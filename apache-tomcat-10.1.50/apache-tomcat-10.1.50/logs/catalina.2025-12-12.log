@@ -298,3 +298,410 @@
 12-Dec-2025 08:56:21.838 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-template-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT]에 대한 배치가 [99] 밀리초에 완료되었습니다.
 12-Dec-2025 08:56:21.847 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
 12-Dec-2025 08:56:21.882 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [10345] 밀리초 내에 시작되었습니다.
+12-Dec-2025 11:14:31.674 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.50
+12-Dec-2025 11:14:31.682 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Dec 2 2025 22:57:41 UTC
+12-Dec-2025 11:14:31.682 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.50.0
+12-Dec-2025 11:14:31.683 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 11
+12-Dec-2025 11:14:31.683 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+12-Dec-2025 11:14:31.683 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+12-Dec-2025 11:14:31.684 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot
+12-Dec-2025 11:14:31.684 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          21.0.4+7-LTS
+12-Dec-2025 11:14:31.685 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Eclipse Adoptium
+12-Dec-2025 11:14:31.685 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:14:31.685 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:14:31.709 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\conf\logging.properties
+12-Dec-2025 11:14:31.710 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+12-Dec-2025 11:14:31.710 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+12-Dec-2025 11:14:31.711 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+12-Dec-2025 11:14:31.711 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dsun.io.useCanonCaches=false
+12-Dec-2025 11:14:31.712 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+12-Dec-2025 11:14:31.712 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+12-Dec-2025 11:14:31.712 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+12-Dec-2025 11:14:31.713 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+12-Dec-2025 11:14:31.713 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+12-Dec-2025 11:14:31.715 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+12-Dec-2025 11:14:31.715 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:14:31.715 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:14:31.716 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\temp
+12-Dec-2025 11:14:31.736 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;%JAVA_HOME%\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\Pandoc;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Local\Programs\Python\Launcher\;C:\Users\lkind\AppData\Local\Microsoft\WindowsApps;C:\Users\lkind\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\GitHubDesktop\bin;C:\Users\lkind\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\lkind\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft;C:\Users\lkind\AppData\Local\Pandoc\;C:\Users\lkind\AppData\Local\Programs\Antigravity\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;;.]
+12-Dec-2025 11:14:32.157 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+12-Dec-2025 11:14:32.205 정보 [main] org.apache.catalina.startup.Catalina.load [1022] 밀리초 내에 서버가 초기화되었습니다.
+12-Dec-2025 11:14:32.287 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+12-Dec-2025 11:14:32.288 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.50]
+12-Dec-2025 11:14:32.320 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\egovframe-project-1.0.0.war]을(를) 배치합니다.
+12-Dec-2025 11:14:32.345 정보 [main] org.apache.catalina.startup.ExpandWar.expand 압축이 풀려진 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\egovframe-project-1.0.0]의 최종 변경 시간이, 연관된 WAR의 최종 변경 시간과 부합하지 않습니다. 해당 디렉토리는 삭제될 것입니다.
+12-Dec-2025 11:14:53.130 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:01.781 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\egovframe-project-1.0.0.war]의 배치가 [29,461] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:01.783 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:15:01.916 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:01.923 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [140] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:01.924 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]을(를) 배치합니다.
+12-Dec-2025 11:15:02.018 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:02.023 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]에 대한 배치가 [99] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:02.025 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]을(를) 배치합니다.
+12-Dec-2025 11:15:02.425 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:02.501 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]에 대한 배치가 [477] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:02.502 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]을(를) 배치합니다.
+12-Dec-2025 11:15:02.591 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:02.604 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]에 대한 배치가 [101] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:02.605 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]을(를) 배치합니다.
+12-Dec-2025 11:15:02.706 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:15:02.711 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]에 대한 배치가 [105] 밀리초에 완료되었습니다.
+12-Dec-2025 11:15:02.719 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
+12-Dec-2025 11:15:02.768 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [30561] 밀리초 내에 시작되었습니다.
+12-Dec-2025 11:17:33.318 정보 [Catalina-utility-2] org.apache.catalina.startup.HostConfig.undeploy 컨텍스트 []의 배치를 제거합니다.
+12-Dec-2025 11:17:33.344 정보 [Catalina-utility-2] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:17:48.081 정보 [Catalina-utility-2] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:17:54.208 정보 [Catalina-utility-2] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [20,863] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:01.786 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.50
+12-Dec-2025 11:24:01.792 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Dec 2 2025 22:57:41 UTC
+12-Dec-2025 11:24:01.793 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.50.0
+12-Dec-2025 11:24:01.793 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 11
+12-Dec-2025 11:24:01.794 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+12-Dec-2025 11:24:01.794 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+12-Dec-2025 11:24:01.794 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot
+12-Dec-2025 11:24:01.795 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          21.0.4+7-LTS
+12-Dec-2025 11:24:01.795 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Eclipse Adoptium
+12-Dec-2025 11:24:01.795 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:24:01.795 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:24:01.806 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\conf\logging.properties
+12-Dec-2025 11:24:01.807 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+12-Dec-2025 11:24:01.807 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+12-Dec-2025 11:24:01.807 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+12-Dec-2025 11:24:01.808 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dsun.io.useCanonCaches=false
+12-Dec-2025 11:24:01.808 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+12-Dec-2025 11:24:01.808 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+12-Dec-2025 11:24:01.808 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+12-Dec-2025 11:24:01.809 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+12-Dec-2025 11:24:01.809 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+12-Dec-2025 11:24:01.809 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+12-Dec-2025 11:24:01.809 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:24:01.810 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:24:01.810 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\temp
+12-Dec-2025 11:24:01.837 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;%JAVA_HOME%\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\Pandoc;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Local\Programs\Python\Launcher\;C:\Users\lkind\AppData\Local\Microsoft\WindowsApps;C:\Users\lkind\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\GitHubDesktop\bin;C:\Users\lkind\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\lkind\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft;C:\Users\lkind\AppData\Local\Pandoc\;C:\Users\lkind\AppData\Local\Programs\Antigravity\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;;.]
+12-Dec-2025 11:24:02.186 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+12-Dec-2025 11:24:02.202 심각 [main] org.apache.catalina.util.LifecycleBase.handleSubClassException 구성요소 [Connector["http-nio-8080"]]을(를) 초기화하지 못했습니다.
+	org.apache.catalina.LifecycleException: 프로토콜 핸들러 초기화가 실패했습니다.
+		at org.apache.catalina.connector.Connector.initInternal(Connector.java:1084)
+		at org.apache.catalina.util.LifecycleBase.init(LifecycleBase.java:122)
+		at org.apache.catalina.core.StandardService.initInternal(StandardService.java:520)
+		at org.apache.catalina.util.LifecycleBase.init(LifecycleBase.java:122)
+		at org.apache.catalina.core.StandardServer.initInternal(StandardServer.java:955)
+		at org.apache.catalina.util.LifecycleBase.init(LifecycleBase.java:122)
+		at org.apache.catalina.startup.Catalina.load(Catalina.java:709)
+		at org.apache.catalina.startup.Catalina.load(Catalina.java:732)
+		at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+		at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+		at org.apache.catalina.startup.Bootstrap.load(Bootstrap.java:299)
+		at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:472)
+	Caused by: java.net.BindException: Address already in use: bind
+		at java.base/sun.nio.ch.Net.bind0(Native Method)
+		at java.base/sun.nio.ch.Net.bind(Net.java:565)
+		at java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(ServerSocketChannelImpl.java:344)
+		at java.base/sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:301)
+		at org.apache.tomcat.util.net.NioEndpoint.initServerSocket(NioEndpoint.java:264)
+		at org.apache.tomcat.util.net.NioEndpoint.bind(NioEndpoint.java:219)
+		at org.apache.tomcat.util.net.AbstractEndpoint.bindWithCleanup(AbstractEndpoint.java:1431)
+		at org.apache.tomcat.util.net.AbstractEndpoint.init(AbstractEndpoint.java:1444)
+		at org.apache.coyote.AbstractProtocol.init(AbstractProtocol.java:633)
+		at org.apache.coyote.http11.AbstractHttp11Protocol.init(AbstractHttp11Protocol.java:82)
+		at org.apache.catalina.connector.Connector.initInternal(Connector.java:1082)
+		... 11 more
+12-Dec-2025 11:24:02.205 정보 [main] org.apache.catalina.startup.Catalina.load [631] 밀리초 내에 서버가 초기화되었습니다.
+12-Dec-2025 11:24:02.255 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+12-Dec-2025 11:24:02.255 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.50]
+12-Dec-2025 11:24:02.295 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\egovframe-project-1.0.0.war]을(를) 배치합니다.
+12-Dec-2025 11:24:05.317 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:12.961 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\egovframe-project-1.0.0.war]의 배치가 [10,668] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:12.964 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:24:17.467 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:24.137 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [11,173] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:24.139 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]을(를) 배치합니다.
+12-Dec-2025 11:24:24.260 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:24.267 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]에 대한 배치가 [126] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:24.267 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]을(를) 배치합니다.
+12-Dec-2025 11:24:24.692 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:24.754 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]에 대한 배치가 [487] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:24.755 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]을(를) 배치합니다.
+12-Dec-2025 11:24:24.831 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:24.845 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]에 대한 배치가 [90] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:24.846 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]을(를) 배치합니다.
+12-Dec-2025 11:24:24.913 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:24:24.918 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]에 대한 배치가 [70] 밀리초에 완료되었습니다.
+12-Dec-2025 11:24:24.923 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [22716] 밀리초 내에 시작되었습니다.
+12-Dec-2025 11:24:24.924 심각 [main] org.apache.catalina.core.StandardServer.await 주소 [localhost]와(과) 포트 [8005]에, 서버 셧다운 소켓을 생성하지 못했습니다. (base 포트 [8005], offset [0])
+	java.net.BindException: Address already in use: bind
+		at java.base/sun.nio.ch.Net.bind0(Native Method)
+		at java.base/sun.nio.ch.Net.bind(Net.java:565)
+		at java.base/sun.nio.ch.Net.bind(Net.java:554)
+		at java.base/sun.nio.ch.NioSocketImpl.bind(NioSocketImpl.java:636)
+		at java.base/java.net.ServerSocket.bind(ServerSocket.java:391)
+		at java.base/java.net.ServerSocket.<init>(ServerSocket.java:278)
+		at org.apache.catalina.core.StandardServer.await(StandardServer.java:531)
+		at org.apache.catalina.startup.Catalina.await(Catalina.java:848)
+		at org.apache.catalina.startup.Catalina.start(Catalina.java:796)
+		at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+		at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+		at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:342)
+		at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:473)
+12-Dec-2025 11:24:24.925 정보 [main] org.apache.coyote.AbstractProtocol.pause 프로토콜 핸들러 ["http-nio-8080"]을(를) 일시 정지 중
+12-Dec-2025 11:24:24.925 정보 [main] org.apache.catalina.core.StandardService.stopInternal 서비스 [Catalina]을(를) 중지시킵니다.
+12-Dec-2025 11:24:24.982 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc 웹 애플리케이션 [ROOT]이(가) JDBC 드라이버 [cubrid.jdbc.driver.CUBRIDDriver]을(를) 등록했지만, 웹 애플리케이션이 중지될 때, 해당 JDBC 드라이버의 등록을 제거하지 못했습니다. 메모리 누수를 방지하기 위하여, 등록을 강제로 제거했습니다.
+12-Dec-2025 11:24:24.983 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc 웹 애플리케이션 [ROOT]이(가) JDBC 드라이버 [net.sf.log4jdbc.DriverSpy]을(를) 등록했지만, 웹 애플리케이션이 중지될 때, 해당 JDBC 드라이버의 등록을 제거하지 못했습니다. 메모리 누수를 방지하기 위하여, 등록을 강제로 제거했습니다.
+12-Dec-2025 11:24:24.983 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc 웹 애플리케이션 [ROOT]이(가) JDBC 드라이버 [com.mysql.cj.jdbc.Driver]을(를) 등록했지만, 웹 애플리케이션이 중지될 때, 해당 JDBC 드라이버의 등록을 제거하지 못했습니다. 메모리 누수를 방지하기 위하여, 등록을 강제로 제거했습니다.
+12-Dec-2025 11:24:24.985 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [mysql-cj-abandoned-connection-cleanup](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+ java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1847)
+ java.base/java.lang.ref.ReferenceQueue.await(ReferenceQueue.java:71)
+ java.base/java.lang.ref.ReferenceQueue.remove0(ReferenceQueue.java:143)
+ java.base/java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:218)
+ com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.run(AbandonedConnectionCleanupThread.java:84)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+12-Dec-2025 11:24:24.985 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-1](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.986 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-2](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.986 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-3](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.987 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-4](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.987 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-5](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.987 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-6](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.987 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-7](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.988 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-8](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.989 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-9](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:24.989 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [ROOT]이(가) [sysLogScheduler_Worker-10](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.036 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc 웹 애플리케이션 [egovframe-project-1.0.0]이(가) JDBC 드라이버 [net.sf.log4jdbc.DriverSpy]을(를) 등록했지만, 웹 애플리케이션이 중지될 때, 해당 JDBC 드라이버의 등록을 제거하지 못했습니다. 메모리 누수를 방지하기 위하여, 등록을 강제로 제거했습니다.
+12-Dec-2025 11:24:25.036 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc 웹 애플리케이션 [egovframe-project-1.0.0]이(가) JDBC 드라이버 [com.mysql.cj.jdbc.Driver]을(를) 등록했지만, 웹 애플리케이션이 중지될 때, 해당 JDBC 드라이버의 등록을 제거하지 못했습니다. 메모리 누수를 방지하기 위하여, 등록을 강제로 제거했습니다.
+12-Dec-2025 11:24:25.036 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-1](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.037 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-2](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.038 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-3](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.038 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-4](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.038 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-5](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.040 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-6](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.040 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-7](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.040 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-8](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.040 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-9](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.041 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [sysLogScheduler_Worker-10](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/java.lang.Object.wait0(Native Method)
+ java.base/java.lang.Object.wait(Object.java:366)
+ org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:561)
+12-Dec-2025 11:24:25.041 경고 [main] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads 웹 애플리케이션 [egovframe-project-1.0.0]이(가) [mysql-cj-abandoned-connection-cleanup](이)라는 이름의 쓰레드를 시작시킨 것으로 보이지만, 해당 쓰레드를 중지시키지 못했습니다. 이는 메모리 누수를 유발할 가능성이 큽니다. 해당 쓰레드의 스택 트레이스:
+ java.base/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+ java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1847)
+ java.base/java.lang.ref.ReferenceQueue.await(ReferenceQueue.java:71)
+ java.base/java.lang.ref.ReferenceQueue.remove0(ReferenceQueue.java:143)
+ java.base/java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:218)
+ com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.run(AbandonedConnectionCleanupThread.java:84)
+ java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+ java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+ java.base/java.lang.Thread.run(Thread.java:1583)
+12-Dec-2025 11:24:25.069 정보 [main] org.apache.coyote.AbstractProtocol.stop 프로토콜 핸들러 ["http-nio-8080"]을(를) 중지시킵니다.
+12-Dec-2025 11:24:25.072 정보 [main] org.apache.coyote.AbstractProtocol.destroy 프로토콜 핸들러 ["http-nio-8080"]을(를) 소멸시킵니다.
+12-Dec-2025 11:24:25.258 정보 [mysql-cj-abandoned-connection-cleanup] org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading 불허되는 접근: 이 웹 애플리케이션 인스턴스는 이미 중지되었습니다. []을(를) 로드할 수 없습니다. 디버그 목적 및 불허되는 접근을 발생시킨 해당 쓰레드를 종료시키기 위한 시도로서, 다음 스택 트레이스가 생성됩니다.
+	java.lang.IllegalStateException: 불허되는 접근: 이 웹 애플리케이션 인스턴스는 이미 중지되었습니다. []을(를) 로드할 수 없습니다. 디버그 목적 및 불허되는 접근을 발생시킨 해당 쓰레드를 종료시키기 위한 시도로서, 다음 스택 트레이스가 생성됩니다.
+		at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1396)
+		at org.apache.catalina.loader.WebappClassLoaderBase.getResource(WebappClassLoaderBase.java:984)
+		at com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.checkThreadContextClassLoader(AbandonedConnectionCleanupThread.java:116)
+		at com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.run(AbandonedConnectionCleanupThread.java:83)
+		at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+		at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+		at java.base/java.lang.Thread.run(Thread.java:1583)
+12-Dec-2025 11:31:41.931 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.50
+12-Dec-2025 11:31:41.937 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Dec 2 2025 22:57:41 UTC
+12-Dec-2025 11:31:41.938 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.50.0
+12-Dec-2025 11:31:41.938 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 11
+12-Dec-2025 11:31:41.938 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+12-Dec-2025 11:31:41.939 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+12-Dec-2025 11:31:41.939 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot
+12-Dec-2025 11:31:41.939 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          21.0.4+7-LTS
+12-Dec-2025 11:31:41.940 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Eclipse Adoptium
+12-Dec-2025 11:31:41.940 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:31:41.940 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:31:41.951 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\conf\logging.properties
+12-Dec-2025 11:31:41.951 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+12-Dec-2025 11:31:41.952 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+12-Dec-2025 11:31:41.952 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+12-Dec-2025 11:31:41.952 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dsun.io.useCanonCaches=false
+12-Dec-2025 11:31:41.953 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+12-Dec-2025 11:31:41.953 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+12-Dec-2025 11:31:41.953 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+12-Dec-2025 11:31:41.954 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+12-Dec-2025 11:31:41.954 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+12-Dec-2025 11:31:41.955 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+12-Dec-2025 11:31:41.955 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:31:41.955 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:31:41.956 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\temp
+12-Dec-2025 11:31:41.975 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;%JAVA_HOME%\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\Pandoc;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Local\Programs\Python\Launcher\;C:\Users\lkind\AppData\Local\Microsoft\WindowsApps;C:\Users\lkind\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\GitHubDesktop\bin;C:\Users\lkind\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\lkind\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft;C:\Users\lkind\AppData\Local\Pandoc\;C:\Users\lkind\AppData\Local\Programs\Antigravity\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;;.]
+12-Dec-2025 11:31:42.445 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+12-Dec-2025 11:31:42.513 정보 [main] org.apache.catalina.startup.Catalina.load [878] 밀리초 내에 서버가 초기화되었습니다.
+12-Dec-2025 11:31:42.578 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+12-Dec-2025 11:31:42.579 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.50]
+12-Dec-2025 11:31:42.618 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:31:59.102 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:32:06.652 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [24,033] 밀리초에 완료되었습니다.
+12-Dec-2025 11:32:06.654 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]을(를) 배치합니다.
+12-Dec-2025 11:32:06.750 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:32:06.755 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]에 대한 배치가 [101] 밀리초에 완료되었습니다.
+12-Dec-2025 11:32:06.756 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]을(를) 배치합니다.
+12-Dec-2025 11:32:07.342 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:32:07.455 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]에 대한 배치가 [699] 밀리초에 완료되었습니다.
+12-Dec-2025 11:32:07.457 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]을(를) 배치합니다.
+12-Dec-2025 11:32:07.602 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:32:07.615 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]에 대한 배치가 [158] 밀리초에 완료되었습니다.
+12-Dec-2025 11:32:07.616 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]을(를) 배치합니다.
+12-Dec-2025 11:32:07.710 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:32:07.715 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]에 대한 배치가 [99] 밀리초에 완료되었습니다.
+12-Dec-2025 11:32:07.730 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
+12-Dec-2025 11:32:07.786 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [25269] 밀리초 내에 시작되었습니다.
+12-Dec-2025 11:36:40.426 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.50
+12-Dec-2025 11:36:40.432 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Dec 2 2025 22:57:41 UTC
+12-Dec-2025 11:36:40.433 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.50.0
+12-Dec-2025 11:36:40.433 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 11
+12-Dec-2025 11:36:40.433 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+12-Dec-2025 11:36:40.434 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+12-Dec-2025 11:36:40.435 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot
+12-Dec-2025 11:36:40.435 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          21.0.4+7-LTS
+12-Dec-2025 11:36:40.435 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Eclipse Adoptium
+12-Dec-2025 11:36:40.436 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:36:40.436 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:36:40.459 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\conf\logging.properties
+12-Dec-2025 11:36:40.460 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+12-Dec-2025 11:36:40.460 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+12-Dec-2025 11:36:40.462 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+12-Dec-2025 11:36:40.463 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dsun.io.useCanonCaches=false
+12-Dec-2025 11:36:40.464 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+12-Dec-2025 11:36:40.464 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+12-Dec-2025 11:36:40.464 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+12-Dec-2025 11:36:40.465 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+12-Dec-2025 11:36:40.466 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+12-Dec-2025 11:36:40.467 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+12-Dec-2025 11:36:40.467 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:36:40.467 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:36:40.468 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\temp
+12-Dec-2025 11:36:40.534 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;%JAVA_HOME%\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\Pandoc;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Local\Programs\Python\Launcher\;C:\Users\lkind\AppData\Local\Microsoft\WindowsApps;C:\Users\lkind\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\GitHubDesktop\bin;C:\Users\lkind\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\lkind\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft;C:\Users\lkind\AppData\Local\Pandoc\;C:\Users\lkind\AppData\Local\Programs\Antigravity\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;;.]
+12-Dec-2025 11:36:40.962 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+12-Dec-2025 11:36:41.017 정보 [main] org.apache.catalina.startup.Catalina.load [964] 밀리초 내에 서버가 초기화되었습니다.
+12-Dec-2025 11:36:41.127 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+12-Dec-2025 11:36:41.129 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.50]
+12-Dec-2025 11:36:41.195 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:36:49.105 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:36:59.673 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [18,475] 밀리초에 완료되었습니다.
+12-Dec-2025 11:36:59.674 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]을(를) 배치합니다.
+12-Dec-2025 11:36:59.807 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:36:59.812 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]에 대한 배치가 [137] 밀리초에 완료되었습니다.
+12-Dec-2025 11:36:59.813 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]을(를) 배치합니다.
+12-Dec-2025 11:37:00.369 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:37:00.445 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]에 대한 배치가 [632] 밀리초에 완료되었습니다.
+12-Dec-2025 11:37:00.445 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]을(를) 배치합니다.
+12-Dec-2025 11:37:00.562 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:37:00.571 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]에 대한 배치가 [126] 밀리초에 완료되었습니다.
+12-Dec-2025 11:37:00.572 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]을(를) 배치합니다.
+12-Dec-2025 11:37:00.672 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:37:00.679 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]에 대한 배치가 [106] 밀리초에 완료되었습니다.
+12-Dec-2025 11:37:00.684 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
+12-Dec-2025 11:37:00.716 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [19694] 밀리초 내에 시작되었습니다.
+12-Dec-2025 11:51:28.439 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 서버 버전 이름:    Apache Tomcat/10.1.50
+12-Dec-2025 11:51:28.452 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 빌드 시각:  Dec 2 2025 22:57:41 UTC
+12-Dec-2025 11:51:28.459 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log Server 버전 번호:  10.1.50.0
+12-Dec-2025 11:51:28.461 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 이름:     Windows 11
+12-Dec-2025 11:51:28.461 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 운영체제 버전:     10.0
+12-Dec-2025 11:51:28.461 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 아키텍처:          amd64
+12-Dec-2025 11:51:28.463 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 자바 홈:           C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot
+12-Dec-2025 11:51:28.464 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 버전:          21.0.4+7-LTS
+12-Dec-2025 11:51:28.464 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log JVM 벤더:          Eclipse Adoptium
+12-Dec-2025 11:51:28.465 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:51:28.465 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:     D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:51:28.484 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.config.file=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\conf\logging.properties
+12-Dec-2025 11:51:28.488 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+12-Dec-2025 11:51:28.489 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djdk.tls.ephemeralDHKeySize=2048
+12-Dec-2025 11:51:28.490 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+12-Dec-2025 11:51:28.490 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dsun.io.useCanonCaches=false
+12-Dec-2025 11:51:28.493 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang=ALL-UNNAMED
+12-Dec-2025 11:51:28.505 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+12-Dec-2025 11:51:28.509 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.io=ALL-UNNAMED
+12-Dec-2025 11:51:28.511 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util=ALL-UNNAMED
+12-Dec-2025 11:51:28.511 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+12-Dec-2025 11:51:28.512 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+12-Dec-2025 11:51:28.513 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.base=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:51:28.519 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Dcatalina.home=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50
+12-Dec-2025 11:51:28.524 정보 [main] org.apache.catalina.startup.VersionLoggerListener.log 명령 행 아규먼트:  -Djava.io.tmpdir=D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\temp
+12-Dec-2025 11:51:28.661 정보 [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent 프로덕션 환경들에서 최적의 성능을 제공하는, APR 기반 Apache Tomcat Native 라이브러리가, 다음 java.library.path에서 발견되지 않습니다: [C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;%JAVA_HOME%\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\Pandoc;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Microsoft\jdk-11.0.25.9-hotspot\bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Bandizip\;C:\Program Files\dotnet\;C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Users\lkind\AppData\Local\Programs\Python\Launcher\;C:\Users\lkind\AppData\Local\Microsoft\WindowsApps;C:\Users\lkind\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\lkind\AppData\Roaming\npm;C:\Users\lkind\AppData\Local\GitHubDesktop\bin;C:\Users\lkind\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\lkind\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft;C:\Users\lkind\AppData\Local\Pandoc\;C:\Users\lkind\AppData\Local\Programs\Antigravity\bin;C:\Program Files\Apache\apache-maven-3.9.11\bin;;.]
+12-Dec-2025 11:51:30.159 정보 [main] org.apache.coyote.AbstractProtocol.init 프로토콜 핸들러 ["http-nio-8080"]을(를) 초기화합니다.
+12-Dec-2025 11:51:30.228 정보 [main] org.apache.catalina.startup.Catalina.load [2636] 밀리초 내에 서버가 초기화되었습니다.
+12-Dec-2025 11:51:30.346 정보 [main] org.apache.catalina.core.StandardService.startInternal 서비스 [Catalina]을(를) 시작합니다.
+12-Dec-2025 11:51:30.347 정보 [main] org.apache.catalina.core.StandardEngine.startInternal 서버 엔진을 시작합니다: [Apache Tomcat/10.1.50]
+12-Dec-2025 11:51:30.417 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]을(를) 배치합니다.
+12-Dec-2025 11:51:42.596 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:51:53.097 정보 [main] org.apache.catalina.startup.HostConfig.deployWAR 웹 애플리케이션 아카이브 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\ROOT.war]의 배치가 [22,675] 밀리초에 완료되었습니다.
+12-Dec-2025 11:51:53.101 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]을(를) 배치합니다.
+12-Dec-2025 11:51:53.323 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:51:53.335 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\docs]에 대한 배치가 [234] 밀리초에 완료되었습니다.
+12-Dec-2025 11:51:53.336 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]을(를) 배치합니다.
+12-Dec-2025 11:51:53.818 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:51:53.892 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\examples]에 대한 배치가 [557] 밀리초에 완료되었습니다.
+12-Dec-2025 11:51:53.893 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]을(를) 배치합니다.
+12-Dec-2025 11:51:53.981 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:51:53.989 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\host-manager]에 대한 배치가 [96] 밀리초에 완료되었습니다.
+12-Dec-2025 11:51:53.990 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]을(를) 배치합니다.
+12-Dec-2025 11:51:54.072 정보 [main] org.apache.jasper.servlet.TldScanner.scanJars 적어도 하나의 JAR가 TLD들을 찾기 위해 스캔되었으나 아무 것도 찾지 못했습니다. 스캔했으나 TLD가 없는 JAR들의 전체 목록을 보시려면, 로그 레벨을 디버그 레벨로 설정하십시오. 스캔 과정에서 불필요한 JAR들을 건너뛰면, 시스템 시작 시간과 JSP 컴파일 시간을 단축시킬 수 있습니다.
+12-Dec-2025 11:51:54.078 정보 [main] org.apache.catalina.startup.HostConfig.deployDirectory 웹 애플리케이션 디렉토리 [D:\project\egov-enterprise\apache-tomcat-10.1.50\apache-tomcat-10.1.50\webapps\manager]에 대한 배치가 [87] 밀리초에 완료되었습니다.
+12-Dec-2025 11:51:54.085 정보 [main] org.apache.coyote.AbstractProtocol.start 프로토콜 핸들러 ["http-nio-8080"]을(를) 시작합니다.
+12-Dec-2025 11:51:54.112 정보 [main] org.apache.catalina.startup.Catalina.start 서버가 [23880] 밀리초 내에 시작되었습니다.
