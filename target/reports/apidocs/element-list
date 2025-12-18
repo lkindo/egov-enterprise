@@ -4,6 +4,7 @@ egovframework.com.cmm.service
 egovframework.com.cmm.service.impl
 egovframework.com.cmm.util
 egovframework.com.cmm.web
+egovframework.com.config
 egovframework.let.cop.bbs.service
 egovframework.let.cop.bbs.service.impl
 egovframework.let.cop.bbs.web

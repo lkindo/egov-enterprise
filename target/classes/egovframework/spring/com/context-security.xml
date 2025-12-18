@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+	<!-- 
+		eGovFrame 호환 Spring Security 설정
+		- SHA-256 호환 PasswordEncoder 사용
+		- 보안 필터 비활성화 (URL 기반 보안 없음)
+		- EgovLoginController 의존성을 위한 빈만 제공
+	-->
+
+	<!-- eGovFrame 호환 SHA-256 Password Encoder -->
+    <bean id="passwordEncoder" class="egovframework.com.cmm.EgovSha256PasswordEncoder"/>
+
+	<!-- JDBC User Service (eGovFrame 표준 쿼리) -->
+    <bean id="jdbcUserService" class="org.springframework.security.provisioning.JdbcUserDetailsManager">
+        <property name="dataSource" ref="egov.dataSource"/>
+        <!-- ESNTL_ID를 패스워드로 사용 (eGovFrame 표준) -->
+        <property name="usersByUsernameQuery" 
+        	value="SELECT CONCAT(USER_SE, USER_ID) as username, ESNTL_ID as password, 1 as enabled FROM COMVNUSERMASTER WHERE CONCAT(USER_SE, USER_ID) = ?"/>
+        <property name="authoritiesByUsernameQuery" 
+        	value="SELECT CONCAT(B.USER_SE, B.USER_ID) as username, A.AUTHOR_CODE as authority FROM NEMPLYRSCRTYESTBS A, COMVNUSERMASTER B WHERE A.SCRTY_DTRMN_TRGET_ID = B.ESNTL_ID AND CONCAT(B.USER_SE, B.USER_ID) = ?"/>
+    </bean>
+
+	<!-- Security Context Repository (EgovLoginController 의존성) -->
+	<bean id="securityContextRepository" class="org.springframework.security.web.context.HttpSessionSecurityContextRepository"/>
+
+	<!-- Authentication Manager (EgovLoginController 의존성) -->
+	<security:authentication-manager alias="authenticationManager">
+		<security:authentication-provider user-service-ref="jdbcUserService">
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+	</security:authentication-manager>
+
+    <!-- 
+		NOTE: security:http 설정을 모두 제거하여 MvcRequestMatcher 오류 방지
+		Spring Security 6에서 URL 기반 보안이 필요하면 Java Config 방식으로 전환 필요
+	-->
+
+</beans>

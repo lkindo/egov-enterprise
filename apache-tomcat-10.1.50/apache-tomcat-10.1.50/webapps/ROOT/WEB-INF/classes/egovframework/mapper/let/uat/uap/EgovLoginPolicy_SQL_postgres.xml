@@ -25,7 +25,7 @@
                    B.LAST_UPDUSR_ID,
                    to_char(B.LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM,
                    CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN 
-              FROM COMVNUSERMASTER A LEFT OUTER JOIN LETTNLOGINPOLICY B
+              FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
             <if test="searchKeyword != null and searchKeyword != ''">
@@ -38,7 +38,7 @@
 
     <select id="selectLoginPolicyListTotCnt" parameterType="egovframework.let.uat.uap.service.LoginPolicyVO" resultType="int">
             SELECT COUNT(*) AS "totcnt"                  
-              FROM COMVNUSERMASTER A LEFT OUTER JOIN LETTNLOGINPOLICY B
+              FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
             <if test="searchKeyword != null and searchKeyword != ''">
@@ -58,7 +58,7 @@
                    B.LAST_UPDUSR_ID,
                    to_char(B.LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM,
                    CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN                   
-              FROM COMVNUSERMASTER A LEFT OUTER JOIN LETTNLOGINPOLICY B
+              FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
                AND A.USER_ID = #{emplyrId}
@@ -66,7 +66,7 @@
     
     <insert id="insertLoginPolicy" parameterType="egovframework.let.uat.uap.service.LoginPolicy">
         
-            INSERT INTO LETTNLOGINPOLICY 
+            INSERT INTO NLOGINPOLICY 
                    (EMPLYR_ID
                    ,IP_INFO
                    ,DPLCT_PERM_AT
@@ -88,7 +88,7 @@
 
     <update id="updateLoginPolicy" parameterType="egovframework.let.uat.uap.service.LoginPolicy">
         
-            UPDATE LETTNLOGINPOLICY 
+            UPDATE NLOGINPOLICY 
                SET IP_INFO = #{ipInfo}
                   ,DPLCT_PERM_AT = #{dplctPermAt}
                   ,LMTT_AT = #{lmttAt}
@@ -100,7 +100,7 @@
 
     <delete id="deleteLoginPolicy">
         
-            DELETE FROM LETTNLOGINPOLICY 
+            DELETE FROM NLOGINPOLICY 
              WHERE EMPLYR_ID = #{emplyrId}
         
     </delete>

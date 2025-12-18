@@ -60,7 +60,7 @@
 				LETTNSYSLOG a
 			LEFT OUTER JOIN COMVNUSERMASTER b
 				ON a.RQESTER_ID = b.ESNTL_ID
-			LEFT OUTER JOIN LETTCCMMNDETAILCODE c
+			LEFT OUTER JOIN CCMMNDETAILCODE c
 				ON a.PROCESS_SE_CODE = c.CODE
 			WHERE 
 				c.CODE_ID = 'COM033'
@@ -86,7 +86,7 @@
 				LETTNSYSLOG a
 			LEFT OUTER JOIN COMVNUSERMASTER b
 				ON a.RQESTER_ID = b.ESNTL_ID
-			LEFT OUTER JOIN LETTCCMMNDETAILCODE c
+			LEFT OUTER JOIN CCMMNDETAILCODE c
 				ON a.PROCESS_SE_CODE = c.CODE
 			WHERE 
 				c.CODE_ID = 'COM033'
@@ -109,7 +109,7 @@
 				LETTNSYSLOG a
 			LEFT OUTER JOIN COMVNUSERMASTER b
 				ON a.RQESTER_ID = b.ESNTL_ID
-			LEFT OUTER JOIN LETTCCMMNDETAILCODE c
+			LEFT OUTER JOIN CCMMNDETAILCODE c
 				ON a.PROCESS_SE_CODE = c.CODE
 			WHERE 
 				c.CODE_ID = 'COM033'
@@ -125,7 +125,7 @@
 	<!-- 시스템 로그 전날 로그 요약  등록 -->
 	<insert id="logInsertSysLogSummary">
 		
-			INSERT INTO LETTSSYSLOGSUMMARY 
+			INSERT INTO SSYSLOGSUMMARY 
 	            SELECT DATE_FORMAT(b.CREAT_DT, '%Y%m%d') as OCCRRNC_DE 
 	                 , 'Member-login' as  SVC_NM
 	                 , 'actionLogin' as METHOD_NM
@@ -135,9 +135,9 @@
 	                 , SUM(CASE WHEN b.CONECT_MTHD = 'O' THEN 1 ELSE 0 END) AS DELETE_CO
 	                 , 0 AS OUTPT_CO
 	                 , 0 AS ERROR_CO
-	              FROM LETTNLOGINLOG b
+	              FROM NLOGINLOG b
                  WHERE NOT EXISTS (SELECT c.OCCRRNC_DE 
-                                     FROM LETTSSYSLOGSUMMARY c
+                                     FROM SSYSLOGSUMMARY c
                                     WHERE c.OCCRRNC_DE = DATE_FORMAT(ADDDATE(SYSDATE(), -1), '%Y%m%d')
                                   )
                    AND DATE_FORMAT(b.CREAT_DT, '%Y%m%d') = DATE_FORMAT(ADDDATE(SYSDATE(), -1), '%Y%m%d')
@@ -149,7 +149,7 @@
 	<!-- 시스템 로그 6개월전 로그 삭제 -->
 	<delete id="logDeleteSysLogSummary">
 		
-			DELETE FROM LETTNLOGINLOG
+			DELETE FROM NLOGINLOG
              WHERE DATE_FORMAT(CREAT_DT, '%Y%m%d') &lt; DATE_FORMAT(ADDDATE(SYSDATE(), -210), '%Y%m%d')
 		
 	</delete>

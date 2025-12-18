@@ -18,6 +18,7 @@ egovframework\let\sec\rgm\web\EgovAuthorGroupController.class
 egovframework\com\cmm\service\impl\FileManageDAO.class
 egovframework\let\sym\prm\web\EgovProgrmManageController.class
 egovframework\let\sym\ccm\zip\service\Zip.class
+egovframework\com\config\CustomSecurityConfig.class
 egovframework\let\uss\ion\uas\service\impl\UserAbsnceDAO.class
 egovframework\let\cop\bbs\service\impl\EgovBBSManageServiceImpl.class
 egovframework\com\cmm\LoginVO.class
@@ -61,6 +62,7 @@ egovframework\com\cmm\EgovWebUtil.class
 egovframework\let\uat\uia\service\EgovLoginService.class
 egovframework\let\sym\ccm\cde\web\EgovCcmCmmnDetailCodeManageController.class
 egovframework\let\sec\ram\service\AuthorManage.class
+egovframework\com\cmm\EgovSha256PasswordEncoder.class
 egovframework\let\sec\rmt\service\RoleManage.class
 egovframework\let\cop\com\web\EgovBBSUseInfoManageController.class
 egovframework\let\sym\cal\service\Restde.class

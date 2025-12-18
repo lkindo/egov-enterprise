@@ -29,8 +29,8 @@
                    (CASE WHEN B.ROLE_CODE IS NULL THEN 'N'
                          ELSE 'Y' 
                      END) AS REG_YN
-              FROM LETTNROLEINFO A 
-                   LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM LETTNAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
+              FROM NROLEINFO A 
+                   LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM NAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
                 ON A.ROLE_CODE = B.ROLE_CODE	
              LIMIT #{recordCountPerPage} OFFSET #{firstIndex}	         
         
@@ -39,14 +39,14 @@
 	<select id="authorRoleManageDAO.selectAuthorRoleListTotCnt" parameterType="egovframework.let.sec.ram.service.AuthorRoleManageVO" resultType="int">
 
 			SELECT COUNT(*) totcnt
-              FROM LETTNROLEINFO A 
-                   LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM LETTNAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
+              FROM NROLEINFO A 
+                   LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM NAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
                 ON A.ROLE_CODE = B.ROLE_CODE
 	</select>
 
     <insert id="authorRoleManageDAO.insertAuthorRole" parameterType="egovframework.let.sec.ram.service.AuthorRoleManage">
         
-            INSERT INTO LETTNAUTHORROLERELATE 
+            INSERT INTO NAUTHORROLERELATE 
                   ( AUTHOR_CODE
                   , ROLE_CODE
                   , CREAT_DT)
@@ -58,7 +58,7 @@
 
     <delete id="authorRoleManageDAO.deleteAuthorRole">
         
-            DELETE FROM LETTNAUTHORROLERELATE 
+            DELETE FROM NAUTHORROLERELATE 
              WHERE AUTHOR_CODE=#{authorCode}
                AND ROLE_CODE=#{roleCode}
         
