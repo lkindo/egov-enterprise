@@ -1,14 +1,14 @@
 <%--
   Class Name : accessDenied.jsp
-  Description : Á¢±ÙºÒ°¡ ¸Þ½ÃÁö È­¸é(system)
+  Description : ï¿½ï¿½ï¿½ÙºÒ°ï¿½ ï¿½Þ½ï¿½ï¿½ï¿½ È­ï¿½ï¿½(system)
   Modification Information
  
-      ¼öÁ¤ÀÏ         ¼öÁ¤ÀÚ                   ¼öÁ¤³»¿ë
+      ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½         ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                   ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     -------    --------    ---------------------------
-     2009.02.01    lee.m.j          ÃÖÃÊ »ý¼º
-     2011.08.31  JJY       °æ·®È¯°æ ¹öÀü »ý¼º
+     2009.02.01    lee.m.j          ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+     2011.08.31  JJY       ï¿½æ·®È¯ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
  
-    author   : °øÅë¼­ºñ½º°³¹ßÆÀ lee.m.j
+    author   : ï¿½ï¿½ï¿½ë¼­ï¿½ñ½º°ï¿½ï¿½ï¿½ï¿½ï¿½ lee.m.j
     since    : 2009.02.01
 --%>
 <%@ page import="org.springframework.security.core.context.SecurityContextHolder" %>
@@ -17,7 +17,7 @@
 
 <%@ page isErrorPage="true"%>
 <%@ page contentType="text/html; charset=euc-kr" %>
-<%@ taglib prefix='c' uri='http://java.sun.com/jsp/jstl/core' %>
+<%@ taglib prefix='c' uri='jakarta.tags.core' %>
 <%@ page import="org.egovframe.rte.fdl.string.EgovStringUtil" %>
 <%@ page import="java.lang.String" %>
 <%
@@ -68,16 +68,16 @@ function fncGoAfterErrorPage(){
 <body>
 
     <!-- skip navigation -->
-    <a href="#contents" class="skip_navi">º»¹® ¹Ù·Î°¡±â</a>
+    <a href="#contents" class="skip_navi">ï¿½ï¿½ï¿½ï¿½ ï¿½Ù·Î°ï¿½ï¿½ï¿½</a>
 
     <div class="wrap">
         <div class="error_page">
             <h1>Error</h1>
             <div class="inner">
-<!--				<p>¼¼¼ÇÀÌ ¸¸·áµÇ¾ú½À´Ï´Ù.</p> -->
-<!--				<p>µ¥ÀÌÅÍ Ã³¸® Áß ¿À·ù°¡ ¹ß»ýÇÏ¿´½À´Ï´Ù.</p> -->
-<!-- 				<p>¼öÇàÁß ¿À·ù°¡ ¹ß»ýÇÏ¿´½À´Ï´Ù.</p> -->
-<!-- 				<p>¾Ë ¼ö ¾ø´Â ¿À·ù°¡ ¹ß»ýÇÏ¿´½À´Ï´Ù.</p> -->
+<!--				<p>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.</p> -->
+<!--				<p>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.</p> -->
+<!-- 				<p>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.</p> -->
+<!-- 				<p>ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.</p> -->
 				<%= request.getAttribute(org.springframework.security.web.WebAttributes.AUTHENTICATION_EXCEPTION) %>
 				<%	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 					if (auth != null) { 
@@ -86,7 +86,7 @@ function fncGoAfterErrorPage(){
 				%>
 				<p>${exception.message}</p>
                 <br>
-                <a href="#LINK" class="btn btn_blue_46 w_130" onclick="javascript:fncGoAfterErrorPage(); return false;">ÀÌÀüÆäÀÌÁö</a>
+                <a href="#LINK" class="btn btn_blue_46 w_130" onclick="javascript:fncGoAfterErrorPage(); return false;">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</a>
             </div>
         </div>
     </div>
