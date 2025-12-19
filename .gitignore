@@ -1,0 +1,108 @@
+# ===========================
+# eGovFrame / Maven / Java 프로젝트용 .gitignore
+# ===========================
+
+# ===== Build 결과물 =====
+target/
+build/
+out/
+*.war
+*.jar
+*.class
+
+# ===== IDE 설정 =====
+# Eclipse
+.project
+.classpath
+.settings/
+*.launch
+.metadata/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+
+# ===== 운영체제 =====
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ===== 로그 파일 =====
+*.log
+logs/
+
+# ===== Maven =====
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== Tomcat =====
+apache-tomcat-*/
+tomcat/
+*.zip
+
+# ===== Docker =====
+# Docker 볼륨 데이터 (로컬에서 마운트된 경우)
+docker-data/
+
+# ===== 환경 설정 (민감 정보) =====
+*.env
+.env.local
+.env.*.local
+application-local.properties
+application-local.yml
+
+# ===== 업로드 파일 =====
+upload/
+uploads/
+files/
+
+# ===== 기타 =====
+# 임시 파일
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+
+# 테스트 결과
+test-output/
+surefire-reports/
+
+# 캐시
+.cache/
