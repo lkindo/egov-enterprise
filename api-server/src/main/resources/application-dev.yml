@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:cubrid:localhost:33000:demodb:::?charSet=UTF-8
+    driver-class-name: cubrid.jdbc.driver.CUBRIDDriver
+    username: dba
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.community.dialect.CUBRIDDialect
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: egovframework.let,com.company.project
+
+logging:
+  level:
+    com.company.project: DEBUG
+    org.springframework.security: DEBUG

@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:cubrid:localhost:33000:demodb:::?charSet=UTF-8}
+    driver-class-name: cubrid.jdbc.driver.CUBRIDDriver
+    username: ${DB_USERNAME:dba}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.CUBRIDDialect
+
+logging:
+  level:
+    com.company.project: INFO
+    org.springframework.security: INFO

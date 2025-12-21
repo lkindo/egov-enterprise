@@ -1,0 +1,29 @@
+# Task Checklist
+
+- [x] Create PRD.MD
+- [x] Analyze Project Structure (AS-IS vs TO-BE)
+- [x] Create TRD.MD
+- [x] Create LLD.MD
+- [x] Initialize Multi-Module Project Structure
+    - [x] Create Root Project (Gradle)
+    - [x] Create common-core module
+    - [x] Create common-domain module
+    - [x] Create common-security module
+    - [x] Create common-service module
+    - [x] Create api-server module
+- [x] Migrate Core Tech
+    - [x] Setup JPA & QueryDSL
+    - [x] Setup JWT Security
+- [x] eGovFrame 5.0 Compliance Upgrade
+    - [x] Add RTE 5.0.0 Dependencies (cmmn, dataaccess, property, logging, idgnr, crypto)
+    - [x] Implement ARIA Encryption (CryptoUtil)
+    - [x] Refactor Service Inheritance (EgovAbstractServiceImpl)
+- [/] Porting Features
+    - [x] User Module (Entity, Repos, Service, Controller)
+    - [x] Common Code Module (Entity, Repos, Service, Controller)
+- [x] Documentation & Verification
+    - [x] Create WALKTHROUGH.md
+    - [x] Create Compliance Analysis Reports
+- [x] Deployment Setup
+    - [x] Create Dockerfile (Multi-stage)
+    - [x] Create docker-compose.yml
