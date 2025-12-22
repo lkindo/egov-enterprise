@@ -136,7 +136,54 @@ _legacy_backup/src/main/resources/egovframework/mapper/let/cop/bbs/
 
 ---
 
-## 4. 환경 설정 참고
+## 4. 현대적 MyBatis 아키텍처 가이드라인 (TO-BE)
+
+레거시의 `DAO` 기반 방식을 지양하고, Spring Boot 친화적인 인터페이스 기반 아키텍처를 적용합니다.
+
+### 4.1 핵심 원칙
+1. **Mapper 인터페이스 사용**: `EgovAbstractMapper`를 상속받는 DAO 대신 `@Mapper` 인터페이스를 사용합니다.
+2. **DTO 기반 통신**: 레거시의 `VO`나 `EgovMap` 대신 기능에 맞는 명확한 `DTO`를 정의하여 사용합니다.
+3. **Layered Architecture 준수**:
+   - **Infrastructure**: `Mapper XML` (SQL)
+   - **Persistence**: `@Mapper Interface`
+   - **Service**: Business Logic (Mapper 주입)
+   - **Web**: REST API Controller
+
+### 4.2 파일 구조 예시
+```
+common-domain/
+  └── src/main/java/com/company/project/domain/[feature]/
+      └── [Feature]Mapper.java (인터페이스)
+  └── src/main/resources/mapper/[feature]/
+      └── [Feature]Mapper.xml (SQL)
+
+common-service/
+  └── src/main/java/com/company/project/service/[feature]/
+      └── [Feature]Service.java (Business Logic)
+```
+
+### 4.3 설정 (application-dev.yml)
+- `mybatis.configuration.map-underscore-to-camel-case: true` 설정 권장 (DB Snake Case -> Java Camel Case 자동 매핑)
+
+---
+
+## 5. 단계별 이관 로드맵 (개정)
+
+### 1단계: 인프라 구축 ✅
+- [x] MyBatis 종속성 추가 및 기본 설정
+- [x] Cubrid DB 연동 확인
+
+### 2단계: 아키텍처 전환 및 샘플 이식 (현재) 🔄
+- [ ] 레거시 BBS SQL 분석 및 현대화
+- [ ] Mapper 인터페이스 정의 및 XML 이식
+- [ ] REST API 변환 (Controller 신규 작성)
+
+### 3단계: 파일/공통코드 모듈 이관 ⏳
+- 신규 아키텍처 표준을 적용하여 순차적 이행
+
+---
+
+## 6. 환경 설정 참고
 
 ### 4.1 JDK 21 설정 (중요)
 Gradle이 자동으로 JDK 21을 다운로드합니다. 수동 설정이 필요한 경우:
@@ -171,6 +218,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login `
 | 루트 빌드 설정 | `build.gradle` | Java 21 Toolchain, 공통 의존성 |
 | API 서버 빌드 | `api-server/build.gradle` | JSP/MyBATIS/레거시 의존성 |
 | 개발 환경 설정 | `api-server/src/main/resources/application-dev.yml` | DB 연결, JSP, MyBATIS |
+| 현대화 플랜 | `implementation_plan.md` | 신규 아키텍처 상세 가이드라인 |
 | 보안 설정 | `common-security/.../SecurityConfig.java` | JWT + 레거시 경로 허용 |
 | 레거시 빈 설정 | `api-server/.../LegacyConfig.java` | DataSource 별칭, MessageSource |
 | 레거시 원본 | `_legacy_backup/` | eGovFrame 5.0 경량환경 전체 |

@@ -26,11 +26,10 @@ public class JwtTokenProvider {
     private final long tokenValidityInMilliseconds = 1000L * 60 * 60;
 
     private SecretKey key;
-    private final UserDetailsService userDetailsService;
 
-    public JwtTokenProvider(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private UserDetailsService userDetailsService;
 
     @PostConstruct
     protected void init() {

@@ -2,16 +2,17 @@ package com.company.project.service.file;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.file.FileGroup;
-import com.company.project.domain.file.FileGroupRepository;
-import com.company.project.domain.file.FileItem;
-import com.company.project.domain.file.FileItemRepository;
+import com.company.project.domain.file.FileDetail;
+import com.company.project.domain.file.FileDetailId;
+import com.company.project.domain.file.FileDetailRepository;
+import com.company.project.domain.file.FileMaster;
+import com.company.project.domain.file.FileMasterRepository;
 import com.company.project.service.file.dto.FileDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.egovframe.rte.fdl.cmmn.exception.FdlException;
+import egovframework.com.cmm.EgovWebUtil;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,94 +21,107 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class FileService {
+/**
+ * JPA 기반 파일 관리 서비스 구현체
+ * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
+ * - EgovAbstractServiceImpl 상속 및 EgovFileService 인터페이스 구현
+ */
+@Service("egovFileService")
+@Transactional(readOnly = true)
+public class FileService extends EgovAbstractServiceImpl implements EgovFileService {
 
-    @Value("${file.upload.path:./uploads}")
-    private String uploadPath;
+    private final FileMasterRepository fileMasterRepository;
+    private final FileDetailRepository fileDetailRepository;
 
-    private final FileGroupRepository fileGroupRepository;
-    private final FileItemRepository fileItemRepository;
-    private final EgovIdGnrService fileIdGnrService;
+    @Value("${file.upload-dir:./uploads}")
+    private String uploadDir;
 
+    public FileService(FileMasterRepository fileMasterRepository,
+            FileDetailRepository fileDetailRepository) {
+        this.fileMasterRepository = fileMasterRepository;
+        this.fileDetailRepository = fileDetailRepository;
+    }
+
+    /**
+     * 파일 업로드 (멀티파일 지원)
+     */
+    @Override
     @Transactional
-    public String uploadFiles(List<MultipartFile> files, String atchFileId) throws IOException {
-        FileGroup fileGroup;
-        int sn = 0;
+    public String uploadFiles(List<MultipartFile> files) throws IOException {
+        String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
+        FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
 
-        try {
-            if (atchFileId == null || atchFileId.isEmpty()) {
-                String newId = fileIdGnrService.getNextStringId();
-                fileGroup = new FileGroup(newId);
-            } else {
-                fileGroup = fileGroupRepository.findByAtchFileId(atchFileId)
-                        .orElse(new FileGroup(atchFileId));
-                sn = fileGroup.getFileItems().size();
-            }
-        } catch (FdlException e) {
-            log.error("Failed to generate File ID", e);
-            throw new BusinessException("Failed to generate file ID", ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-
-        fileGroupRepository.save(fileGroup);
-
-        File dir = new File(uploadPath);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
+        int fileSn = 1;
         for (MultipartFile file : files) {
             if (file.isEmpty())
                 continue;
 
-            String originalName = file.getOriginalFilename();
-            String extension = "";
-            if (originalName != null && originalName.contains(".")) {
-                extension = originalName.substring(originalName.lastIndexOf(".") + 1);
-            }
+            String originalFilename = EgovWebUtil.filePathBlackList(file.getOriginalFilename());
+            String extension = originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf(".") + 1)
+                    : "";
+            String storedFilename = UUID.randomUUID().toString() + "." + extension;
 
-            String savedName = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
-            Path targetPath = Paths.get(uploadPath, savedName);
-            file.transferTo(targetPath);
+            File destDir = new File(uploadDir);
+            if (!destDir.exists())
+                destDir.mkdirs();
 
-            FileItem item = FileItem.builder()
-                    .fileGroup(fileGroup)
-                    .fileSn(sn++)
-                    .fileStreCours(uploadPath)
-                    .streFileNm(savedName)
-                    .orignlFileNm(originalName)
+            File destFile = new File(destDir, storedFilename);
+            file.transferTo(destFile);
+
+            FileDetail detail = FileDetail.builder()
+                    .fileSn(fileSn++)
+                    .fileStreCours(uploadDir)
+                    .streFileNm(storedFilename)
+                    .orignlFileNm(originalFilename)
                     .fileExtsn(extension)
-                    .fileSize(file.getSize())
+                    .fileMg(file.getSize())
                     .build();
 
-            fileGroup.addFileItem(item);
+            master.addFileDetail(detail);
         }
 
-        return fileGroup.getAtchFileId();
+        fileMasterRepository.save(master);
+        return atchFileId;
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * 첨부파일 목록 조회
+     */
+    @Override
     public List<FileDto> getFileList(String atchFileId) {
-        FileGroup group = fileGroupRepository.findByAtchFileId(atchFileId)
+        FileMaster master = fileMasterRepository.findById(atchFileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        return group.getFileItems().stream()
-                .map(FileDto::from)
-                .toList();
+        return fileDetailRepository.findByFileMaster(master).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public FileItem getFileItem(String atchFileId, Integer fileSn) {
-        FileGroup group = fileGroupRepository.findByAtchFileId(atchFileId)
+    /**
+     * 파일 다운로드를 위한 Resource 조회
+     */
+    @Override
+    public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
+        fileMasterRepository.findById(atchFileId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        return fileItemRepository.findByFileGroupAndFileSn(group, fileSn)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        Path filePath = Paths.get(detail.getFileStreCours()).resolve(detail.getStreFileNm());
+        return new UrlResource(filePath.toUri());
+    }
+
+    private FileDto convertToDto(FileDetail d) {
+        return FileDto.builder()
+                .atchFileId(d.getFileMaster().getAtchFileId())
+                .fileSn(d.getFileSn())
+                .orignlFileNm(d.getOrignlFileNm())
+                .fileMg(d.getFileMg())
+                .fileExtsn(d.getFileExtsn())
+                .build();
     }
 }

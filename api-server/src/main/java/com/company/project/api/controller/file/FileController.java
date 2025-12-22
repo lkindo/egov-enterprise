@@ -1,28 +1,25 @@
 package com.company.project.api.controller.file;
 
 import com.company.project.core.response.ApiResponse;
-import com.company.project.domain.file.FileItem;
 import com.company.project.service.file.FileService;
 import com.company.project.service.file.dto.FileDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-@Tag(name = "File", description = "File Management APIs")
+/**
+ * JPA 기반 파일 관리 API 컨트롤러 (기존 경로 호환)
+ */
+@Tag(name = "File", description = "파일 관리 API")
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
@@ -30,37 +27,30 @@ public class FileController {
 
     private final FileService fileService;
 
-    @Operation(summary = "Upload Files")
+    @Operation(summary = "파일 업로드")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> uploadFiles(
-            @RequestPart("files") List<MultipartFile> files,
-            @RequestParam(value = "atchFileId", required = false) String atchFileId) throws IOException {
-        String resultId = fileService.uploadFiles(files, atchFileId);
+            @RequestPart("files") List<MultipartFile> files) throws IOException {
+        String resultId = fileService.uploadFiles(files);
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }
 
-    @Operation(summary = "Get File List")
+    @Operation(summary = "첨부파일 목록 조회")
     @GetMapping("/{atchFileId}")
     public ResponseEntity<ApiResponse<List<FileDto>>> getFileList(@PathVariable String atchFileId) {
         return ResponseEntity.ok(ApiResponse.success(fileService.getFileList(atchFileId)));
     }
 
-    @Operation(summary = "Download File")
+    @Operation(summary = "파일 다운로드")
     @GetMapping("/{atchFileId}/{fileSn}")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable String atchFileId,
             @PathVariable Integer fileSn) throws IOException {
 
-        FileItem item = fileService.getFileItem(atchFileId, fileSn);
-        Path filePath = Paths.get(item.getFileStreCours(), item.getStreFileNm());
-        Resource resource = new UrlResource(filePath.toUri());
-
-        String encodedFileName = UriUtils.encode(item.getOrignlFileNm(), StandardCharsets.UTF_8);
-        String contentDisposition = "attachment; filename=\"" + encodedFileName + "\"";
-
+        Resource resource = fileService.getFileResource(atchFileId, fileSn);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 }

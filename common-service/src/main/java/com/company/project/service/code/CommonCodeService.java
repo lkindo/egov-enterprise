@@ -15,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@Service("egovCommonCodeService")
 @RequiredArgsConstructor
-public class CommonCodeService extends EgovAbstractServiceImpl {
+public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCommonCodeService {
 
     private final CommonCodeRepository commonCodeRepository;
 
+    @Override
     @Transactional(readOnly = true)
     public List<CommonCodeDto> getCodesByGroup(String codeGroupId) {
         return commonCodeRepository.findByCodeGroupIdAndUseAt(codeGroupId, "Y").stream()
@@ -28,6 +29,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl {
                 .collect(Collectors.toList());
     }
 
+    @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public CommonCodeDto createCode(CommonCodeSaveRequest request) {

@@ -1,6 +1,6 @@
 package com.company.project.service.board.dto;
 
-import com.company.project.domain.code.Board;
+import com.company.project.domain.board.Board;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 

@@ -14,13 +14,8 @@ import javax.sql.DataSource;
 
 @Configuration
 @PropertySource("classpath:/egovframework/egovProps/globals.properties")
+@org.springframework.context.annotation.Profile("!test")
 public class LegacyConfig {
-
-    private final DataSource dataSource;
-
-    public LegacyConfig(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
@@ -31,13 +26,16 @@ public class LegacyConfig {
     }
 
     @Bean(name = "egov.dataSource")
-    @Primary
-    public DataSource egovDataSource() {
+    @org.springframework.context.annotation.Lazy
+    public DataSource egovDataSource(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource) {
         return dataSource;
     }
 
     @Bean(name = "egov.sqlSessionTemplate")
-    public SqlSessionTemplate egovSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
+    @org.springframework.context.annotation.Lazy
+    public SqlSessionTemplate egovSqlSessionTemplate(
+            @org.springframework.beans.factory.annotation.Qualifier("sqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         return sqlSessionTemplate;
     }
 

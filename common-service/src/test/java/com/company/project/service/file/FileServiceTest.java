@@ -1,0 +1,72 @@
+package com.company.project.service.file;
+
+import com.company.project.core.exception.BusinessException;
+import com.company.project.domain.file.*;
+import com.company.project.service.file.dto.FileDto;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+
+/**
+ * FileService 단위 테스트
+ */
+@ExtendWith(MockitoExtension.class)
+class FileServiceTest {
+
+    @Mock
+    private FileMasterRepository fileMasterRepository;
+
+    @Mock
+    private FileDetailRepository fileDetailRepository;
+
+    @InjectMocks
+    private FileService fileService;
+
+    @Test
+    @DisplayName("첨부파일 목록 조회 성공")
+    void getFileList_success() {
+        // given
+        String atchFileId = "FILE_001";
+        FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
+
+        FileDetail detail = FileDetail.builder()
+                .fileSn(1)
+                .orignlFileNm("테스트.pdf")
+                .fileExtsn("pdf")
+                .fileMg(1024L)
+                .build();
+        detail.setFileMaster(master);
+
+        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of(detail));
+
+        // when
+        List<FileDto> result = fileService.getFileList(atchFileId);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getOrignlFileNm()).isEqualTo("테스트.pdf");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 파일ID로 조회 시 예외 발생")
+    void getFileList_notFound() {
+        // given
+        String atchFileId = "NOT_EXIST";
+        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> fileService.getFileList(atchFileId))
+                .isInstanceOf(BusinessException.class);
+    }
+}

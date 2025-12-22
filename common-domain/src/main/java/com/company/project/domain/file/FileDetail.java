@@ -1,0 +1,59 @@
+package com.company.project.domain.file;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * 파일 상세 엔티티 (NFILEDETAIL 테이블 매핑)
+ */
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@IdClass(FileDetailId.class)
+@Table(name = "NFILEDETAIL")
+public class FileDetail {
+
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ATCH_FILE_ID", nullable = false)
+    @Setter
+    private FileMaster fileMaster;
+
+    @Id
+    @Column(name = "FILE_SN")
+    private Integer fileSn;
+
+    @Column(name = "FILE_STRE_COURS", length = 6000)
+    private String fileStreCours; // 저장 경로
+
+    @Column(name = "STRE_FILE_NM", length = 765)
+    private String streFileNm; // 저장 파일명
+
+    @Column(name = "ORIGNL_FILE_NM", length = 765)
+    private String orignlFileNm; // 원본 파일명
+
+    @Column(name = "FILE_EXTSN", length = 60)
+    private String fileExtsn; // 확장자
+
+    @Column(name = "FILE_SIZE")
+    private Long fileMg; // 파일 크기
+
+    @Column(name = "FILE_CN")
+    private String fileCn; // 파일 설명
+
+    @Builder
+    public FileDetail(Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,
+            String fileExtsn, Long fileMg, String fileCn) {
+        this.fileSn = fileSn;
+        this.fileStreCours = fileStreCours;
+        this.streFileNm = streFileNm;
+        this.orignlFileNm = orignlFileNm;
+        this.fileExtsn = fileExtsn;
+        this.fileMg = fileMg;
+        this.fileCn = fileCn;
+    }
+}
