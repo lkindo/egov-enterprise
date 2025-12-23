@@ -2,6 +2,8 @@ package com.company.project.api.config;
 
 import egovframework.com.cmm.EgovMessageSource;
 import org.mybatis.spring.SqlSessionTemplate;
+import org.mybatis.spring.boot.autoconfigure.ConfigurationCustomizer;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -10,6 +12,8 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import javax.sql.DataSource;
 
 @Configuration
@@ -25,10 +29,16 @@ public class LegacyConfig {
         return configurer;
     }
 
+    @Bean(name = "dataSource")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource")
+    public DataSource dataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
     @Bean(name = "egov.dataSource")
     @org.springframework.context.annotation.Lazy
-    public DataSource egovDataSource(
-            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource) {
+    public DataSource egovDataSource(DataSource dataSource) {
         return dataSource;
     }
 
@@ -52,5 +62,12 @@ public class LegacyConfig {
         EgovMessageSource egovMessageSource = new EgovMessageSource();
         egovMessageSource.setReloadableResourceBundleMessageSource(messageSource);
         return egovMessageSource;
+    }
+
+    @Bean
+    public ConfigurationCustomizer mybatisConfigurationCustomizer() {
+        return configuration -> {
+            configuration.getTypeAliasRegistry().registerAlias("egovMap", EgovMap.class);
+        };
     }
 }

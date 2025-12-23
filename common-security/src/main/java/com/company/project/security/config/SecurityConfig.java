@@ -42,9 +42,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/users/signup", "/api/v1/auth/login", "/h2-console/**").permitAll()
+                        .requestMatchers(
+                                "/", "/index.jsp", "/css/**", "/js/**", "/images/**",
+                                "/cmm/**", "/uat/uia/**", "/sym/**", "/cop/**",
+                                "/api/v1/users/signup", "/api/v1/auth/login", "/h2-console/**",
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**",
+                                "/WEB-INF/**", "/error/**")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
@@ -54,5 +60,14 @@ public class SecurityConfig {
                 org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin));
 
         return http.build();
+    }
+
+    @Bean
+    public org.springframework.security.web.SecurityFilterChain webSecurityCustomizer(HttpSecurity http)
+            throws Exception {
+        // 정적 리소스는 Security 필터 체인에서 제외
+        return http.securityMatcher("/css/**", "/js/**", "/images/**")
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .build();
     }
 }

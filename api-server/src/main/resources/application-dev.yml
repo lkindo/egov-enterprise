@@ -19,10 +19,12 @@ spring:
       suffix: .jsp
 
 mybatis:
-  mapper-locations: classpath:/mapper/**/*.xml
-  type-aliases-package: egovframework.let,com.company.project
+  mapper-locations: classpath:/mapper/**/*_cubrid.xml
+  type-aliases-package: egovframework.let.**.service,egovframework.com.**.service,egovframework.com.cmm,egovframework.let.sts.com
 
 logging:
   level:
     com.company.project: DEBUG
     org.springframework.security: DEBUG
+    org.mybatis: DEBUG
+    egovframework: DEBUG

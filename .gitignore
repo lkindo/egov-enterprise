@@ -6,6 +6,7 @@
 target/
 build/
 out/
+.gradle/
 *.war
 *.jar
 *.class
