@@ -255,8 +255,7 @@ function fn_egov_modal_remove() {
                     <!-- Menu list -->
                     <form name="menuListForm" action="" method="post">
                         <input type="hidden" id="testData" value="꽥" />
-                        <input type="hidden" id="baseMenuNo" name="baseMenuNo" value="<%=session.getAttribute("
-                            baseMenuNo")%>" />
+                        <input type="hidden" id="baseMenuNo" name="baseMenuNo" value="<%=session.getAttribute("baseMenuNo")%>" />
                         <input type="hidden" id="link" name="link" value="" />
                         <div style="width:0px; height:0px;">
                             <c:forEach var="result" items="${list_menulist}" varStatus="status">

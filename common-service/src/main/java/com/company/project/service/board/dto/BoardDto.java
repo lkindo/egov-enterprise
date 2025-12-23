@@ -19,8 +19,14 @@ public record BoardDto(
         @Schema(description = "조회수", example = "10") Integer inqireCo,
 
         @Schema(description = "등록일시", example = "2023-12-21T17:00:00") LocalDateTime frstRegisterPnttm,
-
-        @Schema(description = "첨부파일 ID", example = "FILE_000000000001") String atchFileId) {
+        @Schema(description = "첨부파일 ID", example = "FILE_000000000001") String atchFileId,
+        @Schema(description = "게시물 번호") Long nttNo,
+        @Schema(description = "정렬 순서") Long sortOrdr,
+        @Schema(description = "부모 게시물 번호") String parnts,
+        @Schema(description = "답변 여부") String replyAt,
+        @Schema(description = "답변 위치") Integer replyLc,
+        @Schema(description = "게시 시작일") String ntceBgnde,
+        @Schema(description = "게시 종료일") String ntceEndde) {
     public static BoardDto from(Board entity) {
         return new BoardDto(
                 entity.getId(),
@@ -30,6 +36,13 @@ public record BoardDto(
                 entity.getAuthor() != null ? entity.getAuthor().getUserNm() : entity.getNtcrNm(),
                 entity.getInqireCo(),
                 entity.getCreatedDate(),
-                entity.getAtchFileId());
+                entity.getAtchFileId(),
+                entity.getNttNo(),
+                entity.getSortOrdr(),
+                entity.getParnts(),
+                entity.getReplyAt(),
+                entity.getReplyLc(),
+                entity.getNtceBgnde(),
+                entity.getNtceEndde());
     }
 }

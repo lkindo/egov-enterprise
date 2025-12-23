@@ -19,76 +19,24 @@ import java.util.Map;
 @Controller
 public class MainPageController {
 
+    @jakarta.annotation.Resource(name = "egovBoardService")
+    private com.company.project.service.board.EgovBoardService boardService;
+
     /**
      * 메인 페이지 이동
      */
     @GetMapping({ "/", "/cmm/main/mainPage.do" })
-    public String mainPage(Model model) {
-        // 오늘의 할일 샘플 데이터
-        List<Map<String, Object>> bbsList = new ArrayList<>();
+    public String mainPage(Model model) throws Exception {
+        // 오늘의 할일 (업무게시판) 데이터 조회
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> taskList = boardService
+                .getBoardPosts("BBSMSTR_CCCCCCCCCCCC", org.springframework.data.domain.PageRequest.of(0, 3));
 
-        Map<String, Object> task1 = new HashMap<>();
-        task1.put("nttSj", "프로젝트 일정 검토");
-        task1.put("frstRegisterPnttm", "2025-12-23");
-        task1.put("isExpired", "N");
-        task1.put("useAt", "Y");
-        bbsList.add(task1);
+        // 최신 업무공지 (공지사항) 데이터 조회
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> notiList = boardService
+                .getBoardPosts("BBSMSTR_AAAAAAAAAAAA", org.springframework.data.domain.PageRequest.of(0, 4));
 
-        Map<String, Object> task2 = new HashMap<>();
-        task2.put("nttSj", "주간 보고서 작성");
-        task2.put("frstRegisterPnttm", "2025-12-23");
-        task2.put("isExpired", "N");
-        task2.put("useAt", "Y");
-        bbsList.add(task2);
-
-        Map<String, Object> task3 = new HashMap<>();
-        task3.put("nttSj", "팀 미팅 준비");
-        task3.put("frstRegisterPnttm", "2025-12-22");
-        task3.put("isExpired", "N");
-        task3.put("useAt", "Y");
-        bbsList.add(task3);
-
-        // 최신 업무공지 정보 샘플 데이터
-        List<Map<String, Object>> notiList = new ArrayList<>();
-
-        Map<String, Object> noti1 = new HashMap<>();
-        noti1.put("nttSj", "2025년 연말 휴무 안내");
-        noti1.put("frstRegisterNm", "관리자");
-        noti1.put("frstRegisterPnttm", "2025-12-23");
-        noti1.put("isExpired", "N");
-        noti1.put("useAt", "Y");
-        noti1.put("replyLc", 0);
-        notiList.add(noti1);
-
-        Map<String, Object> noti2 = new HashMap<>();
-        noti2.put("nttSj", "시스템 정기 점검 예정 공지");
-        noti2.put("frstRegisterNm", "시스템관리");
-        noti2.put("frstRegisterPnttm", "2025-12-22");
-        noti2.put("isExpired", "N");
-        noti2.put("useAt", "Y");
-        noti2.put("replyLc", 0);
-        notiList.add(noti2);
-
-        Map<String, Object> noti3 = new HashMap<>();
-        noti3.put("nttSj", "신규 프로젝트 킥오프 회의");
-        noti3.put("frstRegisterNm", "김과장");
-        noti3.put("frstRegisterPnttm", "2025-12-21");
-        noti3.put("isExpired", "N");
-        noti3.put("useAt", "Y");
-        noti3.put("replyLc", 0);
-        notiList.add(noti3);
-
-        Map<String, Object> noti4 = new HashMap<>();
-        noti4.put("nttSj", "표준프레임워크 교육 안내");
-        noti4.put("frstRegisterNm", "교육팀");
-        noti4.put("frstRegisterPnttm", "2025-12-20");
-        noti4.put("isExpired", "N");
-        noti4.put("useAt", "Y");
-        noti4.put("replyLc", 0);
-        notiList.add(noti4);
-
-        model.addAttribute("bbsList", bbsList);
-        model.addAttribute("notiList", notiList);
+        model.addAttribute("bbsList", taskList.getContent());
+        model.addAttribute("notiList", notiList.getContent());
         return "main/EgovMainView";
     }
 

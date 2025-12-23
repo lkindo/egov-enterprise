@@ -3,19 +3,19 @@ package egovframework.let.cop.bbs.service;
 import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-// import ... removed
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 /**
  * 게시판 속성정보를 담기위한 엔티티 클래스
+ * 
  * @author 공통 서비스 개발팀 이삼섭
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자          수정내용
@@ -23,38 +23,33 @@ import jakarta.validation.constraints.Size;
  *  2009.03.12  이삼섭          최초 생성
  *  2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
  *
- *  </pre>
+ *      </pre>
  */
 public class BoardMaster implements Serializable {
 
     /**
-	 * serialVersion UID
-	 */
-	private static final long serialVersionUID = 2821358749509367821L;
+     * serialVersion UID
+     */
+    private static final long serialVersionUID = 2821358749509367821L;
 
     /** 게시판 속성코드 */
-    // // annotation removed //(message="{cop.bbsAttrbCode}은(는) 필수 입력항목입니다.")
     private String bbsAttrbCode = "";
 
     /** 게시판 아이디 */
     private String bbsId = "";
 
     /** 게시판 소개 */
-    // // annotation removed //(message="{cop.bbsIntrcn}은(는) 필수 입력항목입니다.")
-    @Size (max = 2000 /*, message = "{cop.bbsIntrcn}은(는) 2000자 이하로 입력하세요."*/)
+    @Size(max = 2000)
     private String bbsIntrcn = "";
 
     /** 게시판 명 */
-    // // annotation removed //(message="{cop.bbsNm}은(는) 필수 입력항목입니다.")
-	@Size(max = 120 /* , message = "{cop.bbsNm}은(는) 120자 이하로 입력하세요." */)
+    @Size(max = 120)
     private String bbsNm = "";
 
     /** 게시판 유형코드 */
-    // // annotation removed //(message="{cop.bbsTyCode}은(는) 필수 입력항목입니다.")
     private String bbsTyCode = "";
 
     /** 파일첨부가능여부 */
-    // // annotation removed //(message="{cop.fileAtchPosblAt}은(는) 필수 입력항목입니다.")
     private String fileAtchPosblAt = "";
 
     /** 최초등록자 아이디 */
@@ -70,18 +65,16 @@ public class BoardMaster implements Serializable {
     private String lastUpdusrPnttm = "";
 
     /** 첨부가능파일숫자 */
-	@Min(value = 1/* , message = "{cop.posblAtchFileNumber}은(는) 1개 이상 선택해야 합니다." */)
+    @Min(value = 1)
     private int posblAtchFileNumber = 0;
 
     /** 첨부가능파일사이즈 */
     private String posblAtchFileSize = "0";
 
     /** 답장가능여부 */
-    // // annotation removed //(message="{cop.replyPosblAt}은(는) 필수 입력항목입니다.")
     private String replyPosblAt = "";
 
     /** 템플릿 아이디 */
-    // // annotation removed //(message="{cop.tmplatId}은(는) 필수 입력항목입니다.")
     private String tmplatId = "";
 
     /** 사용여부 */
@@ -100,12 +93,11 @@ public class BoardMaster implements Serializable {
     private String uniqId = "";
 
     /** 템플릿 명 */
-    // // annotation removed //(message="{cop.tmplatNm}은(는) 필수 입력항목입니다.")
     private String tmplatNm = "";
 
-    //---------------------------------
+    // ---------------------------------
     // 2009.06.26 : 2단계 기능 추가
-    //---------------------------------
+    // ---------------------------------
     /** 추가 option (댓글-comment, 만족도조사-stsfdg) */
     private String option = "";
 
@@ -114,7 +106,7 @@ public class BoardMaster implements Serializable {
 
     /** 만족도조사 */
     private String stsfdgAt = "";
-    ////-------------------------------
+    //// -------------------------------
 
     /**
      * bbsAttrbCode attribute를 리턴한다.
@@ -122,17 +114,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsAttrbCode
      */
     public String getBbsAttrbCode() {
-	return bbsAttrbCode;
+        return bbsAttrbCode;
     }
 
     /**
      * bbsAttrbCode attribute 값을 설정한다.
      *
      * @param bbsAttrbCode
-     *            the bbsAttrbCode to set
+     *                     the bbsAttrbCode to set
      */
     public void setBbsAttrbCode(String bbsAttrbCode) {
-	this.bbsAttrbCode = bbsAttrbCode;
+        this.bbsAttrbCode = bbsAttrbCode;
     }
 
     /**
@@ -141,17 +133,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsId
      */
     public String getBbsId() {
-	return bbsId;
+        return bbsId;
     }
 
     /**
      * bbsId attribute 값을 설정한다.
      *
      * @param bbsId
-     *            the bbsId to set
+     *              the bbsId to set
      */
     public void setBbsId(String bbsId) {
-	this.bbsId = bbsId;
+        this.bbsId = bbsId;
     }
 
     /**
@@ -160,17 +152,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsIntrcn
      */
     public String getBbsIntrcn() {
-	return bbsIntrcn;
+        return bbsIntrcn;
     }
 
     /**
      * bbsIntrcn attribute 값을 설정한다.
      *
      * @param bbsIntrcn
-     *            the bbsIntrcn to set
+     *                  the bbsIntrcn to set
      */
     public void setBbsIntrcn(String bbsIntrcn) {
-	this.bbsIntrcn = bbsIntrcn;
+        this.bbsIntrcn = bbsIntrcn;
     }
 
     /**
@@ -179,17 +171,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsNm
      */
     public String getBbsNm() {
-	return bbsNm;
+        return bbsNm;
     }
 
     /**
      * bbsNm attribute 값을 설정한다.
      *
      * @param bbsNm
-     *            the bbsNm to set
+     *              the bbsNm to set
      */
     public void setBbsNm(String bbsNm) {
-	this.bbsNm = bbsNm;
+        this.bbsNm = bbsNm;
     }
 
     /**
@@ -198,17 +190,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsTyCode
      */
     public String getBbsTyCode() {
-	return bbsTyCode;
+        return bbsTyCode;
     }
 
     /**
      * bbsTyCode attribute 값을 설정한다.
      *
      * @param bbsTyCode
-     *            the bbsTyCode to set
+     *                  the bbsTyCode to set
      */
     public void setBbsTyCode(String bbsTyCode) {
-	this.bbsTyCode = bbsTyCode;
+        this.bbsTyCode = bbsTyCode;
     }
 
     /**
@@ -217,17 +209,17 @@ public class BoardMaster implements Serializable {
      * @return the fileAtchPosblAt
      */
     public String getFileAtchPosblAt() {
-	return fileAtchPosblAt;
+        return fileAtchPosblAt;
     }
 
     /**
      * fileAtchPosblAt attribute 값을 설정한다.
      *
      * @param fileAtchPosblAt
-     *            the fileAtchPosblAt to set
+     *                        the fileAtchPosblAt to set
      */
     public void setFileAtchPosblAt(String fileAtchPosblAt) {
-	this.fileAtchPosblAt = fileAtchPosblAt;
+        this.fileAtchPosblAt = fileAtchPosblAt;
     }
 
     /**
@@ -236,17 +228,17 @@ public class BoardMaster implements Serializable {
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
-	return frstRegisterId;
+        return frstRegisterId;
     }
 
     /**
      * frstRegisterId attribute 값을 설정한다.
      *
      * @param frstRegisterId
-     *            the frstRegisterId to set
+     *                       the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
-	this.frstRegisterId = frstRegisterId;
+        this.frstRegisterId = frstRegisterId;
     }
 
     /**
@@ -255,17 +247,17 @@ public class BoardMaster implements Serializable {
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
-	return frstRegisterPnttm;
+        return frstRegisterPnttm;
     }
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
      *
      * @param frstRegisterPnttm
-     *            the frstRegisterPnttm to set
+     *                          the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
-	this.frstRegisterPnttm = frstRegisterPnttm;
+        this.frstRegisterPnttm = frstRegisterPnttm;
     }
 
     /**
@@ -274,17 +266,17 @@ public class BoardMaster implements Serializable {
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
-	return lastUpdusrId;
+        return lastUpdusrId;
     }
 
     /**
      * lastUpdusrId attribute 값을 설정한다.
      *
      * @param lastUpdusrId
-     *            the lastUpdusrId to set
+     *                     the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
-	this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = lastUpdusrId;
     }
 
     /**
@@ -293,17 +285,17 @@ public class BoardMaster implements Serializable {
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
-	return lastUpdusrPnttm;
+        return lastUpdusrPnttm;
     }
 
     /**
      * lastUpdusrPnttm attribute 값을 설정한다.
      *
      * @param lastUpdusrPnttm
-     *            the lastUpdusrPnttm to set
+     *                        the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
-	this.lastUpdusrPnttm = lastUpdusrPnttm;
+        this.lastUpdusrPnttm = lastUpdusrPnttm;
     }
 
     /**
@@ -312,17 +304,17 @@ public class BoardMaster implements Serializable {
      * @return the posblAtchFileNumber
      */
     public int getPosblAtchFileNumber() {
-	return posblAtchFileNumber;
+        return posblAtchFileNumber;
     }
 
     /**
      * posblAtchFileNumber attribute 값을 설정한다.
      *
      * @param posblAtchFileNumber
-     *            the posblAtchFileNumber to set
+     *                            the posblAtchFileNumber to set
      */
     public void setPosblAtchFileNumber(int posblAtchFileNumber) {
-	this.posblAtchFileNumber = posblAtchFileNumber;
+        this.posblAtchFileNumber = posblAtchFileNumber;
     }
 
     /**
@@ -331,17 +323,17 @@ public class BoardMaster implements Serializable {
      * @return the posblAtchFileSize
      */
     public String getPosblAtchFileSize() {
-	return posblAtchFileSize;
+        return posblAtchFileSize;
     }
 
     /**
      * posblAtchFileSize attribute 값을 설정한다.
      *
      * @param posblAtchFileSize
-     *            the posblAtchFileSize to set
+     *                          the posblAtchFileSize to set
      */
     public void setPosblAtchFileSize(String posblAtchFileSize) {
-	this.posblAtchFileSize = posblAtchFileSize;
+        this.posblAtchFileSize = posblAtchFileSize;
     }
 
     /**
@@ -350,17 +342,17 @@ public class BoardMaster implements Serializable {
      * @return the replyPosblAt
      */
     public String getReplyPosblAt() {
-	return replyPosblAt;
+        return replyPosblAt;
     }
 
     /**
      * replyPosblAt attribute 값을 설정한다.
      *
      * @param replyPosblAt
-     *            the replyPosblAt to set
+     *                     the replyPosblAt to set
      */
     public void setReplyPosblAt(String replyPosblAt) {
-	this.replyPosblAt = replyPosblAt;
+        this.replyPosblAt = replyPosblAt;
     }
 
     /**
@@ -369,17 +361,17 @@ public class BoardMaster implements Serializable {
      * @return the tmplatId
      */
     public String getTmplatId() {
-	return tmplatId;
+        return tmplatId;
     }
 
     /**
      * tmplatId attribute 값을 설정한다.
      *
      * @param tmplatId
-     *            the tmplatId to set
+     *                 the tmplatId to set
      */
     public void setTmplatId(String tmplatId) {
-	this.tmplatId = tmplatId;
+        this.tmplatId = tmplatId;
     }
 
     /**
@@ -388,17 +380,17 @@ public class BoardMaster implements Serializable {
      * @return the useAt
      */
     public String getUseAt() {
-	return useAt;
+        return useAt;
     }
 
     /**
      * useAt attribute 값을 설정한다.
      *
      * @param useAt
-     *            the useAt to set
+     *              the useAt to set
      */
     public void setUseAt(String useAt) {
-	this.useAt = useAt;
+        this.useAt = useAt;
     }
 
     /**
@@ -407,17 +399,17 @@ public class BoardMaster implements Serializable {
      * @return the bbsUseFlag
      */
     public String getBbsUseFlag() {
-	return bbsUseFlag;
+        return bbsUseFlag;
     }
 
     /**
      * bbsUseFlag attribute 값을 설정한다.
      *
      * @param bbsUseFlag
-     *            the bbsUseFlag to set
+     *                   the bbsUseFlag to set
      */
     public void setBbsUseFlag(String bbsUseFlag) {
-	this.bbsUseFlag = bbsUseFlag;
+        this.bbsUseFlag = bbsUseFlag;
     }
 
     /**
@@ -426,17 +418,17 @@ public class BoardMaster implements Serializable {
      * @return the trgetId
      */
     public String getTrgetId() {
-	return trgetId;
+        return trgetId;
     }
 
     /**
      * trgetId attribute 값을 설정한다.
      *
      * @param trgetId
-     *            the trgetId to set
+     *                the trgetId to set
      */
     public void setTrgetId(String trgetId) {
-	this.trgetId = trgetId;
+        this.trgetId = trgetId;
     }
 
     /**
@@ -445,17 +437,17 @@ public class BoardMaster implements Serializable {
      * @return the registSeCode
      */
     public String getRegistSeCode() {
-	return registSeCode;
+        return registSeCode;
     }
 
     /**
      * registSeCode attribute 값을 설정한다.
      *
      * @param registSeCode
-     *            the registSeCode to set
+     *                     the registSeCode to set
      */
     public void setRegistSeCode(String registSeCode) {
-	this.registSeCode = registSeCode;
+        this.registSeCode = registSeCode;
     }
 
     /**
@@ -464,17 +456,17 @@ public class BoardMaster implements Serializable {
      * @return the uniqId
      */
     public String getUniqId() {
-	return uniqId;
+        return uniqId;
     }
 
     /**
      * uniqId attribute 값을 설정한다.
      *
      * @param uniqId
-     *            the uniqId to set
+     *               the uniqId to set
      */
     public void setUniqId(String uniqId) {
-	this.uniqId = uniqId;
+        this.uniqId = uniqId;
     }
 
     /**
@@ -483,21 +475,22 @@ public class BoardMaster implements Serializable {
      * @return the tmplatNm
      */
     public String getTmplatNm() {
-	return tmplatNm;
+        return tmplatNm;
     }
 
     /**
      * tmplatNm attribute 값을 설정한다.
      *
      * @param tmplatNm
-     *            the tmplatNm to set
+     *                 the tmplatNm to set
      */
     public void setTmplatNm(String tmplatNm) {
-	this.tmplatNm = tmplatNm;
+        this.tmplatNm = tmplatNm;
     }
 
     /**
      * option attribute를 리턴한다.
+     * 
      * @return the option
      */
     public String getOption() {
@@ -506,6 +499,7 @@ public class BoardMaster implements Serializable {
 
     /**
      * option attribute 값을 설정한다.
+     * 
      * @param option the option to set
      */
     public void setOption(String option) {
@@ -514,6 +508,7 @@ public class BoardMaster implements Serializable {
 
     /**
      * commentAt attribute를 리턴한다.
+     * 
      * @return the commentAt
      */
     public String getCommentAt() {
@@ -522,6 +517,7 @@ public class BoardMaster implements Serializable {
 
     /**
      * commentAt attribute 값을 설정한다.
+     * 
      * @param commentAt the commentAt to set
      */
     public void setCommentAt(String commentAt) {
@@ -530,6 +526,7 @@ public class BoardMaster implements Serializable {
 
     /**
      * stsfdgAt attribute를 리턴한다.
+     * 
      * @return the stsfdgAt
      */
     public String getStsfdgAt() {
@@ -538,6 +535,7 @@ public class BoardMaster implements Serializable {
 
     /**
      * stsfdg attribute 값을 설정한다.
+     * 
      * @param stsfdgAt the stsfdgAt to set
      */
     public void setStsfdgAt(String stsfdgAt) {
@@ -548,6 +546,6 @@ public class BoardMaster implements Serializable {
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

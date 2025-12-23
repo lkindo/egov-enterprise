@@ -17,6 +17,11 @@ public interface EgovBoardService {
     Page<BoardDto> getBoardPosts(String bbsId, Pageable pageable);
 
     /**
+     * 게시물 검색 페이징 목록 조회
+     */
+    Page<BoardDto> getBoardPosts(String bbsId, String searchCnd, String searchWrd, Pageable pageable);
+
+    /**
      * 게시물 등록
      */
     Long createPost(String userId, BoardSaveRequest request);
@@ -35,4 +40,9 @@ public interface EgovBoardService {
      * 게시물 삭제
      */
     void deletePost(Long id, String authorId);
+
+    /**
+     * 답변 등록
+     */
+    Long replyPost(String userId, Long parentId, BoardSaveRequest request);
 }

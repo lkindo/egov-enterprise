@@ -54,13 +54,28 @@ public class Board {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId; // 첨부파일 아이디
 
+    @Column(name = "NTT_NO")
+    private Long nttNo; // 게시물 번호
+
+    @Column(name = "SORT_ORDR")
+    private Long sortOrdr; // 정렬 순서
+
+    @Column(name = "PARNTSCTT_NO")
+    private String parnts; // 부모 게시물 번호
+
+    @Column(name = "ANSWER_AT", length = 1)
+    private String replyAt; // 답변 여부
+
+    @Column(name = "ANSWER_LC")
+    private Integer replyLc; // 답변 위치
+
     @Column(name = "FRST_REGIST_PNTTM", nullable = false)
     private java.time.LocalDateTime createdDate;
 
     @Builder
     public Board(Long id, BoardMaster boardMaster, String nttSj, String nttCn, String ntceBgnde, String ntceEndde,
-            User author,
-            String ntcrNm, String password, String atchFileId) {
+            User author, String ntcrNm, String password, String atchFileId,
+            Long nttNo, Long sortOrdr, String parnts, String replyAt, Integer replyLc) {
         this.id = id;
         this.boardMaster = boardMaster;
         this.nttSj = nttSj;
@@ -73,6 +88,11 @@ public class Board {
         this.ntcrNm = ntcrNm;
         this.password = password;
         this.atchFileId = atchFileId;
+        this.nttNo = nttNo;
+        this.sortOrdr = sortOrdr;
+        this.parnts = parnts;
+        this.replyAt = replyAt;
+        this.replyLc = replyLc;
         this.createdDate = java.time.LocalDateTime.now();
     }
 
@@ -86,5 +106,9 @@ public class Board {
 
     public void increaseInqireCo() {
         this.inqireCo++;
+    }
+
+    public void delete() {
+        this.useAt = "N";
     }
 }

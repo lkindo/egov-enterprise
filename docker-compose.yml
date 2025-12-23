@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   egov-api:
@@ -18,12 +18,14 @@ services:
   db:
     image: cubrid/cubrid:11.3
     container_name: egov-cubrid
+    shm_size: "1gb"
+    privileged: true
     ports:
       - "33000:33000"
       - "30000:30000"
       - "1523:1523"
     environment:
-      - CUBRID_DB_NAME=demodb
+      - CUBRID_DB_NAME=cubdb
       - CUBRID_PASSWORD=
     volumes:
       - cubrid_data:/var/lib/cubrid

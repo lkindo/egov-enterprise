@@ -4,15 +4,15 @@ import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-
 /**
  * 게시판의 이용정보를 관리하기 위한 VO 클래스
+ * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.04.02
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -20,16 +20,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *   2009.04.02  이삼섭          최초 생성
  *   2011.05.31  JJY           경량환경 커스터마이징버전 생성
  *
- * </pre>
+ *      </pre>
  */
 public class BoardUseInfVO extends BoardUseInf implements Serializable {
 
     /**
-	 * serialVersion UID
-	 */
-	private static final long serialVersionUID = -2688781320530443850L;
+     * serialVersion UID
+     */
+    private static final long serialVersionUID = -2688781320530443850L;
 
-	/** 검색시작일 */
+    /** 검색시작일 */
     private String searchBgnDe = "";
 
     /** 검색조건 */
@@ -107,17 +107,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the searchBgnDe
      */
     public String getSearchBgnDe() {
-	return searchBgnDe;
+        return searchBgnDe;
     }
 
     /**
      * searchBgnDe attribute 값을 설정한다.
      *
      * @param searchBgnDe
-     *            the searchBgnDe to set
+     *                    the searchBgnDe to set
      */
     public void setSearchBgnDe(String searchBgnDe) {
-	this.searchBgnDe = searchBgnDe;
+        this.searchBgnDe = searchBgnDe;
     }
 
     /**
@@ -126,17 +126,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the searchCnd
      */
     public String getSearchCnd() {
-	return searchCnd;
+        return searchCnd;
     }
 
     /**
      * searchCnd attribute 값을 설정한다.
      *
      * @param searchCnd
-     *            the searchCnd to set
+     *                  the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
-	this.searchCnd = searchCnd;
+        this.searchCnd = searchCnd;
     }
 
     /**
@@ -145,17 +145,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the searchEndDe
      */
     public String getSearchEndDe() {
-	return searchEndDe;
+        return searchEndDe;
     }
 
     /**
      * searchEndDe attribute 값을 설정한다.
      *
      * @param searchEndDe
-     *            the searchEndDe to set
+     *                    the searchEndDe to set
      */
     public void setSearchEndDe(String searchEndDe) {
-	this.searchEndDe = searchEndDe;
+        this.searchEndDe = searchEndDe;
     }
 
     /**
@@ -164,17 +164,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the searchWrd
      */
     public String getSearchWrd() {
-	return searchWrd;
+        return searchWrd;
     }
 
     /**
      * searchWrd attribute 값을 설정한다.
      *
      * @param searchWrd
-     *            the searchWrd to set
+     *                  the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
-	this.searchWrd = searchWrd;
+        this.searchWrd = searchWrd;
     }
 
     /**
@@ -183,17 +183,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the sortOrdr
      */
     public long getSortOrdr() {
-	return sortOrdr;
+        return sortOrdr;
     }
 
     /**
      * sortOrdr attribute 값을 설정한다.
      *
      * @param sortOrdr
-     *            the sortOrdr to set
+     *                 the sortOrdr to set
      */
     public void setSortOrdr(long sortOrdr) {
-	this.sortOrdr = sortOrdr;
+        this.sortOrdr = sortOrdr;
     }
 
     /**
@@ -202,17 +202,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the searchUseYn
      */
     public String getSearchUseYn() {
-	return searchUseYn;
+        return searchUseYn;
     }
 
     /**
      * searchUseYn attribute 값을 설정한다.
      *
      * @param searchUseYn
-     *            the searchUseYn to set
+     *                    the searchUseYn to set
      */
     public void setSearchUseYn(String searchUseYn) {
-	this.searchUseYn = searchUseYn;
+        this.searchUseYn = searchUseYn;
     }
 
     /**
@@ -221,17 +221,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the pageIndex
      */
     public int getPageIndex() {
-	return pageIndex;
+        return pageIndex;
     }
 
     /**
      * pageIndex attribute 값을 설정한다.
      *
      * @param pageIndex
-     *            the pageIndex to set
+     *                  the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
-	this.pageIndex = pageIndex;
+        this.pageIndex = pageIndex;
     }
 
     /**
@@ -240,17 +240,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the pageUnit
      */
     public int getPageUnit() {
-	return pageUnit;
+        return pageUnit;
     }
 
     /**
      * pageUnit attribute 값을 설정한다.
      *
      * @param pageUnit
-     *            the pageUnit to set
+     *                 the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
-	this.pageUnit = pageUnit;
+        this.pageUnit = pageUnit;
     }
 
     /**
@@ -259,17 +259,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the pageSize
      */
     public int getPageSize() {
-	return pageSize;
+        return pageSize;
     }
 
     /**
      * pageSize attribute 값을 설정한다.
      *
      * @param pageSize
-     *            the pageSize to set
+     *                 the pageSize to set
      */
     public void setPageSize(int pageSize) {
-	this.pageSize = pageSize;
+        this.pageSize = pageSize;
     }
 
     /**
@@ -278,17 +278,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the firstIndex
      */
     public int getFirstIndex() {
-	return firstIndex;
+        return firstIndex;
     }
 
     /**
      * firstIndex attribute 값을 설정한다.
      *
      * @param firstIndex
-     *            the firstIndex to set
+     *                   the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
-	this.firstIndex = firstIndex;
+        this.firstIndex = firstIndex;
     }
 
     /**
@@ -297,17 +297,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the lastIndex
      */
     public int getLastIndex() {
-	return lastIndex;
+        return lastIndex;
     }
 
     /**
      * lastIndex attribute 값을 설정한다.
      *
      * @param lastIndex
-     *            the lastIndex to set
+     *                  the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
-	this.lastIndex = lastIndex;
+        this.lastIndex = lastIndex;
     }
 
     /**
@@ -316,17 +316,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the recordCountPerPage
      */
     public int getRecordCountPerPage() {
-	return recordCountPerPage;
+        return recordCountPerPage;
     }
 
     /**
      * recordCountPerPage attribute 값을 설정한다.
      *
      * @param recordCountPerPage
-     *            the recordCountPerPage to set
+     *                           the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
-	this.recordCountPerPage = recordCountPerPage;
+        this.recordCountPerPage = recordCountPerPage;
     }
 
     /**
@@ -335,17 +335,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the rowNo
      */
     public int getRowNo() {
-	return rowNo;
+        return rowNo;
     }
 
     /**
      * rowNo attribute 값을 설정한다.
      *
      * @param rowNo
-     *            the rowNo to set
+     *              the rowNo to set
      */
     public void setRowNo(int rowNo) {
-	this.rowNo = rowNo;
+        this.rowNo = rowNo;
     }
 
     /**
@@ -354,17 +354,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
-	return frstRegisterNm;
+        return frstRegisterNm;
     }
 
     /**
      * frstRegisterNm attribute 값을 설정한다.
      *
      * @param frstRegisterNm
-     *            the frstRegisterNm to set
+     *                       the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
-	this.frstRegisterNm = frstRegisterNm;
+        this.frstRegisterNm = frstRegisterNm;
     }
 
     /**
@@ -373,17 +373,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the lastUpdusrNm
      */
     public String getLastUpdusrNm() {
-	return lastUpdusrNm;
+        return lastUpdusrNm;
     }
 
     /**
      * lastUpdusrNm attribute 값을 설정한다.
      *
      * @param lastUpdusrNm
-     *            the lastUpdusrNm to set
+     *                     the lastUpdusrNm to set
      */
     public void setLastUpdusrNm(String lastUpdusrNm) {
-	this.lastUpdusrNm = lastUpdusrNm;
+        this.lastUpdusrNm = lastUpdusrNm;
     }
 
     /**
@@ -392,17 +392,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the registSeCodeNm
      */
     public String getRegistSeCodeNm() {
-	return registSeCodeNm;
+        return registSeCodeNm;
     }
 
     /**
      * registSeCodeNm attribute 값을 설정한다.
      *
      * @param registSeCodeNm
-     *            the registSeCodeNm to set
+     *                       the registSeCodeNm to set
      */
     public void setRegistSeCodeNm(String registSeCodeNm) {
-	this.registSeCodeNm = registSeCodeNm;
+        this.registSeCodeNm = registSeCodeNm;
     }
 
     /**
@@ -411,17 +411,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the cmmntyId
      */
     public String getCmmntyId() {
-	return cmmntyId;
+        return cmmntyId;
     }
 
     /**
      * cmmntyId attribute 값을 설정한다.
      *
      * @param cmmntyId
-     *            the cmmntyId to set
+     *                 the cmmntyId to set
      */
     public void setCmmntyId(String cmmntyId) {
-	this.cmmntyId = cmmntyId;
+        this.cmmntyId = cmmntyId;
     }
 
     /**
@@ -430,17 +430,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the cmmntyNm
      */
     public String getCmmntyNm() {
-	return cmmntyNm;
+        return cmmntyNm;
     }
 
     /**
      * cmmntyNm attribute 값을 설정한다.
      *
      * @param cmmntyNm
-     *            the cmmntyNm to set
+     *                 the cmmntyNm to set
      */
     public void setCmmntyNm(String cmmntyNm) {
-	this.cmmntyNm = cmmntyNm;
+        this.cmmntyNm = cmmntyNm;
     }
 
     /**
@@ -449,17 +449,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the clbId
      */
     public String getClbId() {
-	return clbId;
+        return clbId;
     }
 
     /**
      * clbId attribute 값을 설정한다.
      *
      * @param clbId
-     *            the clbId to set
+     *              the clbId to set
      */
     public void setClbId(String clbId) {
-	this.clbId = clbId;
+        this.clbId = clbId;
     }
 
     /**
@@ -468,17 +468,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the clbNm
      */
     public String getClbNm() {
-	return clbNm;
+        return clbNm;
     }
 
     /**
      * clbNm attribute 값을 설정한다.
      *
      * @param clbNm
-     *            the clbNm to set
+     *              the clbNm to set
      */
     public void setClbNm(String clbNm) {
-	this.clbNm = clbNm;
+        this.clbNm = clbNm;
     }
 
     /**
@@ -487,17 +487,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the bbsNm
      */
     public String getBbsNm() {
-	return bbsNm;
+        return bbsNm;
     }
 
     /**
      * bbsNm attribute 값을 설정한다.
      *
      * @param bbsNm
-     *            the bbsNm to set
+     *              the bbsNm to set
      */
     public void setBbsNm(String bbsNm) {
-	this.bbsNm = bbsNm;
+        this.bbsNm = bbsNm;
     }
 
     /**
@@ -506,17 +506,17 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the userNm
      */
     public String getUserNm() {
-	return userNm;
+        return userNm;
     }
 
     /**
      * userNm attribute 값을 설정한다.
      *
      * @param userNm
-     *            the userNm to set
+     *               the userNm to set
      */
     public void setUserNm(String userNm) {
-	this.userNm = userNm;
+        this.userNm = userNm;
     }
 
     /**
@@ -525,21 +525,22 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * @return the provdUrl
      */
     public String getProvdUrl() {
-	return provdUrl;
+        return provdUrl;
     }
 
     /**
      * provdUrl attribute 값을 설정한다.
      *
      * @param provdUrl
-     *            the provdUrl to set
+     *                 the provdUrl to set
      */
     public void setProvdUrl(String provdUrl) {
-	this.provdUrl = provdUrl;
+        this.provdUrl = provdUrl;
     }
 
     /**
      * bbsTyCode attribute를 리턴한다.
+     * 
      * @return the bbsTyCode
      */
     public String getBbsTyCode() {
@@ -548,6 +549,7 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
 
     /**
      * bbsTyCode attribute 값을 설정한다.
+     * 
      * @param bbsTyCode the bbsTyCode to set
      */
     public void setBbsTyCode(String bbsTyCode) {
@@ -558,6 +560,6 @@ public class BoardUseInfVO extends BoardUseInf implements Serializable {
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

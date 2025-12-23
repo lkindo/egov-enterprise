@@ -42,7 +42,7 @@ public class EgovWebUtil {
 		String returnValue = value;
 		returnValue = clearXSSMinimum(returnValue);
 
-		returnValue = returnValue.replaceAll("%00", null);
+		returnValue = returnValue.replaceAll("%00", "");
 
 		returnValue = returnValue.replaceAll("%", "&#37;");
 
@@ -74,18 +74,18 @@ public class EgovWebUtil {
 	 * 2. basePath는 ROOT Path "/" 사용 금지 한다.
 	 * 3. basePath 하위 디렉토리는 업로드한 파일이 존재하도록 구성하며 중요파일이 존재하지 않도록 관리한다.
 	 *
-	 * @param value 파일명
+	 * @param value    파일명
 	 * @param basePath 기본 경로
 	 * @return
 	 */
 	public static String filePathBlackList(String value, String basePath) {
-		if ( basePath == null || "".equals(basePath) )
+		if (basePath == null || "".equals(basePath))
 			throw new SecurityException("base path is empty.");
-		if ( File.separator.equals(basePath) || "/".equals(basePath) )
+		if (File.separator.equals(basePath) || "/".equals(basePath))
 			throw new SecurityException("base path does not allow Root.");
 		return filePathBlackList(basePath + value);
 	}
-	
+
 	/**
 	 * 행안부 보안취약점 점검 조치 방안.
 	 *
@@ -105,14 +105,19 @@ public class EgovWebUtil {
 
 		return returnValue;
 	}
-	
+
+	/**
+	 * 파일 주입 방지.
+	 * 
+	 * @param value
+	 * @return
+	 */
 	public static String fileInjectPathReplaceAll(String value) {
 		String returnValue = value;
 		if (returnValue == null || returnValue.trim().equals("")) {
 			return "";
 		}
 
-		
 		returnValue = returnValue.replaceAll("/", "");
 		returnValue = returnValue.replaceAll("\\..", ""); // ..
 		returnValue = returnValue.replaceAll("\\\\", "");// \
@@ -129,14 +134,15 @@ public class EgovWebUtil {
 		Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
 		return ipPattern.matcher(str).matches();
-    }
+	}
 
 	public static String removeCRLF(String parameter) {
 		return parameter.replaceAll("\r", "").replaceAll("\n", "");
 	}
 
 	public static String removeSQLInjectionRisk(String parameter) {
-		return parameter.replaceAll("\\p{Space}", "").replaceAll("\\*", "").replaceAll("%", "").replaceAll(";", "").replaceAll("-", "").replaceAll("\\+", "").replaceAll(",", "");
+		return parameter.replaceAll("\\p{Space}", "").replaceAll("\\*", "").replaceAll("%", "").replaceAll(";", "")
+				.replaceAll("-", "").replaceAll("\\+", "").replaceAll(",", "");
 	}
 
 	public static String removeOSCmdRisk(String parameter) {
