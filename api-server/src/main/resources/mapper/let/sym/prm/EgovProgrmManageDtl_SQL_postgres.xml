@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="progrmManageDAO">
@@ -25,20 +25,21 @@
 
 	<select id="selectProgrmChangeRequstList_D" parameterType="comDefaultVO" resultType="egovMap">
 		
-			SELECT
-				  PROGRM_FILE_NM AS "progrmFileNm" 
-				, REQUST_NO AS "rqesterNo" 
-				, RQESTER_ID AS "rqesterPersonId" 
-				, CHANGE_REQUST_CN AS "changerqesterCn" 
-				, REQUST_PROCESS_CN AS "rqesterProcessCn"
-				, OPETR_ID AS "opetrId" 
-				, PROCESS_STTUS_CODE AS "processSttus" 
-				, PROCESS_DE AS "processDe" 
-				, REQUST_DE AS "rqesterDe" 
-				, REQUST_SJ AS "rqesterSj"
-			FROM LETTHPROGRMCHANGEDTLS
-			WHERE PROGRM_KOREAN_NM LIKE '%' || #{searchKeyword} || '%'
-			LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+	       SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+				SELECT
+					  PROGRM_FILE_NM AS "progrmFileNm" 
+					, REQUST_NO AS "rqesterNo" 
+					, RQESTER_ID AS "rqesterPersonId" 
+					, dbms_lob.substr(CHANGE_REQUST_CN, 10, 1)||'...'   AS "changerqesterCn" 
+					, dbms_lob.substr(REQUST_PROCESS_CN, 10, 1)||'...' AS "rqesterProcessCn"
+					, OPETR_ID AS "opetrId" 
+					, trim(PROCESS_STTUS_CODE) AS "processSttus"
+					, to_char(PROCESS_DE, 'YYYY-MM-DD') AS "processDe"   
+					, to_char(REQUST_DE, 'YYYY-MM-DD') AS "rqesterDe" 
+					, REQUST_SJ AS "rqesterSj"
+				FROM LETTHPROGRMCHANGEDTLS
+				WHERE PROGRM_FILE_NM like '%'|| #{searchKeyword}||'%'
+	       ) TB ) Z WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 		 
 	</select>
 
@@ -47,7 +48,7 @@
 		
 		SELECT COUNT(*) AS "totcnt"
 		  FROM LETTHPROGRMCHANGEDTLS
-		 WHERE PROGRM_KOREAN_NM LIKE '%' || #{searchKeyword} || '%'
+		WHERE PROGRM_FILE_NM like '%'|| #{searchKeyword}||'%'
 		
 	</select>
 
@@ -67,9 +68,9 @@
 				, CHANGE_REQUST_CN AS "changerqesterCn" 
 				, REQUST_PROCESS_CN AS "rqesterProcessCn"
 				, OPETR_ID AS "opetrId" 
-				, PROCESS_STTUS_CODE AS "processSttus" 
-				, PROCESS_DE AS "processDe" 
-				, REQUST_DE AS "rqesterDe" 
+				, trim(PROCESS_STTUS_CODE) AS "processSttus" 
+				, to_char(PROCESS_DE, 'YYYY-MM-DD') AS "processDe" 
+				, to_char(REQUST_DE, 'YYYY-MM-DD') AS "rqesterDe" 
 				, REQUST_SJ AS "rqesterSj"
 			FROM LETTHPROGRMCHANGEDTLS
 			WHERE PROGRM_FILE_NM=#{progrmFileNm}
@@ -91,7 +92,7 @@
                  , #{rqesterNo}
                  , #{rqesterPersonId}
                  , #{changerqesterCn}
-                 , #{rqesterDe}
+                 , TO_DATE(#{rqesterDe},'yyyy-mm-dd')
                  , #{rqesterSj} 
                  , 'A')
 		
@@ -100,10 +101,10 @@
 	<update id="updateProgrmChangeRequst_S">
 		
 			UPDATE LETTHPROGRMCHANGEDTLS
-			SET RQESTER_ID         = #{rqesterPersonId} 
-			   , CHANGE_REQUST_CN  = #{changerqesterCn}
-            , REQUST_DE        = #{rqesterDe}       
-            , REQUST_SJ        = #{rqesterSj} 
+			SET    RQESTER_ID        = #{rqesterPersonId} 
+			     , CHANGE_REQUST_CN  = #{changerqesterCn}
+                 , REQUST_DE        = TO_DATE(#{rqesterDe},'yyyy-mm-dd')       
+                 , REQUST_SJ        = #{rqesterSj} 
 			WHERE PROGRM_FILE_NM=#{progrmFileNm}
 			AND   REQUST_NO    =#{rqesterNo}
 		
@@ -120,64 +121,66 @@
 	<update id="updateProgrmChangeRequstProcess_S">
 		
 			UPDATE LETTHPROGRMCHANGEDTLS
-			SET REQUST_PROCESS_CN = #{rqesterProcessCn} 
-           , OPETR_ID           = #{opetrId}         
-           , PROCESS_STTUS_CODE = #{processSttus}    
-           , PROCESS_DE         = #{processDe}       
-			WHERE PROGRM_FILE_NM=#{progrmFileNm}
-			AND   REQUST_NO    =#{rqesterNo}  
+			SET    REQUST_PROCESS_CN = #{rqesterProcessCn} 
+                 , OPETR_ID           = #{opetrId}         
+                 , PROCESS_STTUS_CODE = #{processSttus}    
+                 , PROCESS_DE         = TO_DATE(#{processDe},'yyyy-mm-dd')        
+			WHERE  PROGRM_FILE_NM=#{progrmFileNm}
+			AND    REQUST_NO    =#{rqesterNo}  
 		
 	</update>
 
 	<select id="selectChangeRequstProcessList_D" parameterType="comDefaultVO" resultType="egovMap">
 		
-			SELECT
-				  PROGRM_FILE_NM AS "progrmFileNm"
-				, REQUST_NO AS "rqesterNo"
-				, RQESTER_ID AS "rqesterPersonId"  
-				, CHANGE_REQUST_CN AS "changerqesterCn"
-				, REQUST_PROCESS_CN AS "rqesterProcessCn" 
-                , OPETR_ID AS "opetrId"
-                , PROCESS_STTUS_CODE AS "processSttus"
-                , PROCESS_DE AS "processDe"  
-                , REQUST_DE AS "rqesterDe" 
-                , REQUST_SJ AS "rqesterSj"
-			FROM LETTHPROGRMCHANGEDTLS
-			WHERE 1=1
+			SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+				SELECT
+					  PROGRM_FILE_NM AS "progrmFileNm"
+					, REQUST_NO AS "rqesterNo"
+					, RQESTER_ID AS "rqesterPersonId"  
+					, dbms_lob.substr(CHANGE_REQUST_CN, 10, 1)||'...'   AS "changerqesterCn"
+					, dbms_lob.substr(REQUST_PROCESS_CN, 10, 1)||'...' AS "rqesterProcessCn" 
+	                , OPETR_ID AS "opetrId"
+	                , trim(PROCESS_STTUS_CODE) AS "processSttus"
+	                , to_char(PROCESS_DE, 'YYYY-MM-DD') AS "processDe"  
+	                , to_char(REQUST_DE, 'YYYY-MM-DD') AS "rqesterDe" 
+	                , REQUST_SJ AS "rqesterSj"
+				FROM LETTHPROGRMCHANGEDTLS
+				WHERE 1=1
 		 
         <if test='searchCondition == "1"'>AND
-            PROCESS_STTUS_CODE LIKE #{searchKeyword}  
+            PROCESS_STTUS_CODE like #{searchKeyword}  
         </if>        
         <if test='searchCondition == "2"'>AND
             PROCESS_STTUS_CODE = #{searchKeyword}   
         </if>
         <if test='searchCondition == "3"'>AND
-          REQUST_DE between #{searchKeywordFrom} and #{searchKeywordTo} 
+          to_char(REQUST_DE, 'YYYY-MM-DD') between #{searchKeywordFrom} and #{searchKeywordTo} 
         </if>
         <if test='searchCondition == "4"'>AND
-            RQESTER_ID LIKE '%' || #{searchKeyword} || '%'   
+           RQESTER_ID like  '%'||#{searchKeyword}||'%'   
         </if>
            ORDER BY REQUST_NO ASC
-        LIMIT #{recordCountPerPage} OFFSET #{firstIndex}   
+             ) TB ) Z WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+        
 	</select>
 	
 	<select id="selectChangeRequstProcessListTotCnt_S" parameterType="comDefaultVO" resultType="int">
 		
-		SELECT COUNT(*) AS "totcnt"
+		SELECT COUNT(REQUST_NO) AS "totcnt"
 		  FROM LETTHPROGRMCHANGEDTLS
 			WHERE 1=1
 		 
         <if test='searchCondition == "1"'>AND
-            PROCESS_STTUS_CODE LIKE #{searchKeyword}  
+            PROCESS_STTUS_CODE like #{searchKeyword}  
         </if>        
         <if test='searchCondition == "2"'>AND
             PROCESS_STTUS_CODE = #{searchKeyword}   
         </if>
         <if test='searchCondition == "3"'>AND
-          REQUST_DE between #{searchKeywordFrom} and #{searchKeywordTo} 
+          to_char(REQUST_DE, 'YYYY-MM-DD') between #{searchKeywordFrom} and #{searchKeywordTo} 
         </if>
         <if test='searchCondition == "4"'>AND
-            RQESTER_ID LIKE '%' || #{searchKeyword} || '%'   
+           RQESTER_ID like  '%'||#{searchKeyword}||'%'   
         </if>
 	</select>
 

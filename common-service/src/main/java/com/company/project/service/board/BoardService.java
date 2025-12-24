@@ -85,7 +85,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardMaster master = boardMasterRepository.findById(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findById(userId)
+                User author = userRepository.findByEsntlId(userId)
                                 .orElse(null);
 
                 Long nttId = boardRepository.getNextNttId();
@@ -123,7 +123,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 Board parent = boardRepository.findByNttId(parentId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findById(userId)
+                User author = userRepository.findByEsntlId(userId)
                                 .orElse(null);
 
                 Long nttId = boardRepository.getNextNttId();

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="menuManageDAO">
@@ -6,18 +6,19 @@
 
 	<select id="selectMenuManageList_D" parameterType="comDefaultVO" resultType="egovMap">
 		
-			SELECT 
-				  MENU_NO AS "menuNo"
-				, MENU_ORDR AS "menuOrdr"
-				, MENU_NM AS "menuNm"
-				, UPPER_MENU_NO AS "upperMenuId"
-				, MENU_DC AS "menuDc"
-				, RELATE_IMAGE_PATH AS "relateImagePath"
-				, RELATE_IMAGE_NM AS "relateImageNm"
-				, PROGRM_FILE_NM AS "progrmFileNm"
-			FROM NMENUINFO 
-			WHERE MENU_NM LIKE '%' || #{searchKeyword} || '%'
-			LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+		       SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+					SELECT 
+						  MENU_NO           AS "menuNo"
+						, MENU_ORDR         AS "menuOrdr"
+						, MENU_NM           AS "menuNm"
+						, UPPER_MENU_NO     AS "upperMenuId"
+						, MENU_DC           AS "menuDc"
+						, RELATE_IMAGE_PATH AS "relateImagePath"
+						, RELATE_IMAGE_NM   AS "relateImageNm"
+						, PROGRM_FILE_NM    AS "progrmFileNm"
+					FROM NMENUINFO 
+					WHERE MENU_NM like '%'|| #{searchKeyword}||'%'
+		       ) TB ) Z WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 		 
 	</select> 
 
@@ -26,7 +27,7 @@
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"
 		  FROM NMENUINFO
-		 WHERE MENU_NM LIKE '%' || #{searchKeyword} || '%'
+		 WHERE MENU_NM like '%'||#{searchKeyword}||'%'
 		
 	</select>
 
@@ -34,14 +35,14 @@
 	<select id="selectMenuManage_D" parameterType="comDefaultVO" resultType="egovframework.let.sym.mnu.mpm.service.MenuManageVO">
 		
 			SELECT 
-				  MENU_NO AS "menuNo"
-				, MENU_ORDR AS "menuOrdr"
-				, MENU_NM AS "menuNm"
-				, UPPER_MENU_NO AS "upperMenuId"
-				, MENU_DC AS "menuDc"
+				  MENU_NO           AS "menuNo"
+				, MENU_ORDR         AS "menuOrdr"
+				, MENU_NM           AS "menuNm"
+				, UPPER_MENU_NO     AS "upperMenuId"
+				, MENU_DC           AS "menuDc"
 				, RELATE_IMAGE_PATH AS "relateImagePath"
-				, RELATE_IMAGE_NM AS "relateImageNm"
-				, PROGRM_FILE_NM AS "progrmFileNm"
+				, RELATE_IMAGE_NM   AS "relateImageNm"
+				, PROGRM_FILE_NM    AS "progrmFileNm"
 			FROM NMENUINFO
 			WHERE MENU_NO = #{searchKeyword}
 		
@@ -58,10 +59,10 @@
             , RELATE_IMAGE_PATH
             , RELATE_IMAGE_NM
             , PROGRM_FILE_NM )
-			VALUES (   #{menuNo}::integer
-                  , #{menuOrdr}::integer
+			VALUES (   #{menuNo}
+                  , #{menuOrdr}
                   , #{menuNm}  
-                  , #{upperMenuId}::integer
+                  , #{upperMenuId}
                   , #{menuDc}
                   , #{relateImagePath}
                   , #{relateImageNm}
@@ -72,21 +73,21 @@
 	<update id="updateMenuManage_S">
 		
 			UPDATE NMENUINFO 
-			SET  MENU_ORDR         = #{menuOrdr}::integer       
+			SET  MENU_ORDR         = #{menuOrdr}       
             , MENU_NM           = #{menuNm}         
-            , UPPER_MENU_NO     = #{upperMenuId}::integer    
+            , UPPER_MENU_NO     = #{upperMenuId}    
             , MENU_DC           = #{menuDc}         
             , RELATE_IMAGE_PATH = #{relateImagePath}
             , RELATE_IMAGE_NM   = #{relateImageNm}  
             , PROGRM_FILE_NM    = #{progrmFileNm}   
-			WHERE MENU_NO=#{menuNo}::integer
+			WHERE MENU_NO=#{menuNo}
 		
 	</update>
 
 	<delete id="deleteMenuManage_S">
 		                          
 			DELETE FROM NMENUINFO              
-			WHERE MENU_NO=#{menuNo}::integer                 
+			WHERE MENU_NO=#{menuNo}                 
 		                                
 	</delete> 
 	
@@ -95,30 +96,30 @@
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"
 		  FROM NMENUINFO
-		 WHERE MENU_NO = #{menuNo}::integer
+		 WHERE MENU_NO = #{menuNo}
 		
 	</select>
 	
 	<!-- 상위 메뉴번호 존재여부 조회 -->
-	<select id="selectUpperMenuNoByPk" parameterType="egovframework.let.sym.mnu.mpm.service.MenuManageVO" resultType="int">
-		
-		SELECT COUNT(MENU_NO) AS "totcnt"
-		  FROM NMENUINFO
-		 WHERE UPPER_MENU_NO = #{menuNo}::integer
-		
-	</select>
+    <select id="selectUpperMenuNoByPk" parameterType="egovframework.let.sym.mnu.mpm.service.MenuManageVO" resultType="int">
+        
+        SELECT COUNT(MENU_NO) AS totcnt
+          FROM NMENUINFO
+         WHERE UPPER_MENU_NO = #{menuNo}
+        
+    </select>
 
 	<select id="selectMenuListT_D" parameterType="comDefaultVO" resultType="egovMap">
 		 
             SELECT
-			      MENU_NO AS "menuNo"
-				, MENU_ORDR AS "menuOrdr"
-				, MENU_NM AS "menuNm"
-				, UPPER_MENU_NO AS "upperMenuId"
-				, MENU_DC AS "menuDc"
+			      MENU_NO           AS "menuNo"
+				, MENU_ORDR         AS "menuOrdr"
+				, MENU_NM           AS "menuNm"
+				, UPPER_MENU_NO     AS "upperMenuId"
+				, MENU_DC           AS "menuDc"
 				, RELATE_IMAGE_PATH AS "relateImagePath"
-				, RELATE_IMAGE_NM AS "relateImageNm"
-				, PROGRM_FILE_NM AS "progrmFileNm"
+				, RELATE_IMAGE_NM   AS "relateImageNm"
+				, PROGRM_FILE_NM    AS "progrmFileNm"
 			FROM NMENUINFO 
 			WHERE Menu_NO &gt; 0 
 			ORDER BY MENU_ORDR
@@ -134,7 +135,7 @@
 	<!-- 메뉴정보 총건수 조회 -->
 	<select id="selectMenuListTotCnt" parameterType="egovframework.let.sym.mnu.mpm.service.MenuManageVO" resultType="int">
 		
-		SELECT COUNT(MENU_NO) AS "totcnt"
+		SELECT COUNT(MENU_NO) AS totcnt
 		  FROM NMENUINFO
 		
 	</select>

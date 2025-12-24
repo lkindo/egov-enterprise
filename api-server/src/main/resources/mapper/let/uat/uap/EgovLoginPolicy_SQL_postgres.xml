@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="loginPolicyDAO">
 
-	<resultMap id="loginPolicy" type="egovframework.let.uat.uap.service.LoginPolicyVO">
+    <resultMap id="loginPolicy" type="egovframework.let.uat.uap.service.LoginPolicyVO">
         <result property="emplyrId" column="USER_ID"/>
         <result property="emplyrNm" column="USER_NM"/>
         <result property="emplyrSe" column="USER_SE"/>
@@ -13,9 +13,14 @@
         <result property="userId" column="LAST_UPDUSR_ID"/>
         <result property="regDate" column="LAST_UPDT_PNTTM"/>
         <result property="regYn" column="REG_YN"/>
-	</resultMap>
+    </resultMap>
 
     <select id="selectLoginPolicyList" parameterType="egovframework.let.uat.uap.service.LoginPolicyVO" resultMap="loginPolicy">
+            
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
             SELECT A.USER_ID,
                    A.USER_NM,
                    A.USER_SE,
@@ -23,27 +28,33 @@
                    B.DPLCT_PERM_AT,
                    B.LMTT_AT,
                    B.LAST_UPDUSR_ID,
-                   to_char(B.LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM,
-                   CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN 
+                   B.LAST_UPDT_PNTTM,
+                   CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN
               FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
+                       
             <if test="searchKeyword != null and searchKeyword != ''">
                 <if test='searchCondition == "1"'>AND
-                       A.USER_NM LIKE '%' || #{searchKeyword} || '%'  
+                       A.USER_NM LIKE '%'||#{searchKeyword}||'%'
                 </if>
             </if>
-             LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+                      
+                    ) ALL_LIST
+                    ) Z
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+          
     </select>
 
     <select id="selectLoginPolicyListTotCnt" parameterType="egovframework.let.uat.uap.service.LoginPolicyVO" resultType="int">
-            SELECT COUNT(*) AS "totcnt"                  
+            SELECT COUNT(*) AS totcnt                  
               FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
             <if test="searchKeyword != null and searchKeyword != ''">
                 <if test='searchCondition == "1"'>AND
-                       A.USER_NM LIKE '%' || #{searchKeyword} || '%'  
+                       A.USER_NM LIKE '%'||#{searchKeyword}||'%'
                 </if>
             </if>
     </select>
@@ -54,10 +65,10 @@
                    A.USER_SE,
                    B.IP_INFO,
                    B.DPLCT_PERM_AT,
-                   CASE WHEN B.LMTT_AT IS NULL THEN 'N' ELSE B.LMTT_AT END AS LMTT_AT,
+                   IFNULL(B.LMTT_AT,'N') AS LMTT_AT,
                    B.LAST_UPDUSR_ID,
-                   to_char(B.LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM,
-                   CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN                   
+                   B.LAST_UPDT_PNTTM,
+                   CASE WHEN B.EMPLYR_ID IS NULL THEN 'N' ELSE 'Y' END AS REG_YN
               FROM COMVNUSERMASTER A LEFT OUTER JOIN NLOGINPOLICY B
                 ON A.USER_ID = B.EMPLYR_ID   
              WHERE 1 = 1
@@ -80,9 +91,9 @@
                    ,#{dplctPermAt}
                    ,#{lmttAt}
                    ,#{userId}
-                   ,NOW()::timestamp(0)
+                   ,NOW()
                    ,#{userId}
-                   ,NOW()::timestamp(0))
+                   ,NOW())
         
     </insert>
 
@@ -93,7 +104,7 @@
                   ,DPLCT_PERM_AT = #{dplctPermAt}
                   ,LMTT_AT = #{lmttAt}
                   ,LAST_UPDUSR_ID = #{userId}
-                  ,LAST_UPDT_PNTTM = NOW()::timestamp(0)
+                  ,LAST_UPDT_PNTTM = NOW()
              WHERE EMPLYR_ID = #{emplyrId}
         
     </update>

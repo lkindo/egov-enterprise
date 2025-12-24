@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="roleManageDAO">
@@ -25,11 +25,17 @@
                    ROLE_SORT, 
                    ROLE_CREAT_DE
               FROM NROLEINFO
-             WHERE ROLE_CODE = #{roleCode}		         
+             WHERE ROLE_CODE = #{roleCode}                
         
     </select>
 
     <select id="selectRoleList" parameterType="egovframework.let.sec.rmt.service.RoleManageVO" resultMap="role">
+        
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
+
             SELECT ROLE_CODE, 
                    ROLE_NM, 
                    ROLE_PTTRN, 
@@ -42,62 +48,69 @@
                    ROLE_CREAT_DE
               FROM NROLEINFO
              WHERE 1=1
+                     
             <if test='searchCondition == "1"'>AND
-                ROLE_NM LIKE '%' || #{searchKeyword} || '%'
+                ROLE_NM LIKE '%'||#{searchKeyword}||'%'
             </if>
-            ORDER BY ROLE_CREAT_DE DESC
-            LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+                    
+            ORDER BY ROLE_CREAT_DE DESC 
+
+                    ) ALL_LIST
+                    ) Z
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+         
     </select>
 
-	<insert id="insertRole" parameterType="egovframework.let.sec.rmt.service.RoleManage">
-		
-			INSERT INTO NROLEINFO 
-				  ( ROLE_CODE
-				  , ROLE_NM
+    <insert id="insertRole" parameterType="egovframework.let.sec.rmt.service.RoleManage">
+        
+            INSERT INTO NROLEINFO 
+                  ( ROLE_CODE
+                  , ROLE_NM
                   , ROLE_PTTRN
                   , ROLE_DC
                   , ROLE_TY
-				  , ROLE_SORT
-				  , ROLE_CREAT_DE )
-		   VALUES ( #{roleCode}
-			      , #{roleNm}
-				  , #{rolePtn}
+                  , ROLE_SORT
+                  , ROLE_CREAT_DE )
+           VALUES ( #{roleCode}
+                  , #{roleNm}
+                  , #{rolePtn}
                   , #{roleDc}
                   , #{roleTyp}
                   , #{roleSort}
-				  , NOW()::timestamp(0))
-		
-	</insert>
+                  , NOW())
+        
+    </insert>
 
-	<update id="updateRole" parameterType="egovframework.let.sec.rmt.service.RoleManage">
-		
-			UPDATE NROLEINFO 
-			   SET ROLE_NM=#{roleNm}
+    <update id="updateRole" parameterType="egovframework.let.sec.rmt.service.RoleManage">
+        
+            UPDATE NROLEINFO 
+               SET ROLE_NM=#{roleNm}
                  , ROLE_PTTRN=#{rolePtn}
                  , ROLE_DC=#{roleDc}
                  , ROLE_TY=#{roleTyp}
                  , ROLE_SORT=#{roleSort}
-				 , ROLE_CREAT_DE=NOW()::timestamp(0)
-		  	 WHERE ROLE_CODE=#{roleCode}
-		
-	</update>
+                 , ROLE_CREAT_DE=NOW()
+             WHERE ROLE_CODE=#{roleCode}
+        
+    </update>
 
-	<delete id="deleteRole">
-		
-			DELETE FROM NROLEINFO 
-			 WHERE ROLE_CODE=#{roleCode}
-		
-	</delete>
+    <delete id="deleteRole">
+        
+            DELETE FROM NROLEINFO 
+             WHERE ROLE_CODE=#{roleCode}
+        
+    </delete>
 
-	<select id="selectAuthorListTotCnt" parameterType="egovframework.let.sec.rmt.service.RoleManageVO" resultType="int">
+    <select id="selectAuthorListTotCnt" parameterType="egovframework.let.sec.rmt.service.RoleManageVO" resultType="int">
 
-			SELECT COUNT(*) totcnt
-			FROM NROLEINFO
-			WHERE 1=1
-			<if test='searchCondition == "1"'>AND
-				ROLE_NM LIKE '%' || #{searchKeyword} || '%'
-			</if>
-	</select>
+            SELECT COUNT(*) totcnt
+            FROM NROLEINFO
+            WHERE 1=1
+            <if test='searchCondition == "1"'>AND
+                ROLE_NM LIKE '%'||#{searchKeyword}||'%'
+            </if>
+    </select>
 
     <select id="selectRoleAllList" parameterType="egovframework.let.sec.rmt.service.RoleManageVO" resultMap="role">
             SELECT ROLE_CODE, ROLE_NM, ROLE_PTTRN, ROLE_DC, ROLE_TY, ROLE_SORT, ROLE_CREAT_DE

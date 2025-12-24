@@ -4,6 +4,9 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+  sql:
+    init:
+      mode: never
 
 file:
   upload:

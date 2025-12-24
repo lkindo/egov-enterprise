@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="authorGroupDAO">
@@ -16,6 +16,11 @@
     </resultMap>
 
     <select id="selectAuthorGroupList" parameterType="egovframework.let.sec.rgm.service.AuthorGroupVO" resultMap="authorGroup">
+             
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
             SELECT A.USER_ID, 
                    A.USER_NM, 
                    A.GROUP_ID,
@@ -40,49 +45,55 @@
                       FROM NEMPLYRINFO ) A LEFT OUTER JOIN NEMPLYRSCRTYESTBS B
                 ON A.ESNTL_ID = B.SCRTY_DTRMN_TRGET_ID
              WHERE 1 = 1    
+               
             <if test="searchKeyword != null and searchKeyword != ''">
                 <if test='searchCondition == "1"'>AND
-                       A.USER_ID LIKE '%' || #{searchKeyword} || '%'
+                       A.USER_ID LIKE '%'||#{searchKeyword}||'%'
                 </if>
-	            <if test='searchCondition == "2"'>AND
-	                   A.USER_NM LIKE '%' || #{searchKeyword} || '%'
-	            </if>
-	            <if test='searchCondition == "3"'>AND
-	                   A.GROUP_ID = #{searchKeyword}
-	            </if>
+                <if test='searchCondition == "2"'>AND
+                       A.USER_NM LIKE '%'||#{searchKeyword}||'%'
+                </if>
+                <if test='searchCondition == "3"'>AND
+                       A.GROUP_ID = #{searchKeyword}
+                </if>
             </if>
-             LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+             
+                    ) ALL_LIST
+                    ) Z
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+               
     </select>
 
-	<insert id="insertAuthorGroup" parameterType="egovframework.let.sec.rgm.service.AuthorGroup">
-		
-			INSERT INTO NEMPLYRSCRTYESTBS 
-				  ( SCRTY_DTRMN_TRGET_ID
+    <insert id="insertAuthorGroup" parameterType="egovframework.let.sec.rgm.service.AuthorGroup">
+        
+            INSERT INTO NEMPLYRSCRTYESTBS 
+                  ( SCRTY_DTRMN_TRGET_ID
                   , MBER_TY_CODE
-				  , AUTHOR_CODE)
-		   VALUES ( #{uniqId}
+                  , AUTHOR_CODE)
+           VALUES ( #{uniqId}
                   , #{mberTyCode}
                   , #{authorCode})
-		
-	</insert>
+        
+    </insert>
 
-	<update id="updateAuthorGroup" parameterType="egovframework.let.sec.rgm.service.AuthorGroup">
-		
-			UPDATE NEMPLYRSCRTYESTBS 
-			   SET MBER_TY_CODE=#{mberTyCode}
+    <update id="updateAuthorGroup" parameterType="egovframework.let.sec.rgm.service.AuthorGroup">
+        
+            UPDATE NEMPLYRSCRTYESTBS 
+               SET MBER_TY_CODE=#{mberTyCode}
                  , AUTHOR_CODE=#{authorCode}
-		  	 WHERE SCRTY_DTRMN_TRGET_ID=#{uniqId}
-		
-	</update>
+             WHERE SCRTY_DTRMN_TRGET_ID=#{uniqId}
+        
+    </update>
 
-	<delete id="deleteAuthorGroup">
-		
-			DELETE FROM NEMPLYRSCRTYESTBS 
-			 WHERE SCRTY_DTRMN_TRGET_ID=#{uniqId}
-		
-	</delete>
+    <delete id="deleteAuthorGroup">
+        
+            DELETE FROM NEMPLYRSCRTYESTBS 
+             WHERE SCRTY_DTRMN_TRGET_ID=#{uniqId}
+        
+    </delete>
 
-	<select id="selectAuthorGroupListTotCnt" parameterType="egovframework.let.sec.rgm.service.AuthorGroupVO" resultType="int">
+    <select id="selectAuthorGroupListTotCnt" parameterType="egovframework.let.sec.rgm.service.AuthorGroupVO" resultType="int">
 
             SELECT COUNT(*) AS totcnt
               FROM (SELECT MBER_ID USER_ID, MBER_NM USER_NM, GROUP_ID, 'USR01' MBER_TY_CODE 
@@ -97,15 +108,15 @@
              WHERE 1 = 1   
             <if test="searchKeyword != null and searchKeyword != ''">
                 <if test='searchCondition == "1"'>AND
-                       A.USER_ID LIKE '%' || #{searchKeyword} || '%'
+                       A.USER_ID LIKE '%'||#{searchKeyword}||'%'
                 </if>
                 <if test='searchCondition == "2"'>AND
-                       A.USER_NM LIKE '%' || #{searchKeyword} || '%'
+                       A.USER_NM LIKE '%'||#{searchKeyword}||'%'
                 </if>
                 <if test='searchCondition == "3"'>AND
                        A.GROUP_ID = #{searchKeyword}
                 </if>
             </if>
-	</select>
+    </select>
 
 </mapper>

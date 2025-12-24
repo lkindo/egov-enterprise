@@ -16,24 +16,21 @@ services:
       - db
 
   db:
-    image: cubrid/cubrid:11.3
-    container_name: egov-cubrid
-    shm_size: "1gb"
-    privileged: true
+    image: postgres:16
+    container_name: egov-postgres
     ports:
-      - "33000:33000"
-      - "30000:30000"
-      - "1523:1523"
+      - "5433:5432"
     environment:
-      - CUBRID_DB_NAME=cubdb
-      - CUBRID_PASSWORD=
+      POSTGRES_DB: egovdb
+      POSTGRES_USER: egov
+      POSTGRES_PASSWORD: egov123
     volumes:
-      - cubrid_data:/var/lib/cubrid
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - egov-net
 
 volumes:
-  cubrid_data:
+  postgres_data:
 
 networks:
   egov-net:

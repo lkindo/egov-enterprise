@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="menuManageDAO">
@@ -6,16 +6,22 @@
 	
 	<select id="selectMenuCreatManageList_D" parameterType="comDefaultVO" resultType="egovMap">
 		
-			SELECT  AUTHOR_CODE   AS "authorCode",
-					AUTHOR_NM     AS "authorNm",
-					AUTHOR_DC     AS "authorDc",
-					AUTHOR_CREAT_DE AS "authorCreatDe",
-				   (SELECT COUNT(B.AUTHOR_CODE)
-					FROM   NMENUCREATDTLS B
-					WHERE  B.AUTHOR_CODE = A.AUTHOR_CODE ) AS "chkYeoBu"
-			FROM    NAUTHORINFO A
-			WHERE   A.AUTHOR_CODE like '%' || #{searchKeyword} || '%' 
-			LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+                SELECT * 
+                FROM  
+                    (SELECT rownum rn, TB.* 
+                     FROM 
+			            (SELECT AUTHOR_CODE   AS "authorCode",
+								AUTHOR_NM     AS "authorNm",
+								AUTHOR_DC     AS "authorDc",
+								AUTHOR_CREAT_DE AS "authorCreatDe",
+							   (SELECT COUNT(B.AUTHOR_CODE)
+								FROM   NMENUCREATDTLS B
+								WHERE  B.AUTHOR_CODE = A.AUTHOR_CODE ) AS "chkYeoBu"
+						FROM    NAUTHORINFO A
+						WHERE   A.AUTHOR_CODE like '%'||#{searchKeyword}||'%') TB
+
+                    ) Z
+                WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
         
 	</select> 
 
@@ -23,7 +29,7 @@
 		
 			SELECT COUNT(AUTHOR_CODE) AS "totcnt"
 			  FROM NAUTHORINFO
-			 WHERE AUTHOR_CODE like '%' || #{searchKeyword} || '%'
+			 WHERE AUTHOR_CODE like '%'||#{searchKeyword}||'%'
 		
 	</select>
 
@@ -47,7 +53,7 @@
 	<insert id="insertMenuCreat_S">
 		
 			INSERT INTO NMENUCREATDTLS ( AUTHOR_CODE ,MENU_NO )
-			VALUES (  #{authorCode}, #{menuNo}::integer )
+			VALUES (  #{authorCode}, #{menuNo} )
 		
 	</insert>
 

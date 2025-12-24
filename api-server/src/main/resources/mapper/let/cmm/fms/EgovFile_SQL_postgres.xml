@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="FileManageDAO">
@@ -32,7 +32,7 @@
  		
 			SELECT 
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
-				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, to_char(a.CREAT_DT, 'YYYY MM DD') as CREAT_DT
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
 				NFILE a, NFILEDETAIL b
 			WHERE
@@ -50,7 +50,7 @@
 			INSERT INTO NFILE
 			(ATCH_FILE_ID, CREAT_DT, USE_AT)
 			VALUES
-			( #{atchFileId}, NOW()::timestamp(0), 'Y')			
+			( #{atchFileId}, NOW(), 'Y')			
 		
 	</insert>
 	
@@ -60,8 +60,8 @@
 			( ATCH_FILE_ID, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM, 
 			  ORIGNL_FILE_NM, FILE_EXTSN, FILE_SIZE, FILE_CN )
 			VALUES
-			( #{atchFileId}, #{fileSn}::integer, #{fileStreCours}, #{streFileNm}, 
-			  #{orignlFileNm}, #{fileExtsn}, #{fileMg}::integer, #{fileCn} )			
+			( #{atchFileId}, #{fileSn}, #{fileStreCours}, #{streFileNm}, 
+			  #{orignlFileNm}, #{fileExtsn}, #{fileMg}, #{fileCn} )			
 		
 	</insert>	
 	
@@ -71,7 +71,7 @@
 			WHERE
 				ATCH_FILE_ID = #{atchFileId}
 			AND	
-				FILE_SN = #{fileSn}::integer			
+				FILE_SN = #{fileSn}			
 			
 	</delete>
  	
@@ -93,7 +93,7 @@
 			WHERE
 				ATCH_FILE_ID = #{atchFileId}
 			AND 
-				FILE_SN = #{fileSn}::integer	
+				FILE_SN = #{fileSn}	
  		
  	</select>
 
@@ -107,9 +107,10 @@
 
  	<select id="selectFileListByFileNm" parameterType="FileVO" resultMap="fileList">
  		
+ 		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
 			SELECT 
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
-				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, to_char(a.CREAT_DT, 'YYYY MM DD') as CREAT_DT
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
 				NFILE a, NFILEDETAIL b
 			WHERE
@@ -118,15 +119,15 @@
 				a.USE_AT = 'Y'
  		
 			<if test="searchCnd == &quot;streFileNm&quot;">AND
-					b.STRE_FILE_NM LIKE '%' || #{searchWrd} || '%'		
+					b.STRE_FILE_NM LIKE '%' || #{searchWrd} || '%' 		
 			</if>
 			<if test="searchCnd == &quot;orignlFileNm&quot;">AND
-					b.ORIGNL_FILE_NM LIKE '%' || #{searchWrd} || '%'		
+					b.ORIGNL_FILE_NM LIKE '%' || #{searchWrd} || '%' 		
 			</if>	
 					
 			ORDER BY a.ATCH_FILE_ID, b.FILE_SN	
-			LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
-					 
+			) TB ) Z WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+				 		
  	</select>
 
  	<select id="selectFileListCntByFileNm" parameterType="FileVO" resultType="java.lang.Integer">
@@ -141,18 +142,18 @@
 				a.USE_AT = 'Y'				
  		
 			<if test="searchCnd == &quot;streFileNm&quot;">AND
-					b.STRE_FILE_NM LIKE '%' || #{searchWrd} || '%'		
+					b.STRE_FILE_NM LIKE '%' || #{searchWrd} || '%' 		
 			</if>
 			<if test="searchCnd == &quot;orignlFileNm&quot;">AND
-					b.ORIGNL_FILE_NM LIKE '%' || #{searchWrd} || '%'		
+					b.ORIGNL_FILE_NM LIKE '%' || #{searchWrd} || '%' 		
 			</if>	 		
  	</select>
  	
- 		<select id="selectImageFileList" parameterType="FileVO" resultMap="fileList">
+  	<select id="selectImageFileList" parameterType="FileVO" resultMap="fileList">
  		
 			SELECT 
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
-				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, to_char(a.CREAT_DT, 'YYYY MM DD') as CREAT_DT
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
 				NFILE a, NFILEDETAIL b
 			WHERE

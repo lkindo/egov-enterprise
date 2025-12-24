@@ -1,9 +1,10 @@
 spring:
   datasource:
-    url: jdbc:cubrid:localhost:33000:cubdb:::?charSet=UTF-8
-    driver-class-name: cubrid.jdbc.driver.CUBRIDDriver
-    username: dba
-    password:
+    url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt
+    jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt
+    driver-class-name: org.postgresql.Driver
+    username: egov
+    password: egov123
   jpa:
     hibernate:
       ddl-auto: none
@@ -11,7 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.community.dialect.CUBRIDDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   mvc:
     view:
@@ -19,7 +20,7 @@ spring:
       suffix: .jsp
 
 mybatis:
-  mapper-locations: classpath:/mapper/**/*_cubrid.xml
+  mapper-locations: classpath:/mapper/**/*_postgres.xml
   type-aliases-package: egovframework.let.**.service,egovframework.com.**.service,egovframework.com.cmm,egovframework.let.sts.com
 
 logging:

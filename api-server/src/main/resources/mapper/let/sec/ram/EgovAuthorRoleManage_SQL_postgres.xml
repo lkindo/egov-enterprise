@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="authorRoleManageDAO">
@@ -18,6 +18,12 @@
 
     <select id="authorRoleManageDAO.selectAuthorRoleList" parameterType="egovframework.let.sec.ram.service.AuthorRoleManageVO" resultMap="authorRole">
         
+
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
+
             SELECT A.ROLE_CODE,
                    A.ROLE_NM,
                    A.ROLE_PTTRN,
@@ -25,24 +31,29 @@
                    A.ROLE_TY,
                    A.ROLE_SORT,
                    B.AUTHOR_CODE,
-                   to_char(B.CREAT_DT, 'YYYY MM DD') as CREAT_DT,
+                   B.CREAT_DT,
                    (CASE WHEN B.ROLE_CODE IS NULL THEN 'N'
                          ELSE 'Y' 
                      END) AS REG_YN
               FROM NROLEINFO A 
                    LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM NAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
-                ON A.ROLE_CODE = B.ROLE_CODE	
-             LIMIT #{recordCountPerPage} OFFSET #{firstIndex}	         
+                ON A.ROLE_CODE = B.ROLE_CODE        
+
+                    ) ALL_LIST
+                    ) Z
+
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
         
     </select>
 
-	<select id="authorRoleManageDAO.selectAuthorRoleListTotCnt" parameterType="egovframework.let.sec.ram.service.AuthorRoleManageVO" resultType="int">
+    <select id="authorRoleManageDAO.selectAuthorRoleListTotCnt" parameterType="egovframework.let.sec.ram.service.AuthorRoleManageVO" resultType="int">
 
-			SELECT COUNT(*) totcnt
+            SELECT COUNT(*) totcnt
               FROM NROLEINFO A 
                    LEFT OUTER JOIN (SELECT AUTHOR_CODE , ROLE_CODE, CREAT_DT FROM NAUTHORROLERELATE WHERE AUTHOR_CODE = #{searchKeyword}) B
                 ON A.ROLE_CODE = B.ROLE_CODE
-	</select>
+    </select>
 
     <insert id="authorRoleManageDAO.insertAuthorRole" parameterType="egovframework.let.sec.ram.service.AuthorRoleManage">
         
@@ -52,7 +63,7 @@
                   , CREAT_DT)
            VALUES ( #{authorCode}
                   , #{roleCode}
-                  , NOW()::timestamp(0))
+                  , NOW())
         
     </insert>
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="CmmnClCodeManageDAO">
@@ -6,6 +6,11 @@
 
 	<select id="selectCmmnClCodeList" parameterType="egovframework.let.sym.ccm.ccc.service.CmmnClCodeVO" resultType="egovMap">
 		
+			SELECT  * 
+			  FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.* 
+			  FROM  (
+			/* 구현 Sql */
 			SELECT  CL_CODE
 			     ,  CL_CODE_NM
 			     ,  USE_AT
@@ -13,7 +18,7 @@
 			 WHERE  1 = 1
 		
 			<if test='searchCondition == "1"'>AND
-				CL_CODE = #{searchKeyword}
+				CL_CODE LIKE '%' || #{searchKeyword} || '%'
 			</if>
 			<if test='searchCondition == "2"'>AND
 				CL_CODE_NM LIKE '%' || #{searchKeyword} || '%'
@@ -21,7 +26,13 @@
 			<if test="searchCondition == &quot;CodeList&quot;">AND
 				USE_AT        = 'Y'
 			</if>
-			 LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+		
+			/* 구현 Sql */
+				    ) ALL_LIST
+				    ) Z
+			 WHERE  RNUM  &gt; #{firstIndex}
+			   AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+		
 	</select>
 
 	<select id="selectCmmnClCodeListTotCnt" parameterType="egovframework.let.sym.ccm.ccc.service.CmmnClCodeVO" resultType="int">
@@ -31,7 +42,7 @@
 			 WHERE  1 = 1
 		
 			<if test='searchCondition == "1"'>AND
-				CL_CODE = #{searchKeyword}
+				CL_CODE LIKE '%' || #{searchKeyword} || '%'
 			</if>
 			<if test='searchCondition == "3"'>AND
 				CL_CODE_NM LIKE '%' || #{searchKeyword} || '%'
@@ -67,9 +78,9 @@
 		         ,  #{clCodeNm}
 		         ,  #{clCodeDc}
 		         ,  #{useAt}
-		         ,  NOW()::timestamp(0)
+		         ,  NOW()
 		         ,  #{frstRegisterId}
-		         ,  NOW()::timestamp(0)
+		         ,  NOW()
 		         ,  #{frstRegisterId}
 		         ) 
 		
@@ -81,7 +92,7 @@
                SET  CL_CODE_NM        = #{clCodeNm}
                  ,  CL_CODE_DC        = #{clCodeDc}
                  ,  USE_AT            = #{useAt}
-                 ,  LAST_UPDT_PNTTM = NOW()::timestamp(0)
+                 ,  LAST_UPDT_PNTTM = NOW()
                  ,  LAST_UPDUSR_ID    = #{lastUpdusrId}
              WHERE  CL_CODE           = #{clCode} 
 		

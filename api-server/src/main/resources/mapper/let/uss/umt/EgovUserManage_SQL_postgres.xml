@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="userManageDAO">
 
 
     <select id="selectUserList_S" parameterType="egovframework.let.uss.umt.service.UserDefaultVO" resultType="egovMap">
-SELECT * FROM(
+SELECT * FROM ( SELECT rownum rn, TB.* FROM (
     SELECT
-        ESNTL_ID              as "uniqId",
+        ESNTL_ID               as "uniqId",
         'USR03'               as "userTy",
         EMPLYR_ID             as "userId",
         USER_NM             as "userNm",
@@ -18,50 +18,34 @@ SELECT * FROM(
         MBTLNUM           as "moblphonNo",
         GROUP_ID              as "groupId",
         EMPLYR_STTUS_CODE     as "sttus",
-        to_char(SBSCRB_DE, 'YYYY MM DD') as "sbscrbDe"
+        SBSCRB_DE             as "sbscrbDe"
     FROM    NEMPLYRINFO
-    ) A
         WHERE 1=1
         <if test='sbscrbSttus != "0"'>
-            AND "sttus" LIKE  #{sbscrbSttus}
+            AND EMPLYR_STTUS_CODE LIKE  #{sbscrbSttus}
         </if>
         <if test='searchCondition == "0"'>
-            AND "userId" LIKE #{searchKeyword}
+            AND EMPLYR_ID LIKE #{searchKeyword}
         </if>
         <if test='searchCondition == "1"'>
-            AND "userNm" LIKE '%' || #{searchKeyword} || '%'
+            AND USER_NM LIKE '%' ||#{searchKeyword}|| '%'
         </if>
-        ORDER BY "sbscrbDe" DESC
-        LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+        ORDER BY 12 DESC
+        ) TB ) Z WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
     </select>
     
     <select id="selectUserListTotCnt_S" parameterType="egovframework.let.uss.umt.service.UserDefaultVO" resultType="int">
-            SELECT COUNT(1) AS "totcnt"
-            FROM(
-            SELECT
-                ESNTL_ID               as "uniqId",
-                'USR03'               as "userTy",
-                EMPLYR_ID             as "userId",
-                USER_NM             as "userNm",
-                EMAIL_ADRES           as "emailAdres",
-                AREA_NO               as "areaNo",
-                HOUSE_MIDDLE_TELNO      as "middleTelno",
-                HOUSE_END_TELNO         as "endTelno",
-                MBTLNUM           as "moblphonNo",
-                GROUP_ID              as "groupId",
-                EMPLYR_STTUS_CODE     as "sttus",
-                to_char(SBSCRB_DE, 'YYYY MM DD') as "sbscrbDe"
+            SELECT COUNT(1) totcnt
             FROM    NEMPLYRINFO
-            ) A
-        WHERE 1=1
+            WHERE 1=1
             <if test='sbscrbSttus != "0"'>
-                AND "sttus" LIKE  #{sbscrbSttus}
+                AND EMPLYR_STTUS_CODE LIKE  #{sbscrbSttus}
             </if>
             <if test='searchCondition == "0"'>
-                AND "userId" LIKE #{searchKeyword}
+                AND EMPLYR_ID LIKE #{searchKeyword}
             </if>
             <if test='searchCondition == "1"'>
-                AND "userNm" LIKE '%' || #{searchKeyword} || '%'
+                AND USER_NM LIKE '%' ||#{searchKeyword}|| '%'
             </if>
     </select>
     
@@ -121,7 +105,7 @@ SELECT * FROM(
                     #{orgnztId}          ,
                     #{insttCode}         ,
                     #{emplyrSttusCode}   ,
-                    NOW()::timestamp(0)           ,
+                    NOW()           ,
                     #{subDn}             )
         
     </insert>
@@ -136,34 +120,34 @@ SELECT * FROM(
     <select id="selectUser_S" resultType="egovframework.let.uss.umt.service.UserManageVO">
         
             SELECT
-                ESNTL_ID           as "uniqId",
-                'USR03'           as "userTy",
-            EMPLYR_ID         as "emplyrId",
-            USER_NM         as "emplyrNm",
-            PASSWORD          as "password",
-            PASSWORD_HINT     as "passwordHint",
-            PASSWORD_CNSR     as "passwordCnsr",
-            EMPL_NO           as "emplNo",
-            IHIDNUM           as "ihidnum",
-            SEXDSTN_CODE      as "sexdstnCode",
-            BRTHDY              as "brth",
-            AREA_NO           as "areaNo",
-            HOUSE_MIDDLE_TELNO  as "homemiddleTelno",
-            HOUSE_END_TELNO     as "homeendTelno",
-            FXNUM             as "fxnum",
-            HOUSE_ADRES         as "homeadres",
-            DETAIL_ADRES      as "detailAdres",
-            ZIP               as "zip",
-            OFFM_TELNO        as "offmTelno",
-            MBTLNUM       as "moblphonNo",
-            EMAIL_ADRES       as "emailAdres",
-            OFCPS_NM          as "ofcpsNm",
-            GROUP_ID          as "groupId",
-            ORGNZT_ID         as "orgnztId",
-            PSTINST_CODE        as "insttCode",
-            EMPLYR_STTUS_CODE as "emplyrSttusCode", 
-            to_char(SBSCRB_DE, 'YYYY MM DD') as "sbscrbDe",
-            CRTFC_DN_VALUE            as "subDn"
+                ESNTL_ID           uniqId            ,
+                'USR03'           userTy,
+            EMPLYR_ID         emplyrId          ,
+            USER_NM         emplyrNm          ,
+            PASSWORD          password          ,
+            PASSWORD_HINT     passwordHint      ,
+            PASSWORD_CNSR     passwordCnsr      ,
+            EMPL_NO           emplNo            ,
+            IHIDNUM           ihidnum           ,
+            SEXDSTN_CODE      sexdstnCode       ,
+            BRTHDY              brth              ,
+            AREA_NO           areaNo            ,
+            HOUSE_MIDDLE_TELNO  homemiddleTelno   ,
+            HOUSE_END_TELNO     homeendTelno      ,
+            FXNUM             fxnum             ,
+            HOUSE_ADRES         homeadres         ,
+            DETAIL_ADRES      detailAdres       ,
+            ZIP               zip               ,
+            OFFM_TELNO        offmTelno         ,
+            MBTLNUM       moblphonNo        ,
+            EMAIL_ADRES       emailAdres        ,
+            OFCPS_NM          ofcpsNm           ,
+            GROUP_ID          groupId           ,
+            ORGNZT_ID         orgnztId          ,
+            PSTINST_CODE        insttCode         ,
+            EMPLYR_STTUS_CODE emplyrSttusCode   , 
+            SBSCRB_DE         sbscrbDe          ,
+            CRTFC_DN_VALUE            subDn
         FROM NEMPLYRINFO
             WHERE ESNTL_ID=#{uniqId}
         
@@ -243,7 +227,7 @@ SELECT * FROM(
                     PSTINST_CODE          ,
                     EMPLYR_STTUS_CODE   ,
                     ESNTL_ID             ,
-                    NOW()::timestamp(0)
+                    NOW()
             FROM NEMPLYRINFO
             WHERE ESNTL_ID = #{uniqId}
         
@@ -251,21 +235,21 @@ SELECT * FROM(
     
     <select id="checkIdDplct_S" resultType="int">
         
-            SELECT COUNT(1) as "usedCnt"
+            SELECT COUNT(1) usedCnt
                 FROM(
                 SELECT
-                    EMPLYR_ID             as "userId"
+                    EMPLYR_ID             userId
                 FROM    NEMPLYRINFO
                 UNION ALL
                 SELECT
-                    ENTRPRS_MBER_ID        as "userId"
+                    ENTRPRS_MBER_ID        userId
                 FROM    NENTRPRSMBER
                 UNION ALL
                 SELECT
-                    MBER_ID               as "userId"
+                    MBER_ID               userId
                 FROM    NGNRLMBER
                 ) A
-            WHERE "userId" = #{checkId}
+            WHERE userId = #{checkId}
         
     </select>
     
@@ -281,7 +265,7 @@ SELECT * FROM(
     <select id="selectPassword_S" resultType="egovframework.let.uss.umt.service.UserManageVO">
         
             SELECT
-                    PASSWORD          as "password" 
+                    PASSWORD          password 
             FROM    NEMPLYRINFO
             WHERE   ESNTL_ID=#{uniqId}
         

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="userAbsnceDAO">
@@ -14,6 +14,11 @@
     </resultMap>
 
     <select id="selectUserAbsnceList" parameterType="egovframework.let.uss.ion.uas.service.UserAbsnceVO" resultMap="userAbsnce">
+                        
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
             SELECT X.EMPLYR_ID,
                    X.USER_NM,
                    X.USER_ABSNCE_AT,
@@ -29,19 +34,25 @@
                                  ELSE 'Y' 
                              END) AS REG_YN,  
                             LAST_UPDUSR_ID,
-                            to_char(LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM
+                            LAST_UPDT_PNTTM
                       FROM  NEMPLYRINFO A LEFT OUTER JOIN NUSERABSNCE B
                         ON  A.EMPLYR_ID = B.EMPLYR_ID
                    ) X
              WHERE 1 = 1
+                      
              <if test='searchCondition == "1"'>
-                 AND X.USER_NM LIKE '%' || #{searchKeyword} || '%'
+                 AND X.USER_NM LIKE '%'||#{searchKeyword}||'%'
              </if>
              <if test='selAbsnceAt != "A"'>
                  AND X.USER_ABSNCE_AT = #{selAbsnceAt}
              </if>
+                         
             ORDER BY LAST_UPDT_PNTTM DESC
-            LIMIT #{recordCountPerPage} OFFSET #{firstIndex}  
+                    ) ALL_LIST
+                    ) Z
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+          
             
     </select>
 
@@ -56,13 +67,13 @@
                                  ELSE 'Y' 
                              END) AS REG_YN,  
                             LAST_UPDUSR_ID,
-                            to_char(LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM
+                            LAST_UPDT_PNTTM
                       FROM  NEMPLYRINFO A LEFT OUTER JOIN NUSERABSNCE B
                         ON  A.EMPLYR_ID = B.EMPLYR_ID
                    ) X
              WHERE 1 = 1
             <if test='searchCondition == "1"'>
-                AND X.USER_NM LIKE '%' || #{searchKeyword} || '%'
+                AND X.USER_NM LIKE '%'||#{searchKeyword}||'%'
             </if>
             <if test='selAbsnceAt != "A"'>
                 AND X.USER_ABSNCE_AT = #{selAbsnceAt}
@@ -80,7 +91,7 @@
                          ELSE 'Y' 
                      END) AS REG_YN,                     
                    LAST_UPDUSR_ID,
-                   to_char(LAST_UPDT_PNTTM, 'YYYY-MM-DD') as LAST_UPDT_PNTTM
+                   LAST_UPDT_PNTTM
               FROM NEMPLYRINFO A LEFT OUTER JOIN NUSERABSNCE B
                 ON A.EMPLYR_ID = B.EMPLYR_ID
               WHERE 1 = 1
@@ -98,16 +109,16 @@
                 VALUES (#{userId},
                         #{userAbsnceAt},
                         #{lastUpdusrId},
-                        NOW()::timestamp(0),
+                        NOW(),
                         #{lastUpdusrId},
-                        NOW()::timestamp(0))
+                        NOW())
     </insert>    
     
     <update id="updateUserAbsnce" parameterType="egovframework.let.uss.ion.uas.service.UserAbsnce">
             UPDATE NUSERABSNCE
                SET USER_ABSNCE_AT = #{userAbsnceAt},
                    LAST_UPDUSR_ID = #{lastUpdusrId},
-                   LAST_UPDT_PNTTM = NOW()::timestamp(0)
+                   LAST_UPDT_PNTTM = NOW()
              WHERE EMPLYR_ID = #{userId}
     </update>    
     

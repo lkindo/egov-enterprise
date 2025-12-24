@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="CmmnDetailCodeManageDAO">
@@ -6,6 +6,11 @@
 
 	<select id="selectCmmnDetailCodeList" parameterType="egovframework.let.sym.ccm.cde.service.CmmnDetailCodeVO" resultType="egovMap">
 		
+			SELECT  * 
+			  FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.* 
+			  FROM  (
+			/* 구현 Sql */
 			SELECT  A.CODE_ID
 			     ,  A.CODE
 			     ,  A.CODE_NM 
@@ -19,12 +24,18 @@
 				A.CODE_ID = #{searchKeyword}
 			</if>
 			<if test='searchCondition == "2"'>AND
-				A.CODE    = #{searchKeyword}
+				A.CODE LIKE '%' || #{searchKeyword} || '%'
 			</if>
 			<if test='searchCondition == "3"'>AND
 				A.CODE_NM LIKE '%' || #{searchKeyword} || '%'
 			</if>
-			 LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+		
+			/* 구현 Sql */
+				    ) ALL_LIST
+				    ) Z
+			 WHERE  RNUM  &gt; #{firstIndex}
+			   AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+		
 	</select>
 
 	<select id="selectCmmnDetailCodeListTotCnt" parameterType="egovframework.let.sym.ccm.cde.service.CmmnDetailCodeVO" resultType="int">
@@ -39,7 +50,7 @@
 				A.CODE_ID = #{searchKeyword}
 			</if>
 			<if test='searchCondition == "2"'>AND
-				A.CODE    = #{searchKeyword}
+				A.CODE LIKE '%' || #{searchKeyword} || '%'
 			</if>
 			<if test='searchCondition == "3"'>AND
 				A.CODE_NM LIKE '%' || #{searchKeyword} || '%'
@@ -83,9 +94,9 @@
 		         ,  #{codeNm}
 		         ,  #{codeDc}
 		         ,  #{useAt}
-		         ,  NOW()::timestamp(0)
+		         ,  NOW()
 		         ,  #{frstRegisterId}
-		         ,  NOW()::timestamp(0)
+		         ,  NOW()
 		         ,  #{frstRegisterId}
 		         ) 
 		
@@ -97,7 +108,7 @@
                SET  CODE_NM           = #{codeNm}
                  ,  CODE_DC           = #{codeDc}
                  ,  USE_AT            = #{useAt}
-                 ,  LAST_UPDT_PNTTM = NOW()::timestamp(0)
+                 ,  LAST_UPDT_PNTTM = NOW()
                  ,  LAST_UPDUSR_ID    = #{lastUpdusrId}
              WHERE  CODE_ID   = #{codeId} 
                AND  CODE      = #{code}

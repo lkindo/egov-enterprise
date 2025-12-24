@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="authorManageDAO">
@@ -12,15 +12,28 @@
     </resultMap>
 
     <select id="authorManageDAO.selectAuthorList" parameterType="egovframework.let.sec.ram.service.AuthorManageVO" resultMap="author">
+        
+            SELECT  * 
+              FROM  (
+            SELECT ROWNUM RNUM, ALL_LIST.* 
+              FROM  (
+
             SELECT
                    AUTHOR_CODE, AUTHOR_NM, AUTHOR_DC, AUTHOR_CREAT_DE
               FROM NAUTHORINFO
              WHERE 1=1
+                      
             <if test='searchCondition == "1"'>AND
-                AUTHOR_NM LIKE '%' || #{searchKeyword} || '%'
+                AUTHOR_NM LIKE '%'||#{searchKeyword}||'%'
             </if>
+                    
             ORDER BY AUTHOR_CREAT_DE DESC
-            LIMIT #{recordCountPerPage} OFFSET #{firstIndex}      
+
+                    ) ALL_LIST
+                    ) Z
+             WHERE  RNUM  &gt; #{firstIndex}
+               AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+                         
     </select>
 
     <insert id="authorManageDAO.insertAuthor" parameterType="egovframework.let.sec.ram.service.AuthorManage">
@@ -33,8 +46,8 @@
            VALUES ( #{authorCode}
                   , #{authorNm}
                   , #{authorDc}
-                  , NOW()::timestamp(0))
-         
+                  , NOW())
+          
     </insert>
 
     <update id="authorManageDAO.updateAuthor" parameterType="egovframework.let.sec.ram.service.AuthorManage">
@@ -66,8 +79,8 @@
             FROM NAUTHORINFO
             WHERE 1=1
             <if test='searchCondition == "1"'>AND
-                AUTHOR_NM LIKE '%' || #{searchKeyword} || '%'
-            </if> 
+                AUTHOR_NM LIKE '%'||#{searchKeyword}||'%'
+            </if>
     </select>
     
     <select id="authorManageDAO.selectAuthorAllList" parameterType="egovframework.let.sec.ram.service.AuthorManageVO" resultMap="author">

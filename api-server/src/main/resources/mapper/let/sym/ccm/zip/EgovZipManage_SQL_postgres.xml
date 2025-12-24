@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="ZipManageDAO">
@@ -6,6 +6,11 @@
 
 	<select id="selectZipList" parameterType="egovframework.let.sym.ccm.zip.service.ZipVO" resultType="egovMap">
 		
+			SELECT  * 
+			  FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.* 
+			  FROM  (
+			/* 구현 Sql */
 			SELECT  ZIP
 			     ,  SN
 			     ,  CTPRVN_NM
@@ -31,7 +36,13 @@
 			<if test='searchCondition == "5"'>AND
 				LI_BULD_NM LIKE '%' || #{searchKeyword} || '%'
 			</if>
-			 LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
+		
+			/* 구현 Sql */
+				    ) ALL_LIST
+				    ) Z
+			 WHERE  RNUM  &gt; #{firstIndex}
+			   AND  RNUM &lt;= #{firstIndex} + #{recordCountPerPage}
+		
 	</select>
 
 	<select id="selectZipListTotCnt" parameterType="egovframework.let.sym.ccm.zip.service.ZipVO" resultType="int">
@@ -44,16 +55,16 @@
 				ZIP = #{searchKeyword}
 			</if>
 			<if test='searchCondition == "2"'>AND
-				CTPRVN_NM LIKE '%' || #{searchKeyword} || '%'
+				CTPRVN_NM LIKE '%'||#{searchKeyword}||'%'
 			</if>
 			<if test='searchCondition == "3"'>AND
-				SIGNGU_NM LIKE '%' || #{searchKeyword} || '%'
+				SIGNGU_NM LIKE '%'||#{searchKeyword}||'%'
 			</if>
 			<if test='searchCondition == "4"'>AND
-				EMD_NM LIKE '%' || #{searchKeyword} || '%'
+				EMD_NM LIKE '%'||#{searchKeyword}||'%'
 			</if>
 			<if test='searchCondition == "5"'>AND
-				LI_BULD_NM LIKE '%' || #{searchKeyword} || '%'
+				LI_BULD_NM LIKE '%'||#{searchKeyword}||'%'
 			</if>
 	</select>
 
@@ -95,15 +106,15 @@
 			     ) 
 			VALUES
 			     (  #{zip}       
-			     ,  #{sn}::integer
+			     ,  #{sn}        
 			     ,  #{ctprvnNm}  
 			     ,  #{signguNm}  
 			     ,  #{emdNm}     
 			     ,  #{liBuldNm} 
 			     ,  #{lnbrDongHo}
-			     ,  NOW()::timestamp(0)
+			     ,  NOW()
 			     ,  #{frstRegisterId}
-			     ,  NOW()::timestamp(0)
+			     ,  NOW()
 			     ,  #{frstRegisterId}
 			     ) 
 		
@@ -127,15 +138,15 @@
 			     ) 
 			VALUES
 			     (  #{zip}       
-			     ,  #{sn}::integer
+			     ,  #{sn}        
 			     ,  #{ctprvnNm}  
 			     ,  #{signguNm}  
 			     ,  #{emdNm}     
 			     ,  #{liBuldNm} 
 			     ,  #{lnbrDongHo}
-			     ,  NOW()::timestamp(0)
+			     ,  NOW()
 			     ,  #{frstRegisterId}
-			     ,  NOW()::timestamp(0)
+			     ,  NOW()
 			     ,  #{frstRegisterId}
 			     ) 
 		
@@ -149,10 +160,10 @@
                  ,  EMD_NM            = #{emdNm}     
                  ,  LI_BULD_NM        = #{liBuldNm} 
                  ,  LNBR_DONG_HO      = #{lnbrDongHo}
-                 ,  LAST_UPDT_PNTTM = NOW()::timestamp(0)
+                 ,  LAST_UPDT_PNTTM = NOW()
                  ,  LAST_UPDUSR_ID    = #{lastUpdusrId}
              WHERE  ZIP               = #{zip}
-               AND  SN                = #{sn}::integer
+               AND  SN                = #{sn} 
 		
 	</update>
 

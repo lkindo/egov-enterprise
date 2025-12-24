@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="menuManageDAO">
@@ -7,14 +7,14 @@
 	<select id="selectMainMenuHead" parameterType="egovframework.let.sym.mnu.mpm.service.MenuManageVO" resultType="egovMap">
 		 
             SELECT
-			      B.MENU_NO AS "menuNo"
-				, B.MENU_ORDR AS "menuOrdr"
-				, B.MENU_NM AS "menuNm"
-				, B.UPPER_MENU_NO AS "upperMenuId"
-				, B.MENU_DC AS "menuDc"
+			      B.MENU_NO           AS "menuNo"
+				, B.MENU_ORDR         AS "menuOrdr"
+				, B.MENU_NM           AS "menuNm"
+				, B.UPPER_MENU_NO     AS "upperMenuId"
+				, B.MENU_DC           AS "menuDc"
 				, B.RELATE_IMAGE_PATH AS "relateImagePath"
-				, B.RELATE_IMAGE_NM AS "relateImageNm"
-				, B.PROGRM_FILE_NM AS "progrmFileNm"
+				, B.RELATE_IMAGE_NM   AS "relateImageNm"
+				, B.PROGRM_FILE_NM    AS "progrmFileNm"
 				, (SELECT C.URL FROM NPROGRMLIST C WHERE B.PROGRM_FILE_NM = C.PROGRM_FILE_NM) AS "chkURL"
 			FROM NMENUCREATDTLS A, NMENUINFO B 
 			WHERE  B.Menu_NO &gt; 0 
@@ -29,12 +29,12 @@
 	<select id="selectMainMenuLeft" parameterType="egovframework.let.sym.mnu.mpm.service.MenuManageVO" resultType="egovMap">
 		 
 			SELECT
-			       B.MENU_NO AS "menuNo"
-				 , B.MENU_ORDR AS "menuOrdr"
-				 , B.MENU_NM AS "menuNm"
-				 , B.UPPER_MENU_NO AS "upperMenuId"
+			       B.MENU_NO           AS "menuNo"
+				 , B.MENU_ORDR         AS "menuOrdr"
+				 , B.MENU_NM           AS "menuNm"
+				 , B.UPPER_MENU_NO     AS "upperMenuId"
 				 , B.RELATE_IMAGE_PATH AS "relateImagePath"
-				 , B.RELATE_IMAGE_NM AS "relateImageNm"
+				 , B.RELATE_IMAGE_NM   AS "relateImageNm"
 				 , (SELECT C.URL FROM NPROGRMLIST C WHERE B.PROGRM_FILE_NM = C.PROGRM_FILE_NM) AS "chkURL"	
 			FROM   NMENUCREATDTLS A, NMENUINFO B
 			WHERE  A.MENU_NO  = B.MENU_NO 
@@ -58,14 +58,14 @@
 		 
 			select MIN(MENU_NO) 
 			from   NMENUINFO
-			where  UPPER_MENU_NO = #{menuNo}::integer
+			where  UPPER_MENU_NO = #{menuNo}
 			and    MENU_ORDR =
 			      (select MIN(MENU_ORDR) 
 			       from NMENUCREATDTLS A, NMENUINFO B
 			       where A.MENU_NO = B.MENU_NO
 			       AND   A.AUTHOR_CODE = (SELECT AUTHOR_CODE from NEMPLYRSCRTYESTBS
 	                                      WHERE  SCRTY_DTRMN_TRGET_ID = #{tempValue})
-			       AND   B.UPPER_MENU_NO = #{menuNo}::integer)
+			       AND   B.UPPER_MENU_NO = #{menuNo})
 		 
 	</select>
 
@@ -73,14 +73,14 @@
 		 
 			select count(MENU_NO) 
 			from   NMENUINFO
-			where  UPPER_MENU_NO = #{menuNo}::integer
+			where  UPPER_MENU_NO = #{menuNo}
 			and    MENU_ORDR =
 			      (select MIN(MENU_ORDR) 
 			       from NMENUCREATDTLS A, NMENUINFO B
 			       where A.MENU_NO = B.MENU_NO
 			       AND   A.AUTHOR_CODE = (SELECT AUTHOR_CODE from NEMPLYRSCRTYESTBS
 	                                      WHERE  SCRTY_DTRMN_TRGET_ID = #{tempValue})
-			       AND   B.UPPER_MENU_NO = #{menuNo}::integer)
+			       AND   B.UPPER_MENU_NO = #{menuNo})
 		 
 	</select>
 </mapper>

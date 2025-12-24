@@ -42,7 +42,8 @@ public class Board {
     private String useAt; // 사용 여부 (Y/N)
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "FRST_REGISTER_ID")
+    @JoinColumn(name = "FRST_REGISTER_ID", referencedColumnName = "ESNTL_ID")
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User author; // 작성자 (현대적 User 엔티티 연동)
 
     @Column(name = "NTCR_NM", length = 60)

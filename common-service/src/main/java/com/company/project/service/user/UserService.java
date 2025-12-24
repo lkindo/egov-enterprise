@@ -49,7 +49,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
      */
     @Override
     public UserDto getUserById(String userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByEsntlId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return convertToDto(user);
     }

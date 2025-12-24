@@ -59,6 +59,7 @@ $RECYCLE.BIN/
 # ===== 로그 파일 =====
 *.log
 logs/
+server_run_*.txt
 
 # ===== Maven =====
 pom.xml.tag

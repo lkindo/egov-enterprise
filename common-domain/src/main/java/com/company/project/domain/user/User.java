@@ -7,11 +7,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NEMPLYRINFO")
-public class User {
+public class User implements Serializable {
 
     @Id
     @Column(name = "EMPLYR_ID", length = 60)
