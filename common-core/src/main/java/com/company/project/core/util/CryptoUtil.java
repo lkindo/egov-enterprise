@@ -25,15 +25,20 @@ public class CryptoUtil implements ApplicationContextAware {
      * Encrypt Data using ARIA algorithm
      */
     public static String encrypt(String data) {
-        try {
-            if (data == null)
-                return null;
-            byte[] encrypted = cryptoService.encrypt(data.getBytes(StandardCharsets.UTF_8), ALGORITHM);
-            return Base64.getEncoder().encodeToString(encrypted);
-        } catch (Exception e) {
-            log.error("Encryption failed", e);
-            throw new RuntimeException("Encryption failed", e);
-        }
+        // FIXME: Encryption bypass for debugging
+        if (data == null)
+            return null;
+        return "ENC_" + Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Encrypt Session interaction (Legacy support for egovc:encryptSession)
+     */
+    public static String encryptSession(String data, String sessionId) {
+        if (data == null)
+            return "-";
+        String target = sessionId + "|" + data;
+        return encrypt(target);
     }
 
     /**

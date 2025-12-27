@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaAuditing
 @EntityScan(basePackages = "com.company.project.domain")
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
-@SpringBootApplication(scanBasePackages = "com.company.project")
+@SpringBootApplication(scanBasePackages = { "com.company.project", "egovframework" })
 public class ApiServerApplication {
 
     public static void main(String[] args) {

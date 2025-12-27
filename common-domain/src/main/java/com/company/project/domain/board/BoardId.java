@@ -1,17 +1,24 @@
 package com.company.project.domain.board;
 
-import java.io.Serializable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * 게시판 복합키 식별자 클래스 (NBBS 테이블 대응)
- */
+import java.io.Serializable;
+
+@Embeddable
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
 public class BoardId implements Serializable {
-    private Long id;
-    private String boardMaster; // Board 엔티티의 boardMaster 필드명과 일치해야 함
+
+    @Column(name = "NTT_ID")
+    private Long nttId;
+
+    @Column(name = "BBS_ID")
+    private String bbsId;
 }

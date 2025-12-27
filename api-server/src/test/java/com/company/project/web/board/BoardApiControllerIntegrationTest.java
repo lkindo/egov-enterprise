@@ -63,35 +63,39 @@ class BoardApiControllerIntegrationTest {
                 .esntlId("USR_TEST001")
                 .role(Role.USER)
                 .build();
-        userRepository.save(testUser);
+        userRepository.saveAndFlush(testUser);
 
-        // JWT 토큰 생성
-        accessToken = jwtTokenProvider.createToken("testUser", "ROLE_USER");
+        // JWT 토큰 생성 (esntlId를 subject로 사용해야 CustomUserDetailsService가 찾을 수 있음)
+        accessToken = jwtTokenProvider.createToken("USR_TEST001", "ROLE_USER");
 
         // 테스트 게시판 마스터 생성
         testBoardMaster = BoardMaster.builder()
                 .bbsId("TEST_BBS")
                 .bbsNm("테스트 게시판")
                 .bbsTyCode("BBST01")
+                .bbsAttrbCode("BBSA01")
+                .useAt("Y")
+                .fileAtchPosblAt("Y")
+                .atchPosblFileNumber(3)
                 .build();
-        boardMasterRepository.save(testBoardMaster);
+        boardMasterRepository.saveAndFlush(testBoardMaster);
     }
 
     @Test
     @DisplayName("게시물 목록 조회 - 인증된 사용자")
     void getBoardList_authenticated() throws Exception {
-        mockMvc.perform(get("/api/v1/board/{bbsId}", testBoardMaster.getBbsId())
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", testBoardMaster.getBbsId())
                 .header("Authorization", "Bearer " + accessToken)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
     @DisplayName("게시물 목록 조회 - 인증되지 않은 사용자 (401)")
     void getBoardList_unauthenticated() throws Exception {
-        mockMvc.perform(get("/api/v1/board/{bbsId}", testBoardMaster.getBbsId())
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", testBoardMaster.getBbsId())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
@@ -100,10 +104,11 @@ class BoardApiControllerIntegrationTest {
     @Test
     @DisplayName("존재하지 않는 게시판 조회 (404)")
     void getBoardList_notFound() throws Exception {
-        mockMvc.perform(get("/api/v1/board/{bbsId}", "NOT_EXIST")
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", "NOT_EXIST")
                 .header("Authorization", "Bearer " + accessToken)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
+
 }

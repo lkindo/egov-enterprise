@@ -25,6 +25,20 @@
 - **컨트롤러**: `BoardApiController` (`/api/v1/board`)
 - **테스트**: `BoardRepositoryTest`, `BoardServiceTest`
 
+### Menu Functionality & Visibility
+- [x] **Full Depth Rendering**: All 3 levels of menus are correctly rendered in the "전체메뉴" popup and side menus.
+- [x] **Dynamic URL Mapping**: Links now fetch correct URLs from `NPROGRMLIST` via the `Program` entity, fixing broken `#` links.
+- [x] **Active Menu Identification**: `GlobalMenuAdvice` dynamically identifies the active root menu by URI, ensuring the correct side menu is displayed.
+- [x] **Session Syncing**: Identified `rootMenuId` is synced with `baseMenuNo` in the session, fixing the submenu expansion issue.
+- [x] **Legacy Fix**: Redundant model population in `EgovMainController` was disabled to prevent overwriting global menu data.
+- [x] **UI Polishing**: Fixed "내무서비스관리" typo and improved GNB link robustness in `EgovIncHeader.jsp` and `EgovMainView.jsp`.
+
+## Verification Results
+- **Main Page**: Verified that all 6 root menus are visible in GNB and "전체메뉴" popup with working links.
+- **Side Menu**: Verified that clicking a root menu correctly expands its submenus and highlights the active section via `baseMenuNo`.
+- **Admin Section**: Verified that "내부시스템관리" remains visible in the header even when navigating deep into administrative pages.
+- **Log Validation**: Confirmed `GlobalMenuAdvice` traces showing successful mapping of URIs to `rootMenuId` (e.g., `1000000` for notice, `6000000` for admin).
+
 ### ✅ 파일 관리 (File)
 - **엔티티**: `FileMaster`, `FileDetail`, `FileDetailId`
 - **저장소**: `FileMasterRepository`, `FileDetailRepository`

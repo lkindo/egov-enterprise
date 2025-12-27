@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,15 +38,37 @@ public class BoardMaster {
     @Column(name = "ATCH_POSBL_FILE_NUMBER", nullable = false)
     private Integer atchPosblFileNumber;
 
+    @Column(name = "ATCH_POSBL_FILE_SIZE")
+    private Long atchPosblFileSize;
+
     @Column(name = "USE_AT", nullable = false, length = 1)
     private String useAt;
 
+    @Column(name = "TMPLAT_ID", length = 20)
+    private String tmplatId;
+
+    @Column(name = "FRST_REGISTER_ID", length = 20)
+    private String frstRegisterId;
+
     @Column(name = "FRST_REGIST_PNTTM", nullable = false)
-    private java.time.LocalDateTime createdDate;
+    private LocalDateTime createdDate;
+
+    @Column(name = "LAST_UPDUSR_ID", length = 20)
+    private String lastUpdusrId;
+
+    @Column(name = "LAST_UPDT_PNTTM")
+    private LocalDateTime lastModifiedDate;
+
+    @Column(name = "BLOG_ID", length = 20)
+    private String blogId;
+
+    @Column(name = "BLOG_AT", length = 1)
+    private String blogAt;
 
     @Builder
     public BoardMaster(String bbsId, String bbsNm, String bbsIntrcn, String bbsTyCode, String bbsAttrbCode,
-            String replyPosblAt, String fileAtchPosblAt, Integer atchPosblFileNumber, String useAt) {
+            String replyPosblAt, String fileAtchPosblAt, Integer atchPosblFileNumber, Long atchPosblFileSize,
+            String useAt, String tmplatId, String frstRegisterId, String blogId, String blogAt) {
         this.bbsId = bbsId;
         this.bbsNm = bbsNm;
         this.bbsIntrcn = bbsIntrcn;
@@ -54,17 +77,36 @@ public class BoardMaster {
         this.replyPosblAt = replyPosblAt == null ? "N" : replyPosblAt;
         this.fileAtchPosblAt = fileAtchPosblAt == null ? "N" : fileAtchPosblAt;
         this.atchPosblFileNumber = atchPosblFileNumber == null ? 0 : atchPosblFileNumber;
+        this.atchPosblFileSize = atchPosblFileSize;
         this.useAt = useAt == null ? "Y" : useAt;
-        this.createdDate = java.time.LocalDateTime.now();
+        this.tmplatId = tmplatId;
+        this.frstRegisterId = frstRegisterId;
+        this.createdDate = LocalDateTime.now();
+        this.blogId = blogId;
+        this.blogAt = blogAt == null ? "N" : blogAt;
     }
 
     public void update(String bbsNm, String bbsIntrcn, String replyPosblAt, String fileAtchPosblAt,
-            Integer atchPosblFileNumber, String useAt) {
+            Integer atchPosblFileNumber, Long atchPosblFileSize, String tmplatId, String useAt, String lastUpdusrId) {
         this.bbsNm = bbsNm;
         this.bbsIntrcn = bbsIntrcn;
         this.replyPosblAt = replyPosblAt;
         this.fileAtchPosblAt = fileAtchPosblAt;
         this.atchPosblFileNumber = atchPosblFileNumber;
+        this.atchPosblFileSize = atchPosblFileSize;
+        this.tmplatId = tmplatId;
         this.useAt = useAt;
+        this.lastUpdusrId = lastUpdusrId;
+        this.lastModifiedDate = LocalDateTime.now();
+    }
+
+    public void delete(String lastUpdusrId) {
+        this.useAt = "N";
+        this.lastUpdusrId = lastUpdusrId;
+        this.lastModifiedDate = LocalDateTime.now();
+    }
+
+    public void setBbsId(String bbsId) {
+        this.bbsId = bbsId;
     }
 }

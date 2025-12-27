@@ -2,6 +2,7 @@ package com.company.project.service.board;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.domain.board.Board;
+import com.company.project.domain.board.BoardId;
 import com.company.project.domain.board.BoardMaster;
 import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
@@ -22,11 +23,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * BoardService ?�위 ?�스??
+ * BoardService 단위 테스트
  */
 @ExtendWith(MockitoExtension.class)
 class BoardServiceTest {
@@ -44,28 +44,31 @@ class BoardServiceTest {
         private BoardService boardService;
 
         @Test
-        @DisplayName("게시?�ID�?게시�?목록 조회 ?�공")
+        @DisplayName("게시판ID로 게시물 목록 조회 성공")
         void getBoardPosts_success() {
                 // given
                 String bbsId = "TEST_BBS";
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId(bbsId)
-                                .bbsNm("?�스??게시??)
+                                .bbsNm("테스트 게시판")
                                 .bbsTyCode("BBST01")
                                 .build();
 
                 Board board = Board.builder()
-                                .id(1L)
-                                .boardMaster(master)
-                                .nttSj("?�스???�목")
-                                .nttCn("?�스???�용")
+                                .nttId(1L)
+                                .bbsId(master.getBbsId())
+                                .nttSj("테스트 제목")
+                                .nttCn("테스트 내용")
                                 .build();
 
                 PageRequest pageable = PageRequest.of(0, 10);
                 Page<Board> boards = new PageImpl<>(List.of(board));
 
                 when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-                when(boardRepository.findByBoardMasterAndUseAtOrderBySortOrdrDescNttNoAsc(master, "Y", pageable))
+                // search(BoardSearchCondition condition, Pageable pageable) 호출에 맞게 any() 또는 구체적
+                // 객체 사용
+                when(boardRepository.search(org.mockito.ArgumentMatchers.any(),
+                                org.mockito.ArgumentMatchers.eq(pageable)))
                                 .thenReturn(boards);
 
                 // when
@@ -73,11 +76,11 @@ class BoardServiceTest {
 
                 // then
                 assertThat(result.getContent()).hasSize(1);
-                assertThat(result.getContent().get(0).nttSj()).isEqualTo("?�스???�목");
+                assertThat(result.getContent().get(0).getNttSj()).isEqualTo("테스트 제목");
         }
 
         @Test
-        @DisplayName("존재?��? ?�는 게시?�ID�?조회 ???�외 발생")
+        @DisplayName("존재하지 않는 게시판ID로 조회 시 예외 발생")
         void getBoardPosts_notFound() {
                 // given
                 String bbsId = "NOT_EXIST";
@@ -89,29 +92,29 @@ class BoardServiceTest {
         }
 
         @Test
-        @DisplayName("게시�??�세 조회 ??조회??증�?")
+        @DisplayName("게시물 상세 조회 시 조회수 증가")
         void getPostDetail_increaseViewCount() {
                 // given
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId("TEST_BBS")
-                                .bbsNm("?�스??)
+                                .bbsNm("테스트")
                                 .bbsTyCode("BBST01")
                                 .build();
 
                 Board board = Board.builder()
-                                .id(1L)
-                                .boardMaster(master)
-                                .nttSj("?�스???�목")
-                                .nttCn("?�스???�용")
+                                .nttId(1L)
+                                .bbsId(master.getBbsId())
+                                .nttSj("테스트 제목")
+                                .nttCn("테스트 내용")
                                 .build();
 
-                when(boardRepository.findByNttId(1L)).thenReturn(Optional.of(board));
+                when(boardRepository.findById(new BoardId(1L, "TEST_BBS"))).thenReturn(Optional.of(board));
 
                 // when
-                BoardDto result = boardService.getPostDetail(1L);
+                BoardDto result = boardService.getPostDetail("TEST_BBS", 1L);
 
                 // then
-                assertThat(result.nttSj()).isEqualTo("?�스???�목");
-                assertThat(board.getInqireCo()).isEqualTo(1); // 조회??1 증�?
+                assertThat(result.getNttSj()).isEqualTo("테스트 제목");
+                assertThat(board.getInqireCo()).isEqualTo(1); // 조회수 1 증가
         }
 }

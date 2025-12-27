@@ -42,23 +42,29 @@ public class LegacyConfig {
         return dataSource;
     }
 
-    @Bean(name = "egov.sqlSessionTemplate")
+    @Bean(name = { "egov.sqlSessionTemplate", "egov.sqlSession" })
     @org.springframework.context.annotation.Lazy
     public SqlSessionTemplate egovSqlSessionTemplate(
             @org.springframework.beans.factory.annotation.Qualifier("sqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         return sqlSessionTemplate;
     }
 
-    @Bean(name = "egovMessageSource")
-    public EgovMessageSource egovMessageSource() {
+    @Bean(name = "messageSource")
+    public ReloadableResourceBundleMessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         messageSource.setBasenames(
+                "classpath:/egovframework/message/messages",
                 "classpath:/egovframework/message/com/message-common",
+                "classpath:/egovframework/message/com/message-validation",
                 "classpath:/org/egovframe/rte/fdl/idgnr/messages/idgnr",
                 "classpath:/org/egovframe/rte/fdl/property/messages/properties");
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setCacheSeconds(60);
+        return messageSource;
+    }
 
+    @Bean(name = "egovMessageSource")
+    public EgovMessageSource egovMessageSource(ReloadableResourceBundleMessageSource messageSource) {
         EgovMessageSource egovMessageSource = new EgovMessageSource();
         egovMessageSource.setReloadableResourceBundleMessageSource(messageSource);
         return egovMessageSource;

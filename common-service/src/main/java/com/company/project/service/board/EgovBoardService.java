@@ -29,17 +29,17 @@ public interface EgovBoardService {
     /**
      * 게시물 상세 조회
      */
-    BoardDto getPostDetail(Long id);
+    BoardDto getPostDetail(String bbsId, Long nttId);
 
     /**
      * 게시물 수정
      */
-    void updatePost(Long id, BoardSaveRequest request);
+    void updatePost(String bbsId, Long nttId, BoardSaveRequest request);
 
     /**
      * 게시물 삭제
      */
-    void deletePost(Long id, String authorId);
+    void deletePost(String bbsId, Long nttId, String authorId);
 
     /**
      * 답변 등록

@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -39,10 +41,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
+    @org.springframework.core.annotation.Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .securityContext(
+                        securityContext -> securityContext.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/index.jsp", "/css/**", "/js/**", "/images/**",
@@ -60,14 +70,5 @@ public class SecurityConfig {
                 org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin));
 
         return http.build();
-    }
-
-    @Bean
-    public org.springframework.security.web.SecurityFilterChain webSecurityCustomizer(HttpSecurity http)
-            throws Exception {
-        // 정적 리소스는 Security 필터 체인에서 제외
-        return http.securityMatcher("/css/**", "/js/**", "/images/**")
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .build();
     }
 }

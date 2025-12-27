@@ -1,6 +1,9 @@
 package com.company.project.domain.log;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,46 +11,43 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * 로그인 로그 엔티티 (NLOGINLOG 테이블 매핑)
- */
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NLOGINLOG")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LoginLog {
 
     @Id
     @Column(name = "LOG_ID", length = 20)
     private String logId;
 
-    @Column(name = "CONECT_MTHD", length = 1)
-    private String conectMthd; // I: Login, O: Logout
-
     @Column(name = "CONECT_ID", length = 20)
-    private String conectId; // ESNTL_ID
+    private String loginId;
 
-    @Column(name = "CONECT_IP", length = 50)
-    private String conectIp;
+    @Column(name = "CONECT_IP", length = 23)
+    private String loginIp;
+
+    @Column(name = "CONECT_MTHD", length = 10)
+    private String loginMthd;
 
     @Column(name = "ERROR_OCCRRNC_AT", length = 1)
     private String errOccrrAt;
 
-    @Column(name = "ERROR_CODE", length = 10)
+    @Column(name = "ERROR_CODE", length = 3)
     private String errorCode;
 
-    @Column(name = "CREAT_DT", nullable = false)
+    @Column(name = "CREAT_DT")
     private LocalDateTime creatDt;
 
     @Builder
-    public LoginLog(String logId, String conectMthd, String conectId, String conectIp, String errOccrrAt,
-            String errorCode) {
+    public LoginLog(String logId, String loginId, String loginIp, String loginMthd, String errOccrrAt, String errorCode,
+            LocalDateTime creatDt) {
         this.logId = logId;
-        this.conectMthd = conectMthd;
-        this.conectId = conectId;
-        this.conectIp = conectIp;
+        this.loginId = loginId;
+        this.loginIp = loginIp;
+        this.loginMthd = loginMthd;
         this.errOccrrAt = errOccrrAt;
         this.errorCode = errorCode;
-        this.creatDt = LocalDateTime.now();
+        this.creatDt = creatDt;
     }
 }

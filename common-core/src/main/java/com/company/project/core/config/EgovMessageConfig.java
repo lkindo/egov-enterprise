@@ -17,8 +17,10 @@ public class EgovMessageConfig {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         messageSource.setBasenames(
                 "classpath:/egovframework/message/messages",
-                "classpath:/org/egovframe/rte/fdl/idgnr/messages/messages",
-                "classpath:/org/egovframe/rte/fdl/property/messages/messages");
+                "classpath:/egovframework/message/com/message-common",
+                "classpath:/egovframework/message/com/message-validation",
+                "classpath:/org/egovframe/rte/fdl/idgnr/messages/idgnr",
+                "classpath:/org/egovframe/rte/fdl/property/messages/properties");
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setCacheSeconds(60);
         return messageSource;

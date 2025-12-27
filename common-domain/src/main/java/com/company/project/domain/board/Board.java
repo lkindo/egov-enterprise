@@ -1,115 +1,147 @@
 package com.company.project.domain.board;
 
-import com.company.project.domain.user.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@IdClass(BoardId.class)
 @Table(name = "NBBS")
-public class Board {
+@EntityListeners(AuditingEntityListener.class)
+public class Board implements Serializable {
 
-    @Id
-    @Column(name = "NTT_ID")
-    private Long id;
-
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BBS_ID", nullable = false)
-    private BoardMaster boardMaster;
-
-    @Column(name = "NTT_SJ", nullable = false, length = 6000)
-    private String nttSj; // 게시물 제목
-
-    @Column(name = "NTT_CN", nullable = false)
-    private String nttCn; // 게시물 내용
-
-    @Column(name = "NTCE_BGNDE", length = 20)
-    private String ntceBgnde; // 게시 시작일
-
-    @Column(name = "NTCE_ENDDE", length = 20)
-    private String ntceEndde; // 게시 종료일
-
-    @Column(name = "RDCNT")
-    private Integer inqireCo; // 조회수
-
-    @Column(name = "USE_AT", nullable = false, length = 1)
-    private String useAt; // 사용 여부 (Y/N)
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "FRST_REGISTER_ID", referencedColumnName = "ESNTL_ID")
-    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
-    private User author; // 작성자 (현대적 User 엔티티 연동)
-
-    @Column(name = "NTCR_NM", length = 60)
-    private String ntcrNm; // 게시자명
-
-    @Column(name = "PASSWORD", length = 600)
-    private String password; // 비밀번호
-
-    @Column(name = "ATCH_FILE_ID", length = 20)
-    private String atchFileId; // 첨부파일 아이디
+    @EmbeddedId
+    private BoardId id;
 
     @Column(name = "NTT_NO")
-    private Long nttNo; // 게시물 번호
+    private Long nttNo;
 
-    @Column(name = "SORT_ORDR")
-    private Long sortOrdr; // 정렬 순서
+    @Column(name = "NTT_SJ", length = 2000)
+    private String nttSj;
 
-    @Column(name = "PARNTSCTT_NO")
-    private String parnts; // 부모 게시물 번호
+    @Column(name = "NTT_CN")
+    private String nttCn;
 
     @Column(name = "ANSWER_AT", length = 1)
-    private String replyAt; // 답변 여부
+    private String replyAt;
+
+    @Column(name = "PARNTSCTT_NO")
+    private Long parnts;
 
     @Column(name = "ANSWER_LC")
-    private Integer replyLc; // 답변 위치
+    private Integer replyLc;
 
-    @Column(name = "FRST_REGIST_PNTTM", nullable = false)
-    private java.time.LocalDateTime createdDate;
+    @Column(name = "SORT_ORDR")
+    private Long sortOrdr;
+
+    @Column(name = "RDCNT")
+    private Integer inqireCo;
+
+    @Column(name = "USE_AT", length = 1)
+    private String useAt;
+
+    @Column(name = "NTCE_BGNDE", length = 20)
+    private String ntceBgnde;
+
+    @Column(name = "NTCE_ENDDE", length = 20)
+    private String ntceEndde;
+
+    @Column(name = "NTCR_ID", length = 20)
+    private String ntcrId;
+
+    @Column(name = "NTCR_NM", length = 20)
+    private String ntcrNm;
+
+    @Column(name = "PASSWORD", length = 200)
+    private String password;
+
+    @Column(name = "ATCH_FILE_ID", length = 20)
+    private String atchFileId;
+
+    @Column(name = "FRST_REGISTER_ID", length = 20)
+    private String frstRegisterId;
+
+    @Column(name = "LAST_UPDUSR_ID", length = 20)
+    private String lastUpdusrId;
+
+    @CreatedDate
+    @Column(name = "FRST_REGIST_PNTTM", updatable = false, nullable = true)
+    private LocalDateTime createdDate = LocalDateTime.now();
+
+    @LastModifiedDate
+    @Column(name = "LAST_UPDT_PNTTM", nullable = true)
+    private LocalDateTime modifiedDate = LocalDateTime.now();
+
+    // Helper methods for easy access
+    public String getBbsId() {
+        return id != null ? id.getBbsId() : null;
+    }
+
+    public Long getNttId() {
+        return id != null ? id.getNttId() : null;
+    }
 
     @Builder
-    public Board(Long id, BoardMaster boardMaster, String nttSj, String nttCn, String ntceBgnde, String ntceEndde,
-            User author, String ntcrNm, String password, String atchFileId,
-            Long nttNo, Long sortOrdr, String parnts, String replyAt, Integer replyLc) {
-        this.id = id;
-        this.boardMaster = boardMaster;
+    public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
+            Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
+            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
+            String atchFileId, String frstRegisterId) {
+        this.id = new BoardId(nttId, bbsId);
+        this.nttNo = nttNo;
         this.nttSj = nttSj;
         this.nttCn = nttCn;
+        this.replyAt = replyAt;
+        this.parnts = parnts;
+        this.replyLc = replyLc;
+        this.sortOrdr = sortOrdr;
+        this.inqireCo = inqireCo == null ? 0 : inqireCo;
+        this.useAt = useAt == null ? "Y" : useAt;
         this.ntceBgnde = ntceBgnde;
         this.ntceEndde = ntceEndde;
-        this.inqireCo = 0;
-        this.useAt = "Y";
-        this.author = author;
+        this.ntcrId = ntcrId;
         this.ntcrNm = ntcrNm;
         this.password = password;
         this.atchFileId = atchFileId;
-        this.nttNo = nttNo;
-        this.sortOrdr = sortOrdr;
-        this.parnts = parnts;
-        this.replyAt = replyAt;
-        this.replyLc = replyLc;
-        this.createdDate = java.time.LocalDateTime.now();
+        this.frstRegisterId = frstRegisterId;
     }
 
-    public void update(String nttSj, String nttCn, String ntceBgnde, String ntceEndde, String atchFileId) {
+    public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
+            String ntceEndde, String atchFileId, String lastUpdusrId) {
         this.nttSj = nttSj;
         this.nttCn = nttCn;
+        this.ntcrId = ntcrId;
+        this.ntcrNm = ntcrNm;
+        this.password = password;
         this.ntceBgnde = ntceBgnde;
         this.ntceEndde = ntceEndde;
         this.atchFileId = atchFileId;
+        this.lastUpdusrId = lastUpdusrId;
+    }
+
+    public void delete(String lastUpdusrId) {
+        this.useAt = "N";
+        this.lastUpdusrId = lastUpdusrId;
     }
 
     public void increaseInqireCo() {
         this.inqireCo++;
     }
 
-    public void delete() {
-        this.useAt = "N";
+    public void updateReplyOrder(Long nttNo) {
+        this.nttNo = nttNo;
     }
 }

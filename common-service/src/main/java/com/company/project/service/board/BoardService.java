@@ -3,9 +3,11 @@ package com.company.project.service.board;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.board.Board;
+import com.company.project.domain.board.BoardId;
 import com.company.project.domain.board.BoardMaster;
 import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
+import com.company.project.domain.board.BoardSearchCondition;
 import com.company.project.domain.user.User;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.board.dto.BoardDto;
@@ -51,27 +53,17 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(String bbsId, String searchCnd, String searchWrd, Pageable pageable) {
-                BoardMaster master = boardMasterRepository.findById(bbsId)
+                // Verify Master exists
+                boardMasterRepository.findById(bbsId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                Page<Board> result;
-                if (searchWrd == null || searchWrd.isEmpty()) {
-                        result = boardRepository.findByBoardMasterAndUseAtOrderBySortOrdrDescNttNoAsc(master, "Y",
-                                        pageable);
-                } else if ("0".equals(searchCnd)) { // 제목
-                        result = boardRepository.findByBoardMasterAndUseAtAndNttSjContainingOrderBySortOrdrDescNttNoAsc(
-                                        master, "Y", searchWrd, pageable);
-                } else if ("1".equals(searchCnd)) { // 내용
-                        result = boardRepository.findByBoardMasterAndUseAtAndNttCnContainingOrderBySortOrdrDescNttNoAsc(
-                                        master, "Y", searchWrd, pageable);
-                } else if ("2".equals(searchCnd)) { // 작성자
-                        result = boardRepository
-                                        .findByBoardMasterAndUseAtAndAuthorUserNmContainingOrderBySortOrdrDescNttNoAsc(
-                                                        master, "Y", searchWrd, pageable);
-                } else {
-                        result = boardRepository.findByBoardMasterAndUseAtOrderBySortOrdrDescNttNoAsc(master, "Y",
-                                        pageable);
-                }
+                BoardSearchCondition condition = new BoardSearchCondition();
+                condition.setBbsId(bbsId);
+                condition.setUseAt("Y");
+                condition.setSearchCnd(searchCnd);
+                condition.setSearchWrd(searchWrd);
+
+                Page<Board> result = boardRepository.search(condition, pageable);
 
                 return result.map(BoardDto::from);
         }
@@ -88,27 +80,28 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 User author = userRepository.findByEsntlId(userId)
                                 .orElse(null);
 
-                Long nttId = boardRepository.getNextNttId();
-                Long sortOrdr = boardRepository.getMaxSortOrdr(master);
+                Long nttId = boardRepository.findMaxNttId() + 1;
+                Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
                 Board board = Board.builder()
-                                .id(nttId)
-                                .boardMaster(master)
+                                .nttId(nttId)
+                                .bbsId(master.getBbsId())
                                 .nttSj(request.nttSj())
                                 .nttCn(request.nttCn())
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
-                                .author(author)
+                                .ntcrId(userId)
                                 .ntcrNm(author != null ? author.getUserNm() : "익명")
                                 .atchFileId(request.atchFileId())
                                 .nttNo(1L)
                                 .sortOrdr(sortOrdr)
-                                .parnts("0")
+                                .parnts(0L)
                                 .replyAt("N")
                                 .replyLc(0)
+                                .useAt("Y")
                                 .build();
 
-                return boardRepository.save(board).getId();
+                return boardRepository.save(board).getNttId();
         }
 
         /**
@@ -120,33 +113,35 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardMaster master = boardMasterRepository.findById(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                Board parent = boardRepository.findByNttId(parentId)
+                Board parent = boardRepository.findByIdCustom(new BoardId(parentId, master.getBbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 User author = userRepository.findByEsntlId(userId)
                                 .orElse(null);
 
-                Long nttId = boardRepository.getNextNttId();
-                Long nttNo = boardRepository.getMaxNttNo(master, parent.getSortOrdr());
+                // Reply Logic
+                Long nttId = boardRepository.findMaxNttId() + 1;
+                Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
 
                 Board board = Board.builder()
-                                .id(nttId)
-                                .boardMaster(master)
+                                .nttId(nttId)
+                                .bbsId(master.getBbsId())
                                 .nttSj(request.nttSj())
                                 .nttCn(request.nttCn())
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
-                                .author(author)
+                                .ntcrId(userId)
                                 .ntcrNm(author != null ? author.getUserNm() : "익명")
                                 .atchFileId(request.atchFileId())
-                                .parnts(parentId.toString())
+                                .parnts(parentId)
                                 .nttNo(nttNo)
                                 .sortOrdr(parent.getSortOrdr())
                                 .replyAt("Y")
                                 .replyLc(parent.getReplyLc() + 1)
+                                .useAt("Y")
                                 .build();
 
-                return boardRepository.save(board).getId();
+                return boardRepository.save(board).getNttId();
         }
 
         /**
@@ -154,8 +149,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
          */
         @Override
         @Transactional
-        public BoardDto getPostDetail(Long id) {
-                Board board = boardRepository.findByNttId(id)
+        public BoardDto getPostDetail(String bbsId, Long nttId) {
+                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 board.increaseInqireCo(); // 조회수 증가
@@ -167,12 +162,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
          */
         @Override
         @Transactional
-        public void updatePost(Long id, BoardSaveRequest request) {
-                Board board = boardRepository.findByNttId(id)
+        public void updatePost(String bbsId, Long nttId, BoardSaveRequest request) {
+                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                board.update(request.nttSj(), request.nttCn(), request.ntceBgnde(), request.ntceEndde(),
-                                request.atchFileId());
+                board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
+                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
+                                request.atchFileId(), board.getLastUpdusrId());
         }
 
         /**
@@ -180,12 +176,12 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
          */
         @Override
         @Transactional
-        public void deletePost(Long id, String authorId) {
-                Board board = boardRepository.findByNttId(id)
+        public void deletePost(String bbsId, Long nttId, String authorId) {
+                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 if (board != null) {
-                        board.delete(); // Soft delete
+                        board.delete(authorId);
                 }
         }
 }

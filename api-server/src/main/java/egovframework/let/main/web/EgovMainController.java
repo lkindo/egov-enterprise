@@ -89,11 +89,14 @@ public class EgovMainController {
 		List<BoardVO> notiList = new java.util.ArrayList<>();
 		for (com.company.project.service.board.dto.BoardDto dto : notiPage.getContent()) {
 			BoardVO vo = new BoardVO();
-			vo.setNttId(dto.id());
-			vo.setNttSj(dto.nttSj());
-			vo.setFrstRegisterNm(dto.ntcrNm());
+			vo.setNttId(dto.getId());
+			vo.setNttSj(dto.getNttSj());
+			vo.setFrstRegisterNm(dto.getNtcrNm());
 			vo.setFrstRegisterPnttm(
-					dto.frstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("YYYY-MM-DD")));
+					dto.getFrstRegisterPnttm() != null
+							? dto.getFrstRegisterPnttm()
+									.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+							: "");
 			vo.setUseAt("Y");
 			notiList.add(vo);
 		}
@@ -113,11 +116,14 @@ public class EgovMainController {
 		List<BoardVO> bbsList = new java.util.ArrayList<>();
 		for (com.company.project.service.board.dto.BoardDto dto : bbsPage.getContent()) {
 			BoardVO vo = new BoardVO();
-			vo.setNttId(dto.id());
-			vo.setNttSj(dto.nttSj());
-			vo.setFrstRegisterNm(dto.ntcrNm());
+			vo.setNttId(dto.getId());
+			vo.setNttSj(dto.getNttSj());
+			vo.setFrstRegisterNm(dto.getNtcrNm());
 			vo.setFrstRegisterPnttm(
-					dto.frstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("YYYY-MM-DD")));
+					dto.getFrstRegisterPnttm() != null
+							? dto.getFrstRegisterPnttm()
+									.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+							: "");
 			vo.setUseAt("Y");
 			bbsList.add(vo);
 		}
@@ -153,13 +159,17 @@ public class EgovMainController {
 			menuManageVO.setTmp_OrgnztId(user.getOrgnztId());
 			menuManageVO.setTmp_UniqId(user.getUniqId());
 
-			model.addAttribute("list_headmenu", menuManageService.selectMainMenuHead(menuManageVO));
-			model.addAttribute("list_menulist", menuManageService.selectMainMenuLeft(menuManageVO));
+			// model.addAttribute("list_headmenu",
+			// menuManageService.selectMainMenuHead(menuManageVO));
+			// model.addAttribute("list_menulist",
+			// menuManageService.selectMainMenuLeft(menuManageVO));
 		} else {
 			menuManageVO.setAuthorCode("ROLE_ANONYMOUS");
 
-			model.addAttribute("list_headmenu", menuManageService.selectMainMenuHead(menuManageVO));
-			model.addAttribute("list_menulist", menuManageService.selectMainMenuLeft(menuManageVO));
+			// model.addAttribute("list_headmenu",
+			// menuManageService.selectMainMenuHead(menuManageVO));
+			// model.addAttribute("list_menulist",
+			// menuManageService.selectMainMenuLeft(menuManageVO));
 
 		}
 
@@ -226,8 +236,10 @@ public class EgovMainController {
 			menuManageVO.setTmp_Email(user.getEmail());
 			menuManageVO.setTmp_OrgnztId(user.getOrgnztId());
 			menuManageVO.setTmp_UniqId(user.getUniqId());
-			model.addAttribute("list_headmenu", menuManageService.selectMainMenuHead(menuManageVO));
-			model.addAttribute("list_menulist", menuManageService.selectMainMenuLeft(menuManageVO));
+			// model.addAttribute("list_headmenu",
+			// menuManageService.selectMainMenuHead(menuManageVO));
+			// model.addAttribute("list_menulist",
+			// menuManageService.selectMainMenuLeft(menuManageVO));
 		} else {
 			// model.addAttribute("list_headmenu",
 			// menuManageService.selectMainMenuHeadAnonymous(menuManageVO));

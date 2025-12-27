@@ -48,9 +48,10 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
      * 사용자 상세 조회
      */
     @Override
-    public UserDto getUserById(String userId) {
-        User user = userRepository.findByEsntlId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    public UserDto getUserById(String id) {
+        User user = userRepository.findById(id)
+                .orElseGet(() -> userRepository.findByEsntlId(id)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
         return convertToDto(user);
     }
 
@@ -84,7 +85,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 .userNm(user.getUserNm())
                 .esntlId(user.getEsntlId())
                 .role(user.getRole() != null ? user.getRole().name() : null)
-                .createdDate(user.getCreatedDate())
+                .createdDate(user.getSbscrbDe())
                 .build();
     }
 

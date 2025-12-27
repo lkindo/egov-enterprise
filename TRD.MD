@@ -42,7 +42,7 @@ graph TD
 | **Language** | Java 21 (LTS) | 텍스트 블록, Record 등 최신 문법 활용 |
 | **Framework** | **eGovFrame 5.0 (Spring Boot 3.3.x)** | Jakarta EE 9/10 기반 (javax -> jakarta 패키지명 변경 주의) |
 | **Build Tool** | Gradle 8.12 (권장) or Maven 3.9.x | 멀티 모듈 구성이 용이한 Gradle 권장 |
-| **Database** | PostgreSQL / Tibero / Cubrid (택1) | 프로젝트 환경에 맞게 선택 (Docker 환경 권장) |
+| **Database** | PostgreSQL | Docker 환경 권장 |
 | **Persistence** | **Spring Data JPA**, QueryDSL 5.0 | 복잡한 동적 쿼리는 QueryDSL 원칙 |
 | **Security** | Spring Security 6.x, JWT (jjwt 0.11.x) | Stateless, Method Security 적용 |
 | **API Docs** | Springdoc OpenAPI (Swagger 3.0) | Controller 코드 기반 자동 생성 |

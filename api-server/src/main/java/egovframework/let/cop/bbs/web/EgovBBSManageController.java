@@ -54,6 +54,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 public class EgovBBSManageController {
 
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(EgovBBSManageController.class);
+
     @Resource(name = "EgovBBSAttributeManageService")
     private EgovBBSAttributeManageService bbsAttrbService;
 
@@ -133,12 +135,26 @@ public class EgovBBSManageController {
         boardVO.setBbsId(boardVO.getBbsId());
         boardVO.setBbsNm(boardVO.getBbsNm());
 
-        BoardMasterVO vo = new BoardMasterVO();
+        // BoardMasterVO vo = new BoardMasterVO();
+        // vo.setBbsId(boardVO.getBbsId());
+        // vo.setUniqId(user.getUniqId());
+        // BoardMasterVO master = bbsAttrbService.selectBBSMasterInf(vo);
 
-        vo.setBbsId(boardVO.getBbsId());
-        vo.setUniqId(user.getUniqId());
+        // Hibernate/JPA 기반으로 마스터 정보 조회
+        com.company.project.domain.board.BoardMaster jpaMaster = boardMasterRepository.findById(boardVO.getBbsId())
+                .orElseThrow(() -> new RuntimeException("Board Master not found: " + boardVO.getBbsId()));
 
-        BoardMasterVO master = bbsAttrbService.selectBBSMasterInf(vo);
+        BoardMasterVO master = new BoardMasterVO();
+        master.setBbsId(jpaMaster.getBbsId());
+        master.setBbsNm(jpaMaster.getBbsNm());
+        master.setBbsTyCode(jpaMaster.getBbsTyCode());
+        master.setBbsAttrbCode(jpaMaster.getBbsAttrbCode());
+        master.setReplyPosblAt(jpaMaster.getReplyPosblAt());
+        master.setFileAtchPosblAt(jpaMaster.getFileAtchPosblAt());
+        master.setPosblAtchFileNumber(jpaMaster.getAtchPosblFileNumber());
+
+        LOGGER.debug("### Notice Board Master: ID={}, Name={}, Attr={}", master.getBbsId(), master.getBbsNm(),
+                master.getBbsAttrbCode());
 
         // -------------------------------
         // 방명록이면 방명록 URL로 forward
@@ -168,17 +184,25 @@ public class EgovBBSManageController {
         List<BoardVO> resultList = new ArrayList<>();
         for (com.company.project.service.board.dto.BoardDto dto : page.getContent()) {
             BoardVO board = new BoardVO();
-            board.setNttId(dto.id());
-            board.setNttSj(dto.nttSj());
-            board.setFrstRegisterNm(dto.ntcrNm());
+            board.setNttId(dto.getId());
+            board.setNttSj(dto.getNttSj());
+            board.setFrstRegisterNm(dto.getNtcrNm());
             board.setFrstRegisterPnttm(
-                    dto.frstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("YYYY-MM-DD")));
-            board.setInqireCo(dto.inqireCo());
-            board.setReplyLc(dto.replyLc() != null ? dto.replyLc().toString() : "0");
-            board.setUseAt("Y");
-            board.setBbsId(dto.bbsId());
+                    dto.getFrstRegisterPnttm() != null
+                            ? dto.getFrstRegisterPnttm()
+                                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                            : "");
+            board.setInqireCo(dto.getInqireCo());
+            board.setReplyLc(dto.getReplyLc() != null ? dto.getReplyLc().toString() : "0");
+            board.setUseAt(dto.getUseAt() != null ? dto.getUseAt() : "Y");
+            board.setIsExpired(dto.getIsExpired() != null ? dto.getIsExpired() : "N");
+            board.setNtceBgnde(dto.getNtceBgnde());
+            board.setNtceEndde(dto.getNtceEndde());
+            board.setBbsId(dto.getBbsId());
             resultList.add(board);
         }
+
+        LOGGER.debug("### Notice Board Result Count: {}", resultList.size());
 
         model.addAttribute("resultList", resultList);
         model.addAttribute("resultCnt", Long.toString(page.getTotalElements()));
@@ -214,36 +238,39 @@ public class EgovBBSManageController {
 
         boardVO.setLastUpdusrId(user.getUniqId());
 
-        com.company.project.service.board.dto.BoardDto dto = boardService.getPostDetail(boardVO.getNttId());
+        // 상세 조회 시 bbsId와 nttId 모두 전달
+        com.company.project.service.board.dto.BoardDto dto = boardService.getPostDetail(boardVO.getBbsId(),
+                boardVO.getNttId());
 
-        BoardVO vo = new BoardVO();
-        vo.setNttId(dto.id());
-        vo.setNttSj(dto.nttSj());
-        vo.setNttCn(dto.nttCn());
-        vo.setFrstRegisterNm(dto.ntcrNm());
-        vo.setFrstRegisterPnttm(
-                dto.frstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("YYYY-MM-DD")));
-        vo.setInqireCo(dto.inqireCo());
-        vo.setAtchFileId(dto.atchFileId());
-        vo.setBbsId(dto.bbsId());
-
-        model.addAttribute("result", vo);
-
-        model.addAttribute("sessionUniqId", user.getUniqId());
-        // ----------------------------
-        // template 처리 (기본 BBS template 지정 포함)
-        // ----------------------------
-        BoardMasterVO master = new BoardMasterVO();
-
-        master.setBbsId(boardVO.getBbsId());
-        master.setUniqId(user.getUniqId());
-
-        BoardMasterVO masterVo = bbsAttrbService.selectBBSMasterInf(master);
+        // 마스터 정보 조회
+        BoardMaster masterMatch = new BoardMaster();
+        masterMatch.setBbsId(boardVO.getBbsId());
+        masterMatch.setUniqId(user.getUniqId());
+        BoardMasterVO masterVo = bbsAttrbService.selectBBSMasterInf(masterMatch);
 
         if (masterVo.getTmplatCours() == null || masterVo.getTmplatCours().equals("")) {
             masterVo.setTmplatCours("/css/egovframework/cop/bbs/egovBaseTemplate.css");
         }
 
+        BoardVO vo = new BoardVO();
+        vo.setNttId(dto.getId());
+        vo.setNttSj(dto.getNttSj());
+        vo.setNttCn(dto.getNttCn());
+        vo.setFrstRegisterNm(dto.getNtcrNm());
+        vo.setFrstRegisterPnttm(
+                dto.getFrstRegisterPnttm() != null
+                        ? dto.getFrstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        : "");
+        vo.setInqireCo(dto.getInqireCo());
+        vo.setAtchFileId(dto.getAtchFileId());
+        vo.setBbsId(dto.getBbsId());
+        vo.setBbsNm(masterVo.getBbsNm());
+        vo.setParnts(dto.getParnts());
+        vo.setSortOrdr(dto.getSortOrdr());
+        vo.setReplyLc(dto.getReplyLc() != null ? dto.getReplyLc().toString() : "0");
+
+        model.addAttribute("result", vo);
+        model.addAttribute("sessionUniqId", user.getUniqId());
         model.addAttribute("brdMstrVO", masterVo);
 
         return "cop/bbs/EgovNoticeInqire";
@@ -536,16 +563,17 @@ public class EgovBBSManageController {
         if (isAuthenticated) {
             bmvo = bbsAttrbService.selectBBSMasterInf(master);
 
-            com.company.project.service.board.dto.BoardDto dto = boardService.getPostDetail(boardVO.getNttId());
+            com.company.project.service.board.dto.BoardDto dto = boardService.getPostDetail(boardVO.getBbsId(),
+                    boardVO.getNttId());
             bdvo = new BoardVO();
-            bdvo.setNttId(dto.id());
-            bdvo.setNttSj(dto.nttSj());
-            bdvo.setNttCn(dto.nttCn());
-            bdvo.setFrstRegisterNm(dto.ntcrNm());
-            bdvo.setAtchFileId(dto.atchFileId());
-            bdvo.setBbsId(dto.bbsId());
-            bdvo.setNtceBgnde(dto.ntceBgnde());
-            bdvo.setNtceEndde(dto.ntceEndde());
+            bdvo.setNttId(dto.getId());
+            bdvo.setNttSj(dto.getNttSj());
+            bdvo.setNttCn(dto.getNttCn());
+            bdvo.setFrstRegisterNm(dto.getNtcrNm());
+            bdvo.setAtchFileId(dto.getAtchFileId());
+            bdvo.setBbsId(dto.getBbsId());
+            bdvo.setNtceBgnde(dto.getNtceBgnde());
+            bdvo.setNtceEndde(dto.getNtceEndde());
         }
 
         model.addAttribute("result", bdvo);
@@ -586,9 +614,10 @@ public class EgovBBSManageController {
         LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        // 기존 게시글의 첨부파일 ID를 조회
-        com.company.project.service.board.dto.BoardDto existingDto = boardService.getPostDetail(boardVO.getNttId());
-        String atchFileId = existingDto.atchFileId();
+        // 기존 게시글의 첨부파일 ID를 조회 시 bbsId와 nttId 모두 전달
+        com.company.project.service.board.dto.BoardDto existingDto = boardService.getPostDetail(boardVO.getBbsId(),
+                boardVO.getNttId());
+        String atchFileId = existingDto.getAtchFileId();
 
         // null 처리
         if (atchFileId == null) {
@@ -613,12 +642,12 @@ public class EgovBBSManageController {
             bmvo = bbsAttrbService.selectBBSMasterInf(master);
 
             bdvo = new BoardVO();
-            bdvo.setNttId(existingDto.id());
-            bdvo.setNttSj(existingDto.nttSj());
-            bdvo.setNttCn(existingDto.nttCn());
-            bdvo.setFrstRegisterNm(existingDto.ntcrNm());
-            bdvo.setAtchFileId(existingDto.atchFileId());
-            bdvo.setBbsId(existingDto.bbsId());
+            bdvo.setNttId(existingDto.getId());
+            bdvo.setNttSj(existingDto.getNttSj());
+            bdvo.setNttCn(existingDto.getNttCn());
+            bdvo.setFrstRegisterNm(existingDto.getNtcrNm());
+            bdvo.setAtchFileId(existingDto.getAtchFileId());
+            bdvo.setBbsId(existingDto.getBbsId());
 
             // board 객체에 첨부파일 ID 설정 (BindingResult 유지하면서 첨부파일 정보 복원)
             board.setAtchFileId(bdvo.getAtchFileId());
@@ -661,7 +690,7 @@ public class EgovBBSManageController {
                     board.getNtceBgnde(),
                     board.getNtceEndde(),
                     board.getAtchFileId());
-            boardService.updatePost(board.getNttId(), saveRequest);
+            boardService.updatePost(board.getBbsId(), board.getNttId(), saveRequest);
         }
 
         // redirect 시 파라미터 전달
@@ -693,7 +722,7 @@ public class EgovBBSManageController {
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if (isAuthenticated) {
-            boardService.deletePost(board.getNttId(), user.getUniqId());
+            boardService.deletePost(board.getBbsId(), board.getNttId(), user.getUniqId());
         }
 
         redirectAttributes.addAttribute("bbsId", boardVO.getBbsId());

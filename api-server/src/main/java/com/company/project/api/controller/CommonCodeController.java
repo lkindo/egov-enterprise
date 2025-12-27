@@ -21,14 +21,14 @@ public class CommonCodeController {
 
     private final CommonCodeService commonCodeService;
 
-    @Operation(summary = "怨듯넻肄붾뱶 紐⑸줉 議고쉶", description = "?꾩껜 怨듯넻肄붾뱶 紐⑸줉??議고쉶?⑸땲??")
+    @Operation(summary = "공통코드 목록 조회", description = "전체 공통코드 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CommonCodeDto>>> getCodes(
             @RequestParam String codeGroupId) {
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.getCodesByGroup(codeGroupId)));
     }
 
-    @Operation(summary = "怨듯넻肄붾뱶 ?깅줉", description = "?덈줈??怨듯넻肄붾뱶瑜??깅줉?⑸땲?? 愿由ъ옄 沅뚰븳???꾩슂?⑸땲??")
+    @Operation(summary = "공통코드 등록", description = "새로운 공통코드를 등록합니다. 관리자 권한이 필요합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<CommonCodeDto>> createCode(
             @Valid @RequestBody CommonCodeSaveRequest request) {

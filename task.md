@@ -1,29 +1,38 @@
-# Task Checklist
+# 작업 체크리스트
 
-- [x] Create PRD.MD
-- [x] Analyze Project Structure (AS-IS vs TO-BE)
-- [x] Create TRD.MD
-- [x] Create LLD.MD
-- [x] Initialize Multi-Module Project Structure
-    - [x] Create Root Project (Gradle)
-    - [x] Create common-core module
-    - [x] Create common-domain module
-    - [x] Create common-security module
-    - [x] Create common-service module
-    - [x] Create api-server module
-- [x] Migrate Core Tech
-    - [x] Setup JPA & QueryDSL
-    - [x] Setup JWT Security
-- [x] eGovFrame 5.0 Compliance Upgrade
-    - [x] Add RTE 5.0.0 Dependencies (cmmn, dataaccess, property, logging, idgnr, crypto)
-    - [x] Implement ARIA Encryption (CryptoUtil)
-    - [x] Refactor Service Inheritance (EgovAbstractServiceImpl)
-- [/] Porting Features
-    - [x] User Module (Entity, Repos, Service, Controller)
-    - [x] Common Code Module (Entity, Repos, Service, Controller)
-- [x] Documentation & Verification
-    - [x] Create WALKTHROUGH.md
-    - [x] Create Compliance Analysis Reports
-- [x] Deployment Setup
-    - [x] Create Dockerfile (Multi-stage)
-    - [x] Create docker-compose.yml
+- [x] PRD.MD 작성
+- [x] 프로젝트 구조 분석 (기존 AS-IS vs 목표 TO-BE)
+- [x] TRD.MD 작성
+- [x] LLD.MD 작성
+- [x] 멀티 모듈 프로젝트 구조 초기화
+    - [x] 루트 프로젝트 생성 (Gradle)
+    - [x] common-core 모듈 생성
+    - [x] common-domain 모듈 생성
+    - [x] common-security 모듈 생성
+    - [x] Fix menu link logic and depth in JSP
+    - [x] Create `Program` entity and repository for URL mapping
+    - [x] Update `MenuService` for dynamic URL-based identification
+    - [x] Update `GlobalMenuAdvice` for session syncing and dynamic root identification
+    - [x] Resolve "내부시스템관리" menu disappearance by disabling redundant controller logic
+    - [x] Fix submenu expansion issue across all root menus
+    - [x] common-service 모듈 생성
+    - [x] api-server 모듈 생성
+- [x] 핵심 기술 마이그레이션
+    - [x] JPA 및 QueryDSL 설정
+    - [x] JWT 보안 설정
+- [x] 전자정부프레임워크(eGovFrame) 5.0 표준 준수 업그레이드
+    - [x] RTE 5.0.0 의존성 추가 (cmmn, dataaccess, property, logging, idgnr, crypto)
+    - [x] ARIA 암호화 구현 (CryptoUtil)
+    - [x] 서비스 상속 구조 리팩토링 (EgovAbstractServiceImpl)
+- [/] 기능 포팅 (Porting)
+    - [x] 사용자(User) 모듈 (Entity, Repos, Service, Controller)
+    - [x] 공통 코드(Common Code) 모듈 (Entity, Repos, Service, Controller)
+    - [/] 게시판(BBS) 모듈 (Entity, Repos, Service, Controller) - *인코딩 수정 중*
+    - [/] 파일 관리(File) 모듈 (Entity, Repos, Service, Controller) - *구현 확인 중*
+- [x] 문서화 및 검증
+    - [x] WALKTHROUGH.md 작성
+    - [x] 표준 준수 분석 보고서 작성
+- [x] 배포 설정
+    - [x] Dockerfile 생성 (Multi-stage)
+    - [x] docker-compose.yml 생성
+

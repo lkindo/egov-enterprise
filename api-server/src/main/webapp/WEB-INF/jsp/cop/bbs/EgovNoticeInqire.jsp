@@ -2,14 +2,14 @@
   Class Name : EgovNoticeInqire.jsp
   Description : 게시물 조회 화면
   Modification Information
- 
+
       수정일      수정자              수정내용
      ----------  --------    ---------------------------
      2009.03.23   이삼섭        최초 생성
      2009.06.26   한성곤        2단계 기능 추가 (댓글관리, 만족도조사)
      2011.08.31   JJY       	경량환경 버전 생성
      2013.05.23   이기하       	상세보기 오류수정
- 
+
     author   : 공통서비스 개발팀 이삼섭
     since    : 2009.03.23
 --%>
@@ -32,7 +32,7 @@
 	<link rel="stylesheet" href="<c:url value='/css/page.css'/>">
 	<script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
 	<script src="<c:url value='/js/ui.js'/>"></script>
-	
+
 <script type="text/javascript" src="<c:url value='/js/EgovBBSMng.js' />"></script>
 <c:if test="${anonymous == 'true'}"><c:set var="prefix" value="/anonymous"/></c:if>
 <script type="text/javascript">
@@ -41,14 +41,14 @@
             alert("<c:out value='${msg}'/>");
         }
     }
-    
+
     function fn_egov_select_noticeList(pageNo) {
     	event.preventDefault();
-        document.frm.pageIndex.value = pageNo; 
+        document.frm.pageIndex.value = pageNo;
         document.frm.action = "<c:url value='/cop/bbs${prefix}/selectBoardList.do'/>";
-        document.frm.submit();  
+        document.frm.submit();
     }
-    
+
     function fn_egov_delete_notice() {
     	event.preventDefault();
         if ("<c:out value='${anonymous}'/>" == "true" && document.frm.password.value == '') {
@@ -56,14 +56,14 @@
             document.frm.password.focus();
             return;
         }
-        
+
         if (confirm('<spring:message code="common.delete.msg" />')) {
             document.frm.action = "<c:url value='/cop/bbs${prefix}/deleteBoardArticle.do'/>";
             document.frm.method = 'post';
             document.frm.submit();
-        }   
+        }
     }
-    
+
     function fn_egov_moveUpdt_notice() {
     	event.preventDefault();
         if ("<c:out value='${anonymous}'/>" == "true" && document.frm.password.value == '') {
@@ -75,7 +75,7 @@
         document.frm.action = "<c:url value='/cop/bbs${prefix}/forUpdateBoardArticle.do'/>";
         document.frm.submit();
     }
-    
+
     function fn_egov_addReply() {
     	event.preventDefault();
         document.frm.action = "<c:url value='/cop/bbs${prefix}/addReplyBoardArticle.do'/>";
@@ -97,7 +97,7 @@
 <script type="text/javascript">
     function fn_egov_addScrap() {
         document.frm.action = "<c:url value='/cop/bbs/addScrap.do'/>";
-        document.frm.submit();          
+        document.frm.submit();
     }
 </script>
 </c:if>
@@ -123,7 +123,7 @@
                         <!-- Left menu -->
                         <c:import url="/sym/mms/EgovMenuLeft.do" />
                         <!--// Left menu -->
-        
+
                         <div class="content_wrap">
                             <div id="contents" class="content">
                                  <!-- Location -->
@@ -137,7 +137,7 @@
                                 <!--// Location -->
 
 								<form name="frm" method="get" action="<c:url value='/cop/bbs${prefix}/selectBoardList.do'/>">
-								
+
 								<input type="hidden" name="searchCnd" value="<c:out value="${searchVO.searchCnd}" />">
 								<input type="hidden" name="searchWrd" value="<c:out value="${searchVO.searchWrd}" />">
 			                    <input type="hidden" name="pageIndex" value="<c:out value='${searchVO.pageIndex}'/>">
@@ -212,7 +212,7 @@
 	                                        </dl>
 	                                    </div>
 	                                </c:if>
-	                                
+
                                     <c:if test="${anonymous == 'true'}">
                                     	<div class="board_attach">
 	                                    	<dl>
@@ -240,11 +240,11 @@
                                     </div>
                                     <!-- // 목록/저장버튼 끝  -->
                                 </div>
-                                
+
                                 </form>
-                                
+
                                 <!-- 게시판 상세보기 -->
-                              
+
                             </div>
                         </div>
                     </div>
@@ -256,6 +256,6 @@
         <c:import url="/sym/mms/EgovFooter.do" />
         <!--// Footer -->
     </div>
-    
+
 </body>
 </html>

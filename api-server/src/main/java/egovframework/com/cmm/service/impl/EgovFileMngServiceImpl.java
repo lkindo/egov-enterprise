@@ -1,165 +1,219 @@
 package egovframework.com.cmm.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.file.FileDetail;
+import com.company.project.domain.file.FileDetailId;
+import com.company.project.domain.file.FileDetailRepository;
+import com.company.project.domain.file.FileMaster;
+import com.company.project.domain.file.FileMasterRepository;
 
 import egovframework.com.cmm.service.EgovFileMngService;
 import egovframework.com.cmm.service.FileVO;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
  * @Class Name : EgovFileMngServiceImpl.java
- * @Description : 파일정보의 관리를 위한 구현 클래스
- * @Modification Information
- *
- *               수정일 수정자 수정내용
- *               ------- ------- -------------------
- *               2009. 3. 25. 이삼섭 최초생성
- *
- * @author 공통 서비스 개발팀 이삼섭
- * @since 2009. 3. 25.
- * @version
- * @see
- *
+ * @Description : 파일정보의 관리를 위한 구현 클래스 (JPA 기반)
  */
 @Service("EgovFileMngService")
+@RequiredArgsConstructor
 public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements EgovFileMngService {
 
-    @Resource(name = "FileManageDAO")
-    private FileManageDAO fileMngDAO;
+    private final FileMasterRepository fileMasterRepository;
+    private final FileDetailRepository fileDetailRepository;
 
-    /**
-     * 여러 개의 파일을 삭제한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#deleteFileInfs(java.util.List)
-     */
     @Override
+    @Transactional
     public void deleteFileInfs(List<?> fvoList) throws Exception {
-        fileMngDAO.deleteFileInfs(fvoList);
+        for (Object obj : fvoList) {
+            if (obj instanceof FileVO) {
+                deleteFileInf((FileVO) obj);
+            }
+        }
     }
 
-    /**
-     * 하나의 파일에 대한 정보(속성 및 상세)를 등록한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#insertFileInf(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional
     public String insertFileInf(FileVO fvo) throws Exception {
         String atchFileId = fvo.getAtchFileId();
 
-        fileMngDAO.insertFileInf(fvo);
+        // FileMaster 조회 또는 생성
+        FileMaster fileMaster = fileMasterRepository.findById(atchFileId)
+                .orElseGet(() -> {
+                    FileMaster newMaster = FileMaster.builder()
+                            .atchFileId(atchFileId)
+                            .build();
+                    return fileMasterRepository.save(newMaster);
+                });
+
+        // FileDetail 생성
+        FileDetail fileDetail = FileDetail.builder()
+                .fileSn(fvo.getFileSn() != null ? Integer.parseInt(fvo.getFileSn()) : 0)
+                .fileStreCours(fvo.getFileStreCours())
+                .streFileNm(fvo.getStreFileNm())
+                .orignlFileNm(fvo.getOrignlFileNm())
+                .fileExtsn(fvo.getFileExtsn())
+                .fileMg(fvo.getFileMg() != null ? Long.parseLong(fvo.getFileMg()) : 0L)
+                .fileCn(fvo.getFileCn())
+                .build();
+
+        fileMaster.addFileDetail(fileDetail);
+        fileMasterRepository.save(fileMaster);
 
         return atchFileId;
     }
 
-    /**
-     * 여러 개의 파일에 대한 정보(속성 및 상세)를 등록한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#insertFileInfs(java.util.List)
-     */
     @Override
+    @Transactional
     public String insertFileInfs(List<?> fvoList) throws Exception {
         String atchFileId = "";
-
-        if (fvoList.size() != 0) {
-            atchFileId = fileMngDAO.insertFileInfs(fvoList);
+        if (fvoList != null && !fvoList.isEmpty()) {
+            for (Object obj : fvoList) {
+                if (obj instanceof FileVO) {
+                    atchFileId = insertFileInf((FileVO) obj);
+                }
+            }
         }
-        if (atchFileId == "") {
-            atchFileId = null;
-        }
-        return atchFileId;
+        return atchFileId.isEmpty() ? null : atchFileId;
     }
 
-    /**
-     * 파일에 대한 목록을 조회한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#selectFileInfs(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional(readOnly = true)
     public List<FileVO> selectFileInfs(FileVO fvo) throws Exception {
-        return fileMngDAO.selectFileInfs(fvo);
+        List<FileVO> result = new ArrayList<>();
+
+        if (fvo.getAtchFileId() != null) {
+            fileMasterRepository.findById(fvo.getAtchFileId()).ifPresent(master -> {
+                for (FileDetail detail : master.getFileDetails()) {
+                    result.add(convertToVO(master, detail));
+                }
+            });
+        }
+
+        return result;
     }
 
-    /**
-     * 여러 개의 파일에 대한 정보(속성 및 상세)를 수정한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#updateFileInfs(java.util.List)
-     */
     @Override
+    @Transactional
     public void updateFileInfs(List<?> fvoList) throws Exception {
-        // Delete & Insert
-        fileMngDAO.updateFileInfs(fvoList);
+        // Delete old and insert new
+        for (Object obj : fvoList) {
+            if (obj instanceof FileVO) {
+                FileVO fvo = (FileVO) obj;
+                deleteFileInf(fvo);
+                insertFileInf(fvo);
+            }
+        }
     }
 
-    /**
-     * 하나의 파일을 삭제한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#deleteFileInf(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional
     public void deleteFileInf(FileVO fvo) throws Exception {
-        fileMngDAO.deleteFileInf(fvo);
+        if (fvo.getAtchFileId() != null && fvo.getFileSn() != null) {
+            FileDetailId id = new FileDetailId(fvo.getAtchFileId(), Integer.parseInt(fvo.getFileSn()));
+            fileDetailRepository.deleteById(id);
+        }
     }
 
-    /**
-     * 파일에 대한 상세정보를 조회한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#selectFileInf(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional(readOnly = true)
     public FileVO selectFileInf(FileVO fvo) throws Exception {
-        return fileMngDAO.selectFileInf(fvo);
+        if (fvo.getAtchFileId() != null && fvo.getFileSn() != null) {
+            FileDetailId id = new FileDetailId(fvo.getAtchFileId(), Integer.parseInt(fvo.getFileSn()));
+            return fileDetailRepository.findById(id)
+                    .map(detail -> convertToVO(detail.getFileMaster(), detail))
+                    .orElse(null);
+        }
+        return null;
     }
 
-    /**
-     * 파일 구분자에 대한 최대값을 구한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#getMaxFileSN(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional(readOnly = true)
     public int getMaxFileSN(FileVO fvo) throws Exception {
-        return fileMngDAO.getMaxFileSN(fvo);
+        if (fvo.getAtchFileId() != null) {
+            return fileMasterRepository.findById(fvo.getAtchFileId())
+                    .map(master -> master.getFileDetails().stream()
+                            .mapToInt(FileDetail::getFileSn)
+                            .max()
+                            .orElse(0))
+                    .orElse(0);
+        }
+        return 0;
     }
 
-    /**
-     * 전체 파일을 삭제한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#deleteAllFileInf(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional
     public void deleteAllFileInf(FileVO fvo) throws Exception {
-        fileMngDAO.deleteAllFileInf(fvo);
+        if (fvo.getAtchFileId() != null) {
+            fileMasterRepository.findById(fvo.getAtchFileId()).ifPresent(master -> {
+                master.delete(); // Soft delete
+                fileMasterRepository.save(master);
+            });
+        }
     }
 
-    /**
-     * 파일명 검색에 대한 목록을 조회한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#selectFileListByFileNm(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectFileListByFileNm(FileVO fvo) throws Exception {
-        List<FileVO> result = fileMngDAO.selectFileListByFileNm(fvo);
-        int cnt = fileMngDAO.selectFileListCntByFileNm(fvo);
+        List<FileVO> result = new ArrayList<>();
 
-        Map<String, Object> map = new HashMap<String, Object>();
+        // Search by original file name (simplified)
+        List<FileMaster> allMasters = fileMasterRepository.findAll();
+        for (FileMaster master : allMasters) {
+            for (FileDetail detail : master.getFileDetails()) {
+                String searchNm = fvo.getOrignlFileNm();
+                if (searchNm == null || detail.getOrignlFileNm().contains(searchNm)) {
+                    result.add(convertToVO(master, detail));
+                }
+            }
+        }
 
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", Integer.toString(result.size()));
         return map;
     }
 
-    /**
-     * 이미지 파일에 대한 목록을 조회한다.
-     *
-     * @see egovframework.com.cmm.service.EgovFileMngService#selectImageFileList(egovframework.com.cmm.service.FileVO)
-     */
     @Override
+    @Transactional(readOnly = true)
     public List<FileVO> selectImageFileList(FileVO vo) throws Exception {
-        return fileMngDAO.selectImageFileList(vo);
+        List<FileVO> result = new ArrayList<>();
+
+        if (vo.getAtchFileId() != null) {
+            fileMasterRepository.findById(vo.getAtchFileId()).ifPresent(master -> {
+                for (FileDetail detail : master.getFileDetails()) {
+                    // Check for image extensions
+                    String ext = detail.getFileExtsn();
+                    if (ext != null && (ext.equalsIgnoreCase("jpg") || ext.equalsIgnoreCase("jpeg") ||
+                            ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("gif") ||
+                            ext.equalsIgnoreCase("bmp"))) {
+                        result.add(convertToVO(master, detail));
+                    }
+                }
+            });
+        }
+
+        return result;
+    }
+
+    private FileVO convertToVO(FileMaster master, FileDetail detail) {
+        FileVO vo = new FileVO();
+        vo.setAtchFileId(master.getAtchFileId());
+        vo.setFileSn(String.valueOf(detail.getFileSn()));
+        vo.setFileStreCours(detail.getFileStreCours());
+        vo.setStreFileNm(detail.getStreFileNm());
+        vo.setOrignlFileNm(detail.getOrignlFileNm());
+        vo.setFileExtsn(detail.getFileExtsn());
+        vo.setFileMg(String.valueOf(detail.getFileMg()));
+        vo.setFileCn(detail.getFileCn());
+        return vo;
     }
 }

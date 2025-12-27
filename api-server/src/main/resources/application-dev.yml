@@ -1,7 +1,10 @@
+server:
+  port: 8080
+
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt
-    jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt
+    url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt&client_encoding=UTF8
+    jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=ebt&client_encoding=UTF8
     driver-class-name: org.postgresql.Driver
     username: egov
     password: egov123
@@ -19,13 +22,12 @@ spring:
       prefix: /WEB-INF/jsp/
       suffix: .jsp
 
-mybatis:
-  mapper-locations: classpath:/mapper/**/*_postgres.xml
-  type-aliases-package: egovframework.let.**.service,egovframework.com.**.service,egovframework.com.cmm,egovframework.let.sts.com
-
 logging:
   level:
     com.company.project: DEBUG
     org.springframework.security: DEBUG
     org.mybatis: DEBUG
     egovframework: DEBUG
+    org.apache.jasper: DEBUG
+    org.springframework.web: TRACE
+    org.springframework.web.servlet.view: DEBUG

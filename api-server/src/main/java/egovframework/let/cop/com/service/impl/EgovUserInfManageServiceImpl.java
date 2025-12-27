@@ -1,140 +1,120 @@
 package egovframework.let.cop.com.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.user.User;
+import com.company.project.domain.user.UserRepository;
 
 import egovframework.let.cop.com.service.EgovUserInfManageService;
 import egovframework.let.cop.com.service.UserInfVO;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 협업에서 사용할 사용자 조회 서비스 기능 구현 클래스
+ * 협업에서 사용할 사용자 조회 서비스 기능 구현 클래스 (JPA 기반)
  * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.04.06
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *   
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.04.06  이삼섭          최초 생성
- *   2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
- *
- *      </pre>
  */
 @Service("EgovUserInfManageService")
+@RequiredArgsConstructor
 public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implements EgovUserInfManageService {
 
-    @Resource(name = "EgovUserInfManageDAO")
-    private EgovUserInfManageDAO userInfDAO;
+    private final UserRepository userRepository;
 
-    /**
-     * 동호회 운영자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectClubOprtrList(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectClubOprtrList(UserInfVO userVO) throws Exception {
-        List<UserInfVO> result = userInfDAO.selectClubOprtrList(userVO);
-        int cnt = userInfDAO.selectClubOprtrListCnt(userVO);
-
-        Map<String, Object> map = new HashMap<String, Object>();
-
+        // 동호회 운영자 목록 - 실제 동호회 기능 미구현 상태이므로 빈 목록 반환
+        List<UserInfVO> result = new ArrayList<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", "0");
         return map;
     }
 
-    /**
-     * 동호회 사용자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectClubUserList(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectClubUserList(UserInfVO userVO) throws Exception {
-        List<UserInfVO> result = userInfDAO.selectClubUserList(userVO);
-        int cnt = userInfDAO.selectClubUserListCnt(userVO);
-
-        Map<String, Object> map = new HashMap<String, Object>();
-
+        // 동호회 사용자 목록 - 실제 동호회 기능 미구현 상태이므로 빈 목록 반환
+        List<UserInfVO> result = new ArrayList<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", "0");
         return map;
     }
 
-    /**
-     * 커뮤니티 관리자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectCmmntyMngrList(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectCmmntyMngrList(UserInfVO userVO) throws Exception {
-        List<UserInfVO> result = userInfDAO.selectCmmntyMngrList(userVO);
-        int cnt = userInfDAO.selectCmmntyMngrListCnt(userVO);
-
-        Map<String, Object> map = new HashMap<String, Object>();
-
+        // 커뮤니티 관리자 목록 - 실제 커뮤니티 기능 미구현 상태이므로 빈 목록 반환
+        List<UserInfVO> result = new ArrayList<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", "0");
         return map;
     }
 
-    /**
-     * 커뮤니티 사용자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectCmmntyUserList(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectCmmntyUserList(UserInfVO userVO) throws Exception {
-        List<UserInfVO> result = userInfDAO.selectCmmntyUserList(userVO);
-        int cnt = userInfDAO.selectCmmntyUserListCnt(userVO);
-
-        Map<String, Object> map = new HashMap<String, Object>();
-
+        // 커뮤니티 사용자 목록 - 실제 커뮤니티 기능 미구현 상태이므로 빈 목록 반환
+        List<UserInfVO> result = new ArrayList<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", "0");
         return map;
     }
 
-    /**
-     * 사용자 정보에 대한 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectUserList(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> selectUserList(UserInfVO userVO) throws Exception {
-        List<UserInfVO> result = userInfDAO.selectUserList(userVO);
-        int cnt = userInfDAO.selectUserListCnt(userVO);
+        List<User> users = userRepository.findAll();
+        List<UserInfVO> result = new ArrayList<>();
 
-        Map<String, Object> map = new HashMap<String, Object>();
+        for (User user : users) {
+            UserInfVO vo = convertToVO(user);
+            // 검색 조건 필터링 (간소화)
+            String keyword = userVO.getSearchWrd();
+            if (keyword == null || keyword.isEmpty() ||
+                    (user.getUserNm() != null && user.getUserNm().contains(keyword)) ||
+                    (user.getUserId() != null && user.getUserId().contains(keyword))) {
+                result.add(vo);
+            }
+        }
 
+        Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-
+        map.put("resultCnt", Integer.toString(result.size()));
         return map;
     }
 
-    /**
-     * 동호회에 대한 모든 사용자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectAllClubUser(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public List<UserInfVO> selectAllClubUser(UserInfVO userVO) throws Exception {
-        return userInfDAO.selectAllClubUser(userVO);
+        // 동호회 사용자 전체 - 실제 기능 미구현
+        return new ArrayList<>();
     }
 
-    /**
-     * 커뮤니티에 대한 모든 사용자 목록을 조회한다.
-     * 
-     * @see egovframework.let.cop.com.service.EgovUserInfManageService#selectAllCmmntyUser(egovframework.let.cop.com.service.UserInfVO)
-     */
+    @Override
+    @Transactional(readOnly = true)
     public List<UserInfVO> selectAllCmmntyUser(UserInfVO userVO) throws Exception {
-        return userInfDAO.selectAllCmmntyUser(userVO);
+        // 커뮤니티 사용자 전체 - 실제 기능 미구현
+        return new ArrayList<>();
+    }
+
+    private UserInfVO convertToVO(User user) {
+        UserInfVO vo = new UserInfVO();
+        vo.setUniqId(user.getEsntlId());
+        vo.setUserId(user.getUserId());
+        vo.setUserNm(user.getUserNm());
+        vo.setUserEmail(user.getEmailAdres());
+        return vo;
     }
 }

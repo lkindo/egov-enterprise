@@ -18,8 +18,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEsntlId(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with esntl_id: " + username));
+        User user = userRepository.findById(username)
+                .orElseGet(() -> userRepository.findByEsntlId(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username)));
         return new CustomUserDetails(user);
     }
 }

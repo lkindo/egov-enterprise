@@ -41,7 +41,7 @@ class FileServiceTest {
 
         FileDetail detail = FileDetail.builder()
                 .fileSn(1)
-                .orignlFileNm("테스트.pdf")
+                .orignlFileNm("test.pdf")
                 .fileExtsn("pdf")
                 .fileMg(1024L)
                 .build();
@@ -55,7 +55,7 @@ class FileServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getOrignlFileNm()).isEqualTo("테스트.pdf");
+        assertThat(result.get(0).getOrignlFileNm()).isEqualTo("test.pdf");
     }
 
     @Test

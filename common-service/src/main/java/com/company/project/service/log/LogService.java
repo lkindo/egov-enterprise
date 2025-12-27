@@ -34,11 +34,12 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
         LoginLog log = LoginLog.builder()
                 .logId("LGN_" + UUID.randomUUID().toString().substring(0, 16))
-                .conectId(userId)
-                .conectIp(ip)
-                .conectMthd(mthd)
+                .loginId(userId)
+                .loginIp(ip)
+                .loginMthd(mthd)
                 .errOccrrAt(errAt)
                 .errorCode(errCode)
+                .creatDt(java.time.LocalDateTime.now())
                 .build();
         loginLogRepository.save(log);
     }
@@ -56,9 +57,9 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     private LogDto convertToDto(LoginLog log) {
         return LogDto.builder()
                 .logId(log.getLogId())
-                .conectMthd(log.getConectMthd())
-                .conectId(log.getConectId())
-                .conectIp(log.getConectIp())
+                .conectMthd(log.getLoginMthd())
+                .conectId(log.getLoginId())
+                .conectIp(log.getLoginIp())
                 .creatDt(log.getCreatDt())
                 .errOccrrAt(log.getErrOccrrAt())
                 .build();

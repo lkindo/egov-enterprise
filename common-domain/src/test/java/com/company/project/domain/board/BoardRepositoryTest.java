@@ -1,9 +1,11 @@
 package com.company.project.domain.board;
 
+import com.company.project.domain.TestQuerydslConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * BoardRepository JPA 테스트
  */
 @DataJpaTest
+@Import(TestQuerydslConfig.class)
 @ActiveProfiles("test")
 class BoardRepositoryTest {
 
@@ -29,6 +32,8 @@ class BoardRepositoryTest {
                 .bbsId("TEST_BBS_001")
                 .bbsNm("테스트 게시판")
                 .bbsTyCode("BBST01")
+                .bbsAttrbCode("BBSA01")
+                .frstRegisterId("SYSTEM")
                 .build();
 
         // when
@@ -48,13 +53,21 @@ class BoardRepositoryTest {
                         .bbsId("TEST_BBS_002")
                         .bbsNm("테스트 게시판2")
                         .bbsTyCode("BBST01")
+                        .bbsAttrbCode("BBSA01")
+                        .frstRegisterId("SYSTEM")
                         .build());
 
         Board board = Board.builder()
-                .id(1L)
-                .boardMaster(master)
+                .nttId(1L)
+                .bbsId(master.getBbsId())
                 .nttSj("테스트 제목")
                 .nttCn("테스트 내용")
+                .ntceBgnde("20230101")
+                .ntceEndde("99991231")
+                .ntcrId("TESTER")
+                .ntcrNm("Tester")
+                .password("password")
+                .frstRegisterId("TESTER")
                 .build();
 
         // when

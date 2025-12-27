@@ -14,7 +14,7 @@
 | Gradle | 8.12 | ✅ 설정 완료 |
 | Spring Boot | 3.3.7 | ✅ 설정 완료 |
 | eGovFrame RTE | 5.0.0 | ✅ 설정 완료 |
-| Database | Cubrid (Docker) | ✅ 연동 완료 |
+| Database | PostgreSQL (Docker) | ✅ 연동 완료 |
 
 ### 1.2 멀티 모듈 구조
 ```

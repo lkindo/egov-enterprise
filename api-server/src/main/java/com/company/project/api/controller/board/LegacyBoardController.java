@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,102 +18,52 @@ import java.util.Map;
 @Controller
 public class LegacyBoardController {
 
+    private final com.company.project.service.board.EgovBoardService boardService;
+
+    public LegacyBoardController(com.company.project.service.board.EgovBoardService boardService) {
+        this.boardService = boardService;
+    }
+
+    @GetMapping("/cop/bbs/debugBoardList.do")
+    @ResponseBody
+    public Map<String, Object> debugBoardList(@RequestParam(required = false) String bbsId) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (bbsId == null || bbsId.isEmpty()) {
+            bbsId = "BBSMSTR_AAAAAAAAAAAA";
+        }
+
+        // 실제 서비스 호출
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> page = boardService
+                .getBoardPosts(bbsId, pageable);
+
+        // 게시판 정보
+        result.put("bbsId", bbsId);
+        result.put("bbsNm", getBoardName(bbsId));
+        result.put("resultList", page.getContent());
+        result.put("totalCount", page.getTotalElements());
+
+        return result;
+    }
+
     /**
      * 게시판 목록 조회
+     * egovframework.let.cop.bbs.web.EgovBBSManageController와 중복되어 주석 처리
      */
-    @GetMapping("/cop/bbs/selectBoardList.do")
+    // @GetMapping("/cop/bbs/selectBoardList.do")
     public String selectBoardList(
             @RequestParam(required = false) String bbsId,
             @RequestParam(required = false) String baseMenuNo,
             Model model) {
-
-        // 샘플 게시판 마스터 정보 (brdMstrVO)
-        Map<String, Object> brdMstrVO = new HashMap<>();
-        brdMstrVO.put("bbsId", bbsId);
-        brdMstrVO.put("bbsNm", getBoardName(bbsId));
-        brdMstrVO.put("bbsTyCode", "BBST01");
-        brdMstrVO.put("bbsAttrbCode", "BBSA02");
-        brdMstrVO.put("replyPosblAt", "Y");
-        brdMstrVO.put("fileAtchPosblAt", "Y");
-        brdMstrVO.put("posblAtchFileNumber", 3);
-        brdMstrVO.put("authFlag", "N");
-
-        // 검색 조건 (searchVO)
-        Map<String, Object> searchVO = new HashMap<>();
-        searchVO.put("searchCnd", "0");
-        searchVO.put("searchWrd", "");
-        searchVO.put("pageIndex", 1);
-        searchVO.put("pageSize", 10);
-
-        // 샘플 게시판 정보
-        Map<String, Object> boardVO = new HashMap<>();
-        boardVO.put("bbsId", bbsId);
-        boardVO.put("bbsNm", getBoardName(bbsId));
-        boardVO.put("bbsTyCode", "BBST01");
-        boardVO.put("replyPosblAt", "Y");
-        boardVO.put("fileAtchPosblAt", "Y");
-        boardVO.put("posblAtchFileNumber", 3);
-        boardVO.put("posblAtchFileSize", "5242880");
-        boardVO.put("searchCnd", "0");
-        boardVO.put("searchWrd", "");
-        boardVO.put("pageIndex", 1);
-
-        // 샘플 게시글 목록
-        List<Map<String, Object>> resultList = new ArrayList<>();
-
-        Map<String, Object> post1 = new HashMap<>();
-        post1.put("nttId", 1);
-        post1.put("nttNo", 1);
-        post1.put("bbsId", bbsId);
-        post1.put("nttSj", "샘플 게시글 1 - " + getBoardName(bbsId));
-        post1.put("frstRegisterNm", "관리자");
-        post1.put("frstRegisterPnttm", "2025-12-23");
-        post1.put("inqireCo", 10);
-        post1.put("replyLc", 0);
-        post1.put("useAt", "Y");
-        post1.put("isExpired", "N");
-        resultList.add(post1);
-
-        Map<String, Object> post2 = new HashMap<>();
-        post2.put("nttId", 2);
-        post2.put("nttNo", 2);
-        post2.put("bbsId", bbsId);
-        post2.put("nttSj", "샘플 게시글 2 - 테스트 내용");
-        post2.put("frstRegisterNm", "홍길동");
-        post2.put("frstRegisterPnttm", "2025-12-22");
-        post2.put("inqireCo", 5);
-        post2.put("replyLc", 0);
-        post2.put("useAt", "Y");
-        post2.put("isExpired", "N");
-        resultList.add(post2);
-
-        Map<String, Object> post3 = new HashMap<>();
-        post3.put("nttId", 3);
-        post3.put("nttNo", 3);
-        post3.put("bbsId", bbsId);
-        post3.put("nttSj", "샘플 게시글 3 - 추가 정보");
-        post3.put("frstRegisterNm", "김철수");
-        post3.put("frstRegisterPnttm", "2025-12-21");
-        post3.put("inqireCo", 3);
-        post3.put("replyLc", 0);
-        post3.put("useAt", "Y");
-        post3.put("isExpired", "N");
-        resultList.add(post3);
-
-        model.addAttribute("brdMstrVO", brdMstrVO);
-        model.addAttribute("searchVO", searchVO);
-        model.addAttribute("boardVO", boardVO);
-        model.addAttribute("resultList", resultList);
-        model.addAttribute("resultCnt", resultList.size());
-        model.addAttribute("paginationInfo", createPaginationInfo());
-
         return "cop/bbs/EgovNoticeList";
     }
 
     /**
      * 게시글 상세 조회
+     * egovframework.let.cop.bbs.web.EgovBBSManageController와 중복되어 주석 처리
      */
-    @GetMapping("/cop/bbs/selectBoardArticle.do")
+    // @GetMapping("/cop/bbs/selectBoardArticle.do")
     public String selectBoardArticle(
             @RequestParam(required = false) String bbsId,
             @RequestParam(required = false) Long nttId,

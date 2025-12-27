@@ -1,0 +1,100 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "본문 바로가기" [ref=e2] [cursor=pointer]:
+    - /url: "#contents"
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - heading "표준프레임워크 포털 eGovFrame 샘플 포털" [level=1] [ref=e7]:
+          - link "표준프레임워크 포털 eGovFrame 샘플 포털" [ref=e8] [cursor=pointer]:
+            - /url: /cmm/main/mainPage.do
+            - img "표준프레임워크 포털 eGovFrame 샘플 포털" [ref=e9]
+        - link "메뉴구성 설명" [ref=e10] [cursor=pointer]:
+          - /url: "#LINK"
+          - img "메뉴구성 설명" [ref=e11]
+      - generic [ref=e12]:
+        - generic [ref=e13]: 샘플사용자 님 의 최종접속정보는
+        - generic [ref=e14]: 2021-06-30 12:45 입니다.
+        - link "로그아웃" [ref=e15] [cursor=pointer]:
+          - /url: /uat/uia/actionLogout.do
+      - list [ref=e17]:
+        - listitem [ref=e18]:
+          - link "알림정보" [ref=e19] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e20]:
+          - link "직급체계관리" [ref=e21] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e22]:
+          - link "진급관리" [ref=e23] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e24]:
+          - link "근태관리" [ref=e25] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e26]:
+          - link "내부서비스관리" [ref=e27] [cursor=pointer]:
+            - /url: "#"
+        - listitem [ref=e28]:
+          - link "내부시스템관리" [ref=e29] [cursor=pointer]:
+            - /url: "#"
+      - list [ref=e31]:
+        - listitem [ref=e32]:
+          - link "전체메뉴" [ref=e33] [cursor=pointer]:
+            - /url: ""
+    - generic [ref=e37]:
+      - generic [ref=e39]:
+        - heading "알림정보" [level=2] [ref=e40]
+        - list [ref=e41]:
+          - listitem [ref=e42]:
+            - link "공지사항" [ref=e43] [cursor=pointer]:
+              - /url: /cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA
+          - listitem [ref=e44]:
+            - link "업무게시판" [ref=e45] [cursor=pointer]:
+              - /url: /cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC
+      - generic [ref=e47]:
+        - list [ref=e49]:
+          - listitem [ref=e50]:
+            - link "Home" [ref=e51] [cursor=pointer]:
+              - /url: ""
+          - listitem [ref=e52]:
+            - link "알림정보" [ref=e53] [cursor=pointer]:
+              - /url: ""
+          - listitem [ref=e54]: 공지사항
+        - generic [ref=e55]:
+          - heading "알림정보" [level=1] [ref=e56]
+          - heading "공지사항" [level=2] [ref=e57]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: 홈페이지 샘플공지5
+              - generic [ref=e61]:
+                - generic [ref=e62]:
+                  - term [ref=e63]: 작성자
+                  - definition
+                - generic [ref=e64]:
+                  - term [ref=e65]: 작성일
+                  - definition [ref=e66]: 2025-12-27
+                - generic [ref=e67]:
+                  - term [ref=e68]: 조회수
+                  - definition [ref=e69]: "1"
+            - textbox "글내용" [ref=e71]: 홈페이지 샘플공지5
+            - link "목록" [ref=e73] [cursor=pointer]:
+              - /url: ""
+    - generic [ref=e75]:
+      - heading "표준프레임워크 포털 eGovFrame" [level=1] [ref=e76]:
+        - link "표준프레임워크 포털 eGovFrame" [ref=e77] [cursor=pointer]:
+          - /url: "#LINK"
+          - img "표준프레임워크 포털 eGovFrame" [ref=e78]
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - text: "대표문의메일 : egovframesupport@gmail.com | 대표전화 : 0000-0000 (000-0000-0000)"
+          - text: "호환성확인 : 000-0000-0000 | 교육문의 : 000-0000-0000"
+        - paragraph [ref=e81]: Copyright © 2021 Ministry Of The Interior And Safety. All Rights Reserved.
+      - generic [ref=e82]:
+        - link "행정안전부" [ref=e83] [cursor=pointer]:
+          - /url: "#LINK"
+          - img "행정안전부" [ref=e84]
+        - link "NIA 한국지능정보사회진흥원" [ref=e85] [cursor=pointer]:
+          - /url: "#LINK"
+          - img "NIA 한국지능정보사회진흥원" [ref=e86]
+```

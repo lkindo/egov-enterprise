@@ -71,9 +71,9 @@ function fn_egov_modal_remove() {
                                         <div class="gnb">
                                             <ul>
                                                 <c:forEach var="result" items="${list_headmenu}" varStatus="status">
-                                                    <li><a href="" onclick="goMenuPage('<c:out value="
-                                                            ${result.menuNo}" />');" class='<c:if
-                                                            test="${result.menuOrdr >= 5}">manager</c:if>'>
+                                                    <li><a href="#" onclick="goMenuPage('<c:out value="
+                                                            ${result.menuNo}" />');" class="<c:if
+                                                            test='${result.menuOrdr >= 5}'>manager</c:if>">
                                                         <c:out value="${result.menuNm}" /></a>
                                                     </li>
                                                 </c:forEach>
@@ -96,115 +96,40 @@ function fn_egov_modal_remove() {
                     </div>
                     <!--// Header -->
 
-                    <!-- 전체메뉴 팝업 -->
+                    <!-- 전체메뉴 팝업 - 동적 생성 -->
                     <div class="all_menu" id="">
                         <div>
                             <div class="inner">
-                                <div>
-                                    <h2>알림정보</h2>
-                                    <ul>
-                                        <li><a
-                                                href="<c:url value='/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA'/>">공지사항</a>
-                                        </li>
-                                        <li><a
-                                                href="<c:url value='/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC'/>">업무게시판</a>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h2>직급체계관리</h2>
-                                    <ul>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('2000000')">입퇴사정보 관리</a></li>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('2000000')">직급정보 관리</a></li>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('2000000')">직위정보 관리</a></li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h2>진급관리</h2>
-                                    <ul>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('3000000')">업무평가점수 관리</a>
-                                        </li>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('3000000')">상벌정보 관리</a></li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h2>근태관리</h2>
-                                    <ul>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('4000000')">출퇴근정보 관리</a></li>
-                                        <li><a href="#LINK" onclick="javascript:goMenuPage('4000000')">휴무정보 관리</a></li>
-                                    </ul>
-                                </div>
-
-                                <div class="admin">
-                                    <h2>내무서비스관리</h2>
-                                    <h3>내부업무게시판관리</h3>
-                                    <ul>
-                                        <li><a href="<c:url value='/cop/bbs/SelectBBSMasterInfs.do'/>">게시판생성관리</a></li>
-                                        <li><a href="<c:url value='/cop/com/selectBBSUseInfs.do'/>">게시판사용관리</a></li>
-                                        <li><a
-                                                href="<c:url value='/cop/bbs/admin/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA'/>">공지사항관리</a>
-                                        </li>
-                                        <li><a
-                                                href="<c:url value='/cop/bbs/admin/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC'/>">업무게시판관리</a>
-                                        </li>
-                                    </ul>
-
-                                    <h3>사용현황관리</h3>
-                                    <ul>
-                                        <li><a href="<c:url value='/sym/log/clg/SelectLoginLogList.do'/>">접속로그관리</a>
-                                        </li>
-                                        <li><a href="<c:url value='/sts/cst/selectConectStats.do'/>">접속통계관리</a></li>
-                                        <li><a href="<c:url value='/uat/uap/selectLoginPolicyList.do'/>">로그인정책관리</a>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div class="admin">
-                                    <h2>내부시스템관리</h2>
-                                    <h3>사용자관리</h3>
-                                    <ul>
-                                        <li><a href="<c:url value='/uss/umt/user/EgovUserManage.do'/>">사용자등록관리</a></li>
-                                        <li><a
-                                                href="<c:url value='/uss/ion/uas/selectUserAbsnceListView.do'/>">사용자부재관리</a>
-                                        </li>
-                                    </ul>
-
-                                    <h3>사용자권한관리</h3>
-                                    <ul>
-                                        <li><a href="<c:url value='/sec/ram/EgovAuthorList.do'/>">권한관리</a></li>
-                                        <li><a href="<c:url value='/sec/gmt/EgovGroupList.do'/>">사용자그룹관리</a></li>
-                                        <li><a href="<c:url value='/sec/rgm/EgovAuthorGroupListView.do'/>">사용자별권한관리</a>
-                                        </li>
-                                        <li><a href="<c:url value='/sec/rmt/EgovRoleList.do'/>">롤관리</a></li>
-                                    </ul>
-
-                                    <h3>메뉴관리</h3>
-                                    <ul>
-                                        <li><a
-                                                href="<c:url value='/sym/prm/EgovProgramListManageSelect.do'/>">프로그램목록관리</a>
-                                        </li>
-                                        <li><a
-                                                href="<c:url value='/sym/mnu/mcm/EgovMenuCreatManageSelect.do'/>">메뉴생성관리</a>
-                                        </li>
-                                        <li><a href="<c:url value='/sym/mnu/mpm/EgovMenuManageSelect.do'/>">메뉴목록관리</a>
-                                        </li>
-                                    </ul>
-
-                                    <h3>코드관리</h3>
-                                    <ul>
-                                        <li><a href="<c:url value='/sym/ccm/ccc/EgovCcmCmmnClCodeList.do'/>">분류코드관리</a>
-                                        </li>
-                                        <li><a href="<c:url value='/sym/ccm/cca/EgovCcmCmmnCodeList.do'/>">공통코드관리</a>
-                                        </li>
-                                        <li><a
-                                                href="<c:url value='/sym/ccm/cde/EgovCcmCmmnDetailCodeList.do'/>">상세코드관리</a>
-                                        </li>
-                                        <li><a href="<c:url value='/sym/ccm/zip/EgovCcmZipList.do'/>">우편번호관리</a></li>
-                                    </ul>
-                                </div>
+                                <c:forEach var="rootMenu" items="${list_headmenu}">
+                                    <div <c:if test="${rootMenu.id >= 5000000}">class="admin"</c:if>>
+                                        <h2>
+                                            <c:out value="${rootMenu.menuNm}" />
+                                        </h2>
+                                        <c:forEach var="childMenu" items="${rootMenu.children}">
+                                            <c:choose>
+                                                <c:when test="${fn:length(childMenu.children) > 0}">
+                                                    <h3>
+                                                        <c:out value="${childMenu.menuNm}" />
+                                                    </h3>
+                                                    <ul>
+                                                        <c:forEach var="grandchildMenu" items="${childMenu.children}">
+                                                            <li><a href="<c:url value='${grandchildMenu.chkURL}'/>">
+                                                                    <c:out value="${grandchildMenu.menuNm}" />
+                                                                </a></li>
+                                                        </c:forEach>
+                                                    </ul>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <ul>
+                                                        <li><a href="<c:url value='${childMenu.chkURL}'/>">
+                                                                <c:out value="${childMenu.menuNm}" />
+                                                            </a></li>
+                                                    </ul>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:forEach>
+                                    </div>
+                                </c:forEach>
                             </div>
                         </div>
                     </div>
@@ -212,28 +137,43 @@ function fn_egov_modal_remove() {
 
                     <!-- Topmenu start -->
                     <script type="text/javascript">
-                        <!--
-                        function getLastLink(baseMenuNo){
-                            var tNode = new Array;
-                            for (var i = 0; i < document.menuListForm.tmp_menuNm.length; i++) {
-                                tNode[i] = document.menuListForm.tmp_menuNm[i].value;
-                                var nValue = tNode[i].split("|");
-                                //선택된 메뉴(baseMenuNo)의 하위 메뉴중 첫번재 메뉴의 링크정보를 리턴한다.
-                                if (nValue[1]==baseMenuNo) {
-                                    if(nValue[5]!="dir" && nValue[5]!="" && nValue[5]!="/"){
-                                        //링크정보가 있으면 링크정보를 리턴한다.
-                                        return nValue[5];
-                                    }else{
-                                        //링크정보가 없으면 하위 메뉴중 첫번째 메뉴의 링크정보를 리턴한다.
-                                        return getLastLink(nValue[0]);
+                        <!-
+                            function getLastLink(baseMenuNo) {
+                                var tNode = new Array;
+                                for (var i = 0; i < document.menuListForm.tmp_menuNm.length; i++) {
+                                    tNode[i] = document.menuListForm.tmp_menuNm[i].value;
+                                    var nValue = tNode[i].split("|");
+                                    //선택된 메뉴(baseMenuNo)의 하위 메뉴중 첫번재 메뉴의 링크정보를 리턴한다.
+                                    if (nValue[1] == baseMenuNo) {
+                                        if (nValue[5] != "dir" && nValue[5] != "" && nValue[5] != "/") {
+                                            //링크정보가 있으면 링크정보를 리턴한다.
+                                            return nValue[5];
+                                        } else {
+                                            //링크정보가 없으면 하위 메뉴중 첫번째 메뉴의 링크정보를 리턴한다.
+                                            return getLastLink(nValue[0]);
+                                        }
                                     }
                                 }
                             }
-                        }
-                        function goMenuPage(baseMenuNo){
+                        function goMenuPage(baseMenuNo) {
                             event.preventDefault();
-                            document.getElementById("baseMenuNo").value=baseMenuNo;
-                            var link = '<c:url value="/" />' + getLastLink(baseMenuNo).substring(1);
+                            document.getElementById("baseMenuNo").value = baseMenuNo;
+                            var rawLink = getLastLink(baseMenuNo);
+                            if (!rawLink || rawLink === "dir") return;
+
+                            var contextPath = '<c:url value="/" />';
+                            var link = rawLink;
+
+                            if (link.indexOf('/') === 0) {
+                                // If link starts with /, and contextPath is /, then link is fine.
+                                // If contextPath is /app/, then link should be /app/ + link.substring(1)
+                                if (contextPath.length > 1) {
+                                    link = contextPath + link.substring(1);
+                                }
+                            } else {
+                                link = contextPath + link;
+                            }
+
                             if (link.indexOf('?') === -1) {
                                 link = link + '?';
                             } else {
@@ -242,8 +182,7 @@ function fn_egov_modal_remove() {
                             link = link + 'baseMenuNo=' + baseMenuNo;
                             location.href = link;
                         }
-                        function actionLogout()
-                        {
+                        function actionLogout() {
                             document.selectOne.action = "<c:url value='/uat/uia/actionLogout.do'/>";
                             document.selectOne.submit();
                             //document.location.href = "<c:url value='/j_spring_security_logout'/>";
@@ -255,7 +194,8 @@ function fn_egov_modal_remove() {
                     <!-- Menu list -->
                     <form name="menuListForm" action="" method="post">
                         <input type="hidden" id="testData" value="꽥" />
-                        <input type="hidden" id="baseMenuNo" name="baseMenuNo" value="<%=session.getAttribute("baseMenuNo")%>" />
+                        <input type="hidden" id="baseMenuNo" name="baseMenuNo"
+                            value="<c:out value='${sessionScope.baseMenuNo}'/>" />
                         <input type="hidden" id="link" name="link" value="" />
                         <div style="width:0px; height:0px;">
                             <c:forEach var="result" items="${list_menulist}" varStatus="status">

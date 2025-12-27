@@ -490,7 +490,7 @@
 	<function>
 		<description>문자열 암호화 메서드</description>
 		<name>encrypt</name>
-		<function-class>egovframework.com.cmm.web.EgovFileMngController</function-class>
+		<function-class>com.company.project.core.util.CryptoUtil</function-class>
 		<function-signature>java.lang.String encrypt(java.lang.String)</function-signature>
 		<example>
 			${egovc:encrypt(java.lang.String source)}
@@ -500,7 +500,7 @@
 	<function>
 		<description>문자열 및 세션 암호화 메서드</description>
 		<name>encryptSession</name>
-		<function-class>egovframework.com.cmm.web.EgovFileMngController</function-class>
+		<function-class>com.company.project.core.util.CryptoUtil</function-class>
 		<function-signature>java.lang.String encryptSession(java.lang.String, java.lang.String)</function-signature>
 		<example>
 			${egovc:encryptSession(java.lang.String source, java.lang.String sessionId)}

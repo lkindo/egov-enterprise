@@ -37,79 +37,79 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(TestSecurityConfig.class)
 class UserApiControllerIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+        @Autowired
+        private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+        @Autowired
+        private JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    private String adminToken;
+        private String adminToken;
 
-    @BeforeEach
-    void setUp() {
-        // 관리자 사용자 생성
-        User admin = User.builder()
-                .userId("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .userNm("관리자")
-                .esntlId("USR_ADMIN001")
-                .role(Role.ADMIN)
-                .build();
-        userRepository.save(admin);
+        @BeforeEach
+        void setUp() {
+                // 관리자 사용자 생성
+                User admin = User.builder()
+                                .userId("admin")
+                                .password(passwordEncoder.encode("admin123"))
+                                .userNm("관리자")
+                                .esntlId("USR_ADMIN001")
+                                .role(Role.ADMIN)
+                                .build();
+                userRepository.saveAndFlush(admin);
 
-        // 관리자 JWT 토큰 생성
-        adminToken = jwtTokenProvider.createToken("admin", "ROLE_ADMIN");
-    }
+                // 관리자 JWT 토큰 생성 (esntlId를 subject로 사용해야 함)
+                adminToken = jwtTokenProvider.createToken("USR_ADMIN001", "ROLE_ADMIN");
+        }
 
-    @Test
-    @DisplayName("사용자 목록 조회 - 관리자")
-    void getUserList_admin() throws Exception {
-        mockMvc.perform(get("/api/v1/users")
-                .header("Authorization", "Bearer " + adminToken)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
+        @Test
+        @DisplayName("사용자 목록 조회 - 관리자")
+        void getUserList_admin() throws Exception {
+                mockMvc.perform(get("/api/v1/users")
+                                .header("Authorization", "Bearer " + adminToken)
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andDo(print())
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data").isArray());
+        }
 
-    @Test
-    @DisplayName("회원가입 - 성공")
-    void signup_success() throws Exception {
-        Map<String, Object> request = Map.of(
-                "userId", "newUser",
-                "password", "password123",
-                "userNm", "새 사용자",
-                "passwordHint", "hint",
-                "passwordCnsr", "answer");
+        @Test
+        @DisplayName("회원가입 - 성공")
+        void signup_success() throws Exception {
+                Map<String, Object> request = Map.of(
+                                "userId", "newUser",
+                                "password", "password123",
+                                "userNm", "새 사용자",
+                                "passwordHint", "hint",
+                                "passwordCnsr", "answer");
 
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(post("/api/v1/users/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andDo(print())
+                                .andExpect(status().isOk());
+        }
 
-    @Test
-    @DisplayName("회원가입 - 중복 사용자 ID (400)")
-    void signup_duplicateUserId() throws Exception {
-        Map<String, Object> request = Map.of(
-                "userId", "admin", // 이미 존재하는 사용자
-                "password", "password123",
-                "userNm", "중복 사용자");
+        @Test
+        @DisplayName("회원가입 - 중복 사용자 ID (400)")
+        void signup_duplicateUserId() throws Exception {
+                Map<String, Object> request = Map.of(
+                                "userId", "admin", // 이미 존재하는 사용자
+                                "password", "password123",
+                                "userNm", "중복 사용자");
 
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post("/api/v1/users/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andDo(print())
+                                .andExpect(status().isBadRequest());
+        }
 }
