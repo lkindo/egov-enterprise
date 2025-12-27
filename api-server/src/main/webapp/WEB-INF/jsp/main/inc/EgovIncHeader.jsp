@@ -71,10 +71,41 @@ function fn_egov_modal_remove() {
                                         <div class="gnb">
                                             <ul>
                                                 <c:forEach var="result" items="${list_headmenu}" varStatus="status">
-                                                    <li><a href="#" onclick="goMenuPage('<c:out value="
+                                                    <li>
+                                                        <a href="#" onclick="goMenuPage('<c:out value="
                                                             ${result.menuNo}" />');" class="<c:if
                                                             test='${result.menuOrdr >= 5}'>manager</c:if>">
-                                                        <c:out value="${result.menuNm}" /></a>
+                                                        <c:out value="${result.menuNm}" />
+                                                        </a>
+                                                        <!-- Submenu for All Menu view -->
+                                                        <c:if test="${fn:length(result.children) > 0}">
+                                                            <div class="depth2_wrap">
+                                                                <ul>
+                                                                    <c:forEach var="child" items="${result.children}">
+                                                                        <li>
+                                                                            <a href="<c:url value='${child.chkURL}'/>">
+                                                                                <c:out value="${child.menuNm}" />
+                                                                            </a>
+                                                                            <c:if
+                                                                                test="${fn:length(child.children) > 0}">
+                                                                                <div class="depth3_wrap">
+                                                                                    <ul>
+                                                                                        <c:forEach var="grandchild"
+                                                                                            items="${child.children}">
+                                                                                            <li><a
+                                                                                                    href="<c:url value='${grandchild.chkURL}'/>">
+                                                                                                    <c:out
+                                                                                                        value="${grandchild.menuNm}" />
+                                                                                                </a></li>
+                                                                                        </c:forEach>
+                                                                                    </ul>
+                                                                                </div>
+                                                                            </c:if>
+                                                                        </li>
+                                                                    </c:forEach>
+                                                                </ul>
+                                                            </div>
+                                                        </c:if>
                                                     </li>
                                                 </c:forEach>
                                                 <c:if test="${fn:length(list_headmenu) == 0 }">
@@ -96,48 +127,16 @@ function fn_egov_modal_remove() {
                     </div>
                     <!--// Header -->
 
-                    <!-- 전체메뉴 팝업 - 동적 생성 -->
+                    <!-- 전체메뉴 팝업 - Legacy Removed
                     <div class="all_menu" id="">
-                        <div>
-                            <div class="inner">
-                                <c:forEach var="rootMenu" items="${list_headmenu}">
-                                    <div <c:if test="${rootMenu.id >= 5000000}">class="admin"</c:if>>
-                                        <h2>
-                                            <c:out value="${rootMenu.menuNm}" />
-                                        </h2>
-                                        <c:forEach var="childMenu" items="${rootMenu.children}">
-                                            <c:choose>
-                                                <c:when test="${fn:length(childMenu.children) > 0}">
-                                                    <h3>
-                                                        <c:out value="${childMenu.menuNm}" />
-                                                    </h3>
-                                                    <ul>
-                                                        <c:forEach var="grandchildMenu" items="${childMenu.children}">
-                                                            <li><a href="<c:url value='${grandchildMenu.chkURL}'/>">
-                                                                    <c:out value="${grandchildMenu.menuNm}" />
-                                                                </a></li>
-                                                        </c:forEach>
-                                                    </ul>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <ul>
-                                                        <li><a href="<c:url value='${childMenu.chkURL}'/>">
-                                                                <c:out value="${childMenu.menuNm}" />
-                                                            </a></li>
-                                                    </ul>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </c:forEach>
-                                    </div>
-                                </c:forEach>
-                            </div>
-                        </div>
+                       ...
                     </div>
+                    -->
                     <!--// 전체메뉴 팝업 -->
 
                     <!-- Topmenu start -->
                     <script type="text/javascript">
-                        <!-
+                        < !-
                             function getLastLink(baseMenuNo) {
                                 var tNode = new Array;
                                 for (var i = 0; i < document.menuListForm.tmp_menuNm.length; i++) {

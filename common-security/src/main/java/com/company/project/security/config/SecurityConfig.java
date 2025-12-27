@@ -55,7 +55,7 @@ public class SecurityConfig {
                         securityContext -> securityContext.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/index.jsp", "/css/**", "/js/**", "/images/**",
+                                "/", "/index.jsp", "/css/**", "/js/**", "/images/**", "/favicon.ico",
                                 "/cmm/**", "/uat/uia/**", "/sym/**", "/cop/**",
                                 "/api/v1/users/signup", "/api/v1/auth/login", "/h2-console/**",
                                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**",

@@ -3,8 +3,13 @@ package com.company.project.api.controller.board;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import com.company.project.service.board.dto.BoardDto;
+import egovframework.com.cmm.ComDefaultVO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,44 +54,71 @@ public class LegacyBoardController {
 
     /**
      * 게시판 목록 조회
-     * egovframework.let.cop.bbs.web.EgovBBSManageController와 중복되어 주석 처리
      */
-    // @GetMapping("/cop/bbs/selectBoardList.do")
-    public String selectBoardList(
+    @RequestMapping("/cop/bbs/selectArticleList.do")
+    public String selectArticleList(
+            @ModelAttribute("searchVO") ComDefaultVO searchVO,
             @RequestParam(required = false) String bbsId,
-            @RequestParam(required = false) String baseMenuNo,
             Model model) {
-        return "cop/bbs/EgovNoticeList";
+
+        if (bbsId == null || bbsId.isEmpty()) {
+            bbsId = "BBSMSTR_AAAAAAAAAAAA";
+        }
+        searchVO.setSearchCondition(bbsId); // bbsId를 검색 조건으로 활용하기도 함
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest
+                .of(searchVO.getPageIndex() - 1, searchVO.getPageUnit());
+        org.springframework.data.domain.Page<BoardDto> page = boardService.getBoardPosts(bbsId, pageable);
+
+        // 페이징 정보
+        PaginationInfo paginationInfo = new PaginationInfo();
+        paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
+        paginationInfo.setPageSize(searchVO.getPageSize());
+        paginationInfo.setTotalRecordCount((int) page.getTotalElements());
+
+        // 모델 속성 설정
+        Map<String, Object> boardMasterVO = new HashMap<>();
+        boardMasterVO.put("bbsId", bbsId);
+        boardMasterVO.put("bbsNm", getBoardName(bbsId));
+        boardMasterVO.put("tmplatCours", "/css/egovframework/com/com.css");
+
+        model.addAttribute("boardMasterVO", boardMasterVO);
+        model.addAttribute("brdMstrVO", boardMasterVO); // Alias for CSS link in some JSPs
+        model.addAttribute("resultList", page.getContent());
+        model.addAttribute("noticeList", new ArrayList<>()); // 공지사항은 일단 빈 목록
+        model.addAttribute("paginationInfo", paginationInfo);
+
+        return "cop/bbs/EgovArticleList";
     }
 
     /**
      * 게시글 상세 조회
-     * egovframework.let.cop.bbs.web.EgovBBSManageController와 중복되어 주석 처리
      */
-    // @GetMapping("/cop/bbs/selectBoardArticle.do")
+    @RequestMapping("/cop/bbs/selectArticleDetail.do")
     public String selectBoardArticle(
+            @ModelAttribute("searchVO") ComDefaultVO searchVO,
             @RequestParam(required = false) String bbsId,
             @RequestParam(required = false) Long nttId,
             Model model) {
 
+        BoardDto result = boardService.getPostDetail(bbsId, nttId);
+
         // 샘플 게시판 정보
-        Map<String, Object> boardVO = new HashMap<>();
-        boardVO.put("bbsId", bbsId);
-        boardVO.put("bbsNm", getBoardName(bbsId));
-        boardVO.put("nttId", nttId);
-        boardVO.put("nttSj", "샘플 게시글 상세 - " + getBoardName(bbsId));
-        boardVO.put("nttCn", "이것은 샘플 게시글의 상세 내용입니다.\n\n표준프레임워크 경량환경 샘플 페이지입니다.");
-        boardVO.put("frstRegisterNm", "관리자");
-        boardVO.put("frstRegisterPnttm", "2025-12-23");
-        boardVO.put("inqireCo", 15);
-        boardVO.put("replyPosblAt", "Y");
-        boardVO.put("fileAtchPosblAt", "Y");
+        Map<String, Object> boardMasterVO = new HashMap<>();
+        boardMasterVO.put("bbsId", bbsId);
+        boardMasterVO.put("bbsNm", getBoardName(bbsId));
+        boardMasterVO.put("replyPosblAt", "Y");
+        boardMasterVO.put("tmplatCours", "/css/egovframework/com/com.css");
 
-        model.addAttribute("boardVO", boardVO);
-        model.addAttribute("result", boardVO);
+        model.addAttribute("boardMasterVO", boardMasterVO);
+        model.addAttribute("brdMstrVO", boardMasterVO);
+        model.addAttribute("result", result);
         model.addAttribute("sessionUniqId", "USRCNFRM_00000000001");
+        model.addAttribute("useComment", "false");
+        model.addAttribute("useSatisfaction", "false");
 
-        return "cop/bbs/EgovNoticeInqire";
+        return "cop/bbs/EgovArticleDetail";
     }
 
     /**

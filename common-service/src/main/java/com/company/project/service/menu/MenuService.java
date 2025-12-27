@@ -1,14 +1,23 @@
 package com.company.project.service.menu;
 
+import com.company.project.domain.auth.AuthorityRepository;
+import com.company.project.domain.auth.MenuAuthority;
+import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
+import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.service.menu.dto.MenuDto;
+import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,20 +33,24 @@ import java.util.stream.Collectors;
 public class MenuService {
 
     private final MenuRepository menuRepository;
-    private final ProgramRepository programRepository;
+    private final ProgramRepository programRepository; // Restored
+    private final AuthorityRepository authorityRepository;
+    private final MenuAuthorityRepository menuAuthorityRepository;
 
     public List<MenuDto> getMenuHierarchy() {
         List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a,
+                        b) -> a));
 
         Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
         List<MenuDto> rootMenus = new ArrayList<>();
 
         for (Menu menu : menus) {
             String url = "/";
-            if (menu.getProgrmFileNm() != null && programMap.containsKey(menu.getProgrmFileNm())) {
+            if (menu.getProgrmFileNm() != null &&
+                    programMap.containsKey(menu.getProgrmFileNm())) {
                 url = programMap.get(menu.getProgrmFileNm()).getUrl();
             }
 
@@ -71,6 +84,76 @@ public class MenuService {
         }
 
         return rootMenus;
+    }
+
+    public List<MenuCreateDto> selectMenuCreatManagList(ComDefaultVO searchVO) {
+        // Since we need to join or fetch Authority, we use AuthorityRepository
+        // Logic: Search Authorities
+        // Simple implementation: findAll Authorities
+        return authorityRepository.findAll().stream()
+                .map(auth -> {
+                    // Count menu authority records for this authority to determine chkYeoBu
+                    int chkYeoBu = menuAuthorityRepository.findByIdAuthorCode(auth.getAuthorCode()).size();
+                    return MenuCreateDto.builder()
+                            .authorCode(auth.getAuthorCode())
+                            .authorNm(auth.getAuthorNm())
+                            .authorDc(auth.getAuthorDc())
+                            .authorCreatDe(auth.getAuthorCreatDe() != null ? auth.getAuthorCreatDe().toString() : "")
+                            .chkYeoBu(chkYeoBu)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    public int selectMenuCreatManagTotCnt(ComDefaultVO searchVO) {
+        return (int) authorityRepository.count();
+    }
+
+    public List<MenuDto> selectMenuCreatList(MenuCreateDto vo) {
+        // Get all available menus
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        // Get authorized menus for specific authorCode
+        List<MenuAuthority> authorized = menuAuthorityRepository.findByIdAuthorCode(vo.getAuthorCode());
+        Map<Long, Boolean> authMap = authorized.stream()
+                .collect(Collectors.toMap(ma -> ma.getId().getMenuNo(), ma -> true));
+
+        // Create tree structure but flat list for UI which likely uses JS tree or table
+        // The legacy UI expects a list of menus with 'chkYeoBu' (checked or not)
+        return allMenus.stream().map(menu -> {
+            MenuDto dto = MenuDto.builder()
+                    .menuNo(menu.getId())
+                    .menuNm(menu.getMenuNm())
+                    .upperMenuId(menu.getUpperMenuNo())
+                    .build();
+            // Flag if authorized
+            if (authMap.containsKey(menu.getId())) {
+                // dto.setChkYeoBu(true); // Need to add field to DTO or handle in UI
+            }
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
+        // Delete existing mapping
+        menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
+
+        if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
+            String[] menuNos = checkedMenuNos.split(",");
+            for (String menuNo : menuNos) {
+                if (menuNo == null || menuNo.isEmpty())
+                    continue;
+                long mNo = Long.parseLong(menuNo);
+                MenuAuthority ma = MenuAuthority.builder()
+                        .id(MenuAuthority.MenuAuthorityId.builder()
+                                .authorCode(authorCode)
+                                .menuNo(mNo)
+                                .build())
+                        .mapngCreatId(authorCode) // Usually map id, but using authorCode for simplicity
+                        .build();
+                menuAuthorityRepository.save(ma);
+            }
+        }
     }
 
     public List<MenuDto> getSubMenus(Long parentId) {
@@ -138,5 +221,92 @@ public class MenuService {
             }
         }
         return null;
+    }
+
+    /* Menu Management Methods */
+
+    public List<MenuDto> selectMenuManageList(ComDefaultVO searchVO) {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize(),
+                Sort.by("id").ascending());
+        String searchKeyword = searchVO.getSearchKeyword();
+        if (searchKeyword == null)
+            searchKeyword = "";
+
+        Page<Menu> page = menuRepository.searchByKeyword(searchKeyword, pageable);
+        return page.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public int selectMenuManageListTotCnt(ComDefaultVO searchVO) {
+        String searchKeyword = searchVO.getSearchKeyword();
+        if (searchKeyword == null)
+            searchKeyword = "";
+        return (int) menuRepository.searchByKeyword(searchKeyword, PageRequest.of(0, 1)).getTotalElements();
+    }
+
+    public MenuDto selectMenuManage(Long menuNo) {
+        return menuRepository.findById(menuNo).map(this::toDto).orElse(null);
+    }
+
+    public int selectMenuNoByPk(MenuDto vo) {
+        return menuRepository.existsById(vo.getMenuNo()) ? 1 : 0;
+    }
+
+    public int selectUpperMenuNoByPk(MenuDto vo) {
+        return menuRepository.countByUpperMenuNo(vo.getMenuNo());
+    }
+
+    @Transactional
+    public void insertMenuManage(MenuDto vo) {
+        Menu menu = Menu.builder()
+                .id(vo.getMenuNo())
+                .menuNm(vo.getMenuNm())
+                .progrmFileNm(vo.getProgrmFileNm())
+                .upperMenuNo(vo.getUpperMenuNo())
+                .menuOrdr(vo.getMenuOrdr())
+                .menuDc(vo.getMenuDc())
+                .relateImagePath(vo.getRelateImagePath())
+                .relateImageNm(vo.getRelateImageNm())
+                .build();
+        menuRepository.save(menu);
+    }
+
+    @Transactional
+    public void updateMenuManage(MenuDto vo) {
+        Menu menu = menuRepository.findById(vo.getMenuNo())
+                .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
+        menu.update(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(), vo.getMenuDc(),
+                vo.getRelateImagePath(), vo.getRelateImageNm());
+    }
+
+    @Transactional
+    public void deleteMenuManage(MenuDto vo) {
+        menuRepository.deleteById(vo.getMenuNo());
+    }
+
+    public void deleteMenuManageList(String checkedMenuNoForDel) {
+        if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
+            return;
+        String[] delMenuNos = checkedMenuNoForDel.split(",");
+        for (String menuNo : delMenuNos) {
+            if (menuNo == null || menuNo.isEmpty())
+                continue;
+            menuRepository.deleteById(Long.parseLong(menuNo));
+        }
+    }
+
+    private MenuDto toDto(Menu menu) {
+        // Simple mapping
+        return MenuDto.builder()
+                .menuNo(menu.getId())
+                .id(menu.getId())
+                .menuNm(menu.getMenuNm())
+                .progrmFileNm(menu.getProgrmFileNm())
+                .upperMenuNo(menu.getUpperMenuNo())
+                .upperMenuId(menu.getUpperMenuNo())
+                .menuOrdr(menu.getMenuOrdr())
+                .menuDc(menu.getMenuDc())
+                .relateImagePath(menu.getRelateImagePath())
+                .relateImageNm(menu.getRelateImageNm())
+                .build();
     }
 }

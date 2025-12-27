@@ -16,6 +16,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
   mvc:
     view:

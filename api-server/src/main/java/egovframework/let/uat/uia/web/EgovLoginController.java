@@ -1,13 +1,19 @@
 package egovframework.let.uat.uia.web;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.egovframe.rte.fdl.cmmn.trace.LeaveaTrace;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,6 +47,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  *      </pre>
  */
+@Slf4j
 @Controller
 public class EgovLoginController {
 
@@ -64,14 +71,14 @@ public class EgovLoginController {
 	@Resource(name = "leaveaTrace")
 	LeaveaTrace leaveaTrace;
 
-	private final AuthenticationManager authenticationManager;
-	private final SecurityContextRepository securityContextRepository;
-
-	public EgovLoginController(AuthenticationManager authenticationManager,
-			SecurityContextRepository securityContextRepository) {
-		this.authenticationManager = authenticationManager;
-		this.securityContextRepository = securityContextRepository;
-	}
+	@Autowired
+	private AuthenticationManager authenticationManager;
+	@Autowired
+	private SecurityContextRepository securityContextRepository;
+	@Autowired
+	private UserDetailsService userDetailsService;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	/**
 	 * 로그인 화면으로 들어간다
@@ -132,14 +139,17 @@ public class EgovLoginController {
 		// 1. 로그인 정보를 세션에 저장
 		request.getSession().setAttribute("LoginVO", resultVO);
 
-		// 2. 이미 인증된 토큰 직접 생성 (loginService.actionLogin()에서 패스워드 검증 완료)
-		UsernamePasswordAuthenticationToken authResult = UsernamePasswordAuthenticationToken.authenticated(
-				resultVO, // principal (LoginVO 객체)
-				resultVO.getUniqId(), // credentials
-				java.util.Collections.emptyList() // authorities (빈 권한 목록)
-		);
+		// 2. UserDetailsService를 통해 권한 정보가 포함된 UserDetails 로드
+		UserDetails userDetails = userDetailsService.loadUserByUsername(resultVO.getId());
+		log.info("Authenticated User: {}, Authorities: {}", userDetails.getUsername(), userDetails.getAuthorities());
 
-		// 3. SecurityContext 저장
+		// 3. 인증된 토큰 생성 (전달된 authorities가 중요)
+		UsernamePasswordAuthenticationToken authResult = UsernamePasswordAuthenticationToken.authenticated(
+				userDetails,
+				null,
+				userDetails.getAuthorities());
+
+		// 4. SecurityContext 저장
 		var context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authResult);
 		SecurityContextHolder.setContext(context);

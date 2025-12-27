@@ -98,4 +98,17 @@ public class BoardDto {
                         : "")
                 .build();
     }
+
+    // Compatibility getters for legacy JSP
+    public Long getNttId() {
+        return id;
+    }
+
+    public String getFrstRegisterNm() {
+        return ntcrNm;
+    }
+
+    public String getCommentCo() {
+        return "";
+    }
 }

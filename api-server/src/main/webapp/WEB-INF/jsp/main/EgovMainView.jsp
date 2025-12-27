@@ -70,6 +70,34 @@
                                                     test="${menu.id >= 5000000}">class="manager"</c:if>>
                                                     <c:out value="${menu.menuNm}" />
                                                 </a>
+                                                <!-- Submenu for All Menu view -->
+                                                <c:if test="${not empty menu.children}">
+                                                    <div class="depth2_wrap">
+                                                        <ul>
+                                                            <c:forEach var="child" items="${menu.children}">
+                                                                <li>
+                                                                    <a href="<c:url value='${child.chkURL}'/>">
+                                                                        <c:out value="${child.menuNm}" />
+                                                                    </a>
+                                                                    <c:if test="${not empty child.children}">
+                                                                        <div class="depth3_wrap">
+                                                                            <ul>
+                                                                                <c:forEach var="grandchild"
+                                                                                    items="${child.children}">
+                                                                                    <li><a
+                                                                                            href="<c:url value='${grandchild.chkURL}'/>">
+                                                                                            <c:out
+                                                                                                value="${grandchild.menuNm}" />
+                                                                                        </a></li>
+                                                                                </c:forEach>
+                                                                            </ul>
+                                                                        </div>
+                                                                    </c:if>
+                                                                </li>
+                                                            </c:forEach>
+                                                        </ul>
+                                                    </div>
+                                                </c:if>
                                             </li>
                                         </c:forEach>
                                     </ul>
@@ -85,46 +113,11 @@
                                 <!-- //util menu -->
 
                                 <!-- 전체메뉴 팝업 -->
+                                <!-- 전체메뉴 팝업 (Legacy Removed) 
                                 <div class="all_menu">
-                                    <div>
-                                        <div class="inner">
-                                            <c:forEach var="root" items="${menuList}" varStatus="status">
-                                                <div <c:if test="${root.id >= 5000000}">class="admin"</c:if>>
-                                                    <h2>
-                                                        <c:out value="${root.menuNm}" />
-                                                    </h2>
-                                                    <ul>
-                                                        <c:forEach var="child" items="${root.children}">
-                                                            <li>
-                                                                <a href="<c:url value='${child.chkURL}'/>">
-                                                                    <c:out value="${child.menuNm}" />
-                                                                </a>
-                                                                <%-- 3차 메뉴 표시 --%>
-                                                                    <c:if test="${not empty child.children}">
-                                                                        <ul class="depth3"
-                                                                            style="padding-left: 15px; margin-top: 5px; margin-bottom: 5px;">
-                                                                            <c:forEach var="grandChild"
-                                                                                items="${child.children}">
-                                                                                <li
-                                                                                    style="list-style: disc; margin-left: 10px;">
-                                                                                    <a href="<c:url value='${grandChild.chkURL}'/>"
-                                                                                        style="font-size: 12px; color: #666;">
-                                                                                        <c:out
-                                                                                            value="${grandChild.menuNm}" />
-                                                                                    </a>
-                                                                                </li>
-                                                                            </c:forEach>
-                                                                        </ul>
-                                                                    </c:if>
-                                                            </li>
-                                                        </c:forEach>
-                                                    </ul>
-                                                </div>
-                                            </c:forEach>
-                                        </div>
-                                    </div>
+                                   ... (Legacy Markup Hidden)
                                 </div>
-                                <!-- //전체메뉴 팝업 -->
+                                -->
                             </div>
                         </div>
                         <!-- //Header -->

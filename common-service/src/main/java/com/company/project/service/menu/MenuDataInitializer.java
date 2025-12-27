@@ -24,12 +24,16 @@ public class MenuDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (menuRepository.count() > 0) {
-            log.info("Menu data already exists. Skipping initialization.");
+        boolean menuExists = menuRepository.count() > 0;
+        Integer programCount = jdbcTemplate.queryForObject("SELECT count(*) FROM NPROGRMLIST", Integer.class);
+        boolean programExists = programCount != null && programCount > 0;
+
+        if (menuExists && programExists) {
+            log.info("Menu and Program data already exists. Skipping initialization.");
             return;
         }
 
-        log.info("Initializing menu data from legacy SQL file...");
+        log.info("Initializing menu and program data from legacy SQL file...");
 
         File file = new File("d:/project/egov-enterprise/_legacy_backup/DATABASE/postgres/all_ebt_data_postgres.sql");
         if (!file.exists()) {
@@ -50,12 +54,24 @@ public class MenuDataInitializer implements CommandLineRunner {
             }
         }
 
+        if (!menuExists) {
+            log.info("Processing NMENUINFO inserts...");
+            executeInserts(lines, "INSERT INTO NMENUINFO");
+        }
+
+        if (!programExists) {
+            log.info("Processing NPROGRMLIST inserts...");
+            executeInserts(lines, "INSERT INTO NPROGRMLIST");
+        }
+    }
+
+    private void executeInserts(List<String> lines, String tablePattern) {
         String sql = lines.stream()
-                .filter(line -> line.contains("INSERT INTO NMENUINFO"))
+                .filter(line -> line.contains(tablePattern))
                 .collect(Collectors.joining("\n"));
 
         if (sql.isEmpty()) {
-            log.warn("No NMENUINFO insert statements found in the legacy SQL file.");
+            log.warn("No {} insert statements found in the legacy SQL file.", tablePattern);
             return;
         }
 
@@ -72,6 +88,6 @@ public class MenuDataInitializer implements CommandLineRunner {
             }
         }
 
-        log.info("Successfully initialized {} menu items.", count);
+        log.info("Successfully executed {} insert statements for {}.", count, tablePattern);
     }
 }

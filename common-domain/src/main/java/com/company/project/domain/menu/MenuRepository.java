@@ -8,4 +8,11 @@ import java.util.List;
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
     List<Menu> findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.progrmFileNm LIKE %:searchKeyword%")
+    org.springframework.data.domain.Page<Menu> searchByKeyword(
+            @org.springframework.data.repository.query.Param("searchKeyword") String searchKeyword,
+            org.springframework.data.domain.Pageable pageable);
+
+    int countByUpperMenuNo(Long upperMenuNo);
 }

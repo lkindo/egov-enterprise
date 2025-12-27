@@ -52,4 +52,15 @@ public class Menu {
         this.relateImagePath = relateImagePath;
         this.relateImageNm = relateImageNm;
     }
+
+    public void update(String menuNm, String progrmFileNm, Long upperMenuNo, Integer menuOrdr, String menuDc,
+            String relateImagePath, String relateImageNm) {
+        this.menuNm = menuNm;
+        this.progrmFileNm = progrmFileNm;
+        this.upperMenuNo = upperMenuNo;
+        this.menuOrdr = menuOrdr;
+        this.menuDc = menuDc;
+        this.relateImagePath = relateImagePath;
+        this.relateImageNm = relateImageNm;
+    }
 }
