@@ -144,7 +144,7 @@ function fn_egov_modal_remove() {
                                     var nValue = tNode[i].split("|");
                                     //선택된 메뉴(baseMenuNo)의 하위 메뉴중 첫번재 메뉴의 링크정보를 리턴한다.
                                     if (nValue[1] == baseMenuNo) {
-                                        if (nValue[5] != "dir" && nValue[5] != "" && nValue[5] != "/") {
+                                        if (nValue[5] != "dir" && nValue[5] != "" && nValue[5] != "/" && nValue[5] != "#") {
                                             //링크정보가 있으면 링크정보를 리턴한다.
                                             return nValue[5];
                                         } else {

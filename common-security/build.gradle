@@ -1,4 +1,5 @@
 dependencies {
+    api project(':common-core')
     api project(':common-domain')
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-web' // For Servlet API (Filter)

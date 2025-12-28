@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "LETTNSYSLOG")
+@Table(name = "NSYSLOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SysLog {

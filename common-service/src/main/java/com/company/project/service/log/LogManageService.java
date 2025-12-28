@@ -25,6 +25,24 @@ public class LogManageService {
     private final SysLogRepository sysLogRepository;
 
     /**
+     * 시스템 로그 등록
+     */
+    @Transactional
+    public void insertSysLog(SysLogDto dto) {
+        SysLog entity = SysLog.builder()
+                .requstId(dto.getRequstId())
+                .srvcNm(dto.getSrvcNm())
+                .methodNm(dto.getMethodNm())
+                .processSeCode(dto.getProcessSeCode())
+                .processTime(dto.getProcessTime())
+                .rqesterId(dto.getRqesterId())
+                .rqesterIp(dto.getRqesterIp())
+                .occrrncDe(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
+                .build();
+        sysLogRepository.save(entity);
+    }
+
+    /**
      * 시스템 로그 목록 조회
      */
     public List<SysLogDto> selectSysLogList(ComDefaultVO searchVO) {
@@ -32,7 +50,12 @@ public class LogManageService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        Page<SysLog> page = sysLogRepository.findAll(pageable);
+        // Using custom search method from repository
+        Page<SysLog> page = sysLogRepository.searchSysLogs(
+                searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
+                null, // Start date
+                null, // End date
+                pageable);
         return page.getContent().stream().map(this::toSysLogDto).collect(Collectors.toList());
     }
 
@@ -40,7 +63,11 @@ public class LogManageService {
      * 시스템 로그 목록 총 건수
      */
     public int selectSysLogListTotCnt(ComDefaultVO searchVO) {
-        return (int) sysLogRepository.count();
+        return (int) sysLogRepository.searchSysLogs(
+                searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
+                null,
+                null,
+                PageRequest.of(0, 1)).getTotalElements();
     }
 
     /**

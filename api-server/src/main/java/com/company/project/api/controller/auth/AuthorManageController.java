@@ -64,7 +64,7 @@ public class AuthorManageController {
     /**
      * 권한 상세 조회
      */
-    @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthorList.do" })
+    @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthor.do" })
     public String selectAuthor(@RequestParam("authorCode") String authorCode, ModelMap model)
             throws Exception {
         model.addAttribute("authorManage", authorManageService.selectAuthor(authorCode));

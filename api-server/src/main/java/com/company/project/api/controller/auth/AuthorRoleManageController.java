@@ -32,7 +32,7 @@ public class AuthorRoleManageController {
     /**
      * 권한별 롤 관계 화면
      */
-    @RequestMapping("/sec/ram/EgovAuthorRoleListView.do")
+    @RequestMapping({ "/sec/ram/EgovAuthorRoleListView.do" })
     public String selectAuthorRoleListView() throws Exception {
         return "sec/ram/EgovAuthorRoleManage";
     }
@@ -40,7 +40,7 @@ public class AuthorRoleManageController {
     /**
      * 권한별 롤 목록 조회
      */
-    @RequestMapping("/sec/ram/EgovAuthorRoleList.do")
+    @RequestMapping({ "/sec/ram/EgovAuthorRoleList.do", "/sec/rgm/EgovAuthorGroupListView.do" })
     public String selectAuthorRoleList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
 

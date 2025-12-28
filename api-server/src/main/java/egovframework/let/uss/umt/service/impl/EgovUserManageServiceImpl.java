@@ -6,7 +6,7 @@ import com.company.project.domain.user.UserRepository;
 import egovframework.let.uss.umt.service.EgovUserManageService;
 import egovframework.let.uss.umt.service.UserDefaultVO;
 import egovframework.let.uss.umt.service.UserManageVO;
-import egovframework.let.utl.sim.service.EgovFileScrty;
+import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;

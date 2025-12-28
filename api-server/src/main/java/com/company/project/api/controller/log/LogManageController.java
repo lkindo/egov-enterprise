@@ -3,19 +3,24 @@ package com.company.project.api.controller.log;
 import com.company.project.service.log.LogManageService;
 import com.company.project.service.log.dto.SysLogDto;
 import egovframework.com.cmm.ComDefaultVO;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.Resource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 로그 관리 컨트롤러
+ * 시스템 로그 관리 REST 컨트롤러
  */
-@Controller
+@Slf4j
+@RestController
+@RequestMapping("/api/v1/log/sys")
 @RequiredArgsConstructor
 public class LogManageController {
 
@@ -27,10 +32,8 @@ public class LogManageController {
     /**
      * 시스템 로그 목록 조회
      */
-    @RequestMapping("/sym/log/lgm/SelectSysLogList.do")
-    public String selectSysLogList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
-            throws Exception {
-
+    @GetMapping("/list")
+    public ResponseEntity<?> selectSysLogList(@ModelAttribute("searchVO") ComDefaultVO searchVO) throws Exception {
         searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
         searchVO.setPageSize(propertiesService.getInt("pageSize"));
 
@@ -43,24 +46,26 @@ public class LogManageController {
         searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
         searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        model.addAttribute("resultList", logManageService.selectSysLogList(searchVO));
-
+        List<SysLogDto> list = logManageService.selectSysLogList(searchVO);
         int totCnt = logManageService.selectSysLogListTotCnt(searchVO);
         paginationInfo.setTotalRecordCount(totCnt);
-        model.addAttribute("paginationInfo", paginationInfo);
-        model.addAttribute("resultCnt", String.valueOf(totCnt));
 
-        return "sym/log/lgm/EgovSysLogList";
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("paginationInfo", paginationInfo);
+
+        return ResponseEntity.ok(result);
     }
 
     /**
      * 시스템 로그 상세 조회
      */
-    @RequestMapping("/sym/log/lgm/InqireSysLog.do")
-    public String selectSysLog(@RequestParam("requstId") String requstId, ModelMap model)
-            throws Exception {
-        SysLogDto vo = logManageService.selectSysLog(requstId.trim());
-        model.addAttribute("result", vo);
-        return "sym/log/lgm/EgovSysLogInqire";
+    @GetMapping("/{requestId}")
+    public ResponseEntity<?> selectSysLog(@PathVariable("requestId") String requestId) throws Exception {
+        SysLogDto result = logManageService.selectSysLog(requestId.trim());
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
     }
 }

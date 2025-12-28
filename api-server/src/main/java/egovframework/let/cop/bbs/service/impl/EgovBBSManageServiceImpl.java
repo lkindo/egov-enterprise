@@ -5,11 +5,9 @@ import com.company.project.domain.board.BoardId;
 import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.domain.board.BoardSearchCondition;
-import egovframework.com.cmm.service.EgovFileMngService;
-import egovframework.com.cmm.service.FileVO;
 import egovframework.let.cop.bbs.service.BoardVO;
 import egovframework.let.cop.bbs.service.EgovBBSManageService;
-import egovframework.let.utl.fcc.service.EgovDateUtil;
+import egovframework.com.utl.fcc.service.EgovDateUtil;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -33,8 +31,8 @@ public class EgovBBSManageServiceImpl extends EgovAbstractServiceImpl implements
     private final BoardRepository boardRepository;
     private final BoardMasterRepository boardMasterRepository;
 
-    @Resource(name = "EgovFileMngService")
-    private EgovFileMngService fileService;
+    @Resource(name = "egovFileService")
+    private com.company.project.service.file.EgovFileService egovFileService;
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertyService;
@@ -49,9 +47,7 @@ public class EgovBBSManageServiceImpl extends EgovAbstractServiceImpl implements
         entity.delete(board.getLastUpdusrId());
 
         if (board.getAtchFileId() != null && !board.getAtchFileId().isEmpty()) {
-            FileVO fvo = new FileVO();
-            fvo.setAtchFileId(board.getAtchFileId());
-            fileService.deleteAllFileInf(fvo);
+            egovFileService.deleteFiles(board.getAtchFileId());
         }
     }
 

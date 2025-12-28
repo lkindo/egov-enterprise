@@ -48,10 +48,21 @@ public class MenuService {
         List<MenuDto> rootMenus = new ArrayList<>();
 
         for (Menu menu : menus) {
-            String url = "/";
-            if (menu.getProgrmFileNm() != null &&
-                    programMap.containsKey(menu.getProgrmFileNm())) {
-                url = programMap.get(menu.getProgrmFileNm()).getUrl();
+            String url = "#"; // Default to # for safe expansion
+            String progrm = menu.getProgrmFileNm();
+
+            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                if (programMap.containsKey(progrm)) {
+                    String progrmUrl = programMap.get(progrm).getUrl();
+                    // If URL is just / it's likely a directory-like entry in SQL
+                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                } else {
+                    // Not in program map but looks like a program name -> default to / for legacy
+                    // compatibility,
+                    // but # is safer for categories. Here we use / to match existing logic but
+                    // fallback to # if needed.
+                    url = "/";
+                }
             }
 
             MenuDto dto = MenuDto.builder()
@@ -84,6 +95,45 @@ public class MenuService {
         }
 
         return rootMenus;
+    }
+
+    public List<MenuDto> getAllMenus() {
+        List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Program> programs = programRepository.findAll();
+        Map<String, Program> programMap = programs.stream()
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+
+        List<MenuDto> result = new ArrayList<>();
+
+        for (Menu menu : menus) {
+            String url = "#";
+            String progrm = menu.getProgrmFileNm();
+
+            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                if (programMap.containsKey(progrm)) {
+                    String progrmUrl = programMap.get(progrm).getUrl();
+                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                } else {
+                    url = "/";
+                }
+            }
+
+            MenuDto dto = MenuDto.builder()
+                    .id(menu.getId())
+                    .menuNo(menu.getId())
+                    .menuNm(menu.getMenuNm())
+                    .progrmFileNm(menu.getProgrmFileNm())
+                    .upperMenuNo(menu.getUpperMenuNo())
+                    .upperMenuId(menu.getUpperMenuNo())
+                    .menuOrdr(menu.getMenuOrdr())
+                    .chkURL(url)
+                    .relateImagePath(menu.getRelateImagePath())
+                    .relateImageNm(menu.getRelateImageNm())
+                    .build();
+
+            result.add(dto);
+        }
+        return result;
     }
 
     public List<MenuCreateDto> selectMenuCreatManagList(ComDefaultVO searchVO) {
@@ -179,13 +229,44 @@ public class MenuService {
     public String getProgrmFileNmByUrl(String url) {
         if (url == null || url.isEmpty())
             return null;
+
+        final String resolvedUrl;
+        // 0. Manual Alias Mapping for improved sidebar reliability
+        if (url.contains("/sec/rgm/EgovAuthorGroupListView.do")) {
+            resolvedUrl = "/sec/ram/EgovAuthorRoleList.do";
+        } else if (url.contains("/uss/umt/EgovMberSelectUpdtView.do")) {
+            resolvedUrl = "/uss/umt/user/EgovUserSelectUpdtView.do";
+        } else if (url.contains("/sec/ram/EgovAuthor.do")) {
+            resolvedUrl = "/sec/ram/EgovAuthorList.do";
+        } else if (url.contains("/uss/umt/EgovUserManage.do")) {
+            resolvedUrl = "/uss/umt/user/EgovUserManage.do";
+        } else if (url.contains("/sec/ram/EgovAuthorManage.do")) {
+            resolvedUrl = "/sec/ram/EgovAuthorList.do";
+        } else if (url.contains("/uss/ion/uas/selectUserAbsnceListView.do")) {
+            resolvedUrl = "/uss/ion/uas/selectUserAbsnceList.do";
+        } else if (url.contains("/sec/gmt/EgovGroupListView.do")) {
+            resolvedUrl = "/sec/gmt/EgovGroupList.do";
+        } else if (url.contains("/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA")
+                || url.contains("/cop/bbs/admin/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA")) {
+            resolvedUrl = "/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA";
+        } else if (url.contains("/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC")
+                || url.contains("/cop/bbs/admin/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC")) {
+            resolvedUrl = "/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC";
+        } else if (url.contains("/sym/log/clg/SelectLoginLogList.do")) {
+            resolvedUrl = "/sym/log/clg/SelectLoginLogList.do";
+        } else if (url.contains("/sts/cst/selectConectStats.do")) {
+            resolvedUrl = "/sts/cst/selectConectStats.do";
+        } else {
+            resolvedUrl = url;
+        }
+
         // 1. Exact match first
-        return programRepository.findByUrl(url)
+        return programRepository.findByUrl(resolvedUrl)
                 .map(Program::getProgrmFileNm)
                 .orElseGet(() -> {
                     // 2. Try match without parameters if original has them
-                    if (url.contains("?")) {
-                        String baseUrl = url.substring(0, url.indexOf("?"));
+                    if (resolvedUrl.contains("?")) {
+                        String baseUrl = resolvedUrl.substring(0, resolvedUrl.indexOf("?"));
                         return programRepository.findByUrl(baseUrl)
                                 .map(Program::getProgrmFileNm)
                                 .orElse(null);
@@ -226,7 +307,7 @@ public class MenuService {
     /* Menu Management Methods */
 
     public List<MenuDto> selectMenuManageList(ComDefaultVO searchVO) {
-        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize(),
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
                 Sort.by("id").ascending());
         String searchKeyword = searchVO.getSearchKeyword();
         if (searchKeyword == null)

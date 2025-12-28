@@ -11,7 +11,11 @@ import lombok.Getter;
 public class FileDto {
     private String atchFileId;
     private Integer fileSn;
+    private String fileStreCours;
+    private String streFileNm;
     private String orignlFileNm;
-    private Long fileMg;
     private String fileExtsn;
+    private Long fileMg;
+    private String fileCn;
+    private String creatDt;
 }

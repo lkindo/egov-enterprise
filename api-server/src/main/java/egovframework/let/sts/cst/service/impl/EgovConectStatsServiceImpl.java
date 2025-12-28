@@ -62,8 +62,28 @@ public class EgovConectStatsServiceImpl extends EgovAbstractServiceImpl implemen
                 resultList.add(stat);
             }
         } else if ("PRSONAL".equals(statsKind)) {
-            // Personal stats query NLOGINLOG - uses existing LoginLogRepository
-            // TODO: Implement personal stats query if needed
+            List<Object[]> rawResults;
+            if ("Y".equals(pdKind)) {
+                rawResults = loginLogRepository.selectPersonalStatsByYear(fromDate, toDate, detailStatsKind);
+            } else if ("M".equals(pdKind)) {
+                rawResults = loginLogRepository.selectPersonalStatsByMonth(fromDate, toDate, detailStatsKind);
+            } else { // D
+                rawResults = loginLogRepository.selectPersonalStatsByDay(fromDate, toDate, detailStatsKind);
+            }
+
+            for (Object[] row : rawResults) {
+                StatsVO stat = new StatsVO();
+                stat.setStatsCo(convertToInt(row[0]));
+                stat.setStatsDate((String) row[1]);
+                stat.setConectMethod((String) row[2]);
+                stat.setCreatCo(convertToInt(row[3]));
+                stat.setUpdtCo(convertToInt(row[4]));
+                stat.setInqireCo(convertToInt(row[5]));
+                stat.setDeleteCo(convertToInt(row[6]));
+                stat.setOutptCo(convertToInt(row[7]));
+                stat.setErrorCo(convertToInt(row[8]));
+                resultList.add(stat);
+            }
         }
 
         return resultList;

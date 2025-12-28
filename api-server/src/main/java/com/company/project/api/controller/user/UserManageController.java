@@ -103,7 +103,8 @@ public class UserManageController {
     /**
      * 사용자 수정 화면
      */
-    @GetMapping({ "/uss/umt/EgovUserSelectUpdtView.do", "/uss/umt/user/EgovUserSelectUpdtView.do" })
+    @GetMapping({ "/uss/umt/EgovUserSelectUpdtView.do", "/uss/umt/user/EgovUserSelectUpdtView.do",
+            "/uss/umt/EgovMberSelectUpdtView.do" })
     public String updateUserView(@RequestParam("selectedId") String userId, Model model)
             throws Exception {
         UserManageDto userManageVO = userManageService.selectUser(userId);

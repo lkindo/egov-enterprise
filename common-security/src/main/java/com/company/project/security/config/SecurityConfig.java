@@ -2,20 +2,33 @@ package com.company.project.security.config;
 
 import com.company.project.security.jwt.JwtAuthenticationFilter;
 import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.security.service.CustomUserDetails;
+import com.company.project.security.service.CustomUserDetailsService;
+import com.company.project.security.service.EgovPasswordEncoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -31,13 +44,56 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        String encodingId = "bcrypt";
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put("bcrypt", new BCryptPasswordEncoder());
+        encoders.put("egov", NoOpPasswordEncoder.getInstance());
+
+        return new DelegatingPasswordEncoder(encodingId, encoders);
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public EgovPasswordEncoder egovPasswordEncoder() {
+        return new EgovPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider(
+            CustomUserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder,
+            EgovPasswordEncoder egovPasswordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider() {
+            @Override
+            protected void additionalAuthenticationChecks(UserDetails userDetails,
+                    UsernamePasswordAuthenticationToken authentication)
+                    throws AuthenticationException {
+
+                String presentationPassword = authentication.getCredentials().toString();
+                String encodedPassword = userDetails.getPassword();
+
+                // If password starts with {egov} or has no prefix (legacy candidate)
+                if (encodedPassword != null
+                        && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
+                    String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6)
+                            : encodedPassword;
+                    String salt = ((CustomUserDetails) userDetails).getUser().getUserId();
+                    if (egovPasswordEncoder.matches(presentationPassword, cleanHash, salt)) {
+                        return; // Success
+                    }
+                }
+
+                // Fallback to BCrypt or others
+                super.additionalAuthenticationChecks(userDetails, authentication);
+            }
+        };
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(DaoAuthenticationProvider authenticationProvider) {
+        return new ProviderManager(authenticationProvider);
     }
 
     @Bean
@@ -56,7 +112,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/index.jsp", "/css/**", "/js/**", "/images/**", "/favicon.ico",
-                                "/cmm/**", "/uat/uia/**", "/sym/**", "/cop/**",
+                                "/cmm/**", "/uat/uia/**", "/sym/**", "/cop/**", "/uss/**", "/sec/**",
                                 "/api/v1/users/signup", "/api/v1/auth/login", "/h2-console/**",
                                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**",
                                 "/WEB-INF/**", "/error/**")

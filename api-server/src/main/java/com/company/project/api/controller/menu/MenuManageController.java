@@ -6,23 +6,14 @@ import com.company.project.service.program.ProgramService;
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @Controller
@@ -30,7 +21,7 @@ import java.util.Map;
 public class MenuManageController {
 
     private final MenuService menuService;
-    private final ProgramService programService; // Needed for checking if program exists
+    private final ProgramService programService;
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertiesService;
@@ -39,19 +30,11 @@ public class MenuManageController {
     EgovMessageSource egovMessageSource;
 
     /**
-     * 메뉴목록 리스트조회
+     * 메뉴 목록 조회 (JSP)
      */
     @RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageSelect.do")
     public String selectMenuManageList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
-        // 0. Spring Security 사용자권한 처리
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
-
-        // Paging
         searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
         searchVO.setPageSize(propertiesService.getInt("pageSize"));
 
@@ -65,182 +48,102 @@ public class MenuManageController {
         searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
         model.addAttribute("list_menumanage", menuService.selectMenuManageList(searchVO));
-
-        int totCnt = menuService.selectMenuManageListTotCnt(searchVO);
-        paginationInfo.setTotalRecordCount(totCnt);
+        model.addAttribute("resultCnt", menuService.selectMenuManageListTotCnt(searchVO));
         model.addAttribute("paginationInfo", paginationInfo);
 
         return "sym/mnu/mpm/EgovMenuManage";
     }
 
     /**
-     * 메뉴 상세조회
+     * 메뉴 상세 조회 (JSP)
      */
-    @RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageListDetailSelect.do")
-    public String selectMenuManage(@RequestParam("req_menuNo") String req_menuNo,
-            @ModelAttribute("searchVO") ComDefaultVO searchVO,
-            ModelMap model) throws Exception {
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
-        searchVO.setSearchKeyword(req_menuNo);
-
-        MenuDto resultVO = menuService.selectMenuManage(Long.parseLong(req_menuNo));
-        model.addAttribute("menuManageVO", resultVO);
-
+    @GetMapping({ "/sym/mnu/mpm/EgovMenuDetailSelectUpdt.do", "/sym/mnu/mpm/EgovMenuManageListDetailSelect.do" })
+    public String selectMenuManageDetail(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+            @RequestParam("req_menuNo") Long menuNo, ModelMap model) throws Exception {
+        MenuDto menuDto = menuService.selectMenuManage(menuNo);
+        model.addAttribute("menuManageVO", menuDto);
         return "sym/mnu/mpm/EgovMenuDetailSelectUpdt";
     }
 
     /**
-     * 메뉴 등록 화면 (GET)
+     * 메뉴 등록 화면 (JSP)
      */
-    @GetMapping(value = "/sym/mnu/mpm/EgovMenuRegistInsert.do")
-    public String insertMenuManageView(ModelMap model) throws Exception {
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
-
-        // Initialize empty DTO for form
+    @GetMapping("/sym/mnu/mpm/EgovMenuRegistInsert.do")
+    public String insertMenuManageView(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
+            throws Exception {
         model.addAttribute("menuManageVO", new MenuDto());
         return "sym/mnu/mpm/EgovMenuRegist";
     }
 
     /**
-     * 메뉴 등록 처리 (POST)
+     * 메뉴 등록 (JSP)
      */
-    @PostMapping(value = "/sym/mnu/mpm/EgovMenuRegistInsert.do")
-    public String insertMenuManage(@Valid @ModelAttribute("menuManageVO") MenuDto menuDto,
-            BindingResult bindingResult,
-            ModelMap model) throws Exception {
-        String resultMsg = "";
+    @PostMapping("/sym/mnu/mpm/EgovMenuRegistInsert.do")
+    public String insertMenuManage(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+            @ModelAttribute("menuManageVO") MenuDto menuDto, BindingResult bindingResult, ModelMap model)
+            throws Exception {
 
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
-
-        if (bindingResult.hasErrors()) {
+        if (menuService.selectMenuNoByPk(menuDto) != 0) {
+            model.addAttribute("resultMsg", egovMessageSource.getMessage("common.isExist.msg"));
             return "sym/mnu/mpm/EgovMenuRegist";
         }
 
-        if (menuService.selectMenuNoByPk(menuDto) == 0) {
-            ComDefaultVO searchVO = new ComDefaultVO();
-            searchVO.setSearchKeyword(menuDto.getProgrmFileNm());
-            // Check if program exists
-            if (programService.selectProgrmListTotCnt(searchVO) == 0) {
-                resultMsg = egovMessageSource.getMessage("fail.common.insert");
-                model.addAttribute("resultMsg", resultMsg);
-                return "sym/mnu/mpm/EgovMenuRegist";
-            } else {
-                menuService.insertMenuManage(menuDto);
-                resultMsg = egovMessageSource.getMessage("success.common.insert");
-                return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
-            }
-        } else {
-            resultMsg = egovMessageSource.getMessage("common.isExist.msg");
-            model.addAttribute("resultMsg", resultMsg);
+        ComDefaultVO progrmSearchVO = new ComDefaultVO();
+        progrmSearchVO.setSearchKeyword(menuDto.getProgrmFileNm());
+        if (programService.selectProgrmListTotCnt(progrmSearchVO) == 0) {
+            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.insert"));
             return "sym/mnu/mpm/EgovMenuRegist";
         }
+
+        menuService.insertMenuManage(menuDto);
+        return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
     }
 
     /**
-     * 메뉴 수정 처리 (POST)
+     * 메뉴 수정 (JSP)
      */
-    @PostMapping(value = "/sym/mnu/mpm/EgovMenuDetailSelectUpdt.do")
-    public String updateMenuManage(@Valid @ModelAttribute("menuManageVO") MenuDto menuDto,
-            BindingResult bindingResult,
-            ModelMap model) throws Exception {
-        String resultMsg = "";
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
+    @PostMapping("/sym/mnu/mpm/EgovMenuDetailSelectUpdt.do")
+    public String updateMenuManage(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+            @ModelAttribute("menuManageVO") MenuDto menuDto, BindingResult bindingResult, ModelMap model)
+            throws Exception {
 
-        if (bindingResult.hasErrors()) {
+        ComDefaultVO progrmSearchVO = new ComDefaultVO();
+        progrmSearchVO.setSearchKeyword(menuDto.getProgrmFileNm());
+        if (programService.selectProgrmListTotCnt(progrmSearchVO) == 0) {
+            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.update"));
             return "sym/mnu/mpm/EgovMenuDetailSelectUpdt";
         }
 
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setSearchKeyword(menuDto.getProgrmFileNm());
-        if (programService.selectProgrmListTotCnt(searchVO) == 0) {
-            resultMsg = egovMessageSource.getMessage("fail.common.update");
-            model.addAttribute("resultMsg", resultMsg);
-            return "sym/mnu/mpm/EgovMenuDetailSelectUpdt";
-        } else {
-            menuService.updateMenuManage(menuDto);
-            resultMsg = egovMessageSource.getMessage("success.common.update");
-            model.addAttribute("resultMsg", resultMsg);
-            return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
-        }
+        menuService.updateMenuManage(menuDto);
+        return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
     }
 
     /**
-     * 메뉴 삭제 처리
+     * 메뉴 삭제 (JSP)
      */
-    @RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageDelete.do")
-    public String deleteMenuManage(@ModelAttribute("menuManageVO") MenuDto menuDto,
-            ModelMap model) throws Exception {
-        String resultMsg = "";
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
+    @RequestMapping("/sym/mnu/mpm/EgovMenuManageDelete.do")
+    public String deleteMenuManage(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+            @RequestParam("req_menuNo") Long menuNo, ModelMap model) throws Exception {
 
+        MenuDto menuDto = MenuDto.builder().menuNo(menuNo).build();
         if (menuService.selectUpperMenuNoByPk(menuDto) != 0) {
-            resultMsg = egovMessageSource.getMessage("fail.common.delete.upperMenuExist");
-            model.addAttribute("resultMsg", resultMsg);
+            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.delete.upperMenuExist"));
             return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
         }
 
         menuService.deleteMenuManage(menuDto);
-        resultMsg = egovMessageSource.getMessage("success.common.delete");
-        model.addAttribute("resultMsg", resultMsg);
-
         return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
     }
 
     /**
-     * 메뉴 목록 멀티 삭제
+     * 메뉴 다중 삭제 (JSP)
      */
     @RequestMapping("/sym/mnu/mpm/EgovMenuManageListDelete.do")
     public String deleteMenuManageList(@RequestParam("checkedMenuNoForDel") String checkedMenuNoForDel,
-            @ModelAttribute("menuManageVO") MenuDto menuDto,
-            ModelMap model) throws Exception {
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-        if (!Boolean.TRUE.equals(isAuthenticated)) {
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-            return "uat/uia/EgovLoginUsr";
-        }
-
-        String resultMsg = "";
-        String[] delMenuNo = checkedMenuNoForDel.split(",");
-
-        // Check first item for constraints (Legacy behavior, though loop check would be
-        // better)
-        if (delMenuNo.length > 0) {
-            MenuDto checkDto = MenuDto.builder().menuNo(Long.parseLong(delMenuNo[0])).build();
-            if (menuService.selectUpperMenuNoByPk(checkDto) != 0) {
-                resultMsg = egovMessageSource.getMessage("fail.common.delete.upperMenuExist");
-                model.addAttribute("resultMsg", resultMsg);
-                return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
-            }
-        }
-
-        if (checkedMenuNoForDel == null || checkedMenuNoForDel.length() == 0) {
-            resultMsg = egovMessageSource.getMessage("fail.common.delete");
-        } else {
-            menuService.deleteMenuManageList(checkedMenuNoForDel);
-            resultMsg = egovMessageSource.getMessage("success.common.delete");
-        }
-
-        model.addAttribute("resultMsg", resultMsg);
+            @ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
+            throws Exception {
+        menuService.deleteMenuManageList(checkedMenuNoForDel);
         return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
     }
+
 }

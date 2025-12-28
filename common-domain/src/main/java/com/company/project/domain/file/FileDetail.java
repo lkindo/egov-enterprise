@@ -46,8 +46,9 @@ public class FileDetail {
     private String fileCn; // 파일 설명
 
     @Builder
-    public FileDetail(Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,
-            String fileExtsn, Long fileMg, String fileCn) {
+    public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,
+            String orignlFileNm, String fileExtsn, Long fileMg, String fileCn) {
+        this.fileMaster = fileMaster;
         this.fileSn = fileSn;
         this.fileStreCours = fileStreCours;
         this.streFileNm = streFileNm;

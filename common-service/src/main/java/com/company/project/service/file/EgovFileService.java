@@ -27,4 +27,19 @@ public interface EgovFileService {
      * 파일 다운로드를 위한 Resource 조회
      */
     Resource getFileResource(String atchFileId, Integer fileSn) throws IOException;
+
+    /**
+     * 파일 삭제 (전체)
+     */
+    void deleteFiles(String atchFileId) throws IOException;
+
+    /**
+     * 파일 삭제 (단별)
+     */
+    void deleteFile(String atchFileId, Integer fileSn) throws IOException;
+
+    /**
+     * 파일 수정 (추가 업로드)
+     */
+    void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException;
 }

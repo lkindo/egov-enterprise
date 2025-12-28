@@ -71,7 +71,7 @@ public class RoleManageController {
     /**
      * 롤 상세 조회
      */
-    @RequestMapping(value = { "/api/v1/auth/roles", "/sec/rmt/EgovRoleList.do" })
+    @RequestMapping(value = { "/api/v1/auth/roles", "/sec/rmt/EgovRole.do" })
     public String selectRole(@RequestParam("roleCode") String roleCode, ModelMap model)
             throws Exception {
         model.addAttribute("roleManage", roleManageService.selectRole(roleCode));

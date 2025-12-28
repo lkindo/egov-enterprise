@@ -43,4 +43,12 @@ public class RoleInfo {
         this.roleSort = roleSort;
         this.creatDt = LocalDateTime.now();
     }
+
+    public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
+        this.roleNm = roleNm;
+        this.rolePttrn = rolePttrn;
+        this.roleDc = roleDc;
+        this.roleTy = roleTy;
+        this.roleSort = roleSort;
+    }
 }

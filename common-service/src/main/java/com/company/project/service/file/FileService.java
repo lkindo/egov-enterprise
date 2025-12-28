@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -54,8 +55,15 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     public String uploadFiles(List<MultipartFile> files) throws IOException {
         String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
         FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
+        FileMaster savedMaster = fileMasterRepository.save(master);
 
-        int fileSn = 1;
+        saveFileDetails(savedMaster, files, 1);
+
+        return savedMaster.getAtchFileId();
+    }
+
+    private void saveFileDetails(FileMaster master, List<MultipartFile> files, int startSn) throws IOException {
+        int fileSn = startSn;
         for (MultipartFile file : files) {
             if (file.isEmpty())
                 continue;
@@ -74,6 +82,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
             file.transferTo(destFile);
 
             FileDetail detail = FileDetail.builder()
+                    .fileMaster(master)
                     .fileSn(fileSn++)
                     .fileStreCours(uploadDir)
                     .streFileNm(storedFilename)
@@ -84,9 +93,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
 
             master.addFileDetail(detail);
         }
-
         fileMasterRepository.save(master);
-        return atchFileId;
     }
 
     /**
@@ -94,6 +101,9 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
      */
     @Override
     public List<FileDto> getFileList(String atchFileId) {
+        if (atchFileId == null) {
+            return List.of();
+        }
         FileMaster master = fileMasterRepository.findById(atchFileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return fileDetailRepository.findByFileMaster(master).stream()
@@ -106,22 +116,75 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
      */
     @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
-        fileMasterRepository.findById(atchFileId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        Path filePath = Paths.get(detail.getFileStreCours()).resolve(detail.getStreFileNm());
+        Path filePath = Paths.get(detail.getFileStreCours()).resolve(Objects.requireNonNull(detail.getStreFileNm()));
         return new UrlResource(filePath.toUri());
+    }
+
+    @Override
+    @Transactional
+    public void deleteFiles(String atchFileId) throws IOException {
+        FileMaster master = fileMasterRepository.findById(atchFileId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        List<FileDetail> details = fileDetailRepository.findByFileMaster(master);
+        for (FileDetail detail : details) {
+            deletePhysicalFile(detail);
+        }
+
+        fileMasterRepository.delete(master);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
+        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        deletePhysicalFile(detail);
+        fileDetailRepository.delete(detail);
+    }
+
+    @Override
+    @Transactional
+    public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
+        if (atchFileId == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        FileMaster master = fileMasterRepository.findById(atchFileId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        Integer maxSn = fileDetailRepository.findByFileMaster(master).stream()
+                .mapToInt(FileDetail::getFileSn)
+                .max()
+                .orElse(0);
+
+        saveFileDetails(master, files, maxSn + 1);
+    }
+
+    private void deletePhysicalFile(FileDetail detail) {
+        String streFileNm = detail.getStreFileNm();
+        if (streFileNm == null)
+            return;
+        Path filePath = Paths.get(detail.getFileStreCours()).resolve(streFileNm);
+        File file = filePath.toFile();
+        if (file.exists()) {
+            file.delete();
+        }
     }
 
     private FileDto convertToDto(FileDetail d) {
         return FileDto.builder()
                 .atchFileId(d.getFileMaster().getAtchFileId())
                 .fileSn(d.getFileSn())
+                .fileStreCours(d.getFileStreCours())
+                .streFileNm(d.getStreFileNm())
                 .orignlFileNm(d.getOrignlFileNm())
-                .fileMg(d.getFileMg())
                 .fileExtsn(d.getFileExtsn())
+                .fileMg(d.getFileMg())
+                .fileCn(d.getFileCn())
                 .build();
     }
 }

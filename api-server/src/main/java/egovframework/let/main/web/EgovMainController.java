@@ -1,9 +1,9 @@
 package egovframework.let.main.web;
 
 import java.util.Map;
-import java.util.List;
 
 import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
+import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -14,10 +14,21 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.LoginVO;
 import egovframework.let.cop.bbs.service.BoardVO;
+import egovframework.let.cop.bbs.service.EgovBBSManageService;
+import com.company.project.service.board.BoardService;
+import com.company.project.service.board.dto.BoardDto;
+import org.springframework.data.domain.PageRequest;
+
 import egovframework.let.sym.mnu.mpm.service.EgovMenuManageService;
 import egovframework.let.sym.mnu.mpm.service.MenuManageVO;
+import com.company.project.service.menu.MenuService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 템플릿 메인 페이지 컨트롤러 클래스(Sample 소스)
@@ -41,14 +52,38 @@ import jakarta.servlet.http.HttpServletRequest;
 public class EgovMainController {
 
 	/**
-	 * EgovBoardService (JPA)
+	 * EgovBBSManageService
 	 */
-	@Resource(name = "egovBoardService")
-	private com.company.project.service.board.EgovBoardService boardService;
+	@Resource(name = "EgovBBSManageService")
+	private EgovBBSManageService bbsMngService;
 
 	/** EgovMenuManageService */
 	@Resource(name = "meunManageService")
 	private EgovMenuManageService menuManageService;
+
+	/** MenuService (New) */
+	@Resource(name = "menuService")
+	private MenuService menuService;
+
+	/** BoardService (New) */
+	@Resource(name = "egovBoardService")
+	private BoardService boardService;
+
+	/**
+	 * DTO to Map Adapter for JSP Compatibility
+	 */
+	private Map<String, Object> convertToMap(BoardDto dto) {
+		Map<String, Object> map = new HashMap<>();
+		map.put("nttSj", dto.getNttSj());
+		map.put("ntcrNm", dto.getNtcrNm());
+		map.put("frstRegisterNm", dto.getNtcrNm());
+		map.put("frstRegisterPnttm", dto.getFrstRegisterPnttmStr()); // Use Formatted String
+		map.put("inqireCo", dto.getInqireCo());
+		map.put("isExpired", dto.getIsExpired());
+		map.put("useAt", dto.getUseAt());
+		map.put("replyLc", dto.getReplyLc());
+		return map;
+	}
 
 	/**
 	 * 메인 페이지에서 각 업무 화면으로 연계하는 기능을 제공한다.
@@ -77,59 +112,61 @@ public class EgovMainController {
 			throws Exception {
 
 		// 공지사항 메인 컨텐츠 조회 시작 ---------------------------------
-		BoardVO boardVO = new BoardVO();
-		boardVO.setPageUnit(10);
-		boardVO.setPageSize(10);
-		boardVO.setBbsId("BBSMSTR_AAAAAAAAAAAA");
+		/*
+		 * Legacy Code
+		 * BoardVO boardVO = new BoardVO();
+		 * boardVO.setPageUnit(10);
+		 * boardVO.setPageSize(10);
+		 * boardVO.setBbsId("BBSMSTR_AAAAAAAAAAAA");
+		 * 
+		 * PaginationInfo paginationInfo = new PaginationInfo();
+		 * 
+		 * paginationInfo.setCurrentPageNo(boardVO.getPageIndex());
+		 * paginationInfo.setRecordCountPerPage(boardVO.getPageUnit());
+		 * paginationInfo.setPageSize(boardVO.getPageSize());
+		 * 
+		 * boardVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+		 * boardVO.setLastIndex(paginationInfo.getLastRecordIndex());
+		 * boardVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+		 * 
+		 * Map<String, Object> map = bbsMngService.selectBoardArticles(boardVO,
+		 * "BBSA02");
+		 * model.addAttribute("notiList", map.get("resultList"));
+		 */
 
-		org.springframework.data.domain.Pageable pageableNoti = org.springframework.data.domain.PageRequest.of(0, 10);
-		org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> notiPage = boardService
-				.getBoardPosts(boardVO.getBbsId(), pageableNoti);
-
-		List<BoardVO> notiList = new java.util.ArrayList<>();
-		for (com.company.project.service.board.dto.BoardDto dto : notiPage.getContent()) {
-			BoardVO vo = new BoardVO();
-			vo.setNttId(dto.getId());
-			vo.setNttSj(dto.getNttSj());
-			vo.setFrstRegisterNm(dto.getNtcrNm());
-			vo.setFrstRegisterPnttm(
-					dto.getFrstRegisterPnttm() != null
-							? dto.getFrstRegisterPnttm()
-									.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-							: "");
-			vo.setUseAt("Y");
-			notiList.add(vo);
-		}
-		model.addAttribute("notiList", notiList);
+		// Hybrid Code
+		List<BoardDto> notiList = boardService.getBoardPosts("BBSMSTR_AAAAAAAAAAAA", PageRequest.of(0, 10))
+				.getContent();
+		List<Map<String, Object>> notiMapList = notiList.stream().map(this::convertToMap).collect(Collectors.toList());
+		model.addAttribute("notiList", notiMapList);
 
 		// 공지사항 메인컨텐츠 조회 끝 -----------------------------------
 
-		// 업무게시판 메인 컨텐츠 조회 시작 -------------------------------
-		boardVO.setPageUnit(5);
-		boardVO.setPageSize(10);
-		boardVO.setBbsId("BBSMSTR_CCCCCCCCCCCC");
+		// 자료실 메인 컨텐츠 조회 시작 -------------------------------
+		/*
+		 * Legacy Code
+		 * boardVO.setPageUnit(5);
+		 * boardVO.setPageSize(10);
+		 * boardVO.setBbsId("BBSMSTR_CCCCCCCCCCCC");
+		 * 
+		 * paginationInfo.setCurrentPageNo(boardVO.getPageIndex());
+		 * paginationInfo.setRecordCountPerPage(boardVO.getPageUnit());
+		 * paginationInfo.setPageSize(boardVO.getPageSize());
+		 * 
+		 * boardVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+		 * boardVO.setLastIndex(paginationInfo.getLastRecordIndex());
+		 * boardVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+		 * 
+		 * model.addAttribute("bbsList", bbsMngService.selectBoardArticles(boardVO,
+		 * "BBSA02").get("resultList"));
+		 */
 
-		org.springframework.data.domain.Pageable pageableBbs = org.springframework.data.domain.PageRequest.of(0, 5);
-		org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> bbsPage = boardService
-				.getBoardPosts(boardVO.getBbsId(), pageableBbs);
+		// Hybrid Code
+		List<BoardDto> bbsList = boardService.getBoardPosts("BBSMSTR_CCCCCCCCCCCC", PageRequest.of(0, 5)).getContent();
+		List<Map<String, Object>> bbsMapList = bbsList.stream().map(this::convertToMap).collect(Collectors.toList());
+		model.addAttribute("bbsList", bbsMapList);
 
-		List<BoardVO> bbsList = new java.util.ArrayList<>();
-		for (com.company.project.service.board.dto.BoardDto dto : bbsPage.getContent()) {
-			BoardVO vo = new BoardVO();
-			vo.setNttId(dto.getId());
-			vo.setNttSj(dto.getNttSj());
-			vo.setFrstRegisterNm(dto.getNtcrNm());
-			vo.setFrstRegisterPnttm(
-					dto.getFrstRegisterPnttm() != null
-							? dto.getFrstRegisterPnttm()
-									.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-							: "");
-			vo.setUseAt("Y");
-			bbsList.add(vo);
-		}
-		model.addAttribute("bbsList", bbsList);
-
-		// 업무게시판 메인컨텐츠 조회 끝 -----------------------------------
+		// 자료실 메인컨텐츠 조회 끝 -----------------------------------
 
 		return "main/EgovMainView";
 	}
@@ -159,18 +196,23 @@ public class EgovMainController {
 			menuManageVO.setTmp_OrgnztId(user.getOrgnztId());
 			menuManageVO.setTmp_UniqId(user.getUniqId());
 
+			// Legacy Service Call
 			// model.addAttribute("list_headmenu",
 			// menuManageService.selectMainMenuHead(menuManageVO));
 			// model.addAttribute("list_menulist",
 			// menuManageService.selectMainMenuLeft(menuManageVO));
+
+			// Hybrid Migration: Use New MenuService
+			model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
+			model.addAttribute("list_menulist", menuService.getAllMenus());
 		} else {
 			menuManageVO.setAuthorCode("ROLE_ANONYMOUS");
-
+			//
 			// model.addAttribute("list_headmenu",
-			// menuManageService.selectMainMenuHead(menuManageVO));
+			// menuManageService.selectMainMenuHeadByAuthor(menuManageVO));
 			// model.addAttribute("list_menulist",
-			// menuManageService.selectMainMenuLeft(menuManageVO));
-
+			// menuManageService.selectMainMenuLeftByAuthor(menuManageVO));
+			//
 		}
 
 		return "main/inc/EgovIncHeader"; // 업무화면의 상단메뉴 화면
@@ -236,10 +278,16 @@ public class EgovMainController {
 			menuManageVO.setTmp_Email(user.getEmail());
 			menuManageVO.setTmp_OrgnztId(user.getOrgnztId());
 			menuManageVO.setTmp_UniqId(user.getUniqId());
+
+			// Legacy Service Call
 			// model.addAttribute("list_headmenu",
 			// menuManageService.selectMainMenuHead(menuManageVO));
 			// model.addAttribute("list_menulist",
 			// menuManageService.selectMainMenuLeft(menuManageVO));
+
+			// Hybrid Migration: Use New MenuService
+			model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
+			model.addAttribute("list_menulist", menuService.getAllMenus());
 		} else {
 			// model.addAttribute("list_headmenu",
 			// menuManageService.selectMainMenuHeadAnonymous(menuManageVO));

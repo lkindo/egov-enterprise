@@ -46,7 +46,7 @@ public class StatisticsController {
         model.addAttribute("fDate", fromDate);
         model.addAttribute("tDate", toDate);
 
-        return "sts/EgovConectStats";
+        return "sts/cst/EgovConectStats";
     }
 
     /**

@@ -23,7 +23,7 @@ import java.util.Map;
 public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements EgovSysLogService {
 
     @Resource
-    private SysLogRepository sysLogRepository;
+    private com.company.project.service.log.LogManageService logManageService;
 
     @Resource(name = "egovSysLogIdGnrService")
     private EgovIdGnrService egovSysLogIdGnrService;
@@ -33,7 +33,7 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
     public void logInsertSysLog(egovframework.let.sym.log.lgm.service.SysLog vo) throws Exception {
         String requstId = egovSysLogIdGnrService.getNextStringId();
 
-        SysLog entity = SysLog.builder()
+        com.company.project.service.log.dto.SysLogDto dto = com.company.project.service.log.dto.SysLogDto.builder()
                 .requstId(requstId)
                 .srvcNm(vo.getSrvcNm())
                 .methodNm(vo.getMethodNm())
@@ -41,14 +41,9 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
                 .processTime(vo.getProcessTime())
                 .rqesterId(vo.getRqesterId())
                 .rqesterIp(vo.getRqesterIp())
-                // occrrncDe is handled in DB or Entity usually, but here VO doesn't seem to
-                // pass it always?
-                // Legacy SQL: INSERT ... OCCRRNC_DE ... TO_CHAR(sysdate, 'YYYYMMDD')
-                // So we set it here.
-                .occrrncDe(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
                 .build();
 
-        sysLogRepository.save(entity);
+        logManageService.insertSysLog(dto);
     }
 
     @Override
@@ -63,39 +58,38 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
     @Override
     public egovframework.let.sym.log.lgm.service.SysLog selectSysLog(egovframework.let.sym.log.lgm.service.SysLog vo)
             throws Exception {
-        return sysLogRepository.findById(vo.getRequstId())
-                .map(this::convertToVo)
-                .orElse(null);
+        com.company.project.service.log.dto.SysLogDto dto = logManageService.selectSysLog(vo.getRequstId());
+        return dto != null ? convertToVo(dto) : null;
     }
 
     @Override
     public Map<String, Object> selectSysLogInf(egovframework.let.sym.log.lgm.service.SysLog vo) throws Exception {
-        Pageable pageable = PageRequest.of(vo.getPageIndex() - 1, vo.getPageUnit());
+        egovframework.com.cmm.ComDefaultVO searchVO = new egovframework.com.cmm.ComDefaultVO();
+        searchVO.setSearchKeyword(vo.getSearchWrd());
+        searchVO.setPageIndex(vo.getPageIndex());
+        searchVO.setPageUnit(vo.getPageUnit());
 
-        Page<SysLog> page = sysLogRepository.searchSysLogs(
-                vo.getSearchWrd(),
-                vo.getSearchBgnDe(),
-                vo.getSearchEndDe(),
-                pageable);
+        java.util.List<com.company.project.service.log.dto.SysLogDto> list = logManageService
+                .selectSysLogList(searchVO);
+        int totCnt = logManageService.selectSysLogListTotCnt(searchVO);
 
         Map<String, Object> map = new HashMap<>();
-        map.put("resultList", page.getContent().stream().map(this::convertToVo).toList());
-        map.put("resultCnt", Integer.toString((int) page.getTotalElements()));
+        map.put("resultList", list.stream().map(this::convertToVo).toList());
+        map.put("resultCnt", Integer.toString(totCnt));
         return map;
     }
 
-    private egovframework.let.sym.log.lgm.service.SysLog convertToVo(SysLog entity) {
+    private egovframework.let.sym.log.lgm.service.SysLog convertToVo(
+            com.company.project.service.log.dto.SysLogDto dto) {
         egovframework.let.sym.log.lgm.service.SysLog vo = new egovframework.let.sym.log.lgm.service.SysLog();
-        vo.setRequstId(entity.getRequstId());
-        vo.setSrvcNm(entity.getSrvcNm());
-        vo.setMethodNm(entity.getMethodNm());
-        vo.setProcessSeCode(entity.getProcessSeCode());
-        vo.setProcessTime(entity.getProcessTime());
-        vo.setRqesterId(entity.getRqesterId());
-        vo.setRqesterIp(entity.getRqesterIp());
-        vo.setOccrrncDe(entity.getOccrrncDe());
-        // Note: processSeCodeNm, rqsterNm (User Name) are missing here unless joined.
-        // This mirrors the LoginLog limitation.
+        vo.setRequstId(dto.getRequstId());
+        vo.setSrvcNm(dto.getSrvcNm());
+        vo.setMethodNm(dto.getMethodNm());
+        vo.setProcessSeCode(dto.getProcessSeCode());
+        vo.setProcessTime(dto.getProcessTime());
+        vo.setRqesterId(dto.getRqesterId());
+        vo.setRqesterIp(dto.getRqesterIp());
+        vo.setOccrrncDe(dto.getOccrrncDe());
         return vo;
     }
 }

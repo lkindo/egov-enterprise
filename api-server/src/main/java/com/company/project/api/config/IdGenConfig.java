@@ -92,6 +92,21 @@ public class IdGenConfig {
         return idGnrService;
     }
 
+    /**
+     * 설문응답 ID 생성기
+     * 형식: RESULT_0000000000001
+     */
+    @Bean
+    public EgovIdGnrService qustnrRespondInfoIdGnrService(DataSource dataSource) {
+        EgovTableIdGnrServiceImpl idGnrService = new EgovTableIdGnrServiceImpl();
+        idGnrService.setDataSource(dataSource);
+        idGnrService.setStrategy(createStrategy("RESULT_", 13, '0'));
+        idGnrService.setBlockSize(1);
+        idGnrService.setTable("NIDSKEY");
+        idGnrService.setTableName("QRESP");
+        return idGnrService;
+    }
+
     private EgovIdGnrStrategyImpl createStrategy(String prefix, int cipers, char fillChar) {
         EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
         strategy.setPrefix(prefix);

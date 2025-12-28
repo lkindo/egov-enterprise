@@ -1,6 +1,7 @@
 package egovframework.let.cop.bbs.web;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -21,9 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.validation.Valid;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
-import egovframework.com.cmm.service.EgovFileMngService;
-import egovframework.com.cmm.service.EgovFileMngUtil;
-import egovframework.com.cmm.service.FileVO;
+import com.company.project.service.file.EgovFileService;
 import egovframework.let.cop.bbs.service.Board;
 import egovframework.let.cop.bbs.service.BoardMaster;
 import egovframework.let.cop.bbs.service.BoardMasterVO;
@@ -65,11 +67,8 @@ public class EgovBBSManageController {
     @Resource(name = "egovBoardService")
     private com.company.project.service.board.EgovBoardService boardService;
 
-    @Resource(name = "EgovFileMngService")
-    private EgovFileMngService fileMngService;
-
-    @Resource(name = "EgovFileMngUtil")
-    private EgovFileMngUtil fileUtil;
+    @Resource(name = "egovFileService")
+    private EgovFileService egovFileService;
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertyService;
@@ -214,6 +213,87 @@ public class EgovBBSManageController {
     }
 
     /**
+     * 게시판 목록 조회 (레거시 ArticleList 경로)
+     */
+    @RequestMapping("/cop/bbs/selectArticleList.do")
+    public String selectArticleList(
+            @ModelAttribute("searchVO") BoardVO boardVO,
+            @RequestParam(required = false) String bbsId,
+            ModelMap model) throws Exception {
+
+        if (bbsId == null || bbsId.isEmpty()) {
+            bbsId = "BBSMSTR_AAAAAAAAAAAA";
+        }
+        boardVO.setBbsId(bbsId);
+
+        boardVO.setPageUnit(propertyService.getInt("pageUnit"));
+        boardVO.setPageSize(propertyService.getInt("pageSize"));
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                boardVO.getPageIndex() - 1,
+                boardVO.getPageUnit());
+
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> page = boardService
+                .getBoardPosts(bbsId, boardVO.getSearchCnd(), boardVO.getSearchWrd(), pageable);
+
+        PaginationInfo paginationInfo = new PaginationInfo();
+        paginationInfo.setCurrentPageNo(boardVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(boardVO.getPageUnit());
+        paginationInfo.setPageSize(boardVO.getPageSize());
+        paginationInfo.setTotalRecordCount((int) page.getTotalElements());
+
+        model.addAttribute("resultList", page.getContent());
+        model.addAttribute("paginationInfo", paginationInfo);
+
+        // 게시판 정보 (Notice와 달리 Map으로 구성하는 경우 대응)
+        Map<String, Object> boardMasterVO = new HashMap<>();
+        boardMasterVO.put("bbsId", bbsId);
+        boardMasterVO.put("bbsNm", getBoardName(bbsId));
+        boardMasterVO.put("tmplatCours", "/css/egovframework/com/com.css");
+
+        model.addAttribute("boardMasterVO", boardMasterVO);
+        model.addAttribute("brdMstrVO", boardMasterVO);
+
+        return "cop/bbs/EgovArticleList";
+    }
+
+    /**
+     * 게시판 이름 조회 (레거시 지원용)
+     */
+    private String getBoardName(String bbsId) {
+        if ("BBSMSTR_AAAAAAAAAAAA".equals(bbsId)) {
+            return "공지사항";
+        } else if ("BBSMSTR_CCCCCCCCCCCC".equals(bbsId)) {
+            return "업무게시판";
+        }
+        return "게시판";
+    }
+
+    /**
+     * 디버그용 게시판 목록 조회 (JSON)
+     */
+    @GetMapping("/cop/bbs/debugBoardList.do")
+    @ResponseBody
+    public Map<String, Object> debugBoardList(@RequestParam(required = false) String bbsId) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (bbsId == null || bbsId.isEmpty()) {
+            bbsId = "BBSMSTR_AAAAAAAAAAAA";
+        }
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> page = boardService
+                .getBoardPosts(bbsId, pageable);
+
+        result.put("bbsId", bbsId);
+        result.put("bbsNm", getBoardName(bbsId));
+        result.put("resultList", page.getContent());
+        result.put("totalCount", page.getTotalElements());
+
+        return result;
+    }
+
+    /**
      * 게시물에 대한 상세 정보를 조회한다.
      *
      * @param boardVO
@@ -274,6 +354,34 @@ public class EgovBBSManageController {
         model.addAttribute("brdMstrVO", masterVo);
 
         return "cop/bbs/EgovNoticeInqire";
+    }
+
+    /**
+     * 게시글 상세 조회 (레거시 ArticleDetail 경로)
+     */
+    @RequestMapping("/cop/bbs/selectArticleDetail.do")
+    public String selectArticleDetail(
+            @ModelAttribute("searchVO") BoardVO boardVO,
+            @RequestParam(required = false) String bbsId,
+            @RequestParam(required = false) Long nttId,
+            ModelMap model) throws Exception {
+
+        com.company.project.service.board.dto.BoardDto result = boardService.getPostDetail(bbsId, nttId);
+
+        Map<String, Object> boardMasterVO = new HashMap<>();
+        boardMasterVO.put("bbsId", bbsId);
+        boardMasterVO.put("bbsNm", getBoardName(bbsId));
+        boardMasterVO.put("replyPosblAt", "Y");
+        boardMasterVO.put("tmplatCours", "/css/egovframework/com/com.css");
+
+        model.addAttribute("boardMasterVO", boardMasterVO);
+        model.addAttribute("brdMstrVO", boardMasterVO);
+        model.addAttribute("result", result);
+        model.addAttribute("sessionUniqId", "USRCNFRM_00000000001");
+        model.addAttribute("useComment", "false");
+        model.addAttribute("useSatisfaction", "false");
+
+        return "cop/bbs/EgovArticleDetail";
     }
 
     /**
@@ -366,13 +474,11 @@ public class EgovBBSManageController {
         }
 
         if (isAuthenticated) {
-            List<FileVO> result = null;
             String atchFileId = "";
 
             final Map<String, MultipartFile> files = multiRequest.getFileMap();
             if (!files.isEmpty()) {
-                result = fileUtil.parseFileInf(files, "BBS_", 0, "", "");
-                atchFileId = fileMngService.insertFileInfs(result);
+                atchFileId = egovFileService.uploadFiles(new ArrayList<>(files.values()));
             }
             board.setAtchFileId(atchFileId);
             board.setFrstRegisterId(user.getUniqId());
@@ -496,8 +602,7 @@ public class EgovBBSManageController {
             String atchFileId = "";
 
             if (!files.isEmpty()) {
-                List<FileVO> result = fileUtil.parseFileInf(files, "BBS_", 0, "", "");
-                atchFileId = fileMngService.insertFileInfs(result);
+                atchFileId = egovFileService.uploadFiles(new ArrayList<>(files.values()));
             }
 
             board.setAtchFileId(atchFileId);
@@ -619,7 +724,6 @@ public class EgovBBSManageController {
                 boardVO.getNttId());
         String atchFileId = existingDto.getAtchFileId();
 
-        // null 처리
         if (atchFileId == null) {
             atchFileId = "";
         }
@@ -663,15 +767,10 @@ public class EgovBBSManageController {
             final Map<String, MultipartFile> files = multiRequest.getFileMap();
             if (!files.isEmpty()) {
                 if ("".equals(atchFileId)) {
-                    List<FileVO> result = fileUtil.parseFileInf(files, "BBS_", 0, atchFileId, "");
-                    atchFileId = fileMngService.insertFileInfs(result);
+                    atchFileId = egovFileService.uploadFiles(new ArrayList<>(files.values()));
                     board.setAtchFileId(atchFileId);
                 } else {
-                    FileVO fvo = new FileVO();
-                    fvo.setAtchFileId(atchFileId);
-                    int cnt = fileMngService.getMaxFileSN(fvo);
-                    List<FileVO> _result = fileUtil.parseFileInf(files, "BBS_", cnt, atchFileId, "");
-                    fileMngService.updateFileInfs(_result);
+                    egovFileService.updateFiles(atchFileId, new ArrayList<>(files.values()));
                     board.setAtchFileId(atchFileId);
                 }
             }

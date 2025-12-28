@@ -15,10 +15,12 @@ import java.util.Collections;
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
+    private final String authorCode;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        String role = (authorCode != null) ? authorCode : "ROLE_" + user.getRole().name();
+        return Collections.singleton(new SimpleGrantedAuthority(role));
     }
 
     @Override

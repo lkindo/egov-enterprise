@@ -35,4 +35,26 @@
 - [x] 배포 설정
     - [x] Dockerfile 생성 (Multi-stage)
     - [x] docker-compose.yml 생성
+- [/] Hybrid Migration (Backend First)
+    - [x] MIGRATION_STRATEGY.md 작성
+    - [x] 관리자 공통 메뉴 (Admin Menu) 이관
+        - [x] MenuService 검증 (Tree Structure)
+        - [x] EgovMainController에 MenuService 주입
+        - [x] JSP 호환 Adapter 구현 (MenuDto -> Map)
+        - [x] 메뉴 렌더링 검증 (컴파일 완료)
+    - [x] 메인 페이지 (Main Page) 이관
+        - [x] BoardService 기능 추가 (최신글 조회)
+        - [x] EgovMainController에 BoardService 주입
+        - [x] JSP 호환 Adapter 구현 (BoardDto -> Map)
+        - [x] 메인화면 게시글 노출 검증 (컴파일 완료)
+    - [x] 로그인/인증 (Login/Auth) 이관
+        - [x] AuthService 기능 확장 (Legacy Session 호환)
+        - [x] EgovLoginController -> AuthService 전환
+        - [x] Spring Security <-> EgovUserDetailsHelper 동기화 검증 (컴파일 완료)
+    - [x] 게시판 (BBS) 전체 이관
+        - [x] EgovBBSManageController 분석 및 대체 계획
+        - [x] 게시글 목록(List) 조회 Adapter 구현 (Service 교체 완료)
+        - [x] 게시글 상세(Detail) 조회 Adapter 구현 (Service 교체 완료)
+        - [x] 게시글 등록/수정(Write/Update) Adapter 구현
+        - [x] 게시글 삭제(Delete) 기능 검증
 
