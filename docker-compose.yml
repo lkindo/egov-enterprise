@@ -1,19 +1,7 @@
 version: "3.8"
 
 services:
-  egov-api:
-    build: .
-    image: egov-enterprise:latest
-    container_name: egov-api
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      # - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/egovdb
-    networks:
-      - egov-net
-    depends_on:
-      - db
+
 
   db:
     image: postgres:16

@@ -35,6 +35,8 @@
 - [x] 배포 설정
     - [x] Dockerfile 생성 (Multi-stage)
     - [x] docker-compose.yml 생성
+    - [x] Postgres DB Docker 연결 설정
+    - [x] postgres DB DDL/DML Script에서 테이블명 COMT 접두어 제거 (기존 파일 백업 후작업)
 - [/] Hybrid Migration (Backend First)
     - [x] MIGRATION_STRATEGY.md 작성
     - [x] 관리자 공통 메뉴 (Admin Menu) 이관
