@@ -11,7 +11,7 @@ import java.util.Map;
 @Repository
 public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespondInfo, String> {
 
-    // 객�????�계 (Statistics 1)
+    // 媛앷????듦퀎 (Statistics 1)
     @Query(value = """
             SELECT
                 A.QUSTNR_TMPLAT_ID AS qestnrTmplatId,
@@ -33,7 +33,7 @@ public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespond
     List<Map<String, Object>> selectQustnrRespondInfoManageStatistics1(@Param("qestnrId") String qestnrId,
             @Param("qestnrTmplatId") String qestnrTmplatId);
 
-    // 주�????�계 (Statistics 2)
+    // 二쇨????듦퀎 (Statistics 2)
     @Query(value = """
             SELECT
                 A.QUSTNR_TMPLAT_ID AS qestnrTmplatId,

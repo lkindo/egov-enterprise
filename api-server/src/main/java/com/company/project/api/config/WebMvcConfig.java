@@ -15,6 +15,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/images/**").addResourceLocations("/images/");
 
         // ?쒕툝由?而⑦뀓?ㅽ듃 猷⑦듃???뺤쟻 ?먯썝 ?덉슜
-        registry.addResourceHandler("/**").addResourceLocations("/");
+        // registry.addResourceHandler("/**").addResourceLocations("/");
     }
 }

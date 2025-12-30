@@ -7,13 +7,15 @@ body {
 .header .inner {
     position: relative;
     width: 1400px;
-    height: 180px;
+    height: 150px;
+    /* Adjusted height: reduced from 180px but more than 100px */
     margin: 0 auto;
     padding: 0 50px;
 }
 
 .header .left_col {
-    padding-top: 40px;
+    padding-top: 33px;
+    /* Slightly reduced padding */
     font-size: 0;
 }
 
@@ -78,28 +80,43 @@ body {
 }
 
 .gnb {
-    margin-top: 44px;
+    /* Restore natural flow below logo */
+    margin-top: 25px;
+    width: 100%;
+    /* Ensure full width */
+}
+
+.gnb ul {
+    /* Kept for potential compatibility or just target direct child */
+}
+
+/* Explicitly target top level for flex layout */
+.gnb>ul {
+    display: flex;
+    justify-content: space-between;
 }
 
 .gnb ul::after {
+    /* Flexbox doesn't need clearfix, but keeping it harmless */
     content: "";
     display: block;
     clear: both;
 }
 
 .gnb ul li {
-    float: left;
+    /* float: left; - Removed for flexbox */
 }
 
 .gnb ul li+li {
-    margin-left: 90px;
+    /* margin-left: 25px; - Removed for space-between */
 }
 
 .gnb ul li a {
     display: block;
     color: #333;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .gnb ul li a.manager {
@@ -132,6 +149,12 @@ body {
 
 .gnb ul li.active .depth2_wrap {
     display: block;
+}
+
+/* Reset display for subnet */
+.gnb .depth2_wrap ul {
+    display: block;
+    justify-content: unset;
 }
 
 .gnb .depth2_wrap ul li {
@@ -172,7 +195,8 @@ body {
 .util_menu {
     position: absolute;
     right: 50px;
-    top: 90px;
+    top: 50px;
+    /* Adjusted top */
 }
 
 .util_menu ul {

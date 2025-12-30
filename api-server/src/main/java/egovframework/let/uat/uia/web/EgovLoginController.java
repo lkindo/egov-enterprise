@@ -83,7 +83,7 @@ public class EgovLoginController {
 	@RequestMapping(value = "/uat/uia/egovLoginUsr.do")
 	public String loginUsrView(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) throws Exception {
-		return "uat/uia/EgovLoginUsr";
+		return "/uat/uia/EgovLoginUsr";
 	}
 
 	/**

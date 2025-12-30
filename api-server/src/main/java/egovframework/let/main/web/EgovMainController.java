@@ -168,7 +168,7 @@ public class EgovMainController {
 
 		// 자료실 메인컨텐츠 조회 끝 -----------------------------------
 
-		return "main/EgovMainView";
+		return "/main/EgovMainView";
 	}
 
 	/**
@@ -215,7 +215,7 @@ public class EgovMainController {
 			//
 		}
 
-		return "main/inc/EgovIncHeader"; // 업무화면의 상단메뉴 화면
+		return "/main/inc/EgovIncHeader"; // 업무화면의 상단메뉴 화면
 
 	}
 
@@ -228,7 +228,7 @@ public class EgovMainController {
 	 */
 	@RequestMapping(value = "/sym/mms/EgovFooter.do")
 	public String selectFooter(ModelMap model) throws Exception {
-		return "main/inc/EgovIncFooter";
+		return "/main/inc/EgovIncFooter";
 	}
 
 	/**
@@ -251,7 +251,7 @@ public class EgovMainController {
 			// 최근 로그아웃 시간 등에 대한 확보 후 메인 컨텐츠로 활용
 		}
 
-		return "main/inc/EgovIncLeftmenu";
+		return "/main/inc/EgovIncLeftmenu";
 	}
 
 	/**
@@ -294,7 +294,7 @@ public class EgovMainController {
 			// model.addAttribute("list_menulist",
 			// menuManageService.selectMainMenuLeftAnonymous(menuManageVO));
 		}
-		return "main/inc/EgovIncTopnav"; // 내부업무의 상단메뉴 화면
+		return "/main/inc/EgovIncTopnav"; // 내부업무의 상단메뉴 화면
 	}
 
 	/**
@@ -319,7 +319,7 @@ public class EgovMainController {
 			// 최근 로그아웃 시간 등에 대한 확보 후 메인 컨텐츠로 활용
 		}
 
-		return "main/inc/EgovIncLeftmenu";
+		return "/main/inc/EgovIncLeftmenu";
 	}
 
 }

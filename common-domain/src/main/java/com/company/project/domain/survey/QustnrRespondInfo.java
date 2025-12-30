@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ?�문 ?�답 결과 ?�티??
- * ?�이�? NQUSTNRRSPNSRESULT
+ * ?ㅻЦ ?묐떟 寃곌낵 ?뷀떚??
+ * ?뚯씠釉? NQUSTNRRSPNSRESULT
  */
 @Entity
 @Table(name = "NQUSTNRRSPNSRESULT")

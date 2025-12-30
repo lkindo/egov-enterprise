@@ -4,13 +4,13 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
-    jdbc-url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
+    url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
+    jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
     username: egov
-    password: egov
+    password: egov123
     driver-class-name: org.postgresql.Driver
     hikari:
-      jdbc-url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
+      jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -21,6 +21,11 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: true
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
 
 logging:
   level:
