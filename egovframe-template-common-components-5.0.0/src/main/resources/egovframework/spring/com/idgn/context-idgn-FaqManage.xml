@@ -7,7 +7,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="faqManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="FAQ_ID"/>
     </bean>
     <bean name="faqManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

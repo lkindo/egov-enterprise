@@ -7,7 +7,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="httpManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="HTTP_ID"/>
     </bean>
     <bean name="httpManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
@@ -22,7 +22,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="httLManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="HTTL_ID"/>
     </bean>
     <bean name="httLManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

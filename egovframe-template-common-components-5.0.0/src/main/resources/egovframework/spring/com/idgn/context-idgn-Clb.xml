@@ -6,7 +6,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="clbStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="CLB_ID"/>
     </bean>
     <bean name="clbStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

@@ -11,7 +11,7 @@ import java.util.Map;
 @Repository
 public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespondInfo, String> {
 
-    // 객관식 통계 (Statistics 1)
+    // 객�????�계 (Statistics 1)
     @Query(value = """
             SELECT
                 A.QUSTNR_TMPLAT_ID AS qestnrTmplatId,
@@ -19,12 +19,12 @@ public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespond
                 A.QUSTNR_QESITM_ID AS qestnrQesitmId,
                 A.QUSTNR_IEM_ID AS qustnrIemId,
                 (
-                    SELECT IEM_CN FROM COMTNQUSTNRIEM
+                    SELECT IEM_CN FROM NQUSTNRIEM
                     WHERE QUSTNR_IEM_ID = A.QUSTNR_IEM_ID
                 ) AS iemCn,
                 COUNT(A.QUSTNR_IEM_ID) AS qustnrIemIdCnt,
-                ROUND((100.0 / (SELECT COUNT(*) FROM COMTNQUSTNRRSPNSRESULT WHERE QUSTNR_QESITM_ID = A.QUSTNR_QESITM_ID) ) * COUNT(A.QUSTNR_IEM_ID)) AS qustnrPercent
-            FROM COMTNQUSTNRRSPNSRESULT A
+                ROUND((100.0 / (SELECT COUNT(*) FROM NQUSTNRRSPNSRESULT WHERE QUSTNR_QESITM_ID = A.QUSTNR_QESITM_ID) ) * COUNT(A.QUSTNR_IEM_ID)) AS qustnrPercent
+            FROM NQUSTNRRSPNSRESULT A
             WHERE A.QESTNR_ID = :qestnrId
             AND A.QUSTNR_TMPLAT_ID = :qestnrTmplatId
             AND (A.QUSTNR_IEM_ID IS NOT NULL AND A.QUSTNR_IEM_ID != '')
@@ -33,7 +33,7 @@ public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespond
     List<Map<String, Object>> selectQustnrRespondInfoManageStatistics1(@Param("qestnrId") String qestnrId,
             @Param("qestnrTmplatId") String qestnrTmplatId);
 
-    // 주관식 통계 (Statistics 2)
+    // 주�????�계 (Statistics 2)
     @Query(value = """
             SELECT
                 A.QUSTNR_TMPLAT_ID AS qestnrTmplatId,
@@ -43,7 +43,7 @@ public interface QustnrRespondInfoRepository extends JpaRepository<QustnrRespond
                 A.ETC_ANSWER_CN AS etcAnswerCn,
                 A.RESPOND_ANSWER_CN AS respondAnswerCn,
                 A.RESPOND_NM AS respondNm
-            FROM COMTNQUSTNRRSPNSRESULT A
+            FROM NQUSTNRRSPNSRESULT A
             WHERE A.QESTNR_ID = :qestnrId
             AND A.QUSTNR_TMPLAT_ID = :qestnrTmplatId
             AND (A.QUSTNR_IEM_ID IS NULL OR A.QUSTNR_IEM_ID = '')

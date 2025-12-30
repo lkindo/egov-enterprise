@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 설문 문항 엔티티
- * 테이블: COMTNQUSTNRQESITM
+ * ?�문 문항 ?�티??
+ * ?�이�? NQUSTNRQESITM
  */
 @Entity
-@Table(name = "COMTNQUSTNRQESITM")
+@Table(name = "NQUSTNRQESITM")
 @Getter
 @Setter
 @NoArgsConstructor

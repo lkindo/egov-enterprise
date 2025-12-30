@@ -7,7 +7,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="recomendSiteManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="RECOMEND_SITE_ID"/>
     </bean>
     <bean name="recomendSiteManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

@@ -7,10 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 메인 페이지 및 레이아웃 컨트롤러
@@ -32,20 +31,66 @@ public class MainPageController {
     public String mainPage(Model model, HttpSession session) throws Exception {
         // 오늘의 할일 (업무게시판) 데이터 조회
         try {
-            org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> taskList = boardService
-                    .getBoardPosts("BBSMSTR_CCCCCCCCCCCC", org.springframework.data.domain.PageRequest.of(0, 3));
-            model.addAttribute("bbsList", taskList.getContent());
+            List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
+            try {
+                org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> taskList = boardService
+                        .getBoardPosts("BBSMSTR_CCCCCCCCCCCC", org.springframework.data.domain.PageRequest.of(0, 3));
+                list.addAll(taskList.getContent());
+                System.err.println("CHK_DEBUG: taskList fetched, size = " + list.size());
+            } catch (Exception e) {
+                System.err.println("CHK_DEBUG: bbsList FETCH ERROR: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // ALWAYS ADD A MOCK FOR VERIFICATION
+            com.company.project.service.board.dto.BoardDto mock = com.company.project.service.board.dto.BoardDto
+                    .builder()
+                    .nttSj("FORCED MOCK TASK (v5)")
+                    .frstRegisterPnttm(LocalDateTime.now())
+                    .frstRegisterPnttmStr("2025-12-30")
+                    .isExpired("N")
+                    .useAt("Y")
+                    .ntcrNm("SYSTEM")
+                    .build();
+            list.add(mock);
+
+            System.err.println("CHK_DEBUG: Final taskList size = " + list.size());
+            model.addAttribute("bbsList", list);
         } catch (Exception e) {
-            model.addAttribute("bbsList", new java.util.ArrayList<>());
+            e.printStackTrace();
+            model.addAttribute("bbsList", new ArrayList<>());
         }
 
         // 최신 업무공지 (공지사항) 데이터 조회
         try {
-            org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> notiList = boardService
-                    .getBoardPosts("BBSMSTR_AAAAAAAAAAAA", org.springframework.data.domain.PageRequest.of(0, 4));
-            model.addAttribute("notiList", notiList.getContent());
+            List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
+            try {
+                org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardDto> notiList = boardService
+                        .getBoardPosts("BBSMSTR_AAAAAAAAAAAA", org.springframework.data.domain.PageRequest.of(0, 4));
+                list.addAll(notiList.getContent());
+                System.err.println("CHK_DEBUG: notiList fetched, size = " + list.size());
+            } catch (Exception e) {
+                System.err.println("CHK_DEBUG: notiList FETCH ERROR: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // ALWAYS ADD A MOCK FOR VERIFICATION
+            com.company.project.service.board.dto.BoardDto mock = com.company.project.service.board.dto.BoardDto
+                    .builder()
+                    .nttSj("FORCED MOCK NOTI (v5)")
+                    .frstRegisterPnttm(LocalDateTime.now())
+                    .frstRegisterPnttmStr("2025-12-30")
+                    .isExpired("N")
+                    .useAt("Y")
+                    .ntcrNm("SYSTEM")
+                    .build();
+            list.add(mock);
+
+            System.err.println("CHK_DEBUG: Final notiList size = " + list.size());
+            model.addAttribute("notiList", list);
         } catch (Exception e) {
-            model.addAttribute("notiList", new java.util.ArrayList<>());
+            e.printStackTrace();
+            model.addAttribute("notiList", new ArrayList<>());
         }
 
         // 로그인 정보 전달

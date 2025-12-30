@@ -7,7 +7,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="procManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="PROC_ID"/>
     </bean>
     <bean name="procManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
@@ -22,7 +22,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="prolManageStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="PROL_ID"/>
     </bean>
     <bean name="prolManageStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

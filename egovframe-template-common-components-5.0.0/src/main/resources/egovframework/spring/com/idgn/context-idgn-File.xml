@@ -6,7 +6,7 @@
         <property name="dataSource" ref="egov.dataSource" />
         <property name="strategy"   ref="fileStrategy" />
         <property name="blockSize"  value="10"/>
-        <property name="table"      value="COMTECOPSEQ"/>
+        <property name="table"      value="ECOPSEQ"/>
         <property name="tableName"  value="FILE_ID"/>
     </bean>
     <bean name="fileStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">

@@ -16,7 +16,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
                         WHEN :pdKind = 'M' THEN SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2)
                         ELSE SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) || '-' || SUBSTR(OCCRRNC_DE, 7, 2)
                    END AS statsDate
-              FROM COMTSBBSSUMMARY
+              FROM SBBSSUMMARY
              WHERE OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR DETAIL_STATS_SE = :detailStatsKind)
@@ -35,7 +35,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
                         WHEN :pdKind = 'M' THEN SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2)
                         ELSE SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) || '-' || SUBSTR(OCCRRNC_DE, 7, 2)
                    END AS statsDate
-              FROM COMTSBBSSUMMARY
+              FROM SBBSSUMMARY
              WHERE OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR DETAIL_STATS_SE = :detailStatsKind)
@@ -54,7 +54,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
                         WHEN :pdKind = 'M' THEN SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2)
                         ELSE SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) || '-' || SUBSTR(OCCRRNC_DE, 7, 2)
                    END AS statsDate
-              FROM COMTSBBSSUMMARY
+              FROM SBBSSUMMARY
              WHERE OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR DETAIL_STATS_SE = :detailStatsKind)
@@ -72,7 +72,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
                    a.TOP_INQIRE_BBSCTT_ID AS mxmmInqireBbsId,
                    b.NTT_SJ AS mxmmInqireBbsNm,
                    b.RDCNT AS maxStatsCo
-              FROM COMTSBBSSUMMARY a, NBBS b
+              FROM SBBSSUMMARY a, NBBS b
              WHERE a.OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND a.STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR a.DETAIL_STATS_SE = :detailStatsKind)
@@ -89,7 +89,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
                    a.MUMM_INQIRE_BBSCTT_ID AS mummInqireBbsId,
                    b.NTT_SJ AS mummInqireBbsNm,
                    b.RDCNT AS minStatsCo
-              FROM COMTSBBSSUMMARY a, NBBS b
+              FROM SBBSSUMMARY a, NBBS b
              WHERE a.OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND a.STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR a.DETAIL_STATS_SE = :detailStatsKind)
@@ -105,7 +105,7 @@ public interface BbsSummaryRepository extends JpaRepository<BbsSummary, BbsSumma
             SELECT a.OCCRRNC_DE AS statsDate,
                    a.TOP_NTCR_ID AS topNtcepersonId,
                    COUNT(b.NTT_ID) AS topNtcepersonCo
-              FROM COMTSBBSSUMMARY a, NBBS b
+              FROM SBBSSUMMARY a, NBBS b
              WHERE a.OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND a.STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR a.DETAIL_STATS_SE = :detailStatsKind)

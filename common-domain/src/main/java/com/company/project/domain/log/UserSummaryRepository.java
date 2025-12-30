@@ -15,7 +15,7 @@ public interface UserSummaryRepository extends JpaRepository<UserSummary, UserSu
                    CASE WHEN :pdKind = 'D' THEN SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) || '-' || SUBSTR(OCCRRNC_DE, 7, 2)
                         ELSE SUBSTR(OCCRRNC_DE, 1, 4)
                    END AS statsDate
-              FROM COMTSUSERSUMMARY
+              FROM SUSERSUMMARY
              WHERE OCCRRNC_DE BETWEEN :fromDate AND :toDate
                AND STATS_SE = :statsKind
                AND (:detailStatsKind IS NULL OR :detailStatsKind = '' OR DETAIL_STATS_SE = :detailStatsKind)

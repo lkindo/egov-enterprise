@@ -10,6 +10,33 @@ spring:
     init:
       mode: never
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
+    jdbc-url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
+    username: egov
+    password: egov
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: jdbc:postgresql://localhost:5432/egovdb?currentSchema=public
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+logging:
+  level:
+    root: info
+    com.company.project: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: info
+
 file:
   upload:
     path: ${FILE_UPLOAD_PATH:./storage/uploads}
