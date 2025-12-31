@@ -26,6 +26,7 @@ import egovframework.com.cmm.service.CmmnDetailCode;
  *      </pre>
  */
 @Repository("cmmUseDAO")
+@org.springframework.context.annotation.Lazy
 public class CmmUseDAO extends EgovComAbstractDAO {
 
 	/**

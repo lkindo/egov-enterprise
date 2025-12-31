@@ -2,7 +2,6 @@ package com.company.project.api.controller.stats;
 
 import egovframework.com.sts.com.StatsVO;
 import egovframework.com.sts.cst.service.EgovConectStatsService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,10 +15,14 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/stats")
-@RequiredArgsConstructor
 public class ConnectStatsController {
 
     private final EgovConectStatsService connectStatsService;
+
+    public ConnectStatsController(
+            @org.springframework.context.annotation.Lazy EgovConectStatsService connectStatsService) {
+        this.connectStatsService = connectStatsService;
+    }
 
     /**
      * 접속 통계 조회

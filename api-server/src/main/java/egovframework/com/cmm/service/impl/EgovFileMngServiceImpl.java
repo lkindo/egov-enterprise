@@ -16,10 +16,10 @@ import jakarta.annotation.Resource;
  * @Description : 파일정보의 관리를 위한 구현 클래스
  * @Modification Information
  *
- *    수정일       수정자         수정내용
- *    -------        -------     -------------------
- *    2009. 3. 25.     이삼섭    최초생성
- *    2024.10.29.	LeeBaekHaeng	@Override 표기
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2009. 3. 25. 이삼섭 최초생성
+ *               2024.10.29. LeeBaekHaeng @Override 표기
  *
  * @author 공통 서비스 개발팀 이삼섭
  * @since 2009. 3. 25.
@@ -28,6 +28,7 @@ import jakarta.annotation.Resource;
  *
  */
 @Service("EgovFileMngService")
+@org.springframework.context.annotation.Lazy
 public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements EgovFileMngService {
 
 	@Resource(name = "FileManageDAO")
@@ -92,7 +93,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	 */
 	@Override
 	public void updateFileInfs(List<FileVO> fvoList) throws Exception {
-		//Delete & Insert
+		// Delete & Insert
 		fileMngDAO.updateFileInfs(fvoList);
 	}
 

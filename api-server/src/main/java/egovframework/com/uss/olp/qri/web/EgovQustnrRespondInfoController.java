@@ -62,6 +62,7 @@ public class EgovQustnrRespondInfoController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
+	@org.springframework.context.annotation.Lazy
 	@Resource(name = "egovQustnrRespondInfoService")
 	private EgovQustnrRespondInfoService egovQustnrRespondInfoService;
 

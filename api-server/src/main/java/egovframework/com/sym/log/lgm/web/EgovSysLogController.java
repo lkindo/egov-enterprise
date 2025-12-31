@@ -40,6 +40,7 @@ import jakarta.annotation.Resource;
 @Controller
 public class EgovSysLogController {
 
+	@org.springframework.context.annotation.Lazy
 	@Resource(name = "EgovSysLogService")
 	private EgovSysLogService sysLogService;
 

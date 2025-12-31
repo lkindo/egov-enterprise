@@ -3,7 +3,6 @@ package com.company.project.api.controller.stats;
 import egovframework.com.sts.bst.service.EgovBbsStatsService;
 import egovframework.com.sts.com.StatsVO;
 import egovframework.com.sts.ust.service.EgovUserStatsService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,11 +17,16 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/stats")
-@RequiredArgsConstructor
 public class BbsUserStatsController {
 
     private final EgovBbsStatsService bbsStatsService;
     private final EgovUserStatsService userStatsService;
+
+    public BbsUserStatsController(@org.springframework.context.annotation.Lazy EgovBbsStatsService bbsStatsService,
+            @org.springframework.context.annotation.Lazy EgovUserStatsService userStatsService) {
+        this.bbsStatsService = bbsStatsService;
+        this.userStatsService = userStatsService;
+    }
 
     /**
      * 게시판 통계 조회

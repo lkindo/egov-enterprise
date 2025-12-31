@@ -42,11 +42,18 @@ public class LegacyConfig {
         return dataSource;
     }
 
-    @Bean(name = { "egov.sqlSessionTemplate", "egov.sqlSession" })
+    @Bean(name = "egov.sqlSessionTemplate")
     @org.springframework.context.annotation.Lazy
     public SqlSessionTemplate egovSqlSessionTemplate(
-            @org.springframework.beans.factory.annotation.Qualifier("sqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
-        return sqlSessionTemplate;
+            org.apache.ibatis.session.SqlSessionFactory sqlSessionFactory) {
+        return new SqlSessionTemplate(sqlSessionFactory);
+    }
+
+    @Bean(name = "egov.sqlSession")
+    @org.springframework.context.annotation.Lazy
+    public org.apache.ibatis.session.SqlSessionFactory egovSqlSession(
+            org.apache.ibatis.session.SqlSessionFactory sqlSessionFactory) {
+        return sqlSessionFactory;
     }
 
     @Bean(name = "messageSource")
@@ -74,6 +81,11 @@ public class LegacyConfig {
     public ConfigurationCustomizer mybatisConfigurationCustomizer() {
         return configuration -> {
             configuration.getTypeAliasRegistry().registerAlias("egovMap", EgovMap.class);
+            configuration.getTypeAliasRegistry().registerAlias("FileVO", egovframework.com.cmm.service.FileVO.class);
+            configuration.getTypeAliasRegistry().registerAlias("ComDefaultCodeVO",
+                    egovframework.com.cmm.ComDefaultCodeVO.class);
+            configuration.getTypeAliasRegistry().registerAlias("comDefaultVO",
+                    egovframework.com.cmm.ComDefaultVO.class);
         };
     }
 }

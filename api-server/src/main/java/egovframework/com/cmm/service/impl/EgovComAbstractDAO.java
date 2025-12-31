@@ -3,7 +3,6 @@
  */
 package egovframework.com.cmm.service.impl;
 
-import org.apache.ibatis.session.SqlSessionFactory;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 
 import jakarta.annotation.Resource;
@@ -39,7 +38,8 @@ public abstract class EgovComAbstractDAO extends EgovAbstractMapper {
 
 	@Override
 	@Resource(name = "egov.sqlSession")
-	public void setSqlSessionFactory(SqlSessionFactory sqlSession) {
+	@org.springframework.context.annotation.Lazy
+	public void setSqlSessionFactory(org.apache.ibatis.session.SqlSessionFactory sqlSession) {
 		super.setSqlSessionFactory(sqlSession);
 	}
 

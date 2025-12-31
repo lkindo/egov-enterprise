@@ -88,7 +88,7 @@ public class UserManageController {
      * 사용자 등록 처리
      */
     @PostMapping({ "/uss/umt/EgovUserInsert.do", "/uss/umt/user/EgovUserInsert.do" })
-    public String insertUser(@ModelAttribute("userManageVO") UserManageDto userManageVO,
+    public String insertUser(@ModelAttribute("userManageVO") @jakarta.validation.Valid UserManageDto userManageVO,
             BindingResult bindingResult, Model model) throws Exception {
 
         if (bindingResult.hasErrors()) {
@@ -120,7 +120,7 @@ public class UserManageController {
      * 사용자 수정 처리
      */
     @PostMapping({ "/uss/umt/EgovUserSelectUpdt.do", "/uss/umt/user/EgovUserSelectUpdt.do" })
-    public String updateUser(@ModelAttribute("userManageVO") UserManageDto userManageVO,
+    public String updateUser(@ModelAttribute("userManageVO") @jakarta.validation.Valid UserManageDto userManageVO,
             BindingResult bindingResult, Model model) throws Exception {
 
         if (bindingResult.hasErrors()) {

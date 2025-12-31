@@ -5,7 +5,6 @@ import egovframework.com.uss.olp.qri.service.EgovQustnrRespondInfoService;
 import egovframework.com.uss.olp.qri.service.QustnrRespondInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +17,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/survey")
-@RequiredArgsConstructor
 @Tag(name = "Survey Response", description = "설문 조사 응답 및 통계 관리")
 public class QustnrRespondInfoController {
 
-    @Resource(name = "egovQustnrRespondInfoService")
-    private EgovQustnrRespondInfoService egovQustnrRespondInfoService;
+    private final EgovQustnrRespondInfoService egovQustnrRespondInfoService;
+
+    public QustnrRespondInfoController(
+            @org.springframework.context.annotation.Lazy EgovQustnrRespondInfoService egovQustnrRespondInfoService) {
+        this.egovQustnrRespondInfoService = egovQustnrRespondInfoService;
+    }
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertiesService;

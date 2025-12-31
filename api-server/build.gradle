@@ -24,7 +24,48 @@ dependencies {
     implementation 'commons-io:commons-io:2.17.0'
     implementation 'com.google.guava:guava:33.3.1-jre'
     implementation 'org.apache.commons:commons-lang3:3.17.0'
+    implementation 'commons-lang:commons-lang:2.6' // Legacy support
+    implementation 'jakarta.json:jakarta.json-api:2.1.3'
+    implementation 'org.eclipse.parsson:parsson:1.1.5' // JSON-P implementation
     implementation 'org.postgresql:postgresql:42.7.3'
+
+    // Missing Enterprise Dependencies
+    implementation 'org.apache.commons:commons-email:1.5'
+    implementation 'org.springframework.batch:spring-batch-infrastructure'
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
+    
+    // eGovFrame Batch
+    implementation 'org.egovframe.rte:egovframe-rte-bat-core:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-access:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-crypto:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-security:5.0.0'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    
+    // JSON Simple (Legacy Support)
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    
+    // Apache Commons Net (FTP)
+    implementation 'commons-net:commons-net:3.9.0'
+    
+    // XML Processing (Legacy)
+    implementation 'org.apache.xmlbeans:xmlbeans:3.1.0'
+    implementation 'org.jdom:jdom2:2.0.6.1'
+    
+    // Database Connection Pool (Legacy)
+    implementation 'org.apache.commons:commons-dbcp2:2.9.0'
+    
+    // File Upload (Legacy)
+    implementation 'commons-fileupload:commons-fileupload:1.5'
+
+    // Social Login (ScribeJava)
+    implementation 'com.github.scribejava:scribejava-apis:8.3.3'
+    implementation 'com.github.scribejava:scribejava-core:8.3.3'
+
+    // Twitter API V2 Support - Removed due to module decommissioning
+    // implementation 'org.twitter4j:twitter4j-core:4.1.2'
+    // implementation 'io.github.takke:twitter4j-v2:1.4.4'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

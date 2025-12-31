@@ -37,12 +37,17 @@ public class EgovBindingInitializer implements WebBindingInitializer {
 		binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, false));
 		binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
 
-		binder.registerCustomEditor(String.class, "atchFileId", new EgovAtchFileIdPropertyEditor());
-
-		binder.registerCustomEditor(String.class, "reprtId", new EgovCipherIdPropertyEditor()); // 메모보고/주간/월간 보고
-		binder.registerCustomEditor(String.class, "noteId", new EgovCipherIdPropertyEditor()); // 쪽지관리
-		binder.registerCustomEditor(String.class, "noteTrnsmitId", new EgovCipherIdPropertyEditor()); // 쪽지관리
-		binder.registerCustomEditor(String.class, "noteRecptnId", new EgovCipherIdPropertyEditor()); // 쪽지관리
+		// binder.registerCustomEditor(String.class, "atchFileId", new
+		// EgovAtchFileIdPropertyEditor());
+		//
+		// binder.registerCustomEditor(String.class, "reprtId", new
+		// EgovCipherIdPropertyEditor()); // 메모보고/주간/월간 보고
+		// binder.registerCustomEditor(String.class, "noteId", new
+		// EgovCipherIdPropertyEditor()); // 쪽지관리
+		// binder.registerCustomEditor(String.class, "noteTrnsmitId", new
+		// EgovCipherIdPropertyEditor()); // 쪽지관리
+		// binder.registerCustomEditor(String.class, "noteRecptnId", new
+		// EgovCipherIdPropertyEditor()); // 쪽지관리
 	}
 
 }

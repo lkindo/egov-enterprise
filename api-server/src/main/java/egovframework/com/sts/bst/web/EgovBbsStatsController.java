@@ -17,6 +17,7 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.sts.bst.service.EgovBbsStatsService;
 import egovframework.com.sts.com.StatsVO;
 import jakarta.annotation.Resource;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * 게시물 통계 검색 컨트롤러 클래스
@@ -43,6 +44,7 @@ import jakarta.annotation.Resource;
 public class EgovBbsStatsController {
 
 	/** EgovBbsStatsService */
+	@Lazy
 	@Resource(name = "bbsStatsService")
 	private EgovBbsStatsService bbsStatsService;
 

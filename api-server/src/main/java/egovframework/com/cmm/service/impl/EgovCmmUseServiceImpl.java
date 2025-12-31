@@ -32,10 +32,11 @@ import jakarta.annotation.Resource;
  *      </pre>
  */
 @Service("EgovCmmUseService")
+@org.springframework.context.annotation.Lazy
 public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements EgovCmmUseService {
 
-    @Resource(name = "cmmUseDAO")
-    private CmmUseDAO cmmUseDAO;
+	@Resource(name = "cmmUseDAO")
+	private CmmUseDAO cmmUseDAO;
 
 	/**
 	 * 공통코드를 조회한다.

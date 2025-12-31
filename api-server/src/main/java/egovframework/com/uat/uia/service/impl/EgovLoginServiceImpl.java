@@ -42,6 +42,7 @@ import jakarta.annotation.Resource;
  *      </pre>
  */
 @Service("loginService")
+@org.springframework.context.annotation.Lazy
 public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements EgovLoginService {
 
 	@Resource(name = "loginDAO")

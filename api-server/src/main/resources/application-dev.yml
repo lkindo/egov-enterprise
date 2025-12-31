@@ -1,4 +1,7 @@
 spring:
+  main:
+    allow-circular-references: true
+    lazy-initialization: true
   config:
     activate:
       on-profile: dev
@@ -22,10 +25,10 @@ spring:
         format_sql: true
         use_sql_comments: true
 
-  mybatis:
-    mapper-locations: classpath:/mapper/com/**/*.xml
-    configuration:
-      map-underscore-to-camel-case: true
+mybatis:
+  mapper-locations: classpath:/mapper/com/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
 
   mvc:
     view:
