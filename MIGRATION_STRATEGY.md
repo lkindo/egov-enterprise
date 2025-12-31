@@ -18,6 +18,8 @@
 1. **사용자 경험 유지**: 마이그레이션 중에도 기존 JSP 화면은 동일하게 동작해야 한다.
 2. **데이터 중심**: DB 스키마와 엔터티(JPA)를 우선 정립한다.
 3. **점진적 교체**: 메인 페이지와 공통 메뉴부터 시작하여 업무 단위로 서비스를 교체한다.
+4. **패키지 표준화**: 기존 `egovframework.let` (Light) 패키지 의존성을 `egovframework.com` (Common 5.0) 패키지로 전환한다.
+
 
 ---
 
@@ -30,7 +32,7 @@
 #### 현재 상태 (Analysis)
 - **Controller**: `EgovMainController`
 - **View**: `EgovIncHeader.jsp`, `EgovIncLeftmenu.jsp`
-- **Legacy Service**: `egovframework.let.sym.mnu.mpm.service.EgovMenuManageService`
+- **Legacy Service**: `egovframework.com.sym.mnu.mpm.service.EgovMenuManageService`
 - **Data Requirement**:
   - `list_headmenu` (List)
   - Item Structure: `menuNo`, `menuNm`, `chkURL`, `children` (Deep copy)
@@ -54,7 +56,7 @@
 #### 현재 상태 (Analysis)
 - **Controller**: `EgovMainController`
 - **View**: `EgovMainView.jsp`
-- **Legacy Service**: `egovframework.let.cop.bbs.service.EgovBBSManageService`
+- **Legacy Service**: `egovframework.com.cop.bbs.service.EgovBBSManageService`
 - **Data Requirement**:
   - `notiList` (공지사항), `bbsList` (갤러리/할일)
   - Item Fields: `nttSj` (제목), `frstRegisterPnttmStr` (날짜), `ntcrNm` (작성자)
@@ -75,11 +77,12 @@
 
 ### Phase 3: 점진적 확산 (Gradual Rollout)
 
-위 패턴을 기반으로 주요 업무 모듈을 순차적으로 전환합니다.
+위 패턴을 기반으로 주요 업무 모듈을 순차적으로 전환합니다. 이때 `egovframe-template-common-components-5.0.0`을 소스로 사용하므로 패키지명 변경(`let` -> `com`)에 따른 Import 수정이 필수적입니다.
 
-1. **로그인/권한**: `EgovLoginController` → `AuthService` (JPA/JWT 기반 세션 호환)
-2. **게시판(BBS)**: `EgovBBSManageController` → `BoardService`
-3. **사용자 관리**: `EgovUserManageController` → `UserService`
+1. **로그인/권한**: `EgovLoginController` -> `AuthService` (JPA/JWT 기반 세션 호환)
+2. **게시판(BBS)**: `EgovBBSManageController` -> `BoardService` 및 `egovframework.com.cop.bbs` 패키지 사용
+    - *Note*: `EgovMainController` 등에서 참조하는 `BoardVO` 등의 import 경로를 `egovframework.let`에서 `egovframework.com`으로 수정해야 함.
+3. **사용자 관리**: `EgovUserManageController` -> `UserService`
 
 ---
 

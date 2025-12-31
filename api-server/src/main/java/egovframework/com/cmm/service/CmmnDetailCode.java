@@ -2,9 +2,6 @@ package egovframework.com.cmm.service;
 
 import java.io.Serializable;
 
-// import ... removed
-import jakarta.validation.constraints.Size;
-
 /**
  * 공통상세코드 모델 클래스
  * @author 공통서비스 개발팀 이중호
@@ -18,51 +15,48 @@ import jakarta.validation.constraints.Size;
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.04.01  이중호          최초 생성
+ *   2017.09.07	이정은		표준프레임워크 v3.7 개선(clCode 추가)
  *
  * </pre>
  */
 public class CmmnDetailCode implements Serializable {
 
-	private static final long serialVersionUID = -6508801327314181679L;
+	private static final long serialVersionUID = 1L;
+
+	/*
+	 * 분류코드
+	 */
+	private String clCode = "";
 
 	/*
 	 * 코드ID
 	 */
-	// // annotation removed
-	@Size(max = 6)
-    private String codeId;
+    private String codeId = "";
 
     /*
      * 코드ID명
      */
-    private String codeIdNm;
+    private String codeIdNm = "";
 
     /*
-     * 코드
+     * 상세코드
      */
-	// // annotation removed
-	@Size(max = 15)
-	private String code;
+	private String code = "";
 
 	/*
-	 * 코드명
+	 * 상세코드명
 	 */
-	// // annotation removed
-	@Size(max = 60)
-    private String codeNm;
+    private String codeNm = "";
 
     /*
-     * 코드설명
+     * 상세코드설명
      */
-	// // annotation removed
-	@Size(max = 200)
-    private String codeDc;
+    private String codeDc = "";
 
     /*
      * 사용여부
      */
-	// // annotation removed
-    private String useAt;
+    private String useAt = "";
 
     /*
      * 최초등록자ID
@@ -74,7 +68,24 @@ public class CmmnDetailCode implements Serializable {
      */
     private String lastUpdusrId   = "";
 
-	/**
+
+    /**
+     * clCode attribute 를 리턴한다.
+     * @return String
+     */
+    public String getClCode() {
+    	return clCode;
+    }
+    
+    /**
+     * clCode attribute 값을 설정한다.
+     * @param clCode String
+     */
+    public void setClCode(String clCode) {
+    	this.clCode = clCode;
+    }
+
+    /**
 	 * codeId attribute 를 리턴한다.
 	 * @return String
 	 */
@@ -201,5 +212,6 @@ public class CmmnDetailCode implements Serializable {
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
+
 
 }

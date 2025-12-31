@@ -22,6 +22,11 @@ spring:
         format_sql: true
         use_sql_comments: true
 
+  mybatis:
+    mapper-locations: classpath:/mapper/com/**/*.xml
+    configuration:
+      map-underscore-to-camel-case: true
+
   mvc:
     view:
       prefix: /WEB-INF/jsp/

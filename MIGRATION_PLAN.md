@@ -24,7 +24,7 @@ egov-enterprise/
 ├── common-security/    # Spring Security + JWT
 ├── common-service/     # 비즈니스 로직
 ├── api-server/         # REST API 서버 (Spring Boot 메인)
-└── _legacy_backup/     # eGovFrame 5.0 경량환경 원본 (이관 대상)
+└── egovframe-template-common-components-5.0.0/ # eGovFrame 5.0 공통 컴포넌트 (이관 소스)
 ```
 
 ### 1.3 검증된 기능
@@ -59,6 +59,7 @@ egov-enterprise/
 > `api-server/src/main/java/egovframework` 폴더는 삭제된 상태.
 > `api-server/src/main/webapp` 및 `api-server/src/main/resources/egovframework`는 복사된 상태.
 
+
 ---
 
 ## 3. 다음 작업 (BBS 모듈 이관)
@@ -66,7 +67,7 @@ egov-enterprise/
 ### 3.1 복사할 파일 목록
 ```
 # 공통 VO/유틸리티
-_legacy_backup/src/main/java/egovframework/com/cmm/
+egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/
   ├── ComDefaultVO.java
   ├── LoginVO.java
   ├── EgovMessageSource.java
@@ -79,7 +80,7 @@ _legacy_backup/src/main/java/egovframework/com/cmm/
           └── FileManageDAO.java
 
 # BBS 서비스
-_legacy_backup/src/main/java/egovframework/let/cop/bbs/
+egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cop/bbs/
   ├── service/
   │   ├── Board.java
   │   ├── BoardMaster.java
@@ -88,8 +89,7 @@ _legacy_backup/src/main/java/egovframework/let/cop/bbs/
   │   ├── EgovBBSManageService.java
   │   ├── EgovBBSAttributeManageService.java
   │   └── impl/
-  │       ├── BBSManageDAO.java
-  │       ├── BBSAttributeManageDAO.java
+  │       ├── EgovBBSManageDAO.java (Note: DAO name might be different in com vs let)
   │       ├── EgovBBSManageServiceImpl.java
   │       └── EgovBBSAttributeManageServiceImpl.java
   └── web/
@@ -98,33 +98,33 @@ _legacy_backup/src/main/java/egovframework/let/cop/bbs/
 
 ### 3.2 복사할 MyBATIS 매퍼
 ```
-_legacy_backup/src/main/resources/egovframework/mapper/let/cop/bbs/
-  └── *_cubrid.xml (Cubrid용 SQL 매퍼)
+egovframe-template-common-components-5.0.0/src/main/resources/egovframework/mapper/com/cop/bbs/
+  └── *_postgres.xml (PostgreSQL용 SQL 매퍼)
 ```
 
 ### 3.3 작업 순서
 1. **디렉토리 생성**
    ```powershell
    New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cmm/service/impl" -Force
-   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/let/cop/bbs/service/impl" -Force
-   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/let/cop/bbs/web" -Force
+   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cop/bbs/service/impl" -Force
+   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cop/bbs/web" -Force
    ```
 
 2. **공통 클래스 복사**
    ```powershell
-   Copy-Item "_legacy_backup/src/main/java/egovframework/com/cmm/ComDefaultVO.java" "api-server/src/main/java/egovframework/com/cmm/"
-   Copy-Item "_legacy_backup/src/main/java/egovframework/com/cmm/LoginVO.java" "api-server/src/main/java/egovframework/com/cmm/"
-   Copy-Item "_legacy_backup/src/main/java/egovframework/com/cmm/EgovMessageSource.java" "api-server/src/main/java/egovframework/com/cmm/"
+   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/ComDefaultVO.java" "api-server/src/main/java/egovframework/com/cmm/"
+   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/LoginVO.java" "api-server/src/main/java/egovframework/com/cmm/"
+   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/EgovMessageSource.java" "api-server/src/main/java/egovframework/com/cmm/"
    ```
 
 3. **BBS 서비스 복사**
    ```powershell
-   Copy-Item "_legacy_backup/src/main/java/egovframework/let/cop/bbs/*" "api-server/src/main/java/egovframework/let/cop/bbs/" -Recurse
+   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cop/bbs/*" "api-server/src/main/java/egovframework/com/cop/bbs/" -Recurse
    ```
 
 4. **MyBATIS 매퍼 복사**
    ```powershell
-   Copy-Item "_legacy_backup/src/main/resources/egovframework/mapper/let/cop/bbs/*_cubrid.xml" "api-server/src/main/resources/mapper/bbs/"
+   Copy-Item "egovframe-template-common-components-5.0.0/src/main/resources/egovframework/mapper/com/cop/bbs/*_postgres.xml" "api-server/src/main/resources/mapper/bbs/"
    ```
 
 5. **컴파일 테스트**
@@ -143,6 +143,8 @@ _legacy_backup/src/main/resources/egovframework/mapper/let/cop/bbs/
 ### 4.1 핵심 원칙
 1. **Mapper 인터페이스 사용**: `EgovAbstractMapper`를 상속받는 DAO 대신 `@Mapper` 인터페이스를 사용합니다.
 2. **DTO 기반 통신**: 레거시의 `VO`나 `EgovMap` 대신 기능에 맞는 명확한 `DTO`를 정의하여 사용합니다.
+3. **Enterprise Package (Com)**: 모든 레거시 소스는 `egovframework.let` (Light)이 아닌 `egovframework.com` (Common) 패키지 소스를 사용합니다.
+4. **PostgreSQL Only**: 모든 SQL Mapper는 `*_postgres.xml`만을 사용하며, 타 DB 지원은 고려하지 않습니다.
 3. **Layered Architecture 준수**:
    - **Infrastructure**: `Mapper XML` (SQL)
    - **Persistence**: `@Mapper Interface`
@@ -221,7 +223,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login `
 | 현대화 플랜 | `implementation_plan.md` | 신규 아키텍처 상세 가이드라인 |
 | 보안 설정 | `common-security/.../SecurityConfig.java` | JWT + 레거시 경로 허용 |
 | 레거시 빈 설정 | `api-server/.../LegacyConfig.java` | DataSource 별칭, MessageSource |
-| 레거시 원본 | `_legacy_backup/` | eGovFrame 5.0 경량환경 전체 |
+| 레거시 원본 | `egovframe-template-common-components-5.0.0/` | eGovFrame 5.0 공통 컴포넌트 원본 |
 
 ---
 

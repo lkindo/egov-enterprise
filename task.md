@@ -37,6 +37,8 @@
     - [x] docker-compose.yml 생성
     - [x] Postgres DB Docker 연결 설정
     - [x] postgres DB DDL/DML Script에서 테이블명 COMT 접두어 제거 (기존 파일 백업 후작업)
+- [x] Document Menu-Table Relationships `[Doc]` <!-- id: 5 -->
+- [/] RESOLVE_ENTERPRISE_DEPENDENCIES `[Build]` <!-- id: 6 -->
 - [/] Hybrid Migration (Backend First)
     - [x] MIGRATION_STRATEGY.md 작성
     - [x] 관리자 공통 메뉴 (Admin Menu) 이관
@@ -59,4 +61,11 @@
         - [x] 게시글 상세(Detail) 조회 Adapter 구현 (Service 교체 완료)
         - [x] 게시글 등록/수정(Write/Update) Adapter 구현
         - [x] 게시글 삭제(Delete) 기능 검증
+        - [x] Integrate `patch_DDL.sql` and `patch_DML.sql`
+        - [x] Remove `COMT`/`LETT` prefixes from SQL Mappers (Aligned with `table_list.txt`)
+    - [x] **Enterprise Standardization (Refactoring)**
+        - [x] Enforce PostgreSQL (Docs & Config)
+        - [x] Remove `egovframework.let` (Light) packages
+        - [x] Import `egovframework.com` (Enterprise) packages
+        - [x] Migrate Controllers (`QustnrRespondInfo`, `BbsUserStats`, `ConnectStats`) to `com`
 

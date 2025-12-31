@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ScrinStatsDAO">
+	
+	<!-- ?붾㈃?듦퀎 議고쉶 -->
+	<select id="selectScrinStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
+		SELECT COALESCE(SUM(a.RDCNT),0) AS statsCo
+			 <!-- 湲곌컙寃???? -->
+			 <if test='pdKind == "Y"'>
+		     , SUBSTR(a.OCCRRNC_DE, 1, 4) AS statsDate
+		     </if>
+		     <!-- 湲곌컙寃???? -->
+		     <if test='pdKind == "M"'>
+		     , CONCAT(CONCAT(SUBSTR(a.OCCRRNC_DE, 1, 4), '-'), SUBSTR(a.OCCRRNC_DE, 5, 2)) AS statsDate
+		     </if>
+		     <!-- 湲곌컙寃???? -->
+		     <if test='pdKind == "D"'>
+		     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(a.OCCRRNC_DE, 1, 4), '-'), SUBSTR(a.OCCRRNC_DE, 5, 2)), '-'), SUBSTR(a.OCCRRNC_DE, 7, 2)) AS statsDate
+		     </if>
+		  FROM SWEBLOGSUMMARY a,
+		       (SELECT PROGRM_STRE_PATH AS URL
+			  	  FROM NPROGRMLIST 
+			 	 WHERE PROGRM_FILE_NM = #{detailStatsKind}) b
+		 WHERE 1 = 1
+		   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
+		   AND a.OCCRRNC_DE BETWEEN #{fromDate} AND #{toDate} 
+		   AND POSITION(b.URL IN a.URL) > 0
+		 GROUP BY statsDate
+		 ORDER BY statsDate   
+	</select>
+	
+</mapper>

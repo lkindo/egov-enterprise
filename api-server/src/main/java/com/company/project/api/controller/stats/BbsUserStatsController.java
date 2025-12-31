@@ -1,8 +1,8 @@
 package com.company.project.api.controller.stats;
 
-import egovframework.let.sts.bst.service.EgovBbsStatsService;
-import egovframework.let.sts.com.StatsVO;
-import egovframework.let.sts.ust.service.EgovUserStatsService;
+import egovframework.com.sts.bst.service.EgovBbsStatsService;
+import egovframework.com.sts.com.StatsVO;
+import egovframework.com.sts.ust.service.EgovUserStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

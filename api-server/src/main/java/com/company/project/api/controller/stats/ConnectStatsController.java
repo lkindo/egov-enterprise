@@ -1,7 +1,7 @@
 package com.company.project.api.controller.stats;
 
-import egovframework.let.sts.com.StatsVO;
-import egovframework.let.sts.cst.service.EgovConectStatsService;
+import egovframework.com.sts.com.StatsVO;
+import egovframework.com.sts.cst.service.EgovConectStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +46,6 @@ public class ConnectStatsController {
         statsVO.setToDate(toDate != null ? toDate.replace("-", "") : "");
         statsVO.setDetailStatsKind(detailStatsKind);
 
-        @SuppressWarnings("unchecked")
         List<StatsVO> resultList = (List<StatsVO>) connectStatsService.selectConectStats(statsVO);
 
         return ResponseEntity.ok(resultList);

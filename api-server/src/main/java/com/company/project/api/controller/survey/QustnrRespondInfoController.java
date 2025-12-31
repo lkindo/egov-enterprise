@@ -1,7 +1,8 @@
 package com.company.project.api.controller.survey;
 
-import egovframework.let.uss.olp.qri.service.EgovQustnrRespondInfoService;
-import egovframework.let.uss.olp.qri.service.QustnrRespondInfoVO;
+import egovframework.com.cmm.ComDefaultVO;
+import egovframework.com.uss.olp.qri.service.EgovQustnrRespondInfoService;
+import egovframework.com.uss.olp.qri.service.QustnrRespondInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ public class QustnrRespondInfoController {
 
     @Operation(summary = "설문 응답 목록 조회")
     @GetMapping("/response")
-    public ResponseEntity<?> getResponseList(@ModelAttribute QustnrRespondInfoVO searchVO) throws Exception {
+    public ResponseEntity<?> getResponseList(@ModelAttribute ComDefaultVO searchVO) throws Exception {
 
         searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
         searchVO.setPageSize(propertiesService.getInt("pageSize"));

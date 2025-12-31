@@ -13,20 +13,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * <pre>
  * << 개정이력(Modification Information) >>
- *
+ *   
  *   수정일      수정자           수정내용
  *  -------       --------    ---------------------------
  *   2009.3.11   이삼섭          최초 생성
  *
  * </pre>
  */
+@SuppressWarnings("serial")
 public class ComDefaultCodeVO implements Serializable {
-    /**
-	 *  serialVersion UID
-	 */
-	private static final long serialVersionUID = -2020648489890016404L;
-
-	/** 코드 ID */
+    /** 코드 ID */
     private String codeId = "";
     
     /** 상세코드 */
@@ -53,7 +49,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the codeId
      */
     public String getCodeId() {
-	return codeId;
+    	return codeId;
     }
 
     /**
@@ -63,7 +59,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the codeId to set
      */
     public void setCodeId(String codeId) {
-	this.codeId = codeId;
+    	this.codeId = codeId;
     }
 
     /**
@@ -72,7 +68,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the code
      */
     public String getCode() {
-	return code;
+    	return code;
     }
 
     /**
@@ -82,7 +78,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the code to set
      */
     public void setCode(String code) {
-	this.code = code;
+    	this.code = code;
     }
 
     /**
@@ -91,7 +87,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the codeNm
      */
     public String getCodeNm() {
-	return codeNm;
+    	return codeNm;
     }
 
     /**
@@ -101,7 +97,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the codeNm to set
      */
     public void setCodeNm(String codeNm) {
-	this.codeNm = codeNm;
+    	this.codeNm = codeNm;
     }
 
     /**
@@ -110,7 +106,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the codeDc
      */
     public String getCodeDc() {
-	return codeDc;
+    	return codeDc;
     }
 
     /**
@@ -120,7 +116,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the codeDc to set
      */
     public void setCodeDc(String codeDc) {
-	this.codeDc = codeDc;
+    	this.codeDc = codeDc;
     }
 
     /**
@@ -129,7 +125,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the tableNm
      */
     public String getTableNm() {
-	return tableNm;
+    	return tableNm;
     }
 
     /**
@@ -139,7 +135,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the tableNm to set
      */
     public void setTableNm(String tableNm) {
-	this.tableNm = tableNm;
+    	this.tableNm = tableNm;
     }
 
     /**
@@ -148,7 +144,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the haveDetailCondition
      */
     public String getHaveDetailCondition() {
-	return haveDetailCondition;
+    	return haveDetailCondition;
     }
 
     /**
@@ -158,7 +154,7 @@ public class ComDefaultCodeVO implements Serializable {
      *            the haveDetailCondition to set
      */
     public void setHaveDetailCondition(String haveDetailCondition) {
-	this.haveDetailCondition = haveDetailCondition;
+    	this.haveDetailCondition = haveDetailCondition;
     }
 
     /**
@@ -167,7 +163,7 @@ public class ComDefaultCodeVO implements Serializable {
      * @return the detailCondition
      */
     public String getDetailCondition() {
-	return detailCondition;
+    	return detailCondition;
     }
 
     /**
@@ -177,13 +173,13 @@ public class ComDefaultCodeVO implements Serializable {
      *            the detailCondition to set
      */
     public void setDetailCondition(String detailCondition) {
-	this.detailCondition = detailCondition;
+    	this.detailCondition = detailCondition;
     }
 
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+    	return ToStringBuilder.reflectionToString(this);
     }
 }
