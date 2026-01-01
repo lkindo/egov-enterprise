@@ -29,7 +29,7 @@
                                 alert("비밀번호를 입력하세요");
                                 return false;
                             } else {
-                                document.loginForm.action = "<c:url value='/uat/uia/actionSecurityLogin.do'/>";
+                                document.loginForm.action = "<c:url value='/uat/uia/actionLogin.do'/>";
                                 document.loginForm.submit();
                             }
                         }
@@ -188,7 +188,7 @@
                                             <p class="txt">표준프레임워크 경량환경 내부업무 시스템에 오신것을 환영합니다.</p>
                                             <div class="loginbox">
                                                 <form id="loginForm" name="loginForm" method="post"
-                                                    action="<c:url value='/uat/uia/actionSecurityLogin.do'/>">
+                                                    action="<c:url value='/uat/uia/actionLogin.do'/>">
                                                     <fieldset>
                                                         <legend>로그인</legend>
 

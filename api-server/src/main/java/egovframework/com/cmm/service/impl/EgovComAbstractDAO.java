@@ -37,7 +37,7 @@ import jakarta.annotation.Resource;
 public abstract class EgovComAbstractDAO extends EgovAbstractMapper {
 
 	@Override
-	@Resource(name = "egov.sqlSession")
+	@org.springframework.beans.factory.annotation.Autowired
 	@org.springframework.context.annotation.Lazy
 	public void setSqlSessionFactory(org.apache.ibatis.session.SqlSessionFactory sqlSession) {
 		super.setSqlSessionFactory(sqlSession);

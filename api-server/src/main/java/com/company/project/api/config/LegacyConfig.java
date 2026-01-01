@@ -4,6 +4,7 @@ import egovframework.com.cmm.EgovMessageSource;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.boot.autoconfigure.ConfigurationCustomizer;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -45,15 +46,15 @@ public class LegacyConfig {
     @Bean(name = "egov.sqlSessionTemplate")
     @org.springframework.context.annotation.Lazy
     public SqlSessionTemplate egovSqlSessionTemplate(
-            org.apache.ibatis.session.SqlSessionFactory sqlSessionFactory) {
-        return new SqlSessionTemplate(sqlSessionFactory);
+            ObjectProvider<org.apache.ibatis.session.SqlSessionFactory> sqlSessionFactoryProvider) {
+        return new SqlSessionTemplate(sqlSessionFactoryProvider.getObject());
     }
 
     @Bean(name = "egov.sqlSession")
     @org.springframework.context.annotation.Lazy
     public org.apache.ibatis.session.SqlSessionFactory egovSqlSession(
-            org.apache.ibatis.session.SqlSessionFactory sqlSessionFactory) {
-        return sqlSessionFactory;
+            ObjectProvider<org.apache.ibatis.session.SqlSessionFactory> sqlSessionFactoryProvider) {
+        return sqlSessionFactoryProvider.getObject();
     }
 
     @Bean(name = "messageSource")

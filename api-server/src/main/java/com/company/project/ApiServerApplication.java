@@ -21,7 +21,8 @@ import org.springframework.context.annotation.FilterType;
                                                 org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "org\\.egovframe\\.rte\\.fdl\\.crypto\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\..*\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\..*\\.web\\..*"),
+
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\..*\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sts\\..*\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\..*\\.web\\..*"),

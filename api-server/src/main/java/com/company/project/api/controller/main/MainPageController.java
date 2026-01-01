@@ -153,31 +153,10 @@ public class MainPageController {
     /**
      * 로그인 처리 (샘플 - 실제로는 Spring Security 사용)
      */
-    @PostMapping("/uat/uia/actionSecurityLogin.do")
-    public String actionLogin(
-            @RequestParam String id,
-            @RequestParam String password,
-            HttpSession session,
-            Model model) {
-        // 샘플 로그인: 아무 아이디/비밀번호나 허용
-        // 실제로는 Spring Security와 연동 필요
-        if (id != null && !id.isEmpty()) {
-            // 세션에 간단한 로그인 정보 저장 (샘플용)
-            session.setAttribute("LoginVO", createSampleLoginVO(id));
-            return "redirect:/cmm/main/mainPage.do";
-        }
-        model.addAttribute("message", "아이디 또는 비밀번호가 올바르지 않습니다.");
-        return "uat/uia/EgovLoginUsr";
-    }
 
     /**
      * 로그아웃
      */
-    @GetMapping("/uat/uia/actionLogout.do")
-    public String actionLogout(HttpSession session) {
-        session.invalidate();
-        return "redirect:/cmm/main/mainPage.do";
-    }
 
     /**
      * 페이지 링크 (모달용)
@@ -190,13 +169,5 @@ public class MainPageController {
     /**
      * 샘플 LoginVO 생성 (임시)
      */
-    private Object createSampleLoginVO(String userId) {
-        return new egovframework.com.cmm.LoginVO() {
-            {
-                setId(userId);
-                setName("샘플사용자");
-                setUniqId("USRCNFRM_00000000001");
-            }
-        };
-    }
+
 }

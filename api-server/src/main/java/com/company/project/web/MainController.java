@@ -37,7 +37,9 @@ public class MainController {
         map.put("nttSj", dto.getNttSj());
         map.put("ntcrNm", dto.getNtcrNm());
         map.put("frstRegisterNm", dto.getNtcrNm());
-        map.put("frstRegisterPnttm", dto.getFrstRegisterPnttmStr());
+        map.put("frstRegisterPnttm", dto.getFrstRegisterPnttm() != null
+                ? dto.getFrstRegisterPnttm().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                : "");
         map.put("inqireCo", dto.getInqireCo());
         map.put("isExpired", dto.getIsExpired());
         map.put("useAt", dto.getUseAt());
@@ -45,7 +47,7 @@ public class MainController {
         return map;
     }
 
-    @RequestMapping(value = "/cmm/main/mainPage.do")
+    @RequestMapping(value = "/cmm/main/debugPage.do")
     public String getMgtMainPage(HttpServletRequest request, ModelMap model) throws Exception {
 
         // Hybrid: Use JPA BoardService

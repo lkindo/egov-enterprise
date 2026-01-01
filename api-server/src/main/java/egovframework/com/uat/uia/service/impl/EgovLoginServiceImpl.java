@@ -49,7 +49,9 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	private LoginDAO loginDAO;
 
 	/** EgovSndngMailRegistService */
-	@Resource(name = "sndngMailRegistService")
+	// @Resource(name = "sndngMailRegistService")
+	@org.springframework.beans.factory.annotation.Autowired(required = false)
+	@org.springframework.context.annotation.Lazy
 	private EgovSndngMailRegistService sndngMailRegistService;
 
 	@Resource(name = "egovLoginConfig")
