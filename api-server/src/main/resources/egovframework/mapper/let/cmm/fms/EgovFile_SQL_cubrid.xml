@@ -94,7 +94,7 @@
  		
  	</select>
 
-	<update id="deleteCOMTNFILE" parameterType="egovframework.com.cmm.service.FileVO" >
+	<update id="deleteNFILE" parameterType="egovframework.com.cmm.service.FileVO" >
 		
 			UPDATE NFILE
 			SET USE_AT = 'N'

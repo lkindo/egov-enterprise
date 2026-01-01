@@ -70,7 +70,6 @@ public class EgovMberManageController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-
 	/**
 	 * 일반회원목록을 조회한다. (pageing)
 	 *
@@ -151,7 +150,7 @@ public class EgovMberManageController {
 		comDefaultCodeVO.setCodeId("COM013");
 		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		// 그룹정보를 조회 - GROUP_ID정보
-		comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 
 		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
@@ -172,7 +171,8 @@ public class EgovMberManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovMberInsert.do")
-	public String insertMber(@Valid @ModelAttribute("mberManageVO") MberManageVO mberManageVO, BindingResult bindingResult,
+	public String insertMber(@Valid @ModelAttribute("mberManageVO") MberManageVO mberManageVO,
+			BindingResult bindingResult,
 			Model model) throws Exception {
 
 		// 미인증 사용자에 대한 보안처리
@@ -195,7 +195,7 @@ public class EgovMberManageController {
 			comDefaultCodeVO.setCodeId("COM013");
 			List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 			// 그룹정보를 조회 - GROUP_ID정보
-			comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+			comDefaultCodeVO.setTableNm("NORGNZTINFO");
 			List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 
 			model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
@@ -250,7 +250,7 @@ public class EgovMberManageController {
 		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(vo);
 
 		// 그룹정보를 조회 - GROUP_ID정보
-		vo.setTableNm("COMTNORGNZTINFO");
+		vo.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(vo);
 
 		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록

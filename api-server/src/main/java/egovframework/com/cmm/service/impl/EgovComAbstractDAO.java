@@ -38,6 +38,7 @@ public abstract class EgovComAbstractDAO extends EgovAbstractMapper {
 
 	@Override
 	@org.springframework.beans.factory.annotation.Autowired
+	@org.springframework.beans.factory.annotation.Qualifier("sqlSessionFactory")
 	@org.springframework.context.annotation.Lazy
 	public void setSqlSessionFactory(org.apache.ibatis.session.SqlSessionFactory sqlSession) {
 		super.setSqlSessionFactory(sqlSession);

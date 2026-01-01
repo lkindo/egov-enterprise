@@ -15,10 +15,10 @@ import jakarta.annotation.Resource;
  * @Description : 개인정보 조회 이력 관리를 위한 JavaConfig
  * @Modification Information
  *
- *    수정일         수정자         수정내용
- *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
-* @author Vincent Han
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2014.09.11 표준프레임워크 최초생성
+ * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5
  */
@@ -40,7 +40,7 @@ public class EgovPrivacyConfig {
 		idGnrService.setDataSource(dataSource);
 		idGnrService.setStrategy(strategy);
 		idGnrService.setBlockSize(10);
-		idGnrService.setTable("COMTECOPSEQ");
+		idGnrService.setTable("NECOPSEQ");
 		idGnrService.setTableName("PRIVACYLOG_ID");
 
 		return idGnrService;

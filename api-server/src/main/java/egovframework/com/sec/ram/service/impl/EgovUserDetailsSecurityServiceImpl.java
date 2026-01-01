@@ -8,27 +8,28 @@ import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
 /**
- *권한관리 인증에 대한 ServiceImpl 클래스를 정의한다.
+ * 권한관리 인증에 대한 ServiceImpl 클래스를 정의한다.
+ * 
  * @author 공통서비스 개발팀 이문준
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.03.11  이문준          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-
+@org.springframework.stereotype.Service("egovUserDetailsService")
 public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
-
 
 	/**
 	 * 인증된 사용자객체를 VO형식으로 가져온다.
+	 * 
 	 * @return Object - 사용자 ValueObject
 	 */
 	@Override
@@ -44,10 +45,12 @@ public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl 
 		return null;
 	}
 
-
 	/**
 	 * 인증된 사용자의 권한 정보를 가져온다.
-	 * 예) [ROLE_ADMIN, ROLE_USER, ROLE_A, ROLE_B, ROLE_RESTRICTED, IS_AUTHENTICATED_FULLY, IS_AUTHENTICATED_REMEMBERED, IS_AUTHENTICATED_ANONYMOUSLY]
+	 * 예) [ROLE_ADMIN, ROLE_USER, ROLE_A, ROLE_B, ROLE_RESTRICTED,
+	 * IS_AUTHENTICATED_FULLY, IS_AUTHENTICATED_REMEMBERED,
+	 * IS_AUTHENTICATED_ANONYMOUSLY]
+	 * 
 	 * @return List - 사용자 권한정보 목록
 	 */
 	@Override
@@ -57,6 +60,7 @@ public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl 
 
 	/**
 	 * 인증된 사용자 여부를 체크한다.
+	 * 
 	 * @return Boolean - 인증된 사용자 여부(TRUE / FALSE)
 	 */
 

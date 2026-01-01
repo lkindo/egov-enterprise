@@ -67,7 +67,7 @@ public class EgovUserManageController {
 	protected EgovPropertyService propertiesService;
 
 	@Resource(name = "egovNextUrlWhitelist")
-    protected List<String> nextUrlWhitelist;
+	protected List<String> nextUrlWhitelist;
 
 	/**
 	 * 사용자목록을 조회한다. (pageing)
@@ -152,10 +152,10 @@ public class EgovUserManageController {
 		comDefaultCodeVO.setCodeId("COM025");
 		List<CmmnDetailCode> insttCodeResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		// 조직정보를 조회 - ORGNZT_ID정보
-		comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> orgnztIdResult = cmmUseService.selectOgrnztIdDetail(comDefaultCodeVO);
 		// 그룹정보를 조회 - GROUP_ID정보
-		comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 
 		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
@@ -237,10 +237,10 @@ public class EgovUserManageController {
 		vo.setCodeId("COM025");
 		List<CmmnDetailCode> insttCodeResult = cmmUseService.selectCmmCodeDetail(vo);
 		// 조직정보를 조회 - ORGNZT_ID정보
-		vo.setTableNm("COMTNORGNZTINFO");
+		vo.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> orgnztIdResult = cmmUseService.selectOgrnztIdDetail(vo);
 		// 그룹정보를 조회 - GROUP_ID정보
-		vo.setTableNm("COMTNORGNZTINFO");
+		vo.setTableNm("NORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(vo);
 
 		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록

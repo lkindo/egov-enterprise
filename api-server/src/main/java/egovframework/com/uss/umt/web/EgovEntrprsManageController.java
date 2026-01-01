@@ -93,7 +93,7 @@ public class EgovEntrprsManageController {
 	/** 그룹 정보 조회 목록 */
 	@ModelAttribute("groupId_result")
 	public List<CmmnDetailCode> getGroupId_result(ComDefaultCodeVO comDefaultCodeVO) throws Exception {
-		comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		return cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 	}
 
@@ -145,7 +145,7 @@ public class EgovEntrprsManageController {
 		// List<CmmnDetailCode> entrprsMberSttus_result =
 		// cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		// 그룹정보를 조회 - GROUP_ID정보
-		// comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		// comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		// List<CmmnDetailCode> groupId_result =
 		// cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 		// 기업구분코드를 코드정보로부터 조회 - COM026
@@ -242,7 +242,7 @@ public class EgovEntrprsManageController {
 		// List<CmmnDetailCode> entrprsMberSttus_result =
 		// cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		// 그룹정보를 조회 - GROUP_ID정보
-		// comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
+		// comDefaultCodeVO.setTableNm("NORGNZTINFO");
 		// List<CmmnDetailCode> groupId_result =
 		// cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 		// 기업구분코드를 코드정보로부터 조회 - COM026

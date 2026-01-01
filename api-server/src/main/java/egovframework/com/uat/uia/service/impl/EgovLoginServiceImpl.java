@@ -46,6 +46,7 @@ import jakarta.annotation.Resource;
 public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements EgovLoginService {
 
 	@Resource(name = "loginDAO")
+	@org.springframework.context.annotation.Lazy
 	private LoginDAO loginDAO;
 
 	/** EgovSndngMailRegistService */
@@ -55,6 +56,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	private EgovSndngMailRegistService sndngMailRegistService;
 
 	@Resource(name = "egovLoginConfig")
+	@org.springframework.context.annotation.Lazy
 	EgovLoginConfig egovLoginConfig;
 
 	/**

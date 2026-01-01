@@ -1,10 +1,9 @@
 package com.company.project.api.config;
 
 import egovframework.com.cmm.EgovMessageSource;
-import org.mybatis.spring.SqlSessionTemplate;
+// SqlSessionTemplate, ObjectProvider - 순환참조 유발로 제거
 import org.mybatis.spring.boot.autoconfigure.ConfigurationCustomizer;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -43,19 +42,10 @@ public class LegacyConfig {
         return dataSource;
     }
 
-    @Bean(name = "egov.sqlSessionTemplate")
-    @org.springframework.context.annotation.Lazy
-    public SqlSessionTemplate egovSqlSessionTemplate(
-            ObjectProvider<org.apache.ibatis.session.SqlSessionFactory> sqlSessionFactoryProvider) {
-        return new SqlSessionTemplate(sqlSessionFactoryProvider.getObject());
-    }
-
-    @Bean(name = "egov.sqlSession")
-    @org.springframework.context.annotation.Lazy
-    public org.apache.ibatis.session.SqlSessionFactory egovSqlSession(
-            ObjectProvider<org.apache.ibatis.session.SqlSessionFactory> sqlSessionFactoryProvider) {
-        return sqlSessionFactoryProvider.getObject();
-    }
+    // MyBatis Auto-configuration에 의해 생성된 SqlSessionFactory를 직접 사용
+    // 아래 빈 정의들은 순환참조를 유발하여 제거됨
+    // @Bean(name = "egov.sqlSessionTemplate")
+    // @Bean(name = "egov.sqlSession")
 
     @Bean(name = "messageSource")
     public ReloadableResourceBundleMessageSource messageSource() {
@@ -88,5 +78,10 @@ public class LegacyConfig {
             configuration.getTypeAliasRegistry().registerAlias("comDefaultVO",
                     egovframework.com.cmm.ComDefaultVO.class);
         };
+    }
+
+    @Bean
+    public com.company.project.api.config.ApplicationContextProvider applicationContextProvider() {
+        return new com.company.project.api.config.ApplicationContextProvider();
     }
 }

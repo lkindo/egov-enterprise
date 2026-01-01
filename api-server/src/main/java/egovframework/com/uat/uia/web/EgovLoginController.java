@@ -90,6 +90,9 @@ public class EgovLoginController {
 	@org.springframework.context.annotation.Lazy
 	private EgovCmmUseService cmmUseService;
 
+	@Resource(name = "egovUserDetailsService")
+	private egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService;
+
 	/** EgovMessageSource */
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
@@ -216,7 +219,7 @@ public class EgovLoginController {
 
 			if ("security".equals(EgovProperties.getProperty("Globals.Auth").trim())) {
 				actionSecurityProcess(resultVO, request, response);
-				Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+				Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
 				if (isAuthenticated) {
 					return "forward:/EgovContent.do"; // 성공 시 페이지.. (redirect 불가)
 				} else {
@@ -326,12 +329,12 @@ public class EgovLoginController {
 	public String actionMain(HttpServletRequest request, ModelMap model) throws Exception {
 
 		// 1. Spring Security 사용자권한 처리
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		LoginVO user = (LoginVO) egovUserDetailsService.getAuthenticatedUser();
 
 		if (user.getIp().equals("")) {
 			user.setIp(EgovClntInfo.getClntIP(request));
@@ -395,7 +398,8 @@ public class EgovLoginController {
 
 		request.getSession().setAttribute("loginVO", null);
 		// 세션모드인경우 Authority 초기화
-		// List<String> authList = (List<String>)EgovUserDetailsHelper.getAuthorities();
+		// List<String> authList =
+		// (List<String>)egovUserDetailsService.getAuthorities();
 		request.getSession().setAttribute("accessUser", null);
 
 		if ("security".equals(EgovProperties.getProperty("Globals.Auth").trim())) {
@@ -640,7 +644,7 @@ public class EgovLoginController {
 		model.addAttribute("expirePwdDay", expirePwdDay);
 
 		// 비밀번호 설정일로부터 몇일이 지났는지 확인한다. ex) 3이면 비빌번호 설정후 3일 경과
-		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		LoginVO loginVO = (LoginVO) egovUserDetailsService.getAuthenticatedUser();
 		model.addAttribute("loginVO", loginVO);
 		int passedDayChangePWD = 0;
 		if (loginVO != null) {
@@ -658,5 +662,4 @@ public class EgovLoginController {
 
 		return "egovframework/com/uat/uia/EgovExpirePwd";
 	}
-
 }

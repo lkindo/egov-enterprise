@@ -42,15 +42,15 @@ public class SmsBasicDAO {
 		// for mySql
 		buffer.append("SELECT\n");
 		buffer.append("  a.SMS_ID, a.TRNSMIS_TELNO, a.TRNSMIS_CN,\n");
-		buffer.append("  (SELECT COUNT(*) FROM COMTNSMSRECPTN s WHERE s.SMS_ID = a.SMS_ID) as RECPTN_CNT,\n");
+		buffer.append("  (SELECT COUNT(*) FROM NSMSRECPTN s WHERE s.SMS_ID = a.SMS_ID) as RECPTN_CNT,\n");
 		buffer.append("  DATE_FORMAT(a.FRST_REGIST_PNTTM, '%Y-%m-%d %H:%i:%S') as FRST_REGIST_PNTTM\n");
-		buffer.append("FROM COMTNSMS a\n");
+		buffer.append("FROM NSMS a\n");
 		buffer.append("WHERE 1=1\n");
 
 		if ("0".equals(vo.getSearchCnd())) {
 			if (!"".equals(vo.getSearchWrd())) {
 				buffer.append(
-						"  AND a.SMS_ID in (SELECT SMS_ID FROM COMTNSMSRECPTN WHERE RECPTN_TELNO LIKE CONCAT ('%', ?,'%'))\n");
+						"  AND a.SMS_ID in (SELECT SMS_ID FROM NSMSRECPTN WHERE RECPTN_TELNO LIKE CONCAT ('%', ?,'%'))\n");
 			}
 		} else if ("1".equals(vo.getSearchCnd())) {
 			buffer.append("  AND a.TRNSMIS_CN LIKE CONCAT ('%', #searchWrd#,'%')\n");
@@ -64,14 +64,14 @@ public class SmsBasicDAO {
 		 * buffer.append("SELECT * FROM ( SELECT rownum rn, TB.* FROM (\n");
 		 * buffer.append("SELECT\n");
 		 * buffer.append("  a.SMS_ID, a.TRNSMIS_TELNO, a.TRNSMIS_CN,\n"); buffer.
-		 * append("  (SELECT COUNT(*) FROM COMTNSMSRECPTN s WHERE s.SMS_ID = a.SMS_ID) as RECPTN_CNT,\n"
+		 * append("  (SELECT COUNT(*) FROM NSMSRECPTN s WHERE s.SMS_ID = a.SMS_ID) as RECPTN_CNT,\n"
 		 * ); buffer.
 		 * append("  TO_CHAR(a.FRST_REGIST_PNTTM, 'YYYY-MM-DD HH24:MI:SS') as FRST_REGIST_PNTTM\n"
-		 * ); buffer.append("FROM COMTNSMS a\n"); buffer.append("WHERE 1=1\n");
+		 * ); buffer.append("FROM NSMS a\n"); buffer.append("WHERE 1=1\n");
 		 * 
 		 * if ("0".equals(vo.getSearchCnd())) { if (!"".equals(vo.getSearchWrd())) {
 		 * buffer.
-		 * append("  AND a.SMS_ID in (SELECT SMS_ID FROM COMTNSMSRECPTN WHERE RECPTN_TELNO LIKE '%' || ? || '%')\n"
+		 * append("  AND a.SMS_ID in (SELECT SMS_ID FROM NSMSRECPTN WHERE RECPTN_TELNO LIKE '%' || ? || '%')\n"
 		 * ); } } else if ("1".equals(vo.getSearchCnd())) {
 		 * buffer.append("  AND a.TRNSMIS_CN LIKE '%' || ? || '%'\n"); }
 		 * 
@@ -134,13 +134,13 @@ public class SmsBasicDAO {
 		// for mySql
 		buffer.append("SELECT\n");
 		buffer.append("  COUNT(a.SMS_ID) as cnt\n");
-		buffer.append("FROM COMTNSMS a\n");
+		buffer.append("FROM NSMS a\n");
 		buffer.append("WHERE 1=1\n");
 
 		if ("0".equals(vo.getSearchCnd())) {
 			if (!"".equals(vo.getSearchWrd())) {
 				buffer.append(
-						"  AND a.SMS_ID in (SELECT SMS_ID FROM COMTNSMSRECPTN WHERE RECPTN_TELNO LIKE CONCAT ('%', ?,'%'))\n");
+						"  AND a.SMS_ID in (SELECT SMS_ID FROM NSMSRECPTN WHERE RECPTN_TELNO LIKE CONCAT ('%', ?,'%'))\n");
 			}
 		} else if ("1".equals(vo.getSearchCnd())) {
 			buffer.append("  AND a.TRNSMIS_CN LIKE CONCAT ('%', #searchWrd#,'%')\n");
@@ -149,11 +149,11 @@ public class SmsBasicDAO {
 		// for Oracle
 		/*
 		 * buffer.append("SELECT\n"); buffer.append("  COUNT(a.SMS_ID) as cnt\n");
-		 * buffer.append("FROM COMTNSMS a\n"); buffer.append("WHERE 1=1\n");
+		 * buffer.append("FROM NSMS a\n"); buffer.append("WHERE 1=1\n");
 		 * 
 		 * if ("0".equals(vo.getSearchCnd())) { if (!"".equals(vo.getSearchWrd())) {
 		 * buffer.
-		 * append("  AND a.SMS_ID in (SELECT SMS_ID FROM COMTNSMSRECPTN WHERE RECPTN_TELNO LIKE '%' || ? || '%')\n"
+		 * append("  AND a.SMS_ID in (SELECT SMS_ID FROM NSMSRECPTN WHERE RECPTN_TELNO LIKE '%' || ? || '%')\n"
 		 * ); } } else if ("1".equals(vo.getSearchCnd())) {
 		 * buffer.append("  AND a.TRNSMIS_CN LIKE '%' || ? || '%'\n"); }
 		 */
@@ -194,7 +194,7 @@ public class SmsBasicDAO {
 		StringBuffer buffer = new StringBuffer();
 
 		// for mySql
-		buffer.append("INSERT INTO COMTNSMS\n");
+		buffer.append("INSERT INTO NSMS\n");
 		buffer.append("  (SMS_ID, TRNSMIS_TELNO, TRNSMIS_CN,\n");
 		buffer.append("   FRST_REGISTER_ID, FRST_REGIST_PNTTM )\n");
 		buffer.append("VALUES\n");
@@ -202,7 +202,7 @@ public class SmsBasicDAO {
 
 		// for Oracle
 		/*
-		 * buffer.append("INSERT INTO COMTNSMS\n");
+		 * buffer.append("INSERT INTO NSMS\n");
 		 * buffer.append("  (SMS_ID, TRNSMIS_TELNO, TRNSMIS_CN,\n");
 		 * buffer.append("   FRST_REGISTER_ID, FRST_REGIST_PNTTM )\n");
 		 * buffer.append("VALUES\n"); buffer.append("(?, ?, ?, ?, SYSDATE)");
@@ -240,7 +240,7 @@ public class SmsBasicDAO {
 		StringBuffer buffer = new StringBuffer();
 
 		// for mySql & Oracle
-		buffer.append("INSERT INTO COMTNSMSRECPTN\n");
+		buffer.append("INSERT INTO NSMSRECPTN\n");
 		buffer.append("  (SMS_ID, RECPTN_TELNO, RESULT_CODE, RESULT_MSSAGE)\n");
 		buffer.append("VALUES\n");
 		buffer.append("(?, ?, ?, ?)");
@@ -273,7 +273,7 @@ public class SmsBasicDAO {
 		buffer.append("  a.SMS_ID, a.TRNSMIS_TELNO, a.TRNSMIS_CN,\n");
 		buffer.append("  a.FRST_REGISTER_ID, b.USER_NM as FRST_REGISTER_NM,\n");
 		buffer.append("  DATE_FORMAT(a.FRST_REGIST_PNTTM, '%Y-%m-%d') as FRST_REGIST_PNTTM\n");
-		buffer.append("FROM COMTNSMS a\n");
+		buffer.append("FROM NSMS a\n");
 		buffer.append("LEFT OUTER JOIN COMVNUSERMASTER b\n");
 		buffer.append("  ON a.FRST_REGISTER_ID = b.ESNTL_ID\n");
 		buffer.append("WHERE a.SMS_ID = ?\n");
@@ -285,7 +285,7 @@ public class SmsBasicDAO {
 		 * buffer.append("  a.FRST_REGISTER_ID, b.USER_NM as FRST_REGISTER_NM,\n");
 		 * buffer.
 		 * append("  TO_CHAR(a.FRST_REGIST_PNTTM, 'YYYY-MM-DD') as FRST_REGIST_PNTTM\n"
-		 * ); buffer.append("FROM COMTNSMS a\n");
+		 * ); buffer.append("FROM NSMS a\n");
 		 * buffer.append("LEFT OUTER JOIN COMVNUSERMASTER b\n");
 		 * buffer.append("  ON a.FRST_REGISTER_ID = b.ESNTL_ID\n");
 		 * buffer.append("WHERE a.SMS_ID = ?\n");
@@ -323,7 +323,7 @@ public class SmsBasicDAO {
 		// for mySql & Oracle
 		buffer.append("SELECT\n");
 		buffer.append("  a.SMS_ID, a.RECPTN_TELNO, a.RESULT_CODE, a.RESULT_MSSAGE\n");
-		buffer.append("FROM COMTNSMSRECPTN a\n");
+		buffer.append("FROM NSMSRECPTN a\n");
 		buffer.append("WHERE a.SMS_ID = ?");
 
 		try (Connection conn = SmsBasicDBUtil.getConnection();
@@ -362,7 +362,7 @@ public class SmsBasicDAO {
 		StringBuffer buffer = new StringBuffer();
 
 		// for mySql & Oracle
-		buffer.append("UPDATE COMTNSMSRECPTN SET\n");
+		buffer.append("UPDATE NSMSRECPTN SET\n");
 		buffer.append("  RESULT_CODE = ?,\n");
 		buffer.append("  RESULT_MSSAGE = ?\n");
 		buffer.append("WHERE \n");
@@ -392,13 +392,13 @@ public class SmsBasicDAO {
 
 		// for mySql
 		buffer.append(
-				"SELECT CONCAT('SMSID_', LPAD(IFNULL(MAX(SUBSTR(SMS_ID, 7, 14)), 0) + 1, 14, '0')) as SMS_ID from COMTNSMS\n");
+				"SELECT CONCAT('SMSID_', LPAD(IFNULL(MAX(SUBSTR(SMS_ID, 7, 14)), 0) + 1, 14, '0')) as SMS_ID from NSMS\n");
 		buffer.append("WHERE SMS_ID LIKE 'SMSID_%'");
 
 		// for Oracle
 		/*
 		 * buffer.
-		 * append("SELECT CONCAT('SMSID_', LPAD(IFNULL(MAX(SUBSTR(SMS_ID, 7, 14)), 0) + 1, 14, '0')) as SMS_ID from COMTNSMS\n"
+		 * append("SELECT CONCAT('SMSID_', LPAD(IFNULL(MAX(SUBSTR(SMS_ID, 7, 14)), 0) + 1, 14, '0')) as SMS_ID from NSMS\n"
 		 * ); buffer.append("WHERE SMS_ID LIKE 'SMSID_%'");
 		 */
 
