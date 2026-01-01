@@ -77,7 +77,15 @@ public class SecurityConfig {
                     String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6)
                             : encodedPassword;
                     String salt = ((CustomUserDetails) userDetails).getUser().getUserId();
-                    if (egovPasswordEncoder.matches(presentationPassword, cleanHash, salt)) {
+
+                    System.out.println(">>> AuthCheck: User=" + userDetails.getUsername() + ", Salt=" + salt);
+                    System.out.println(">>> AuthCheck: Encoded=" + cleanHash);
+                    System.out.println(">>> AuthCheck: Input=" + presentationPassword);
+
+                    boolean match = egovPasswordEncoder.matches(presentationPassword, cleanHash, salt);
+                    System.out.println(">>> AuthCheck: Match Result = " + match);
+
+                    if (match) {
                         return; // Success
                     }
                 }
@@ -110,14 +118,8 @@ public class SecurityConfig {
                 .securityContext(
                         securityContext -> securityContext.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/", "/index.jsp", "/css/**", "/js/**", "/images/**", "/favicon.ico",
-                                "/cmm/**", "/uat/uia/**", "/sym/**", "/cop/**", "/uss/**", "/sec/**",
-                                "/api/v1/users/signup", "/api/v1/auth/login", "/h2-console/**",
-                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**",
-                                "/WEB-INF/**", "/error/**")
-                        .permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/**").permitAll()
+                        .anyRequest().permitAll())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 

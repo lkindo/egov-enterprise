@@ -1,5 +1,13 @@
 # 작업 체크리스트
 
+## 테스트 계정 정보 (Test Credentials)
+> **Common Password**: `rhdxhd12` (Hash: `raHL...`)
+- **Admin**: `webmaster`
+- **User**: `USER`
+- **Enterprise**: `ENTERPRISE`
+- **Test**: `TEST1`
+
+
 - [x] PRD.MD 작성
 - [x] 프로젝트 구조 분석 (기존 AS-IS vs 목표 TO-BE)
 - [x] TRD.MD 작성

@@ -29,6 +29,13 @@ public class MainPageController {
      */
     @GetMapping({ "/", "/cmm/main/mainPage.do" })
     public String mainPage(Model model, HttpSession session) throws Exception {
+        // DEBUG: Print all session attributes
+        System.out.println(">>> MainPageController.mainPage called");
+        java.util.Enumeration<String> attributeNames = session.getAttributeNames();
+        while (attributeNames.hasMoreElements()) {
+            String name = attributeNames.nextElement();
+            System.out.println(">>> SESSION ATTR: " + name + " = " + session.getAttribute(name));
+        }
         // 오늘의 할일 (업무게시판) 데이터 조회
         try {
             List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();

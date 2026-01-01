@@ -41,7 +41,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import com.gpki.gpkiapi.cert.X509Certificate;
 import com.gpki.servlet.GPKIHttpServletRequest;
 import com.gpki.servlet.GPKIHttpServletResponse;
+import com.gpki.servlet.GPKIHttpServletResponse;
 */
+
+import com.company.project.domain.user.User;
+import com.company.project.security.service.CustomUserDetails;
+import org.springframework.security.core.AuthenticationException;
 
 /**
  * 일반 로그인, 인증서 로그인을 처리하는 컨트롤러 클래스
@@ -181,61 +186,57 @@ public class EgovLoginController {
 	public String actionLogin(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) throws Exception {
 
-		// 1. 로그인인증제한 활성화시
-		if (egovLoginConfig.isLock()) {
-			Map<?, ?> mapLockUserInfo = loginService.selectLoginIncorrect(loginVO);
-			if (mapLockUserInfo != null) {
-				// 2.1 로그인인증제한 처리
-				String sLoginIncorrectCode = loginService.processLoginIncorrect(loginVO, mapLockUserInfo);
-				if (!sLoginIncorrectCode.equals("E")) {
-					if (sLoginIncorrectCode.equals("L")) {
-						model.addAttribute("loginMessage",
-								egovMessageSource.getMessageArgs("fail.common.loginIncorrect",
-										new Object[] { egovLoginConfig.getLockCount(), request.getLocale() }));
-					} else if (sLoginIncorrectCode.equals("C")) {
-						model.addAttribute("loginMessage",
-								egovMessageSource.getMessage("fail.common.login", request.getLocale()));
-					}
-					return "redirect:/uat/uia/egovLoginUsr.do";
-				}
-			} else {
-				model.addAttribute("loginMessage",
-						egovMessageSource.getMessage("fail.common.login", request.getLocale()));
-				return "redirect:/uat/uia/egovLoginUsr.do";
-			}
+		// 0. AuthenticationManager Check
+		if (authenticationManager == null) {
+			LOGGER.error("AuthenticationManager is null. Check SecurityConfig.");
+			model.addAttribute("loginMessage", "Authentication Configuration Error");
+			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 2. 로그인 처리
-		LoginVO resultVO = loginService.actionLogin(loginVO);
-		String userIp = EgovClntInfo.getClntIP(request);
-		resultVO.setIp(userIp);
+		// 1. Spring Security Authentication
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(loginVO.getId(),
+				loginVO.getPassword());
+		Authentication authResult;
 
-		// 3. 일반 로그인 처리
-		// 2022.11.11 시큐어코딩 처리
-		if (resultVO.getId() != null && !resultVO.getId().equals("")) {
-
-			// 3-1. 로그인 정보를 세션에 저장
-			request.getSession().setAttribute("loginVO", resultVO);
-
-			if ("security".equals(EgovProperties.getProperty("Globals.Auth").trim())) {
-				actionSecurityProcess(resultVO, request, response);
-				Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
-				if (isAuthenticated) {
-					return "forward:/EgovContent.do"; // 성공 시 페이지.. (redirect 불가)
-				} else {
-					model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login"));
-					return "redirect:/uat/uia/egovLoginUsr.do";
-				}
-			} else {
-				// 2019.10.01 로그인 인증세션 추가
-				request.getSession().setAttribute("accessUser", resultVO.getUserSe().concat(resultVO.getId()));
-				return "redirect:/uat/uia/actionMain.do";
-			}
-
-		} else {
+		try {
+			authResult = authenticationManager.authenticate(token);
+			System.out.println(">>> EgovLoginController: Authentication SUCCESS");
+		} catch (AuthenticationException e) {
+			LOGGER.warn("Login failed for user: {}", loginVO.getId());
+			System.out.println(">>> EgovLoginController: Authentication FAILED. Exception: " + e.getMessage());
+			e.printStackTrace(); // Print stack trace to server logs
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login", request.getLocale()));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
+
+		// 2. Security Context Handling
+		SecurityContext sc = SecurityContextHolder.createEmptyContext();
+		sc.setAuthentication(authResult);
+		SecurityContextHolder.setContext(sc);
+		if (securityContextRepository != null) {
+			securityContextRepository.saveContext(sc, request, response);
+		}
+
+		// 3. Map to LoginVO for Legacy Session Compatibility
+		CustomUserDetails details = (CustomUserDetails) authResult.getPrincipal();
+		User user = details.getUser();
+		LoginVO resultVO = new LoginVO();
+
+		resultVO.setId(user.getUserId());
+		resultVO.setUniqId(user.getEsntlId());
+		resultVO.setName(user.getUserNm());
+		resultVO.setIhidNum(user.getIhidnum());
+		resultVO.setEmail(user.getEmailAdres());
+		resultVO.setUserSe("USR"); // Map all JPA users to USR (Employee/Official) type for legacy compatibility
+		resultVO.setOrgnztId(user.getOrgnztId());
+		resultVO.setIp(EgovClntInfo.getClntIP(request));
+
+		System.out.println(">>> EgovLoginController: Setting Session 'LoginVO' = " + resultVO);
+		request.getSession().setAttribute("LoginVO", resultVO);
+		request.getSession().setAttribute("accessUser", resultVO.getUserSe().concat(resultVO.getId()));
+
+		System.out.println(">>> EgovLoginController: Redirecting to /cmm/main/mainPage.do");
+		return "redirect:/cmm/main/mainPage.do";
 	}
 
 	@RequestMapping(value = "/uat/uia/actionSecurityProcess.do")
