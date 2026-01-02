@@ -120,6 +120,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/**").permitAll()
                         .anyRequest().permitAll())
+                .addFilterBefore((request, response, chain) -> {
+                    jakarta.servlet.http.HttpServletRequest req = (jakarta.servlet.http.HttpServletRequest) request;
+                    jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
+                    System.out.println(">>> DEBUG_FILTER_PRE: " + req.getRequestURI());
+                    chain.doFilter(request, response);
+                    System.out.println(
+                            ">>> DEBUG_FILTER_POST: " + req.getRequestURI() + " => Status: " + res.getStatus());
+                }, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 

@@ -22,7 +22,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                 "org.egovframe" }, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class }),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "org\\.egovframe\\.rte\\.fdl\\.crypto\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\..*\\.web\\..*"),
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
@@ -38,6 +37,19 @@ public class ApiServerApplication extends SpringBootServletInitializer {
         @Override
         protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
                 return application.sources(ApiServerApplication.class);
+        }
+
+        @org.springframework.context.annotation.Bean
+        public egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService() {
+                return new egovframework.com.sec.ram.service.impl.EgovUserDetailsSecurityServiceImpl();
+        }
+
+        @org.springframework.context.annotation.Bean
+        public egovframework.com.cmm.util.EgovUserDetailsHelper egovUserDetailsHelper(
+                        egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService) {
+                egovframework.com.cmm.util.EgovUserDetailsHelper helper = new egovframework.com.cmm.util.EgovUserDetailsHelper();
+                helper.setEgovUserDetailsService(egovUserDetailsService);
+                return helper;
         }
 
         public static void main(String[] args) {

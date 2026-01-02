@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class EgovCryptoConfig {
+public class ProjectCryptoConfig {
 
     @Bean(name = "ariacryptoService")
     public EgovARIACryptoServiceImpl cryptoService() {
