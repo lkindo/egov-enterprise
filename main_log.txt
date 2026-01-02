@@ -1,0 +1,300 @@
+﻿>>> EgovLoginController: Authentication SUCCESS
+>>> EgovLoginController: SecurityContext saved via Repository
+>>> EgovLoginController: Setting Session 'LoginVO' = egovframework.com.cmm.LoginVO@55286daa
+>>> EgovLoginController: Redirecting to /cmm/main/mainPage.do
+2026-01-02 17:40:13.011 [http-nio-8090-exec-10] TRACE o.s.web.servlet.DispatcherServlet - Rendering view [org.springframework.web.servlet.view.RedirectView: name [redirect:]; URL [/cmm/main/mainPage.do]] 
+2026-01-02 17:40:13.011 [http-nio-8090-exec-10] DEBUG o.s.web.servlet.view.RedirectView - View name [redirect:], model {}
+2026-01-02 17:40:13.012 [http-nio-8090-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - Completed 302 FOUND, headers={masked}
+2026-01-02 17:40:13.016 [http-nio-8090-exec-2] TRACE o.s.web.servlet.DispatcherServlet - GET "/cmm/main/mainPage.do", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.017 [http-nio-8090-exec-2] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.company.project.api.controller.main.MainPageController#mainPage(Model, HttpSession)
+2026-01-02 17:40:13.017 [http-nio-8090-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 302 FOUND, headers={masked}
+2026-01-02 17:40:13.020 [http-nio-8090-exec-5] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - 2 matching mappings: [{GET [/uat/uia/egovLoginUsr.do]}, { [/uat/uia/egovLoginUsr.do]}]
+2026-01-02 17:40:13.020 [http-nio-8090-exec-5] TRACE o.s.web.servlet.DispatcherServlet - GET "/uat/uia/egovLoginUsr.do", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.020 [http-nio-8090-exec-5] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - 2 matching mappings: [{GET [/uat/uia/egovLoginUsr.do]}, { [/uat/uia/egovLoginUsr.do]}]
+2026-01-02 17:40:13.020 [http-nio-8090-exec-5] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.company.project.api.controller.main.MainPageController#loginPage(Model)
+2026-01-02 17:40:13.020 [http-nio-8090-exec-5] INFO  c.c.p.api.advice.GlobalMenuAdvice - GlobalMenuAdvice starting for URI: /uat/uia/egovLoginUsr.do
+2026-01-02 17:40:13.022 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-02 17:40:13.027 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-02 17:40:13.032 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+2026-01-02 17:40:13.032 [http-nio-8090-exec-5] TRACE org.hibernate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/uat/uia/egovLoginUsr.do]
+2026-01-02 17:40:13.034 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0
+2026-01-02 17:40:13.036 [http-nio-8090-exec-5] INFO  c.c.p.api.advice.GlobalMenuAdvice - GlobalMenuAdvice - Identified rootMenuId: 1000000 for relativeUri: /uat/uia/egovLoginUsr.do
+2026-01-02 17:40:13.037 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-02 17:40:13.040 [http-nio-8090-exec-5] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-02 17:40:13.042 [http-nio-8090-exec-5] TRACE o.s.web.servlet.DispatcherServlet - Rendering view [org.springframework.web.servlet.view.JstlView: name [uat/uia/EgovLoginUsr]; URL [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]] 
+2026-01-02 17:40:13.043 [http-nio-8090-exec-5] DEBUG o.s.web.servlet.view.JstlView - View name [uat/uia/EgovLoginUsr], model {list_headmenu=[com.company.project.service.menu.dto.MenuDto@2f52bb7b, com.company.project.service.menu.dto.MenuDto@56fb848f, com.company.project.service.menu.dto.MenuDto@7930a604, com.company.project.service.menu.dto.MenuDto@7fa4180b, com.company.project.service.menu.dto.MenuDto@4597fde7, com.company.project.service.menu.dto.MenuDto@4fc2c626, com.company.project.service.menu.dto.MenuDto@33be495c, com.company.project.service.menu.dto.MenuDto@6c856b60, com.company.project.service.menu.dto.MenuDto@1687dbd2], menuList=[com.company.project.service.menu.dto.MenuDto@2f52bb7b, com.company.project.service.menu.dto.MenuDto@56fb848f, com.company.project.service.menu.dto.MenuDto@7930a604, com.company.project.service.menu.dto.MenuDto@7fa4180b, com.company.project.service.menu.dto.MenuDto@4597fde7, com.company.project.service.menu.dto.MenuDto@4fc2c626, com.company.project.service.menu.dto.MenuDto@33be495c, com.company.project.service.menu.dto.MenuDto@6c856b60, com.company.project.service.menu.dto.MenuDto@1687dbd2], list_menulist=[com.company.project.service.menu.dto.MenuDto@2f52bb7b, com.company.project.service.menu.dto.MenuDto@4f2ddcd2, com.company.project.service.menu.dto.MenuDto@e1888c2, com.company.project.service.menu.dto.MenuDto@56fb848f, com.company.project.service.menu.dto.MenuDto@49812c0a, com.company.project.service.menu.dto.MenuDto@61f027a3, com.company.project.service.menu.dto.MenuDto@401abc03, com.company.project.service.menu.dto.MenuDto@a0e625a, com.company.project.service.menu.dto.MenuDto@4a2fee6d, com.company.project.service.menu.dto.MenuDto@7930a604, com.company.project.service.menu.dto.MenuDto@2a8215b4, com.company.project.service.menu.dto.MenuDto@3f6d4e43, com.company.project.service.menu.dto.MenuDto@4688e746, com.company.project.service.menu.dto.MenuDto@73e1257c, com.company.project.service.menu.dto.MenuDto@49f4a101, com.company.project.service.menu.dto.MenuDto@1cbef12a, com.company.project.service.menu.dto.MenuDto@7fa4180b, com.company.project.service.menu.dto.MenuDto@1d8d872c, com.company.project.service.menu.dto.MenuDto@67bd8b24, com.company.project.service.menu.dto.MenuDto@b2dc27b, com.company.project.service.menu.dto.MenuDto@60714595, com.company.project.service.menu.dto.MenuDto@11b40a50, com.company.project.service.menu.dto.MenuDto@1a5b57e9, com.company.project.service.menu.dto.MenuDto@7f8060c3, com.company.project.service.menu.dto.MenuDto@15b7df4b, com.company.project.service.menu.dto.MenuDto@2460b127, com.company.project.service.menu.dto.MenuDto@64c44e5d, com.company.project.service.menu.dto.MenuDto@183ebc7e, com.company.project.service.menu.dto.MenuDto@33d875b5, com.company.project.service.menu.dto.MenuDto@12100360, com.company.project.service.menu.dto.MenuDto@54e001d9, com.company.project.service.menu.dto.MenuDto@39d08a77, com.company.project.service.menu.dto.MenuDto@49d52525, com.company.project.service.menu.dto.MenuDto@5bcc247c, com.company.project.service.menu.dto.MenuDto@ff60815, com.company.project.service.menu.dto.MenuDto@32c8a8ae, com.company.project.service.menu.dto.MenuDto@52d45fdf, com.company.project.service.menu.dto.MenuDto@68016e3d, com.company.project.service.menu.dto.MenuDto@4597fde7, com.company.project.service.menu.dto.MenuDto@57886588, com.company.project.service.menu.dto.MenuDto@20722a0f, com.company.project.service.menu.dto.MenuDto@5028b379, com.company.project.service.menu.dto.MenuDto@33bb5fc7, com.company.project.service.menu.dto.MenuDto@278bd81d, com.company.project.service.menu.dto.MenuDto@1698bcb1, com.company.project.service.menu.dto.MenuDto@3be6660, com.company.project.service.menu.dto.MenuDto@6a1244b7, com.company.project.service.menu.dto.MenuDto@13a022d8, com.company.project.service.menu.dto.MenuDto@408e6929, com.company.project.service.menu.dto.MenuDto@30f38a3e, com.company.project.service.menu.dto.MenuDto@48bc576b, com.company.project.service.menu.dto.MenuDto@5a181a46, com.company.project.service.menu.dto.MenuDto@69ece70d, com.company.project.service.menu.dto.MenuDto@45622274, com.company.project.service.menu.dto.MenuDto@6f4f32bc, com.company.project.service.menu.dto.MenuDto@759fcf39, com.company.project.service.menu.dto.MenuDto@7bc58a08, com.company.project.service.menu.dto.MenuDto@2f607686, com.company.project.service.menu.dto.MenuDto@392c6b04, com.company.project.service.menu.dto.MenuDto@32c18d1f, com.company.project.service.menu.dto.MenuDto@6503d485, com.company.project.service.menu.dto.MenuDto@497b4ae5, com.company.project.service.menu.dto.MenuDto@13556c85, com.company.project.service.menu.dto.MenuDto@2dc2a285, com.company.project.service.menu.dto.MenuDto@561eec44, com.company.project.service.menu.dto.MenuDto@4521b800, com.company.project.service.menu.dto.MenuDto@7d28d565, com.company.project.service.menu.dto.MenuDto@454696cf, com.company.project.service.menu.dto.MenuDto@641b2eef, com.company.project.service.menu.dto.MenuDto@2c327bd4, com.company.project.service.menu.dto.MenuDto@170a10ca, com.company.project.service.menu.dto.MenuDto@668b0c0a, com.company.project.service.menu.dto.MenuDto@5b5a3a62, com.company.project.service.menu.dto.MenuDto@64891606, com.company.project.service.menu.dto.MenuDto@2342c61d, com.company.project.service.menu.dto.MenuDto@1d976523, com.company.project.service.menu.dto.MenuDto@1714d5d9, com.company.project.service.menu.dto.MenuDto@3b81d81b, com.company.project.service.menu.dto.MenuDto@e468358, com.company.project.service.menu.dto.MenuDto@28de51ce, com.company.project.service.menu.dto.MenuDto@1955e311, com.company.project.service.menu.dto.MenuDto@2c21b120, com.company.project.service.menu.dto.MenuDto@16c7bbbf, com.company.project.service.menu.dto.MenuDto@4ccdc888, com.company.project.service.menu.dto.MenuDto@7ab6e76b, com.company.project.service.menu.dto.MenuDto@5bbff1ac, com.company.project.service.menu.dto.MenuDto@708eb327, com.company.project.service.menu.dto.MenuDto@5225ac36, com.company.project.service.menu.dto.MenuDto@1f6584a6, com.company.project.service.menu.dto.MenuDto@3b732477, com.company.project.service.menu.dto.MenuDto@3ee1bfb5, com.company.project.service.menu.dto.MenuDto@415af043, com.company.project.service.menu.dto.MenuDto@72290c7a, com.company.project.service.menu.dto.MenuDto@50dbced4, com.company.project.service.menu.dto.MenuDto@6374df6d, com.company.project.service.menu.dto.MenuDto@753ae3a8, com.company.project.service.menu.dto.MenuDto@4f4a6ba9, com.company.project.service.menu.dto.MenuDto@41e9b1fa, com.company.project.service.menu.dto.MenuDto@4a3911d, com.company.project.service.menu.dto.MenuDto@26a61582, com.company.project.service.menu.dto.MenuDto@3a2d25dc, com.company.project.service.menu.dto.MenuDto@36c73502, com.company.project.service.menu.dto.MenuDto@2ef461be, com.company.project.service.menu.dto.MenuDto@38e86be7, com.company.project.service.menu.dto.MenuDto@6b38aae3, com.company.project.service.menu.dto.MenuDto@4fc2c626, com.company.project.service.menu.dto.MenuDto@6458fda3, com.company.project.service.menu.dto.MenuDto@692c8907, com.company.project.service.menu.dto.MenuDto@12e06096, com.company.project.service.menu.dto.MenuDto@3ca1bf9b, com.company.project.service.menu.dto.MenuDto@1f37e849, com.company.project.service.menu.dto.MenuDto@125e3e19, com.company.project.service.menu.dto.MenuDto@3ab0814, com.company.project.service.menu.dto.MenuDto@32c7329d, com.company.project.service.menu.dto.MenuDto@1212e12c, com.company.project.service.menu.dto.MenuDto@715fab81, com.company.project.service.menu.dto.MenuDto@2aefe616, com.company.project.service.menu.dto.MenuDto@21b76a0c, com.company.project.service.menu.dto.MenuDto@24a9f497, com.company.project.service.menu.dto.MenuDto@28265020, com.company.project.service.menu.dto.MenuDto@7daccc64, com.company.project.service.menu.dto.MenuDto@67d13ed7, com.company.project.service.menu.dto.MenuDto@cb773f6, com.company.project.service.menu.dto.MenuDto@168a8510, com.company.project.service.menu.dto.MenuDto@ddeb449, com.company.project.service.menu.dto.MenuDto@631714a3, com.company.project.service.menu.dto.MenuDto@5488e3f4, com.company.project.service.menu.dto.MenuDto@16e84e70, com.company.project.service.menu.dto.MenuDto@6e6cdc18, com.company.project.service.menu.dto.MenuDto@35856f7a, com.company.project.service.menu.dto.MenuDto@2601bd7d, com.company.project.service.menu.dto.MenuDto@724eec03, com.company.project.service.menu.dto.MenuDto@7aca624e, com.company.project.service.menu.dto.MenuDto@642a3cd2, com.company.project.service.menu.dto.MenuDto@4feb9f7f, com.company.project.service.menu.dto.MenuDto@4a405c75, com.company.project.service.menu.dto.MenuDto@63319f61, com.company.project.service.menu.dto.MenuDto@33be495c, com.company.project.service.menu.dto.MenuDto@5648e379, com.company.project.service.menu.dto.MenuDto@45cb9ea8, com.company.project.service.menu.dto.MenuDto@d20d190, com.company.project.service.menu.dto.MenuDto@62859dc2, com.company.project.service.menu.dto.MenuDto@6c856b60, com.company.project.service.menu.dto.MenuDto@73c7f9c0, com.company.project.service.menu.dto.MenuDto@6a6007ce, com.company.project.service.menu.dto.MenuDto@6147f743, com.company.project.service.menu.dto.MenuDto@2fe20d24, com.company.project.service.menu.dto.MenuDto@6327f8e1, com.company.project.service.menu.dto.MenuDto@913cd3c, com.company.project.service.menu.dto.MenuDto@5730ceb2, com.company.project.service.menu.dto.MenuDto@1687dbd2, com.company.project.service.menu.dto.MenuDto@6884625d, com.company.project.service.menu.dto.MenuDto@34b87f5c, com.company.project.service.menu.dto.MenuDto@23d53eda, com.company.project.service.menu.dto.MenuDto@7241314c, com.company.project.service.menu.dto.MenuDto@399c23d3, com.company.project.service.menu.dto.MenuDto@4ea9f923, com.company.project.service.menu.dto.MenuDto@44803dc2, com.company.project.service.menu.dto.MenuDto@3f30af4f, com.company.project.service.menu.dto.MenuDto@676a91c1, com.company.project.service.menu.dto.MenuDto@660b0cee, com.company.project.service.menu.dto.MenuDto@232053c0], activeRootMenuId=1000000, subMenu=[com.company.project.service.menu.dto.MenuDto@19d0da3c, com.company.project.service.menu.dto.MenuDto@2a87a45e]}
+2026-01-02 17:40:13.043 [http-nio-8090-exec-5] DEBUG o.s.web.servlet.view.JstlView - Forwarding to [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]
+2026-01-02 17:40:13.049 [http-nio-8090-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.053 [http-nio-8090-exec-1] TRACE o.s.web.servlet.DispatcherServlet - GET "/css/component.css", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.053 [http-nio-8090-exec-3] TRACE o.s.web.servlet.DispatcherServlet - GET "/css/page.css", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.053 [http-nio-8090-exec-7] TRACE o.s.web.servlet.DispatcherServlet - GET "/css/layout.css", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.053 [http-nio-8090-exec-8] TRACE o.s.web.servlet.DispatcherServlet - GET "/css/base.css", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.053 [http-nio-8090-exec-6] TRACE o.s.web.servlet.DispatcherServlet - GET "/js/jquery-1.11.2.min.js", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.053 [http-nio-8090-exec-6] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/js/]]
+2026-01-02 17:40:13.053 [http-nio-8090-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/css/]]
+2026-01-02 17:40:13.053 [http-nio-8090-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/css/]]
+2026-01-02 17:40:13.053 [http-nio-8090-exec-7] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/css/]]
+2026-01-02 17:40:13.053 [http-nio-8090-exec-8] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/css/]]
+2026-01-02 17:40:13.054 [http-nio-8090-exec-9] TRACE o.s.web.servlet.DispatcherServlet - GET "/js/ui.js", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.054 [http-nio-8090-exec-9] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/js/]]
+2026-01-02 17:40:13.057 [http-nio-8090-exec-1] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.057 [http-nio-8090-exec-3] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.057 [http-nio-8090-exec-8] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.057 [http-nio-8090-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.057 [http-nio-8090-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.057 [http-nio-8090-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.057 [http-nio-8090-exec-7] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.058 [http-nio-8090-exec-9] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.058 [http-nio-8090-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.058 [http-nio-8090-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.058 [http-nio-8090-exec-6] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.058 [http-nio-8090-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.060 [http-nio-8090-exec-4] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/logo.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.060 [http-nio-8090-exec-10] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/logo_footer.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.062 [http-nio-8090-exec-10] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.062 [http-nio-8090-exec-4] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.064 [http-nio-8090-exec-4] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.064 [http-nio-8090-exec-10] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.065 [http-nio-8090-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.065 [http-nio-8090-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.070 [http-nio-8090-exec-2] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/banner01.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.070 [http-nio-8090-exec-5] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/banner02.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.070 [http-nio-8090-exec-2] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.070 [http-nio-8090-exec-5] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.073 [http-nio-8090-exec-1] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/ico_person.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.073 [http-nio-8090-exec-8] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/ico_home.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.073 [http-nio-8090-exec-3] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/ico_allmenu.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.073 [http-nio-8090-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.073 [http-nio-8090-exec-2] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.073 [http-nio-8090-exec-8] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.073 [http-nio-8090-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.073 [http-nio-8090-exec-5] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.073 [http-nio-8090-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.074 [http-nio-8090-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.074 [http-nio-8090-exec-9] TRACE o.s.web.servlet.DispatcherServlet - GET "/images/ico_arrow_r_gray_4x7.png", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.076 [http-nio-8090-exec-9] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [ServletContext [/images/]]
+2026-01-02 17:40:13.078 [http-nio-8090-exec-1] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.078 [http-nio-8090-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.078 [http-nio-8090-exec-3] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.078 [http-nio-8090-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.078 [http-nio-8090-exec-8] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.078 [http-nio-8090-exec-9] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-02 17:40:13.078 [http-nio-8090-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.078 [http-nio-8090-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+2026-01-02 17:40:13.099 [http-nio-8090-exec-7] TRACE o.s.web.servlet.DispatcherServlet - GET "/favicon.ico", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-02 17:40:13.100 [http-nio-8090-exec-7] WARN  o.s.web.servlet.PageNotFound - No mapping for GET /favicon.ico
+2026-01-02 17:40:13.100 [http-nio-8090-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.company.project.core.exception.GlobalExceptionHandler#handleException(Exception)
+2026-01-02 17:40:13.100 [http-nio-8090-exec-7] ERROR c.c.p.c.e.GlobalExceptionHandler - Exception
+org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.
+	at org.springframework.web.servlet.DispatcherServlet.noHandlerFound(DispatcherServlet.java:1305)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:340)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java:82)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:128)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at com.company.project.security.jwt.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:30)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+	at org.springframework.security.web.ObservationFilterChainDecorator$AroundFilterObservation$SimpleAroundFilterObservation.lambda$wrap$0(ObservationFilterChainDecorator.java:323)
+	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:224)
