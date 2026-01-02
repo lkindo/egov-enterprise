@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Default Strategy -->
+    <bean name="defaultStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
+        <property name="prefix" value="TEST_"/>
+        <property name="cipers" value="20"/>
+        <property name="fillChar" value="0"/>
+    </bean>
+
+    <!-- Base Implementation Class -->
+    <bean id="abstractIdGnrService" class="org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl" abstract="true" destroy-method="destroy">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="strategy" ref="defaultStrategy"/>
+        <property name="blockSize" value="10"/>
+        <property name="table" value="IDS"/>
+    </bean>
+
+    <!-- [1] CMS & Portal Core -->
+    <bean name="egovNttIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NTT_ID"/></bean>
+    <bean name="egovBbsIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="BBS_ID"/></bean>
+    <bean name="egovCmmntyIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CMMNTY_ID"/></bean>
+    <bean name="egovClubIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CLUB_ID"/></bean>
+    <bean name="egovTmplatIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="TMPLAT_ID"/></bean>
+    <bean name="egovFileIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="FILE_ID"/></bean>
+    
+    <!-- [2] Security & Roles -->
+    <bean name="egovAuthorCodeGnrService" parent="abstractIdGnrService"><property name="tableName" value="AUTHOR_CODE"/></bean>
+    <bean name="egovRoleCodeGnrService" parent="abstractIdGnrService"><property name="tableName" value="ROLE_CODE"/></bean>
+    <bean name="egovGroupIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="GROUP_ID"/></bean>
+    <bean name="egovLoginPolicyIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="LOGIN_POLICY_ID"/></bean>
+    <bean name="egovUsrCnfrmIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="USR_CNFRM_ID"/></bean>
+
+    <!-- [3] Monitoring & Logs -->
+    <bean name="egovLoginLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="LOGIN_LOG_ID"/></bean>
+    <bean name="egovSysLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SYS_LOG_ID"/></bean>
+    <bean name="egovUserLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="USER_LOG_ID"/></bean>
+    <bean name="egovWebLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="WEB_LOG_ID"/></bean>
+    <bean name="egovTrsmrcvLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="TRSMRCV_LOG_ID"/></bean>
+    <bean name="egovProxyLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="PROXY_LOG_ID"/></bean>
+    <bean name="egovHttpLogManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="HTTP_LOG_ID"/></bean>
+    <bean name="egovProcessMonLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="PROCS_LOG_ID"/></bean>
+    <bean name="egovFileSysMntrngLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="FILESYS_LOG_ID"/></bean>
+    <bean name="egovServerResrceMntrngLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SRVR_RES_LOG_ID"/></bean>
+    <bean name="egovTrsmrcvMntrngLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="TRSMRCV_LOG_ID"/></bean>
+    <bean name="egovNtwrkSvcMntrngLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NTWRK_LOG_ID"/></bean>
+    <bean name="egovDbMntrngLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DBM_LOG_ID"/></bean>
+
+    <bean name="egovProxySvcIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="PROXY_ID"/></bean>
+    <bean name="egovProcessMonIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="PROCS_ID"/></bean>
+    <bean name="egovSynchrnServerIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SYNC_ID"/></bean>
+    <bean name="egovHttpManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="HTTP_ID"/></bean>
+    <bean name="egovFileSysMntrngIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="FILESYS_ID"/></bean>
+
+    <!-- [4] Surveys & Polls -->
+    <bean name="egovOnlinePollManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ONLINE_POLL_ID"/></bean>
+    <bean name="egovOnlinePollItemIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ONLINE_POLL_ITEM_ID"/></bean>
+    <bean name="egovOnlinePollResultIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ONLINE_POLL_RESULT_ID"/></bean>
+    
+    <bean name="egovQustnrManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_ID"/></bean>
+    <bean name="egovQustnrQestnManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_QESTN_ID"/></bean>
+    <bean name="egovQustnrItemManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_ITEM_ID"/></bean>
+    <bean name="egovQustnrTmplatManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_TMPLAT_ID"/></bean>
+    <bean name="qustnrRespondManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_RESPOND_MANAGE_ID"/></bean>
+    <bean name="qustnrRespondInfoIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_RESPOND_INFO_ID"/></bean>
+
+    <bean name="egovOnlinePollIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="POLL_ID"/></bean>
+    <bean name="egovQustnrQestnIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_QESTN_ID"/></bean>
+    <bean name="egovQustnrRespondIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_RESPOND_ID"/></bean>
+    <bean name="egovQustnrResultIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QUSTNR_RESULT_ID"/></bean>
+
+    <!-- [5] Business & Public Collaboration -->
+    <bean name="egovCnsltManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNSLT_ID"/></bean>
+    <bean name="egovQnaManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="QNA_ID"/></bean>
+    <bean name="egovFaqManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="FAQ_ID"/></bean>
+    <bean name="egovMgtIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MGT_ID"/></bean>
+    <bean name="egovWordDicaryIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="WORD_DICARY_ID"/></bean>
+    <bean name="egovOnlineMenualIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ONLINE_MNUAL_ID"/></bean>
+    <bean name="egovHpcmManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="HPCM_ID"/></bean>
+    <bean name="egovAdministrationWordIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ADMINISTRATION_WORD_ID"/></bean>
+    <bean name="egovIntnetSvcGuidanceIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="INTNET_SVC_GUIDE_ID"/></bean>
+
+    <!-- [6] Personalization & Social -->
+    <bean name="egovIndvdlPgeIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="INDVDL_PGE_ID"/></bean>
+    <bean name="egovWikiBookmarkIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="WIKI_BOOKMARK_ID"/></bean>
+    <bean name="egovUnityLinkIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="UNITY_LINK_ID"/></bean>
+    <bean name="egovSiteManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SITE_ID"/></bean>
+    <bean name="egovRwardManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="RWARD_ID"/></bean>
+    <bean name="egovRssTagManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="RSS_TAG_ID"/></bean>
+    <bean name="egovRoughMapIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ROUGH_MAP_ID"/></bean>
+    <bean name="egovRecomendSiteManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="RECOMEND_SITE_ID"/></bean>
+    <bean name="egovPopupManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="POPUP_ID"/></bean>
+    <bean name="egovNewsManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NEWS_ID"/></bean>
+    <bean name="egovSrchwrdIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SRCHWRD_ID"/></bean>
+    <bean name="egovSrchwrdManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SRCHWRD_MANAGE_ID"/></bean>
+    <bean name="egovMainImageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MAIN_IMAGE_ID"/></bean>
+    <bean name="egovBannerIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="BANNER_ID"/></bean>
+
+    <!-- [7] Cooperation & Schedules -->
+    <bean name="deptSchdulManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SCHDUL_ID"/></bean>
+    <bean name="egovLeaderSchdulIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="LEADER_SCHDUL_ID"/></bean>
+    <bean name="egovAnnvrsryManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ANNVRSRY_ID"/></bean>
+    <bean name="egovEventInfoIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="EVENT_INFO_ID"/></bean>
+    <bean name="egovEventManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="EVENT_ID"/></bean>
+    <bean name="egovMtgPlaceManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MTG_PLACE_ID"/></bean>
+    <bean name="egovMtgPlaceResveIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MTG_PLACE_RESVE_ID"/></bean>
+    <bean name="egovInfrmlSanctnIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="INFRML_SANCTN_ID"/></bean>
+    <bean name="egovCtsnnManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CTSNN_ID"/></bean>
+    <bean name="egovNcrdIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NCRD_ID"/></bean>
+    <bean name="egovScrapIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SCRAP_ID"/></bean>
+    <bean name="egovMemoTodoIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MEMO_TODO_ID"/></bean>
+    <bean name="egovMemoReprtIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="MEMO_REPRT_ID"/></bean>
+    <bean name="egovNoteIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NOTE_ID"/></bean>
+    <bean name="egovNoteManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NOTE_MANAGE_ID"/></bean>
+    <bean name="egovNoteRecptnIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NOTE_RECPTN_ID"/></bean>
+    <bean name="egovNoteTrnsmitIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="NOTE_TRNSMIT_ID"/></bean>
+    <bean name="diaryManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DIARY_ID"/></bean>
+    <bean name="egovExtrlhrInfoIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="EXTRLHR_INFO_ID"/></bean>
+    <bean name="egovCmtManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CMT_ID"/></bean>
+    <bean name="egovWikMnthngReprtIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="WIK_MNTHNG_ID"/></bean>
+
+    <!-- [8] External Systems & Data -->
+    <bean name="egovDeptIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_ID"/></bean>
+    <bean name="egovDeptManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_MANAGE_ID"/></bean>
+    <bean name="egovZipIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ZIP_ID"/></bean>
+    <bean name="egovRestdeIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="RESTDE_ID"/></bean>
+    <bean name="egovDeptJobIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_JOB_ID"/></bean>
+    <bean name="egovDeptJobLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_JOB_LOG_ID"/></bean>
+    <bean name="egovDeptJobBxIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_JOB_BX_ID"/></bean>
+    <bean name="egovDeptJobBxLogIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DEPT_JOB_BX_LOG_ID"/></bean>
+    <bean name="egovCntcInsttIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNTC_INSTT_ID"/></bean>
+    <bean name="egovCntcSystemIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNTC_SYSTEM_ID"/></bean>
+    <bean name="egovCntcMessageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNTC_MSG_ID"/></bean>
+    <bean name="egovCntcMessageItemIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNTC_MSG_ITEM_ID"/></bean>
+    <bean name="egovCntcServiceIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CNTC_SERVICE_ID"/></bean>
+    <bean name="egovSystemCntcIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="SYSTEM_CNTC_ID"/></bean>
+    <bean name="egovRequestOfferIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="REQUEST_OFFER_ID"/></bean>
+    <bean name="egovDtaUseStatsIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DTA_USE_STATS_ID"/></bean>
+    <bean name="egovDamManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="DAM_ID"/></bean>
+    <bean name="egovInsttCodeRecptnIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="INSTT_CODE_RECPTN_ID"/></bean>
+    <bean name="egovAdministCodeRecptnIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="ADMINIST_CODE_RECPTN_ID"/></bean>
+
+    <!-- [9] Policies & Terms -->
+    <bean name="egovIndvdlInfoPolicyIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="INDVDL_ID"/></bean>
+    <bean name="egovStplatManageIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="STPLAT_ID"/></bean>
+    <bean name="smsStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
+        <property name="prefix" value="SMS_"/>
+        <property name="cipers" value="16"/>
+        <property name="fillChar" value="0"/>
+    </bean>
+    <bean name="egovSmsIdGnrService" parent="abstractIdGnrService">
+        <property name="strategy" ref="smsStrategy"/>
+        <property name="tableName" value="SMS_ID"/>
+    </bean>
+    <bean name="egovCpyrhtPrtcPolicyIdGnrService" parent="abstractIdGnrService"><property name="tableName" value="CPYRHT_ID"/></bean>
+
+    <!-- Strategies -->
+    <bean name="nttIdStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
+        <property name="prefix" value="NTT_"/>
+        <property name="cipers" value="20"/>
+        <property name="fillChar" value="0"/>
+    </bean>
+    <bean name="bbsIdStrategy" class="org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl">
+        <property name="prefix" value="BBS_"/>
+        <property name="cipers" value="20"/>
+        <property name="fillChar" value="0"/>
+    </bean>
+
+</beans>

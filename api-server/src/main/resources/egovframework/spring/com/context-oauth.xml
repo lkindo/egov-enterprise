@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Naver OAuth -->
+    <bean id="naverAuthVO" class="egovframework.com.ext.oauth.service.OAuthVO">
+        <constructor-arg value="naver"/>
+        <constructor-arg value="dummy-client-id"/>
+        <constructor-arg value="dummy-client-secret"/>
+        <constructor-arg value="http://localhost:8080/auth/naver/callback"/>
+        <constructor-arg value="profile"/>
+    </bean>
+
+    <!-- Google OAuth -->
+    <bean id="googleAuthVO" class="egovframework.com.ext.oauth.service.OAuthVO">
+        <constructor-arg value="google"/>
+        <constructor-arg value="dummy-client-id"/>
+        <constructor-arg value="dummy-client-secret"/>
+        <constructor-arg value="http://localhost:8080/auth/google/callback"/>
+        <constructor-arg value="profile"/>
+    </bean>
+
+    <!-- Kakao OAuth -->
+    <bean id="kakaoAuthVO" class="egovframework.com.ext.oauth.service.OAuthVO">
+        <constructor-arg value="kakao"/>
+        <constructor-arg value="dummy-client-id"/>
+        <constructor-arg value="dummy-client-secret"/>
+        <constructor-arg value="http://localhost:8080/auth/kakao/callback"/>
+        <constructor-arg value="profile"/>
+    </bean>
+
+</beans>

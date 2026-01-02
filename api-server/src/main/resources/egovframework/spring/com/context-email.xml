@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="egovMultiPartEmail" class="egovframework.com.cop.ems.service.EgovMultiPartEmail" scope="prototype">
+        <property name="host" value="127.0.0.1" />
+        <property name="port" value="25" />
+        <property name="emailAddress" value="no-reply@test.com" />
+        <property name="senderName" value="System" />
+    </bean>
+
+    <bean id="mntrngMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="smtp.test.com" />
+        <property name="port" value="587" />
+        <property name="username" value="test" />
+        <property name="password" value="test" />
+    </bean>
+
+    <bean id="mntrngMessage" class="org.springframework.mail.SimpleMailMessage">
+        <property name="from" value="no-reply@test.com" />
+        <property name="subject" value="Monitoring Alert" />
+        <property name="text" value="System Alert" />
+    </bean>
+
+</beans>

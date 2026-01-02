@@ -29,7 +29,7 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
  *      </pre>
  */
 
-@Service("egovUserDetailsService")
+@Service("egovUserDetailsSessionService")
 public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
 
 	/**

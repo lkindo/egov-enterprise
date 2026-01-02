@@ -1,0 +1,27 @@
+* Host localhost:8090 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8090...
+* Established connection to localhost (::1 port 8090) from ::1 port 64171 
+* using HTTP/1.x
+> GET /cmm/main/mainPage.do HTTP/1.1
+> Host: localhost:8090
+> User-Agent: curl/8.16.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 302 
+< X-Content-Type-Options: nosniff
+< X-XSS-Protection: 0
+< Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+< Pragma: no-cache
+< Expires: 0
+< X-Frame-Options: SAMEORIGIN
+< Location: http://localhost:8090/uat/uia/egovLoginUsr.do
+< Content-Length: 0
+< Date: Fri, 02 Jan 2026 08:09:19 GMT
+< 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+* Connection #0 to host localhost:8090 left intact

@@ -11,6 +11,9 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+
 @EnableJpaAuditing
 @EntityScan(basePackages = "com.company.project")
 @EnableJpaRepositories(basePackages = "com.company.project")
@@ -28,8 +31,14 @@ import org.springframework.context.annotation.FilterType;
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\..*\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\..*\\.web\\..*")
                 })
+
 @ImportResource({ "classpath*:egovframework/spring/com/**/context-*.xml" })
-public class ApiServerApplication {
+public class ApiServerApplication extends SpringBootServletInitializer {
+
+        @Override
+        protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+                return application.sources(ApiServerApplication.class);
+        }
 
         public static void main(String[] args) {
                 SpringApplication app = new SpringApplication(ApiServerApplication.class);

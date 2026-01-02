@@ -119,7 +119,7 @@
 		]]>
 	</select>
 	<!-- 설문조사(설문등록):: 설문등록 /설문지정보-->
-	<select id="selectQustnrRespondInfoManagenqestnrinfo" parameterType="java.util.Map" resultType="egovMap">
+	<select id="selectQustnrRespondInfoManageComtnqestnrinfo" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
 			A.QESTNR_ID,
@@ -143,7 +143,7 @@
 		]]>
 	</select>
 	<!-- 설문조사(설문등록):: 설문등록 /설문문 항정보-->
-	<select id="selectQustnrRespondInfoManagenqustnrqesitm" parameterType="java.util.Map" resultType="egovMap">
+	<select id="selectQustnrRespondInfoManageComtnqustnrqesitm" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
 			A.QUSTNR_QESITM_ID AS QESTNR_QESITM_ID,
@@ -164,7 +164,7 @@
 		]]>
 	</select>
 	<!-- 설문조사(설문등록):: 설문등록 /설문 항목정보 -->
-	<select id="selectQustnrRespondInfoManagenqustnriem" parameterType="java.util.Map" resultType="egovMap">
+	<select id="selectQustnrRespondInfoManageComtnqustnriem" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
 			A.QUSTNR_QESITM_ID AS QESTNR_QESITM_ID,

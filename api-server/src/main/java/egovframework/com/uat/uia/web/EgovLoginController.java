@@ -215,6 +215,10 @@ public class EgovLoginController {
 		SecurityContextHolder.setContext(sc);
 		if (securityContextRepository != null) {
 			securityContextRepository.saveContext(sc, request, response);
+			System.out.println(">>> EgovLoginController: SecurityContext saved via Repository");
+		} else {
+			System.out
+					.println(">>> EgovLoginController: SecurityContextRepository is NULL! Context might not persist.");
 		}
 
 		// 3. Map to LoginVO for Legacy Session Compatibility
@@ -329,9 +333,24 @@ public class EgovLoginController {
 	@RequestMapping(value = "/uat/uia/actionMain.do")
 	public String actionMain(HttpServletRequest request, ModelMap model) throws Exception {
 
-		// 1. Spring Security 사용자권한 처리
+		// 1. Spring Security Authentication Check
 		Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
+		System.out.println(">>> EgovLoginController.actionMain: isAuthenticated() = " + isAuthenticated);
+
+		// DEBUG: Check SecurityContext status directly
+		org.springframework.security.core.context.SecurityContext context = org.springframework.security.core.context.SecurityContextHolder
+				.getContext();
+		org.springframework.security.core.Authentication auth = context.getAuthentication();
+		System.out.println(">>> EgovLoginController.actionMain: SecurityContext = " + context);
+		System.out.println(">>> EgovLoginController.actionMain: Authentication = " + auth);
+		if (auth != null) {
+			System.out.println(">>> EgovLoginController.actionMain: Auth.getPrincipal() = " + auth.getPrincipal());
+			System.out
+					.println(">>> EgovLoginController.actionMain: Auth.isAuthenticated() = " + auth.isAuthenticated());
+		}
+
 		if (!isAuthenticated) {
+			System.out.println(">>> EgovLoginController.actionMain: Authentication Failed! Redirecting to Login.");
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}

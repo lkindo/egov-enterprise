@@ -64,7 +64,6 @@ public class EgovComIndexController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovComIndexController.class);
 
 	/** EgovLoginService */
-	@org.springframework.context.annotation.Lazy
 	@Resource(name = "loginService")
 	private EgovLoginService loginService;
 

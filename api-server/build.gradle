@@ -1,5 +1,6 @@
 plugins {
     id 'org.springframework.boot'
+    id 'war'
 }
 
 dependencies {
@@ -31,6 +32,7 @@ dependencies {
 
     // Missing Enterprise Dependencies
     implementation 'org.apache.commons:commons-email:1.5'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.batch:spring-batch-infrastructure'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
@@ -39,6 +41,9 @@ dependencies {
     implementation 'org.egovframe.rte:egovframe-rte-bat-core:5.0.0'
     implementation 'org.egovframe.rte:egovframe-rte-fdl-access:5.0.0'
     implementation 'org.egovframe.rte:egovframe-rte-fdl-crypto:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-idgnr:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-cmmn:5.0.0'
+    implementation 'org.egovframe.rte:egovframe-rte-fdl-excel:5.0.0'
     implementation 'org.egovframe.rte:egovframe-rte-fdl-security:5.0.0'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'

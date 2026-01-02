@@ -28,6 +28,10 @@ subprojects {
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
         options.compilerArgs << "-parameters"
+        // Suppress ALL warnings for eGovFrame legacy code compatibility (Java 21 forRemoval deprecations)
+        options.deprecation = false
+        options.warnings = false
+        options.compilerArgs << "-nowarn"
     }
     
     configurations {

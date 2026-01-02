@@ -24,6 +24,11 @@ public class MainPageController {
     public MainPageController() {
     }
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        System.out.println(">>> MainPageController BEAN CREATED <<<");
+    }
+
     /**
      * 메인 페이지 이동
      */
