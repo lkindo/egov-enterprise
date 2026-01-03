@@ -56,6 +56,22 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	@Resource(name = "egovUsrCnfrmIdGnrService")
 	private EgovIdGnrService idgenService;
 
+	@Resource(name = "termsRepository")
+	private com.company.project.domain.user.TermsRepository termsRepository;
+
+	@Override
+	public List<egovframework.com.uss.umt.service.StplatVO> selectStplat(String stplatId) {
+		return termsRepository.findById(stplatId)
+				.map(t -> {
+					egovframework.com.uss.umt.service.StplatVO vo = new egovframework.com.uss.umt.service.StplatVO();
+					vo.setUseStplatId(t.getUseStplatId());
+					vo.setUseStplatCn(t.getUseStplatCn());
+					vo.setInfoProvdAgeCn(t.getInfoProvdAgreCn());
+					return List.of(vo);
+				})
+				.orElse(List.of());
+	}
+
 	@Override
 	@Transactional
 	public String insertEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception {
@@ -79,7 +95,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	@Override
-	public List<EntrprsManageVO> selectEntrprsmberList(UserDefaultVO userSearchVO) {
+	public List<EntrprsManageVO> selectEntrprsMberList(UserDefaultVO userSearchVO) {
 		Pageable pageable = PageRequest.of(userSearchVO.getPageIndex() - 1, userSearchVO.getPageUnit());
 		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
 				userSearchVO.getSbscrbSttus(),
@@ -93,7 +109,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	@Override
-	public int selectEntrprsmberListTotCnt(UserDefaultVO userSearchVO) {
+	public int selectEntrprsMberListTotCnt(UserDefaultVO userSearchVO) {
 		Pageable pageable = PageRequest.of(0, 1);
 		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
 				userSearchVO.getSbscrbSttus(),

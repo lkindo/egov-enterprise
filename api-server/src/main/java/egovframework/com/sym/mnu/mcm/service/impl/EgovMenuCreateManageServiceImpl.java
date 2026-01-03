@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.company.project.domain.auth.MenuAuthority;
-import com.company.project.domain.auth.MenuAuthorityId;
+import com.company.project.domain.auth.MenuAuthority.MenuAuthorityId;
 import com.company.project.domain.auth.MenuAuthorityProjection;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.auth.MenuCreatManageProjection;

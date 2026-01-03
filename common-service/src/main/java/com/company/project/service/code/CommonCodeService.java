@@ -137,8 +137,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
-        Page<CommonCodeGroup> page = commonCodeGroupRepository.searchCommonCodeGroups(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+        Page<com.company.project.domain.code.CommonCodeGroupProjection> page = commonCodeGroupRepository
+                .searchCommonCodeGroups(
+                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
@@ -182,6 +183,17 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
         commonCodeGroupRepository.findById(dto.getCodeId()).ifPresent(CommonCodeGroup::delete);
     }
 
+    private CmmnCodeDto toDto(com.company.project.domain.code.CommonCodeGroupProjection projection) {
+        return CmmnCodeDto.builder()
+                .codeId(projection.getCodeId())
+                .codeIdNm(projection.getCodeIdNm())
+                .codeIdDc(projection.getCodeIdDc())
+                .clCode(projection.getClCode())
+                .clCodeNm(projection.getClCodeNm())
+                .useAt(projection.getUseAt())
+                .build();
+    }
+
     private CmmnCodeDto toDto(CommonCodeGroup entity) {
         String clCodeNm = commonCodeCategoryRepository.findById(entity.getClCode())
                 .map(CommonCodeCategory::getClCodeNm).orElse("");
@@ -203,14 +215,15 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
-        Page<CommonCode> page = commonCodeRepository.searchCommonCodes(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+        Page<com.company.project.domain.code.CommonCodeDetailProjection> page = commonCodeRepository
+                .searchCommonCodeDetails(
+                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
     public int selectCmmnDetailCodeListTotCnt(ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
-        return (int) commonCodeRepository.searchCommonCodes(
+        return (int) commonCodeRepository.searchCommonCodeDetails(
                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
@@ -250,6 +263,17 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
     public void deleteCmmnDetailCode(CmmnDetailCodeDto dto) {
         commonCodeRepository.findById(new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode()))
                 .ifPresent(CommonCode::delete);
+    }
+
+    private CmmnDetailCodeDto toDto(com.company.project.domain.code.CommonCodeDetailProjection projection) {
+        return CmmnDetailCodeDto.builder()
+                .codeId(projection.getCodeId())
+                .codeIdNm(projection.getCodeIdNm())
+                .code(projection.getCode())
+                .codeNm(projection.getCodeNm())
+                .codeDc(projection.getCodeDc())
+                .useAt(projection.getUseAt())
+                .build();
     }
 
     private CmmnDetailCodeDto toDto(CommonCode entity) {

@@ -100,12 +100,24 @@ public class User implements Serializable {
     @Column(name = "CRTFC_DN_VALUE", length = 600)
     private String subDn;
 
+    @Column(name = "LOCK_AT", length = 1)
+    private String lockAt;
+
+    @Column(name = "LOCK_CNT")
+    private Integer lockCnt;
+
+    @Column(name = "LOCK_LAST_PNTTM")
+    private LocalDateTime lockLastPnttm;
+
+    @Column(name = "CHG_PWD_LAST_PNTTM")
+    private LocalDateTime chgPwdLastPnttm;
+
     @Builder
     public User(String userId, String esntlId, String userNm, String password, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth, String areaNo, String homemiddleTelno,
             String homeendTelno, String fxnum, String homeadres, String detailAdres, String zip, String offmTelno,
             String moblphonNo, String emailAdres, String ofcpsNm, String groupId, String orgnztId, String insttCode,
-            Role role, String subDn, String authorCode) {
+            Role role, String subDn, String authorCode, String lockAt) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -134,6 +146,7 @@ public class User implements Serializable {
         this.sbscrbDe = LocalDateTime.now();
         this.subDn = subDn;
         this.authorCode = authorCode;
+        this.lockAt = lockAt;
     }
 
     public void update(String userNm, String passwordHint, String passwordCnsr, String emplNo, String ihidnum,
@@ -168,5 +181,12 @@ public class User implements Serializable {
 
     public void updatePassword(String password) {
         this.password = password;
+        this.chgPwdLastPnttm = LocalDateTime.now();
+    }
+
+    public void unlock() {
+        this.lockAt = "N";
+        this.lockCnt = 0;
+        this.lockLastPnttm = null;
     }
 }
