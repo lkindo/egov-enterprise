@@ -11,7 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -33,13 +33,25 @@ import java.util.Map;
 @Configuration
 @EnableWebSecurity
 @org.springframework.context.annotation.Profile("!test")
-@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = false)
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider) {
+    public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider,
+            Environment environment) {
+        System.out.println(">>> SecurityConfig LOADED! <<<");
         this.jwtTokenProvider = jwtTokenProvider;
+        // this.environment = environment; // Not actually stored in field in original
+        // code I saw?
+        // Wait, line 40 was: "private final JwtTokenProvider jwtTokenProvider;"
+        // Line 41: "public SecurityConfig(..."
+        // I should stick to original signature if possible or add Environment if
+        // needed.
+        // Original code Step 1803 shows NO 'environment' field.
+        // Step 1592 AuthenticInterceptor HAD 'environment' field.
+        // SecurityConfig Step 1803: NO environment field.
+        // So I should NOT verify environment. just print.
     }
 
     @Bean
@@ -118,8 +130,15 @@ public class SecurityConfig {
                 .securityContext(
                         securityContext -> securityContext.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()
-                        .anyRequest().permitAll())
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**").permitAll()
+                        .requestMatchers("/uat/uia/**").permitAll()
+                        .requestMatchers("/sym/mms/**").permitAll()
+                        .requestMatchers("/connection").permitAll()
+                        .requestMatchers("/WEB-INF/**").permitAll() // Allow internal forwarding to JSPs
+                        .anyRequest().authenticated())
+                .formLogin(login -> login
+                        .loginPage("/uat/uia/egovLoginUsr.do") // Redirect to custom login page
+                        .permitAll())
                 .addFilterBefore((request, response, chain) -> {
                     jakarta.servlet.http.HttpServletRequest req = (jakarta.servlet.http.HttpServletRequest) request;
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;

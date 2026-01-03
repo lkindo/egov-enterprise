@@ -84,89 +84,7 @@
                     <div class="wrap">
 
                         <!-- Header -->
-                        <div class="header">
-                            <div class="inner">
-                                <div class="left_col">
-                                    <h1 class="logo">
-                                        <a href="<c:url value='/cmm/main/mainPage.do'/>">
-                                            <img src="<c:url value='/images/logo.png'/>"
-                                                alt="표준프레임워크 포털 eGovFrame 샘플 포털">
-                                        </a>
-                                    </h1>
-                                </div>
-                                <div class="top_menu">
-                                    <span class="t"><span>로그인정보 없음</span> &nbsp</span>
-                                    <span class="d">로그인후 사용하십시오</span>
-                                </div>
-                                <!-- gnb -->
-                                <div class="gnb">
-                                    <ul>
-                                        <c:forEach var="menu" items="${menuList}" varStatus="status">
-                                            <li>
-                                                <c:set var="menuUrl" value="#" />
-                                                <c:choose>
-                                                    <c:when test="${menu.id == 1000000}">
-                                                        <c:set var="menuUrl"
-                                                            value="/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA" />
-                                                    </c:when>
-                                                    <c:when test="${menu.id == 5000000 || menu.id == 6000000}">
-                                                        <c:set var="menuUrl" value="#" />
-                                                    </c:when>
-                                                </c:choose>
-                                                <a href="<c:url value='${menuUrl}'/>" <c:if
-                                                    test="${menu.id >= 5000000}">class="manager"</c:if>>
-                                                    <c:out value="${menu.menuNm}" />
-                                                </a>
-                                            </li>
-                                        </c:forEach>
-                                    </ul>
-                                </div>
-
-                                <!-- util menu -->
-                                <div class="util_menu">
-                                    <ul>
-                                        <li><a href="#" class="allmenu" title="전체메뉴">전체메뉴</a></li>
-                                    </ul>
-                                </div>
-                                <!-- //util menu -->
-
-                                <!-- 전체메뉴 팝업 -->
-                                <div class="all_menu">
-                                    <div>
-                                        <div class="inner">
-                                            <c:forEach var="root" items="${menuList}" varStatus="status">
-                                                <div <c:if test="${root.id >= 5000000}">class="admin"</c:if>>
-                                                    <h2>
-                                                        <c:out value="${root.menuNm}" />
-                                                    </h2>
-                                                    <ul>
-                                                        <c:forEach var="child" items="${root.children}">
-                                                            <li>
-                                                                <c:set var="childUrl" value="#" />
-                                                                <c:choose>
-                                                                    <c:when test="${child.id == 1010000}">
-                                                                        <c:set var="childUrl"
-                                                                            value="/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA" />
-                                                                    </c:when>
-                                                                    <c:when test="${child.id == 1020000}">
-                                                                        <c:set var="childUrl"
-                                                                            value="/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC" />
-                                                                    </c:when>
-                                                                </c:choose>
-                                                                <a href="<c:url value='${childUrl}'/>">
-                                                                    <c:out value="${child.menuNm}" />
-                                                                </a>
-                                                            </li>
-                                                        </c:forEach>
-                                                    </ul>
-                                                </div>
-                                            </c:forEach>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- //전체메뉴 팝업 -->
-                            </div>
-                        </div>
+                        <c:import url="/sym/mms/EgovHeader.do" />
                         <!-- //Header -->
 
                         <div class="container" style="padding-bottom: 60px;">
@@ -220,7 +138,7 @@
                                                         </div>
                                                     </fieldset>
                                                     <input type="hidden" id="loginMessage" name="message"
-                                                        value="<c:out value='${message}'/>" />
+                                                        value="${loginMessage}" />
                                                     <input type="hidden" name="userSe" value="USR" />
                                                 </form>
                                             </div>
@@ -231,29 +149,8 @@
                         </div>
 
                         <!-- Footer -->
-                        <div class="footer">
-                            <div class="inner">
-                                <h1>
-                                    <a href="#">
-                                        <img src="<c:url value='/images/logo_footer.png'/>" alt="표준프레임워크 포털 eGovFrame">
-                                    </a>
-                                </h1>
-                                <div class="mid">
-                                    <address>
-                                        대표문의메일 : egovframesupport@gmail.com | 대표전화 : 0000-0000 (000-0000-0000)<br>
-                                        호환성확인 : 000-0000-0000 | 교육문의 : 000-0000-0000
-                                    </address>
-                                    <p class="copy">Copyright © 2021 Ministry Of The Interior And Safety. All Rights
-                                        Reserved.</p>
-                                </div>
-                                <div class="right_col">
-                                    <a href="#"><img src="<c:url value='/images/banner01.png'/>" alt="행정안전부"></a>
-                                    <a href="#"><img src="<c:url value='/images/banner02.png'/>"
-                                            alt="NIA 한국지능정보사회진흥원"></a>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- //Footer -->
+                        <c:import url="/sym/mms/EgovFooter.do" />
+                        <!--// Footer -->
 
                     </div>
 

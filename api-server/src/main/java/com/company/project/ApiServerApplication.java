@@ -41,7 +41,7 @@ public class ApiServerApplication extends SpringBootServletInitializer {
 
         @org.springframework.context.annotation.Bean
         public egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService() {
-                return new egovframework.com.sec.ram.service.impl.EgovUserDetailsSecurityServiceImpl();
+                return new egovframework.com.cmm.service.impl.EgovUserDetailsSessionServiceImpl();
         }
 
         @org.springframework.context.annotation.Bean

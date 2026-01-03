@@ -85,8 +85,22 @@ public class EgovLoginPolicyFilter implements Filter {
 		String userSe = request.getParameter("userSe");
 		String userIp = "";
 
+		System.out.println(">>> EgovLoginPolicyFilter > doFilter > id: " + id + ", userSe: " + userSe);
+
 		if (id == null || userSe == null) {
-			((HttpServletResponse) response).sendRedirect(httpRequest.getContextPath() + "/uat/uia/egovLoginUsr.do");
+			System.out.println(
+					">>> EgovLoginPolicyFilter > Missing parameters > id or userSe is null. Redirecting to login.");
+			// ((HttpServletResponse) response).sendRedirect(httpRequest.getContextPath() +
+			// "/uat/uia/egovLoginUsr.do");
+			// Don't redirect here, let the chain continue or return error?
+			// If this filter is ONLY for actionLogin.do, then parameters are mandatory.
+			// But if it intercepts forwards... actionLogin.do forwarding to mainPage.do
+			// might trigger this if filter matches?
+			// But filter only matches /uat/uia/actionLogin.do.
+			// Proceeding with redirect but logging it.
+			((HttpServletResponse) response).sendRedirect(
+					httpRequest.getContextPath() + "/uat/uia/egovLoginUsr.do?login_error=parameter_missing");
+			return;
 		}
 
 		// 1. LoginVO를 DB로 부터 가져오는 과정
@@ -126,8 +140,8 @@ public class EgovLoginPolicyFilter implements Filter {
 			((HttpServletResponse) response)
 					.sendRedirect(httpRequest.getContextPath() + "/uat/uia/egovLoginUsr.do?login_error=1");
 		} catch (Exception e) {
-//			LOGGER.error("Exception: {}", e.getClass().getName());
-//			LOGGER.error("Exception  Message: {}", e.getMessage());
+			// LOGGER.error("Exception: {}", e.getClass().getName());
+			// LOGGER.error("Exception Message: {}", e.getMessage());
 			// 2017-02-14 이정은 시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 

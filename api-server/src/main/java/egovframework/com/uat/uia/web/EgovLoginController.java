@@ -145,7 +145,7 @@ public class EgovLoginController {
 		String authError = request.getParameter("auth_error") == null ? ""
 				: (String) request.getParameter("auth_error");
 		if (authError != null && authError.equals("1")) {
-			return "egovframework/com/cmm/error/accessDenied";
+			return "sec/accessDenied";
 		}
 
 		/*
@@ -159,7 +159,7 @@ public class EgovLoginController {
 		 * model.addAttribute("challenge", gpkiresponse.getChallenge()); return
 		 * "egovframework/com/uat/uia/EgovLoginUsr";
 		 * 
-		 * }catch(Exception e){ return "egovframework/com/cmm/egovError"; }
+		 * }catch(Exception e){ return "cmm/error/egovError"; }
 		 */
 
 		// 2021.05.30, 정진오, 디지털원패스 처리하기 위해 로그인 화면에 인증방식 전달
@@ -171,7 +171,7 @@ public class EgovLoginController {
 			model.addAttribute("loginMessage", message);
 		}
 
-		return "egovframework/com/uat/uia/EgovLoginUsr";
+		return "uat/uia/EgovLoginUsr";
 	}
 
 	/**
@@ -182,12 +182,28 @@ public class EgovLoginController {
 	 * @return result - 로그인결과(세션정보)
 	 * @exception Exception
 	 */
+	@RequestMapping(value = "/uat/uia/actionPing.do")
+	public void actionPing(HttpServletResponse response) throws Exception {
+		System.out.println(">>> PING RECEIVED");
+		response.getWriter().write("PONG");
+		response.flushBuffer();
+	}
+
 	@RequestMapping(value = "/uat/uia/actionLogin.do")
-	public String actionLogin(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
-			HttpServletResponse response, ModelMap model) throws Exception {
+	public String actionLogin(HttpServletRequest request, HttpServletResponse response, ModelMap model)
+			throws Exception {
+
+		System.out.println(">>> EgovLoginController.actionLogin() STARTED (Manual Binding)");
+
+		LoginVO loginVO = new LoginVO();
+		loginVO.setId(request.getParameter("id"));
+		loginVO.setPassword(request.getParameter("password"));
+		loginVO.setUserSe(request.getParameter("userSe"));
+		System.out.println(">>> Manual Binding: id=" + loginVO.getId() + ", userSe=" + loginVO.getUserSe());
 
 		// 0. AuthenticationManager Check
 		if (authenticationManager == null) {
+			System.out.println(">>> EgovLoginController: AuthenticationManager is NULL!");
 			LOGGER.error("AuthenticationManager is null. Check SecurityConfig.");
 			model.addAttribute("loginMessage", "Authentication Configuration Error");
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -336,18 +352,6 @@ public class EgovLoginController {
 		// 1. Spring Security Authentication Check
 		Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
 		System.out.println(">>> EgovLoginController.actionMain: isAuthenticated() = " + isAuthenticated);
-
-		// DEBUG: Check SecurityContext status directly
-		org.springframework.security.core.context.SecurityContext context = org.springframework.security.core.context.SecurityContextHolder
-				.getContext();
-		org.springframework.security.core.Authentication auth = context.getAuthentication();
-		System.out.println(">>> EgovLoginController.actionMain: SecurityContext = " + context);
-		System.out.println(">>> EgovLoginController.actionMain: Authentication = " + auth);
-		if (auth != null) {
-			System.out.println(">>> EgovLoginController.actionMain: Auth.getPrincipal() = " + auth.getPrincipal());
-			System.out
-					.println(">>> EgovLoginController.actionMain: Auth.isAuthenticated() = " + auth.isAuthenticated());
-		}
 
 		if (!isAuthenticated) {
 			System.out.println(">>> EgovLoginController.actionMain: Authentication Failed! Redirecting to Login.");

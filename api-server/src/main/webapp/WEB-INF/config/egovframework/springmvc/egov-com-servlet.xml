@@ -15,6 +15,9 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
         <context:exclude-filter type="regex" expression="org\.egovframe\.rte\.fdl\.security\.config\.EgovSecurityConfiguration"/>
 	</context:component-scan>
+	
+	<!-- GlobalMenuAdvice를 XML 컨텍스트에도 명시적으로 등록하여 eGovFrame 컨트롤러에서도 동작하도록 함 -->
+	<bean id="globalMenuAdvice" class="com.company.project.api.advice.GlobalMenuAdvice" />
 
 	<!-- 서블릿컨네이너상의 exception에 대한 오류 페이지를 연결하는 mvc 설정 -->
 	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">

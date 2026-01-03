@@ -29,7 +29,7 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
  *      </pre>
  */
 
-@Service("egovUserDetailsSessionService")
+@Service("egovUserDetailsService")
 public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
 
 	/**
@@ -40,9 +40,15 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 	@Override
 	public Object getAuthenticatedUser() {
 		if (RequestContextHolder.getRequestAttributes() == null) {
+			System.out.println(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: RequestAttributes is NULL");
 			return null;
 		}
-		return RequestContextHolder.getRequestAttributes().getAttribute("LoginVO", RequestAttributes.SCOPE_SESSION);
+		Object loginVO = RequestContextHolder.getRequestAttributes().getAttribute("LoginVO",
+				RequestAttributes.SCOPE_SESSION);
+		System.out
+				.println(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: Retrieved LoginVO from session: "
+						+ loginVO);
+		return loginVO;
 	}
 
 	@Override
@@ -55,11 +61,20 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 	public Boolean isAuthenticated() {
 		// 인증된 유저인지 확인한다.
 		if (RequestContextHolder.getRequestAttributes() == null) {
+			System.out.println(">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: RequestAttributes is NULL");
 			return false;
 		}
 
 		Object loginVO = RequestContextHolder.getRequestAttributes().getAttribute("LoginVO",
 				RequestAttributes.SCOPE_SESSION);
+		if (loginVO == null) {
+			// Check for lowercase 'loginVO' just in case
+			loginVO = RequestContextHolder.getRequestAttributes().getAttribute("loginVO",
+					RequestAttributes.SCOPE_SESSION);
+		}
+
+		System.out.println(
+				">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: LoginVO present? " + (loginVO != null));
 		return loginVO != null;
 	}
 

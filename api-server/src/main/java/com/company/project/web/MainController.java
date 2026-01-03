@@ -73,11 +73,10 @@ public class MainController {
 
     @RequestMapping(value = "/sym/mms/EgovHeader.do")
     public String selectHeader(ModelMap model) throws Exception {
-        // New MenuService for hierarchy
-        if (EgovUserDetailsHelper.isAuthenticated()) {
-            model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
-            model.addAttribute("list_menulist", menuService.getAllMenus());
-        }
+        // Expose menus to all users (including unauthenticated) for Login Page
+        model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
+        model.addAttribute("list_menulist", menuService.getAllMenus());
+
         return "main/inc/EgovIncHeader";
     }
 

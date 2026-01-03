@@ -24,7 +24,7 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
  *
  *      </pre>
  */
-@org.springframework.stereotype.Service("egovUserDetailsService")
+@org.springframework.stereotype.Service("egovUserDetailsSecurityService")
 public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
 
 	/**

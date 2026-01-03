@@ -62,12 +62,8 @@ public class AuthenticInterceptor implements HandlerInterceptor {
 		boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		// 미민증사용자 체크
 		if (!isAuthenticated) {
-			// TEMPORARY FIX: Bypass authentication check to identify if this is the cause
-			System.out.println(">>> AuthenticInterceptor: Bypass! Request allowed: " + request.getRequestURI());
-			// ModelAndView modelAndView = new
-			// ModelAndView("redirect:/uat/uia/egovLoginUsr.do");
-			// throw new ModelAndViewDefiningException(modelAndView);
-			return true;
+			ModelAndView modelAndView = new ModelAndView("redirect:/uat/uia/egovLoginUsr.do");
+			throw new ModelAndViewDefiningException(modelAndView);
 		}
 		// 인증된 권한 목록
 		List<String> authList = EgovUserDetailsHelper.getAuthorities();

@@ -26,9 +26,11 @@ public class GlobalMenuAdvice {
         String queryString = request.getQueryString();
         String fullUri = (queryString != null) ? (uri + "?" + queryString) : uri;
 
-        log.info("GlobalMenuAdvice starting for URI: {}", fullUri);
+        log.info(">>> GlobalMenuAdvice starting for URI: {}", fullUri);
 
         List<MenuDto> menuHierarchy = menuService.getMenuHierarchy();
+        log.info(">>> GlobalMenuAdvice - menuHierarchy size: {}",
+                (menuHierarchy != null ? menuHierarchy.size() : "NULL"));
         model.addAttribute("list_headmenu", menuHierarchy);
         model.addAttribute("menuList", menuHierarchy);
 
@@ -54,12 +56,11 @@ public class GlobalMenuAdvice {
         }
 
         if (rootMenuId != null) {
-            log.info("GlobalMenuAdvice - Identified rootMenuId: {} for relativeUri: {}", rootMenuId, relativeUri);
+            log.debug("GlobalMenuAdvice - Identified rootMenuId: {} for relativeUri: {}", rootMenuId, relativeUri);
             model.addAttribute("activeRootMenuId", rootMenuId);
             model.addAttribute("subMenu", menuService.getSubMenus(rootMenuId));
             session.setAttribute("baseMenuNo", rootMenuId.toString());
         } else {
-            log.warn("GlobalMenuAdvice - FAILED to identify rootMenuId for relativeUri: {}", relativeUri);
             // Default to first menu if on main page or unknown
             if (relativeUri.equals("/") || relativeUri.contains("mainPage.do")) {
                 session.setAttribute("baseMenuNo", "1000000");
