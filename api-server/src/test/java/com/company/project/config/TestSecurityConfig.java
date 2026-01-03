@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import javax.sql.DataSource;
 
 /**
  * 테스트 환경용 Security 설정
@@ -21,6 +22,11 @@ public class TestSecurityConfig {
 
     public TestSecurityConfig(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @Bean(name = "egov.dataSource")
+    public DataSource egovDataSource(DataSource dataSource) {
+        return dataSource;
     }
 
     @Bean

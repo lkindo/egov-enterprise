@@ -6,8 +6,6 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import org.springframework.context.annotation.ImportResource;
-
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
@@ -31,17 +29,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\..*\\.web\\..*")
                 })
 
-@ImportResource({ "classpath*:egovframework/spring/com/**/context-*.xml" })
 public class ApiServerApplication extends SpringBootServletInitializer {
 
         @Override
         protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
                 return application.sources(ApiServerApplication.class);
-        }
-
-        @org.springframework.context.annotation.Bean
-        public egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService() {
-                return new egovframework.com.cmm.service.impl.EgovUserDetailsSessionServiceImpl();
         }
 
         @org.springframework.context.annotation.Bean

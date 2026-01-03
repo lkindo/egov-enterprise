@@ -184,7 +184,7 @@ public class EgovLoginController {
 	 */
 	@RequestMapping(value = "/uat/uia/actionPing.do")
 	public void actionPing(HttpServletResponse response) throws Exception {
-		System.out.println(">>> PING RECEIVED");
+		LOGGER.debug(">>> PING RECEIVED");
 		response.getWriter().write("PONG");
 		response.flushBuffer();
 	}
@@ -193,17 +193,17 @@ public class EgovLoginController {
 	public String actionLogin(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
-		System.out.println(">>> EgovLoginController.actionLogin() STARTED (Manual Binding)");
+		LOGGER.debug(">>> EgovLoginController.actionLogin() STARTED (Manual Binding)");
 
 		LoginVO loginVO = new LoginVO();
 		loginVO.setId(request.getParameter("id"));
 		loginVO.setPassword(request.getParameter("password"));
 		loginVO.setUserSe(request.getParameter("userSe"));
-		System.out.println(">>> Manual Binding: id=" + loginVO.getId() + ", userSe=" + loginVO.getUserSe());
+		LOGGER.debug(">>> Manual Binding: id={}, userSe={}", loginVO.getId(), loginVO.getUserSe());
 
 		// 0. AuthenticationManager Check
 		if (authenticationManager == null) {
-			System.out.println(">>> EgovLoginController: AuthenticationManager is NULL!");
+			LOGGER.debug(">>> EgovLoginController: AuthenticationManager is NULL!");
 			LOGGER.error("AuthenticationManager is null. Check SecurityConfig.");
 			model.addAttribute("loginMessage", "Authentication Configuration Error");
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -216,10 +216,10 @@ public class EgovLoginController {
 
 		try {
 			authResult = authenticationManager.authenticate(token);
-			System.out.println(">>> EgovLoginController: Authentication SUCCESS");
+			LOGGER.debug(">>> EgovLoginController: Authentication SUCCESS");
 		} catch (AuthenticationException e) {
 			LOGGER.warn("Login failed for user: {}", loginVO.getId());
-			System.out.println(">>> EgovLoginController: Authentication FAILED. Exception: " + e.getMessage());
+			LOGGER.debug(">>> EgovLoginController: Authentication FAILED. Exception: {}", e.getMessage());
 			e.printStackTrace(); // Print stack trace to server logs
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login", request.getLocale()));
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -231,10 +231,9 @@ public class EgovLoginController {
 		SecurityContextHolder.setContext(sc);
 		if (securityContextRepository != null) {
 			securityContextRepository.saveContext(sc, request, response);
-			System.out.println(">>> EgovLoginController: SecurityContext saved via Repository");
+			LOGGER.debug(">>> EgovLoginController: SecurityContext saved via Repository");
 		} else {
-			System.out
-					.println(">>> EgovLoginController: SecurityContextRepository is NULL! Context might not persist.");
+			LOGGER.debug(">>> EgovLoginController: SecurityContextRepository is NULL! Context might not persist.");
 		}
 
 		// 3. Map to LoginVO for Legacy Session Compatibility
@@ -251,11 +250,11 @@ public class EgovLoginController {
 		resultVO.setOrgnztId(user.getOrgnztId());
 		resultVO.setIp(EgovClntInfo.getClntIP(request));
 
-		System.out.println(">>> EgovLoginController: Setting Session 'LoginVO' = " + resultVO);
+		LOGGER.debug(">>> EgovLoginController: Setting Session 'LoginVO' = {}", resultVO);
 		request.getSession().setAttribute("LoginVO", resultVO);
 		request.getSession().setAttribute("accessUser", resultVO.getUserSe().concat(resultVO.getId()));
 
-		System.out.println(">>> EgovLoginController: Redirecting to /cmm/main/mainPage.do");
+		LOGGER.debug(">>> EgovLoginController: Redirecting to /cmm/main/mainPage.do");
 		return "redirect:/cmm/main/mainPage.do";
 	}
 
@@ -351,10 +350,10 @@ public class EgovLoginController {
 
 		// 1. Spring Security Authentication Check
 		Boolean isAuthenticated = egovUserDetailsService.isAuthenticated();
-		System.out.println(">>> EgovLoginController.actionMain: isAuthenticated() = " + isAuthenticated);
+		LOGGER.debug(">>> EgovLoginController.actionMain: isAuthenticated() = {}", isAuthenticated);
 
 		if (!isAuthenticated) {
-			System.out.println(">>> EgovLoginController.actionMain: Authentication Failed! Redirecting to Login.");
+			LOGGER.debug(">>> EgovLoginController.actionMain: Authentication Failed! Redirecting to Login.");
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}

@@ -1,72 +1,77 @@
 package com.company.project.web.auth;
 
-import com.company.project.config.TestSecurityConfig;
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.api.controller.AuthController;
+import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.service.auth.AuthService;
+import com.company.project.service.auth.dto.LoginRequest;
+import com.company.project.service.auth.dto.TokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 인증 API 통합 테스트
+ * 인증 API 컨트롤러 슬라이스 테스트
  */
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {
+                DataSourceAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                BatchAutoConfiguration.class
+})
 @ActiveProfiles("test")
-@Transactional
-@Import(TestSecurityConfig.class)
-class AuthApiControllerIntegrationTest {
+class AuthApiControllerTest {
 
         @Autowired
         private MockMvc mockMvc;
 
         @Autowired
-        private UserRepository userRepository;
-
-        @Autowired
-        private PasswordEncoder passwordEncoder;
-
-        @Autowired
         private ObjectMapper objectMapper;
 
-        @BeforeEach
-        void setUp() {
-                // 테스트 사용자 생성
-                User testUser = User.builder()
-                                .userId("loginUser")
-                                .password(passwordEncoder.encode("correctPassword"))
-                                .userNm("로그인 테스트 사용자")
-                                .esntlId("USR_LOGIN001")
-                                .role(Role.USER)
-                                .build();
-                userRepository.saveAndFlush(testUser);
-        }
+        @MockBean
+        private AuthService authService;
+
+        @MockBean
+        private JwtTokenProvider jwtTokenProvider;
+
+        @MockBean
+        private PasswordEncoder passwordEncoder;
+
+        @MockBean
+        private AuthenticationManager authenticationManager;
 
         @Test
         @DisplayName("로그인 - 성공")
         void login_success() throws Exception {
+                // Given
+                TokenResponse mockResponse = new TokenResponse("mock-jwt-token", null);
+                when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
+
                 Map<String, String> request = Map.of(
                                 "userId", "loginUser",
                                 "password", "correctPassword");
 
+                // When & Then
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
@@ -79,10 +84,16 @@ class AuthApiControllerIntegrationTest {
         @Test
         @DisplayName("로그인 - 잘못된 비밀번호")
         void login_wrongPassword() throws Exception {
+                // Given
+                when(authService.login(any(LoginRequest.class)))
+                                .thenThrow(new org.springframework.security.authentication.BadCredentialsException(
+                                                "Bad credentials"));
+
                 Map<String, String> request = Map.of(
                                 "userId", "loginUser",
                                 "password", "wrongPassword");
 
+                // When & Then
                 mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))

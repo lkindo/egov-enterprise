@@ -26,6 +26,7 @@ import egovframework.com.uss.umt.service.UserDefaultVO;
 import egovframework.com.uss.umt.service.UserManageVO;
 import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 
 /**
  * 업무사용자관련 요청을 비지니스 클래스로 전달하고 처리된결과를 해당 웹 화면으로 전달하는 Controller를 정의한다
@@ -178,7 +179,8 @@ public class EgovUserManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovUserInsert.do")
-	public String insertUser(@ModelAttribute("userManageVO") UserManageVO userManageVO, BindingResult bindingResult,
+	public String insertUser(@ModelAttribute("userManageVO") @Valid UserManageVO userManageVO,
+			BindingResult bindingResult,
 			Model model) throws Exception {
 
 		// 미인증 사용자에 대한 보안처리
@@ -290,7 +292,8 @@ public class EgovUserManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovUserSelectUpdt.do")
-	public String updateUser(@ModelAttribute("userManageVO") UserManageVO userManageVO, BindingResult bindingResult,
+	public String updateUser(@ModelAttribute("userManageVO") @Valid UserManageVO userManageVO,
+			BindingResult bindingResult,
 			Model model) throws Exception {
 
 		// 미인증 사용자에 대한 보안처리

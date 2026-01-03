@@ -4,19 +4,22 @@ import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
- * @Class Name  : Board.java
+ * @Class Name : Board.java
  * @Description : 게시물에 대한 데이터 처리 모델
  * @Modification Information
  * 
- *     수정일         수정자                   수정내용
- *     -------          --------        ---------------------------
- *   2009.03.06       이삼섭                  최초 생성
+ *               수정일 수정자 수정내용
+ *               ------- -------- ---------------------------
+ *               2009.03.06 이삼섭 최초 생성
  *
  * @author 공통 서비스 개발팀 이삼섭
  * @since 2009. 02. 13
  * @version 1.0
- * @see 
+ * @see
  * 
  */
 @SuppressWarnings("serial")
@@ -29,6 +32,7 @@ public class Board implements Serializable {
 	/**
 	 * 게시판 아이디
 	 */
+	@NotBlank(message = "게시판 ID는 필수입니다")
 	private String bbsId = "";
 	/**
 	 * 최초등록자 아이디
@@ -65,6 +69,8 @@ public class Board implements Serializable {
 	/**
 	 * 게시물 내용
 	 */
+	@NotBlank(message = "게시물 내용은 필수입니다")
+	@Size(max = 10000, message = "게시물 내용은 10000자 이하이어야 합니다")
 	private String nttCn = "";
 	/**
 	 * 게시물 아이디
@@ -77,6 +83,8 @@ public class Board implements Serializable {
 	/**
 	 * 게시물 제목
 	 */
+	@NotBlank(message = "게시물 제목은 필수입니다")
+	@Size(max = 200, message = "게시물 제목은 200자 이하이어야 합니다")
 	private String nttSj = "";
 	/**
 	 * 부모글번호
@@ -109,31 +117,33 @@ public class Board implements Serializable {
 	/**
 	 * 게시 종료일
 	 */
-	private String ntceEnddeView = ""; 
+	private String ntceEnddeView = "";
 	/**
 	 * 게시 시작일
 	 */
 	private String ntceBgndeView = "";
 	/**
-	 * 공지사항 여부 
+	 * 공지사항 여부
 	 */
 	private String noticeAt = "";
 	/**
-	 * 비밀글 여부 
+	 * 비밀글 여부
 	 */
 	private String secretAt = "";
 	/**
-	 * 제목 Bold 여부 
+	 * 제목 Bold 여부
 	 */
 	private String sjBoldAt = "";
 	/**
-	 * 블로그 게시판 여부 
+	 * 블로그 게시판 여부
 	 */
 	private String blogAt = "";
 	/** 블로그 ID */
-    private String blogId = "";
+	private String blogId = "";
+
 	/**
 	 * atchFileId attribute를 리턴한다.
+	 * 
 	 * @return the atchFileId
 	 */
 	public String getAtchFileId() {
@@ -142,6 +152,7 @@ public class Board implements Serializable {
 
 	/**
 	 * atchFileId attribute 값을 설정한다.
+	 * 
 	 * @param atchFileId the atchFileId to set
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -150,6 +161,7 @@ public class Board implements Serializable {
 
 	/**
 	 * bbsId attribute를 리턴한다.
+	 * 
 	 * @return the bbsId
 	 */
 	public String getBbsId() {
@@ -158,6 +170,7 @@ public class Board implements Serializable {
 
 	/**
 	 * bbsId attribute 값을 설정한다.
+	 * 
 	 * @param bbsId the bbsId to set
 	 */
 	public void setBbsId(String bbsId) {
@@ -166,6 +179,7 @@ public class Board implements Serializable {
 
 	/**
 	 * frstRegisterId attribute를 리턴한다.
+	 * 
 	 * @return the frstRegisterId
 	 */
 	public String getFrstRegisterId() {
@@ -174,6 +188,7 @@ public class Board implements Serializable {
 
 	/**
 	 * frstRegisterId attribute 값을 설정한다.
+	 * 
 	 * @param frstRegisterId the frstRegisterId to set
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -182,6 +197,7 @@ public class Board implements Serializable {
 
 	/**
 	 * frstRegisterPnttm attribute를 리턴한다.
+	 * 
 	 * @return the frstRegisterPnttm
 	 */
 	public String getFrstRegisterPnttm() {
@@ -190,6 +206,7 @@ public class Board implements Serializable {
 
 	/**
 	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * 
 	 * @param frstRegisterPnttm the frstRegisterPnttm to set
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -198,6 +215,7 @@ public class Board implements Serializable {
 
 	/**
 	 * lastUpdusrId attribute를 리턴한다.
+	 * 
 	 * @return the lastUpdusrId
 	 */
 	public String getLastUpdusrId() {
@@ -206,6 +224,7 @@ public class Board implements Serializable {
 
 	/**
 	 * lastUpdusrId attribute 값을 설정한다.
+	 * 
 	 * @param lastUpdusrId the lastUpdusrId to set
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -214,6 +233,7 @@ public class Board implements Serializable {
 
 	/**
 	 * lastUpdusrPnttm attribute를 리턴한다.
+	 * 
 	 * @return the lastUpdusrPnttm
 	 */
 	public String getLastUpdusrPnttm() {
@@ -222,6 +242,7 @@ public class Board implements Serializable {
 
 	/**
 	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * 
 	 * @param lastUpdusrPnttm the lastUpdusrPnttm to set
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -230,6 +251,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceBgnde attribute를 리턴한다.
+	 * 
 	 * @return the ntceBgnde
 	 */
 	public String getNtceBgnde() {
@@ -238,6 +260,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceBgnde attribute 값을 설정한다.
+	 * 
 	 * @param ntceBgnde the ntceBgnde to set
 	 */
 	public void setNtceBgnde(String ntceBgnde) {
@@ -246,6 +269,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceEndde attribute를 리턴한다.
+	 * 
 	 * @return the ntceEndde
 	 */
 	public String getNtceEndde() {
@@ -254,6 +278,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceEndde attribute 값을 설정한다.
+	 * 
 	 * @param ntceEndde the ntceEndde to set
 	 */
 	public void setNtceEndde(String ntceEndde) {
@@ -262,6 +287,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntcrId attribute를 리턴한다.
+	 * 
 	 * @return the ntcrId
 	 */
 	public String getNtcrId() {
@@ -270,6 +296,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntcrId attribute 값을 설정한다.
+	 * 
 	 * @param ntcrId the ntcrId to set
 	 */
 	public void setNtcrId(String ntcrId) {
@@ -278,6 +305,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntcrNm attribute를 리턴한다.
+	 * 
 	 * @return the ntcrNm
 	 */
 	public String getNtcrNm() {
@@ -286,6 +314,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntcrNm attribute 값을 설정한다.
+	 * 
 	 * @param ntcrNm the ntcrNm to set
 	 */
 	public void setNtcrNm(String ntcrNm) {
@@ -294,6 +323,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttCn attribute를 리턴한다.
+	 * 
 	 * @return the nttCn
 	 */
 	public String getNttCn() {
@@ -302,6 +332,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttCn attribute 값을 설정한다.
+	 * 
 	 * @param nttCn the nttCn to set
 	 */
 	public void setNttCn(String nttCn) {
@@ -310,6 +341,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttId attribute를 리턴한다.
+	 * 
 	 * @return the nttId
 	 */
 	public long getNttId() {
@@ -318,6 +350,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttId attribute 값을 설정한다.
+	 * 
 	 * @param nttId the nttId to set
 	 */
 	public void setNttId(long nttId) {
@@ -326,6 +359,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttNo attribute를 리턴한다.
+	 * 
 	 * @return the nttNo
 	 */
 	public long getNttNo() {
@@ -334,6 +368,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttNo attribute 값을 설정한다.
+	 * 
 	 * @param nttNo the nttNo to set
 	 */
 	public void setNttNo(long nttNo) {
@@ -342,6 +377,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttSj attribute를 리턴한다.
+	 * 
 	 * @return the nttSj
 	 */
 	public String getNttSj() {
@@ -350,6 +386,7 @@ public class Board implements Serializable {
 
 	/**
 	 * nttSj attribute 값을 설정한다.
+	 * 
 	 * @param nttSj the nttSj to set
 	 */
 	public void setNttSj(String nttSj) {
@@ -358,6 +395,7 @@ public class Board implements Serializable {
 
 	/**
 	 * parnts attribute를 리턴한다.
+	 * 
 	 * @return the parnts
 	 */
 	public String getParnts() {
@@ -366,6 +404,7 @@ public class Board implements Serializable {
 
 	/**
 	 * parnts attribute 값을 설정한다.
+	 * 
 	 * @param parnts the parnts to set
 	 */
 	public void setParnts(String parnts) {
@@ -374,6 +413,7 @@ public class Board implements Serializable {
 
 	/**
 	 * password attribute를 리턴한다.
+	 * 
 	 * @return the password
 	 */
 	public String getPassword() {
@@ -382,6 +422,7 @@ public class Board implements Serializable {
 
 	/**
 	 * password attribute 값을 설정한다.
+	 * 
 	 * @param password the password to set
 	 */
 	public void setPassword(String password) {
@@ -390,6 +431,7 @@ public class Board implements Serializable {
 
 	/**
 	 * inqireCo attribute를 리턴한다.
+	 * 
 	 * @return the inqireCo
 	 */
 	public int getInqireCo() {
@@ -398,6 +440,7 @@ public class Board implements Serializable {
 
 	/**
 	 * inqireCo attribute 값을 설정한다.
+	 * 
 	 * @param inqireCo the inqireCo to set
 	 */
 	public void setInqireCo(int inqireCo) {
@@ -406,6 +449,7 @@ public class Board implements Serializable {
 
 	/**
 	 * replyAt attribute를 리턴한다.
+	 * 
 	 * @return the replyAt
 	 */
 	public String getReplyAt() {
@@ -414,6 +458,7 @@ public class Board implements Serializable {
 
 	/**
 	 * replyAt attribute 값을 설정한다.
+	 * 
 	 * @param replyAt the replyAt to set
 	 */
 	public void setReplyAt(String replyAt) {
@@ -422,6 +467,7 @@ public class Board implements Serializable {
 
 	/**
 	 * replyLc attribute를 리턴한다.
+	 * 
 	 * @return the replyLc
 	 */
 	public String getReplyLc() {
@@ -430,6 +476,7 @@ public class Board implements Serializable {
 
 	/**
 	 * replyLc attribute 값을 설정한다.
+	 * 
 	 * @param replyLc the replyLc to set
 	 */
 	public void setReplyLc(String replyLc) {
@@ -438,6 +485,7 @@ public class Board implements Serializable {
 
 	/**
 	 * sortOrdr attribute를 리턴한다.
+	 * 
 	 * @return the sortOrdr
 	 */
 	public long getSortOrdr() {
@@ -446,6 +494,7 @@ public class Board implements Serializable {
 
 	/**
 	 * sortOrdr attribute 값을 설정한다.
+	 * 
 	 * @param sortOrdr the sortOrdr to set
 	 */
 	public void setSortOrdr(long sortOrdr) {
@@ -454,6 +503,7 @@ public class Board implements Serializable {
 
 	/**
 	 * useAt attribute를 리턴한다.
+	 * 
 	 * @return the useAt
 	 */
 	public String getUseAt() {
@@ -462,6 +512,7 @@ public class Board implements Serializable {
 
 	/**
 	 * useAt attribute 값을 설정한다.
+	 * 
 	 * @param useAt the useAt to set
 	 */
 	public void setUseAt(String useAt) {
@@ -470,6 +521,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceEnddeView attribute를 리턴한다.
+	 * 
 	 * @return the ntceEnddeView
 	 */
 	public String getNtceEnddeView() {
@@ -478,6 +530,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceEnddeView attribute 값을 설정한다.
+	 * 
 	 * @param ntceEnddeView the ntceEnddeView to set
 	 */
 	public void setNtceEnddeView(String ntceEnddeView) {
@@ -486,6 +539,7 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceBgndeView attribute를 리턴한다.
+	 * 
 	 * @return the ntceBgndeView
 	 */
 	public String getNtceBgndeView() {
@@ -494,14 +548,16 @@ public class Board implements Serializable {
 
 	/**
 	 * ntceBgndeView attribute 값을 설정한다.
+	 * 
 	 * @param ntceBgndeView the ntceBgndeView to set
 	 */
 	public void setNtceBgndeView(String ntceBgndeView) {
 		this.ntceBgndeView = ntceBgndeView;
 	}
-	
+
 	/**
 	 * noticeAt attribute를 리턴한다.
+	 * 
 	 * @return the noticeAt
 	 */
 	public String getNoticeAt() {
@@ -510,14 +566,16 @@ public class Board implements Serializable {
 
 	/**
 	 * noticeAt attribute 값을 설정한다.
+	 * 
 	 * @param noticeAt the noticeAt to set
 	 */
 	public void setNoticeAt(String noticeAt) {
 		this.noticeAt = noticeAt;
 	}
-	
+
 	/**
 	 * secretAt attribute를 리턴한다.
+	 * 
 	 * @return the secretAt
 	 */
 	public String getSecretAt() {
@@ -526,14 +584,16 @@ public class Board implements Serializable {
 
 	/**
 	 * secretAt attribute 값을 설정한다.
+	 * 
 	 * @param secretAt the secretAt to set
 	 */
 	public void setSecretAt(String secretAt) {
 		this.secretAt = secretAt;
 	}
-	
+
 	/**
 	 * sjBoldAt attribute를 리턴한다.
+	 * 
 	 * @return the sjBoldAt
 	 */
 	public String getSjBoldAt() {
@@ -542,12 +602,13 @@ public class Board implements Serializable {
 
 	/**
 	 * sjBoldAt attribute 값을 설정한다.
+	 * 
 	 * @param sjBoldAt the sjBoldAt to set
 	 */
 	public void setSjBoldAt(String sjBoldAt) {
 		this.sjBoldAt = sjBoldAt;
 	}
-	
+
 	public String getBlogAt() {
 		return blogAt;
 	}
@@ -567,7 +628,7 @@ public class Board implements Serializable {
 	/**
 	 * toString 메소드를 대치한다.
 	 */
-	public String toString(){
+	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
 	}
 }

@@ -2,14 +2,17 @@ package egovframework.com.cmm.service;
 
 import egovframework.com.cmm.ComDefaultVO;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * @Class Name : FileVO.java
  * @Description : 파일정보 처리를 위한 VO 클래스
  * @Modification Information
  *
- *    수정일       수정자         수정내용
- *    -------        -------     -------------------
- *    2009. 3. 25.     이삼섭
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2009. 3. 25. 이삼섭
  *
  * @author 공통 서비스 개발팀 이삼섭
  * @since 2009. 3. 25.
@@ -51,6 +54,8 @@ public class FileVO extends ComDefaultVO {
     /**
      * 원파일명
      */
+    @NotBlank(message = "원본 파일명은 필수입니다")
+    @Size(max = 200, message = "파일명은 200자 이하이어야 합니다")
     public String orignlFileNm = "";
     /**
      * 저장파일명
@@ -63,17 +68,17 @@ public class FileVO extends ComDefaultVO {
      * @return the atchFileId
      */
     public String getAtchFileId() {
-	return atchFileId;
+        return atchFileId;
     }
 
     /**
      * atchFileId attribute 값을 설정한다.
      * 
      * @param atchFileId
-     *            the atchFileId to set
+     *                   the atchFileId to set
      */
     public void setAtchFileId(String atchFileId) {
-	this.atchFileId = atchFileId;
+        this.atchFileId = atchFileId;
     }
 
     /**
@@ -82,17 +87,17 @@ public class FileVO extends ComDefaultVO {
      * @return the creatDt
      */
     public String getCreatDt() {
-	return creatDt;
+        return creatDt;
     }
 
     /**
      * creatDt attribute 값을 설정한다.
      * 
      * @param creatDt
-     *            the creatDt to set
+     *                the creatDt to set
      */
     public void setCreatDt(String creatDt) {
-	this.creatDt = creatDt;
+        this.creatDt = creatDt;
     }
 
     /**
@@ -101,17 +106,17 @@ public class FileVO extends ComDefaultVO {
      * @return the fileCn
      */
     public String getFileCn() {
-	return fileCn;
+        return fileCn;
     }
 
     /**
      * fileCn attribute 값을 설정한다.
      * 
      * @param fileCn
-     *            the fileCn to set
+     *               the fileCn to set
      */
     public void setFileCn(String fileCn) {
-	this.fileCn = fileCn;
+        this.fileCn = fileCn;
     }
 
     /**
@@ -120,17 +125,17 @@ public class FileVO extends ComDefaultVO {
      * @return the fileExtsn
      */
     public String getFileExtsn() {
-	return fileExtsn;
+        return fileExtsn;
     }
 
     /**
      * fileExtsn attribute 값을 설정한다.
      * 
      * @param fileExtsn
-     *            the fileExtsn to set
+     *                  the fileExtsn to set
      */
     public void setFileExtsn(String fileExtsn) {
-	this.fileExtsn = fileExtsn;
+        this.fileExtsn = fileExtsn;
     }
 
     /**
@@ -139,17 +144,17 @@ public class FileVO extends ComDefaultVO {
      * @return the fileMg
      */
     public String getFileMg() {
-	return fileMg;
+        return fileMg;
     }
 
     /**
      * fileMg attribute 값을 설정한다.
      * 
      * @param fileMg
-     *            the fileMg to set
+     *               the fileMg to set
      */
     public void setFileMg(String fileMg) {
-	this.fileMg = fileMg;
+        this.fileMg = fileMg;
     }
 
     /**
@@ -158,17 +163,17 @@ public class FileVO extends ComDefaultVO {
      * @return the fileSn
      */
     public String getFileSn() {
-	return fileSn;
+        return fileSn;
     }
 
     /**
      * fileSn attribute 값을 설정한다.
      * 
      * @param fileSn
-     *            the fileSn to set
+     *               the fileSn to set
      */
     public void setFileSn(String fileSn) {
-	this.fileSn = fileSn;
+        this.fileSn = fileSn;
     }
 
     /**
@@ -177,17 +182,17 @@ public class FileVO extends ComDefaultVO {
      * @return the fileStreCours
      */
     public String getFileStreCours() {
-	return fileStreCours;
+        return fileStreCours;
     }
 
     /**
      * fileStreCours attribute 값을 설정한다.
      * 
      * @param fileStreCours
-     *            the fileStreCours to set
+     *                      the fileStreCours to set
      */
     public void setFileStreCours(String fileStreCours) {
-	this.fileStreCours = fileStreCours;
+        this.fileStreCours = fileStreCours;
     }
 
     /**
@@ -196,17 +201,17 @@ public class FileVO extends ComDefaultVO {
      * @return the orignlFileNm
      */
     public String getOrignlFileNm() {
-	return orignlFileNm;
+        return orignlFileNm;
     }
 
     /**
      * orignlFileNm attribute 값을 설정한다.
      * 
      * @param orignlFileNm
-     *            the orignlFileNm to set
+     *                     the orignlFileNm to set
      */
     public void setOrignlFileNm(String orignlFileNm) {
-	this.orignlFileNm = orignlFileNm;
+        this.orignlFileNm = orignlFileNm;
     }
 
     /**
@@ -215,17 +220,17 @@ public class FileVO extends ComDefaultVO {
      * @return the streFileNm
      */
     public String getStreFileNm() {
-	return streFileNm;
+        return streFileNm;
     }
 
     /**
      * streFileNm attribute 값을 설정한다.
      * 
      * @param streFileNm
-     *            the streFileNm to set
+     *                   the streFileNm to set
      */
     public void setStreFileNm(String streFileNm) {
-	this.streFileNm = streFileNm;
+        this.streFileNm = streFileNm;
     }
-	
+
 }

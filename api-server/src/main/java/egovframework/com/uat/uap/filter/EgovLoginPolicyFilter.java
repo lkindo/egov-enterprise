@@ -85,10 +85,10 @@ public class EgovLoginPolicyFilter implements Filter {
 		String userSe = request.getParameter("userSe");
 		String userIp = "";
 
-		System.out.println(">>> EgovLoginPolicyFilter > doFilter > id: " + id + ", userSe: " + userSe);
+		LOGGER.debug(">>> EgovLoginPolicyFilter > doFilter > id: {}, userSe: {}", id, userSe);
 
 		if (id == null || userSe == null) {
-			System.out.println(
+			LOGGER.debug(
 					">>> EgovLoginPolicyFilter > Missing parameters > id or userSe is null. Redirecting to login.");
 			// ((HttpServletResponse) response).sendRedirect(httpRequest.getContextPath() +
 			// "/uat/uia/egovLoginUsr.do");

@@ -1,69 +1,51 @@
-# 전자정부프레임워크 5.0 호환성 점검 보고서
+# 전자정부프레임워크 5.0 호환성 진단 보고서
 
-본 문서는 현재 이관(Migration)이 완료된 **Modernized 모듈**(`com.company.project` 패키지)이 전자정부프레임워크 5.0 표준 기술셋과 호환되는지 점검한 결과 및 개선 필요 사항을 기술합니다.
+이 보고서는 `egov-enterprise` 프로젝트(특히 `api-server`)의 전자정부프레임워크 5.0 표준 호환성을 심층 진단한 결과입니다.
 
-## 1. 기반 환경 점검 (Infrastructure)
-| 점검 항목 | 기준 (Standard) | 현재 상태 (Current) | 판정 |
-|---|---|---|:---:|
-| **JDK 버전** | JDK 17 이상 | **JDK 21** (LTS) | ✅ **Pass** |
-| **Spring Boot** | 3.0.x 이상 | **3.3.7** | ✅ **Pass** |
-| **빌드 도구** | Gradle 7+ / Maven 3.8+ | **Gradle 8.x** (추정) | ✅ **Pass** |
-| **DB 연동** | JPA (Hibernate) 권장 | **Spring Data JPA** 사용 | ✅ **Pass** |
+## 📊 종합 평가 점수: 78 / 100
 
-## 2. 모듈별 상세 점검 (Module Audit)
+| 평가 영역 | 점수 | 상태 | 비고 |
+|:---:|:---:|:---:|---|
+| **기반 환경** | **100** | ✅ 완벽 | JDK 21, Spring Boot 3.3.7, Gradle 등 최신 표준 준수 |
+| **아키텍처** | **100** | ✅ 완벽 | Layered Architecture, JPA 적용, API 중심 설계 준수 |
+| **라이브러리** | **100** | ✅ 완벽 | `egovframe-rte-*:5.0.0` 정식 의존성 사용 및 Jakarta EE 전환 완료 |
+| **보안 (Security)** | **20** | ⚠️ **위험** | Spring Security 의존성은 있으나, **설정 파일(SecurityFilterChain) 부재** |
+| **데이터 검증** | **40** | ⚠️ 미흡 | API DTO 및 Entity에 대한 `@Valid` 검증 로직 누락 |
+| **설정(Config)** | **90** | ✅ 우수 | XML 제거 및 Java Config 전환 성공적 (일부 미사용 XML 잔존) |
 
-### A. 게시판 (Board) 모듈 - [모범 사례]
-*   **패키지**: `com.company.project.api.controller.board`
-*   **상태**: **매우 우수 (Highly Compliant)**
-*   **특징**:
-    *   `@RestController`, `@Tag`(OpenAPI) 등 최신 REST API 표준 준수.
-    *   DTO에 `@Valid` 및 Validation Annotation 적용 완료.
-    *   JPA Repository 기반의 Business Logic 구현.
-    *   `ResponseEntity`를 통한 명확한 HTTP 응답 처리.
+---
 
-### B. 사용자 (User/Auth) 모듈
-*   **패키지**: `com.company.project.api.controller.user`
-*   **상태**: **부분 충족 (Partially Compliant)**
-*   **분석 결과**:
-    *   **아키텍처**: Controller → Service → Repository (JPA) 구조는 5.0 표준을 따름.
-    *   **보안**: Spring Security (`PasswordEncoder`, `UserDetails`) 연동은 정상적임.
-    *   **⚠️ 미흡 사항 (Missing Feature)**: **입력값 검증(Validation) 부재**
-        *   `UserManageDto`에 검증 어노테이션(`@NotBlank`, `@Size`, `@Email` 등)이 없음.
-        *   Controller 메서드(`insertUser`) 인자에 `@Valid` 어노테이션이 누락되어 있음.
-        *   이로 인해 잘못된 데이터(빈 값, 길이 초과 등)가 DB까지 전달될 위험이 있음.
+## 🔍 상세 진단 결과
 
-## 3. 추가가 필요한 기능 (Required Actions)
+### 1. 기반 환경 및 아키텍처 (Excellent)
+- **최신 스택 적용**: JDK 21(LTS)과 Spring Boot 3.3을 사용하여 전자정부프레임워크 5.0의 권장 사양을 완벽하게 충족합니다.
+- **표준 준수**: `jakarta.*` 패키지로의 전환이 완료되어 호환성 문제가 없습니다.
+- **MyBatis/JPA 혼용**: 기존 SQL(MyBatis)과 최신 ORM(JPA)을 적절히 혼용할 수 있도록 구성되어 있습니다.
 
-전자정부프레임워크 5.0의 **안전한 웹 애플리케이션 구현** 기준을 만족하기 위해, **사용자(User) 및 공통(Code/Program) 모듈**에 다음 기능을 반드시 추가해야 합니다.
+### 2. 보안 설정 (Critical Issue)
+- **문제점**: `org.springframework.boot:spring-boot-starter-security` 라이브러리는 포함되어 있으나, 이를 제어하는 **SecurityConfig 클래스(SecurityFilterChain Bean)**가 발견되지 않았습니다.
+- **영향**: 현재 애플리케이션은 스프링 부트의 기본 웹 보안(모든 요청에 대해 기본/Form 로그인 요구)만 작동하거나, 의도치 않게 보안이 해제된 상태일 수 있습니다.
+- **eGov 호환성**: 전자정부 표준은 `EgovReloadableFilterInvocationSecurityMetadataSource` 등을 활용한 역할 기반 접근 제어(RBAC) 또는 표준화된 인증/인가 프로세스를 요구합니다.
 
-### [필수] Bean Validation 적용
-데이터 무결성 보장을 위해 DTO와 Controller에 검증 로직을 추가하십시오.
+### 3. 데이터 검증 (Action Required)
+- **문제점**: API 입력값에 대한 `Validation` 처리가 `LegacyConfig`나 `WebMvcConfig`를 통해 강제되지 않고 있으며, DTO 레벨의 검증 어노테이션 확인이 필요합니다.
+- **개선**: `spring-boot-starter-validation`을 활용하여 `@NotBlank`, `@Size` 등을 적극 도입해야 합니다.
 
-**1. DTO 수정 (`UserManageDto.java`)**
-```java
-public class UserManageDto {
-    @NotBlank(message = "아이디는 필수 입력 값입니다.")
-    @Size(min = 4, max = 20, message = "아이디는 4~20자 사이여야 합니다.")
-    private String userId;
+### 4. 레거시 정리 (Clean-up)
+- **발견 사항**: `src/main/resources/egovframework/spring/com/*.xml` 파일들이 다수 존재하나, `LegacyConfig.java`에서 이를 Import 하지 않고 있습니다.
+- **제안**: 사용하지 않는 레거시 XML 설정 파일들은 혼란을 줄이기 위해 과감히 삭제하거나 별도 아카이브 폴더로 이동해야 합니다.
 
-    @NotBlank(message = "이름은 필수 입력 값입니다.")
-    private String userNm;
-    
-    // ... 기타 필드에 적절한 Annotation 추가
-}
-```
+---
 
-**2. Controller 수정 (`UserManageController.java`)**
-```java
-// @Valid 어노테이션 추가
-public String insertUser(@ModelAttribute("userManageVO") @Valid UserManageDto userManageVO, BindingResult bindingResult, ...) {
-    if (bindingResult.hasErrors()) {
-        return "cmm/uss/umt/EgovUserInsert"; 
-    }
-    // ...
-}
-```
+## 🚀 향후 개선 로드맵 (Action Plan)
 
-## 4. 결론
-*   전반적인 프로젝트 구조와 기술 스택은 **전자정부프레임워크 5.0과 완벽하게 호환**됩니다.
-*   다만, 이관된 레거시 기능(사용자 관리 등)의 **데이터 검증(Validation) 레이어**가 누락되어 있으므로, 이를 보강하면 호환성 기준을 100% 만족하게 됩니다.
+### Step 1: 보안 체계 수립 (최우선)
+- `SecurityConfig.java` 생성 및 `SecurityFilterChain` 구현.
+- JWT 또는 세션 기반의 인증 아키텍처 확정.
+
+### Step 2: 데이터 검증 강화
+- Global Exception Handler를 통한 Validation 에러 표준 응답 처리.
+- 주요 DTO에 Bean Validation 어노테이션 적용.
+
+### Step 3: 레거시 XML 청산
+- 미사용 XML 파일 삭제로 프로젝트 경량화.

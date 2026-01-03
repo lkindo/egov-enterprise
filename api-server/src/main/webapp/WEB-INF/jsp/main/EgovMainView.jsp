@@ -68,7 +68,7 @@
                                                                             </a>
                                                                             <span>
                                                                                 <c:out
-                                                                                    value="${result.frstRegisterPnttm}" />
+                                                                                    value="${result.frstRegisterPnttmStr}" />
                                                                             </span>
                                                                         </li>
                                                                     </c:if>
@@ -118,7 +118,7 @@
                                                                                 </td>
                                                                                 <td class="al_r date">
                                                                                     <c:out
-                                                                                        value="${result.frstRegisterPnttm}" />
+                                                                                        value="${result.frstRegisterPnttmStr}" />
                                                                                 </td>
                                                                             </tr>
                                                                         </c:if>
