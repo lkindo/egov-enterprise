@@ -123,7 +123,7 @@ public class EgovProgrmManageController {
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
 		List<ProgrmManageVO> resultList = progrmManageService.selectProgrmList(searchVO);
-		model.addAttribute("resultList", resultList);
+		model.addAttribute("list_progrmmanage", resultList);
 
 		int totCnt = progrmManageService.selectProgrmListTotCnt(searchVO);
 		paginationInfo.setTotalRecordCount(totCnt);

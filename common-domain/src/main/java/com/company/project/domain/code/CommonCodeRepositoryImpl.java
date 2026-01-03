@@ -1,5 +1,6 @@
 package com.company.project.domain.code;
 
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 
 import static com.company.project.domain.code.QCommonCode.commonCode;
+import static com.company.project.domain.code.QCommonCodeGroup.commonCodeGroup;
 
 @RequiredArgsConstructor
 public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
@@ -18,10 +20,20 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<CommonCode> searchCommonCodes(String searchCondition, String searchKeyword, Pageable pageable) {
-        List<CommonCode> content = queryFactory
-                .selectFrom(commonCode)
+    public Page<CommonCodeDetailProjection> searchCommonCodeDetails(String searchCondition, String searchKeyword,
+            Pageable pageable) {
+        List<CommonCodeDetailProjection> content = queryFactory
+                .select(Projections.constructor(CommonCodeDetailProjection.class,
+                        commonCode.codeGroupId,
+                        commonCodeGroup.codeIdNm,
+                        commonCode.code,
+                        commonCode.codeNm,
+                        commonCode.codeDc,
+                        commonCode.useAt))
+                .from(commonCode)
+                .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
                 .where(
+                        commonCodeGroup.useAt.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -30,7 +42,9 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
         long total = queryFactory
                 .select(commonCode.count())
                 .from(commonCode)
+                .join(commonCodeGroup).on(commonCode.codeGroupId.eq(commonCodeGroup.codeId))
                 .where(
+                        commonCodeGroup.useAt.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
@@ -43,7 +57,7 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
         }
 
         if ("1".equals(searchCondition)) {
-            return commonCode.codeGroupId.eq(searchKeyword);
+            return commonCode.codeGroupId.contains(searchKeyword);
         } else if ("2".equals(searchCondition)) {
             return commonCode.code.contains(searchKeyword);
         } else if ("3".equals(searchCondition)) {

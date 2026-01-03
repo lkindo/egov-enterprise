@@ -1,27 +1,36 @@
 package egovframework.com.uss.umt.service.impl;
 
-import java.util.List;
-
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.springframework.stereotype.Service;
-
 import egovframework.com.uss.umt.service.EgovEntrprsManageService;
 import egovframework.com.uss.umt.service.EntrprsManageVO;
-import egovframework.com.uss.umt.service.StplatVO;
 import egovframework.com.uss.umt.service.UserDefaultVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.company.project.domain.user.EnterpriseUser;
+import com.company.project.domain.user.EnterpriseUserRepository;
+import com.company.project.domain.user.GeneralUserRepository;
+import com.company.project.domain.user.UserRepository;
 
 /**
  * 기업회원관리에 관한 비지니스클래스를 정의한다.
+ * 
  * @author 공통서비스 개발팀 조재영
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -30,162 +39,204 @@ import jakarta.annotation.Resource;
  *   2014.12.08	 이기하			암호화방식 변경(EgovFileScrty.encryptPassword)
  *   2017.07.21  장동한 			로그인인증제한 작업
  *
- * </pre>
+ *      </pre>
  */
 @Service("entrprsManageService")
 public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implements EgovEntrprsManageService {
 
-	/** userManageDAO */
-    @Resource(name="userManageDAO")
-    private UserManageDAO userManageDAO;
+	@Resource(name = "enterpriseUserRepository")
+	private EnterpriseUserRepository enterpriseUserRepository;
 
-    /** mberManageDAO */
-    @Resource(name="mberManageDAO")
-    private MberManageDAO mberManageDAO;
+	@Resource(name = "userRepository")
+	private UserRepository userRepository;
 
-    /** entrprsManageDAO */
-    @Resource(name="entrprsManageDAO")
-    private EntrprsManageDAO entrprsManageDAO;
+	@Resource(name = "generalUserRepository")
+	private GeneralUserRepository generalUserRepository;
 
-    /** egovUsrCnfrmIdGnrService */
-    @Resource(name="egovUsrCnfrmIdGnrService")
-    private EgovIdGnrService idgenService;
+	@Resource(name = "egovUsrCnfrmIdGnrService")
+	private EgovIdGnrService idgenService;
 
-    /**
-	 * 기업회원의 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	 * @param entrprsManageVO 기업회원등록정보
-	 * @return result 등록결과
-	 * @throws Exception
-	 */
-    @Override
-	public String insertEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception  {
-        //고유아이디 셋팅
-    	String uniqId = idgenService.getNextStringId();
-        entrprsManageVO.setUniqId(uniqId);
-        //패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
-		entrprsManageVO.setEntrprsMberPassword(pass);
-
-        String result = entrprsManageDAO.insertEntrprsmber(entrprsManageVO);
-        return result;
-    }
-
-    /**
-	 * 기 등록된 사용자 중 검색조건에 맞는기업회원의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param uniqId 조회대상 기업회원아이디
-	 * @return entrprsManageVO 기업회원정보
-	 * @throws Exception
-	 */
-    @Override
-	public EntrprsManageVO selectEntrprsmber(String uniqId) {
-        EntrprsManageVO entrprsManageVO = entrprsManageDAO.selectEntrprsmber(uniqId);
-        return entrprsManageVO;
-    }
-
-	/**
-	 * 화면에 조회된 기업회원의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
-	 * @param entrprsManageVO 기업회원수정정보
-	 * @throws Exception
-	 */
-    @Override
-	public void updateEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception {
-    	//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
-		entrprsManageVO.setEntrprsMberPassword(pass);
-		entrprsManageDAO.updateEntrprsmber(entrprsManageVO);
-    }
-
-	/**
-	 * 화면에 조회된 기업회원의 정보를 데이터베이스에서 삭제
-	 * @param checkedIdForDel 삭제대상기업회원아이디
-	 * @throws Exception
-	 */
-    @Override
-	public void deleteEntrprsmber(String checkedIdForDel)  {
-        //log.debug("jjyser_delete-->"+checkedIdForDel);
-        String [] delId = checkedIdForDel.split(",");
-        for (String element : delId) {
-            String [] id = element.split(":");
-            //log.debug("id[0]:"+id[0]);
-            if (id[0].equals("USR03")){
-                //업무사용자(직원)삭제
-                userManageDAO.deleteUser(id[1]);
-            }else if(id[0].equals("USR01")){
-                //일반회원삭제
-                mberManageDAO.deleteMber(id[1]);
-            }else if(id[0].equals("USR02")){
-                //기업회원삭제
-                entrprsManageDAO.deleteEntrprsmber(id[1]);
-            }
-        }
-    }
-
-	/**
-	 * 기업회원용 약관정보 조회
-	 * @param stplatId 기업회원약관아이디
-	 * @return stplatList 기업회원약관정보
-	 * @throws Exception
-	 */
-    @Override
-	public List<StplatVO> selectStplat(String stplatId) {
-    	List<StplatVO> stplatList = entrprsManageDAO.selectStplat(stplatId);
-        return stplatList;
-    }
-
-	/**
-	 * 기업회원 암호 수정
-	 * @param passVO 기업회원수정정보(비밀번호)
-	 * @throws Exception
-	 */
 	@Override
-	public void updatePassword(EntrprsManageVO passVO) {
-		entrprsManageDAO.updatePassword(passVO);
+	@Transactional
+	public String insertEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception {
+		String uniqId = idgenService.getNextStringId();
+		entrprsManageVO.setUniqId(uniqId);
+
+		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(),
+				EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));
+		entrprsManageVO.setEntrprsMberPassword(pass);
+
+		EnterpriseUser user = toEntity(entrprsManageVO);
+		enterpriseUserRepository.save(user);
+		return uniqId;
 	}
 
-	/**
-	 * 기업회원이 비밀번호를 기억하지 못할 때 비밀번호를 찾을 수 있도록 함
-	 * @param passVO 기업회원암호 조회조건정보
-	 * @return entrprsManageVO 기업회원암호정보
-	 * @throws Exception
-	 */
+	@Override
+	public EntrprsManageVO selectEntrprsmber(String uniqId) {
+		return enterpriseUserRepository.findById(uniqId)
+				.map(this::toVO)
+				.orElse(null);
+	}
+
+	@Override
+	public List<EntrprsManageVO> selectEntrprsmberList(UserDefaultVO userSearchVO) {
+		Pageable pageable = PageRequest.of(userSearchVO.getPageIndex() - 1, userSearchVO.getPageUnit());
+		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
+				userSearchVO.getSbscrbSttus(),
+				userSearchVO.getSearchCondition(),
+				userSearchVO.getSearchKeyword(),
+				pageable);
+
+		return page.getContent().stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public int selectEntrprsmberListTotCnt(UserDefaultVO userSearchVO) {
+		Pageable pageable = PageRequest.of(0, 1);
+		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
+				userSearchVO.getSbscrbSttus(),
+				userSearchVO.getSearchCondition(),
+				userSearchVO.getSearchKeyword(),
+				pageable);
+		return (int) page.getTotalElements();
+	}
+
+	@Override
+	@Transactional
+	public void updateEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception {
+		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(),
+				EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));
+		entrprsManageVO.setEntrprsMberPassword(pass);
+
+		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(user -> {
+			user.update(
+					entrprsManageVO.getEntrprsmberId(),
+					entrprsManageVO.getEntrprsSeCode(),
+					entrprsManageVO.getBizrno(),
+					entrprsManageVO.getJurirno(),
+					entrprsManageVO.getCmpnyNm(),
+					entrprsManageVO.getCxfc(),
+					entrprsManageVO.getZip(),
+					entrprsManageVO.getAdres(),
+					entrprsManageVO.getEntrprsMiddleTelno(),
+					entrprsManageVO.getFxnum(),
+					entrprsManageVO.getIndutyCode(),
+					entrprsManageVO.getApplcntNm(),
+					entrprsManageVO.getEntrprsMberSttus(),
+					entrprsManageVO.getEntrprsMberPasswordHint(),
+					entrprsManageVO.getEntrprsMberPasswordCnsr(),
+					entrprsManageVO.getGroupId(),
+					entrprsManageVO.getDetailAdres(),
+					entrprsManageVO.getEntrprsEndTelno(),
+					entrprsManageVO.getAreaNo(),
+					entrprsManageVO.getApplcntEmailAdres());
+		});
+	}
+
+	@Override
+	@Transactional
+	public void deleteEntrprsmber(String checkedIdForDel) {
+		String[] delId = checkedIdForDel.split(",");
+		for (String element : delId) {
+			String[] id = element.split(":");
+			if (id.length < 2)
+				continue;
+			String type = id[0];
+			String esntlId = id[1];
+
+			if ("USR03".equals(type)) {
+				userRepository.deleteById(esntlId);
+			} else if ("USR01".equals(type)) {
+				generalUserRepository.deleteById(esntlId);
+			} else if ("USR02".equals(type)) {
+				enterpriseUserRepository.deleteById(esntlId);
+			}
+		}
+	}
+
+	@Override
+	@Transactional
+	public void updatePassword(EntrprsManageVO entrprsManageVO) {
+		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(user -> {
+			user.updatePassword(entrprsManageVO.getEntrprsMberPassword());
+		});
+	}
+
 	@Override
 	public EntrprsManageVO selectPassword(EntrprsManageVO passVO) {
-		EntrprsManageVO entrprsManageVO = entrprsManageDAO.selectPassword(passVO);
-		return entrprsManageVO;
+		return enterpriseUserRepository.findById(passVO.getUniqId())
+				.map(u -> {
+					EntrprsManageVO vo = new EntrprsManageVO();
+					vo.setEntrprsMberPassword(u.getEntrprsMberPassword());
+					return vo;
+				})
+				.orElse(null);
 	}
 
-	/**
-	 * 기 등록된기업 회원 중 검색조건에 맞는 회원들의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param userSearchVO 검색조건
-	 * @return List<EntrprsManageVO> 기업회원목록정보
-	 * @throws Exception
-	 */
 	@Override
-	public List<EntrprsManageVO> selectEntrprsMberList(UserDefaultVO userSearchVO) {
-		return entrprsManageDAO.selectEntrprsMberList(userSearchVO);
+	@Transactional
+	public void updateLockIncorrect(EntrprsManageVO entrprsManageVO) {
+		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(EnterpriseUser::unlock);
 	}
 
-    /**
-     * 기업회원 총 개수를 조회한다.
-     * @param userSearchVO 검색조건
-     * @return 사용자 총 개수(int)
-     * @throws Exception
-     */
-    @Override
-	public int selectEntrprsMberListTotCnt(UserDefaultVO userSearchVO) {
-    	return entrprsManageDAO.selectEntrprsMberListTotCnt(userSearchVO);
-    }
+	private EntrprsManageVO toVO(EnterpriseUser user) {
+		EntrprsManageVO vo = new EntrprsManageVO();
+		vo.setUniqId(user.getEsntlId());
+		vo.setEntrprsmberId(user.getEntrprsmberId());
+		vo.setEntrprsSeCode(user.getEntrprsSeCode());
+		vo.setBizrno(user.getBizrno());
+		vo.setJurirno(user.getJurirno());
+		vo.setCmpnyNm(user.getCmpnyNm());
+		vo.setCxfc(user.getCxfc());
+		vo.setZip(user.getZip());
+		vo.setAdres(user.getAdres());
+		vo.setEntrprsMiddleTelno(user.getEntrprsMiddleTelno());
+		vo.setFxnum(user.getFxnum());
+		vo.setIndutyCode(user.getIndutyCode());
+		vo.setApplcntNm(user.getApplcntNm());
+		vo.setSbscrbDe(user.getSbscrbDe() != null ? user.getSbscrbDe().toString() : "");
+		vo.setEntrprsMberSttus(user.getEntrprsMberSttus());
+		vo.setEntrprsMberPassword(user.getEntrprsMberPassword());
+		vo.setEntrprsMberPasswordHint(user.getEntrprsMberPasswordHint());
+		vo.setEntrprsMberPasswordCnsr(user.getEntrprsMberPasswordCnsr());
+		vo.setGroupId(user.getGroupId());
+		vo.setDetailAdres(user.getDetailAdres());
+		vo.setEntrprsEndTelno(user.getEntrprsEndTelno());
+		vo.setAreaNo(user.getAreaNo());
+		vo.setApplcntEmailAdres(user.getApplcntEmailAdres());
+		vo.setApplcntIhidnum(user.getApplcntIhidnum());
+		vo.setLockAt(user.getLockAt());
+		return vo;
+	}
 
-    /**
-     * 로그인인증제한 해제
-     * @param entrprsManageVO 기업회원정보
-     * @return void
-     * @throws Exception
-     */
-    @Override
-    public void updateLockIncorrect(EntrprsManageVO entrprsManageVO) throws Exception {
-    	entrprsManageDAO.updateLockIncorrect(entrprsManageVO);
-    }
-
-
+	private EnterpriseUser toEntity(EntrprsManageVO vo) {
+		return EnterpriseUser.builder()
+				.esntlId(vo.getUniqId())
+				.entrprsmberId(vo.getEntrprsmberId())
+				.entrprsSeCode(vo.getEntrprsSeCode())
+				.bizrno(vo.getBizrno())
+				.jurirno(vo.getJurirno())
+				.cmpnyNm(vo.getCmpnyNm())
+				.cxfc(vo.getCxfc())
+				.zip(vo.getZip())
+				.adres(vo.getAdres())
+				.entrprsMiddleTelno(vo.getEntrprsMiddleTelno())
+				.fxnum(vo.getFxnum())
+				.indutyCode(vo.getIndutyCode())
+				.applcntNm(vo.getApplcntNm())
+				.entrprsMberSttus(vo.getEntrprsMberSttus())
+				.entrprsMberPassword(vo.getEntrprsMberPassword())
+				.entrprsMberPasswordHint(vo.getEntrprsMberPasswordHint())
+				.entrprsMberPasswordCnsr(vo.getEntrprsMberPasswordCnsr())
+				.groupId(vo.getGroupId())
+				.detailAdres(vo.getDetailAdres())
+				.entrprsEndTelno(vo.getEntrprsEndTelno())
+				.areaNo(vo.getAreaNo())
+				.applcntEmailAdres(vo.getApplcntEmailAdres())
+				.applcntIhidnum(vo.getApplcntIhidnum())
+				.lockAt(vo.getLockAt())
+				.build();
+	}
 }

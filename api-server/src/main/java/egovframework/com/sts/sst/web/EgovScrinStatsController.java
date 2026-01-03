@@ -2,7 +2,6 @@ package egovframework.com.sts.sst.web;
 
 import java.util.List;
 
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -12,6 +11,7 @@ import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
 import egovframework.com.sts.sst.service.EgovScrinStatsService;
 import egovframework.com.sym.mnu.mpm.service.EgovMenuManageService;
+import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 import jakarta.annotation.Resource;
 
 /**
@@ -57,7 +57,7 @@ public class EgovScrinStatsController {
 	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
 		// 트리메뉴 조회
-		List<EgovMap> resultMenuList = menuManageService.selectMenuList();
+		List<MenuManageVO> resultMenuList = menuManageService.selectMenuList();
 		model.addAttribute("list_menulist", resultMenuList);
 
 		if (statsVO.getFromDate() != null && !"".equals(statsVO.getFromDate())) {

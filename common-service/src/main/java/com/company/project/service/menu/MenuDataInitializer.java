@@ -35,7 +35,8 @@ public class MenuDataInitializer implements CommandLineRunner {
 
         log.info("Initializing menu and program data from legacy SQL file...");
 
-        File file = new File("d:/project/egov-enterprise/_legacy_backup/DATABASE/postgres/all_ebt_data_postgres.sql");
+        // 하드코딩된 절대 경로 대신 프로젝트 내부의 템플릿 SQL 파일을 참조하도록 수정
+        File file = new File("egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
         if (!file.exists()) {
             log.warn("Legacy SQL file not found at: {}. Current working directory: {}", file.getAbsolutePath(),
                     System.getProperty("user.dir"));

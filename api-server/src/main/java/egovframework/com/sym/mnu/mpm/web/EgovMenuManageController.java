@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,6 @@ import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 import egovframework.com.sym.prm.service.EgovProgrmManageService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 
 /**
  * 메뉴목록 관리및 메뉴생성, 사이트맵 생성을 처리하는 비즈니스 구현 클래스
@@ -140,8 +138,8 @@ public class EgovMenuManageController {
 		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		List<EgovMap> resultList = menuManageService.selectMenuManageList(searchVO);
-		model.addAttribute("resultList", resultList);
+		List<MenuManageVO> resultList = menuManageService.selectMenuManageList(searchVO);
+		model.addAttribute("list_menumanage", resultList);
 
 		int totCnt = menuManageService.selectMenuManageListTotCnt(searchVO);
 		paginationInfo.setTotalRecordCount(totCnt);
@@ -192,8 +190,9 @@ public class EgovMenuManageController {
 
 	/**
 	 * 메뉴정보를 등록화면으로 이동 및 등록 한다.
-	 * @param menuManageVO    MenuManageVO
-	 * @param commandMap      Map
+	 * 
+	 * @param menuManageVO MenuManageVO
+	 * @param commandMap   Map
 	 * @return 출력페이지정보 등록화면 호출시 "sym/mnu/mpm/EgovMenuRegist",
 	 *         출력페이지정보 등록처리시 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
 	 * @exception Exception
@@ -210,7 +209,7 @@ public class EgovMenuManageController {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		String sCmd = commandMap.get("cmd") == null ? "" : (String)commandMap.get("cmd");
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("insert")) {
 			if (bindingResult.hasErrors()) {
 				sLocationUrl = "egovframework/com/sym/mnu/mpm/EgovMenuRegist";
@@ -315,15 +314,15 @@ public class EgovMenuManageController {
 	@IncludedInfo(name = "메뉴리스트관리", order = 1090, gid = 60)
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListSelect.do")
 	public String selectMenuList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
-//		String resultMsg = "";
+		// String resultMsg = "";
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		List<EgovMap> resultList = menuManageService.selectMenuList();
-//		resultMsg = egovMessageSource.getMessage("success.common.select");
+		List<MenuManageVO> resultList = menuManageService.selectMenuList();
+		// resultMsg = egovMessageSource.getMessage("success.common.select");
 		model.addAttribute("list_menulist", resultList);
 		// model.addAttribute("resultMsg", resultMsg);
 		return "egovframework/com/sym/mnu/mpm/EgovMenuList";
@@ -452,7 +451,7 @@ public class EgovMenuManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		List<EgovMap> resultList = menuManageService.selectMenuList();
+		List<MenuManageVO> resultList = menuManageService.selectMenuList();
 		model.addAttribute("list_menulist", resultList);
 		return "egovframework/com/sym/mnu/mpm/EgovMenuMvmn";
 	}
@@ -474,7 +473,7 @@ public class EgovMenuManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		List<EgovMap> resultList = menuManageService.selectMenuList();
+		List<MenuManageVO> resultList = menuManageService.selectMenuList();
 		model.addAttribute("list_menulist", resultList);
 		return "egovframework/com/sym/mnu/mpm/EgovMenuMvmnNew";
 	}
@@ -519,7 +518,7 @@ public class EgovMenuManageController {
 		String sLocationUrl = null;
 		String resultMsg = "";
 		String sMessage = "";
-		String[] fileExtension = {"XLS", "XLSX"};
+		String[] fileExtension = { "XLS", "XLSX" };
 
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -528,13 +527,15 @@ public class EgovMenuManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String)commandMap.get("cmd");
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
 		if (sCmd.equals("bndeInsert")) {
 
-			final MultipartHttpServletRequest multiRequest = WebUtils.getNativeRequest(request, MultipartHttpServletRequest.class);
+			final MultipartHttpServletRequest multiRequest = WebUtils.getNativeRequest(request,
+					MultipartHttpServletRequest.class);
 
-			//2022.01 Possible null pointer dereference due to return value of called method
+			// 2022.01 Possible null pointer dereference due to return value of called
+			// method
 			if (multiRequest != null) {
 
 				final Map<String, MultipartFile> files = multiRequest.getFileMap();

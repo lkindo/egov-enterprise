@@ -1,45 +1,33 @@
 package egovframework.com.sym.ccm.cca.service.impl;
 
-import java.util.List;
-
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.springframework.stereotype.Service;
-
+import com.company.project.domain.code.CommonCodeGroup;
+import com.company.project.domain.code.CommonCodeGroupProjection;
+import com.company.project.domain.code.CommonCodeGroupRepository;
 import egovframework.com.sym.ccm.cca.service.CmmnCode;
 import egovframework.com.sym.ccm.cca.service.CmmnCodeVO;
 import egovframework.com.sym.ccm.cca.service.EgovCcmCmmnCodeManageService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
-*
-* 공통코드에 대한 서비스 구현클래스를 정의한다
-* @author 공통서비스 개발팀 이중호
-* @since 2009.04.01
-* @version 1.0
-* @see
-*
-* <pre>
-* << 개정이력(Modification Information) >>
-*
-*   수정일      수정자           수정내용
-*  -------    --------    ---------------------------
-*   2009.04.01  이중호          최초 생성
-*
-* </pre>
-*/
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service("CmmnCodeManageService")
-public class EgovCcmCmmnCodeManageServiceImpl extends EgovAbstractServiceImpl implements EgovCcmCmmnCodeManageService{
+@RequiredArgsConstructor
+public class EgovCcmCmmnCodeManageServiceImpl extends EgovAbstractServiceImpl implements EgovCcmCmmnCodeManageService {
 
-    @Resource(name="CmmnCodeManageDAO")
-    private CmmnCodeManageDAO cmmnCodeManageDAO;
+	private final CommonCodeGroupRepository groupRepository;
 
 	/**
 	 * 공통코드 총 개수를 조회한다.
 	 */
 	@Override
 	public int selectCmmnCodeListTotCnt(CmmnCodeVO searchVO) throws Exception {
-        return cmmnCodeManageDAO.selectCmmnCodeListTotCnt(searchVO);
+		return (int) groupRepository.count();
 	}
 
 	/**
@@ -47,40 +35,89 @@ public class EgovCcmCmmnCodeManageServiceImpl extends EgovAbstractServiceImpl im
 	 */
 	@Override
 	public List<CmmnCodeVO> selectCmmnCodeList(CmmnCodeVO searchVO) throws Exception {
-		return cmmnCodeManageDAO.selectCmmnCodeList(searchVO);
+		PageRequest pageRequest = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage());
+		Page<CommonCodeGroupProjection> result = groupRepository.searchCommonCodeGroups(
+				searchVO.getSearchCondition(),
+				searchVO.getSearchKeyword(),
+				pageRequest);
+
+		searchVO.setLastIndex(result.getTotalPages());
+
+		return result.getContent().stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
 	/**
 	 * 공통코드 상세항목을 조회한다.
 	 */
 	@Override
-	public CmmnCodeVO selectCmmnCodeDetail(CmmnCodeVO cmmnCodeVO) throws Exception{
-		CmmnCodeVO ret = cmmnCodeManageDAO.selectCmmnCodeDetail(cmmnCodeVO);
-    	return ret;
+	public CmmnCodeVO selectCmmnCodeDetail(CmmnCodeVO cmmnCodeVO) throws Exception {
+		return groupRepository.findById(cmmnCodeVO.getCodeId())
+				.map(this::toVO)
+				.orElse(null);
 	}
 
 	/**
 	 * 공통코드를 수정한다.
 	 */
 	@Override
+	@Transactional
 	public void updateCmmnCode(CmmnCodeVO cmmnCodeVO) throws Exception {
-		cmmnCodeManageDAO.updateCmmnCode(cmmnCodeVO);
+		groupRepository.findById(cmmnCodeVO.getCodeId())
+				.ifPresent(group -> group.update(
+						cmmnCodeVO.getCodeIdNm(),
+						cmmnCodeVO.getCodeIdDc(),
+						cmmnCodeVO.getUseAt(),
+						cmmnCodeVO.getLastUpdusrId()));
 	}
 
 	/**
 	 * 공통코드를 등록한다.
 	 */
 	@Override
+	@Transactional
 	public void insertCmmnCode(CmmnCode cmmnCode) throws Exception {
-		cmmnCodeManageDAO.insertCmmnCode(cmmnCode);
+		groupRepository.save(CommonCodeGroup.builder()
+				.codeId(cmmnCode.getCodeId())
+				.codeIdNm(cmmnCode.getCodeIdNm())
+				.codeIdDc(cmmnCode.getCodeIdDc())
+				.clCode(cmmnCode.getClCode())
+				.useAt(cmmnCode.getUseAt())
+				.frstRegisterId(cmmnCode.getFrstRegisterId())
+				.build());
 	}
 
 	/**
 	 * 공통코드를 삭제한다.
 	 */
 	@Override
+	@Transactional
 	public void deleteCmmnCode(CmmnCode cmmnCode) throws Exception {
-		cmmnCodeManageDAO.deleteCmmnCode(cmmnCode);
+		groupRepository.findById(cmmnCode.getCodeId())
+				.ifPresent(group -> group.delete());
 	}
 
+	private CmmnCodeVO toVO(CommonCodeGroup entity) {
+		CmmnCodeVO vo = new CmmnCodeVO();
+		vo.setCodeId(entity.getCodeId());
+		vo.setCodeIdNm(entity.getCodeIdNm());
+		vo.setCodeIdDc(entity.getCodeIdDc());
+		vo.setClCode(entity.getClCode());
+		vo.setUseAt(entity.getUseAt());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		vo.setLastUpdusrId(entity.getLastUpdusrId());
+		return vo;
+	}
+
+	private CmmnCodeVO toVO(CommonCodeGroupProjection projection) {
+		CmmnCodeVO vo = new CmmnCodeVO();
+		vo.setCodeId(projection.getCodeId());
+		vo.setCodeIdNm(projection.getCodeIdNm());
+		vo.setCodeIdDc(projection.getCodeIdDc());
+		vo.setClCode(projection.getClCode());
+		vo.setClCodeNm(projection.getClCodeNm());
+		vo.setUseAt(projection.getUseAt());
+		return vo;
+	}
 }

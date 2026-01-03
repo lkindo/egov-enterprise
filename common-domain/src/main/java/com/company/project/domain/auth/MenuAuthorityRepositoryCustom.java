@@ -7,5 +7,5 @@ import java.util.List;
 public interface MenuAuthorityRepositoryCustom {
     List<MenuAuthorityProjection> selectMenuCreatList(String authorCode);
 
-    Page<Authority> selectMenuCreatManagList(String searchKeyword, Pageable pageable);
+    Page<MenuCreatManageProjection> selectMenuCreatManagList(String searchKeyword, Pageable pageable);
 }

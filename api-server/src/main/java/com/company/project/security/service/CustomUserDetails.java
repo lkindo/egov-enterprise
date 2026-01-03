@@ -26,7 +26,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Simple default authority, can be expanded based on userSe
+        if (user.getAuthorCode() != null && !user.getAuthorCode().isEmpty()) {
+            return Collections.singletonList(
+                    new org.springframework.security.core.authority.SimpleGrantedAuthority(user.getAuthorCode()));
+        }
         return Collections.emptyList();
     }
 

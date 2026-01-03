@@ -1,7 +1,9 @@
 package com.company.project.domain.auth;
 
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,9 +40,19 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
     }
 
     @Override
-    public Page<Authority> selectMenuCreatManagList(String searchKeyword, Pageable pageable) {
-        List<Authority> content = queryFactory
-                .selectFrom(authority)
+    public Page<MenuCreatManageProjection> selectMenuCreatManagList(String searchKeyword, Pageable pageable) {
+        List<MenuCreatManageProjection> content = queryFactory
+                .select(Projections.bean(MenuCreatManageProjection.class,
+                        authority.authorCode,
+                        authority.authorNm,
+                        authority.authorDc,
+                        authority.authorCreatDe,
+                        ExpressionUtils.as(
+                                JPAExpressions.select(menuAuthority.count())
+                                        .from(menuAuthority)
+                                        .where(menuAuthority.id.authorCode.eq(authority.authorCode)),
+                                "chkYeoBu")))
+                .from(authority)
                 .where(authorNmLike(searchKeyword))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

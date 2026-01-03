@@ -49,8 +49,8 @@ import jakarta.annotation.Resource;
 public class EgovMenuCreateManageController {
 
 	/* Validator */
-//	@Autowired
-//	private DefaultBeanValidator beanValidator;
+	// @Autowired
+	// private DefaultBeanValidator beanValidator;
 	/** EgovPropertyService */
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
@@ -111,7 +111,7 @@ public class EgovMenuCreateManageController {
 		if (resultList.size() == 0) {
 			resultMsg = egovMessageSource.getMessage("info.nodata.msg");
 		}
-		model.addAttribute("resultList", resultList);
+		model.addAttribute("list_menumanage", resultList);
 
 		int totCnt = menuCreateManageService.selectMenuCreatManagTotCnt(searchVO);
 		paginationInfo.setTotalRecordCount(totCnt);
@@ -136,7 +136,7 @@ public class EgovMenuCreateManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 		List<EgovMap> resultList = menuCreateManageService.selectMenuCreatList(menuCreatVO);
-		model.addAttribute("resultList", resultList);
+		model.addAttribute("list_menulist", resultList);
 		model.addAttribute("resultVO", menuCreatVO);
 
 		return "egovframework/com/sym/mnu/mcm/EgovMenuCreat";

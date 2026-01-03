@@ -1,27 +1,38 @@
 package egovframework.com.uss.umt.service.impl;
 
-import java.util.List;
-
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
-import org.springframework.stereotype.Service;
-
 import egovframework.com.uss.umt.service.EgovUserManageService;
 import egovframework.com.uss.umt.service.UserDefaultVO;
 import egovframework.com.uss.umt.service.UserManageVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.company.project.domain.user.Role;
+import com.company.project.domain.user.User;
+import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.GeneralUserRepository;
+import com.company.project.domain.user.EnterpriseUserRepository;
 
 /**
  * 사용자관리에 관한 비지니스 클래스를 정의한다.
+ * 
  * @author 공통서비스 개발팀 조재영
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -30,173 +41,255 @@ import jakarta.annotation.Resource;
  *   2014.12.08	 이기하			암호화방식 변경(EgovFileScrty.encryptPassword)
  *   2017.07.21  장동한 			로그인인증제한 작업
  *
- * </pre>
+ *      </pre>
  */
 @Service("userManageService")
 public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implements EgovUserManageService {
 
-	/** userManageDAO */
-	@Resource(name="userManageDAO")
-	private UserManageDAO userManageDAO;
+	@Resource(name = "userRepository")
+	private UserRepository userRepository;
 
-	/** mberManageDAO */
-	@Resource(name="mberManageDAO")
-	private MberManageDAO mberManageDAO;
+	@Resource(name = "generalUserRepository")
+	private GeneralUserRepository generalUserRepository;
 
-	/** entrprsManageDAO */
-	@Resource(name="entrprsManageDAO")
-	private EntrprsManageDAO entrprsManageDAO;
+	@Resource(name = "enterpriseUserRepository")
+	private EnterpriseUserRepository enterpriseUserRepository;
 
-	/** egovUsrCnfrmIdGnrService */
-	@Resource(name="egovUsrCnfrmIdGnrService")
+	@Resource(name = "egovUsrCnfrmIdGnrService")
 	private EgovIdGnrService idgenService;
 
-	/**
-	 * 입력한 사용자아이디의 중복여부를 체크하여 사용가능여부를 확인
-	 * @param checkId 중복여부 확인대상 아이디
-	 * @return 사용가능여부(아이디 사용회수 int)
-	 * @throws Exception
-	 */
 	@Override
 	public int checkIdDplct(String checkId) {
-		return userManageDAO.checkIdDplct(checkId);
+		int count = 0;
+		if (userRepository.existsById(checkId))
+			count++;
+		if (generalUserRepository.findByMberId(checkId).isPresent())
+			count++;
+		if (enterpriseUserRepository.findByEntrprsmberId(checkId).isPresent())
+			count++;
+		return count;
 	}
 
-	/**
-	 * 화면에 조회된 사용자의 정보를 데이터베이스에서 삭제
-	 * @param checkedIdForDel 삭제대상 업무사용자아이디
-	 * @throws Exception
-	 */
 	@Override
+	@Transactional
 	public void deleteUser(String checkedIdForDel) {
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
-		String [] delId = EgovStringUtil.isNullToString(checkedIdForDel).split(",");
+		String[] delId = EgovStringUtil.isNullToString(checkedIdForDel).split(",");
 		for (String element : delId) {
-			String [] id = element.split(":");
-			if (id[0].equals("USR03")){
-		        //업무사용자(직원)삭제
-				userManageDAO.deleteUser(id[1]);
-			}else if(id[0].equals("USR01")){
-				//일반회원삭제
-				mberManageDAO.deleteMber(id[1]);
-			}else if(id[0].equals("USR02")){
-				//기업회원삭제
-				entrprsManageDAO.deleteEntrprsmber(id[1]);
+			String[] id = element.split(":");
+			if (id.length < 2)
+				continue;
+			String type = id[0];
+			String esntlId = id[1];
+
+			if ("USR03".equals(type)) { // 업무사용자
+				userRepository.deleteById(esntlId);
+			} else if ("USR01".equals(type)) { // 일반회원
+				generalUserRepository.deleteById(esntlId);
+			} else if ("USR02".equals(type)) { // 기업회원
+				enterpriseUserRepository.deleteById(esntlId);
 			}
 		}
 	}
 
-	/**
-	 * @param userManageVO 업무사용자 등록정보
-	 * @return result 등록결과
-	 * @throws Exception
-	 */
 	@Override
+	@Transactional
 	public String insertUser(UserManageVO userManageVO) throws Exception {
-		//고유아이디 셋팅
 		String uniqId = idgenService.getNextStringId();
 		userManageVO.setUniqId(uniqId);
-		//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(userManageVO.getPassword(), EgovStringUtil.isNullToString(userManageVO.getEmplyrId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+
+		String pass = EgovFileScrty.encryptPassword(userManageVO.getPassword(),
+				EgovStringUtil.isNullToString(userManageVO.getEmplyrId()));
 		userManageVO.setPassword(pass);
-		String result = userManageDAO.insertUser(userManageVO);
-		return result;
+
+		User user = toEntity(userManageVO);
+		userRepository.save(user);
+		return uniqId;
 	}
 
-	/**
-	 * 기 등록된 사용자 중 검색조건에 맞는 사용자의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param uniqId 상세조회대상 업무사용자 아이디
-	 * @return userManageVO 업무사용자 상세정보
-	 * @throws Exception
-	 */
 	@Override
 	public UserManageVO selectUser(String uniqId) {
-		UserManageVO userManageVO = userManageDAO.selectUser(uniqId);
-		return userManageVO;
+		return userRepository.findByEsntlId(uniqId)
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 기 등록된 특정 사용자의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param userSearchVO 검색조건
-	 * @return List<UserManageVO> 업무사용자 목록정보
-	 * @throws Exception
-	 */
 	@Override
 	public List<EgovMap> selectUserList(UserDefaultVO userSearchVO) {
-		List<EgovMap> result = userManageDAO.selectUserList(userSearchVO);
-		return result;
+		Pageable pageable = PageRequest.of(userSearchVO.getPageIndex() - 1, userSearchVO.getPageUnit());
+		Page<User> page = userRepository.searchUsers(
+				userSearchVO.getSbscrbSttus(),
+				userSearchVO.getSearchCondition(),
+				userSearchVO.getSearchKeyword(),
+				pageable);
+
+		return page.getContent().stream()
+				.map(u -> {
+					EgovMap map = new EgovMap();
+					map.put("uniqId", u.getEsntlId());
+					map.put("userTy", "USR03");
+					map.put("userId", u.getUserId());
+					map.put("userNm", u.getUserNm());
+					map.put("emailAdres", u.getEmailAdres());
+					map.put("areaNo", u.getAreaNo());
+					map.put("middleTelno", u.getHomemiddleTelno());
+					map.put("endTelno", u.getHomeendTelno());
+					map.put("moblphonNo", u.getMoblphonNo());
+					map.put("groupId", u.getGroupId());
+					map.put("sttus", u.getRole() != null ? u.getRole().toString() : "");
+					map.put("sbscrbDe", u.getSbscrbDe() != null ? u.getSbscrbDe().toString() : "");
+					return map;
+				})
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 기 등록된 특정 사용자목록의 전체수를 확인
-	 * @param userSearchVO 검색조건
-	 * @return 총사용자개수(int)
-	 * @throws Exception
-	 */
 	@Override
 	public int selectUserListTotCnt(UserDefaultVO userSearchVO) {
-		return userManageDAO.selectUserListTotCnt(userSearchVO);
+		Pageable pageable = PageRequest.of(0, 1);
+		Page<User> page = userRepository.searchUsers(
+				userSearchVO.getSbscrbSttus(),
+				userSearchVO.getSearchCondition(),
+				userSearchVO.getSearchKeyword(),
+				pageable);
+		return (int) page.getTotalElements();
 	}
 
-	/**
-	 * 화면에 조회된 사용자의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
-	 * @param userManageVO 업무사용자 수정정보
-	 * @throws Exception
-	 */
 	@Override
+	@Transactional
 	public void updateUser(UserManageVO userManageVO) throws Exception {
-		//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(userManageVO.getPassword(), EgovStringUtil.isNullToString(userManageVO.getEmplyrId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		String pass = EgovFileScrty.encryptPassword(userManageVO.getPassword(),
+				EgovStringUtil.isNullToString(userManageVO.getEmplyrId()));
 		userManageVO.setPassword(pass);
 
-		userManageDAO.updateUser(userManageVO);
+		userRepository.findByEsntlId(userManageVO.getUniqId()).ifPresent(user -> {
+			user.update(
+					userManageVO.getEmplyrNm(),
+					userManageVO.getPasswordHint(),
+					userManageVO.getPasswordCnsr(),
+					userManageVO.getEmplNo(),
+					userManageVO.getIhidnum(),
+					userManageVO.getSexdstnCode(),
+					userManageVO.getBrth(),
+					userManageVO.getAreaNo(),
+					userManageVO.getHomemiddleTelno(),
+					userManageVO.getHomeendTelno(),
+					userManageVO.getFxnum(),
+					userManageVO.getHomeadres(),
+					userManageVO.getDetailAdres(),
+					userManageVO.getZip(),
+					userManageVO.getOffmTelno(),
+					userManageVO.getMoblphonNo(),
+					userManageVO.getEmailAdres(),
+					userManageVO.getOfcpsNm(),
+					userManageVO.getGroupId(),
+					userManageVO.getOrgnztId(),
+					userManageVO.getInsttCode(),
+					userManageVO.getEmplyrSttusCode() != null ? parseRole(userManageVO.getEmplyrSttusCode())
+							: Role.USER,
+					userManageVO.getSubDn());
+		});
 	}
 
-	/**
-	 * 사용자정보 수정시 히스토리 정보를 추가
-	 * @param userManageVO 업무사용자 수정정보
-	 * @return result 등록결과
-	 * @throws Exception
-	 */
+	private Role parseRole(String code) {
+		try {
+			return Role.valueOf(code);
+		} catch (IllegalArgumentException e) {
+			return Role.USER;
+		}
+	}
+
 	@Override
 	public String insertUserHistory(UserManageVO userManageVO) {
-		return userManageDAO.insertUserHistory(userManageVO);
+		return "";
 	}
 
-	/**
-	 * 업무사용자 암호 수정
-	 * @param userManageVO 업무사용자 수정정보(비밀번호)
-	 * @throws Exception
-	 */
 	@Override
+	@Transactional
 	public void updatePassword(UserManageVO userManageVO) {
-		userManageDAO.updatePassword(userManageVO);
+		userRepository.findByEsntlId(userManageVO.getUniqId()).ifPresent(user -> {
+			user.updatePassword(userManageVO.getPassword());
+		});
 	}
 
-	/**
-	 * 사용자가 비밀번호를 기억하지 못할 때 비밀번호를 찾을 수 있도록 함
-	 * @param passVO 업무사용자 암호 조회조건정보
-	 * @return userManageVO 업무사용자 암호정보
-	 * @throws Exception
-	 */
 	@Override
 	public UserManageVO selectPassword(UserManageVO passVO) {
-		UserManageVO userManageVO = userManageDAO.selectPassword(passVO);
-		return userManageVO;
+		return userRepository.findByEsntlId(passVO.getUniqId())
+				.map(u -> {
+					UserManageVO vo = new UserManageVO();
+					vo.setPassword(u.getPassword());
+					return vo;
+				})
+				.orElse(null);
 	}
 
-
-	/**
-	 * 로그인인증제한 해제
-	 * @param userManageVO 업무사용자 수정정보
-	 * @return void
-	 * @throws Exception
-	 */
 	@Override
-	public void updateLockIncorrect(UserManageVO userManageVO) throws Exception {
-		userManageDAO.updateLockIncorrect(userManageVO);
+	@Transactional
+	public void updateLockIncorrect(UserManageVO userManageVO) {
+		userRepository.findByEsntlId(userManageVO.getUniqId()).ifPresent(user -> {
+			user.unlock();
+		});
 	}
 
+	private UserManageVO toVO(User user) {
+		UserManageVO vo = new UserManageVO();
+		vo.setUniqId(user.getEsntlId());
+		vo.setEmplyrId(user.getUserId());
+		vo.setEmplyrNm(user.getUserNm());
+		vo.setPassword(user.getPassword());
+		vo.setPasswordHint(user.getPasswordHint());
+		vo.setPasswordCnsr(user.getPasswordCnsr());
+		vo.setEmplNo(user.getEmplNo());
+		vo.setIhidnum(user.getIhidnum());
+		vo.setSexdstnCode(user.getSexdstnCode());
+		vo.setBrth(user.getBrth());
+		vo.setAreaNo(user.getAreaNo());
+		vo.setHomemiddleTelno(user.getHomemiddleTelno());
+		vo.setHomeendTelno(user.getHomeendTelno());
+		vo.setFxnum(user.getFxnum());
+		vo.setHomeadres(user.getHomeadres());
+		vo.setDetailAdres(user.getDetailAdres());
+		vo.setZip(user.getZip());
+		vo.setOffmTelno(user.getOffmTelno());
+		vo.setMoblphonNo(user.getMoblphonNo());
+		vo.setEmailAdres(user.getEmailAdres());
+		vo.setOfcpsNm(user.getOfcpsNm());
+		vo.setGroupId(user.getGroupId());
+		vo.setOrgnztId(user.getOrgnztId());
+		vo.setInsttCode(user.getInsttCode());
+		vo.setEmplyrSttusCode(user.getRole() != null ? user.getRole().name() : "");
+		vo.setSbscrbDe(user.getSbscrbDe() != null ? user.getSbscrbDe().toString() : "");
+		vo.setSubDn(user.getSubDn());
+		vo.setLockAt(user.getLockAt());
+		return vo;
+	}
 
-
+	private User toEntity(UserManageVO vo) {
+		return User.builder()
+				.userId(vo.getEmplyrId())
+				.esntlId(vo.getUniqId())
+				.userNm(vo.getEmplyrNm())
+				.password(vo.getPassword())
+				.passwordHint(vo.getPasswordHint())
+				.passwordCnsr(vo.getPasswordCnsr())
+				.emplNo(vo.getEmplNo())
+				.ihidnum(vo.getIhidnum())
+				.sexdstnCode(vo.getSexdstnCode())
+				.brth(vo.getBrth())
+				.areaNo(vo.getAreaNo())
+				.homemiddleTelno(vo.getHomemiddleTelno())
+				.homeendTelno(vo.getHomeendTelno())
+				.fxnum(vo.getFxnum())
+				.homeadres(vo.getHomeadres())
+				.detailAdres(vo.getDetailAdres())
+				.zip(vo.getZip())
+				.offmTelno(vo.getOffmTelno())
+				.moblphonNo(vo.getMoblphonNo())
+				.emailAdres(vo.getEmailAdres())
+				.ofcpsNm(vo.getOfcpsNm())
+				.groupId(vo.getGroupId())
+				.orgnztId(vo.getOrgnztId())
+				.insttCode(vo.getInsttCode())
+				.role(vo.getEmplyrSttusCode() != null ? parseRole(vo.getEmplyrSttusCode()) : Role.USER)
+				.subDn(vo.getSubDn())
+				.build();
+	}
 }

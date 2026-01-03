@@ -92,3 +92,15 @@
   - *대응*: Adapter에서 `PaginationInfo` 객체를 명시적으로 생성하여 모델에 전달.
 - **세션 호환성**: Legacy는 `EgovUserDetailsHelper`를 사용, 신규는 Spring Security Context 사용.
   - *대응*: `GlobalMenuAdvice` 또는 Controller 진입점에서 Principal 동기화 로직 적용.
+
+---
+
+## 4. 기능 연결 및 점검 표준 절차
+이 프로젝트의 기능을 신규로 마이그레이션하거나 메뉴에 연결할 때는 아래의 표준 절차를 준수합니다. (상세 내용은 `.agent/workflows/feature-migration.md` 참조)
+
+1.  **백엔드**: 패키지(`egovframework.com`) 및 컨트롤러 URL 정합성 확인
+2.  **DB**: 프로그램(`NPROGRMLIST`), 메뉴(`NMENUINFO`), 권한(`NMENUCREATDTLS`) 등록
+3.  **보안**: `EgovSecurityConfig` 접근 제어 및 `ArgumentResolver` 주입 점검
+4.  **프론트**: JSP 레이아웃 렌더링 및 `Map` 변환 Adapter 검증
+5.  **검증**: CRUD 기능 테스트 및 `PaginationInfo` 페이징 규격 확인
+6.  **고도화**: JPA/QueryDSL 전환 및 시스템 로그 연동 최적화

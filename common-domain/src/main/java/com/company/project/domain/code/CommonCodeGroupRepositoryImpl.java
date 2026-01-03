@@ -1,5 +1,6 @@
 package com.company.project.domain.code;
 
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
+import static com.company.project.domain.code.QCommonCodeCategory.commonCodeCategory;
 import static com.company.project.domain.code.QCommonCodeGroup.commonCodeGroup;
 
 @RequiredArgsConstructor
@@ -18,10 +20,18 @@ public class CommonCodeGroupRepositoryImpl implements CommonCodeGroupRepositoryC
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<CommonCodeGroup> searchCommonCodeGroups(String searchCondition, String searchKeyword,
+    public Page<CommonCodeGroupProjection> searchCommonCodeGroups(String searchCondition, String searchKeyword,
             Pageable pageable) {
-        List<CommonCodeGroup> content = queryFactory
-                .selectFrom(commonCodeGroup)
+        List<CommonCodeGroupProjection> content = queryFactory
+                .select(Projections.constructor(CommonCodeGroupProjection.class,
+                        commonCodeGroup.codeId,
+                        commonCodeGroup.codeIdNm,
+                        commonCodeGroup.codeIdDc,
+                        commonCodeGroup.clCode,
+                        commonCodeCategory.clCodeNm,
+                        commonCodeGroup.useAt))
+                .from(commonCodeGroup)
+                .leftJoin(commonCodeCategory).on(commonCodeGroup.clCode.eq(commonCodeCategory.clCode))
                 .where(
                         conditionEq(searchCondition, searchKeyword))
                 .offset(pageable.getOffset())

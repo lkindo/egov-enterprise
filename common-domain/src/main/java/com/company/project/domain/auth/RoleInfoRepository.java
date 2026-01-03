@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface RoleInfoRepository extends JpaRepository<RoleInfo, String> {
+public interface RoleInfoRepository extends JpaRepository<RoleInfo, String>, RoleInfoRepositoryCustom {
 
     @Query("SELECT r FROM RoleInfo r WHERE r.roleNm LIKE %:searchKeyword%")
     Page<RoleInfo> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);

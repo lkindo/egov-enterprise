@@ -90,6 +90,10 @@ public class User implements Serializable {
     @Column(name = "EMPLYR_STTUS_CODE", length = 45)
     private Role role;
 
+    @Transient
+    @Setter
+    private String authorCode;
+
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
@@ -101,7 +105,7 @@ public class User implements Serializable {
             String emplNo, String ihidnum, String sexdstnCode, String brth, String areaNo, String homemiddleTelno,
             String homeendTelno, String fxnum, String homeadres, String detailAdres, String zip, String offmTelno,
             String moblphonNo, String emailAdres, String ofcpsNm, String groupId, String orgnztId, String insttCode,
-            Role role, String subDn) {
+            Role role, String subDn, String authorCode) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -129,6 +133,7 @@ public class User implements Serializable {
         this.role = role != null ? role : Role.USER;
         this.sbscrbDe = LocalDateTime.now();
         this.subDn = subDn;
+        this.authorCode = authorCode;
     }
 
     public void update(String userNm, String passwordHint, String passwordCnsr, String emplNo, String ihidnum,
