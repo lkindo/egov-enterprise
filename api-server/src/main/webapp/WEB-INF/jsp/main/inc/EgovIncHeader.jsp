@@ -72,8 +72,8 @@ function fn_egov_modal_remove() {
                                             <ul>
                                                 <c:forEach var="result" items="${list_headmenu}" varStatus="status">
                                                     <li>
-                                                        <a href="#" onclick="goMenuPage('<c:out value="
-                                                            ${result.menuNo}" />');" class="<c:if
+                                                        <a href="#LINK" onclick="goMenuPage('<c:out value="
+                                                            ${result.menuNo}" />'); return false;" class="<c:if
                                                             test='${result.menuOrdr >= 5}'>manager</c:if>">
                                                         <c:out value="${result.menuNm}" />
                                                         </a>
@@ -139,8 +139,16 @@ function fn_egov_modal_remove() {
                         <!-
                             function getLastLink(baseMenuNo) {
                                 var tNode = new Array;
-                                for (var i = 0; i < document.menuListForm.tmp_menuNm.length; i++) {
-                                    tNode[i] = document.menuListForm.tmp_menuNm[i].value;
+                                var menuCol = document.menuListForm.tmp_menuNm;
+                                if (!menuCol) return null;
+
+                                // Ensure array (handle single element case)
+                                if (!menuCol.length && menuCol.value) {
+                                    menuCol = [menuCol];
+                                }
+
+                                for (var i = 0; i < menuCol.length; i++) {
+                                    tNode[i] = menuCol[i].value;
                                     var nValue = tNode[i].split("|");
                                     //선택된 메뉴(baseMenuNo)의 하위 메뉴중 첫번재 메뉴의 링크정보를 리턴한다.
                                     if (nValue[1] == baseMenuNo) {
@@ -155,10 +163,21 @@ function fn_egov_modal_remove() {
                                 }
                             }
                         function goMenuPage(baseMenuNo) {
-                            event.preventDefault();
+                            // event.preventDefault(); // Removed for compatibility
                             document.getElementById("baseMenuNo").value = baseMenuNo;
+
+                            // Debugging
+                            // console.log("goMenuPage clicked: " + baseMenuNo);
+                            // alert("Menu Clicked: " + baseMenuNo);
+
                             var rawLink = getLastLink(baseMenuNo);
-                            if (!rawLink || rawLink === "dir") return;
+
+                            // console.log("rawLink: " + rawLink);
+
+                            if (!rawLink || rawLink === "dir") {
+                                // console.log("No valid link found");
+                                return;
+                            }
 
                             var contextPath = '<c:url value="/" />';
                             var link = rawLink;

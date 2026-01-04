@@ -1,0 +1,212 @@
+[
+  {
+    "url": "/dam/app/EgovComDamAppraisalList.do",
+    "desc": "지식평가관리",
+    "type": "included_info",
+    "file": "EgovKnoAppraisalController.java"
+  },
+  {
+    "url": "/dam/mgm/EgovComDamManagementList.do",
+    "desc": "지식정보관리",
+    "type": "included_info",
+    "file": "EgovKnoManagementController.java"
+  },
+  {
+    "url": "/dam/per/EgovComDamPersonalList.do",
+    "desc": "개인지식관리",
+    "type": "included_info",
+    "file": "EgovKnoPersonalController.java"
+  },
+  {
+    "url": "/dam/spe/req/listRequestOffer.do",
+    "desc": "지식정보제공",
+    "type": "included_info",
+    "file": "EgovRequestOfferController.java"
+  },
+  {
+    "url": "/dam/spe/spe/EgovComDamSpecialistList.do",
+    "desc": "지식전문가관리",
+    "type": "included_info",
+    "file": "EgovKnoSpecialistController.java"
+  },
+  {
+    "url": "/sec/drm/EgovDeptAuthorList.do",
+    "desc": "부서권한관리",
+    "type": "included_info",
+    "file": "EgovDeptAuthorController.java"
+  },
+  {
+    "url": "/sec/gmt/EgovGroupList.do",
+    "desc": "그룹관리",
+    "type": "included_info",
+    "file": "EgovGroupManageController.java"
+  },
+  {
+    "url": "/sec/ram/EgovAuthorList.do",
+    "desc": "권한관리",
+    "type": "included_info",
+    "file": "EgovAuthorManageController.java"
+  },
+  {
+    "url": "/sec/rgm/EgovAuthorGroupList.do",
+    "desc": "권한그룹관리",
+    "type": "included_info",
+    "file": "EgovAuthorGroupController.java"
+  },
+  {
+    "url": "/sec/rmt/EgovRoleList.do",
+    "desc": "롤관리",
+    "type": "included_info",
+    "file": "EgovRoleManageController.java"
+  },
+  {
+    "url": "/ssi/syi/iis/getCntcInsttList.do",
+    "desc": "연계기관관리",
+    "type": "included_info",
+    "file": "EgovCntcInsttController.java"
+  },
+  {
+    "url": "/ssi/syi/ims/getCntcMessageList.do",
+    "desc": "연계메시지관리",
+    "type": "included_info",
+    "file": "EgovCntcMessageController.java"
+  },
+  {
+    "url": "/ssi/syi/ist/getCntcSttusList.do",
+    "desc": "연계현황관리",
+    "type": "included_info",
+    "file": "EgovCntcSttusController.java"
+  },
+  {
+    "url": "/ssi/syi/sim/getSystemCntcList.do",
+    "desc": "시스템연계관리",
+    "type": "included_info",
+    "file": "EgovSystemCntcController.java"
+  },
+  {
+    "url": "/sts/dst/selectDtaUseStatsListView.do",
+    "desc": "자료이용현황통계",
+    "type": "included_info",
+    "file": "EgovDtaUseStatsContoller.java"
+  },
+  {
+    "url": "/sts/rst/selectReprtStatsListView.do",
+    "desc": "보고서통계",
+    "type": "included_info",
+    "file": "EgovReprtStatsController.java"
+  },
+  {
+    "url": "/sts/sst/selectScrinStats.do",
+    "desc": "화면통계",
+    "type": "included_info",
+    "file": "EgovScrinStatsController.java"
+  },
+  {
+    "url": "/sym/adr/getAdressCntcInitPage.do",
+    "desc": "주소정보연계",
+    "type": "included_info",
+    "file": "EgovAdressCntcController.java"
+  },
+  {
+    "url": "/sym/bat/getBatchOpertList.do",
+    "desc": "배치작업관리",
+    "type": "included_info",
+    "file": "EgovBatchOpertController.java"
+  },
+  {
+    "url": "/sym/bat/getBatchResultList.do",
+    "desc": "배치결과관리",
+    "type": "included_info",
+    "file": "EgovBatchResultController.java"
+  },
+  {
+    "url": "/sym/bat/getBatchSchdulList.do",
+    "desc": "스케줄처리",
+    "type": "included_info",
+    "file": "EgovBatchSchdulController.java"
+  },
+  {
+    "url": "/sym/ccm/acr/getAdministCodeRecptnList.do",
+    "desc": "행정코드관리",
+    "type": "included_info",
+    "file": "EgovAdministCodeRecptnController.java"
+  },
+  {
+    "url": "/sym/ccm/cca/SelectCcmCmmnCodeList.do",
+    "desc": "공통코드",
+    "type": "included_info",
+    "file": "EgovCcmCmmnCodeManageController.java"
+  },
+  {
+    "url": "/sym/ccm/ccc/SelectCcmCmmnClCodeList.do",
+    "desc": "공통분류코드",
+    "type": "included_info",
+    "file": "EgovCcmCmmnClCodeManageController.java"
+  },
+  {
+    "url": "/sym/ccm/cde/SelectCcmCmmnDetailCodeList.do",
+    "desc": "공통상세코드",
+    "type": "included_info",
+    "file": "EgovCcmCmmnDetailCodeManageController.java"
+  },
+  {
+    "url": "/sym/ccm/icr/getInsttCodeRecptnList.do",
+    "desc": "기관코드수신",
+    "type": "included_info",
+    "file": "EgovInsttCodeRecptnController.java"
+  },
+  {
+    "url": "/sym/ccm/zip/EgovCcmZipList.do",
+    "desc": "우편번호관리",
+    "type": "included_info",
+    "file": "EgovCcmZipManageController.java"
+  },
+  {
+    "url": "/sym/log/lgm/SelectSysLogList.do",
+    "desc": "로그관리",
+    "type": "included_info",
+    "file": "EgovSysLogController.java"
+  },
+  {
+    "url": "/sym/log/plg/SelectPrivacyLogList.do",
+    "desc": "개인정보조회로그관리",
+    "type": "included_info",
+    "file": "EgovPrivacyLogController.java"
+  },
+  {
+    "url": "/sym/log/slg/SelectSysHistoryList.do",
+    "desc": "시스템이력관리",
+    "type": "included_info",
+    "file": "EgovSysHistoryController.java"
+  },
+  {
+    "url": "/sym/log/tlg/SelectTrsmrcvLogList.do",
+    "desc": "송/수신로그관리",
+    "type": "included_info",
+    "file": "EgovTrsmrcvLogController.java"
+  },
+  {
+    "url": "/sym/log/ulg/SelectUserLogList.do",
+    "desc": "사용로그관리",
+    "type": "included_info",
+    "file": "EgovUserLogController.java"
+  },
+  {
+    "url": "/sym/log/wlg/SelectWebLogList.do",
+    "desc": "웹로그관리",
+    "type": "included_info",
+    "file": "EgovWebLogController.java"
+  },
+  {
+    "url": "/uat/uia/egovLoginUsr.do",
+    "desc": "로그인",
+    "type": "included_info",
+    "file": "EgovLoginController.java"
+  },
+  {
+    "url": "/uss/ion/rss/listRssTagManage.do",
+    "desc": "RSS태그관리",
+    "type": "included_info",
+    "file": "EgovRssTagManageController.java"
+  }
+]

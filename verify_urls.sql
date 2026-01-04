@@ -1,0 +1,1 @@
+SELECT PROGRM_FILE_NM, URL FROM NPROGRMLIST WHERE PROGRM_FILE_NM IN ('egovLoginUsr', 'EgovAuthorList', 'selectBbsStats');

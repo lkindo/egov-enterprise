@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,9 +13,23 @@ function fncGoAfterErrorPage(){
     history.back(-2);
 }
 </script>
+
+    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
+    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
+    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 
 <body>
+<div class="wrap">
+<c:import url="/sym/mms/EgovHeader.do" />
+<div class="container" style="padding-bottom: 60px;">
+<div class="sub_layout">
+<div class="sub_in">
+<div class="layout">
+
 
 <div style="width: 1000px; margin: 50px auto 50px;">
 
@@ -37,5 +51,12 @@ function fncGoAfterErrorPage(){
 
 </div>
 
+
+</div>
+</div>
+</div>
+</div>
+<c:import url="/sym/mms/EgovFooter.do" />
+</div>
 </body>
 </html>

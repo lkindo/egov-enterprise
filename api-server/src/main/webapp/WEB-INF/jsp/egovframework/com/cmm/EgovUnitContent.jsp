@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%
@@ -65,8 +65,22 @@
 </c:if>
     });
 </script>
+
+    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
+    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
+    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 <body>
+<div class="wrap">
+<c:import url="/sym/mms/EgovHeader.do" />
+<div class="container" style="padding-bottom: 60px;">
+<div class="sub_layout">
+<div class="sub_in">
+<div class="layout">
+
 	<c:if test="${loginVO != null}">
 		${loginVO.name}(${loginVO.id})<spring:message code="comCmm.unitContent.2"/> <a href="${pageContext.request.contextPath }/uat/uia/actionLogout.do"><spring:message code="comCmm.unitContent.3"/></a>
 		<!--
@@ -98,5 +112,12 @@
 	<spring:message code="comCmm.unitContent.12"/> <p/><!-- 운영 시에 본 컨트롤을 사용하여 메뉴를 구성하는 경우, -->
 	<spring:message code="comCmm.unitContent.13"/><p/><!-- 성능 문제를 일으키거나 사용자별 메뉴 구성에 오류를 발생할 수 있기 때문에 -->
 	<spring:message code="comCmm.unitContent.14"/><p /><!-- 실 운영 시에는 삭제해서 배포하는 것을 권장해 드립니다. -->
+
+</div>
+</div>
+</div>
+</div>
+<c:import url="/sym/mms/EgovFooter.do" />
+</div>
 </body>
 </html>

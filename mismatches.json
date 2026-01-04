@@ -1,0 +1,794 @@
+[
+  {
+    "progrm_file_nm": "EgovCcmCmmnClCodeList",
+    "db_url": "/cmm/sym/ccm/EgovCcmCmmnClCodeList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "FaqListInqire",
+    "db_url": "/uss/olh/faq/EgovFaqList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "CnsltListInqire",
+    "db_url": "/uss/olp/cns/EgovCnsltListInqire.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovDiaryManageList",
+    "db_url": "/cop/smt/dsm/EgovDiaryManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovProgramChgHstListSelect",
+    "db_url": "/sym/prm/EgovProgramChgHst.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovGroupList",
+    "db_url": "/sec/gmt/EgovGroupManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovQustnrRespondManageList",
+    "db_url": "/uss/olp/qrm/EgovQustnrRespondManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovTnextrlHrInfoList",
+    "db_url": "/uss/ion/ecc/EgovTnextrlHrList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovEventCmpgnList",
+    "db_url": "/uss/ion/ecc/EgovEventCmpgnList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovCcmZipList",
+    "db_url": "/cmm/sym/zip/EgovCcmZipList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamSpecialistList",
+    "db_url": "/dam/spe/spe/EgovComDamSpecialistList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovSiteMapng",
+    "db_url": "/sym/mnu/stm/EgovSiteMapng.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovCcmCmmnDetailCodeList",
+    "db_url": "/cmm/sym/ccm/EgovCcmCmmnDetailCodeList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getBackupOpertList",
+    "db_url": "/sym/sym/bak/EgovBackupOpertList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovAllSchdulManageList",
+    "db_url": "/cop/smt/sam/EgovAllSchdulManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovMenuListSelect",
+    "db_url": "/sym/mnu/mpm/EgovMenuManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovProgramListManageSelect",
+    "db_url": "/sym/prm/EgovProgramListManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovAuthorGroupList",
+    "db_url": "/sec/rgm/EgovAuthorGroupManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovMenuCreatManageSelect",
+    "db_url": "/sym/mnu/mcm/EgovMenuCreatManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamPersonalList",
+    "db_url": "/dam/per/EgovComDamPersonalList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamMapTeamList",
+    "db_url": "/dam/map/tea/EgovComDamMapTeamList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovEventRcrptManageList",
+    "db_url": "/uss/ion/evt/EgovEventRceptManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovBndtManageList",
+    "db_url": "/uss/ion/bnt/EgovBndtManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamManagementList",
+    "db_url": "/dam/mgm/EgovComDamManagementList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamAppraisalList",
+    "db_url": "/dam/app/EgovComDamAppraisalList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovMberManage",
+    "db_url": "/uss/umt/EgovMberManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComUtlProcessMonList",
+    "db_url": "/utl/sys/prm/EgovComUtlProcessMonList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovIndvdlpgeCntntsList",
+    "db_url": "/uss/mpe/EgovIndvdlPgeList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "CnsltAnswerListInqire",
+    "db_url": "/uss/olp/cns/EgovCnsltAnswerListInqire.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovProgramChangeRequstProcessListSelect",
+    "db_url": "/sym/prm/EgovProgramChangeRequstProcess.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "insertSndngMailView",
+    "db_url": "/cop/ems/EgovMailRegist.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectAnnvrsryMainList",
+    "db_url": "/uss/ion/ans/EgovAnnvrsryMainList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectBBSUseInfs",
+    "db_url": "/cop/bbs/EgovArticleList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getBackupResultList",
+    "db_url": "/sym/sym/bak/EgovBackupResultList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectLeaderSchdulList",
+    "db_url": "/cop/smt/lsm/EgovLeaderSchdulDailyList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "OnlineManualUserList",
+    "db_url": "/uss/olh/omm/EgovOnlineManualUserList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectConectStats",
+    "db_url": "/sts/cst/EgovConectStats.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listAdministrationWord",
+    "db_url": "/uss/olh/awm/EgovAdministrationWordDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectLoginLogList",
+    "db_url": "/sym/log/clg/EgovLoginLogDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectDeptJobBxList",
+    "db_url": "/cop/smt/djm/EgovDeptJobBxList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectCtsnnManageList",
+    "db_url": "/uss/ion/ctn/EgovCtsnnManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listOnlineManual",
+    "db_url": "/uss/olh/omn/EgovOnlineManualDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listPopup",
+    "db_url": "/cop/com/EgovTemplateInqirePopup.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listOnlinePollPartcptn",
+    "db_url": "/uss/olp/opp/EgovOnlinePollPartcptnList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectBannerMainList",
+    "db_url": "/uss/ion/bnr/EgovBannerMainList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listRecentSrchwrd",
+    "db_url": "/uss/ion/rsm/EgovRecentSrchwrdDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "NewsInfoListInqire",
+    "db_url": "/uss/ion/nws/EgovNewsList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listWikiBookmark",
+    "db_url": "/uss/ion/wik/bmk/EgovWikiBookmarkList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listUnityLink",
+    "db_url": "/uss/ion/ulm/EgovUnityLinkDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectDeptJobList",
+    "db_url": "/cop/smt/djm/EgovDeptJobBxList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectFileSysMntrngList",
+    "db_url": "/utl/sys/fsm/EgovFileSysMntrngDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "registEgovNoteManage",
+    "db_url": "/uss/ion/ntm/EgovNoteManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listIndvdlInfoPolicy",
+    "db_url": "/uss/sam/ipm/EgovIndvdlInfoPolicyDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectBBSMasterInfs",
+    "db_url": "/cop/bbs/EgovBBSMasterList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listNoteRecptn",
+    "db_url": "/uss/ion/ntr/EgovNoteRecptnDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectBkmkMenuManageList",
+    "db_url": "/sym/mnu/bmm/EgovBkmkMenuManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectBannerList",
+    "db_url": "/uss/ion/bnr/EgovBannerList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "HpcmListInqire",
+    "db_url": "/uss/olh/hpc/EgovHpcmList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listRssTagManage",
+    "db_url": "/uss/ion/rss/EgovRssTagManageDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getBatchOpertList",
+    "db_url": "/sym/bat/EgovBatchOpertList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listRequestOffer",
+    "db_url": "/dam/spe/req/EgovComDamRequestOfferDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectCmmntyInfs",
+    "db_url": "/cop/cmy/EgovCommuMain.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "QnaListInqire",
+    "db_url": "/uss/olh/qna/EgovQnaList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getCntcMessageList",
+    "db_url": "/ssi/syi/ims/EgovCntcMessageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getCntcInsttList",
+    "db_url": "/ssi/syi/iis/EgovCntcInsttList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectIntnetSvcGuidanceList",
+    "db_url": "/uss/ion/isg/EgovIntnetSvcGuidanceList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectBbsStats",
+    "db_url": "/sts/EgovBbsStats.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "loginSessionView",
+    "db_url": "/utl/sys/rsc/EgovLoginSesionCheck.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getInsttCodeRecptnList",
+    "db_url": "/sym/ccm/icr/EgovInsttCodeRecptnList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getBatchResultList",
+    "db_url": "/sym/bat/EgovBatchResultList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectAnnvrsryManageList",
+    "db_url": "/uss/ion/ans/EgovAnnvrsryManageBndeListPop.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getSystemCntcList",
+    "db_url": "/ssi/syi/sim/EgovSystemCntcList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getDbMntrngList",
+    "db_url": "/utl/sys/dbm/EgovDbMntrngList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listOnlinePollManage",
+    "db_url": "/uss/olp/opm/EgovOnlinePollManageDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "StplatListInqire",
+    "db_url": "/uss/sam/stp/EgovStplatListInqire.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectProxySvcList",
+    "db_url": "/utl/sys/pxy/EgovProxySvcDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectSysHistoryList",
+    "db_url": "/sym/log/slg/EgovSysHistList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectScrapList",
+    "db_url": "/cop/scp/EgovArticleScrapDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMemoReprtList",
+    "db_url": "/cop/smt/mrm/EgovMemoReprtDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectLoginPolicyList",
+    "db_url": "/uat/uap/EgovLoginPolicyList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovUserManage",
+    "db_url": "/cmm/uss/umt/EgovUserManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectServerList",
+    "db_url": "/sym/sym/srv/EgovServerDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "CpyrhtPrtcPolicyListInqire",
+    "db_url": "/uss/sam/cpy/EgovCpyrhtPrtcPolicyListInqire.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectUserStats",
+    "db_url": "/sts/ust/EgovUserStats.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectRwardManageList",
+    "db_url": "/uss/ion/rwd/EgovRwardManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "QnaAnswerListInqire",
+    "db_url": "/uss/olh/qna/EgovQnaAnswerList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectSmsList",
+    "db_url": "/cop/sms/EgovSmsInfoList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectTroblReqstList",
+    "db_url": "/sym/tbm/tbr/EgovTroblReqstDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectDeptManageListView",
+    "db_url": "/uss/umt/EgovDeptManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectAdbkList",
+    "db_url": "/cop/adb/EgovAddressBookList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectSynchrnServerList",
+    "db_url": "/utl/sys/ssy/EgovSynchrnServerDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectWebLogList",
+    "db_url": "/sym/log/wlg/EgovWebLogDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectNtwrkSvcMntrngList",
+    "db_url": "/utl/sys/nsm/EgovNtwrkSvcMntrngDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectLoginScrinImageList",
+    "db_url": "/uss/ion/lsi/EgovLoginScrinImageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectWikMnthngReprtList",
+    "db_url": "/cop/smt/wmr/EgovWikMnthngReprtDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectServerEqpmnList",
+    "db_url": "/sym/sym/srv/EgovServerEqpmnDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectSndngMailList",
+    "db_url": "/cop/ems/EgovMailDtls.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMainImageList",
+    "db_url": "/uss/ion/msi/EgovMainImageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMemoTodoList",
+    "db_url": "/cop/smt/mtm/EgovMemoTodoDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectReprtStatsListView",
+    "db_url": "/sts/rst/EgovReprtStatsList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectUserAbsnceListView",
+    "db_url": "/uss/ion/uas/EgovUserAbsnceList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectSysLogList",
+    "db_url": "/sym/log/lgm/EgovSysLogDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectNcrdInfs",
+    "db_url": "/cop/ncm/EgovNcrdList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listAdministrationWordManage",
+    "db_url": "/uss/olh/awm/EgovAdministrationWordManageDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectTwitterMain",
+    "db_url": "/uss/ion/tir/EgovTwitterMain.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMtgPlaceResveManageList",
+    "db_url": "/uss/ion/mtg/EgovMtgPlaceResveManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "WordDicaryListInqire",
+    "db_url": "/uss/olh/wor/EgovWordDicaryList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMyNcrdUseInf",
+    "db_url": "/cop/ncm/EgovMyNcrdList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectDtaUseStatsList",
+    "db_url": "/sts/dst/EgovDtaUseStatsDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectTrsmrcvLogList",
+    "db_url": "/sym/log/tlg/EgovTrsmrcvLogInqire.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectScrinStats",
+    "db_url": "/sts/sst/EgovScrinStats.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectTemplateInfs",
+    "db_url": "/cop/com/EgovTemplateInqirePopup.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SiteListInqire",
+    "db_url": "/uss/ion/sit/EgovSiteList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "RecomendSiteListInqire",
+    "db_url": "/uss/ion/rec/EgovRecomendSiteList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectNotificationList",
+    "db_url": "/uss/ion/noi/EgovNotificationData.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getMainImageResult",
+    "db_url": "/uss/ion/msi/EgovMainImageView.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listRssTagService",
+    "db_url": "/uss/ion/rsn/EgovRssTagService.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "listNoteTrnsmit",
+    "db_url": "/uss/ion/nts/EgovNoteTrnsmitCnfirm.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMtgPlaceManageList",
+    "db_url": "/uss/ion/mtg/EgovMtgPlaceManageList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectEventRceptConfmList",
+    "db_url": "/uss/ion/evt/EgovEventRceptConfm.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovCcmCmmnCodeList",
+    "db_url": "/cmm/sym/ccm/EgovCcmCmmnCodeList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "SelectUserLogList",
+    "db_url": "/sym/log/ulg/EgovUserLogDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovMenuManageSelect",
+    "db_url": "/sym/mnu/mpm/EgovMenuManage.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovProgramChangeRequstSelect",
+    "db_url": "/sym/prm/EgovProgramChangeRequst.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getBatchSchdulList",
+    "db_url": "/sym/bat/EgovBatchSchdulList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectNtwrkList",
+    "db_url": "/sym/sym/nwk/EgovNtwrkDetail.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectTroblProcessList",
+    "db_url": "/sym/tbm/tbp/EgovTroblProcessList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getCntcSttusList",
+    "db_url": "/ssi/syi/ist/EgovCntcSttusList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComDamMapMaterialList",
+    "db_url": "/dam/map/mat/EgovComDamMapMaterialList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "getTrsmrcvMntrngList",
+    "db_url": "/utl/sys/trm/EgovTrsmrcvMntrngList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "EgovComUtlHttpMonList",
+    "db_url": "/utl/sys/htm/EgovComUtlHttpMonList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  },
+  {
+    "progrm_file_nm": "selectMntrngServerList",
+    "db_url": "/utl/sys/srm/EgovMntrngServerList.do",
+    "status": "Mapping Missing",
+    "source_url": "None"
+  }
+]
