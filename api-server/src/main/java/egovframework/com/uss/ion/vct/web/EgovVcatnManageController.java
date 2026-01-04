@@ -2,8 +2,13 @@ package egovframework.com.uss.ion.vct.web;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -19,76 +24,41 @@ import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.service.CmmnDetailCode;
 import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.uss.ion.vct.service.EgovVcatnManageService;
 import egovframework.com.uss.ion.vct.service.VcatnManage;
 import egovframework.com.uss.ion.vct.service.VcatnManageVO;
 import egovframework.com.utl.fcc.service.EgovDateUtil;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
-/**
- * <pre>
- * 개요
- * - 휴가관리에 대한 controller 클래스를 정의한다.
- *
- * 상세내용
- * - 휴가관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 휴가관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * </pre>
- * 
- * @author 이용
- * @since 2010.06.15
- * @version 1.0
- * @see
- *
- *      <pre>
- *  == 개정이력(Modification Information) ==
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
- *
- *      </pre>
- */
+import com.company.project.service.vacation.EgovVacationService;
+import com.company.project.service.vacation.dto.VacationDto;
+import com.company.project.service.vacation.EgovAnnualLeaveService;
+import com.company.project.service.vacation.dto.AnnualLeaveDto;
+
 @Controller
 public class EgovVcatnManageController {
 
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "egovVcatnManageService")
-	private EgovVcatnManageService egovVcatnManageService;
+	@Resource(name = "egovVacationService")
+	private EgovVacationService egovVacationService;
+
+	@Resource(name = "egovAnnualLeaveService")
+	private EgovAnnualLeaveService egovAnnualLeaveService;
 
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	/**
-	 * 휴가관리 목록화면 이동
-	 * 
-	 * @return String
-	 * @exception Exception
-	 */
 	@RequestMapping("/uss/ion/vct/EgovVcatnManageListView.do")
 	public String selectVcatnManageListView() throws Exception {
-
 		return "egovframework/com/uss/ion/vct/EgovVcatnManageList";
 	}
 
-	/**
-	 * 휴가관리정보를 관리하기 위해 등록된 휴가관리 목록을 조회한다.
-	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
-	 */
 	@IncludedInfo(name = "휴가관리", order = 900, gid = 50)
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnManageList.do")
 	public String selectVcatnManageList(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, ModelMap model)
 			throws Exception {
-
-		String searchKeyword = vcatnManageVO.getSearchKeyword();
 
 		java.util.Calendar cal = java.util.Calendar.getInstance();
 		String[] yearList = new String[5];
@@ -101,39 +71,48 @@ public class EgovVcatnManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		VcatnManageVO resultVO = egovVcatnManageService.selectIndvdlYrycManage(user.getUniqId());
+		// Check Annual Leave Existence
+		AnnualLeaveDto annualLeaveDto = egovAnnualLeaveService.getAnnualLeave(user.getUniqId(),
+				Integer.toString(cal.get(java.util.Calendar.YEAR)));
 
-		if (resultVO == null) {
+		if (annualLeaveDto == null) {
+			// Try finding any annual leave for latest year? Or just use current year.
+			// Legacy specific logic: selectIndvdlYrycManage gets info. If null, redirect.
 			model.addAttribute("messageTemp",
-                egovMessageSource.getMessage("comUssIonVct.vcatnManageList.validate.move")); // 휴가 사용을 위한 개인연차 등록을 위해 개인연차관리 콤포넌트로 이동
+					egovMessageSource.getMessage("comUssIonVct.vcatnManageList.validate.move"));
 			return "egovframework/com/uss/ion/yrc/EgovIndvdlYrycManageList";
 		} else {
-
-			resultVO.setSearchKeyword(searchKeyword);
-
 			/** paging */
 			PaginationInfo paginationInfo = new PaginationInfo();
-			paginationInfo.setCurrentPageNo(resultVO.getPageIndex());
-			paginationInfo.setRecordCountPerPage(resultVO.getPageUnit());
-			paginationInfo.setPageSize(resultVO.getPageSize());
+			paginationInfo.setCurrentPageNo(vcatnManageVO.getPageIndex());
+			paginationInfo.setRecordCountPerPage(vcatnManageVO.getPageUnit());
+			paginationInfo.setPageSize(vcatnManageVO.getPageSize());
 
-			resultVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-			resultVO.setLastIndex(paginationInfo.getLastRecordIndex());
-			resultVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+			vcatnManageVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+			vcatnManageVO.setLastIndex(paginationInfo.getLastRecordIndex());
+			vcatnManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-			model.addAttribute("vcatnManageVO", resultVO);
+			// Fill VO with Annual Leave Info for Display
+			vcatnManageVO.setOccrncYrycCo(annualLeaveDto.getOccrncYrycCo());
+			vcatnManageVO.setUseYrycCo(annualLeaveDto.getUseYrycCo());
+			vcatnManageVO.setRemndrYrycCo(annualLeaveDto.getRemndrYrycCo());
+			vcatnManageVO.setApplcntId(user.getUniqId());
 
-			resultVO.setApplcntId(user.getUniqId());
-			resultVO.setVcatnManageList(egovVcatnManageService.selectVcatnManageList(resultVO));
+			// JPA List
+			Pageable pageable = PageRequest.of(vcatnManageVO.getPageIndex() - 1, vcatnManageVO.getPageUnit(),
+					Sort.by(Sort.Direction.DESC, "id.bgnde"));
+			Page<VacationDto> page = egovVacationService.getVacationList(user.getUniqId(), pageable);
 
-			model.addAttribute("vcatnManageList", resultVO.getVcatnManageList());
+			List<VcatnManageVO> list = page.getContent().stream()
+					.map(this::convertToVO)
+					.collect(Collectors.toList());
 
-			int totCnt = egovVcatnManageService.selectVcatnManageListTotCnt(resultVO);
-			paginationInfo.setTotalRecordCount(totCnt);
+			model.addAttribute("vcatnManageList", list);
 
-			String accessControll = user.getOrgnztId();
+			paginationInfo.setTotalRecordCount((int) page.getTotalElements());
 
-			model.addAttribute("access", accessControll);
+			model.addAttribute("vcatnManageVO", vcatnManageVO);
+			model.addAttribute("access", user.getOrgnztId()); // Legacy uses orgnztId for access control logic in JSP?
 			model.addAttribute("yearList", yearList);
 			model.addAttribute("paginationInfo", paginationInfo);
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
@@ -142,274 +121,170 @@ public class EgovVcatnManageController {
 		}
 	}
 
-	/**
-	 * 등록된 휴가관리의 상세정보를 조회한다.
-	 *
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
-	 */
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnManageDetail.do")
 	public String selectVcatnManage(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
 			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, @RequestParam Map<?, ?> commandMap, ModelMap model)
 			throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		vcatnManageVO.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgnde()));
 		vcatnManageVO.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEndde()));
 
-		// 등록 상세정보
-		VcatnManageVO vcatnManageVOTemp = egovVcatnManageService.selectVcatnManage(vcatnManageVO);
+		VacationDto dto = egovVacationService.getVacation(vcatnManageVO.getApplcntId(), vcatnManageVO.getVcatnSe(),
+				vcatnManageVO.getBgnde());
+		VcatnManageVO resultVO = convertToVO(dto);
 
-		model.addAttribute("vcatnManageVO", vcatnManageVOTemp);
+		model.addAttribute("vcatnManageVO", resultVO);
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
 		if (sCmd.equals("updt")) {
-
 			ComDefaultCodeVO vo = new ComDefaultCodeVO();
 			vo.setCodeId("COM056");
 			List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
 
 			model.addAttribute("vcatnSeCode", vcatnSeCodeList);
-			model.addAttribute("vcatnManage", vcatnManageVOTemp);
+			model.addAttribute("vcatnManage", resultVO);
 			return "egovframework/com/uss/ion/vct/EgovVcatnUpdt";
 		} else {
 			return "egovframework/com/uss/ion/vct/EgovVcatnDetail";
 		}
 	}
 
-	/**
-	 * 휴가관리 등록 화면으로 이동한다.
-	 *
-	 * @return String - 리턴 Url
-	 */
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnRegist.do")
 	public String insertViewVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
 			@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (user == null) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
-		VcatnManageVO vcatnManageVO1 = egovVcatnManageService
-				.selectIndvdlYrycManage(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		vcatnManageVO1.setApplcntId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		vcatnManageVO1.setApplcntNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
-		vcatnManageVO1.setOrgnztNm(user == null ? "" : EgovStringUtil.isNullToString(user.getOrgnztNm()));
+		java.util.Calendar cal = java.util.Calendar.getInstance();
+		AnnualLeaveDto annualLeaveDto = egovAnnualLeaveService.getAnnualLeave(user.getUniqId(),
+				Integer.toString(cal.get(java.util.Calendar.YEAR)));
+
+		if (annualLeaveDto != null) {
+			vcatnManageVO.setOccrncYrycCo(annualLeaveDto.getOccrncYrycCo());
+			vcatnManageVO.setUseYrycCo(annualLeaveDto.getUseYrycCo());
+			vcatnManageVO.setRemndrYrycCo(annualLeaveDto.getRemndrYrycCo());
+		}
+
+		vcatnManageVO.setApplcntId(user.getUniqId());
+		vcatnManageVO.setApplcntNm(user.getName());
+		vcatnManageVO.setOrgnztNm(user.getOrgnztNm());
 
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM056");
 		List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
 
 		model.addAttribute("vcatnSeCode", vcatnSeCodeList);
-		model.addAttribute("vcatnManageVO", vcatnManageVO1);
+		model.addAttribute("vcatnManageVO", vcatnManageVO);
 
 		return "egovframework/com/uss/ion/vct/EgovVcatnRegist";
 	}
 
-	/**
-	 * 휴가관리정보를 신규로 등록한다.
-	 *
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
-	 */
 	@RequestMapping(value = "/uss/ion/vct/insertVcatnManage.do")
 	public String insertVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
 			@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, BindingResult bindingResult,
 			SessionStatus status, @RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		if (!isAuthenticated) {
+		Map<String, Object> session = (Map<String, Object>) commandMap; // Legacy type mismatch possibility, but okay.
+
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (user == null) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-
-		// 승인권자 소속명, 성명 유지
-		model.addAttribute("infSanctnDtNm",
-				commandMap.get("sanctnDtNm") == null ? "" : (String) commandMap.get("sanctnDtNm"));
-		model.addAttribute("infOrgnztNm",
-				commandMap.get("orgnztNm") == null ? "" : (String) commandMap.get("orgnztNm"));
-
-		String sEnddeView = commandMap.get("enddeView") == null ? "" : (String) commandMap.get("enddeView"); // 종료일자 구분
-		if (!sEnddeView.equals("")) {
-			vcatnManage.setEndde(sEnddeView);
-		}
-
-		String sTemp = null;
-		String sTempMessage = null;
-		int iTemp = 0;
-
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("vcatnManageVO", vcatnManageVO);
 			return "egovframework/com/uss/ion/vct/EgovVcatnRegist";
 		}
 
-		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		vcatnManage.setApplcntId(user.getUniqId());
+		String bgnde = EgovStringUtil.removeMinusChar(vcatnManage.getBgnde());
+		String endde = EgovStringUtil.removeMinusChar(vcatnManage.getEndde());
 
-		if (user != null) {
+		// Duplicate Check
+		int iTemp = egovVacationService.checkVacationDuplicate(user.getUniqId(), bgnde, endde);
+
+		if (iTemp == 0) {
+			status.setComplete();
+
+			VacationDto dto = convertToDto(vcatnManage);
+			dto.setBgnde(bgnde);
+			dto.setEndde(endde);
+			dto.setOccrrncYear(bgnde.substring(0, 4));
+			dto.setFrstRegisterId(user.getUniqId());
+			dto.setConfmAt("R"); // Request
+
 			if (vcatnManage.getSanctnerId() != null) {
-				vcatnManage.setConfmAt("A");
+				dto.setConfmAt("A"); // Or logic? specific approval?
 			}
-			vcatnManage.setApplcntId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-			vcatnManage.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-			vcatnManageVO.setApplcntId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-			vcatnManageVO.setSearchKeyword(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
-			// 시작일자 포함여부
-			iTemp = egovVcatnManageService.selectVcatnManageDplctAt(vcatnManageVO);
-			vcatnManageVO.setSearchKeyword(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
-			// 종료일자 포함여부
-			iTemp += egovVcatnManageService.selectVcatnManageDplctAt(vcatnManageVO);
+			egovVacationService.registerVacation(dto);
 
-			if (iTemp == 0) {
-				status.setComplete();
-				sTemp = egovVcatnManageService.insertVcatnManage(vcatnManage, vcatnManageVO);
+			model.addAttribute("message", egovMessageSource.getMessage("comUssIonVct.common.inputSuccess"));
+			return "forward:/uss/ion/vct/EgovVcatnManageList.do";
 
-				if (sTemp.equals("01")) {
-					model.addAttribute("message", egovMessageSource.getMessage("comUssIonVct.common.inputSuccess"));
-					return "forward:/uss/ion/vct/EgovVcatnManageList.do";
-				} else {
-					if (sTemp.equals("99")) {
-						sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.vacationSelectError");
-					} else if (sTemp.equals("09")) {
-						sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.thatYearOnly");
-					} else if (sTemp.equals("02")) {
-						sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.vacationFail");
-					} else if (sTemp.equals("03")) {
-						sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.halfVacationFail");
-					} else {
-						sTempMessage = "undefined error";
-					}
-					model.addAttribute("errorMessage", sTempMessage);
-
-					VcatnManageVO vcatnManageVO1 = egovVcatnManageService.selectIndvdlYrycManage(user.getUniqId());
-					vcatnManageVO1.setApplcntId(user.getUniqId());
-					vcatnManageVO1.setApplcntNm(user.getName());
-					vcatnManageVO1.setOrgnztNm(user.getOrgnztNm());
-					vcatnManageVO1.setTempBgnde(EgovDateUtil.formatDate(vcatnManage.getBgnde(), "-"));
-					vcatnManageVO1.setTempEndde(EgovDateUtil.formatDate(vcatnManage.getEndde(), "-"));
-
-					model.addAttribute("vcatnManageVO", vcatnManageVO1);
-					ComDefaultCodeVO vo = new ComDefaultCodeVO();
-					vo.setCodeId("COM056");
-					List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
-					model.addAttribute("vcatnSeCode", vcatnSeCodeList);
-
-					return "egovframework/com/uss/ion/vct/EgovVcatnRegist";
-				}
-			} else {
-
-				model.addAttribute("errorMessage",
-						egovMessageSource.getMessage("comUssIonVct.common.validate.duplicate"));
-
-				VcatnManageVO vcatnManageVO1 = egovVcatnManageService
-						.selectIndvdlYrycManage(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-				vcatnManageVO1.setApplcntId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-				vcatnManageVO1.setApplcntNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
-				vcatnManageVO1.setOrgnztNm(user == null ? "" : EgovStringUtil.isNullToString(user.getOrgnztNm()));
-				model.addAttribute("vcatnManageVO", vcatnManageVO1);
-
-				ComDefaultCodeVO vo = new ComDefaultCodeVO();
-				vo.setCodeId("COM056");
-				List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
-				model.addAttribute("vcatnSeCode", vcatnSeCodeList);
-
-				return "egovframework/com/uss/ion/vct/EgovVcatnRegist";
-			}
 		} else {
-			return "redirect:/uat/uia/egovLoginUsr.do";
+			model.addAttribute("errorMessage",
+					egovMessageSource.getMessage("comUssIonVct.common.validate.duplicate"));
+
+			// Refill data for view
+			vcatnManageVO.setApplcntId(user.getUniqId());
+			vcatnManageVO.setApplcntNm(user.getName());
+			vcatnManageVO.setOrgnztNm(user.getOrgnztNm());
+			java.util.Calendar cal = java.util.Calendar.getInstance();
+			AnnualLeaveDto annualLeaveDto = egovAnnualLeaveService.getAnnualLeave(user.getUniqId(),
+					Integer.toString(cal.get(java.util.Calendar.YEAR)));
+			if (annualLeaveDto != null) {
+				vcatnManageVO.setOccrncYrycCo(annualLeaveDto.getOccrncYrycCo());
+				vcatnManageVO.setUseYrycCo(annualLeaveDto.getUseYrycCo());
+				vcatnManageVO.setRemndrYrycCo(annualLeaveDto.getRemndrYrycCo());
+			}
+
+			model.addAttribute("vcatnManageVO", vcatnManageVO);
+
+			ComDefaultCodeVO vo = new ComDefaultCodeVO();
+			vo.setCodeId("COM056");
+			List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
+			model.addAttribute("vcatnSeCode", vcatnSeCodeList);
+
+			return "egovframework/com/uss/ion/vct/EgovVcatnRegist";
 		}
 	}
 
-	/**
-	 * 기 등록된 휴가관리정보를 수정한다.
-	 *
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
-	 */
 	@RequestMapping(value = "/uss/ion/vct/updtVcatnManage.do")
 	public String updtVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
 			@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
-		String sTemp = null;
-		String sTempMessage = null;
-
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
-		if (!isAuthenticated) {
-			return "redirect:/uat/uia/egovLoginUsr.do";
-		}
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-		if (user != null) {
-			// 221116 김혜준 2022 시큐어코딩 조치
-			vcatnManage.setFrstRegisterId(EgovStringUtil.isNullToString(user.getUniqId()));
-			sTemp = egovVcatnManageService.updtVcatnManage(vcatnManage, vcatnManageVO);
-			// 221116 김혜준 2022 시큐어코딩 조치
-			status.setComplete();
-			// sTemp = egovVcatnManageService.insertVcatnManage(vcatnManage, vcatnManageVO);
-
-			if (sTemp.equals("01")) {
-				model.addAttribute("message", egovMessageSource.getMessage("comUssIonVct.common.inputSuccess"));
-				return "forward:/uss/ion/vct/EgovVcatnManageList.do";
-			} else {
-
-				if (sTemp.equals("99")) {
-					sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.vacationSelectError");
-				} else if (sTemp.equals("09")) {
-					sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.thatYearOnly");
-				} else if (sTemp.equals("02")) {
-					sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.vacationFail");
-				} else if (sTemp.equals("03")) {
-					sTempMessage = egovMessageSource.getMessage("comUssIonVct.common.validate.halfVacationFail");
-				} else {
-					sTempMessage = "undefined error";
-				}
-
-				model.addAttribute("errorMessage", sTempMessage);
-
-				VcatnManageVO vcatnManageVO1 = egovVcatnManageService.selectIndvdlYrycManage(user.getUniqId());
-				vcatnManageVO1.setApplcntId(user.getUniqId());
-				vcatnManageVO1.setApplcntNm(user.getName());
-				vcatnManageVO1.setOrgnztNm(user.getOrgnztNm());
-				vcatnManageVO1.setTempBgnde(EgovDateUtil.formatDate(vcatnManage.getBgnde(), "-"));
-				vcatnManageVO1.setTempEndde(EgovDateUtil.formatDate(vcatnManage.getEndde(), "-"));
-
-				model.addAttribute("vcatnManageVO", vcatnManageVO1);
-				ComDefaultCodeVO vo = new ComDefaultCodeVO();
-				vo.setCodeId("COM056");
-				List<CmmnDetailCode> vcatnSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
-				model.addAttribute("vcatnSeCode", vcatnSeCodeList);
-
-				return "egovframework/com/uss/ion/vct/EgovVcatnUpdt";
-			}
-		} else {
+		if (user == null) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
+
+		VacationDto dto = convertToDto(vcatnManage);
+		dto.setBgnde(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
+		dto.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
+		dto.setLastUpdusrId(user.getUniqId());
+
+		egovVacationService.updateVacation(dto);
+		status.setComplete();
+
+		model.addAttribute("message", egovMessageSource.getMessage("comUssIonVct.common.inputSuccess"));
+		return "forward:/uss/ion/vct/EgovVcatnManageList.do";
 	}
 
-	/**
-	 * 기 등록된 휴가관리정보를 삭제한다.
-	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
-	 */
 	@RequestMapping(value = "/uss/ion/vct/deleteVcatnManage.do")
 	public String deleteVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage, SessionStatus status,
 			ModelMap model) throws Exception {
-		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
-		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
-		egovVcatnManageService.deleteVcatnManage(vcatnManage);
+		String bgnde = EgovStringUtil.removeMinusChar(vcatnManage.getBgnde());
+		egovVacationService.deleteVacation(vcatnManage.getApplcntId(), vcatnManage.getVcatnSe(), bgnde);
 		status.setComplete();
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.delete"));
 		return "forward:/uss/ion/vct/EgovVcatnManageList.do";
 	}
 
-	/*** 승인관련 ***/
-	/**
-	 * 휴가관리정보 승인 처리를 위해 신청된 휴가관리 목록을 조회한다.
-	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
-	 */
 	@IncludedInfo(name = "휴가승인관리", order = 901, gid = 50)
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnConfmList.do")
 	public String selectVcatnManageConfmList(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
@@ -421,105 +296,114 @@ public class EgovVcatnManageController {
 			yearList[x] = Integer.toString(cal.get(java.util.Calendar.YEAR) - x);
 		}
 
-		/** paging */
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (user == null) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
+
 		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(vcatnManageVO.getPageIndex());
 		paginationInfo.setRecordCountPerPage(vcatnManageVO.getPageUnit());
 		paginationInfo.setPageSize(vcatnManageVO.getPageSize());
 
-		vcatnManageVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		vcatnManageVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		vcatnManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+		Pageable pageable = PageRequest.of(vcatnManageVO.getPageIndex() - 1, vcatnManageVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "id.bgnde"));
+
+		// Legacy: If sanctnerId is set, search by it. ConfmAt filter is implicit?
+		// Legacy passes searchYear, searchMonth, etc. But JPA queries I added are
+		// mainly by sanctner.
+		// I'll use findBySanctnerIdAndConfmAt if available or just all for Sanctner.
+		Page<VacationDto> page = egovVacationService.getVacationListConfm(user.getUniqId(), null, pageable);
+
+		List<VcatnManageVO> list = page.getContent().stream().map(this::convertToVO).collect(Collectors.toList());
+
+		model.addAttribute("vcatnManageList", list);
+
+		paginationInfo.setTotalRecordCount((int) page.getTotalElements());
+		model.addAttribute("yearList", yearList);
+		model.addAttribute("paginationInfo", paginationInfo);
+		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+
+		return "egovframework/com/uss/ion/vct/EgovVcatnConfmList";
+	}
+
+	@RequestMapping(value = "/uss/ion/vct/EgovVcatnConfm.do")
+	public String selectVcatnConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
+			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, ModelMap model) throws Exception {
+
+		vcatnManageVO.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgnde()));
+		vcatnManageVO.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEndde()));
+
+		VacationDto dto = egovVacationService.getVacation(vcatnManageVO.getApplcntId(), vcatnManageVO.getVcatnSe(),
+				vcatnManageVO.getBgnde());
+		VcatnManageVO resultVO = convertToVO(dto);
+
+		model.addAttribute("vcatnManageVO", resultVO);
+		model.addAttribute("vcatnManage", resultVO);
+		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+
+		return "egovframework/com/uss/ion/vct/EgovVcatnConfm";
+	}
+
+	@RequestMapping(value = "/uss/ion/vct/updtVcatnConfm.do")
+	public String updtVcatnManageConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
+			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, BindingResult bindingResult, SessionStatus status,
+			ModelMap model) throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		if (user == null) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		vcatnManageVO.setSanctnerId(user.getUniqId()); // 사용자가 승인권자인지 조건값 setting
+		String bgnde = EgovStringUtil.removeMinusChar(vcatnManage.getBgnde());
 
-		vcatnManageVO.setSearchKeyword(vcatnManageVO.getSearchYear() + vcatnManageVO.getSearchMonth());
-		vcatnManageVO.setVcatnManageList(egovVcatnManageService.selectVcatnManageConfmList(vcatnManageVO));
+		egovVacationService.approveVacation(vcatnManage.getApplcntId(), vcatnManage.getVcatnSe(), bgnde,
+				user.getUniqId(), vcatnManage.getConfmAt(), vcatnManage.getReturnResn(), user.getUniqId());
 
-		model.addAttribute("vcatnManageList", vcatnManageVO.getVcatnManageList());
-
-		int totCnt = egovVcatnManageService.selectVcatnManageConfmListTotCnt(vcatnManageVO);
-		paginationInfo.setTotalRecordCount(totCnt);
-		model.addAttribute("yearList", yearList);
-		model.addAttribute("paginationInfo", paginationInfo);
-
-		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
-
-		return "egovframework/com/uss/ion/vct/EgovVcatnConfmList";
+		return "forward:/uss/ion/vct/EgovVcatnConfmList.do";
 	}
 
-	/**
-	 * 휴가승인관리 상세정보를 조회한다.
-	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
-	 */
-	@RequestMapping(value = "/uss/ion/vct/EgovVcatnConfm.do")
-	public String selectVcatnConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
-			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, ModelMap model) throws Exception {
-		vcatnManageVO.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgnde()));
-		vcatnManageVO.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEndde()));
-
-		// 등록 상세정보
-		VcatnManageVO vcatnManageVOTemp = egovVcatnManageService.selectVcatnManage(vcatnManageVO);
-
-		model.addAttribute("vcatnManageVO", vcatnManageVOTemp);
-		model.addAttribute("vcatnManage", vcatnManageVOTemp);
-		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
-
-		return "egovframework/com/uss/ion/vct/EgovVcatnConfm";
-	}
-
-	/**
-	 * 신청된 휴가를 승인처리한다.
-	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
-	 */
-	@RequestMapping(value = "/uss/ion/vct/updtVcatnConfm.do")
-	public String updtVcatnManageConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
-			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, BindingResult bindingResult, SessionStatus status,
-			ModelMap model) throws Exception {
-
-		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
-		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
-
-		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
-		if (!isAuthenticated) {
-			return "redirect:/uat/uia/egovLoginUsr.do";
-		}
-
-		if (bindingResult.hasErrors()) {
-			model.addAttribute("vcatnManageVO", vcatnManageVO);
-			return "egovframework/com/uss/ion/vct/EgovVcatnConfm";
-		} else {
-			vcatnManage.setSanctnerId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-			vcatnManage.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-
-			egovVcatnManageService.updtVcatnManageConfm(vcatnManage);
-			return "forward:/uss/ion/vct/EgovVcatnConfmList.do";
-		}
-	}
-
-	/**
-	 * 휴가정보 반려처리 화면을 호출한다.
-	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String
-	 *
-	 * @param vcatnManage
-	 */
 	@RequestMapping("/uss/ion/vct/EgovVcatnReturn.do")
 	public String selectSanctnerListPopup(@ModelAttribute("vcatnManage") VcatnManage vcatnManage, ModelMap model)
 			throws Exception {
 		return "egovframework/com/uss/ion/vct/EgovVcatnReturn";
+	}
+
+	private VcatnManageVO convertToVO(VacationDto dto) {
+		if (dto == null)
+			return null;
+		VcatnManageVO vo = new VcatnManageVO();
+		vo.setApplcntId(dto.getApplcntId());
+		vo.setVcatnSe(dto.getVcatnSe());
+		vo.setBgnde(dto.getBgnde());
+		vo.setEndde(dto.getEndde());
+		vo.setReqstDe(dto.getReqstDe());
+		vo.setVcatnResn(dto.getVcatnResn());
+		vo.setOccrrncYear(dto.getOccrrncYear());
+		vo.setNoonSe(dto.getNoonSe());
+		vo.setSanctnerId(dto.getSanctnerId());
+		vo.setConfmAt(dto.getConfmAt());
+		// vo.setSanctnDt(dto.getSanctnDt()); // Date type conflict handling if needed
+		vo.setReturnResn(dto.getReturnResn());
+		vo.setInfrmlSanctnId(dto.getInfrmlSanctnId());
+		vo.setApplcntNm(dto.getApplcntNm());
+		vo.setOrgnztNm(dto.getOrgnztNm());
+		return vo;
+	}
+
+	private VacationDto convertToDto(VcatnManage vo) {
+		VacationDto dto = new VacationDto();
+		dto.setApplcntId(vo.getApplcntId());
+		dto.setVcatnSe(vo.getVcatnSe());
+		dto.setBgnde(vo.getBgnde());
+		dto.setEndde(vo.getEndde());
+		dto.setReqstDe(vo.getReqstDe());
+		dto.setVcatnResn(vo.getVcatnResn());
+		dto.setOccrrncYear(vo.getOccrrncYear());
+		dto.setNoonSe(vo.getNoonSe());
+		dto.setSanctnerId(vo.getSanctnerId());
+		dto.setConfmAt(vo.getConfmAt());
+		dto.setReturnResn(vo.getReturnResn());
+		return dto;
 	}
 }

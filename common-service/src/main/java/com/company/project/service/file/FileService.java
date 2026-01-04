@@ -148,6 +148,13 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     @Override
+    public FileDto getFileDetail(String atchFileId, Integer fileSn) {
+        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        return convertToDto(detail);
+    }
+
+    @Override
     @Transactional
     public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
         if (atchFileId == null) {

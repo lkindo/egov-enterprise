@@ -12,6 +12,7 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C002", "Method not allowed"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C003", "Internal server error"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "C004", "Resource not found"),
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "C005", "Resource already exists"),
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),

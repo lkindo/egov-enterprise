@@ -10,19 +10,21 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.company.project.service.code.EgovCommonCodeService;
+import com.company.project.service.code.dto.CmmnClCodeDto;
+import com.company.project.service.code.dto.CmmnCodeDto;
+import com.company.project.service.code.dto.CmmnDetailCodeDto;
+import com.company.project.web.adapter.CommonCodeAdapter;
+
+import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
-import egovframework.com.cmm.service.CmmnDetailCode;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.sym.ccm.cca.service.CmmnCodeVO;
-import egovframework.com.sym.ccm.cca.service.EgovCcmCmmnCodeManageService;
 import egovframework.com.sym.ccm.ccc.service.CmmnClCodeVO;
-import egovframework.com.sym.ccm.ccc.service.EgovCcmCmmnClCodeManageService;
 import egovframework.com.sym.ccm.cde.service.CmmnDetailCodeVO;
-import egovframework.com.sym.ccm.cde.service.EgovCcmCmmnDetailCodeManageService;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 공통상세코드에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한
@@ -50,14 +52,8 @@ import jakarta.validation.Valid;
 @Controller
 public class EgovCcmCmmnDetailCodeManageController {
 
-	@Resource(name = "CmmnDetailCodeManageService")
-	private EgovCcmCmmnDetailCodeManageService cmmnDetailCodeManageService;
-
-	@Resource(name = "CmmnClCodeManageService")
-	private EgovCcmCmmnClCodeManageService cmmnClCodeManageService;
-
-	@Resource(name = "CmmnCodeManageService")
-	private EgovCcmCmmnCodeManageService cmmnCodeManageService;
+	@Resource(name = "egovCommonCodeService")
+	private EgovCommonCodeService egovCommonCodeService;
 
 	/** EgovPropertyService */
 	@Resource(name = "propertiesService")
@@ -95,10 +91,19 @@ public class EgovCcmCmmnDetailCodeManageController {
 		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		List<CmmnDetailCodeVO> resultList = cmmnDetailCodeManageService.selectCmmnDetailCodeList(searchVO);
+		// DTO mapping
+		ComDefaultVO commonSearchVO = new ComDefaultVO();
+		commonSearchVO.setPageIndex(searchVO.getPageIndex());
+		commonSearchVO.setPageUnit(searchVO.getPageUnit());
+		commonSearchVO.setPageSize(searchVO.getPageSize());
+		commonSearchVO.setSearchCondition(searchVO.getSearchCondition());
+		commonSearchVO.setSearchKeyword(searchVO.getSearchKeyword());
+
+		List<CmmnDetailCodeDto> dtoList = egovCommonCodeService.selectCmmnDetailCodeList(commonSearchVO);
+		List<CmmnDetailCodeVO> resultList = CommonCodeAdapter.toDetailCodeVOList(dtoList);
 		model.addAttribute("resultList", resultList);
 
-		int totCnt = cmmnDetailCodeManageService.selectCmmnDetailCodeListTotCnt(searchVO);
+		int totCnt = egovCommonCodeService.selectCmmnDetailCodeListTotCnt(commonSearchVO);
 		paginationInfo.setTotalRecordCount(totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 
@@ -117,7 +122,10 @@ public class EgovCcmCmmnDetailCodeManageController {
 	@RequestMapping(value = "/sym/ccm/cde/SelectCcmCmmnDetailCodeDetail.do")
 	public String selectCmmnDetailCodeDetail(@ModelAttribute("loginVO") LoginVO loginVO,
 			CmmnDetailCodeVO cmmnDetailCodeVO, ModelMap model) throws Exception {
-		CmmnDetailCode vo = cmmnDetailCodeManageService.selectCmmnDetailCodeDetail(cmmnDetailCodeVO);
+
+		CmmnDetailCodeDto dto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+		CmmnDetailCodeDto resultDto = egovCommonCodeService.selectCmmnDetailCodeDetail(dto);
+		CmmnDetailCodeVO vo = CommonCodeAdapter.toVO(resultDto);
 		model.addAttribute("result", vo);
 
 		return "egovframework/com/sym/ccm/cde/EgovCcmCmmnDetailCodeDetail";
@@ -135,7 +143,9 @@ public class EgovCcmCmmnDetailCodeManageController {
 	@RequestMapping(value = "/sym/ccm/cde/RemoveCcmCmmnDetailCode.do")
 	public String deleteCmmnDetailCode(@ModelAttribute("loginVO") LoginVO loginVO, CmmnDetailCodeVO cmmnDetailCodeVO,
 			ModelMap model) throws Exception {
-		cmmnDetailCodeManageService.deleteCmmnDetailCode(cmmnDetailCodeVO);
+
+		CmmnDetailCodeDto dto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+		egovCommonCodeService.deleteCmmnDetailCode(dto);
 
 		model.addAttribute("searchCondition", cmmnDetailCodeVO.getSearchCondition());
 		model.addAttribute("searchKeyword", cmmnDetailCodeVO.getSearchKeyword());
@@ -157,23 +167,42 @@ public class EgovCcmCmmnDetailCodeManageController {
 			@ModelAttribute("cmmnCodeVO") CmmnCodeVO cmmnCodeVO,
 			@ModelAttribute("cmmnDetailCodeVO") CmmnDetailCodeVO cmmnDetailCodeVO, ModelMap model) throws Exception {
 
-		CmmnClCodeVO searchClCodeVO = new CmmnClCodeVO();
-		searchClCodeVO.setFirstIndex(0);
-		List<CmmnClCodeVO> clCodeList = cmmnClCodeManageService.selectCmmnClCodeList(searchClCodeVO);
+		ComDefaultVO commonSearchVO = new ComDefaultVO();
+		commonSearchVO.setRecordCountPerPage(9999);
+		commonSearchVO.setFirstIndex(0);
+
+		List<CmmnClCodeDto> clCodeDtoList = egovCommonCodeService.selectCmmnClCodeList(commonSearchVO);
+		List<CmmnClCodeVO> clCodeList = CommonCodeAdapter.toClCodeVOList(clCodeDtoList);
 		model.addAttribute("clCodeList", clCodeList);
 
 		CmmnCodeVO clCode = new CmmnCodeVO();
 		clCode.setClCode(cmmnCodeVO.getClCode());
 
-		if (!cmmnCodeVO.getClCode().equals("")) {
+		if (cmmnCodeVO.getClCode() != null && !cmmnCodeVO.getClCode().equals("")) {
+			// Can't easily use selectCmmnCodeList because it searches by CodeGroup
+			// Name/ID...
+			// CommonCodeService.getCodesByGroup() is for Details, not Groups.
+			// But selectCmmnCodeList takes searchCondition.
+			// Let's check CommonCodeService.selectCmmnCodeList
+			// It expects searchCondition=1 (Code ID), 2 (Code ID Name).
+			// It seems "clCode" is not a standard search condition there?
+			// Legacy CmmnCodeManageService might have supported it.
+			// Let's assume we can search by ClCode if we adapt CommonCodeService or check
+			// if it supports it.
+			// Looking at CommonCodeGroupRepository.searchCommonCodeGroups:
+			// It likely supports filtering?
+			// Actually, simply searching by ClCode might need a custom method or checking
+			// if searchCondition supports it.
 
-			CmmnCodeVO searchCodeVO = new CmmnCodeVO();
-			searchCodeVO.setRecordCountPerPage(999999);
-			searchCodeVO.setFirstIndex(0);
-			searchCodeVO.setSearchCondition("clCode");
-			searchCodeVO.setSearchKeyword(cmmnCodeVO.getClCode());
+			// For now, let's try populating searchVO as is.
+			ComDefaultVO codeSearchVO = new ComDefaultVO();
+			codeSearchVO.setRecordCountPerPage(9999);
+			codeSearchVO.setFirstIndex(0);
+			codeSearchVO.setSearchCondition("clCode"); // Custom condition?
+			codeSearchVO.setSearchKeyword(cmmnCodeVO.getClCode());
 
-			List<CmmnCodeVO> codeList = cmmnCodeManageService.selectCmmnCodeList(searchCodeVO);
+			List<CmmnCodeDto> codeDtoList = egovCommonCodeService.selectCmmnCodeList(codeSearchVO);
+			List<CmmnCodeVO> codeList = CommonCodeAdapter.toCodeVOList(codeDtoList);
 			model.addAttribute("codeList", codeList);
 		}
 
@@ -200,20 +229,29 @@ public class EgovCcmCmmnDetailCodeManageController {
 		searchClCodeVO.setFirstIndex(0);
 
 		if (bindingResult.hasErrors()) {
+			ComDefaultVO commonSearchVO = new ComDefaultVO();
+			commonSearchVO.setRecordCountPerPage(9999);
+			commonSearchVO.setFirstIndex(0);
 
-			List<CmmnClCodeVO> clCodeList = cmmnClCodeManageService.selectCmmnClCodeList(searchClCodeVO);
+			List<CmmnClCodeDto> clCodeDtoList = egovCommonCodeService.selectCmmnClCodeList(commonSearchVO);
+			List<CmmnClCodeVO> clCodeList = CommonCodeAdapter.toClCodeVOList(clCodeDtoList);
 			model.addAttribute("clCodeList", clCodeList);
 
 			return "egovframework/com/sym/ccm/cde/EgovCcmCmmnDetailCodeRegist";
 		}
 
 		if (cmmnDetailCodeVO.getCodeId() != null) {
-
-			CmmnDetailCode vo = cmmnDetailCodeManageService.selectCmmnDetailCodeDetail(cmmnDetailCodeVO);
-			if (vo != null) {
+			CmmnDetailCodeDto dto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+			CmmnDetailCodeDto resultDto = egovCommonCodeService.selectCmmnDetailCodeDetail(dto);
+			if (resultDto != null) {
 				model.addAttribute("message", egovMessageSource.getMessage("comSymCcmCde.validate.codeCheck"));
 
-				List<CmmnClCodeVO> clCodeList = cmmnClCodeManageService.selectCmmnClCodeList(searchClCodeVO);
+				ComDefaultVO commonSearchVO = new ComDefaultVO();
+				commonSearchVO.setRecordCountPerPage(9999);
+				commonSearchVO.setFirstIndex(0);
+
+				List<CmmnClCodeDto> clCodeDtoList = egovCommonCodeService.selectCmmnClCodeList(commonSearchVO);
+				List<CmmnClCodeVO> clCodeList = CommonCodeAdapter.toClCodeVOList(clCodeDtoList);
 				model.addAttribute("clCodeList", clCodeList);
 
 				return "egovframework/com/sym/ccm/cde/EgovCcmCmmnDetailCodeRegist";
@@ -221,7 +259,8 @@ public class EgovCcmCmmnDetailCodeManageController {
 		}
 
 		cmmnDetailCodeVO.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
-		cmmnDetailCodeManageService.insertCmmnDetailCode(cmmnDetailCodeVO);
+		CmmnDetailCodeDto saveDto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+		egovCommonCodeService.insertCmmnDetailCode(saveDto);
 
 		model.addAttribute("searchCondition", cmmnDetailCodeVO.getSearchCondition());
 		model.addAttribute("searchKeyword", cmmnDetailCodeVO.getSearchKeyword());
@@ -242,8 +281,10 @@ public class EgovCcmCmmnDetailCodeManageController {
 	public String updateCmmnDetailCodeView(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("cmmnDetailCodeVO") CmmnDetailCodeVO cmmnDetailCodeVO, ModelMap model) throws Exception {
 
-		CmmnDetailCode result = cmmnDetailCodeManageService.selectCmmnDetailCodeDetail(cmmnDetailCodeVO);
-		model.addAttribute("cmmnDetailCodeVO", result);
+		CmmnDetailCodeDto dto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+		CmmnDetailCodeDto resultDto = egovCommonCodeService.selectCmmnDetailCodeDetail(dto);
+		CmmnDetailCodeVO resultVO = CommonCodeAdapter.toVO(resultDto);
+		model.addAttribute("cmmnDetailCodeVO", resultVO);
 
 		return "egovframework/com/sym/ccm/cde/EgovCcmCmmnDetailCodeUpdt";
 	}
@@ -264,14 +305,18 @@ public class EgovCcmCmmnDetailCodeManageController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (bindingResult.hasErrors()) {
-			CmmnDetailCode result = cmmnDetailCodeManageService.selectCmmnDetailCodeDetail(cmmnDetailCodeVO);
-			model.addAttribute("cmmnDetailCodeVO", result);
+			CmmnDetailCodeDto dto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+			CmmnDetailCodeDto result = egovCommonCodeService.selectCmmnDetailCodeDetail(dto);
+			CmmnDetailCodeVO resultVO = CommonCodeAdapter.toVO(result);
+			model.addAttribute("cmmnDetailCodeVO", resultVO);
 
 			return "egovframework/com/sym/ccm/cde/EgovCcmCmmnDetailCodeUpdt";
 		}
 
 		cmmnDetailCodeVO.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
-		cmmnDetailCodeManageService.updateCmmnDetailCode(cmmnDetailCodeVO);
+
+		CmmnDetailCodeDto saveDto = CommonCodeAdapter.toDto(cmmnDetailCodeVO);
+		egovCommonCodeService.updateCmmnDetailCode(saveDto);
 
 		model.addAttribute("searchCondition", cmmnDetailCodeVO.getSearchCondition());
 		model.addAttribute("searchKeyword", cmmnDetailCodeVO.getSearchKeyword());

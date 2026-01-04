@@ -45,4 +45,22 @@ public interface EgovBoardService {
      * 답변 등록
      */
     Long replyPost(String userId, Long parentId, BoardSaveRequest request);
+
+    /**
+     * 게시물 등록 (파일 첨부 포함)
+     */
+    Long createPostWithFiles(String userId, BoardSaveRequest request,
+            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
+
+    /**
+     * 게시물 수정 (파일 첨부 포함)
+     */
+    void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request,
+            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
+
+    /**
+     * 답변 등록 (파일 첨부 포함)
+     */
+    Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request,
+            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
 }

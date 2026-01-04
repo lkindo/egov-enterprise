@@ -17,12 +17,12 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.company.project.service.file.EgovFileService;
+import com.company.project.service.file.dto.FileDto;
+
 import egovframework.com.cmm.EgovBrowserUtil;
 import egovframework.com.cmm.EgovWebUtil;
-import egovframework.com.cmm.service.EgovFileMngService;
-import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cmm.util.EgovBasicLogger;
-import egovframework.com.cmm.util.EgovResourceCloseHelper;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,8 +57,8 @@ public class EgovFileDownloadController {
 	@Resource(name = "egovEnvCryptoService")
 	EgovEnvCryptoService cryptoService;
 
-	@Resource(name = "EgovFileMngService")
-	private EgovFileMngService fileService;
+	@Resource(name = "egovFileService")
+	private EgovFileService fileService;
 
 	/**
 	 * 첨부파일로 등록된 파일에 대하여 다운로드를 제공한다.
@@ -93,10 +93,9 @@ public class EgovFileDownloadController {
 				throw new Exception();
 			}
 
-			FileVO fileVO = new FileVO();
-			fileVO.setAtchFileId(decodedFileId);
-			fileVO.setFileSn(fileSn);
-			FileVO fvo = fileService.selectFileInf(fileVO);
+			// New Service Usage
+			Integer sn = Integer.parseInt(fileSn);
+			FileDto fvo = fileService.getFileDetail(decodedFileId, sn);
 
 			File uFile = new File(fvo.getFileStreCours(), fvo.getStreFileNm());
 			long fSize = uFile.length();

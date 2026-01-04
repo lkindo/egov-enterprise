@@ -1,0 +1,845 @@
+> Task :common-core:compileJava UP-TO-DATE
+> Task :common-domain:compileJava UP-TO-DATE
+> Task :common-security:compileJava UP-TO-DATE
+
+> Task :common-service:compileJava
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\EgovAnnualLeaveService.java:17: error: method updateAnnualLeaveUsage(String,String,double,double,String) is already defined in interface EgovAnnualLeaveService
+        void updateAnnualLeaveUsage(String userId, String occrrncYear, double useYrycCo, double remndrYrycCo,
+             ^
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:61: error: cannot find symbol
+                .uniqId(dto.getUniqId())
+                           ^
+  symbol:   method getUniqId()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:62: error: cannot find symbol
+                .authorCode(dto.getAuthorCode())
+                               ^
+  symbol:   method getAuthorCode()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:63: error: cannot find symbol
+                .mberTyCode(dto.getMberTyCode())
+                               ^
+  symbol:   method getMberTyCode()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:70: error: cannot find symbol
+        UserAuthority entity = userAuthorityRepository.findById(dto.getUniqId())
+                                                                   ^
+  symbol:   method getUniqId()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:71: error: cannot find symbol
+                .orElseThrow(() -> new RuntimeException("UserAuthority not found: " + dto.getUniqId()));
+                                                                                         ^
+  symbol:   method getUniqId()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:72: error: cannot find symbol
+        entity.update(dto.getAuthorCode(), dto.getMberTyCode());
+                         ^
+  symbol:   method getAuthorCode()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:72: error: cannot find symbol
+        entity.update(dto.getAuthorCode(), dto.getMberTyCode());
+                                              ^
+  symbol:   method getMberTyCode()
+  location: variable dto of type UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:84: error: cannot find symbol
+        return UserAuthorityDto.builder()
+                               ^
+  symbol:   method builder()
+  location: class UserAuthorityDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:44: error: cannot find symbol
+        return boardMasterRepository.search(condition, pageable)
+                                    ^
+  symbol:   method search(BoardMasterSearchCondition,Pageable)
+  location: variable boardMasterRepository of type BoardMasterRepository
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:55: error: incompatible types: ErrorCode cannot be converted to String
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate ID");
+                                                 ^
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:60: error: cannot find symbol
+                .bbsNm(dto.getBbsNm())
+                          ^
+  symbol:   method getBbsNm()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:61: error: cannot find symbol
+                .bbsIntrcn(dto.getBbsIntrcn())
+                              ^
+  symbol:   method getBbsIntrcn()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:62: error: cannot find symbol
+                .bbsTyCode(dto.getBbsTyCode())
+                              ^
+  symbol:   method getBbsTyCode()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:63: error: cannot find symbol
+                .bbsAttrbCode(dto.getBbsAttrbCode())
+                                 ^
+  symbol:   method getBbsAttrbCode()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:64: error: cannot find symbol
+                .replyPosblAt(dto.getReplyPosblAt())
+                                 ^
+  symbol:   method getReplyPosblAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:65: error: cannot find symbol
+                .fileAtchPosblAt(dto.getFileAtchPosblAt())
+                                    ^
+  symbol:   method getFileAtchPosblAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:66: error: cannot find symbol
+                .atchPosblFileNumber(dto.getAtchPosblFileNumber())
+                                        ^
+  symbol:   method getAtchPosblFileNumber()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:67: error: cannot find symbol
+                .atchPosblFileSize(dto.getAtchPosblFileSize())
+                                      ^
+  symbol:   method getAtchPosblFileSize()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:68: error: cannot find symbol
+                .tmplatId(dto.getTmplatId())
+                             ^
+  symbol:   method getTmplatId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:70: error: cannot find symbol
+                .frstRegisterId(dto.getFrstRegisterId())
+                                   ^
+  symbol:   method getFrstRegisterId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:71: error: cannot find symbol
+                .lastUpdusrId(dto.getFrstRegisterId())
+                                 ^
+  symbol:   method getFrstRegisterId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:72: error: cannot find symbol
+                .cmmntyId(dto.getCmmntyId())
+                             ^
+  symbol:   method getCmmntyId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:73: error: cannot find symbol
+                .blogId(dto.getBlogId())
+                           ^
+  symbol:   method getBlogId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:74: error: cannot find symbol
+                .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
+                           ^
+  symbol:   method getBlogAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:74: error: cannot find symbol
+                .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
+                                                     ^
+  symbol:   method getBlogAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:83: error: cannot find symbol
+        BoardMaster entity = boardMasterRepository.findById(dto.getBbsId())
+                                                               ^
+  symbol:   method getBbsId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:96: error: cannot find symbol
+                dto.getLastUpdusrId());
+                   ^
+  symbol:   method getLastUpdusrId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:95: error: cannot find symbol
+                dto.getTmplatId(),
+                   ^
+  symbol:   method getTmplatId()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:94: error: cannot find symbol
+                dto.getAtchPosblFileSize(),
+                   ^
+  symbol:   method getAtchPosblFileSize()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:93: error: cannot find symbol
+                dto.getAtchPosblFileNumber(),
+                   ^
+  symbol:   method getAtchPosblFileNumber()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:92: error: cannot find symbol
+                dto.getFileAtchPosblAt(),
+                   ^
+  symbol:   method getFileAtchPosblAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:91: error: cannot find symbol
+                dto.getReplyPosblAt(),
+                   ^
+  symbol:   method getReplyPosblAt()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:90: error: cannot find symbol
+                dto.getBbsAttrbCode(),
+                   ^
+  symbol:   method getBbsAttrbCode()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:89: error: cannot find symbol
+                dto.getBbsTyCode(),
+                   ^
+  symbol:   method getBbsTyCode()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:88: error: cannot find symbol
+                dto.getBbsIntrcn(),
+                   ^
+  symbol:   method getBbsIntrcn()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:87: error: cannot find symbol
+                dto.getBbsNm(),
+                   ^
+  symbol:   method getBbsNm()
+  location: variable dto of type BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:43: error: cannot find symbol
+        return BoardMasterDto.builder()
+                             ^
+  symbol:   method builder()
+  location: class BoardMasterDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:55: error: cannot find symbol
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                                         ^
+  symbol:   method getFrstRegisterPnttm()
+  location: variable entity of type BoardMaster
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:57: error: cannot find symbol
+                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                                       ^
+  symbol:   method getLastUpdusrPnttm()
+  location: variable entity of type BoardMaster
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:59: error: cannot find symbol
+                .cmmntyId(entity.getCmmntyId())
+                                ^
+  symbol:   method getCmmntyId()
+  location: variable entity of type BoardMaster
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:27: error: cannot find symbol
+                .satisfactionId(dto.getSatisfactionId())
+                                   ^
+  symbol:   method getSatisfactionId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:28: error: cannot find symbol
+                .articleId(dto.getArticleId())
+                              ^
+  symbol:   method getArticleId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:29: error: cannot find symbol
+                .boardId(dto.getBoardId())
+                            ^
+  symbol:   method getBoardId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:30: error: cannot find symbol
+                .writerId(dto.getWriterId())
+                             ^
+  symbol:   method getWriterId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:31: error: cannot find symbol
+                .writerNm(dto.getWriterNm())
+                             ^
+  symbol:   method getWriterNm()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:32: error: cannot find symbol
+                .satisfactionLevel(dto.getSatisfactionLevel())
+                                      ^
+  symbol:   method getSatisfactionLevel()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:33: error: cannot find symbol
+                .satisfactionOpinion(dto.getSatisfactionOpinion())
+                                        ^
+  symbol:   method getSatisfactionOpinion()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:34: error: cannot find symbol
+                .password(dto.getSatisfactionPassword()) // Set password
+                             ^
+  symbol:   method getSatisfactionPassword()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:36: error: cannot find symbol
+                .frstRegisterId(dto.getWriterId())
+                                   ^
+  symbol:   method getWriterId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:37: error: cannot find symbol
+                .lastUpdusrId(dto.getWriterId())
+                                 ^
+  symbol:   method getWriterId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:45: error: cannot find symbol
+        satisfactionRepository.findById(dto.getSatisfactionId())
+                                           ^
+  symbol:   method getSatisfactionId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                            ^
+  symbol:   method getSatisfactionLevel()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                                                        ^
+  symbol:   method getSatisfactionOpinion()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                                                                                      ^
+  symbol:   method getWriterId()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:47: error: cannot find symbol
+                        dto.getSatisfactionPassword()));
+                           ^
+  symbol:   method getSatisfactionPassword()
+  location: variable dto of type SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:59: error: cannot find symbol
+                .map(s -> SatisfactionDto.builder()
+                                         ^
+  symbol:   method builder()
+  location: class SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:69: error: incompatible types: inference variable T has incompatible bounds
+                .collect(Collectors.toList());
+                        ^
+    equality constraints: SatisfactionDto
+    lower bounds: Object
+  where T is a type-variable:
+    T extends Object declared in method <T>toList()
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:81: error: cannot find symbol
+        return SatisfactionDto.builder()
+                              ^
+  symbol:   method builder()
+  location: class SatisfactionDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:33: error: cannot find symbol
+                .id(new AnnualLeave.AnnualLeaveId(dto.getUserId(), dto.getOccrrncYear()))
+                                                     ^
+  symbol:   method getUserId()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:33: error: cannot find symbol
+                .id(new AnnualLeave.AnnualLeaveId(dto.getUserId(), dto.getOccrrncYear()))
+                                                                      ^
+  symbol:   method getOccrrncYear()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:34: error: cannot find symbol
+                .occrncYrycCo(dto.getOccrncYrycCo())
+                                 ^
+  symbol:   method getOccrncYrycCo()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:35: error: cannot find symbol
+                .useYrycCo(dto.getUseYrycCo())
+                              ^
+  symbol:   method getUseYrycCo()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:36: error: cannot find symbol
+                .remndrYrycCo(dto.getRemndrYrycCo())
+                                 ^
+  symbol:   method getRemndrYrycCo()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:37: error: cannot find symbol
+                .frstRegisterId(dto.getUserId())
+                                   ^
+  symbol:   method getUserId()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:38: error: cannot find symbol
+                .lastUpdusrId(dto.getUserId())
+                                 ^
+  symbol:   method getUserId()
+  location: variable dto of type AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:68: error: cannot find symbol
+        return AnnualLeaveDto.builder()
+                             ^
+  symbol:   method builder()
+  location: class AnnualLeaveDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                               ^
+  symbol:   method getApplcntId()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                   ^
+  symbol:   method getVcatnSe()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                     ^
+  symbol:   method getBgnde()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:31: error: cannot find symbol
+                .endde(dto.getEndde())
+                          ^
+  symbol:   method getEndde()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:32: error: cannot find symbol
+                .reqstDe(dto.getReqstDe())
+                            ^
+  symbol:   method getReqstDe()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:33: error: cannot find symbol
+                .vcatnResn(dto.getVcatnResn())
+                              ^
+  symbol:   method getVcatnResn()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:34: error: cannot find symbol
+                .occrrncYear(dto.getOccrrncYear())
+                                ^
+  symbol:   method getOccrrncYear()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:35: error: cannot find symbol
+                .noonSe(dto.getNoonSe())
+                           ^
+  symbol:   method getNoonSe()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:37: error: cannot find symbol
+                .infrmlSanctnId(dto.getInfrmlSanctnId())
+                                   ^
+  symbol:   method getInfrmlSanctnId()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:38: error: cannot find symbol
+                .frstRegisterId(dto.getApplcntId())
+                                   ^
+  symbol:   method getApplcntId()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:39: error: cannot find symbol
+                .lastUpdusrId(dto.getApplcntId())
+                                 ^
+  symbol:   method getApplcntId()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+        vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                               ^
+  symbol:   method getApplcntId()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+        vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                   ^
+  symbol:   method getVcatnSe()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+        vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                                     ^
+  symbol:   method getBgnde()
+  location: variable dto of type VacationDto
+D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:95: error: cannot find symbol
+        return VacationDto.builder()
+                          ^
+  symbol:   method builder()
+  location: class VacationDto
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+82 errors
+
+> Task :common-service:compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':common-service:compileJava'.
+> Compilation failed; see the compiler output below.
+  Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full outputD:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:55: error: incompatible types: ErrorCode cannot be converted to String
+              throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate ID");
+                                                   ^
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:69: error: incompatible types: inference variable T has incompatible bounds
+                  .collect(Collectors.toList());
+                          ^
+      equality constraints: SatisfactionDto
+      lower bounds: Object
+    where T is a type-variable:
+      T extends Object declared in method <T>toList()D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:61: error: cannot find symbol
+                  .uniqId(dto.getUniqId())
+                             ^
+    symbol:   method getUniqId()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:62: error: cannot find symbol
+                  .authorCode(dto.getAuthorCode())
+                                 ^
+    symbol:   method getAuthorCode()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:63: error: cannot find symbol
+                  .mberTyCode(dto.getMberTyCode())
+                                 ^
+    symbol:   method getMberTyCode()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:70: error: cannot find symbol
+          UserAuthority entity = userAuthorityRepository.findById(dto.getUniqId())
+                                                                     ^
+    symbol:   method getUniqId()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:71: error: cannot find symbol
+                  .orElseThrow(() -> new RuntimeException("UserAuthority not found: " + dto.getUniqId()));
+                                                                                           ^
+    symbol:   method getUniqId()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:72: error: cannot find symbol
+          entity.update(dto.getAuthorCode(), dto.getMberTyCode());
+                           ^
+    symbol:   method getAuthorCode()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:72: error: cannot find symbol
+          entity.update(dto.getAuthorCode(), dto.getMberTyCode());
+                                                ^
+    symbol:   method getMberTyCode()
+    location: variable dto of type UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\auth\UserAuthorityService.java:84: error: cannot find symbol
+          return UserAuthorityDto.builder()
+                                 ^
+    symbol:   method builder()
+    location: class UserAuthorityDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:44: error: cannot find symbol
+          return boardMasterRepository.search(condition, pageable)
+                                      ^
+    symbol:   method search(BoardMasterSearchCondition,Pageable)
+    location: variable boardMasterRepository of type BoardMasterRepository
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:60: error: cannot find symbol
+                  .bbsNm(dto.getBbsNm())
+                            ^
+    symbol:   method getBbsNm()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:61: error: cannot find symbol
+                  .bbsIntrcn(dto.getBbsIntrcn())
+                                ^
+    symbol:   method getBbsIntrcn()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:62: error: cannot find symbol
+                  .bbsTyCode(dto.getBbsTyCode())
+                                ^
+    symbol:   method getBbsTyCode()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:63: error: cannot find symbol
+                  .bbsAttrbCode(dto.getBbsAttrbCode())
+                                   ^
+    symbol:   method getBbsAttrbCode()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:64: error: cannot find symbol
+                  .replyPosblAt(dto.getReplyPosblAt())
+                                   ^
+    symbol:   method getReplyPosblAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:65: error: cannot find symbol
+                  .fileAtchPosblAt(dto.getFileAtchPosblAt())
+                                      ^
+    symbol:   method getFileAtchPosblAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:66: error: cannot find symbol
+                  .atchPosblFileNumber(dto.getAtchPosblFileNumber())
+                                          ^
+    symbol:   method getAtchPosblFileNumber()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:67: error: cannot find symbol
+                  .atchPosblFileSize(dto.getAtchPosblFileSize())
+                                        ^
+    symbol:   method getAtchPosblFileSize()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:68: error: cannot find symbol
+                  .tmplatId(dto.getTmplatId())
+                               ^
+    symbol:   method getTmplatId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:70: error: cannot find symbol
+                  .frstRegisterId(dto.getFrstRegisterId())
+                                     ^
+    symbol:   method getFrstRegisterId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:71: error: cannot find symbol
+                  .lastUpdusrId(dto.getFrstRegisterId())
+                                   ^
+    symbol:   method getFrstRegisterId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:72: error: cannot find symbol
+                  .cmmntyId(dto.getCmmntyId())
+                               ^
+    symbol:   method getCmmntyId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:73: error: cannot find symbol
+                  .blogId(dto.getBlogId())
+                             ^
+    symbol:   method getBlogId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:74: error: cannot find symbol
+                  .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
+                             ^
+    symbol:   method getBlogAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:74: error: cannot find symbol
+                  .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
+                                                       ^
+    symbol:   method getBlogAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:83: error: cannot find symbol
+          BoardMaster entity = boardMasterRepository.findById(dto.getBbsId())
+                                                                 ^
+    symbol:   method getBbsId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:96: error: cannot find symbol
+                  dto.getLastUpdusrId());
+                     ^
+    symbol:   method getLastUpdusrId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:95: error: cannot find symbol
+                  dto.getTmplatId(),
+                     ^
+    symbol:   method getTmplatId()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:94: error: cannot find symbol
+                  dto.getAtchPosblFileSize(),
+                     ^
+    symbol:   method getAtchPosblFileSize()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:93: error: cannot find symbol
+                  dto.getAtchPosblFileNumber(),
+                     ^
+    symbol:   method getAtchPosblFileNumber()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:92: error: cannot find symbol
+                  dto.getFileAtchPosblAt(),
+                     ^
+    symbol:   method getFileAtchPosblAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:91: error: cannot find symbol
+                  dto.getReplyPosblAt(),
+                     ^
+    symbol:   method getReplyPosblAt()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:90: error: cannot find symbol
+                  dto.getBbsAttrbCode(),
+                     ^
+    symbol:   method getBbsAttrbCode()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:89: error: cannot find symbol
+                  dto.getBbsTyCode(),
+                     ^
+    symbol:   method getBbsTyCode()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:88: error: cannot find symbol
+                  dto.getBbsIntrcn(),
+                     ^
+    symbol:   method getBbsIntrcn()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\BoardMasterService.java:87: error: cannot find symbol
+                  dto.getBbsNm(),
+                     ^
+    symbol:   method getBbsNm()
+    location: variable dto of type BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:43: error: cannot find symbol
+          return BoardMasterDto.builder()
+                               ^
+    symbol:   method builder()
+    location: class BoardMasterDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:55: error: cannot find symbol
+                  .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                                           ^
+    symbol:   method getFrstRegisterPnttm()
+    location: variable entity of type BoardMaster
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:57: error: cannot find symbol
+                  .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                                         ^
+    symbol:   method getLastUpdusrPnttm()
+    location: variable entity of type BoardMaster
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\dto\BoardMasterDto.java:59: error: cannot find symbol
+                  .cmmntyId(entity.getCmmntyId())
+                                  ^
+    symbol:   method getCmmntyId()
+    location: variable entity of type BoardMaster
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:27: error: cannot find symbol
+                  .satisfactionId(dto.getSatisfactionId())
+                                     ^
+    symbol:   method getSatisfactionId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:28: error: cannot find symbol
+                  .articleId(dto.getArticleId())
+                                ^
+    symbol:   method getArticleId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:29: error: cannot find symbol
+                  .boardId(dto.getBoardId())
+                              ^
+    symbol:   method getBoardId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:30: error: cannot find symbol
+                  .writerId(dto.getWriterId())
+                               ^
+    symbol:   method getWriterId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:31: error: cannot find symbol
+                  .writerNm(dto.getWriterNm())
+                               ^
+    symbol:   method getWriterNm()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:32: error: cannot find symbol
+                  .satisfactionLevel(dto.getSatisfactionLevel())
+                                        ^
+    symbol:   method getSatisfactionLevel()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:33: error: cannot find symbol
+                  .satisfactionOpinion(dto.getSatisfactionOpinion())
+                                          ^
+    symbol:   method getSatisfactionOpinion()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:34: error: cannot find symbol
+                  .password(dto.getSatisfactionPassword()) // Set password
+                               ^
+    symbol:   method getSatisfactionPassword()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:36: error: cannot find symbol
+                  .frstRegisterId(dto.getWriterId())
+                                     ^
+    symbol:   method getWriterId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:37: error: cannot find symbol
+                  .lastUpdusrId(dto.getWriterId())
+                                   ^
+    symbol:   method getWriterId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:45: error: cannot find symbol
+          satisfactionRepository.findById(dto.getSatisfactionId())
+                                             ^
+    symbol:   method getSatisfactionId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                  .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                              ^
+    symbol:   method getSatisfactionLevel()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                  .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                                                          ^
+    symbol:   method getSatisfactionOpinion()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:46: error: cannot find symbol
+                  .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                                                                                                        ^
+    symbol:   method getWriterId()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:47: error: cannot find symbol
+                          dto.getSatisfactionPassword()));
+                             ^
+    symbol:   method getSatisfactionPassword()
+    location: variable dto of type SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:59: error: cannot find symbol
+                  .map(s -> SatisfactionDto.builder()
+                                           ^
+    symbol:   method builder()
+    location: class SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\board\SatisfactionService.java:81: error: cannot find symbol
+          return SatisfactionDto.builder()
+                                ^
+    symbol:   method builder()
+    location: class SatisfactionDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:33: error: cannot find symbol
+                  .id(new AnnualLeave.AnnualLeaveId(dto.getUserId(), dto.getOccrrncYear()))
+                                                       ^
+    symbol:   method getUserId()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:33: error: cannot find symbol
+                  .id(new AnnualLeave.AnnualLeaveId(dto.getUserId(), dto.getOccrrncYear()))
+                                                                        ^
+    symbol:   method getOccrrncYear()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:34: error: cannot find symbol
+                  .occrncYrycCo(dto.getOccrncYrycCo())
+                                   ^
+    symbol:   method getOccrncYrycCo()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:35: error: cannot find symbol
+                  .useYrycCo(dto.getUseYrycCo())
+                                ^
+    symbol:   method getUseYrycCo()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:36: error: cannot find symbol
+                  .remndrYrycCo(dto.getRemndrYrycCo())
+                                   ^
+    symbol:   method getRemndrYrycCo()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:37: error: cannot find symbol
+                  .frstRegisterId(dto.getUserId())
+                                     ^
+    symbol:   method getUserId()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:38: error: cannot find symbol
+                  .lastUpdusrId(dto.getUserId())
+                                   ^
+    symbol:   method getUserId()
+    location: variable dto of type AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\AnnualLeaveService.java:68: error: cannot find symbol
+          return AnnualLeaveDto.builder()
+                               ^
+    symbol:   method builder()
+    location: class AnnualLeaveDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                  .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                 ^
+    symbol:   method getApplcntId()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                  .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                     ^
+    symbol:   method getVcatnSe()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:30: error: cannot find symbol
+                  .id(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                       ^
+    symbol:   method getBgnde()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:31: error: cannot find symbol
+                  .endde(dto.getEndde())
+                            ^
+    symbol:   method getEndde()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:32: error: cannot find symbol
+                  .reqstDe(dto.getReqstDe())
+                              ^
+    symbol:   method getReqstDe()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:33: error: cannot find symbol
+                  .vcatnResn(dto.getVcatnResn())
+                                ^
+    symbol:   method getVcatnResn()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:34: error: cannot find symbol
+                  .occrrncYear(dto.getOccrrncYear())
+                                  ^
+    symbol:   method getOccrrncYear()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:35: error: cannot find symbol
+                  .noonSe(dto.getNoonSe())
+                             ^
+    symbol:   method getNoonSe()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:37: error: cannot find symbol
+                  .infrmlSanctnId(dto.getInfrmlSanctnId())
+                                     ^
+    symbol:   method getInfrmlSanctnId()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:38: error: cannot find symbol
+                  .frstRegisterId(dto.getApplcntId())
+                                     ^
+    symbol:   method getApplcntId()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:39: error: cannot find symbol
+                  .lastUpdusrId(dto.getApplcntId())
+                                   ^
+    symbol:   method getApplcntId()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+          vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                 ^
+    symbol:   method getApplcntId()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+          vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                     ^
+    symbol:   method getVcatnSe()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:47: error: cannot find symbol
+          vacationRepository.findById(new Vacation.VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+                                                                                                       ^
+    symbol:   method getBgnde()
+    location: variable dto of type VacationDto
+  D:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\VacationService.java:95: error: cannot find symbol
+          return VacationDto.builder()
+                            ^
+    symbol:   method builder()
+    location: class VacationDtoD:\project\egov-enterprise\common-service\src\main\java\com\company\project\service\vacation\EgovAnnualLeaveService.java:17: error: method updateAnnualLeaveUsage(String,String,double,double,String) is already defined in interface EgovAnnualLeaveService
+          void updateAnnualLeaveUsage(String userId, String occrrncYear, double useYrycCo, double remndrYrycCo,
+               ^
+  82 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.12/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 10s
+4 actionable tasks: 1 executed, 3 up-to-date

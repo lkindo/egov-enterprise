@@ -15,6 +15,10 @@ dependencies {
     
     // Hibernate Community Dialects (CUBRID 지원)
     implementation 'org.hibernate.orm:hibernate-community-dialects:6.4.0.Final'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 }
 
 // QueryDSL Config

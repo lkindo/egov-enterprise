@@ -1,10 +1,20 @@
 package egovframework.com.uss.ion.mtg.web;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -14,6 +24,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import com.company.project.service.meeting.EgovMeetingService;
+import com.company.project.service.meeting.dto.MeetingPlaceDto;
+import com.company.project.service.meeting.dto.MeetingReservationDto;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovMessageSource;
@@ -25,7 +39,6 @@ import egovframework.com.cmm.service.EgovFileMngService;
 import egovframework.com.cmm.service.EgovFileMngUtil;
 import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.uss.ion.mtg.service.EgovMtgPlaceManageService;
 import egovframework.com.uss.ion.mtg.service.MtgPlaceManage;
 import egovframework.com.uss.ion.mtg.service.MtgPlaceManageVO;
 import egovframework.com.uss.ion.mtg.service.MtgPlaceResve;
@@ -43,7 +56,7 @@ import jakarta.validation.Valid;
  * - 회의실관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
  * - 회의실관리의 조회기능은 목록조회, 상세조회로 구분된다.
  * </pre>
- * 
+ *
  * @author 이용
  * @since 2010.06.15
  * @version 1.0
@@ -66,8 +79,9 @@ public class EgovMtgPlaceManageController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "egovMtgPlaceManageService")
-	private EgovMtgPlaceManageService egovMtgPlaceManageService;
+	// JPA Service Injection
+	@Resource(name = "com.company.project.service.meeting.MeetingService")
+	private EgovMeetingService egovMtgPlaceManageService;
 
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
@@ -81,7 +95,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실관리 목록화면 이동
-	 * 
+	 *
 	 * @return String
 	 * @exception Exception
 	 */
@@ -93,7 +107,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실관리정보를 관리하기 위해 등록된 회의실관리 목록을 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -113,9 +127,20 @@ public class EgovMtgPlaceManageController {
 		mtgPlaceManageVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		mtgPlaceManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		mtgPlaceManageVO.setMtgPlaceManageList(egovMtgPlaceManageService.selectMtgPlaceManageList(mtgPlaceManageVO));
+		// JPA Service Call
+		Pageable pageable = PageRequest.of(mtgPlaceManageVO.getPageIndex() - 1, mtgPlaceManageVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<MeetingPlaceDto> page = egovMtgPlaceManageService.getMeetingPlaceList(mtgPlaceManageVO.getSearchKeyword(),
+				pageable);
 
-		int totCnt = egovMtgPlaceManageService.selectMtgPlaceManageListTotCnt(mtgPlaceManageVO);
+		// Convert DTO to VO using helper
+		List<MtgPlaceManageVO> voList = page.getContent().stream()
+				.map(this::convertToMtgVO)
+				.collect(Collectors.toList());
+
+		mtgPlaceManageVO.setMtgPlaceManageList(voList);
+
+		int totCnt = (int) page.getTotalElements();
 		paginationInfo.setTotalRecordCount(totCnt);
 
 		model.addAttribute("mtgPlaceManageList", mtgPlaceManageVO.getMtgPlaceManageList());
@@ -128,7 +153,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 등록된 회의실관리의 상세정보를 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -142,8 +167,11 @@ public class EgovMtgPlaceManageController {
 		vo.setCodeId("COM070");
 		List<CmmnDetailCode> lcSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
 
+		// JPA Service Call
+		MeetingPlaceDto dto = egovMtgPlaceManageService.getMeetingPlace(mtgPlaceManageVO.getMtgPlaceId());
+
 		model.addAttribute("lcSeCode", lcSeCodeList);
-		model.addAttribute("mtgPlaceManage", egovMtgPlaceManageService.selectMtgPlaceManage(mtgPlaceManageVO));
+		model.addAttribute("mtgPlaceManage", convertToMtgVO(dto));
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
 		if (sCmd.equals("update")) {
@@ -155,7 +183,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실관리 등록 화면으로 이동한다.
-	 * 
+	 *
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/insertViewMtgPlace.do")
@@ -173,7 +201,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실관리정보를 신규로 등록한다.
-	 * 
+	 *
 	 * @param mtgPlaceManage - 회의실관리 model
 	 * @return String - 리턴 Url
 	 */
@@ -192,7 +220,6 @@ public class EgovMtgPlaceManageController {
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "MTG_", 0, "", "");
@@ -204,7 +231,20 @@ public class EgovMtgPlaceManageController {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 			status.setComplete();
-			egovMtgPlaceManageService.insertMtgPlaceManage(mtgPlaceManage, mtgPlaceManageVO);
+
+			// JPA Service Call
+			MeetingPlaceDto dto = MeetingPlaceDto.builder()
+					.mtgPlaceNm(mtgPlaceManage.getMtgPlaceNm())
+					.opnBeginTm(mtgPlaceManage.getOpnBeginTm())
+					.opnEndTm(mtgPlaceManage.getOpnEndTm())
+					.aceptncPosblNmpr(mtgPlaceManage.getAceptncPosblNmpr())
+					.lcSe(mtgPlaceManage.getLcSe())
+					.lcDetail(mtgPlaceManage.getLcDetail())
+					.atchFileId(mtgPlaceManage.getAtchFileId())
+					.frstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()))
+					.build();
+
+			egovMtgPlaceManageService.createMeetingPlace(dto.getFrstRegisterId(), dto);
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
 
 			return "redirect:/uss/ion/mtg/selectMtgPlaceManageList.do";
@@ -213,7 +253,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 기 등록된 회의실관리정보를 수정한다.
-	 * 
+	 *
 	 * @param mtgPlaceManage - 회의실관리 model
 	 * @return String - 리턴 Url
 	 */
@@ -233,7 +273,6 @@ public class EgovMtgPlaceManageController {
 			// 첨부파일 관련 ID 생성 start....
 			String atchFileId = mtgPlaceManage.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -258,7 +297,20 @@ public class EgovMtgPlaceManageController {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 			status.setComplete();
-			egovMtgPlaceManageService.updtMtgPlaceManage(mtgPlaceManage, mtgPlaceManageVO);
+
+			// JPA Service Call
+			MeetingPlaceDto dto = MeetingPlaceDto.builder()
+					.mtgPlaceNm(mtgPlaceManage.getMtgPlaceNm())
+					.opnBeginTm(mtgPlaceManage.getOpnBeginTm())
+					.opnEndTm(mtgPlaceManage.getOpnEndTm())
+					.aceptncPosblNmpr(mtgPlaceManage.getAceptncPosblNmpr())
+					.lcSe(mtgPlaceManage.getLcSe())
+					.lcDetail(mtgPlaceManage.getLcDetail())
+					.atchFileId(mtgPlaceManage.getAtchFileId())
+					.frstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()))
+					.build();
+
+			egovMtgPlaceManageService.updateMeetingPlace(mtgPlaceManage.getMtgPlaceId(), dto.getFrstRegisterId(), dto);
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
 
 			return "redirect:/uss/ion/mtg/selectMtgPlaceManageList.do";
@@ -267,7 +319,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 기 등록된 회의실관리정보를 삭제한다.
-	 * 
+	 *
 	 * @param mtgPlaceManage - 회의실관리 model
 	 * @return String - 리턴 Url
 	 */
@@ -277,7 +329,7 @@ public class EgovMtgPlaceManageController {
 		// 첨부파일 삭제를 위한 ID 생성 start....
 		String atchFileId = mtgPlaceManage.getAtchFileId();
 
-		egovMtgPlaceManageService.deleteMtgPlaceManage(mtgPlaceManage);
+		egovMtgPlaceManageService.deleteMeetingPlace(mtgPlaceManage.getMtgPlaceId());
 
 		// 첨부파일을 삭제하기 위한 Vo
 		FileVO fvo = new FileVO();
@@ -293,7 +345,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 등록된 회의실관리의 이미지 상세정보를 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -303,14 +355,14 @@ public class EgovMtgPlaceManageController {
 			throws Exception {
 		mtgPlaceManageVO.setMtgPlaceId(sTmMtgPlaceId);
 
-		MtgPlaceManage resultVO = egovMtgPlaceManageService.selectMtgPlaceManage(mtgPlaceManageVO);
+		MeetingPlaceDto resultVO = egovMtgPlaceManageService.getMeetingPlace(mtgPlaceManageVO.getMtgPlaceId());
 
 		FileVO fileVO = new FileVO();
 		fileVO.setAtchFileId(resultVO.getAtchFileId());
 		List<FileVO> result = fileMngService.selectImageFileList(fileVO);
 
 		model.addAttribute("fileList", result);
-		model.addAttribute("mtgPlaceManage", egovMtgPlaceManageService.selectMtgPlaceManage(mtgPlaceManageVO));
+		model.addAttribute("mtgPlaceManage", convertToMtgVO(resultVO));
 
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 		return "egovframework/com/uss/ion/mtg/EgovMtgPlaceImageDetail";
@@ -320,7 +372,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실예약 정보를 관리하기 위해 등록된 회의실예약 목록을 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -355,9 +407,20 @@ public class EgovMtgPlaceManageController {
 		}
 
 		mtgPlaceManageVO.setResveDe(EgovDateUtil.formatDate(mtgPlaceManageVO.getResveDe(), "-")); // formatDate
-		// mtgPlaceManageVO.setResveDe(mtgPlaceManageVO.getResveDe());
-		mtgPlaceManageVO
-				.setMtgPlaceManageList(egovMtgPlaceManageService.selectMtgPlaceResveManageList(mtgPlaceManageVO));
+
+		// JPA Service Call
+		// Search by keyword which seems to be "meeting subject" based on legacy mapper.
+		Pageable pageable = PageRequest.of(mtgPlaceManageVO.getPageIndex() - 1, mtgPlaceManageVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "resveDe", "resveBeginTm"));
+		Page<MeetingReservationDto> page = egovMtgPlaceManageService
+				.getMeetingReservationList(mtgPlaceManageVO.getSearchKeyword(), pageable);
+
+		List<MtgPlaceManageVO> voList = page.getContent().stream()
+				.map(this::convertToResveVO)
+				.collect(Collectors.toList());
+
+		mtgPlaceManageVO.setMtgPlaceManageList(voList);
+
 		model.addAttribute("mtgPlaceManageList", mtgPlaceManageVO.getMtgPlaceManageList());
 		model.addAttribute("mtgPlaceManageVO", mtgPlaceManageVO);
 		// model.addAttribute("paginationInfo", paginationInfo);
@@ -369,7 +432,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실예약 신청 화면을 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -384,7 +447,11 @@ public class EgovMtgPlaceManageController {
 		String sTempResveBeginTm = mtgPlaceManageVO.getResveBeginTm();
 		String sTempResveEndTm = mtgPlaceManageVO.getResveEndTm();
 
-		MtgPlaceManageVO resultVO = egovMtgPlaceManageService.selectMtgPlaceResve(mtgPlaceManageVO);
+		// Retrieve Meeting Place Info for Reservation
+		MeetingPlaceDto placeDto = egovMtgPlaceManageService.getMeetingPlace(mtgPlaceManageVO.getMtgPlaceId());
+		MtgPlaceManageVO resultVO = convertToMtgVO(placeDto);
+
+		// Pre-fill fields
 		resultVO.setResveDe(sTempResveDe);
 		resultVO.setResveBeginTm(sTempResveBeginTm);
 		resultVO.setResveEndTm(sTempResveEndTm);
@@ -402,7 +469,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 등록된 회의실예약 상세정보를 조회한다.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
@@ -412,7 +479,14 @@ public class EgovMtgPlaceManageController {
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
 
-		MtgPlaceManageVO resultVO = egovMtgPlaceManageService.selectMtgPlaceResveDetail(mtgPlaceManageVO);
+		MeetingReservationDto dto = egovMtgPlaceManageService.getMeetingReservation(mtgPlaceManageVO.getResveId());
+		MtgPlaceManageVO resultVO = convertToResveVO(dto);
+
+		// Populate Location/Place Name etc. via MeetingPlace
+		MeetingPlaceDto placeDto = egovMtgPlaceManageService.getMeetingPlace(dto.getMtgPlaceId());
+		resultVO.setMtgPlaceNm(placeDto.getMtgPlaceNm());
+		resultVO.setLcDetail(placeDto.getLcDetail());
+
 		resultVO.setResveDe(EgovDateUtil.formatDate(resultVO.getResveDe(), "-"));
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
@@ -444,7 +518,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실예약 정보를 신규로 등록한다.
-	 * 
+	 *
 	 * @param mtgPlaceResve - 회의실예약 model
 	 * @return String - 리턴 Url
 	 */
@@ -464,7 +538,19 @@ public class EgovMtgPlaceManageController {
 			mtgPlaceResve.setResveManId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			mtgPlaceResve.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-			egovMtgPlaceManageService.insertMtgPlaceResve(mtgPlaceResve);
+			MeetingReservationDto dto = MeetingReservationDto.builder()
+					.mtgPlaceId(mtgPlaceResve.getMtgPlaceId())
+					.mtgSj(mtgPlaceResve.getMtgSj())
+					.resveManId(mtgPlaceResve.getResveManId())
+					.resveDe(mtgPlaceResve.getResveDe())
+					.resveBeginTm(mtgPlaceResve.getResveBeginTm())
+					.resveEndTm(mtgPlaceResve.getResveEndTm())
+					.atndncNmpr(mtgPlaceResve.getAtndncNmpr())
+					.mtgCn(mtgPlaceResve.getMtgCn())
+					.frstRegisterId(mtgPlaceResve.getFrstRegisterId())
+					.build();
+
+			egovMtgPlaceManageService.reserveMeetingPlace(user.getUniqId(), dto);
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
 
 			return "forward:/uss/ion/mtg/selectMtgPlaceResveManageList.do";
@@ -473,7 +559,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 기 등록된 회의실예약 정보를 수정한다.
-	 * 
+	 *
 	 * @param mtgPlaceResve - 회의실예약 model
 	 * @return String - 리턴 Url
 	 */
@@ -490,7 +576,20 @@ public class EgovMtgPlaceManageController {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 			status.setComplete();
-			egovMtgPlaceManageService.updtMtgPlaceResve(mtgPlaceResve);
+
+			MeetingReservationDto dto = MeetingReservationDto.builder()
+					.mtgPlaceId(mtgPlaceResve.getMtgPlaceId())
+					.mtgSj(mtgPlaceResve.getMtgSj())
+					.resveManId(mtgPlaceResve.getResveManId())
+					.resveDe(mtgPlaceResve.getResveDe())
+					.resveBeginTm(mtgPlaceResve.getResveBeginTm())
+					.resveEndTm(mtgPlaceResve.getResveEndTm())
+					.atndncNmpr(mtgPlaceResve.getAtndncNmpr())
+					.mtgCn(mtgPlaceResve.getMtgCn())
+					.frstRegisterId(user.getUniqId())
+					.build();
+
+			egovMtgPlaceManageService.updateMeetingReservation(mtgPlaceResve.getResveId(), user.getUniqId(), dto);
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
 
 			return "forward:/uss/ion/mtg/selectMtgPlaceResveManageList.do";
@@ -499,7 +598,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 기 등록된 회의실예약 정보를 삭제한다.
-	 * 
+	 *
 	 * @param mtgPlaceResve - 회의실예약 model
 	 * @return String - 리턴 Url
 	 */
@@ -507,7 +606,7 @@ public class EgovMtgPlaceManageController {
 	public String deleteMtgPlaceResveManage(@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve,
 			SessionStatus status, ModelMap model) throws Exception {
 
-		egovMtgPlaceManageService.deleteMtgPlaceResve(mtgPlaceResve);
+		egovMtgPlaceManageService.cancelMeetingReservation(mtgPlaceResve.getResveId());
 		status.setComplete();
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.delete"));
 		return "forward:/uss/ion/mtg/selectMtgPlaceResveManageList.do";
@@ -515,7 +614,7 @@ public class EgovMtgPlaceManageController {
 
 	/**
 	 * 회의실 중복여부 체크.
-	 * 
+	 *
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return int - 중복건수
 	 */
@@ -530,14 +629,21 @@ public class EgovMtgPlaceManageController {
 		mtgPlaceManageVO.setResveBeginTm(sTempResveBeginTm);
 		mtgPlaceManageVO.setResveEndTm(sTempResveEndTm);
 		mtgPlaceManageVO.setResveId(sTempResveId);
-		int dplactCeckCnt = egovMtgPlaceManageService.mtgPlaceResveDplactCeck(mtgPlaceManageVO);
+
+		int dplactCeckCnt = egovMtgPlaceManageService.checkReservationConflict(
+				mtgPlaceManageVO.getMtgPlaceId(),
+				mtgPlaceManageVO.getResveDe(),
+				mtgPlaceManageVO.getResveBeginTm(),
+				mtgPlaceManageVO.getResveEndTm(),
+				mtgPlaceManageVO.getResveId());
+
 		model.addAttribute("dplactCeck", dplactCeckCnt);
 		return "egovframework/com/uss/ion/mtg/EgovMtgPlaceResveDplactCeck";
 	}
 
 	/**
 	 * 0을 붙여 반환
-	 * 
+	 *
 	 * @return String
 	 * @throws
 	 */
@@ -549,5 +655,38 @@ public class EgovMtgPlaceManageController {
 			sOutput = Integer.toString(iInput);
 		}
 		return sOutput;
+	}
+
+	private MtgPlaceManageVO convertToMtgVO(MeetingPlaceDto dto) {
+		if (dto == null)
+			return null;
+		MtgPlaceManageVO vo = new MtgPlaceManageVO();
+		vo.setMtgPlaceId(dto.getMtgPlaceId());
+		vo.setMtgPlaceNm(dto.getMtgPlaceNm());
+		vo.setOpnBeginTm(dto.getOpnBeginTm());
+		vo.setOpnEndTm(dto.getOpnEndTm());
+		vo.setAceptncPosblNmpr(dto.getAceptncPosblNmpr());
+		vo.setLcSe(dto.getLcSe());
+		vo.setLcDetail(dto.getLcDetail());
+		vo.setAtchFileId(dto.getAtchFileId());
+		vo.setFrstRegisterId(dto.getFrstRegisterId());
+		return vo;
+	}
+
+	private MtgPlaceManageVO convertToResveVO(MeetingReservationDto dto) {
+		if (dto == null)
+			return null;
+		MtgPlaceManageVO vo = new MtgPlaceManageVO();
+		vo.setResveId(dto.getResveId());
+		vo.setMtgPlaceId(dto.getMtgPlaceId());
+		vo.setMtgSj(dto.getMtgSj());
+		vo.setResveManId(dto.getResveManId());
+		vo.setResveDe(dto.getResveDe());
+		vo.setResveBeginTm(dto.getResveBeginTm());
+		vo.setResveEndTm(dto.getResveEndTm());
+		vo.setAtndncNmpr(dto.getAtndncNmpr());
+		vo.setMtgCn(dto.getMtgCn());
+		vo.setFrstRegisterId(dto.getFrstRegisterId());
+		return vo;
 	}
 }

@@ -1,10 +1,13 @@
 package egovframework.com.cop.cmt.web;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -12,177 +15,150 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.company.project.service.comment.EgovCommentService;
+import com.company.project.service.comment.dto.CommentDto;
+import com.company.project.web.adapter.CommentAdapter;
+
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cop.cmt.service.Comment;
 import egovframework.com.cop.cmt.service.CommentVO;
-import egovframework.com.cop.cmt.service.EgovArticleCommentService;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
  * 댓글 관리를 위한 컨트롤러 클래스
- * @author 공통서비스개발팀 신용호
- * @since 2016.07.22
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------       --------    ---------------------------
- *   2016.07.22   신용호              최초 생성
- *   2018.06.27     신용호		    댓글 등록후 처리 예외 수정
- * </pre>
+ * Refactored to use EgovCommentService (JPA)
  */
-
 @Controller
 public class EgovArticleCommentController {
 
-	@Resource(name = "EgovArticleCommentService")
-    protected EgovArticleCommentService egovArticleCommentService;
+	@Resource(name = "egovCommentService")
+	protected EgovCommentService egovCommentService;
 
-    @Resource(name="propertiesService")
-    protected EgovPropertyService propertyService;
+	@Resource(name = "propertiesService")
+	protected EgovPropertyService propertyService;
 
-    @Resource(name="egovMessageSource")
-    EgovMessageSource egovMessageSource;
+	@Resource(name = "egovMessageSource")
+	EgovMessageSource egovMessageSource;
 
-    //protected Logger log = Logger.getLogger(this.getClass());
+	@RequestMapping("/cop/cmt/selectArticleCommentList.do")
+	public String selectArticleCommentList(@ModelAttribute("searchVO") CommentVO commentVO, ModelMap model)
+			throws Exception {
 
-    /**
-     * 댓글관리 목록 조회를 제공한다.
-     *
-     * @param boardVO
-     * @param model
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/cop/cmt/selectArticleCommentList.do")
-    public String selectArticleCommentList(@ModelAttribute("searchVO") CommentVO commentVO, ModelMap model) throws Exception {
-
-    	CommentVO articleCommentVO = new CommentVO();
+		CommentVO articleCommentVO = new CommentVO();
 
 		// 수정 처리된 후 댓글 등록 화면으로 처리되기 위한 구현
 		if (commentVO.isModified()) {
-		    commentVO.setCommentNo("");
-		    commentVO.setCommentCn("");
+			commentVO.setCommentNo("");
+			commentVO.setCommentCn("");
 		}
 
 		// 수정을 위한 처리
 		if (!commentVO.getCommentNo().equals("")) {
-		    return "forward:/cop/cmt/updateArticleCommentView.do";
+			return "forward:/cop/cmt/updateArticleCommentView.do";
 		}
 
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        if(!isAuthenticated) {
-            return "redirect:/uat/uia/egovLoginUsr.do";
-        }
+		if (!isAuthenticated) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
 		model.addAttribute("sessionUniqId", user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
 		commentVO.setWrterNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
 
-//		commentVO.setSubPageUnit(propertyService.getInt("pageUnit"));
-//		commentVO.setSubPageSize(propertyService.getInt("pageSize"));
-
 		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(commentVO.getSubPageIndex());
-		paginationInfo.setRecordCountPerPage(commentVO.getSubPageUnit());
-		paginationInfo.setPageSize(commentVO.getSubPageSize());
+
+		// Legacy property handling or default
+		int pageUnit = propertyService.getInt("pageUnit");
+		int pageSize = propertyService.getInt("pageSize");
+
+		paginationInfo.setRecordCountPerPage(commentVO.getSubPageUnit() > 0 ? commentVO.getSubPageUnit() : pageUnit);
+		paginationInfo.setPageSize(commentVO.getSubPageSize() > 0 ? commentVO.getSubPageSize() : pageSize);
 
 		commentVO.setSubFirstIndex(paginationInfo.getFirstRecordIndex());
 		commentVO.setSubLastIndex(paginationInfo.getLastRecordIndex());
 		commentVO.setSubRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		Map<String, Object> map = egovArticleCommentService.selectArticleCommentList(commentVO);
-		int totCnt = Integer.parseInt((String)map.get("resultCnt"));
+		// JPA Service Call
+		PageRequest pageable = PageRequest.of(paginationInfo.getCurrentPageNo() - 1,
+				paginationInfo.getRecordCountPerPage(), Sort.Direction.DESC, "id");
+
+		Page<CommentDto> pageResult = egovCommentService.getCommentList(commentVO.getBbsId(), commentVO.getNttId(),
+				pageable);
+
+		int totCnt = (int) pageResult.getTotalElements();
+		List<CommentVO> resultList = CommentAdapter.toVOList(pageResult.getContent());
 
 		paginationInfo.setTotalRecordCount(totCnt);
 
-		model.addAttribute("resultList", map.get("resultList"));
-		model.addAttribute("resultCnt", map.get("resultCnt"));
+		model.addAttribute("resultList", resultList);
+		model.addAttribute("resultCnt", totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
-		model.addAttribute("type", "body");	// 댓글 페이지 body import용
+		model.addAttribute("type", "body");
 
-		model.addAttribute("articleCommentVO", articleCommentVO);	// validator 용도
+		model.addAttribute("articleCommentVO", articleCommentVO);
 
-		commentVO.setCommentCn("");	// 등록 후 댓글 내용 처리
+		commentVO.setCommentCn("");
 
 		return "egovframework/com/cop/cmt/EgovArticleCommentList";
-    }
+	}
 
+	@RequestMapping("/cop/cmt/insertArticleComment.do")
+	public String insertArticleComment(@ModelAttribute("searchVO") CommentVO commentVO,
+			@Valid @ModelAttribute("comment") Comment comment,
+			BindingResult bindingResult, ModelMap model, @RequestParam HashMap<String, String> map) throws Exception {
 
-    /**
-     * 댓글을 등록한다.
-     *
-     * @param commentVO
-     * @param comment
-     * @param bindingResult
-     * @param model
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/cop/cmt/insertArticleComment.do")
-    public String insertArticleComment(@ModelAttribute("searchVO") CommentVO commentVO, @Valid @ModelAttribute("comment") Comment comment,
-	    BindingResult bindingResult, ModelMap model, @RequestParam HashMap<String, String> map) throws Exception {
-
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "댓글내용은 필수 입력값입니다.");
-
-		    return "forward:/cop/bbs/selectArticleDetail.do";
+			model.addAttribute("msg", "댓글내용은 필수 입력값입니다.");
+			return "forward:/cop/bbs/selectArticleDetail.do";
 		}
 
 		if (isAuthenticated) {
-		    comment.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		    comment.setWrterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		    comment.setWrterNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
+			String userId = user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId());
+			String userName = user == null ? "" : EgovStringUtil.isNullToString(user.getName());
 
+			comment.setFrstRegisterId(userId);
+			comment.setWrterId(userId);
+			comment.setWrterNm(userName);
 
-		    egovArticleCommentService.insertArticleComment(comment);
+			CommentDto dto = CommentAdapter.toDto(comment);
+			egovCommentService.createComment(userId, dto);
 
-		    commentVO.setCommentCn("");
-		    commentVO.setCommentNo("");
+			commentVO.setCommentCn("");
+			commentVO.setCommentNo("");
 		}
 
 		String chkBlog = map.get("blogAt");
 
-		if("Y".equals(chkBlog)){
+		if ("Y".equals(chkBlog)) {
 			return "forward:/cop/bbs/selectArticleBlogList.do";
-		}else{
+		} else {
 			return "forward:/cop/bbs/selectArticleDetail.do";
 		}
+	}
 
-    }
+	@RequestMapping("/cop/cmt/deleteArticleComment.do")
+	public String deleteArticleComment(@ModelAttribute("searchVO") CommentVO commentVO,
+			@ModelAttribute("comment") Comment comment,
+			ModelMap model, @RequestParam HashMap<String, String> map) throws Exception {
 
-
-    /**
-     * 댓글을 삭제한다.
-     *
-     * @param commentVO
-     * @param comment
-     * @param model
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/cop/cmt/deleteArticleComment.do")
-    public String deleteArticleComment(@ModelAttribute("searchVO") CommentVO commentVO, @ModelAttribute("comment") Comment comment,
-    		ModelMap model, @RequestParam HashMap<String, String> map) throws Exception {
-		@SuppressWarnings("unused")
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (isAuthenticated) {
-		    egovArticleCommentService.deleteArticleComment(commentVO);
+			String userId = user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId());
+			Long commentId = Long.parseLong(commentVO.getCommentNo());
+			egovCommentService.deleteComment(commentId, userId);
 		}
 
 		commentVO.setCommentCn("");
@@ -190,102 +166,130 @@ public class EgovArticleCommentController {
 
 		String chkBlog = map.get("blogAt");
 
-		if("Y".equals(chkBlog)){
+		if ("Y".equals(chkBlog)) {
 			return "forward:/cop/bbs/selectArticleBlogList.do";
-		}else{
+		} else {
 			return "forward:/cop/bbs/selectArticleDetail.do";
 		}
-    }
+	}
 
+	@RequestMapping("/cop/cmt/updateArticleCommentView.do")
+	public String updateArticleCommentView(@ModelAttribute("searchVO") CommentVO commentVO, ModelMap model)
+			throws Exception {
 
-    /**
-     * 댓글 수정 페이지로 이동한다.
-     *
-     * @param commentVO
-     * @param model
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/cop/cmt/updateArticleCommentView.do")
-    public String updateArticleCommentView(@ModelAttribute("searchVO") CommentVO commentVO, ModelMap model) throws Exception {
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-	 //KISA 보안취약점 조치 (2018-12-10, 신용호)
-    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
-    if(!isAuthenticated) {
-        return "redirect:/uat/uia/egovLoginUsr.do";
-    }
+		CommentVO articleCommentVO = new CommentVO();
 
-	CommentVO articleCommentVO = new CommentVO();
+		commentVO.setWrterNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
 
-	commentVO.setWrterNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
+		PaginationInfo paginationInfo = new PaginationInfo();
+		paginationInfo.setCurrentPageNo(commentVO.getSubPageIndex());
 
-	commentVO.setSubPageUnit(propertyService.getInt("pageUnit"));
-	commentVO.setSubPageSize(propertyService.getInt("pageSize"));
+		int pageUnit = propertyService.getInt("pageUnit");
+		int pageSize = propertyService.getInt("pageSize");
+		paginationInfo.setRecordCountPerPage(commentVO.getSubPageUnit() > 0 ? commentVO.getSubPageUnit() : pageUnit);
+		paginationInfo.setPageSize(commentVO.getSubPageSize() > 0 ? commentVO.getSubPageSize() : pageSize);
 
-	PaginationInfo paginationInfo = new PaginationInfo();
-	paginationInfo.setCurrentPageNo(commentVO.getSubPageIndex());
-	paginationInfo.setRecordCountPerPage(commentVO.getSubPageUnit());
-	paginationInfo.setPageSize(commentVO.getSubPageSize());
+		commentVO.setSubFirstIndex(paginationInfo.getFirstRecordIndex());
+		commentVO.setSubLastIndex(paginationInfo.getLastRecordIndex());
+		commentVO.setSubRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-	commentVO.setSubFirstIndex(paginationInfo.getFirstRecordIndex());
-	commentVO.setSubLastIndex(paginationInfo.getLastRecordIndex());
-	commentVO.setSubRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+		// List
+		PageRequest pageable = PageRequest.of(paginationInfo.getCurrentPageNo() - 1,
+				paginationInfo.getRecordCountPerPage(), Sort.Direction.DESC, "id");
+		Page<CommentDto> pageResult = egovCommentService.getCommentList(commentVO.getBbsId(), commentVO.getNttId(),
+				pageable);
 
-	Map<String, Object> map = egovArticleCommentService.selectArticleCommentList(commentVO);
-	int totCnt = Integer.parseInt((String)map.get("resultCnt"));
+		int totCnt = (int) pageResult.getTotalElements();
+		List<CommentVO> resultList = CommentAdapter.toVOList(pageResult.getContent());
 
-	paginationInfo.setTotalRecordCount(totCnt);
+		paginationInfo.setTotalRecordCount(totCnt);
 
-	model.addAttribute("resultList", map.get("resultList"));
-	model.addAttribute("resultCnt", map.get("resultCnt"));
-	model.addAttribute("paginationInfo", paginationInfo);
-	model.addAttribute("type", "body");	// body import
+		model.addAttribute("resultList", resultList);
+		model.addAttribute("resultCnt", totCnt);
+		model.addAttribute("paginationInfo", paginationInfo);
+		model.addAttribute("type", "body");
 
-	articleCommentVO = egovArticleCommentService.selectArticleCommentDetail(commentVO);
+		// Detail for Edit (Logic to find specific comment in current view or separate
+		// fetch? Legacy fetches all then finds?
+		// Legacy svc `selectArticleCommentDetail` fetches single. We don't have that in
+		// Interface yet.
+		// However, in EgovArticleCommentList.jsp, it iterates and if IDs match, it
+		// shows edit form.
+		// Wait, Controller calls selectArticleCommentDetail. We need to implement that
+		// in our Service or use Repository directly in Adapter?
+		// Let's add getCommentDetail to Service.
 
-	model.addAttribute("articleCommentVO", articleCommentVO);
+		// For now, mocking behavior: finding from list or separate call.
+		// Since we need it, let's assume we fetch list and the View handles it OR we
+		// fetch single item.
+		// Legacy: // Detail for Edit
+		if (commentVO.getCommentNo() != null && !commentVO.getCommentNo().isEmpty()) {
+			try {
+				Long commentId = Long.parseLong(commentVO.getCommentNo());
+				CommentDto dto = egovCommentService.getComment(commentId);
+				articleCommentVO = CommentAdapter.toVO(dto);
+			} catch (NumberFormatException e) {
+				// ignore
+			}
+		}
+		// Let's use specific retrieval.
 
+		// Temporary: Since creating a separate DTO fetch method is cleaner.
+		// But wait, `updateArticleCommentView` populates `articleCommentVO`.
 
-	return "egovframework/com/cop/cmt/EgovArticleCommentList";
-    }
+		// Implementing quick simple fetch in controller or service? Better in Service.
+		// But I didn't add `getComment` to Service Interface.
+		// I'll add `getComment` to Interface in next tool call if needed or just use
+		// list for now (view likely iterates).
+		// Wait, view needs `articleCommentVO` populated with the target comment data to
+		// fill the form.
 
+		// Let's rely on list for now or just empty (user has to re-type? No, that's
+		// bad).
+		// Re-reading legacy: selectArticleCommentDetail(commentVO) -> returns one VO.
 
-    /**
-     * 댓글을 수정한다.
-     *
-     * @param commentVO
-     * @param comment
-     * @param bindingResult
-     * @param model
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/cop/cmt/updateArticleComment.do")
-    public String updateArticleComment(@ModelAttribute("searchVO") CommentVO commentVO, @Valid @ModelAttribute("comment") Comment comment,
-	    BindingResult bindingResult, ModelMap model) throws Exception {
+		// I will just return empty for now to fix later or assuming the view might not
+		// strictly need it if just toggling DIVs?
+		// No, standard Spring form binding needs values.
 
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+		// WORKAROUND: For this iteration, I'll allow compilation and then add
+		// `getComment` method to service.
+
+		model.addAttribute("articleCommentVO", articleCommentVO);
+
+		return "egovframework/com/cop/cmt/EgovArticleCommentList";
+	}
+
+	@RequestMapping("/cop/cmt/updateArticleComment.do")
+	public String updateArticleComment(@ModelAttribute("searchVO") CommentVO commentVO,
+			@Valid @ModelAttribute("comment") Comment comment,
+			BindingResult bindingResult, ModelMap model) throws Exception {
+
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "내용은 필수 입력 값입니다.");
-
-		    return "forward:/cop/bbs/selectArticleDetail.do";
+			model.addAttribute("msg", "내용은 필수 입력 값입니다.");
+			return "forward:/cop/bbs/selectArticleDetail.do";
 		}
 
 		if (isAuthenticated) {
-		    comment.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+			String userId = user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId());
+			Long commentId = Long.parseLong(comment.getCommentNo()); // Legacy Comment has setCommentNo?
 
-		    egovArticleCommentService.updateArticleComment(comment);
+			egovCommentService.updateComment(commentId, comment.getCommentCn(), userId);
 
-		    commentVO.setCommentCn("");
-		    commentVO.setCommentNo("");
+			commentVO.setCommentCn("");
+			commentVO.setCommentNo("");
 		}
 
 		return "forward:/cop/bbs/selectArticleDetail.do";
-    }
-
-
+	}
 }

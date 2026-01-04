@@ -8,6 +8,7 @@ import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.board.dto.BoardDto;
+import com.company.project.service.file.EgovFileService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,13 +18,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 
 /**
  * BoardService 단위 테스트
@@ -39,6 +47,9 @@ class BoardServiceTest {
 
         @Mock
         private UserRepository userRepository;
+
+        @Mock
+        private EgovFileService fileService;
 
         @InjectMocks
         private BoardService boardService;
@@ -65,11 +76,7 @@ class BoardServiceTest {
                 Page<Board> boards = new PageImpl<>(List.of(board));
 
                 when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-                // search(BoardSearchCondition condition, Pageable pageable) 호출에 맞게 any() 또는 구체적
-                // 객체 사용
-                when(boardRepository.search(org.mockito.ArgumentMatchers.any(),
-                                org.mockito.ArgumentMatchers.eq(pageable)))
-                                .thenReturn(boards);
+                when(boardRepository.search(any(), eq(pageable))).thenReturn(boards);
 
                 // when
                 Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
@@ -116,5 +123,40 @@ class BoardServiceTest {
                 // then
                 assertThat(result.getNttSj()).isEqualTo("테스트 제목");
                 assertThat(board.getInqireCo()).isEqualTo(1); // 조회수 1 증가
+        }
+
+        @Test
+        @DisplayName("파일 첨부 게시물 등록 성공")
+        void createPostWithFiles_success() throws IOException {
+                // given
+                String userId = "USER_01";
+                String bbsId = "TEST_BBS";
+                String atchFileId = "FILE_01";
+
+                com.company.project.service.board.dto.BoardSaveRequest request = new com.company.project.service.board.dto.BoardSaveRequest(
+                                bbsId, "Title", "Content", "2023-01-01", "2023-12-31", null);
+
+                List<MultipartFile> files = List.of(mock(MultipartFile.class));
+
+                BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+                com.company.project.domain.user.User user = com.company.project.domain.user.User.builder()
+                                .esntlId(userId).userNm("Tester").build();
+                Board savedBoard = Board.builder().nttId(1L).atchFileId(atchFileId).build();
+
+                when(fileService.uploadFiles(files)).thenReturn(atchFileId);
+                when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
+                when(userRepository.findByEsntlId(userId)).thenReturn(Optional.of(user));
+                when(boardRepository.findMaxNttId()).thenReturn(0L);
+                when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
+                when(boardRepository.save(any(Board.class))).thenReturn(savedBoard);
+
+                // when
+                Long result = boardService.createPostWithFiles(userId, request, files);
+
+                // then
+                assertThat(result).isEqualTo(1L);
+                verify(fileService).uploadFiles(files);
+                verify(boardRepository).save(argThat(
+                                board -> board.getAtchFileId().equals(atchFileId) && board.getNtcrId().equals(userId)));
         }
 }

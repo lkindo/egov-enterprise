@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
+@Entity(name = "BoardTemplate")
 @Table(name = "NTMPLATINFO")
 public class Template {
 

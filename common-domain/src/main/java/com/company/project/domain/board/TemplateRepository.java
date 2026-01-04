@@ -5,6 +5,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository
+@Repository("boardTemplateRepository")
 public interface TemplateRepository extends JpaRepository<Template, String> {
 }

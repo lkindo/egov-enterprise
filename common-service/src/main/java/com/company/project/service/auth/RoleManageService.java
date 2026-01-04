@@ -76,6 +76,16 @@ public class RoleManageService {
     }
 
     /**
+     * 롤 수정
+     */
+    @Transactional
+    public void updateRole(RoleManageDto dto) {
+        roleInfoRepository.findById(dto.getRoleCode()).ifPresent(entity -> {
+            entity.update(dto.getRoleNm(), dto.getRolePttrn(), dto.getRoleDc(), dto.getRoleTy(), dto.getRoleSort());
+        });
+    }
+
+    /**
      * 롤 삭제
      */
     @Transactional

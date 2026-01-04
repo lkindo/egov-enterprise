@@ -1,108 +1,73 @@
 package egovframework.com.sts.cst.web;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.commons.validator.GenericValidator;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.company.project.service.stats.EgovStatsService;
+import com.company.project.service.stats.dto.StatsDto;
+import com.company.project.web.adapter.StatsAdapter;
+
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
-import egovframework.com.sts.cst.service.EgovConectStatsService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 접속 통계 검색 컨트롤러 클래스
- * 
- * @author 공통서비스 개발팀 박지욱
- * @since 2009.03.19
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자          수정내용
- *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.cst)
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *
- *      </pre>
+ * 접속 통계 Controller (JPA 전환)
  */
-
 @Controller
+@RequiredArgsConstructor
 public class EgovConectStatsController {
 
-	/** EgovConectStatsService */
-	@org.springframework.context.annotation.Lazy
-	@Resource(name = "conectStatsService")
-	private EgovConectStatsService conectStatsService;
-
-	/** EgovCmmUseService */
-	/*
-	 * @Resource(name="EgovCmmUseService")
-	 * private EgovCmmUseService cmmUseService;
-	 */
+	private final EgovStatsService egovStatsService;
 
 	/**
-	 * 접속 통계를 조회한다
-	 * 
-	 * @param statsVO StatsVO
-	 * @return String
-	 * @exception Exception
+	 * 접속 통계 조회
 	 */
-	@IncludedInfo(name = "접속통계", listUrl = "/sts/cst/selectConectStats.do", order = 140, gid = 30)
+	@IncludedInfo(name = "접속통계", order = 200, gid = 30)
 	@RequestMapping(value = "/sts/cst/selectConectStats.do")
-	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO,
-			ModelMap model) throws Exception {
+	public String selectConectStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
-		if (statsVO.getFromDate() != null && !"".equals(statsVO.getFromDate())) {
+		// 기본값 설정
+		if (statsVO.getFromDate() == null || statsVO.getFromDate().isEmpty()) {
+			statsVO.setFromDate(java.time.LocalDate.now().minusMonths(1).toString());
+		}
+		if (statsVO.getToDate() == null || statsVO.getToDate().isEmpty()) {
+			statsVO.setToDate(java.time.LocalDate.now().toString());
+		}
+		if (statsVO.getStatsKind() == null || statsVO.getStatsKind().isEmpty()) {
+			statsVO.setStatsKind("day");
+		}
 
-			List<StatsVO> conectStats = conectStatsService.selectConectStats(statsVO);
+		// JPA 서비스 호출
+		List<StatsDto> dtoList = egovStatsService.getConnectionStats(
+				statsVO.getFromDate(),
+				statsVO.getToDate(),
+				statsVO.getStatsKind());
 
-			// 1. 서비스별
-			if ("SERVICE".equals(statsVO.getStatsKind())) {
-				model.addAttribute("conectStats", conectStats);
-				model.addAttribute("statsInfo", statsVO);
-				// 2. 개인별
-			} else {
-				// 그래프에 표시될 이미지 길이를 결정한다.
-				float iMaxUnit = 50.0f;
-				for (StatsVO conectStat : conectStats) {
-					StatsVO vo = conectStat;
-					int iCnt = vo.getStatsCo();
-					if (iCnt > 10 && iCnt <= 100) {
-						if (iMaxUnit > 5.0f) {
-							iMaxUnit = 5.0f;
-						}
-					} else if (iCnt > 100 && iCnt <= 1000) {
-						if (iMaxUnit > 0.5f) {
-							iMaxUnit = 0.5f;
-						}
-					} else if (iCnt > 1000) {
-						if (iMaxUnit > 0.05f) {
-							iMaxUnit = 0.05f;
-						}
-					}
-				}
-				statsVO.setMaxUnit(iMaxUnit);
-				model.addAttribute("conectStats", conectStats);
-				model.addAttribute("statsInfo", statsVO);
-			}
-			if (GenericValidator.isDate(statsVO.getFromDate(), "yyyyMMdd", true)) {
-				model.addAttribute("fDate", (LocalDate.parse(statsVO.getFromDate(), DateTimeFormatter.BASIC_ISO_DATE)
-						.format(DateTimeFormatter.ISO_LOCAL_DATE)));
-			}
-			if (GenericValidator.isDate(statsVO.getToDate(), "yyyyMMdd", true)) {
-				model.addAttribute("tDate", (LocalDate.parse(statsVO.getToDate(), DateTimeFormatter.BASIC_ISO_DATE)
-						.format(DateTimeFormatter.ISO_LOCAL_DATE)));
+		List<StatsVO> resultList = dtoList.stream()
+				.map(StatsAdapter::toVO)
+				.collect(Collectors.toList());
+
+		// 최대값 계산 (그래프용)
+		int maxStatsCo = resultList.stream()
+				.mapToInt(StatsVO::getStatsCo)
+				.max().orElse(0);
+
+		for (StatsVO vo : resultList) {
+			vo.setMaxStatsCo(maxStatsCo);
+			if (maxStatsCo > 0) {
+				vo.setMaxUnit((float) vo.getStatsCo() / maxStatsCo * 100);
 			}
 		}
+
+		model.addAttribute("resultList", resultList);
+		model.addAttribute("statsVO", statsVO);
+
 		return "egovframework/com/sts/cst/EgovConectStats";
 	}
 }

@@ -10,15 +10,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.company.project.service.code.EgovCommonCodeService;
+import com.company.project.service.code.dto.CmmnClCodeDto;
+import com.company.project.web.adapter.CommonCodeAdapter;
+
+import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.sym.ccm.ccc.service.CmmnClCode;
 import egovframework.com.sym.ccm.ccc.service.CmmnClCodeVO;
-import egovframework.com.sym.ccm.ccc.service.EgovCcmCmmnClCodeManageService;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 공통분류코드에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한
@@ -43,8 +45,9 @@ import jakarta.validation.Valid;
  */
 @Controller
 public class EgovCcmCmmnClCodeManageController {
-	@Resource(name = "CmmnClCodeManageService")
-	private EgovCcmCmmnClCodeManageService cmmnClCodeManageService;
+
+	@Resource(name = "egovCommonCodeService")
+	private EgovCommonCodeService egovCommonCodeService;
 
 	/** EgovPropertyService */
 	@Resource(name = "propertiesService")
@@ -82,10 +85,20 @@ public class EgovCcmCmmnClCodeManageController {
 		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		List<CmmnClCodeVO> resultList = cmmnClCodeManageService.selectCmmnClCodeList(searchVO);
+		// Use Adapter and Service
+		ComDefaultVO commonSearchVO = new ComDefaultVO();
+		commonSearchVO.setPageIndex(searchVO.getPageIndex());
+		commonSearchVO.setPageUnit(searchVO.getPageUnit());
+		commonSearchVO.setPageSize(searchVO.getPageSize());
+		commonSearchVO.setSearchCondition(searchVO.getSearchCondition());
+		commonSearchVO.setSearchKeyword(searchVO.getSearchKeyword());
+
+		List<CmmnClCodeDto> dtoList = egovCommonCodeService.selectCmmnClCodeList(commonSearchVO);
+		List<CmmnClCodeVO> resultList = CommonCodeAdapter.toClCodeVOList(dtoList);
+
 		model.addAttribute("resultList", resultList);
 
-		int totCnt = cmmnClCodeManageService.selectCmmnClCodeListTotCnt(searchVO);
+		int totCnt = egovCommonCodeService.selectCmmnClCodeListTotCnt(commonSearchVO);
 		paginationInfo.setTotalRecordCount(totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 
@@ -105,7 +118,9 @@ public class EgovCcmCmmnClCodeManageController {
 	public String selectCmmnClCodeDetail(@ModelAttribute("loginVO") LoginVO loginVO, CmmnClCodeVO cmmnClCodeVO,
 			ModelMap model) throws Exception {
 
-		CmmnClCode vo = cmmnClCodeManageService.selectCmmnClCodeDetail(cmmnClCodeVO);
+		CmmnClCodeDto dto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+		CmmnClCodeDto resultDto = egovCommonCodeService.selectCmmnClCodeDetail(dto);
+		CmmnClCodeVO vo = CommonCodeAdapter.toVO(resultDto);
 
 		model.addAttribute("result", vo);
 
@@ -150,15 +165,20 @@ public class EgovCcmCmmnClCodeManageController {
 		}
 
 		if (cmmnClCodeVO.getClCode() != null) {
-			CmmnClCode vo = cmmnClCodeManageService.selectCmmnClCodeDetail(cmmnClCodeVO);
-			if (vo != null) {
+			CmmnClCodeDto dto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+			// Check existence logic. Service insert checks existence, but here we check
+			// before to show message.
+			CmmnClCodeDto resultDto = egovCommonCodeService.selectCmmnClCodeDetail(dto);
+			if (resultDto != null) {
 				model.addAttribute("message", egovMessageSource.getMessage("comSymCcmCcc.validate.codeCheck"));
 				return "egovframework/com/sym/ccm/ccc/EgovCcmCmmnClCodeRegist";
 			}
 		}
 
 		cmmnClCodeVO.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
-		cmmnClCodeManageService.insertCmmnClCode(cmmnClCodeVO);
+
+		CmmnClCodeDto saveDto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+		egovCommonCodeService.insertCmmnClCode(saveDto);
 
 		return "forward:/sym/ccm/ccc/SelectCcmCmmnClCodeList.do";
 	}
@@ -180,7 +200,9 @@ public class EgovCcmCmmnClCodeManageController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		cmmnClCodeVO.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
-		cmmnClCodeManageService.deleteCmmnClCode(cmmnClCodeVO);
+
+		CmmnClCodeDto dto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+		egovCommonCodeService.deleteCmmnClCode(dto);
 
 		return "forward:/sym/ccm/ccc/SelectCcmCmmnClCodeList.do";
 	}
@@ -197,9 +219,11 @@ public class EgovCcmCmmnClCodeManageController {
 	public String updateCmmnClCodeView(@ModelAttribute("searchVO") CmmnClCodeVO cmmnClCodeVO, ModelMap model)
 			throws Exception {
 
-		CmmnClCode result = cmmnClCodeManageService.selectCmmnClCodeDetail(cmmnClCodeVO);
+		CmmnClCodeDto dto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+		CmmnClCodeDto resultDto = egovCommonCodeService.selectCmmnClCodeDetail(dto);
+		CmmnClCodeVO vo = CommonCodeAdapter.toVO(resultDto);
 
-		model.addAttribute("cmmnClCodeVO", result);
+		model.addAttribute("cmmnClCodeVO", vo);
 
 		return "egovframework/com/sym/ccm/ccc/EgovCcmCmmnClCodeUpdt";
 	}
@@ -222,14 +246,18 @@ public class EgovCcmCmmnClCodeManageController {
 
 		if (bindingResult.hasErrors()) {
 
-			CmmnClCode result = cmmnClCodeManageService.selectCmmnClCodeDetail(cmmnClCode);
-			model.addAttribute("cmmnClCodeVO", result);
+			CmmnClCodeDto dto = CommonCodeAdapter.toDto(cmmnClCode);
+			CmmnClCodeDto resultDto = egovCommonCodeService.selectCmmnClCodeDetail(dto);
+			CmmnClCodeVO resultVO = CommonCodeAdapter.toVO(resultDto);
+			model.addAttribute("cmmnClCodeVO", resultVO);
 
 			return "egovframework/com/sym/ccm/ccc/EgovCcmCmmnClCodeUpdt";
 		}
 
 		cmmnClCodeVO.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
-		cmmnClCodeManageService.updateCmmnClCode(cmmnClCodeVO);
+
+		CmmnClCodeDto saveDto = CommonCodeAdapter.toDto(cmmnClCodeVO);
+		egovCommonCodeService.updateCmmnClCode(saveDto);
 
 		return "forward:/sym/ccm/ccc/SelectCcmCmmnClCodeList.do";
 	}

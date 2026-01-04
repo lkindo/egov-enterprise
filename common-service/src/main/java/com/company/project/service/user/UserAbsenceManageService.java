@@ -6,7 +6,7 @@ import com.company.project.domain.user.UserAbsenceRepository;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.user.dto.UserAbsenceDto;
 import egovframework.com.cmm.ComDefaultVO;
-import lombok.RequiredArgsConstructor;
+import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,12 +20,18 @@ import java.util.stream.Collectors;
  * 사용자 부재 관리 서비스
  */
 @Service("userAbsenceManageService")
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserAbsenceManageService {
 
     private final UserAbsenceRepository userAbsenceRepository;
     private final UserRepository userRepository;
+
+    public UserAbsenceManageService(
+            @org.springframework.beans.factory.annotation.Qualifier("userAbsenceRepository") UserAbsenceRepository userAbsenceRepository,
+            UserRepository userRepository) {
+        this.userAbsenceRepository = userAbsenceRepository;
+        this.userRepository = userRepository;
+    }
 
     /**
      * 사용자 부재 목록 조회

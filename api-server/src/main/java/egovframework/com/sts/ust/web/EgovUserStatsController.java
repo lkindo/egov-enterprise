@@ -1,111 +1,70 @@
 package egovframework.com.sts.ust.web;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import egovframework.com.cmm.ComDefaultCodeVO;
+import com.company.project.service.stats.EgovStatsService;
+import com.company.project.service.stats.dto.StatsDto;
+import com.company.project.web.adapter.StatsAdapter;
+
 import egovframework.com.cmm.annotation.IncludedInfo;
-import egovframework.com.cmm.service.CmmnDetailCode;
-import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.sts.com.StatsVO;
-import egovframework.com.sts.ust.service.EgovUserStatsService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 사용자 통계 검색 컨트롤러 클래스
- * 
- * @author 공통서비스 개발팀 박지욱
- * @since 2009.03.19
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일     수정자          수정내용
- *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.sst)
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *
- *      </pre>
+ * 사용자 통계 Controller (JPA 전환)
  */
-
 @Controller
+@RequiredArgsConstructor
 public class EgovUserStatsController {
 
-	/** EgovUserStatsService */
-	@org.springframework.context.annotation.Lazy
-	@Resource(name = "userStatsService")
-	private EgovUserStatsService userStatsService;
-
-	/** EgovCmmUseService */
-	@Resource(name = "EgovCmmUseService")
-	private EgovCmmUseService cmmUseService;
-
-	/** log */
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovUserStatsController.class);
+	private final EgovStatsService egovStatsService;
 
 	/**
-	 * 사용자 통계를 조회한다
-	 * 
-	 * @param statsVO StatsVO
-	 * @return String
-	 * @exception Exception
+	 * 사용자 통계 조회
 	 */
-	@IncludedInfo(name = "사용자통계", listUrl = "/sts/ust/selectUserStats.do", order = 130, gid = 30)
+	@IncludedInfo(name = "사용자통계", order = 220, gid = 30)
 	@RequestMapping(value = "/sts/ust/selectUserStats.do")
-	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO,
-			ModelMap model) throws Exception {
+	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
-		// 세부통계구분 공통코드 목록 조회(회원유형,상태,성별에 대한 세부통계구분코드)
-		ComDefaultCodeVO vo = new ComDefaultCodeVO();
-
-		vo.setCodeId("COM012");
-		List<CmmnDetailCode> code012 = cmmUseService.selectCmmCodeDetail(vo);
-		vo.setCodeId("COM013");
-		List<CmmnDetailCode> code013 = cmmUseService.selectCmmCodeDetail(vo);
-		vo.setCodeId("COM014");
-		List<CmmnDetailCode> code014 = cmmUseService.selectCmmCodeDetail(vo);
-
-		model.addAttribute("COM012", code012);
-		model.addAttribute("COM013", code013);
-		model.addAttribute("COM014", code014);
-
-		if (statsVO.getFromDate() != null && !"".equals(statsVO.getFromDate())) {
-
-			List<StatsVO> userStats = userStatsService.selectUserStats(statsVO);
-			LOGGER.debug("++++++++++++++++++++++ userStats.size() : {}", userStats.size());
-			// 그래프에 표시될 이미지 길이를 결정한다.
-			float iMaxUnit = 50.0f;
-			for (StatsVO userStat : userStats) {
-				StatsVO sVo = userStat;
-				int iCnt = sVo.getStatsCo();
-				if (iCnt > 10 && iCnt <= 100) {
-					if (iMaxUnit > 5.0f) {
-						iMaxUnit = 5.0f;
-					}
-				} else if (iCnt > 100 && iCnt <= 1000) {
-					if (iMaxUnit > 0.5f) {
-						iMaxUnit = 0.5f;
-					}
-				} else if (iCnt > 1000) {
-					if (iMaxUnit > 0.05f) {
-						iMaxUnit = 0.05f;
-					}
-				}
-			}
-			statsVO.setMaxUnit(iMaxUnit);
-
-			model.addAttribute("userStats", userStats);
-			model.addAttribute("statsInfo", statsVO);
+		if (statsVO.getFromDate() == null || statsVO.getFromDate().isEmpty()) {
+			statsVO.setFromDate(java.time.LocalDate.now().minusMonths(1).toString());
 		}
+		if (statsVO.getToDate() == null || statsVO.getToDate().isEmpty()) {
+			statsVO.setToDate(java.time.LocalDate.now().toString());
+		}
+		if (statsVO.getStatsKind() == null || statsVO.getStatsKind().isEmpty()) {
+			statsVO.setStatsKind("day");
+		}
+
+		List<StatsDto> dtoList = egovStatsService.getUserStats(
+				statsVO.getFromDate(),
+				statsVO.getToDate(),
+				statsVO.getStatsKind());
+
+		List<StatsVO> resultList = dtoList.stream()
+				.map(StatsAdapter::toVO)
+				.collect(Collectors.toList());
+
+		int maxStatsCo = resultList.stream()
+				.mapToInt(StatsVO::getStatsCo)
+				.max().orElse(0);
+
+		for (StatsVO vo : resultList) {
+			vo.setMaxStatsCo(maxStatsCo);
+			if (maxStatsCo > 0) {
+				vo.setMaxUnit((float) vo.getStatsCo() / maxStatsCo * 100);
+			}
+		}
+
+		model.addAttribute("resultList", resultList);
+		model.addAttribute("statsVO", statsVO);
+
 		return "egovframework/com/sts/ust/EgovUserStats";
 	}
 }

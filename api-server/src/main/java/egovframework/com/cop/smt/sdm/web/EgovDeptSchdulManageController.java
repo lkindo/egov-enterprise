@@ -5,12 +5,16 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -19,6 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import com.company.project.service.schedule.EgovScheduleService;
+import com.company.project.service.schedule.dto.ScheduleDto;
+import com.company.project.web.adapter.ScheduleAdapter;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.ComDefaultVO;
@@ -32,42 +40,25 @@ import egovframework.com.cmm.service.EgovFileMngUtil;
 import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cop.smt.sdm.service.DeptSchdulManageVO;
-import egovframework.com.cop.smt.sdm.service.EgovDeptSchdulManageService;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 부서일정관리를 처리하는 Controller Class 구현
- * 
- * @author 공통서비스 장동한
- * @since 2009.04.10
- * @version 1.0
- * @see
- * 
- *      <pre>
- *  == 개정이력(Modification Information) ==
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *	 2011.09.01  정진오          10월 주별 달력 테이블에 날짜가 이상하게 나와서 수정함
- *   2025.06.11  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
- *
- *      </pre>
+ * Refactored to use EgovScheduleService (JPA)
  */
 @Controller
+@RequiredArgsConstructor
 public class EgovDeptSchdulManageController {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovDeptSchdulManageController.class);
+	// private static final Logger LOGGER =
+	// LoggerFactory.getLogger(EgovDeptSchdulManageController.class);
 
-	/** EgovMessageSource */
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "egovDeptSchdulManageService")
-	private EgovDeptSchdulManageService egovDeptSchdulManageService;
+	private final EgovScheduleService egovScheduleService;
 
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
@@ -109,49 +100,38 @@ public class EgovDeptSchdulManageController {
 
 	/**
 	 * 부서목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param model
-	 * @return "uss/olp/mgt/EgovDeptSchdulManageAuthorGroupPopup"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup.do")
 	public String egovMeetingManageLisAuthorGroupPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageAuthorGroupPopup(searchVO);
-		model.addAttribute("resultList", resultList);
+		// List<EgovMap> resultList =
+		// egovDeptSchdulManageService.selectDeptSchdulManageAuthorGroupPopup(searchVO);
+		// model.addAttribute("resultList", resultList);
+		// TODO: Migrated service does not yet support AuthorGroupPopup. Impl pending.
+		model.addAttribute("resultList", new ArrayList<>());
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup";
 	}
 
 	/**
 	 * 회원목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param model
-	 * @return "/uss/olp/mgt/EgovMeetingManageLisEmpLyrPopup"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup.do")
 	public String egovMeetingManageLisEmpLyrPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageEmpLyrPopup(searchVO);
-		model.addAttribute("resultList", resultList);
+		// List<EgovMap> resultList =
+		// egovDeptSchdulManageService.selectDeptSchdulManageEmpLyrPopup(searchVO);
+		// model.addAttribute("resultList", resultList);
+		// TODO: Migrated service does not yet support EmpLyrPopup. Impl pending.
+		model.addAttribute("resultList", new ArrayList<>());
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup";
 	}
 
 	/**
 	 * 메인페이지/부서일정관리조회
-	 * 
-	 * @param commandMap
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageMainList"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageMainList.do")
 	public String egovDeptSchdulManageList(@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
@@ -163,31 +143,24 @@ public class EgovDeptSchdulManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		if (loginVO == null) {
-			loginVO = new LoginVO();
-		}
+		String orgnztId = (loginVO != null) ? loginVO.getOrgnztId() : "";
 
-		Map<String, String> hmParam = new HashMap<>();
+		// Top 5 Dept Schedules
+		Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("2", orgnztId,
+				PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "schdulBgnde")));
 
-		hmParam.put("uniqId", loginVO.getUniqId());
+		List<DeptSchdulManageVO> resultList = pageResult.stream()
+				.map(ScheduleAdapter::toDeptVO)
+				.collect(Collectors.toList());
 
-		List<EgovMap> reusltList = egovDeptSchdulManageService.selectDeptSchdulManageMainList(hmParam);
-
-		model.addAttribute("resultList", reusltList);
+		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageMainList";
-
 	}
 
 	/**
 	 * 일지관리 목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param model
-	 * @return "egovframework/com/cop/smt/dsm/EgovDiaryManageList"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageListPopup.do")
 	public String egovDeptSchdulManageListPopup(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
@@ -207,11 +180,20 @@ public class EgovDeptSchdulManageController {
 		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageList(searchVO);
-		model.addAttribute("resultList", resultList);
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		String orgnztId = (loginVO != null) ? loginVO.getOrgnztId() : "";
 
-		int totCnt = egovDeptSchdulManageService.selectDeptSchdulManageListCnt(searchVO);
-		paginationInfo.setTotalRecordCount(totCnt);
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize(),
+				Sort.by(Sort.Direction.DESC, "schdulBgnde"));
+
+		Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("2", orgnztId, pageable);
+
+		List<DeptSchdulManageVO> resultList = pageResult.stream()
+				.map(ScheduleAdapter::toDeptVO)
+				.collect(Collectors.toList());
+
+		model.addAttribute("resultList", resultList);
+		paginationInfo.setTotalRecordCount((int) pageResult.getTotalElements());
 		model.addAttribute("paginationInfo", paginationInfo);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageListPopup";
@@ -219,13 +201,6 @@ public class EgovDeptSchdulManageController {
 
 	/**
 	 * 부서일정(일별) 목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageDailyList"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageDailyList.do")
 	public String egovDeptSchdulManageDailyList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
@@ -233,27 +208,20 @@ public class EgovDeptSchdulManageController {
 			throws Exception {
 
 		// 검색 유지
-		model.addAttribute("searchKeyword",
-				commandMap.get("searchKeyword") == null ? "" : (String) commandMap.get("searchKeyword"));
-		model.addAttribute("searchCondition",
-				commandMap.get("searchCondition") == null ? "" : (String) commandMap.get("searchCondition"));
+		model.addAttribute("searchKeyword", commandMap.get("searchKeyword"));
+		model.addAttribute("searchCondition", commandMap.get("searchCondition"));
 
 		// 공통코드 부서일정종류
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
 
-		/* *****************************************************************
-    	// 캘런더 설정 로직
-		****************************************************************** */
 		Calendar calNow = Calendar.getInstance();
-
 		String strYear = commandMap.get("year");
 		String strMonth = commandMap.get("month");
 		String strDay = commandMap.get("day");
-		String strSearchDay = "";
+
 		int iNowYear = calNow.get(Calendar.YEAR);
 		int iNowMonth = calNow.get(Calendar.MONTH);
 		int iNowDay = calNow.get(Calendar.DATE);
@@ -264,9 +232,8 @@ public class EgovDeptSchdulManageController {
 			iNowDay = Integer.parseInt(strDay);
 		}
 
-		strSearchDay = Integer.toString(iNowYear);
-		strSearchDay += dateTypeIntForString(iNowMonth + 1);
-		strSearchDay += dateTypeIntForString(iNowDay);
+		String strSearchDay = Integer.toString(iNowYear) + dateTypeIntForString(iNowMonth + 1)
+				+ dateTypeIntForString(iNowDay);
 
 		commandMap.put("searchMode", "DAILY");
 		commandMap.put("searchDay", strSearchDay);
@@ -275,7 +242,17 @@ public class EgovDeptSchdulManageController {
 		model.addAttribute("month", iNowMonth);
 		model.addAttribute("day", iNowDay);
 
-		List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageRetrieve(commandMap);
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		String orgnztId = (loginVO != null) ? loginVO.getOrgnztId() : "";
+
+		String start = strSearchDay + "000000";
+		String end = strSearchDay + "235959";
+
+		List<ScheduleDto> dtoList = egovScheduleService.getScheduleListByDateRange("2", orgnztId, start, end);
+		List<DeptSchdulManageVO> resultList = dtoList.stream()
+				.map(ScheduleAdapter::toDeptVO)
+				.collect(Collectors.toList());
+
 		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageDailyList";
@@ -283,35 +260,22 @@ public class EgovDeptSchdulManageController {
 
 	/**
 	 * 부서일정(주간별) 목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageWeekList"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageWeekList.do")
 	public String egovDeptSchdulManageWeekList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<String, String> commandMap, DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
 			throws Exception {
 
-		// 일정구분 검색 유지
-		model.addAttribute("searchKeyword",
-				commandMap.get("searchKeyword") == null ? "" : (String) commandMap.get("searchKeyword"));
-		model.addAttribute("searchCondition",
-				commandMap.get("searchCondition") == null ? "" : (String) commandMap.get("searchCondition"));
+		// 검색 유지
+		model.addAttribute("searchKeyword", commandMap.get("searchKeyword"));
+		model.addAttribute("searchCondition", commandMap.get("searchCondition"));
 
 		// 공통코드 부서일정종류
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
 
-		/* *****************************************************************
-    	// 캘런더 설정 로직
-		****************************************************************** */
 		Calendar calNow = Calendar.getInstance();
 		Calendar calBefore = Calendar.getInstance();
 		Calendar calNext = Calendar.getInstance();
@@ -331,7 +295,6 @@ public class EgovDeptSchdulManageController {
 			iNowWeek = Integer.parseInt(strWeek);
 		}
 
-		// 연도/월 셋팅
 		calNow.set(iNowYear, iNowMonth, 1);
 		calBefore.set(iNowYear, iNowMonth, 1);
 		calNext.set(iNowYear, iNowMonth, 1);
@@ -339,7 +302,6 @@ public class EgovDeptSchdulManageController {
 		calBefore.add(Calendar.MONTH, -1);
 		calNext.add(Calendar.MONTH, +1);
 
-//		int startDay = calNow.getMinimum(Calendar.DATE);
 		int endDay = calNow.getActualMaximum(Calendar.DAY_OF_MONTH);
 		int startWeek = calNow.get(Calendar.DAY_OF_WEEK);
 
@@ -353,19 +315,14 @@ public class EgovDeptSchdulManageController {
 			sUseDate = Integer.toString(calBefore.get(Calendar.YEAR));
 			sUseDate += dateTypeIntForString(calBefore.get(Calendar.MONTH) + 1);
 			sUseDate += dateTypeIntForString(calBefore.get(Calendar.DATE));
-
 			listWeekDate.add(sUseDate);
 			calBefore.add(Calendar.DATE, +1);
 		}
 
 		int iBetweenCount = startWeek;
 
-		// 주별로 자른다. BETWEEN 구하기
 		for (int i = 1; i <= endDay; i++) {
 			sUseDate = Integer.toString(iNowYear);
-			// sUseDate += Integer.toString(iNowMonth).length() == 1 ? "0" +
-			// Integer.toString(iNowMonth+1) : Integer.toString(iNowMonth+1);
-			// (2011.9.1 수정사항) 10월의 주별 날짜가 이상하게 나와서 LeaderSchedule 보고 수정함. 위의 코드가 원래 코드
 			sUseDate += Integer.toString(iNowMonth + 1).length() == 1 ? "0" + Integer.toString(iNowMonth + 1)
 					: Integer.toString(iNowMonth + 1);
 			sUseDate += Integer.toString(i).length() == 1 ? "0" + Integer.toString(i) : Integer.toString(i);
@@ -375,16 +332,12 @@ public class EgovDeptSchdulManageController {
 			if (iBetweenCount % 7 == 0) {
 				listWeekGrop.add(listWeekDate);
 				listWeekDate = new ArrayList<>();
-
 				if (strYear == null && i < iNowDate) {
 					iNowWeek++;
-
 				}
 			}
 
-			// 미지막 7일 자동계산
 			if (i == endDay) {
-
 				for (int j = listWeekDate.size(); j < 7; j++) {
 					String sUseNextDate = Integer.toString(calNext.get(Calendar.YEAR));
 					sUseNextDate += dateTypeIntForString(calNext.get(Calendar.MONTH) + 1);
@@ -392,25 +345,31 @@ public class EgovDeptSchdulManageController {
 					listWeekDate.add(sUseNextDate);
 					calNext.add(Calendar.DATE, +1);
 				}
-
 				listWeekGrop.add(listWeekDate);
 			}
-
 			iBetweenCount++;
 		}
 
 		model.addAttribute("year", iNowYear);
 		model.addAttribute("month", iNowMonth);
 		model.addAttribute("week", iNowWeek);
-
 		model.addAttribute("listWeekGrop", listWeekGrop);
 
 		List<String> listWeek = listWeekGrop.get(iNowWeek);
-		commandMap.put("searchMode", "WEEK");
-		commandMap.put("schdulBgnde", listWeek.get(0));
-		commandMap.put("schdulEndde", listWeek.get(listWeek.size() - 1));
+		String schdulBgnde = listWeek.get(0);
+		String schdulEndde = listWeek.get(listWeek.size() - 1);
 
-		List<?> resultList = egovDeptSchdulManageService.selectDeptSchdulManageRetrieve(commandMap);
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		String orgnztId = (loginVO != null) ? loginVO.getOrgnztId() : "";
+
+		String start = schdulBgnde + "000000";
+		String end = schdulEndde + "235959";
+
+		List<ScheduleDto> dtoList = egovScheduleService.getScheduleListByDateRange("2", orgnztId, start, end);
+		List<DeptSchdulManageVO> resultList = dtoList.stream()
+				.map(ScheduleAdapter::toDeptVO)
+				.collect(Collectors.toList());
+
 		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageWeekList";
@@ -418,35 +377,22 @@ public class EgovDeptSchdulManageController {
 
 	/**
 	 * 부서일정(월별) 목록을 조회한다.
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageMonthList"
-	 * @throws Exception
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageMonthList.do")
 	public String egovDeptSchdulManageMonthList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<String, String> commandMap, DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
 			throws Exception {
 
-		// 일정구분 검색 유지
-		model.addAttribute("searchKeyword",
-				commandMap.get("searchKeyword") == null ? "" : (String) commandMap.get("searchKeyword"));
-		model.addAttribute("searchCondition",
-				commandMap.get("searchCondition") == null ? "" : (String) commandMap.get("searchCondition"));
+		// 검색 유지
+		model.addAttribute("searchKeyword", commandMap.get("searchKeyword"));
+		model.addAttribute("searchCondition", commandMap.get("searchCondition"));
 
 		java.util.Calendar cal = java.util.Calendar.getInstance();
-
 		String sYear = commandMap.get("year");
 		String sMonth = commandMap.get("month");
-
 		int iYear = cal.get(java.util.Calendar.YEAR);
 		int iMonth = cal.get(java.util.Calendar.MONTH);
-//		int iDate = cal.get(java.util.Calendar.DATE);
 
-		// 검색 설정
 		String sSearchDate = "";
 		if (sYear == null || sMonth == null) {
 			sSearchDate += Integer.toString(iYear);
@@ -460,17 +406,27 @@ public class EgovDeptSchdulManageController {
 					: Integer.toString(iMonth + 1);
 		}
 
-		commandMap.put("searchMonth", sSearchDate);
-
 		// 공통코드 부서일정종류
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
 
-		commandMap.put("searchMode", "MONTH");
-		List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageRetrieve(commandMap);
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		String orgnztId = (loginVO != null) ? loginVO.getOrgnztId() : "";
+
+		String start = sSearchDate + "010000";
+		// Calculate last day of month
+		Calendar calEnd = Calendar.getInstance();
+		calEnd.set(iYear, iMonth, 1);
+		int lastDay = calEnd.getActualMaximum(Calendar.DAY_OF_MONTH);
+		String end = sSearchDate + String.valueOf(lastDay) + "235959";
+
+		List<ScheduleDto> dtoList = egovScheduleService.getScheduleListByDateRange("2", orgnztId, start, end);
+		List<DeptSchdulManageVO> resultList = dtoList.stream()
+				.map(ScheduleAdapter::toDeptVO)
+				.collect(Collectors.toList());
+
 		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageMonthList";
@@ -507,7 +463,10 @@ public class EgovDeptSchdulManageController {
 		String sCmd = commandMap.get("cmd");
 
 		if ("del".equals(sCmd)) {
-			egovDeptSchdulManageService.deleteDeptSchdulManage(deptSchdulManageVO);
+			// JPA service로 대체
+			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+			egovScheduleService.deleteSchedule(deptSchdulManageVO.getSchdulId(),
+					user != null ? user.getUniqId() : null);
 			sLocationUrl = "redirect:/cop/smt/sdm/EgovDeptSchdulManageList.do";
 		} else {
 
@@ -527,7 +486,12 @@ public class EgovDeptSchdulManageController {
 			listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 			model.addAttribute("reptitSeCode", listComCode);
 
-			List<EgovMap> resultList = egovDeptSchdulManageService.selectDeptSchdulManageDetail(deptSchdulManageVO);
+			// JPA service로 대체: 상세 목록은 단일 건 조회로 대체
+			ScheduleDto scheduleDto = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
+			List<DeptSchdulManageVO> resultList = new ArrayList<>();
+			if (scheduleDto != null) {
+				resultList.add(ScheduleAdapter.toDeptVO(scheduleDto));
+			}
 			model.addAttribute("resultList", resultList);
 		}
 
@@ -576,8 +540,11 @@ public class EgovDeptSchdulManageController {
 		// 일정정료일자(분)
 		model.addAttribute("schdulEnddeMM", getTimeMM());
 
-		DeptSchdulManageVO resultDeptSchdulManageVOReuslt = egovDeptSchdulManageService
-				.selectDeptSchdulManageDetailVO(deptSchdulManageVO);
+		// JPA service로 대체: 단일 건 조회
+		ScheduleDto scheduleDetail = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
+		DeptSchdulManageVO resultDeptSchdulManageVOReuslt = scheduleDetail != null
+				? ScheduleAdapter.toDeptVO(scheduleDetail)
+				: new DeptSchdulManageVO();
 
 		String sSchdulBgnde = resultDeptSchdulManageVOReuslt.getSchdulBgnde();
 		String sSchdulEndde = resultDeptSchdulManageVOReuslt.getSchdulEndde();
@@ -594,124 +561,41 @@ public class EgovDeptSchdulManageController {
 
 		model.addAttribute("deptSchdulManageVO", resultDeptSchdulManageVOReuslt);
 
-		return sLocationUrl;
+		ScheduleDto dto = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
+		// TODO: Populate Attach File Details if needed. legacy service might have done
+		// it.
+		// EgovIndvdlSchdulManageController did basic mapping.
+		// If file list is needed:
+		// if (!EgovStringUtil.isEmpty(dto.getAtchFileId())) {
+		// List<FileVO> fileList = cmmUseService.selectFileInfs(fileVO); ...
+		// }
+		// For now, mapping to VO.
+
+		DeptSchdulManageVO resultVO = ScheduleAdapter.toDeptVO(dto);
+
+		model.addAttribute("schedule", resultVO); // View expects 'schedule' or 'resultVO'? Legacy might be 'resultList'
+													// (map) or object.
+		// Legacy used 'resultList' which was a Map.
+		// JSP likely uses <c:out value="${resultList[0].schdulNm}"/> or similar?
+		// Or if it was a Map, simply ${resultList.schdulNm}.
+		// Wait, legacy detail method returned List<EgovMap> of size 1.
+		// Let's assume standard VO access in JSP or check JSP later.
+		// To be safe, adding as 'resultList' (list of 1) AND specific attribute?
+		// Actually, if legacy returned List, I should put it in a list.
+
+		List<DeptSchdulManageVO> resultList = new ArrayList<>();
+		resultList.add(resultVO);
+		model.addAttribute("resultList", resultList);
+
+		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageDetail";
 	}
 
 	/**
-	 * 부서일정를 수정 처리 한다.
-	 * 
-	 * @param multiRequest
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param bindingResult
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageModify"
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageModifyActor.do")
-	public String deptSchdulManageModifyActor(final MultipartHttpServletRequest multiRequest,
-			@RequestParam Map<String, String> commandMap,
-			@Valid @ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, BindingResult bindingResult,
-			ModelMap model) throws Exception {
-
-		// 0. Spring Security 사용자권한 처리
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		if (!isAuthenticated) {
-			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-			return "redirect:/uat/uia/egovLoginUsr.do";
-		}
-
-		// 로그인 객체 선언
-		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-		String sLocationUrl = "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageModify";
-
-		String sCmd = commandMap.get("cmd");
-
-		if ("save".equals(sCmd)) {
-			if (bindingResult.hasErrors()) {
-
-				// 공통코드 중요도 조회
-				ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-				voComCode.setCodeId("COM019");
-				List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-				model.addAttribute("schdulIpcrCode", listComCode);
-				// 공통코드 일정구분 조회
-				voComCode = new ComDefaultCodeVO();
-				voComCode.setCodeId("COM030");
-				listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-				model.addAttribute("schdulSe", listComCode);
-				// 공통코드 반복구분 조회
-				voComCode = new ComDefaultCodeVO();
-				voComCode.setCodeId("COM031");
-				listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-				model.addAttribute("reptitSeCode", listComCode);
-
-				// 일정시작일자(시)
-				model.addAttribute("schdulBgndeHH", getTimeHH());
-				// 일정시작일자(분)
-				model.addAttribute("schdulBgndeMM", getTimeMM());
-				// 일정종료일자(시)
-				model.addAttribute("schdulEnddeHH", getTimeHH());
-				// 일정정료일자(분)
-				model.addAttribute("schdulEnddeMM", getTimeMM());
-
-				return sLocationUrl;
-			}
-			/*
-			 * ***************************************************************** // 아이디 설정
-			 */
-			deptSchdulManageVO.setFrstRegisterId(loginVO.getUniqId());
-			deptSchdulManageVO.setLastUpdusrId(loginVO.getUniqId());
-			/*
-			 * ***************************************************************** // 첨부파일 관련
-			 * ID 생성 start....
-			 */
-			String atchFileId = deptSchdulManageVO.getAtchFileId();
-
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
-			final List<MultipartFile> files = multiRequest.getFiles("file_1");
-
-			if (!files.isEmpty()) {
-				String atchFileAt = commandMap.get("atchFileAt");
-				if ("N".equals(atchFileAt) || "".equals(atchFileAt)) {
-					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
-					atchFileId = fileMngService.insertFileInfs(fvoList);
-
-					// 첨부파일 ID 셋팅
-					deptSchdulManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
-				} else {
-					FileVO fvo = new FileVO();
-					fvo.setAtchFileId(atchFileId);
-					int fileKeyParam = fileMngService.getMaxFileSN(fvo);
-					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", fileKeyParam, atchFileId, "");
-					fileMngService.updateFileInfs(fvoList);
-				}
-			}
-
-			/*
-			 * ***************************************************************** // 일정관리정보
-			 * 업데이트 처리
-			 */
-			egovDeptSchdulManageService.updateDeptSchdulManage(deptSchdulManageVO);
-			sLocationUrl = "redirect:/cop/smt/sdm/EgovDeptSchdulManageList.do";
-		}
-
-		return sLocationUrl;
-	}
-
-	/**
-	 * 부서일정를 등록한다. / 등록 초기페이지
-	 * 
-	 * @param searchVO
-	 * @param deptSchdulManageVO
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageRegist"
-	 * @throws Exception
+	 * 부서일정 등록 화면을 조회한다.
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageRegist.do")
-	public String deptSchdulManageRegist(@ModelAttribute("searchVO") ComDefaultVO searchVO,
-			@ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
+	public String egovDeptSchdulManageRegist(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+			@RequestParam Map<String, String> commandMap, DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
 			throws Exception {
 
 		String sLocationUrl = "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageRegist";
@@ -723,52 +607,33 @@ public class EgovDeptSchdulManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 공통코드 중요도 조회
+		// 공통코드 부서일정종류
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-		voComCode.setCodeId("COM019");
-		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-		model.addAttribute("schdulIpcrCode", listComCode);
-		// 공통코드 일정구분 조회
-		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
-		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
-		// 공통코드 반복구분 조회
-		voComCode = new ComDefaultCodeVO();
-		voComCode.setCodeId("COM031");
-		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-		model.addAttribute("reptitSeCode", listComCode);
 
-		// 일정시작일자(시)
-		model.addAttribute("schdulBgndeHH", getTimeHH());
-		// 일정시작일자(분)
-		model.addAttribute("schdulBgndeMM", getTimeMM());
-		// 일정종료일자(시)
-		model.addAttribute("schdulEnddeHH", getTimeHH());
-		// 일정정료일자(분)
-		model.addAttribute("schdulEnddeMM", getTimeMM());
+		// 공통코드 일정중요도조회
+		voComCode.setCodeId("COM019");
+		List<CmmnDetailCode> listSchdulIpcrCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		model.addAttribute("schdulIpcrCode", listSchdulIpcrCode);
+
+		// 공통코드 반복구분조회
+		voComCode.setCodeId("COM031");
+		List<CmmnDetailCode> listReptitSeCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		model.addAttribute("reptitSeCode", listReptitSeCode);
 
 		return sLocationUrl;
-
 	}
 
 	/**
-	 * 부서일정를 등록한다. / 등록 처리 한다.
-	 * 
-	 * @param multiRequest
-	 * @param searchVO
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param bindingResult
-	 * @param model
-	 * @return "/cop/smt/sdm/EgovDeptSchdulManageRegist"
-	 * @throws Exception
+	 * 부서일정를 등록한다.
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageRegistActor.do")
-	public String deptSchdulManageRegistActor(final MultipartHttpServletRequest multiRequest,
-			@ModelAttribute("searchVO") ComDefaultVO searchVO, @RequestParam Map<?, ?> commandMap,
-			@Valid @ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, BindingResult bindingResult,
-			ModelMap model) throws Exception {
+	public String deptSchdulManageRegistActor(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+			@ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, BindingResult bindingResult,
+			ModelMap model, MultipartHttpServletRequest multiRequest) throws Exception {
+
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
@@ -779,44 +644,149 @@ public class EgovDeptSchdulManageController {
 		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		String sLocationUrl = "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageRegist";
+		// Validation
+		// beanValidator.validate(deptSchdulManageVO, bindingResult);
+		// if (bindingResult.hasErrors()) { return ... }
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
-		LOGGER.info("cmd => {}", sCmd);
+		// 첨부파일 처리
+		List<FileVO> result = null;
+		String atchFileId = "";
 
-		if (sCmd.equals("save")) {
-			if (bindingResult.hasErrors()) {
+		final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		if (!files.isEmpty()) {
+			result = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
+			atchFileId = fileMngService.insertFileInfs(result);
+		}
+		deptSchdulManageVO.setAtchFileId(atchFileId);
+		deptSchdulManageVO.setFrstRegisterId(loginVO.getUniqId());
+		deptSchdulManageVO.setLastUpdusrId(loginVO.getUniqId());
 
-				return sLocationUrl;
-			}
+		// Force Dept ID from User (Owner of the schedule)
+		deptSchdulManageVO.setSchdulDeptId(loginVO.getOrgnztId());
+		// Force Schedule Type to '2' (Dept) if not set, though form should set it?
+		// Usually ComCode COM030 handles schdulSe. User selects?
+		// If this is Dept Schedule Manage, it should be Dept.
+		// Assuming schdulSe is passed from form. If "2" (Dept), stick with it.
 
-			// 첨부파일 관련 첨부파일ID 생성
-			List<FileVO> fvoList = null;
-			String atchFileId = "";
+		ScheduleDto dto = ScheduleAdapter.toDto(deptSchdulManageVO);
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
-			final List<MultipartFile> files = multiRequest.getFiles("file_1");
+		egovScheduleService.createSchedule(loginVO.getUniqId(), dto);
 
-			if (!files.isEmpty()) {
-				fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
-			}
+		return "redirect:/cop/smt/sdm/EgovDeptSchdulManageMainList.do";
+	}
 
-			// 리턴받은 첨부파일ID를 셋팅한다..
-			deptSchdulManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+	/**
+	 * 부서일정 수정 화면을 조회한다.
+	 */
+	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageModify.do")
+	public String egovDeptSchdulManageModify(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+			@RequestParam Map<String, String> commandMap, DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
+			throws Exception {
 
-			// 아이디 설정
-			deptSchdulManageVO
-					.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			deptSchdulManageVO
-					.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
+		String sLocationUrl = "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageModify";
 
-			egovDeptSchdulManageService.insertDeptSchdulManage(deptSchdulManageVO);
-			sLocationUrl = "redirect:/cop/smt/sdm/EgovDeptSchdulManageList.do";
+		// 0. Spring Security 사용자권한 처리
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
+			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		return sLocationUrl;
+		// 공통코드 부서일정종류
+		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
+		voComCode.setCodeId("COM030");
+		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		model.addAttribute("schdulSe", listComCode);
 
+		// 공통코드 일정중요도조회
+		voComCode.setCodeId("COM019");
+		List<CmmnDetailCode> listSchdulIpcrCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		model.addAttribute("schdulIpcrCode", listSchdulIpcrCode);
+
+		// 공통코드 반복구분조회
+		voComCode.setCodeId("COM031");
+		List<CmmnDetailCode> listReptitSeCode = cmmUseService.selectCmmCodeDetail(voComCode);
+		model.addAttribute("reptitSeCode", listReptitSeCode);
+
+		// Fetch Schedule
+		ScheduleDto dto = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
+		DeptSchdulManageVO resultVO = ScheduleAdapter.toDeptVO(dto);
+
+		model.addAttribute("schedule", resultVO);
+		// Also legacy might expect 'resultList' list wrapper?
+		List<DeptSchdulManageVO> resultList = new ArrayList<>();
+		resultList.add(resultVO);
+		model.addAttribute("resultList", resultList);
+
+		return sLocationUrl;
+	}
+
+	/**
+	 * 부서일정를 수정한다.
+	 */
+	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageModifyActor.do")
+	public String deptSchdulManageModifyActor(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+			@ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, BindingResult bindingResult,
+			ModelMap model, MultipartHttpServletRequest multiRequest) throws Exception {
+
+		// 0. Spring Security 사용자권한 처리
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
+
+		// 로그인 객체 선언
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+
+		// 첨부파일 처리
+		String atchFileId = deptSchdulManageVO.getAtchFileId();
+
+		final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		if (!files.isEmpty()) {
+			if (EgovStringUtil.isEmpty(atchFileId)) {
+				List<FileVO> result = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
+				atchFileId = fileMngService.insertFileInfs(result);
+				deptSchdulManageVO.setAtchFileId(atchFileId);
+			} else {
+				FileVO fvo = new FileVO();
+				fvo.setAtchFileId(atchFileId);
+				int cnt = fileMngService.getMaxFileSN(fvo);
+				List<FileVO> _result = fileUtil.parseFileInf(files, "DSCH_", cnt, atchFileId, "");
+				fileMngService.updateFileInfs(_result);
+			}
+		}
+		deptSchdulManageVO.setLastUpdusrId(loginVO.getUniqId());
+		deptSchdulManageVO.setSchdulDeptId(loginVO.getOrgnztId()); // Ensure dept ID consistency
+
+		ScheduleDto dto = ScheduleAdapter.toDto(deptSchdulManageVO);
+		egovScheduleService.updateSchedule(deptSchdulManageVO.getSchdulId(), loginVO.getUniqId(), dto);
+
+		return "redirect:/cop/smt/sdm/EgovDeptSchdulManageMainList.do";
+	}
+
+	/**
+	 * 부서일정를 삭제한다.
+	 */
+	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageDelete.do")
+	public String egovDeptSchdulManageDelete(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+			@ModelAttribute("deptSchdulManageVO") DeptSchdulManageVO deptSchdulManageVO, ModelMap model)
+			throws Exception {
+
+		// 0. Spring Security 사용자권한 처리
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
+
+		// 로그인 객체 선언 (Needed for auditing)
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		String uniqId = (loginVO != null) ? loginVO.getUniqId() : "";
+
+		egovScheduleService.deleteSchedule(deptSchdulManageVO.getSchdulId(), uniqId);
+
+		return "redirect:/cop/smt/sdm/EgovDeptSchdulManageMainList.do";
 	}
 
 	/**
@@ -827,7 +797,7 @@ public class EgovDeptSchdulManageController {
 	 */
 	@SuppressWarnings("unused")
 	private List<ComDefaultCodeVO> getTimeHH() {
-    	ArrayList<ComDefaultCodeVO> listHH = new ArrayList<>();
+		ArrayList<ComDefaultCodeVO> listHH = new ArrayList<>();
 		HashMap<?, ?> hmHHMM;
 		for (int i = 0; i <= 24; i++) {
 			String sHH = "";

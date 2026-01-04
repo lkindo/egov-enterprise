@@ -86,6 +86,12 @@ public class Board implements Serializable {
     @Column(name = "LAST_UPDT_PNTTM", nullable = true)
     private LocalDateTime modifiedDate = LocalDateTime.now();
 
+    @Column(name = "SECRET_AT", length = 1)
+    private String secretAt;
+
+    @Column(name = "BLOG_ID", length = 20)
+    private String blogId;
+
     // Helper methods for easy access
     public String getBbsId() {
         return id != null ? id.getBbsId() : null;
@@ -132,9 +138,9 @@ public class Board implements Serializable {
         this.lastUpdusrId = lastUpdusrId;
     }
 
-    public void delete(String lastUpdusrId) {
+    public void delete(String authorId) {
         this.useAt = "N";
-        this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = authorId;
     }
 
     public void increaseInqireCo() {

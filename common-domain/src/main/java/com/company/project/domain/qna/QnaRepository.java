@@ -1,0 +1,35 @@
+package com.company.project.domain.qna;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+/**
+ * Q&A Repository
+ */
+public interface QnaRepository extends JpaRepository<Qna, String> {
+
+    /**
+     * 질문 제목 검색
+     */
+    Page<Qna> findByQestnSjContaining(String qestnSj, Pageable pageable);
+
+    /**
+     * 처리상태별 검색
+     */
+    Page<Qna> findByQnaProcessSttusCode(String qnaProcessSttusCode, Pageable pageable);
+
+    /**
+     * 키워드 검색 (질문제목 또는 질문내용)
+     */
+    @Query("SELECT q FROM Qna q WHERE q.qestnSj LIKE %:keyword% OR q.qestnCn LIKE %:keyword%")
+    Page<Qna> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * 미답변 Q&A 목록
+     */
+    @Query("SELECT q FROM Qna q WHERE q.qnaProcessSttusCode = 'Q'")
+    Page<Qna> findUnanswered(Pageable pageable);
+}

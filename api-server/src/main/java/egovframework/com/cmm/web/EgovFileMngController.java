@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import egovframework.com.cmm.service.EgovFileMngService;
+import com.company.project.service.file.EgovFileService;
+import com.company.project.service.file.dto.FileDto;
+import com.company.project.web.adapter.FileAdapter;
+
 import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import jakarta.annotation.Resource;
@@ -49,8 +52,8 @@ public class EgovFileMngController {
 	/** 암호화서비스 */
 	private static EgovEnvCryptoService cryptoService;
 
-	@Resource(name = "EgovFileMngService")
-	private EgovFileMngService fileService;
+	@Resource(name = "egovFileService")
+	private EgovFileService fileService;
 
 	@Resource(name = "egovEnvCryptoService")
 	public void setEgovEnvCryptoService(EgovEnvCryptoService cryptoService) {
@@ -78,13 +81,14 @@ public class EgovFileMngController {
 			decodedAtchFileId = cryptoService.decrypt(param_atchFileId);
 		}
 
-		fileVO.setAtchFileId(decodedAtchFileId);
-		List<FileVO> result = fileService.selectFileInfs(fileVO);
+		// New Service Integration
+		List<FileDto> dtoList = fileService.getFileList(decodedAtchFileId);
+		List<FileVO> result = FileAdapter.toVOList(dtoList);
 
 		// FileId를 유추하지 못하도록 세션ID와 함께 암호화하여 표시한다. (2022.12.06 추가) - 파일아이디가 유추 불가능하도록 조치
 		for (FileVO file : result) {
 			String sessionId = request.getSession().getId();
-			String toEncrypt = sessionId + "|" + file.atchFileId;
+			String toEncrypt = sessionId + "|" + file.getAtchFileId();
 			file.setAtchFileId(Base64.getEncoder().encodeToString(cryptoService.encrypt(toEncrypt).getBytes()));
 		}
 
@@ -119,14 +123,14 @@ public class EgovFileMngController {
 			decodedAtchFileId = cryptoService.decrypt(param_atchFileId);
 		}
 
-		fileVO.setAtchFileId(decodedAtchFileId);
-
-		List<FileVO> result = fileService.selectFileInfs(fileVO);
+		// New Service Integration
+		List<FileDto> dtoList = fileService.getFileList(decodedAtchFileId);
+		List<FileVO> result = FileAdapter.toVOList(dtoList);
 
 		// FileId를 유추하지 못하도록 세션ID와 함께 암호화하여 표시한다. (2022.12.06 추가) - 파일아이디가 유추 불가능하도록 조치
 		for (FileVO file : result) {
 			String sessionId = request.getSession().getId();
-			String toEncrypt = sessionId + "|" + file.atchFileId;
+			String toEncrypt = sessionId + "|" + file.getAtchFileId();
 			file.setAtchFileId(Base64.getEncoder().encodeToString(cryptoService.encrypt(toEncrypt).getBytes()));
 		}
 
@@ -156,27 +160,13 @@ public class EgovFileMngController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (isAuthenticated) {
-			fileService.deleteFileInf(fileVO);
+			// New Service Integration
+			if (fileVO.getAtchFileId() != null && fileVO.getFileSn() != null) {
+				fileService.deleteFile(fileVO.getAtchFileId(), Integer.parseInt(fileVO.getFileSn()));
+			}
 		}
 
 		return "blank";
-
-		// --------------------------------------------
-		// contextRoot가 있는 경우 제외 시켜야 함
-		// --------------------------------------------
-		//// return "forward:/cmm/fms/selectFileInfs.do";
-		// return "forward:" + returnUrl;
-		/*
-		 * ******************************************************* modify by jdh
-		 *******************************************************
-		 * if ("".equals(request.getContextPath()) ||
-		 * "/".equals(request.getContextPath())) { return "forward:" + returnUrl; }
-		 * 
-		 * if (returnUrl.startsWith(request.getContextPath())) { return "forward:" +
-		 * returnUrl.substring(returnUrl.indexOf("/", 1)); } else { return "forward:" +
-		 * returnUrl; }
-		 */
-		//// ------------------------------------------
 	}
 
 	/**

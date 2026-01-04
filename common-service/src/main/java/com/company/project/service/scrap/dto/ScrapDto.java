@@ -1,0 +1,36 @@
+package com.company.project.service.scrap.dto;
+
+import com.company.project.domain.scrap.Scrap;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+
+/**
+ * 스크랩 DTO
+ */
+@Getter
+@Builder
+public class ScrapDto {
+    private String scrapId;
+    private String bbsId;
+    private Long nttId;
+    private String scrapNm;
+    private String useAt;
+    private String uniqId;
+    private String frstRegisterId;
+    private LocalDateTime frstRegisterPnttm;
+
+    public static ScrapDto from(Scrap entity) {
+        return ScrapDto.builder()
+                .scrapId(entity.getScrapId())
+                .bbsId(entity.getBbsId())
+                .nttId(entity.getNttId())
+                .scrapNm(entity.getScrapNm())
+                .useAt(entity.getUseAt())
+                .uniqId(entity.getUniqId())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .build();
+    }
+}

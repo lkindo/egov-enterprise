@@ -56,7 +56,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	@Resource(name = "egovUsrCnfrmIdGnrService")
 	private EgovIdGnrService idgenService;
 
-	@Resource(name = "termsRepository")
+	@Resource(name = "userTermsRepository")
 	private com.company.project.domain.user.TermsRepository termsRepository;
 
 	@Override

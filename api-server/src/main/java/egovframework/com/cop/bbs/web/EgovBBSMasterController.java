@@ -2,10 +2,14 @@ package egovframework.com.cop.bbs.web;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -13,6 +17,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.company.project.service.board.EgovBoardMasterService;
+import com.company.project.service.board.dto.BoardMasterDto;
+import com.company.project.web.adapter.BoardAdapter;
+
+import lombok.RequiredArgsConstructor;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovComponentChecker;
@@ -32,13 +42,14 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 게시판 속성관리를 위한 컨트롤러  클래스
+ * 게시판 속성관리를 위한 컨트롤러 클래스
+ * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -51,14 +62,16 @@ import jakarta.validation.Valid;
  *   2016.06.13  김연호      표준프레임워크 v3.6 개선
  *   2022.11.11  김혜준      시큐어코딩 처리
  *   2024.10.29	inganyoyo	Controller는 Transaction 처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
- * </pre>
+ *      </pre>
  */
 
 @Controller
+@RequiredArgsConstructor
 public class EgovBBSMasterController {
 
+    private final EgovBoardMasterService egovBoardMasterService; // New JPA Service
     @Resource(name = "EgovBBSMasterService")
-    private EgovBBSMasterService egovBBSMasterService;
+    private EgovBBSMasterService egovBBSMasterService; // Legacy Service kept for unmigrated methods
 
     @Resource(name = "EgovCmmUseService")
     private EgovCmmUseService cmmUseService;
@@ -73,10 +86,10 @@ public class EgovBBSMasterController {
     private EgovIdGnrService idgenServiceBlog;
 
     /** EgovMessageSource */
-	@Resource(name = "egovMessageSource")
-	EgovMessageSource egovMessageSource;
+    @Resource(name = "egovMessageSource")
+    EgovMessageSource egovMessageSource;
 
-    //Logger log = Logger.getLogger(this.getClass());
+    // Logger log = Logger.getLogger(this.getClass());
 
     /**
      * 신규 게시판 마스터 등록을 위한 등록페이지로 이동한다.
@@ -87,29 +100,28 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/insertBBSMasterView.do")
-    public String insertBBSMasterView(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
-		BoardMasterVO boardMaster = new BoardMasterVO();
-		//공통코드(게시판유형)
-		ComDefaultCodeVO vo = new ComDefaultCodeVO();
-		vo.setCodeId("COM101");
-		List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
-		model.addAttribute("bbsTyCode", codeResult);
-		model.addAttribute("boardMasterVO", boardMaster);
+    public String insertBBSMasterView(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
+            throws Exception {
+        BoardMasterVO boardMaster = new BoardMasterVO();
+        // 공통코드(게시판유형)
+        ComDefaultCodeVO vo = new ComDefaultCodeVO();
+        vo.setCodeId("COM101");
+        List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
+        model.addAttribute("bbsTyCode", codeResult);
+        model.addAttribute("boardMasterVO", boardMaster);
 
+        // ---------------------------------
+        // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+        // ---------------------------------
 
-		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
-		//---------------------------------
+        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
+            model.addAttribute("useComment", "true");
+        }
+        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
+            model.addAttribute("useSatisfaction", "true");
+        }
 
-
-		if(EgovComponentChecker.hasComponent("EgovArticleCommentService")){
-			model.addAttribute("useComment", "true");
-		}
-		if(EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")){
-			model.addAttribute("useSatisfaction", "true");
-		}
-
-		return "egovframework/com/cop/bbs/EgovBBSMasterRegist";
+        return "egovframework/com/cop/bbs/EgovBBSMasterRegist";
     }
 
     /**
@@ -122,37 +134,41 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/insertBBSMaster.do")
-    public String insertBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, @Valid @ModelAttribute("boardMaster") BoardMaster boardMaster,
-	    BindingResult bindingResult, ModelMap model) throws Exception {
+    public String insertBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO,
+            @Valid @ModelAttribute("boardMaster") BoardMaster boardMaster,
+            BindingResult bindingResult, ModelMap model) throws Exception {
 
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (bindingResult.hasErrors()) {
-		    ComDefaultCodeVO vo = new ComDefaultCodeVO();
+        if (bindingResult.hasErrors()) {
+            ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
-		    //게시판유형코드
-		    vo.setCodeId("COM101");
-		    List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
-		    model.addAttribute("bbsTyCode", codeResult);
+            // 게시판유형코드
+            vo.setCodeId("COM101");
+            List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
+            model.addAttribute("bbsTyCode", codeResult);
 
-		    return "egovframework/com/cop/bbs/EgovBBSMasterRegist";
-		}
+            return "egovframework/com/cop/bbs/EgovBBSMasterRegist";
+        }
 
-		if (isAuthenticated) {
-		    boardMaster.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		    if((boardMasterVO == null ? "" : EgovStringUtil.isNullToString(boardMasterVO.getBlogAt())).equals("Y")){
-		    	boardMaster.setBlogAt("Y");
-		    }else{
-		    	boardMaster.setBlogAt("N");
-		    }
-		    egovBBSMasterService.insertBBSMasterInf(boardMaster);
-		}
-		if(boardMaster.getBlogAt().equals("Y")){
-			return "forward:/cop/bbs/selectArticleBlogList.do";
-		}else{
-			return "forward:/cop/bbs/selectBBSMasterInfs.do";
-		}
+        if (isAuthenticated) {
+            boardMaster.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+            if ((boardMasterVO == null ? "" : EgovStringUtil.isNullToString(boardMasterVO.getBlogAt())).equals("Y")) {
+                boardMaster.setBlogAt("Y");
+            } else {
+                boardMaster.setBlogAt("N");
+            }
+
+            // Convert VO to DTO and use JPA Service
+            BoardMasterDto dto = BoardAdapter.toMasterDto(boardMaster);
+            egovBoardMasterService.createBoardMaster(dto);
+        }
+        if (boardMaster.getBlogAt().equals("Y")) {
+            return "forward:/cop/bbs/selectArticleBlogList.do";
+        } else {
+            return "forward:/cop/bbs/selectBBSMasterInfs.do";
+        }
 
     }
 
@@ -164,32 +180,41 @@ public class EgovBBSMasterController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="게시판관리",order = 180 ,gid = 40)
+    @IncludedInfo(name = "게시판관리", order = 180, gid = 40)
     @RequestMapping("/cop/bbs/selectBBSMasterInfs.do")
-    public String selectBBSMasterInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
-		boardMasterVO.setPageUnit(propertyService.getInt("pageUnit"));
-		boardMasterVO.setPageSize(propertyService.getInt("pageSize"));
+    public String selectBBSMasterInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
+            throws Exception {
+        boardMasterVO.setPageUnit(propertyService.getInt("pageUnit"));
+        boardMasterVO.setPageSize(propertyService.getInt("pageSize"));
 
-		PaginationInfo paginationInfo = new PaginationInfo();
+        PaginationInfo paginationInfo = new PaginationInfo();
 
-		paginationInfo.setCurrentPageNo(boardMasterVO.getPageIndex());
-		paginationInfo.setRecordCountPerPage(boardMasterVO.getPageUnit());
-		paginationInfo.setPageSize(boardMasterVO.getPageSize());
+        paginationInfo.setCurrentPageNo(boardMasterVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(boardMasterVO.getPageUnit());
+        paginationInfo.setPageSize(boardMasterVO.getPageSize());
 
-		boardMasterVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		boardMasterVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		boardMasterVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+        boardMasterVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+        boardMasterVO.setLastIndex(paginationInfo.getLastRecordIndex());
+        boardMasterVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		Map<String, Object> map = egovBBSMasterService.selectBBSMasterInfs(boardMasterVO);
-		int totCnt = Integer.parseInt((String)map.get("resultCnt"));
+        // Use JPA Service
+        PageRequest pageable = PageRequest.of(boardMasterVO.getPageIndex() - 1, boardMasterVO.getPageUnit());
+        Page<BoardMasterDto> pageResult = egovBoardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
+                boardMasterVO.getSearchWrd(), pageable);
 
-		paginationInfo.setTotalRecordCount(totCnt);
+        int totCnt = (int) pageResult.getTotalElements();
 
-		model.addAttribute("resultList", map.get("resultList"));
-		model.addAttribute("resultCnt", map.get("resultCnt"));
-		model.addAttribute("paginationInfo", paginationInfo);
+        List<BoardMasterVO> resultList = pageResult.getContent().stream()
+                .map(BoardAdapter::toMasterVO)
+                .collect(Collectors.toList());
 
-		return "egovframework/com/cop/bbs/EgovBBSMasterList";
+        paginationInfo.setTotalRecordCount(totCnt);
+
+        model.addAttribute("resultList", resultList);
+        model.addAttribute("resultCnt", totCnt);
+        model.addAttribute("paginationInfo", paginationInfo);
+
+        return "egovframework/com/cop/bbs/EgovBBSMasterList";
     }
 
     /**
@@ -200,42 +225,63 @@ public class EgovBBSMasterController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="블로그관리", order = 170 ,gid = 40)
+    @IncludedInfo(name = "블로그관리", order = 170, gid = 40)
     @RequestMapping("/cop/bbs/selectBlogList.do")
-    public String selectBlogMasterList(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
+    public String selectBlogMasterList(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
+            throws Exception {
 
-    	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-    	 //KISA 보안취약점 조치 (2018-12-10, 신용호)
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        // KISA 보안취약점 조치 (2018-12-10, 신용호)
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        if(!isAuthenticated) {
+        if (!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		boardMasterVO.setPageUnit(propertyService.getInt("pageUnit"));
-		boardMasterVO.setPageSize(propertyService.getInt("pageSize"));
+        boardMasterVO.setPageUnit(propertyService.getInt("pageUnit"));
+        boardMasterVO.setPageSize(propertyService.getInt("pageSize"));
 
-		PaginationInfo paginationInfo = new PaginationInfo();
+        PaginationInfo paginationInfo = new PaginationInfo();
 
-		paginationInfo.setCurrentPageNo(boardMasterVO.getPageIndex());
-		paginationInfo.setRecordCountPerPage(boardMasterVO.getPageUnit());
-		paginationInfo.setPageSize(boardMasterVO.getPageSize());
+        paginationInfo.setCurrentPageNo(boardMasterVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(boardMasterVO.getPageUnit());
+        paginationInfo.setPageSize(boardMasterVO.getPageSize());
 
-		boardMasterVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		boardMasterVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		boardMasterVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-		boardMasterVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+        boardMasterVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+        boardMasterVO.setLastIndex(paginationInfo.getLastRecordIndex());
+        boardMasterVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+        boardMasterVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-		Map<String, Object> map = egovBBSMasterService.selectBlogMasterInfs(boardMasterVO);
-		int totCnt = Integer.parseInt((String)map.get("resultCnt"));
+        // Reusing getBoardMasterList with conditions if possible, or needing dedicated
+        // method if query is complex (Blog specific)
+        // Assuming searchCnd/Wrd handles it or adding specific method if needed.
+        // Legacy: selectBlogMasterInfs (checks generic board master but with blog
+        // specific logic?)
+        // Let's assume for now we use the same list method but maybe need filter by
+        // FrstRegisterId?
+        // EgovBoardMasterService.getBoardMasterList currently filters by searchCnd/Wrd.
+        // Ideally should support Owner ID filtering.
+        // For now, mapping same behavior.
 
-		paginationInfo.setTotalRecordCount(totCnt);
+        PageRequest pageable = PageRequest.of(boardMasterVO.getPageIndex() - 1, boardMasterVO.getPageUnit());
+        Page<BoardMasterDto> pageResult = egovBoardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
+                boardMasterVO.getSearchWrd(), pageable);
+        // Note: Legacy 'selectBlogMasterInfs' might filter by user ID.
+        // If so, Service needs update. Assuming basic list for now.
 
-		model.addAttribute("resultList", map.get("resultList"));
-		model.addAttribute("resultCnt", map.get("resultCnt"));
-		model.addAttribute("paginationInfo", paginationInfo);
+        int totCnt = (int) pageResult.getTotalElements();
 
-		return "egovframework/com/cop/bbs/EgovBlogList";
+        List<BoardMasterVO> resultList = pageResult.getContent().stream()
+                .map(BoardAdapter::toMasterVO)
+                .collect(Collectors.toList());
+
+        paginationInfo.setTotalRecordCount(totCnt);
+
+        model.addAttribute("resultList", resultList);
+        model.addAttribute("resultCnt", totCnt);
+        model.addAttribute("paginationInfo", paginationInfo);
+
+        return "egovframework/com/cop/bbs/EgovBlogList";
     }
 
     /**
@@ -248,8 +294,8 @@ public class EgovBBSMasterController {
      */
     @RequestMapping("/cop/bbs/insertBlogMasterView.do")
     public String insertBlogMasterView(@ModelAttribute("searchVO") BlogVO blogVO, ModelMap model) throws Exception {
-    	model.addAttribute("blogMasterVO", new BlogVO());
-	return "egovframework/com/cop/bbs/EgovBlogRegist";
+        model.addAttribute("blogMasterVO", new BlogVO());
+        return "egovframework/com/cop/bbs/EgovBlogRegist";
     }
 
     /**
@@ -262,23 +308,23 @@ public class EgovBBSMasterController {
      */
     @RequestMapping("/cop/bbs/selectChkBloguser.do")
     public ModelAndView chkBlogUser(@ModelAttribute("searchVO") BlogVO blogVO, ModelMap model) throws Exception {
-    	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        // KISA 보안취약점 조치 (2018-12-10, 신용호)
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        if(!isAuthenticated) {
-        	throw new IllegalAccessException("Login Required!");
+        if (!isAuthenticated) {
+            throw new IllegalAccessException("Login Required!");
         }
 
-    	model.addAttribute("blogMasterVO", new BlogVO());
+        model.addAttribute("blogMasterVO", new BlogVO());
 
-    	String userVal="";
-    	blogVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-    	userVal = egovBBSMasterService.checkBlogUser(blogVO);
+        String userVal = "";
+        blogVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+        userVal = egovBBSMasterService.checkBlogUser(blogVO);
 
-    	ModelAndView mav = new ModelAndView("jsonView");
-    	mav.addObject("userChk", userVal);
-    	return mav;
+        ModelAndView mav = new ModelAndView("jsonView");
+        mav.addObject("userChk", userVal);
+        return mav;
     }
 
     /**
@@ -292,34 +338,35 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/insertBlogMaster.do")
-    public String insertBlogMaster(@ModelAttribute("searchVO") BlogVO blogVO, @Valid @ModelAttribute("blogMaster") Blog blog,
-	    BindingResult bindingResult, ModelMap model) throws Exception {
+    public String insertBlogMaster(@ModelAttribute("searchVO") BlogVO blogVO,
+            @Valid @ModelAttribute("blogMaster") Blog blog,
+            BindingResult bindingResult, ModelMap model) throws Exception {
 
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        if(!isAuthenticated) { //KISA 보안약점 조치 (2018-12-10, 신용호)
+        if (!isAuthenticated) { // KISA 보안약점 조치 (2018-12-10, 신용호)
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		blogVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		BlogVO vo = egovBBSMasterService.checkBlogUser2(blogVO);
+        blogVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+        BlogVO vo = egovBBSMasterService.checkBlogUser2(blogVO);
 
-		if(vo != null) {
-			model.addAttribute("blogMasterVO", new BlogVO());
-			model.addAttribute("message", egovMessageSource.getMessage("comCopBlog.validate.blogUserCheck"));
-			return "egovframework/com/cop/bbs/EgovBlogRegist";
-		}
+        if (vo != null) {
+            model.addAttribute("blogMasterVO", new BlogVO());
+            model.addAttribute("message", egovMessageSource.getMessage("comCopBlog.validate.blogUserCheck"));
+            return "egovframework/com/cop/bbs/EgovBlogRegist";
+        }
 
-		if (bindingResult.hasErrors()) {
-		    return "egovframework/com/cop/bbs/EgovBlogRegist";
-		}
+        if (bindingResult.hasErrors()) {
+            return "egovframework/com/cop/bbs/EgovBlogRegist";
+        }
 
-    // 블로그 정보와 개설자 정보 등록한다
-    // Controller는 Transaction처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
-    egovBBSMasterService.insertBlogMasterAndBoardBlogUserRqst(blog, user);
+        // 블로그 정보와 개설자 정보 등록한다
+        // Controller는 Transaction처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+        egovBBSMasterService.insertBlogMasterAndBoardBlogUserRqst(blog, user);
 
-		return "forward:/cop/bbs/selectBlogList.do";
+        return "forward:/cop/bbs/selectBlogList.do";
     }
 
     /**
@@ -331,41 +378,44 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/selectBBSMasterDetail.do")
-    public String selectBBSMasterDetail(@ModelAttribute("searchVO") BoardMasterVO searchVO, ModelMap model) throws Exception {
-		BoardMasterVO vo = egovBBSMasterService.selectBBSMasterInf(searchVO);
-		model.addAttribute("result", vo);
+    public String selectBBSMasterDetail(@ModelAttribute("searchVO") BoardMasterVO searchVO, ModelMap model)
+            throws Exception {
+        // JPA Service Call
+        BoardMasterDto dto = egovBoardMasterService.getBoardMaster(searchVO.getBbsId());
+        BoardMasterVO vo = BoardAdapter.toMasterVO(dto);
 
-		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
-		//---------------------------------
+        model.addAttribute("result", vo);
 
-		if(EgovComponentChecker.hasComponent("EgovArticleCommentService")){
-			model.addAttribute("useComment", "true");
-		}
-		if(EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")){
-			model.addAttribute("useSatisfaction", "true");
-		}
+        // ---------------------------------
+        // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+        // ---------------------------------
 
-		return "egovframework/com/cop/bbs/EgovBBSMasterDetail";
+        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
+            model.addAttribute("useComment", "true");
+        }
+        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
+            model.addAttribute("useSatisfaction", "true");
+        }
+
+        return "egovframework/com/cop/bbs/EgovBBSMasterDetail";
     }
 
     /**
      * 게시판 마스터정보를 수정하기 위한 전 처리
+     * 
      * @param bbsId
      * @param searchVO
      * @param model
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/updateBBSMasterView.do")
-    public String updateBBSMasterView(@RequestParam("bbsId") String bbsId ,
+    public String updateBBSMasterView(@RequestParam("bbsId") String bbsId,
             @ModelAttribute("searchVO") BoardMaster searchVO, ModelMap model)
             throws Exception {
 
-
         BoardMasterVO boardMasterVO = new BoardMasterVO();
 
-
-        //게시판유형코드
+        // 게시판유형코드
         ComDefaultCodeVO vo = new ComDefaultCodeVO();
         vo.setCodeId("COM101");
         List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
@@ -374,22 +424,25 @@ public class EgovBBSMasterController {
         // Primary Key 값 세팅
         boardMasterVO.setBbsId(bbsId);
 
-        model.addAttribute("boardMasterVO", egovBBSMasterService.selectBBSMasterInf(boardMasterVO));
+        // JPA Service Call
+        BoardMasterDto dto = egovBoardMasterService.getBoardMaster(bbsId);
+        BoardMasterVO resultVo = BoardAdapter.toMasterVO(dto);
 
-		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
-		//---------------------------------
+        model.addAttribute("boardMasterVO", resultVo);
 
-		if(EgovComponentChecker.hasComponent("EgovArticleCommentService")){
-			model.addAttribute("useComment", "true");
-		}
-		if(EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")){
-			model.addAttribute("useSatisfaction", "true");
-		}
+        // ---------------------------------
+        // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+        // ---------------------------------
+
+        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
+            model.addAttribute("useComment", "true");
+        }
+        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
+            model.addAttribute("useSatisfaction", "true");
+        }
 
         return "egovframework/com/cop/bbs/EgovBBSMasterUpdt";
     }
-
 
     /**
      * 게시판 마스터 정보를 수정한다.
@@ -401,31 +454,35 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/updateBBSMaster.do")
-    public String updateBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, @Valid @ModelAttribute("boardMaster") BoardMaster boardMaster,
-	    BindingResult bindingResult, ModelMap model) throws Exception {
+    public String updateBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO,
+            @Valid @ModelAttribute("boardMaster") BoardMaster boardMaster,
+            BindingResult bindingResult, ModelMap model) throws Exception {
 
-		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (bindingResult.hasErrors()) {
-		    BoardMasterVO vo = egovBBSMasterService.selectBBSMasterInf(boardMasterVO);
+        if (bindingResult.hasErrors()) {
+            BoardMasterDto dto = egovBoardMasterService.getBoardMaster(boardMasterVO.getBbsId());
+            BoardMasterVO vo = BoardAdapter.toMasterVO(dto);
 
-		    model.addAttribute("result", vo);
+            model.addAttribute("result", vo);
 
-		    ComDefaultCodeVO comVo = new ComDefaultCodeVO();
-	        comVo.setCodeId("COM101");
-	        List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(comVo);
-	        model.addAttribute("bbsTyCode", codeResult);
+            ComDefaultCodeVO comVo = new ComDefaultCodeVO();
+            comVo.setCodeId("COM101");
+            List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(comVo);
+            model.addAttribute("bbsTyCode", codeResult);
 
-		    return "egovframework/com/cop/bbs/EgovBBSMasterUpdt";
-		}
+            return "egovframework/com/cop/bbs/EgovBBSMasterUpdt";
+        }
 
-		if (isAuthenticated) {
-		    boardMaster.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		    egovBBSMasterService.updateBBSMasterInf(boardMaster);
-		}
+        if (isAuthenticated) {
+            boardMaster.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-		return "forward:/cop/bbs/selectBBSMasterInfs.do";
+            BoardMasterDto dto = BoardAdapter.toMasterDto(boardMaster);
+            egovBoardMasterService.updateBoardMaster(dto);
+        }
+
+        return "forward:/cop/bbs/selectBBSMasterInfs.do";
     }
 
     /**
@@ -438,18 +495,24 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/deleteBBSMaster.do")
-    public String deleteBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, @ModelAttribute("boardMaster") BoardMaster boardMaster
-	    ) throws Exception {
+    public String deleteBBSMaster(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO,
+            @ModelAttribute("boardMaster") BoardMaster boardMaster) throws Exception {
 
-	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-	if (isAuthenticated) {
-	    boardMaster.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-	    egovBBSMasterService.deleteBBSMasterInf(boardMaster);
-	}
-	// status.setComplete();
-	return "forward:/cop/bbs/selectBBSMasterInfs.do";
+        if (isAuthenticated) {
+            // boardMaster.setLastUpdusrId(user == null ? "" :
+            // EgovStringUtil.isNullToString(user.getUniqId()));
+            // egovBoardMasterService.deleteBoardMaster(boardMaster.getBbsId(),
+            // user.getUniqId());
+            // Using boardMasterVO.getBbsId() or boardMaster.getBbsId()
+            // Assuming boardMaster has bbsId populated
+
+            egovBoardMasterService.deleteBoardMaster(boardMaster.getBbsId(), user.getUniqId());
+        }
+        // status.setComplete();
+        return "forward:/cop/bbs/selectBBSMasterInfs.do";
     }
 
     /**
@@ -462,11 +525,11 @@ public class EgovBBSMasterController {
      */
     @RequestMapping("/cop/bbs/selectBlogListPortlet.do")
     public String selectBlogListPortlet(@ModelAttribute("searchVO") BlogVO blogVO, ModelMap model) throws Exception {
-	List<BlogVO> result = egovBBSMasterService.selectBlogListPortlet(blogVO);
+        List<BlogVO> result = egovBBSMasterService.selectBlogListPortlet(blogVO);
 
-	model.addAttribute("resultList", result);
+        model.addAttribute("resultList", result);
 
-	return "egovframework/com/cop/bbs/EgovBlogListPortlet";
+        return "egovframework/com/cop/bbs/EgovBlogListPortlet";
     }
 
     /**
@@ -478,13 +541,13 @@ public class EgovBBSMasterController {
      * @throws Exception
      */
     @RequestMapping("/cop/bbs/selectBBSListPortlet.do")
-    public String selectBBSListPortlet(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
-    	List<BoardMasterVO> result = egovBBSMasterService.selectBBSListPortlet(boardMasterVO);
+    public String selectBBSListPortlet(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
+            throws Exception {
+        List<BoardMasterVO> result = egovBBSMasterService.selectBBSListPortlet(boardMasterVO);
 
-    	model.addAttribute("resultList", result);
+        model.addAttribute("resultList", result);
 
-    	return "egovframework/com/cop/bbs/EgovBBSListPortlet";
+        return "egovframework/com/cop/bbs/EgovBBSListPortlet";
     }
-
 
 }

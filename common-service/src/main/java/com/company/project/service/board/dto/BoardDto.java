@@ -66,6 +66,27 @@ public class BoardDto {
     @Schema(description = "등록일시 (포맷팅)", example = "2023-12-21")
     private final String frstRegisterPnttmStr;
 
+    @Schema(description = "게시물 작성자 ID")
+    private final String ntcrId;
+
+    @Schema(description = "최초 등록자 ID")
+    private final String frstRegisterId;
+
+    @Schema(description = "최종 수정자 ID")
+    private final String lastUpdusrId;
+
+    @Schema(description = "최종 수정일시")
+    private final LocalDateTime lastUpdtPnttm;
+
+    @Schema(description = "비밀번호")
+    private final String password;
+
+    @Schema(description = "비밀글 여부")
+    private final String secretAt;
+
+    @Schema(description = "블로그 여부")
+    private final String blogAt;
+
     public static BoardDto from(Board entity) {
         String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String expired = "N";
@@ -96,6 +117,12 @@ public class BoardDto {
                 .frstRegisterPnttmStr(entity.getCreatedDate() != null
                         ? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : "")
+                .ntcrId(entity.getNtcrId())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .lastUpdtPnttm(entity.getModifiedDate())
+                .password(entity.getPassword())
+                .secretAt(entity.getSecretAt())
+                .blogAt(entity.getBlogId() != null ? "Y" : "N") // Simple logic for now
                 .build();
     }
 

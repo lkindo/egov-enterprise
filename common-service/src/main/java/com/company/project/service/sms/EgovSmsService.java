@@ -1,0 +1,17 @@
+package com.company.project.service.sms;
+
+import com.company.project.service.sms.dto.SmsDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * SMS 서비스 인터페이스
+ */
+public interface EgovSmsService {
+
+    Page<SmsDto> getSmsList(String keyword, Pageable pageable);
+
+    SmsDto getSms(String smsId);
+
+    String sendSms(String userId, SmsDto dto);
+}

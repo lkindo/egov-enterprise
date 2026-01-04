@@ -39,6 +39,11 @@ public interface EgovFileService {
     void deleteFile(String atchFileId, Integer fileSn) throws IOException;
 
     /**
+     * 파일 상세 조회 (단건)
+     */
+    FileDto getFileDetail(String atchFileId, Integer fileSn);
+
+    /**
      * 파일 수정 (추가 업로드)
      */
     void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException;

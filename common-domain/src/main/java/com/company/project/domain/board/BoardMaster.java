@@ -65,10 +65,14 @@ public class BoardMaster {
     @Column(name = "BLOG_AT", length = 1)
     private String blogAt;
 
+    @Column(name = "CMMNTY_ID", length = 20)
+    private String cmmntyId;
+
     @Builder
     public BoardMaster(String bbsId, String bbsNm, String bbsIntrcn, String bbsTyCode, String bbsAttrbCode,
             String replyPosblAt, String fileAtchPosblAt, Integer atchPosblFileNumber, Long atchPosblFileSize,
-            String useAt, String tmplatId, String frstRegisterId, String blogId, String blogAt) {
+            String useAt, String tmplatId, String frstRegisterId, String lastUpdusrId, String blogId, String blogAt,
+            String cmmntyId) {
         this.bbsId = bbsId;
         this.bbsNm = bbsNm;
         this.bbsIntrcn = bbsIntrcn;
@@ -81,9 +85,11 @@ public class BoardMaster {
         this.useAt = useAt == null ? "Y" : useAt;
         this.tmplatId = tmplatId;
         this.frstRegisterId = frstRegisterId;
+        this.lastUpdusrId = lastUpdusrId;
         this.createdDate = LocalDateTime.now();
         this.blogId = blogId;
         this.blogAt = blogAt == null ? "N" : blogAt;
+        this.cmmntyId = cmmntyId;
     }
 
     public void update(String bbsNm, String bbsIntrcn, String replyPosblAt, String fileAtchPosblAt,

@@ -1,255 +1,89 @@
-# eGovFrame 5.0 레거시 이관 계획서
+# eGovFrame 5.0 엔터프라이즈 마이그레이션 마스터 플랜
 
-> **작성일**: 2025-12-21  
-> **목적**: 다른 환경에서 작업을 이어갈 수 있도록 현재 상태와 향후 작업 내용을 정리
-
----
-
-## 1. 현재 프로젝트 상태
-
-### 1.1 기본 환경 ✅ 완료
-| 항목 | 버전 | 상태 |
-|------|------|------|
-| Java | 21 LTS (Adoptium) | ✅ 설정 완료 |
-| Gradle | 8.12 | ✅ 설정 완료 |
-| Spring Boot | 3.3.7 | ✅ 설정 완료 |
-| eGovFrame RTE | 5.0.0 | ✅ 설정 완료 |
-| Database | PostgreSQL (Docker) | ✅ 연동 완료 |
-
-### 1.2 멀티 모듈 구조
-```
-egov-enterprise/
-├── common-core/        # eGovFrame 공통 설정, 유틸리티
-├── common-domain/      # JPA 엔터티, Repository
-├── common-security/    # Spring Security + JWT
-├── common-service/     # 비즈니스 로직
-├── api-server/         # REST API 서버 (Spring Boot 메인)
-└── egovframe-template-common-components-5.0.0/ # eGovFrame 5.0 공통 컴포넌트 (이관 소스)
-```
-
-### 1.3 검증된 기능
-- [x] Gradle 빌드 성공
-- [x] api-server 실행 (JDK 21)
-- [x] 회원가입 API (`POST /api/v1/users/signup`)
-- [x] 로그인 API (`POST /api/v1/auth/login`) - JWT 토큰 발급
-- [x] Swagger UI (`http://localhost:8080/swagger-ui/index.html`)
+> **최종 수정일**: 2026-01-04
+> **목표**: eGovFrame 공통 컴포넌트(`egovframework.com`) 전체를 현대적인 Spring Boot + JPA 아키텍처로 전환하되, 레거시 JSP와의 호환성을 유지합니다.
 
 ---
 
-## 2. 레거시 이관 현황
+## 1. 개요 (Executive Summary)
 
-### 2.1 선택된 전략: 점진적 이행 (옵션 A)
-전체 복사 대신 **필요한 기능 모듈만 선별하여 하나씩 추가**하는 방식.
+본 프로젝트는 레거시 eGovFrame 기반 시스템을 다음과 같이 현대화하는 것을 목표로 합니다:
+1.  **아키텍처 현대화**: MyBatis/VO 기반에서 JPA/Entity/Repository 패턴으로 전환.
+2.  **모듈 표준화**: 경량(`let`) 모듈 대신 엔터프라이즈(`com`) 전체 공통 모듈로 표준화 및 교체.
+3.  **하이브리드 전환**: "백엔드 우선(Backend First)" 전략을 채택하여, 프론트엔드(JSP)는 유지하면서 백엔드 로직을 우선 교체합니다.
 
-### 2.2 이관 대상 (우선순위)
-1. **게시판(BBS)** - 1순위
-2. **파일 관리** - 2순위
-3. **공통코드 관리** - 3순위
-4. **사용자/권한 관리** - 4순위
-
-### 2.3 완료된 인프라 설정
-- [x] `api-server/build.gradle`: JSP/MyBATIS/ICU4J/Guava/Commons IO 의존성 추가
-- [x] `common-core/build.gradle`: eGovFrame MVC/Security/Excel 패키지 추가
-- [x] `application-dev.yml`: JSP View Resolver 및 MyBATIS 매퍼 경로 설정
-- [x] `LegacyConfig.java`: DataSource 별칭, MessageSource 설정
-- [x] `SecurityConfig.java`: `.do` 확장자 및 정적 리소스 접근 허용
-
-### 2.4 현재 상태
-> ⚠️ **중단 지점**: 레거시 코드 전체 복사 후 컴파일 오류 다수 발생으로 인해 롤백됨.
-> `api-server/src/main/java/egovframework` 폴더는 삭제된 상태.
-> `api-server/src/main/webapp` 및 `api-server/src/main/resources/egovframework`는 복사된 상태.
-
+> 📘 **상세 가이드**: 개별 모듈의 상세 이관 절차는 [모듈 마이그레이션 표준 가이드](C:/Users/sanle/.gemini/antigravity/brain/f15a5c1f-5304-4178-b610-069ac85c2e0f/MODULE_MIGRATION_GUIDE.md)를 참조하십시오.
 
 ---
 
-## 3. 다음 작업 (BBS 모듈 이관)
+## 2. 마이그레이션 전략: 도메인 클러스터 (Domain Cluster)
 
-### 3.1 복사할 파일 목록
-```
-# 공통 VO/유틸리티
-egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/
-  ├── ComDefaultVO.java
-  ├── LoginVO.java
-  ├── EgovMessageSource.java
-  └── service/
-      ├── EgovFileMngService.java
-      ├── EgovFileMngUtil.java
-      ├── FileVO.java
-      └── impl/
-          ├── EgovFileMngServiceImpl.java
-          └── FileManageDAO.java
+의존성이 높은 모듈들을 묶어서(Cluster) 이관 및 검증하는 전략을 채택합니다.
 
-# BBS 서비스
-egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cop/bbs/
-  ├── service/
-  │   ├── Board.java
-  │   ├── BoardMaster.java
-  │   ├── BoardVO.java
-  │   ├── BoardMasterVO.java
-  │   ├── EgovBBSManageService.java
-  │   ├── EgovBBSAttributeManageService.java
-  │   └── impl/
-  │       ├── EgovBBSManageDAO.java (Note: DAO name might be different in com vs let)
-  │       ├── EgovBBSManageServiceImpl.java
-  │       └── EgovBBSAttributeManageServiceImpl.java
-  └── web/
-      └── EgovBBSManageController.java (또는 REST로 변환)
-```
-
-### 3.2 복사할 MyBATIS 매퍼
-```
-egovframe-template-common-components-5.0.0/src/main/resources/egovframework/mapper/com/cop/bbs/
-  └── *_postgres.xml (PostgreSQL용 SQL 매퍼)
-```
-
-### 3.3 작업 순서
-1. **디렉토리 생성**
-   ```powershell
-   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cmm/service/impl" -Force
-   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cop/bbs/service/impl" -Force
-   New-Item -ItemType Directory -Path "api-server/src/main/java/egovframework/com/cop/bbs/web" -Force
-   ```
-
-2. **공통 클래스 복사**
-   ```powershell
-   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/ComDefaultVO.java" "api-server/src/main/java/egovframework/com/cmm/"
-   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/LoginVO.java" "api-server/src/main/java/egovframework/com/cmm/"
-   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cmm/EgovMessageSource.java" "api-server/src/main/java/egovframework/com/cmm/"
-   ```
-
-3. **BBS 서비스 복사**
-   ```powershell
-   Copy-Item "egovframe-template-common-components-5.0.0/src/main/java/egovframework/com/cop/bbs/*" "api-server/src/main/java/egovframework/com/cop/bbs/" -Recurse
-   ```
-
-4. **MyBATIS 매퍼 복사**
-   ```powershell
-   Copy-Item "egovframe-template-common-components-5.0.0/src/main/resources/egovframework/mapper/com/cop/bbs/*_postgres.xml" "api-server/src/main/resources/mapper/bbs/"
-   ```
-
-5. **컴파일 테스트**
-   ```powershell
-   ./gradlew :api-server:classes
-   ```
-
-6. **누락 의존성 해결**: 컴파일 오류 발생 시 필요한 클래스만 추가 복사
+| 단계 | 클러스터 명 | 포함 모듈 | 상태 |
+|---|---|---|---|
+| **Phase 1** | **Core Foundation** | 시스템(`sym`), 보안(`sec`), 사용자(`uss`) | ✅ 완료 |
+| **Phase 2** | **Collaboration Base** | 게시판(`cop.bbs`) + 파일(`cmm.service`) + 댓글(`cop.cmt`) | 🔄 **진행 중** |
+| | **Community Ext** | 커뮤니티(`cop.cmy`) + 동호회(`cop.clb`) | ⬜ 대기 |
+| **Phase 3** | **Work Support** | 일정(`cop.smt`) + 약관(`uss.umt`) | ⬜ 대기 |
+| | **Customer Help** | 도움말(`uss.olh`) + 설문(`uss.olp`) | ⬜ 대기 |
+| **Phase 4** | **Analytics** | 통계(`sts`) + 연계(`ssi`) | ⬜ 대기 |
 
 ---
 
-## 4. 현대적 MyBatis 아키텍처 가이드라인 (TO-BE)
+## 3. 기술 전략 (Technical Strategy)
 
-레거시의 `DAO` 기반 방식을 지양하고, Spring Boot 친화적인 인터페이스 기반 아키텍처를 적용합니다.
+### 3.1. 레이어드 아키텍처 (Layered Architecture)
 
-### 4.1 핵심 원칙
-1. **Mapper 인터페이스 사용**: `EgovAbstractMapper`를 상속받는 DAO 대신 `@Mapper` 인터페이스를 사용합니다.
-2. **DTO 기반 통신**: 레거시의 `VO`나 `EgovMap` 대신 기능에 맞는 명확한 `DTO`를 정의하여 사용합니다.
-3. **Enterprise Package (Com)**: 모든 레거시 소스는 `egovframework.let` (Light)이 아닌 `egovframework.com` (Common) 패키지 소스를 사용합니다.
-4. **PostgreSQL Only**: 모든 SQL Mapper는 `*_postgres.xml`만을 사용하며, 타 DB 지원은 고려하지 않습니다.
-3. **Layered Architecture 준수**:
-   - **Infrastructure**: `Mapper XML` (SQL)
-   - **Persistence**: `@Mapper Interface`
-   - **Service**: Business Logic (Mapper 주입)
-   - **Web**: REST API Controller
+데이터 흐름은 다음과 같습니다:
+`Legacy Controller` → `Adapter` → `Modern Service` → `JPA Repository` → `PostgreSQL`
 
-### 4.2 파일 구조 예시
-```
-common-domain/
-  └── src/main/java/com/company/project/domain/[feature]/
-      └── [Feature]Mapper.java (인터페이스)
-  └── src/main/resources/mapper/[feature]/
-      └── [Feature]Mapper.xml (SQL)
-
-common-service/
-  └── src/main/java/com/company/project/service/[feature]/
-      └── [Feature]Service.java (Business Logic)
+```mermaid
+graph LR
+    JSP[Legacy JSP View] -- Model(Map) --> CTL[Legacy Controller]
+    CTL -- DTO --> SVC[Modern Service]
+    SVC -- Entity --> REP[JPA Repository]
+    REP -- SQL --> DB[(PostgreSQL)]
+    
+    subgraph "Hybrid Layer"
+    CTL
+    ADPT[Adapter]
+    end
+    
+    CTL -.-> ADPT
+    ADPT -.-> SVC
 ```
 
-### 4.3 설정 (application-dev.yml)
-- `mybatis.configuration.map-underscore-to-camel-case: true` 설정 권장 (DB Snake Case -> Java Camel Case 자동 매핑)
+### 3.2. 표준 디렉토리 구조
+```
+common-domain/src/main/java/com/company/project/domain/[module]/
+├── [Entity].java       # JPA 엔티티 (Setter 미사용, Builder 패턴)
+└── [Repository].java   # JpaRepository 인터페이스
 
----
-
-## 5. 단계별 이관 로드맵 (개정)
-
-### 1단계: 인프라 구축 ✅
-- [x] MyBatis 종속성 추가 및 기본 설정
-- [x] Cubrid DB 연동 확인
-
-### 2단계: 아키텍처 전환 및 샘플 이식 (현재) 🔄
-- [ ] 레거시 BBS SQL 분석 및 현대화
-- [ ] Mapper 인터페이스 정의 및 XML 이식
-- [ ] REST API 변환 (Controller 신규 작성)
-
-### 3단계: 파일/공통코드 모듈 이관 ⏳
-- 신규 아키텍처 표준을 적용하여 순차적 이행
-
----
-
-## 6. 환경 설정 참고
-
-### 4.1 JDK 21 설정 (중요)
-Gradle이 자동으로 JDK 21을 다운로드합니다. 수동 설정이 필요한 경우:
-```powershell
-$env:JAVA_HOME = "C:\Users\<username>\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2\jdk-21.0.5+11"
+common-service/src/main/java/com/company/project/service/[module]/
+├── [Service].java      # 서비스 인터페이스
+└── [ServiceImpl].java  # 비즈니스 로직 구현체
 ```
 
-### 4.2 서버 실행
-```powershell
-./gradlew :api-server:bootRun
-```
-
-### 4.3 API 테스트
-```powershell
-# 회원가입
-curl -X POST http://localhost:8080/api/v1/users/signup `
-  -H "Content-Type: application/json" `
-  -d '{"loginId":"testuser","password":"Test1234!","name":"테스트","email":"test@test.com","passwordHint":"hint","passwordCnsr":"answer","role":"USER"}'
-
-# 로그인
-curl -X POST http://localhost:8080/api/v1/auth/login `
-  -H "Content-Type: application/json" `
-  -d '{"loginId":"testuser","password":"Test1234!"}'
+### 3.3. 하이브리드 어댑터 패턴
+기존 JSP가 `Map` 또는 `VO` 객체를 기대하는 구조를 유지하기 위해 어댑터 패턴을 사용합니다:
+```java
+// Controller
+@GetMapping("/list.do")
+public String list(Model model) {
+    List<BoardDto> posts = boardService.findAll();
+    // Adapter: DTO -> Legacy Map 구조 변환 (null safe 처리 필수)
+    List<Map<String, Object>> legacyList = BoardAdapter.toLegacyList(posts);
+    model.addAttribute("resultList", legacyList);
+    return "egovframework/com/cop/bbs/EgovNoticeList";
+}
 ```
 
 ---
 
-## 5. 주요 파일 위치
-
-| 파일 | 경로 | 설명 |
-|------|------|------|
-| 루트 빌드 설정 | `build.gradle` | Java 21 Toolchain, 공통 의존성 |
-| API 서버 빌드 | `api-server/build.gradle` | JSP/MyBATIS/레거시 의존성 |
-| 개발 환경 설정 | `api-server/src/main/resources/application-dev.yml` | DB 연결, JSP, MyBATIS |
-| 현대화 플랜 | `implementation_plan.md` | 신규 아키텍처 상세 가이드라인 |
-| 보안 설정 | `common-security/.../SecurityConfig.java` | JWT + 레거시 경로 허용 |
-| 레거시 빈 설정 | `api-server/.../LegacyConfig.java` | DataSource 별칭, MessageSource |
-| 레거시 원본 | `egovframe-template-common-components-5.0.0/` | eGovFrame 5.0 공통 컴포넌트 원본 |
-
----
-
-## 6. 알려진 이슈
-
-### 6.1 미해결 Lint 오류
-`common-service/BoardService.java`에 `BusinessException`, `ErrorCode` 관련 컴파일 오류 존재.
-→ 현재 JPA 기반 Board 엔터티와 레거시 BBS는 별개로 운영 예정.
-
-### 6.2 레거시 코드 의존성
-레거시 코드에서 사용하는 외부 라이브러리:
-- `com.ibm.icu:icu4j` (음력 변환)
-- `commons-io:commons-io` (파일 처리)
-- `com.google.guava:guava` (유틸리티)
-
-→ 이미 `api-server/build.gradle`에 추가됨.
-
----
-
-## 7. 연락처 및 참고자료
-
-- **eGovFrame 공식 문서**: https://www.egovframe.go.kr/
-- **Spring Boot 3.3 문서**: https://docs.spring.io/spring-boot/docs/3.3.x/reference/html/
-- **Cubrid JDBC**: https://www.cubrid.org/manual/en/11.3/api/jdbc.html
-
----
-
-> 이 문서를 참고하여 다른 환경에서 작업을 계속할 수 있습니다.
-> 질문이 있으면 이 문서와 함께 맥락을 공유해 주세요.
+## 4. 검증 체크리스트
+각 모듈 이관 시 다음 사항을 반드시 확인해야 합니다:
+1.  **DB**: 테이블 존재 여부 (`COMT` 접두어 제거 확인) 및 JPA를 통한 데이터 접근 가능 여부.
+2.  **Logic**: 서비스 단위 테스트(Unit Tests) 통과 여부.
+3.  **UI**: JSP 페이지가 500 에러 없이 정상 렌더링되는지.
+4.  **Flow**: 등록/수정/삭제(CRUD) 작업이 DB에 정상 반영되는지.

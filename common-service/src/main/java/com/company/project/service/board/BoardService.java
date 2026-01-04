@@ -12,11 +12,16 @@ import com.company.project.domain.user.User;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.board.dto.BoardDto;
 import com.company.project.service.board.dto.BoardSaveRequest;
+import com.company.project.service.file.EgovFileService;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * JPA 기반 게시판 서비스 구현체
@@ -29,31 +34,27 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
         private final UserRepository userRepository;
+        private final EgovFileService fileService;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        EgovFileService fileService) {
                 this.boardRepository = boardRepository;
                 this.boardMasterRepository = boardMasterRepository;
                 this.userRepository = userRepository;
+                this.fileService = fileService;
         }
 
-        /**
-         * 게시물 페이징 목록 조회
-         */
         @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(String bbsId, Pageable pageable) {
                 return getBoardPosts(bbsId, "", "", pageable);
         }
 
-        /**
-         * 게시물 검색 페이징 목록 조회
-         */
         @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(String bbsId, String searchCnd, String searchWrd, Pageable pageable) {
-                // Verify Master exists
                 boardMasterRepository.findById(bbsId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -68,9 +69,6 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 return result.map(BoardDto::from);
         }
 
-        /**
-         * 게시물 등록
-         */
         @Override
         @Transactional
         public Long createPost(String userId, BoardSaveRequest request) {
@@ -104,9 +102,22 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 return boardRepository.save(board).getNttId();
         }
 
-        /**
-         * 답변 등록
-         */
+        @Override
+        @Transactional
+        public Long createPostWithFiles(String userId, BoardSaveRequest request, List<MultipartFile> files)
+                        throws IOException {
+                String atchFileId = request.atchFileId();
+                if (files != null && !files.isEmpty()) {
+                        atchFileId = fileService.uploadFiles(files);
+                }
+
+                BoardSaveRequest newRequest = new BoardSaveRequest(
+                                request.bbsId(), request.nttSj(), request.nttCn(),
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+
+                return createPost(userId, newRequest);
+        }
+
         @Override
         @Transactional
         public Long replyPost(String userId, Long parentId, BoardSaveRequest request) {
@@ -119,7 +130,6 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 User author = userRepository.findByEsntlId(userId)
                                 .orElse(null);
 
-                // Reply Logic
                 Long nttId = boardRepository.findMaxNttId() + 1;
                 Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
 
@@ -144,22 +154,32 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 return boardRepository.save(board).getNttId();
         }
 
-        /**
-         * 게시물 상세 조회
-         */
+        @Override
+        @Transactional
+        public Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request,
+                        List<MultipartFile> files) throws IOException {
+                String atchFileId = request.atchFileId();
+                if (files != null && !files.isEmpty()) {
+                        atchFileId = fileService.uploadFiles(files);
+                }
+
+                BoardSaveRequest newRequest = new BoardSaveRequest(
+                                request.bbsId(), request.nttSj(), request.nttCn(),
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+
+                return replyPost(userId, parentId, newRequest);
+        }
+
         @Override
         @Transactional
         public BoardDto getPostDetail(String bbsId, Long nttId) {
                 Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                board.increaseInqireCo(); // 조회수 증가
+                board.increaseInqireCo();
                 return BoardDto.from(board);
         }
 
-        /**
-         * 게시물 수정
-         */
         @Override
         @Transactional
         public void updatePost(String bbsId, Long nttId, BoardSaveRequest request) {
@@ -171,9 +191,27 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 request.atchFileId(), board.getLastUpdusrId());
         }
 
-        /**
-         * 게시물 삭제
-         */
+        @Override
+        @Transactional
+        public void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request, List<MultipartFile> files)
+                        throws IOException {
+                String atchFileId = request.atchFileId();
+
+                if (files != null && !files.isEmpty()) {
+                        if (atchFileId == null || atchFileId.isEmpty()) {
+                                atchFileId = fileService.uploadFiles(files);
+                        } else {
+                                fileService.updateFiles(atchFileId, files);
+                        }
+                }
+
+                BoardSaveRequest newRequest = new BoardSaveRequest(
+                                request.bbsId(), request.nttSj(), request.nttCn(),
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+
+                updatePost(bbsId, nttId, newRequest);
+        }
+
         @Override
         @Transactional
         public void deletePost(String bbsId, Long nttId, String authorId) {
