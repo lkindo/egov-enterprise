@@ -1,0 +1,500 @@
+2026-01-05 23:50:50.943 [http-nio-8080-exec-1] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-01-05 23:50:50.943 [http-nio-8080-exec-1] DEBUG o.s.s.w.s.SessionManagementFilter - Request requested invalid session id 6971BA3012A9B19048ECC1D2718029E0
+2026-01-05 23:50:51.033 [http-nio-8080-exec-1] DEBUG o.s.s.w.s.HttpSessionRequestCache - Saved request http://localhost:8080/?continue to session
+2026-01-05 23:50:51.034 [http-nio-8080-exec-1] DEBUG o.s.s.web.DefaultRedirectStrategy - Redirecting to http://localhost:8080/uat/uia/egovLoginUsr.do
+>>> DEBUG_FILTER_POST: / => Status: 302
+2026-01-05 23:50:51.060 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /uat/uia/egovLoginUsr.do
+>>> DEBUG_FILTER_PRE: /uat/uia/egovLoginUsr.do
+2026-01-05 23:50:51.062 [http-nio-8080-exec-2] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-01-05 23:50:51.067 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /uat/uia/egovLoginUsr.do
+2026-01-05 23:50:51.071 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - GET "/uat/uia/egovLoginUsr.do", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-05 23:50:51.074 [http-nio-8080-exec-2] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to egovframework.com.uat.uia.web.EgovLoginController#loginUsrView(LoginVO, HttpServletRequest, HttpServletResponse, ModelMap)
+2026-01-05 23:50:51.101 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice starting for URI: /uat/uia/egovLoginUsr.do
+2026-01-05 23:50:51.161 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:51.211 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:51.236 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice - menuHierarchy size: 9
+2026-01-05 23:50:51.252 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+2026-01-05 23:50:51.253 [http-nio-8080-exec-2] TRACE org.hibernate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/uat/uia/egovLoginUsr.do]
+2026-01-05 23:50:51.261 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0
+2026-01-05 23:50:51.269 [http-nio-8080-exec-2] DEBUG c.c.p.api.advice.GlobalMenuAdvice - GlobalMenuAdvice - Identified rootMenuId: 1000000 for relativeUri: /uat/uia/egovLoginUsr.do
+2026-01-05 23:50:51.271 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:51.275 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:51.300 [http-nio-8080-exec-2] DEBUG e.com.cmm.service.EgovProperties - ===>>> getProperty/D:/project/egov-enterprise/api-server/build/classes/java/main/
+2026-01-05 23:50:51.300 [http-nio-8080-exec-2] DEBUG e.com.cmm.service.EgovProperties - getProperty : /D:/project/egov-enterprise/api-server/build/classes/java/main/egovframework/egovProps\globals.properties = Globals.Auth
+2026-01-05 23:50:51.303 [http-nio-8080-exec-2] DEBUG e.com.cmm.service.EgovProperties - Loaded properties from classpath: /egovframework/egovProps/globals.properties
+2026-01-05 23:50:51.329 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - Rendering view [org.springframework.web.servlet.view.JstlView: name [uat/uia/EgovLoginUsr]; URL [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]] 
+2026-01-05 23:50:51.329 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - View name [uat/uia/EgovLoginUsr], model {list_headmenu=[com.company.project.service.menu.dto.MenuDto@294b68db, com.company.project.service.menu.dto.MenuDto@6bbd39db, com.company.project.service.menu.dto.MenuDto@5b33acb9, com.company.project.service.menu.dto.MenuDto@3919edb4, com.company.project.service.menu.dto.MenuDto@4b6647fc, com.company.project.service.menu.dto.MenuDto@4917ccaa, com.company.project.service.menu.dto.MenuDto@f07e755, com.company.project.service.menu.dto.MenuDto@7905cf4c, com.company.project.service.menu.dto.MenuDto@a52e37], menuList=[com.company.project.service.menu.dto.MenuDto@294b68db, com.company.project.service.menu.dto.MenuDto@6bbd39db, com.company.project.service.menu.dto.MenuDto@5b33acb9, com.company.project.service.menu.dto.MenuDto@3919edb4, com.company.project.service.menu.dto.MenuDto@4b6647fc, com.company.project.service.menu.dto.MenuDto@4917ccaa, com.company.project.service.menu.dto.MenuDto@f07e755, com.company.project.service.menu.dto.MenuDto@7905cf4c, com.company.project.service.menu.dto.MenuDto@a52e37], list_menulist=[com.company.project.service.menu.dto.MenuDto@294b68db, com.company.project.service.menu.dto.MenuDto@77a0c015, com.company.project.service.menu.dto.MenuDto@472dbcfb, com.company.project.service.menu.dto.MenuDto@6bbd39db, com.company.project.service.menu.dto.MenuDto@108574fd, com.company.project.service.menu.dto.MenuDto@3978344c, com.company.project.service.menu.dto.MenuDto@48a9fb1e, com.company.project.service.menu.dto.MenuDto@62c95c94, com.company.project.service.menu.dto.MenuDto@59d0feac, com.company.project.service.menu.dto.MenuDto@5b33acb9, com.company.project.service.menu.dto.MenuDto@21f26b8e, com.company.project.service.menu.dto.MenuDto@268415a5, com.company.project.service.menu.dto.MenuDto@e01c01d, com.company.project.service.menu.dto.MenuDto@507a6aef, com.company.project.service.menu.dto.MenuDto@6266c575, com.company.project.service.menu.dto.MenuDto@6449dda1, com.company.project.service.menu.dto.MenuDto@3919edb4, com.company.project.service.menu.dto.MenuDto@64c8f81d, com.company.project.service.menu.dto.MenuDto@67e6db79, com.company.project.service.menu.dto.MenuDto@33ffe79d, com.company.project.service.menu.dto.MenuDto@19718096, com.company.project.service.menu.dto.MenuDto@3ada8bb5, com.company.project.service.menu.dto.MenuDto@6b36a284, com.company.project.service.menu.dto.MenuDto@27b97370, com.company.project.service.menu.dto.MenuDto@32d92221, com.company.project.service.menu.dto.MenuDto@5cb090ec, com.company.project.service.menu.dto.MenuDto@2cc3b7c, com.company.project.service.menu.dto.MenuDto@6e82eaa6, com.company.project.service.menu.dto.MenuDto@1531057d, com.company.project.service.menu.dto.MenuDto@4ddec0c7, com.company.project.service.menu.dto.MenuDto@2eaa15db, com.company.project.service.menu.dto.MenuDto@57040d72, com.company.project.service.menu.dto.MenuDto@4a83e002, com.company.project.service.menu.dto.MenuDto@7160c96d, com.company.project.service.menu.dto.MenuDto@f9a0e57, com.company.project.service.menu.dto.MenuDto@7802ed4b, com.company.project.service.menu.dto.MenuDto@2dd491b9, com.company.project.service.menu.dto.MenuDto@5a881ecf, com.company.project.service.menu.dto.MenuDto@4b6647fc, com.company.project.service.menu.dto.MenuDto@53f4b7f, com.company.project.service.menu.dto.MenuDto@6a389626, com.company.project.service.menu.dto.MenuDto@63e89b81, com.company.project.service.menu.dto.MenuDto@798c9f55, com.company.project.service.menu.dto.MenuDto@61757a8, com.company.project.service.menu.dto.MenuDto@283078ea, com.company.project.service.menu.dto.MenuDto@fa3cafe, com.company.project.service.menu.dto.MenuDto@12488a68, com.company.project.service.menu.dto.MenuDto@2e5e259e, com.company.project.service.menu.dto.MenuDto@582ff97, com.company.project.service.menu.dto.MenuDto@146731e3, com.company.project.service.menu.dto.MenuDto@42aae2cd, com.company.project.service.menu.dto.MenuDto@1d075dd3, com.company.project.service.menu.dto.MenuDto@f6b67a3, com.company.project.service.menu.dto.MenuDto@22aea784, com.company.project.service.menu.dto.MenuDto@37879596, com.company.project.service.menu.dto.MenuDto@1049af70, com.company.project.service.menu.dto.MenuDto@444b94a5, com.company.project.service.menu.dto.MenuDto@138e992f, com.company.project.service.menu.dto.MenuDto@182e85ed, com.company.project.service.menu.dto.MenuDto@45c19bb7, com.company.project.service.menu.dto.MenuDto@5db7d116, com.company.project.service.menu.dto.MenuDto@3a177c6e, com.company.project.service.menu.dto.MenuDto@567a872c, com.company.project.service.menu.dto.MenuDto@1fafa277, com.company.project.service.menu.dto.MenuDto@7c73fff5, com.company.project.service.menu.dto.MenuDto@7d861819, com.company.project.service.menu.dto.MenuDto@7fc7a362, com.company.project.service.menu.dto.MenuDto@1d191af7, com.company.project.service.menu.dto.MenuDto@7ef6d2f6, com.company.project.service.menu.dto.MenuDto@337d5be1, com.company.project.service.menu.dto.MenuDto@7163325f, com.company.project.service.menu.dto.MenuDto@24f84026, com.company.project.service.menu.dto.MenuDto@6cd1572d, com.company.project.service.menu.dto.MenuDto@35aabb05, com.company.project.service.menu.dto.MenuDto@5db38625, com.company.project.service.menu.dto.MenuDto@3b2c14c5, com.company.project.service.menu.dto.MenuDto@5d2254b2, com.company.project.service.menu.dto.MenuDto@3d30ae80, com.company.project.service.menu.dto.MenuDto@7cf395ad, com.company.project.service.menu.dto.MenuDto@27a23cca, com.company.project.service.menu.dto.MenuDto@68ea7b48, com.company.project.service.menu.dto.MenuDto@50968c7b, com.company.project.service.menu.dto.MenuDto@30a83539, com.company.project.service.menu.dto.MenuDto@6da0b8a, com.company.project.service.menu.dto.MenuDto@3d511022, com.company.project.service.menu.dto.MenuDto@59c0b6a7, com.company.project.service.menu.dto.MenuDto@2830415b, com.company.project.service.menu.dto.MenuDto@7ee0898c, com.company.project.service.menu.dto.MenuDto@4b854672, com.company.project.service.menu.dto.MenuDto@17acb42b, com.company.project.service.menu.dto.MenuDto@3dbc151c, com.company.project.service.menu.dto.MenuDto@47ea57ce, com.company.project.service.menu.dto.MenuDto@263d2f97, com.company.project.service.menu.dto.MenuDto@5442da97, com.company.project.service.menu.dto.MenuDto@98b21f6, com.company.project.service.menu.dto.MenuDto@1c4a532e, com.company.project.service.menu.dto.MenuDto@534496a7, com.company.project.service.menu.dto.MenuDto@1110783a, com.company.project.service.menu.dto.MenuDto@41c46f7f, com.company.project.service.menu.dto.MenuDto@fd9974a, com.company.project.service.menu.dto.MenuDto@78dfd9b8, com.company.project.service.menu.dto.MenuDto@6a9caf31, com.company.project.service.menu.dto.MenuDto@8419a8a, com.company.project.service.menu.dto.MenuDto@4b612f0f, com.company.project.service.menu.dto.MenuDto@4df53dc2, com.company.project.service.menu.dto.MenuDto@4917ccaa, com.company.project.service.menu.dto.MenuDto@421ff66a, com.company.project.service.menu.dto.MenuDto@460ea169, com.company.project.service.menu.dto.MenuDto@4d5f7f0, com.company.project.service.menu.dto.MenuDto@602ac185, com.company.project.service.menu.dto.MenuDto@5d3bd74c, com.company.project.service.menu.dto.MenuDto@6e8d306b, com.company.project.service.menu.dto.MenuDto@454c303d, com.company.project.service.menu.dto.MenuDto@73dcf7f8, com.company.project.service.menu.dto.MenuDto@70dedf78, com.company.project.service.menu.dto.MenuDto@7757b760, com.company.project.service.menu.dto.MenuDto@53bebc6f, com.company.project.service.menu.dto.MenuDto@47c9f2d7, com.company.project.service.menu.dto.MenuDto@416ad049, com.company.project.service.menu.dto.MenuDto@bcc83b3, com.company.project.service.menu.dto.MenuDto@2db71b61, com.company.project.service.menu.dto.MenuDto@25600b4a, com.company.project.service.menu.dto.MenuDto@329f6f37, com.company.project.service.menu.dto.MenuDto@5d21b3cc, com.company.project.service.menu.dto.MenuDto@48d8d71a, com.company.project.service.menu.dto.MenuDto@6d47bf10, com.company.project.service.menu.dto.MenuDto@24e89358, com.company.project.service.menu.dto.MenuDto@7487ebda, com.company.project.service.menu.dto.MenuDto@7a698257, com.company.project.service.menu.dto.MenuDto@2a061d35, com.company.project.service.menu.dto.MenuDto@4a94397e, com.company.project.service.menu.dto.MenuDto@106c2cd, com.company.project.service.menu.dto.MenuDto@37cb9380, com.company.project.service.menu.dto.MenuDto@2d3ecff9, com.company.project.service.menu.dto.MenuDto@460a5ce9, com.company.project.service.menu.dto.MenuDto@71adee4f, com.company.project.service.menu.dto.MenuDto@1a913469, com.company.project.service.menu.dto.MenuDto@f07e755, com.company.project.service.menu.dto.MenuDto@410b61c5, com.company.project.service.menu.dto.MenuDto@55f29019, com.company.project.service.menu.dto.MenuDto@4bb3d37e, com.company.project.service.menu.dto.MenuDto@5892841d, com.company.project.service.menu.dto.MenuDto@7905cf4c, com.company.project.service.menu.dto.MenuDto@428dd383, com.company.project.service.menu.dto.MenuDto@33ee193, com.company.project.service.menu.dto.MenuDto@5643eaa9, com.company.project.service.menu.dto.MenuDto@1abd3e10, com.company.project.service.menu.dto.MenuDto@3600e70f, com.company.project.service.menu.dto.MenuDto@42c6ba25, com.company.project.service.menu.dto.MenuDto@b990676, com.company.project.service.menu.dto.MenuDto@a52e37, com.company.project.service.menu.dto.MenuDto@7827f4ab, com.company.project.service.menu.dto.MenuDto@49ae4c3f, com.company.project.service.menu.dto.MenuDto@3ecec0bd, com.company.project.service.menu.dto.MenuDto@7da7dba4, com.company.project.service.menu.dto.MenuDto@3ae2ea17, com.company.project.service.menu.dto.MenuDto@11696c0, com.company.project.service.menu.dto.MenuDto@49957577, com.company.project.service.menu.dto.MenuDto@a2cfd1a, com.company.project.service.menu.dto.MenuDto@27b30c1a, com.company.project.service.menu.dto.MenuDto@12a62eba, com.company.project.service.menu.dto.MenuDto@707adf54], activeRootMenuId=1000000, subMenu=[com.company.project.service.menu.dto.MenuDto@1d53286c, com.company.project.service.menu.dto.MenuDto@22bf2400], loginVO=egovframework.com.cmm.LoginVO@14f0d13, org.springframework.validation.BindingResult.loginVO=org.springframework.validation.BeanPropertyBindingResult: 0 errors, useMemberManage=true, authType=session}
+2026-01-05 23:50:51.340 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - Forwarding to [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]
+2026-01-05 23:50:51.353 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_PRE: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:51.356 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.249 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_PRE: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.251 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.253 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - "INCLUDE" dispatch for GET "/sym/mms/EgovHeader.do", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-05 23:50:53.254 [http-nio-8080-exec-2] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.company.project.web.MainController#selectHeader(ModelMap)
+2026-01-05 23:50:53.255 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice starting for URI: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.256 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:53.264 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:53.271 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice - menuHierarchy size: 9
+2026-01-05 23:50:53.273 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+2026-01-05 23:50:53.273 [http-nio-8080-exec-2] TRACE org.hibernate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]
+2026-01-05 23:50:53.280 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:53.286 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:53.293 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:53.298 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:53.306 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - Rendering view [org.springframework.web.servlet.view.JstlView: name [main/inc/EgovIncHeader]; URL [/WEB-INF/jsp/main/inc/EgovIncHeader.jsp]] 
+2026-01-05 23:50:53.306 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - View name [main/inc/EgovIncHeader], model {list_headmenu=[com.company.project.service.menu.dto.MenuDto@c9d1e43, com.company.project.service.menu.dto.MenuDto@43d0c8b3, com.company.project.service.menu.dto.MenuDto@37ac2846, com.company.project.service.menu.dto.MenuDto@35b7313, com.company.project.service.menu.dto.MenuDto@67501a3d, com.company.project.service.menu.dto.MenuDto@2200d334, com.company.project.service.menu.dto.MenuDto@7438312a, com.company.project.service.menu.dto.MenuDto@2c231755, com.company.project.service.menu.dto.MenuDto@4b45711e], menuList=[com.company.project.service.menu.dto.MenuDto@6f789231, com.company.project.service.menu.dto.MenuDto@5a7c5f95, com.company.project.service.menu.dto.MenuDto@6e517230, com.company.project.service.menu.dto.MenuDto@efc2365, com.company.project.service.menu.dto.MenuDto@253ec191, com.company.project.service.menu.dto.MenuDto@1d06a254, com.company.project.service.menu.dto.MenuDto@78a39336, com.company.project.service.menu.dto.MenuDto@172b704c, com.company.project.service.menu.dto.MenuDto@444a0971], list_menulist=[com.company.project.service.menu.dto.MenuDto@6c7617ae, com.company.project.service.menu.dto.MenuDto@8280335, com.company.project.service.menu.dto.MenuDto@44cdbb6c, com.company.project.service.menu.dto.MenuDto@50d83305, com.company.project.service.menu.dto.MenuDto@ccf95d7, com.company.project.service.menu.dto.MenuDto@44b61ed0, com.company.project.service.menu.dto.MenuDto@6d89cbf1, com.company.project.service.menu.dto.MenuDto@7c588d5e, com.company.project.service.menu.dto.MenuDto@cc9ce2f, com.company.project.service.menu.dto.MenuDto@78fd01f8, com.company.project.service.menu.dto.MenuDto@5b888b55, com.company.project.service.menu.dto.MenuDto@6302cf07, com.company.project.service.menu.dto.MenuDto@2178ddfe, com.company.project.service.menu.dto.MenuDto@319aeae8, com.company.project.service.menu.dto.MenuDto@2e571dad, com.company.project.service.menu.dto.MenuDto@5bd89597, com.company.project.service.menu.dto.MenuDto@3ca8343f, com.company.project.service.menu.dto.MenuDto@5a8354e8, com.company.project.service.menu.dto.MenuDto@4caf8060, com.company.project.service.menu.dto.MenuDto@53c4d04f, com.company.project.service.menu.dto.MenuDto@2eb01fc4, com.company.project.service.menu.dto.MenuDto@6e542aee, com.company.project.service.menu.dto.MenuDto@5ec81bc4, com.company.project.service.menu.dto.MenuDto@2bfbeefa, com.company.project.service.menu.dto.MenuDto@51b8a7e, com.company.project.service.menu.dto.MenuDto@4a57d369, com.company.project.service.menu.dto.MenuDto@54dff7dc, com.company.project.service.menu.dto.MenuDto@20275f83, com.company.project.service.menu.dto.MenuDto@79b67983, com.company.project.service.menu.dto.MenuDto@d8e2147, com.company.project.service.menu.dto.MenuDto@26c4463d, com.company.project.service.menu.dto.MenuDto@3c85ce21, com.company.project.service.menu.dto.MenuDto@7635d253, com.company.project.service.menu.dto.MenuDto@a4d51cb, com.company.project.service.menu.dto.MenuDto@e3c0b11, com.company.project.service.menu.dto.MenuDto@1cda2831, com.company.project.service.menu.dto.MenuDto@4425d6b3, com.company.project.service.menu.dto.MenuDto@248604f5, com.company.project.service.menu.dto.MenuDto@4a8cf7f7, com.company.project.service.menu.dto.MenuDto@75ad537, com.company.project.service.menu.dto.MenuDto@6d201b21, com.company.project.service.menu.dto.MenuDto@79151bdc, com.company.project.service.menu.dto.MenuDto@548b7846, com.company.project.service.menu.dto.MenuDto@529ec8d, com.company.project.service.menu.dto.MenuDto@68bd061a, com.company.project.service.menu.dto.MenuDto@39273b2a, com.company.project.service.menu.dto.MenuDto@36613d00, com.company.project.service.menu.dto.MenuDto@7c66f2c5, com.company.project.service.menu.dto.MenuDto@7c6ba685, com.company.project.service.menu.dto.MenuDto@7c952c49, com.company.project.service.menu.dto.MenuDto@432387e6, com.company.project.service.menu.dto.MenuDto@898b59d, com.company.project.service.menu.dto.MenuDto@29667585, com.company.project.service.menu.dto.MenuDto@7cc4e384, com.company.project.service.menu.dto.MenuDto@2307474d, com.company.project.service.menu.dto.MenuDto@6e7e3aed, com.company.project.service.menu.dto.MenuDto@74aeb0fa, com.company.project.service.menu.dto.MenuDto@2f2db528, com.company.project.service.menu.dto.MenuDto@3689b2af, com.company.project.service.menu.dto.MenuDto@293f4fc1, com.company.project.service.menu.dto.MenuDto@2897037c, com.company.project.service.menu.dto.MenuDto@6ad167b3, com.company.project.service.menu.dto.MenuDto@11b6bc8c, com.company.project.service.menu.dto.MenuDto@4224b83c, com.company.project.service.menu.dto.MenuDto@52b8cfe7, com.company.project.service.menu.dto.MenuDto@33b5c6fc, com.company.project.service.menu.dto.MenuDto@17434eda, com.company.project.service.menu.dto.MenuDto@7041e156, com.company.project.service.menu.dto.MenuDto@6492df4e, com.company.project.service.menu.dto.MenuDto@798d7706, com.company.project.service.menu.dto.MenuDto@7435c373, com.company.project.service.menu.dto.MenuDto@b01d7f2, com.company.project.service.menu.dto.MenuDto@799b1173, com.company.project.service.menu.dto.MenuDto@6b3c7c01, com.company.project.service.menu.dto.MenuDto@31c8044e, com.company.project.service.menu.dto.MenuDto@3473ebc2, com.company.project.service.menu.dto.MenuDto@154264b6, com.company.project.service.menu.dto.MenuDto@1d16de6b, com.company.project.service.menu.dto.MenuDto@6c0d43f3, com.company.project.service.menu.dto.MenuDto@470b884b, com.company.project.service.menu.dto.MenuDto@41ea23c8, com.company.project.service.menu.dto.MenuDto@6aa44818, com.company.project.service.menu.dto.MenuDto@6c309c64, com.company.project.service.menu.dto.MenuDto@77e20879, com.company.project.service.menu.dto.MenuDto@6706812e, com.company.project.service.menu.dto.MenuDto@2f2af15e, com.company.project.service.menu.dto.MenuDto@47119b63, com.company.project.service.menu.dto.MenuDto@2057e238, com.company.project.service.menu.dto.MenuDto@738b18ed, com.company.project.service.menu.dto.MenuDto@b53a7c3, com.company.project.service.menu.dto.MenuDto@40d2ff49, com.company.project.service.menu.dto.MenuDto@5f0b8349, com.company.project.service.menu.dto.MenuDto@74ecb435, com.company.project.service.menu.dto.MenuDto@629778d4, com.company.project.service.menu.dto.MenuDto@35e8fb78, com.company.project.service.menu.dto.MenuDto@36fa3747, com.company.project.service.menu.dto.MenuDto@272670b1, com.company.project.service.menu.dto.MenuDto@7e2efd59, com.company.project.service.menu.dto.MenuDto@ceffadf, com.company.project.service.menu.dto.MenuDto@6bc8a40a, com.company.project.service.menu.dto.MenuDto@7f7fe23a, com.company.project.service.menu.dto.MenuDto@76b20cb9, com.company.project.service.menu.dto.MenuDto@57829b2, com.company.project.service.menu.dto.MenuDto@2b3e35e3, com.company.project.service.menu.dto.MenuDto@2b507c8c, com.company.project.service.menu.dto.MenuDto@4de17a9b, com.company.project.service.menu.dto.MenuDto@910ef2c, com.company.project.service.menu.dto.MenuDto@53db52c0, com.company.project.service.menu.dto.MenuDto@7b47f02b, com.company.project.service.menu.dto.MenuDto@3db4687a, com.company.project.service.menu.dto.MenuDto@3353996f, com.company.project.service.menu.dto.MenuDto@3a978097, com.company.project.service.menu.dto.MenuDto@7e15f946, com.company.project.service.menu.dto.MenuDto@60fca946, com.company.project.service.menu.dto.MenuDto@4fcbccd7, com.company.project.service.menu.dto.MenuDto@495e6e81, com.company.project.service.menu.dto.MenuDto@18d07125, com.company.project.service.menu.dto.MenuDto@1d635de0, com.company.project.service.menu.dto.MenuDto@cdf87ef, com.company.project.service.menu.dto.MenuDto@364fca93, com.company.project.service.menu.dto.MenuDto@2d8ddc26, com.company.project.service.menu.dto.MenuDto@2a06082a, com.company.project.service.menu.dto.MenuDto@5a16127a, com.company.project.service.menu.dto.MenuDto@12c540f9, com.company.project.service.menu.dto.MenuDto@51eac26b, com.company.project.service.menu.dto.MenuDto@4bb7d724, com.company.project.service.menu.dto.MenuDto@215899ea, com.company.project.service.menu.dto.MenuDto@19a2d7b0, com.company.project.service.menu.dto.MenuDto@1e5cb775, com.company.project.service.menu.dto.MenuDto@6ba74d6d, com.company.project.service.menu.dto.MenuDto@ed50e3a, com.company.project.service.menu.dto.MenuDto@1c54707, com.company.project.service.menu.dto.MenuDto@7ad9bf55, com.company.project.service.menu.dto.MenuDto@2bc44946, com.company.project.service.menu.dto.MenuDto@dc636da, com.company.project.service.menu.dto.MenuDto@2610a51a, com.company.project.service.menu.dto.MenuDto@1104859a, com.company.project.service.menu.dto.MenuDto@18836085, com.company.project.service.menu.dto.MenuDto@244fe5a9, com.company.project.service.menu.dto.MenuDto@754ac4f, com.company.project.service.menu.dto.MenuDto@32c9d16a, com.company.project.service.menu.dto.MenuDto@31cd08fe, com.company.project.service.menu.dto.MenuDto@6af4c1c3, com.company.project.service.menu.dto.MenuDto@48602e06, com.company.project.service.menu.dto.MenuDto@34def4e1, com.company.project.service.menu.dto.MenuDto@6d0d807c, com.company.project.service.menu.dto.MenuDto@213baec7, com.company.project.service.menu.dto.MenuDto@68e2b4f8, com.company.project.service.menu.dto.MenuDto@2b583cf9, com.company.project.service.menu.dto.MenuDto@2a57478e, com.company.project.service.menu.dto.MenuDto@56668995, com.company.project.service.menu.dto.MenuDto@2b5ea2d5, com.company.project.service.menu.dto.MenuDto@418bfcb3, com.company.project.service.menu.dto.MenuDto@51f0b83b, com.company.project.service.menu.dto.MenuDto@3338a9b1, com.company.project.service.menu.dto.MenuDto@6d2eed09, com.company.project.service.menu.dto.MenuDto@73deea7b, com.company.project.service.menu.dto.MenuDto@27bba55b, com.company.project.service.menu.dto.MenuDto@5138e53c, com.company.project.service.menu.dto.MenuDto@4b640cb7, com.company.project.service.menu.dto.MenuDto@4fedba92, com.company.project.service.menu.dto.MenuDto@35065f49, com.company.project.service.menu.dto.MenuDto@23814dd0]}
+2026-01-05 23:50:53.307 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - Including [/WEB-INF/jsp/main/inc/EgovIncHeader.jsp]
+2026-01-05 23:50:53.309 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_PRE: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.311 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_POST: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp => Status: 200
+2026-01-05 23:50:53.969 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Exiting from "INCLUDE" dispatch, status 200, headers={}
+>>> DEBUG_FILTER_POST: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp => Status: 200
+2026-01-05 23:50:53.987 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_PRE: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.988 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:53.988 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - "INCLUDE" dispatch for GET "/sym/mms/EgovFooter.do", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-05 23:50:53.990 [http-nio-8080-exec-2] TRACE o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.company.project.web.MainController#selectFooter(ModelMap)
+2026-01-05 23:50:53.992 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice starting for URI: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:54.001 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+Hibernate: 
+    /* <criteria> */ select
+        m1_0.menu_no,
+        m1_0.menu_dc,
+        m1_0.menu_nm,
+        m1_0.menu_ordr,
+        m1_0.progrm_file_nm,
+        m1_0.relate_image_nm,
+        m1_0.relate_image_path,
+        m1_0.upper_menu_no 
+    from
+        nmenuinfo m1_0 
+    order by
+        m1_0.upper_menu_no,
+        m1_0.menu_ordr
+2026-01-05 23:50:54.051 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0
+2026-01-05 23:50:54.064 [http-nio-8080-exec-2] INFO  c.c.p.api.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice - menuHierarchy size: 9
+2026-01-05 23:50:54.092 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+Hibernate: 
+    /* <criteria> */ select
+        p1_0.progrm_file_nm,
+        p1_0.progrm_dc,
+        p1_0.progrm_korean_nm,
+        p1_0.progrm_stre_path,
+        p1_0.url 
+    from
+        nprogrmlist p1_0 
+    where
+        p1_0.url=?
+2026-01-05 23:50:54.096 [http-nio-8080-exec-2] TRACE org.hibernate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp]
+2026-01-05 23:50:54.154 [http-nio-8080-exec-2] TRACE o.s.web.servlet.DispatcherServlet - Rendering view [org.springframework.web.servlet.view.JstlView: name [main/inc/EgovIncFooter]; URL [/WEB-INF/jsp/main/inc/EgovIncFooter.jsp]] 
+2026-01-05 23:50:54.154 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - View name [main/inc/EgovIncFooter], model {list_headmenu=[com.company.project.service.menu.dto.MenuDto@25e9bdb0, com.company.project.service.menu.dto.MenuDto@335a2817, com.company.project.service.menu.dto.MenuDto@5053d1bf, com.company.project.service.menu.dto.MenuDto@18cb1c6a, com.company.project.service.menu.dto.MenuDto@70a726fe, com.company.project.service.menu.dto.MenuDto@125fa26d, com.company.project.service.menu.dto.MenuDto@5c4f47b0, com.company.project.service.menu.dto.MenuDto@1c27281f, com.company.project.service.menu.dto.MenuDto@55fe6db3], menuList=[com.company.project.service.menu.dto.MenuDto@25e9bdb0, com.company.project.service.menu.dto.MenuDto@335a2817, com.company.project.service.menu.dto.MenuDto@5053d1bf, com.company.project.service.menu.dto.MenuDto@18cb1c6a, com.company.project.service.menu.dto.MenuDto@70a726fe, com.company.project.service.menu.dto.MenuDto@125fa26d, com.company.project.service.menu.dto.MenuDto@5c4f47b0, com.company.project.service.menu.dto.MenuDto@1c27281f, com.company.project.service.menu.dto.MenuDto@55fe6db3], list_menulist=[com.company.project.service.menu.dto.MenuDto@25e9bdb0, com.company.project.service.menu.dto.MenuDto@3adde1ab, com.company.project.service.menu.dto.MenuDto@1c895387, com.company.project.service.menu.dto.MenuDto@335a2817, com.company.project.service.menu.dto.MenuDto@39cbe7d9, com.company.project.service.menu.dto.MenuDto@1ffe86a6, com.company.project.service.menu.dto.MenuDto@4afbfc4b, com.company.project.service.menu.dto.MenuDto@1cb88bf8, com.company.project.service.menu.dto.MenuDto@7a2b5299, com.company.project.service.menu.dto.MenuDto@5053d1bf, com.company.project.service.menu.dto.MenuDto@118b20cc, com.company.project.service.menu.dto.MenuDto@4079f12, com.company.project.service.menu.dto.MenuDto@5c382321, com.company.project.service.menu.dto.MenuDto@7ca70da5, com.company.project.service.menu.dto.MenuDto@3462cfbd, com.company.project.service.menu.dto.MenuDto@c25392c, com.company.project.service.menu.dto.MenuDto@18cb1c6a, com.company.project.service.menu.dto.MenuDto@119922a2, com.company.project.service.menu.dto.MenuDto@5517cf11, com.company.project.service.menu.dto.MenuDto@772afd29, com.company.project.service.menu.dto.MenuDto@526346b9, com.company.project.service.menu.dto.MenuDto@a37e265, com.company.project.service.menu.dto.MenuDto@61b3cb75, com.company.project.service.menu.dto.MenuDto@4150a1df, com.company.project.service.menu.dto.MenuDto@9ce61c2, com.company.project.service.menu.dto.MenuDto@3c5f8e54, com.company.project.service.menu.dto.MenuDto@43c812c9, com.company.project.service.menu.dto.MenuDto@7d20d36, com.company.project.service.menu.dto.MenuDto@7d68ac7f, com.company.project.service.menu.dto.MenuDto@3d05b0a8, com.company.project.service.menu.dto.MenuDto@3ed8a39b, com.company.project.service.menu.dto.MenuDto@2974a2cb, com.company.project.service.menu.dto.MenuDto@11c7f8ce, com.company.project.service.menu.dto.MenuDto@1d79aae, com.company.project.service.menu.dto.MenuDto@7ae82574, com.company.project.service.menu.dto.MenuDto@7606a218, com.company.project.service.menu.dto.MenuDto@58a9259e, com.company.project.service.menu.dto.MenuDto@6516d6cf, com.company.project.service.menu.dto.MenuDto@70a726fe, com.company.project.service.menu.dto.MenuDto@5e6e9c9c, com.company.project.service.menu.dto.MenuDto@1d3bf32b, com.company.project.service.menu.dto.MenuDto@c2fb0c7, com.company.project.service.menu.dto.MenuDto@5f5cbf23, com.company.project.service.menu.dto.MenuDto@757c5228, com.company.project.service.menu.dto.MenuDto@379c5507, com.company.project.service.menu.dto.MenuDto@464472bb, com.company.project.service.menu.dto.MenuDto@7cdb78f7, com.company.project.service.menu.dto.MenuDto@6ba18856, com.company.project.service.menu.dto.MenuDto@3e40cc48, com.company.project.service.menu.dto.MenuDto@5bf4b091, com.company.project.service.menu.dto.MenuDto@7c4f67d8, com.company.project.service.menu.dto.MenuDto@1b4ba33f, com.company.project.service.menu.dto.MenuDto@23510e92, com.company.project.service.menu.dto.MenuDto@5ddf4251, com.company.project.service.menu.dto.MenuDto@5a298f95, com.company.project.service.menu.dto.MenuDto@1c3d8db4, com.company.project.service.menu.dto.MenuDto@37b3353f, com.company.project.service.menu.dto.MenuDto@10592452, com.company.project.service.menu.dto.MenuDto@61a44eb, com.company.project.service.menu.dto.MenuDto@76ba29b1, com.company.project.service.menu.dto.MenuDto@588ef094, com.company.project.service.menu.dto.MenuDto@1ac3463, com.company.project.service.menu.dto.MenuDto@55c515a1, com.company.project.service.menu.dto.MenuDto@72954909, com.company.project.service.menu.dto.MenuDto@5db00d9f, com.company.project.service.menu.dto.MenuDto@3ddf3566, com.company.project.service.menu.dto.MenuDto@40ca5761, com.company.project.service.menu.dto.MenuDto@184f9370, com.company.project.service.menu.dto.MenuDto@45cea913, com.company.project.service.menu.dto.MenuDto@1fec0c9, com.company.project.service.menu.dto.MenuDto@131dfec8, com.company.project.service.menu.dto.MenuDto@772d3bc8, com.company.project.service.menu.dto.MenuDto@471b920f, com.company.project.service.menu.dto.MenuDto@3094eaad, com.company.project.service.menu.dto.MenuDto@4c83b9c9, com.company.project.service.menu.dto.MenuDto@52ee28ea, com.company.project.service.menu.dto.MenuDto@49fe4352, com.company.project.service.menu.dto.MenuDto@5ea81942, com.company.project.service.menu.dto.MenuDto@f34aeaf, com.company.project.service.menu.dto.MenuDto@2cbe6edb, com.company.project.service.menu.dto.MenuDto@17614ccd, com.company.project.service.menu.dto.MenuDto@91d356a, com.company.project.service.menu.dto.MenuDto@2376b330, com.company.project.service.menu.dto.MenuDto@7ce1d933, com.company.project.service.menu.dto.MenuDto@617be546, com.company.project.service.menu.dto.MenuDto@1ad3a66, com.company.project.service.menu.dto.MenuDto@1754e650, com.company.project.service.menu.dto.MenuDto@658e8dc8, com.company.project.service.menu.dto.MenuDto@5b6115ea, com.company.project.service.menu.dto.MenuDto@33776aea, com.company.project.service.menu.dto.MenuDto@3a16cb2, com.company.project.service.menu.dto.MenuDto@12d051c3, com.company.project.service.menu.dto.MenuDto@414dd836, com.company.project.service.menu.dto.MenuDto@49e5cacf, com.company.project.service.menu.dto.MenuDto@41a9ebbd, com.company.project.service.menu.dto.MenuDto@5167f402, com.company.project.service.menu.dto.MenuDto@7ec40a70, com.company.project.service.menu.dto.MenuDto@199014d5, com.company.project.service.menu.dto.MenuDto@176ae059, com.company.project.service.menu.dto.MenuDto@7943c152, com.company.project.service.menu.dto.MenuDto@270ac380, com.company.project.service.menu.dto.MenuDto@3ea54d08, com.company.project.service.menu.dto.MenuDto@7e8d1aad, com.company.project.service.menu.dto.MenuDto@19231d7f, com.company.project.service.menu.dto.MenuDto@6844cb18, com.company.project.service.menu.dto.MenuDto@125fa26d, com.company.project.service.menu.dto.MenuDto@7c1d0615, com.company.project.service.menu.dto.MenuDto@6ad33349, com.company.project.service.menu.dto.MenuDto@6b1a1389, com.company.project.service.menu.dto.MenuDto@254809f9, com.company.project.service.menu.dto.MenuDto@31718eeb, com.company.project.service.menu.dto.MenuDto@42cbbaf7, com.company.project.service.menu.dto.MenuDto@79f67f7c, com.company.project.service.menu.dto.MenuDto@1c94b67a, com.company.project.service.menu.dto.MenuDto@212f65d5, com.company.project.service.menu.dto.MenuDto@3eac6f05, com.company.project.service.menu.dto.MenuDto@746bfa33, com.company.project.service.menu.dto.MenuDto@4df5a5a2, com.company.project.service.menu.dto.MenuDto@172e6004, com.company.project.service.menu.dto.MenuDto@4aa7e1a3, com.company.project.service.menu.dto.MenuDto@61b620a6, com.company.project.service.menu.dto.MenuDto@18e4187, com.company.project.service.menu.dto.MenuDto@65443ff2, com.company.project.service.menu.dto.MenuDto@101b6000, com.company.project.service.menu.dto.MenuDto@4078d1b5, com.company.project.service.menu.dto.MenuDto@33092244, com.company.project.service.menu.dto.MenuDto@77f62078, com.company.project.service.menu.dto.MenuDto@3ca645e6, com.company.project.service.menu.dto.MenuDto@3ad5debe, com.company.project.service.menu.dto.MenuDto@4034c0a2, com.company.project.service.menu.dto.MenuDto@687cd3c, com.company.project.service.menu.dto.MenuDto@880217f, com.company.project.service.menu.dto.MenuDto@1c342eff, com.company.project.service.menu.dto.MenuDto@7a63dc0b, com.company.project.service.menu.dto.MenuDto@42350056, com.company.project.service.menu.dto.MenuDto@4bb75ab6, com.company.project.service.menu.dto.MenuDto@76c9c6e9, com.company.project.service.menu.dto.MenuDto@5c4f47b0, com.company.project.service.menu.dto.MenuDto@12aecfbf, com.company.project.service.menu.dto.MenuDto@78735a0c, com.company.project.service.menu.dto.MenuDto@9e0dd5e, com.company.project.service.menu.dto.MenuDto@3126bc05, com.company.project.service.menu.dto.MenuDto@1c27281f, com.company.project.service.menu.dto.MenuDto@55114ea9, com.company.project.service.menu.dto.MenuDto@3750dd3d, com.company.project.service.menu.dto.MenuDto@38d5eca4, com.company.project.service.menu.dto.MenuDto@3c97b92f, com.company.project.service.menu.dto.MenuDto@632ccc12, com.company.project.service.menu.dto.MenuDto@52a44c7f, com.company.project.service.menu.dto.MenuDto@45833a43, com.company.project.service.menu.dto.MenuDto@55fe6db3, com.company.project.service.menu.dto.MenuDto@44dcbd1d, com.company.project.service.menu.dto.MenuDto@4195b5c8, com.company.project.service.menu.dto.MenuDto@3122de31, com.company.project.service.menu.dto.MenuDto@6dafbb74, com.company.project.service.menu.dto.MenuDto@4cbad789, com.company.project.service.menu.dto.MenuDto@20ed1023, com.company.project.service.menu.dto.MenuDto@7999159, com.company.project.service.menu.dto.MenuDto@17fdeec5, com.company.project.service.menu.dto.MenuDto@d61652c, com.company.project.service.menu.dto.MenuDto@454500ab, com.company.project.service.menu.dto.MenuDto@e1d4203]}
+2026-01-05 23:50:54.155 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.JstlView - Including [/WEB-INF/jsp/main/inc/EgovIncFooter.jsp]
+2026-01-05 23:50:54.157 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_PRE: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+2026-01-05 23:50:54.165 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp
+>>> DEBUG_FILTER_POST: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp => Status: 200
+2026-01-05 23:50:54.399 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Exiting from "INCLUDE" dispatch, status 200, headers={masked}
+>>> DEBUG_FILTER_POST: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp => Status: 200
+>>> DEBUG_FILTER_POST: /WEB-INF/jsp/uat/uia/EgovLoginUsr.jsp => Status: 200
+2026-01-05 23:50:54.408 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK, headers={masked}
+>>> DEBUG_FILTER_POST: /uat/uia/egovLoginUsr.do => Status: 200
+2026-01-05 23:50:55.302 [http-nio-8080-exec-3] TRACE o.s.web.servlet.DispatcherServlet - GET "/favicon.ico", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+2026-01-05 23:50:55.305 [http-nio-8080-exec-3] WARN  o.s.web.servlet.PageNotFound - No mapping for GET /favicon.ico
+2026-01-05 23:50:55.321 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.company.project.core.exception.GlobalExceptionHandler#handleException(Exception)
+2026-01-05 23:50:55.321 [http-nio-8080-exec-3] ERROR c.c.p.c.e.GlobalExceptionHandler - Exception
+org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.
+	at org.springframework.web.servlet.DispatcherServlet.noHandlerFound(DispatcherServlet.java:1305)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.ObservationFilterChainDecorator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(ObservationFilterChainDecorator.java:479)
+	at org.springframework.security.web.ObservationFilterChainDecorator.lambda$wrapUnsecured$1(ObservationFilterChainDecorator.java:90)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:219)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-01-05 23:50:55.383 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json;q=0.8', given [image/avif, image/webp, image/apng, image/svg+xml, image/*, */*;q=0.8] and supported [application/json, application/*+json]
+2026-01-05 23:50:55.390 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.company.project.core.response.ApiResponse@1cf90068]
+2026-01-05 23:50:55.429 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.]
+2026-01-05 23:50:55.430 [http-nio-8080-exec-3] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+2026-01-05 23:50:55.430 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR, headers={masked}
