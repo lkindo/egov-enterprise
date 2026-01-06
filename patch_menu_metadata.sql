@@ -1,6 +1,0 @@
--- 메뉴 프로그램 경로 및 파일명 정합성 패치
-UPDATE NPROGRMLIST SET PROGRM_STRE_PATH = '/cmm/sym/ccm/' WHERE PROGRM_FILE_NM = 'EgovCcmCmmnClCodeList';
-UPDATE NPROGRMLIST SET PROGRM_STRE_PATH = '/cmm/sym/ccm/' WHERE PROGRM_FILE_NM = 'EgovCcmCmmnCodeList';
-UPDATE NPROGRMLIST SET PROGRM_STRE_PATH = '/cmm/sym/ccm/' WHERE PROGRM_FILE_NM = 'EgovCcmCmmnDetailCodeList';
-UPDATE NPROGRMLIST SET PROGRM_STRE_PATH = '/cmm/sym/zip/' WHERE PROGRM_FILE_NM = 'EgovCcmZipList';
-UPDATE NPROGRMLIST SET PROGRM_STRE_PATH = '/cmm/uss/umt/' WHERE PROGRM_FILE_NM = 'EgovUserManage';

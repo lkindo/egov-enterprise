@@ -108,6 +108,20 @@ public class EgovSymIdGnrConfig {
         return createIdGnrService("INSTT_CODE_ID", "INSTT_", 10);
     }
 
+    // ========== 보고서 통계 (sts.rst) ==========
+
+    @Bean
+    public EgovIdGnrService egovReprtStatsIdGnrService() {
+        return createIdGnrService("REPRT_STATS_ID", "RPTSTS_", 10);
+    }
+
+    // ========== 자료이용현황 통계 (sts.dst) ==========
+
+    @Bean
+    public EgovIdGnrService egovDtaUseStatsIdGnrService() {
+        return createIdGnrService("DTA_USE_STATS_ID", "DTAUSE_", 10);
+    }
+
     // ========== 공통 메서드 ==========
 
     /**

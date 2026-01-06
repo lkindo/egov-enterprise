@@ -1,16 +1,13 @@
 package egovframework.com.sts.bst.web;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.Resource;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.company.project.service.stats.EgovStatsService;
-import com.company.project.service.stats.dto.StatsDto;
-import com.company.project.web.adapter.StatsAdapter;
+import egovframework.com.sts.bst.service.EgovBbsStatsService;
 
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
@@ -23,7 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EgovBbsStatsController {
 
-	private final EgovStatsService egovStatsService;
+	@Resource(name = "egovBbsStatsService")
+	private EgovBbsStatsService egovBbsStatsService;
 
 	/**
 	 * 게시물 통계 조회
@@ -42,28 +40,34 @@ public class EgovBbsStatsController {
 			statsVO.setStatsKind("day");
 		}
 
-		List<StatsDto> dtoList = egovStatsService.getBoardStats(
-				statsVO.getFromDate(),
-				statsVO.getToDate(),
-				statsVO.getStatsKind());
+		// 1. 생성글수
+		List<StatsVO> bbsStatsList = egovBbsStatsService.selectBbsCretCntStats(statsVO);
+		// 2. 최고조회수
+		List<StatsVO> bbsMaxStatsList = egovBbsStatsService.selectBbsMaxCntStats(statsVO);
+		// 3. 최소조회수
+		List<StatsVO> bbsMinStatsList = egovBbsStatsService.selectBbsMinCntStats(statsVO);
+		// 4. 최고게시자
+		List<StatsVO> bbsMaxNtcrList = egovBbsStatsService.selectBbsMaxUserStats(statsVO);
 
-		List<StatsVO> resultList = dtoList.stream()
-				.map(StatsAdapter::toVO)
-				.collect(Collectors.toList());
-
-		int maxStatsCo = resultList.stream()
+		// 그래프용 최대값 계산 (생성글수 기준)
+		int maxStatsCo = bbsStatsList.stream()
 				.mapToInt(StatsVO::getStatsCo)
 				.max().orElse(0);
 
-		for (StatsVO vo : resultList) {
+		for (StatsVO vo : bbsStatsList) {
 			vo.setMaxStatsCo(maxStatsCo);
 			if (maxStatsCo > 0) {
 				vo.setMaxUnit((float) vo.getStatsCo() / maxStatsCo * 100);
 			}
 		}
 
-		model.addAttribute("resultList", resultList);
+		model.addAttribute("bbsStatsList", bbsStatsList);
+		model.addAttribute("bbsMaxStatsList", bbsMaxStatsList);
+		model.addAttribute("bbsMinStatsList", bbsMinStatsList);
+		model.addAttribute("bbsMaxNtcrList", bbsMaxNtcrList);
+
 		model.addAttribute("statsVO", statsVO);
+		model.addAttribute("resultList", bbsStatsList); // 호환성을 위해 추가
 
 		return "egovframework/com/sts/bst/EgovBbsStats";
 	}

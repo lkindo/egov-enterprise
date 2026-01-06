@@ -1,16 +1,13 @@
 package egovframework.com.sts.ust.web;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.Resource;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.company.project.service.stats.EgovStatsService;
-import com.company.project.service.stats.dto.StatsDto;
-import com.company.project.web.adapter.StatsAdapter;
+import egovframework.com.sts.ust.service.EgovUserStatsService;
 
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
@@ -23,7 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EgovUserStatsController {
 
-	private final EgovStatsService egovStatsService;
+	@Resource(name = "egovUserStatsService")
+	private EgovUserStatsService egovUserStatsService;
 
 	/**
 	 * 사용자 통계 조회
@@ -42,14 +40,7 @@ public class EgovUserStatsController {
 			statsVO.setStatsKind("day");
 		}
 
-		List<StatsDto> dtoList = egovStatsService.getUserStats(
-				statsVO.getFromDate(),
-				statsVO.getToDate(),
-				statsVO.getStatsKind());
-
-		List<StatsVO> resultList = dtoList.stream()
-				.map(StatsAdapter::toVO)
-				.collect(Collectors.toList());
+		List<StatsVO> resultList = egovUserStatsService.selectUserStats(statsVO);
 
 		int maxStatsCo = resultList.stream()
 				.mapToInt(StatsVO::getStatsCo)
