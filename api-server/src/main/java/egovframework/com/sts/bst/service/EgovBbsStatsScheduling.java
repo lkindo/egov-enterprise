@@ -30,7 +30,7 @@ public class EgovBbsStatsScheduling extends EgovAbstractServiceImpl {
 
 	/** EgovBbsStatsService */
 	@Lazy
-	@Resource(name = "bbsStatsService")
+	@Resource(name = "egovBbsStatsService")
 	private EgovBbsStatsService bbsStatsService;
 
 	/**

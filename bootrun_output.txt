@@ -1,0 +1,5 @@
+> Task :common-core:compileJava UP-TO-DATE
+> Task :common-domain:compileJava UP-TO-DATE
+> Task :common-security:compileJava UP-TO-DATE
+> Task :common-service:compileJava UP-TO-DATE
+Terminate batch job (Y/N)? 

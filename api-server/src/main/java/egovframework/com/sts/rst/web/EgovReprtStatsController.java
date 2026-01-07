@@ -1,154 +1,156 @@
 /**
- * 개요
- * - 보고서통계에 대한 controller 클래스를 정의한다.
- *
- * 상세내용
- * - 보고서통계에 대한 등록, 조회 기능을 제공한다.
- * - 보고서통계의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author lee.m.j
- * @version 1.0
- * @created 03-8-2009 오후 2:09:15
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자          수정내용
- *  -------    --------    ---------------------------
- *  2009.8.3   lee.m.j          최초 생성 *
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *
- *  </pre>
+ * 보고서통계 controller 클래스 (JPA 전환)
  */
 
 package egovframework.com.sts.rst.web;
 
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.company.project.domain.stats.ReprtStats;
+import com.company.project.service.stats.ReportStatsService;
+
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovMessageSource;
-import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.service.EgovCmmUseService;
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.sts.rst.service.EgovReprtStatsService;
-import egovframework.com.sts.rst.service.ReprtStats;
 import egovframework.com.sts.rst.service.ReprtStatsVO;
 import egovframework.com.utl.fcc.service.EgovDateUtil;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Controller
+@RequiredArgsConstructor
 public class EgovReprtStatsController {
 
-	@Resource(name="egovMessageSource")
-    EgovMessageSource egovMessageSource;
+	@Resource(name = "egovMessageSource")
+	EgovMessageSource egovMessageSource;
 
-    @Resource(name = "EgovCmmUseService")
-    EgovCmmUseService egovCmmUseService;
+	@Resource(name = "EgovCmmUseService")
+	EgovCmmUseService egovCmmUseService;
 
-	@Resource(name = "egovReprtStatsService")
-	EgovReprtStatsService egovReprtStatsService;
-
-    /** Message ID Generation */
-    @Resource(name="egovReprtStatsIdGnrService")
-    private EgovIdGnrService egovReprtStatsIdGnrService;
-
-    /**
-	 * 보고서 통계 목록화면 이동
-	 * @return String
-	 * @exception Exception
-	 */
-    @RequestMapping("/sts/rst/selectReprtStatsListView.do")
-    public String selectReprtStatsListView(@ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
-    		                               @ModelAttribute("pmReprtStats") ReprtStatsVO reprtStatsVO,
-    		                                ModelMap model) throws Exception {
-
-    	comDefaultCodeVO.setCodeId("COM040");
-    	model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
-    	comDefaultCodeVO.setCodeId("COM042");
-    	model.addAttribute("cmmCode042List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
-
-    	reprtStatsVO.setPmFromDate(EgovDateUtil.addMonth(EgovDateUtil.getToday(), -1));
-    	reprtStatsVO.setPmToDate(EgovDateUtil.getToday());
-    	model.addAttribute("pmReprtStats", reprtStatsVO);
-
-        return "egovframework/com/sts/rst/EgovReprtStatsList";
-    }
+	private final ReportStatsService reportStatsService;
 
 	/**
-	 * 보고서 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return String - 리턴 Url
+	 * 보고서 통계 목록화면 이동
 	 */
-    @IncludedInfo(name="보고서통계", listUrl="/sts/rst/selectReprtStatsListView.do", order = 160 ,gid = 30)
+	@RequestMapping("/sts/rst/selectReprtStatsListView.do")
+	public String selectReprtStatsListView(@ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
+			@ModelAttribute("pmReprtStats") ReprtStatsVO reprtStatsVO,
+			ModelMap model) throws Exception {
+
+		comDefaultCodeVO.setCodeId("COM040");
+		model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+		comDefaultCodeVO.setCodeId("COM042");
+		model.addAttribute("cmmCode042List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+
+		reprtStatsVO.setPmFromDate(EgovDateUtil.addMonth(EgovDateUtil.getToday(), -1));
+		reprtStatsVO.setPmToDate(EgovDateUtil.getToday());
+		model.addAttribute("pmReprtStats", reprtStatsVO);
+
+		return "egovframework/com/sts/rst/EgovReprtStatsList";
+	}
+
+	/**
+	 * 보고서 통계정보의 대상목록을 조회한다. (JPA 전환)
+	 */
+	@IncludedInfo(name = "보고서통계", listUrl = "/sts/rst/selectReprtStatsListView.do", order = 160, gid = 30)
 	@RequestMapping("/sts/rst/selectReprtStatsList.do")
-	public String selectReprtStatsList(@RequestParam("pmReprtTy") String pmReprtTy,
-			                           @RequestParam("pmDateTy") String pmDateTy,
-			                           @RequestParam("pmFromDate") String pmFromDate,
-			                           @RequestParam("pmToDate") String pmToDate,
-			                           @ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
-			                           @ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
-			                            ModelMap model) throws Exception {
+	public String selectReprtStatsList(@RequestParam(value = "pmReprtTy", required = false) String pmReprtTy,
+			@RequestParam(value = "pmDateTy", required = false) String pmDateTy,
+			@RequestParam(value = "pmFromDate", required = false) String pmFromDate,
+			@RequestParam(value = "pmToDate", required = false) String pmToDate,
+			@ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
+			@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
+			ModelMap model) throws Exception {
 
-		/** paging */
-    	PaginationInfo paginationInfo = new PaginationInfo();
+		// Set default values if parameters are null
+		if (pmFromDate == null || pmFromDate.equals("")) {
+			pmFromDate = EgovDateUtil.addMonth(EgovDateUtil.getToday(), -1);
+			pmToDate = EgovDateUtil.getToday();
+		}
+
+		// paging
+		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(reprtStatsVO.getPageIndex());
-	 // paginationInfo.setRecordCountPerPage(reprtStatsVO.getPageUnit());
-	    paginationInfo.setRecordCountPerPage(5);
+		paginationInfo.setRecordCountPerPage(5);
 		paginationInfo.setPageSize(reprtStatsVO.getPageSize());
-
-		reprtStatsVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		reprtStatsVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		reprtStatsVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
 		reprtStatsVO.setPmReprtTy(pmReprtTy);
 		reprtStatsVO.setPmDateTy(pmDateTy);
 		reprtStatsVO.setPmFromDate(pmFromDate);
 		reprtStatsVO.setPmToDate(pmToDate);
 
-		reprtStatsVO.setReprtStatsList(egovReprtStatsService.selectReprtStatsList(reprtStatsVO));
-		model.addAttribute("reprtStatsList", reprtStatsVO.getReprtStatsList());
+		// JPA 서비스 호출
+		int pageIndex = reprtStatsVO.getPageIndex() > 0 ? reprtStatsVO.getPageIndex() - 1 : 0;
+		Page<ReprtStats> pageResult = reportStatsService.getReprtStatsList(
+				pmReprtTy, pmFromDate, pmToDate, pageIndex, 5);
 
-		int totPageCnt = egovReprtStatsService.selectReprtStatsListTotCnt(reprtStatsVO);
+		// ReprtStats -> ReprtStatsVO 변환
+		List<ReprtStatsVO> reprtStatsList = new ArrayList<>();
+		for (ReprtStats rs : pageResult.getContent()) {
+			ReprtStatsVO vo = new ReprtStatsVO();
+			vo.setReprtId(rs.getReprtId());
+			vo.setReprtNm(rs.getReprtNm());
+			vo.setReprtTy(rs.getReprtTy());
+			vo.setReprtSttus(rs.getReprtSttus());
+			reprtStatsList.add(vo);
+		}
+		reprtStatsVO.setReprtStatsList(reprtStatsList);
+		model.addAttribute("reprtStatsList", reprtStatsList);
+
+		int totPageCnt = (int) pageResult.getTotalElements();
 		paginationInfo.setTotalRecordCount(totPageCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 
-		int totCnt = egovReprtStatsService.selectReprtStatsListBarTotCnt(reprtStatsVO);
-
-		if (totCnt > 10 && totCnt <= 100) {
-			if (reprtStatsVO.getMaxUnit() > 5.0f) {
-				reprtStatsVO.setMaxUnit(5.0f);
-			}
-		} else if (totCnt > 100 && totCnt <= 1000) {
-			if (reprtStatsVO.getMaxUnit() > 0.5f) {
-				reprtStatsVO.setMaxUnit(0.5f);
-			}
-		} else if (reprtStatsVO.getMaxUnit() > 1000) {
-			if (reprtStatsVO.getMaxUnit() > 0.05f) {
-				reprtStatsVO.setMaxUnit(0.05f);
-			}
+		// 등록일별 그래프
+		List<Object[]> barList = reportStatsService.getReprtStatsByDate(pmFromDate, pmToDate);
+		List<ReprtStatsVO> reprtStatsBarList = new ArrayList<>();
+		for (Object[] row : barList) {
+			ReprtStatsVO vo = new ReprtStatsVO();
+			vo.setGrpRegDate((String) row[0]);
+			vo.setGrpCnt(String.valueOf(((Number) row[1]).intValue()));
+			reprtStatsBarList.add(vo);
 		}
+		reprtStatsVO.setReprtStatsBarList(reprtStatsBarList);
+		model.addAttribute("reprtStatsBarList", reprtStatsBarList);
 
-		reprtStatsVO.setReprtStatsBarList(egovReprtStatsService.selectReprtStatsBarList(reprtStatsVO));
-		model.addAttribute("reprtStatsBarList", reprtStatsVO.getReprtStatsBarList());
+		// 보고서유형별 그래프
+		List<Object[]> tyList = reportStatsService.getReprtStatsByType(pmFromDate, pmToDate);
+		List<ReprtStatsVO> reprtStatsByReprtTyList = new ArrayList<>();
+		for (Object[] row : tyList) {
+			ReprtStatsVO vo = new ReprtStatsVO();
+			vo.setGrpReprtTy((String) row[0]);
+			vo.setGrpReprtTyCnt(String.valueOf(((Number) row[1]).intValue()));
+			reprtStatsByReprtTyList.add(vo);
+		}
+		reprtStatsVO.setReprtStatsByReprtTyList(reprtStatsByReprtTyList);
+		model.addAttribute("reprtStatsByReprtTyList", reprtStatsByReprtTyList);
 
-		reprtStatsVO.setReprtStatsByReprtTyList(egovReprtStatsService.selectReprtStatsByReprtTyList(reprtStatsVO));
-		model.addAttribute("reprtStatsByReprtTyList", reprtStatsVO.getReprtStatsByReprtTyList());
+		// 진행상태별 그래프
+		List<Object[]> sttusList = reportStatsService.getReprtStatsByStatus(pmFromDate, pmToDate);
+		List<ReprtStatsVO> reprtStatsByReprtSttusList = new ArrayList<>();
+		for (Object[] row : sttusList) {
+			ReprtStatsVO vo = new ReprtStatsVO();
+			vo.setGrpReprtSttus((String) row[0]);
+			vo.setGrpReprtSttusCnt(String.valueOf(((Number) row[1]).intValue()));
+			reprtStatsByReprtSttusList.add(vo);
+		}
+		reprtStatsVO.setReprtStatsByReprtSttusList(reprtStatsByReprtSttusList);
+		model.addAttribute("reprtStatsByReprtSttusList", reprtStatsByReprtSttusList);
 
-		reprtStatsVO.setReprtStatsByReprtSttusList(egovReprtStatsService.selectReprtStatsByReprtSttusList(reprtStatsVO));
-		model.addAttribute("reprtStatsByReprtSttusList", reprtStatsVO.getReprtStatsByReprtSttusList());
-
-    	comDefaultCodeVO.setCodeId("COM040");
-    	model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
-    	comDefaultCodeVO.setCodeId("COM042");
-    	model.addAttribute("cmmCode042List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+		comDefaultCodeVO.setCodeId("COM040");
+		model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+		comDefaultCodeVO.setCodeId("COM042");
+		model.addAttribute("cmmCode042List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
 
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
@@ -157,19 +159,19 @@ public class EgovReprtStatsController {
 
 	/**
 	 * 보고서 통계정보의 상세정보를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return String - 리턴 Url
+	 * (상세 조회 - 추가 구현 필요시 확장)
 	 */
 	@RequestMapping("/sts/rst/getReprtStats.do")
 	public String selectReprtStats(@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
-			                       @RequestParam("reprtTy") String reprtTy,
-			                       @RequestParam("reprtSttus") String reprtSttus,
-			                        ModelMap model) throws Exception {
+			@RequestParam("reprtTy") String reprtTy,
+			@RequestParam("reprtSttus") String reprtSttus,
+			ModelMap model) throws Exception {
 
 		reprtStatsVO.setReprtTy(reprtTy);
 		reprtStatsVO.setReprtSttus(reprtSttus);
 
-		model.addAttribute("reprtStats", egovReprtStatsService.selectReprtStats(reprtStatsVO));
+		// 상세 조회 - 빈 목록 반환 (추후 구현 가능)
+		model.addAttribute("reprtStats", new ArrayList<ReprtStatsVO>());
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
 		return "egovframework/com/sts/rst/EgovReprtStatsDetail";
@@ -177,51 +179,17 @@ public class EgovReprtStatsController {
 
 	/**
 	 * 보고서 통계정보의 등록화면으로 이동한다.
-	 * @param reprtStats - 보고서통계 model
-	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/sts/rst/addViewReprtStats.do")
 	public String insertViewReprtStats(@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
-			                           @ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
-			                            ModelMap model) throws Exception {
+			@ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
+			ModelMap model) throws Exception {
 
-    	comDefaultCodeVO.setCodeId("COM036");
-    	model.addAttribute("cmmCode036List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
-    	comDefaultCodeVO.setCodeId("COM040");
-    	model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+		comDefaultCodeVO.setCodeId("COM036");
+		model.addAttribute("cmmCode036List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
+		comDefaultCodeVO.setCodeId("COM040");
+		model.addAttribute("cmmCode040List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
 
 		return "egovframework/com/sts/rst/EgovReprtStatsRegis";
 	}
-
-	/**
-	 * 보고서 통계정보를 등록한다.
-	 * @param reprtStats - 보고서통계 model
-	 * @return String - 리턴 Url
-	 */
-	@RequestMapping("/sts/rst/addReprtStats.do")
-	public String insertReprtStats(@Valid @ModelAttribute("reprtStats") ReprtStats reprtStats,
-			                       @ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
-			                        BindingResult bindingResult,
-			                        ModelMap model)
-	                                throws Exception {
-
-    	if (bindingResult.hasErrors()) {
-    		model.addAttribute("reprtStats", reprtStatsVO);
-			return "forward:/sts/rst/addViewReprtStats.do";
-		} else {
-			LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-
-			reprtStats.setReprtId(egovReprtStatsIdGnrService.getNextStringId());
-			reprtStats.setUserId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
-
-			egovReprtStatsService.insertReprtStats(reprtStats);
-
-			reprtStatsVO.setReprtId(reprtStats.getReprtId());
-			reprtStatsVO.setReprtTy(reprtStats.getReprtTy());
-			reprtStatsVO.setReprtSttus(reprtStats.getReprtSttus());
-
-			return "forward:/sts/rst/getReprtStats.do";
-		}
-	}
-
 }

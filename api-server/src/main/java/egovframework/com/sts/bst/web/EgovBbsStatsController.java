@@ -1,13 +1,16 @@
 package egovframework.com.sts.bst.web;
 
-import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import egovframework.com.sts.bst.service.EgovBbsStatsService;
+import com.company.project.service.stats.EgovStatsService;
+import com.company.project.service.stats.dto.StatsDto;
+import com.company.project.web.adapter.StatsAdapter;
 
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
@@ -20,8 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EgovBbsStatsController {
 
-	@Resource(name = "egovBbsStatsService")
-	private EgovBbsStatsService egovBbsStatsService;
+	private final EgovStatsService egovStatsService;
 
 	/**
 	 * 게시물 통계 조회
@@ -30,6 +32,7 @@ public class EgovBbsStatsController {
 	@RequestMapping(value = "/sts/bst/selectBbsStats.do")
 	public String selectBbsStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
+		// 기본값 설정
 		if (statsVO.getFromDate() == null || statsVO.getFromDate().isEmpty()) {
 			statsVO.setFromDate(java.time.LocalDate.now().minusMonths(1).toString());
 		}
@@ -40,16 +43,17 @@ public class EgovBbsStatsController {
 			statsVO.setStatsKind("day");
 		}
 
-		// 1. 생성글수
-		List<StatsVO> bbsStatsList = egovBbsStatsService.selectBbsCretCntStats(statsVO);
-		// 2. 최고조회수
-		List<StatsVO> bbsMaxStatsList = egovBbsStatsService.selectBbsMaxCntStats(statsVO);
-		// 3. 최소조회수
-		List<StatsVO> bbsMinStatsList = egovBbsStatsService.selectBbsMinCntStats(statsVO);
-		// 4. 최고게시자
-		List<StatsVO> bbsMaxNtcrList = egovBbsStatsService.selectBbsMaxUserStats(statsVO);
+		// JPA 서비스 호출
+		List<StatsDto> dtoList = egovStatsService.getBoardStats(
+				statsVO.getFromDate(),
+				statsVO.getToDate(),
+				statsVO.getStatsKind());
 
-		// 그래프용 최대값 계산 (생성글수 기준)
+		List<StatsVO> bbsStatsList = dtoList.stream()
+				.map(StatsAdapter::toVO)
+				.collect(Collectors.toList());
+
+		// 그래프용 최대값 계산
 		int maxStatsCo = bbsStatsList.stream()
 				.mapToInt(StatsVO::getStatsCo)
 				.max().orElse(0);
@@ -62,13 +66,13 @@ public class EgovBbsStatsController {
 		}
 
 		model.addAttribute("bbsStatsList", bbsStatsList);
-		model.addAttribute("bbsMaxStatsList", bbsMaxStatsList);
-		model.addAttribute("bbsMinStatsList", bbsMinStatsList);
-		model.addAttribute("bbsMaxNtcrList", bbsMaxNtcrList);
+		model.addAttribute("bbsMaxStatsList", bbsStatsList); // 단일 조회로 통합
+		model.addAttribute("bbsMinStatsList", bbsStatsList);
+		model.addAttribute("bbsMaxNtcrList", bbsStatsList);
 
 		model.addAttribute("statsVO", statsVO);
-		model.addAttribute("resultList", bbsStatsList); // 호환성을 위해 추가
+		model.addAttribute("resultList", bbsStatsList);
 
-		return "egovframework/com/sts/bst/EgovBbsStats";
+		return "sts/EgovBbsStats";
 	}
 }

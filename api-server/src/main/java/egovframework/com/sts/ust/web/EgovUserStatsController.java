@@ -1,13 +1,16 @@
 package egovframework.com.sts.ust.web;
 
-import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import egovframework.com.sts.ust.service.EgovUserStatsService;
+import com.company.project.service.stats.EgovStatsService;
+import com.company.project.service.stats.dto.StatsDto;
+import com.company.project.web.adapter.StatsAdapter;
 
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sts.com.StatsVO;
@@ -20,8 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EgovUserStatsController {
 
-	@Resource(name = "egovUserStatsService")
-	private EgovUserStatsService egovUserStatsService;
+	private final EgovStatsService egovStatsService;
 
 	/**
 	 * 사용자 통계 조회
@@ -30,6 +32,7 @@ public class EgovUserStatsController {
 	@RequestMapping(value = "/sts/ust/selectUserStats.do")
 	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
+		// 기본값 설정
 		if (statsVO.getFromDate() == null || statsVO.getFromDate().isEmpty()) {
 			statsVO.setFromDate(java.time.LocalDate.now().minusMonths(1).toString());
 		}
@@ -40,8 +43,17 @@ public class EgovUserStatsController {
 			statsVO.setStatsKind("day");
 		}
 
-		List<StatsVO> resultList = egovUserStatsService.selectUserStats(statsVO);
+		// JPA 서비스 호출
+		List<StatsDto> dtoList = egovStatsService.getUserStats(
+				statsVO.getFromDate(),
+				statsVO.getToDate(),
+				statsVO.getStatsKind());
 
+		List<StatsVO> resultList = dtoList.stream()
+				.map(StatsAdapter::toVO)
+				.collect(Collectors.toList());
+
+		// 그래프용 최대값 계산
 		int maxStatsCo = resultList.stream()
 				.mapToInt(StatsVO::getStatsCo)
 				.max().orElse(0);
