@@ -47,6 +47,7 @@ import jakarta.validation.Valid;
  * Refactored to use EgovBoardService (JPA)
  */
 @Controller
+@org.springframework.context.annotation.Lazy
 public class EgovArticleController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovArticleController.class);

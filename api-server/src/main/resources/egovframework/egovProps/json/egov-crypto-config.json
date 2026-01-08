@@ -3,7 +3,7 @@
   "initial": true,
   "crypto": true,
   "algorithm": "SHA-256",
-  "algorithmKey": "egovframe",
+  "algorithmKey": "egoventerprise0123",
   "algorithmKeyHash": "gdyYs/IZqY86VcWhT8emCYfqY1ahw2vtLG+/FzNqtrQ=",
   "cryptoBlockSize": 1024,
   "cryptoPropertyLocation": "classpath:/egovframework/egovProps/globals.properties",
