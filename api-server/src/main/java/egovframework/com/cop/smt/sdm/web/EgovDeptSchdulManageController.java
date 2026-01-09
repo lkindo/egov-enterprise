@@ -48,7 +48,7 @@ import lombok.RequiredArgsConstructor;
  * 부서일정관리를 처리하는 Controller Class 구현
  * Refactored to use EgovScheduleService (JPA)
  */
-@Controller
+@Controller("egovDeptSchdulManageController")
 @RequiredArgsConstructor
 public class EgovDeptSchdulManageController {
 
@@ -134,7 +134,7 @@ public class EgovDeptSchdulManageController {
 	 * 메인페이지/부서일정관리조회
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageMainList.do")
-	public String egovDeptSchdulManageList(@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
+	public String egovDeptSchdulManageMainList(@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -439,7 +439,7 @@ public class EgovDeptSchdulManageController {
 	 */
 	@IncludedInfo(name = "부서일정관리", order = 320, gid = 40)
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageList.do")
-	public String egovDeptSchdulManageList() {
+	public String selectDeptSchdulManageList() {
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageList";
 	}
 
@@ -496,98 +496,6 @@ public class EgovDeptSchdulManageController {
 		}
 
 		return sLocationUrl;
-	}
-
-	/**
-	 * 부서일정를 수정 폼
-	 * 
-	 * @param searchVO
-	 * @param commandMap
-	 * @param deptSchdulManageVO
-	 * @param bindingResult
-	 * @param model
-	 * @return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageModify"
-	 * @throws Exception
-	 */
-	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageModify.do")
-	public String deptSchdulManageModify(@ModelAttribute("searchVO") ComDefaultVO searchVO,
-			DeptSchdulManageVO deptSchdulManageVO, ModelMap model) throws Exception {
-
-		String sLocationUrl = "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageModify";
-
-		// 공통코드 중요도 조회
-		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
-		voComCode.setCodeId("COM019");
-		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-		model.addAttribute("schdulIpcrCode", listComCode);
-		// 공통코드 일정구분 조회
-		voComCode = new ComDefaultCodeVO();
-		voComCode.setCodeId("COM030");
-		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-		model.addAttribute("schdulSe", listComCode);
-		// 공통코드 반복구분 조회
-		voComCode = new ComDefaultCodeVO();
-		voComCode.setCodeId("COM031");
-		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
-		model.addAttribute("reptitSeCode", listComCode);
-
-		// 일정시작일자(시)
-		model.addAttribute("schdulBgndeHH", getTimeHH());
-		// 일정시작일자(분)
-		model.addAttribute("schdulBgndeMM", getTimeMM());
-		// 일정종료일자(시)
-		model.addAttribute("schdulEnddeHH", getTimeHH());
-		// 일정정료일자(분)
-		model.addAttribute("schdulEnddeMM", getTimeMM());
-
-		// JPA service로 대체: 단일 건 조회
-		ScheduleDto scheduleDetail = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
-		DeptSchdulManageVO resultDeptSchdulManageVOReuslt = scheduleDetail != null
-				? ScheduleAdapter.toDeptVO(scheduleDetail)
-				: new DeptSchdulManageVO();
-
-		String sSchdulBgnde = resultDeptSchdulManageVOReuslt.getSchdulBgnde();
-		String sSchdulEndde = resultDeptSchdulManageVOReuslt.getSchdulEndde();
-
-		resultDeptSchdulManageVOReuslt.setSchdulBgndeYYYMMDD(
-				sSchdulBgnde.substring(0, 4) + "-" + sSchdulBgnde.substring(4, 6) + "-" + sSchdulBgnde.substring(6, 8));
-		resultDeptSchdulManageVOReuslt.setSchdulBgndeHH(sSchdulBgnde.substring(8, 10));
-		resultDeptSchdulManageVOReuslt.setSchdulBgndeMM(sSchdulBgnde.substring(10, 12));
-
-		resultDeptSchdulManageVOReuslt.setSchdulEnddeYYYMMDD(
-				sSchdulEndde.substring(0, 4) + "-" + sSchdulEndde.substring(4, 6) + "-" + sSchdulEndde.substring(6, 8));
-		resultDeptSchdulManageVOReuslt.setSchdulEnddeHH(sSchdulEndde.substring(8, 10));
-		resultDeptSchdulManageVOReuslt.setSchdulEnddeMM(sSchdulEndde.substring(10, 12));
-
-		model.addAttribute("deptSchdulManageVO", resultDeptSchdulManageVOReuslt);
-
-		ScheduleDto dto = egovScheduleService.getSchedule(deptSchdulManageVO.getSchdulId());
-		// TODO: Populate Attach File Details if needed. legacy service might have done
-		// it.
-		// EgovIndvdlSchdulManageController did basic mapping.
-		// If file list is needed:
-		// if (!EgovStringUtil.isEmpty(dto.getAtchFileId())) {
-		// List<FileVO> fileList = cmmUseService.selectFileInfs(fileVO); ...
-		// }
-		// For now, mapping to VO.
-
-		DeptSchdulManageVO resultVO = ScheduleAdapter.toDeptVO(dto);
-
-		model.addAttribute("schedule", resultVO); // View expects 'schedule' or 'resultVO'? Legacy might be 'resultList'
-													// (map) or object.
-		// Legacy used 'resultList' which was a Map.
-		// JSP likely uses <c:out value="${resultList[0].schdulNm}"/> or similar?
-		// Or if it was a Map, simply ${resultList.schdulNm}.
-		// Wait, legacy detail method returned List<EgovMap> of size 1.
-		// Let's assume standard VO access in JSP or check JSP later.
-		// To be safe, adding as 'resultList' (list of 1) AND specific attribute?
-		// Actually, if legacy returned List, I should put it in a list.
-
-		List<DeptSchdulManageVO> resultList = new ArrayList<>();
-		resultList.add(resultVO);
-		model.addAttribute("resultList", resultList);
-
-		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageDetail";
 	}
 
 	/**

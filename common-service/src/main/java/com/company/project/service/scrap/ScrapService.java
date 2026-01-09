@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 스크랩 서비스 구현체
  */
-@Service
+@Service("egovScrapService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ScrapService implements EgovScrapService {

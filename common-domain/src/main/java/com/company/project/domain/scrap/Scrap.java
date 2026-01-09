@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNSCRAP
  */
 @Entity
-@Table(name = "COMTNSCRAP")
+@Table(name = "NSCRAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Scrap {
@@ -34,19 +34,19 @@ public class Scrap {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "UNIQ_ID", length = 20)
+    @Column(name = "FRST_REGISTER_ID", length = 20, insertable = false, updatable = false)
     private String uniqId;
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

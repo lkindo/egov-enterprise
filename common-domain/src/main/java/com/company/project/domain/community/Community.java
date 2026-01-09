@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNCMMNTY")
+@Table(name = "NCMMNTY")
 @EntityListeners(AuditingEntityListener.class)
 public class Community implements Serializable {
 

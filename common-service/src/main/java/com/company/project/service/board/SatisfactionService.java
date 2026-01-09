@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("egovSatisfactionService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SatisfactionService implements EgovSatisfactionService {

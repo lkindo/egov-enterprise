@@ -18,7 +18,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNINDVDLSCHDULMANAGE")
+@Table(name = "NSCHDULINFO")
 @EntityListeners(AuditingEntityListener.class)
 public class Schedule implements Serializable {
 
@@ -32,7 +32,7 @@ public class Schedule implements Serializable {
     @Column(name = "SCHDUL_DEPT_ID", length = 20)
     private String schdulDeptId;
 
-    @Column(name = "SCHDUL_KIND_CODE", length = 1)
+    @Column(name = "SCHDUL_KND_CODE", length = 1)
     private String schdulKindCode; // 1: 부서일정, 2: 개인일정
 
     @Column(name = "SCHDUL_BGNDE", length = 20)

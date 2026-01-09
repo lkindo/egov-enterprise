@@ -148,69 +148,6 @@ public class LegacyCollaborationController {
     }
 
     /**
-     * 일정관리 (개인)
-     */
-    @RequestMapping("/cop/smt/sim/EgovIndvdlSchdulManageList.do")
-    public String selectIndvdlSchdulList(@ModelAttribute("searchVO") IndvdlSchdulManageVO schdulVO, ModelMap model)
-            throws Exception {
-        // Schedule often lists all for a month/week in legacy, but here we provide a
-        // list view bridge
-        PageRequest pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "schdulBgnde"));
-        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("1", getUserId(), pageable);
-
-        model.addAttribute("resultList",
-                pageResult.getContent().stream().map(ScheduleAdapter::toVO).collect(Collectors.toList()));
-        model.addAttribute("resultCnt", pageResult.getTotalElements());
-        return "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageList";
-    }
-
-    /**
-     * 부서 일정관리
-     */
-    @RequestMapping("/cop/smt/sdm/EgovDeptSchdulManageList.do")
-    public String selectDeptSchdulList(@ModelAttribute("searchVO") DeptSchdulManageVO schdulVO, ModelMap model)
-            throws Exception {
-        PageRequest pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "schdulBgnde"));
-        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("2", getUserId(), pageable);
-
-        model.addAttribute("resultList",
-                pageResult.getContent().stream().map(ScheduleAdapter::toDeptVO).collect(Collectors.toList()));
-        model.addAttribute("resultCnt", pageResult.getTotalElements());
-        return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageList";
-    }
-
-    /**
-     * 명함 관리
-     */
-    @RequestMapping("/cop/ncm/selectNcrdInfs.do")
-    public String selectNcrdInfs(@ModelAttribute("searchVO") NameCardVO nameCardVO, ModelMap model) throws Exception {
-        PaginationInfo paginationInfo = setupPaging(nameCardVO.getPageIndex(), nameCardVO.getPageUnit(), model);
-
-        PageRequest pageable = PageRequest.of(nameCardVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
-        Page<NameCardDto> pageResult = egovNameCardService.getNameCardList(nameCardVO.getSearchWrd(), pageable);
-
-        model.addAttribute("resultList", pageResult.getContent());
-        model.addAttribute("resultCnt", pageResult.getTotalElements());
-        return "egovframework/com/cop/ncm/EgovNcrdList";
-    }
-
-    /**
-     * 메모 할일 관리
-     */
-    @RequestMapping("/cop/smt/mtm/selectMemoTodoList.do")
-    public String selectMemoTodoList(@ModelAttribute("searchVO") MemoTodoVO memoTodoVO, ModelMap model)
-            throws Exception {
-        PaginationInfo paginationInfo = setupPaging(memoTodoVO.getPageIndex(), memoTodoVO.getPageUnit(), model);
-
-        PageRequest pageable = PageRequest.of(memoTodoVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
-        Page<MemoTodoDto> pageResult = egovMemoTodoService.getMemoTodoList(getUserId(), pageable);
-
-        model.addAttribute("resultList", pageResult.getContent());
-        model.addAttribute("resultCnt", pageResult.getTotalElements());
-        return "egovframework/com/cop/smt/mtm/EgovMemoTodoList";
-    }
-
-    /**
      * 게시판 사용 정보 조회 (게시판사용정보)
      */
     @RequestMapping("/cop/com/selectBBSUseInfs.do")
