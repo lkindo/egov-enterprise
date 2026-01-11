@@ -3,7 +3,7 @@ package com.company.project.service.popup;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.popup.Popup;
-import com.company.project.domain.popup.PopupRepository;
+import com.company.project.domain.popup.PopupDomainRepository;
 import com.company.project.service.popup.dto.PopupDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PopupService implements EgovPopupService {
 
-    private final PopupRepository popupRepository;
+    private final PopupDomainRepository popupRepository;
 
     @Override
     public Page<PopupDto> getPopupList(String keyword, Pageable pageable) {

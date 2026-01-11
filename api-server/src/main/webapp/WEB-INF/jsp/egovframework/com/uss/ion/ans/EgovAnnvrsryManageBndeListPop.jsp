@@ -19,9 +19,9 @@
 %>
 
 <%@ page contentType="text/html; charset=utf-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
-<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <!DOCTYPE html>
 <html lang="ko">
@@ -131,22 +131,8 @@
 	}
 		
 </script>
-
-    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
-    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
-    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 <body>
-<div class="wrap">
-<c:import url="/sym/mms/EgovHeader.do" />
-<div class="container" style="padding-bottom: 60px;">
-<div class="sub_layout">
-<div class="sub_in">
-<div class="layout">
-
 <noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- 자바스크립트를 지원하지 않는 브라우저에서는 일부 기능을 사용하실 수 없습니다. -->
 
 <div class="board">
@@ -212,13 +198,6 @@
 		</tbody>
 	</table>
 		</form>
-</div>
-
-</div>
-</div>
-</div>
-</div>
-<c:import url="/sym/mms/EgovFooter.do" />
 </div>
 </body>
 </html>

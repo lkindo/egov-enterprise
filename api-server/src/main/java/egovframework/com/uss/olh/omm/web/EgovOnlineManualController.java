@@ -58,7 +58,7 @@ public class EgovOnlineManualController {
 	EgovMessageSource egovMessageSource;
 
 	/** egovOnlinePollService */
-	@Resource(name = "EgovOnlineManualService")
+	@Resource(name = "egovOnlineManualService")
 	private EgovOnlineManualService egovOnlineManualService;
 
 	/** EgovPropertyService */

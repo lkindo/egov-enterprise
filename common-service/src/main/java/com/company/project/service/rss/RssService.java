@@ -1,7 +1,7 @@
 package com.company.project.service.rss;
 
 import com.company.project.domain.rss.Rss;
-import com.company.project.domain.rss.RssRepository;
+import com.company.project.domain.rss.RssDomainRepository;
 import com.company.project.service.rss.dto.RssDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RssService implements EgovRssService {
 
-    private final RssRepository rssRepository;
+    private final RssDomainRepository rssRepository;
 
     @Override
     public RssDto getRss(String rssId) {

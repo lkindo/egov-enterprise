@@ -1,100 +1,89 @@
-/**
- * 개요
- * - 사용자부재에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 사용자부재에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 사용자부재의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
- * @version 1.0
- * @created 03-8-2009 오후 2:09:36
- */
-
 package egovframework.com.uss.ion.uas.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.vacation.UserAbsence;
+import com.company.project.domain.vacation.UserAbsenceDomainRepository;
+
 import egovframework.com.uss.ion.uas.service.EgovUserAbsnceService;
-import egovframework.com.uss.ion.uas.service.UserAbsnce;
 import egovframework.com.uss.ion.uas.service.UserAbsnceVO;
 import jakarta.annotation.Resource;
 
 @Service("egovUserAbsnceService")
 public class EgovUserAbsnceServiceImpl extends EgovAbstractServiceImpl implements EgovUserAbsnceService {
 
-	@Resource(name="userAbsnceDAO")
-	private UserAbsnceDAO userAbsnceDAO;
+	@Resource(name = "commonUserAbsenceRepository")
+	private UserAbsenceDomainRepository userAbsenceRepository;
 
-	/**
-	 * 사용자부재정보를 관리하기 위해 등록된 사용자부재 목록을 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return List - 사용자부재 목록
-	 */
 	@Override
-	public List<UserAbsnceVO> selectUserAbsnceList(UserAbsnceVO userAbsnceVO) throws Exception {
-		return userAbsnceDAO.selectUserAbsnceList(userAbsnceVO);
+	public List<egovframework.com.uss.ion.uas.service.UserAbsnceVO> selectUserAbsnceList(
+			egovframework.com.uss.ion.uas.service.UserAbsnceVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "lastUpdateDate"));
+		Page<UserAbsence> page = userAbsenceRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 사용자부재정보목록 총 개수를 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return int - 사용자부재 카운트 수
-	 */
 	@Override
-	public int selectUserAbsnceListTotCnt(UserAbsnceVO userAbsnceVO) throws Exception {
-		return userAbsnceDAO.selectUserAbsnceListTotCnt(userAbsnceVO);
+	public int selectUserAbsnceListTotCnt(egovframework.com.uss.ion.uas.service.UserAbsnceVO searchVO)
+			throws Exception {
+		return (int) userAbsenceRepository.count();
 	}
 
-	/**
-	 * 등록된 사용자부재 상세정보를 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return UserAbsnceVO - 사용자부재 VO
-	 */
 	@Override
-	public UserAbsnceVO selectUserAbsnce(UserAbsnceVO userAbsnceVO) throws Exception {
-		return userAbsnceDAO.selectUserAbsnce(userAbsnceVO);
+	public egovframework.com.uss.ion.uas.service.UserAbsnceVO selectUserAbsnce(
+			egovframework.com.uss.ion.uas.service.UserAbsnceVO searchVO) throws Exception {
+		return userAbsenceRepository.findById(searchVO.getUserId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 사용자부재정보를 신규로 등록한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return UserAbsnceVO - 사용자부재 VO
-	 */
 	@Override
-	public UserAbsnceVO insertUserAbsnce(UserAbsnce userAbsnce, UserAbsnceVO userAbsnceVO) throws Exception {
-		userAbsnceDAO.insertUserAbsnce(userAbsnce);
-		userAbsnceVO.setUserId(userAbsnce.getUserId());
-		return selectUserAbsnce(userAbsnceVO);
+	public egovframework.com.uss.ion.uas.service.UserAbsnceVO insertUserAbsnce(
+			egovframework.com.uss.ion.uas.service.UserAbsnce userAbsnce,
+			egovframework.com.uss.ion.uas.service.UserAbsnceVO userAbsnceVO) throws Exception {
+		UserAbsence entity = UserAbsence.builder()
+				.userId(userAbsnce.getUserId())
+				.userAbsnceAt(userAbsnce.getUserAbsnceAt())
+				.frstRegisterId(userAbsnce.getLastUpdusrId())
+				.lastUpdusrId(userAbsnce.getLastUpdusrId())
+				.build();
+		userAbsenceRepository.save(entity);
+		return toVO(entity);
 	}
 
-	/**
-	 * 기 등록된 사용자부재정보를 수정한다.
-	 * @param userAbsnce - 사용자부재 model
-	 */
 	@Override
-	public void updateUserAbsnce(UserAbsnce userAbsnce) throws Exception {
-		userAbsnceDAO.updateUserAbsnce(userAbsnce);
+	public void updateUserAbsnce(egovframework.com.uss.ion.uas.service.UserAbsnce searchVO) throws Exception {
+		userAbsenceRepository.findById(searchVO.getUserId()).ifPresent(entity -> {
+			entity.updateAbsence(searchVO.getUserAbsnceAt(), searchVO.getLastUpdusrId());
+			userAbsenceRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 사용자부재정보를 삭제한다.
-	 * @param userAbsnce - 사용자부재 model
-	 */
 	@Override
-	public void deleteUserAbsnce(UserAbsnce userAbsnce) throws Exception {
-		userAbsnceDAO.deleteUserAbsnce(userAbsnce);
+	public void deleteUserAbsnce(egovframework.com.uss.ion.uas.service.UserAbsnce searchVO) throws Exception {
+		userAbsenceRepository.deleteById(searchVO.getUserId());
 	}
 
-	/**
-	 * 사용자부재정보가 특정화면에 반영된 결과를 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return UserAbsnceVO - 사용자부재 VO
-	 */
 	@Override
-	public UserAbsnceVO selectUserAbsnceResult(UserAbsnceVO userAbsnceVO) throws Exception {
-		return null;
+	public egovframework.com.uss.ion.uas.service.UserAbsnceVO selectUserAbsnceResult(
+			egovframework.com.uss.ion.uas.service.UserAbsnceVO searchVO) throws Exception {
+		return selectUserAbsnce(searchVO);
+	}
+
+	private egovframework.com.uss.ion.uas.service.UserAbsnceVO toVO(UserAbsence entity) {
+		egovframework.com.uss.ion.uas.service.UserAbsnceVO vo = new egovframework.com.uss.ion.uas.service.UserAbsnceVO();
+		vo.setUserId(entity.getUserId());
+		vo.setUserAbsnceAt(entity.getUserAbsnceAt());
+		vo.setLastUpdusrId(entity.getLastUpdusrId());
+		return vo;
 	}
 }

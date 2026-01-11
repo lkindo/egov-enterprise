@@ -6,7 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 
-@Entity
+@Entity(name = "WikiBookmarkDomain")
 @Table(name = "COMTNWIKIBKMK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

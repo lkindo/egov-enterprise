@@ -1,61 +1,105 @@
 package egovframework.com.uss.ion.rec.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.cmmn.exception.FdlException;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.recomendsite.RecomendSite;
+import com.company.project.domain.recomendsite.RecomendSiteDomainRepository;
+
+import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.ion.rec.service.EgovRecomendSiteService;
 import egovframework.com.uss.ion.rec.service.RecomendSiteVO;
 import jakarta.annotation.Resource;
 
-@Service("EgovRecomendSiteService")
+@Service("egovRecomendSiteService")
 public class EgovRecomendSiteServiceImpl extends EgovAbstractServiceImpl implements EgovRecomendSiteService {
 
-	@Resource(name="EgovRecomendSiteDAO")
-    private EgovRecomendSiteDAO egovRecomendSiteDao;
+	@Resource(name = "recomendSiteDomainRepository")
+	private RecomendSiteDomainRepository recomendSiteRepository;
 
-    /** ID Generation */
-	@Resource(name="egovRecomendSiteManageIdGnrService")
+	@Resource(name = "egovRecomendSiteIdGnrService")
 	private EgovIdGnrService idgenService;
 
 	@Override
+	public RecomendSiteVO selectRecomendSiteDetail(RecomendSiteVO searchVO) throws Exception {
+		return recomendSiteRepository.findById(searchVO.getRecomendSiteId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
+	}
+
+	@Override
 	public List<RecomendSiteVO> selectRecomendSiteList(RecomendSiteVO searchVO) {
-		return egovRecomendSiteDao.selectRecomendSiteList(searchVO);
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "recomendSiteNm"));
+		Page<RecomendSite> page = recomendSiteRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
 	@Override
 	public int selectRecomendSiteListCnt(RecomendSiteVO searchVO) {
-		return egovRecomendSiteDao.selectRecomendSiteListCnt(searchVO);
+		return (int) recomendSiteRepository.count();
 	}
 
 	@Override
-	public void insertRecomendSite(RecomendSiteVO recomendSiteVO) throws FdlException {
-		String	recomendSiteId = idgenService.getNextStringId();
-		recomendSiteVO.setRecomendSiteId(recomendSiteId);
+	public void insertRecomendSite(RecomendSiteVO searchVO) throws FdlException {
+		try {
+			String id = idgenService.getNextStringId();
+			searchVO.setRecomendSiteId(id);
 
-    	egovRecomendSiteDao.insertRecomendSite(recomendSiteVO);
-	}
+			RecomendSite entity = RecomendSite.builder()
+					.recomendSiteId(id)
+					.recomendSiteUrl(searchVO.getRecomendSiteUrl())
+					.recomendSiteNm(searchVO.getRecomendSiteNm())
+					.recomendSiteDc(searchVO.getRecomendSiteDc())
+					.recomendResnCn(searchVO.getRecomendResnCn())
+					.recomendConfmAt(searchVO.getRecomendConfmAt())
+					.confmDe(searchVO.getConfmDe())
+					.frstRegisterId(searchVO.getFrstRegisterId())
+					.build();
 
-	@Override
-	public RecomendSiteVO selectRecomendSiteDetail(RecomendSiteVO recomendSiteVO) throws Exception {
-		RecomendSiteVO resultVO = egovRecomendSiteDao.selectRecomendSiteDetail(recomendSiteVO);
-        if (resultVO == null) {
-			throw processException("info.nodata.msg");
+			recomendSiteRepository.save(entity);
+		} catch (Exception e) {
+			throw new FdlException("error.msg", e);
 		}
-        return resultVO;
 	}
 
 	@Override
-	public void updateRecomendSite(RecomendSiteVO recomendSiteVO) {
-		egovRecomendSiteDao.updateRecomendSite(recomendSiteVO);
+	public void updateRecomendSite(RecomendSiteVO searchVO) {
+		recomendSiteRepository.findById(searchVO.getRecomendSiteId()).ifPresent(entity -> {
+			entity.update(searchVO.getRecomendSiteUrl(), searchVO.getRecomendSiteNm(), searchVO.getRecomendSiteDc(),
+					searchVO.getRecomendResnCn(), searchVO.getRecomendConfmAt(), searchVO.getConfmDe(),
+					searchVO.getLastUpdusrId());
+			recomendSiteRepository.save(entity);
+		});
 	}
 
 	@Override
-	public void deleteRecomendSite(RecomendSiteVO recomendSiteVO) {
-		egovRecomendSiteDao.deleteRecomendSite(recomendSiteVO);
+	public void deleteRecomendSite(RecomendSiteVO searchVO) {
+		recomendSiteRepository.deleteById(searchVO.getRecomendSiteId());
 	}
 
+	private RecomendSiteVO toVO(RecomendSite entity) {
+		RecomendSiteVO vo = new RecomendSiteVO();
+		vo.setRecomendSiteId(entity.getRecomendSiteId());
+		vo.setRecomendSiteUrl(entity.getRecomendSiteUrl());
+		vo.setRecomendSiteNm(entity.getRecomendSiteNm());
+		vo.setRecomendSiteDc(entity.getRecomendSiteDc());
+		vo.setRecomendResnCn(entity.getRecomendResnCn());
+		vo.setRecomendConfmAt(entity.getRecomendConfmAt());
+		vo.setConfmDe(entity.getConfmDe());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+		}
+		return vo;
+	}
 }

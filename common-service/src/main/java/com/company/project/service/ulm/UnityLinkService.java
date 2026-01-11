@@ -1,7 +1,7 @@
 package com.company.project.service.ulm;
 
 import com.company.project.domain.ulm.UnityLink;
-import com.company.project.domain.ulm.UnityLinkRepository;
+import com.company.project.domain.ulm.UnityLinkDomainRepository;
 import com.company.project.service.ulm.dto.UnityLinkDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class UnityLinkService implements EgovUnityLinkService {
 
-    private final UnityLinkRepository unityLinkRepository;
+    private final UnityLinkDomainRepository unityLinkRepository;
 
     @Override
     public UnityLinkDto getUnityLink(String unityLinkId) {

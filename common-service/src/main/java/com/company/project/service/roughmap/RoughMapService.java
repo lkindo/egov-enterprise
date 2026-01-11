@@ -1,7 +1,7 @@
 package com.company.project.service.roughmap;
 
 import com.company.project.domain.roughmap.RoughMap;
-import com.company.project.domain.roughmap.RoughMapRepository;
+import com.company.project.domain.roughmap.RoughMapDomainRepository;
 import com.company.project.service.roughmap.dto.RoughMapDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RoughMapService implements EgovRoughMapService {
 
-    private final RoughMapRepository roughMapRepository;
+    private final RoughMapDomainRepository roughMapRepository;
 
     @Override
     public RoughMapDto getRoughMap(String roughMapId) {

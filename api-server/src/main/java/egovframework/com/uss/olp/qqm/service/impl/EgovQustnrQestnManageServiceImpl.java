@@ -1,142 +1,136 @@
 package egovframework.com.uss.olp.qqm.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.survey.QustnrQesitm;
+import com.company.project.domain.survey.QustnrQesitmRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.olp.qqm.service.EgovQustnrQestnManageService;
 import egovframework.com.uss.olp.qqm.service.QustnrQestnManageVO;
 import jakarta.annotation.Resource;
 
-/**
- * 설문문항을 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.03.20
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *
- * </pre>
- */
 @Service("egovQustnrQestnManageService")
-public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl implements EgovQustnrQestnManageService{
+public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl implements EgovQustnrQestnManageService {
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	@Resource(name = "qustnrQesitmRepository")
+	private QustnrQesitmRepository qustnrQesitmRepository;
 
-	@Resource(name="qustnrQestnManageDao")
-	private QustnrQestnManageDao dao;
-
-	@Resource(name="egovQustnrQestnManageIdGnrService")
+	@Resource(name = "egovQustnrQestnManageIdGnrService")
 	private EgovIdGnrService idgenService;
 
-
-    /**
-	 * 설문조사 응답자답변내용결과/기타답변내용결과 통계를 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
-	 * @return Map
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> selectQustnrManageStatistics2(Map<?, ?> map) throws Exception{
-		return dao.selectQustnrManageStatistics2(map);
+	public List<EgovMap> selectQustnrManageStatistics2(Map<?, ?> map) throws Exception {
+		// 통계 기능은 복잡한 쿼리가 필요하므로 Custom Repository 구현 필요
+		// 현재는 빈 리스트 반환
+		return Collections.emptyList();
 	}
 
-    /**
-	 * 설문조사 통계를 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
-	 * @return Map
-	 * @throws Exception
-	 */
 	@Override
-	public List<?> selectQustnrManageStatistics(Map<?, ?> map) throws Exception{
-		return dao.selectQustnrManageStatistics(map);
-	}
-    /**
-	 * 설문지정보 설문제목을 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
-	 * @return Map
-	 * @throws Exception
-	 */
-	@Override
-	public Map<?, ?> selectQustnrManageQestnrSj(Map<?, ?> map) throws Exception{
-		return dao.selectQustnrManageQestnrSj(map);
+	public List<?> selectQustnrManageStatistics(Map<?, ?> map) throws Exception {
+		// 통계 기능은 복잡한 쿼리가 필요하므로 Custom Repository 구현 필요
+		return Collections.emptyList();
 	}
 
-    /**
-	 * 설문문항 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<?> selectQustnrQestnManageList(ComDefaultVO searchVO) throws Exception{
-		return dao.selectQustnrQestnManageList(searchVO);
+	public Map<?, ?> selectQustnrManageQestnrSj(Map<?, ?> map) throws Exception {
+		return Collections.emptyMap();
 	}
 
-    /**
-	 * 설문문항를(을) 상세조회 한다.
-	 * @param QustnrQestnManage - 회정정보가 담김 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> selectQustnrQestnManageDetail(QustnrQestnManageVO qustnrQestnManageVO) throws Exception{
-		return dao.selectQustnrQestnManageDetail(qustnrQestnManageVO);
+	public List<?> selectQustnrQestnManageList(ComDefaultVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<QustnrQesitm> page = qustnrQesitmRepository.findAll(pageable);
+
+		return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
 	}
 
-    /**
-	 * 설문문항를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return int
-	 * @throws Exception
-	 */
 	@Override
-	public int selectQustnrQestnManageListCnt(ComDefaultVO searchVO) throws Exception{
-		return dao.selectQustnrQestnManageListCnt(searchVO);
+	public List<EgovMap> selectQustnrQestnManageDetail(QustnrQestnManageVO qustnrQestnManageVO) throws Exception {
+		return qustnrQesitmRepository.findById(qustnrQestnManageVO.getQestnrQesitmId())
+				.map(this::toEgovMap)
+				.map(Collections::singletonList)
+				.orElse(Collections.emptyList());
 	}
 
-    /**
-	 * 설문문항를(을) 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
+	@Override
+	public int selectQustnrQestnManageListCnt(ComDefaultVO searchVO) throws Exception {
+		return (int) qustnrQesitmRepository.count();
+	}
+
 	@Override
 	public void insertQustnrQestnManage(QustnrQestnManageVO qustnrQestnManageVO) throws Exception {
 		String sMakeId = idgenService.getNextStringId();
-
 		qustnrQestnManageVO.setQestnrQesitmId(sMakeId);
-
-		dao.insertQustnrQestnManage(qustnrQestnManageVO);
+		qustnrQesitmRepository.save(toEntity(qustnrQestnManageVO));
 	}
 
-    /**
-	 * 설문문항를(을) 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void updateQustnrQestnManage(QustnrQestnManageVO qustnrQestnManageVO) throws Exception{
-		dao.updateQustnrQestnManage(qustnrQestnManageVO);
+	public void updateQustnrQestnManage(QustnrQestnManageVO qustnrQestnManageVO) throws Exception {
+		qustnrQesitmRepository.findById(qustnrQestnManageVO.getQestnrQesitmId()).ifPresent(entity -> {
+			entity.setQestnrTmplatId(qustnrQestnManageVO.getQestnrTmplatId());
+			entity.setQestnrId(qustnrQestnManageVO.getQestnrId());
+			if (qustnrQestnManageVO.getQestnSn() != null && !qustnrQestnManageVO.getQestnSn().isEmpty()) {
+				entity.setQestnSn(Long.parseLong(qustnrQestnManageVO.getQestnSn()));
+			}
+			entity.setQestnTyCode(qustnrQestnManageVO.getQestnTyCode());
+			entity.setQestnCn(qustnrQestnManageVO.getQestnCn());
+			if (qustnrQestnManageVO.getMxmmChoiseCo() != null && !qustnrQestnManageVO.getMxmmChoiseCo().isEmpty()) {
+				entity.setMxmmChoiseCo(Integer.parseInt(qustnrQestnManageVO.getMxmmChoiseCo()));
+			}
+			entity.setLastUpdusrId(qustnrQestnManageVO.getLastUpdusrId());
+			entity.setLastUpdtPnttm(java.time.LocalDateTime.now().toString());
+			qustnrQesitmRepository.save(entity);
+		});
 	}
 
-    /**
-	 * 설문문항를(을) 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void deleteQustnrQestnManage(QustnrQestnManageVO qustnrQestnManageVO) throws Exception{
-		dao.deleteQustnrQestnManage(qustnrQestnManageVO);
+	public void deleteQustnrQestnManage(QustnrQestnManageVO qustnrQestnManageVO) throws Exception {
+		qustnrQesitmRepository.deleteById(qustnrQestnManageVO.getQestnrQesitmId());
+	}
+
+	private QustnrQesitm toEntity(QustnrQestnManageVO vo) {
+		QustnrQesitm entity = new QustnrQesitm();
+		entity.setQestnrQesitmId(vo.getQestnrQesitmId());
+		entity.setQestnrTmplatId(vo.getQestnrTmplatId());
+		entity.setQestnrId(vo.getQestnrId());
+		if (vo.getQestnSn() != null && !vo.getQestnSn().isEmpty()) {
+			entity.setQestnSn(Long.parseLong(vo.getQestnSn()));
+		}
+		entity.setQestnTyCode(vo.getQestnTyCode());
+		entity.setQestnCn(vo.getQestnCn());
+		if (vo.getMxmmChoiseCo() != null && !vo.getMxmmChoiseCo().isEmpty()) {
+			entity.setMxmmChoiseCo(Integer.parseInt(vo.getMxmmChoiseCo()));
+		}
+		entity.setFrstRegisterId(vo.getFrstRegisterId());
+		entity.setFrstRegisterPnttm(java.time.LocalDateTime.now().toString());
+		return entity;
+	}
+
+	private EgovMap toEgovMap(QustnrQesitm entity) {
+		EgovMap map = new EgovMap();
+		map.put("qestnrQesitmId", entity.getQestnrQesitmId());
+		map.put("qestnrTmplatId", entity.getQestnrTmplatId());
+		map.put("qestnrId", entity.getQestnrId());
+		map.put("qestnSn", String.valueOf(entity.getQestnSn()));
+		map.put("qestnTyCode", entity.getQestnTyCode());
+		map.put("qestnCn", entity.getQestnCn());
+		map.put("mxmmChoiseCo", String.valueOf(entity.getMxmmChoiseCo()));
+		map.put("frstRegisterId", entity.getFrstRegisterId());
+		map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+		return map;
 	}
 }

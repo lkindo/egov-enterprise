@@ -1,218 +1,129 @@
 package egovframework.com.uss.ion.rwd.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.uss.ion.ism.service.EgovInfrmlSanctnService;
-import egovframework.com.uss.ion.ism.service.InfrmlSanctn;
-import egovframework.com.uss.ion.rwd.service.EgovRwardManageService;
-import egovframework.com.uss.ion.rwd.service.RwardManage;
-import egovframework.com.uss.ion.rwd.service.RwardManageVO;
-import egovframework.com.utl.fcc.service.EgovDateUtil;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
-import jakarta.annotation.Resource;
+import com.company.project.domain.notification.RwardManage;
+import com.company.project.domain.notification.RwardManageRepository;
 
-/**
- * 개요
- * - 포상관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 포상관리에 대한 등록, 수정, 삭제, 조회, 승인처리 기능을 제공한다.
- * - 포상관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
- * @version 1.0
- * @created 06-15-2010 오후 2:08:56
- */
+import egovframework.com.uss.ion.rwd.service.EgovRwardManageService;
+import egovframework.com.uss.ion.rwd.service.RwardManageVO;
+import jakarta.annotation.Resource;
 
 @Service("egovRwardManageService")
 public class EgovRwardManageServiceImpl extends EgovAbstractServiceImpl implements EgovRwardManageService {
 
-	@Resource(name="rwardManageDAO")
-    private RwardManageDAO rwardManageDAO;
+	@Resource(name = "rwardManageRepository")
+	private RwardManageRepository rwardManageRepository;
 
-    /** ID Generation */
-	@Resource(name="egovRwardManageIdGnrService")
-	private EgovIdGnrService idgenRwardManageService;
+	@Resource(name = "egovRwardManageIdGnrService")
+	private EgovIdGnrService idgenService;
 
-	@Resource(name="EgovInfrmlSanctnService")
-    protected EgovInfrmlSanctnService infrmlSanctnService;
-
-	/**
-	 * 포상관리정보를 관리하기 위해 등록된 포상관리 목록을 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return List - 포상관리 목록
-	 */
 	@Override
-	public List<RwardManageVO> selectRwardManageList(RwardManageVO rwardManageVO) throws Exception{
-		rwardManageVO.setSearchFromDate(EgovStringUtil.removeMinusChar(rwardManageVO.getSearchFromDate()));
-		rwardManageVO.setSearchToDate(EgovStringUtil.removeMinusChar(rwardManageVO.getSearchToDate()));
-		List<RwardManageVO> result = rwardManageDAO.selectRwardManageList(rwardManageVO);
-
-
-		int num = result.size();
-
-	    for (int i = 0 ; i < num ; i ++ ){
-	    	RwardManageVO rwardManageVO1 = result.get(i);
-	    	rwardManageVO1.setRwardDe(EgovDateUtil.formatDate(rwardManageVO1.getRwardDe(), "-"));
-	    	result.set(i, rwardManageVO1);
-	    }
-		return result;
+	public List<RwardManageVO> selectRwardManageList(RwardManageVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<RwardManage> page = rwardManageRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 포상관리목록 총 개수를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return int - 포상관리 카운트 수
-	 */
 	@Override
-	public int selectRwardManageListTotCnt(RwardManageVO rwardManageVO) throws Exception {
-		return rwardManageDAO.selectRwardManageListTotCnt(rwardManageVO);
+	public int selectRwardManageListTotCnt(RwardManageVO searchVO) throws Exception {
+		return (int) rwardManageRepository.count();
 	}
 
-	/**
-	 * 등록된 포상관리의 상세정보를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return RwardManageVO - 포상관리 VO
-	 */
 	@Override
-	public RwardManageVO selectRwardManage(RwardManageVO rwardManageVO) throws Exception {
-
-		RwardManageVO rwardManageVOTemp = rwardManageDAO.selectRwardManage(rwardManageVO);
-		rwardManageVOTemp.setRwardDe(EgovDateUtil.formatDate(rwardManageVOTemp.getRwardDe(), "-"));
-
-		return rwardManageVOTemp;
+	public RwardManageVO selectRwardManage(RwardManageVO searchVO) throws Exception {
+		return rwardManageRepository.findById(searchVO.getRwardId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 포상관리정보를 신규로 등록한다.
-	 * @param rwardManage - 포상관리 model
-	 */
 	@Override
-	public void insertRwardManage(RwardManage rwardManage) throws Exception {
+	public void insertRwardManage(egovframework.com.uss.ion.rwd.service.RwardManage searchVO) throws Exception {
+		String id = idgenService.getNextStringId();
+		searchVO.setRwardId(id);
 
-		/*
-		 * 포상 승인처리  신청 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
-		 */
-		rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
-       	InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn(converToInfrmlSanctnObject(rwardManage)); //신청
-		rwardManage.setInfrmlSanctnId(infrmlSanctn.getInfrmlSanctnId());
-		rwardManage.setConfmAt(infrmlSanctn.getConfmAt());
+		RwardManage entity = RwardManage.builder()
+				.rwardId(id)
+				.rwardwnrId(searchVO.getRwardManId())
+				.rwardCode(searchVO.getRwardCd())
+				.rwardDe(searchVO.getRwardDe())
+				.rwardNm(searchVO.getRwardNm())
+				.pblenCn(searchVO.getPblenCn())
+				.sanctnerId(searchVO.getSanctnerId())
+				.confmAt(searchVO.getConfmAt())
+				.atchFileId(searchVO.getAtchFileId())
+				.infrmlSanctnId(searchVO.getInfrmlSanctnId())
+				.frstRegisterId(searchVO.getFrstRegisterId())
+				.build();
 
-		String	sRwardId = idgenRwardManageService.getNextStringId();
-		rwardManage.setRwardId(sRwardId);
-
-		rwardManageDAO.insertRwardManage(rwardManage);
+		rwardManageRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 포상관리정보를 수정한다.
-	 * @param rwardManage - 포상관리 model
-	 */
 	@Override
-	public void updtRwardManage(RwardManage rwardManage) throws Exception {
-		rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
-		rwardManageDAO.updtRwardManage(rwardManage);
+	public void updtRwardManage(egovframework.com.uss.ion.rwd.service.RwardManage searchVO) throws Exception {
+		rwardManageRepository.findById(searchVO.getRwardId()).ifPresent(entity -> {
+			entity.update(searchVO.getRwardCd(), searchVO.getRwardDe(), searchVO.getRwardNm(), searchVO.getPblenCn(),
+					searchVO.getAtchFileId(), searchVO.getLastUpdusrId());
+			rwardManageRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 포상관리정보를 삭제한다.
-	 * @param rwardManage - 포상관리 model
-	 */
 	@Override
-	public void deleteRwardManage(RwardManage rwardManage) throws Exception {
-		/*
-		 * 포상 승인처리  삭제 infrmlSanctnService.deleteInfrmlSanctn("000", vcatnManage);
-		 */
-		rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
-        infrmlSanctnService.deleteInfrmlSanctn(converToInfrmlSanctnObject(rwardManage));  //삭제
-		rwardManageDAO.deleteRwardManage(rwardManage);
+	public void deleteRwardManage(egovframework.com.uss.ion.rwd.service.RwardManage searchVO) throws Exception {
+		rwardManageRepository.deleteById(searchVO.getRwardId());
 	}
 
-
-
-	/**
-	 * 포상관리정보 승인 처리를 위해 신청된 포상관리 목록을 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return List - 포상관리 목록
-	 */
 	@Override
-	public List<RwardManageVO> selectRwardManageConfmList(RwardManageVO rwardManageVO) throws Exception{
-		rwardManageVO.setSearchFromDate(EgovStringUtil.removeMinusChar(rwardManageVO.getSearchFromDate()));
-		rwardManageVO.setSearchToDate(EgovStringUtil.removeMinusChar(rwardManageVO.getSearchToDate()));
-		List<RwardManageVO> result = rwardManageDAO.selectRwardManageConfmList(rwardManageVO);
-
-		int num = result.size();
-
-	    for (int i = 0 ; i < num ; i ++ ){
-	    	RwardManageVO rwardManageVO1 = result.get(i);
-	    	rwardManageVO1.setRwardDe(EgovDateUtil.formatDate(rwardManageVO1.getRwardDe(), "-"));
-	    	result.set(i, rwardManageVO1);
-	    }
-		return result;
+	public List<RwardManageVO> selectRwardManageConfmList(RwardManageVO searchVO) throws Exception {
+		// select where sanctnerId = ?
+		return rwardManageRepository.findAll().stream()
+				.filter(e -> searchVO.getSanctnerId().equals(e.getSanctnerId()))
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 포상승인목록 총 개수를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return int - 포상관리 카운트 수
-	 */
 	@Override
-	public int selectRwardManageConfmListTotCnt(RwardManageVO rwardManageVO) throws Exception {
-		return rwardManageDAO.selectRwardManageConfmListTotCnt(rwardManageVO);
+	public int selectRwardManageConfmListTotCnt(RwardManageVO searchVO) throws Exception {
+		return (int) selectRwardManageConfmList(searchVO).size();
 	}
 
-	/**
-	 * 포상정보를 승인/반려처리 한다.
-	 * @param rwardManage - 포상관리 model
-	 */
 	@Override
-	public void updtRwardManageConfm(RwardManage rwardManage) throws Exception {
-		InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-		rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
-		if("C".equals(rwardManage.getConfmAt())){
-			/*
-			 * 승인처리
-			 */
-			infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm(converToInfrmlSanctnObject(rwardManage));  //승인
-			//infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm("002", rwardManage);
-		}else if("R".equals(rwardManage.getConfmAt())){
-			/*
-			 * 반려처리
-			 */
-			infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn(converToInfrmlSanctnObject(rwardManage));  //반려
-			//infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn("002", rwardManage);
+	public void updtRwardManageConfm(egovframework.com.uss.ion.rwd.service.RwardManage searchVO) throws Exception {
+		rwardManageRepository.findById(searchVO.getRwardId()).ifPresent(entity -> {
+			entity.confirm(searchVO.getConfmAt(), LocalDateTime.now(), searchVO.getReturnResn(),
+					searchVO.getLastUpdusrId());
+			rwardManageRepository.save(entity);
+		});
+	}
+
+	private RwardManageVO toVO(RwardManage entity) {
+		RwardManageVO vo = new RwardManageVO();
+		vo.setRwardId(entity.getRwardId());
+		vo.setRwardManId(entity.getRwardwnrId());
+		vo.setRwardCd(entity.getRwardCode());
+		vo.setRwardDe(entity.getRwardDe());
+		vo.setRwardNm(entity.getRwardNm());
+		vo.setPblenCn(entity.getPblenCn());
+		vo.setSanctnerId(entity.getSanctnerId());
+		vo.setConfmAt(entity.getConfmAt());
+		if (entity.getSanctnDt() != null) {
+			vo.setSanctnDt(entity.getSanctnDt().toString());
 		}
-		rwardManage.setSanctnDt(infrmlSanctn.getSanctnDt());
-		rwardManage.setConfmAt(infrmlSanctn.getConfmAt());
-
-		rwardManageDAO.updtRwardManageConfm(rwardManage);
+		vo.setReturnResn(entity.getReturnResn());
+		vo.setAtchFileId(entity.getAtchFileId());
+		vo.setInfrmlSanctnId(entity.getInfrmlSanctnId());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		return vo;
 	}
-
-	/**
-	 * RwardManage model을 InfrmlSanctn model로 변환한다.
-	 * @param RwardManage
-	 * @return InfrmlSanctn
-	 * @param rwardManage
-	 */
-	private InfrmlSanctn converToInfrmlSanctnObject(RwardManage rwardManage) throws Exception{
-		InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-    	infrmlSanctn.setJobSeCode("002");								// 업무구분코드 (공통코드 COM75)
-    	infrmlSanctn.setApplcntId(rwardManage.getRwardManId());			// 포상자ID
-    	infrmlSanctn.setReqstDe(rwardManage.getRwardDe());				// 포상일자
-    	infrmlSanctn.setSanctnerId(rwardManage.getSanctnerId());		// 결재자ID
-    	infrmlSanctn.setConfmAt(rwardManage.getConfmAt());				// 승인구분
-    	infrmlSanctn.setSanctnDt(rwardManage.getSanctnDt());			// 결재일시
-    	infrmlSanctn.setReturnResn(rwardManage.getReturnResn());		// 반려사유
-    	infrmlSanctn.setFrstRegisterId(rwardManage.getFrstRegisterId());
-    	infrmlSanctn.setFrstRegisterPnttm(rwardManage.getFrstRegisterId());
-    	infrmlSanctn.setLastUpdusrId(rwardManage.getLastUpdusrId());
-    	infrmlSanctn.setLastUpdusrPnttm(rwardManage.getLastUpdusrPnttm());
-    	infrmlSanctn.setInfrmlSanctnId(rwardManage.getInfrmlSanctnId());// 약식결재ID
-    	return infrmlSanctn;
-	}
-
 }

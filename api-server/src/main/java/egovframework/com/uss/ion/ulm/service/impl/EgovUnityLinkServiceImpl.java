@@ -1,114 +1,99 @@
 package egovframework.com.uss.ion.ulm.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.uss.ion.ulm.service.EgovUnityLinkService;
-import egovframework.com.uss.ion.ulm.service.UnityLink;
+import com.company.project.domain.notification.UnityLink;
+import com.company.project.domain.notification.UnityLinkRepository;
+
 import jakarta.annotation.Resource;
 
-/**
- * 통합링크관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
- */
 @Service("egovUnityLinkService")
 public class EgovUnityLinkServiceImpl extends EgovAbstractServiceImpl
-        implements EgovUnityLinkService {
+        implements egovframework.com.uss.ion.ulm.service.EgovUnityLinkService {
 
-    @Resource(name = "onlineUnityLinkDao")
-    private UnityLinkDao dao;
+    @Resource(name = "unityLinkRepository")
+    private UnityLinkRepository unityLinkRepository;
 
     @Resource(name = "egovUnityLinkIdGnrService")
     private EgovIdGnrService idgenService;
 
-    /**
-     *통합링크관리 메인 셈플 목록을 조회한다.
-     * @param unityLink  통합링크관리 정보 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<?> selectUnityLinkSample(UnityLink unityLink) throws Exception {
-        return dao.selectUnityLinkSample(unityLink);
+    public List<?> selectUnityLinkSample(egovframework.com.uss.ion.ulm.service.UnityLink unityLink) throws Exception {
+        return unityLinkRepository.findAll().stream().map(this::toVO).collect(Collectors.toList());
     }
 
-    /**
-     * 통합링크관리를(을) 목록을 조회 한다.
-     * @param searchVO 조회할 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<?> selectUnityLinkList(ComDefaultVO searchVO) throws Exception {
-        return dao.selectUnityLinkList(searchVO);
+    public List<?> selectUnityLinkList(egovframework.com.cmm.ComDefaultVO searchVO) throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+                Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+        Page<com.company.project.domain.notification.UnityLink> page = unityLinkRepository.findAll(pageable);
+        return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
     }
 
-    /**
-     * 통합링크관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
-     * @return int
-     * @throws Exception
-     */
     @Override
-	public int selectUnityLinkListCnt(ComDefaultVO searchVO) throws Exception {
-        return dao.selectUnityLinkListCnt(searchVO);
+    public int selectUnityLinkListCnt(egovframework.com.cmm.ComDefaultVO searchVO) throws Exception {
+        return (int) unityLinkRepository.count();
     }
 
-    /**
-     * 통합링크관리를(을) 상세조회 한다.
-     * @param unityLink 조회할 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public UnityLink selectUnityLinkDetail(UnityLink unityLink) throws Exception {
-        return dao.selectUnityLinkDetail(unityLink);
+    public void insertUnityLink(egovframework.com.uss.ion.ulm.service.UnityLink searchVO) throws Exception {
+        String id = idgenService.getNextStringId();
+        searchVO.setUnityLinkId(id);
+
+        com.company.project.domain.notification.UnityLink entity = com.company.project.domain.notification.UnityLink
+                .builder()
+                .unityLinkId(id)
+                .unityLinkSeCode(searchVO.getUnityLinkSeCode())
+                .unityLinkNm(searchVO.getUnityLinkNm())
+                .unityLinkUrl(searchVO.getUnityLinkUrl())
+                .unityLinkDc(searchVO.getUnityLinkDc())
+                .frstRegisterId(searchVO.getFrstRegisterId())
+                .build();
+
+        unityLinkRepository.save(entity);
     }
 
-    /**
-     * 통합링크관리를(을) 등록한다.
-     * @param unityLink 조회할 정보가 담긴 VO
-     * @throws Exception
-     */
     @Override
-	public void insertUnityLink(UnityLink unityLink)throws Exception {
-        String sMakeId = idgenService.getNextStringId();
-        unityLink.setUnityLinkId(sMakeId);
-        dao.insertUnityLink(unityLink);
+    public void updateUnityLink(egovframework.com.uss.ion.ulm.service.UnityLink searchVO) throws Exception {
+        unityLinkRepository.findById(searchVO.getUnityLinkId()).ifPresent(entity -> {
+            entity.update(searchVO.getUnityLinkSeCode(), searchVO.getUnityLinkNm(), searchVO.getUnityLinkUrl(),
+                    searchVO.getUnityLinkDc(), searchVO.getLastUpdusrId());
+            unityLinkRepository.save(entity);
+        });
     }
 
-    /**
-     * 통합링크관리를(을) 수정한다.
-     * @param searchVO 조회할 정보가 담긴 VO
-     * @throws Exception
-     */
     @Override
-	public void updateUnityLink(UnityLink unityLink) throws Exception {
-        dao.updateUnityLink(unityLink);
+    public void deleteUnityLink(egovframework.com.uss.ion.ulm.service.UnityLink searchVO) throws Exception {
+        unityLinkRepository.deleteById(searchVO.getUnityLinkId());
     }
 
-    /**
-     * 통합링크관리를(을) 삭제한다.
-     * @param searchVO 조회할 정보가 담긴 VO
-     * @throws Exception
-     */
     @Override
-	public void deleteUnityLink(UnityLink unityLink) throws Exception {
-        dao.deleteUnityLink(unityLink);
+    public egovframework.com.uss.ion.ulm.service.UnityLink selectUnityLinkDetail(
+            egovframework.com.uss.ion.ulm.service.UnityLink searchVO)
+            throws Exception {
+        return unityLinkRepository.findById(searchVO.getUnityLinkId())
+                .map(this::toVO)
+                .orElseThrow(() -> processException("info.nodata.msg"));
     }
 
+    private egovframework.com.uss.ion.ulm.service.UnityLink toVO(
+            com.company.project.domain.notification.UnityLink entity) {
+        egovframework.com.uss.ion.ulm.service.UnityLink vo = new egovframework.com.uss.ion.ulm.service.UnityLink();
+        vo.setUnityLinkId(entity.getUnityLinkId());
+        vo.setUnityLinkSeCode(entity.getUnityLinkSeCode());
+        vo.setUnityLinkNm(entity.getUnityLinkNm());
+        vo.setUnityLinkUrl(entity.getUnityLinkUrl());
+        vo.setUnityLinkDc(entity.getUnityLinkDc());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        return vo;
+    }
 }

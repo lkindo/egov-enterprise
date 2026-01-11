@@ -6,7 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 
-@Entity
+@Entity(name = "NoteTrnsmitDomain")
 @Table(name = "COMTNNOTETRNSMIT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

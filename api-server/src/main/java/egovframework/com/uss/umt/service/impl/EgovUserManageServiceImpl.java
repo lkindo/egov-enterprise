@@ -52,7 +52,7 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Resource(name = "generalUserRepository")
 	private GeneralUserRepository generalUserRepository;
 
-	@Resource(name = "enterpriseUserRepository")
+	@Resource(name = "enterpriseUserDomainRepository")
 	private EnterpriseUserRepository enterpriseUserRepository;
 
 	@Resource(name = "egovUsrCnfrmIdGnrService")

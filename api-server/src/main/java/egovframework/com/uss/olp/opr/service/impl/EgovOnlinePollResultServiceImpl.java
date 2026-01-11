@@ -1,55 +1,51 @@
 package egovframework.com.uss.olp.opr.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.survey.OnlinePollManageRepository;
+import com.company.project.domain.survey.OnlinePollResult;
+import com.company.project.domain.survey.OnlinePollResultRepository;
+
 import egovframework.com.uss.olp.opr.service.EgovOnlinePollResultService;
-import egovframework.com.uss.olp.opr.service.OnlinePollResult;
 import jakarta.annotation.Resource;
 
-/**
- * 온라인POLL결과를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
- */
 @Service("egovOnlinePollResultService")
-public class EgovOnlinePollResultServiceImpl extends EgovAbstractServiceImpl
-        implements EgovOnlinePollResultService {
+public class EgovOnlinePollResultServiceImpl extends EgovAbstractServiceImpl implements EgovOnlinePollResultService {
 
-    @Resource(name = "onlinePollResultDao")
-    private OnlinePollResultDao dao;
+    @Resource(name = "onlinePollManageRepository")
+    private OnlinePollManageRepository onlinePollManageRepository;
 
+    @Resource(name = "onlinePollResultRepository")
+    private OnlinePollResultRepository onlinePollResultRepository;
 
-    /**
-     * 온라인POLL결과를(을) 목록을 한다.
-     * @param onlinePollResult  온라인POLL결과 정보 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<?> selectOnlinePollResultList(OnlinePollResult onlinePollResult) throws Exception {
-        return dao.selectOnlinePollResultList(onlinePollResult);
+    public List<EgovMap> selectOnlinePollResultList(
+            egovframework.com.uss.olp.opr.service.OnlinePollResult onlinePollResult) throws Exception {
+        List<com.company.project.domain.survey.OnlinePollResult> results = onlinePollResultRepository
+                .findByPollId(onlinePollResult.getPollId());
+        return results.stream().map(this::toResultEgovMap).collect(Collectors.toList());
     }
 
-    /**
-     * 온라인POLL결과를(을) 삭제 한다.
-     * @param onlinePollResult  온라인POLL결과 정보가 담김 VO
-     * @return void
-     * @throws Exception
-     */
     @Override
-	public void deleteOnlinePollResult(OnlinePollResult onlinePollResult) throws Exception {
-        dao.deleteOnlinePollResult(onlinePollResult);
+    public void deleteOnlinePollResult(egovframework.com.uss.olp.opr.service.OnlinePollResult onlinePollResult)
+            throws Exception {
+        if (onlinePollResult.getPollResultId() != null) {
+            onlinePollResultRepository.deleteById(onlinePollResult.getPollResultId());
+        }
+    }
+
+    private EgovMap toResultEgovMap(com.company.project.domain.survey.OnlinePollResult entity) {
+        EgovMap map = new EgovMap();
+        map.put("pollId", entity.getPollId());
+        map.put("pollIemId", entity.getPollIemId());
+        map.put("pollResultId", entity.getPollResultId());
+        map.put("frstRegisterId", entity.getFrstRegisterId());
+        map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+        return map;
     }
 }

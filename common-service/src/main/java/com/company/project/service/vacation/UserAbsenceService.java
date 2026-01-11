@@ -1,24 +1,20 @@
 package com.company.project.service.vacation;
 
 import com.company.project.domain.vacation.UserAbsence;
-import com.company.project.domain.vacation.UserAbsenceRepository;
+import com.company.project.domain.vacation.UserAbsenceDomainRepository;
 import com.company.project.service.vacation.dto.UserAbsenceDto;
-import com.company.project.service.vacation.dto.UserAbsenceDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserAbsenceService implements EgovUserAbsenceService {
 
-    private final UserAbsenceRepository userAbsenceRepository;
-
-    public UserAbsenceService(
-            @org.springframework.beans.factory.annotation.Qualifier("commonUserAbsenceRepository") UserAbsenceRepository userAbsenceRepository) {
-        this.userAbsenceRepository = userAbsenceRepository;
-    }
+    private final UserAbsenceDomainRepository userAbsenceRepository;
 
     @Override
     public UserAbsenceDto getUserAbsence(String userId) {

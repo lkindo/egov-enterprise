@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 /**
  * 메인 이미지 관리 엔티티
  */
-@Entity
+@Entity(name = "MainImageDomain")
 @Table(name = "NMAINIMAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

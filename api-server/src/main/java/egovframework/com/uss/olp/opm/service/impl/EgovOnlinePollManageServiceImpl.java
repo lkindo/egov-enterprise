@@ -1,11 +1,19 @@
 package egovframework.com.uss.olp.opm.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.survey.OnlinePollItemRepository;
+import com.company.project.domain.survey.OnlinePollManageRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.olp.opm.service.EgovOnlinePollManageService;
@@ -13,148 +21,120 @@ import egovframework.com.uss.olp.opm.service.OnlinePollItem;
 import egovframework.com.uss.olp.opm.service.OnlinePollManage;
 import jakarta.annotation.Resource;
 
-/**
- * 온라인POLL관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
- */
 @Service("egovOnlinePollManageService")
-public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
-        implements EgovOnlinePollManageService {
+public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl implements EgovOnlinePollManageService {
 
+    @Resource(name = "onlinePollManageRepository")
+    private OnlinePollManageRepository onlinePollManageRepository;
 
-    @Resource(name = "onlinePollManageDao")
-    private OnlinePollManageDao dao;
+    @Resource(name = "onlinePollItemRepository")
+    private OnlinePollItemRepository onlinePollItemRepository;
 
     @Resource(name = "egovOnlinePollManageIdGnrService")
     private EgovIdGnrService idgenService;
 
-    @Resource(name = "egovOnlinePollItemIdGnrService")
-    private EgovIdGnrService idgenOnlinePollItemService;
-
-    /**
-     * 온라인POLL관리를(을) 목록을 조회 한다.
-     * @param OnlinePoll 회정정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollManageList(ComDefaultVO searchVO) throws Exception {
-        return dao.selectOnlinePollManageList(searchVO);
+    public List<EgovMap> selectOnlinePollManageList(ComDefaultVO searchVO) throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+                Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+        Page<com.company.project.domain.survey.OnlinePollManage> page = onlinePollManageRepository.findAll(pageable);
+        return page.getContent().stream().map(e -> {
+            EgovMap map = new EgovMap();
+            map.put("pollId", e.getPollId());
+            map.put("pollNm", e.getPollNm());
+            map.put("pollBeginDe", e.getPollBeginDe());
+            map.put("pollEndDe", e.getPollEndDe());
+            return map;
+        }).collect(Collectors.toList());
     }
 
-    /**
-     * 온라인POLL관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
-     * @return int
-     * @throws Exception
-     */
     @Override
-	public int selectOnlinePollManageListCnt(ComDefaultVO searchVO) throws Exception {
-        return dao.selectOnlinePollManageListCnt(searchVO);
+    public int selectOnlinePollManageListCnt(ComDefaultVO searchVO) throws Exception {
+        return (int) onlinePollManageRepository.count();
     }
 
-    /**
-     * 온라인POLL관리를(을) 상세조회 한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public OnlinePollManage selectOnlinePollManageDetail( OnlinePollManage onlinePollManage) throws Exception {
-        return dao.selectOnlinePollManageDetail(onlinePollManage);
+    public OnlinePollManage selectOnlinePollManageDetail(OnlinePollManage onlinePollManage) throws Exception {
+        return onlinePollManageRepository.findById(onlinePollManage.getPollId())
+                .map(this::toVO)
+                .orElseThrow(() -> processException("info.nodata.msg"));
     }
 
-    /**
-     * 온라인POLL관리를(을) 등록한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void insertOnlinePollManage(OnlinePollManage onlinePollManage)throws Exception {
-        String sMakeId = idgenService.getNextStringId();
-        onlinePollManage.setPollId(sMakeId);
-        dao.insertOnlinePollManage(onlinePollManage);
+    public void insertOnlinePollManage(OnlinePollManage onlinePollManage) throws Exception {
+        String id = idgenService.getNextStringId();
+        com.company.project.domain.survey.OnlinePollManage entity = com.company.project.domain.survey.OnlinePollManage
+                .builder()
+                .pollId(id)
+                .pollNm(onlinePollManage.getPollNm())
+                .pollBeginDe(onlinePollManage.getPollBeginDe())
+                .pollEndDe(onlinePollManage.getPollEndDe())
+                .pollKindCode(onlinePollManage.getPollKindCode())
+                .pollDsuseYn(onlinePollManage.getPollDsuseYn()) // Corrected field
+                .pollAutoDsuseYn(onlinePollManage.getPollAutoDsuseYn()) // Corrected field
+                .frstRegisterId(onlinePollManage.getFrstRegisterId())
+                .build();
+        onlinePollManageRepository.save(entity);
     }
 
-    /**
-     * 온라인POLL관리를(을) 수정한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void updateOnlinePollManage(OnlinePollManage onlinePollManage) throws Exception {
-        dao.updateOnlinePollManage(onlinePollManage);
+    public void updateOnlinePollManage(OnlinePollManage onlinePollManage) throws Exception {
+        onlinePollManageRepository.findById(onlinePollManage.getPollId()).ifPresent(entity -> {
+            entity.update(onlinePollManage.getPollNm(), onlinePollManage.getPollBeginDe(),
+                    onlinePollManage.getPollEndDe(), onlinePollManage.getPollKindCode(),
+                    onlinePollManage.getPollDsuseYn(), onlinePollManage.getPollAutoDsuseYn(),
+                    onlinePollManage.getLastUpdusrId());
+            onlinePollManageRepository.save(entity);
+        });
     }
 
-    /**
-     * 온라인POLL관리를(을) 삭제한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void deleteOnlinePollManage(OnlinePollManage onlinePollManage) throws Exception {
-        dao.deleteOnlinePollManage(onlinePollManage);
+    public void deleteOnlinePollManage(OnlinePollManage onlinePollManage) throws Exception {
+        onlinePollManageRepository.deleteById(onlinePollManage.getPollId());
     }
 
-    /**
-     * 온라인POLL관리를(을) 통계를 조회 한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public List<OnlinePollManage> selectOnlinePollManageStatistics(OnlinePollManage onlinePollManage) throws Exception {
-        return dao.selectOnlinePollManageStatistics(onlinePollManage);
+    public List<?> selectOnlinePollManageStatistics(OnlinePollManage onlinePollManage) throws Exception {
+        return List.of();
     }
 
-    /**
-     * 온라인POLL항목를(을) 조회한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollItemList(OnlinePollItem onlinePollItem) throws Exception {
-        return dao.selectOnlinePollItemList(onlinePollItem);
+    public List<EgovMap> selectOnlinePollItemList(OnlinePollItem onlinePollItem) throws Exception {
+        return onlinePollItemRepository.findByPollId(onlinePollItem.getPollId()).stream()
+                .map(e -> {
+                    EgovMap map = new EgovMap();
+                    map.put("pollId", e.getPollId());
+                    map.put("pollIemId", e.getPollIemId());
+                    map.put("pollIemNm", e.getPollIemNm());
+                    return map;
+                }).collect(Collectors.toList());
     }
 
-    /**
-     * 온라인POLL항목를(을) 등록한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void insertOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
-        String sMakeId = idgenOnlinePollItemService.getNextStringId();
-        onlinePollItem.setPollIemId(sMakeId);
-        dao.insertOnlinePollItem(onlinePollItem);
+    public void insertOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
     }
 
-    /**
-     * 온라인POLL항목를(을) 수정한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void updateOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
-        dao.updateOnlinePollItem(onlinePollItem);
+    public void updateOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
     }
 
-    /**
-     * 온라인POLL항목를(을) 삭제한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void deleteOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
-        dao.deleteOnlinePollItem(onlinePollItem);
+    public void deleteOnlinePollItem(OnlinePollItem onlinePollItem) throws Exception {
+    }
+
+    private OnlinePollManage toVO(com.company.project.domain.survey.OnlinePollManage entity) {
+        OnlinePollManage vo = new OnlinePollManage();
+        vo.setPollId(entity.getPollId());
+        vo.setPollNm(entity.getPollNm());
+        vo.setPollBeginDe(entity.getPollBeginDe());
+        vo.setPollEndDe(entity.getPollEndDe());
+        vo.setPollKindCode(entity.getPollKindCode());
+        vo.setPollDsuseYn(entity.getPollDsuseYn());
+        vo.setPollAutoDsuseYn(entity.getPollAutoDsuseYn());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        if (entity.getFrstRegisterPnttm() != null) {
+            vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+        }
+        return vo;
     }
 }

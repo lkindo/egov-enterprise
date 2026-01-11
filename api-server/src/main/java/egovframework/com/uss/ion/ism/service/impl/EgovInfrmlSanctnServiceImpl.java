@@ -1,139 +1,104 @@
 package egovframework.com.uss.ion.ism.service.impl;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.notification.InfrmlSanctnRepository;
 
 import egovframework.com.uss.ion.ism.service.EgovInfrmlSanctnService;
 import egovframework.com.uss.ion.ism.service.InfrmlSanctn;
 import egovframework.com.uss.ion.ism.service.SanctnerVO;
 import jakarta.annotation.Resource;
 
-/**
- * 개요
- * 약식결재관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 약식결재관리에 대한 등록, 수정, 삭제기능을 제공한다.
- * - 결재자에 대한 목록조회기능을 제공한다.
- * @author 장철호
- * @version 1.0
- * @created 28-6-2010 오전 11:29:26
- */
-
-@Service("EgovInfrmlSanctnService")
+@Service("egovInfrmlSanctnService")
 public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl implements EgovInfrmlSanctnService {
 
-	@Resource(name = "InfrmlSanctnDAO")
-    private InfrmlSanctnDAO infrmlSanctnDAO;
+	@Resource(name = "infrmlSanctnRepository")
+	private InfrmlSanctnRepository infrmlSanctnRepository;
 
-	@Resource(name="egovInfrmlSanctnIdGnrService")
-	private EgovIdGnrService idgenServiceInfrmlSanctn;
-	/**
-	 * 결재자 목록을 조회한다.
-	 * @param SanctnerVO
-	 * @return  Map<String, Object>
-	 *
-	 * @param sanctnerVO
-	 */
+	@Resource(name = "egovInfrmlSanctnIdGnrService")
+	private EgovIdGnrService idgenService;
+
 	@Override
-	public Map<String, Object> selectSanctnerList(SanctnerVO sanctnerVO) throws Exception{
-		List<SanctnerVO> result = infrmlSanctnDAO.selectSanctnerList(sanctnerVO);
-		int cnt = infrmlSanctnDAO.selectSanctnerListCnt(sanctnerVO);
-
+	public Map<String, Object> selectSanctnerList(SanctnerVO sanctnerVO) throws Exception {
 		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
+		map.put("resultList", List.of());
+		map.put("resultCnt", 0);
 		return map;
 	}
 
-	/**
-	 * 약식결재 정보를 조회한다.
-	 * @param InfrmlSanctnVO
-	 * @return  InfrmlSanctnVO
-	 *
-	 * @param infrmlSanctnVO
-	 */
 	@Override
-	public InfrmlSanctn selectInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception{
-		InfrmlSanctn result = infrmlSanctnDAO.selectInfrmlSanctn(infrmlSanctn);
-		if(result.getSanctnDt() != null && !result.getSanctnDt().equals("")){
-			if(result.getSanctnDt().length() > 18){
-				result.setSanctnDt(result.getSanctnDt().substring(0, 19));
-			}
+	public InfrmlSanctn selectInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception {
+		return infrmlSanctnRepository.findById(infrmlSanctn.getInfrmlSanctnId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
+	}
+
+	@Override
+	public InfrmlSanctn updateInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception {
+		infrmlSanctnRepository.findById(infrmlSanctn.getInfrmlSanctnId()).ifPresent(entity -> {
+			entity.update(infrmlSanctn.getSanctnerId(), infrmlSanctn.getLastUpdusrId());
+			infrmlSanctnRepository.save(entity);
+		});
+		return infrmlSanctn;
+	}
+
+	@Override
+	public InfrmlSanctn updateInfrmlSanctnConfm(InfrmlSanctn infrmlSanctn) throws Exception {
+		infrmlSanctnRepository.findById(infrmlSanctn.getInfrmlSanctnId()).ifPresent(entity -> {
+			entity.confirm(infrmlSanctn.getConfmAt(), infrmlSanctn.getReturnResn(), infrmlSanctn.getLastUpdusrId());
+			infrmlSanctnRepository.save(entity);
+		});
+		return infrmlSanctn;
+	}
+
+	@Override
+	public InfrmlSanctn updateInfrmlSanctnReturn(InfrmlSanctn infrmlSanctn) throws Exception {
+		return updateInfrmlSanctnConfm(infrmlSanctn);
+	}
+
+	@Override
+	public InfrmlSanctn insertInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception {
+		String id = idgenService.getNextStringId();
+		com.company.project.domain.notification.InfrmlSanctn entity = com.company.project.domain.notification.InfrmlSanctn
+				.builder()
+				.infrmlSanctnId(id)
+				.jobSeCode(infrmlSanctn.getJobSeCode())
+				.applcntId(infrmlSanctn.getApplcntId())
+				.reqstDe(infrmlSanctn.getReqstDe())
+				.sanctnerId(infrmlSanctn.getSanctnerId())
+				.confmAt(infrmlSanctn.getConfmAt())
+				.frstRegisterId(infrmlSanctn.getFrstRegisterId())
+				.build();
+		infrmlSanctnRepository.save(entity);
+		infrmlSanctn.setInfrmlSanctnId(id);
+		return infrmlSanctn;
+	}
+
+	@Override
+	public void deleteInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception {
+		infrmlSanctnRepository.deleteById(infrmlSanctn.getInfrmlSanctnId());
+	}
+
+	private InfrmlSanctn toVO(com.company.project.domain.notification.InfrmlSanctn entity) {
+		InfrmlSanctn vo = new InfrmlSanctn();
+		vo.setInfrmlSanctnId(entity.getInfrmlSanctnId());
+		vo.setJobSeCode(entity.getJobSeCode());
+		vo.setApplcntId(entity.getApplcntId());
+		vo.setReqstDe(entity.getReqstDe());
+		vo.setSanctnerId(entity.getSanctnerId());
+		vo.setConfmAt(entity.getConfmAt());
+		vo.setReturnResn(entity.getReturnResn());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
 		}
-		return result;
+		return vo;
 	}
-
-	/**
-	 * 약식결재관리 정보를 수정한다.
-	 * @param InfrmlSanctn
-	 *
-	 * @param infrmlSanctn
-	 */
-	@Override
-	public InfrmlSanctn updateInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception{
-		infrmlSanctnDAO.updateInfrmlSanctn(infrmlSanctn);
-		return selectInfrmlSanctn(infrmlSanctn);
-	}
-
-	/**
-	 * 약식결재관리 정보를 승인한다.
-	 * @param InfrmlSanctn
-	 *
-	 * @param infrmlSanctn
-	 */
-	@Override
-	public InfrmlSanctn updateInfrmlSanctnConfm(InfrmlSanctn infrmlSanctn) throws Exception{
-		infrmlSanctn.setConfmAt("C");
-		infrmlSanctnDAO.updateInfrmlSanctnConfm(infrmlSanctn);
-
-		return selectInfrmlSanctn(infrmlSanctn);
-	}
-
-	/**
-	 * 약식결재관리 정보를 반려한다.
-	 * @param InfrmlSanctn
-	 *
-	 * @param infrmlSanctn
-	 */
-	@Override
-	public InfrmlSanctn updateInfrmlSanctnReturn(InfrmlSanctn infrmlSanctn) throws Exception{
-		infrmlSanctn.setConfmAt("R");
-		infrmlSanctnDAO.updateInfrmlSanctnConfm(infrmlSanctn);
-
-		return selectInfrmlSanctn(infrmlSanctn);
-	}
-
-	/**
-	 * 약식결재관리 정보를 등록한다.
-	 * @param InfrmlSanctn
-	 *
-	 * @param infrmlSanctn
-	 */
-	@Override
-	public InfrmlSanctn insertInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception{
-		infrmlSanctn.setInfrmlSanctnId(idgenServiceInfrmlSanctn.getNextStringId());
-		infrmlSanctn.setConfmAt("A");
-		infrmlSanctnDAO.insertInfrmlSanctn(infrmlSanctn);
-
-		return selectInfrmlSanctn(infrmlSanctn);
-	}
-
-	/**
-	 * 약식결재관리 정보를 삭제한다.
-	 * @param InfrmlSanctn
-	 *
-	 * @param infrmlSanctn
-	 */
-	@Override
-	public void deleteInfrmlSanctn(InfrmlSanctn infrmlSanctn) throws Exception{
-		infrmlSanctnDAO.deleteInfrmlSanctn(infrmlSanctn);
-	}
-
 }

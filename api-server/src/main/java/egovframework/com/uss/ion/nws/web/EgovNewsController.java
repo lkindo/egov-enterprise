@@ -48,7 +48,7 @@ import jakarta.validation.Valid;
 @Controller
 public class EgovNewsController {
 
-	@Resource(name = "EgovNewsService")
+	@Resource(name = "egovNewsService")
 	private EgovNewsService egovNewsService;
 
 	/** EgovPropertyService */
@@ -169,7 +169,7 @@ public class EgovNewsController {
 		// 리턴받은 첨부파일ID를 셋팅한다..
 		newsVO.setAtchFileId(atchFileId); // 첨부파일 ID
 
-		if(bindingResult.hasErrors()){
+		if (bindingResult.hasErrors()) {
 
 			return "egovframework/com/uss/ion/nws/EgovNewsRegist";
 

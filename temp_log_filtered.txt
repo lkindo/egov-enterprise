@@ -1,0 +1,139 @@
+﻿> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 2026-01-11 20:54:02.749 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.company.project.core.exception.GlobalExceptionHandler#handleException(Exception)
+> 2026-01-11 20:54:02.749 [http-nio-8080-exec-9] ERROR c.c.p.c.e.GlobalExceptionHandler - Exception
+> org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.
+  	at org.springframework.web.servlet.DispatcherServlet.noHandlerFound(DispatcherServlet.java:1305)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)
+  	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+> 2026-01-11 20:54:02.751 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.]
+  2026-01-11 20:54:02.751 [http-nio-8080-exec-9] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+  2026-01-11 20:54:02.751 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR, headers={masked}
+  2026-01-11 20:54:04.057 [http-nio-8080-exec-7] TRACE o.s.web.servlet.DispatcherServlet - GET "/favicon.ico", parameters={}, headers={masked} in DispatcherServlet 'dispatcherServlet'
+  2026-01-11 20:54:04.061 [http-nio-8080-exec-7] WARN  o.s.web.servlet.PageNotFound - No mapping for GET /favicon.ico
+> 2026-01-11 20:54:04.063 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.company.project.core.exception.GlobalExceptionHandler#handleException(Exception)
+> 2026-01-11 20:54:04.063 [http-nio-8080-exec-7] ERROR c.c.p.c.e.GlobalExceptionHandler - Exception
+> org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.
+  	at org.springframework.web.servlet.DispatcherServlet.noHandlerFound(DispatcherServlet.java:1305)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)
+  	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+> 2026-01-11 20:54:04.065 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.]
+  2026-01-11 20:54:04.066 [http-nio-8080-exec-7] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+  2026-01-11 20:54:04.066 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR, headers={masked}
+  2026-01-11 20:54:24.894 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing GET /uss/umt/EgovEntrprsMberManage.do
+  >>> DEBUG_FILTER_PRE: /uss/umt/EgovEntrprsMberManage.do
+  2026-01-11 20:54:24.895 [http-nio-8080-exec-4] DEBUG o.s.s.w.c.HttpSessionSecurityContextRepository - Retrieved SecurityContextImpl [Authentication=UsernamePasswordAuthenticationToken [Principal=com.company.project.security.service.CustomUserDetails@641a4af9, Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[]]]
+> 2026-01-11 20:54:24.983 [http-nio-8080-exec-4] ERROR o.a.c.c.C.[.[localhost].[/].[jsp] - Servlet.service() for servlet [jsp] threw exception
+> jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at jakarta.el.BeanELResolver$BeanProperties.get(BeanELResolver.java:261)
+  	at jakarta.el.BeanELResolver.property(BeanELResolver.java:330)
+  	at jakarta.el.BeanELResolver.getValue(BeanELResolver.java:99)
+  	at org.apache.jasper.el.JasperELResolver.getValue(JasperELResolver.java:130)
+  	at org.apache.el.parser.AstValue.getValue(AstValue.java:161)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> org.apache.jasper.JasperException: jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:490)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> Caused by: jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at jakarta.el.BeanELResolver$BeanProperties.get(BeanELResolver.java:261)
+  	at jakarta.el.BeanELResolver.property(BeanELResolver.java:330)
+  	at jakarta.el.BeanELResolver.getValue(BeanELResolver.java:99)
+  	at org.apache.jasper.el.JasperELResolver.getValue(JasperELResolver.java:130)
+  	at org.apache.el.parser.AstValue.getValue(AstValue.java:161)
+> org.apache.jasper.JasperException: jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:490)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> Caused by: jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at jakarta.el.BeanELResolver$BeanProperties.get(BeanELResolver.java:261)
+  	at jakarta.el.BeanELResolver.property(BeanELResolver.java:330)
+  	at jakarta.el.BeanELResolver.getValue(BeanELResolver.java:99)
+  	at org.apache.jasper.el.JasperELResolver.getValue(JasperELResolver.java:130)
+  	at org.apache.el.parser.AstValue.getValue(AstValue.java:161)
+> 2026-01-11 20:54:25.029 [http-nio-8080-exec-4] ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] - Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]] with root cause
+> jakarta.el.PropertyNotFoundException: Property [userId] not found on type [egovframework.com.uss.umt.service.EntrprsManageVO]
+  	at jakarta.el.BeanELResolver$BeanProperties.get(BeanELResolver.java:261)
+  	at jakarta.el.BeanELResolver.property(BeanELResolver.java:330)
+  	at jakarta.el.BeanELResolver.getValue(BeanELResolver.java:99)
+  	at org.apache.jasper.el.JasperELResolver.getValue(JasperELResolver.java:130)
+  	at org.apache.el.parser.AstValue.getValue(AstValue.java:161)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+> 	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.wrapFilter(ObservationFilterChainDecorator.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$ObservationFilter.doFilter(ObservationFilterChainDecorator.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDecorator$VirtualFilterChain.doFilter(ObservationFilterChainDecorator.java:137)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+> 2026-01-11 20:54:25.331 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.company.project.core.exception.GlobalExceptionHandler#handleException(Exception)
+> 2026-01-11 20:54:25.332 [http-nio-8080-exec-3] ERROR c.c.p.c.e.GlobalExceptionHandler - Exception
+> org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.
+  	at org.springframework.web.servlet.DispatcherServlet.noHandlerFound(DispatcherServlet.java:1305)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)
+  	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+> 2026-01-11 20:54:25.334 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.NoHandlerFoundException: No endpoint GET /favicon.ico.]
+  2026-01-11 20:54:25.334 [http-nio-8080-exec-3] TRACE o.s.web.servlet.DispatcherServlet - No view rendering, null ModelAndView returned.
+  2026-01-11 20:54:25.334 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR, headers={masked}

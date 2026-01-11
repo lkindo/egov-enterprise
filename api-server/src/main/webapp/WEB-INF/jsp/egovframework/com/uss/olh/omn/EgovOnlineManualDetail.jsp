@@ -13,9 +13,9 @@
     Copyright (C) 2009 by MOPAS  All rights reserved.
 --%>
 <%@ page contentType="text/html; charset=utf-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <c:set var="ImgUrl" value="${pageContext.request.contextPath}/images/egovframework/com/cmm/"/>
 <c:set var="CssUrl" value="${pageContext.request.contextPath}/css/egovframework/com/" />
@@ -43,22 +43,8 @@ function fn_egov_list_OnlineManual(){
 	location.href = "<c:url value='/uss/olh/omn/listOnlineManual.do'/>";
 }
 </script>
-
-    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
-    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
-    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 <body onLoad="fn_egov_init_OnlineManual();">
-<div class="wrap">
-<c:import url="/sym/mms/EgovHeader.do" />
-<div class="container" style="padding-bottom: 60px;">
-<div class="sub_layout">
-<div class="sub_in">
-<div class="layout">
-
 <DIV id="content" style="width:712px">
 <%-- noscript 테그 --%>
 <noscript class="noScriptTitle">자바스크립트를 지원하지 않는 브라우저에서는 일부 기능을 사용하실 수 없습니다.</noscript>
@@ -156,12 +142,5 @@ function fn_egov_list_OnlineManual(){
 </table>
 
 
-
-</div>
-</div>
-</div>
-</div>
-<c:import url="/sym/mms/EgovFooter.do" />
-</div>
 </body>
 </html>

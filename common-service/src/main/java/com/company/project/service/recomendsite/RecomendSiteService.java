@@ -3,7 +3,7 @@ package com.company.project.service.recomendsite;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.recomendsite.RecomendSite;
-import com.company.project.domain.recomendsite.RecomendSiteRepository;
+import com.company.project.domain.recomendsite.RecomendSiteDomainRepository;
 import com.company.project.service.recomendsite.dto.RecomendSiteDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RecomendSiteService implements EgovRecomendSiteService {
 
-    private final RecomendSiteRepository recomendSiteRepository;
+    private final RecomendSiteDomainRepository recomendSiteRepository;
 
     @Override
     public Page<RecomendSiteDto> getRecomendSiteList(String keyword, Pageable pageable) {

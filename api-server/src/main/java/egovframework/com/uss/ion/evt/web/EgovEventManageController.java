@@ -199,7 +199,6 @@ public class EgovEventManageController {
 			@ModelAttribute("eventManageVO") EventManageVO eventManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
 
-
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("eventManageVO", eventManageVO);
 			return "egovframework/com/uss/ion/evt/EgovEventReqstRegist";
@@ -223,7 +222,6 @@ public class EgovEventManageController {
 	public String updtEventManage(@ModelAttribute("eventManage") EventManage eventManage,
 			@ModelAttribute("eventManageVO") EventManageVO eventManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
-
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("eventManageVO", eventManage);
@@ -261,7 +259,7 @@ public class EgovEventManageController {
 	 * @return String - 리턴 Url
 	 */
 	@IncludedInfo(name = "행사접수관리", order = 941, gid = 50)
-	@RequestMapping(value = "/uss/ion/evt/EgovEventRcrptManageList.do")
+	@RequestMapping(value = { "/uss/ion/evt/EgovEventRcrptManageList.do", "/uss/ion/evt/EgovEventRceptManageList.do" })
 	public String selectEventAtdrnList(@ModelAttribute("eventManageVO") EventManageVO eventManageVO, ModelMap model)
 			throws Exception {
 

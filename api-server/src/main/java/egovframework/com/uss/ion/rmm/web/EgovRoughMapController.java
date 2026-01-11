@@ -52,7 +52,7 @@ import jakarta.validation.Valid;
 public class EgovRoughMapController {
 
 	/** EgovRoughMapService */
-	@Resource(name = "EgovRoughMapService")
+	@Resource(name = "egovRoughMapService")
 	private EgovRoughMapService egovRoughMapService;
 
 	/** EgovPropertyService */

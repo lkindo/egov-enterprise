@@ -46,7 +46,7 @@ import jakarta.validation.Valid;
 @Controller
 public class EgovSiteController {
 
-	@Resource(name = "EgovSiteService")
+	@Resource(name = "egovSiteService")
 	private EgovSiteService egovSiteService;
 
 	/** EgovPropertyService */

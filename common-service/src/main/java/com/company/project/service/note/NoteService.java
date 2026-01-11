@@ -1,6 +1,11 @@
 package com.company.project.service.note;
 
-import com.company.project.domain.note.*;
+import com.company.project.domain.note.Note;
+import com.company.project.domain.note.NoteDomainRepository;
+import com.company.project.domain.note.NoteRecptn;
+import com.company.project.domain.note.NoteRecptnDomainRepository;
+import com.company.project.domain.note.NoteTrnsmit;
+import com.company.project.domain.note.NoteTrnsmitDomainRepository;
 import com.company.project.service.note.dto.NoteDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,9 +20,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class NoteService implements EgovNoteService {
 
-    private final NoteRepository noteRepository;
-    private final NoteTrnsmitRepository noteTrnsmitRepository;
-    private final NoteRecptnRepository noteRecptnRepository;
+    private final NoteDomainRepository noteRepository;
+    private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
+    private final NoteRecptnDomainRepository noteRecptnRepository;
 
     @Override
     public NoteDto getNote(String noteId) {

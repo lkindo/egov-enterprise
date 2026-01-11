@@ -44,7 +44,7 @@ import com.company.project.domain.user.UserRepository;
 @Service("entrprsManageService")
 public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implements EgovEntrprsManageService {
 
-	@Resource(name = "enterpriseUserRepository")
+	@Resource(name = "enterpriseUserDomainRepository")
 	private EnterpriseUserRepository enterpriseUserRepository;
 
 	@Resource(name = "userRepository")

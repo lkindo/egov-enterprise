@@ -1,7 +1,7 @@
 package com.company.project.service.image;
 
 import com.company.project.domain.image.MainImage;
-import com.company.project.domain.image.MainImageRepository;
+import com.company.project.domain.image.MainImageDomainRepository;
 import com.company.project.service.image.dto.ImageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MainImageService implements EgovMainImageService {
 
-    private final MainImageRepository mainImageRepository;
+    private final MainImageDomainRepository mainImageRepository;
 
     @Override
     public ImageDto getMainImage(String imageId) {

@@ -1,26 +1,18 @@
-/**
- * 개요
- * - 배너에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 배너에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 배너의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
- * @version 1.0
- * @created 03-8-2009 오후 2:07:12
- */
-
 package egovframework.com.uss.ion.bnr.service.impl;
 
-import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.cmm.service.FileVO;
+import com.company.project.domain.banner.BannerRepository;
+
 import egovframework.com.uss.ion.bnr.service.Banner;
 import egovframework.com.uss.ion.bnr.service.BannerVO;
 import egovframework.com.uss.ion.bnr.service.EgovBannerService;
@@ -29,96 +21,111 @@ import jakarta.annotation.Resource;
 @Service("egovBannerService")
 public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements EgovBannerService {
 
-	/** logger */
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovBannerServiceImpl.class);
+	@Resource(name = "bannerRepository")
+	private BannerRepository bannerRepository;
 
-	@Resource(name="bannerDAO")
-    private BannerDAO bannerDAO;
+	@Resource(name = "egovBannerIdGnrService")
+	private EgovIdGnrService idgenService;
 
-	/**
-	 * 배너를 관리하기 위해 등록된 배너목록을 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return List - 배너 목록
-	 */
 	@Override
-	public List<BannerVO> selectBannerList(BannerVO bannerVO) throws Exception{
-		return bannerDAO.selectBannerList(bannerVO);
+	public List<BannerVO> selectBannerList(BannerVO bannerVO) throws Exception {
+		Pageable pageable = PageRequest.of(bannerVO.getPageIndex() - 1, bannerVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "regDate"));
+		Page<com.company.project.domain.banner.Banner> page = bannerRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 배너목록 총 개수를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return int - 배너 카운트 수
-	 */
 	@Override
 	public int selectBannerListTotCnt(BannerVO bannerVO) throws Exception {
-		return bannerDAO.selectBannerListTotCnt(bannerVO);
+		return (int) bannerRepository.count();
 	}
 
-	/**
-	 * 등록된 배너의 상세정보를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return BannerVO - 배너 VO
-	 */
 	@Override
-	public BannerVO selectBanner(BannerVO bannerVO) throws Exception{
-		return bannerDAO.selectBanner(bannerVO);
+	public BannerVO selectBanner(BannerVO bannerVO) throws Exception {
+		return bannerRepository.findById(bannerVO.getBannerId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 배너정보를 신규로 등록한다.
-	 * @param banner - 배너 model
-	 */
 	@Override
-	public BannerVO insertBanner(Banner banner, BannerVO bannerVO) throws Exception{
-        bannerDAO.insertBanner(banner);
-        bannerVO.setBannerId(banner.getBannerId());
-        return selectBanner(bannerVO);
+	public BannerVO insertBanner(Banner banner, BannerVO bannerVO) throws Exception {
+		String id = idgenService.getNextStringId();
+		int sortOrdr = 0;
+		try {
+			if (banner.getSortOrdr() != null) {
+				sortOrdr = Integer.parseInt(banner.getSortOrdr());
+			}
+		} catch (NumberFormatException e) {
+			sortOrdr = 0;
+		}
+
+		com.company.project.domain.banner.Banner entity = com.company.project.domain.banner.Banner.builder()
+				.bannerId(id)
+				.bannerNm(banner.getBannerNm())
+				.linkUrl(banner.getLinkUrl())
+				.bannerImage(banner.getBannerImage())
+				.bannerDc(banner.getBannerDc())
+				.sortOrdr(sortOrdr)
+				.reflctAt(banner.getReflctAt())
+				.userId(banner.getUserId())
+				.build();
+		bannerRepository.save(entity);
+		bannerVO.setBannerId(id);
+		return bannerVO;
 	}
 
-	/**
-	 * 기 등록된 배너정보를 수정한다.
-	 * @param banner - 배너 model
-	 */
 	@Override
-	public void updateBanner(Banner banner) throws Exception{
-        bannerDAO.updateBanner(banner);
+	public void updateBanner(Banner banner) throws Exception {
+		bannerRepository.findById(banner.getBannerId()).ifPresent(entity -> {
+			int sortOrdr = 0;
+			try {
+				if (banner.getSortOrdr() != null) {
+					sortOrdr = Integer.parseInt(banner.getSortOrdr());
+				}
+			} catch (NumberFormatException e) {
+				sortOrdr = entity.getSortOrdr();
+			}
+			entity.update(banner.getBannerNm(), banner.getLinkUrl(), banner.getBannerImage(), banner.getBannerDc(),
+					sortOrdr, banner.getReflctAt());
+			bannerRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 배너정보를 삭제한다.
-	 * @param banner - 배너 model
-	 */
 	@Override
 	public void deleteBanner(Banner banner) throws Exception {
-		deleteBannerFile(banner);
-        bannerDAO.deleteBanner(banner);
+		bannerRepository.deleteById(banner.getBannerId());
 	}
 
-	/**
-	 * 기 등록된 배너정보의 이미지파일을 삭제한다.
-	 * @param banner - 배너 model
-	 */
 	@Override
-	public void deleteBannerFile(Banner banner) throws Exception{
-		FileVO fileVO = bannerDAO.selectBannerFile(banner);
-		File file = new File(fileVO.getFileStreCours()+fileVO.getStreFileNm());
-		//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
-		if(file.delete()){
-			LOGGER.debug("[file.delete] file : File Deletion Success");
-		}else{
-			LOGGER.error("[file.delete] file : File Deletion Fail");
+	public void deleteBannerFile(Banner banner) throws Exception {
+		bannerRepository.findById(banner.getBannerId()).ifPresent(entity -> {
+			entity.update(entity.getBannerNm(), entity.getLinkUrl(), null, entity.getBannerDc(),
+					entity.getSortOrdr(), entity.getReflctAt());
+			bannerRepository.save(entity);
+		});
+	}
+
+	@Override
+	public List<BannerVO> selectBannerResult(BannerVO bannerVO) throws Exception {
+		return bannerRepository.findAll().stream()
+				.filter(e -> "Y".equals(e.getReflctAt()))
+				.map(this::toVO)
+				.collect(Collectors.toList());
+	}
+
+	private BannerVO toVO(com.company.project.domain.banner.Banner entity) {
+		BannerVO vo = new BannerVO();
+		vo.setBannerId(entity.getBannerId());
+		vo.setBannerNm(entity.getBannerNm());
+		vo.setLinkUrl(entity.getLinkUrl());
+		vo.setBannerImage(entity.getBannerImage());
+		vo.setBannerDc(entity.getBannerDc());
+		vo.setSortOrdr(String.valueOf(entity.getSortOrdr()));
+		vo.setReflctAt(entity.getReflctAt());
+		vo.setUserId(entity.getUserId());
+		if (entity.getRegDate() != null) {
+			vo.setRegDate(entity.getRegDate().toString());
 		}
+		return vo;
 	}
-
-	/**
-	 * 배너가 특정화면에 반영된 결과를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return BannerVO - 배너 VO
-	 */
-	@Override
-	public List<BannerVO> selectBannerResult(BannerVO bannerVO) throws Exception{
-		return bannerDAO.selectBannerResult(bannerVO);
-	}
-
 }

@@ -53,7 +53,7 @@ public class EgovAdministrationWordController {
 	EgovMessageSource egovMessageSource;
 
 	/** egovOnlinePollService */
-	@Resource(name = "EgovAdministrationWordService")
+	@Resource(name = "egovAdministrationWordService")
 	private EgovAdministrationWordService egovAdministrationWordService;
 
 	@Resource(name = "EgovCmmUseService")

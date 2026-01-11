@@ -1,112 +1,114 @@
 package egovframework.com.uss.sam.ipm.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.terms.IndvdlInfoPolicyRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.sam.ipm.service.EgovIndvdlInfoPolicyService;
 import egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy;
 import jakarta.annotation.Resource;
 
-/**
- * 개인정보보호정책를 처리하는 ServiceImpl Class 구현
- *
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see
- *
- *      <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일          수정자       수정내용
- *  -----------    --------    ---------------------------
- *   2009.07.03     장동한       최초 생성
- *
- *      </pre>
- */
 @Service("egovIndvdlInfoPolicyService")
 public class EgovIndvdlInfoPolicyServiceImpl extends EgovAbstractServiceImpl implements EgovIndvdlInfoPolicyService {
 
-	@Resource(name = "onlineIndvdlInfoPolicyDao")
-	private IndvdlInfoPolicyDao dao;
+	@Resource(name = "indvdlInfoPolicyRepository")
+	private IndvdlInfoPolicyRepository indvdlInfoPolicyRepository;
 
 	@Resource(name = "egovIndvdlInfoPolicyIdGnrService")
 	private EgovIdGnrService idgenService;
 
-	/**
-	 * 개인정보보호정책를(을) 목록을 조회 한다.
-	 *
-	 * @param OnlinePoll 회정정보가 담김 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
 	public List<EgovMap> selectIndvdlInfoPolicyList(ComDefaultVO searchVO) throws Exception {
-		return dao.selectIndvdlInfoPolicyList(searchVO);
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<com.company.project.domain.terms.IndvdlInfoPolicy> page = indvdlInfoPolicyRepository.findAll(pageable);
+
+		return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
 	}
 
-	/**
-	 * 개인정보보호정책를(을) 목록 전체 건수를(을) 조회한다.
-	 *
-	 * @param searchVO 조회할 정보가 담긴 VO
-	 * @return int
-	 * @throws Exception
-	 */
 	@Override
 	public int selectIndvdlInfoPolicyListCnt(ComDefaultVO searchVO) throws Exception {
-		return dao.selectIndvdlInfoPolicyListCnt(searchVO);
+		return (int) indvdlInfoPolicyRepository.count();
 	}
 
-	/**
-	 * 개인정보보호정책를(을) 상세조회 한다.
-	 *
-	 * @param searchVO 조회할 정보가 담긴 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public IndvdlInfoPolicy selectIndvdlInfoPolicyDetail(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
-		return dao.selectIndvdlInfoPolicyDetail(indvdlInfoPolicy);
+	public egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy selectIndvdlInfoPolicyDetail(
+			egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy indvdlInfoPolicyVO) throws Exception {
+		com.company.project.domain.terms.IndvdlInfoPolicy entity = indvdlInfoPolicyRepository
+				.findById(indvdlInfoPolicyVO.getIndvdlInfoId())
+				.orElseThrow(() -> processException("info.nodata.msg"));
+		return toVO(entity);
 	}
 
-	/**
-	 * 개인정보보호정책를(을) 등록한다.
-	 *
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void insertIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
+	public void insertIndvdlInfoPolicy(egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy indvdlInfoPolicyVO)
+			throws Exception {
 		String sMakeId = idgenService.getNextStringId();
-		indvdlInfoPolicy.setIndvdlInfoId(sMakeId);
-		dao.insertIndvdlInfoPolicy(indvdlInfoPolicy);
+		indvdlInfoPolicyVO.setIndvdlInfoId(sMakeId);
+
+		com.company.project.domain.terms.IndvdlInfoPolicy entity = com.company.project.domain.terms.IndvdlInfoPolicy
+				.builder()
+				.indvdlInfoPolicyId(sMakeId)
+				.indvdlInfoPolicyNm(indvdlInfoPolicyVO.getIndvdlInfoNm())
+				.indvdlInfoPolicyCn(indvdlInfoPolicyVO.getIndvdlInfoDc())
+				.indvdlInfoPolicyAgreAt(indvdlInfoPolicyVO.getIndvdlInfoYn())
+				.frstRegisterId(indvdlInfoPolicyVO.getFrstRegisterId())
+				.build();
+
+		indvdlInfoPolicyRepository.save(entity);
 	}
 
-	/**
-	 * 개인정보보호정책를(을) 수정한다.
-	 *
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void updateIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
-		dao.updateIndvdlInfoPolicy(indvdlInfoPolicy);
+	public void updateIndvdlInfoPolicy(egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy indvdlInfoPolicyVO)
+			throws Exception {
+		indvdlInfoPolicyRepository.findById(indvdlInfoPolicyVO.getIndvdlInfoId()).ifPresent(entity -> {
+			entity.update(
+					indvdlInfoPolicyVO.getIndvdlInfoNm(),
+					indvdlInfoPolicyVO.getIndvdlInfoDc(),
+					indvdlInfoPolicyVO.getIndvdlInfoYn(),
+					indvdlInfoPolicyVO.getLastUpdusrId());
+			indvdlInfoPolicyRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 개인정보보호정책를(을) 삭제한다.
-	 *
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void deleteIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
-		dao.deleteIndvdlInfoPolicy(indvdlInfoPolicy);
+	public void deleteIndvdlInfoPolicy(egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy indvdlInfoPolicyVO)
+			throws Exception {
+		indvdlInfoPolicyRepository.deleteById(indvdlInfoPolicyVO.getIndvdlInfoId());
 	}
 
+	private EgovMap toEgovMap(com.company.project.domain.terms.IndvdlInfoPolicy entity) {
+		EgovMap map = new EgovMap();
+		map.put("indvdlInfoId", entity.getIndvdlInfoPolicyId());
+		map.put("indvdlInfoNm", entity.getIndvdlInfoPolicyNm());
+		map.put("indvdlInfoDc", entity.getIndvdlInfoPolicyCn());
+		map.put("indvdlInfoYn", entity.getIndvdlInfoPolicyAgreAt());
+		map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+		map.put("frstRegisterId", entity.getFrstRegisterId());
+		return map;
+	}
+
+	private egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy toVO(
+			com.company.project.domain.terms.IndvdlInfoPolicy entity) {
+		egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy vo = new egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy();
+		vo.setIndvdlInfoId(entity.getIndvdlInfoPolicyId());
+		vo.setIndvdlInfoNm(entity.getIndvdlInfoPolicyNm());
+		vo.setIndvdlInfoDc(entity.getIndvdlInfoPolicyCn());
+		vo.setIndvdlInfoYn(entity.getIndvdlInfoPolicyAgreAt());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		vo.setFrstRegisterPnttm(
+				entity.getFrstRegisterPnttm() != null ? entity.getFrstRegisterPnttm().toString() : null);
+		return vo;
+	}
 }

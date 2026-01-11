@@ -1,109 +1,114 @@
 package egovframework.com.uss.ion.rmm.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.notification.RoughMap;
+import com.company.project.domain.notification.RoughMapRepository;
 
 import egovframework.com.uss.ion.rmm.service.EgovRoughMapService;
 import egovframework.com.uss.ion.rmm.service.RoughMapDefaultVO;
 import egovframework.com.uss.ion.rmm.service.RoughMapVO;
 import jakarta.annotation.Resource;
 
-/**
- * 개요
- * - 위치정보연계에 대한 Service Interface를 구현한다.
- *
- * 상세내용
- * - 건물의 위치정보에 대한 등록, 수정, 삭제, 상세조회 기능을 제공한다.
- * - 건물의 위치정보의 조회기능은 목록, 상세조회로 구분된다.
- *
- * @author 옥찬우
- * @since 2014.08.27
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일			수정자		수정내용
- *  -----------		------		---------
- *   2014.08.27		옥찬우		최초 생성
- *
- * </pre>
- */
-
-@Service("EgovRoughMapService")
+@Service("egovRoughMapService")
 public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements EgovRoughMapService {
 
-    /** RoughMapDAO */
-    @Resource(name="roughMapDAO")
-    private EgovRoughMapDAO roughMapDAO;
+    @Resource(name = "roughMapRepository")
+    private RoughMapRepository roughMapRepository;
 
-    /** ID Generation */
-    @Resource(name="egovRoughMapIdGnrService")
+    @Resource(name = "egovRoughMapIdGnrService")
     private EgovIdGnrService idgenService;
 
-    /**
-     * 건물의 위치정보 목록을 조회한다.
-     * @param roughMapVO
-     * @return Map<String, Object> 건물 위치정보 조회결과 리스트, 조회건수
-     * @throws Exception
-    */
     @Override
-	public List<EgovMap> selectRoughMapList(RoughMapDefaultVO searchVO) throws Exception {
-    	return roughMapDAO.selectRoughMapList(searchVO);
+    public List<EgovMap> selectRoughMapList(RoughMapDefaultVO searchVO) throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+                Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+        Page<RoughMap> page = roughMapRepository.findAll(pageable);
+        return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
     }
 
-	@Override
-	public int selectRoughMapListTotCnt(RoughMapDefaultVO searchVO) {
-		return roughMapDAO.selectRoughMapListTotCnt(searchVO);
-	}
-
-    /**
-     * 건물의 위치정보를 조회한다.
-     *
-     * @param roughMapVO
-     * @return Geolocation 건물의 위치정보
-     * @throws Exception
-    */
     @Override
-	public RoughMapVO selectRoughMapDetail(RoughMapVO roughMapVO) throws Exception {
-        return roughMapDAO.selectRoughMap(roughMapVO);
+    public int selectRoughMapListTotCnt(RoughMapDefaultVO searchVO) {
+        return (int) roughMapRepository.count();
     }
 
-    /**
-     * 건물의 위치정보를 DB에 등록한다.
-     * @param roughMap
-     * @throws Exception
-    */
     @Override
-	public void insertRoughMap(RoughMapVO roughMap) throws Exception {
-    	String roughMapId = idgenService.getNextStringId();
-
-        roughMap.setRoughMapId(roughMapId);
-        roughMapDAO.insertRoughMap(roughMap);
+    public RoughMapVO selectRoughMapDetail(RoughMapVO searchVO) throws Exception {
+        return roughMapRepository.findById(searchVO.getRoughMapId())
+                .map(this::toVO)
+                .orElseThrow(() -> processException("info.nodata.msg"));
     }
 
-    /**
-     * 건물의 위치정보를 수정한다.
-     * @param roughMap
-     * @throws Exception
-    */
     @Override
-	public void updateRoughMap(RoughMapVO roughMap) throws Exception {
-        roughMapDAO.updateRoughMap(roughMap);
+    public void insertRoughMap(RoughMapVO searchVO) throws Exception {
+        String id = idgenService.getNextStringId();
+        searchVO.setRoughMapId(id);
+
+        RoughMap entity = RoughMap.builder()
+                .roughMapId(id)
+                .roughMapSj(searchVO.getRoughMapSj())
+                .roughMapAddress(searchVO.getRoughMapAddress())
+                .la(searchVO.getLa())
+                .lo(searchVO.getLo())
+                .markerLa(searchVO.getMarkerLa())
+                .markerLo(searchVO.getMarkerLo())
+                .infoWindow(searchVO.getInfoWindow())
+                .zoomLevel(searchVO.getZoomLevel() != null ? Integer.parseInt(searchVO.getZoomLevel()) : null)
+                .frstRegisterId(searchVO.getFrstRegisterId())
+                .build();
+
+        roughMapRepository.save(entity);
     }
 
-    /**
-     * 건물의 위치정보를 삭제한다.
-     * @param roughMap
-     * @throws Exception
-    */
     @Override
-	public void deleteRoughMap(RoughMapVO roughMap) throws Exception {
-        roughMapDAO.deleteRoughMap(roughMap);
+    public void updateRoughMap(RoughMapVO searchVO) throws Exception {
+        roughMapRepository.findById(searchVO.getRoughMapId()).ifPresent(entity -> {
+            entity.update(searchVO.getRoughMapSj(), searchVO.getRoughMapAddress(), searchVO.getLa(), searchVO.getLo(),
+                    searchVO.getMarkerLa(), searchVO.getMarkerLo(), searchVO.getInfoWindow(),
+                    searchVO.getZoomLevel() != null ? Integer.parseInt(searchVO.getZoomLevel()) : null,
+                    searchVO.getLastUpdusrId());
+            roughMapRepository.save(entity);
+        });
+    }
+
+    @Override
+    public void deleteRoughMap(RoughMapVO searchVO) throws Exception {
+        roughMapRepository.deleteById(searchVO.getRoughMapId());
+    }
+
+    private RoughMapVO toVO(RoughMap entity) {
+        RoughMapVO vo = new RoughMapVO();
+        vo.setRoughMapId(entity.getRoughMapId());
+        vo.setRoughMapSj(entity.getRoughMapSj());
+        vo.setRoughMapAddress(entity.getRoughMapAddress());
+        vo.setLa(entity.getLa());
+        vo.setLo(entity.getLo());
+        vo.setMarkerLa(entity.getMarkerLa());
+        vo.setMarkerLo(entity.getMarkerLo());
+        vo.setInfoWindow(entity.getInfoWindow());
+        vo.setZoomLevel(entity.getZoomLevel() != null ? String.valueOf(entity.getZoomLevel()) : null);
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        if (entity.getFrstRegisterPnttm() != null) {
+            vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+        }
+        return vo;
+    }
+
+    private EgovMap toEgovMap(RoughMap entity) {
+        EgovMap map = new EgovMap();
+        map.put("roughMapId", entity.getRoughMapId());
+        map.put("roughMapSj", entity.getRoughMapSj());
+        map.put("roughMapAddress", entity.getRoughMapAddress());
+        return map;
     }
 }

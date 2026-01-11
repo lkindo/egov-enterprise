@@ -139,4 +139,15 @@ public class Qna {
             return true;
         return this.writngPassword.equals(password);
     }
+
+    /**
+     * 답변 등록
+     */
+    public void answer(String answerCn, String updusrId) {
+        this.answerCn = answerCn;
+        this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
+        this.qnaProcessSttusCode = "A"; // 답변완료
+        this.lastUpdusrId = updusrId;
+        this.lastUpdusrPnttm = LocalDateTime.now();
+    }
 }

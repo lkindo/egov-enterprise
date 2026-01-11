@@ -1,136 +1,136 @@
 package egovframework.com.uss.ion.pwm.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.notification.Popup;
+import com.company.project.domain.notification.PopupRepository;
 
 import egovframework.com.uss.ion.pwm.service.EgovPopupManageService;
 import egovframework.com.uss.ion.pwm.service.PopupManageVO;
 import jakarta.annotation.Resource;
 
-/**
- * 개요
- * - 팝업창에 대한 ServiceImpl을 정의한다.
- *
- * 상세내용
- * - 팝업창에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 팝업창의 조회기능은 목록조회, 상세조회로, 사용자화면 보기로 구분된다.
- * @author 이창원
- * @version 1.0
- * @created 05-8-2009 오후 2:19:58
- */
-
 @Service("egovPopupManageService")
 public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implements EgovPopupManageService {
 
-	@Resource(name = "popupManageDAO")
-	public PopupManageDAO dao;
+	@Resource(name = "popupRepository")
+	private PopupRepository popupRepository;
 
 	@Resource(name = "egovPopupManageIdGnrService")
 	private EgovIdGnrService idgenService;
 
-	public EgovPopupManageServiceImpl() {
-	}
-
-	/**
-	 * 기 등록된 팝업창정보를 삭제한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
-	 *
-	 * @param popupManage
-	 */
 	@Override
-	public void deletePopup(PopupManageVO popupManageVO) throws Exception {
-		dao.deletePopup(popupManageVO);
+	public List<EgovMap> selectPopupMainList(PopupManageVO searchVO) throws Exception {
+		return popupRepository.findAll().stream()
+				.filter(e -> "Y".equals(e.getNtceAt()))
+				.map(this::toEgovMap)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 팝업창정보를 신규로 등록한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
-	 *
-	 * @param popupManage
-	 */
-	@Override
-	public void insertPopup(PopupManageVO popupManageVO) throws Exception {
-		String sMakeId = idgenService.getNextStringId();
-		popupManageVO.setPopupId(sMakeId);
-		dao.insertPopup(popupManageVO);
-	}
-
-	/**
-	 * 기 등록된 팝업창정보를 수정한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
-	 *
-	 * @param popupManage
-	 */
-	@Override
-	public void updatePopup(PopupManageVO popupManageVO) throws Exception {
-		dao.updatePopup(popupManageVO);
-	}
-
-	/**
-	 * 팝업창을 사용자 화면에서 볼수 있는 정보들을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return popupManageVO - 팝업창 Vo
-	 *
-	 * @param popupManageVO
-	 */
-	@Override
-	public PopupManageVO selectPopup(PopupManageVO popupManageVO) throws Exception {
-		return dao.selectPopup(popupManageVO);
-	}
-
-	/**
-	 * 팝업창의 취약점을 관리하기 위해 등록된 팝업창 화이트리스트를 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
-	 *
-	 * @param popupManageVO
-	 */
 	@Override
 	public List<EgovMap> selectPopupWhiteList() throws Exception {
-		return dao.selectPopupWhiteList();
+		return popupRepository.findAll().stream()
+				.map(e -> {
+					EgovMap map = new EgovMap();
+					map.put("fileUrl", e.getFileUrl());
+					return map;
+				})
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 팝업창를 관리하기 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
-	 *
-	 * @param popupManageVO
-	 */
 	@Override
-	public List<EgovMap> selectPopupList(PopupManageVO popupManageVO) throws Exception {
-		return dao.selectPopupList(popupManageVO);
+	public List<EgovMap> selectPopupList(PopupManageVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<Popup> page = popupRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
 	}
 
-	/**
-	 * 팝업창를 관리하기 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
-	 *
-	 * @param popupManageVO
-	 */
 	@Override
-	public int selectPopupListCount(PopupManageVO popupManageVO) throws Exception {
-		return dao.selectPopupListCount(popupManageVO);
+	public int selectPopupListCount(PopupManageVO searchVO) throws Exception {
+		return (int) popupRepository.count();
 	}
 
-	/**
-	 * 팝업창를 사용하기위해 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
-	 *
-	 * @param popupManageVO
-	 */
 	@Override
-	public List<EgovMap> selectPopupMainList(PopupManageVO popupManageVO) throws Exception {
-		return dao.selectPopupMainList(popupManageVO);
+	public void insertPopup(PopupManageVO searchVO) throws Exception {
+		String id = idgenService.getNextStringId();
+		searchVO.setPopupId(id);
+
+		Popup entity = Popup.builder()
+				.popupId(id)
+				.popupSjNm(searchVO.getPopupTitleNm())
+				.fileUrl(searchVO.getFileUrl())
+				.popupVrticlLc(searchVO.getPopupHlc())
+				.popupWidthLc(searchVO.getPopupWlc())
+				.popupVrticlSize(Integer.valueOf(searchVO.getPopupHSize()))
+				.popupWidthSize(Integer.valueOf(searchVO.getPopupWSize()))
+				.ntceBgnde(searchVO.getNtceBgnde())
+				.ntceEndde(searchVO.getNtceEndde())
+				.stopvewSetupAt(searchVO.getStopVewAt())
+				.ntceAt(searchVO.getNtceAt())
+				.frstRegisterId(searchVO.getFrstRegisterId())
+				.build();
+
+		popupRepository.save(entity);
 	}
 
+	@Override
+	public void updatePopup(PopupManageVO searchVO) throws Exception {
+		popupRepository.findById(searchVO.getPopupId()).ifPresent(entity -> {
+			entity.update(searchVO.getPopupTitleNm(), searchVO.getFileUrl(), searchVO.getPopupHlc(),
+					searchVO.getPopupWlc(), Integer.valueOf(searchVO.getPopupHSize()),
+					Integer.valueOf(searchVO.getPopupWSize()), searchVO.getNtceBgnde(),
+					searchVO.getNtceEndde(), searchVO.getStopVewAt(), searchVO.getNtceAt(), searchVO.getLastUpdusrId());
+			popupRepository.save(entity);
+		});
+	}
+
+	@Override
+	public void deletePopup(PopupManageVO searchVO) throws Exception {
+		popupRepository.deleteById(searchVO.getPopupId());
+	}
+
+	@Override
+	public PopupManageVO selectPopup(PopupManageVO searchVO) throws Exception {
+		return popupRepository.findById(searchVO.getPopupId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
+	}
+
+	private PopupManageVO toVO(Popup entity) {
+		PopupManageVO vo = new PopupManageVO();
+		vo.setPopupId(entity.getPopupId());
+		vo.setPopupTitleNm(entity.getPopupSjNm());
+		vo.setFileUrl(entity.getFileUrl());
+		vo.setPopupHlc(entity.getPopupVrticlLc());
+		vo.setPopupWlc(entity.getPopupWidthLc());
+		vo.setPopupHSize(String.valueOf(entity.getPopupVrticlSize()));
+		vo.setPopupWSize(String.valueOf(entity.getPopupWidthSize()));
+		vo.setNtceBgnde(entity.getNtceBgnde());
+		vo.setNtceEndde(entity.getNtceEndde());
+		vo.setStopVewAt(entity.getStopvewSetupAt());
+		vo.setNtceAt(entity.getNtceAt());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		return vo;
+	}
+
+	private EgovMap toEgovMap(Popup entity) {
+		EgovMap map = new EgovMap();
+		map.put("popupId", entity.getPopupId());
+		map.put("popupTitleNm", entity.getPopupSjNm());
+		map.put("fileUrl", entity.getFileUrl());
+		map.put("ntceBgnde", entity.getNtceBgnde());
+		map.put("ntceEndde", entity.getNtceEndde());
+		map.put("ntceAt", entity.getNtceAt());
+		return map;
+	}
 }

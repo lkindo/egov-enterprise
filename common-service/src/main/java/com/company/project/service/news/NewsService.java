@@ -3,7 +3,7 @@ package com.company.project.service.news;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.news.News;
-import com.company.project.domain.news.NewsRepository;
+import com.company.project.domain.news.NewsDomainRepository;
 import com.company.project.service.news.dto.NewsDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class NewsService implements EgovNewsService {
 
-    private final NewsRepository newsRepository;
+    private final NewsDomainRepository newsRepository;
 
     @Override
     public Page<NewsDto> getNewsList(String keyword, Pageable pageable) {

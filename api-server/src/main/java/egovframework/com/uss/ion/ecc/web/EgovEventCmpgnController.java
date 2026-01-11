@@ -25,6 +25,7 @@ import egovframework.com.uss.ion.ecc.service.TnextrlHrVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+
 /**
  * 행사/이벤트/캠페인을 처리하는 Controller Class 구현
  * 
@@ -51,7 +52,7 @@ public class EgovEventCmpgnController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "EgovEventCmpgnService")
+	@Resource(name = "egovEventCmpgnService")
 	private EgovEventCmpgnService egovEventCmpgnService;
 
 	/** EgovPropertyService */

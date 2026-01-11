@@ -1,9 +1,15 @@
 package egovframework.com.uss.umt.service.impl;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.user.DeptManage;
+import com.company.project.domain.user.DeptManageRepository;
 
 import egovframework.com.uss.umt.service.DeptManageVO;
 import egovframework.com.uss.umt.service.EgovDeptManageService;
@@ -12,75 +18,56 @@ import jakarta.annotation.Resource;
 @Service("egovDeptManageService")
 public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implements EgovDeptManageService {
 
-	@Resource(name="deptManageDAO")
-    private DeptManageDAO deptManageDAO;
+	@Resource(name = "deptManageRepository")
+	private DeptManageRepository deptManageRepository;
 
-	/**
-	 * 부서를 관리하기 위해 등록된 부서목록을 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return List - 부서 목록
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public List<DeptManageVO> selectDeptManageList(DeptManageVO deptManageVO) throws Exception {
-		return deptManageDAO.selectDeptManageList(deptManageVO);
+		// 단순 전체 조회 (페이징 없음)
+		List<DeptManage> entities = deptManageRepository.findAll(Sort.by(Sort.Direction.ASC, "orgnztId"));
+		return entities.stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 부서목록 총 개수를 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return int - 부서 카운트 수
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public int selectDeptManageListTotCnt(DeptManageVO deptManageVO) throws Exception {
-		return deptManageDAO.selectDeptManageListTotCnt(deptManageVO);
+		return (int) deptManageRepository.count();
 	}
 
-	/**
-	 * 등록된 부서의 상세정보를 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return deptManageVO - 부서 Vo
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public DeptManageVO selectDeptManage(DeptManageVO deptManageVO) throws Exception {
-		return deptManageDAO.selectDeptManage(deptManageVO);
+		return deptManageRepository.findById(deptManageVO.getOrgnztId())
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 부서정보를 신규로 등록한다.
-	 * @param deptManageVO - 부서 model
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public void insertDeptManage(DeptManageVO deptManageVO) throws Exception {
-		deptManageDAO.insertDeptManage(deptManageVO);
+		DeptManage entity = DeptManage.builder()
+				.orgnztId(deptManageVO.getOrgnztId())
+				.orgnztNm(deptManageVO.getOrgnztNm())
+				.orgnztDc(deptManageVO.getOrgnztDc())
+				.build();
+		deptManageRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 부서정보를 수정한다.
-	 * @param deptManageVO - 부서 model
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public void updateDeptManage(DeptManageVO deptManageVO) throws Exception {
-		deptManageDAO.updateDeptManage(deptManageVO);
+		deptManageRepository.findById(deptManageVO.getOrgnztId()).ifPresent(entity -> {
+			entity.update(deptManageVO.getOrgnztNm(), deptManageVO.getOrgnztDc());
+			deptManageRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 부서정보를 삭제한다.
-	 * @param deptManageVO - 부서 model
-	 *
-	 * @param deptManageVO
-	 */
 	@Override
 	public void deleteDeptManage(DeptManageVO deptManageVO) throws Exception {
-		deptManageDAO.deleteDeptManage(deptManageVO);
+		deptManageRepository.deleteById(deptManageVO.getOrgnztId());
+	}
+
+	private DeptManageVO toVO(DeptManage entity) {
+		DeptManageVO vo = new DeptManageVO();
+		vo.setOrgnztId(entity.getOrgnztId());
+		vo.setOrgnztNm(entity.getOrgnztNm());
+		vo.setOrgnztDc(entity.getOrgnztDc());
+		return vo;
 	}
 }

@@ -1,118 +1,111 @@
 package egovframework.com.uss.olp.opp.service.impl;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.survey.OnlinePollItemRepository;
+import com.company.project.domain.survey.OnlinePollManageRepository;
+import com.company.project.domain.survey.OnlinePollResultRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.olp.opp.service.EgovOnlinePollPartcptnService;
 import egovframework.com.uss.olp.opp.service.OnlinePollPartcptn;
 import jakarta.annotation.Resource;
 
-/**
- * 온라인POLL참여를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2011.10.27  서준식          온라인 POLL 중복 투표 방지 기능 추가
- * </pre>
- */
 @Service("egovOnlinePollPartcptnService")
 public class EgovOnlinePollPartcptnServiceImpl extends EgovAbstractServiceImpl
         implements EgovOnlinePollPartcptnService {
 
-    @Resource(name = "onlinePollPartcptnDao")
-    private OnlinePollPartcptnDao dao;
+    @Resource(name = "onlinePollManageRepository")
+    private OnlinePollManageRepository onlinePollManageRepository;
+
+    @Resource(name = "onlinePollItemRepository")
+    private OnlinePollItemRepository onlinePollItemRepository;
+
+    @Resource(name = "onlinePollResultRepository")
+    private OnlinePollResultRepository onlinePollResultRepository;
 
     @Resource(name = "egovOnlinePollResultIdGnrService")
     private EgovIdGnrService idgenService;
 
-    /**
-     *온라인POLL관리를(을) 목록을 한다.
-     * @param searchVO 조회할 정보가 담긴 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollManageList(ComDefaultVO searchVO) throws Exception {
-        return dao.selectOnlinePollManageList(searchVO);
+    public List<EgovMap> selectOnlinePollManageList(ComDefaultVO searchVO) throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+                Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+        Page<com.company.project.domain.survey.OnlinePollManage> page = onlinePollManageRepository.findAll(pageable);
+        return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
     }
 
-    /**
-     * 온라인POLL관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
-     * @return int
-     * @throws Exception
-     */
     @Override
-	public int selectOnlinePollManageListCnt(ComDefaultVO searchVO) throws Exception {
-        return dao.selectOnlinePollManageListCnt(searchVO);
+    public int selectOnlinePollManageListCnt(ComDefaultVO searchVO) throws Exception {
+        return (int) onlinePollManageRepository.count();
     }
 
-    /**
-     *  온라인POLL관리를(을) 상세조회 한다.
-     * @param onlinePollPartcptn  온라인POLL항목 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollManageDetail( OnlinePollPartcptn onlinePollPartcptn) throws Exception {
-        return dao.selectOnlinePollManageDetail(onlinePollPartcptn);
+    public List<EgovMap> selectOnlinePollManageDetail(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
+        return onlinePollManageRepository.findById(onlinePollPartcptn.getPollId())
+                .map(e -> List.of(toEgovMap(e)))
+                .orElse(Collections.emptyList());
     }
 
-    /**
-     *  온라인POLL항목를(을) 상세조회 한다.
-     * @param onlinePollPartcptn  온라인POLL 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollItemDetail( OnlinePollPartcptn onlinePollPartcptn) throws Exception {
-        return dao.selectOnlinePollItemDetail(onlinePollPartcptn);
+    public List<EgovMap> selectOnlinePollItemDetail(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
+        List<com.company.project.domain.survey.OnlinePollItem> items = onlinePollItemRepository
+                .findByPollId(onlinePollPartcptn.getPollId());
+        return items.stream().map(this::toItemEgovMap).collect(Collectors.toList());
     }
 
-    /**
-     * 온라인POLL참여를(을) 등록한다.
-     * @param onlinePollPartcptn  온라인POLL 정보가 담김 VO
-     * @throws Exception
-     */
     @Override
-	public void insertOnlinePollResult(OnlinePollPartcptn onlinePollPartcptn)throws Exception {
-        String sMakeId = idgenService.getNextStringId();
-        onlinePollPartcptn.setPollResultId(sMakeId);
-        dao.insertOnlinePollResult(onlinePollPartcptn);
+    public void insertOnlinePollResult(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
+        String id = idgenService.getNextStringId();
+        com.company.project.domain.survey.OnlinePollResult entity = com.company.project.domain.survey.OnlinePollResult
+                .builder()
+                .pollResultId(id)
+                .pollId(onlinePollPartcptn.getPollId())
+                .pollIemId(onlinePollPartcptn.getPollIemId())
+                .frstRegisterId(onlinePollPartcptn.getFrstRegisterId())
+                .build();
+        onlinePollResultRepository.save(entity);
     }
 
-    /**
-     * 온라인POLL통계를(을) 목록을 한다.
-     * @param onlinePollPartcptn  온라인POLL 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
     @Override
-	public List<EgovMap> selectOnlinePollManageStatistics(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
-        return dao.selectOnlinePollManageStatistics(onlinePollPartcptn);
+    public List<EgovMap> selectOnlinePollManageStatistics(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
+        return Collections.emptyList();
     }
 
-    /**
-     * 온라인POLL참여 여부를 조회한다.
-     * @param onlinePollPartcptn 회정정보가 담김 VO
-     * @return int
-     * @throws Exception
-     */
     @Override
-	public int selectOnlinePollResult( OnlinePollPartcptn onlinePollPartcptn) throws Exception{
-    	return dao.selectOnlinePollResult(onlinePollPartcptn);
+    public int selectOnlinePollResult(OnlinePollPartcptn onlinePollPartcptn) throws Exception {
+        return (int) onlinePollResultRepository.countByPollIdAndFrstRegisterId(onlinePollPartcptn.getPollId(),
+                onlinePollPartcptn.getFrstRegisterId());
     }
 
+    private EgovMap toEgovMap(com.company.project.domain.survey.OnlinePollManage entity) {
+        EgovMap map = new EgovMap();
+        map.put("pollId", entity.getPollId());
+        map.put("pollNm", entity.getPollNm());
+        map.put("pollBeginDe", entity.getPollBeginDe());
+        map.put("pollEndDe", entity.getPollEndDe());
+        map.put("pollKindCode", entity.getPollKindCode());
+        map.put("frstRegisterId", entity.getFrstRegisterId());
+        map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+        return map;
+    }
 
+    private EgovMap toItemEgovMap(com.company.project.domain.survey.OnlinePollItem entity) {
+        EgovMap map = new EgovMap();
+        map.put("pollId", entity.getPollId());
+        map.put("pollIemId", entity.getPollIemId());
+        map.put("pollIemNm", entity.getPollIemNm());
+        return map;
+    }
 }

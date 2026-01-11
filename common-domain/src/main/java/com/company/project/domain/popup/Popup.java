@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 팝업창 관리 JPA Entity
  * 레거시 테이블: COMTNPOPUPMANAGE
  */
-@Entity
+@Entity(name = "PopupDomain")
 @Table(name = "COMTNPOPUPMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

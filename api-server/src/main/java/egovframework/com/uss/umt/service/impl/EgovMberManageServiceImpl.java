@@ -53,7 +53,7 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Resource(name = "userRepository")
 	private UserRepository userRepository;
 
-	@Resource(name = "enterpriseUserRepository")
+	@Resource(name = "enterpriseUserDomainRepository")
 	private EnterpriseUserRepository enterpriseUserRepository;
 
 	@Resource(name = "userTermsRepository")

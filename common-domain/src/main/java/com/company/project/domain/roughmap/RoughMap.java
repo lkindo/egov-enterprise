@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 /**
  * 약도 관리 엔티티
  */
-@Entity
+@Entity(name = "RoughMapDomain")
 @Table(name = "NROUGHMAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

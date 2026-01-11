@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 추천사이트정보 JPA Entity
  * 레거시 테이블: COMTNRECOMENDSITEINFO
  */
-@Entity
+@Entity(name = "RecomendSiteDomain")
 @Table(name = "COMTNRECOMENDSITEINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

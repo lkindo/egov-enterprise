@@ -1,5 +1,6 @@
 package egovframework.com.uss.ion.ntm.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -9,129 +10,93 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.company.project.domain.note.Note;
+import com.company.project.domain.note.NoteRecptn;
+import com.company.project.domain.note.NoteRecptnDomainRepository;
+import com.company.project.domain.note.NoteDomainRepository;
+import com.company.project.domain.note.NoteTrnsmit;
+import com.company.project.domain.note.NoteTrnsmitDomainRepository;
+
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.ion.ntm.service.EgovNoteManageService;
 import egovframework.com.uss.ion.ntm.service.NoteManageVO;
 import jakarta.annotation.Resource;
-/**
- * 쪽지 관리(보내기)를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2010.06.16
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
- */
+
 @Service("egovNoteManageService")
-public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl
-        implements EgovNoteManageService {
+public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl implements EgovNoteManageService {
 
-    @Resource(name = "noteManageDao")
-    private NoteManageDao dao;
+    @Resource(name = "noteDomainRepository")
+    private NoteDomainRepository noteRepository;
 
-    /* 쪽지관리 ID Generator Service */
+    @Resource(name = "noteTrnsmitDomainRepository")
+    private NoteTrnsmitDomainRepository noteTrnsmitRepository;
+
+    @Resource(name = "noteRecptnDomainRepository")
+    private NoteRecptnDomainRepository noteRecptnRepository;
+
     @Resource(name = "egovNoteManageIdGnrService")
-    private EgovIdGnrService noteIdgenService;
+    private EgovIdGnrService idgenService;
 
-    /* 보낸쪽지함관리 ID Generator Service */
-    @Resource(name = "egovNoteTrnsmitIdGnrService")
-    private EgovIdGnrService noteTrnsmitIdgenService;
-
-    /* 받은쪽지함관리 ID Generator Service */
-    @Resource(name = "egovNoteRecptnIdGnrService")
-    private EgovIdGnrService noteRecptnIdgenService;
-
-    /**
-     * 쪽지관리 정보를 조회한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
-     * @throws Exception
-     */
     @Override
-	public Map<?, ?> selectNoteManage(NoteManageVO noteManage) throws Exception {
-    	return dao.selectNoteManage(noteManage);
+    public Map<?, ?> selectNoteManage(NoteManageVO noteManageVO) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        noteRepository.findById(noteManageVO.getNoteId()).ifPresent(entity -> {
+            map.put("noteManage", toVO(entity));
+        });
+        return map;
     }
 
-    /**
-     * 쪽지 관리(보내기)를(을) 등록한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담긴 객체
-     * @param commandMap -Request 변수
-     * @throws Exception
-     */
     @Override
-	public void insertNoteManage(NoteManageVO noteManage, @RequestParam Map<?, ?> commandMap)throws Exception{
+    public void insertNoteManage(NoteManageVO noteManageVO, @RequestParam Map<?, ?> commandMap) throws Exception {
+        String id = idgenService.getNextStringId();
+        Note entity = Note.builder()
+                .noteId(id)
+                .noteSj(noteManageVO.getNoteSj())
+                .noteCn(noteManageVO.getNoteCn())
+                .frstRegisterId(noteManageVO.getFrstRegisterId())
+                .build();
+        noteRepository.save(entity);
 
-        /* ****************************************************************
-         * 쪽지관리 처리
-         **************************************************************** */
-    	//쪽지 ID설정
-    	noteManage.setNoteId(noteIdgenService.getNextStringId());
-    	//쪽지 등록
-    	dao.insertNoteManage(noteManage);
+        // 발신 정보 저장
+        noteTrnsmitRepository.save(NoteTrnsmit.builder()
+                .noteTrnsmitId(id)
+                .note(entity)
+                .trnsmiterId(noteManageVO.getFrstRegisterId())
+                .frstRegisterId(noteManageVO.getFrstRegisterId())
+                .build());
 
-        /* ****************************************************************
-         * 보낸쪽지 처리
-         **************************************************************** */
-    	//보낸쪽지함 ID설정
-    	noteManage.setNoteTrnsmitId(noteTrnsmitIdgenService.getNextStringId());
-    	//발신자 아이디설정
-    	noteManage.setTrnsmiterId(noteManage.getFrstRegisterId());
-
-    	//보낸쪽지등록
-    	dao.insertNoteTrnsmit(noteManage);
-
-        //수신자 리스트
-        String sRecptnEmpList = (String)commandMap.get("recptnEmpList");
-        String[] sRecptnEmpListResult = sRecptnEmpList.split(",");
-
-        //수신자구분 리스트
-        String sRecptnSeList = (String)commandMap.get("recptnSeList");
-        String[] sRecptnSeListResult = sRecptnSeList.split(",");
-
-
-        /* ****************************************************************
-         * 받은쪽지함 처리
-         **************************************************************** */
-        for(int i=0;i<sRecptnEmpListResult.length;i++){
-
-        	//받은쪽지함 ID설정
-        	noteManage.setNoteRecptnId(noteRecptnIdgenService.getNextStringId());
-        	//받은쪽지함 수신여부 설정
-        	noteManage.setOpenYn("N");
-        	//받은쪽지함 수신자 설정
-        	noteManage.setRcverId(sRecptnEmpListResult[i]);
-        	//받은쪽지함 수신 구분설정
-        	noteManage.setRecptnSe(sRecptnSeListResult[i]);
-        	//받은쪽지함 등록
-        	dao.insertNoteRecptn(noteManage);
+        // 수신 정보 저장
+        if (noteManageVO.getRecptnEmpList() != null) {
+            String[] rcverIds = noteManageVO.getRecptnEmpList().split(",");
+            for (String rcverId : rcverIds) {
+                noteRecptnRepository.save(NoteRecptn.builder()
+                        .noteRecptnId(idgenService.getNextStringId())
+                        .note(entity)
+                        .rcverId(rcverId.trim())
+                        .build());
+            }
         }
-
-
     }
 
-    /**
-	 * 수신자/참조자선택팝업 목록을 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return List -회원정보 리스트
-	 * @throws Exception
-	 */
-	@Override
-	public List<EgovMap> selectNoteEmpListPopup(ComDefaultVO searchVO) throws Exception{
-		return dao.selectNoteEmpListPopup(searchVO);
-	}
+    @Override
+    public List<EgovMap> selectNoteEmpListPopup(ComDefaultVO searchVO) throws Exception {
+        return List.of();
+    }
 
-    /**
-	 *  수신자/참조자선택팝업 개수를 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return int -조회된 데이터 건수
-	 * @throws Exception
-	 */
-	@Override
-	public int selectNoteEmpListPopupCnt(ComDefaultVO searchVO) throws Exception{
-		return dao.selectNoteEmpListPopupCnt(searchVO);
-	}
+    @Override
+    public int selectNoteEmpListPopupCnt(ComDefaultVO searchVO) throws Exception {
+        return 0;
+    }
+
+    private NoteManageVO toVO(Note entity) {
+        NoteManageVO vo = new NoteManageVO();
+        vo.setNoteId(entity.getNoteId());
+        vo.setNoteSj(entity.getNoteSj());
+        vo.setNoteCn(entity.getNoteCn());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        if (entity.getFrstRegistPnttm() != null) {
+            vo.setFrstRegisterPnttm(entity.getFrstRegistPnttm().toString());
+        }
+        return vo;
+    }
 }

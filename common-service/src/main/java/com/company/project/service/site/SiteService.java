@@ -3,7 +3,7 @@ package com.company.project.service.site;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.site.Site;
-import com.company.project.domain.site.SiteRepository;
+import com.company.project.domain.site.SiteDomainRepository;
 import com.company.project.service.site.dto.SiteDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class SiteService implements EgovSiteService {
 
-    private final SiteRepository siteRepository;
+    private final SiteDomainRepository siteRepository;
 
     @Override
     public Page<SiteDto> getSiteList(String keyword, Pageable pageable) {

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 기념일관리 JPA Entity
  * 레거시 테이블: COMTNANNVRSRYMANAGE
  */
-@Entity
+@Entity(name = "AnniversaryDomain") // Avoid collision with notification.Anniversary
 @Table(name = "COMTNANNVRSRYMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

@@ -49,7 +49,7 @@ import jakarta.validation.Valid;
 @Controller
 public class EgovHpcmController {
 
-	@Resource(name = "EgovHpcmService")
+	@Resource(name = "egovHpcmService")
 	private EgovHpcmService egovHpcmService;
 
 	/** EgovPropertyService */

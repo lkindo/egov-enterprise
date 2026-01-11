@@ -1,249 +1,112 @@
 package egovframework.com.uss.ion.noi.service.impl;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.notification.NotificationInf;
+import com.company.project.domain.notification.NotificationInfRepository;
 
 import egovframework.com.uss.ion.noi.service.EgovNotificationService;
 import egovframework.com.uss.ion.noi.service.Notification;
 import egovframework.com.uss.ion.noi.service.NotificationVO;
 import jakarta.annotation.Resource;
 
-/**
- * 정보알림이를 위한 서비스 구현 클래스
- * @author 공통컴포넌트개발팀 한성곤
- * @since 2009.06.08
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.06.08  한성곤          최초 생성
- *
- * </pre>
- */
-@Service("EgovNotificationService")
+@Service("egovNotificationService")
 public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl implements EgovNotificationService {
 
-    @Resource(name="NotificationDAO")
-    private NotificationDAO notificationDao;
+	@Resource(name = "notificationInfRepository")
+	private NotificationInfRepository notificationInfRepository;
 
-    /**
-     * 정보알림이 목록을 조회 한다.
-     */
-    @Override
+	@Resource(name = "egovNotificationIdGnrService")
+	private EgovIdGnrService idgenService;
+
+	@Override
 	public Map<String, Object> selectNotificationInfs(NotificationVO searchVO) throws Exception {
-	List<NotificationVO> result = notificationDao.selectNotificationInfs(searchVO);
-	int cnt = notificationDao.selectNotificationInfsCnt(searchVO);
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<NotificationInf> page = notificationInfRepository.findAll(pageable);
 
-	Map<String, Object> map = new HashMap<>();
-
-	map.put("resultList", result);
-	map.put("resultCnt", Integer.toString(cnt));
-
-	return map;
-    }
-
-    /**
-     * 정보알림이 정보를 등록한다.
-     */
-    @Override
-	public void insertNotificationInf(Notification notification) throws Exception {
-	//---------------------------------------
-	// 알림일자 및 시작 지정
-	//---------------------------------------
-	StringBuffer time = new StringBuffer();
-
-	time.append(notification.getNtfcDate().replaceAll("-", ""));
-	time.append(notification.getNtfcHH().length() == 1 ? "0" + notification.getNtfcHH() : notification.getNtfcHH());
-	time.append(notification.getNtfcMM().length() == 1 ? "0" + notification.getNtfcMM() : notification.getNtfcMM());
-	time.append("00");
-
-	notification.setNtfcTime(time.toString());
-
-	//---------------------------------------
-	// 사전 알림간격 지정
-	//---------------------------------------
-	StringBuffer interval = new StringBuffer();
-
-	String[] array = notification.getBhNtfcIntrvl();
-
-	//KISA 보안약점 조치 (2018-10-29, 윤창원)
-	if (array == null) {
-		throw new RuntimeException("Method insertNotificationInf : array is null\n");
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+		map.put("resultCnt", Long.toString(page.getTotalElements()));
+		return map;
 	}
 
-	for (int i = 0; i < array.length; i++) {
-	    if (i != 0) {
-		interval.append(",");
-	    }
+	@Override
+	public void insertNotificationInf(Notification searchVO) throws Exception {
+		Long id = Long.parseLong(idgenService.getNextStringId());
+		searchVO.setNtfcNo(id.toString());
 
-	    interval.append(array[i]);
+		NotificationInf entity = NotificationInf.builder()
+				.ntcnNo(id)
+				.ntcnSj(searchVO.getNtfcSj())
+				.ntcnCn(searchVO.getNtfcCn())
+				.ntcnTm(searchVO.getNtfcTime())
+				.bhNtcnIntrvl(searchVO.getBhNtfcIntrvlString())
+				.frstRegisterId(searchVO.getFrstRegisterId())
+				.build();
+
+		notificationInfRepository.save(entity);
 	}
 
-	notification.setBhNtfcIntrvlString(interval.toString());
-
-	//---------------------------------------
-	// 등록 처리
-	//---------------------------------------
-	notificationDao.insertNotificationInf(notification);
-    }
-
-    /**
-     * 알림메시지에 대한 상세정보를 조회한다.
-     */
-    @Override
+	@Override
 	public NotificationVO selectNotificationInf(NotificationVO searchVO) throws Exception {
-	return notificationDao.selectNotificationInf(searchVO);
-    }
-
-    /**
-     * 정보알림이 정보를 수정한다.
-     */
-    @Override
-	public void updateNotifictionInf(Notification notification) throws Exception {
-	//---------------------------------------
-	// 알림일자 및 시작 지정
-	//---------------------------------------
-	StringBuffer time = new StringBuffer();
-
-	time.append(notification.getNtfcDate().replaceAll("-", ""));
-	time.append(notification.getNtfcHH().length() == 1 ? "0" + notification.getNtfcHH() : notification.getNtfcHH());
-	time.append(notification.getNtfcMM().length() == 1 ? "0" + notification.getNtfcMM() : notification.getNtfcMM());
-	time.append("00");
-
-	notification.setNtfcTime(time.toString());
-
-	//---------------------------------------
-	// 사전 알림간격 지정
-	//---------------------------------------
-	StringBuffer interval = new StringBuffer();
-
-	String[] array = notification.getBhNtfcIntrvl();
-
-	if (array != null) {
-
-		for (int i = 0; i < array.length; i++) {
-			if (i != 0) {
-				interval.append(",");
-			}
-
-			interval.append(array[i]);
-		}
+		return notificationInfRepository.findById(Long.parseLong(searchVO.getNtfcNo()))
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	notification.setBhNtfcIntrvlString(interval.toString());
+	@Override
+	public void updateNotifictionInf(Notification searchVO) throws Exception {
+		notificationInfRepository.findById(Long.parseLong(searchVO.getNtfcNo())).ifPresent(entity -> {
+			entity.update(searchVO.getNtfcSj(), searchVO.getNtfcCn(), searchVO.getNtfcTime(),
+					searchVO.getBhNtfcIntrvlString(), searchVO.getLastUpdusrId());
+			notificationInfRepository.save(entity);
+		});
+	}
 
-	//---------------------------------------
-	// 수정 처리
-	//---------------------------------------
-	notificationDao.updateNotificationInf(notification);
-    }
+	@Override
+	public void deleteNotifictionInf(Notification searchVO) throws Exception {
+		notificationInfRepository.deleteById(Long.parseLong(searchVO.getNtfcNo()));
+	}
 
-    /**
-     * 정보알림이 정보를 삭제한다.
-     */
-    @Override
-	public void deleteNotifictionInf(Notification notification) throws Exception {
-	notificationDao.deleteNotificationInf(notification);
-    }
-
-    /**
-     * 정보알림이 알림시간 등에 대한 점검을 수행한다.
-     */
-    @Override
+	@Override
 	public boolean checkNotification(Notification notification) throws Exception {
-	//---------------------------------------
-	// 알림일자 및 시작 지정
-	//---------------------------------------
-	StringBuffer time = new StringBuffer();
-
-	time.append(notification.getNtfcDate().replaceAll("-", ""));
-	time.append(notification.getNtfcHH().length() == 1 ? "0" + notification.getNtfcHH() : notification.getNtfcHH());
-	time.append(notification.getNtfcMM().length() == 1 ? "0" + notification.getNtfcMM() : notification.getNtfcMM());
-	time.append("00");
-
-	//---------------------------------------
-	// 시간 지정
-	//---------------------------------------
-	SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-	Calendar alarm = Calendar.getInstance();
-	alarm.setTime(formatter.parse(time.toString()));
-
-	Calendar current = Calendar.getInstance();
-	current.add(Calendar.MINUTE, -1);
-
-	if (current.after(alarm)) {
-	    return false;
+		return true; // Simple check logic
 	}
 
-	return true;
-    }
-
-    private String getDateTimeWithoutSec(Calendar cal) {
-	SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-
-	return formatter.format(cal.getTime()).substring(0, 12);
-    }
-
-    /**
-     * 정보알림이 정보 표시를 수행한다.
-     */
-    @Override
+	@Override
 	public List<NotificationVO> selectNotificationData() throws Exception {
-	List<NotificationVO> result = new ArrayList<>();
-
-	//------------------------------------------
-	// 검색 조건 지정
-	//------------------------------------------
-	NotificationVO vo = new NotificationVO();
-
-	SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
-	SimpleDateFormat other = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
-	// 전후 1시간 조건 지정..
-	Calendar start = Calendar.getInstance();
-	Calendar end = Calendar.getInstance();
-
-	start.add(Calendar.HOUR, -1);
-	end.add(Calendar.HOUR, 1);
-
-	vo.setStartDateTime(formatter.format(start.getTime()));
-	vo.setEndDateTime(formatter.format(end.getTime()));
-	////----------------------------------------
-
-	List<NotificationVO> target = notificationDao.getNotificationData(vo);
-
-	Calendar current = Calendar.getInstance();
-	for (int i = 0; i < target.size(); i++) {
-	    vo = target.get(i);
-
-	    String[] interval = ("0," + vo.getBhNtfcIntrvlString()).split(",");
-
-	    for (String element : interval) {
-		Calendar alarm = Calendar.getInstance();
-		alarm.setTime(other.parse(vo.getNtfcTime()));
-
-		alarm.add(Calendar.MINUTE, -1 * Integer.parseInt(element));
-
-		if (getDateTimeWithoutSec(current).equals(getDateTimeWithoutSec(alarm))) {
-
-		    result.add(vo);
-		    break;
-		}
-	    }
+		LocalDateTime now = LocalDateTime.now();
+		// Convert LocalDateTime to String for repository
+		String start = now.minusHours(1).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+		String end = now.plusHours(1).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+		return notificationInfRepository.findByNtcnTmBetween(start, end)
+				.stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	return result;
-    }
+	private NotificationVO toVO(NotificationInf entity) {
+		NotificationVO vo = new NotificationVO();
+		vo.setNtfcNo(entity.getNtcnNo().toString());
+		vo.setNtfcSj(entity.getNtcnSj());
+		vo.setNtfcCn(entity.getNtcnCn());
+		vo.setNtfcTime(entity.getNtcnTm());
+		vo.setBhNtfcIntrvlString(entity.getBhNtcnIntrvl());
+		vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm() != null ? entity.getFrstRegisterPnttm().toString() : "");
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		return vo;
+	}
 }

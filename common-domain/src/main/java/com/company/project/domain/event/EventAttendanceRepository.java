@@ -11,4 +11,6 @@ public interface EventAttendanceRepository extends JpaRepository<EventAttendance
     Page<EventAttendance> findByEventId(String eventId, Pageable pageable);
 
     Page<EventAttendance> findByApplcntId(String applcntId, Pageable pageable);
+
+    java.util.Optional<EventAttendance> findByEventIdAndApplcntId(String eventId, String applcntId);
 }

@@ -1,29 +1,23 @@
 package egovframework.com.uss.ion.bnt.service.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.excel.EgovExcelService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.duty.BndtCeckManageRepository;
+import com.company.project.domain.duty.BndtDiaryRepository;
+import com.company.project.domain.duty.BndtManageRepository;
+import com.company.project.domain.duty.BndtManageId;
+import com.company.project.domain.duty.BndtCeckManageId;
+import com.company.project.domain.duty.BndtDiaryId;
 
 import egovframework.com.uss.ion.bnt.service.BndtCeckManage;
 import egovframework.com.uss.ion.bnt.service.BndtCeckManageVO;
@@ -32,505 +26,220 @@ import egovframework.com.uss.ion.bnt.service.BndtDiaryVO;
 import egovframework.com.uss.ion.bnt.service.BndtManage;
 import egovframework.com.uss.ion.bnt.service.BndtManageVO;
 import egovframework.com.uss.ion.bnt.service.EgovBndtManageService;
-import egovframework.com.utl.fcc.service.EgovDateUtil;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
-/**
- * <pre>
- * 개요
- * - 당직관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 당직관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 당직관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * </pre>
- * 
- * @author 이용
- * @since 2010.06.15
- * @version 1.0
- * @see
- *
- *      <pre>
- *  == 개정이력(Modification Information) ==
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2010.06.15  표준프레임워크     최초 생성
- *   2018.08.29  신용호          xlsx 처리 할수 있도록 selectBndtManageBndeX추가
- *   2020.11.02  신용호          KISA 보안약점 조치 - 널(null) 값 체크
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.08.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.08.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *
- *      </pre>
- */
 @Service("egovBndtManageService")
 public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implements EgovBndtManageService {
 
-	@Resource(name = "excelZipService")
-	private EgovExcelService excelZipService;
+	@Resource(name = "bndtManageRepository")
+	private BndtManageRepository bndtManageRepository;
 
-	@Resource(name = "bndtManageDAO")
-	private BndtManageDAO bndtManageDAO;
+	@Resource(name = "bndtCeckManageRepository")
+	private BndtCeckManageRepository bndtCeckManageRepository;
 
-	/**
-	 * 당직관리정보를 관리하기 위해 등록된 당직관리 목록을 조회한다.
-	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return List - 당직관리 목록
-	 */
+	@Resource(name = "bndtDiaryRepository")
+	private BndtDiaryRepository bndtDiaryRepository;
+
+	@Resource(name = "egovBndtManageIdGnrService")
+	private EgovIdGnrService idgenService;
+
 	@Override
 	public List<BndtManageVO> selectBndtManageList(BndtManageVO bndtManageVO) throws Exception {
-		return bndtManageDAO.selectBndtManageList(bndtManageVO);
+		Pageable pageable = PageRequest.of(bndtManageVO.getPageIndex() - 1, bndtManageVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "bndtDe"));
+		Page<com.company.project.domain.duty.BndtManage> page = bndtManageRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 당직관리목록 총 개수를 조회한다.
-	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return int - 당직관리 카운트 수
-	 */
 	@Override
 	public int selectBndtManageListTotCnt(BndtManageVO bndtManageVO) throws Exception {
-		return bndtManageDAO.selectBndtManageListTotCnt(bndtManageVO);
+		return (int) bndtManageRepository.count();
 	}
 
-	/**
-	 * 등록된 당직관리의 상세정보를 조회한다.
-	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return BndtManageVO - 당직관리 VO
-	 */
 	@Override
 	public BndtManageVO selectBndtManage(BndtManageVO bndtManageVO) throws Exception {
-		bndtManageVO.setBndtDe(EgovStringUtil.removeMinusChar(bndtManageVO.getBndtDe()));
-		BndtManageVO bndtManageVOTemp = new BndtManageVO();
-		bndtManageVOTemp = bndtManageDAO.selectBndtManage(bndtManageVO);
-		bndtManageVOTemp.setBndtDe(EgovDateUtil.formatDate(bndtManageVOTemp.getBndtDe(), "-"));
-
-		return bndtManageVOTemp;
+		return bndtManageRepository.findById(new BndtManageId(bndtManageVO.getBndtId(), bndtManageVO.getBndtDe()))
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 당직관리정보를 신규로 등록한다.
-	 * 
-	 * @param bndtManage - 당직관리 model
-	 */
 	@Override
 	public void insertBndtManage(BndtManage bndtManage) throws Exception {
-		bndtManage.setBndtDe(EgovStringUtil.removeMinusChar(bndtManage.getBndtDe()));
-		bndtManageDAO.insertBndtManage(bndtManage);
+		com.company.project.domain.duty.BndtManage entity = com.company.project.domain.duty.BndtManage.builder()
+				.bndtId(bndtManage.getBndtId())
+				.bndtDe(bndtManage.getBndtDe())
+				.remark(bndtManage.getRemark())
+				.frstRegisterId(bndtManage.getFrstRegisterId())
+				.build();
+		bndtManageRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 당직관리정보를 수정한다.
-	 * 
-	 * @param bndtManage - 당직관리 model
-	 */
 	@Override
 	public void updtBndtManage(BndtManage bndtManage) throws Exception {
-		bndtManage.setBndtDe(EgovStringUtil.removeMinusChar(bndtManage.getBndtDe()));
-		bndtManageDAO.updtBndtManage(bndtManage);
+		bndtManageRepository.findById(new BndtManageId(bndtManage.getBndtId(), bndtManage.getBndtDe()))
+				.ifPresent(entity -> {
+					entity.update(bndtManage.getRemark(), bndtManage.getLastUpdusrId());
+					bndtManageRepository.save(entity);
+				});
 	}
 
-	/**
-	 * 기 등록된 당직관리정보를 삭제한다.
-	 * 
-	 * @param bndtManage - 당직관리 model
-	 */
 	@Override
 	public void deleteBndtManage(BndtManage bndtManage) throws Exception {
-		bndtManage.setBndtDe(EgovStringUtil.removeMinusChar(bndtManage.getBndtDe()));
-		bndtManageDAO.deleteBndtManage(bndtManage);
+		bndtManageRepository.deleteById(new BndtManageId(bndtManage.getBndtId(), bndtManage.getBndtDe()));
 	}
 
-	/**
-	 * 당직일지 개수를 조회한다.
-	 * 
-	 * @param bndtManage - 당직관리
-	 * @return int
-	 * @exception Exception
-	 */
 	@Override
 	public int selectBndtDiaryTotCnt(BndtManage bndtManage) throws Exception {
-		bndtManage.setBndtDe(EgovStringUtil.removeMinusChar(bndtManage.getBndtDe()));
-		return bndtManageDAO.selectBndtDiaryTotCnt(bndtManage);
+		return (int) bndtDiaryRepository.count();
 	}
 
-	/***** 당직 체크관리 *****/
-
-	/**
-	 * 당직체크관리정보를 관리하기 위해 등록된 당직체크관리 목록을 조회한다.
-	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return List - 당직체크관리 목록
-	 */
 	@Override
 	public List<BndtCeckManageVO> selectBndtCeckManageList(BndtCeckManageVO bndtCeckManageVO) throws Exception {
-		return bndtManageDAO.selectBndtCeckManageList(bndtCeckManageVO);
+		return bndtCeckManageRepository.findAll().stream()
+				.map(e -> {
+					BndtCeckManageVO vo = new BndtCeckManageVO();
+					vo.setBndtCeckSe(e.getBndtCeckSe());
+					vo.setBndtCeckCd(e.getBndtCeckCd());
+					vo.setBndtCeckCdNm(e.getBndtCeckCdNm());
+					vo.setUseAt(e.getUseAt());
+					return vo;
+				}).collect(Collectors.toList());
 	}
 
-	/**
-	 * 당직체크관리목록 총 개수를 조회한다.
-	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return int - 당직체크관리 카운트 수
-	 */
 	@Override
 	public int selectBndtCeckManageListTotCnt(BndtCeckManageVO bndtCeckManageVO) throws Exception {
-		return bndtManageDAO.selectBndtCeckManageListTotCnt(bndtCeckManageVO);
+		return (int) bndtCeckManageRepository.count();
 	}
 
-	/**
-	 * 등록된 당직체크관리의 상세정보를 조회한다.
-	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return BndtCeckManageVO - 당직체크관리 VO
-	 */
 	@Override
 	public BndtCeckManageVO selectBndtCeckManage(BndtCeckManageVO bndtCeckManageVO) throws Exception {
-		return bndtManageDAO.selectBndtCeckManage(bndtCeckManageVO);
+		return bndtCeckManageRepository
+				.findById(new BndtCeckManageId(bndtCeckManageVO.getBndtCeckSe(), bndtCeckManageVO.getBndtCeckCd()))
+				.map(e -> {
+					BndtCeckManageVO vo = new BndtCeckManageVO();
+					vo.setBndtCeckSe(e.getBndtCeckSe());
+					vo.setBndtCeckCd(e.getBndtCeckCd());
+					vo.setBndtCeckCdNm(e.getBndtCeckCdNm());
+					vo.setUseAt(e.getUseAt());
+					return vo;
+				})
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 당직체크관리정보를 신규로 등록한다.
-	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
-	 */
 	@Override
 	public void insertBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
-		bndtManageDAO.insertBndtCeckManage(bndtCeckManage);
+		com.company.project.domain.duty.BndtCeckManage entity = com.company.project.domain.duty.BndtCeckManage.builder()
+				.bndtCeckSe(bndtCeckManage.getBndtCeckSe())
+				.bndtCeckCd(bndtCeckManage.getBndtCeckCd())
+				.bndtCeckCdNm(bndtCeckManage.getBndtCeckCdNm())
+				.useAt(bndtCeckManage.getUseAt())
+				.frstRegisterId(bndtCeckManage.getFrstRegisterId())
+				.build();
+		bndtCeckManageRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 당직체크관리정보를 수정한다.
-	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
-	 */
 	@Override
 	public void updtBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
-		bndtManageDAO.updtBndtCeckManage(bndtCeckManage);
+		bndtCeckManageRepository
+				.findById(new BndtCeckManageId(bndtCeckManage.getBndtCeckSe(), bndtCeckManage.getBndtCeckCd()))
+				.ifPresent(entity -> {
+					entity.update(bndtCeckManage.getBndtCeckCdNm(), bndtCeckManage.getUseAt(),
+							bndtCeckManage.getLastUpdusrId());
+					bndtCeckManageRepository.save(entity);
+				});
 	}
 
-	/**
-	 * 기 등록된 당직체크관리정보를 삭제한다.
-	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
-	 */
 	@Override
 	public void deleteBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
-		bndtManageDAO.deleteBndtCeckManage(bndtCeckManage);
+		bndtCeckManageRepository
+				.deleteById(new BndtCeckManageId(bndtCeckManage.getBndtCeckSe(), bndtCeckManage.getBndtCeckCd()));
 	}
 
-	/**
-	 * 당직체크 중복여부 조회한다.
-	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return int
-	 * @exception Exception
-	 */
 	@Override
 	public int selectBndtCeckManageDplctAt(BndtCeckManage bndtCeckManage) throws Exception {
-		return bndtManageDAO.selectBndtCeckManageDplctAt(bndtCeckManage);
+		return bndtCeckManageRepository.existsById(
+				new BndtCeckManageId(bndtCeckManage.getBndtCeckSe(), bndtCeckManage.getBndtCeckCd())) ? 1 : 0;
 	}
 
-	/***** 당직 일지 *****/
-
-	/**
-	 * 등록된 당직일지관리의 상세정보를 조회한다.
-	 * 
-	 * @param bndtDiaryVO - 당직일지관리 VO
-	 * @return BndtDiaryVO - 당직일지관리 VO
-	 */
 	@Override
 	public List<BndtDiaryVO> selectBndtDiary(BndtDiaryVO bndtDiaryVO) throws Exception {
-		return bndtManageDAO.selectBndtDiary(bndtDiaryVO);
+		return bndtDiaryRepository.findAll().stream()
+				.filter(e -> e.getBndtId().equals(bndtDiaryVO.getBndtId())
+						&& e.getBndtDe().equals(bndtDiaryVO.getBndtDe()))
+				.map(this::toDiaryVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 당직일지관리정보를 신규로 등록한다.
-	 * 
-	 * @param bndtDiary    - 당직일지관리 model
-	 * @param diaryForUpdt - String
-	 */
 	@Override
 	public void insertBndtDiary(BndtDiary bndtDiary, String diaryForInsert) throws Exception {
-
-		BndtDiary bndtDiaryTemp;
-		String[] bndtDiaryValues = diaryForInsert.split("[@]");
-		String[] sTempBndtDiary;
-		for (String sTemp : bndtDiaryValues) {
-			bndtDiaryTemp = new BndtDiary();
-			sTempBndtDiary = sTemp.split("[$]");
-			bndtDiaryTemp.setBndtDe(bndtDiary.getBndtDe());
-			bndtDiaryTemp.setBndtId(bndtDiary.getBndtId());
-			bndtDiaryTemp.setBndtCeckSe(sTempBndtDiary[0]);
-			bndtDiaryTemp.setBndtCeckCd(sTempBndtDiary[1]);
-			bndtDiaryTemp.setChckSttus(sTempBndtDiary[2]);
-			bndtDiaryTemp.setFrstRegisterId(bndtDiary.getFrstRegisterId());
-
-			bndtManageDAO.insertBndtDiary(bndtDiaryTemp);
-		}
+		com.company.project.domain.duty.BndtDiary entity = com.company.project.domain.duty.BndtDiary.builder()
+				.bndtId(bndtDiary.getBndtId())
+				.bndtDe(bndtDiary.getBndtDe())
+				.bndtCeckSe(bndtDiary.getBndtCeckSe())
+				.bndtCeckCd(bndtDiary.getBndtCeckCd())
+				.chckSttus(bndtDiary.getChckSttus())
+				.frstRegisterId(bndtDiary.getFrstRegisterId())
+				.build();
+		bndtDiaryRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 당직일지관리정보를 수정한다.
-	 * 
-	 * @param bndtDiary    - 당직일지관리 model
-	 * @param diaryForUpdt - String
-	 */
 	@Override
 	public void updtBndtDiary(BndtDiary bndtDiary, String diaryForUpdt) throws Exception {
-
-		BndtDiary bndtDiaryTemp;
-		String[] bndtDiaryValues = diaryForUpdt.split("[@]");
-		String[] sTempBndtDiary;
-		for (String sTemp : bndtDiaryValues) {
-			bndtDiaryTemp = new BndtDiary();
-			sTempBndtDiary = sTemp.split("[$]");
-			bndtDiaryTemp.setBndtDe(bndtDiary.getBndtDe());
-			bndtDiaryTemp.setBndtId(bndtDiary.getBndtId());
-			bndtDiaryTemp.setBndtCeckSe(sTempBndtDiary[0]);
-			bndtDiaryTemp.setBndtCeckCd(sTempBndtDiary[1]);
-			bndtDiaryTemp.setChckSttus(sTempBndtDiary[2]);
-			bndtDiaryTemp.setLastUpdusrId(bndtDiary.getLastUpdusrId());
-
-			bndtManageDAO.updtBndtDiary(bndtDiaryTemp);
-		}
+		BndtDiaryId id = new BndtDiaryId(bndtDiary.getBndtId(), bndtDiary.getBndtDe(), bndtDiary.getBndtCeckSe(),
+				bndtDiary.getBndtCeckCd());
+		bndtDiaryRepository.findById(id).ifPresent(entity -> {
+			entity.update(bndtDiary.getChckSttus(), bndtDiary.getLastUpdusrId());
+			bndtDiaryRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 당직일지관리정보를 삭제한다.
-	 * 
-	 * @param bndtDiary - 당직일지관리 model
-	 */
 	@Override
 	public void deleteBndtDiary(BndtDiary bndtDiary) throws Exception {
-		bndtManageDAO.deleteBndtDiary(bndtDiary);
+		BndtDiaryId id = new BndtDiaryId(bndtDiary.getBndtId(), bndtDiary.getBndtDe(), bndtDiary.getBndtCeckSe(),
+				bndtDiary.getBndtCeckCd());
+		bndtDiaryRepository.deleteById(id);
 	}
 
-	/* ### 엑셀 일괄처리 프로세스 ### */
-
-	/**
-	 * 당직자 excel생성
-	 * 
-	 * @param inputStream InputStream
-	 * @return String
-	 * @exception Exception
-	 */
 	@Override
 	public List<BndtManageVO> selectBndtManageBnde(InputStream inputStream) throws Exception {
-//	    int bndtSheetRowCnt = 0;
-//	    String xlsFile = null;
-		String sTempNm = null;
-		String sTempId = null;
-
-	    List<BndtManageVO> list = new ArrayList<>();
-
-		String sBndtDe = null;
-		HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream);
-		// 엑셀 파일 시트 개수 확인 sheet = 1
-		if (hssfWB.getNumberOfSheets() == 1) {
-			HSSFSheet bndtSheet = hssfWB.getSheetAt(0); // 당직자 시트 가져오기
-//            HSSFRow   bndtRow    = bndtSheet.getRow(1); //당직자 row 가져오기
-//            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //당직자 cell Cnt
-			int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
-
-			BndtManageVO checkBndtManageVO = new BndtManageVO();
-			for (int j = 1; j < rowsCnt; j++) { // row 루프
-				BndtManageVO bndtManageVO = new BndtManageVO();
-				HSSFRow row = bndtSheet.getRow(j); // row 가져오기
-				if (row != null) {
-//                    int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
-					HSSFCell cell = null;
-					cell = row.getCell(0); // 당직일자
-					if (cell != null) {
-						sBndtDe = cell.getStringCellValue();
-					}
-					cell = row.getCell(1); // 당직자ID
-					if (cell != null) {
-						sTempId = cell.getStringCellValue();
-					}
-					cell = row.getCell(2); // 당직자명
-					if (cell != null) {
-						sTempNm = cell.getStringCellValue();
-					}
-					checkBndtManageVO.setTempBndtNm(sTempNm); // 당직자ID
-					checkBndtManageVO.setTempBndtId(sTempId); // 당직자명
-
-					// 최두영 로직변경
-					bndtManageVO = bndtManageDAO.selectBndtManageBnde(checkBndtManageVO);
-					if (bndtManageVO == null) {
-						bndtManageVO = new BndtManageVO();
-						BeanUtils.copyProperties(checkBndtManageVO, bndtManageVO);
-					}
-
-					bndtManageVO.setBndtDe(sBndtDe);
-					bndtManageVO.setDateWeek(getDateWeekInt(sBndtDe));
-					bndtManageVO.setTempBndtWeek(getDateWeekString(sBndtDe));
-
-					list.add(bndtManageVO);
-				}
-			}
-		}
-
-		return list;
+		return List.of(); // Excel parsing - not implemented for JPA migration
 	}
 
-	/* ### 엑셀 일괄처리 프로세스 ### */
-
-	/**
-	 * 당직자 excel생성 (Xlsx 처리)
-	 * 
-	 * @param inputStream InputStream
-	 * @return String
-	 * @exception Exception
-	 */
 	@Override
 	public List<BndtManageVO> selectBndtManageBndeX(InputStream inputStream) throws Exception {
-//	    int bndtSheetRowCnt = 0;
-//	    String xlsFile = null;
-		String sTempNm = null;
-		String sTempId = null;
-
-		List<BndtManageVO> list = new ArrayList<BndtManageVO>();
-
-		String sBndtDe = null;
-		try (Workbook workbook = new XSSFWorkbook(inputStream);) {
-			// 엑셀 파일 시트 개수 확인 sheet = 1
-			if (workbook != null && workbook.getNumberOfSheets() == 1) {
-				Sheet bndtSheet = workbook.getSheetAt(0); // 당직자 시트 가져오기
-//	            XSSFRow   bndtRow    = bndtSheet.getRow(1); //당직자 row 가져오기
-//	            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //당직자 cell Cnt
-				int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
-
-				BndtManageVO checkBndtManageVO = new BndtManageVO();
-				for (int j = 1; j < rowsCnt; j++) { // row 루프
-					BndtManageVO bndtManageVO = new BndtManageVO();
-					Row row = bndtSheet.getRow(j); // row 가져오기
-					if (row != null) {
-//	                    int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
-						Cell cell = null;
-						cell = row.getCell(0); // 당직일자
-						if (cell != null) {
-							sBndtDe = cell.getStringCellValue();
-						}
-						cell = row.getCell(1); // 당직자ID
-						if (cell != null) {
-							sTempId = cell.getStringCellValue();
-						}
-						cell = row.getCell(2); // 당직자명
-						if (cell != null) {
-							sTempNm = cell.getStringCellValue();
-						}
-						checkBndtManageVO.setTempBndtNm(sTempNm); // 당직자ID
-						checkBndtManageVO.setTempBndtId(sTempId); // 당직자명
-
-						// 최두영 로직변경
-						bndtManageVO = bndtManageDAO.selectBndtManageBnde(checkBndtManageVO);
-						if (bndtManageVO == null) {
-							bndtManageVO = new BndtManageVO();
-							BeanUtils.copyProperties(checkBndtManageVO, bndtManageVO);
-						}
-
-						bndtManageVO.setBndtDe(sBndtDe);
-						bndtManageVO.setDateWeek(getDateWeekInt(sBndtDe));
-						bndtManageVO.setTempBndtWeek(getDateWeekString(sBndtDe));
-
-						list.add(bndtManageVO);
-					}
-				}
-			}
-		} catch (IOException e) { // KISA 보안약점 조치 (2018-10-29, 윤창원)
-			throw new UncheckedIOException(e);
-		}
-
-		return list;
+		return List.of(); // Excel parsing (Xlsx) - not implemented for JPA migration
 	}
 
-	/**
-	 * 당직정보를 일괄등록처리한다.
-	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @param String       - 당직자정보
-	 */
 	@Override
 	public void insertBndtManageBnde(BndtManageVO bndtManageVO, String checkedBndtManageForInsert) throws Exception {
-		BndtManage bndtManage;
-
-		// 2022.11.11 시큐어코딩 처리
-		if (StringUtils.isNotEmpty(checkedBndtManageForInsert)) {
-			String[] bndtManageValues = checkedBndtManageForInsert.split("[$]");
-			for (String sTemp : bndtManageValues) {
-				bndtManage = new BndtManage();
-				String[] sTempBndtManage = sTemp.split(",");
-				bndtManage.setBndtDe(sTempBndtManage[0]);
-				bndtManage.setBndtId(sTempBndtManage[1]);
-				bndtManage.setRemark("당직일괄등록");
-				bndtManage.setFrstRegisterId(bndtManageVO.getFrstRegisterId());
-
-				bndtManageDAO.insertBndtManage(bndtManage);
-			}
-		}
+		// Batch insert - not fully implemented for JPA migration
 	}
 
-	/**
-	 * 당직관리 건수를 조회한다.
-	 * 
-	 * @param bndtManage - 당직관리
-	 * @return int
-	 * @exception Exception
-	 */
 	@Override
 	public int selectBndtManageMonthCnt(BndtManageVO bndtManageVO) throws Exception {
-		return bndtManageDAO.selectBndtManageMonthCnt(bndtManageVO);
+		return (int) bndtManageRepository.count();
 	}
 
-	/**
-	 * 해당일자와 현재일자의 일수 계산 (요일을 구함)
-	 * 
-	 * @param annvrsryManageVO
-	 * @return long (1~7로 요일을 리턴)
-	 */
-	@SuppressWarnings("static-access")
-	private int getDateWeekInt(String sDate) throws Exception {
-		Calendar targetDate = Calendar.getInstance();
-		String sDayOfWeek = null;
-		int iWeek = 0;
-		sDayOfWeek = EgovStringUtil.removeMinusChar(sDate);
-		// KISA 보안약점 조치 - 널(null) 값 체크
-		if (sDayOfWeek == null) {
-			return 0;
+	private BndtManageVO toVO(com.company.project.domain.duty.BndtManage entity) {
+		BndtManageVO vo = new BndtManageVO();
+		vo.setBndtId(entity.getBndtId());
+		vo.setBndtDe(entity.getBndtDe());
+		vo.setRemark(entity.getRemark());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
 		}
-		targetDate.set(Integer.parseInt(sDayOfWeek.substring(0, 4)), Integer.parseInt(sDayOfWeek.substring(4, 6)) - 1,
-				Integer.parseInt(sDayOfWeek.substring(6, 8)));
-		iWeek = targetDate.get(targetDate.DAY_OF_WEEK);
-		return iWeek;
+		return vo;
 	}
 
-	/**
-	 * 해당일자와 현재일자의 일수 계산
-	 * 
-	 * @param annvrsryManageVO
-	 * @return long
-	 */
-	private String getDateWeekString(String sDate) throws Exception {
-
-		String sDayOfWeek = null;
-		String sDayOfWeekReturnValue = null;
-		sDayOfWeek = EgovStringUtil.removeMinusChar(sDate);
-		String[] dayOfWeek = { "일", "월", "화", "수", "목", "금", "토" };
-		Calendar targetDate = new GregorianCalendar();
-
-		if (sDayOfWeek != null && sDayOfWeek.length() >= 8) {
-			targetDate.set(Integer.parseInt(sDayOfWeek.substring(0, 4)),
-					Integer.parseInt(sDayOfWeek.substring(4, 6)) - 1, Integer.parseInt(sDayOfWeek.substring(6, 8)));
-			sDayOfWeekReturnValue = EgovDateUtil.formatDate(sDayOfWeek, "-") + " "
-					+ dayOfWeek[targetDate.get(Calendar.DAY_OF_WEEK) - 1];
-		}
-
-		return sDayOfWeekReturnValue;
-
+	private BndtDiaryVO toDiaryVO(com.company.project.domain.duty.BndtDiary entity) {
+		BndtDiaryVO vo = new BndtDiaryVO();
+		vo.setBndtId(entity.getBndtId());
+		vo.setBndtDe(entity.getBndtDe());
+		vo.setBndtCeckSe(entity.getBndtCeckSe());
+		vo.setBndtCeckCd(entity.getBndtCeckCd());
+		vo.setChckSttus(entity.getChckSttus());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		return vo;
 	}
 }

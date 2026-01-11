@@ -1,243 +1,147 @@
 package egovframework.com.uss.ion.ctn.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.uss.ion.ctn.service.CtsnnManage;
+import com.company.project.domain.notification.CtsnnManage;
+import com.company.project.domain.notification.CtsnnManageRepository;
+
 import egovframework.com.uss.ion.ctn.service.CtsnnManageVO;
 import egovframework.com.uss.ion.ctn.service.EgovCtsnnManageService;
-import egovframework.com.uss.ion.ism.service.EgovInfrmlSanctnService;
-import egovframework.com.uss.ion.ism.service.InfrmlSanctn;
-import egovframework.com.utl.fcc.service.EgovDateUtil;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-
-/**
- * 개요
- * - 경조관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 경조관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 경조관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
- * @version 1.0
- * @created 06-15-2010 오후 2:08:56
- */
 
 @Service("egovCtsnnManageService")
 public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implements EgovCtsnnManageService {
 
-	@Resource(name="ctsnnManageDAO")
-    private CtsnnManageDAO ctsnnManageDAO;
+	@Resource(name = "ctsnnManageRepository")
+	private CtsnnManageRepository ctsnnManageRepository;
 
-    /** ID Generation */
-	@Resource(name="egovCtsnnManageIdGnrService")
-	private EgovIdGnrService idgenCtsnnManageService;
+	@Resource(name = "egovCtsnnManageIdGnrService")
+	private EgovIdGnrService idgenService;
 
-
-	@Resource(name="EgovInfrmlSanctnService")
-    protected EgovInfrmlSanctnService infrmlSanctnService;
-
-	/**
-	 * 경조관리정보를 관리하기 위해 등록된 경조관리 목록을 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return List - 경조관리 목록
-	 */
 	@Override
-	public List<CtsnnManageVO> selectCtsnnManageList(CtsnnManageVO ctsnnManageVO) throws Exception{
-		ctsnnManageVO.setSearchFromDate(EgovStringUtil.removeMinusChar(ctsnnManageVO.getSearchFromDate()));
-		ctsnnManageVO.setSearchToDate(EgovStringUtil.removeMinusChar(ctsnnManageVO.getSearchToDate()));
-		List<CtsnnManageVO> result = ctsnnManageDAO.selectCtsnnManageList(ctsnnManageVO);
-
-		int num = result.size();
-
-	    for (int i = 0 ; i < num ; i ++ ){
-	    	CtsnnManageVO ctsnnManageVO1 = result.get(i);
-	    	ctsnnManageVO1.setReqstDe(EgovDateUtil.formatDate(ctsnnManageVO1.getReqstDe(), "-"));
-	    	ctsnnManageVO1.setOccrrDe(EgovDateUtil.formatDate(ctsnnManageVO1.getOccrrDe(), "-"));
-	    	result.set(i, ctsnnManageVO1);
-	    }
-		return result;
+	public List<CtsnnManageVO> selectCtsnnManageList(CtsnnManageVO ctsnnManageVO) throws Exception {
+		Pageable pageable = PageRequest.of(ctsnnManageVO.getPageIndex() - 1, ctsnnManageVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<CtsnnManage> page = ctsnnManageRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 경조관리목록 총 개수를 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return int - 경조관리 카운트 수
-	 */
 	@Override
 	public int selectCtsnnManageListTotCnt(CtsnnManageVO ctsnnManageVO) throws Exception {
-		return ctsnnManageDAO.selectCtsnnManageListTotCnt(ctsnnManageVO);
+		return (int) ctsnnManageRepository.count();
 	}
 
-	/**
-	 * 등록된 경조관리의 상세정보를 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return CtsnnManageVO - 경조관리 VO
-	 */
 	@Override
 	public CtsnnManageVO selectCtsnnManage(CtsnnManageVO ctsnnManageVO) throws Exception {
-
-		CtsnnManageVO ctsnnManageVOTemp = ctsnnManageDAO.selectCtsnnManage(ctsnnManageVO);
-		ctsnnManageVOTemp.setReqstDe(EgovDateUtil.formatDate(ctsnnManageVOTemp.getReqstDe(), "-"));
-		ctsnnManageVOTemp.setOccrrDe(EgovDateUtil.formatDate(ctsnnManageVOTemp.getOccrrDe(), "-"));
-		ctsnnManageVOTemp.setBrth(EgovDateUtil.formatDate(ctsnnManageVOTemp.getBrth(), "-"));
-		return ctsnnManageVOTemp;
+		return ctsnnManageRepository.findById(ctsnnManageVO.getCtsnnId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 경조관리정보를 신규로 등록한다.
-	 * @param ctsnnManage - 경조관리 model
-	 */
 	@Override
-	public void insertCtsnnManage(CtsnnManage ctsnnManage) throws Exception {
+	public void insertCtsnnManage(egovframework.com.uss.ion.ctn.service.CtsnnManage ctsnnManage) throws Exception {
+		String id = idgenService.getNextStringId();
 
-		java.util.Calendar cal = java.util.Calendar.getInstance();
-    	String  sYear  =Integer.toString(cal.get(java.util.Calendar.YEAR));
-    	String  sMonth =Integer.toString(cal.get(java.util.Calendar.MONTH)+1);
-    	if(sMonth.length() == 1) {
-			sMonth = "0"+sMonth;
-		}
-    	String  sDay   =Integer.toString(cal.get(java.util.Calendar.DATE));
-    	if(sDay.length() == 1) {
-			sDay = "0"+sDay;
-		}
-    	ctsnnManage.setReqstDe(sYear+sMonth+sDay);
+		CtsnnManage entity = CtsnnManage.builder()
+				.ctsnnId(id)
+				.usid(ctsnnManage.getUsid())
+				.ctsnnCd(ctsnnManage.getCtsnnCd())
+				.reqstDe(ctsnnManage.getReqstDe())
+				.ctsnnNm(ctsnnManage.getCtsnnNm())
+				.trgterNm(ctsnnManage.getTrgterNm())
+				.brth(ctsnnManage.getBrth())
+				.occrrDe(ctsnnManage.getOccrrDe())
+				.relate(ctsnnManage.getRelate())
+				.remark(ctsnnManage.getRemark())
+				.sanctnerId(ctsnnManage.getSanctnerId())
+				.confmAt(ctsnnManage.getConfmAt())
+				.infrmlSanctnId(ctsnnManage.getInfrmlSanctnId())
+				.frstRegisterId(ctsnnManage.getFrstRegisterId())
+				.build();
 
-		/*
-		 * 경조 승인처리  신청
-		 */
-		//InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn("001", ctsnnManage);
-
-    	ctsnnManage.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManage.getReqstDe()));
-    	ctsnnManage.setBrth(EgovStringUtil.removeMinusChar(ctsnnManage.getBrth()));
-    	ctsnnManage.setOccrrDe(EgovStringUtil.removeMinusChar(ctsnnManage.getOccrrDe()));
-		InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn(converToInfrmlSanctnObject(ctsnnManage)); //신청
-		ctsnnManage.setInfrmlSanctnId(infrmlSanctn.getInfrmlSanctnId());
-		ctsnnManage.setConfmAt(infrmlSanctn.getConfmAt());
-
-		String	sCtsnnId = idgenCtsnnManageService.getNextStringId();
-		ctsnnManage.setCtsnnId(sCtsnnId);
-
-		ctsnnManageDAO.insertCtsnnManage(ctsnnManage);
+		ctsnnManageRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 경조관리정보를 수정한다.
-	 * @param ctsnnManage - 경조관리 model
-	 */
 	@Override
-	public void updtCtsnnManage(CtsnnManage ctsnnManage) throws Exception {
-		ctsnnManage.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManage.getReqstDe()));
-    	ctsnnManage.setBrth(EgovStringUtil.removeMinusChar(ctsnnManage.getBrth()));
-    	ctsnnManage.setOccrrDe(EgovStringUtil.removeMinusChar(ctsnnManage.getOccrrDe()));
-		ctsnnManage.setBrth(EgovStringUtil.removeMinusChar(ctsnnManage.getBrth()));
-		ctsnnManage.setOccrrDe(EgovStringUtil.removeMinusChar(ctsnnManage.getOccrrDe()));
-		ctsnnManageDAO.updtCtsnnManage(ctsnnManage);
+	public void updtCtsnnManage(egovframework.com.uss.ion.ctn.service.CtsnnManage ctsnnManage) throws Exception {
+		ctsnnManageRepository.findById(ctsnnManage.getCtsnnId()).ifPresent(entity -> {
+			entity.update(
+					ctsnnManage.getCtsnnCd(),
+					ctsnnManage.getCtsnnNm(),
+					ctsnnManage.getReqstDe(),
+					ctsnnManage.getTrgterNm(),
+					ctsnnManage.getBrth(),
+					ctsnnManage.getOccrrDe(),
+					ctsnnManage.getRelate(),
+					ctsnnManage.getRemark(),
+					ctsnnManage.getLastUpdusrId());
+			ctsnnManageRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 기 등록된 경조관리정보를 삭제한다.
-	 * @param ctsnnManage - 경조관리 model
-	 */
 	@Override
-	public void deleteCtsnnManage(CtsnnManage ctsnnManage) throws Exception {
-		ctsnnManage.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManage.getReqstDe()));
-    	ctsnnManage.setBrth(EgovStringUtil.removeMinusChar(ctsnnManage.getBrth()));
-    	ctsnnManage.setOccrrDe(EgovStringUtil.removeMinusChar(ctsnnManage.getOccrrDe()));
-		/*
-		 * 포상 승인처리  삭제 infrmlSanctnService.deleteInfrmlSanctn("000", vcatnManage);
-		 */
-		infrmlSanctnService.deleteInfrmlSanctn(converToInfrmlSanctnObject(ctsnnManage));  //삭제
-		//infrmlSanctnService.deleteInfrmlSanctn("001", ctsnnManage);
-		ctsnnManageDAO.deleteCtsnnManage(ctsnnManage);
+	public void deleteCtsnnManage(egovframework.com.uss.ion.ctn.service.CtsnnManage ctsnnManage) throws Exception {
+		ctsnnManageRepository.deleteById(ctsnnManage.getCtsnnId());
 	}
 
-	/**
-	 * 경조관리정보 승인 처리를 위해 신청된 경조관리 목록을 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return List - 경조관리 목록
-	 */
 	@Override
-	public List<CtsnnManageVO> selectCtsnnManageConfmList(CtsnnManageVO ctsnnManageVO) throws Exception{
-		ctsnnManageVO.setSearchFromDate(EgovStringUtil.removeMinusChar(ctsnnManageVO.getSearchFromDate()));
-		ctsnnManageVO.setSearchToDate(EgovStringUtil.removeMinusChar(ctsnnManageVO.getSearchToDate()));
-		List<CtsnnManageVO> result = ctsnnManageDAO.selectCtsnnManageConfmList(ctsnnManageVO);
-		int num = result.size();
-
-	    for (int i = 0 ; i < num ; i ++ ){
-	    	CtsnnManageVO ctsnnManageVO1 = result.get(i);
-	    	ctsnnManageVO1.setReqstDe(EgovDateUtil.formatDate(ctsnnManageVO1.getReqstDe(), "-"));
-	    	ctsnnManageVO1.setOccrrDe(EgovDateUtil.formatDate(ctsnnManageVO1.getOccrrDe(), "-"));
-	    	result.set(i, ctsnnManageVO1);
-	    }
-		return result;
+	public List<CtsnnManageVO> selectCtsnnManageConfmList(CtsnnManageVO ctsnnManageVO) throws Exception {
+		return ctsnnManageRepository.findAll().stream()
+				.filter(e -> ctsnnManageVO.getSanctnerId().equals(e.getSanctnerId()))
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 경조승인목록 총 개수를 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return int - 경조관리 카운트 수
-	 */
 	@Override
 	public int selectCtsnnManageConfmListTotCnt(CtsnnManageVO ctsnnManageVO) throws Exception {
-		return ctsnnManageDAO.selectCtsnnManageConfmListTotCnt(ctsnnManageVO);
+		return (int) selectCtsnnManageConfmList(ctsnnManageVO).size();
 	}
 
-	/**
-	 * 경조정보를 승인처리 한다.
-	 * @param ctsnnManage - 경조관리 model
-	 */
 	@Override
-	public void updtCtsnnManageConfm(CtsnnManage ctsnnManage) throws Exception {
-		 InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-		 ctsnnManage.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManage.getReqstDe()));
-	     ctsnnManage.setBrth(EgovStringUtil.removeMinusChar(ctsnnManage.getBrth()));
-	     ctsnnManage.setOccrrDe(EgovStringUtil.removeMinusChar(ctsnnManage.getOccrrDe()));
-	   //KISA 보안약점 조치 (2018-10-29, 윤창원)
-		 if("C".equals(ctsnnManage.getConfmAt())){
-			/*
-			 * 승인처리
-			 */
-			 infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm(converToInfrmlSanctnObject(ctsnnManage));  //승인
-			 //infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm("001", ctsnnManage);
-		 }else if("R".equals(ctsnnManage.getConfmAt())){
-			/*
-			 * 반려처리
-			 */
-			 //infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn("001", ctsnnManage);
-			 infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn(converToInfrmlSanctnObject(ctsnnManage));
-		 }
-		 ctsnnManage.setSanctnDt(infrmlSanctn.getSanctnDt());
-		 ctsnnManage.setConfmAt(infrmlSanctn.getConfmAt());
-
-		 ctsnnManageDAO.updtCtsnnManageConfm(ctsnnManage);
+	public void updtCtsnnManageConfm(egovframework.com.uss.ion.ctn.service.CtsnnManage ctsnnManage) throws Exception {
+		ctsnnManageRepository.findById(ctsnnManage.getCtsnnId()).ifPresent(entity -> {
+			entity.confirm(
+					ctsnnManage.getConfmAt(),
+					null,
+					ctsnnManage.getReturnResn(),
+					ctsnnManage.getLastUpdusrId());
+			ctsnnManageRepository.save(entity);
+		});
 	}
 
-	/**
-	 * CtsnnManage model을 InfrmlSanctn model로 변환한다.
-	 * @param CtsnnManage
-	 * @return InfrmlSanctn
-	 * @param ctsnnManage
-	 */
-	private InfrmlSanctn converToInfrmlSanctnObject(CtsnnManage ctsnnManage) throws Exception{
-		InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-    	infrmlSanctn.setJobSeCode("001");								// 업무구분코드 (공통코드 COM75)
-    	infrmlSanctn.setApplcntId(ctsnnManage.getUsid());			    // 사용자ID
-    	infrmlSanctn.setReqstDe(ctsnnManage.getReqstDe());				// 신청일자
-    	infrmlSanctn.setSanctnerId(ctsnnManage.getSanctnerId());		// 결재자ID
-    	infrmlSanctn.setConfmAt(ctsnnManage.getConfmAt());				// 승인구분
-    	infrmlSanctn.setSanctnDt(ctsnnManage.getSanctnDt());			// 결재일시
-    	infrmlSanctn.setReturnResn(ctsnnManage.getReturnResn());		// 반려사유
-    	infrmlSanctn.setFrstRegisterId(ctsnnManage.getFrstRegisterId());
-    	ctsnnManage.setFrstRegisterPnttm(ctsnnManage.getFrstRegisterId());
-    	infrmlSanctn.setLastUpdusrId(ctsnnManage.getLastUpdusrId());
-    	infrmlSanctn.setLastUpdusrPnttm(ctsnnManage.getLastUpdusrPnttm());
-    	infrmlSanctn.setInfrmlSanctnId(ctsnnManage.getInfrmlSanctnId());// 약식결재ID
-    	return infrmlSanctn;
+	private CtsnnManageVO toVO(CtsnnManage entity) {
+		CtsnnManageVO vo = new CtsnnManageVO();
+		vo.setCtsnnId(entity.getCtsnnId());
+		vo.setUsid(entity.getUsid());
+		vo.setCtsnnCd(entity.getCtsnnCd());
+		vo.setReqstDe(entity.getReqstDe());
+		vo.setCtsnnNm(entity.getCtsnnNm());
+		vo.setTrgterNm(entity.getTrgterNm());
+		vo.setBrth(entity.getBrth());
+		vo.setOccrrDe(entity.getOccrrDe());
+		vo.setRelate(entity.getRelate());
+		vo.setRemark(entity.getRemark());
+		vo.setSanctnerId(entity.getSanctnerId());
+		vo.setConfmAt(entity.getConfmAt());
+		vo.setReturnResn(entity.getReturnResn());
+		vo.setInfrmlSanctnId(entity.getInfrmlSanctnId());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+		}
+		vo.setLastUpdusrId(entity.getLastUpdusrId());
+		if (entity.getLastUpdusrPnttm() != null) {
+			vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm().toString());
+		}
+		return vo;
 	}
-
 }

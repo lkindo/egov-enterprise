@@ -2,124 +2,110 @@ package egovframework.com.uss.ion.rss.service.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.notification.RssTag;
+import com.company.project.domain.notification.RssTagRepository;
 
 import egovframework.com.uss.ion.rss.service.EgovRssTagManageService;
 import egovframework.com.uss.ion.rss.service.RssManage;
 import jakarta.annotation.Resource;
-/**
- * RSS태그관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2010.06.16
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
- */
-@Service("egovRssManageService")
-public class EgovRssTagManageServiceImpl extends EgovAbstractServiceImpl
-        implements EgovRssTagManageService {
 
-	/* RSS관리 DAO */
-    @Resource(name = "rssManageDao")
-    private RssTagManageDao dao;
+@Service("egovRssTagManageService")
+public class EgovRssTagManageServiceImpl extends EgovAbstractServiceImpl implements EgovRssTagManageService {
 
-    /* RSS ID Generator Service */
-    @Resource(name = "egovRssTagManageIdGnrService")
+    @Resource(name = "rssTagRepository")
+    private RssTagRepository rssTagRepository;
+
+    @Resource(name = "egovRssManageIdGnrService")
     private EgovIdGnrService idgenService;
 
-    /**
-     * JDBC 테이블 목록을조회한다.
-     * @return List -조회한목록이담긴List
-     * @throws Exception
-     */
     @Override
-	public List<?> selectRssTagManageTableList() throws Exception {
-    	return dao.selectRssTagManageTableList();
+    public List<RssManage> selectRssTagManageList(RssManage searchVO) throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+                Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+        Page<RssTag> page = rssTagRepository.findAll(pageable);
+        return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
     }
-    /**
-     * JDBC 테이블 컬럼 목록을 조회한다.
-     * @param map - 컬럼조회정보
-     * @return List -조회한목록이담긴List
-     * @throws Exception
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-	@Override
-	public List<?> selectRssTagManageTableColumnList(Map map) throws Exception {
-    	return dao.selectRssTagManageTableColumnList(map);
-    }
-    /**
-     * RSS태그관리를(을) 목록을 조회 한다.
-     * @param rssManage -조회할 정보가 담긴 객체
-     * @return List -조회한목록이담긴List
-     * @throws Exception
-     */
+
     @Override
-	public List<?> selectRssTagManageList(RssManage rssManage) throws Exception {
-    	return dao.selectRssTagManageList(rssManage);
+    public int selectRssTagManageListCnt(RssManage searchVO) throws Exception {
+        return (int) rssTagRepository.count();
     }
 
-    /**
-     * RSS태그관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO -조회할 정보가 담긴 객체
-     * @return int -조회한건수가담긴Integer
-     * @throws Exception
-     */
     @Override
-	public int selectRssTagManageListCnt(RssManage rssManage) throws Exception {
-        return dao.selectRssTagManageListCnt(rssManage);
+    public RssManage selectRssTagManageDetail(RssManage searchVO) throws Exception {
+        return rssTagRepository.findById(searchVO.getRssId())
+                .map(this::toVO)
+                .orElseThrow(() -> processException("info.nodata.msg"));
     }
 
-    /**
-     * RSS태그관리를(을) 상세조회 한다.
-     * @param searchVO -조회할 정보가 담긴 객체
-     * @return List -조회한목록이담긴List
-     * @throws Exception
-     */
     @Override
-	public RssManage selectRssTagManageDetail(RssManage rssManage) throws Exception {
-        return dao.selectRssTagManageDetail(rssManage);
+    public void insertRssTagManage(RssManage searchVO) throws Exception {
+        String id = idgenService.getNextStringId();
+        searchVO.setRssId(id);
+
+        RssTag entity = RssTag.builder()
+                .rssId(id)
+                .trgetSvcNm(searchVO.getTrgetSvcNm())
+                .trgetSvcTable(searchVO.getTrgetSvcTable())
+                .trgetSvcListCo(searchVO.getTrgetSvcListCo())
+                .hderTag(searchVO.getHderTag())
+                .itemTag(searchVO.getBdtTag()) // Mapping to BdtTag in VO
+                .titleTag(searchVO.getBdtTitle()) // Mapping to BdtTitle in VO
+                .linkTag(searchVO.getBdtLink()) // Mapping to BdtLink in VO
+                .descriptionTag(searchVO.getBdtDescription()) // Mapping to BdtDescription in VO
+                .frstRegisterId(searchVO.getFrstRegisterId())
+                .build();
+
+        rssTagRepository.save(entity);
     }
 
-    /**
-     * RSS태그관리를(을) 등록한다.
-     * @param rssManage -RSS태그관리 정보가 담긴 객체
-     * @throws Exception
-     */
     @Override
-	public void insertRssTagManage(RssManage rssManage)throws Exception {
-
-    	rssManage.setRssId(idgenService.getNextStringId());
-
-    	dao.insertRssTagManage(rssManage);
+    public void updateRssTagManage(RssManage searchVO) throws Exception {
+        rssTagRepository.findById(searchVO.getRssId()).ifPresent(entity -> {
+            entity.update(searchVO.getTrgetSvcNm(), searchVO.getTrgetSvcTable(), searchVO.getTrgetSvcListCo(),
+                    searchVO.getHderTag(), searchVO.getBdtTag(), searchVO.getBdtTitle(), searchVO.getBdtLink(),
+                    searchVO.getBdtDescription(), searchVO.getLastUpdusrId());
+            rssTagRepository.save(entity);
+        });
     }
 
-    /**
-     * RSS태그관리를(을) 수정한다.
-     * @param rssManage -RSS태그관리 정보가 담긴 객체
-     * @throws Exception
-     */
     @Override
-	public void updateRssTagManage(RssManage rssManage) throws Exception {
-    	dao.updateRssTagManage(rssManage);
+    public void deleteRssTagManage(RssManage searchVO) throws Exception {
+        rssTagRepository.deleteById(searchVO.getRssId());
     }
 
-    /**
-     * RSS태그관리를(을) 삭제한다.
-     * @param rssManage -RSS태그관리 정보가 담긴 객체
-     * @throws Exception
-     */
     @Override
-	public void deleteRssTagManage(RssManage rssManage) throws Exception {
-    	dao.deleteRssTagManage(rssManage);
+    public List<?> selectRssTagManageTableList() throws Exception {
+        return List.of();
     }
 
+    @Override
+    public List<?> selectRssTagManageTableColumnList(Map<?, ?> map) throws Exception {
+        return List.of();
+    }
+
+    private RssManage toVO(RssTag entity) {
+        RssManage vo = new RssManage();
+        vo.setRssId(entity.getRssId());
+        vo.setTrgetSvcNm(entity.getTrgetSvcNm());
+        vo.setTrgetSvcTable(entity.getTrgetSvcTable());
+        vo.setTrgetSvcListCo(entity.getTrgetSvcListCo());
+        vo.setHderTag(entity.getHderTag());
+        vo.setBdtTag(entity.getItemTag());
+        vo.setBdtTitle(entity.getTitleTag());
+        vo.setBdtLink(entity.getLinkTag());
+        vo.setBdtDescription(entity.getDescriptionTag());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        return vo;
+    }
 }

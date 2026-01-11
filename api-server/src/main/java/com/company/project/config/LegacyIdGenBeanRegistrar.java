@@ -11,51 +11,124 @@ import org.springframework.core.type.AnnotationMetadata;
 public class LegacyIdGenBeanRegistrar implements ImportBeanDefinitionRegistrar {
 
     private static final String[] BEAN_NAMES = {
+            // Administration
             "egovAdministrationWordIdGnrService",
+            // Anniversary
             "egovAnnvrsryManageIdGnrService",
+            // Banner
             "egovBannerIdGnrService",
+            // Bndt (당직관리)
+            "egovBndtManageIdGnrService",
+            // Cmt (출퇴근)
             "egovCmtManageIdGnrService",
+            // Cnslt (상담)
             "egovCnsltManageIdGnrService",
+            // Cpyrht (저작권)
             "egovCpyrhtPrtcPolicyIdGnrService",
+            // Ctsnn (경조)
             "egovCtsnnManageIdGnrService",
+            // DB Monitoring
+            "egovDbMntrngLogIdGnrService",
+            // Dept (부서)
             "egovDeptManaIdGnrService",
+            "egovDeptManageIdGnrService",
+            // Event
             "egovEventCmpgnIdGnrService",
             "egovEventManageIdGnrService",
+            // External HR
+            "egovExtrlHrIdGnrService",
+            // FAQ
             "egovFaqManageIdGnrService",
+            // FileSys Monitoring
+            "egovFileSysMntrngIdGnrService",
+            "egovFileSysMntrngLogIdGnrService",
+            // Homepage Content
             "egovHpcmIdGnrService",
+            // HTTP Monitoring
+            "egovHttpLogManageIdGnrService",
+            "egovHttpManageIdGnrService",
+            // Individual Info Policy
             "egovIndvdlInfoPolicyIdGnrService",
+            // Individual Page
             "egovIndvdlPgeIdGnrService",
+            // Informal Sanction
             "egovInfrmlSanctnIdGnrService",
+            // Internet Service
             "egovIntnetSvcGuidanceIdGnrService",
+            // Login Screen Image
             "egovLoginScrinImageIdGnrService",
+            "egovLoginScrnImageIdGnrService",
+            // Main Image
             "egovMainImageIdGnrService",
+            // Meeting
             "egovMgtIdGnrService",
+            // Mtg Place
             "egovMtgPlaceManageIdGnrService",
             "egovMtgPlaceResveIdGnrService",
+            "egovMtgPlaceResveManageIdGnrService",
+            // News
+            "egovNewsIdGnrService",
             "egovNewsManageIdGnrService",
+            // Note
             "egovNoteManageIdGnrService",
             "egovNoteRecptnIdGnrService",
             "egovNoteTrnsmitIdGnrService",
+            // Notification
+            "egovNotificationIdGnrService",
+            // Network Service Monitoring
+            "egovNtwrkSvcMntrngLogIdGnrService",
+            // Online Manual
+            "egovOnlineManualIdGnrService",
             "egovOnlineMenualIdGnrService",
+            // Online Poll
             "egovOnlinePollItemIdGnrService",
             "egovOnlinePollManageIdGnrService",
             "egovOnlinePollResultIdGnrService",
+            // Popup
             "egovPopupManageIdGnrService",
+            // Process Monitoring
+            "egovProcessMonIdGnrService",
+            "egovProcessMonLogIdGnrService",
+            // Proxy Service
+            "egovProxyLogIdGnrService",
+            "egovProxySvcIdGnrService",
+            // QnA
             "egovQnaManageIdGnrService",
+            // Questionnaire
             "egovQustnrItemManageIdGnrService",
             "egovQustnrManageIdGnrService",
             "egovQustnrQestnManageIdGnrService",
             "egovQustnrTmplatManageIdGnrService",
+            // Recomend Site
+            "egovRecomendSiteIdGnrService",
             "egovRecomendSiteManageIdGnrService",
+            // Rough Map
             "egovRoughMapIdGnrService",
+            // RSS
+            "egovRssManageIdGnrService",
             "egovRssTagManageIdGnrService",
+            // Reward
             "egovRwardManageIdGnrService",
+            // Server Resource Monitoring
+            "egovServerResrceMntrngLogIdGnrService",
+            // Site
+            "egovSiteIdGnrService",
             "egovSiteManageIdGnrService",
+            // Stipulation
             "egovStplatManageIdGnrService",
+            // Synchronize Server
+            "egovSynchrnServerIdGnrService",
+            // Transmit/Receive Monitoring
+            "egovTrsmrcvMntrngLogIdGnrService",
+            // Unity Link
             "egovUnityLinkIdGnrService",
+            // User Confirm
             "egovUsrCnfrmIdGnrService",
+            // Wiki Bookmark
             "egovWikiBookmarkIdGnrService",
+            // Word Dictionary
             "egovWordDicaryIdGnrService",
+            // Questionnaire Respond
             "qustnrRespondInfoIdGnrService",
             "qustnrRespondManageIdGnrService"
     };
@@ -81,12 +154,7 @@ public class LegacyIdGenBeanRegistrar implements ImportBeanDefinitionRegistrar {
                 builder.addPropertyReference("strategy", strategyBeanName);
                 builder.addPropertyValue("blockSize", 1);
                 builder.addPropertyValue("table", "IDS");
-                builder.addPropertyValue("tableName", beanName.toUpperCase()); // Use bean name as key for now
-
-                // Set init-method is not strictly required if we don't need checks, but usually
-                // setDataSource is enough.
-                // EgovTableIdGnrServiceImpl has setDataSource, setStrategy, setBlockSize,
-                // setTable, setTableName.
+                builder.addPropertyValue("tableName", beanName.toUpperCase());
 
                 registry.registerBeanDefinition(beanName, builder.getBeanDefinition());
             }

@@ -1,125 +1,108 @@
 package egovframework.com.uss.sam.cpy.service.impl;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.terms.CpyrhtPrtcPolicy;
+import com.company.project.domain.terms.CpyrhtPrtcPolicyRepository;
 
 import egovframework.com.uss.sam.cpy.service.CpyrhtPrtcPolicyDefaultVO;
 import egovframework.com.uss.sam.cpy.service.CpyrhtPrtcPolicyVO;
 import egovframework.com.uss.sam.cpy.service.EgovCpyrhtPrtcPolicyService;
 import jakarta.annotation.Resource;
 
-/**
- *
- * 저작권보호정책내용을 처리하는 비즈니스 구현 클래스
- *
- * @author 공통서비스 개발팀 박정규
- * @since 2009.04.01
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일          수정자       수정내용
- *  -----------    --------    ---------------------------
- *   2009.04.01     박정규       최초 생성
- *
- *      </pre>
- */
 @Service("CpyrhtPrtcPolicyService")
 public class EgovCpyrhtPrtcPolicyServiceImpl extends EgovAbstractServiceImpl implements EgovCpyrhtPrtcPolicyService {
 
-	@Resource(name = "CpyrhtPrtcPolicyDAO")
-	private CpyrhtPrtcPolicyDAO cpyrhtPrtcPolicyDAO;
+	@Resource(name = "cpyrhtPrtcPolicyRepository")
+	private CpyrhtPrtcPolicyRepository cpyrhtPrtcPolicyRepository;
 
-	/** ID Generation */
 	@Resource(name = "egovCpyrhtPrtcPolicyIdGnrService")
 	private EgovIdGnrService idgenService;
 
-	/**
-	 * 저작권보호정책 글을 조회한다.
-	 *
-	 * @param vo
-	 * @return 조회한 글
-	 * @exception Exception
-	 */
 	@Override
 	public CpyrhtPrtcPolicyVO selectCpyrhtPrtcPolicyDetail(CpyrhtPrtcPolicyVO vo) throws Exception {
-		CpyrhtPrtcPolicyVO resultVO = cpyrhtPrtcPolicyDAO.selectCpyrhtPrtcPolicyDetail(vo);
-		if (resultVO == null) {
-			throw processException("info.nodata.msg");
-		}
-		return resultVO;
+		return cpyrhtPrtcPolicyRepository.findById(vo.getCpyrhtId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
-	/**
-	 * 저작권보호정책 글 목록을 조회한다.
-	 *
-	 * @param searchVO
-	 * @return 글 목록
-	 * @exception Exception
-	 */
 	@Override
 	public List<EgovMap> selectCpyrhtPrtcPolicyList(CpyrhtPrtcPolicyDefaultVO searchVO) throws Exception {
-		return cpyrhtPrtcPolicyDAO.selectCpyrhtPrtcPolicyList(searchVO);
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<CpyrhtPrtcPolicy> page = cpyrhtPrtcPolicyRepository.findAll(pageable);
+
+		return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
 	}
 
-	/**
-	 * 저작권보호정책 글 총 개수를 조회한다.
-	 *
-	 * @param searchVO
-	 * @return 글 총 개수
-	 */
 	@Override
 	public int selectCpyrhtPrtcPolicyListTotCnt(CpyrhtPrtcPolicyDefaultVO searchVO) {
-		return cpyrhtPrtcPolicyDAO.selectCpyrhtPrtcPolicyListTotCnt(searchVO);
+		return (int) cpyrhtPrtcPolicyRepository.count();
 	}
 
-	/**
-	 * 저작권보호정책 글을 등록한다.
-	 *
-	 * @param vo
-	 * @exception Exception
-	 */
 	@Override
 	public void insertCpyrhtPrtcPolicyCn(CpyrhtPrtcPolicyVO vo) throws Exception {
 		egovLogger.debug(vo.toString());
-
 		String cpyrhtId = idgenService.getNextStringId();
-
 		vo.setCpyrhtId(cpyrhtId);
 
-		cpyrhtPrtcPolicyDAO.insertCpyrhtPrtcPolicyCn(vo);
+		CpyrhtPrtcPolicy entity = CpyrhtPrtcPolicy.builder()
+				.cpyrhtId(cpyrhtId)
+				.cpyrhtPrtcPolicyCn(vo.getCpyrhtPrtcPolicyCn())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+
+		cpyrhtPrtcPolicyRepository.save(entity);
 	}
 
-	/**
-	 * 저작권보호정책 글을 수정한다.
-	 *
-	 * @param vo
-	 * @exception Exception
-	 */
 	@Override
 	public void updateCpyrhtPrtcPolicyCn(CpyrhtPrtcPolicyVO vo) throws Exception {
 		egovLogger.debug(vo.toString());
-
-		cpyrhtPrtcPolicyDAO.updateCpyrhtPrtcPolicyCn(vo);
+		cpyrhtPrtcPolicyRepository.findById(vo.getCpyrhtId()).ifPresent(entity -> {
+			entity.update(vo.getCpyrhtPrtcPolicyCn(), vo.getLastUpdusrId());
+			cpyrhtPrtcPolicyRepository.save(entity);
+		});
 	}
 
-	/**
-	 * 저작권보호정책 글을 삭제한다.
-	 *
-	 * @param vo
-	 * @exception Exception
-	 */
 	@Override
 	public void deleteCpyrhtPrtcPolicyCn(CpyrhtPrtcPolicyVO vo) throws Exception {
 		egovLogger.debug(vo.toString());
+		cpyrhtPrtcPolicyRepository.deleteById(vo.getCpyrhtId());
+	}
 
-		cpyrhtPrtcPolicyDAO.deleteCpyrhtPrtcPolicyCn(vo);
+	private CpyrhtPrtcPolicyVO toVO(CpyrhtPrtcPolicy entity) {
+		CpyrhtPrtcPolicyVO vo = new CpyrhtPrtcPolicyVO();
+		vo.setCpyrhtId(entity.getCpyrhtId());
+		vo.setCpyrhtPrtcPolicyCn(entity.getCpyrhtPrtcPolicyCn());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+		}
+		vo.setLastUpdusrId(entity.getLastUpdusrId());
+		if (entity.getLastUpdusrPnttm() != null) {
+			vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm().toString());
+		}
+		return vo;
+	}
+
+	private EgovMap toEgovMap(CpyrhtPrtcPolicy entity) {
+		EgovMap map = new EgovMap();
+		map.put("cpyrhtId", entity.getCpyrhtId());
+		map.put("cpyrhtPrtcPolicyCn", entity.getCpyrhtPrtcPolicyCn());
+		map.put("frstRegisterId", entity.getFrstRegisterId());
+		map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+		return map;
 	}
 
 }

@@ -3,7 +3,7 @@ package com.company.project.service.anniversary;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.anniversary.Anniversary;
-import com.company.project.domain.anniversary.AnniversaryRepository;
+import com.company.project.domain.anniversary.AnniversaryDomainRepository;
 import com.company.project.service.anniversary.dto.AnniversaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class AnniversaryService implements EgovAnniversaryService {
 
-    private final AnniversaryRepository anniversaryRepository;
+    private final AnniversaryDomainRepository anniversaryRepository;
 
     @Override
     public Page<AnniversaryDto> getAnniversaryList(String keyword, Pageable pageable) {

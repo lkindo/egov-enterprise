@@ -1,76 +1,83 @@
 package egovframework.com.uss.ion.yrc.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.vacation.AnnualLeave;
+import com.company.project.domain.vacation.AnnualLeaveRepository;
+
 import egovframework.com.uss.ion.yrc.service.EgovIndvdlYrycManageService;
-import egovframework.com.uss.ion.yrc.service.IndvdlYrycManage;
 import jakarta.annotation.Resource;
 
-/**
- * 개요
- * - 연차관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 연차관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 연차관리의 조회기능은 목록조회로 구분된다.
- * @author 이기하
- * @version 1.0
- * @created 2014.11.14
- */
-
 @Service("egovIndvdlYrycManageService")
-public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl implements EgovIndvdlYrycManageService {
+public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl
+		implements egovframework.com.uss.ion.yrc.service.EgovIndvdlYrycManageService {
 
-	@Resource(name="indvdlYrycDAO")
-    private IndvdlYrycDAO indvdlYrycDAO;
+	@Resource(name = "annualLeaveRepository")
+	private AnnualLeaveRepository annualLeaveRepository;
 
-	/**
-	 * 개인별 연차를 조회 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 */
 	@Override
-	public List<IndvdlYrycManage> selectIndvdlYrycManageList(IndvdlYrycManage indvdlYrycManage) throws Exception {
-		List<IndvdlYrycManage> result = indvdlYrycDAO.selectIndvdlYrycManageList(indvdlYrycManage);
-		return result;
+	public List<egovframework.com.uss.ion.yrc.service.IndvdlYrycManage> selectIndvdlYrycManageList(
+			egovframework.com.uss.ion.yrc.service.IndvdlYrycManage indvdlYrycManage) throws Exception {
+		Pageable pageable = PageRequest.of(indvdlYrycManage.getPageIndex() - 1, indvdlYrycManage.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "id.occrrncYear"));
+		Page<AnnualLeave> page = annualLeaveRepository.findAll(pageable);
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 개인별 연차 리스트 개수를 조회 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 */
 	@Override
-	public int selectIndvdlYrycManageListTotCnt(IndvdlYrycManage indvdlYrycManage) throws Exception {
-		return indvdlYrycDAO.selectIndvdlYrycManageListTotCnt(indvdlYrycManage);
+	public int selectIndvdlYrycManageListTotCnt(egovframework.com.uss.ion.yrc.service.IndvdlYrycManage indvdlYrycManage)
+			throws Exception {
+		return (int) annualLeaveRepository.count();
 	}
 
-	/**
-	 * 개인별 연차를 입력 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 */
 	@Override
-	public void insertIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
-		indvdlYrycDAO.insertIndvdlYrycManage(indvdlYrycManage);
+	public void insertIndvdlYrycManage(egovframework.com.uss.ion.yrc.service.IndvdlYrycManage indvdlYrycManage)
+			throws Exception {
+		AnnualLeave entity = AnnualLeave.builder()
+				.id(new AnnualLeave.AnnualLeaveId(indvdlYrycManage.getMberId(), indvdlYrycManage.getOccrrncYear()))
+				.occrncYrycCo(indvdlYrycManage.getOccrncYrycCo())
+				.useYrycCo(indvdlYrycManage.getUseYrycCo())
+				.remndrYrycCo(indvdlYrycManage.getRemndrYrycCo())
+				.frstRegisterId(indvdlYrycManage.getMberId())
+				.build();
+		annualLeaveRepository.save(entity);
 	}
 
-	/**
-	 * 개인별 연차를 수정 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 */
 	@Override
-	public void updtIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
-		indvdlYrycDAO.updtIndvdlYrycManage(indvdlYrycManage);
+	public void updtIndvdlYrycManage(egovframework.com.uss.ion.yrc.service.IndvdlYrycManage indvdlYrycManage)
+			throws Exception {
+		annualLeaveRepository
+				.findById(
+						new AnnualLeave.AnnualLeaveId(indvdlYrycManage.getMberId(), indvdlYrycManage.getOccrrncYear()))
+				.ifPresent(entity -> {
+					entity.updateUsage(indvdlYrycManage.getUseYrycCo(), indvdlYrycManage.getRemndrYrycCo(),
+							indvdlYrycManage.getMberId());
+					annualLeaveRepository.save(entity);
+				});
 	}
 
-	/**
-	 * 개인별 연차를 삭제 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 */
 	@Override
-	public void deleteIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
-		indvdlYrycDAO.deleteIndvdlYrycManage(indvdlYrycManage);
+	public void deleteIndvdlYrycManage(egovframework.com.uss.ion.yrc.service.IndvdlYrycManage indvdlYrycManage)
+			throws Exception {
+		annualLeaveRepository.deleteById(
+				new AnnualLeave.AnnualLeaveId(indvdlYrycManage.getMberId(), indvdlYrycManage.getOccrrncYear()));
 	}
 
+	private egovframework.com.uss.ion.yrc.service.IndvdlYrycManage toVO(AnnualLeave entity) {
+		egovframework.com.uss.ion.yrc.service.IndvdlYrycManage vo = new egovframework.com.uss.ion.yrc.service.IndvdlYrycManage();
+		vo.setMberId(entity.getId().getUserId());
+		vo.setOccrrncYear(entity.getId().getOccrrncYear());
+		vo.setOccrncYrycCo(entity.getOccrncYrycCo());
+		vo.setUseYrycCo(entity.getUseYrycCo());
+		vo.setRemndrYrycCo(entity.getRemndrYrycCo());
+		return vo;
+	}
 }

@@ -45,7 +45,7 @@ import jakarta.validation.Valid;
 @Controller
 public class EgovRecomendSiteController {
 
-	@Resource(name = "EgovRecomendSiteService")
+	@Resource(name = "egovRecomendSiteService")
 	private EgovRecomendSiteService egovRecomendSiteService;
 
 	/** EgovPropertyService */

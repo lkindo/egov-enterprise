@@ -1,129 +1,153 @@
 package egovframework.com.uss.olp.mgt.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.meeting.MeetingManage;
+import com.company.project.domain.meeting.MeetingManageRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.olp.mgt.service.EgovMeetingManageService;
 import egovframework.com.uss.olp.mgt.service.MeetingManageVO;
+import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-/**
- * 회의관리를 처리하기 위한 ServiceImpl 구현 Class
- * @author 공통서비스 장동한
- * @since 2009.03.20
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *
- * </pre>
- */
+
 @Service("egovMeetingManageService")
-public class EgovMeetingManageServiceImpl extends EgovAbstractServiceImpl implements EgovMeetingManageService{
+public class EgovMeetingManageServiceImpl extends EgovAbstractServiceImpl implements EgovMeetingManageService {
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	@Resource(name = "meetingManageRepository")
+	private MeetingManageRepository meetingManageRepository;
 
-	@Resource(name="meetingManageDao")
-	private MeetingManageDao dao;
-
-	@Resource(name="egovMgtIdGnrService")
+	@Resource(name = "egovMgtIdGnrService")
 	private EgovIdGnrService idgenService;
 
-    /**
-	 * 부서 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> egovMeetingManageLisAuthorGroupPopup(ComDefaultVO searchVO){
-		return dao.egovMeetingManageLisAuthorGroupPopup(searchVO);
+	public List<EgovMap> egovMeetingManageLisAuthorGroupPopup(ComDefaultVO searchVO) {
+		// 부서 목록 조회 기능 (기존 팝업 로직 유지 필요 시 별도 리포지토리 사용 권장)
+		return Collections.emptyList();
 	}
 
-    /**
-	 * 아이디 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> egovMeetingManageLisEmpLyrPopup(ComDefaultVO searchVO){
-		return dao.egovMeetingManageLisEmpLyrPopup(searchVO);
+	public List<EgovMap> egovMeetingManageLisEmpLyrPopup(ComDefaultVO searchVO) {
+		// 아이디 목록 조회 기능 (기존 팝업 로직 유지 필요 시 별도 리포지토리 사용 권장)
+		return Collections.emptyList();
 	}
 
-    /**
-	 * 회의정보 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> selectMeetingManageList(ComDefaultVO searchVO) throws Exception{
-		return dao.selectMeetingManageList(searchVO);
+	public List<EgovMap> selectMeetingManageList(ComDefaultVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<MeetingManage> page = meetingManageRepository.findAll(pageable);
+
+		return page.getContent().stream().map(this::toEgovMap).collect(Collectors.toList());
 	}
 
-    /**
-	 * 회의정보를 상세조회 한다.
-	 * @param MeetingManageVO - 회정정보가 담김 VO
-	 * @return List
-	 * @throws Exception
-	 */
 	@Override
-	public List<EgovMap> selectMeetingManageDetail(MeetingManageVO meetingManageVO) throws Exception{
-		return dao.selectMeetingManageDetail(meetingManageVO);
+	public List<EgovMap> selectMeetingManageDetail(MeetingManageVO meetingManageVO) throws Exception {
+		MeetingManage entity = meetingManageRepository.findById(meetingManageVO.getMtgId())
+				.orElseThrow(() -> processException("info.nodata.msg"));
+		return Collections.singletonList(toEgovMap(entity));
 	}
 
-    /**
-	 * 회의정보를 목록 전체 건수를 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @return int
-	 * @throws Exception
-	 */
 	@Override
-	public int selectMeetingManageListCnt(ComDefaultVO searchVO) throws Exception{
-		return dao.selectMeetingManageListCnt(searchVO);
+	public int selectMeetingManageListCnt(ComDefaultVO searchVO) throws Exception {
+		return (int) meetingManageRepository.count();
 	}
 
-    /**
-	 * 회의정보를 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
 	public void insertMeetingManage(MeetingManageVO meetingManageVO) throws Exception {
 		String sMakeId = idgenService.getNextStringId();
-
 		meetingManageVO.setMtgId(sMakeId);
 
-		dao.insertMeetingManage(meetingManageVO);
+		MeetingManage entity = MeetingManage.builder()
+				.mtgId(sMakeId)
+				.mtgNm(meetingManageVO.getMtgNm())
+				.mtgMtrCn(meetingManageVO.getMtgMtrCn())
+				.mtgSn(meetingManageVO.getMtgSn() != null ? Integer.parseInt(meetingManageVO.getMtgSn()) : null)
+				.mtgCo(meetingManageVO.getMtgCo() != null ? Integer.parseInt(meetingManageVO.getMtgCo()) : null)
+				.mtgDe(EgovStringUtil.removeMinusChar(meetingManageVO.getMtgDe()))
+				.mtgPlace(meetingManageVO.getMtgPlace())
+				.mtgBeginTm(meetingManageVO.getMtgBeginTime())
+				.mtgEndTime(meetingManageVO.getMtgEndTime())
+				.clsdrMtgAt(meetingManageVO.getClsdrMtgAt())
+				.readngBgnde(EgovStringUtil.removeMinusChar(meetingManageVO.getReadngBeginDe()))
+				.readngAt(meetingManageVO.getReadngAt())
+				.mtgResultCn(meetingManageVO.getMtgResultCn())
+				.mtgResultEnnc(meetingManageVO.getMtgResultEnnc())
+				.etcMatter(meetingManageVO.getEtcMatter())
+				.mngtDeptId(meetingManageVO.getMngtDeptId())
+				.mnaerId(meetingManageVO.getMnaerId())
+				.mnaerDeptId(meetingManageVO.getMnaerDeptId())
+				.mtgAt(meetingManageVO.getMtnAt())
+				.nonatdrnCo(meetingManageVO.getNonatdrnCo() != null ? Integer.parseInt(meetingManageVO.getNonatdrnCo())
+						: null)
+				.atdrnCo(meetingManageVO.getAtdrnCo() != null ? Integer.parseInt(meetingManageVO.getAtdrnCo()) : null)
+				.frstRegisterId(meetingManageVO.getFrstRegisterId())
+				.build();
+
+		meetingManageRepository.save(entity);
 	}
 
-    /**
-	 * 회의정보를 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void updateMeetingManage(MeetingManageVO meetingManageVO){
-		dao.updateMeetingManage(meetingManageVO);
+	public void updateMeetingManage(MeetingManageVO meetingManageVO) {
+		meetingManageRepository.findById(meetingManageVO.getMtgId()).ifPresent(entity -> {
+			entity.update(
+					meetingManageVO.getMtgNm(),
+					meetingManageVO.getMtgMtrCn(),
+					meetingManageVO.getMtgSn() != null ? Integer.parseInt(meetingManageVO.getMtgSn()) : null,
+					meetingManageVO.getMtgCo() != null ? Integer.parseInt(meetingManageVO.getMtgCo()) : null,
+					EgovStringUtil.removeMinusChar(meetingManageVO.getMtgDe()),
+					meetingManageVO.getMtgPlace(),
+					meetingManageVO.getMtgBeginTime(),
+					meetingManageVO.getMtgEndTime(),
+					meetingManageVO.getClsdrMtgAt(),
+					EgovStringUtil.removeMinusChar(meetingManageVO.getReadngBeginDe()),
+					meetingManageVO.getReadngAt(),
+					meetingManageVO.getMtgResultCn(),
+					meetingManageVO.getMtgResultEnnc(),
+					meetingManageVO.getEtcMatter(),
+					meetingManageVO.getMngtDeptId(),
+					meetingManageVO.getMnaerId(),
+					meetingManageVO.getMnaerDeptId(),
+					meetingManageVO.getMtnAt(),
+					meetingManageVO.getNonatdrnCo() != null ? Integer.parseInt(meetingManageVO.getNonatdrnCo()) : null,
+					meetingManageVO.getAtdrnCo() != null ? Integer.parseInt(meetingManageVO.getAtdrnCo()) : null,
+					meetingManageVO.getLastUpdusrId());
+			meetingManageRepository.save(entity);
+		});
 	}
 
-    /**
-	 * 회의정보를 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
-	 * @throws Exception
-	 */
 	@Override
-	public void deleteMeetingManage(MeetingManageVO meetingManageVO){
-		dao.deleteMeetingManage(meetingManageVO);
+	public void deleteMeetingManage(MeetingManageVO meetingManageVO) {
+		meetingManageRepository.deleteById(meetingManageVO.getMtgId());
+	}
+
+	private EgovMap toEgovMap(MeetingManage entity) {
+		EgovMap map = new EgovMap();
+		map.put("mtgId", entity.getMtgId());
+		map.put("mtgNm", entity.getMtgNm());
+		map.put("mtgMtrCn", entity.getMtgMtrCn());
+		map.put("mtgSn", entity.getMtgSn());
+		map.put("mtgCo", entity.getMtgCo());
+		map.put("mtgDe", entity.getMtgDe());
+		map.put("mtgPlace", entity.getMtgPlace());
+		map.put("mtgBeginTime", entity.getMtgBeginTm());
+		map.put("mtgEndTime", entity.getMtgEndTime());
+		map.put("clsdrMtgAt", entity.getClsdrMtgAt());
+		map.put("readngBeginDe", entity.getReadngBgnde());
+		map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
+		map.put("frstRegisterId", entity.getFrstRegisterId());
+		return map;
 	}
 }

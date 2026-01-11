@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 사이트정보 JPA Entity
  * 레거시 테이블: COMTNSITEINFO
  */
-@Entity
+@Entity(name = "SiteDomain")
 @Table(name = "COMTNSITEINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

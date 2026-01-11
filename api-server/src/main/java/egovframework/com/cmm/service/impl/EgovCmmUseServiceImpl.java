@@ -1,11 +1,17 @@
 package egovframework.com.cmm.service.impl;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
+
+import com.company.project.domain.code.CommonCode;
+import com.company.project.domain.code.CommonCodeRepository;
+import com.company.project.domain.group.GroupManageRepository;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.service.CmmnDetailCode;
@@ -28,15 +34,21 @@ import jakarta.annotation.Resource;
  *   2009.03.11  이삼섭          최초 생성
  *   2024.10.29  이백행          @Override 표기
  *   2025.07.16  이백행          2025년 컨트리뷰션 `throws Exception` 제거
+ *   2026.01.11  Antigravity     JPA 전환 (MyBatis CmmUseDAO 제거)
  *
  *      </pre>
  */
 @Service("EgovCmmUseService")
-@org.springframework.context.annotation.Lazy
 public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements EgovCmmUseService {
 
-	@Resource(name = "cmmUseDAO")
-	private CmmUseDAO cmmUseDAO;
+	@Resource(name = "commonCodeRepository")
+	private CommonCodeRepository commonCodeRepository;
+
+	@Resource(name = "groupManageRepository")
+	private GroupManageRepository groupManageRepository;
+
+	// @Resource(name = "organizationManageRepository")
+	// private OrganizationManageRepository organizationManageRepository;
 
 	/**
 	 * 공통코드를 조회한다.
@@ -46,7 +58,9 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	 */
 	@Override
 	public List<CmmnDetailCode> selectCmmCodeDetail(ComDefaultCodeVO comDefaultCodeVO) {
-		return cmmUseDAO.selectCmmCodeDetail(comDefaultCodeVO);
+		return commonCodeRepository.findByCodeGroupIdAndUseAt(comDefaultCodeVO.getCodeId(), "Y").stream()
+				.map(this::toCmmnDetailCode)
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -59,7 +73,7 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	public Map<String, List<CmmnDetailCode>> selectCmmCodeDetails(List<ComDefaultCodeVO> comDefaultCodeVOs) {
 		Map<String, List<CmmnDetailCode>> map = new HashMap<>();
 		for (ComDefaultCodeVO comDefaultCodeVO : comDefaultCodeVOs) {
-			map.put(comDefaultCodeVO.getCodeId(), cmmUseDAO.selectCmmCodeDetail(comDefaultCodeVO));
+			map.put(comDefaultCodeVO.getCodeId(), selectCmmCodeDetail(comDefaultCodeVO));
 		}
 		return map;
 	}
@@ -72,7 +86,8 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	 */
 	@Override
 	public List<CmmnDetailCode> selectOgrnztIdDetail(ComDefaultCodeVO comDefaultCodeVO) {
-		return cmmUseDAO.selectOgrnztIdDetail(comDefaultCodeVO);
+		// TODO: OrganizationManageRepository 구현 필요
+		return Collections.emptyList();
 	}
 
 	/**
@@ -83,6 +98,23 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	 */
 	@Override
 	public List<CmmnDetailCode> selectGroupIdDetail(ComDefaultCodeVO comDefaultCodeVO) {
-		return cmmUseDAO.selectGroupIdDetail(comDefaultCodeVO);
+		return groupManageRepository.findAll().stream()
+				.map(group -> {
+					CmmnDetailCode code = new CmmnDetailCode();
+					code.setCode(group.getGroupId());
+					code.setCodeNm(group.getGroupNm());
+					code.setCodeDc(group.getGroupDc());
+					return code;
+				})
+				.collect(Collectors.toList());
+	}
+
+	private CmmnDetailCode toCmmnDetailCode(CommonCode commonCode) {
+		CmmnDetailCode code = new CmmnDetailCode();
+		code.setCodeId(commonCode.getCodeGroupId());
+		code.setCode(commonCode.getCode());
+		code.setCodeNm(commonCode.getCodeNm());
+		code.setCodeDc(commonCode.getCodeDc());
+		return code;
 	}
 }
