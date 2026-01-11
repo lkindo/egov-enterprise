@@ -80,7 +80,7 @@ public class EgovMtgPlaceManageController {
 	EgovMessageSource egovMessageSource;
 
 	// JPA Service Injection
-	@Resource(name = "com.company.project.service.meeting.MeetingService")
+	@Resource(name = "meetingService")
 	private EgovMeetingService egovMtgPlaceManageService;
 
 	@Resource(name = "EgovCmmUseService")

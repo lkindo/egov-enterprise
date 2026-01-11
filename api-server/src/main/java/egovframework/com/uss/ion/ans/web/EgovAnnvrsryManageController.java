@@ -83,7 +83,7 @@ public class EgovAnnvrsryManageController {
 	EgovMessageSource egovMessageSource;
 
 	// JPA Service Injection
-	@Resource(name = "com.company.project.service.anniversary.AnniversaryService")
+	@Resource(name = "anniversaryService")
 	private EgovAnniversaryService egovAnnvrsryManageService;
 
 	@Resource(name = "EgovCmmUseService")

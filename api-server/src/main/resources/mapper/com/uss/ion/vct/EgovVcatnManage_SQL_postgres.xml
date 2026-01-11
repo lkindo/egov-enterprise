@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?><!-- 
-	?섏젙??                ?섏젙??                         ?섏젙?댁슜
+	수정일                수정자                         수정내용
   =========     =======    =================================================
-  2011.8.12   	?덈???    	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  2011.8.12   	이백행    	테이블 표준화에 따른 수정사항 반영
 							OCCRNC_YRYC_CO	->	YRYC_OCCRRNC_CO
 							USID			->	USER_ID
-  2024.10.29	沅뚰깭??	?닿??뱀씤?곸꽭(selectVcatnManage) ?뚯씠釉붽?怨??섏젙
+  2024.10.29	권태현	휴가승인상세(selectVcatnManage) 테이블명칭 수정
 --><!--Converted at: Wed May 11 15:51:25 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -138,7 +138,7 @@
         
     </delete>  
     
-<!-- ?닿??쇱옄 以묐났?щ? 泥댄겕 -->
+<!-- 휴가일자 중복여부 체크 -->
     <select id="selectVcatnManageDplctAt" parameterType="egovframework.com.uss.ion.vct.service.VcatnManageVO" resultType="int">
         
             SELECT  COUNT(*) totcnt
@@ -150,7 +150,7 @@
     </select>
 
 
-<!-- ?닿? ?뱀씤愿?? -->
+<!-- 휴가 승인관리 -->
     <select id="selectVcatnManageConfmList" parameterType="egovframework.com.uss.ion.vct.service.VcatnManageVO" resultType="egovframework.com.uss.ion.vct.service.VcatnManageVO">
         
 			 SELECT  ROW_NUMBER() OVER ()  as rowCount ,
@@ -236,7 +236,7 @@
 
  
 
-<!-- ?닿? ?곗감?뚯씠釉?愿?? -->
+<!-- 휴가 연차테이블 관리 -->
 
     <select id="selectIndvdlYrycManage" parameterType="egovframework.com.uss.ion.vct.service.VcatnManageVO" resultType="egovframework.com.uss.ion.vct.service.VcatnManageVO">
         

@@ -507,4 +507,14 @@
 		</example>
 	</function>
 
+	<function>
+		<description>문자열 암호화 메서드</description>
+		<name>encryptId</name>
+		<function-class>com.company.project.core.util.CryptoUtil</function-class>
+		<function-signature>java.lang.String encryptId(java.lang.String)</function-signature>
+		<example>
+			${egovc:encryptId(java.lang.String source)}
+		</example>
+	</function>
+
 </taglib>

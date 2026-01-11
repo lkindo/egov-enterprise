@@ -29,7 +29,7 @@ import com.company.project.service.vacation.dto.AnnualLeaveDto;
 @Controller
 public class EgovIndvdlYrycManageController {
 
-    @Resource(name = "egovAnnualLeaveService")
+    @Resource(name = "annualLeaveService")
     private EgovAnnualLeaveService egovAnnualLeaveService;
 
     @IncludedInfo(name = "개인연차관리", order = 902, gid = 50)

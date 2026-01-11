@@ -38,4 +38,8 @@ public class RoleManageDto {
     public String getRoleCreatDe() {
         return creatDt;
     }
+
+    public String getRolePtn() {
+        return rolePttrn;
+    }
 }

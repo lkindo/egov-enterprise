@@ -379,7 +379,8 @@ public class EgovEntrprsManageController {
 	 */
 	@IncludedInfo(name = "기업회원관리", order = 450, gid = 50)
 	@RequestMapping(value = "/uss/umt/EgovEntrprsMberManage.do")
-	public String selectEntrprsMberList(@ModelAttribute("userSearchVO") UserDefaultVO userSearchVO, ModelMap model)
+	public String selectEntrprsMberList(@ModelAttribute("entrprsUserSearchVO") UserDefaultVO userSearchVO,
+			ModelMap model)
 			throws Exception {
 
 		// 미인증 사용자에 대한 보안처리

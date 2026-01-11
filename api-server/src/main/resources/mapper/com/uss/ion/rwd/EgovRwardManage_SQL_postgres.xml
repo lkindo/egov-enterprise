@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?><!-- 
-	?섏젙??                   ?섏젙??                         ?섏젙?댁슜
+	수정일                   수정자                         수정내용
   =========     =======    =================================================
-  2011.8.10   	?뺤쭊??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
-							RWARD_MAN_ID瑜?RWARDWNR_ID濡?蹂寃쏀븿
-							RWARD_CD瑜?RWARD_CODE濡?蹂寃쏀븿
+  2011.8.10   	정진오    	 	테이블 표준화에 따른 수정사항 반영
+							RWARD_MAN_ID를 RWARDWNR_ID로 변경함
+							RWARD_CD를 RWARD_CODE로 변경함
  --><!--Converted at: Wed May 11 15:51:21 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -162,7 +162,7 @@
           WHERE  RWARD_ID            = #{rwardId}
         
     </delete>  
-<!-- ?ъ긽 ?뱀씤愿?? -->
+<!-- 포상 승인관리 -->
     <select id="selectRwardManageConfmList" parameterType="egovframework.com.uss.ion.rwd.service.RwardManageVO" resultType="egovframework.com.uss.ion.rwd.service.RwardManageVO">
         
          SELECT   ROW_NUMBER() OVER ()  AS rowCount         ,
@@ -241,7 +241,7 @@
         
     </update> 
 
-<!-- ?ъ긽 ?뱀씤愿?? 
+<!-- 포상 승인관리 
     <select id="selectRwardManageConfmList" parameterClass="RwardManageVO" resultClass="RwardManageVO">
         <![CDATA[
 			 SELECT  ROW_NUMBER() OVER ()  as rowCount ,

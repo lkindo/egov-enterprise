@@ -72,7 +72,7 @@ public class EgovBannerController {
 	@Resource(name = "EgovFileMngUtil")
 	private EgovFileMngUtil fileUtil;
 
-	@Resource(name = "com.company.project.service.banner.BannerService")
+	@Resource(name = "bannerService")
 	private EgovBannerService egovBannerService;
 
 	/** Message ID Generation */

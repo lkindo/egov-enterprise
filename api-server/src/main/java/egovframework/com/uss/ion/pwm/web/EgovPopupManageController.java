@@ -81,7 +81,7 @@ public class EgovPopupManageController {
 	protected EgovPropertyService propertiesService;
 
 	// JPA Service Injection
-	@Resource(name = "com.company.project.service.popup.PopupService")
+	@Resource(name = "popupService")
 	private EgovPopupService egovPopupManageService;
 
 	/**

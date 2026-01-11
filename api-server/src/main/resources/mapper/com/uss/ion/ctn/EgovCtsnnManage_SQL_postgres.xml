@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?><!-- 
-	?섏젙??                ?섏젙??                         ?섏젙?댁슜
+	수정일                수정자                         수정내용
   =========     =======    =================================================
-  2011.8.12   	?덈???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
-  2018.08.16  理쒕몢??          PostgreSQL ?ㅻ쪟 ?섏젙
+  2011.8.12   	안진호    	 	테이블 표준화에 따른 수정사항 반영
+  2018.08.16  최두영          PostgreSQL 오류 수정
 							CTSNN_CD	->	CTSNN_CODE
 							USID		->	USER_ID
 --><!--Converted at: Wed May 11 15:51:04 KST 2016-->
@@ -171,7 +171,7 @@
     </delete>  
 
 
-<!--  寃쎌“ ?뱀씤愿?? -->
+<!--  경조 승인관리 -->
     <select id="selectCtsnnManageConfmList" parameterType="egovframework.com.uss.ion.ctn.service.CtsnnManageVO" resultType="egovframework.com.uss.ion.ctn.service.CtsnnManageVO">
         
          SELECT   ROW_NUMBER() OVER ()   AS rowCount        ,

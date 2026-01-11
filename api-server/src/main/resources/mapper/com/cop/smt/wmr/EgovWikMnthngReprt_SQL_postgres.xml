@@ -91,7 +91,7 @@
 			</if>		
 	</select>
 	
-	<!-- ?ъ슜??:議고쉶 -->
+	<!-- 작성자명:조회 -->
 	<select id="selectWrterClsfNm" parameterType="java.lang.String" resultType="java.lang.String">
 	 
 		SELECT 
@@ -101,7 +101,7 @@
 	 
 	</select>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::紐⑸줉議고쉶 -->
+	<!-- 주간/월간보고::목록조회 -->
 	<select id="selectWikMnthngReprtList" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultMap="WikMnthngReprtList">
 	 
 		SELECT 
@@ -112,7 +112,7 @@
 			B.USER_NM WRTER_NM,
 			A.REPORT_BGNDE,
 			A.REPORT_ENDDE,
-			(CASE WHEN A.CONFM_DT = '' THEN '誘몄듅?? ELSE '?뱀씤' END) CONFM_DT
+			(CASE WHEN A.CONFM_DT = '' THEN '미승인' ELSE '승인' END) CONFM_DT
 		FROM NWIKMNTHNGREPRT A
 		LEFT OUTER JOIN COMVNUSERMASTER B
 			ON A.WRTER_ID = B.ESNTL_ID
@@ -155,7 +155,7 @@
 
 	</select>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::紐⑸줉議고쉶 Count -->
+	<!-- 주간/월간보고::목록조회 Count -->
 	<select id="selectWikMnthngReprtListCnt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -195,7 +195,7 @@
 	 
 	</select>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::?곸꽭蹂닿린 -->
+	<!-- 주간/월간보고::상세보기 -->
 	<select id="selectWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultMap="WikMnthngReprtDetail">
 		SELECT 
 			A.REPRT_ID,
@@ -224,11 +224,11 @@
 		LEFT OUTER JOIN NEMPLYRINFO C
 			ON A.REPORTR_ID = C.ESNTL_ID
 		WHERE 1=1
-			AND (A.WRTER_ID = #{searchId} || A.REPORTR_ID = #{searchId})
+			AND (A.WRTER_ID = #{searchId} OR A.REPORTR_ID = #{searchId})
 			AND A.REPRT_ID = #{reprtId}
 	</select>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::?섏젙  -->
+	<!-- 주간/월간보고::수정  -->
 	<update id="updateWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		UPDATE NWIKMNTHNGREPRT 
 		SET  
@@ -250,7 +250,7 @@
 			AND REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::?뱀씤  -->
+	<!-- 주간/월간보고::승인  -->
 	<update id="confirmWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		UPDATE NWIKMNTHNGREPRT 
 		SET  
@@ -260,7 +260,7 @@
 			AND REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::??젣  -->
+	<!-- 주간/월간보고::삭제  -->
 	<delete id="deleteWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		
 			DELETE FROM NWIKMNTHNGREPRT 
@@ -270,7 +270,7 @@
 		
 	</delete>
 	
-	<!-- 二쇨컙/?붽컙蹂닿퀬::?낅젰  -->
+	<!-- 주간/월간보고::입력  -->
 	<insert id="insertWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt">
 	 
 	 

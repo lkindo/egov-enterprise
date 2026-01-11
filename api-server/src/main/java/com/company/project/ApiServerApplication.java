@@ -20,7 +20,9 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                 "org.egovframe" }, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class }),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\..*\\.web\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.gmt\\.web\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.rmt\\.web\\..*"),
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
                                 // NOTE: sym 패키지 활성화 - IdGnrService 빈 등록 완료 (2026-01-05)
@@ -69,8 +71,21 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                                                                                                                         // -
                                                                                                                                         // Legacy
                                                                                                                                         // 처리
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\..*\\.web\\..*")
-                })
+                                // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
+                                // "egovframework\\.com\\.cop\\.com\\.web\\..*"), // 게시판사용정보 - Legacy 처리
+
+                                // USS 패키지 활성화 (기업회원, 일반회원 관리 등)
+                                // 단, UserManageController는 Modern Controller가 존재하므로 제외
+                                // USS 패키지 활성화 (기업회원, 일반회원 관리 등)
+                                // 단, UserManageController는 Modern Controller가 존재하므로 제외
+                                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
+                                                egovframework.com.uss.umt.web.EgovUserManageController.class,
+                                                egovframework.com.uss.ion.uas.web.EgovUserAbsnceController.class
+                                }),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsenceManageController.*"),
+// 그 외 USS 내의 Legacy Controller와의 충돌 방지 필요 시 추가 제외
+
+})
 
 public class ApiServerApplication extends SpringBootServletInitializer {
 

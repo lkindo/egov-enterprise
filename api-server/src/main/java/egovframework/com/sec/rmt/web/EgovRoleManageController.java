@@ -146,9 +146,14 @@ public class EgovRoleManageController {
 		// JPA currently doesn't implement selectAuthorAllList directly, assuming logic
 		// handles it or not needed for detail view yet
 
+		System.out.println("[DEBUG] selectRole roleCode: " + roleCode);
 		RoleManageDto dto = roleManageService.selectRole(roleCode);
+		if (dto == null) {
+			System.out.println("[DEBUG] Role not found for roleCode: " + roleCode);
+			model.addAttribute("message", egovMessageSource.getMessage("fail.common.select"));
+			return "forward:/sec/rmt/EgovRoleList.do";
+		}
 		model.addAttribute("roleManage", SecurityAdapter.toVO(dto));
-		// model.addAttribute("authorManageList", authorManageVO.getAuthorManageList());
 		model.addAttribute("cmmCodeDetailList", getCmmCodeDetailList(new ComDefaultCodeVO(), "COM029"));
 
 		return "egovframework/com/sec/rmt/EgovRoleUpdate";

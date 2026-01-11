@@ -41,10 +41,10 @@ public class EgovVcatnManageController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "egovVacationService")
+	@Resource(name = "vacationService")
 	private EgovVacationService egovVacationService;
 
-	@Resource(name = "egovAnnualLeaveService")
+	@Resource(name = "annualLeaveService")
 	private EgovAnnualLeaveService egovAnnualLeaveService;
 
 	@Resource(name = "EgovCmmUseService")

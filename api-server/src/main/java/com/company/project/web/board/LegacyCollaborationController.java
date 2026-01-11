@@ -29,6 +29,7 @@ import com.company.project.service.namecard.EgovNameCardService;
 import com.company.project.service.namecard.dto.NameCardDto;
 import com.company.project.web.adapter.BoardAdapter;
 import com.company.project.web.adapter.ScheduleAdapter;
+import com.company.project.web.adapter.NameCardAdapter;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
@@ -179,6 +180,43 @@ public class LegacyCollaborationController {
         model.addAttribute("resultCnt", pageResult.getTotalElements());
         model.addAttribute("paginationInfo", paginationInfo);
         return "egovframework/com/cop/com/EgovBBSUseInfList";
+    }
+
+    /**
+     * 명함 관리 목록
+     */
+    @RequestMapping("/cop/ncm/selectNcrdInfs.do")
+    public String selectNcrdInfs(@ModelAttribute("searchVO") NameCardVO nameCardVO, ModelMap model) throws Exception {
+        if (!EgovUserDetailsHelper.isAuthenticated())
+            return "redirect:/uat/uia/egovLoginUsr.do";
+
+        PaginationInfo paginationInfo = setupPaging(nameCardVO.getPageIndex(), nameCardVO.getPageUnit(), model);
+
+        PageRequest pageable = PageRequest.of(nameCardVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
+        Page<NameCardDto> pageResult = egovNameCardService.getNameCardList(nameCardVO.getSearchWrd(), pageable);
+
+        model.addAttribute("resultList", NameCardAdapter.toVOList(pageResult.getContent()));
+        model.addAttribute("resultCnt", pageResult.getTotalElements());
+        return "egovframework/com/cop/ncm/EgovNcrdList";
+    }
+
+    /**
+     * 내 명함 목록
+     */
+    @RequestMapping("/cop/ncm/selectMyNcrdUseInf.do")
+    public String selectMyNcrdUseInf(@ModelAttribute("searchVO") NameCardVO nameCardVO, ModelMap model)
+            throws Exception {
+        if (!EgovUserDetailsHelper.isAuthenticated())
+            return "redirect:/uat/uia/egovLoginUsr.do";
+
+        PaginationInfo paginationInfo = setupPaging(nameCardVO.getPageIndex(), nameCardVO.getPageUnit(), model);
+
+        PageRequest pageable = PageRequest.of(nameCardVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
+        Page<NameCardDto> pageResult = egovNameCardService.getMyNameCards(getUserId(), pageable);
+
+        model.addAttribute("resultList", NameCardAdapter.toVOList(pageResult.getContent()));
+        model.addAttribute("resultCnt", pageResult.getTotalElements());
+        return "egovframework/com/cop/ncm/EgovMyNcrdList";
     }
 
     private PaginationInfo setupPaging(int pageIndex, int pageUnit, ModelMap model) {

@@ -42,6 +42,13 @@ public class CryptoUtil implements ApplicationContextAware {
     }
 
     /**
+     * Encrypt ID (Legacy support for egovc:encryptId)
+     */
+    public static String encryptId(String data) {
+        return encrypt(data);
+    }
+
+    /**
      * Decrypt Data using ARIA algorithm
      */
     public static String decrypt(String encryptedData) {

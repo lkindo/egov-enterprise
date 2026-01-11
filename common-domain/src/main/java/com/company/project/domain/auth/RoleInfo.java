@@ -3,8 +3,6 @@ package com.company.project.domain.auth;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
@@ -30,8 +28,8 @@ public class RoleInfo {
     @Column(name = "ROLE_SORT", length = 10)
     private String roleSort;
 
-    @Column(name = "CREAT_DT")
-    private LocalDateTime creatDt;
+    @Column(name = "ROLE_CREAT_DE", length = 20)
+    private String creatDt;
 
     @Builder
     public RoleInfo(String roleCode, String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
@@ -41,7 +39,7 @@ public class RoleInfo {
         this.roleDc = roleDc;
         this.roleTy = roleTy;
         this.roleSort = roleSort;
-        this.creatDt = LocalDateTime.now();
+        this.creatDt = java.time.LocalDate.now().toString().replace("-", "");
     }
 
     public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
