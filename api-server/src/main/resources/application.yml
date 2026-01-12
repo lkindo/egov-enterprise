@@ -2,7 +2,7 @@ spring:
   profiles:
     active: dev
   main:
-    lazy-initialization: true
+    lazy-initialization: false
     allow-bean-definition-overriding: true
   jackson:
     serialization:
@@ -39,9 +39,12 @@ logging:
   level:
     root: info
     com.company.project: debug
+    egovframework: debug
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.security: info
+    org.springframework.web: debug
+    org.springframework.web.servlet.mvc.method.annotation: trace
 
 file:
   upload:

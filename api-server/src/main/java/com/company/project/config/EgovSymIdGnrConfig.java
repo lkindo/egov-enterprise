@@ -148,4 +148,11 @@ public class EgovSymIdGnrConfig {
 
         return idGnrService;
     }
+
+    // ========== 사용자 관리 (uss.umt) ==========
+
+    @Bean
+    public EgovIdGnrService egovUsrCnfrmIdGnrService() {
+        return createIdGnrService("USRCNFRM_ID", "USRCNFRM_", 20);
+    }
 }

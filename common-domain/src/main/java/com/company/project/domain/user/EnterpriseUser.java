@@ -17,10 +17,10 @@ import java.time.LocalDateTime;
 @Table(name = "NENTRPRSMBER")
 public class EnterpriseUser {
 
-    @Id
-    @Column(name = "ESNTL_ID", length = 20)
+    @Column(name = "ESNTL_ID", nullable = false, length = 20)
     private String esntlId;
 
+    @Id
     @Column(name = "ENTRPRS_MBER_ID", nullable = false, length = 20)
     private String entrprsmberId;
 

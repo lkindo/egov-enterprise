@@ -60,6 +60,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	private com.company.project.domain.user.TermsRepository termsRepository;
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<egovframework.com.uss.umt.service.StplatVO> selectStplat(String stplatId) {
 		return termsRepository.findById(stplatId)
 				.map(t -> {
@@ -88,13 +89,15 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public EntrprsManageVO selectEntrprsmber(String uniqId) {
-		return enterpriseUserRepository.findById(uniqId)
+		return enterpriseUserRepository.findByEsntlId(uniqId)
 				.map(this::toVO)
 				.orElse(null);
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<EntrprsManageVO> selectEntrprsMberList(UserDefaultVO userSearchVO) {
 		Pageable pageable = PageRequest.of(userSearchVO.getPageIndex() - 1, userSearchVO.getPageUnit());
 		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
@@ -109,6 +112,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public int selectEntrprsMberListTotCnt(UserDefaultVO userSearchVO) {
 		Pageable pageable = PageRequest.of(0, 1);
 		Page<EnterpriseUser> page = enterpriseUserRepository.searchEnterpriseUsers(
@@ -126,7 +130,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 				EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));
 		entrprsManageVO.setEntrprsMberPassword(pass);
 
-		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(user -> {
+		enterpriseUserRepository.findByEsntlId(entrprsManageVO.getUniqId()).ifPresent(user -> {
 			user.update(
 					entrprsManageVO.getEntrprsmberId(),
 					entrprsManageVO.getEntrprsSeCode(),
@@ -175,14 +179,15 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	@Override
 	@Transactional
 	public void updatePassword(EntrprsManageVO entrprsManageVO) {
-		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(user -> {
+		enterpriseUserRepository.findByEsntlId(entrprsManageVO.getUniqId()).ifPresent(user -> {
 			user.updatePassword(entrprsManageVO.getEntrprsMberPassword());
 		});
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public EntrprsManageVO selectPassword(EntrprsManageVO passVO) {
-		return enterpriseUserRepository.findById(passVO.getUniqId())
+		return enterpriseUserRepository.findByEsntlId(passVO.getUniqId())
 				.map(u -> {
 					EntrprsManageVO vo = new EntrprsManageVO();
 					vo.setEntrprsMberPassword(u.getEntrprsMberPassword());
@@ -194,7 +199,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	@Override
 	@Transactional
 	public void updateLockIncorrect(EntrprsManageVO entrprsManageVO) {
-		enterpriseUserRepository.findById(entrprsManageVO.getUniqId()).ifPresent(EnterpriseUser::unlock);
+		enterpriseUserRepository.findByEsntlId(entrprsManageVO.getUniqId()).ifPresent(EnterpriseUser::unlock);
 	}
 
 	private EntrprsManageVO toVO(EnterpriseUser user) {
