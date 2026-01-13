@@ -286,8 +286,10 @@ public class EgovEntrprsManageController {
 			return "index";
 		}
 
-		EntrprsManageVO entrprsManageVO = new EntrprsManageVO();
-		entrprsManageVO = entrprsManageService.selectEntrprsmber(entrprsmberId);
+		EntrprsManageVO entrprsManageVO = entrprsManageService.selectEntrprsmber(entrprsmberId);
+		if (entrprsManageVO == null) {
+			entrprsManageVO = new EntrprsManageVO();
+		}
 		model.addAttribute("entrprsManageVO", entrprsManageVO);
 		model.addAttribute("userSearchVO", userSearchVO);
 
@@ -354,13 +356,18 @@ public class EgovEntrprsManageController {
 		model.addAttribute("indutyCode_result", indutyCode_result); // 업종코드목록
 
 		// 2021.05.30, 정진오, 디지털원패스 정보 조회
-		LoginVO loginVO = (LoginVO) request.getSession().getAttribute("loginVO");
-		String onepassUserId = loginVO.getUniqId();
-		String onepassUserkey = loginVO.getOnepassUserkey();
-		String onepassIntfToken = loginVO.getOnepassIntfToken();
-		if (entrprsmberId.equals(onepassUserId)) {
-			model.addAttribute("onepassUserkey", onepassUserkey); // 디지털원패스 사용자키
-			model.addAttribute("onepassIntfToken", onepassIntfToken); // 디지털원패스 사용자세션값
+		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (loginVO != null) {
+			String onepassUserId = loginVO.getUniqId();
+			String onepassUserkey = loginVO.getOnepassUserkey();
+			String onepassIntfToken = loginVO.getOnepassIntfToken();
+			if (entrprsmberId.equals(onepassUserId)) {
+				model.addAttribute("onepassUserkey", onepassUserkey); // 디지털원패스 사용자키
+				model.addAttribute("onepassIntfToken", onepassIntfToken); // 디지털원패스 사용자세션값
+			} else {
+				model.addAttribute("onepassUserkey", "");
+				model.addAttribute("onepassIntfToken", "");
+			}
 		} else {
 			model.addAttribute("onepassUserkey", "");
 			model.addAttribute("onepassIntfToken", "");
@@ -479,10 +486,6 @@ public class EgovEntrprsManageController {
 			return "index";
 		}
 
-		/** EgovPropertyService.sample */
-		userSearchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-		userSearchVO.setPageSize(propertiesService.getInt("pageSize"));
-
 		/** pageing */
 		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(userSearchVO.getPageIndex());
@@ -502,9 +505,10 @@ public class EgovEntrprsManageController {
 			paginationInfo.setTotalRecordCount(totCnt);
 
 			// 사용자상태코드를 코드정보로부터 조회
-			ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
-			comDefaultCodeVO.setCodeId("COM013");
-			entrprsMberSttus_result = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
+			// ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
+			// comDefaultCodeVO.setCodeId("COM013");
+			// entrprsMberSttus_result =
+			// cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		} catch (Exception e) {
 			LOGGER.error("Exception in selectEntrprsMberList", e);
 			model.addAttribute("resultMsg", "fail.common.msg");
@@ -512,7 +516,9 @@ public class EgovEntrprsManageController {
 
 		model.addAttribute("resultList", resultList);
 		model.addAttribute("paginationInfo", paginationInfo);
-		model.addAttribute("entrprsMberSttus_result", entrprsMberSttus_result); // 기업회원상태코드목록
+		// model.addAttribute("entrprsMberSttus_result", entrprsMberSttus_result); //
+		// 기업회원상태코드목록
+		LOGGER.debug("Enterprise Member List accessed. total count: {}", paginationInfo.getTotalRecordCount());
 
 		return "egovframework/com/uss/umt/EgovEntrprsMberManage";
 	}

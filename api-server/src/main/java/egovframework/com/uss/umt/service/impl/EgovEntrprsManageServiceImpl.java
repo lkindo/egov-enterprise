@@ -229,6 +229,7 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 		vo.setApplcntEmailAdres(user.getApplcntEmailAdres());
 		vo.setApplcntIhidnum(user.getApplcntIhidnum());
 		vo.setLockAt(user.getLockAt());
+		vo.setUserTy("USR02");
 		return vo;
 	}
 

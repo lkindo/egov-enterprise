@@ -1,6 +1,6 @@
-<% /** * @Class Name : EgovEntrprsMberManage.jsp * @Description : 기업회원관리(조회,삭제) JSP * @Modification Information * @ * @
-    수정일 수정자 수정내용 * @ ------- -------- --------------------------- * @ 2009.03.02 조재영 최초 생성 * @ 2016.07.26 장동한 표준프레임워크
-    v3.6 개선 * * @author 공통서비스 개발팀 조재영 * @since 2009.03.02 * @version 1.0 * @see * */ %>
+﻿<% /** * @Class Name : EgovEntrprsMberManage.jsp * @Description : 湲곗뾽?뚯썝愿由?議고쉶,??젣) JSP * @Modification Information * @ * @
+    ?섏젙???섏젙???섏젙?댁슜 * @ ------- -------- --------------------------- * @ 2009.03.02 議곗옱??理쒖큹 ?앹꽦 * @ 2016.07.26 ?λ룞???쒖??꾨젅?꾩썙??
+    v3.6 媛쒖꽑 * * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??* @since 2009.03.02 * @version 1.0 * @see * */ %>
     <%@ page language="java" contentType="text/html; charset=UTF-8" %>
         <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
             <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui" %>
@@ -16,7 +16,7 @@
                             <head>
                                 <title>${pageTitle}
                                     <spring:message code="title.list" />
-                                </title><!-- 기업회원관리 목록 -->
+                                </title><!-- 湲곗뾽?뚯썝愿由?紐⑸줉 -->
                                 <meta http-equiv="content-type" content="text/html; charset=utf-8">
                                 <link type="text/css" rel="stylesheet"
                                     href="<c:url value='/css/egovframework/com/com.css' />">
@@ -119,42 +119,39 @@ function fnSearch(){
                                             <spring:message code="title.list" />
                                         </h1>
 
-                                        <!-- 검색영역 -->
-                                        <div class="search_box" title="<spring:message code="
-                                            common.searchCondition.msg" />">
+                                        <!-- 寃?됱쁺??-->
+                                        <div class="search_box" title="<spring:message code="common.searchCondition.msg" />">
                                         <ul>
                                             <li style="margin:3px 0 0 0;">
-                                                <div>사용자수 <strong>
+                                                <div>?ъ슜?먯닔 <strong>
                                                         <c:out value="${paginationInfo.totalRecordCount}" />
                                                     </strong></div>
                                             </li>
-                                            <li><!-- 상태-->
+                                            <li><!-- ?곹깭-->
                                                 <select name="sbscrbSttus" id="sbscrbSttus"
-                                                    title="<spring:message code="
-                                                    comUssUmt.userManageSsearch.sbscrbSttusTitle" />">
+                                                    title="<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusTitle" />">
                                                 <option value="0" <c:if
                                                     test="${empty userSearchVO.sbscrbSttus || userSearchVO.sbscrbSttus == '0'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message code="comUssUmt.userManageSsearch.sbscrbSttusAll" />
-                                                </option><!-- 상태(전체) -->
+                                                </option><!-- ?곹깭(?꾩껜) -->
                                                 <option value="A" <c:if test="${userSearchVO.sbscrbSttus == 'A'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message code="comUssUmt.userManageSsearch.sbscrbSttusA" />
-                                                </option><!-- 가입신청 -->
+                                                </option><!-- 媛?낆떊泥?-->
                                                 <option value="D" <c:if test="${userSearchVO.sbscrbSttus == 'D'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message code="comUssUmt.userManageSsearch.sbscrbSttusD" />
-                                                </option><!-- 삭제 -->
+                                                </option><!-- ??젣 -->
                                                 <option value="P" <c:if test="${userSearchVO.sbscrbSttus == 'P'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message code="comUssUmt.userManageSsearch.sbscrbSttusP" />
-                                                </option><!-- 승인 -->
+                                                </option><!-- ?뱀씤 -->
                                                 </select>
                                             </li>
-                                            <li><!-- 조건 -->
+                                            <li><!-- 議곌굔 -->
                                                 <select name="searchCondition" id="searchCondition"
-                                                    title="<spring:message code="
-                                                    comUssUmt.userManageSsearch.searchConditioTitle" />"><!--  -->
+                                                    title="<spring:message code="comUssUmt.userManageSsearch.searchConditioTitle" />"><!--  -->
                                                 <option value="0" <c:if test="${userSearchVO.searchCondition == '0'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message
@@ -168,34 +165,33 @@ function fnSearch(){
                                                 </option><!-- Name -->
                                                 </select>
                                             </li>
-                                            <!-- 검색키워드 및 조회버튼 -->
+                                            <!-- 寃?됲궎?뚮뱶 諛?議고쉶踰꾪듉 -->
                                             <li>
                                                 <input class="s_input" name="searchKeyword" type="text" size="35"
-                                                    title="<spring:message code=" title.search" />
+                                                    title="<spring:message code="title.search" />
                                                 <spring:message code="input.input" />" value='
                                                 <c:out value="${userSearchVO.searchKeyword}" />' maxlength="255" >
-                                                <input type="submit" class="s_btn" value="<spring:message code="
-                                                    button.inquire" />" title="
+                                                <input type="submit" class="s_btn" value="<spring:message code="button.inquire" />" title="
                                                 <spring:message code="title.inquire" />
-                                                <spring:message code="input.button" />" /><!-- 조회 -->
+                                                <spring:message code="input.button" />" /><!-- 議고쉶 -->
                                                 <input type="button" class="s_btn"
                                                     onClick="fnDeleteUser(); return false;"
-                                                    value="<spring:message code=" title.delete" />" title="
+                                                    value="<spring:message code="title.delete" />" title="
                                                 <spring:message code="title.delete" />
-                                                <spring:message code="input.button" />" /><!-- 삭제 -->
+                                                <spring:message code="input.button" />" /><!-- ??젣 -->
                                                 <span class="btn_b"><a
                                                         href="<c:url value='/uss/umt/EgovEntrprsMberInsertView.do'/>"
                                                         onClick="fnAddUserView(); return false;"
-                                                        title="<spring:message code=" button.create" />
+                                                        title="<spring:message code="button.create" />
                                                     <spring:message code="input.button" />">
                                                     <spring:message code="button.create" /></a>
-                                                </span><!-- 등록 -->
+                                                </span><!-- ?깅줉 -->
                                             </li>
                                         </ul>
                                     </div>
 
 
-                                    <table class="board_list" summary="<spring:message code=" common.summary.list"
+                                    <table class="board_list" summary="<spring:message code="common.summary.list"
                                         arguments="${pageTitle}" />">
                                     <caption>${pageTitle}
                                         <spring:message code="title.list" />
@@ -216,32 +212,31 @@ function fnSearch(){
                                         <tr>
                                             <th>
                                                 <spring:message code="table.num" />
-                                            </th><!-- 번호 -->
+                                            </th><!-- 踰덊샇 -->
                                             <th><input type="checkbox" name="checkAll" class="check2"
-                                                    onclick="javascript:fncCheckAll()" title="<spring:message code="
-                                                    input.selectAll.title" />"></th><!-- 전체선택 -->
+                                                    onclick="javascript:fncCheckAll()" title="<spring:message code="input.selectAll.title" />"></th><!-- ?꾩껜?좏깮 -->
 
                                             <th class="board_th_link">
                                                 <spring:message code="comUssUmt.entrprsUserManageList.id" />
-                                            </th><!--아이디 -->
+                                            </th><!--?꾩씠??-->
                                             <th>
                                                 <spring:message code="comUssUmt.entrprsUserManageList.company" />
-                                            </th><!-- 회사명 -->
+                                            </th><!-- ?뚯궗紐?-->
                                             <th>
                                                 <spring:message code="comUssUmt.entrprsUserManageList.name" />
-                                            </th><!-- 신청자이름 -->
+                                            </th><!-- ?좎껌?먯씠由?-->
                                             <th>
                                                 <spring:message code="comUssUmt.entrprsUserManageList.email" />
-                                            </th><!-- 사용자이메일 -->
+                                            </th><!-- ?ъ슜?먯씠硫붿씪 -->
                                             <th>
                                                 <spring:message code="comUssUmt.entrprsUserManageList.phone" />
-                                            </th><!-- 전화번호 -->
+                                            </th><!-- ?꾪솕踰덊샇 -->
                                             <th>
                                                 <spring:message code="table.regdate" />
-                                            </th><!-- 등록일 -->
+                                            </th><!-- ?깅줉??-->
                                             <th>
                                                 <spring:message code="comUssUmt.entrprsUserManageList.sbscrbSttus" />
-                                            </th><!-- 가입상태 -->
+                                            </th><!-- 媛?낆긽??-->
 
                                         </tr>
                                     </thead>
@@ -260,7 +255,7 @@ function fnSearch(){
                                                 </td>
                                                 <td>
                                                     <input type="checkbox" name="checkField" class="check2"
-                                                        title="선택" />
+                                                        title="?좏깮" />
                                                     <input name="checkId" type="hidden"
                                                         value="<c:out value='${result.userTy}'/>:<c:out value='${result.uniqId}'/>" />
                                                 </td>
@@ -319,3 +314,5 @@ function fnSearch(){
                             </body>
 
                             </html>
+
+
