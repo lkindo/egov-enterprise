@@ -82,41 +82,45 @@ public class EgovMberManageController {
 	@RequestMapping(value = "/uss/umt/EgovMberManage.do")
 	public String selectMberList(@ModelAttribute("userSearchVO") UserDefaultVO userSearchVO, ModelMap model)
 			throws Exception {
+		try {
+			// 미인증 사용자에 대한 보안처리
+			Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+			if (!isAuthenticated) {
+				return "index";
+			}
 
-		// 미인증 사용자에 대한 보안처리
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		if (!isAuthenticated) {
-			return "index";
+			/** EgovPropertyService */
+			userSearchVO.setPageUnit(propertiesService.getInt("pageUnit"));
+			userSearchVO.setPageSize(propertiesService.getInt("pageSize"));
+
+			/** pageing */
+			PaginationInfo paginationInfo = new PaginationInfo();
+			paginationInfo.setCurrentPageNo(userSearchVO.getPageIndex());
+			paginationInfo.setRecordCountPerPage(userSearchVO.getPageUnit());
+			paginationInfo.setPageSize(userSearchVO.getPageSize());
+
+			userSearchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+			userSearchVO.setLastIndex(paginationInfo.getLastRecordIndex());
+			userSearchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+
+			List<MberManageVO> resultList = mberManageService.selectMberList(userSearchVO);
+			model.addAttribute("resultList", resultList);
+
+			int totCnt = mberManageService.selectMberListTotCnt(userSearchVO);
+			paginationInfo.setTotalRecordCount(totCnt);
+			model.addAttribute("paginationInfo", paginationInfo);
+
+			// 일반회원 상태코드를 코드정보로부터 조회
+			ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
+			comDefaultCodeVO.setCodeId("COM013");
+			List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
+			model.addAttribute("entrprsMberSttus_result", mberSttusResult);// 기업회원상태코드목록
+
+			return "egovframework/com/uss/umt/EgovMberManage";
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
-
-		/** EgovPropertyService */
-		userSearchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-		userSearchVO.setPageSize(propertiesService.getInt("pageSize"));
-
-		/** pageing */
-		PaginationInfo paginationInfo = new PaginationInfo();
-		paginationInfo.setCurrentPageNo(userSearchVO.getPageIndex());
-		paginationInfo.setRecordCountPerPage(userSearchVO.getPageUnit());
-		paginationInfo.setPageSize(userSearchVO.getPageSize());
-
-		userSearchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		userSearchVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		userSearchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-
-		List<MberManageVO> resultList = mberManageService.selectMberList(userSearchVO);
-		model.addAttribute("resultList", resultList);
-
-		int totCnt = mberManageService.selectMberListTotCnt(userSearchVO);
-		paginationInfo.setTotalRecordCount(totCnt);
-		model.addAttribute("paginationInfo", paginationInfo);
-
-		// 일반회원 상태코드를 코드정보로부터 조회
-		ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
-		comDefaultCodeVO.setCodeId("COM013");
-		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		model.addAttribute("entrprsMberSttus_result", mberSttusResult);// 기업회원상태코드목록
-
-		return "egovframework/com/uss/umt/EgovMberManage";
 	}
 
 	/**
@@ -264,9 +268,16 @@ public class EgovMberManageController {
 
 		// 2021.05.30, 정진오, 디지털원패스 정보 조회
 		LoginVO loginVO = (LoginVO) request.getSession().getAttribute("loginVO");
-		String onepassUserId = loginVO.getUniqId();
-		String onepassUserkey = loginVO.getOnepassUserkey();
-		String onepassIntfToken = loginVO.getOnepassIntfToken();
+		String onepassUserId = "";
+		String onepassUserkey = "";
+		String onepassIntfToken = "";
+
+		if (loginVO != null) {
+			onepassUserId = loginVO.getUniqId();
+			onepassUserkey = loginVO.getOnepassUserkey();
+			onepassIntfToken = loginVO.getOnepassIntfToken();
+		}
+
 		if (mberId.equals(onepassUserId)) {
 			model.addAttribute("onepassUserkey", onepassUserkey); // 디지털원패스 사용자키
 			model.addAttribute("onepassIntfToken", onepassIntfToken); // 디지털원패스 사용자세션값

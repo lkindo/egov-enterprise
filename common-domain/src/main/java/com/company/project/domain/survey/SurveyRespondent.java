@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNQUSTNRRESPONDINFO
  */
 @Entity
-@Table(name = "COMTNQUSTNRRESPONDINFO")
+@Table(name = "NQUSTNRRESPONDINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SurveyRespondent {

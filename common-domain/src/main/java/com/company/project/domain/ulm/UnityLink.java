@@ -7,7 +7,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 
 @Entity(name = "UnityLinkDomain")
-@Table(name = "COMTNUNITYLINK")
+@Table(name = "NUNITYLINK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

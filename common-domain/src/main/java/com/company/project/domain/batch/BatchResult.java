@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNBATCHRESULT
  */
 @Entity
-@Table(name = "COMTNBATCHRESULT")
+@Table(name = "NBATCHRESULT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BatchResult {

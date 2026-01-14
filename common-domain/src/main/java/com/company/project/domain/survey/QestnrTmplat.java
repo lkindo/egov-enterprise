@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNQUSTNRTRMPLAT
  */
 @Entity
-@Table(name = "COMTNQUSTNRTRMPLAT")
+@Table(name = "NQUSTNRTMPLAT")
 @Getter
 @Setter
 @NoArgsConstructor

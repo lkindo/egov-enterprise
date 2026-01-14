@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNCOMMENT")
+@Table(name = "NCOMMENT")
 @EntityListeners(AuditingEntityListener.class)
 public class Comment implements Serializable {
 

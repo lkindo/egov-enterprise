@@ -17,7 +17,7 @@ import jakarta.persistence.EntityListeners;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNCPYRHTPRTCPOLICY")
+@Table(name = "NCPYRHTPRTCPOLICY")
 @EntityListeners(AuditingEntityListener.class)
 public class CpyrhtPrtcPolicy {
 

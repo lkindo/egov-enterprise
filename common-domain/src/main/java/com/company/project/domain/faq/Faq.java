@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNFAQ
  */
 @Entity
-@Table(name = "COMTNFAQ")
+@Table(name = "NFAQINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Faq {
@@ -31,7 +31,7 @@ public class Faq {
     @Column(name = "ANSWER_CN", length = 4000)
     private String answerCn;
 
-    @Column(name = "INQIRE_CO")
+    @Column(name = "RDCNT")
     private Integer inqireCo = 0;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
@@ -40,13 +40,13 @@ public class Faq {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

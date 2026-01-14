@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNRESTDE
  */
 @Entity
-@Table(name = "COMTNRESTDE")
+@Table(name = "NRESTDE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Holiday {

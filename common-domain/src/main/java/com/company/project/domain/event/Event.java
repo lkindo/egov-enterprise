@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNEVENTMANAGE
  */
 @Entity
-@Table(name = "COMTNEVENTMANAGE")
+@Table(name = "NEVENTMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Event {

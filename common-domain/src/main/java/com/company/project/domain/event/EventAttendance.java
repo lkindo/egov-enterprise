@@ -12,7 +12,7 @@ import java.util.Objects;
  * 레거시 테이블: COMTNEVENTATDRN
  */
 @Entity
-@Table(name = "COMTNEVENTATDRN")
+@Table(name = "NEVENTATDRN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(EventAttendance.EventAttendanceId.class)

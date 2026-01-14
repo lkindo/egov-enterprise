@@ -9,7 +9,7 @@ import jakarta.persistence.*;
  * 사용자 부재 관리 엔티티
  */
 @Entity(name = "CommonUserAbsence")
-@Table(name = "COMTNUSERABSNCE")
+@Table(name = "NUSERABSNCE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

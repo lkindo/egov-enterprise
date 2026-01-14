@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNINDVDLPGE
  */
 @Entity
-@Table(name = "COMTNINDVDLPGE")
+@Table(name = "NINDVDLPGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MyPageContent {

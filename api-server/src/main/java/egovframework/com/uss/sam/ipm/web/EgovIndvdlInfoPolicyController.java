@@ -70,11 +70,12 @@ public class EgovIndvdlInfoPolicyController {
 	 * @throws Exception
 	 */
 	@IncludedInfo(name = "개인정보보호정책확인", order = 510, gid = 50)
-	@RequestMapping(value = "/uss/sam/ipm/listIndvdlInfoPolicy.do")
+	@RequestMapping(value = { "/uss/sam/ipm/listIndvdlInfoPolicy.do", "/uss/sam/ipm/EgovIndvdlInfoPolicyDetail.do" })
 	public String egovIndvdlInfoPolicyList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, IndvdlInfoPolicy indvdlInfoPolicy, ModelMap model) throws Exception {
 
-//        String sSearchMode = commandMap.get("searchMode") == null ? "" : (String) commandMap.get("searchMode");
+		// String sSearchMode = commandMap.get("searchMode") == null ? "" : (String)
+		// commandMap.get("searchMode");
 
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));

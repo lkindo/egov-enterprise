@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNQNA
  */
 @Entity
-@Table(name = "COMTNQNA")
+@Table(name = "NQAINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Qna {
@@ -58,7 +58,7 @@ public class Qna {
     @Column(name = "ANSWER_DE", length = 20)
     private String answerDe;
 
-    @Column(name = "INQIRE_CO")
+    @Column(name = "RDCNT")
     private Integer inqireCo = 0;
 
     @Column(name = "WRITNG_DE", length = 20)
@@ -67,13 +67,13 @@ public class Qna {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

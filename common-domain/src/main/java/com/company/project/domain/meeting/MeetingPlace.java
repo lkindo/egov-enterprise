@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNMTGPLACEMANAGE
  */
 @Entity
-@Table(name = "COMTNMTGPLACEMANAGE")
+@Table(name = "NMTGPLACEMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MeetingPlace {

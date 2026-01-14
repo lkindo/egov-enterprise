@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNRECOMENDSITEINFO
  */
 @Entity(name = "RecomendSiteDomain")
-@Table(name = "COMTNRECOMENDSITEINFO")
+@Table(name = "NRECOMENDSITEINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RecomendSite {

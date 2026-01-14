@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNTMPLATINFO
  */
 @Entity(name = "CommonTemplate")
-@Table(name = "COMTNTMPLATINFO")
+@Table(name = "NTMPLATINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Template {

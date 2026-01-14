@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNNEWSINFO
  */
 @Entity(name = "NewsDomain")
-@Table(name = "COMTNNEWSINFO")
+@Table(name = "NNEWSINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class News {

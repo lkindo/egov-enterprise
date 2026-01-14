@@ -18,7 +18,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNSTPLATINFO")
+@Table(name = "NSTPLATINFO")
 @EntityListeners(AuditingEntityListener.class)
 public class Terms implements Serializable {
 

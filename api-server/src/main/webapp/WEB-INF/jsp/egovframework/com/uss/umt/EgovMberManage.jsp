@@ -10,6 +10,48 @@
 							<c:set var="pageTitle">
 								<spring:message code="comUssUmt.userManage.title" />
 							</c:set>
+							<!-- MESSAGE VARIABLES -->
+							<c:set var="msgSearchCond">
+								<spring:message code="common.searchCondition.msg" />
+							</c:set>
+							<c:set var="msgSbscrbTitle">
+								<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusTitle" />
+							</c:set>
+							<c:set var="msgSearchTitle">
+								<spring:message code="comUssUmt.userManageSsearch.searchConditioTitle" />
+							</c:set>
+							<c:set var="msgInputTitle">
+								<spring:message code="title.search" />
+								<spring:message code="input.input" />
+							</c:set>
+							<c:set var="msgInquire">
+								<spring:message code="button.inquire" />
+							</c:set>
+							<c:set var="msgInquireTitle">
+								<spring:message code="title.inquire" />
+								<spring:message code="input.button" />
+							</c:set>
+							<c:set var="msgDelete">
+								<spring:message code="title.delete" />
+							</c:set>
+							<c:set var="msgDeleteTitle">
+								<spring:message code="title.delete" />
+								<spring:message code="input.button" />
+							</c:set>
+							<c:set var="msgCreate">
+								<spring:message code="button.create" />
+							</c:set>
+							<c:set var="msgCreateTitle">
+								<spring:message code="button.create" />
+								<spring:message code="input.button" />
+							</c:set>
+							<c:set var="msgSummary">
+								<spring:message code="common.summary.list" arguments="${pageTitle}" />
+							</c:set>
+							<c:set var="msgSelectAll">
+								<spring:message code="input.selectAll.title" />
+							</c:set>
+
 							<!DOCTYPE html>
 							<html>
 
@@ -118,187 +160,181 @@ function fnSearch(){
 										</h1>
 
 										<!-- 검색영역 -->
-										<div class="search_box" title="<spring:message code="
-											common.searchCondition.msg" />">
-										<ul>
-											<li><!-- 상태-->
-												<select name="sbscrbSttus" id="sbscrbSttus"
-													title="<spring:message code="
-													comUssUmt.userManageSsearch.sbscrbSttusTitle" />">
-												<option value="0" <c:if
-													test="${empty mberVO.sbscrbSttus || mberVO.sbscrbSttus == '0'}">
-													selected="selected"</c:if> >
-													<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusAll" />
-												</option><!-- 상태(전체) -->
-												<option value="A" <c:if test="${mberVO.sbscrbSttus == 'A'}">
-													selected="selected"</c:if> >
-													<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusA" />
-												</option><!-- 가입신청 -->
-												<option value="D" <c:if test="${mberVO.sbscrbSttus == 'D'}">
-													selected="selected"</c:if> >
-													<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusD" />
-												</option><!-- 삭제 -->
-												<option value="P" <c:if test="${mberVO.sbscrbSttus == 'P'}">
-													selected="selected"</c:if> >
-													<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusP" />
-												</option><!-- 승인 -->
-												</select>
-											</li>
-											<li><!-- 조건 -->
-												<select name="searchCondition" id="searchCondition"
-													title="<spring:message code="
-													comUssUmt.userManageSsearch.searchConditioTitle" />"><!--  -->
-												<option value="0" <c:if test="${mberVO.searchCondition == '0'}">
-													selected="selected"</c:if> >
-													<spring:message
-														code="comUssUmt.userManageSsearch.searchConditionId" />
-												</option><!-- ID  -->
-												<option value="1" <c:if
-													test="${empty mberVO.searchCondition || mberVO.searchCondition == '1'}">
-													selected="selected"</c:if> >
-													<spring:message
-														code="comUssUmt.userManageSsearch.searchConditionName" />
-												</option><!-- Name -->
-												</select>
-											</li>
-											<!-- 검색키워드 및 조회버튼 -->
-											<li>
-												<input class="s_input" name="searchKeyword" type="text" size="35"
-													title="<spring:message code=" title.search" />
-												<spring:message code="input.input" />" value='
-												<c:out value="${mberVO.searchKeyword}" />' maxlength="255" >
-												<input type="submit" class="s_btn" value="<spring:message code="
-													button.inquire" />" title="
-												<spring:message code="title.inquire" />
-												<spring:message code="input.button" />" />
-												<input type="button" class="s_btn"
-													onClick="fnDeleteUser(); return false;"
-													value="<spring:message code=" title.delete" />" title="
-												<spring:message code="title.delete" />
-												<spring:message code="input.button" />" />
-												<span class="btn_b"><a
-														href="<c:url value='/uss/umt/EgovMberInsertView.do'/>"
-														onClick="fnAddUserView(); return false;"
-														title="<spring:message code=" button.create" />
-													<spring:message code="input.button" />">
-													<spring:message code="button.create" /></a>
-												</span>
-											</li>
-										</ul>
-									</div>
+										<div class="search_box" title="${msgSearchCond}">
+											<ul>
+												<li><!-- 상태-->
+													<select name="sbscrbSttus" id="sbscrbSttus"
+														title="${msgSbscrbTitle}">
+														<option value="0" <c:if
+															test="${empty mberVO.sbscrbSttus || mberVO.sbscrbSttus == '0'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.sbscrbSttusAll" />
+														</option><!-- 상태(전체) -->
+														<option value="A" <c:if test="${mberVO.sbscrbSttus == 'A'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.sbscrbSttusA" />
+														</option><!-- 가입신청 -->
+														<option value="D" <c:if test="${mberVO.sbscrbSttus == 'D'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.sbscrbSttusD" />
+														</option><!-- 삭제 -->
+														<option value="P" <c:if test="${mberVO.sbscrbSttus == 'P'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.sbscrbSttusP" />
+														</option><!-- 승인 -->
+													</select>
+												</li>
+												<li><!-- 조건 -->
+													<select name="searchCondition" id="searchCondition"
+														title="${msgSearchTitle}"><!--  -->
+														<option value="0" <c:if test="${mberVO.searchCondition == '0'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.searchConditionId" />
+														</option><!-- ID  -->
+														<option value="1" <c:if
+															test="${empty mberVO.searchCondition || mberVO.searchCondition == '1'}">
+															selected="selected"</c:if> >
+															<spring:message
+																code="comUssUmt.userManageSsearch.searchConditionName" />
+														</option><!-- Name -->
+													</select>
+												</li>
+												<!-- 검색키워드 및 조회버튼 -->
+												<li>
+													<input class="s_input" name="searchKeyword" type="text" size="35"
+														title="${msgInputTitle}"
+														value="${fn:escapeXml(mberVO.searchKeyword)}" maxlength="255">
+													<input type="submit" class="s_btn" value="${msgInquire}"
+														title="${msgInquireTitle}" />
+													<input type="button" class="s_btn" value="${msgDelete}"
+														title="${msgDeleteTitle}" />
+													<c:url var="urlInsert" value='/uss/umt/EgovMberInsertView.do' />
+													<span class="btn_b"><a href="${urlInsert}"
+															onClick="fnAddUserView(); return false;"
+															title="${msgCreateTitle}">${msgCreate}</a></span>
+												</li>
+											</ul>
+										</div>
 
 
-									<table class="board_list" summary="<spring:message code=" common.summary.list"
-										arguments="${pageTitle}" />">
-									<caption>${pageTitle}
-										<spring:message code="title.list" />
-									</caption>
-									<colgroup>
-										<col style="width: 5%;">
-										<col style="width: 3%;">
+										<table class="board_list" summary="${msgSummary}">
+											<caption>${pageTitle}
+												<spring:message code="title.list" />
+											</caption>
+											<colgroup>
+												<col style="width: 5%;">
+												<col style="width: 3%;">
+												<col style="width: 15%;">
+												<col style="width: 15%;">
+												<col style="width: 20%;">
+												<col style="width: 13%;">
+												<col style="width: 10%;">
+												<col style="width: 19%;">
+											</colgroup>
+											<thead>
+												<tr>
+													<th>
+														<spring:message code="table.num" />
+													</th><!-- 번호 -->
+													<th><input type="checkbox" name="checkAll" class="check2"
+															onclick="javascript:fncCheckAll()" title="${msgSelectAll}">
+													</th><!-- 전체선택 -->
 
-										<col style="width: 15%;">
-										<col style="width: 15%;">
-										<col style="width: 20%;">
-										<col style="width: 13%;">
-										<col style="width: 10%;">
-										<col style="width: ;">
-									</colgroup>
-									<thead>
-										<tr>
-											<th>
-												<spring:message code="table.num" />
-											</th><!-- 번호 -->
-											<th><input type="checkbox" name="checkAll" class="check2"
-													onclick="javascript:fncCheckAll()" title="<spring:message code="
-													input.selectAll.title" />"></th><!-- 전체선택 -->
+													<th class="board_th_link">
+														<spring:message code="comUssUmt.userManageList.id" />
+													</th><!--아이디 -->
+													<th>
+														<spring:message code="comUssUmt.userManageList.name" />
+													</th><!-- 사용자이름 -->
+													<th>
+														<spring:message code="comUssUmt.userManageList.email" />
+													</th><!-- 사용자이메일 -->
+													<th>
+														<spring:message code="comUssUmt.userManageList.phone" />
+													</th><!-- 전화번호 -->
+													<th>
+														<spring:message code="table.regdate" />
+													</th><!-- 등록일 -->
+													<th>
+														<spring:message code="comUssUmt.userManageList.sbscrbSttus" />
+													</th><!-- 가입상태 -->
 
-											<th class="board_th_link">
-												<spring:message code="comUssUmt.userManageList.id" />
-											</th><!--아이디 -->
-											<th>
-												<spring:message code="comUssUmt.userManageList.name" />
-											</th><!-- 사용자이름 -->
-											<th>
-												<spring:message code="comUssUmt.userManageList.email" />
-											</th><!-- 사용자이메일 -->
-											<th>
-												<spring:message code="comUssUmt.userManageList.phone" />
-											</th><!-- 전화번호 -->
-											<th>
-												<spring:message code="table.regdate" />
-											</th><!-- 등록일 -->
-											<th>
-												<spring:message code="comUssUmt.userManageList.sbscrbSttus" />
-											</th><!-- 가입상태 -->
+												</tr>
+											</thead>
+											<tbody class="ov">
+												<c:if test="${fn:length(resultList) == 0}">
+													<tr>
+														<td colspan="8">
+															<spring:message code="common.nodata.msg" />
+														</td>
+													</tr>
+												</c:if>
+												<c:forEach var="result" items="${resultList}" varStatus="status">
+													<tr>
+														<td>
+															${status.count}
+														</td>
+														<td>
+															<input name="checkField" title="checkField ${status.count}"
+																type="checkbox" />
+															<input name="checkId" type="hidden"
+																value="${fn:escapeXml(result.userTy)}:${fn:escapeXml(result.uniqId)}" />
+														</td>
+														<td>
+															<c:url var="urlSelect"
+																value='/uss/umt/EgovMberSelectUpdtView.do'>
+																<c:param name="selectedId" value="${result.uniqId}" />
+															</c:url>
+															<a href="${urlSelect}"
+																onclick="javascript:fnSelectUser('${fn:escapeXml(result.userTy)}:${fn:escapeXml(result.uniqId)}'); return false;">
+																${fn:escapeXml(result.mberId)}
+															</a>
+														</td>
+														<td>
+															${fn:escapeXml(result.mberNm)}
+														</td>
+														<td>
+															${fn:escapeXml(result.mberEmailAdres)}
+														</td>
+														<td>
+															${fn:escapeXml(result.areaNo)})
+															${fn:escapeXml(result.middleTelno)}-
+															${fn:escapeXml(result.endTelno)}
+														</td>
+														<td>
+															${fn:substring(result.sbscrbDe,0,10)}
+														</td>
+														<td>
+															<c:forEach var="entrprsMberSttus_result"
+																items="${entrprsMberSttus_result}" varStatus="status">
+																<c:if
+																	test="${result.mberSttus == entrprsMberSttus_result.code}">
+																	${fn:escapeXml(entrprsMberSttus_result.codeNm)}
+																</c:if>
+															</c:forEach>
+														</td>
+													</tr>
+												</c:forEach>
+											</tbody>
+										</table>
 
-										</tr>
-									</thead>
-									<tbody class="ov">
-										<c:if test="${fn:length(resultList) == 0}">
-											<tr>
-												<td colspan="8">
-													<spring:message code="common.nodata.msg" />
-												</td>
-											</tr>
-										</c:if>
-										<c:forEach var="result" items="${resultList}" varStatus="status">
-											<tr>
-												<td>
-													<c:out value="${status.count}" />
-												</td>
-												<td>
-													<input name="checkField" title="checkField <c:out value="
-														${status.count}" />" type="checkbox"/>
-													<input name="checkId" type="hidden"
-														value="<c:out value='${result.userTy}'/>:<c:out value='${result.uniqId}'/>" />
-												</td>
-												<td><a href="<c:url value='/uss/umt/EgovMberSelectUpdtView.do'/>?selectedId=<c:out value="
-														${result.uniqId}" />" onclick="javascript:fnSelectUser('
-													<c:out value="${result.userTy}" />:
-													<c:out value="${result.uniqId}" />'); return false;">
-													<c:out value="${result.mberId}" /></a>
-												</td>
-												<td>
-													<c:out value="${result.mberNm}" />
-												</td>
-												<td>
-													<c:out value="${result.mberEmailAdres}" />
-												</td>
-												<td>
-													<c:out value="${result.areaNo}" />)
-													<c:out value="${result.middleTelno}" />-
-													<c:out value="${result.endTelno}" />
-												</td>
-												<td>
-													<c:out value="${fn:substring(result.sbscrbDe,0,10)}" />
-												</td>
-												<td>
-													<c:forEach var="entrprsMberSttus_result"
-														items="${entrprsMberSttus_result}" varStatus="status">
-														<c:if
-															test="${result.mberSttus == entrprsMberSttus_result.code}">
-															<c:out value="${entrprsMberSttus_result.codeNm}" />
-														</c:if>
-													</c:forEach>
-												</td>
-											</tr>
-										</c:forEach>
-									</tbody>
-									</table>
+										<!-- paging navigation -->
+										<div class="pagination">
+											<ul>
+												<ui:pagination paginationInfo="${paginationInfo}" type="image"
+													jsFunction="fnLinkPage" />
+											</ul>
+										</div>
 
-									<!-- paging navigation -->
-									<div class="pagination">
-										<ul>
-											<ui:pagination paginationInfo="${paginationInfo}" type="image"
-												jsFunction="fnLinkPage" />
-										</ul>
-									</div>
-
-									<input name="selectedId" type="hidden" />
-									<input name="checkedIdForDel" type="hidden" />
-									<input name="pageIndex" type="hidden"
-										value="<c:out value='${userSearchVO.pageIndex}'/>" />
+										<input name="selectedId" type="hidden" />
+										<input name="checkedIdForDel" type="hidden" />
+										<input name="pageIndex" type="hidden"
+											value="${fn:escapeXml(userSearchVO.pageIndex)}" />
 									</div>
 								</form>
 

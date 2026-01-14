@@ -8,6 +8,7 @@ import com.company.project.service.user.UserManageService;
 import com.company.project.service.user.dto.UserManageDto;
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
+import egovframework.com.uss.umt.service.UserDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -41,34 +42,49 @@ public class UserManageController {
      * 사용자 목록 조회
      */
     @RequestMapping({ "/uss/umt/EgovUserManage.do", "/uss/umt/user/EgovUserManage.do" })
-    public String selectUserList(@ModelAttribute("userSearchVO") ComDefaultVO searchVO, ModelMap model)
+    public String selectUserList(@ModelAttribute("userSearchVO") UserDefaultVO searchVO, ModelMap model)
             throws Exception {
+        try {
+            // mberVO is used in JSP for some search fields
+            model.addAttribute("mberVO", searchVO);
 
-        // mberVO is used in JSP for some search fields
-        model.addAttribute("mberVO", searchVO);
+            searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
+            searchVO.setPageSize(propertiesService.getInt("pageSize"));
 
-        searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-        searchVO.setPageSize(propertiesService.getInt("pageSize"));
+            PaginationInfo paginationInfo = new PaginationInfo();
+            paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+            paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
+            paginationInfo.setPageSize(searchVO.getPageSize());
 
-        PaginationInfo paginationInfo = new PaginationInfo();
-        paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
-        paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
-        paginationInfo.setPageSize(searchVO.getPageSize());
+            searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+            searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
+            searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-        searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
-        searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+            // 서비스 호환을 위한 ComDefaultVO 변환
+            ComDefaultVO comDefaultVO = new ComDefaultVO();
+            comDefaultVO.setPageIndex(searchVO.getPageIndex());
+            comDefaultVO.setPageUnit(searchVO.getPageUnit());
+            comDefaultVO.setPageSize(searchVO.getPageSize());
+            comDefaultVO.setSearchCondition(searchVO.getSearchCondition());
+            comDefaultVO.setSearchKeyword(searchVO.getSearchKeyword());
+            comDefaultVO.setFirstIndex(searchVO.getFirstIndex());
+            comDefaultVO.setLastIndex(searchVO.getLastIndex());
+            comDefaultVO.setRecordCountPerPage(searchVO.getRecordCountPerPage());
 
-        model.addAttribute("resultList", userManageService.selectUserList(searchVO));
+            model.addAttribute("resultList", userManageService.selectUserList(comDefaultVO));
 
-        int totCnt = userManageService.selectUserListTotCnt(searchVO);
-        paginationInfo.setTotalRecordCount(totCnt);
-        model.addAttribute("paginationInfo", paginationInfo);
+            int totCnt = userManageService.selectUserListTotCnt(comDefaultVO);
+            paginationInfo.setTotalRecordCount(totCnt);
+            model.addAttribute("paginationInfo", paginationInfo);
 
-        // 공통코드 목록 조회
-        model.addAttribute("emplyrSttusCode_result", commonCodeService.getCodesByGroup("COM013"));
+            // 공통코드 목록 조회
+            model.addAttribute("emplyrSttusCode_result", commonCodeService.getCodesByGroup("COM013"));
 
-        return "cmm/uss/umt/EgovUserManage";
+            return "cmm/uss/umt/EgovUserManage";
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
@@ -103,11 +119,15 @@ public class UserManageController {
     /**
      * 사용자 수정 화면
      */
-    @GetMapping({ "/uss/umt/EgovUserSelectUpdtView.do", "/uss/umt/user/EgovUserSelectUpdtView.do",
-            "/uss/umt/EgovMberSelectUpdtView.do" })
-    public String updateUserView(@RequestParam("selectedId") String userId, Model model)
+    @RequestMapping(value = { "/uss/umt/EgovUserSelectUpdtView.do",
+            "/uss/umt/user/EgovUserSelectUpdtView.do" }, method = { RequestMethod.GET, RequestMethod.POST })
+    public String updateUserView(@RequestParam(value = "selectedId", required = false) String userId, Model model)
             throws Exception {
-        UserManageDto userManageVO = userManageService.selectUser(userId);
+        if (userId == null || userId.isEmpty()) {
+            return "forward:/uss/umt/EgovUserManage.do";
+        }
+
+        UserManageDto userManageVO = userManageService.selectUserByEsntlId(userId);
         model.addAttribute("userManageVO", userManageVO);
 
         // 공통코드 목록 조회

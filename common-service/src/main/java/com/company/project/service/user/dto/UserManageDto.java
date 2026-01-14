@@ -58,6 +58,7 @@ public class UserManageDto {
     private String offmTelno;
     private String fxnum;
     private String lockAt;
+    private String subDn;
 
     // Getters as aliases for legacy JSP form:input path
     public String getEmplyrId() {

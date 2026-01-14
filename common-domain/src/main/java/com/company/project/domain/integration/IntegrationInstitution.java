@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTCCNTCINSTTINFO
  */
 @Entity
-@Table(name = "COMTCCNTCINSTTINFO")
+@Table(name = "CCNTCINSTTINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class IntegrationInstitution {

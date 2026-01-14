@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNSYSHISTORY
  */
 @Entity
-@Table(name = "COMTNSYSHISTORY")
+@Table(name = "NSYSHISTORY")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SystemHistory {

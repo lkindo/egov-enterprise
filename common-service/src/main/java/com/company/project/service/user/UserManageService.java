@@ -58,6 +58,15 @@ public class UserManageService {
     }
 
     /**
+     * 사용자 상세 조회 (G-ID/ESNTL_ID 기준)
+     */
+    public UserManageDto selectUserByEsntlId(String esntlId) {
+        return userRepository.findByEsntlId(esntlId)
+                .map(this::toDto)
+                .orElse(null);
+    }
+
+    /**
      * 사용자 등록
      */
     @Transactional
@@ -158,6 +167,7 @@ public class UserManageService {
                 .sbscrbDe(entity.getSbscrbDe() != null
                         ? entity.getSbscrbDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : null)
+                .subDn(entity.getSubDn())
                 .build();
     }
 }

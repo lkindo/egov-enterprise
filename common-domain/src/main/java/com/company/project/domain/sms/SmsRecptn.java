@@ -10,7 +10,7 @@ import java.io.Serializable;
  * 레거시 테이블: COMTNSMSRECPTN
  */
 @Entity
-@Table(name = "COMTNSMSRECPTN")
+@Table(name = "NSMSRECPTN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(SmsRecptnId.class)

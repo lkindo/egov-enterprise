@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNPOPUPMANAGE
  */
 @Entity(name = "PopupDomain")
-@Table(name = "COMTNPOPUPMANAGE")
+@Table(name = "NPOPUPMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Popup {

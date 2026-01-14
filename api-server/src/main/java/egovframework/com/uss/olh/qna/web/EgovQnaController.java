@@ -200,7 +200,7 @@ public class EgovQnaController {
 	 * Q&A 답변 목록 조회
 	 */
 	@IncludedInfo(name = "Q&A답변관리", order = 551, gid = 50)
-	@RequestMapping(value = "/uss/olh/qna/selectQnaAnswerList.do")
+	@RequestMapping(value = { "/uss/olh/qna/selectQnaAnswerList.do", "/uss/olh/qna/EgovQnaAnswerList.do" })
 	public String selectQnaAnswerList(@ModelAttribute("searchVO") QnaVO searchVO, ModelMap model) throws Exception {
 
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));

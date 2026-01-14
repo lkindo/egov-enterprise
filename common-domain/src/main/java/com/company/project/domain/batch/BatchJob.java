@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNBATCHOPERT
  */
 @Entity
-@Table(name = "COMTNBATCHOPERT")
+@Table(name = "NBATCHOPERT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BatchJob {

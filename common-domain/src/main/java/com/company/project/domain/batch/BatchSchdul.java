@@ -15,7 +15,7 @@ import java.util.List;
  * 레거시 테이블: COMTNBATCHSCHDUL
  */
 @Entity
-@Table(name = "COMTNBATCHSCHDUL")
+@Table(name = "NBATCHSCHDUL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BatchSchdul {

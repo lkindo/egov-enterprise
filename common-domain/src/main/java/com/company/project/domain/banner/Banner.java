@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNBANNER
  */
 @Entity
-@Table(name = "COMTNBANNER")
+@Table(name = "NBANNER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Banner {

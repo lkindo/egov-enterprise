@@ -14,6 +14,26 @@ public record CommonCodeDto(
         @Schema(description = "코드설명", example = "설명 내용") String codeDc,
 
         @Schema(description = "사용여부", example = "Y") String useAt) {
+    public String getCodeGroupId() {
+        return codeGroupId;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getCodeNm() {
+        return codeNm;
+    }
+
+    public String getCodeDc() {
+        return codeDc;
+    }
+
+    public String getUseAt() {
+        return useAt;
+    }
+
     public static CommonCodeDto from(CommonCode entity) {
         return new CommonCodeDto(
                 entity.getCodeGroupId(),

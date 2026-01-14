@@ -15,7 +15,7 @@ import java.util.List;
  * 레거시 테이블: COMTNSMS
  */
 @Entity
-@Table(name = "COMTNSMS")
+@Table(name = "NSMS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Sms {

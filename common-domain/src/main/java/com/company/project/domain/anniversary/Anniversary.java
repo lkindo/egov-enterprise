@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNANNVRSRYMANAGE
  */
 @Entity(name = "AnniversaryDomain") // Avoid collision with notification.Anniversary
-@Table(name = "COMTNANNVRSRYMANAGE")
+@Table(name = "NANNVRSRYMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Anniversary {
