@@ -15,11 +15,13 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     Page<Notification> findByNtfcSjContaining(String ntfcSj, Pageable pageable);
 
-    Page<Notification> findByUniqId(String uniqId, Pageable pageable);
+    // DB에 uniqId 컬럼이 없으므로 제거
+    // Page<Notification> findByUniqId(String uniqId, Pageable pageable);
 
     @Query("SELECT n FROM Notification n WHERE n.ntfcSj LIKE %:keyword% OR n.ntfcCn LIKE %:keyword%")
     Page<Notification> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT n FROM Notification n WHERE n.ntfcDate >= :today ORDER BY n.ntfcDate, n.ntfcTime")
+    // n.ntfcDate -> n.ntfcTime (실제 매핑된 컬럼: NTCN_TM) 사용
+    @Query("SELECT n FROM Notification n WHERE n.ntfcTime >= :today ORDER BY n.ntfcTime")
     List<Notification> findActiveNotifications(@Param("today") String today);
 }

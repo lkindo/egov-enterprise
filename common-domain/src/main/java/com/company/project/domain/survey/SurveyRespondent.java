@@ -19,13 +19,13 @@ import java.time.LocalDateTime;
 public class SurveyRespondent {
 
     @Id
-    @Column(name = "QESTNR_RESPOND_ID", length = 20)
+    @Column(name = "QUSTNR_RESPOND_ID", length = 20)
     private String qestnrRespondId;
 
     @Column(name = "QESTNR_ID", length = 20)
     private String qestnrId;
 
-    @Column(name = "QESTNR_TMPLAT_ID", length = 20)
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
     private String qestnrTmplatId;
 
     @Column(name = "SEXDSTN_CODE", length = 20)
@@ -37,7 +37,7 @@ public class SurveyRespondent {
     @Column(name = "RESPOND_NM", length = 100)
     private String respondNm;
 
-    @Column(name = "BRTH", length = 20)
+    @Column(name = "BRTHDY", length = 20)
     private String brth;
 
     @Column(name = "AREA_NO", length = 10)
@@ -52,13 +52,13 @@ public class SurveyRespondent {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

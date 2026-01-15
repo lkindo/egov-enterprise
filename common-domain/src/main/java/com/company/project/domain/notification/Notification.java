@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -15,41 +16,42 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "NNTFCINFO")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification {
 
     @Id
-    @Column(name = "NTFC_NO", length = 20)
+    @Column(name = "NTCN_NO", length = 20)
     private String ntfcNo;
 
-    @Column(name = "NTFC_SJ", length = 255, nullable = false)
+    @Column(name = "NTCN_SJ", length = 255, nullable = false)
     private String ntfcSj;
 
-    @Column(name = "NTFC_CN", length = 4000)
+    @Column(name = "NTCN_CN", length = 4000)
     private String ntfcCn;
 
-    @Column(name = "NTFC_DATE", length = 20)
+    @Transient
     private String ntfcDate;
 
-    @Column(name = "NTFC_TIME", length = 10)
+    @Column(name = "NTCN_TM", length = 14)
     private String ntfcTime;
 
-    @Column(name = "BH_NTFC_INTRVL", length = 100)
+    @Column(name = "BH_NTCN_INTRVL", length = 100)
     private String bhNtfcIntrvl;
 
-    @Column(name = "UNIQ_ID", length = 20)
+    @Transient
     private String uniqId;
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

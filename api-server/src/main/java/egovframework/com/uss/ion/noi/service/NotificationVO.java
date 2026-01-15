@@ -4,32 +4,33 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 정보알림이 서비스를 위한 VO 클래스
+ * 
  * @author 공통컴포넌트개발팀 한성곤
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.6.8  한성곤          최초 생성
  *
- * </pre>
+ *      </pre>
  */
 @SuppressWarnings("serial")
 public class NotificationVO extends Notification {
 
     /** 검색조건 */
     private String searchCnd = "";
-    
+
     /** 검색단어 */
     private String searchWrd = "";
-    
+
     /** 정렬순서(DESC,ASC) */
     private String sortOrdr = "";
-    
+
     /** 현재페이지 */
     private int pageIndex = 1;
 
@@ -50,15 +51,38 @@ public class NotificationVO extends Notification {
 
     /** rowNo */
     private int rowNo = 0;
-    
+
     /** 정보알림이 표시를 위한 시작일 및 시작시간 */
     private String startDateTime = "";
-    
+
     /** 정보알림이 표시를 위한 종료일 및 종료시간 */
     private String endDateTime = "";
 
+    /** 화면 처리를 위한 시(HH) */
+    private String ntfcHH = "";
+
+    /** 화면 처리를 위한 분(MM) */
+    private String ntfcMM = "";
+
+    public String getNtfcHH() {
+        return ntfcHH;
+    }
+
+    public void setNtfcHH(String ntfcHH) {
+        this.ntfcHH = ntfcHH;
+    }
+
+    public String getNtfcMM() {
+        return ntfcMM;
+    }
+
+    public void setNtfcMM(String ntfcMM) {
+        this.ntfcMM = ntfcMM;
+    }
+
     /**
      * searchCnd attribute를 리턴한다.
+     * 
      * @return the searchCnd
      */
     public String getSearchCnd() {
@@ -67,6 +91,7 @@ public class NotificationVO extends Notification {
 
     /**
      * searchCnd attribute 값을 설정한다.
+     * 
      * @param searchCnd the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
@@ -75,6 +100,7 @@ public class NotificationVO extends Notification {
 
     /**
      * searchWrd attribute를 리턴한다.
+     * 
      * @return the searchWrd
      */
     public String getSearchWrd() {
@@ -83,6 +109,7 @@ public class NotificationVO extends Notification {
 
     /**
      * searchWrd attribute 값을 설정한다.
+     * 
      * @param searchWrd the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
@@ -91,6 +118,7 @@ public class NotificationVO extends Notification {
 
     /**
      * sortOrdr attribute를 리턴한다.
+     * 
      * @return the sortOrdr
      */
     public String getSortOrdr() {
@@ -99,6 +127,7 @@ public class NotificationVO extends Notification {
 
     /**
      * sortOrdr attribute 값을 설정한다.
+     * 
      * @param sortOrdr the sortOrdr to set
      */
     public void setSortOrdr(String sortOrdr) {
@@ -107,6 +136,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageIndex attribute를 리턴한다.
+     * 
      * @return the pageIndex
      */
     public int getPageIndex() {
@@ -115,6 +145,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageIndex attribute 값을 설정한다.
+     * 
      * @param pageIndex the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
@@ -123,6 +154,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageUnit attribute를 리턴한다.
+     * 
      * @return the pageUnit
      */
     public int getPageUnit() {
@@ -131,6 +163,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageUnit attribute 값을 설정한다.
+     * 
      * @param pageUnit the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
@@ -139,6 +172,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageSize attribute를 리턴한다.
+     * 
      * @return the pageSize
      */
     public int getPageSize() {
@@ -147,6 +181,7 @@ public class NotificationVO extends Notification {
 
     /**
      * pageSize attribute 값을 설정한다.
+     * 
      * @param pageSize the pageSize to set
      */
     public void setPageSize(int pageSize) {
@@ -155,6 +190,7 @@ public class NotificationVO extends Notification {
 
     /**
      * firstIndex attribute를 리턴한다.
+     * 
      * @return the firstIndex
      */
     public int getFirstIndex() {
@@ -163,6 +199,7 @@ public class NotificationVO extends Notification {
 
     /**
      * firstIndex attribute 값을 설정한다.
+     * 
      * @param firstIndex the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
@@ -171,6 +208,7 @@ public class NotificationVO extends Notification {
 
     /**
      * lastIndex attribute를 리턴한다.
+     * 
      * @return the lastIndex
      */
     public int getLastIndex() {
@@ -179,6 +217,7 @@ public class NotificationVO extends Notification {
 
     /**
      * lastIndex attribute 값을 설정한다.
+     * 
      * @param lastIndex the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
@@ -187,6 +226,7 @@ public class NotificationVO extends Notification {
 
     /**
      * recordCountPerPage attribute를 리턴한다.
+     * 
      * @return the recordCountPerPage
      */
     public int getRecordCountPerPage() {
@@ -195,6 +235,7 @@ public class NotificationVO extends Notification {
 
     /**
      * recordCountPerPage attribute 값을 설정한다.
+     * 
      * @param recordCountPerPage the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
@@ -203,6 +244,7 @@ public class NotificationVO extends Notification {
 
     /**
      * rowNo attribute를 리턴한다.
+     * 
      * @return the rowNo
      */
     public int getRowNo() {
@@ -211,14 +253,16 @@ public class NotificationVO extends Notification {
 
     /**
      * rowNo attribute 값을 설정한다.
+     * 
      * @param rowNo the rowNo to set
      */
     public void setRowNo(int rowNo) {
         this.rowNo = rowNo;
     }
-    
+
     /**
      * startDateTime attribute를 리턴한다.
+     * 
      * @return the startDateTime
      */
     public String getStartDateTime() {
@@ -227,6 +271,7 @@ public class NotificationVO extends Notification {
 
     /**
      * startDateTime attribute 값을 설정한다.
+     * 
      * @param startDateTime the startDateTime to set
      */
     public void setStartDateTime(String startDateTime) {
@@ -235,6 +280,7 @@ public class NotificationVO extends Notification {
 
     /**
      * endDateTime attribute를 리턴한다.
+     * 
      * @return the endDateTime
      */
     public String getEndDateTime() {
@@ -243,6 +289,7 @@ public class NotificationVO extends Notification {
 
     /**
      * endDateTime attribute 값을 설정한다.
+     * 
      * @param endDateTime the endDateTime to set
      */
     public void setEndDateTime(String endDateTime) {
@@ -253,6 +300,6 @@ public class NotificationVO extends Notification {
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }
