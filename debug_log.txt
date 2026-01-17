@@ -1,0 +1,2614 @@
+﻿
+> 2026-01-18 01:46:07.698 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Securing GET /sym/log/slg/SelectSysHi
+storyList.do
+> 2026-01-18 01:46:07.700 [http-nio-8080-exec-3] DEBUG o.s.s.w.c
+.HttpSessionSecurityContextRepository - Retrieved SecurityContex
+tImpl [Authentication=UsernamePasswordAuthenticationToken [Princ
+ipal=com.company.project.security.service.CustomUserDetails@1c2c
+826c, Credentials=[PROTECTED], Authenticated=true, Details=null,
+ Granted Authorities=[]]]
+> 2026-01-18 01:46:07.700 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Secured GET /sym/log/slg/SelectSysHis
+toryList.do
+> 2026-01-18 01:46:07.700 [http-nio-8080-exec-3] TRACE o.s.web.s
+ervlet.DispatcherServlet - GET "/sym/log/slg/SelectSysHistoryLis
+t.do", parameters={}, headers={masked} in DispatcherServlet 'dis
+patcherServlet'
+> 2026-01-18 01:46:07.700 [http-nio-8080-exec-3] TRACE o.s.w.s.m
+.m.a.RequestMappingHandlerMapping - Mapped to egovframework.com.
+sym.log.slg.web.EgovSysHistoryController#selectSysHistoryList(Sy
+sHistoryVO, ModelMap)
+> 2026-01-18 01:46:07.700 [http-nio-8080-exec-3] INFO  c.c.p.api
+.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice starting for URI
+: /sym/log/slg/SelectSysHistoryList.do
+> 2026-01-18 01:46:07.703 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          m1_0.menu_no,
+          m1_0.menu_dc,
+          m1_0.menu_nm,
+          m1_0.menu_ordr,
+          m1_0.progrm_file_nm,
+          m1_0.relate_image_nm,
+          m1_0.relate_image_path,
+          m1_0.upper_menu_no 
+      from
+          nmenuinfo m1_0 
+      order by
+          m1_0.upper_menu_no,
+          m1_0.menu_ordr
+> 2026-01-18 01:46:07.708 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          p1_0.progrm_file_nm,
+          p1_0.progrm_dc,
+          p1_0.progrm_korean_nm,
+          p1_0.progrm_stre_path,
+          p1_0.url 
+      from
+          nprogrmlist p1_0
+> 2026-01-18 01:46:07.714 [http-nio-8080-exec-3] INFO  c.c.p.api
+.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice - menuHierarchy 
+size: 9
+> 2026-01-18 01:46:07.715 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          p1_0.progrm_file_nm,
+          p1_0.progrm_dc,
+          p1_0.progrm_korean_nm,
+          p1_0.progrm_stre_path,
+          p1_0.url 
+      from
+          nprogrmlist p1_0 
+      where
+          p1_0.url=?
+> 2026-01-18 01:46:07.715 [http-nio-8080-exec-3] TRACE org.hiber
+nate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/sym/log/
+slg/SelectSysHistoryList.do]
+> 2026-01-18 01:46:07.718 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          m1_0.menu_no,
+          m1_0.menu_dc,
+          m1_0.menu_nm,
+          m1_0.menu_ordr,
+          m1_0.progrm_file_nm,
+          m1_0.relate_image_nm,
+          m1_0.relate_image_path,
+          m1_0.upper_menu_no 
+      from
+          nmenuinfo m1_0
+> 2026-01-18 01:46:07.721 [http-nio-8080-exec-3] DEBUG c.c.p.api
+.advice.GlobalMenuAdvice - GlobalMenuAdvice - Identified rootMen
+uId: 6000000 for relativeUri: /sym/log/slg/SelectSysHistoryList.
+do
+> 2026-01-18 01:46:07.722 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          m1_0.menu_no,
+          m1_0.menu_dc,
+          m1_0.menu_nm,
+          m1_0.menu_ordr,
+          m1_0.progrm_file_nm,
+          m1_0.relate_image_nm,
+          m1_0.relate_image_path,
+          m1_0.upper_menu_no 
+      from
+          nmenuinfo m1_0 
+      order by
+          m1_0.upper_menu_no,
+          m1_0.menu_ordr
+> 2026-01-18 01:46:07.727 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          p1_0.progrm_file_nm,
+          p1_0.progrm_dc,
+          p1_0.progrm_korean_nm,
+          p1_0.progrm_stre_path,
+          p1_0.url 
+      from
+          nprogrmlist p1_0
+> 2026-01-18 01:46:07.733 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          sh1_0.hist_id,
+          sh1_0.atch_file_id,
+          sh1_0.frst_register_id,
+          sh1_0.frst_regist_pnttm,
+          sh1_0.hist_cn,
+          sh1_0.hist_se_code,
+          sh1_0.last_updusr_id,
+          sh1_0.last_updt_pnttm,
+          sh1_0.sys_nm 
+      from
+          nsyshistory sh1_0 
+      order by
+          sh1_0.frst_regist_pnttm desc 
+      offset
+          ? rows 
+      fetch
+          first ? rows only
+> 2026-01-18 01:46:07.733 [http-nio-8080-exec-3] TRACE org.hiber
+nate.orm.jdbc.bind - binding parameter (1:INTEGER) <- [0]
+> 2026-01-18 01:46:07.733 [http-nio-8080-exec-3] TRACE org.hiber
+nate.orm.jdbc.bind - binding parameter (2:INTEGER) <- [20]
+> 2026-01-18 01:46:07.737 [http-nio-8080-exec-3] TRACE o.s.w.s.m
+.m.a.RequestMappingHandlerAdapter - Applying default cacheSecond
+s=-1
+> 2026-01-18 01:46:07.738 [http-nio-8080-exec-3] TRACE o.s.web.s
+ervlet.DispatcherServlet - Rendering view [org.springframework.w
+eb.servlet.view.JstlView: name [egovframework/com/sym/log/slg/Eg
+ovSysHistList]; URL [/WEB-INF/jsp/egovframework/com/sym/log/slg/
+EgovSysHistList.jsp]] 
+> 2026-01-18 01:46:07.738 [http-nio-8080-exec-3] DEBUG o.s.web.s
+ervlet.view.JstlView - View name [egovframework/com/sym/log/slg/
+EgovSysHistList], model {list_headmenu=[com.company.project.serv
+ice.menu.dto.MenuDto@28b1855, com.company.project.service.menu.d
+to.MenuDto@19ee742d, com.company.project.service.menu.dto.MenuDt
+o@15005cd9, com.company.project.service.menu.dto.MenuDto@695c6be
+c, com.company.project.service.menu.dto.MenuDto@33cf9f22, com.co
+mpany.project.service.menu.dto.MenuDto@596ada6a, com.company.pro
+ject.service.menu.dto.MenuDto@4e9ba30a, com.company.project.serv
+ice.menu.dto.MenuDto@4412a23e, com.company.project.service.menu.
+dto.MenuDto@beb0311], menuList=[com.company.project.service.menu
+.dto.MenuDto@28b1855, com.company.project.service.menu.dto.MenuD
+to@19ee742d, com.company.project.service.menu.dto.MenuDto@15005c
+d9, com.company.project.service.menu.dto.MenuDto@695c6bec, com.c
+ompany.project.service.menu.dto.MenuDto@33cf9f22, com.company.pr
+oject.service.menu.dto.MenuDto@596ada6a, com.company.project.ser
+vice.menu.dto.MenuDto@4e9ba30a, com.company.project.service.menu
+.dto.MenuDto@4412a23e, com.company.project.service.menu.dto.Menu
+Dto@beb0311], list_menulist=[com.company.project.service.menu.dt
+o.MenuDto@28b1855, com.company.project.service.menu.dto.MenuDto@
+45d318c, com.company.project.service.menu.dto.MenuDto@174d41fe, 
+com.company.project.service.menu.dto.MenuDto@19ee742d, com.compa
+ny.project.service.menu.dto.MenuDto@461f027b, com.company.projec
+t.service.menu.dto.MenuDto@15bf6222, com.company.project.service
+.menu.dto.MenuDto@7883f048, com.company.project.service.menu.dto
+.MenuDto@53c0c17, com.company.project.service.menu.dto.MenuDto@3
+b0eca11, com.company.project.service.menu.dto.MenuDto@15005cd9, 
+com.company.project.service.menu.dto.MenuDto@55ce0120, com.compa
+ny.project.service.menu.dto.MenuDto@32a8aa61, com.company.projec
+t.service.menu.dto.MenuDto@57915497, com.company.project.service
+.menu.dto.MenuDto@1a025236, com.company.project.service.menu.dto
+.MenuDto@3f609757, com.company.project.service.menu.dto.MenuDto@
+486cd978, com.company.project.service.menu.dto.MenuDto@695c6bec,
+ com.company.project.service.menu.dto.MenuDto@1504090e, com.comp
+any.project.service.menu.dto.MenuDto@1d9f7a7a, com.company.proje
+ct.service.menu.dto.MenuDto@26fe8cb1, com.company.project.servic
+e.menu.dto.MenuDto@877260f, com.company.project.service.menu.dto
+.MenuDto@3d0e0276, com.company.project.service.menu.dto.MenuDto@
+5ba4f307, com.company.project.service.menu.dto.MenuDto@96d67c6, 
+com.company.project.service.menu.dto.MenuDto@381b7fba, com.compa
+ny.project.service.menu.dto.MenuDto@75cbd77d, com.company.projec
+t.service.menu.dto.MenuDto@98b3e08, com.company.project.service.
+menu.dto.MenuDto@6bba2ba8, com.company.project.service.menu.dto.
+MenuDto@8bf7fca, com.company.project.service.menu.dto.MenuDto@23
+64319f, com.company.project.service.menu.dto.MenuDto@73cf2085, c
+om.company.project.service.menu.dto.MenuDto@4912a23f, com.compan
+y.project.service.menu.dto.MenuDto@3aa0c5f8, com.company.project
+.service.menu.dto.MenuDto@38caf3fa, com.company.project.service.
+menu.dto.MenuDto@320b376e, com.company.project.service.menu.dto.
+MenuDto@6ed4684a, com.company.project.service.menu.dto.MenuDto@5
+2e7ff6d, com.company.project.service.menu.dto.MenuDto@3ddd83e8, 
+com.company.project.service.menu.dto.MenuDto@33cf9f22, com.compa
+ny.project.service.menu.dto.MenuDto@5606737a, com.company.projec
+t.service.menu.dto.MenuDto@1bddd7c8, com.company.project.service
+.menu.dto.MenuDto@76ac5f49, com.company.project.service.menu.dto
+.MenuDto@27bf50b7, com.company.project.service.menu.dto.MenuDto@
+42477a99, com.company.project.service.menu.dto.MenuDto@37d1968e,
+ com.company.project.service.menu.dto.MenuDto@2393d12a, com.comp
+any.project.service.menu.dto.MenuDto@7ef40707, com.company.proje
+ct.service.menu.dto.MenuDto@79e29f2, com.company.project.service
+.menu.dto.MenuDto@3c40ba69, com.company.project.service.menu.dto
+.MenuDto@1e7264a, com.company.project.service.menu.dto.MenuDto@5
+ff5c54e, com.company.project.service.menu.dto.MenuDto@2952a6fb, 
+com.company.project.service.menu.dto.MenuDto@10f8c24a, com.compa
+ny.project.service.menu.dto.MenuDto@28956369, com.company.projec
+t.service.menu.dto.MenuDto@59bb1c80, com.company.project.service
+.menu.dto.MenuDto@65620c32, com.company.project.service.menu.dto
+.MenuDto@335e6846, com.company.project.service.menu.dto.MenuDto@
+30d3cb6f, com.company.project.service.menu.dto.MenuDto@310d8ee9,
+ com.company.project.service.menu.dto.MenuDto@44fb0766, com.comp
+any.project.service.menu.dto.MenuDto@4274be7, com.company.projec
+t.service.menu.dto.MenuDto@2a0160bf, com.company.project.service
+.menu.dto.MenuDto@77a6d9d0, com.company.project.service.menu.dto
+.MenuDto@6bfa3075, com.company.project.service.menu.dto.MenuDto@
+553c369e, com.company.project.service.menu.dto.MenuDto@7419b01e,
+ com.company.project.service.menu.dto.MenuDto@35b09f14, com.comp
+any.project.service.menu.dto.MenuDto@f73784f, com.company.projec
+t.service.menu.dto.MenuDto@3bcf27f9, com.company.project.service
+.menu.dto.MenuDto@26fe9de, com.company.project.service.menu.dto.
+MenuDto@33968eb8, com.company.project.service.menu.dto.MenuDto@2
+7333985, com.company.project.service.menu.dto.MenuDto@65012275, 
+com.company.project.service.menu.dto.MenuDto@18dd0612, com.compa
+ny.project.service.menu.dto.MenuDto@1fb9a8ff, com.company.projec
+t.service.menu.dto.MenuDto@21f8559c, com.company.project.service
+.menu.dto.MenuDto@4d06c95c, com.company.project.service.menu.dto
+.MenuDto@3d1bab78, com.company.project.service.menu.dto.MenuDto@
+6fb70274, com.company.project.service.menu.dto.MenuDto@c00eeab, 
+com.company.project.service.menu.dto.MenuDto@77b79a5e, com.compa
+ny.project.service.menu.dto.MenuDto@1717bfbb, com.company.projec
+t.service.menu.dto.MenuDto@4064ab8f, com.company.project.service
+.menu.dto.MenuDto@4b9a609e, com.company.project.service.menu.dto
+.MenuDto@3476d9, com.company.project.service.menu.dto.MenuDto@2a
+f4fb03, com.company.project.service.menu.dto.MenuDto@4fa91501, c
+om.company.project.service.menu.dto.MenuDto@572f12fa, com.compan
+y.project.service.menu.dto.MenuDto@740e2478, com.company.project
+.service.menu.dto.MenuDto@79aff519, com.company.project.service.
+menu.dto.MenuDto@7ea9e630, com.company.project.service.menu.dto.
+MenuDto@513e93dd, com.company.project.service.menu.dto.MenuDto@5
+4965066, com.company.project.service.menu.dto.MenuDto@529770d0, 
+com.company.project.service.menu.dto.MenuDto@633e94d4, com.compa
+ny.project.service.menu.dto.MenuDto@463b5315, com.company.projec
+t.service.menu.dto.MenuDto@20482ed4, com.company.project.service
+.menu.dto.MenuDto@4930cbfd, com.company.project.service.menu.dto
+.MenuDto@5ebf6e3b, com.company.project.service.menu.dto.MenuDto@
+42803d02, com.company.project.service.menu.dto.MenuDto@23df9508,
+ com.company.project.service.menu.dto.MenuDto@6c7fcdad, com.comp
+any.project.service.menu.dto.MenuDto@4914b8af, com.company.proje
+ct.service.menu.dto.MenuDto@abfe4a2, com.company.project.service
+.menu.dto.MenuDto@596ada6a, com.company.project.service.menu.dto
+.MenuDto@55974728, com.company.project.service.menu.dto.MenuDto@
+4717fa92, com.company.project.service.menu.dto.MenuDto@2baaf31f,
+ com.company.project.service.menu.dto.MenuDto@5ec5883c, com.comp
+any.project.service.menu.dto.MenuDto@31842acb, com.company.proje
+ct.service.menu.dto.MenuDto@493f9503, com.company.project.servic
+e.menu.dto.MenuDto@35f1b530, com.company.project.service.menu.dt
+o.MenuDto@47075fda, com.company.project.service.menu.dto.MenuDto
+@5745f783, com.company.project.service.menu.dto.MenuDto@62e7f7e5
+, com.company.project.service.menu.dto.MenuDto@5a0786bc, com.com
+pany.project.service.menu.dto.MenuDto@2783fba9, com.company.proj
+ect.service.menu.dto.MenuDto@5f82e935, com.company.project.servi
+ce.menu.dto.MenuDto@20775ff, com.company.project.service.menu.dt
+o.MenuDto@64532165, com.company.project.service.menu.dto.MenuDto
+@5c35c0f5, com.company.project.service.menu.dto.MenuDto@14364107
+, com.company.project.service.menu.dto.MenuDto@2da776f3, com.com
+pany.project.service.menu.dto.MenuDto@5002322b, com.company.proj
+ect.service.menu.dto.MenuDto@22c262b6, com.company.project.servi
+ce.menu.dto.MenuDto@4da3190, com.company.project.service.menu.dt
+o.MenuDto@125cdf16, com.company.project.service.menu.dto.MenuDto
+@538e241c, com.company.project.service.menu.dto.MenuDto@62e82b09
+, com.company.project.service.menu.dto.MenuDto@37ebd075, com.com
+pany.project.service.menu.dto.MenuDto@43bb0df1, com.company.proj
+ect.service.menu.dto.MenuDto@61376f5e, com.company.project.servi
+ce.menu.dto.MenuDto@4224b012, com.company.project.service.menu.d
+to.MenuDto@2ba5b85b, com.company.project.service.menu.dto.MenuDt
+o@30eaec5b, com.company.project.service.menu.dto.MenuDto@6a7d288
+7, com.company.project.service.menu.dto.MenuDto@4e9ba30a, com.co
+mpany.project.service.menu.dto.MenuDto@d3ea1fa, com.company.proj
+ect.service.menu.dto.MenuDto@b5fb766, com.company.project.servic
+e.menu.dto.MenuDto@6c301a62, com.company.project.service.menu.dt
+o.MenuDto@6f8a3e73, com.company.project.service.menu.dto.MenuDto
+@4412a23e, com.company.project.service.menu.dto.MenuDto@17c36309
+, com.company.project.service.menu.dto.MenuDto@61511210, com.com
+pany.project.service.menu.dto.MenuDto@d5ee752, com.company.proje
+ct.service.menu.dto.MenuDto@3399392c, com.company.project.servic
+e.menu.dto.MenuDto@3fcedf7d, com.company.project.service.menu.dt
+o.MenuDto@56668b06, com.company.project.service.menu.dto.MenuDto
+@2cf892ef, com.company.project.service.menu.dto.MenuDto@beb0311,
+ com.company.project.service.menu.dto.MenuDto@56d28e05, com.comp
+any.project.service.menu.dto.MenuDto@1fae9695, com.company.proje
+ct.service.menu.dto.MenuDto@7df200dd, com.company.project.servic
+e.menu.dto.MenuDto@15f59a66, com.company.project.service.menu.dt
+o.MenuDto@57158c7b, com.company.project.service.menu.dto.MenuDto
+@3ce4b232, com.company.project.service.menu.dto.MenuDto@517da99b
+, com.company.project.service.menu.dto.MenuDto@68622f78, com.com
+pany.project.service.menu.dto.MenuDto@136f005b, com.company.proj
+ect.service.menu.dto.MenuDto@a035526, com.company.project.servic
+e.menu.dto.MenuDto@368e148c], activeRootMenuId=6000000, subMenu=
+[com.company.project.service.menu.dto.MenuDto@4feef4ca, com.comp
+any.project.service.menu.dto.MenuDto@24e858b4, com.company.proje
+ct.service.menu.dto.MenuDto@3452836a, com.company.project.servic
+e.menu.dto.MenuDto@72becb18, com.company.project.service.menu.dt
+o.MenuDto@4a4e2921, com.company.project.service.menu.dto.MenuDto
+@2c85e524, com.company.project.service.menu.dto.MenuDto@cec7a0d,
+ com.company.project.service.menu.dto.MenuDto@88e9683, com.compa
+ny.project.service.menu.dto.MenuDto@3332a192, com.company.projec
+t.service.menu.dto.MenuDto@309dce15, com.company.project.service
+.menu.dto.MenuDto@5fcee619, com.company.project.service.menu.dto
+.MenuDto@230859ed, com.company.project.service.menu.dto.MenuDto@
+590422f, com.company.project.service.menu.dto.MenuDto@5ba3c9ee, 
+com.company.project.service.menu.dto.MenuDto@737502ad, com.compa
+ny.project.service.menu.dto.MenuDto@1253ea1f, com.company.projec
+t.service.menu.dto.MenuDto@15555340, com.company.project.service
+.menu.dto.MenuDto@507c14bd, com.company.project.service.menu.dto
+.MenuDto@b471475, com.company.project.service.menu.dto.MenuDto@6
+c90410, com.company.project.service.menu.dto.MenuDto@393988da, c
+om.company.project.service.menu.dto.MenuDto@950babc, com.company
+.project.service.menu.dto.MenuDto@3a87e35f, com.company.project.
+service.menu.dto.MenuDto@74a0899b, com.company.project.service.m
+enu.dto.MenuDto@1aab08d, com.company.project.service.menu.dto.Me
+nuDto@da37f5e, com.company.project.service.menu.dto.MenuDto@83bf
+8ae, com.company.project.service.menu.dto.MenuDto@78274463, com.
+company.project.service.menu.dto.MenuDto@2cddad32, com.company.p
+roject.service.menu.dto.MenuDto@3a927e78, com.company.project.se
+rvice.menu.dto.MenuDto@6dbb0f0c], searchVO=egovframework.com.sym
+.log.slg.service.SysHistoryVO@2f7d4a84[atchFileId=,firstIndex=1,
+frstRegisterNm=,histSeCodeNm=,lastIndex=1,lastUpdusrNm=,pageInde
+x=1,pageSize=10,pageUnit=20,recordCountPerPage=10,rowNo=0,search
+BgnDe=,searchCnd=,searchEndDe=,searchUseYn=,searchWrd=,sortOrdr=
+,atchFileId=,frstRegisterId=,frstRegisterPnttm=,histCn=,histId=,
+histSeCode=,lastUpdusrId=,lastUpdusrPnttm=,sysNm=], org.springfr
+amework.validation.BindingResult.searchVO=org.springframework.va
+lidation.BeanPropertyBindingResult: 0 errors, resultList=[], pag
+inationInfo=org.egovframe.rte.ptl.mvc.tags.ui.pagination.Paginat
+ionInfo@6e08c664, org.springframework.validation.BindingResult.p
+aginationInfo=org.springframework.validation.BeanPropertyBinding
+Result: 0 errors}
+> 2026-01-18 01:46:07.739 [http-nio-8080-exec-3] DEBUG o.s.web.s
+ervlet.view.JstlView - Forwarding to [/WEB-INF/jsp/egovframework
+/com/sym/log/slg/EgovSysHistList.jsp]
+> 2026-01-18 01:46:07.743 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Securing GET /WEB-INF/jsp/egovframewo
+rk/com/sym/log/slg/EgovSysHistList.jsp
+> 2026-01-18 01:46:07.743 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Secured GET /WEB-INF/jsp/egovframewor
+k/com/sym/log/slg/EgovSysHistList.jsp
+> 2026-01-18 01:46:07.744 [http-nio-8080-exec-3] ERROR o.a.c.c.C
+.[.[localhost].[/].[jsp] - Servlet.service() for servlet [jsp] t
+hrew exception
+  jakarta.servlet.jsp.JspTagException: No message found under co
+de 'comSymLogSlg.sysHistList.title' for locale 'ko'.
+  	at org.springframework.web.servlet.tags.MessageTag.doEndTag(M
+essageTag.java:294)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspx_meth_spring_005fmessage_005f0(EgovS
+ysHistList_jsp.java:419)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspService(EgovSysHistList_jsp.java:188)
+  	at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.
+java:67)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspSer
+vletWrapper.java:456)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspSer
+vlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.ja
+va:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:75)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:186)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.catalina.core.ApplicationDispatcher.invoke(Appl
+icationDispatcher.java:633)
+  	at org.apache.catalina.core.ApplicationDispatcher.processRequ
+est(ApplicationDispatcher.java:409)
+  	at org.apache.catalina.core.ApplicationDispatcher.doForward(A
+pplicationDispatcher.java:331)
+  	at org.apache.catalina.core.ApplicationDispatcher.forward(App
+licationDispatcher.java:268)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+$HeaderWriterRequestDispatcher.forward(HeaderWriterFilter.java:1
+70)
+  	at org.springframework.web.servlet.view.InternalResourceView.
+renderMergedOutputModel(InternalResourceView.java:171)
+  	at org.springframework.web.servlet.view.AbstractView.render(A
+bstractView.java:314)
+  	at org.springframework.web.servlet.DispatcherServlet.render(D
+ispatcherServlet.java:1432)
+  	at org.springframework.web.servlet.DispatcherServlet.processD
+ispatchResult(DispatcherServlet.java:1168)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispat
+ch(DispatcherServlet.java:1106)
+  	at org.springframework.web.servlet.DispatcherServlet.doServic
+e(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRe
+quest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(Fra
+meworkServlet.java:903)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+564)
+  	at org.springframework.web.servlet.FrameworkServlet.service(F
+rameworkServlet.java:885)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.jwt.JwtAuthenticationFilter.d
+oFilterInternal(JwtAuthenticationFilter.java:30)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doHeadersAfter(HeaderWriterFilter.java:90)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doFilterInternal(HeaderWriterFilter.java:75)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:82)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.request.async.Web
+AsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIn
+tegrationFilter.java:62)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.DisableEncodeUrlF
+ilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:191)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+> 2026-01-18 01:46:07.751 [http-nio-8080-exec-3] DEBUG o.s.web.s
+ervlet.DispatcherServlet - Error rendering view [org.springframe
+work.web.servlet.view.JstlView: name [egovframework/com/sym/log/
+slg/EgovSysHistList]; URL [/WEB-INF/jsp/egovframework/com/sym/lo
+g/slg/EgovSysHistList.jsp]]
+  jakarta.servlet.ServletException: jakarta.servlet.jsp.JspTagEx
+ception: No message found under code 'comSymLogSlg.sysHistList.t
+itle' for locale 'ko'.
+  	at org.apache.jasper.runtime.PageContextImpl.handlePageExcept
+ion(PageContextImpl.java:665)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspService(EgovSysHistList_jsp.java:398)
+  	at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.
+java:67)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspSer
+vletWrapper.java:456)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspSer
+vlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.ja
+va:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:75)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:186)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.catalina.core.ApplicationDispatcher.invoke(Appl
+icationDispatcher.java:633)
+  	at org.apache.catalina.core.ApplicationDispatcher.processRequ
+est(ApplicationDispatcher.java:409)
+  	at org.apache.catalina.core.ApplicationDispatcher.doForward(A
+pplicationDispatcher.java:331)
+  	at org.apache.catalina.core.ApplicationDispatcher.forward(App
+licationDispatcher.java:268)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+$HeaderWriterRequestDispatcher.forward(HeaderWriterFilter.java:1
+70)
+  	at org.springframework.web.servlet.view.InternalResourceView.
+renderMergedOutputModel(InternalResourceView.java:171)
+  	at org.springframework.web.servlet.view.AbstractView.render(A
+bstractView.java:314)
+  	at org.springframework.web.servlet.DispatcherServlet.render(D
+ispatcherServlet.java:1432)
+  	at org.springframework.web.servlet.DispatcherServlet.processD
+ispatchResult(DispatcherServlet.java:1168)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispat
+ch(DispatcherServlet.java:1106)
+  	at org.springframework.web.servlet.DispatcherServlet.doServic
+e(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRe
+quest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(Fra
+meworkServlet.java:903)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+564)
+  	at org.springframework.web.servlet.FrameworkServlet.service(F
+rameworkServlet.java:885)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.jwt.JwtAuthenticationFilter.d
+oFilterInternal(JwtAuthenticationFilter.java:30)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doHeadersAfter(HeaderWriterFilter.java:90)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doFilterInternal(HeaderWriterFilter.java:75)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:82)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.request.async.Web
+AsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIn
+tegrationFilter.java:62)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.DisableEncodeUrlF
+ilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:191)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+> 2026-01-18 01:46:07.764 [http-nio-8080-exec-3] TRACE o.s.web.s
+ervlet.DispatcherServlet - Failed to complete request
+  jakarta.servlet.ServletException: jakarta.servlet.jsp.JspTagEx
+ception: No message found under code 'comSymLogSlg.sysHistList.t
+itle' for locale 'ko'.
+  	at org.apache.jasper.runtime.PageContextImpl.handlePageExcept
+ion(PageContextImpl.java:665)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspService(EgovSysHistList_jsp.java:398)
+  	at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.
+java:67)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspSer
+vletWrapper.java:456)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspSer
+vlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.ja
+va:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:75)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:186)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.catalina.core.ApplicationDispatcher.invoke(Appl
+icationDispatcher.java:633)
+  	at org.apache.catalina.core.ApplicationDispatcher.processRequ
+est(ApplicationDispatcher.java:409)
+  	at org.apache.catalina.core.ApplicationDispatcher.doForward(A
+pplicationDispatcher.java:331)
+  	at org.apache.catalina.core.ApplicationDispatcher.forward(App
+licationDispatcher.java:268)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+$HeaderWriterRequestDispatcher.forward(HeaderWriterFilter.java:1
+70)
+  	at org.springframework.web.servlet.view.InternalResourceView.
+renderMergedOutputModel(InternalResourceView.java:171)
+  	at org.springframework.web.servlet.view.AbstractView.render(A
+bstractView.java:314)
+  	at org.springframework.web.servlet.DispatcherServlet.render(D
+ispatcherServlet.java:1432)
+  	at org.springframework.web.servlet.DispatcherServlet.processD
+ispatchResult(DispatcherServlet.java:1168)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispat
+ch(DispatcherServlet.java:1106)
+  	at org.springframework.web.servlet.DispatcherServlet.doServic
+e(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRe
+quest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(Fra
+meworkServlet.java:903)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+564)
+  	at org.springframework.web.servlet.FrameworkServlet.service(F
+rameworkServlet.java:885)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.jwt.JwtAuthenticationFilter.d
+oFilterInternal(JwtAuthenticationFilter.java:30)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doHeadersAfter(HeaderWriterFilter.java:90)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doFilterInternal(HeaderWriterFilter.java:75)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:82)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.request.async.Web
+AsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIn
+tegrationFilter.java:62)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.DisableEncodeUrlF
+ilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:191)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+> 2026-01-18 01:46:07.778 [http-nio-8080-exec-3] ERROR o.a.c.c.C
+.[.[.[.[dispatcherServlet] - Servlet.service() for servlet [disp
+atcherServlet] in context with path [] threw exception [jakarta.
+servlet.jsp.JspTagException: No message found under code 'comSym
+LogSlg.sysHistList.title' for locale 'ko'.] with root cause
+  jakarta.servlet.jsp.JspTagException: No message found under co
+de 'comSymLogSlg.sysHistList.title' for locale 'ko'.
+  	at org.springframework.web.servlet.tags.MessageTag.doEndTag(M
+essageTag.java:294)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspx_meth_spring_005fmessage_005f0(EgovS
+ysHistList_jsp.java:419)
+  	at org.apache.jsp.WEB_002dINF.jsp.egovframework.com.sym.log.s
+lg.EgovSysHistList_jsp._jspService(EgovSysHistList_jsp.java:188)
+  	at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.
+java:67)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.jasper.servlet.JspServletWrapper.service(JspSer
+vletWrapper.java:456)
+  	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspSer
+vlet.java:377)
+  	at org.apache.jasper.servlet.JspServlet.service(JspServlet.ja
+va:325)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:91)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:75)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:186)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:110)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.catalina.core.ApplicationDispatcher.invoke(Appl
+icationDispatcher.java:633)
+  	at org.apache.catalina.core.ApplicationDispatcher.processRequ
+est(ApplicationDispatcher.java:409)
+  	at org.apache.catalina.core.ApplicationDispatcher.doForward(A
+pplicationDispatcher.java:331)
+  	at org.apache.catalina.core.ApplicationDispatcher.forward(App
+licationDispatcher.java:268)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+$HeaderWriterRequestDispatcher.forward(HeaderWriterFilter.java:1
+70)
+  	at org.springframework.web.servlet.view.InternalResourceView.
+renderMergedOutputModel(InternalResourceView.java:171)
+  	at org.springframework.web.servlet.view.AbstractView.render(A
+bstractView.java:314)
+  	at org.springframework.web.servlet.DispatcherServlet.render(D
+ispatcherServlet.java:1432)
+  	at org.springframework.web.servlet.DispatcherServlet.processD
+ispatchResult(DispatcherServlet.java:1168)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispat
+ch(DispatcherServlet.java:1106)
+  	at org.springframework.web.servlet.DispatcherServlet.doServic
+e(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRe
+quest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(Fra
+meworkServlet.java:903)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+564)
+  	at org.springframework.web.servlet.FrameworkServlet.service(F
+rameworkServlet.java:885)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.FilterChainProxy.lambda$d
+oFilterInternal$3(FilterChainProxy.java:231)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$1(ObservationFilterChainDecorator.java:340)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapSecured$0(ObservationFilterChainDecorator.java
+:82)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:128)
+  	at org.springframework.security.web.access.intercept.Authoriz
+ationFilter.doFilter(AuthorizationFilter.java:100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:126)
+  	at org.springframework.security.web.access.ExceptionTranslati
+onFilter.doFilter(ExceptionTranslationFilter.java:120)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:131)
+  	at org.springframework.security.web.session.SessionManagement
+Filter.doFilter(SessionManagementFilter.java:85)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AnonymousA
+uthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:
+100)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.servletapi.SecurityContex
+tHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareReq
+uestFilter.java:179)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.savedrequest.RequestCache
+AwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:227)
+  	at org.springframework.security.web.authentication.AbstractAu
+thenticationProcessingFilter.doFilter(AbstractAuthenticationProc
+essingFilter.java:221)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.jwt.JwtAuthenticationFilter.d
+oFilterInternal(JwtAuthenticationFilter.java:30)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at com.company.project.security.config.SecurityConfig.lambda$
+filterChain$4(SecurityConfig.java:146)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:107)
+  	at org.springframework.security.web.authentication.logout.Log
+outFilter.doFilter(LogoutFilter.java:93)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doHeadersAfter(HeaderWriterFilter.java:90)
+  	at org.springframework.security.web.header.HeaderWriterFilter
+.doFilterInternal(HeaderWriterFilter.java:75)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:82)
+  	at org.springframework.security.web.context.SecurityContextHo
+lderFilter.doFilter(SecurityContextHolderFilter.java:69)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.context.request.async.Web
+AsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIn
+tegrationFilter.java:62)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:227)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.session.DisableEncodeUrlF
+ilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.wrapFilter(ObservationFilterChainDecora
+tor.java:240)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$AroundFilterObservation$SimpleAroundFilterObservation.lam
+bda$wrap$0(ObservationFilterChainDecorator.java:323)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$ObservationFilter.doFilter(ObservationFilterChainDecorato
+r.java:224)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$VirtualFilterChain.doFilter(ObservationFilterChainDecorat
+or.java:137)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:233)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:191)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+> 2026-01-18 01:46:07.794 [http-nio-8080-exec-3] TRACE o.s.w.s.m
+.m.a.RequestMappingHandlerMapping - 2 matching mappings: [{ [/er
+ror], produces [text/html]}, { [/error]}]
+> 2026-01-18 01:46:07.794 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Securing GET /error
+> 2026-01-18 01:46:07.794 [http-nio-8080-exec-3] DEBUG o.s.s.w.c
+.HttpSessionSecurityContextRepository - Retrieved SecurityContex
+tImpl [Authentication=UsernamePasswordAuthenticationToken [Princ
+ipal=com.company.project.security.service.CustomUserDetails@1c2c
+826c, Credentials=[PROTECTED], Authenticated=true, Details=null,
+ Granted Authorities=[]]]
+> 2026-01-18 01:46:07.794 [http-nio-8080-exec-3] DEBUG o.s.secur
+ity.web.FilterChainProxy - Secured GET /error
+> 2026-01-18 01:46:07.794 [http-nio-8080-exec-3] TRACE o.s.web.s
+ervlet.DispatcherServlet - "ERROR" dispatch for GET "/error", pa
+rameters={}, headers={masked} in DispatcherServlet 'dispatcherSe
+rvlet'
+> 2026-01-18 01:46:07.795 [http-nio-8080-exec-3] TRACE o.s.w.s.m
+.m.a.RequestMappingHandlerMapping - 2 matching mappings: [{ [/er
+ror], produces [text/html]}, { [/error]}]
+> 2026-01-18 01:46:07.795 [http-nio-8080-exec-3] TRACE o.s.w.s.m
+.m.a.RequestMappingHandlerMapping - Mapped to org.springframewor
+k.boot.autoconfigure.web.servlet.error.BasicErrorController#erro
+rHtml(HttpServletRequest, HttpServletResponse)
+> 2026-01-18 01:46:07.795 [http-nio-8080-exec-3] INFO  c.c.p.api
+.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice starting for URI
+: /error
+> 2026-01-18 01:46:07.797 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          m1_0.menu_no,
+          m1_0.menu_dc,
+          m1_0.menu_nm,
+          m1_0.menu_ordr,
+          m1_0.progrm_file_nm,
+          m1_0.relate_image_nm,
+          m1_0.relate_image_path,
+          m1_0.upper_menu_no 
+      from
+          nmenuinfo m1_0 
+      order by
+          m1_0.upper_menu_no,
+          m1_0.menu_ordr
+> 2026-01-18 01:46:07.803 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          p1_0.progrm_file_nm,
+          p1_0.progrm_dc,
+          p1_0.progrm_korean_nm,
+          p1_0.progrm_stre_path,
+          p1_0.url 
+      from
+          nprogrmlist p1_0
+> 2026-01-18 01:46:07.807 [http-nio-8080-exec-3] INFO  c.c.p.api
+.advice.GlobalMenuAdvice - >>> GlobalMenuAdvice - menuHierarchy 
+size: 9
+> 2026-01-18 01:46:07.808 [http-nio-8080-exec-3] DEBUG org.hiber
+nate.SQL - 
+      /* <criteria> */ select
+          p1_0.progrm_file_nm,
+          p1_0.progrm_dc,
+          p1_0.progrm_korean_nm,
+          p1_0.progrm_stre_path,
+          p1_0.url 
+      from
+          nprogrmlist p1_0 
+      where
+          p1_0.url=?
+> 2026-01-18 01:46:07.808 [http-nio-8080-exec-3] TRACE org.hiber
+nate.orm.jdbc.bind - binding parameter (1:VARCHAR) <- [/error]
+> 2026-01-18 01:46:07.814 [http-nio-8080-exec-3] TRACE o.s.web.s
+ervlet.DispatcherServlet - Rendering view [org.springframework.b
+oot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration$St
+aticView@281a7ff9] 
+> 2026-01-18 01:46:07.815 [http-nio-8080-exec-3] DEBUG o.s.web.s
+ervlet.DispatcherServlet - Exiting from "ERROR" dispatch, status
+ 500, headers={masked}
+  2026-01-18 01:46:08.025 [http-nio-8080-exec-2] TRACE o.s.web.s
+ervlet.DispatcherServlet - GET "/favicon.ico", parameters={}, he
+aders={masked} in DispatcherServlet 'dispatcherServlet'
+  2026-01-18 01:46:08.028 [http-nio-8080-exec-2] WARN  o.s.web.s
+ervlet.PageNotFound - No mapping for GET /favicon.ico
+  2026-01-18 01:46:08.028 [http-nio-8080-exec-2] DEBUG o.s.w.s.m
+.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler
+ com.company.project.core.exception.GlobalExceptionHandler#handl
+eException(Exception)
+  2026-01-18 01:46:08.028 [http-nio-8080-exec-2] ERROR c.c.p.c.e
+.GlobalExceptionHandler - Exception
+  org.springframework.web.servlet.NoHandlerFoundException: No en
+dpoint GET /favicon.ico.
+  	at org.springframework.web.servlet.DispatcherServlet.noHandle
+rFound(DispatcherServlet.java:1305)
+  	at org.springframework.web.servlet.DispatcherServlet.doDispat
+ch(DispatcherServlet.java:1067)
+  	at org.springframework.web.servlet.DispatcherServlet.doServic
+e(DispatcherServlet.java:979)
+  	at org.springframework.web.servlet.FrameworkServlet.processRe
+quest(FrameworkServlet.java:1014)
+  	at org.springframework.web.servlet.FrameworkServlet.doGet(Fra
+meworkServlet.java:903)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+564)
+  	at org.springframework.web.servlet.FrameworkServlet.service(F
+rameworkServlet.java:885)
+  	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:
+658)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:195)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFil
+ter.java:51)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:108)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator$FilterObservation$SimpleFilterObservation.lambda$wrap$1(O
+bservationFilterChainDecorator.java:479)
+  	at org.springframework.security.web.ObservationFilterChainDec
+orator.lambda$wrapUnsecured$1(ObservationFilterChainDecorator.ja
+va:90)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+Internal(FilterChainProxy.java:219)
+  	at org.springframework.security.web.FilterChainProxy.doFilter
+(FilterChainProxy.java:191)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.servlet.handler.HandlerMappingIntr
+ospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.j
+ava:195)
+  	at org.springframework.web.filter.CompositeFilter$VirtualFilt
+erChain.doFilter(CompositeFilter.java:113)
+  	at org.springframework.web.filter.CompositeFilter.doFilter(Co
+mpositeFilter.java:74)
+  	at org.springframework.security.config.annotation.web.configu
+ration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doF
+ilter(WebMvcSecurityConfiguration.java:230)
+  	at org.springframework.web.filter.DelegatingFilterProxy.invok
+eDelegate(DelegatingFilterProxy.java:362)
+  	at org.springframework.web.filter.DelegatingFilterProxy.doFil
+ter(DelegatingFilterProxy.java:278)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.ServerHttpObservationFilter
+.doFilterInternal(ServerHttpObservationFilter.java:113)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.springframework.web.filter.CharacterEncodingFilter.doF
+ilterInternal(CharacterEncodingFilter.java:201)
+  	at org.springframework.web.filter.OncePerRequestFilter.doFilt
+er(OncePerRequestFilter.java:116)
+  	at org.apache.catalina.core.ApplicationFilterChain.internalDo
+Filter(ApplicationFilterChain.java:164)
+  	at org.apache.catalina.core.ApplicationFilterChain.doFilter(A
+pplicationFilterChain.java:140)
+  	at org.apache.catalina.core.StandardWrapperValve.invoke(Stand
+ardWrapperValve.java:167)
+  	at org.apache.catalina.core.StandardContextValve.invoke(Stand
+ardContextValve.java:90)
+  	at org.apache.catalina.authenticator.AuthenticatorBase.invoke
+(AuthenticatorBase.java:483)
+  	at org.apache.catalina.core.StandardHostValve.invoke(Standard
+HostValve.java:115)
+  	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorRe
+portValve.java:93)
+  	at org.apache.catalina.core.StandardEngineValve.invoke(Standa
+rdEngineValve.java:74)
+  	at org.apache.catalina.connector.CoyoteAdapter.service(Coyote
+Adapter.java:344)
+  	at org.apache.coyote.http11.Http11Processor.service(Http11Pro
+cessor.java:397)
+  	at org.apache.coyote.AbstractProcessorLight.process(AbstractP
+rocessorLight.java:63)
+  	at org.apache.coyote.AbstractProtocol$ConnectionHandler.proce
+ss(AbstractProtocol.java:905)
+  	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doR
+un(NioEndpoint.java:1741)
+  	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketP
+rocessorBase.java:52)
+  	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorke
+r(ThreadPoolExecutor.java:1190)
+  	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.r
+un(ThreadPoolExecutor.java:659)
+  	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable
+.run(TaskThread.java:63)
+  	at java.base/java.lang.Thread.run(Thread.java:1583)
+  2026-01-18 01:46:08.028 [http-nio-8080-exec-2] DEBUG o.s.w.s.m
+.m.a.HttpEntityMethodProcessor - Using 'application/json;q=0.8',
+ given [image/avif, image/webp, image/apng, image/svg+xml, image
+/*, */*;q=0.8] and supported [application/json, application/*+js
+on]
+  2026-01-18 01:46:08.028 [http-nio-8080-exec-2] TRACE o.s.w.s.m
+.m.a.HttpEntityMethodProcessor - Writing [com.company.project.co
+re.response.ApiResponse@14ba72e1]
+  2026-01-18 01:46:08.030 [http-nio-8080-exec-2] DEBUG o.s.w.s.m
+.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springfra
+mework.web.servlet.NoHandlerFoundException: No endpoint GET /fav
+icon.ico.]
+  2026-01-18 01:46:08.030 [http-nio-8080-exec-2] TRACE o.s.web.s
+ervlet.DispatcherServlet - No view rendering, null ModelAndView 
+returned.
+  2026-01-18 01:46:08.030 [http-nio-8080-exec-2] DEBUG o.s.web.s
+ervlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR, 
+headers={masked}
+
+

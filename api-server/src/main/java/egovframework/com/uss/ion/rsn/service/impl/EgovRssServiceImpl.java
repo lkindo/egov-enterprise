@@ -37,7 +37,7 @@ public class EgovRssServiceImpl extends EgovAbstractServiceImpl implements EgovR
 	@Override
 	public List<?> selectRssTagServiceList(RssInfo rssInfo) throws Exception {
 		Pageable pageable = PageRequest.of(rssInfo.getPageIndex() - 1, rssInfo.getPageUnit(),
-				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+				Sort.by(Sort.Direction.DESC, "frstRegistPnttm"));
 		Page<Rss> page = rssRepository.findAll(pageable);
 		return page.getContent().stream().map(this::toMap).collect(Collectors.toList());
 	}

@@ -1,4 +1,4 @@
-# 전자정부프레임워크 5.0 공통 모듈 구축 - TRD (Technical Requirements Document)
+# 전자정부프레임워크 5.0 공통 모듈 구축 - 기술 설계서 (TRD)
 
 ## 1. 기술적 목표 (Technical Goals)
 본 문서는 `PRD.MD`에 정의된 요구사항을 달성하기 위한 구체적인 기술 사양과 아키텍처 원칙을 정의합니다.
@@ -9,7 +9,7 @@
 ## 2. 시스템 아키텍처 (System Architecture)
 
 ### 2.1. 멀티 모듈 구조 (Multi-Module Structure)
-Gradle(또는 Maven) 기반의 계층형 멀티 모듈 구조를 채택합니다.
+Gradle 기반의 계층형 멀티 모듈 구조를 채택합니다.
 
 ```mermaid
 graph TD
@@ -33,7 +33,7 @@ graph TD
 | **common-domain** | **JPA Entity**, Repository, Enums, DTO(Domain) | common-core, DB Driver |
 | **common-security** | **JWT Provider**, Security Config, Filter Chain, UserDetails | common-domain |
 | **common-service** | 핵심 비즈니스 로직(Service Impl), Transaction 관리 | common-domain |
-| **api-server** | **Execution Target**. Controller(REST API), Swagger 설정 | common-service, common-security |
+| **api-server** | **실행 대상 (Execution Target)**. Controller(REST API), Swagger 설정 | common-service, common-security |
 
 ## 3. 기술 스택 및 버전 (Tech Stack & Versions)
 
@@ -41,7 +41,7 @@ graph TD
 | :--- | :--- | :--- |
 | **Language** | Java 21 (LTS) | 텍스트 블록, Record 등 최신 문법 활용 |
 | **Framework** | **eGovFrame 5.0 (Spring Boot 3.3.x)** | Jakarta EE 9/10 기반 (javax -> jakarta 패키지명 변경 주의) |
-| **Build Tool** | Gradle 8.12 (권장) or Maven 3.9.x | 멀티 모듈 구성이 용이한 Gradle 권장 |
+| **Build Tool** | Gradle 8.12 (권장) | 멀티 모듈 구성이 용이한 Gradle 권장 |
 | **Database** | PostgreSQL | Docker 환경 권장 |
 | **Persistence** | **Spring Data JPA**, QueryDSL 5.0 | 복잡한 동적 쿼리는 QueryDSL 원칙 |
 | **Security** | Spring Security 6.x, JWT (jjwt 0.11.x) | Stateless, Method Security 적용 |
@@ -62,13 +62,13 @@ graph TD
 *   **DTO 사용 의무화**:
     *   Entity는 절대로 Controller 밖으로 리턴하지 않음.
     *   Request/Response DTO를 명확히 분리 (e.g., `UserSaveRequest`, `UserResponse`).
-    *   객체 변환은 `MapStruct` 또는 생성자 패턴 사용.
+    *   객체 변환은 생성자 패턴 또는 별도 매퍼 클래스 사용.
 *   **예외 처리 (Error Handling)**:
     *   `@RestControllerAdvice`를 통한 전역 예외 처리.
     *   표준 응답 포맷(`ApiResponse<T>`) 정의하여 성공/실패 구조 통일.
 
 ### 4.3. 인증 및 인가 (Authentication & Authorization)
-*   **JWT 저장**: Access Token은 Header(`Authorization: Bearer`), Refresh Token은 `HttpOnly Cookie` 또는 Redis 저장 권장.
+*   **JWT 저장**: Access Token은 Header(`Authorization: Bearer`), Refresh Token은 `HttpOnly Cookie` 또는 서버측 저장소 권장.
 *   **권한 체계**: Role-Based Access Control (RBAC). URL 패턴 통제보다는 Method Level Security(`@PreAuthorize("hasRole('ADMIN')")`) 권장.
 
 ## 5. 마이그레이션 전략 (Migration Strategy)

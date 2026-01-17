@@ -874,9 +874,18 @@ public class EgovAnnvrsryManageController {
 			long lTemp = getDateCount(vo, today);
 
 			// Notification Logic: if diff <= AnnvrsryBeginDe (e.g. 3 days before)
-			if (lTemp >= 0 && lTemp < Long.parseLong(vo.getAnnvrsryBeginDe().replaceAll("\\p{Space}", ""))) {
-				vo.setAnnvrsryDe(EgovDateUtil.formatDate(vo.getAnnvrsryDe(), "-"));
-				resultList.add(vo);
+			// Notification Logic: if diff <= AnnvrsryBeginDe (e.g. 3 days before)
+			String beginDe = vo.getAnnvrsryBeginDe();
+			if (beginDe != null && !beginDe.trim().isEmpty()) {
+				try {
+					long beginDeVal = Long.parseLong(beginDe.replaceAll("\\p{Space}", ""));
+					if (lTemp >= 0 && lTemp < beginDeVal) {
+						vo.setAnnvrsryDe(EgovDateUtil.formatDate(vo.getAnnvrsryDe(), "-"));
+						resultList.add(vo);
+					}
+				} catch (NumberFormatException e) {
+					// Ignore invalid begin date
+				}
 			}
 		}
 		return resultList;
@@ -905,9 +914,15 @@ public class EgovAnnvrsryManageController {
 			}
 		}
 
-		if (sAnnvrsryDe != null && !sAnnvrsryDe.equals("")) {
-			targetDate.set(Integer.parseInt(sAnnvrsryDe.substring(0, 4)),
-					Integer.parseInt(sAnnvrsryDe.substring(4, 6)) - 1, Integer.parseInt(sAnnvrsryDe.substring(6, 8)));
+		if (sAnnvrsryDe != null && !sAnnvrsryDe.trim().isEmpty() && sAnnvrsryDe.length() >= 8) {
+			try {
+				targetDate.set(Integer.parseInt(sAnnvrsryDe.substring(0, 4)),
+						Integer.parseInt(sAnnvrsryDe.substring(4, 6)) - 1,
+						Integer.parseInt(sAnnvrsryDe.substring(6, 8)));
+			} catch (NumberFormatException e) {
+				// Parse failed, return -1 (no notification)
+				return -1;
+			}
 		} else {
 			// Default to tomorrow?
 			targetDate.set(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DATE));

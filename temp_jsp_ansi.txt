@@ -13,9 +13,9 @@
 
 							<head>
 								<meta http-equiv="content-type" content="text/html; charset=utf-8">
-								<title>DIAGNOSTIC -
+								<title>
 									<spring:message code="ussIonRsm.recentSrchwrdList.recentSrchwrdList" />
-								</title>
+								</title><!-- 최근검색어 관리 목록 -->
 								<link href="<c:url value=" /css/egovframework/com/com.css" />" rel="stylesheet"
 								type="text/css">
 								<link href="<c:url value=" /css/egovframework/com/button.css" />" rel="stylesheet"
@@ -94,15 +94,16 @@ $(document).ready(function(){
 
 							<body>
 								<div class="board">
-									<h1>DIAGNOSTIC 123 -
+									<h1>
 										<spring:message code="ussIonRsm.recentSrchwrdList.recentSrchwrdList" />
 									</h1>
 									<form name="listForm" action="<c:url value=''/>" method="post">
+										<spring:message code="common.noScriptTitle.msg" var="vNoScriptTitle" />
 										<spring:message code="title.searchCondition" var="vSearchConditionTitle" />
 										<spring:message code="title.search" var="vSearchTitle" />
 										<spring:message code="button.inquire" var="vInquireTitle" />
 										<spring:message code="button.create" var="vCreateTitle" />
-										<div class="search_box" title="HARDCODED_TITLE">
+										<div class="search_box" title="${vNoScriptTitle}">
 											<ul>
 												<li>
 													<select name="searchCondition" id="searchCondition" class="select"

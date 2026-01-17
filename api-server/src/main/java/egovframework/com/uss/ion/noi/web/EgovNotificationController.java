@@ -90,6 +90,7 @@ public class EgovNotificationController {
     @RequestMapping("/uss/ion/noi/addNotification.do")
     public String addNotificationView(@ModelAttribute("searchVO") NotificationVO searchVO, ModelMap model)
             throws Exception {
+        System.out.println("DEBUG: Entering addNotificationView");
 
         model.addAttribute("notification", new NotificationVO());
         return "egovframework/com/uss/ion/noi/EgovNotificationRegist";

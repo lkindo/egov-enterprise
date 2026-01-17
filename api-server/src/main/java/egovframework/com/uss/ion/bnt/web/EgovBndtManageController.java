@@ -269,7 +269,6 @@ public class EgovBndtManageController {
 			@ModelAttribute("bndtManageVO") BndtManageVO bndtManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
 
-
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("bndtManageVO", bndtManageVO);
 			return "egovframework/com/uss/ion/bnt/EgovBndtManageUpdt";
@@ -422,7 +421,6 @@ public class EgovBndtManageController {
 			@ModelAttribute("bndtCeckManageVO") BndtCeckManageVO bndtCeckManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
 
-
 		if (bindingResult.hasErrors()) {
 			ComDefaultCodeVO vo = new ComDefaultCodeVO();
 			vo.setCodeId("COM071");
@@ -461,7 +459,6 @@ public class EgovBndtManageController {
 	public String updtBndtCeckManage(@ModelAttribute("bndtCeckManage") BndtCeckManage bndtCeckManage,
 			@ModelAttribute("bndtCeckManageVO") BndtCeckManageVO bndtCeckManageVO, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
-
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("bndtCeckManageVO", bndtCeckManageVO);

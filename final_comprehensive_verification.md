@@ -4,24 +4,24 @@
 
 | 메뉴번호 | 메뉴명 | 원본 프로그램 | 매칭 JSP | 실제 경로 | 상태 |
 |---|---|---|---|---|---|
-| 0 | root | dir | **N/A** | 📁 폴더 | Normal |
-| 1000000 | 사용자디렉토리/통합인증 | dir | **N/A** | 📁 폴더 | Normal |
+| 0 | root | dir | **없음** | 📁 폴더 | 정상 |
+| 1000000 | 사용자디렉토리/통합인증 | dir | **없음** | 📁 폴더 | 정상 |
 | 1010000 | 로그인 | egovLoginUsr | **EgovLoginUsr.jsp** | /uat/uia/EgovLoginUsr.jsp | ✅ 정상 |
 | 1020000 | 로그인정책관리 | selectLoginPolicyList | **EgovLoginPolicyList.jsp** | /uat/uap/EgovLoginPolicyList.jsp | ⚠️ 파일명 상이 |
-| 2000000 | 보안 | dir | **N/A** | 📁 폴더 | Normal |
+| 2000000 | 보안 | dir | **없음** | 📁 폴더 | 정상 |
 | 2010000 | 권한관리 | EgovAuthorList | **EgovAuthorManage.jsp** | /sec/ram/EgovAuthorManage.jsp | ⚠️ 파일명 상이 |
 | 2020000 | 권한그룹관리 | EgovAuthorGroupList | **EgovAuthorGroupManage.jsp** | /sec/rgm/EgovAuthorGroupManage.jsp | ⚠️ 파일명 상이 |
 | 2030000 | 그룹관리 | EgovGroupList | **EgovGroupManage.jsp** | /sec/gmt/EgovGroupManage.jsp | ⚠️ 파일명 상이 |
 | 2040000 | 롤관리 | EgovRoleList | **EgovRoleManage.jsp** | /sec/rmt/EgovRoleManage.jsp | ⚠️ 파일명 상이 |
 | 2050000 | 부서권한관리 | EgovDeptAuthorList | **EgovAuthorManage.jsp** | /sec/ram/EgovAuthorManage.jsp | ⚠️ 파일명 상이 |
-| 3000000 | 통계/리포팅 | dir | **N/A** | 📁 폴더 | Normal |
+| 3000000 | 통계/리포팅 | dir | **없음** | 📁 폴더 | 정상 |
 | 3010000 | 게시물통계 | selectBbsStats | **EgovBbsStats.jsp** | /sts/EgovBbsStats.jsp | ⚠️ 파일명 상이 |
 | 3020000 | 사용자통계 | selectUserStats | **EgovUserStats.jsp** | /egovframework/com/sts/ust/EgovUserStats.jsp | ❌ 이관완료 |
 | 3030000 | 접속통계 | selectConectStats | **EgovConectStats.jsp** | /sts/cst/EgovConectStats.jsp | ⚠️ 파일명 상이 |
 | 3040000 | 화면통계 | selectScrinStats | **EgovScrinStats.jsp** | /egovframework/com/sts/sst/EgovScrinStats.jsp | ❌ 이관완료 |
 | 3050000 | 보고서통계 | selectReprtStatsListView | **EgovReprtStatsList.jsp** | /egovframework/com/sts/rst/EgovReprtStatsList.jsp | ❌ 이관완료 |
 | 3060000 | 자료이용현황통계 | selectDtaUseStatsList | **EgovDtaUseStatsDetail.jsp** | /egovframework/com/sts/dst/EgovDtaUseStatsDetail.jsp | ❌ 이관완료 |
-| 4000000 | 협업 | dir | **N/A** | 📁 폴더 | Normal |
+| 4000000 | 협업 | dir | **없음** | 📁 폴더 | 정상 |
 | 4010000 | 게시판속성관리 | SelectBBSMasterInfs | **EgovBBSMasterList.jsp** | /egovframework/com/cop/bbs/EgovBBSMasterList.jsp | ❌ 이관완료 |
 | 4020000 | 게시판사용정보 | selectBBSUseInfs | **EgovArticleList.jsp** | /cop/bbs/EgovArticleList.jsp | ⚠️ 파일명 상이 |
 | 4030000 | 템플릿관리 | selectTemplateInfs | **EgovTemplateInqirePopup.jsp** | /cop/com/EgovTemplateInqirePopup.jsp | ⚠️ 파일명 상이 |
@@ -43,7 +43,7 @@
 | 4190000 | 주간/월간보고관리 | selectWikMnthngReprtList | **EgovWikMnthngReprtDetail.jsp** | /egovframework/com/cop/smt/wmr/EgovWikMnthngReprtDetail.jsp | ❌ 이관완료 |
 | 4200000 | 메모할일관리 | selectMemoTodoList | **EgovMemoTodoDetail.jsp** | /egovframework/com/cop/smt/mtm/EgovMemoTodoDetail.jsp | ❌ 이관완료 |
 | 4210000 | 메모보고 | selectMemoReprtList | **EgovMemoReprtDetail.jsp** | /egovframework/com/cop/smt/mrm/EgovMemoReprtDetail.jsp | ❌ 이관완료 |
-| 5000000 | 사용자지원 | dir | **N/A** | 📁 폴더 | Normal |
+| 5000000 | 사용자지원 | dir | **없음** | 📁 폴더 | 정상 |
 | 5010000 | 기업회원관리 | EgovEntrprsMberManage | **EgovEntrprsMberManage.jsp** | /egovframework/com/uss/umt/EgovEntrprsMberManage.jsp | ❌ 이관완료 |
 | 5020000 | 업무사용자관리 | EgovUserManage | **EgovUserManage.jsp** | /cmm/uss/umt/EgovUserManage.jsp | ✅ 정상 |
 | 5030000 | 부서관리 | selectDeptManageListView | **EgovDeptManageList.jsp** | /egovframework/com/uss/umt/EgovDeptManageList.jsp | ❌ 이관완료 |
@@ -110,7 +110,7 @@
 | 5640000 | 행사신청관리 | EgovEventReqstManageList | **EgovEventReqstManageList.jsp** | /egovframework/com/uss/ion/evt/EgovEventReqstManageList.jsp | ❌ 이관완료 |
 | 5650000 | 행사접수관리 | EgovEventRcrptManageList | **EgovEventRceptManageList.jsp** | /egovframework/com/uss/ion/evt/EgovEventRceptManageList.jsp | ❌ 이관완료 |
 | 5660000 | 행사접수승인관리 | selectEventRceptConfmList | **EgovEventRceptConfm.jsp** | /egovframework/com/uss/ion/evt/EgovEventRceptConfm.jsp | ❌ 이관완료 |
-| 6000000 | 시스템관리 | dir | **N/A** | 📁 폴더 | Normal |
+| 6000000 | 시스템관리 | dir | **없음** | 📁 폴더 | 정상 |
 | 6010000 | 공통분류코드 | EgovCcmCmmnClCodeList | **EgovCcmCmmnClCodeList.jsp** | /cmm/sym/ccm/EgovCcmCmmnClCodeList.jsp | ✅ 정상 |
 | 6020000 | 공통상세코드 | EgovCcmCmmnDetailCodeList | **EgovCcmCmmnDetailCodeList.jsp** | /cmm/sym/ccm/EgovCcmCmmnDetailCodeList.jsp | ✅ 정상 |
 | 6030000 | 공통코드 | EgovCcmCmmnCodeList | **EgovCcmCmmnCodeList.jsp** | /cmm/sym/ccm/EgovCcmCmmnCodeList.jsp | ✅ 정상 |
@@ -142,12 +142,12 @@
 | 6290000 | 서버(S/W)목록 | selectServerList | **EgovServerDetail.jsp** | /egovframework/com/sym/sym/srv/EgovServerDetail.jsp | ❌ 이관완료 |
 | 6300000 | 장애신청관리 | selectTroblReqstList | **EgovTroblReqstDetail.jsp** | /egovframework/com/sym/tbm/tbr/EgovTroblReqstDetail.jsp | ❌ 이관완료 |
 | 6310000 | 장애처리결과관리 | selectTroblProcessList | **EgovTroblProcessList.jsp** | /egovframework/com/sym/tbm/tbp/EgovTroblProcessList.jsp | ❌ 이관완료 |
-| 7000000 | 시스템/서비스연계 | dir | **N/A** | 📁 폴더 | Normal |
+| 7000000 | 시스템/서비스연계 | dir | **없음** | 📁 폴더 | 정상 |
 | 7010000 | 시스템연계관리 | getSystemCntcList | **EgovSystemCntcList.jsp** | /egovframework/com/ssi/syi/sim/EgovSystemCntcList.jsp | ❌ 이관완료 |
 | 7020000 | 연계현황관리 | getCntcSttusList | **EgovCntcSttusList.jsp** | /egovframework/com/ssi/syi/ist/EgovCntcSttusList.jsp | ❌ 이관완료 |
 | 7030000 | 연계메시지관리 | getCntcMessageList | **EgovCntcMessageList.jsp** | /egovframework/com/ssi/syi/ims/EgovCntcMessageList.jsp | ❌ 이관완료 |
 | 7040000 | 연계기관관리 | getCntcInsttList | **EgovCntcInsttList.jsp** | /egovframework/com/ssi/syi/iis/EgovCntcInsttList.jsp | ❌ 이관완료 |
-| 8000000 | 자산 관리 | dir | **N/A** | 📁 폴더 | Normal |
+| 8000000 | 자산 관리 | dir | **없음** | 📁 폴더 | 정상 |
 | 8010000 | 개인지식관리 | EgovComDamPersonalList | **EgovComDamPersonalList.jsp** | /egovframework/com/dam/per/EgovComDamPersonalList.jsp | ❌ 이관완료 |
 | 8020000 | 지식맵관리(유형) | EgovComDamMapMaterialList | **EgovComDamMapMaterialList.jsp** | /egovframework/com/dam/map/mat/EgovComDamMapMaterialList.jsp | ❌ 이관완료 |
 | 8030000 | 지식맵관리(조직) | EgovComDamMapTeamList | **EgovComDamMapTeamList.jsp** | /egovframework/com/dam/map/tea/EgovComDamMapTeamList.jsp | ❌ 이관완료 |
@@ -155,7 +155,7 @@
 | 8050000 | 지식정보관리 | EgovComDamManagementList | **EgovComDamManagementList.jsp** | /egovframework/com/dam/mgm/EgovComDamManagementList.jsp | ❌ 이관완료 |
 | 8060000 | 지식평가관리 | EgovComDamAppraisalList | **EgovComDamAppraisalList.jsp** | /egovframework/com/dam/app/EgovComDamAppraisalList.jsp | ❌ 이관완료 |
 | 8070000 | 지식정보제공 | listRequestOffer | **EgovComDamRequestOfferDetail.jsp** | /egovframework/com/dam/spe/req/EgovComDamRequestOfferDetail.jsp | ❌ 이관완료 |
-| 9000000 | 요소기술 | dir | **N/A** | 📁 폴더 | Normal |
+| 9000000 | 요소기술 | dir | **없음** | 📁 폴더 | 정상 |
 | 9010000 | 공휴일관리(달력) | EgovRestdeList | **EgovRestdeList.jsp** | /egovframework/com/sym/cal/EgovRestdeList.jsp | ❌ 이관완료 |
 | 9020000 | 송수신모니터링 | getTrsmrcvMntrngList | **EgovTrsmrcvMntrngList.jsp** | /egovframework/com/utl/sys/trm/EgovTrsmrcvMntrngList.jsp | ❌ 이관완료 |
 | 9030000 | DB서비스모니터링 | getDbMntrngList | **EgovDbMntrngList.jsp** | /egovframework/com/utl/sys/dbm/EgovDbMntrngList.jsp | ❌ 이관완료 |

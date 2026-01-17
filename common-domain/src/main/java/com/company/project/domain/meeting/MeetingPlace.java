@@ -19,10 +19,10 @@ import java.time.LocalDateTime;
 public class MeetingPlace {
 
     @Id
-    @Column(name = "MTG_PLACE_ID", length = 20)
+    @Column(name = "MTGRUM_ID", length = 20)
     private String mtgPlaceId;
 
-    @Column(name = "MTG_PLACE_NM", length = 255, nullable = false)
+    @Column(name = "MTGRUM_NM", length = 255, nullable = false)
     private String mtgPlaceNm;
 
     @Column(name = "OPN_BEGIN_TM", length = 6)
@@ -46,13 +46,13 @@ public class MeetingPlace {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

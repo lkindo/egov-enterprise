@@ -40,10 +40,10 @@ public class Banner {
     @Column(name = "REFLCT_AT", length = 1)
     private String reflctAt;
 
-    @Column(name = "USER_ID", length = 20)
+    @Column(name = "FRST_REGISTER_ID", length = 20)
     private String userId;
 
-    @Column(name = "REG_DATE")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime regDate;
 
     @Builder

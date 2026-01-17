@@ -31,10 +31,10 @@ public class Event {
     @Column(name = "EVENT_PURPS", length = 200)
     private String eventPurps;
 
-    @Column(name = "EVENT_BEGIN_DE", length = 20)
+    @Column(name = "EVENT_BGNDE", length = 20)
     private String eventBeginDe;
 
-    @Column(name = "EVENT_END_DE", length = 20)
+    @Column(name = "EVENT_ENDDE", length = 20)
     private String eventEndDe;
 
     @Column(name = "EVENT_AUSPC_INSTT_NM", length = 100)
@@ -61,22 +61,22 @@ public class Event {
     @Column(name = "REFRN_URL", length = 255)
     private String refrnUrl;
 
-    @Column(name = "RCEPT_BEGIN_DE", length = 20)
+    @Column(name = "RCEPT_BGNDE", length = 20)
     private String rceptBeginDe;
 
-    @Column(name = "RCEPT_END_DE", length = 20)
+    @Column(name = "RCEPT_ENDDE", length = 20)
     private String rceptEndDe;
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

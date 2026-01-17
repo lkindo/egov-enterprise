@@ -29,7 +29,7 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	@Override
 	public List<?> selectWikiBookmarkList(WikiBookmark wikiBookmark) throws Exception {
 		Pageable pageable = PageRequest.of(wikiBookmark.getPageIndex() - 1, wikiBookmark.getPageUnit(),
-				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+				Sort.by(Sort.Direction.DESC, "frstRegistPnttm"));
 		Page<com.company.project.domain.wiki.WikiBookmark> page = wikiBookmarkRepository.findAll(pageable);
 		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}

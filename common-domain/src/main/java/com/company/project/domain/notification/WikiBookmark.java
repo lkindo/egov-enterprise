@@ -31,7 +31,7 @@ public class WikiBookmark {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime frstRegistPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
@@ -45,6 +45,6 @@ public class WikiBookmark {
         this.userId = userId;
         this.wikiBkmkNm = wikiBkmkNm;
         this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.frstRegistPnttm = LocalDateTime.now();
     }
 }

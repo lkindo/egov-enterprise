@@ -22,13 +22,13 @@ public class MeetingReservation {
     @Column(name = "RESVE_ID", length = 20)
     private String resveId;
 
-    @Column(name = "MTG_PLACE_ID", length = 20, nullable = false)
+    @Column(name = "MTGRUM_ID", length = 20, nullable = false)
     private String mtgPlaceId;
 
     @Column(name = "MTG_SJ", length = 255, nullable = false)
     private String mtgSj;
 
-    @Column(name = "RESVE_MAN_ID", length = 20, nullable = false)
+    @Column(name = "RSVCTM_ID", length = 20, nullable = false)
     private String resveManId;
 
     @Column(name = "RESVE_DE", length = 20)
@@ -49,13 +49,13 @@ public class MeetingReservation {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

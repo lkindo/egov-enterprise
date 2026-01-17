@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "NCZIP")
+@Table(name = "NCZIP", schema = "ebt")
 @IdClass(ZipId.class)
 public class Zip {
 

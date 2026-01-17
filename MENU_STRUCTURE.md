@@ -9,13 +9,13 @@
 
 ---
 
-## 1. 사용자디렉토리/통합인증 (User Directory / Auth)
+## 1. 사용자디렉토리/통합인증 (사용자 인증 및 권한)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 로그인정책관리 | selectLoginPolicyList | /uat/uap/selectLoginPolicyList.do | NLOGINPOLICY | LoginPolicyManageController |
 | ✅ | 로그인 | egovLoginUsr | /uat/uia/egovLoginUsr.do | NLOGINPOLICY, COMVNUSERMASTER | AuthController |
 
-## 2. 보안 (Security)
+## 2. 보안 (보안 관리)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 권한관리 | EgovAuthorList | /sec/ram/EgovAuthorList.do | NAUTHORINFO | AuthorManageController |
@@ -24,7 +24,7 @@
 | ✅ | 롤관리 | EgovRoleList | /sec/rmt/EgovRoleList.do | NROLEINFO | RoleManageController |
 | ✅ | 부서권한관리 | EgovDeptAuthorList | /sec/drm/EgovDeptAuthorList.do | NDEPTAUTHOR | AuthorManageController |
 
-## 3. 통계/리포팅 (Statistics)
+## 3. 통계/리포팅 (시스템 통계)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 게시물통계 | selectBbsStats | /sts/bst/selectBbsStats.do | NBBS, NSTATISTIC | BbsUserStatsController |
@@ -34,7 +34,7 @@
 | ✅ | 보고서통계 | selectReprtStatsListView | /sts/rst/selectReprtStatsListView.do | NREPRTSTATS | StatisticsController |
 | ✅ | 자료이용현황통계 | selectDtaUseStatsList | /sts/dst/selectDtaUseStatsList.do | NDTAUSESTATS | StatisticsController |
 
-## 4. 협업 (Collaboration)
+## 4. 협업 (협업 지원)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 게시판속성관리 | SelectBBSMasterInfs | /cop/bbs/SelectBBSMasterInfs.do | NBBSMASTER | BBSManageController |
@@ -57,7 +57,7 @@
 | 🟦 | 메모할일관리 | selectMemoTodoList | /cop/smt/mtm/selectMemoTodoList.do | NMEMOTODO | - |
 | 🟦 | 메모보고 | selectMemoReprtList | /cop/smt/mrm/selectMemoReprtList.do | NMEMOREPRT | - |
 
-## 5. 사용자지원 (User Support)
+## 5. 사용자지원 (회원 및 도움말 지원)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 기업회원관리 | EgovEntrprsMberManage | /uss/umt/EgovEntrprsMberManage.do | NENTRPRSMBER | UserManageController |
@@ -71,7 +71,7 @@
 | 🟦 | 설문관리 | EgovQustnrManageList | /uss/olp/qmc/EgovQustnrManageList.do | NQUSTNRMANAGE | - |
 | ✅ | 설문조사 | EgovQustnrRespondInfoManageList | /uss/olp/qri/EgovQustnrRespondInfoManageList.do | NQUSTNRRESPONDINFO | QustnrRespondInfoController |
 
-## 6. 시스템관리 (System Management)
+## 6. 시스템관리 (시스템 설정 및 관리)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | ✅ | 공통분류코드 | EgovCcmCmmnClCodeList | /sym/ccm/ccc/EgovCcmCmmnClCodeList.do | NCMMNCLCODE | CcmManageController |
@@ -88,7 +88,7 @@
 | 🟦 | 네트워크관리 | selectNtwrkList | /sym/sym/nwk/selectNtwrkList.do | NNTWRKINFO | - |
 | 🟦 | 서버정보관리 | selectServerEqpmnList | /sym/sym/srv/selectServerEqpmnList.do | NSERVEREQPMNINFO | - |
 
-## 7. 시스템/서비스연계 (System Connection)
+## 7. 시스템/서비스연계 (시스템 간 연계)
 | 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
 |:---:|---|---|---|---|---|
 | 🟦 | 시스템연계관리 | getSystemCntcList | /sym/sci/cnt/getSystemCntcList.do | NSYSTEMCNTC | - |

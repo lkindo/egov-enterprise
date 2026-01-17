@@ -78,3 +78,18 @@
     - [x] Docker 환경 및 `COMT` 테이블 정리 로직
 - [x] **Enterprise 최적화**
     - [x] 패키지 표준화 (`let` -> `com`)
+- [x] **최근검색어 404 오류 해결 (Recent Search Word Fix)**
+    - [x] `rsm` 관련 Java 파일 복구 (Controller, Service, DAO, VO)
+    - [x] MyBatis Mapper (`SQL_postgres.xml`) 복구 및 테이블명 수정 (`nrecentsrchwrd`, `nrecentsrchwrdmanage`)
+    - [x] 서버 재시작 및 동작 확인
+- [x] **공통 문서 한글화 (Documentation Localization)**
+    - [x] `README.md` 한글화
+    - [x] `PRD.MD` 한글화/보완
+    - [x] `TRD.MD` 한글화
+    - [x] `LLD.MD` 한글화
+    - [x] `MIGRATION_PLAN.md` 한글화
+    - [x] `MIGRATION_STRATEGY.md` 한글화
+    - [x] `COMPLIANCE_REPORT.md` 한글화
+    - [x] `MENU_STRUCTURE.md` 보완 및 한글화
+    - [x] `final_comprehensive_verification.md` 보완 및 한글화
+    - [x] `task.md` 본체 한글화 완료
