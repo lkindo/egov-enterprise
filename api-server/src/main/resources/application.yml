@@ -49,3 +49,11 @@ logging:
 file:
   upload:
     path: ${FILE_UPLOAD_PATH:./storage/uploads}
+
+server:
+  error:
+    include-message: always
+    include-exception: true
+    include-stacktrace: always
+    whitelabel:
+      enabled: true

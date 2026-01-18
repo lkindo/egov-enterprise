@@ -1,4 +1,4 @@
-<% /** * @Class Name : EgovUserManage.jsp * @Description : 사용자관리(조회,삭제) JSP * @Modification Information * @ * @ 수정일 수정자
+﻿<% /** * @Class Name : EgovUserManage.jsp * @Description : 사용자관리(조회,삭제) JSP * @Modification Information * @ * @ 수정일 수정자
     수정내용 * @ ------- -------- --------------------------- * @ 2009.03.02 조재영 최초 생성 * 2011.09.07 서준식 네비게이션명 변경 (사용자 관리 ->
     업무사용자관리)
     * 2016.06.13 장동한 표준프레임워크 v3.6 개선
@@ -136,8 +136,7 @@ function fnViewCheck(){
                                         </h1>
 
                                         <!-- 검색영역 -->
-                                        <div class="search_box" title="<spring:message code="
-                                            common.searchCondition.msg" />">
+                                        <div class="search_box" title="<spring:message code="common.searchCondition.msg" />">
                                         <ul>
                                             <li style="margin:3px 0 0 0;">
                                                 <div>사용자수 <strong>
@@ -146,8 +145,7 @@ function fnViewCheck(){
                                             </li>
                                             <li><!-- 상태-->
                                                 <select name="sbscrbSttus" id="sbscrbSttus"
-                                                    title="<spring:message code="
-                                                    comUssUmt.userManageSsearch.sbscrbSttusTitle" />">
+                                                    title="<spring:message code="comUssUmt.userManageSsearch.sbscrbSttusTitle" />">
                                                 <option value="0" <c:if
                                                     test="${empty mberVO.sbscrbSttus || mberVO.sbscrbSttus == '0'}">
                                                     selected="selected"</c:if> >
@@ -169,8 +167,7 @@ function fnViewCheck(){
                                             </li>
                                             <li><!-- 조건 -->
                                                 <select name="searchCondition" id="searchCondition"
-                                                    title="<spring:message code="
-                                                    comUssUmt.userManageSsearch.searchConditioTitle" />"><!--  -->
+                                                    title="<spring:message code="comUssUmt.userManageSsearch.searchConditioTitle" />"><!--  -->
                                                 <option value="0" <c:if test="${mberVO.searchCondition == '0'}">
                                                     selected="selected"</c:if> >
                                                     <spring:message
@@ -187,22 +184,19 @@ function fnViewCheck(){
                                             <!-- 검색키워드 및 조회버튼 -->
                                             <li>
                                                 <input class="s_input" name="searchKeyword" type="text" size="35"
-                                                    title="<spring:message code=" title.search" />
+                                                    title="<spring:message code="title.search" />
                                                 <spring:message code="input.input" />" value='
                                                 <c:out value="${userSearchVO.searchKeyword}" />' maxlength="255" >
-                                                <input type="submit" class="s_btn" value="<spring:message code="
-                                                    button.inquire" />" title="
-                                                <spring:message code="title.inquire" />
+                                                <input type="submit" class="s_btn" value="<spring:message code="button.inquire" />" title="<spring:message code="title.inquire" />
                                                 <spring:message code="input.button" />" />
                                                 <input type="button" class="s_btn"
                                                     onClick="fnDeleteUser(); return false;"
-                                                    value="<spring:message code=" title.delete" />" title="
-                                                <spring:message code="title.delete" />
+                                                    value="<spring:message code="title.delete" />" title="<spring:message code="title.delete" />
                                                 <spring:message code="input.button" />" />
                                                 <span class="btn_b"><a
                                                         href="<c:url value='/uss/umt/EgovUserInsertView.do'/>"
                                                         onClick="fnAddUserView(); return false;"
-                                                        title="<spring:message code=" button.create" />
+                                                        title="<spring:message code="button.create" />
                                                     <spring:message code="input.button" />">
                                                     <spring:message code="button.create" /></a>
                                                 </span>
@@ -211,7 +205,7 @@ function fnViewCheck(){
                                     </div>
 
 
-                                    <table class="board_list" summary="<spring:message code=" common.summary.list"
+                                    <table class="board_list" summary="<spring:message code="common.summary.list"
                                         arguments="${pageTitle}" />">
                                     <caption>${pageTitle}
                                         <spring:message code="title.list" />
@@ -233,8 +227,7 @@ function fnViewCheck(){
                                                 <spring:message code="table.num" />
                                             </th><!-- 번호 -->
                                             <th><input type="checkbox" name="checkAll" class="check2"
-                                                    onclick="javascript:fncCheckAll()" title="<spring:message code="
-                                                    input.selectAll.title" />"></th><!-- 전체선택 -->
+                                                    onclick="javascript:fncCheckAll()" title="<spring:message code="input.selectAll.title" />"></th><!-- 전체선택 -->
 
                                             <th class="board_th_link">
                                                 <spring:message code="comUssUmt.userManageList.id" />
@@ -276,8 +269,7 @@ function fnViewCheck(){
                                                     <input name="checkId" type="hidden"
                                                         value="<c:out value='${result.userTy}'/>:<c:out value='${result.uniqId}'/>" />
                                                 </td>
-                                                <td><a href="<c:url value='/uss/umt/EgovMberSelectUpdtView.do'/>?selectedId=<c:out value="
-                                                        ${result.uniqId}" />" onclick="javascript:fnSelectUser('
+                                                <td><a href="<c:url value='/uss/umt/EgovMberSelectUpdtView.do'/>?selectedId=<c:out value="${result.uniqId}" />" onclick="javascript:fnSelectUser('
                                                     <c:out value="${result.userTy}" />:
                                                     <c:out value="${result.uniqId}" />'); return false;">
                                                     <c:out value="${result.emplyrId}" /></a>

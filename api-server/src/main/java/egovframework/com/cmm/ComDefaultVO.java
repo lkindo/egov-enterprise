@@ -9,34 +9,34 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @Description : ComDefaultVO class
  * @Modification Information
  * @
- * @  수정일         수정자                   수정내용
- * @ -------    --------    ---------------------------
- * @ 2009.02.01    조재영         최초 생성
+ *   @ 수정일 수정자 수정내용
+ *   @ ------- -------- ---------------------------
+ *   @ 2009.02.01 조재영 최초 생성
  *
- *  @author 공통서비스 개발팀 조재영
- *  @since 2009.02.01
- *  @version 1.0
- *  @see 
- *  
+ * @author 공통서비스 개발팀 조재영
+ * @since 2009.02.01
+ * @version 1.0
+ * @see
+ * 
  */
 @SuppressWarnings("serial")
 public class ComDefaultVO implements Serializable {
-	
-	/** 검색조건 */
+
+    /** 검색조건 */
     private String searchCondition = "";
-    
+
     /** 검색Keyword */
     private String searchKeyword = "";
-    
+
     /** 검색사용여부 */
     private String searchUseYn = "";
-    
+
     /** 현재페이지 */
     private int pageIndex = 1;
-    
+
     /** 페이지개수 */
     private int pageUnit = 10;
-    
+
     /** 페이지사이즈 */
     private int pageSize = 10;
 
@@ -48,38 +48,47 @@ public class ComDefaultVO implements Serializable {
 
     /** recordCountPerPage */
     private int recordCountPerPage = 10;
-    
+
     /** 검색KeywordFrom */
-    private String searchKeywordFrom = "";    
+    private String searchKeywordFrom = "";
 
-	/** 검색KeywordTo */
-    private String searchKeywordTo = "";  
-    
-	public int getFirstIndex() {
-		return firstIndex;
-	}
+    /** 검색KeywordTo */
+    private String searchKeywordTo = "";
 
-	public void setFirstIndex(int firstIndex) {
-		this.firstIndex = firstIndex;
-	}
+    /** 검색시작일 */
+    private String searchBgnDe = "";
 
-	public int getLastIndex() {
-		return lastIndex;
-	}
+    /** 검색종료일 */
+    private String searchEndDe = "";
 
-	public void setLastIndex(int lastIndex) {
-		this.lastIndex = lastIndex;
-	}
+    /** 검색단어 */
+    private String searchWrd = "";
 
-	public int getRecordCountPerPage() {
-		return recordCountPerPage;
-	}
+    public int getFirstIndex() {
+        return firstIndex;
+    }
 
-	public void setRecordCountPerPage(int recordCountPerPage) {
-		this.recordCountPerPage = recordCountPerPage;
-	}
+    public void setFirstIndex(int firstIndex) {
+        this.firstIndex = firstIndex;
+    }
 
-	public String getSearchCondition() {
+    public int getLastIndex() {
+        return lastIndex;
+    }
+
+    public void setLastIndex(int lastIndex) {
+        this.lastIndex = lastIndex;
+    }
+
+    public int getRecordCountPerPage() {
+        return recordCountPerPage;
+    }
+
+    public void setRecordCountPerPage(int recordCountPerPage) {
+        this.recordCountPerPage = recordCountPerPage;
+    }
+
+    public String getSearchCondition() {
         return searchCondition;
     }
 
@@ -131,36 +140,93 @@ public class ComDefaultVO implements Serializable {
         return ToStringBuilder.reflectionToString(this);
     }
 
-    
     /**
-	 * searchKeywordFrom attribute를 리턴한다.
-	 * @return String
-	 */
-	public String getSearchKeywordFrom() {
-		return searchKeywordFrom;
-	}
+     * searchKeywordFrom attribute를 리턴한다.
+     * 
+     * @return String
+     */
+    public String getSearchKeywordFrom() {
+        return searchKeywordFrom;
+    }
 
-	/**
-	 * searchKeywordFrom attribute 값을 설정한다.
-	 * @param searchKeywordFrom String
-	 */
-	public void setSearchKeywordFrom(String searchKeywordFrom) {
-		this.searchKeywordFrom = searchKeywordFrom;
-	}
+    /**
+     * searchKeywordFrom attribute 값을 설정한다.
+     * 
+     * @param searchKeywordFrom String
+     */
+    public void setSearchKeywordFrom(String searchKeywordFrom) {
+        this.searchKeywordFrom = searchKeywordFrom;
+    }
 
-	/**
-	 * searchKeywordTo attribute를 리턴한다.
-	 * @return String
-	 */
-	public String getSearchKeywordTo() {
-		return searchKeywordTo;
-	}
+    /**
+     * searchKeywordTo attribute를 리턴한다.
+     * 
+     * @return String
+     */
+    public String getSearchKeywordTo() {
+        return searchKeywordTo;
+    }
 
-	/**
-	 * searchKeywordTo attribute 값을 설정한다.
-	 * @param searchKeywordTo String
-	 */
-	public void setSearchKeywordTo(String searchKeywordTo) {
-		this.searchKeywordTo = searchKeywordTo;
-	}
+    /**
+     * searchKeywordTo attribute 값을 설정한다.
+     * 
+     * @param searchKeywordTo String
+     */
+    public void setSearchKeywordTo(String searchKeywordTo) {
+        this.searchKeywordTo = searchKeywordTo;
+    }
+
+    /**
+     * searchBgnDe attribute를 리턴한다.
+     * 
+     * @return String
+     */
+    public String getSearchBgnDe() {
+        return searchBgnDe;
+    }
+
+    /**
+     * searchBgnDe attribute 값을 설정한다.
+     * 
+     * @param searchBgnDe String
+     */
+    public void setSearchBgnDe(String searchBgnDe) {
+        this.searchBgnDe = searchBgnDe;
+    }
+
+    /**
+     * searchEndDe attribute를 리턴한다.
+     * 
+     * @return String
+     */
+    public String getSearchEndDe() {
+        return searchEndDe;
+    }
+
+    /**
+     * searchEndDe attribute 값을 설정한다.
+     * 
+     * @param searchEndDe String
+     */
+    public void setSearchEndDe(String searchEndDe) {
+        this.searchEndDe = searchEndDe;
+    }
+
+    /**
+     * searchWrd attribute를 리턴한다.
+     * 
+     * @return String
+     */
+    public String getSearchWrd() {
+        return searchWrd;
+    }
+
+    /**
+     * searchWrd attribute 값을 설정한다.
+     * 
+     * @param searchWrd String
+     */
+    public void setSearchWrd(String searchWrd) {
+        this.searchWrd = searchWrd;
+    }
 }

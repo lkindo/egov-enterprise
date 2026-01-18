@@ -55,7 +55,6 @@
 						</head>
 
 						<body>
-
 							<noscript class="noScriptTitle">
 								<spring:message code="common.noScriptTitle.msg" />
 							</noscript><!-- 자바스크립트를 지원하지 않는 브라우저에서는 일부 기능을 사용하실 수 없습니다. -->
@@ -88,9 +87,9 @@
 											</option><!-- 이력구분 -->
 											</select>
 											<input id="searchWrd" class="s_input2 vat" name="searchWrd" type="text"
-												value='<c:out value=' ${searchVO.searchWrd}' />' maxlength="35"
-											size="35" onkeypress="press(event);" title="
-											<spring:message code="title.search" />" /><!-- 사용자명검색 -->
+												value='<c:out value="${searchVO.searchWrd}" />' maxlength="35" size="35"
+												onkeypress="press(event);" title="<spring:message code="
+												title.search" />" /><!-- 사용자명검색 -->
 
 											<span class="btn_b"><a href=""
 													onclick="fn_egov_select_sysHist('1'); return false;"

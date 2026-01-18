@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8" %>
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui" %>
@@ -24,9 +24,9 @@
                             <title>
                                 <spring:message code="comSymLogSlg.sysHistList.title" />
                             </title><!-- 시스템 이력 목록 -->
-                            <link href="<c:url value="/css/egovframework/com/com.css" />" rel="stylesheet"
+                            <link href="<c:url value=" /css/egovframework/com/com.css" />" rel="stylesheet"
                             type="text/css">
-                            <link href="<c:url value="/css/egovframework/com/button.css" />" rel="stylesheet"
+                            <link href="<c:url value=" /css/egovframework/com/button.css" />" rel="stylesheet"
                             type="text/css">
                             <script type="text/javascript">
                                 function fn_egov_insert_sysHist() {
@@ -68,11 +68,12 @@
                                     method="post">
                                     <input name="histId" type="hidden" />
 
-                                    <div class="search_box" title="<spring:message code="common.searchCondition.msg" />
+                                    <div class="search_box" title="<spring:message code=" common.searchCondition.msg" />
                                     "><!-- 이 레이아웃은 하단 정보를 대한 검색 정보로 구성되어 있습니다. -->
                                     <ul>
                                         <li>
-                                            <select name="searchCnd" class="select" title="<spring:message code="select.searchCondition" />">
+                                            <select name="searchCnd" class="select" title="<spring:message code="
+                                                select.searchCondition" />">
                                             <option selected value=''>--
                                                 <spring:message code="input.cSelect" />--
                                             </option><!-- 선택하세요 -->
@@ -87,14 +88,17 @@
                                             </select>
                                             <input id="searchWrd" class="s_input2 vat" name="searchWrd" type="text"
                                                 value='<c:out value="${searchVO.searchWrd}" />' maxlength="35" size="35"
-                                                onkeypress="press(event);" title="<spring:message code="title.search" />" /><!-- 사용자명검색 -->
+                                                onkeypress="press(event);" title="<spring:message code="
+                                                title.search" />" /><!-- 사용자명검색 -->
 
                                             <span class="btn_b"><a href=""
                                                     onclick="fn_egov_select_sysHist('1'); return false;"
-                                                    title="<spring:message code="title.inquire" />">
+                                                    title="<spring:message code=" title.inquire" />">
                                                 <spring:message code="button.inquire" /></a>
                                             </span><!-- 조회 -->
-                                            <input class="s_btn" type="button" value="<spring:message code="button.create" />" title="<spring:message code="title.create" />" onclick="fn_egov_insert_sysHist();
+                                            <input class="s_btn" type="button" value="<spring:message code="
+                                                button.create" />" title="
+                                            <spring:message code="title.create" />" onclick="fn_egov_insert_sysHist();
                                             return false;" /><!-- 등록 -->
                                         </li>
                                     </ul>
@@ -167,9 +171,11 @@
                                                     <c:out value="${result.frstRegisterPnttm}" />
                                                 </td>
                                                 <td>
-                                                    <a href="" onclick="fn_egov_inqire_sysHist('<c:out value="${result.histId}" />'); return false;">
+                                                    <a href="" onclick="fn_egov_inqire_sysHist('<c:out value="
+                                                        ${result.histId}" />'); return false;">
                                                     <img src="<c:url value='/images/egovframework/com/cmm/icon/search.gif'/>"
-                                                        alt="<spring:message code="comSymLogSlg.sysHistList.fnEgovInqireSysHist" />" /></a>
+                                                        alt="<spring:message code="
+                                                        comSymLogSlg.sysHistList.fnEgovInqireSysHist" />" /></a>
                                                 </td>
                                             </tr>
                                         </c:forEach>
@@ -192,4 +198,3 @@
                         </body>
 
                         </html>
-
