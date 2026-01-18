@@ -29,25 +29,42 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // 1. 기술적 문제(Quartz)로 인한 제외 (전체 제외 유지)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.bat\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.bak\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.nwk\\..*"), // 네트워크
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
 
                                 // 2. 모던 컨트롤러와 충돌나는 컨트롤러만 제외 (.web 패키지 한정)
                                 // CCM: zip, ccc, cca, cde
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\.zip\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\.ccc\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\.cca\\.web\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\.cde\\.web\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\..*"), // CCM
+                                                                                                                                  // 전체
+                                                                                                                                  // 제외
+                                                                                                                                  // (Zip,
+                                                                                                                                  // Ccc,
+                                                                                                                                  // Cca,
+                                                                                                                                  // Cde,
+                                                                                                                                  // Adc,
+                                                                                                                                  // Acr
+                                                                                                                                  // 등)
 
-                                // LOG: clg(로그인)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\.clg\\.web\\..*"),
+                                // LOG: 전체 제외 (Clg, Ulg, Slg, Wlg, Tlg 등 종속성 오류 방지)
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\..*"),
 
-                                // MNU: mpm(메뉴관리), mcm(메뉴생성)
+                                // MNU: mpm(메뉴관리), mcm(메뉴생성) - 모던 컨트롤러 사용
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mpm\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mcm\\.web\\..*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.bmm\\.web\\..*"), // 즐겨찾기
+                                                                                                                                              // -
+                                                                                                                                              // 종속성
+                                                                                                                                              // 오류로
+                                                                                                                                              // 제외
 
                                 // PRM: prm(프로그램)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.prm\\.web\\..*"),
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sts\\.cst\\.web\\..*"),
+                                // STS: 전체 제외 (Cst, Bst, Dst, Vst, Rst 등 종속성 오류 방지)
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sts\\..*"),
                                 // COP 패키지: LegacyCollaborationController와 중복되는 컨트롤러만 제외
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), // 게시판
                                                                                                                                         // -
@@ -67,6 +84,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // "egovframework\\.com\\.cop\\.smt\\.sdm\\.web\\..*"), // 부서일정 - 활성화
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
                                 // "egovframework\\.com\\.cop\\.smt\\.mtm\\.web\\..*"), // 메모할일 - 활성화
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.ems\\..*"), // 메일발송
+                                                                                                                                  // -
+                                                                                                                                  // EgovMailConfig
+                                                                                                                                  // Dummy
+                                                                                                                                  // 사용
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"), // 게시판사용정보
                                                                                                                                         // -
                                                                                                                                         // Legacy
@@ -83,6 +105,80 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                                 egovframework.com.uss.ion.uas.web.EgovUserAbsnceController.class
                                 }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsenceManageController.*"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"), // 설문/투표
+                                                                                                                                  // 도구
+                                                                                                                                  // -
+                                                                                                                                  // 종속성
+                                                                                                                                  // 오류로
+                                                                                                                                  // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olh\\..*"), // 온라인도움말
+                                                                                                                                  // -
+                                                                                                                                  // 종속성
+                                                                                                                                  // 오류로
+                                                                                                                                  // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rss\\..*"), // RSS
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rsm\\..*"), // 최근검색어
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntr\\..*"), // 받은쪽지
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntm\\..*"), // 쪽지관리
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.noi\\..*"), // 정보알림
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ctn\\..*"), // 경조사
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.evt\\..*"), // 행사
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.nts\\..*"), // 보낸쪽지
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                                                                                                                        // -
+                                                                                                                                        // 종속성
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                                                                                                                        // 도구
+                                                                                                                                        // -
+                                                                                                                                        // 오류로
+                                                                                                                                        // 제외
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\..*"), // USS
+                                                                                                                                  // ION
+                                                                                                                                  // 전체
+                                                                                                                                  // 제외
+                                                                                                                                  // (Mtg,
+                                                                                                                                  // Ntr,
+                                                                                                                                  // Ntm,
+                                                                                                                                  // Noi,
+                                                                                                                                  // Evt
+                                                                                                                                  // 등
+                                                                                                                                  // 포함)
 // 그 외 USS 내의 Legacy Controller와의 충돌 방지 필요 시 추가 제외
 
 })

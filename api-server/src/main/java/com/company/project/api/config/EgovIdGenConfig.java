@@ -624,4 +624,18 @@ public class EgovIdGenConfig {
         strategy.setFillChar('0');
         return strategy;
     }
+
+    @Bean
+    public EgovIdGnrStrategyImpl mailMsgStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("MAILMSG_");
+        strategy.setCipers(12);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovMailMsgIdGnrService() {
+        return createIdService("MAILMSG_ID", mailMsgStrategy());
+    }
 }

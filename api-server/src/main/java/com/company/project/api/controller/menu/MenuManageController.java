@@ -146,4 +146,13 @@ public class MenuManageController {
         return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
     }
 
+    /**
+     * 메뉴리스트 조회 (JSP) - 트리 구조
+     */
+    @RequestMapping(value = "/sym/mnu/mpm/EgovMenuListSelect.do")
+    public String selectMenuList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
+        model.addAttribute("list_menulist", menuService.getAllMenus());
+        return "egovframework/com/sym/mnu/mpm/EgovMenuList";
+    }
+
 }

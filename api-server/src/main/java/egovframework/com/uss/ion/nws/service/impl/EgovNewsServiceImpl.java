@@ -25,7 +25,7 @@ public class EgovNewsServiceImpl extends EgovAbstractServiceImpl implements Egov
 	@Resource(name = "newsDomainRepository")
 	private NewsDomainRepository newsRepository;
 
-	@Resource(name = "egovNewsIdGnrService")
+	@Resource(name = "egovNewsManageIdGnrService")
 	private EgovIdGnrService idgenService;
 
 	@Override

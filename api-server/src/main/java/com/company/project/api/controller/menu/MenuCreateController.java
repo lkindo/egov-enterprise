@@ -8,7 +8,13 @@ import egovframework.com.cmm.EgovMessageSource;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
+import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.com.cmm.LoginVO;
+import egovframework.com.sym.mnu.mcm.service.EgovMenuCreateManageService;
+import egovframework.com.sym.mnu.mcm.service.MenuSiteMapVO;
+import egovframework.com.utl.fcc.service.EgovStringUtil;
+import java.util.List;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +35,7 @@ public class MenuCreateController {
     EgovMessageSource egovMessageSource;
 
     private final MenuService menuService;
+    private final EgovMenuCreateManageService menuCreateManageService;
 
     /**
      * *메뉴생성목록을 조회한다.
@@ -64,6 +71,35 @@ public class MenuCreateController {
         model.addAttribute("resultMsg", resultMsg);
 
         return "sym/mnu/mcm/EgovMenuCreatManage";
+    }
+
+    /* 메뉴사이트맵 생성조회 */
+    @GetMapping(value = "/sym/mnu/mcm/EgovMenuCreatSiteMapSelect.do")
+    public String selectMenuCreatSiteMap(@ModelAttribute("menuSiteMapVO") MenuSiteMapVO menuSiteMapVO, Model model)
+            throws Exception {
+
+        List<EgovMap> resultList = menuCreateManageService.selectMenuCreatSiteMapList(menuSiteMapVO);
+        model.addAttribute("list_menulist", resultList);
+
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        menuSiteMapVO.setCreatPersonId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
+        model.addAttribute("resultVO", menuSiteMapVO);
+        return "egovframework/com/sym/mnu/mcm/EgovMenuCreatSiteMap";
+    }
+
+    /* 메뉴사이트맵 생성조회 (Fragment for Embedding) */
+    @GetMapping(value = "/sym/mnu/mcm/EgovMenuCreatSiteMapSelectFragment.do")
+    public String selectMenuCreatSiteMapFragment(@ModelAttribute("menuSiteMapVO") MenuSiteMapVO menuSiteMapVO,
+            Model model)
+            throws Exception {
+
+        List<EgovMap> resultList = menuCreateManageService.selectMenuCreatSiteMapList(menuSiteMapVO);
+        model.addAttribute("list_menulist", resultList);
+
+        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        menuSiteMapVO.setCreatPersonId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
+        model.addAttribute("resultVO", menuSiteMapVO);
+        return "egovframework/com/sym/mnu/mcm/EgovMenuCreatSiteMapFragment";
     }
 
     /* 메뉴생성 세부조회 */

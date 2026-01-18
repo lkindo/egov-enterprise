@@ -48,7 +48,7 @@ import jakarta.validation.Valid;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovProgrmManageController {
 
 	/** EgovPropertyService */
