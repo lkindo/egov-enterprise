@@ -22,6 +22,13 @@ public class BatchSchdulDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
+    // Display fields
+    private String batchOpertNm;
+    private String batchProgrm;
+    private String executCycleNm;
+    private String executSchdul;
+    private java.util.List<String> executSchdulDfkSes;
+
     public static BatchSchdulDto from(BatchSchdul entity) {
         return BatchSchdulDto.builder()
                 .batchSchdulId(entity.getBatchSchdulId())
@@ -33,6 +40,26 @@ public class BatchSchdulDto {
                 .executSchdulSecnd(entity.getExecutSchdulSecnd())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .build();
+    }
+
+    public static BatchSchdulDto from(BatchSchdul entity, String batchOpertNm, String batchProgrm, String executCycleNm,
+            String executSchdul, java.util.List<String> executSchdulDfkSes) {
+        return BatchSchdulDto.builder()
+                .batchSchdulId(entity.getBatchSchdulId())
+                .batchOpertId(entity.getBatchOpertId())
+                .executCycle(entity.getExecutCycle())
+                .executSchdulDe(entity.getExecutSchdulDe())
+                .executSchdulHour(entity.getExecutSchdulHour())
+                .executSchdulMnt(entity.getExecutSchdulMnt())
+                .executSchdulSecnd(entity.getExecutSchdulSecnd())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .batchOpertNm(batchOpertNm)
+                .batchProgrm(batchProgrm)
+                .executCycleNm(executCycleNm)
+                .executSchdul(executSchdul)
+                .executSchdulDfkSes(executSchdulDfkSes)
                 .build();
     }
 }

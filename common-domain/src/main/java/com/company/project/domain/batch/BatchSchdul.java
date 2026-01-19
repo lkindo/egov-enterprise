@@ -45,14 +45,18 @@ public class BatchSchdul {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "BATCH_SCHDUL_ID")
+    private List<BatchSchdulDfk> batchSchdulDfks = new ArrayList<>();
 
     @Builder
     public BatchSchdul(String batchSchdulId, String batchOpertId, String executCycle,

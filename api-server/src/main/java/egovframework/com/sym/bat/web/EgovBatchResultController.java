@@ -26,106 +26,112 @@ import jakarta.annotation.Resource;
  * @version 1.0
  * @updated 17-6-2010 오전 10:27:13
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == 개정이력(Modification Information) ==
  *
  *   수정일       수정자           수정내용
  *  -------     --------    ---------------------------
  *  2010.06.17   김진만     최초 생성
  *  2011.8.26	정진오			IncludedInfo annotation 추가
- * </pre>
+ *      </pre>
  */
 
 @Controller
 public class EgovBatchResultController {
 
-	/** egovBatchResultService */
-	@Resource(name = "egovBatchResultService")
-	private EgovBatchResultService egovBatchResultService;
+    /** egovBatchResultService */
+    @Resource(name = "egovBatchResultService")
+    private EgovBatchResultService egovBatchResultService;
 
-	/* Property 서비스 */
-	@Resource(name = "propertiesService")
-	private EgovPropertyService propertyService;
+    /* Property 서비스 */
+    @Resource(name = "propertiesService")
+    private EgovPropertyService propertyService;
 
-	/*  메세지 서비스 */
-	@Resource(name = "egovMessageSource")
-	private EgovMessageSource egovMessageSource;
+    /* 메세지 서비스 */
+    @Resource(name = "egovMessageSource")
+    private EgovMessageSource egovMessageSource;
 
-	/** logger */
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchResultController.class);
+    /** logger */
+    private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchResultController.class);
 
-	/**
-	 * 배치결과을 삭제한다.
-	 * @return 리턴URL
-	 *
-	 * @param batchResult 삭제대상 배치결과model
-	 * @param model		ModelMap
-	 * @exception Exception Exception
-	 */
-	@RequestMapping("/sym/bat/deleteBatchResult.do")
-	public String deleteBatchResult(BatchResult batchResult, ModelMap model) throws Exception {
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		if (!isAuthenticated) {
-			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-			return "redirect:/uat/uia/egovLoginUsr.do";
-		}
+    /**
+     * 배치결과을 삭제한다.
+     * 
+     * @return 리턴URL
+     *
+     * @param batchResult 삭제대상 배치결과model
+     * @param model       ModelMap
+     * @exception Exception Exception
+     */
+    @RequestMapping("/sym/bat/deleteBatchResult.do")
+    public String deleteBatchResult(BatchResult batchResult, ModelMap model) throws Exception {
+        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+        if (!isAuthenticated) {
+            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
+            return "redirect:/uat/uia/egovLoginUsr.do";
+        }
 
-		egovBatchResultService.deleteBatchResult(batchResult);
+        egovBatchResultService.deleteBatchResult(batchResult);
 
-		return "forward:/sym/bat/getBatchResultList.do";
-	}
+        return "forward:/sym/bat/getBatchResultList.do";
+    }
 
-	/**
-	 * 배치결과정보을 상세조회한다.
-	 * @return 리턴URL
-	 *
-	 * @param batchResult 조회대상 배치결과model
-	 * @param model		ModelMap
-	 * @exception Exception Exception
-	 */
-	@RequestMapping("/sym/bat/getBatchResult.do")
-	public String selectBatchResult(@ModelAttribute("searchVO") BatchResult batchResult, ModelMap model) throws Exception {
-		LOGGER.debug(" 조회조건 : {}", batchResult);
-		BatchResult result = egovBatchResultService.selectBatchResult(batchResult);
-		model.addAttribute("resultInfo", result);
-		LOGGER.debug(" 결과값 : {}", result);
+    /**
+     * 배치결과정보을 상세조회한다.
+     * 
+     * @return 리턴URL
+     *
+     * @param batchResult 조회대상 배치결과model
+     * @param model       ModelMap
+     * @exception Exception Exception
+     */
+    @RequestMapping("/sym/bat/getBatchResult.do")
+    public String selectBatchResult(@ModelAttribute("searchVO") BatchResult batchResult, ModelMap model)
+            throws Exception {
+        LOGGER.debug(" 조회조건 : {}", batchResult);
+        BatchResult result = egovBatchResultService.selectBatchResult(batchResult);
+        model.addAttribute("resultInfo", result);
+        LOGGER.debug(" 결과값 : {}", result);
 
-		return "egovframework/com/sym/bat/EgovBatchResultDetail";
-	}
+        return "egovframework/com/sym/bat/EgovBatchResultDetail";
+    }
 
-	/**
-	 * 배치결과 목록을 조회한다.
-	 * @return 리턴URL
-	 *
-	 * @param searchVO 목록조회조건VO
-	 * @param model		ModelMap
-	 * @exception Exception Exception
-	 */
-	@IncludedInfo(name = "배치결과관리", listUrl = "/sym/bat/getBatchResultList.do", order = 1130, gid = 60)
-	@RequestMapping("/sym/bat/getBatchResultList.do")
-	public String selectBatchResultList(@ModelAttribute("searchVO") BatchResult searchVO, ModelMap model) throws Exception {
-		searchVO.setPageUnit(propertyService.getInt("pageUnit"));
-		searchVO.setPageSize(propertyService.getInt("pageSize"));
+    /**
+     * 배치결과 목록을 조회한다.
+     * 
+     * @return 리턴URL
+     *
+     * @param searchVO 목록조회조건VO
+     * @param model    ModelMap
+     * @exception Exception Exception
+     */
+    @IncludedInfo(name = "배치결과관리", listUrl = "/sym/bat/getBatchResultList.do", order = 1130, gid = 60)
+    @RequestMapping("/sym/bat/getBatchResultList.do")
+    public String selectBatchResultList(@ModelAttribute("searchVO") BatchResult searchVO, ModelMap model)
+            throws Exception {
+        searchVO.setPageUnit(propertyService.getInt("pageUnit"));
+        searchVO.setPageSize(propertyService.getInt("pageSize"));
 
-		PaginationInfo paginationInfo = new PaginationInfo();
-		paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
-		paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
-		paginationInfo.setPageSize(searchVO.getPageSize());
+        PaginationInfo paginationInfo = new PaginationInfo();
+        paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
+        paginationInfo.setPageSize(searchVO.getPageSize());
 
-		searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+        searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+        searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
+        searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		List<BatchResult> resultList = egovBatchResultService.selectBatchResultList(searchVO);
-		int totCnt = egovBatchResultService.selectBatchResultListCnt(searchVO);
+        List<BatchResult> resultList = egovBatchResultService.selectBatchResultList(searchVO);
+        int totCnt = egovBatchResultService.selectBatchResultListCnt(searchVO);
 
-		paginationInfo.setTotalRecordCount(totCnt);
+        paginationInfo.setTotalRecordCount(totCnt);
 
-		model.addAttribute("resultList", resultList);
-		model.addAttribute("resultCnt", totCnt);
-		model.addAttribute("paginationInfo", paginationInfo);
+        model.addAttribute("resultList", resultList);
+        model.addAttribute("resultCnt", totCnt);
+        model.addAttribute("paginationInfo", paginationInfo);
 
-		return "egovframework/com/sym/bat/EgovBatchResultList";
-	}
+        return "egovframework/com/sym/bat/EgovBatchResultList";
+    }
 
 }

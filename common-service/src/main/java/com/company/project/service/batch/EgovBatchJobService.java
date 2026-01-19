@@ -11,7 +11,7 @@ import java.util.List;
  */
 public interface EgovBatchJobService {
 
-    Page<BatchJobDto> getBatchJobList(String keyword, Pageable pageable);
+    Page<BatchJobDto> getBatchJobList(String searchCondition, String keyword, Pageable pageable);
 
     BatchJobDto getBatchJob(String batchOpertId);
 

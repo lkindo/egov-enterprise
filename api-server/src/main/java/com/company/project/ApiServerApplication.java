@@ -29,24 +29,25 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // 1. 기술적 문제(Quartz)로 인한 제외 (전체 제외 유지)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.bat\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.bak\\..*"),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.nwk\\..*"), // 네트워크
-                                                                                                                                        // -
-                                                                                                                                        // 종속성
-                                                                                                                                        // 오류로
-                                                                                                                                        // 제외
+                                // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
+                                // "egovframework\\.com\\.sym\\.sym\\.nwk\\..*"), // 네트워크 활성화
+                                // -
+                                // 종속성
+                                // 오류로
+                                // 제외
 
                                 // 2. 모던 컨트롤러와 충돌나는 컨트롤러만 제외 (.web 패키지 한정)
                                 // CCM: zip, ccc, cca, cde
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\..*"), // CCM
-                                                                                                                                  // 전체
-                                                                                                                                  // 제외
-                                                                                                                                  // (Zip,
-                                                                                                                                  // Ccc,
-                                                                                                                                  // Cca,
-                                                                                                                                  // Cde,
-                                                                                                                                  // Adc,
-                                                                                                                                  // Acr
-                                                                                                                                  // 등)
+                                // 전체
+                                // 제외
+                                // (Zip,
+                                // Ccc,
+                                // Cca,
+                                // Cde,
+                                // Adc,
+                                // Acr
+                                // 등)
 
                                 // LOG: 전체 제외 (Clg, Ulg, Slg, Wlg, Tlg 등 종속성 오류 방지)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\..*"),

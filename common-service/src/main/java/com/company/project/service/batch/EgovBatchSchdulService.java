@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
  */
 public interface EgovBatchSchdulService {
 
-    Page<BatchSchdulDto> getBatchSchdulList(String batchOpertId, Pageable pageable);
+    Page<BatchSchdulDto> getBatchSchdulList(String searchCondition, String searchKeyword, Pageable pageable);
 
     BatchSchdulDto getBatchSchdul(String batchSchdulId);
 

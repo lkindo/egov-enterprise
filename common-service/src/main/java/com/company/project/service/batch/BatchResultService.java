@@ -2,7 +2,6 @@ package com.company.project.service.batch;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.batch.BatchResult;
 import com.company.project.domain.batch.BatchResultRepository;
 import com.company.project.service.batch.dto.BatchResultDto;
 import lombok.RequiredArgsConstructor;
@@ -20,26 +19,64 @@ import org.springframework.transaction.annotation.Transactional;
 public class BatchResultService implements EgovBatchResultService {
 
     private final BatchResultRepository batchResultRepository;
+    private final com.company.project.domain.batch.BatchJobRepository batchJobRepository;
+    private final com.company.project.service.code.EgovCommonCodeService commonCodeService;
 
     @Override
-    public Page<BatchResultDto> getBatchResultList(String batchSchdulId, Pageable pageable) {
-        if (batchSchdulId == null || batchSchdulId.isEmpty()) {
-            return batchResultRepository.findAll(pageable).map(BatchResultDto::from);
-        }
-        return batchResultRepository.findByBatchSchdulId(batchSchdulId, pageable).map(BatchResultDto::from);
+    public Page<BatchResultDto> getBatchResultList(String sttus, String searchKeywordFrom, String searchKeywordTo,
+            String searchCondition, String searchKeyword, Pageable pageable) {
+        Page<com.company.project.domain.batch.BatchResult> entities = batchResultRepository.searchBatchResults(sttus,
+                searchKeywordFrom, searchKeywordTo, searchCondition, searchKeyword, pageable);
+
+        // Get common codes for status names
+        java.util.List<com.company.project.service.code.dto.CommonCodeDto> statusCodes = commonCodeService
+                .getCodesByGroup("COM076");
+        java.util.Map<String, String> statusMap = statusCodes.stream()
+                .collect(java.util.stream.Collectors.toMap(com.company.project.service.code.dto.CommonCodeDto::getCode,
+                        com.company.project.service.code.dto.CommonCodeDto::getCodeNm, (a, b) -> a));
+
+        return entities.map(entity -> {
+            String batchOpertNm = "";
+            String batchProgrm = "";
+            com.company.project.domain.batch.BatchJob job = batchJobRepository.findById(entity.getBatchOpertId())
+                    .orElse(null);
+            if (job != null) {
+                batchOpertNm = job.getBatchOpertNm();
+                batchProgrm = job.getBatchProgrm();
+            }
+            String sttusNm = statusMap.getOrDefault(entity.getSttus(), entity.getSttus());
+            return BatchResultDto.from(entity, batchOpertNm, batchProgrm, sttusNm);
+        });
     }
 
     @Override
     public BatchResultDto getBatchResult(String batchResultId) {
-        BatchResult batchResult = batchResultRepository.findById(batchResultId)
+        com.company.project.domain.batch.BatchResult entity = batchResultRepository.findById(batchResultId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return BatchResultDto.from(batchResult);
+
+        String batchOpertNm = "";
+        String batchProgrm = "";
+        com.company.project.domain.batch.BatchJob job = batchJobRepository.findById(entity.getBatchOpertId())
+                .orElse(null);
+        if (job != null) {
+            batchOpertNm = job.getBatchOpertNm();
+            batchProgrm = job.getBatchProgrm();
+        }
+
+        java.util.List<com.company.project.service.code.dto.CommonCodeDto> statusCodes = commonCodeService
+                .getCodesByGroup("COM076");
+        String sttusNm = statusCodes.stream()
+                .filter(c -> c.getCode().equals(entity.getSttus()))
+                .map(com.company.project.service.code.dto.CommonCodeDto::getCodeNm)
+                .findFirst().orElse(entity.getSttus());
+
+        return BatchResultDto.from(entity, batchOpertNm, batchProgrm, sttusNm);
     }
 
     @Override
     @Transactional
     public void deleteBatchResult(String batchResultId) {
-        BatchResult batchResult = batchResultRepository.findById(batchResultId)
+        com.company.project.domain.batch.BatchResult batchResult = batchResultRepository.findById(batchResultId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         batchResultRepository.delete(batchResult);
     }

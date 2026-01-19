@@ -23,6 +23,11 @@ public class BatchResultDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
+    // Display fields
+    private String batchOpertNm;
+    private String batchProgrm;
+    private String sttusNm;
+
     public static BatchResultDto from(BatchResult entity) {
         return BatchResultDto.builder()
                 .batchResultId(entity.getBatchResultId())
@@ -35,6 +40,24 @@ public class BatchResultDto {
                 .errorInfo(entity.getErrorInfo())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .build();
+    }
+
+    public static BatchResultDto from(BatchResult entity, String batchOpertNm, String batchProgrm, String sttusNm) {
+        return BatchResultDto.builder()
+                .batchResultId(entity.getBatchResultId())
+                .batchSchdulId(entity.getBatchSchdulId())
+                .batchOpertId(entity.getBatchOpertId())
+                .paramtr(entity.getParamtr())
+                .sttus(entity.getSttus())
+                .executBeginTime(entity.getExecutBeginTime())
+                .executEndTime(entity.getExecutEndTime())
+                .errorInfo(entity.getErrorInfo())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .batchOpertNm(batchOpertNm)
+                .batchProgrm(batchProgrm)
+                .sttusNm(sttusNm)
                 .build();
     }
 }

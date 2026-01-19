@@ -9,7 +9,8 @@ import org.springframework.data.domain.Pageable;
  */
 public interface EgovBatchResultService {
 
-    Page<BatchResultDto> getBatchResultList(String batchSchdulId, Pageable pageable);
+    Page<BatchResultDto> getBatchResultList(String sttus, String searchKeywordFrom, String searchKeywordTo,
+            String searchCondition, String searchKeyword, Pageable pageable);
 
     BatchResultDto getBatchResult(String batchResultId);
 

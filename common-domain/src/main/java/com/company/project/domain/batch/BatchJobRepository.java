@@ -13,5 +13,7 @@ public interface BatchJobRepository extends JpaRepository<BatchJob, String> {
 
     Page<BatchJob> findByBatchOpertNmContaining(String batchOpertNm, Pageable pageable);
 
+    Page<BatchJob> findByBatchProgrmContaining(String batchProgrm, Pageable pageable);
+
     List<BatchJob> findByUseAt(String useAt);
 }

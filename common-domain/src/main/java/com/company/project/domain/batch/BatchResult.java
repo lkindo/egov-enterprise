@@ -34,10 +34,10 @@ public class BatchResult {
     @Column(name = "STTUS", length = 20)
     private String sttus;
 
-    @Column(name = "EXECUT_BEGIN_TIME", length = 14)
+    @Column(name = "EXECUT_BEGIN_TM", length = 14)
     private String executBeginTime;
 
-    @Column(name = "EXECUT_END_TIME", length = 14)
+    @Column(name = "EXECUT_END_TM", length = 14)
     private String executEndTime;
 
     @Column(name = "ERROR_INFO", length = 2000)
@@ -46,13 +46,13 @@ public class BatchResult {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @Column(name = "FRST_REGISTER_PNTTM")
+    @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDUSR_PNTTM")
+    @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
     @Builder

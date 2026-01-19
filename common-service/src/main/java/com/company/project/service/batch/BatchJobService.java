@@ -25,10 +25,16 @@ public class BatchJobService implements EgovBatchJobService {
     private final BatchJobRepository batchJobRepository;
 
     @Override
-    public Page<BatchJobDto> getBatchJobList(String keyword, Pageable pageable) {
+    public Page<BatchJobDto> getBatchJobList(String searchCondition, String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return batchJobRepository.findAll(pageable).map(BatchJobDto::from);
         }
+
+        if ("1".equals(searchCondition)) {
+            return batchJobRepository.findByBatchProgrmContaining(keyword, pageable).map(BatchJobDto::from);
+        }
+
+        // Default to search by BatchOpertNm (Condition "0" or empty)
         return batchJobRepository.findByBatchOpertNmContaining(keyword, pageable).map(BatchJobDto::from);
     }
 
