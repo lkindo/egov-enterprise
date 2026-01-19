@@ -18,19 +18,20 @@ import jakarta.annotation.Resource;
 
 /**
  * 발송메일 내역을 조회하는 컨트롤러 클래스
+ * 
  * @author 공통서비스 개발팀 박지욱
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자          수정내용
  *  -------    --------    ---------------------------
  *  2009.03.12  박지욱          최초 생성
  *
- *  </pre>
+ *      </pre>
  */
 @Controller
 public class EgovSndngMailDtlsController {
@@ -49,13 +50,15 @@ public class EgovSndngMailDtlsController {
 
 	/**
 	 * 발송메일 내역을 조회한다
+	 * 
 	 * @param searchVO ComDefaultVO
 	 * @return String
 	 * @exception Exception
 	 */
 	@IncludedInfo(name = "발송메일내역", order = 361, gid = 40)
 	@RequestMapping(value = "/cop/ems/selectSndngMailList.do")
-	public String selectSndngMailList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
+	public String selectSndngMailList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
+			throws Exception {
 
 		// 발송메일 내역 조회
 		/** EgovPropertyService.sample */
@@ -85,12 +88,14 @@ public class EgovSndngMailDtlsController {
 
 	/**
 	 * 발송메일을 삭제한다.
+	 * 
 	 * @param sndngMailVO SndngMailVO
 	 * @return String
 	 * @exception
 	 */
 	@RequestMapping(value = "/cop/ems/deleteSndngMailList.do")
-	public String deleteSndngMailList(@ModelAttribute("sndngMailVO") SndngMailVO sndngMailVO, ModelMap model) throws Exception {
+	public String deleteSndngMailList(@ModelAttribute("sndngMailVO") SndngMailVO sndngMailVO, ModelMap model)
+			throws Exception {
 
 		if (sndngMailVO == null || sndngMailVO.getMssageId() == null || sndngMailVO.getMssageId().equals("")) {
 			return "egovframework/com/cmm/egovError";

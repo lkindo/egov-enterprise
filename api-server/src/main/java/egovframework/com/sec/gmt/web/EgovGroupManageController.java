@@ -45,7 +45,7 @@ import jakarta.validation.Valid;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 @SessionAttributes(types = SessionVO.class)
 public class EgovGroupManageController {
 
@@ -84,7 +84,7 @@ public class EgovGroupManageController {
 	 * @exception Exception
 	 */
 	@IncludedInfo(name = "그룹관리", listUrl = "/sec/gmt/EgovGroupList.do", order = 80, gid = 20)
-	@RequestMapping(value = "/sec/gmt/EgovGroupList.do")
+	// @RequestMapping(value = "/sec/gmt/EgovGroupList.do")
 	public String selectGroupList(@ModelAttribute("groupManageVO") GroupManageVO groupManageVO,
 			ModelMap model) throws Exception {
 		/** paging */

@@ -40,73 +40,76 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
-@Controller
+// @Controller
 public class EgovLoginPolicyController {
 
-    @Resource(name="egovMessageSource")
-    EgovMessageSource egovMessageSource;
+	@Resource(name = "egovMessageSource")
+	EgovMessageSource egovMessageSource;
 
-	@Resource(name="egovLoginPolicyService")
+	@Resource(name = "egovLoginPolicyService")
 	EgovLoginPolicyService egovLoginPolicyService;
 
 	/**
 	 * 로그인정책 목록 조회화면으로 이동한다.
+	 * 
 	 * @return String - 리턴 Url
 	 */
-	@RequestMapping("/uat/uap/selectLoginPolicyListView.do")
+	// @RequestMapping("/uat/uap/selectLoginPolicyListView.do")
 	public String selectLoginPolicyListView() throws Exception {
 		return "egovframework/com/uat/uap/EgovLoginPolicyList";
 	}
 
 	/**
 	 * 로그인정책 목록을 조회한다.
+	 * 
 	 * @param loginPolicyVO - 로그인정책 VO
 	 * @return String - 리턴 Url
 	 */
-	@IncludedInfo(name="로그인정책관리", order = 30 ,gid = 10)
+	@IncludedInfo(name = "로그인정책관리", order = 30, gid = 10)
 	@RequestMapping("/uat/uap/selectLoginPolicyList.do")
 	public String selectLoginPolicyList(@ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
-			                             ModelMap model) throws Exception {
+			ModelMap model) throws Exception {
 
-    	/** paging */
-    	PaginationInfo paginationInfo = new PaginationInfo();
-	    paginationInfo.setCurrentPageNo(loginPolicyVO.getPageIndex());
-	    paginationInfo.setRecordCountPerPage(loginPolicyVO.getPageUnit());
-	    paginationInfo.setPageSize(loginPolicyVO.getPageSize());
+		/** paging */
+		PaginationInfo paginationInfo = new PaginationInfo();
+		paginationInfo.setCurrentPageNo(loginPolicyVO.getPageIndex());
+		paginationInfo.setRecordCountPerPage(loginPolicyVO.getPageUnit());
+		paginationInfo.setPageSize(loginPolicyVO.getPageSize());
 
-	    loginPolicyVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-	    loginPolicyVO.setLastIndex(paginationInfo.getLastRecordIndex());
-	    loginPolicyVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+		loginPolicyVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+		loginPolicyVO.setLastIndex(paginationInfo.getLastRecordIndex());
+		loginPolicyVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-	    loginPolicyVO.setLoginPolicyList(egovLoginPolicyService.selectLoginPolicyList(loginPolicyVO));
-        model.addAttribute("loginPolicyList", loginPolicyVO.getLoginPolicyList());
+		loginPolicyVO.setLoginPolicyList(egovLoginPolicyService.selectLoginPolicyList(loginPolicyVO));
+		model.addAttribute("loginPolicyList", loginPolicyVO.getLoginPolicyList());
 
-        int totCnt = egovLoginPolicyService.selectLoginPolicyListTotCnt(loginPolicyVO);
-	    paginationInfo.setTotalRecordCount(totCnt);
-        model.addAttribute("paginationInfo", paginationInfo);
-        model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+		int totCnt = egovLoginPolicyService.selectLoginPolicyListTotCnt(loginPolicyVO);
+		paginationInfo.setTotalRecordCount(totCnt);
+		model.addAttribute("paginationInfo", paginationInfo);
+		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
 		return "egovframework/com/uat/uap/EgovLoginPolicyList";
 	}
 
 	/**
 	 * 로그인정책 목록의 상세정보를 조회한다.
+	 * 
 	 * @param loginPolicyVO - 로그인정책 VO
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/uat/uap/getLoginPolicy.do")
 	public String selectLoginPolicy(@RequestParam("emplyrId") String emplyrId,
-			                        @ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
-                                     ModelMap model) throws Exception {
+			@ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
+			ModelMap model) throws Exception {
 
 		loginPolicyVO.setEmplyrId(emplyrId);
 
 		model.addAttribute("loginPolicy", egovLoginPolicyService.selectLoginPolicy(loginPolicyVO));
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
-		LoginPolicyVO vo = (LoginPolicyVO)model.get("loginPolicy");
+		LoginPolicyVO vo = (LoginPolicyVO) model.get("loginPolicy");
 
-		if(vo.getRegYn().equals("N")) {
+		if (vo.getRegYn().equals("N")) {
 			return "egovframework/com/uat/uap/EgovLoginPolicyRegist";
 		} else {
 			return "egovframework/com/uat/uap/EgovLoginPolicyUpdt";
@@ -115,13 +118,14 @@ public class EgovLoginPolicyController {
 
 	/**
 	 * 로그인정책 정보 등록화면으로 이동한다.
+	 * 
 	 * @param loginPolicy - 로그인정책 model
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/uat/uap/addLoginPolicyView.do")
 	public String insertLoginPolicyView(@RequestParam("emplyrId") String emplyrId,
-                                        @ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
-                                         ModelMap model) throws Exception {
+			@ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
+			ModelMap model) throws Exception {
 
 		loginPolicyVO.setEmplyrId(emplyrId);
 
@@ -133,20 +137,21 @@ public class EgovLoginPolicyController {
 
 	/**
 	 * 로그인정책 정보를 신규로 등록한다.
+	 * 
 	 * @param loginPolicy - 로그인정책 model
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/uat/uap/addLoginPolicy.do")
 	public String insertLoginPolicy(@Valid @ModelAttribute("loginPolicy") LoginPolicy loginPolicy,
-			                         BindingResult bindingResult,
-                                     ModelMap model) throws Exception {
+			BindingResult bindingResult,
+			ModelMap model) throws Exception {
 
-    	if (bindingResult.hasErrors()) {
-    		model.addAttribute("loginPolicyVO", loginPolicy);
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("loginPolicyVO", loginPolicy);
 			return "egovframework/com/uat/uap/EgovLoginPolicyRegist";
 		} else {
 
-			LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			loginPolicy.setUserId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 
 			egovLoginPolicyService.insertLoginPolicy(loginPolicy);
@@ -163,19 +168,20 @@ public class EgovLoginPolicyController {
 
 	/**
 	 * 기 등록된 로그인정책 정보를 수정한다.
+	 * 
 	 * @param loginPolicy - 로그인정책 model
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/uat/uap/updtLoginPolicy.do")
 	public String updateLoginPolicy(@Valid @ModelAttribute("loginPolicy") LoginPolicy loginPolicy,
-			                         BindingResult bindingResult,
-                                     ModelMap model) throws Exception {
+			BindingResult bindingResult,
+			ModelMap model) throws Exception {
 
-    	if (bindingResult.hasErrors()) {
-    		model.addAttribute("loginPolicyVO", loginPolicy);
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("loginPolicyVO", loginPolicy);
 			return "egovframework/com/uat/uap/EgovLoginPolicyUpdt";
 		} else {
-			LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			loginPolicy.setUserId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 
 			egovLoginPolicyService.updateLoginPolicy(loginPolicy);
@@ -191,12 +197,13 @@ public class EgovLoginPolicyController {
 
 	/**
 	 * 기 등록된 로그인정책 정보를 삭제한다.
+	 * 
 	 * @param loginPolicy - 로그인정책 model
 	 * @return String - 리턴 Url
 	 */
 	@RequestMapping("/uat/uap/removeLoginPolicy.do")
 	public String deleteLoginPolicy(@ModelAttribute("loginPolicy") LoginPolicy loginPolicy,
-                                     ModelMap model) throws Exception {
+			ModelMap model) throws Exception {
 
 		egovLoginPolicyService.deleteLoginPolicy(loginPolicy);
 

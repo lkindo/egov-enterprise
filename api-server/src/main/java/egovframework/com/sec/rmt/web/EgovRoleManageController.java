@@ -51,7 +51,7 @@ import jakarta.validation.Valid;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 @SessionAttributes(types = SessionVO.class)
 public class EgovRoleManageController {
 
@@ -97,7 +97,7 @@ public class EgovRoleManageController {
 	 * @exception Exception
 	 */
 	@IncludedInfo(name = "롤관리", listUrl = "/sec/rmt/EgovRoleList.do", order = 90, gid = 20)
-	@RequestMapping(value = "/sec/rmt/EgovRoleList.do")
+	// @RequestMapping(value = "/sec/rmt/EgovRoleList.do")
 	public String selectRoleList(@ModelAttribute("roleManageVO") RoleManageVO roleManageVO,
 			ModelMap model) throws Exception {
 

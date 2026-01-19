@@ -27,12 +27,13 @@ import jakarta.validation.Valid;
 
 /**
  * 템플릿 관리를 위한 컨트롤러 클래스
+ * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -40,7 +41,7 @@ import jakarta.validation.Valid;
  *   2009.03.18  이삼섭          최초 생성
  *   2011.08.26	 정진오			IncludedInfo annotation 추가
  *
- * </pre>
+ *      </pre>
  */
 @Controller
 public class EgovTemplateManageController {
@@ -54,7 +55,7 @@ public class EgovTemplateManageController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertyService;
 
-	//Logger log = Logger.getLogger(this.getClass());
+	// Logger log = Logger.getLogger(this.getClass());
 
 	/**
 	 * 템플릿 목록을 조회한다.
@@ -66,7 +67,8 @@ public class EgovTemplateManageController {
 	 */
 	@IncludedInfo(name = "템플릿관리", order = 200, gid = 40)
 	@RequestMapping("/cop/tpl/selectTemplateInfs.do")
-	public String selectTemplateInfs(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO, ModelMap model) throws Exception {
+	public String selectTemplateInfs(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO, ModelMap model)
+			throws Exception {
 		tmplatInfVO.setPageUnit(propertyService.getInt("pageUnit"));
 		tmplatInfVO.setPageSize(propertyService.getInt("pageSize"));
 
@@ -101,7 +103,8 @@ public class EgovTemplateManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/cop/tpl/selectTemplateInf.do")
-	public String selectTemplateInf(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO, ModelMap model) throws Exception {
+	public String selectTemplateInf(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO, ModelMap model)
+			throws Exception {
 
 		ComDefaultCodeVO codeVO = new ComDefaultCodeVO();
 
@@ -224,7 +227,8 @@ public class EgovTemplateManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/cop/bbs/deleteTemplateInf.do")
-	public String deleteTemplateInf(@ModelAttribute("searchVO") TemplateInfVO searchVO, @ModelAttribute("tmplatInf") TemplateInf tmplatInf, SessionStatus status, ModelMap model)
+	public String deleteTemplateInf(@ModelAttribute("searchVO") TemplateInfVO searchVO,
+			@ModelAttribute("tmplatInf") TemplateInf tmplatInf, SessionStatus status, ModelMap model)
 			throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
@@ -247,7 +251,8 @@ public class EgovTemplateManageController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/cop/tpl/selectTemplateInfsPop.do")
-	public String selectTemplateInfsPop(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO, @RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
+	public String selectTemplateInfsPop(@ModelAttribute("searchVO") TemplateInfVO tmplatInfVO,
+			@RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
 
 		String typeFlag = (String) commandMap.get("typeFlag");
 
@@ -264,7 +269,7 @@ public class EgovTemplateManageController {
 
 		tmplatInfVO.setPageUnit(propertyService.getInt("pageUnit"));
 		tmplatInfVO.setPageSize(propertyService.getInt("pageSize"));
-		//CMY, CLB
+		// CMY, CLB
 
 		PaginationInfo paginationInfo = new PaginationInfo();
 

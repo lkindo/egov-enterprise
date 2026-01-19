@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * 접속통계 및 게시판통계 컨트롤러
  */
-@Controller
+// @Controller
 @RequiredArgsConstructor
 public class StatisticsController {
 
@@ -26,7 +26,7 @@ public class StatisticsController {
     /**
      * 접속통계 조회
      */
-    @RequestMapping("/sts/cst/selectConectStats.do")
+    // @RequestMapping("/sts/cst/selectConectStats.do")
     public String selectConectStats(
             @RequestParam(required = false) String pdKind,
             @RequestParam(required = false) String statsKind,

@@ -91,7 +91,8 @@ public class EgovDiaryManageController {
 	public String egovDiaryManageList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, DiaryManageVO diaryManageVO, ModelMap model) throws Exception {
 
-//		String sSearchMode = commandMap.get("searchMode") == null ? "" : (String)commandMap.get("searchMode");
+		// String sSearchMode = commandMap.get("searchMode") == null ? "" :
+		// (String)commandMap.get("searchMode");
 
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
@@ -213,7 +214,8 @@ public class EgovDiaryManageController {
 	@RequestMapping(value = "/cop/smt/dsm/EgovDiaryManageModifyActor.do")
 	public String diaryManageModifyActor(final MultipartHttpServletRequest multiRequest,
 			@ModelAttribute("searchVO") ComDefaultVO searchVO, @RequestParam Map<?, ?> commandMap,
-			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult, ModelMap model)
+			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult,
+			ModelMap model)
 			throws Exception {
 
 		// 0. Spring Security 사용자권한 처리
@@ -339,7 +341,8 @@ public class EgovDiaryManageController {
 	@RequestMapping(value = "/cop/smt/dsm/EgovDiaryManageRegistActor.do")
 	public String diaryManageRegistActor(final MultipartHttpServletRequest multiRequest,
 			@ModelAttribute("searchVO") ComDefaultVO searchVO, @RequestParam Map<?, ?> commandMap,
-			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult, ModelMap model)
+			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult,
+			ModelMap model)
 			throws Exception {
 
 		// 0. Spring Security 사용자권한 처리

@@ -70,8 +70,8 @@ public class EgovMemoReprtController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-    // 첨부파일 관련
-	@Resource(name="EgovFileMngService")
+	// 첨부파일 관련
+	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
 	@Resource(name = "EgovFileMngUtil")

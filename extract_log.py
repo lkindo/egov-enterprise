@@ -1,33 +1,28 @@
 
-import sys
-
-log_file = r"d:\project\egov-enterprise\temp_log.txt"
-output_file = r"d:\project\egov-enterprise\error_trace.txt"
-
-def extract_error():
+try:
+    with open('startup.txt', 'r', encoding='utf-16') as f:
+        lines = f.readlines()
+except UnicodeError:
     try:
-        with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+        with open('startup.txt', 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        
-        # Find the index of the last "500 INTERNAL_SERVER_ERROR"
-        target_index = -1
-        for i in range(len(lines) - 1, -1, -1):
-            if "500 INTERNAL_SERVER_ERROR" in lines[i]:
-                target_index = i
-                break
-        
-        if target_index != -1:
-            start_index = max(0, target_index - 150)
-            end_index = min(len(lines), target_index + 10)
-            
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.writelines(lines[start_index:end_index])
-            print(f"Extracted lines {start_index} to {end_index}")
-        else:
-            print("Target string not found.")
-            
-    except Exception as e:
-        print(f"Error: {e}")
+    except UnicodeError:
+        with open('startup.txt', 'r', encoding='cp949') as f:
+            lines = f.readlines()
 
-if __name__ == "__main__":
-    extract_error()
+found_exception = False
+for i, line in enumerate(lines):
+    if "Exception" in line or "Caused by" in line:
+        print(f"Line {i}: {line.strip()}")
+        found_exception = True
+        # Print next 5 lines for context
+        for j in range(1, 6):
+            if i + j < len(lines):
+                print(f"    {lines[i+j].strip()}")
+
+if not found_exception:
+    print("No Exception or Caused by found.")
+    # Print last 20 lines to see what happened
+    print("Last 20 lines:")
+    for line in lines[-20:]:
+        print(line.strip())

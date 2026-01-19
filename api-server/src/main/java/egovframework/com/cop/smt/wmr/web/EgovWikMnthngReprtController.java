@@ -75,8 +75,8 @@ public class EgovWikMnthngReprtController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-    // 첨부파일 관련
-	@Resource(name="EgovFileMngService")
+	// 첨부파일 관련
+	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
 	@Resource(name = "EgovFileMngUtil")
@@ -300,8 +300,9 @@ public class EgovWikMnthngReprtController {
 	 */
 	@RequestMapping("/cop/smt/wmr/updateWikMnthngReprt.do")
 	public String updateWikMnthngReprt(final MultipartHttpServletRequest multiRequest, EgovSecurityMap securityMap,
-			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult, ModelMap model) throws Exception{
-    	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
+			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult,
+			ModelMap model) throws Exception {
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
@@ -365,20 +366,21 @@ public class EgovWikMnthngReprtController {
 	 */
 	@RequestMapping("/cop/smt/wmr/insertWikMnthngReprt.do")
 	public String insertWikMnthngReprt(final MultipartHttpServletRequest multiRequest,
-			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult, ModelMap model) throws Exception{
-    	// 0. Spring Security 사용자권한 처리
-    	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-    	if(!isAuthenticated) {
-    		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-        	return "redirect:/uat/uia/egovLoginUsr.do";
-    	}
+			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult,
+			ModelMap model) throws Exception {
+		// 0. Spring Security 사용자권한 처리
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
 		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/wmr/EgovWikMnthngReprtRegist";
 
-		if(bindingResult.hasErrors()){
+		if (bindingResult.hasErrors()) {
 
 			// 파일업로드 제한
 			String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
@@ -423,7 +425,8 @@ public class EgovWikMnthngReprtController {
 	 * @param wikMnthngReprt
 	 */
 	@RequestMapping("/cop/smt/wmr/deleteWikMnthngReprt.do")
-	public String deleteWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, ModelMap model) throws Exception{
+	public String deleteWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO,
+			ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -457,7 +460,8 @@ public class EgovWikMnthngReprtController {
 	 * @param wikMnthngReprt
 	 */
 	@RequestMapping("/cop/smt/wmr/confirmWikMnthngReprt.do")
-	public String confirmWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, ModelMap model) throws Exception{
+	public String confirmWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO,
+			ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 

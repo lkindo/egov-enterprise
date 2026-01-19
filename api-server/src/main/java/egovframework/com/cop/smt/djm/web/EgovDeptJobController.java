@@ -81,8 +81,8 @@ public class EgovDeptJobController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-    // 첨부파일 관련
-	@Resource(name="EgovFileMngService")
+	// 첨부파일 관련
+	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
 	@Resource(name = "EgovFileMngUtil")
@@ -262,14 +262,15 @@ public class EgovDeptJobController {
 	 *
 	 * @param deptJobBxVO
 	 */
-//	@RequestMapping("/cop/smt/djm/selectDeptJobBx.do")
-//	public String selectDeptJobBx(@ModelAttribute("searchVO") DeptJobBxVO deptJobBxVO, ModelMap model) throws Exception{
-//
-//		DeptJobBx deptJobBx = deptJobService.selectDeptJobBx(deptJobBxVO);
-//        model.addAttribute("deptJobBx", deptJobBx);
-//
-//		return "egovframework/com/cop/smt/djm/EgovDeptJobBxDetail";
-//	}
+	// @RequestMapping("/cop/smt/djm/selectDeptJobBx.do")
+	// public String selectDeptJobBx(@ModelAttribute("searchVO") DeptJobBxVO
+	// deptJobBxVO, ModelMap model) throws Exception{
+	//
+	// DeptJobBx deptJobBx = deptJobService.selectDeptJobBx(deptJobBxVO);
+	// model.addAttribute("deptJobBx", deptJobBx);
+	//
+	// return "egovframework/com/cop/smt/djm/EgovDeptJobBxDetail";
+	// }
 
 	/**
 	 * 부서업무함 정보의 등록화면으로 이동한다.
@@ -361,7 +362,8 @@ public class EgovDeptJobController {
 	 * @param deptJobBxVO
 	 */
 	@RequestMapping("/cop/smt/djm/updateDeptJobBx.do")
-	public String updateDeptJobBx(@Valid @ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO, BindingResult bindingResult,
+	public String updateDeptJobBx(@Valid @ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO,
+			BindingResult bindingResult,
 			ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -414,7 +416,8 @@ public class EgovDeptJobController {
 	 * @param deptJobBxVO
 	 */
 	@RequestMapping("/cop/smt/djm/insertDeptJobBx.do")
-	public String insertDeptJobBx(@Valid @ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO, BindingResult bindingResult,
+	public String insertDeptJobBx(@Valid @ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO,
+			BindingResult bindingResult,
 			ModelMap model) throws Exception {
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -428,7 +431,7 @@ public class EgovDeptJobController {
 
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobBxRegist";
 
-		if(bindingResult.hasErrors()){
+		if (bindingResult.hasErrors()) {
 			return sLocationUrl;
 		}
 

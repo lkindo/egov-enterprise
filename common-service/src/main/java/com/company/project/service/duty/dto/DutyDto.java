@@ -14,4 +14,6 @@ public class DutyDto {
     private String bndtDe;
     private String remark;
     private List<DutyDiaryDto> diaries;
+    private String frstRegisterId;
+    private java.time.LocalDateTime frstRegistPnttm;
 }

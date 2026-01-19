@@ -91,4 +91,12 @@ public class ScheduleAdapter {
                 .frstRegisterId(vo.getFrstRegisterId())
                 .build();
     }
+
+    public static java.util.List<IndvdlSchdulManageVO> toVOList(java.util.List<ScheduleDto> dtoList) {
+        if (dtoList == null)
+            return null;
+        return dtoList.stream()
+                .map(ScheduleAdapter::toVO)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

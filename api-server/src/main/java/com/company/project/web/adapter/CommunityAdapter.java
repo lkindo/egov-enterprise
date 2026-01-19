@@ -106,4 +106,12 @@ public class CommunityAdapter {
                 .frstRegisterId(legacyUser.getFrstRegisterId())
                 .build();
     }
+
+    public static java.util.List<CommunityVO> toVOList(java.util.List<CommunityDto> dtoList) {
+        if (dtoList == null)
+            return null;
+        return dtoList.stream()
+                .map(CommunityAdapter::toVO)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
