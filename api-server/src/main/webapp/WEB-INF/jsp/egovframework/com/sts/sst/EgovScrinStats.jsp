@@ -245,7 +245,7 @@ function getNextWeek(v,t){
 			          <td>${resultInfo.statsDate} &nbsp;&nbsp;&nbsp;${resultInfo.statsCo}&nbsp;<spring:message code="comStsSst.scrinStats.results.unit"/></td> <!-- 회 -->
 			        </tr>
 			        </c:forEach>
-				    <c:if test="${fn:length(scrinStatsList) == 0}">
+				    <c:if test="${fn:length(scrinStats) == 0}">
 			   		<tr><td></td></tr>
 			   		</c:if>
 			      </table>

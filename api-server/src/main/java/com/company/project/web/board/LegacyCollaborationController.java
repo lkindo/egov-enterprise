@@ -263,24 +263,23 @@ public class LegacyCollaborationController {
     /**
      * 게시판 사용 정보 조회 (게시판사용정보)
      */
-    /*
-     * @RequestMapping("/cop/com/selectBBSUseInfs.do") public String
-     * selectBBSUseInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO,
-     * ModelMap model) throws Exception { PaginationInfo paginationInfo =
-     * setupPaging(boardMasterVO.getPageIndex(), boardMasterVO.getPageUnit(),
-     * model);
-     * 
-     * PageRequest pageable = PageRequest.of(boardMasterVO.getPageIndex() - 1,
-     * boardMasterVO.getPageUnit()); Page<BoardMasterDto> pageResult =
-     * egovBoardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
-     * boardMasterVO.getSearchWrd(), pageable);
-     * 
-     * model.addAttribute("resultList",
-     * pageResult.getContent().stream().map(BoardAdapter::toMasterVO).collect(
-     * Collectors.toList())); model.addAttribute("resultCnt",
-     * pageResult.getTotalElements()); return
-     * "egovframework/com/cop/com/EgovBBSUseInfList"; }
+    /**
+     * 게시판 사용 정보 조회 (게시판사용정보)
      */
+    @RequestMapping("/cop/com/selectBBSUseInfs.do")
+    public String selectBBSUseInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
+            throws Exception {
+        PaginationInfo paginationInfo = setupPaging(boardMasterVO.getPageIndex(), boardMasterVO.getPageUnit(), model);
+
+        PageRequest pageable = PageRequest.of(boardMasterVO.getPageIndex() - 1, boardMasterVO.getPageUnit());
+        Page<BoardMasterDto> pageResult = egovBoardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
+                boardMasterVO.getSearchWrd(), pageable);
+
+        model.addAttribute("resultList",
+                pageResult.getContent().stream().map(BoardAdapter::toMasterVO).collect(Collectors.toList()));
+        model.addAttribute("resultCnt", pageResult.getTotalElements());
+        return "egovframework/com/cop/com/EgovBBSUseInfList";
+    }
 
     /**
      * 명함 관리 목록
@@ -428,26 +427,24 @@ public class LegacyCollaborationController {
     /**
      * 발송메일 내역 목록
      */
-    /*
-     * @RequestMapping("/cop/ems/selectSndngMailList.do") public String
-     * selectSndngMailList(@ModelAttribute("searchVO") SndngMailVO searchVO,
-     * ModelMap model) throws Exception { if
-     * (!EgovUserDetailsHelper.isAuthenticated()) return
-     * "redirect:/uat/uia/egovLoginUsr.do";
-     * 
-     * PaginationInfo paginationInfo = setupPaging(searchVO.getPageIndex(),
-     * searchVO.getPageUnit(), model); PageRequest pageable =
-     * PageRequest.of(searchVO.getPageIndex() - 1,
-     * paginationInfo.getRecordCountPerPage());
-     * 
-     * Page<SentMailDto> pageResult =
-     * egovMailService.getSentMailList(searchVO.getSearchWrd(), pageable);
-     * 
-     * model.addAttribute("resultList",
-     * MailAdapter.toVOList(pageResult.getContent()));
-     * model.addAttribute("resultCnt", pageResult.getTotalElements()); return
-     * "egovframework/com/cop/ems/EgovSndngMailList"; }
+    /**
+     * 발송메일 내역 목록
      */
+    @RequestMapping("/cop/ems/selectSndngMailList.do")
+    public String selectSndngMailList(@ModelAttribute("searchVO") SndngMailVO searchVO, ModelMap model)
+            throws Exception {
+        if (!EgovUserDetailsHelper.isAuthenticated())
+            return "redirect:/uat/uia/egovLoginUsr.do";
+
+        PaginationInfo paginationInfo = setupPaging(searchVO.getPageIndex(), searchVO.getPageUnit(), model);
+        PageRequest pageable = PageRequest.of(searchVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
+
+        Page<SentMailDto> pageResult = egovMailService.getSentMailList(searchVO.getSearchWrd(), pageable);
+
+        model.addAttribute("resultList", MailAdapter.toVOList(pageResult.getContent()));
+        model.addAttribute("resultCnt", pageResult.getTotalElements());
+        return "egovframework/com/cop/ems/EgovSndngMailList";
+    }
 
     /**
      * 간부일정관리 목록

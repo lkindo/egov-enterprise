@@ -79,13 +79,13 @@ public class EgovCommuMasterController {
     @RequestMapping("/cop/cmy/insertCommuMasterView.do")
     public String insertCommuMasterView(@ModelAttribute("searchVO") CommunityVO cmmntyVO, ModelMap model)
             throws Exception {
-        model.addAttribute("cmmntyVO", new CommunityVO());
+        model.addAttribute("commuMasterVO", new CommunityVO());
         return "egovframework/com/cop/cmy/EgovCommuMasterRegist";
     }
 
     @RequestMapping("/cop/cmy/insertCommuMaster.do")
     public String insertCommuMaster(@ModelAttribute("searchVO") CommunityVO cmmntyVO,
-            @ModelAttribute("cmmntyVO") Community cmmnty,
+            @ModelAttribute("commuMasterVO") Community cmmnty,
             BindingResult bindingResult, SessionStatus status, ModelMap model) throws Exception {
 
         LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
@@ -112,7 +112,8 @@ public class EgovCommuMasterController {
             throws Exception {
 
         CommunityDto dto = egovCommunityService.getCommunity(cmmntyVO.getCmmntyId());
-        model.addAttribute("cmmntyVO", CommunityAdapter.toVO(dto));
+        model.addAttribute("result", CommunityAdapter.toVO(dto)); // Changed to result to match
+                                                                  // EgovCommuMasterDetail.jsp
 
         return "egovframework/com/cop/cmy/EgovCommuMasterDetail";
     }
@@ -122,14 +123,14 @@ public class EgovCommuMasterController {
             throws Exception {
 
         CommunityDto dto = egovCommunityService.getCommunity(cmmntyVO.getCmmntyId());
-        model.addAttribute("cmmntyVO", CommunityAdapter.toVO(dto));
+        model.addAttribute("commuMasterVO", CommunityAdapter.toVO(dto)); // Changed from cmmntyVO to commuMasterVO
 
         return "egovframework/com/cop/cmy/EgovCommuMasterUpdt";
     }
 
     @RequestMapping("/cop/cmy/updateCommuMaster.do")
     public String updateCommuMaster(@ModelAttribute("searchVO") CommunityVO cmmntyVO,
-            @ModelAttribute("cmmntyVO") Community cmmnty,
+            @ModelAttribute("commuMasterVO") Community cmmnty,
             BindingResult bindingResult, SessionStatus status, ModelMap model) throws Exception {
 
         LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();

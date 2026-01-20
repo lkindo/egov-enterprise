@@ -65,7 +65,8 @@ public class EgovUserStatsController {
 			}
 		}
 
-		model.addAttribute("resultList", resultList);
+		model.addAttribute("userStats", resultList);
+		model.addAttribute("userStatsList", resultList); // for compatibility with legacy JSP check
 		model.addAttribute("statsVO", statsVO);
 
 		return "egovframework/com/sts/ust/EgovUserStats";

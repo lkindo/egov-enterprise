@@ -62,11 +62,17 @@ public class EgovDtaUseStatsContoller {
 	 */
 	@IncludedInfo(name = "자료이용현황통계", listUrl = "/sts/dst/selectDtaUseStatsListView.do", order = 161, gid = 30)
 	@RequestMapping("/sts/dst/selectDtaUseStatsList.do")
-	public String selectDtaUseStatsList(@RequestParam("pmFromDate") String pmFromDate,
-			@RequestParam("pmToDate") String pmToDate,
+	public String selectDtaUseStatsList(@RequestParam(value = "pmFromDate", required = false) String pmFromDate,
+			@RequestParam(value = "pmToDate", required = false) String pmToDate,
 			@ModelAttribute("dtaUseStatsVO") DtaUseStatsVO dtaUseStatsVO,
 			@ModelAttribute("comDefaultCodeVO") ComDefaultCodeVO comDefaultCodeVO,
 			ModelMap model) throws Exception {
+
+		// Set default values if parameters are null
+		if (pmFromDate == null || pmFromDate.equals("")) {
+			pmFromDate = EgovDateUtil.addMonth(EgovDateUtil.getToday(), -1);
+			pmToDate = EgovDateUtil.getToday();
+		}
 
 		// paging
 		PaginationInfo paginationInfo = new PaginationInfo();
@@ -111,6 +117,9 @@ public class EgovDtaUseStatsContoller {
 		dtaUseStatsVO.setDtaUseStatsBarList(dtaUseStatsBarList);
 		model.addAttribute("dtaUseStatsBarList", dtaUseStatsBarList);
 
+		model.addAttribute("dtaUseStatsVO", dtaUseStatsVO);
+		model.addAttribute("pmDtaUseStats", dtaUseStatsVO);
+
 		comDefaultCodeVO.setCodeId("COM042");
 		model.addAttribute("cmmCode042List", egovCmmUseService.selectCmmCodeDetail(comDefaultCodeVO));
 
@@ -135,6 +144,9 @@ public class EgovDtaUseStatsContoller {
 		model.addAttribute("dtaUseStatsList", new ArrayList<DtaUseStatsVO>());
 		paginationInfo.setTotalRecordCount(0);
 		model.addAttribute("paginationInfo", paginationInfo);
+
+		model.addAttribute("dtaUseStats", dtaUseStatsVO);
+		model.addAttribute("dtaUseStatsVO", dtaUseStatsVO);
 
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 

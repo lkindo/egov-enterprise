@@ -54,7 +54,7 @@ public class EgovScrinStatsController {
 	 */
 	@IncludedInfo(name = "화면통계", listUrl = "/sts/sst/selectScrinStats.do", order = 150, gid = 30)
 	@RequestMapping(value = "/sts/sst/selectScrinStats.do")
-	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
+	public String selectScrinStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
 		// 트리메뉴 조회
 		List<MenuManageVO> resultMenuList = menuManageService.selectMenuList();

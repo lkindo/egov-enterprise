@@ -65,12 +65,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.prm\\.web\\..*"),
 
                                 // STS: 전체 제외 (Cst, Bst, Dst, Vst, Rst 등 종속성 오류 방지)
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sts\\..*"),
+                                // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
+                                // "egovframework\\.com\\.sts\\..*"),
                                 // COP 패키지: LegacyCollaborationController와 중복되는 컨트롤러만 제외
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), // 게시판
-                                                                                                                                        // -
-                                                                                                                                        // Legacy
-                                                                                                                                        // 처리
+                                // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
+                                // "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), // 게시판 - 활성화
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.adb\\.web\\..*"), // 주소록
                                                                                                                                         // -
                                                                                                                                         // Legacy

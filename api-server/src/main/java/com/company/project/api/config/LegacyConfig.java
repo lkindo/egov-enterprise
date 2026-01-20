@@ -84,4 +84,98 @@ public class LegacyConfig {
     public com.company.project.api.config.ApplicationContextProvider applicationContextProvider() {
         return new com.company.project.api.config.ApplicationContextProvider();
     }
+
+    // ID Generation Services for BBS Master
+    // org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl and related
+    // strategies
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl bbsMasterIdStrategy() {
+        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
+        strategy.setPrefix("BBSMSTR_");
+        strategy.setCipers(20);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovBBSMstrIdGnrService(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
+            @org.springframework.beans.factory.annotation.Qualifier("bbsMasterIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
+        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
+        idGnrService.setDataSource(dataSource);
+        idGnrService.setStrategy(strategy);
+        idGnrService.setBlockSize(10);
+        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTableName("BBS_ID");
+        return idGnrService;
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl blogIdStrategy() {
+        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
+        strategy.setPrefix("BLOG_");
+        strategy.setCipers(15);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovBlogIdGnrService(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
+            @org.springframework.beans.factory.annotation.Qualifier("blogIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
+        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
+        idGnrService.setDataSource(dataSource);
+        idGnrService.setStrategy(strategy);
+        idGnrService.setBlockSize(10);
+        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTableName("BLOG_ID");
+        return idGnrService;
+    }
+
+    // Answer No ID Generation Service for Article Comments
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl answerNoStrategy() {
+        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
+        // strategy.setPrefix(""); // No prefix in XML
+        strategy.setCipers(20);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovAnswerNoGnrService(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
+            @org.springframework.beans.factory.annotation.Qualifier("answerNoStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
+        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
+        idGnrService.setDataSource(dataSource);
+        idGnrService.setStrategy(strategy);
+        idGnrService.setBlockSize(10);
+        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTableName("ANSWER_NO");
+        return idGnrService;
+    }
+
+    // Satisfaction No ID Generation Service
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl stsfdgNoStrategy() {
+        org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
+        // strategy.setPrefix(""); // No prefix in XML
+        strategy.setCipers(20);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl egovStsfdgNoGnrService(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource,
+            @org.springframework.beans.factory.annotation.Qualifier("stsfdgNoStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy strategy) {
+        org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
+        idGnrService.setDataSource(dataSource);
+        idGnrService.setStrategy(strategy);
+        idGnrService.setBlockSize(10);
+        idGnrService.setTable("COMTECOPSEQ");
+        idGnrService.setTableName("STSFDG_NO");
+        return idGnrService;
+    }
 }
