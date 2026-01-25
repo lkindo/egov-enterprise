@@ -200,8 +200,7 @@ public class BackupJob implements Job {
 
 					if (ArchiveStreamFactory.TAR.equals(archiveFormat)) {
 						// 파일이름 한글처리 ~~~
-						entry = new TarArchiveEntry(sfile,
-								new String(sfile.getAbsolutePath().getBytes(Charset.defaultCharset().name()), "UTF-8"));
+						entry = new TarArchiveEntry(sfile, sfile.getAbsolutePath());
 						((TarArchiveEntry) entry).setSize(sfile.length());
 					} else {
 						entry = new ZipArchiveEntry(sfile.getAbsolutePath());
