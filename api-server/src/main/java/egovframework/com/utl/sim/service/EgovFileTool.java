@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -341,10 +340,10 @@ public class EgovFileTool {
 	 * @param parFile 파일
 	 * @param parChar 구분자(',', '|', 'TAB')
 	 * @param parField 필드수
-	 * @return Vector parResult 파싱결과 구조체
+	 * @return List parResult 파싱결과 구조체
 	 * @exception Exception
 	 */
-	public static Vector<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField) throws Exception {
+	public static List<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField) throws Exception {
 
 		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
 		if (basePath == null || basePath.equals("")) {
@@ -356,7 +355,7 @@ public class EgovFileTool {
 		}
 
 		// 파싱결과 구조체
-		Vector<List<String>> parResult = new Vector<>();
+		List<List<String>> parResult = new ArrayList<>();
 
 		// 파일 오픈
 		String parFile1 = parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -366,20 +365,30 @@ public class EgovFileTool {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
 
-				// 1. 파일 텍스트 내용을 읽어서 StringBuffer에 쌓는다.
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				StringBuffer strBuff = new StringBuffer();
+				List<String> currentRecord = new ArrayList<>();
+				StringBuilder tokenBuffer = new StringBuilder();
+				String line;
+				int parCharLen = parChar.length();
+
+				// 1. 파일 텍스트 내용을 읽어서 StringBuilder에 쌓는다.
+				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder strBuff = new StringBuilder();
 				String line = "";
 				while ((line = br.readLine()) != null) {
 					if (line.length() < MAX_STR_LEN) {
-						strBuff.append(line);
-					}
-				}
+						tokenBuffer.append(line);
 
-				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
-				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
+						if (parCharLen > 0) {
+							int idx;
+							while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
+								String token = tokenBuffer.substring(0, idx);
+								currentRecord.add(token);
 
-				// 3. 필드 수 만큼 돌아가며 Vector<ArrayList> 형태로 만든다.
+								if (currentRecord.size() == parField) {
+									parResult.add(currentRecord);
+									currentRecord = new ArrayList<>();
+				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
 				int filedCnt = 1;
 				List<String> arr = new ArrayList<>();
 				for (int i = 0; i < strArr.length; i++) {
@@ -403,17 +412,19 @@ public class EgovFileTool {
 								if (i == (strArr.length - 1)) {
 									parResult.add(arr);
 								}
+
+								tokenBuffer.delete(0, idx + parCharLen);
 							}
 						}
-					} else {
-						arr = new ArrayList<>();
-						if (strArr[i] != null) {
-							arr.add(strArr[i]);
-						}
-						parResult.add(arr);
 					}
+				}
 
-					filedCnt++;
+				// Last token
+				String lastToken = tokenBuffer.toString();
+				currentRecord.add(lastToken);
+
+				if (!currentRecord.isEmpty()) {
+					parResult.add(currentRecord);
 				}
 			}
 		} finally {
