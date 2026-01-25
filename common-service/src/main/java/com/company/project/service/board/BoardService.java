@@ -124,7 +124,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardMaster master = boardMasterRepository.findById(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                Board parent = boardRepository.findByIdCustom(new BoardId(parentId, master.getBbsId()))
+                Board parent = boardRepository.findById(new BoardId(parentId, master.getBbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 User author = userRepository.findByEsntlId(userId)
@@ -173,7 +173,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Override
         @Transactional
         public BoardDto getPostDetail(String bbsId, Long nttId) {
-                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
+                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 board.increaseInqireCo();
@@ -183,7 +183,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Override
         @Transactional
         public void updatePost(String bbsId, Long nttId, BoardSaveRequest request) {
-                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
+                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
@@ -215,7 +215,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Override
         @Transactional
         public void deletePost(String bbsId, Long nttId, String authorId) {
-                Board board = boardRepository.findByIdCustom(new BoardId(nttId, bbsId))
+                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 if (board != null) {

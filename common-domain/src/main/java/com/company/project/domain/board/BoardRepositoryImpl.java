@@ -45,28 +45,9 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
             }
         }
 
-        // Use Projections.constructor to ensure stable column mapping
+        // Select full entity to ensure all fields (including Auditing fields) are populated
         List<Board> content = queryFactory
-                .select(com.querydsl.core.types.Projections.constructor(Board.class,
-                        board.id.nttId,
-                        board.id.bbsId,
-                        board.nttNo,
-                        board.nttSj,
-                        board.nttCn,
-                        board.replyAt,
-                        board.parnts,
-                        board.replyLc,
-                        board.sortOrdr,
-                        board.inqireCo,
-                        board.useAt,
-                        board.ntceBgnde,
-                        board.ntceEndde,
-                        board.ntcrId,
-                        board.ntcrNm,
-                        board.password,
-                        board.atchFileId,
-                        board.frstRegisterId))
-                .from(board)
+                .selectFrom(board)
                 .where(builder)
                 .orderBy(board.sortOrdr.desc(), board.nttNo.asc())
                 .offset(pageable.getOffset())
@@ -84,26 +65,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     @Override
     public Optional<Board> findByIdCustom(BoardId id) {
         Board result = queryFactory
-                .select(com.querydsl.core.types.Projections.constructor(Board.class,
-                        board.id.nttId,
-                        board.id.bbsId,
-                        board.nttNo,
-                        board.nttSj,
-                        board.nttCn,
-                        board.replyAt,
-                        board.parnts,
-                        board.replyLc,
-                        board.sortOrdr,
-                        board.inqireCo,
-                        board.useAt,
-                        board.ntceBgnde,
-                        board.ntceEndde,
-                        board.ntcrId,
-                        board.ntcrNm,
-                        board.password,
-                        board.atchFileId,
-                        board.frstRegisterId))
-                .from(board)
+                .selectFrom(board)
                 .where(board.id.nttId.eq(id.getNttId())
                         .and(board.id.bbsId.eq(id.getBbsId())))
                 .fetchOne();
