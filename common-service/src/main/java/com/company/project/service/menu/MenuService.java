@@ -285,23 +285,24 @@ public class MenuService {
     public Long getRootMenuIdByProgrmFileNm(String progrmFileNm) {
         if (progrmFileNm == null)
             return null;
-        List<Menu> menus = menuRepository.findAll();
-        for (Menu menu : menus) {
-            if (progrmFileNm.equals(menu.getProgrmFileNm())) {
-                Long currentId = menu.getId();
-                Long upperId = menu.getUpperMenuNo();
-                while (upperId != null && upperId != 0) {
-                    final Long finalUpperId = upperId;
-                    Menu upper = menus.stream().filter(m -> m.getId().equals(finalUpperId)).findFirst().orElse(null);
-                    if (upper == null)
-                        break;
-                    currentId = upper.getId();
-                    upperId = upper.getUpperMenuNo();
-                }
-                return currentId;
-            }
+
+        Menu currentMenu = menuRepository.findByProgrmFileNm(progrmFileNm).orElse(null);
+        if (currentMenu == null) {
+            return null;
         }
-        return null;
+
+        Long currentId = currentMenu.getId();
+        Long upperId = currentMenu.getUpperMenuNo();
+
+        while (upperId != null && upperId != 0) {
+            Menu upper = menuRepository.findById(upperId).orElse(null);
+            if (upper == null) {
+                break;
+            }
+            currentId = upper.getId();
+            upperId = upper.getUpperMenuNo();
+        }
+        return currentId;
     }
 
     /* Menu Management Methods */
