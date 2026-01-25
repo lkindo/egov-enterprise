@@ -760,10 +760,8 @@ public class EgovStringUtil {
 			throw new IllegalArgumentException("Start String: " + startChr + " End String: " + endChr);
 		}
 
-		do {
-			// 시작문자 및 종료문자 중에서 랜덤 숫자를 발생시킨다.
-			randomInt = rnd.nextInt(endInt + 1);
-		} while (randomInt < startInt); // 입력받은 문자 'A'(65)보다 작으면 다시 랜덤 숫자 발생.
+		// 시작문자 및 종료문자 중에서 랜덤 숫자를 발생시킨다.
+		randomInt = rnd.nextInt(endInt - startInt + 1) + startInt;
 
 		// 랜덤 숫자를 문자로 변환 후 스트링으로 다시 변환
 		randomStr = (char)randomInt + "";
