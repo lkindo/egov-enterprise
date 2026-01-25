@@ -18,8 +18,8 @@ package egovframework.com.utl.sim.service;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * 메뉴관리 Business Interface class
@@ -54,13 +54,13 @@ public class EgovMenuGov {
 	 * @param parFile  DAT파일명
 	 * @param parChar  구분자
 	 * @param parField 필드수
-	 * @return Vector list
+	 * @return List list
 	 * @version 1.0 (2009.02.04.)
 	 * @see
 	 */
-	public static Vector<List<String>> parsFileByMenuChar(String basePath, String parFile, String parChar, int parField)
+	public static List<List<String>> parsFileByMenuChar(String basePath, String parFile, String parChar, int parField)
 			throws Exception {
-		Vector<List<String>> list = null;
+		List<List<String>> list = null;
 
 		File file = new File(parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR));
 
@@ -68,7 +68,7 @@ public class EgovMenuGov {
 		if (file.exists() && file.isFile()) {
 			list = EgovFileTool.parsFileByChar(basePath, parFile, parChar, parField);
 		} else {
-			list = new Vector<List<String>>();
+			list = new ArrayList<List<String>>();
 		}
 
 		return list;

@@ -46,7 +46,15 @@ public class EgovComponentChecker extends EgovAbstractServiceImpl implements App
 	 *
 	*/
 	public static boolean hasComponent(String componentName){
-		return context.containsBean(componentName);
+
+		if (context.containsBean(componentName)) {
+			Object component = context.getBean(componentName);
+
+			// 221116	김혜준	2022 시큐어코딩 조치
+			return !ObjectUtils.isEmpty(component);
+		}
+
+		return false;
 	}
 
 

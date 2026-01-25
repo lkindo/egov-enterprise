@@ -142,10 +142,10 @@ public class EgovWebUtil {
 		return returnValue;
 	}
 
-	public static boolean isIPAddress(String str) {
-		Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+	private static final Pattern IP_PATTERN = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
-		return ipPattern.matcher(str).matches();
+	public static boolean isIPAddress(String str) {
+		return IP_PATTERN.matcher(str).matches();
 	}
 
 	public static String removeCRLF(String parameter) {
