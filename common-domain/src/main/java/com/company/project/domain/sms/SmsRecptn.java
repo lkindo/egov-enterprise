@@ -37,6 +37,11 @@ public class SmsRecptn {
         this.resultCode = resultCode;
         this.resultMssage = resultMssage;
     }
+
+    public void updateResult(String resultCode, String resultMssage) {
+        this.resultCode = resultCode;
+        this.resultMssage = resultMssage;
+    }
 }
 
 @Data
