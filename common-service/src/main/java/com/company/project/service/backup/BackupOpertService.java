@@ -34,10 +34,15 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
         Map<String, String> cycleMap = cycleCodes.stream()
                 .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
+        // Fetch Weekly codes (COM074) once
+        List<CommonCodeDto> dfkCodes = commonCodeService.getCodesByGroup("COM074");
+        Map<String, String> dfkMap = dfkCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+
         return page.map(entity -> {
             BackupOpertDto dto = BackupOpertDto.from(entity);
             dto.setExecutCycleNm(cycleMap.getOrDefault(dto.getExecutCycle(), ""));
-            formatSchedule(dto);
+            formatSchedule(dto, dfkMap);
             return dto;
         });
     }
@@ -60,7 +65,12 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
                 .filter(c -> c.code().equals(dto.getCmprsSe()))
                 .findFirst().map(CommonCodeDto::codeNm).orElse(""));
 
-        formatSchedule(dto);
+        // Fetch Weekly codes (COM074) once
+        List<CommonCodeDto> dfkCodes = commonCodeService.getCodesByGroup("COM074");
+        Map<String, String> dfkMap = dfkCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+
+        formatSchedule(dto, dfkMap);
         return dto;
     }
 
@@ -133,7 +143,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
         entity.setUseAt("N");
     }
 
-    private void formatSchedule(BackupOpertDto dto) {
+    private void formatSchedule(BackupOpertDto dto, Map<String, String> dfkMap) {
         StringBuilder sb = new StringBuilder();
         String de = dto.getExecutSchdulDe();
 
@@ -147,10 +157,6 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
         }
 
         if ("02".equals(dto.getExecutCycle()) && dto.getExecutSchdulDfkSes() != null) { // Weekly
-            List<CommonCodeDto> dfkCodes = commonCodeService.getCodesByGroup("COM074");
-            Map<String, String> dfkMap = dfkCodes.stream()
-                    .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
-
             List<String> dfkNames = new ArrayList<>();
             for (String dfk : dto.getExecutSchdulDfkSes()) {
                 dfkNames.add(dfkMap.getOrDefault(dfk, ""));
