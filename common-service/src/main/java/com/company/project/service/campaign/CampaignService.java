@@ -50,19 +50,19 @@ public class CampaignService implements EgovCampaignService {
         campaignRepository.save(campaign);
 
         if (dto.getExternalHrs() != null) {
-            for (CampaignExternalHrDto hrDto : dto.getExternalHrs()) {
-                CampaignExternalHr hr = CampaignExternalHr.builder()
-                        .extrlHrId(hrDto.getExtrlHrId())
-                        .campaign(campaign)
-                        .extrlHrNm(hrDto.getExtrlHrNm())
-                        .sexdstnCode(hrDto.getSexdstnCode())
-                        .emailAdres(hrDto.getEmailAdres())
-                        .psitnInsttNm(hrDto.getPsitnInsttNm())
-                        .frstRegisterId("SYSTEM")
-                        .lastUpdusrId("SYSTEM")
-                        .build();
-                campaignExternalHrRepository.save(hr);
-            }
+            List<CampaignExternalHr> hrs = dto.getExternalHrs().stream()
+                    .map(hrDto -> CampaignExternalHr.builder()
+                            .extrlHrId(hrDto.getExtrlHrId())
+                            .campaign(campaign)
+                            .extrlHrNm(hrDto.getExtrlHrNm())
+                            .sexdstnCode(hrDto.getSexdstnCode())
+                            .emailAdres(hrDto.getEmailAdres())
+                            .psitnInsttNm(hrDto.getPsitnInsttNm())
+                            .frstRegisterId("SYSTEM")
+                            .lastUpdusrId("SYSTEM")
+                            .build())
+                    .collect(Collectors.toList());
+            campaignExternalHrRepository.saveAll(hrs);
         }
     }
 
@@ -78,19 +78,19 @@ public class CampaignService implements EgovCampaignService {
                     // Handle external hours update (simple delete and insert for demo)
                     campaignExternalHrRepository.deleteByCampaign_EventId(dto.getEventId());
                     if (dto.getExternalHrs() != null) {
-                        for (CampaignExternalHrDto hrDto : dto.getExternalHrs()) {
-                            CampaignExternalHr hr = CampaignExternalHr.builder()
-                                    .extrlHrId(hrDto.getExtrlHrId())
-                                    .campaign(c)
-                                    .extrlHrNm(hrDto.getExtrlHrNm())
-                                    .sexdstnCode(hrDto.getSexdstnCode())
-                                    .emailAdres(hrDto.getEmailAdres())
-                                    .psitnInsttNm(hrDto.getPsitnInsttNm())
-                                    .frstRegisterId("SYSTEM")
-                                    .lastUpdusrId("SYSTEM")
-                                    .build();
-                            campaignExternalHrRepository.save(hr);
-                        }
+                        List<CampaignExternalHr> hrs = dto.getExternalHrs().stream()
+                                .map(hrDto -> CampaignExternalHr.builder()
+                                        .extrlHrId(hrDto.getExtrlHrId())
+                                        .campaign(c)
+                                        .extrlHrNm(hrDto.getExtrlHrNm())
+                                        .sexdstnCode(hrDto.getSexdstnCode())
+                                        .emailAdres(hrDto.getEmailAdres())
+                                        .psitnInsttNm(hrDto.getPsitnInsttNm())
+                                        .frstRegisterId("SYSTEM")
+                                        .lastUpdusrId("SYSTEM")
+                                        .build())
+                                .collect(Collectors.toList());
+                        campaignExternalHrRepository.saveAll(hrs);
                     }
                 });
     }
