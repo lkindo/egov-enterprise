@@ -194,20 +194,7 @@ public class EgovStringUtil {
 	 * @return sb.toString() 새로운 문자열로 변환된 문자열
 	 */
 	public static String replace(String source, String subject, String object) {
-		StringBuffer rtnStr = new StringBuffer();
-		String preStr = "";
-		String nextStr = source;
-		String srcStr = source;
-
-		while (srcStr.indexOf(subject) >= 0) {
-			preStr = srcStr.substring(0, srcStr.indexOf(subject));
-			nextStr = srcStr.substring(srcStr.indexOf(subject) + subject.length(), srcStr.length());
-			srcStr = nextStr;
-			rtnStr.append(preStr).append(object);
-		}
-		rtnStr.append(nextStr);
-
-		return rtnStr.toString();
+		return source.replace(subject, object == null ? "null" : object);
 	}
 
 	/**
