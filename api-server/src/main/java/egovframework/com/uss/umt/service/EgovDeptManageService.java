@@ -13,6 +13,13 @@ public interface EgovDeptManageService {
 	 */
 	public List<DeptManageVO> selectDeptManageList(DeptManageVO deptManageVO) throws Exception;
 
+    /**
+     * 부서목록을 조회한다. (페이징/검색 포함)
+     * @param deptManageVO - 부서 Vo
+     * @return List - 부서 목록
+     */
+    public List<DeptManageVO> selectDeptManageListPaged(DeptManageVO deptManageVO) throws Exception;
+
 	/**
 	 * 부서목록 총 개수를 조회한다.
 	 * @param deptManageVO - 부서 Vo
