@@ -2,6 +2,8 @@ package com.company.project.service.duty;
 
 import com.company.project.service.duty.dto.DutyCheckDto;
 import com.company.project.service.duty.dto.DutyDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -15,6 +17,8 @@ public interface EgovDutyService {
     void deleteDuty(String bndtId, String bndtDe);
 
     List<DutyDto> getDutyList(String bndtDePrefix);
+
+    Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable);
 
     List<DutyCheckDto> getDutyCheckList(String useAt);
 

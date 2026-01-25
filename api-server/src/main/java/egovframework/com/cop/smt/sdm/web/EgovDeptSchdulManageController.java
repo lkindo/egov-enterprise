@@ -40,6 +40,8 @@ import egovframework.com.cmm.service.EgovFileMngUtil;
 import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cop.smt.sdm.service.DeptSchdulManageVO;
+import egovframework.com.uss.umt.service.DeptManageVO;
+import egovframework.com.uss.umt.service.EgovDeptManageService;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,9 @@ public class EgovDeptSchdulManageController {
 	EgovMessageSource egovMessageSource;
 
 	private final EgovScheduleService egovScheduleService;
+
+    @Resource(name = "egovDeptManageService")
+    private EgovDeptManageService egovDeptManageService;
 
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
@@ -105,11 +110,32 @@ public class EgovDeptSchdulManageController {
 	public String egovMeetingManageLisAuthorGroupPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// List<EgovMap> resultList =
-		// egovDeptSchdulManageService.selectDeptSchdulManageAuthorGroupPopup(searchVO);
-		// model.addAttribute("resultList", resultList);
-		// TODO: Migrated service does not yet support AuthorGroupPopup. Impl pending.
-		model.addAttribute("resultList", new ArrayList<>());
+        DeptManageVO deptManageVO = new DeptManageVO();
+        deptManageVO.setSearchCondition(searchVO.getSearchCondition());
+        deptManageVO.setSearchKeyword(searchVO.getSearchKeyword());
+
+        // Pagination logic
+        deptManageVO.setPageUnit(propertiesService.getInt("pageUnit"));
+        deptManageVO.setPageSize(propertiesService.getInt("pageSize"));
+
+        PaginationInfo paginationInfo = new PaginationInfo();
+		paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+		paginationInfo.setRecordCountPerPage(deptManageVO.getPageUnit());
+		paginationInfo.setPageSize(deptManageVO.getPageSize());
+
+        deptManageVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+		deptManageVO.setLastIndex(paginationInfo.getLastRecordIndex());
+		deptManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+        deptManageVO.setPageIndex(searchVO.getPageIndex());
+
+        // Use selectDeptManageListPaged
+        List<DeptManageVO> resultList = egovDeptManageService.selectDeptManageListPaged(deptManageVO);
+        int totCnt = egovDeptManageService.selectDeptManageListTotCnt(deptManageVO);
+
+        paginationInfo.setTotalRecordCount(totCnt);
+
+        model.addAttribute("resultList", resultList);
+        model.addAttribute("paginationInfo", paginationInfo);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup";
 	}
@@ -121,11 +147,8 @@ public class EgovDeptSchdulManageController {
 	public String egovMeetingManageLisEmpLyrPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// List<EgovMap> resultList =
-		// egovDeptSchdulManageService.selectDeptSchdulManageEmpLyrPopup(searchVO);
-		// model.addAttribute("resultList", resultList);
-		// TODO: Migrated service does not yet support EmpLyrPopup. Impl pending.
-		model.addAttribute("resultList", new ArrayList<>());
+		List<Map<String, Object>> resultList = egovScheduleService.selectEmpLyrPopup(searchVO);
+		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup";
 	}

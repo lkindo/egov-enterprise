@@ -4,14 +4,20 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.schedule.Schedule;
 import com.company.project.domain.schedule.ScheduleRepository;
+import com.company.project.domain.user.User;
+import com.company.project.domain.user.UserRepository;
 import com.company.project.service.schedule.dto.ScheduleDto;
+import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +26,24 @@ import java.util.stream.Collectors;
 public class ScheduleService implements EgovScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final UserRepository userRepository;
+
+    @Override
+    public List<Map<String, Object>> selectEmpLyrPopup(ComDefaultVO searchVO) {
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize());
+        Page<User> users = userRepository.searchUsers(null, searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+
+        return users.getContent().stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("emplyrId", user.getUserId());
+            map.put("userNm", user.getUserNm());
+            map.put("esntlId", user.getEsntlId());
+            map.put("offmTelno", user.getOffmTelno());
+            map.put("homeadres", user.getHomeadres());
+            map.put("detailAdres", user.getDetailAdres());
+            return map;
+        }).collect(Collectors.toList());
+    }
 
     @Override
     public Page<ScheduleDto> getScheduleList(String userId, Pageable pageable) {
