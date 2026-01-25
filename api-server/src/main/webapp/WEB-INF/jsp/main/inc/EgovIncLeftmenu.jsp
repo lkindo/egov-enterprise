@@ -21,6 +21,16 @@
 							console.log("leftStartMenuValue = " + leftStartMenuValue);
 
 							// 서브 메뉴 생성
+							function fn_get_url(link) {
+								if (link == "#") return "#";
+								var contextPath = '<c:url value="/"/>';
+								if (link.indexOf("/") == 0) {
+									return contextPath + link.substring(1);
+								} else {
+									return contextPath + link;
+								}
+							}
+
 							function subMenuTag(menuList, mainMenuNo) {
 								var subMenuTag = "";
 								menuList.forEach(function (item, index) {
@@ -28,11 +38,7 @@
 
 									if (mainMenuNo == itemList[1]) {
 										var link = itemList[5];
-										if (link == "#") {
-											subMenuTag += '<li><a href="#">' + itemList[2] + '</a></li>';
-										} else {
-											subMenuTag += '<li><a href="<c:url value="/"/>' + link.substr(1) + '">' + itemList[2] + '</a></li>';
-										}
+										subMenuTag += '<li><a href="' + fn_get_url(link) + '">' + itemList[2] + '</a></li>';
 									}
 								});
 								if (subMenuTag != "") subMenuTag = "<ul>" + subMenuTag + "</ul>";
@@ -51,11 +57,7 @@
 										break;
 									case itemList[1]:
 										var link = itemList[5];
-										if (link == "#") {
-											mainMenuTag += '<li><a href="#">' + itemList[2] + '</a>' + subMenuTag(menuList, itemList[0]) + '</li>';
-										} else {
-											mainMenuTag += '<li><a href="<c:url value="/"/>' + link.substr(1) + '">' + itemList[2] + '</a>' + subMenuTag(menuList, itemList[0]) + '</li>';
-										}
+										mainMenuTag += '<li><a href="' + fn_get_url(link) + '">' + itemList[2] + '</a>' + subMenuTag(menuList, itemList[0]) + '</li>';
 										break;
 									default:
 										break;

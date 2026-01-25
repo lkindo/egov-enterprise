@@ -23,6 +23,9 @@ public class ReportStatsService {
     private final ReprtStatsRepository reprtStatsRepository;
     private final DtaUseStatsRepository dtaUseStatsRepository;
 
+    @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
+    private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
+
     // ========== 보고서 통계 ==========
 
     /**
@@ -68,6 +71,25 @@ public class ReportStatsService {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
         return reprtStatsRepository.countByReprtSttus(from, to);
+    }
+
+    /**
+     * 보고서 통계 등록
+     */
+    @Transactional
+    public void insertReprtStats(ReprtStats reprtStats) throws Exception {
+        String reprtId = reprtStatsIdGnrService.getNextStringId();
+        ReprtStats newStats = ReprtStats.builder()
+                .reprtId(reprtId)
+                .reprtNm(reprtStats.getReprtNm())
+                .reprtTy(reprtStats.getReprtTy())
+                .reprtSttus(reprtStats.getReprtSttus())
+                .frstRegisterId(reprtStats.getFrstRegisterId())
+                .frstRegistPnttm(java.time.LocalDateTime.now())
+                .lastUpdusrId(reprtStats.getFrstRegisterId())
+                .lastUpdtPnttm(java.time.LocalDateTime.now())
+                .build();
+        reprtStatsRepository.save(newStats);
     }
 
     // ========== 자료이용현황 통계 ==========

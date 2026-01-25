@@ -192,4 +192,36 @@ public class EgovReprtStatsController {
 
 		return "egovframework/com/sts/rst/EgovReprtStatsRegis";
 	}
+
+	/**
+	 * 보고서 통계정보를 등록한다.
+	 */
+	@RequestMapping("/sts/rst/addReprtStats.do")
+	public String insertReprtStats(@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
+			org.springframework.validation.BindingResult bindingResult,
+			ModelMap model) throws Exception {
+
+		// Server-side validation
+		// beanValidator.validate(reprtStatsVO, bindingResult); (Optional)
+
+		if (bindingResult.hasErrors()) {
+			return "egovframework/com/sts/rst/EgovReprtStatsRegis";
+		}
+
+		// Login info
+		egovframework.com.cmm.LoginVO loginVO = (egovframework.com.cmm.LoginVO) egovframework.com.cmm.util.EgovUserDetailsHelper
+				.getAuthenticatedUser();
+		String userId = (loginVO != null) ? loginVO.getUniqId() : "SYSTEM";
+
+		ReprtStats reprtStats = ReprtStats.builder()
+				.reprtNm(reprtStatsVO.getReprtNm())
+				.reprtTy(reprtStatsVO.getReprtTy())
+				.reprtSttus(reprtStatsVO.getReprtSttus())
+				.frstRegisterId(userId)
+				.build();
+
+		reportStatsService.insertReprtStats(reprtStats);
+
+		return "redirect:/sts/rst/selectReprtStatsListView.do";
+	}
 }
