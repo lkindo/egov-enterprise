@@ -23,7 +23,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -184,51 +186,47 @@ public class EgovFileMntrg extends Thread {
 			 * //log.debug("in checkAndConfigure() ::: currentList:" + currentList.get(i));
 			 * }
 			 */
-			boolean isSame = false;
-			boolean isNew = true;
-			boolean isDel = true;
-			String str1 = "";
-			String str2 = "";
-			// int tmpCnt = 0;
+
+			Map<String, String> originalMap = new HashMap<>();
+			Map<String, String> currentMap = new HashMap<>();
+
+			for (String str : originalList) {
+				int idx = str.indexOf("$");
+				if (idx != -1) {
+					originalMap.put(str.substring(0, idx), str);
+				}
+			}
+			for (String str : currentList) {
+				int idx = str.indexOf("$");
+				if (idx != -1) {
+					currentMap.put(str.substring(0, idx), str);
+				}
+			}
 
 			// 현재하위디렉토리정보와 초최하위디렉토리 정보를 비교한다. 삭제된 경우를 확인함
-			for (int i = 0; i < originalList.size(); i++) {
-				for (int j = 0; j < currentList.size(); j++) {
-					str1 = originalList.get(i);
-					str2 = currentList.get(j);
-					if (str1.substring(0, str1.indexOf("$")).equals(str2.substring(0, str2.indexOf("$")))) {
-						isDel = false;
-					}
+			for (String str1 : originalList) {
+				int idx = str1.indexOf("$");
+				String key = (idx != -1) ? str1.substring(0, idx) : str1;
+				if (!currentMap.containsKey(key)) {
+					changedList.add("DEL$" + str1);
 				}
-				if (isDel) {
-					changedList.add("DEL$" + originalList.get(i));
-				}
-				isDel = true; // 초기화
 			}
 
 			// 현재하위디렉토리 정보와 최초하위디렉토리 정보를 비교한다.(신규로 생성되었거나 수정된 경우를 확인함)
-			for (int i = 0; i < currentList.size(); i++) {
-				for (int j = 0; j < originalList.size(); j++) {
-					if (currentList.get(i).equals(originalList.get(j))) {
-						isSame = true;
-					}
-					str1 = currentList.get(i);
-					str2 = originalList.get(j);
-					if (str1.substring(0, str1.indexOf("$")).equals(str2.substring(0, str2.indexOf("$")))) {
-						isNew = false;
-					}
-				}
-				if (!isSame) {
-					if (isNew) {
-						changedList.add("NEW$" + currentList.get(i));
-						// totalChangedList.add("NEW$"+currentList.get(i));
-					} else {
-						changedList.add("MODI$" + currentList.get(i));
+			for (String str1 : currentList) {
+				int idx = str1.indexOf("$");
+				String key = (idx != -1) ? str1.substring(0, idx) : str1;
+				String originalStr = originalMap.get(key);
+
+				if (originalStr == null) {
+					changedList.add("NEW$" + str1);
+					// totalChangedList.add("NEW$"+currentList.get(i));
+				} else {
+					if (!str1.equals(originalStr)) {
+						changedList.add("MODI$" + str1);
 						// totalChangedList.add("MODI$"+currentList.get(i));
 					}
 				}
-				isSame = false; // 초기화
-				isNew = true; // 초기화
 			}
 		} catch (NullPointerException e) {
 			EgovBasicLogger.debug("NullPointerException", e);
