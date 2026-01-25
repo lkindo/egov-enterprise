@@ -84,11 +84,12 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // "egovframework\\.com\\.cop\\.smt\\.sdm\\.web\\..*"), // 부서일정 - 활성화
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
                                 // "egovframework\\.com\\.cop\\.smt\\.mtm\\.web\\..*"), // 메모할일 - 활성화
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.ems\\..*"), // 메일발송
-                                                                                                                                  // -
-                                                                                                                                  // EgovMailConfig
-                                                                                                                                  // Dummy
-                                                                                                                                  // 사용
+                                // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
+                                // "egovframework\\.com\\.cop\\.ems\\..*"), // 메일발송
+                                // -
+                                // EgovMailConfig
+                                // Dummy
+                                // 사용
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"), // 게시판사용정보
                                                                                                                                         // -
                                                                                                                                         // Legacy
