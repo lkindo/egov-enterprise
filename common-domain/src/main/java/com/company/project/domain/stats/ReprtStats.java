@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
-@Table(name = "NREPRTSTATS")
+@jakarta.persistence.Entity
+@jakarta.persistence.Table(name = "NREPRTSTATS")
+@lombok.AllArgsConstructor
+@lombok.Builder
 public class ReprtStats {
 
     @Id

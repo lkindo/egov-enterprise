@@ -190,6 +190,29 @@ public class ApiServerApplication extends SpringBootServletInitializer {
                 return application.sources(ApiServerApplication.class);
         }
 
+        @org.springframework.context.annotation.Bean(name = "reprtStatsIdStrategy")
+        public org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy reprtStatsIdStrategy() {
+                org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
+                strategy.setPrefix("RS_");
+                strategy.setCipers(3);
+                strategy.setFillChar('0');
+                return strategy;
+        }
+
+        @org.springframework.context.annotation.Bean(name = "reprtStatsIdGnrService")
+        public org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService(
+                        @org.springframework.beans.factory.annotation.Qualifier("dataSource") javax.sql.DataSource dataSource,
+                        @org.springframework.beans.factory.annotation.Qualifier("reprtStatsIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy reprtStatsIdStrategy) {
+
+                org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
+                idGnrService.setDataSource(dataSource);
+                idGnrService.setStrategy(reprtStatsIdStrategy);
+                idGnrService.setBlockSize(10);
+                idGnrService.setTable("COMTECOPSEQ");
+                idGnrService.setTableName("RS_ID");
+                return idGnrService;
+        }
+
         @org.springframework.context.annotation.Bean
         public egovframework.com.cmm.util.EgovUserDetailsHelper egovUserDetailsHelper(
                         egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService) {

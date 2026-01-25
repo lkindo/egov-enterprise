@@ -99,8 +99,7 @@ function fncReprtStatsDelete() {
                                             <h2>보고서 등록</h2>
 
                                             <!-- 등록폼 -->
-                                            <table class="wTable" summary="<spring:message code=" common.summary.list"
-                                                arguments="${pageTitle}" />">
+                                            <table class="wTable" summary="<spring:message code="common.summary.list" arguments="${pageTitle}" />">
                                             <caption>${pageTitle }
                                                 <spring:message code="title.create" />
                                             </caption>
@@ -114,8 +113,7 @@ function fncReprtStatsDelete() {
                                                     </th>
                                                     <td class="nopd">
                                                         <input name="reprtNm" id="reprtNm" type="text" maxLength="10"
-                                                            size="30" title="<spring:message code="
-                                                            sts.title" />">&nbsp;
+                                                            size="30" title="<spring:message code="sts.title" />">&nbsp;
                                                         <form:errors path="reprtNm" />
                                                     </td>
                                                 </tr>
@@ -124,7 +122,7 @@ function fncReprtStatsDelete() {
                                                     </th>
                                                     <td class="left">
                                                         <select name="reprtTy" id="reprtTy"
-                                                            title="<spring:message code=" sts.category" />">
+                                                            title="<spring:message code="sts.category" />">
                                                         <c:forEach var="cmmCode040" items="${cmmCode040List}"
                                                             varStatus="status">
                                                             <option value="<c:out value=" ${cmmCode040.code}" />" >
@@ -139,7 +137,7 @@ function fncReprtStatsDelete() {
                                                                 class="pilsu">*</span></label></th>
                                                     <td class="left">
                                                         <select name="reprtSttus" id="reprtSttus"
-                                                            title="<spring:message code=" sts.status" />">
+                                                            title="<spring:message code="sts.status" />">
                                                         <c:forEach var="cmmCode036" items="${cmmCode036List}"
                                                             varStatus="status">
                                                             <option value="<c:out value=" ${cmmCode036.code}" />" >
@@ -155,8 +153,7 @@ function fncReprtStatsDelete() {
 
                                             <!-- 하단 버튼 -->
                                             <div class="btn">
-                                                <input type="submit" class="s_submit" value="<spring:message code="
-                                                    button.create" />" title="
+                                                <input type="submit" class="s_submit" value="<spring:message code="button.create" />" title="
                                                 <spring:message code="button.create" />
                                                 <spring:message code="input.button" />" onclick="fncReprtStatsInsert();
                                                 return false;" />
