@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class SmsService implements EgovSmsService {
 
     private final SmsRepository smsRepository;
+    private final SmsSender smsSender;
 
     @Override
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
@@ -58,14 +59,22 @@ public class SmsService implements EgovSmsService {
                 .map(r -> SmsRecptn.builder()
                         .smsId(smsId)
                         .recptnTelno(r.getRecptnTelno())
-                        .resultCode("0000") // 성공 가정
-                        .resultMssage("SUCCESS")
+                        .resultCode("9000") // Ready to send
+                        .resultMssage("Ready")
                         .build())
                 .collect(Collectors.toList()));
 
         smsRepository.save(sms);
 
-        // TODO: 실제 SMS 발송 로직 연동
+        // 실제 SMS 발송 로직 연동
+        for (SmsRecptn recipient : sms.getRecipients()) {
+            boolean success = smsSender.send(recipient.getRecptnTelno(), sms.getTrnsmitCn(), sms.getTrnsmitTelno());
+            if (success) {
+                recipient.updateResult("0000", "SUCCESS");
+            } else {
+                recipient.updateResult("9999", "FAILED");
+            }
+        }
 
         return smsId;
     }
