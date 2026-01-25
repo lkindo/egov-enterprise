@@ -164,133 +164,130 @@ function fn_egov_onload() {
                                             <spring:message code="title.list" />
                                         </h1><!-- 권한관리 목록 -->
                                         <!-- 검색영역 -->
-                                        <div class="search_box" title="<spring:message code="
-                                            common.searchCondition.msg" />">
-                                        <ul>
-                                            <li>
-                                                <div style="line-height:4px;">&nbsp;</div>
-                                                <div>
-                                                    <spring:message code="comCopSecRam.list.searchKeywordText" /> :
-                                                </div>
-                                            </li><!-- 권한명 -->
-                                            <!-- 검색키워드 및 조회버튼 -->
-                                            <li style="border: 0px solid #d2d2d2;">
-                                                <input class="s_input" name="searchKeyword" type="text" size="35"
-                                                    title="<spring:message code=" title.search" />
-                                                <spring:message code="input.input" />" value='
-                                                <c:out value="${authorManageVO.searchKeyword}" />' maxlength="155" >
-                                                <input type="submit" class="s_btn" value="<spring:message code="
-                                                    button.inquire" />" title="
-                                                <spring:message code="title.inquire" />
-                                                <spring:message code="input.button" />" />
-                                                <span class="btn_b"><a href="<c:url value="
-                                                        /sec/ram/EgovAuthorList.do" />" title="
-                                                    <spring:message code="button.list" />
-                                                    <spring:message code="input.button" />">
-                                                    <spring:message code="button.list" /></a>
-                                                </span>
-                                                <input type="button" class="s_btn" onClick="fncAuthorDeleteList()"
-                                                    value="<spring:message code=" title.delete" />" title="
-                                                <spring:message code="title.delete" />
-                                                <spring:message code="input.button" />" />
-                                                <span class="btn_b"><a href="<c:url value="
-                                                        /sec/ram/EgovAuthorInsertView.do" />?searchCondition=
-                                                    <c:out value="${authorManageVO.searchCondition}" />&searchKeyword=
-                                                    <c:out value="${authorManageVO.searchKeyword}" />&pageIndex=
-                                                    <c:out value="${authorManageVO.pageIndex}" />" title="
-                                                    <spring:message code="button.create" />
-                                                    <spring:message code="input.button" />">
-                                                    <spring:message code="button.create" /></a>
-                                                </span>
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    <!-- 목록영역 -->
-                                    <table class="board_list"
-                                        summary='<spring:message code="common.summary.list" arguments="${pageTitle}" />'>
-                                        <caption>${pageTitle}
-                                            <spring:message code="title.list" />
-                                        </caption>
-                                        <colgroup>
-                                            <col style="width: 9%;">
-                                            <col style="width: 33%;">
-                                            <col style="width: 30%;">
-                                            <col style="width: ;">
-                                            <col style="width: 10%;">
-                                            <col style="width: 7%;">
-                                        </colgroup>
-                                        <thead>
-                                            <tr>
-                                                <th><input type="checkbox" name="checkAll" class="check2"
-                                                        onclick="javascript:fncCheckAll()" title="<spring:message code="
-                                                        input.selectAll.title" />"></th><!-- 번호 -->
-                                                <th class="board_th_link">
-                                                    <spring:message code="comCopSecRam.list.authorRollId" />
-                                                </th><!-- 권한 ID -->
-                                                <th>
-                                                    <spring:message code="comCopSecRam.list.authorNm" />
-                                                </th><!-- 권한 명 -->
-                                                <th>
-                                                    <spring:message code="comCopSecRam.list.authorDc" />
-                                                </th><!-- 설명 -->
-                                                <th>
-                                                    <spring:message code="table.regdate" />
-                                                </th><!-- 등록일자 -->
-                                                <th>
-                                                    <spring:message code="comCopSecRam.list.authorRoll" />
-                                                </th><!-- 롤 정보 -->
-                                            </tr>
-                                        </thead>
-                                        <tbody class="ov">
-                                            <c:if test="${fn:length(authorList) == 0}">
-                                                <tr>
-                                                    <td colspan="6">
-                                                        <spring:message code="common.nodata.msg" />
-                                                    </td>
-                                                </tr>
-                                            </c:if>
-                                            <c:forEach var="author" items="${authorList}" varStatus="status">
-                                                <tr>
-                                                    <td><input type="checkbox" name="delYn" class="check2"
-                                                            title="선택"><input type="hidden" name="checkId"
-                                                            value="<c:out value=" ${author.authorCode}" />" /></td>
-                                                    <td><a href="<c:url value=" /sec/ram/EgovAuthor.do" />?authorCode=
-                                                        <c:out value="${author.authorCode}" />"
-                                                        onclick="fncSelectAuthor('
-                                                        <c:out value="${author.authorCode}" />');">
-                                                        <c:out value="${author.authorCode}" /></a>
-                                                    </td>
-                                                    <td>
-                                                        <c:out value="${author.authorNm}" />
-                                                    </td>
-                                                    <td>
-                                                        <c:out value="${author.authorDc}" />
-                                                    </td>
-                                                    <td>
-                                                        <c:out value="${fn:substring(author.authorCreatDe,0,10)}" />
-                                                    </td>
-                                                    <td><a href="<c:url value='/sec/ram/EgovAuthorRoleList.do'/>?searchKeyword=<c:out value="
-                                                            ${author.authorCode}" />"
-                                                        onclick="javascript:fncSelectAuthorRole('
-                                                        <c:out value="${author.authorCode}" />')"><img
-                                                            src="<c:url value='/images/egovframework/com/cmm/btn/btn_search.gif'/>"
-                                                            width="15" height="15" align="middle" alt="롤 정보"></a>
-                                                    </td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-
-                                    <c:if test="${!empty authorManageVO.pageIndex }">
-                                        <!-- paging navigation -->
-                                        <div class="pagination">
+                                        <div class="search_box"
+                                            title='<spring:message code="common.searchCondition.msg" />'>
                                             <ul>
-                                                <ui:pagination paginationInfo="${paginationInfo}" type="image"
-                                                    jsFunction="linkPage" />
+                                                <li>
+                                                    <div style="line-height:4px;">&nbsp;</div>
+                                                    <div>
+                                                        <spring:message code="comCopSecRam.list.searchKeywordText" /> :
+                                                    </div>
+                                                </li><!-- 권한명 -->
+                                                <!-- 검색키워드 및 조회버튼 -->
+                                                <li style="border: 0px solid #d2d2d2;">
+                                                    <input class="s_input" name="searchKeyword" type="text" size="35"
+                                                        title='<spring:message code="title.search" /> <spring:message code="input.input" />'
+                                                        value='<c:out value="${authorManageVO.searchKeyword}" />'
+                                                        maxlength="155">
+                                                    <input type="submit" class="s_btn"
+                                                        value='<spring:message code="button.inquire" />'
+                                                        title='<spring:message code="title.inquire" /> <spring:message code="input.button" />' />
+                                                    <span class="btn_b"><a
+                                                            href="<c:url value='/sec/ram/EgovAuthorList.do' />"
+                                                            title='<spring:message code="button.list" /> <spring:message code="input.button" />'>
+                                                            <spring:message code="button.list" />
+                                                        </a>
+                                                    </span>
+                                                    <input type="button" class="s_btn" onClick="fncAuthorDeleteList()"
+                                                        value='<spring:message code="title.delete" />'
+                                                        title='<spring:message code="title.delete" /> <spring:message code="input.button" />' />
+                                                    <span class="btn_b"><a
+                                                            href="<c:url value='/sec/ram/EgovAuthorInsertView.do' />?searchCondition=<c:out value='${authorManageVO.searchCondition}' />&searchKeyword=<c:out value='${authorManageVO.searchKeyword}' />&pageIndex=<c:out value='${authorManageVO.pageIndex}' />"
+                                                            title='<spring:message code="button.create" /> <spring:message code="input.button" />'>
+                                                            <spring:message code="button.create" />
+                                                        </a>
+                                                    </span>
+                                                </li>
                                             </ul>
                                         </div>
-                                    </c:if>
+
+                                        <!-- 목록영역 -->
+                                        <table class="board_list"
+                                            summary='<spring:message code="common.summary.list" arguments="${pageTitle}" />'>
+                                            <caption>${pageTitle}
+                                                <spring:message code="title.list" />
+                                            </caption>
+                                            <colgroup>
+                                                <col style="width: 9%;">
+                                                <col style="width: 33%;">
+                                                <col style="width: 30%;">
+                                                <col style="width: ;">
+                                                <col style="width: 10%;">
+                                                <col style="width: 7%;">
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th><input type="checkbox" name="checkAll" class="check2"
+                                                            onclick="javascript:fncCheckAll()"
+                                                            title='<spring:message code="input.selectAll.title" />'>
+                                                    </th><!-- 번호 -->
+                                                    <th class="board_th_link">
+                                                        <spring:message code="comCopSecRam.list.authorRollId" />
+                                                    </th><!-- 권한 ID -->
+                                                    <th>
+                                                        <spring:message code="comCopSecRam.list.authorNm" />
+                                                    </th><!-- 권한 명 -->
+                                                    <th>
+                                                        <spring:message code="comCopSecRam.list.authorDc" />
+                                                    </th><!-- 설명 -->
+                                                    <th>
+                                                        <spring:message code="table.regdate" />
+                                                    </th><!-- 등록일자 -->
+                                                    <th>
+                                                        <spring:message code="comCopSecRam.list.authorRoll" />
+                                                    </th><!-- 롤 정보 -->
+                                                </tr>
+                                            </thead>
+                                            <tbody class="ov">
+                                                <c:if test="${fn:length(authorList) == 0}">
+                                                    <tr>
+                                                        <td colspan="6">
+                                                            <spring:message code="common.nodata.msg" />
+                                                        </td>
+                                                    </tr>
+                                                </c:if>
+                                                <c:forEach var="author" items="${authorList}" varStatus="status">
+                                                    <tr>
+                                                        <td><input type="checkbox" name="delYn" class="check2"
+                                                                title="선택"><input type="hidden" name="checkId"
+                                                                value="<c:out value=" ${author.authorCode}" />" /></td>
+                                                        <td><a href="<c:url value="
+                                                                /sec/ram/EgovAuthor.do" />?authorCode=
+                                                            <c:out value="${author.authorCode}" />"
+                                                            onclick="fncSelectAuthor('
+                                                            <c:out value="${author.authorCode}" />');">
+                                                            <c:out value="${author.authorCode}" /></a>
+                                                        </td>
+                                                        <td>
+                                                            <c:out value="${author.authorNm}" />
+                                                        </td>
+                                                        <td>
+                                                            <c:out value="${author.authorDc}" />
+                                                        </td>
+                                                        <td>
+                                                            <c:out value="${fn:substring(author.authorCreatDe,0,10)}" />
+                                                        </td>
+                                                        <td><a href="<c:url value='/sec/ram/EgovAuthorRoleList.do'/>?searchKeyword=<c:out value="
+                                                                ${author.authorCode}" />"
+                                                            onclick="javascript:fncSelectAuthorRole('
+                                                            <c:out value="${author.authorCode}" />')"><img
+                                                                src="<c:url value='/images/egovframework/com/cmm/btn/btn_search.gif'/>"
+                                                                width="15" height="15" align="middle" alt="롤 정보"></a>
+                                                        </td>
+                                                    </tr>
+                                                </c:forEach>
+                                            </tbody>
+                                        </table>
+
+                                        <c:if test="${!empty authorManageVO.pageIndex }">
+                                            <!-- paging navigation -->
+                                            <div class="pagination">
+                                                <ul>
+                                                    <ui:pagination paginationInfo="${paginationInfo}" type="image"
+                                                        jsFunction="linkPage" />
+                                                </ul>
+                                            </div>
+                                        </c:if>
 
 
                                     </div><!-- end div board -->
