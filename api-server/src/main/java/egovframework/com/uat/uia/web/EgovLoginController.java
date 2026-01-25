@@ -220,7 +220,7 @@ public class EgovLoginController {
 		} catch (AuthenticationException e) {
 			LOGGER.warn("Login failed for user: {}", loginVO.getId());
 			LOGGER.debug(">>> EgovLoginController: Authentication FAILED. Exception: {}", e.getMessage());
-			e.printStackTrace(); // Print stack trace to server logs
+			LOGGER.error("Login failed", e);
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login", request.getLocale()));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}

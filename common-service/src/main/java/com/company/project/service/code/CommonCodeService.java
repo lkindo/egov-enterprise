@@ -8,6 +8,7 @@ import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.code.dto.CommonCodeSaveRequest;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "commonCodes", key = "#codeGroupId")
     public List<CommonCodeDto> getCodesByGroup(String codeGroupId) {
         return commonCodeRepository.findByCodeGroupIdAndUseAt(codeGroupId, "Y").stream()
                 .map(CommonCodeDto::from)

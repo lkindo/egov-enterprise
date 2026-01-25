@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,19 +58,19 @@ public class NoteService implements EgovNoteService {
 
         // 3. 수신 정보 저장 (여러 명일 경우)
         if (dto.getRecipients() != null) {
-            for (NoteDto.NoteRecptnDto rDto : dto.getRecipients()) {
-                NoteRecptn recptn = NoteRecptn.builder()
-                        .noteRecptnId(rDto.getNoteRecptnId())
-                        .note(note)
-                        .noteTrnsmit(trnsmit)
-                        .rcverId(rDto.getRcverId())
-                        .openYn("N")
-                        .recptnSe(rDto.getRecptnSe())
-                        .frstRegisterId(dto.getFrstRegisterId())
-                        .lastUpdusrId(dto.getFrstRegisterId())
-                        .build();
-                noteRecptnRepository.save(recptn);
-            }
+            List<NoteRecptn> recipients = dto.getRecipients().stream()
+                    .map(rDto -> NoteRecptn.builder()
+                            .noteRecptnId(rDto.getNoteRecptnId())
+                            .note(note)
+                            .noteTrnsmit(trnsmit)
+                            .rcverId(rDto.getRcverId())
+                            .openYn("N")
+                            .recptnSe(rDto.getRecptnSe())
+                            .frstRegisterId(dto.getFrstRegisterId())
+                            .lastUpdusrId(dto.getFrstRegisterId())
+                            .build())
+                    .collect(Collectors.toList());
+            noteRecptnRepository.saveAll(recipients);
         }
     }
 
