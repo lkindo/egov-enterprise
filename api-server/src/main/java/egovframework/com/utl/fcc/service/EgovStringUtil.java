@@ -194,20 +194,7 @@ public class EgovStringUtil {
 	 * @return sb.toString() 새로운 문자열로 변환된 문자열
 	 */
 	public static String replace(String source, String subject, String object) {
-		StringBuffer rtnStr = new StringBuffer();
-		String preStr = "";
-		String nextStr = source;
-		String srcStr = source;
-
-		while (srcStr.indexOf(subject) >= 0) {
-			preStr = srcStr.substring(0, srcStr.indexOf(subject));
-			nextStr = srcStr.substring(srcStr.indexOf(subject) + subject.length(), srcStr.length());
-			srcStr = nextStr;
-			rtnStr.append(preStr).append(object);
-		}
-		rtnStr.append(nextStr);
-
-		return rtnStr.toString();
+		return source.replace(subject, object == null ? "null" : object);
 	}
 
 	/**
@@ -773,10 +760,8 @@ public class EgovStringUtil {
 			throw new IllegalArgumentException("Start String: " + startChr + " End String: " + endChr);
 		}
 
-		do {
-			// 시작문자 및 종료문자 중에서 랜덤 숫자를 발생시킨다.
-			randomInt = rnd.nextInt(endInt + 1);
-		} while (randomInt < startInt); // 입력받은 문자 'A'(65)보다 작으면 다시 랜덤 숫자 발생.
+		// 시작문자 및 종료문자 중에서 랜덤 숫자를 발생시킨다.
+		randomInt = rnd.nextInt(endInt - startInt + 1) + startInt;
 
 		// 랜덤 숫자를 문자로 변환 후 스트링으로 다시 변환
 		randomStr = (char)randomInt + "";

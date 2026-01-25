@@ -148,9 +148,7 @@ public class EgovFileMntrg extends Thread {
 	// abstract protected void doOnChange();
 	protected void doOnChange(List<String> changedList) {
 		// log.debug("doOnChange() start");
-		for (int i = 0; i < changedList.size(); i++) {
-			writeLog(changedList.get(i));
-		}
+		writeLog(changedList);
 		changedList.clear(); // 직전리스트와 비교해서 변경된 내역은 로그처리한 후 초기화한다.
 		originalList = new ArrayList<String>(currentList); // 현재리스트가 직전리스트가 된다.(새로 생성해야 함!)
 		cnt++;
@@ -287,6 +285,40 @@ public class EgovFileMntrg extends Thread {
 		java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyyMMdd:HH:mm:ss",
 				java.util.Locale.KOREA);
 		return dateFormat.format(new java.util.Date(date));
+	}
+
+	/**
+	 * <pre>
+	 * Comment : 디렉토리(파일)의  로그정보를 기록한다.
+	 * </pre>
+	 *
+	 * @param List<String> logList 추가할 로그정보 리스트
+	 * @return boolean result 로그추가 성공여부
+	 */
+	public boolean writeLog(List<String> logList) {
+		boolean result = false;
+
+		try (FileWriter fWriter = new FileWriter(logFile, true);
+				BufferedWriter bWriter = new BufferedWriter(fWriter)) {
+
+			for (String logStr : logList) {
+				try (BufferedReader br = new BufferedReader(new StringReader(logStr))) {
+					String line = br.readLine();
+					while (line != null) {
+						if (line.length() <= MAX_STR_LEN) {
+							bWriter.write(line);
+							bWriter.write("\n");
+						}
+						line = br.readLine();
+					}
+				}
+			}
+			result = true;
+		} catch (IOException e) {
+			throw new RuntimeException("File IO exception", e);
+		}
+
+		return result;
 	}
 
 	/**
