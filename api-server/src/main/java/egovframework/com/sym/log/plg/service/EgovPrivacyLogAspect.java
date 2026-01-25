@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.aspectj.lang.JoinPoint;
 import org.slf4j.Logger;
@@ -51,6 +52,15 @@ public class EgovPrivacyLogAspect {
 	public void setTarget(Map<String, String> target) {
 		this.target = target;
 	}
+
+	private static final Object NO_METHOD = new Object();
+
+	private final ClassValue<Map<String, Object>> methodCache = new ClassValue<Map<String, Object>>() {
+		@Override
+		protected Map<String, Object> computeValue(Class<?> type) {
+			return new ConcurrentHashMap<>();
+		}
+	};
 
 	@Resource(name = "egovPrivacyLogService")
 	private EgovPrivacyLogService privacyLogService;
@@ -126,19 +136,39 @@ public class EgovPrivacyLogAspect {
 	protected List<String> getItemValues(Object data, String serviceName) {
 		List<String> list = new ArrayList<String>();
 
+		Class<?> clazz = data.getClass();
+		Map<String, Object> methods = methodCache.get(clazz);
+
 		for (String key : target.keySet()) {
 
-			try {
-				Method method = data.getClass().getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
+			Object cached = methods.get(key);
+			Method method = null;
 
+			if (cached != null) {
+				if (cached == NO_METHOD) {
+					continue;
+				}
+				method = (Method) cached;
+			} else {
+				try {
+					method = clazz.getMethod("get" + key.substring(0, 1).toUpperCase() + key.substring(1));
+					methods.put(key, method);
+				} catch (NoSuchMethodException ignore) {
+					methods.put(key, NO_METHOD);
+					LOGGER.error("[" + ignore.getClass() + "] Try/Catch... : " + ignore.getMessage());
+					continue;
+				} catch (Exception ignore) {
+					LOGGER.error("[" + ignore.getClass() + "] Try/Catch... : " + ignore.getMessage());
+					continue;
+				}
+			}
+
+			try {
 				Object returned = method.invoke(data);
 
 				if (returned != null && !returned.toString().trim().equals("")) {
 					list.add(target.get(key));
 				}
-			} catch (NoSuchMethodException ignore) {
-				LOGGER.error("[" + ignore.getClass() + "] Try/Catch... : " + ignore.getMessage());
-				continue;
 			} catch (IllegalAccessException ignore) {
 				LOGGER.error("[" + ignore.getClass() + "] Try/Catch... : " + ignore.getMessage());
 				continue;
