@@ -121,11 +121,8 @@ public class EgovDeptSchdulManageController {
 	public String egovMeetingManageLisEmpLyrPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// List<EgovMap> resultList =
-		// egovDeptSchdulManageService.selectDeptSchdulManageEmpLyrPopup(searchVO);
-		// model.addAttribute("resultList", resultList);
-		// TODO: Migrated service does not yet support EmpLyrPopup. Impl pending.
-		model.addAttribute("resultList", new ArrayList<>());
+		List<Map<String, Object>> resultList = egovScheduleService.selectEmpLyrPopup(searchVO);
+		model.addAttribute("resultList", resultList);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup";
 	}

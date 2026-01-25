@@ -69,10 +69,12 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
             return null;
         }
 
-        if ("0".equals(searchCondition)) {
+        if ("0".equals(searchCondition) || "EMPLYR_ID".equals(searchCondition)) {
             return user.userId.contains(searchKeyword);
-        } else if ("1".equals(searchCondition)) {
+        } else if ("1".equals(searchCondition) || "USER_NM".equals(searchCondition)) {
             return user.userNm.contains(searchKeyword);
+        } else if ("OFFM_TELNO".equals(searchCondition)) {
+            return user.offmTelno.contains(searchKeyword);
         }
 
         return null;
