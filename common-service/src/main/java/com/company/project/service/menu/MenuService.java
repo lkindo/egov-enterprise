@@ -137,26 +137,31 @@ public class MenuService {
     }
 
     public List<MenuCreateDto> selectMenuCreatManagList(ComDefaultVO searchVO) {
-        // Since we need to join or fetch Authority, we use AuthorityRepository
-        // Logic: Search Authorities
-        // Simple implementation: findAll Authorities
-        return authorityRepository.findAll().stream()
-                .map(auth -> {
-                    // Count menu authority records for this authority to determine chkYeoBu
-                    int chkYeoBu = menuAuthorityRepository.findByIdAuthorCode(auth.getAuthorCode()).size();
-                    return MenuCreateDto.builder()
-                            .authorCode(auth.getAuthorCode())
-                            .authorNm(auth.getAuthorNm())
-                            .authorDc(auth.getAuthorDc())
-                            .authorCreatDe(auth.getAuthorCreatDe() != null ? auth.getAuthorCreatDe().toString() : "")
-                            .chkYeoBu(chkYeoBu)
-                            .build();
-                })
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+                Sort.by("authorCode").ascending());
+        String searchKeyword = searchVO.getSearchKeyword();
+        if (searchKeyword == null) {
+            searchKeyword = "";
+        }
+
+        return menuAuthorityRepository.selectMenuCreatManagList(searchKeyword, pageable).stream()
+                .map(proj -> MenuCreateDto.builder()
+                        .authorCode(proj.getAuthorCode())
+                        .authorNm(proj.getAuthorNm())
+                        .authorDc(proj.getAuthorDc())
+                        .authorCreatDe(proj.getAuthorCreatDe() != null ? proj.getAuthorCreatDe().toString() : "")
+                        .chkYeoBu(proj.getChkYeoBu().intValue())
+                        .build())
                 .collect(Collectors.toList());
     }
 
     public int selectMenuCreatManagTotCnt(ComDefaultVO searchVO) {
-        return (int) authorityRepository.count();
+        String searchKeyword = searchVO.getSearchKeyword();
+        if (searchKeyword == null) {
+            searchKeyword = "";
+        }
+        return (int) menuAuthorityRepository.selectMenuCreatManagList(searchKeyword, PageRequest.of(0, 1))
+                .getTotalElements();
     }
 
     public List<MenuDto> selectMenuCreatList(MenuCreateDto vo) {
