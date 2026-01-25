@@ -5,6 +5,8 @@ import com.company.project.service.duty.dto.DutyCheckDto;
 import com.company.project.service.duty.dto.DutyDto;
 import com.company.project.service.duty.dto.DutyDiaryDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +60,12 @@ public class DutyService implements EgovDutyService {
         return dutyRepository.findById_BndtDeStartingWith(bndtDePrefix).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable) {
+        return dutyRepository.findById_BndtDeStartingWith(bndtDePrefix, pageable)
+                .map(this::convertToDto);
     }
 
     @Override
