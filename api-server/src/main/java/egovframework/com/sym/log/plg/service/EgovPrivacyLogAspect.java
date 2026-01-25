@@ -176,7 +176,7 @@ public class EgovPrivacyLogAspect {
 	}
 
 	private String getStringFromItemList(List<String> list) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 
 		for (String item : list) {
 			if (buffer.length() != 0) {
