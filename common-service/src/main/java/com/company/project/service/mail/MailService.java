@@ -5,21 +5,27 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.mail.SentMail;
 import com.company.project.domain.mail.SentMailRepository;
 import com.company.project.service.mail.dto.SentMailDto;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 메일 서비스 구현체
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MailService implements EgovMailService {
 
     private final SentMailRepository sentMailRepository;
+    private final JavaMailSender javaMailSender;
 
     @Override
     public Page<SentMailDto> getSentMailList(String keyword, Pageable pageable) {
@@ -53,7 +59,22 @@ public class MailService implements EgovMailService {
 
         sentMailRepository.save(sentMail);
 
-        // TODO: 실제 메일 발송 로직 연동
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setSubject(dto.getSj());
+            helper.setText(dto.getEmailCn(), true);
+            helper.setFrom(dto.getDsptchPerson());
+            helper.setTo(dto.getRecptnPerson());
+
+            javaMailSender.send(message);
+
+            sentMail.updateResult("S"); // Success
+        } catch (Exception e) {
+            log.error("Failed to send mail: {}", e.getMessage(), e);
+            sentMail.updateResult("F"); // Failure
+        }
 
         return mssageId;
     }
