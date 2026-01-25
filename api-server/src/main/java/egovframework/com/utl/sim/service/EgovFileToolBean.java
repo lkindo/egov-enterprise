@@ -26,7 +26,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.springframework.stereotype.Component;
 
@@ -74,10 +73,10 @@ public class EgovFileToolBean {
 	 * @param parFile  파일
 	 * @param parChar  구분자(',', '|', 'TAB')
 	 * @param parField 필드수
-	 * @return Vector parResult 파싱결과 구조체
+	 * @return List parResult 파싱결과 구조체
 	 * @exception Exception
 	 */
-	public Vector<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField)
+	public List<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField)
 			throws Exception {
 
 		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
@@ -91,7 +90,7 @@ public class EgovFileToolBean {
 		}
 
 		// 파싱결과 구조체
-		Vector<List<String>> parResult = new Vector<>();
+		List<List<String>> parResult = new ArrayList<>();
 
 		// 파일 오픈
 		String parFile1 = parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -101,9 +100,9 @@ public class EgovFileToolBean {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
 
-				// 1. 파일 텍스트 내용을 읽어서 StringBuffer에 쌓는다.
+				// 1. 파일 텍스트 내용을 읽어서 StringBuilder에 쌓는다.
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				StringBuffer strBuff = new StringBuffer();
+				StringBuilder strBuff = new StringBuilder();
 				String line = "";
 				while ((line = br.readLine()) != null) {
 					if (line.length() < MAX_STR_LEN) {
@@ -114,7 +113,7 @@ public class EgovFileToolBean {
 				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
 				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
 
-				// 3. 필드 수 만큼 돌아가며 Vector<ArrayList> 형태로 만든다.
+				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
 				int filedCnt = 1;
 				List<String> arr = new ArrayList<>();
 				for (int i = 0; i < strArr.length; i++) {

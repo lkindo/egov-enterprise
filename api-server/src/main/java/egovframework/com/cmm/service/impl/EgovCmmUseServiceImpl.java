@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.company.project.domain.code.CommonCode;
 import com.company.project.domain.code.CommonCodeRepository;
 import com.company.project.domain.group.GroupManageRepository;
+import com.company.project.domain.organization.OrganizationManageRepository;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.service.CmmnDetailCode;
@@ -47,8 +48,8 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	@Resource(name = "groupManageRepository")
 	private GroupManageRepository groupManageRepository;
 
-	// @Resource(name = "organizationManageRepository")
-	// private OrganizationManageRepository organizationManageRepository;
+	@Resource(name = "organizationManageRepository")
+	private OrganizationManageRepository organizationManageRepository;
 
 	/**
 	 * 공통코드를 조회한다.
@@ -86,8 +87,15 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	 */
 	@Override
 	public List<CmmnDetailCode> selectOgrnztIdDetail(ComDefaultCodeVO comDefaultCodeVO) {
-		// TODO: OrganizationManageRepository 구현 필요
-		return Collections.emptyList();
+		return organizationManageRepository.findAll().stream()
+				.map(org -> {
+					CmmnDetailCode code = new CmmnDetailCode();
+					code.setCode(org.getOrgnztId());
+					code.setCodeNm(org.getOrgnztNm());
+					code.setCodeDc(org.getOrgnztDc());
+					return code;
+				})
+				.collect(Collectors.toList());
 	}
 
 	/**

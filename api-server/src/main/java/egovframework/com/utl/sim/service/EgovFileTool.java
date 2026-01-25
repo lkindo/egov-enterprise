@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -341,10 +340,10 @@ public class EgovFileTool {
 	 * @param parFile 파일
 	 * @param parChar 구분자(',', '|', 'TAB')
 	 * @param parField 필드수
-	 * @return Vector parResult 파싱결과 구조체
+	 * @return List parResult 파싱결과 구조체
 	 * @exception Exception
 	 */
-	public static Vector<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField) throws Exception {
+	public static List<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField) throws Exception {
 
 		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
 		if (basePath == null || basePath.equals("")) {
@@ -356,7 +355,7 @@ public class EgovFileTool {
 		}
 
 		// 파싱결과 구조체
-		Vector<List<String>> parResult = new Vector<>();
+		List<List<String>> parResult = new ArrayList<>();
 
 		// 파일 오픈
 		String parFile1 = parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -372,6 +371,10 @@ public class EgovFileTool {
 				String line;
 				int parCharLen = parChar.length();
 
+				// 1. 파일 텍스트 내용을 읽어서 StringBuilder에 쌓는다.
+				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder strBuff = new StringBuilder();
+				String line = "";
 				while ((line = br.readLine()) != null) {
 					if (line.length() < MAX_STR_LEN) {
 						tokenBuffer.append(line);
@@ -385,6 +388,29 @@ public class EgovFileTool {
 								if (currentRecord.size() == parField) {
 									parResult.add(currentRecord);
 									currentRecord = new ArrayList<>();
+				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
+				int filedCnt = 1;
+				List<String> arr = new ArrayList<>();
+				for (int i = 0; i < strArr.length; i++) {
+
+					if (parField != 1) {
+						if ((filedCnt % parField) == 1) {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+							}
+							if (i == (strArr.length - 1)) {
+								parResult.add(arr);
+							}
+						} else if ((filedCnt % parField) == 0) {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+								parResult.add(arr);
+							}
+						} else {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+								if (i == (strArr.length - 1)) {
+									parResult.add(arr);
 								}
 
 								tokenBuffer.delete(0, idx + parCharLen);

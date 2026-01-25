@@ -121,9 +121,6 @@ public class MenuCreateController {
             @ModelAttribute("menuCreatVO") MenuCreateDto menuCreatVO,
             Model model, RedirectAttributes redirectAttributes) throws Exception {
 
-        // TODO: Security Check if strictly needed here beyond FilterSecurityInterceptor
-        // Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
         String resultMsg = "";
         if (checkedMenuNoForInsert == null || (checkedMenuNoForInsert.length() == 0)) {
             resultMsg = egovMessageSource.getMessage("fail.common.insert");
