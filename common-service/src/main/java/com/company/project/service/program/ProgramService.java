@@ -5,6 +5,7 @@ import com.company.project.domain.program.ProgramRepository;
 import com.company.project.service.program.dto.ProgramDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -76,6 +77,7 @@ public class ProgramService {
      * 프로그램 등록
      */
     @Transactional
+    @CacheEvict(value = "menuHierarchy", allEntries = true)
     public void insertProgrm(ProgramDto dto) {
         Program program = Program.builder()
                 .progrmFileNm(dto.getProgrmFileNm())
@@ -91,6 +93,7 @@ public class ProgramService {
      * 프로그램 수정
      */
     @Transactional
+    @CacheEvict(value = "menuHierarchy", allEntries = true)
     public void updateProgrm(ProgramDto dto) {
         programRepository.findById(dto.getProgrmFileNm()).ifPresent(program -> {
             program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
@@ -101,6 +104,7 @@ public class ProgramService {
      * 프로그램 삭제
      */
     @Transactional
+    @CacheEvict(value = "menuHierarchy", allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
         programRepository.deleteById(dto.getProgrmFileNm());
     }
@@ -109,6 +113,7 @@ public class ProgramService {
      * 프로그램 목록 멀티 삭제
      */
     @Transactional
+    @CacheEvict(value = "menuHierarchy", allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {
         String[] delProgrmFileNm = checkedProgrmFileNmForDel.split(",");
         for (String id : delProgrmFileNm) {

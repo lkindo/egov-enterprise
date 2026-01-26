@@ -45,8 +45,9 @@ public class MenuService {
     @Lazy
     private MenuService self;
 
+    @Cacheable(value = "menuHierarchy")
     public List<MenuDto> getMenuHierarchy() {
-        List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Menu> menus = self.getAllMenusCached();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
@@ -204,7 +205,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = "allMenus", allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         // Delete existing mapping
         menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
@@ -365,7 +366,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = "allMenus", allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
     public void insertMenuManage(MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
@@ -381,7 +382,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = "allMenus", allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
     public void updateMenuManage(MenuDto vo) {
         Menu menu = menuRepository.findById(vo.getMenuNo())
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
@@ -390,12 +391,12 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = "allMenus", allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
     public void deleteMenuManage(MenuDto vo) {
         menuRepository.deleteById(vo.getMenuNo());
     }
 
-    @CacheEvict(value = "allMenus", allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
