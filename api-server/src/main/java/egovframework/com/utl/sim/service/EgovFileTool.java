@@ -365,9 +365,50 @@ public class EgovFileTool {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
 
+				// 1. 파일 텍스트 내용을 읽어서 StringBuilder에 쌓는다.
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder strBuff = new StringBuilder();
+				String line;
+				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder strBuff = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					if (line.length() < MAX_STR_LEN) {
+						strBuff.append(line);
+					}
+				}
+
+				String[] strArr = strBuff.toString().split(java.util.regex.Pattern.quote(parChar));
 				List<String> currentRecord = new ArrayList<>();
+				for (String token : strArr) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
+					}
+				}
+				StringBuilder sb = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+
+				String content = sb.toString();
+				if (content.isEmpty()) {
+					return parResult;
+				}
+
+				String[] tokens = content.split(java.util.regex.Pattern.quote(parChar));
+
+				List<String> currentRecord = new ArrayList<>();
+				for (String token : tokens) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
+					}
 				StringBuilder tokenBuffer = new StringBuilder();
+				List<String> currentRecord = new ArrayList<>();
 				String line;
 				int parCharLen = parChar.length();
 
@@ -385,6 +426,58 @@ public class EgovFileTool {
 							currentRecord.clear();
 						}
 					}
+					if (line.length() < MAX_STR_LEN) {
+						strBuff.append(line);
+					}
+				}
+
+				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
+				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
+
+				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
+				int filedCnt = 1;
+				List<String> arr = new ArrayList<>();
+				for (int i = 0; i < strArr.length; i++) {
+
+					if (parField != 1) {
+						if ((filedCnt % parField) == 1) {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+							}
+							if (i == (strArr.length - 1)) {
+								parResult.add(arr);
+							}
+						} else if ((filedCnt % parField) == 0) {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+								parResult.add(arr);
+							}
+						} else {
+							if (strArr[i] != null) {
+								arr.add(strArr[i]);
+								if (i == (strArr.length - 1)) {
+									parResult.add(arr);
+								}
+						int idx;
+						while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
+							String token = tokenBuffer.substring(0, idx);
+							currentRecord.add(token);
+
+							if (currentRecord.size() == parField) {
+								parResult.add(currentRecord);
+								currentRecord = new ArrayList<>();
+							}
+							tokenBuffer.delete(0, idx + parCharLen);
+						}
+					} else {
+						arr = new ArrayList<>();
+						if (strArr[i] != null) {
+							arr.add(strArr[i]);
+						}
+						parResult.add(arr);
+					}
+
+					filedCnt++;
 				}
 			}
 		} finally {
