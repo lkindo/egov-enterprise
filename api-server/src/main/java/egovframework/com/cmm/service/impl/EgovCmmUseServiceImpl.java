@@ -89,11 +89,11 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	public List<CmmnDetailCode> selectOgrnztIdDetail(ComDefaultCodeVO comDefaultCodeVO) {
 		return organizationManageRepository.findAll().stream()
 				.map(org -> {
-					CmmnDetailCode code = new CmmnDetailCode();
-					code.setCode(org.getOrgnztId());
-					code.setCodeNm(org.getOrgnztNm());
-					code.setCodeDc(org.getOrgnztDc());
-					return code;
+					CmmnDetailCode detailCode = new CmmnDetailCode();
+					detailCode.setCode(org.getOrgnztId());
+					detailCode.setCodeNm(org.getOrgnztNm());
+					detailCode.setCodeDc(org.getOrgnztDc());
+					return detailCode;
 				})
 				.collect(Collectors.toList());
 	}

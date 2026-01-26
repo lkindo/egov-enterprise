@@ -64,11 +64,11 @@ public class SmsService implements EgovSmsService {
                         .build())
                 .collect(Collectors.toList()));
 
-        smsRepository.save(sms);
+        Sms savedSms = smsRepository.save(sms);
 
-        // 실제 SMS 발송 로직 연동
-        for (SmsRecptn recipient : sms.getRecipients()) {
-            boolean success = smsSender.send(recipient.getRecptnTelno(), sms.getTrnsmitCn(), sms.getTrnsmitTelno());
+        // Send SMS
+        for (SmsRecptn recipient : savedSms.getRecipients()) {
+            boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(), savedSms.getTrnsmitTelno());
             if (success) {
                 recipient.updateResult("0000", "SUCCESS");
             } else {
