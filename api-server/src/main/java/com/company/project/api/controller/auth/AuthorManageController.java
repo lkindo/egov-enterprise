@@ -67,8 +67,20 @@ public class AuthorManageController {
     @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthor.do" })
     public String selectAuthor(@RequestParam("authorCode") String authorCode, ModelMap model)
             throws Exception {
-        model.addAttribute("authorManage", authorManageService.selectAuthor(authorCode));
-        model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+        System.out.println("DEBUG: AuthorManageController.selectAuthor called with " + authorCode);
+
+        AuthorManageDto dto = authorManageService.selectAuthor(authorCode);
+        if (dto == null) {
+            System.out.println("DEBUG: dto is null. Creating empty dto.");
+            dto = new AuthorManageDto();
+            dto.setAuthorCode(authorCode);
+            model.addAttribute("message", "해당 권한을 찾을 수 없습니다.");
+        } else {
+            System.out.println("DEBUG: found dto: " + dto);
+            model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+        }
+
+        model.addAttribute("authorManage", dto);
         return "sec/ram/EgovAuthorUpdate";
     }
 

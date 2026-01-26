@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 레거시 테이블: COMTNSNDNGMAIL
  */
 @Entity
-@Table(name = "NSNDNGMAIL")
+@Table(name = "HEMAILDSPTCHMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SentMail {

@@ -55,36 +55,42 @@ public class EgovSndngMailDtlsController {
 	 * @return String
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "발송메일내역", order = 361, gid = 40)
-	@RequestMapping(value = "/cop/ems/selectSndngMailList.do")
-	public String selectSndngMailList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
-			throws Exception {
-
-		// 발송메일 내역 조회
-		/** EgovPropertyService.sample */
-		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-		searchVO.setPageSize(propertiesService.getInt("pageSize"));
-
-		/** pageing */
-		PaginationInfo paginationInfo = new PaginationInfo();
-		paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
-		paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
-		paginationInfo.setPageSize(searchVO.getPageSize());
-
-		searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
-		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
-		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-
-		List<SndngMailVO> sndngMailList = sndngMailDtlsService.selectSndngMailList(searchVO);
-		model.addAttribute("resultList", sndngMailList);
-
-		int totCnt = sndngMailDtlsService.selectSndngMailListTotCnt(searchVO);
-		paginationInfo.setTotalRecordCount(totCnt);
-		model.addAttribute("paginationInfo", paginationInfo);
-		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
-
-		return "egovframework/com/cop/ems/EgovMailDtls";
-	}
+	/*
+	 * @IncludedInfo(name = "발송메일내역", order = 361, gid = 40)
+	 * 
+	 * @RequestMapping(value = "/cop/ems/selectSndngMailList.do")
+	 * public String selectSndngMailList(@ModelAttribute("searchVO") ComDefaultVO
+	 * searchVO, ModelMap model)
+	 * throws Exception {
+	 * 
+	 * // 발송메일 내역 조회
+	 * // EgovPropertyService.sample
+	 * searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
+	 * searchVO.setPageSize(propertiesService.getInt("pageSize"));
+	 * 
+	 * // pageing
+	 * PaginationInfo paginationInfo = new PaginationInfo();
+	 * paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+	 * paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
+	 * paginationInfo.setPageSize(searchVO.getPageSize());
+	 * 
+	 * searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+	 * searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
+	 * searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+	 * 
+	 * List<SndngMailVO> sndngMailList =
+	 * sndngMailDtlsService.selectSndngMailList(searchVO);
+	 * model.addAttribute("resultList", sndngMailList);
+	 * 
+	 * int totCnt = sndngMailDtlsService.selectSndngMailListTotCnt(searchVO);
+	 * paginationInfo.setTotalRecordCount(totCnt);
+	 * model.addAttribute("paginationInfo", paginationInfo);
+	 * model.addAttribute("message",
+	 * egovMessageSource.getMessage("success.common.select"));
+	 * 
+	 * return "egovframework/com/cop/ems/EgovMailDtls";
+	 * }
+	 */
 
 	/**
 	 * 발송메일을 삭제한다.
