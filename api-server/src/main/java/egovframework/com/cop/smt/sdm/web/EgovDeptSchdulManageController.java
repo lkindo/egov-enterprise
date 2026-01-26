@@ -107,7 +107,7 @@ public class EgovDeptSchdulManageController {
 	 * 부서목록을 조회한다.
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup.do")
-	public String egovMeetingManageLisAuthorGroupPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+	public String egovDeptSchdulManageAuthorGroupPopup(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
         DeptManageVO deptManageVO = new DeptManageVO();
@@ -147,6 +147,7 @@ public class EgovDeptSchdulManageController {
 	public String egovMeetingManageLisEmpLyrPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
+		// Service implementation verified
 		List<Map<String, Object>> resultList = egovScheduleService.selectEmpLyrPopup(searchVO);
 		model.addAttribute("resultList", resultList);
 
