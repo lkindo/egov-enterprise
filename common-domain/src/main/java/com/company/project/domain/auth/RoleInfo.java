@@ -42,6 +42,15 @@ public class RoleInfo {
         this.creatDt = java.time.LocalDate.now().toString().replace("-", "");
     }
 
+    /**
+     * Updates the role information.
+     *
+     * @param roleNm    Role Name
+     * @param rolePttrn Role Pattern
+     * @param roleDc    Role Description
+     * @param roleTy    Role Type
+     * @param roleSort  Role Sort Order
+     */
     public void update(String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
         this.roleNm = roleNm;
         this.rolePttrn = rolePttrn;
