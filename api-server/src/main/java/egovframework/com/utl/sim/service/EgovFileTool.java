@@ -413,6 +413,19 @@ public class EgovFileTool {
 				int parCharLen = parChar.length();
 
 				while ((line = br.readLine()) != null) {
+					tokenBuffer.append(line);
+
+					int idx;
+					while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
+						String token = tokenBuffer.substring(0, idx);
+						currentRecord.add(token);
+						tokenBuffer.delete(0, idx + parCharLen);
+
+						if (currentRecord.size() == parField) {
+							parResult.add(new ArrayList<>(currentRecord));
+							currentRecord.clear();
+						}
+					}
 					if (line.length() < MAX_STR_LEN) {
 						strBuff.append(line);
 					}
