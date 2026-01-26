@@ -365,6 +365,23 @@ public class EgovFileTool {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder strBuff = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					if (line.length() < MAX_STR_LEN) {
+						strBuff.append(line);
+					}
+				}
+
+				String[] strArr = strBuff.toString().split(java.util.regex.Pattern.quote(parChar));
+				List<String> currentRecord = new ArrayList<>();
+				for (String token : strArr) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
+					}
+				}
 				StringBuilder sb = new StringBuilder();
 				String line;
 				while ((line = br.readLine()) != null) {

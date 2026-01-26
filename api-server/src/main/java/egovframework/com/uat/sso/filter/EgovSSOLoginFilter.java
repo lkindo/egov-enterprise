@@ -77,14 +77,17 @@ public class EgovSSOLoginFilter implements Filter {
 			if (isRemotelyAuthenticated == null) {
 				try {
 					if (egovSSOService != null) {// 2022.01 Null pointers should not be dereferenced
-						// TODO egovSSOService null 일 경우 프로세스 확인 필요
 						// sso서버에 토큰 생성
 						egovSSOService.requestIssueToken(request, response);
+						// sso 인증 완료 여부를 세션에 저장
+						session.setAttribute("isRemotelyAuthenticated", "true");
+					} else {
+						LOGGER.debug("EgovSSOService is null, skipping SSO token issuance.");
+						session.setAttribute("isRemotelyAuthenticated", "fail");
 					}
+
 					// 로컬 인증 적용 여부 완료를 세션에 저장
 					session.setAttribute("isLocallyAuthenticated", "true");
-					// sso 인증 완료 여부를 세션에 저장
-					session.setAttribute("isRemotelyAuthenticated", "true");
 
 				} catch (IllegalStateException ex) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
 					session.setAttribute("isRemotelyAuthenticated", "fail");
@@ -98,7 +101,6 @@ public class EgovSSOLoginFilter implements Filter {
 		} else if (isLocallyAuthenticated == null) {
 			if (isRemotelyAuthenticated == null) {
 				if (egovSSOService != null) {// 2022.01 Null pointers should not be dereferenced
-					// TODO egovSSOService null 일 경우 프로세스 확인 필요
 					// sso서버에 토큰이 존재하는지 체크함
 					isSSOLoggedOn = egovSSOService.hasTokenInSSOServer(httpRequest, response);
 					if (isSSOLoggedOn) {
