@@ -364,7 +364,6 @@ public class EgovFileTool {
 		try {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
-
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 				StringBuilder strBuff = new StringBuilder();
 				String line;
@@ -381,6 +380,48 @@ public class EgovFileTool {
 					if (currentRecord.size() == parField) {
 						parResult.add(new ArrayList<>(currentRecord));
 						currentRecord.clear();
+					}
+				}
+				StringBuilder sb = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+
+				String content = sb.toString();
+				if (content.isEmpty()) {
+					return parResult;
+				}
+
+				String[] tokens = content.split(java.util.regex.Pattern.quote(parChar));
+
+				List<String> currentRecord = new ArrayList<>();
+				for (String token : tokens) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
+					}
+				StringBuilder tokenBuffer = new StringBuilder();
+				List<String> currentRecord = new ArrayList<>();
+				String line;
+				int parCharLen = parChar.length();
+
+				while ((line = br.readLine()) != null) {
+					if (line.length() < MAX_STR_LEN) {
+						tokenBuffer.append(line);
+
+						int idx;
+						while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
+							String token = tokenBuffer.substring(0, idx);
+							currentRecord.add(token);
+
+							if (currentRecord.size() == parField) {
+								parResult.add(currentRecord);
+								currentRecord = new ArrayList<>();
+							}
+							tokenBuffer.delete(0, idx + parCharLen);
+						}
 					}
 				}
 			}
