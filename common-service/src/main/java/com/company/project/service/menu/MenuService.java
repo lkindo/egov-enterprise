@@ -374,10 +374,14 @@ public class MenuService {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
         String[] delMenuNos = checkedMenuNoForDel.split(",");
+        List<Long> idsToDelete = new ArrayList<>();
         for (String menuNo : delMenuNos) {
             if (menuNo == null || menuNo.isEmpty())
                 continue;
-            menuRepository.deleteById(Long.parseLong(menuNo));
+            idsToDelete.add(Long.parseLong(menuNo));
+        }
+        if (!idsToDelete.isEmpty()) {
+            menuRepository.deleteAllById(idsToDelete);
         }
     }
 
