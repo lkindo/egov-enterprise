@@ -34,6 +34,8 @@ public class BatchSchdulService implements EgovBatchSchdulService {
     private final BatchJobRepository batchJobRepository;
     private final EgovCommonCodeService commonCodeService;
 
+    private final java.util.concurrent.ConcurrentHashMap<String, Map<String, String>> codeMapCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     public Page<BatchSchdulDto> getBatchSchdulList(String searchCondition, String searchKeyword, Pageable pageable) {
         Page<BatchSchdul> entities = batchSchdulRepository
@@ -77,9 +79,9 @@ public class BatchSchdulService implements EgovBatchSchdulService {
     }
 
     private Map<String, String> getCodeMap(String codeGroupId) {
-        return commonCodeService.getCodesByGroup(codeGroupId).stream()
+        return codeMapCache.computeIfAbsent(codeGroupId, key -> commonCodeService.getCodesByGroup(key).stream()
                 .collect(Collectors.toMap(CommonCodeDto::getCode,
-                        CommonCodeDto::getCodeNm, (a, b) -> a));
+                        CommonCodeDto::getCodeNm, (a, b) -> a)));
     }
 
     private BatchSchdulDto convertToDto(BatchSchdul entity,
