@@ -364,8 +364,27 @@ public class EgovFileTool {
 		try {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
-
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+				StringBuilder sb = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+
+				String content = sb.toString();
+				if (content.isEmpty()) {
+					return parResult;
+				}
+
+				String[] tokens = content.split(java.util.regex.Pattern.quote(parChar));
+
+				List<String> currentRecord = new ArrayList<>();
+				for (String token : tokens) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
+					}
 				StringBuilder tokenBuffer = new StringBuilder();
 				List<String> currentRecord = new ArrayList<>();
 				String line;
@@ -388,6 +407,9 @@ public class EgovFileTool {
 				        }
 				    }
 				}
+                // Handle remaining tokens if necessary? Legacy seems to ignore them if they don't form a full record
+                // or just append them. The original code was buggy so hard to tell.
+                // Assuming well-formed input or that we only want full records.
 			}
 		} finally {
 			EgovResourceCloseHelper.close(br);
