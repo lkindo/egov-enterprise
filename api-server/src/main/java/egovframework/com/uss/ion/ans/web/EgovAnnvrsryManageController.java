@@ -410,95 +410,36 @@ public class EgovAnnvrsryManageController {
 			status.setComplete();
 			annvrsryManage.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-			// Duplicate Check is NOT typically done on update for same ID, but legacy did
-			// calls selectAnnvrsryManageDplctAt.
-			// But if I update name to existing name...
-			// Legacy passed annvrsryManage which contains AnnId.
-			// If the duplication check doesn't exclude current ID, it's a bug in legacy or
-			// intended.
-			// Legacy SQL: `WHERE USID=#usid# AND ...`. Count(*).
-			// It doesn't seem to exclude self. So updating without changing fields returns
-			// count 1.
-			// Wait, if legacy service returns 0, then update.
-			// So if I save same data, it says duplicate?
-			// This implies legacy logic prevents updating to existing values, BUT might
-			// prevent saving *itself* if fields are same?
-			// Actually, usually duplicate check excludes self for updates.
-			// I'll assume standard behavior or blindly follow legacy.
-			// If legacy didn't exclude self, then you couldn't save without changing
-			// something unique?
-			// Let's implement robust check (exclude self if needed) or just trust the new
-			// Service.
-			// But wait, my `checkAnniversaryDuplicate` calls `countBy...`. It doesn't take
-			// ID.
-			// So it counts strictly by fields.
-			// If I am updating, and I don't change fields, count is 1 (myself).
-			// Logic: `if (service.check... == 0)`.
-			// So if count is 1, it fails.
-			// This means I CANNOT save without changing to something non-existent.
-			// IF I change nothing, it fails? Use case: update memo.
-			// If I update memo, duplicate check (on name/date) returns 1. Update blocked.
-			// This seems like a Legacy Bug or I misunderstood
-			// `selectAnnvrsryManageDplctAt`.
-			// Maybe it is only called if keys change? No, called unconditionally.
-			// I will IMPROVE this by checking if the found duplicate is NOT me.
-			// But `countBy...` returns int.
-			// I will implement a better update logic: `updateAnniversary` in service should
-			// handle this or I check manually.
-			// Given time, I'll assume the user wants me to follow legacy or make it work.
-			// I'll skip duplicate check on Update for now OR implement it properly (exclude
-			// self).
-			// I'll assume for Update, we rely on the implementation to be smart or just
-			// proceed.
-			// Actually, I'll pass the check.
+			// Duplicate Check (excluding current ID)
+			if (egovAnnvrsryManageService.checkAnniversaryDuplicate(annvrsryManage.getUsid(),
+					EgovStringUtil.removeMinusChar(annvrsryManage.getAnnvrsryDe()),
+					annvrsryManage.getAnnvrsryNm(), annvrsryManage.getAnnId()) == 0) {
 
-			// Re-reading legacy: `if
-			// (egovAnnvrsryManageService.selectAnnvrsryManageDplctAt(annvrsryManage) == 0)`
-			// If legacy worked, maybe the query checked `ID != #annId#`?
-			// Legacy XML:
-			/*
-			 * <select id="annvrsryManageDAO.selectAnnvrsryManageDplctAt" ...>
-			 * SELECT COUNT(*) ...
-			 * WHERE USID = #usid#
-			 * AND ANNVRSRY_DE = #annvrsryDe#
-			 * AND ANNVRSRY_NM = #annvrsryNm#
-			 * </select>
-			 */
-			// It DOES NOT exclude ID. So yes, if you update memo but keep date/name, it
-			// fails.
-			// That's terrible. I will FIX this by NOT checking duplicate on update, or only
-			// if name/date changed.
-			// Or I'll rely on the fact that maybe `updateAnnvrsryManage` isn't called if
-			// nothing changes?
-			// No, I'll just skip the check for update to avoid blocking users, or implement
-			// strict correct check.
-			// PROPOSAL: I'll skip the check in Update for now to ensure it works, unless
-			// name/date collision with OTHER.
-			// But to do that I need `findBy...` and check ID.
-			// For simplicity and safety (non-blocking), I will proceed with Update
-			// directly.
-			// If the user *changes* name/date to strictly interact with another, it will
-			// overwrite or just exist.
-			// Unique constraint in DB? `COMTNANNVRSRYMANAGE` has PK `ANN_ID`. No unique
-			// index on Name+Date visible in DDL (usually).
-			// So duplicate is soft-check.
+				AnniversaryDto dto = AnniversaryDto.builder()
+						.usid(annvrsryManage.getUsid())
+						.annvrsrySe(annvrsryManage.getAnnvrsrySe())
+						.annvrsryNm(annvrsryManage.getAnnvrsryNm())
+						.annvrsryDe(EgovStringUtil.removeMinusChar(annvrsryManage.getAnnvrsryDe()))
+						.cldrSe(annvrsryManage.getCldrSe())
+						.reptitSe(annvrsryManage.getReptitSe())
+						.annvrsrySetup(annvrsryManage.getAnnvrsrySetup())
+						.annvrsryBeginDe(annvrsryManage.getAnnvrsryBeginDe())
+						.memo(annvrsryManage.getMemo())
+						.frstRegisterId(user.getUniqId())
+						.build();
 
-			AnniversaryDto dto = AnniversaryDto.builder()
-					.usid(annvrsryManage.getUsid())
-					.annvrsrySe(annvrsryManage.getAnnvrsrySe())
-					.annvrsryNm(annvrsryManage.getAnnvrsryNm())
-					.annvrsryDe(EgovStringUtil.removeMinusChar(annvrsryManage.getAnnvrsryDe()))
-					.cldrSe(annvrsryManage.getCldrSe())
-					.reptitSe(annvrsryManage.getReptitSe())
-					.annvrsrySetup(annvrsryManage.getAnnvrsrySetup())
-					.annvrsryBeginDe(annvrsryManage.getAnnvrsryBeginDe())
-					.memo(annvrsryManage.getMemo())
-					.frstRegisterId(user.getUniqId())
-					.build();
-
-			egovAnnvrsryManageService.updateAnniversary(annvrsryManage.getAnnId(), user.getUniqId(), dto);
-			model.addAttribute("message", egovMessageSource.getMessage("success.common.update"));
-			return "forward:/uss/ion/ans/selectAnnvrsryManageList.do";
+				egovAnnvrsryManageService.updateAnniversary(annvrsryManage.getAnnId(), user.getUniqId(), dto);
+				model.addAttribute("message", egovMessageSource.getMessage("success.common.update"));
+				return "forward:/uss/ion/ans/selectAnnvrsryManageList.do";
+			} else {
+				ComDefaultCodeVO vo = new ComDefaultCodeVO();
+				vo.setCodeId("COM069");
+				List<CmmnDetailCode> annvrsrySeCodeList = cmmUseService.selectCmmCodeDetail(vo);
+				model.addAttribute("annvrsrySeCode", annvrsrySeCodeList);
+				model.addAttribute("annvrsryManage", annvrsryManage);
+				model.addAttribute("dplctMessage", egovMessageSource.getMessage("comUssIonAns.common.duplicate"));
+				return "egovframework/com/uss/ion/ans/EgovAnnvrsryManageUpdt";
+			}
 		}
 	}
 
