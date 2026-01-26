@@ -211,6 +211,7 @@ public class MenuService {
 
         if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
             String[] menuNos = checkedMenuNos.split(",");
+            List<MenuAuthority> authorities = new ArrayList<>();
             for (String menuNo : menuNos) {
                 if (menuNo == null || menuNo.isEmpty())
                     continue;
@@ -222,7 +223,10 @@ public class MenuService {
                                 .build())
                         .mapngCreatId(authorCode) // Usually map id, but using authorCode for simplicity
                         .build();
-                menuAuthorityRepository.save(ma);
+                authorities.add(ma);
+            }
+            if (!authorities.isEmpty()) {
+                menuAuthorityRepository.saveAll(authorities);
             }
         }
     }
