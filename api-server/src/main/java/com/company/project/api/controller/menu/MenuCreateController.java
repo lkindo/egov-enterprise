@@ -121,6 +121,9 @@ public class MenuCreateController {
             @ModelAttribute("menuCreatVO") MenuCreateDto menuCreatVO,
             Model model, RedirectAttributes redirectAttributes) throws Exception {
 
+        // Security Check: Authentication is handled by ApiSecurityConfig (FilterSecurityInterceptor).
+        // Explicit EgovUserDetailsHelper.isAuthenticated() check is not required here.
+
         String resultMsg = "";
         if (checkedMenuNoForInsert == null || (checkedMenuNoForInsert.length() == 0)) {
             resultMsg = egovMessageSource.getMessage("fail.common.insert");
