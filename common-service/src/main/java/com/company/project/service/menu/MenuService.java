@@ -12,6 +12,10 @@ import com.company.project.service.menu.dto.MenuDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -36,6 +40,10 @@ public class MenuService {
     private final ProgramRepository programRepository; // Restored
     private final AuthorityRepository authorityRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
+
+    @Autowired
+    @Lazy
+    private MenuService self;
 
     public List<MenuDto> getMenuHierarchy() {
         List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
@@ -97,8 +105,13 @@ public class MenuService {
         return rootMenus;
     }
 
+    @Cacheable(value = "allMenus")
+    public List<Menu> getAllMenusCached() {
+        return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+    }
+
     public List<MenuDto> getAllMenus() {
-        List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Menu> menus = self.getAllMenusCached();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
@@ -189,6 +202,7 @@ public class MenuService {
     }
 
     @Transactional
+    @CacheEvict(value = "allMenus", allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         // Delete existing mapping
         menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
@@ -296,16 +310,22 @@ public class MenuService {
             return null;
         }
 
+        List<Menu> allMenus = self.getAllMenusCached();
+        Map<Long, Long> parentMap = new java.util.HashMap<>();
+        for (Menu m : allMenus) {
+            parentMap.put(m.getId(), m.getUpperMenuNo());
+        }
+
         Long currentId = currentMenu.getId();
         Long upperId = currentMenu.getUpperMenuNo();
 
         while (upperId != null && upperId != 0) {
-            Menu upper = menuRepository.findById(upperId).orElse(null);
-            if (upper == null) {
+            if (!parentMap.containsKey(upperId)) {
                 break;
             }
-            currentId = upper.getId();
-            upperId = upper.getUpperMenuNo();
+            Long nextUpperId = parentMap.get(upperId);
+            currentId = upperId;
+            upperId = nextUpperId;
         }
         return currentId;
     }
@@ -343,6 +363,7 @@ public class MenuService {
     }
 
     @Transactional
+    @CacheEvict(value = "allMenus", allEntries = true)
     public void insertMenuManage(MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
@@ -358,6 +379,7 @@ public class MenuService {
     }
 
     @Transactional
+    @CacheEvict(value = "allMenus", allEntries = true)
     public void updateMenuManage(MenuDto vo) {
         Menu menu = menuRepository.findById(vo.getMenuNo())
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
@@ -366,10 +388,12 @@ public class MenuService {
     }
 
     @Transactional
+    @CacheEvict(value = "allMenus", allEntries = true)
     public void deleteMenuManage(MenuDto vo) {
         menuRepository.deleteById(vo.getMenuNo());
     }
 
+    @CacheEvict(value = "allMenus", allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
