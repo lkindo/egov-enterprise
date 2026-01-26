@@ -15,4 +15,6 @@ public interface AnniversaryDomainRepository extends JpaRepository<Anniversary, 
     List<Anniversary> findByUsid(String usid);
 
     int countByUsidAndAnnvrsryDeAndAnnvrsryNm(String usid, String annvrsryDe, String annvrsryNm);
+
+    int countByUsidAndAnnvrsryDeAndAnnvrsryNmAndAnnIdNot(String usid, String annvrsryDe, String annvrsryNm, String annId);
 }

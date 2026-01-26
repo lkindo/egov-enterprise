@@ -87,4 +87,9 @@ public class AnniversaryService implements EgovAnniversaryService {
     public int checkAnniversaryDuplicate(String usid, String annvrsryDe, String annvrsryNm) {
         return anniversaryRepository.countByUsidAndAnnvrsryDeAndAnnvrsryNm(usid, annvrsryDe, annvrsryNm);
     }
+
+    @Override
+    public int checkAnniversaryDuplicate(String usid, String annvrsryDe, String annvrsryNm, String excludeAnnId) {
+        return anniversaryRepository.countByUsidAndAnnvrsryDeAndAnnvrsryNmAndAnnIdNot(usid, annvrsryDe, annvrsryNm, excludeAnnId);
+    }
 }
