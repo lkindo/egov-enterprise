@@ -369,63 +369,7 @@ public class EgovFileTool {
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 				StringBuilder strBuff = new StringBuilder();
 				String line;
-				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				StringBuilder strBuff = new StringBuilder();
-				String line;
 				while ((line = br.readLine()) != null) {
-					if (line.length() < MAX_STR_LEN) {
-						strBuff.append(line);
-					}
-				}
-
-				String[] strArr = strBuff.toString().split(java.util.regex.Pattern.quote(parChar));
-				List<String> currentRecord = new ArrayList<>();
-				for (String token : strArr) {
-					currentRecord.add(token);
-					if (currentRecord.size() == parField) {
-						parResult.add(new ArrayList<>(currentRecord));
-						currentRecord.clear();
-					}
-				}
-				StringBuilder sb = new StringBuilder();
-				String line;
-				while ((line = br.readLine()) != null) {
-					sb.append(line);
-				}
-
-				String content = sb.toString();
-				if (content.isEmpty()) {
-					return parResult;
-				}
-
-				String[] tokens = content.split(java.util.regex.Pattern.quote(parChar));
-
-				List<String> currentRecord = new ArrayList<>();
-				for (String token : tokens) {
-					currentRecord.add(token);
-					if (currentRecord.size() == parField) {
-						parResult.add(new ArrayList<>(currentRecord));
-						currentRecord.clear();
-					}
-				StringBuilder tokenBuffer = new StringBuilder();
-				List<String> currentRecord = new ArrayList<>();
-				String line;
-				int parCharLen = parChar.length();
-
-				while ((line = br.readLine()) != null) {
-					tokenBuffer.append(line);
-
-					int idx;
-					while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
-						String token = tokenBuffer.substring(0, idx);
-						currentRecord.add(token);
-						tokenBuffer.delete(0, idx + parCharLen);
-
-						if (currentRecord.size() == parField) {
-							parResult.add(new ArrayList<>(currentRecord));
-							currentRecord.clear();
-						}
-					}
 					if (line.length() < MAX_STR_LEN) {
 						strBuff.append(line);
 					}
@@ -434,7 +378,7 @@ public class EgovFileTool {
 				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
 				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
 
-				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
+				// 3. 필드 수 만큼 돌아가며 List<String> 형태로 만든다.
 				int filedCnt = 1;
 				List<String> arr = new ArrayList<>();
 				for (int i = 0; i < strArr.length; i++) {
@@ -458,16 +402,7 @@ public class EgovFileTool {
 								if (i == (strArr.length - 1)) {
 									parResult.add(arr);
 								}
-						int idx;
-						while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
-							String token = tokenBuffer.substring(0, idx);
-							currentRecord.add(token);
-
-							if (currentRecord.size() == parField) {
-								parResult.add(currentRecord);
-								currentRecord = new ArrayList<>();
 							}
-							tokenBuffer.delete(0, idx + parCharLen);
 						}
 					} else {
 						arr = new ArrayList<>();
