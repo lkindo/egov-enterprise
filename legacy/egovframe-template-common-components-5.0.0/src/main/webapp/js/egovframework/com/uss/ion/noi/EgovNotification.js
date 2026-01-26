@@ -70,8 +70,22 @@ function cfHttpException(xmlHttp) {
 
 // 서버로 XML데이터 요청.
 function fcRequestData() {
-	// TODO context root 지정 필요
-    cfXmlHttpStatus("GET", noi_url, true, "");
+    var url;
+    if (typeof(noi_url) == 'undefined') {
+        if (typeof(getContextPath) != 'undefined') {
+            if (typeof(getContextPath) == 'function') {
+                url = getContextPath() + "/uss/ion/noi/getNotifications.do";
+            } else {
+                url = getContextPath + "/uss/ion/noi/getNotifications.do";
+            }
+        } else {
+            url = "/uss/ion/noi/getNotifications.do";
+        }
+    } else {
+        url = noi_url;
+    }
+
+    cfXmlHttpStatus("GET", url, true, "");
 }
 
 // 메인 처리
