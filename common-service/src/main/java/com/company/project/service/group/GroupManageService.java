@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -106,9 +107,7 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroups(String[] groupIds) {
-        for (String groupId : groupIds) {
-            groupManageRepository.deleteById(groupId);
-        }
+        groupManageRepository.deleteAllById(Arrays.asList(groupIds));
     }
 
     private GroupManageDto toDto(GroupManage entity) {
