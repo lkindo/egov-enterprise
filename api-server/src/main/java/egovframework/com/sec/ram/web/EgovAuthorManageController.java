@@ -42,7 +42,7 @@ import jakarta.annotation.Resource;
  *      </pre>
  */
 
-// // @Controller
+// @Controller
 @SessionAttributes(types = SessionVO.class)
 public class EgovAuthorManageController {
 
@@ -64,7 +64,7 @@ public class EgovAuthorManageController {
 	 */
 	@RequestMapping("/sec/ram/EgovAuthorListView.do")
 	public String selectAuthorListView() throws Exception {
-		return "egovframework/com/sec/ram/EgovAuthorManage";
+		return "sec/ram/EgovAuthorManage";
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class EgovAuthorManageController {
 		model.addAttribute("paginationInfo", paginationInfo);
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
-		return "egovframework/com/sec/ram/EgovAuthorManage";
+		return "sec/ram/EgovAuthorManage";
 	}
 
 	/**
@@ -118,11 +118,23 @@ public class EgovAuthorManageController {
 	public String selectAuthor(@RequestParam("authorCode") String authorCode,
 			@ModelAttribute("authorManageVO") AuthorManageVO authorManageVO, ModelMap model) throws Exception {
 
-		AuthorManageDto dto = authorManageService.selectAuthor(authorCode);
-		model.addAttribute("authorManage", SecurityAdapter.toVO(dto));
-		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+		System.out.println("DEBUG: selectAuthor called with authorCode=" + authorCode);
 
-		return "egovframework/com/sec/ram/EgovAuthorUpdate";
+		AuthorManageDto dto = authorManageService.selectAuthor(authorCode);
+
+		if (dto == null) {
+			System.out.println("DEBUG: selectAuthor dto is NULL for code=" + authorCode);
+			AuthorManageVO emptyVO = new AuthorManageVO();
+			emptyVO.setAuthorCode(authorCode);
+			model.addAttribute("authorManage", emptyVO);
+			model.addAttribute("message", "해당 권한을 찾을 수 없습니다.");
+		} else {
+			System.out.println("DEBUG: selectAuthor found dto=" + dto);
+			model.addAttribute("authorManage", SecurityAdapter.toVO(dto));
+			model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
+		}
+
+		return "sec/ram/EgovAuthorUpdate";
 	}
 
 	/**
@@ -134,7 +146,7 @@ public class EgovAuthorManageController {
 	 */
 	@RequestMapping("/sec/ram/EgovAuthorInsertView.do")
 	public String insertAuthorView(@ModelAttribute("authorManageVO") AuthorManageVO authorManageVO) throws Exception {
-		return "egovframework/com/sec/ram/EgovAuthorInsert";
+		return "sec/ram/EgovAuthorInsert";
 	}
 
 	/**
@@ -213,6 +225,6 @@ public class EgovAuthorManageController {
 	 */
 	@RequestMapping("/sec/ram/accessDenied.do")
 	public String accessDenied() throws Exception {
-		return "egovframework/com/sec/accessDenied";
+		return "sec/accessDenied";
 	}
 }
