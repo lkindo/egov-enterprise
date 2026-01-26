@@ -287,9 +287,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 		if (checkedProgrmFileNmForDel == null || checkedProgrmFileNmForDel.isEmpty())
 			return;
 		String[] delProgrmFileNm = checkedProgrmFileNmForDel.split(",");
-		for (String element : delProgrmFileNm) {
-			programRepository.deleteById(element);
-		}
+		programRepository.deleteAllByIdInBatch(java.util.Arrays.asList(delProgrmFileNm));
 	}
 
 	/**
