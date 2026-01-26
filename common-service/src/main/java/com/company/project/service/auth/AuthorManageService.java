@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,9 +90,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthors(String[] authorCodes) {
-        for (String authorCode : authorCodes) {
-            authorityRepository.deleteById(authorCode);
-        }
+        authorityRepository.deleteAllById(Arrays.asList(authorCodes));
     }
 
     private AuthorManageDto toDto(Authority entity) {

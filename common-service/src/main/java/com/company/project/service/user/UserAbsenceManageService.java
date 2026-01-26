@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,13 +43,23 @@ public class UserAbsenceManageService {
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
         Page<User> userPage = userRepository.findAll(pageable);
+        List<User> users = userPage.getContent();
 
-        return userPage.getContent().stream().map(user -> {
+        // 1. Collect all User IDs
+        List<String> userIds = users.stream()
+                .map(User::getUserId)
+                .collect(Collectors.toList());
+
+        // 2. Bulk fetch absences using findAllById
+        java.util.Map<String, UserAbsence> absenceMap = userAbsenceRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(UserAbsence::getUserId, java.util.function.Function.identity()));
+
+        return users.stream().map(user -> {
             UserAbsenceDto dto = new UserAbsenceDto();
             dto.setUserId(user.getUserId());
             dto.setUserNm(user.getUserNm());
 
-            UserAbsence absence = userAbsenceRepository.findById(user.getUserId()).orElse(null);
+            UserAbsence absence = absenceMap.get(user.getUserId());
             if (absence != null) {
                 dto.setUserAbsnceAt(absence.getUserAbsnceAt());
                 dto.setRegYn("Y");
@@ -127,8 +138,6 @@ public class UserAbsenceManageService {
      */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {
-        for (String userId : userIds) {
-            userAbsenceRepository.deleteById(userId);
-        }
+        userAbsenceRepository.deleteAllById(Arrays.asList(userIds));
     }
 }
