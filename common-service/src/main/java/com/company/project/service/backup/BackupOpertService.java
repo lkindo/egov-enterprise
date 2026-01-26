@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,19 +26,16 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
     private final BackupOpertRepository backupOpertRepository;
     private final EgovCommonCodeService commonCodeService;
 
+    // Cache mapping Group ID to Map instance to avoid repeated stream processing
+    private final Map<String, Map<String, String>> codeMapCache = new ConcurrentHashMap<>();
+
     @Override
     @Transactional(readOnly = true)
     public Page<BackupOpertDto> getBackupOpertList(String condition, String keyword, Pageable pageable) {
         Page<BackupOpert> page = backupOpertRepository.searchBackupOperts(condition, keyword, pageable);
 
-        List<CommonCodeDto> cycleCodes = commonCodeService.getCodesByGroup("COM047");
-        Map<String, String> cycleMap = cycleCodes.stream()
-                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
-
-        // Fetch Weekly codes (COM074) once
-        List<CommonCodeDto> dfkCodes = commonCodeService.getCodesByGroup("COM074");
-        Map<String, String> dfkMap = dfkCodes.stream()
-                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+        Map<String, String> cycleMap = getCommonCodeMap("COM047");
+        Map<String, String> dfkMap = getCommonCodeMap("COM074");
 
         return page.map(entity -> {
             BackupOpertDto dto = BackupOpertDto.from(entity);
@@ -55,21 +53,10 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
 
         BackupOpertDto dto = BackupOpertDto.from(entity);
 
-        List<CommonCodeDto> cycleCodes = commonCodeService.getCodesByGroup("COM047");
-        dto.setExecutCycleNm(cycleCodes.stream()
-                .filter(c -> c.code().equals(dto.getExecutCycle()))
-                .findFirst().map(CommonCodeDto::codeNm).orElse(""));
+        dto.setExecutCycleNm(getCommonCodeMap("COM047").getOrDefault(dto.getExecutCycle(), ""));
+        dto.setCmprsSeNm(getCommonCodeMap("COM049").getOrDefault(dto.getCmprsSe(), ""));
 
-        List<CommonCodeDto> cmprsCodes = commonCodeService.getCodesByGroup("COM049");
-        dto.setCmprsSeNm(cmprsCodes.stream()
-                .filter(c -> c.code().equals(dto.getCmprsSe()))
-                .findFirst().map(CommonCodeDto::codeNm).orElse(""));
-
-        // Fetch Weekly codes (COM074) once
-        List<CommonCodeDto> dfkCodes = commonCodeService.getCodesByGroup("COM074");
-        Map<String, String> dfkMap = dfkCodes.stream()
-                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
-
+        Map<String, String> dfkMap = getCommonCodeMap("COM074");
         formatSchedule(dto, dfkMap);
         return dto;
     }
@@ -171,5 +158,12 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
                 .append(dto.getExecutSchdulSecnd());
 
         dto.setExecutSchdul(sb.toString());
+    }
+
+    private Map<String, String> getCommonCodeMap(String groupId) {
+        return codeMapCache.computeIfAbsent(groupId, k -> {
+            List<CommonCodeDto> codes = commonCodeService.getCodesByGroup(k);
+            return codes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm, (a, b) -> b));
+        });
     }
 }
