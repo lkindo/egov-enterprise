@@ -459,11 +459,14 @@ public class FileSystemUtils {
 	 *
 	 * 2022.11.11 김혜준 시큐어코딩 처리
 	 */
+	private static final java.util.Set<String> ALLOWED_CLASS_NAMES = java.util.Set.of(
+		"BatchShellScriptJob", "EgovAdministCodeRecptnService", "EgovInsttCodeRecptnService", "EgovNetworkState", "ProcessMonChecker"
+	);
+
 	public Process processOperate(String clsssName, String cmdAttribs) throws IOException {
-		String[] sourceClassName = {"BatchShellScriptJob", "EgovAdministCodeRecptnService", "EgovInsttCodeRecptnService", "EgovNetworkState", "ProcessMonChecker"};
 		String[] command = new String[]{cmdAttribs};
 		Process process = null;
-		if (Arrays.asList(sourceClassName).contains(clsssName)) {
+		if (ALLOWED_CLASS_NAMES.contains(clsssName)) {
 			process = openProcess(command);
 		}
 		return process;
