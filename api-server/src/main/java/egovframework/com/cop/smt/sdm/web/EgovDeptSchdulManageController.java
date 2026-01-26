@@ -107,7 +107,7 @@ public class EgovDeptSchdulManageController {
 	 * 부서목록을 조회한다.
 	 */
 	@RequestMapping(value = "/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup.do")
-	public String egovMeetingManageLisAuthorGroupPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
+	public String egovDeptSchdulManageAuthorGroupPopup(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
         DeptManageVO deptManageVO = new DeptManageVO();

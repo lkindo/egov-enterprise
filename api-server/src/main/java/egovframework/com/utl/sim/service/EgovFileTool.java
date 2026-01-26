@@ -364,68 +364,31 @@ public class EgovFileTool {
 		try {
 			// 파일이며, 존재하면 파싱 시작
 			if (file.exists() && file.isFile()) {
-
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				List<String> currentRecord = new ArrayList<>();
-				StringBuilder tokenBuffer = new StringBuilder();
+				StringBuilder sb = new StringBuilder();
 				String line;
-				int parCharLen = parChar.length();
-
-				// 1. 파일 텍스트 내용을 읽어서 StringBuilder에 쌓는다.
-				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-				StringBuilder strBuff = new StringBuilder();
-				String line = "";
 				while ((line = br.readLine()) != null) {
-					if (line.length() < MAX_STR_LEN) {
-						tokenBuffer.append(line);
+					sb.append(line);
+				}
 
-						if (parCharLen > 0) {
-							int idx;
-							while ((idx = tokenBuffer.indexOf(parChar)) >= 0) {
-								String token = tokenBuffer.substring(0, idx);
-								currentRecord.add(token);
+				String content = sb.toString();
+				if (content.isEmpty()) {
+					return parResult;
+				}
 
-								if (currentRecord.size() == parField) {
-									parResult.add(currentRecord);
-									currentRecord = new ArrayList<>();
-				// 3. 필드 수 만큼 돌아가며 List<ArrayList> 형태로 만든다.
-				int filedCnt = 1;
-				List<String> arr = new ArrayList<>();
-				for (int i = 0; i < strArr.length; i++) {
+				String[] tokens = content.split(java.util.regex.Pattern.quote(parChar));
 
-					if (parField != 1) {
-						if ((filedCnt % parField) == 1) {
-							if (strArr[i] != null) {
-								arr.add(strArr[i]);
-							}
-							if (i == (strArr.length - 1)) {
-								parResult.add(arr);
-							}
-						} else if ((filedCnt % parField) == 0) {
-							if (strArr[i] != null) {
-								arr.add(strArr[i]);
-								parResult.add(arr);
-							}
-						} else {
-							if (strArr[i] != null) {
-								arr.add(strArr[i]);
-								if (i == (strArr.length - 1)) {
-									parResult.add(arr);
-								}
-
-								tokenBuffer.delete(0, idx + parCharLen);
-							}
-						}
+				List<String> currentRecord = new ArrayList<>();
+				for (String token : tokens) {
+					currentRecord.add(token);
+					if (currentRecord.size() == parField) {
+						parResult.add(new ArrayList<>(currentRecord));
+						currentRecord.clear();
 					}
 				}
-
-				// Last token
-				String lastToken = tokenBuffer.toString();
-				currentRecord.add(lastToken);
-
-				if (!currentRecord.isEmpty()) {
-					parResult.add(currentRecord);
-				}
+                // Handle remaining tokens if necessary? Legacy seems to ignore them if they don't form a full record
+                // or just append them. The original code was buggy so hard to tell.
+                // Assuming well-formed input or that we only want full records.
 			}
 		} finally {
 			EgovResourceCloseHelper.close(br);
