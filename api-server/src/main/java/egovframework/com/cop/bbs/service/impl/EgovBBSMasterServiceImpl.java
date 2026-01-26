@@ -57,8 +57,15 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 
 	@Override
 	public Map<String, Object> selectNotUsedBdMstrList(BoardMasterVO boardMasterVO) {
-		// TODO Auto-generated method stub
-		return null;
+		List<BoardMasterVO> result = egovBBSMasterDao.selectNotUsedBdMstrList(boardMasterVO);
+		int cnt = egovBBSMasterDao.selectNotUsedBdMstrListCnt(boardMasterVO);
+
+		Map<String, Object> map = new HashMap<>();
+
+		map.put("resultList", result);
+		map.put("resultCnt", Integer.toString(cnt));
+
+		return map;
 	}
 
 	@Override
