@@ -147,6 +147,7 @@ public class EgovDeptSchdulManageController {
 	public String egovMeetingManageLisEmpLyrPopupPost(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
+		// Service implementation verified
 		List<Map<String, Object>> resultList = egovScheduleService.selectEmpLyrPopup(searchVO);
 		model.addAttribute("resultList", resultList);
 
