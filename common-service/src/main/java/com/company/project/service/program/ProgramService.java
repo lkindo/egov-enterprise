@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,10 +111,8 @@ public class ProgramService {
      */
     @Transactional
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {
-        String[] delProgrmFileNm = checkedProgrmFileNmForDel.split(",");
-        for (String id : delProgrmFileNm) {
-            programRepository.deleteById(id);
-        }
+        List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
+        programRepository.deleteAllByIdInBatch(delProgrmFileNm);
     }
 
     private ProgramDto toDto(Program entity) {
