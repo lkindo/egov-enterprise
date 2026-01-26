@@ -23,4 +23,6 @@ public interface EgovAnniversaryService {
     void deleteAnniversary(String annId);
 
     int checkAnniversaryDuplicate(String usid, String annvrsryDe, String annvrsryNm);
+
+    int checkAnniversaryDuplicate(String usid, String annvrsryDe, String annvrsryNm, String excludeAnnId);
 }
