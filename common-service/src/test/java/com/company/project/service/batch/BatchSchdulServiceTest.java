@@ -71,12 +71,18 @@ class BatchSchdulServiceTest {
             return jobs;
         });
 
+        // Mock DFK repository call
+        when(batchSchdulRepository.findAllDfksByBatchSchdulIdIn(any())).thenReturn(Collections.emptyList());
+
         // when
         Page<BatchSchdulDto> result = batchSchdulService.getBatchSchdulList(null, null, pageable);
 
         // then
         // Verify that findAllById is called once
         verify(batchJobRepository, times(1)).findAllById(any());
+        // Verify that findAllDfksByBatchSchdulIdIn is called once
+        verify(batchSchdulRepository, times(1)).findAllDfksByBatchSchdulIdIn(any());
+
         // Verify that findById is NOT called
         verify(batchJobRepository, never()).findById(anyString());
 
