@@ -58,7 +58,21 @@ public class BatchSchdulService implements EgovBatchSchdulService {
                         job -> job,
                         (existing, replacement) -> existing));
 
-        return entities.map(entity -> convertToDto(entity, cycleMap, dfkMap, jobMap));
+        // Collect BatchSchdul IDs and fetch all related BatchSchdulDfk entities
+        Set<String> batchSchdulIds = entities.stream()
+                .map(BatchSchdul::getBatchSchdulId)
+                .collect(Collectors.toSet());
+
+        Map<String, List<BatchSchdulDfk>> dfkMapBySchdulId;
+        if (batchSchdulIds.isEmpty()) {
+            dfkMapBySchdulId = new HashMap<>();
+        } else {
+            dfkMapBySchdulId = batchSchdulRepository
+                    .findAllDfksByBatchSchdulIdIn(batchSchdulIds).stream()
+                    .collect(Collectors.groupingBy(BatchSchdulDfk::getBatchSchdulId));
+        }
+
+        return entities.map(entity -> convertToDto(entity, cycleMap, dfkMap, jobMap, dfkMapBySchdulId));
     }
 
     @Override
@@ -75,7 +89,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
                     .ifPresent(job -> jobMap.put(job.getBatchOpertId(), job));
         }
 
-        return convertToDto(entity, cycleMap, dfkMap, jobMap);
+        return convertToDto(entity, cycleMap, dfkMap, jobMap, null);
     }
 
     private Map<String, String> getCodeMap(String codeGroupId) {
@@ -86,7 +100,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
     private BatchSchdulDto convertToDto(BatchSchdul entity,
             Map<String, String> cycleMap, Map<String, String> dfkMap,
-            Map<String, BatchJob> jobMap) {
+            Map<String, BatchJob> jobMap, Map<String, List<BatchSchdulDfk>> dfkMapBySchdulId) {
         String batchOpertNm = "";
         String batchProgrm = "";
         BatchJob job = jobMap.get(entity.getBatchOpertId());
@@ -97,14 +111,23 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
         String executCycleNm = cycleMap.getOrDefault(entity.getExecutCycle(), entity.getExecutCycle());
 
-        List<String> dfkNames = entity.getBatchSchdulDfks().stream()
+        List<BatchSchdulDfk> dfks;
+        if (dfkMapBySchdulId != null && dfkMapBySchdulId.containsKey(entity.getBatchSchdulId())) {
+            dfks = dfkMapBySchdulId.get(entity.getBatchSchdulId());
+        } else if (dfkMapBySchdulId != null) {
+            dfks = java.util.Collections.emptyList();
+        } else {
+            dfks = entity.getBatchSchdulDfks();
+        }
+
+        List<String> dfkNames = dfks.stream()
                 .map(dfk -> dfkMap.getOrDefault(dfk.getExecutSchdulDfkSe(), dfk.getExecutSchdulDfkSe()))
                 .collect(Collectors.toList());
 
         String executSchdul = makeExecutSchdul(entity, dfkNames);
 
         return BatchSchdulDto.from(entity, batchOpertNm, batchProgrm, executCycleNm, executSchdul,
-                entity.getBatchSchdulDfks().stream()
+                dfks.stream()
                         .map(BatchSchdulDfk::getExecutSchdulDfkSe)
                         .collect(Collectors.toList()));
     }
