@@ -53,8 +53,13 @@ public class MenuServiceHierarchyPerformanceTest {
     private MenuService menuService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         menuService = new MenuService(menuRepository, programRepository, authorityRepository, menuAuthorityRepository);
+
+        // Inject self to avoid NPE
+        java.lang.reflect.Field selfField = MenuService.class.getDeclaredField("self");
+        selfField.setAccessible(true);
+        selfField.set(menuService, menuService);
 
         // Populate Data
         List<Menu> menus = new ArrayList<>();

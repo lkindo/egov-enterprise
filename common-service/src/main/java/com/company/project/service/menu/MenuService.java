@@ -49,6 +49,7 @@ public class MenuService {
         List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
+                .filter(p -> p.getProgrmFileNm() != null)
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a,
                         b) -> a));
 
@@ -114,6 +115,7 @@ public class MenuService {
         List<Menu> menus = self.getAllMenusCached();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
+                .filter(p -> p.getProgrmFileNm() != null)
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
         List<MenuDto> result = new ArrayList<>();
@@ -398,10 +400,14 @@ public class MenuService {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
         String[] delMenuNos = checkedMenuNoForDel.split(",");
+        List<Long> ids = new ArrayList<>();
         for (String menuNo : delMenuNos) {
             if (menuNo == null || menuNo.isEmpty())
                 continue;
-            menuRepository.deleteById(Long.parseLong(menuNo));
+            ids.add(Long.parseLong(menuNo));
+        }
+        if (!ids.isEmpty()) {
+            menuRepository.deleteAllById(ids);
         }
     }
 
