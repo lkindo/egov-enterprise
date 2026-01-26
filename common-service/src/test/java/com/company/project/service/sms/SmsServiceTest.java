@@ -11,8 +11,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,11 +33,35 @@ class SmsServiceTest {
     @Mock
     private SmsSender smsSender;
 
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
+    @Mock
+    private Executor taskExecutor;
+
     @InjectMocks
     private SmsService smsService;
 
     @Test
     void sendSms_Success() {
+        // Setup TransactionTemplate mock
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> action = invocation.getArgument(0);
+            return action.doInTransaction(null);
+        });
+        doAnswer(invocation -> {
+            Consumer<Object> action = invocation.getArgument(0);
+            action.accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
+
+        // Setup Executor mock to run immediately
+        doAnswer(invocation -> {
+            Runnable r = invocation.getArgument(0);
+            r.run();
+            return null;
+        }).when(taskExecutor).execute(any());
+
         // Given
         String userId = "TEST_USER";
         SmsRecptnDto recipientDto = SmsRecptnDto.builder()
@@ -53,9 +81,10 @@ class SmsServiceTest {
 
         // Then
         ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
-        verify(smsRepository).save(smsCaptor.capture());
+        // Expect 2 saves: Initial save and Final update
+        verify(smsRepository, times(2)).save(smsCaptor.capture());
 
-        Sms capturedSms = smsCaptor.getValue();
+        Sms capturedSms = smsCaptor.getAllValues().get(1);
         assertNotNull(capturedSms);
         assertEquals(userId, capturedSms.getUniqId());
 
@@ -70,6 +99,24 @@ class SmsServiceTest {
 
     @Test
     void sendSms_Failure() {
+        // Setup TransactionTemplate mock
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> action = invocation.getArgument(0);
+            return action.doInTransaction(null);
+        });
+        doAnswer(invocation -> {
+            Consumer<Object> action = invocation.getArgument(0);
+            action.accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
+
+        // Setup Executor mock to run immediately
+        doAnswer(invocation -> {
+            Runnable r = invocation.getArgument(0);
+            r.run();
+            return null;
+        }).when(taskExecutor).execute(any());
+
         // Given
         String userId = "TEST_USER";
         SmsRecptnDto recipientDto = SmsRecptnDto.builder()
@@ -89,9 +136,10 @@ class SmsServiceTest {
 
         // Then
         ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
-        verify(smsRepository).save(smsCaptor.capture());
+        // Expect 2 saves: Initial save and Final update
+        verify(smsRepository, times(2)).save(smsCaptor.capture());
 
-        Sms capturedSms = smsCaptor.getValue();
+        Sms capturedSms = smsCaptor.getAllValues().get(1);
 
         // Verify interactions
         verify(smsSender).send("01012345678", "Test Message", "021234567");
