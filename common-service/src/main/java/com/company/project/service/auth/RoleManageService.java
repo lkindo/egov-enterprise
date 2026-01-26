@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -97,9 +98,7 @@ public class RoleManageService {
      */
     @Transactional
     public void deleteRoles(String[] roleCodes) {
-        for (String roleCode : roleCodes) {
-            roleInfoRepository.deleteById(roleCode);
-        }
+        roleInfoRepository.deleteAllByIdInBatch(Arrays.asList(roleCodes));
     }
 
     private RoleManageDto toDto(RoleInfo entity) {
