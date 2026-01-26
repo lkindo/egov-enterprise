@@ -216,51 +216,18 @@ public class EgovArticleCommentController {
 		model.addAttribute("paginationInfo", paginationInfo);
 		model.addAttribute("type", "body");
 
-		// Detail for Edit (Logic to find specific comment in current view or separate
-		// fetch? Legacy fetches all then finds?
-		// Legacy svc `selectArticleCommentDetail` fetches single. We don't have that in
-		// Interface yet.
-		// However, in EgovArticleCommentList.jsp, it iterates and if IDs match, it
-		// shows edit form.
-		// Wait, Controller calls selectArticleCommentDetail. We need to implement that
-		// in our Service or use Repository directly in Adapter?
-		// Let's add getCommentDetail to Service.
-
-		// For now, mocking behavior: finding from list or separate call.
-		// Since we need it, let's assume we fetch list and the View handles it OR we
-		// fetch single item.
-		// Legacy: // Detail for Edit
+		// Detail for Edit
 		if (commentVO.getCommentNo() != null && !commentVO.getCommentNo().isEmpty()) {
 			try {
 				Long commentId = Long.parseLong(commentVO.getCommentNo());
 				CommentDto dto = egovCommentService.getComment(commentId);
-				articleCommentVO = CommentAdapter.toVO(dto);
+				if (dto != null) {
+					articleCommentVO = CommentAdapter.toVO(dto);
+				}
 			} catch (NumberFormatException e) {
 				// ignore
 			}
 		}
-		// Let's use specific retrieval.
-
-		// Temporary: Since creating a separate DTO fetch method is cleaner.
-		// But wait, `updateArticleCommentView` populates `articleCommentVO`.
-
-		// Implementing quick simple fetch in controller or service? Better in Service.
-		// But I didn't add `getComment` to Service Interface.
-		// I'll add `getComment` to Interface in next tool call if needed or just use
-		// list for now (view likely iterates).
-		// Wait, view needs `articleCommentVO` populated with the target comment data to
-		// fill the form.
-
-		// Let's rely on list for now or just empty (user has to re-type? No, that's
-		// bad).
-		// Re-reading legacy: selectArticleCommentDetail(commentVO) -> returns one VO.
-
-		// I will just return empty for now to fix later or assuming the view might not
-		// strictly need it if just toggling DIVs?
-		// No, standard Spring form binding needs values.
-
-		// WORKAROUND: For this iteration, I'll allow compilation and then add
-		// `getComment` method to service.
 
 		model.addAttribute("articleCommentVO", articleCommentVO);
 
