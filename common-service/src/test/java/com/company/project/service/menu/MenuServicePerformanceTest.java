@@ -47,6 +47,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest(classes = MenuServicePerformanceTest.TestConfig.class, properties = "spring.main.allow-bean-definition-overriding=true")
 @SpringBootTest(classes = MenuServicePerformanceTest.TestConfig.class)
 @Transactional
 public class MenuServicePerformanceTest {
