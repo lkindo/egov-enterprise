@@ -43,12 +43,19 @@ public class AuthenticInterceptor implements HandlerInterceptor {
 	/** 관리자 접근 권한 패턴 목록 */
 	private List<String> adminAuthPatternList;
 
+	/** 관리자 접근 권한 패턴 매처 목록 */
+	private List<AntPathRequestMatcher> adminAuthMatchers;
+
 	public List<String> getAdminAuthPatternList() {
 		return adminAuthPatternList;
 	}
 
 	public void setAdminAuthPatternList(List<String> adminAuthPatternList) {
 		this.adminAuthPatternList = Collections.unmodifiableList(adminAuthPatternList);
+		this.adminAuthMatchers = new java.util.ArrayList<>();
+		for (String pattern : this.adminAuthPatternList) {
+			this.adminAuthMatchers.add(new AntPathRequestMatcher(pattern));
+		}
 	}
 
 	/**
@@ -69,13 +76,13 @@ public class AuthenticInterceptor implements HandlerInterceptor {
 		List<String> authList = EgovUserDetailsHelper.getAuthorities();
 		// 관리자인증여부
 		boolean adminAuthUrlPatternMatcher = false;
-		// AntPathRequestMatcher
-		AntPathRequestMatcher antPathRequestMatcher = null;
 		// 관리자가 아닐때 체크함
-		for (String adminAuthPattern : adminAuthPatternList) {
-			antPathRequestMatcher = new AntPathRequestMatcher(adminAuthPattern);
-			if (antPathRequestMatcher.matches(request)) {
-				adminAuthUrlPatternMatcher = true;
+		if (adminAuthMatchers != null) {
+			for (AntPathRequestMatcher matcher : adminAuthMatchers) {
+				if (matcher.matches(request)) {
+					adminAuthUrlPatternMatcher = true;
+					break;
+				}
 			}
 		}
 		// 관리자 권한 체크
