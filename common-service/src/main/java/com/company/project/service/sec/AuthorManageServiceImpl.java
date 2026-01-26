@@ -93,40 +93,10 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
     @Override
     @Transactional
     public void updateRole(RoleDto dto) {
-        // Find existing role
-        // Note: RoleInfo in domain.auth does not have an update method shown in
-        // previous view_file?
-        // Let's check RoleInfo.java again or assume setters/update method exists.
-        // Wait, RoleInfo.java shown earlier didn't have update method?
-        // It had @Getter and Constructor @Builder. No Setters (default) and no update
-        // method seen in snippet?
-        // Actually, let's double check. If no update method, I need to add it or use
-        // repository.save with modified entity.
-        // It's JPA, so dirty checking works if I modify fields. But fields are private
-        // with no setters?
-        // It has @Getter. No @Setter.
-        // I might need to add update method to RoleInfo or setters.
-        // Assuming I will add it if missing.
-
         RoleInfo role = roleInfoRepository.findById(dto.getRoleCode())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // Temporarily assuming methods exist or I will add them.
-        // To be safe, I should use reflection or add method.
-        // Ideally should have checked RoleInfo update method.
-        // Previous view_file for auth.RoleInfo showed constructor and fields. No update
-        // method.
-
-        // Wait, I should add update method to RoleInfo.java in domain.auth as well.
-        // But for now, let's write the code assuming it exists, and then fix RoleInfo.
-        // Or I can't write it if it doesn't exist?
-        // I'll leave a TODO or comment, but better to fix Entity first.
-
-        // Re-reading auth.RoleInfo content from memory/history:
-        // It had constructor @Builder.
-        // No update method.
-
-        // So I must add update method to RoleInfo.java.
+        role.update(dto.getRoleNm(), dto.getRolePtn(), dto.getRoleDc(), dto.getRoleTyp(), dto.getRoleSort());
     }
 
     @Override
