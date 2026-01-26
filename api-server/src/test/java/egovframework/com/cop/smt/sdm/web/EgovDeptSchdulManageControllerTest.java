@@ -10,7 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.company.project.service.schedule.EgovScheduleService;
 
+import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.cmm.service.EgovFileMngService;
@@ -98,5 +101,27 @@ class EgovDeptSchdulManageControllerTest {
                 .andExpect(model().attributeExists("paginationInfo"));
 
         verify(egovDeptManageService).selectDeptManageListPaged(any(DeptManageVO.class));
+    }
+
+    @Test
+    void egovMeetingManageLisEmpLyrPopupPost_ReturnsPopupViewWithList() throws Exception {
+        // Given
+        List<Map<String, Object>> mockList = new ArrayList<>();
+        Map<String, Object> map = new HashMap<>();
+        map.put("emplyrId", "user1");
+        mockList.add(map);
+
+        given(egovScheduleService.selectEmpLyrPopup(any(ComDefaultVO.class))).willReturn(mockList);
+
+        // When & Then
+        mockMvc.perform(post("/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup.do")
+                .param("searchCondition", "USER_NM")
+                .param("searchKeyword", "John"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("egovframework/com/cop/smt/sdm/EgovDeptSchdulManageEmpLyrPopup"))
+                .andExpect(model().attribute("resultList", mockList));
+
+        verify(egovScheduleService).selectEmpLyrPopup(any(ComDefaultVO.class));
     }
 }
