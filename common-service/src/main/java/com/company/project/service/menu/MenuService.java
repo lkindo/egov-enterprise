@@ -112,6 +112,16 @@ public class MenuService {
         return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
     }
 
+    @Cacheable(value = "menuParentMap")
+    public Map<Long, Long> getMenuParentMapCached() {
+        List<Menu> allMenus = self.getAllMenusCached();
+        Map<Long, Long> parentMap = new java.util.HashMap<>();
+        for (Menu m : allMenus) {
+            parentMap.put(m.getId(), m.getUpperMenuNo());
+        }
+        return java.util.Collections.unmodifiableMap(parentMap);
+    }
+
     public List<MenuDto> getAllMenus() {
         List<Menu> menus = self.getAllMenusCached();
         List<Program> programs = programRepository.findAll();
@@ -205,7 +215,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap"}, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         // Delete existing mapping
         menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
@@ -318,11 +328,7 @@ public class MenuService {
             return null;
         }
 
-        List<Menu> allMenus = self.getAllMenusCached();
-        Map<Long, Long> parentMap = new java.util.HashMap<>();
-        for (Menu m : allMenus) {
-            parentMap.put(m.getId(), m.getUpperMenuNo());
-        }
+        Map<Long, Long> parentMap = self.getMenuParentMapCached();
 
         Long currentId = currentMenu.getId();
         Long upperId = currentMenu.getUpperMenuNo();
@@ -371,7 +377,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap"}, allEntries = true)
     public void insertMenuManage(MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
@@ -387,7 +393,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap"}, allEntries = true)
     public void updateMenuManage(MenuDto vo) {
         Menu menu = menuRepository.findById(vo.getMenuNo())
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
@@ -396,12 +402,12 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap"}, allEntries = true)
     public void deleteMenuManage(MenuDto vo) {
         menuRepository.deleteById(vo.getMenuNo());
     }
 
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap"}, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;

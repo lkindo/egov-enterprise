@@ -35,6 +35,17 @@ public class BackupOpertDto {
     private LocalDateTime frstRegistPnttm;
 
     public static BackupOpertDto from(BackupOpert entity) {
+        return from(entity, true);
+    }
+
+    public static BackupOpertDto from(BackupOpert entity, boolean includeChildren) {
+        String[] dfkSes = null;
+        if (includeChildren) {
+            dfkSes = entity.getExecutSchdulDfkSes().stream()
+                    .map(BackupSchdulDfk::getExecutSchdulDfkSe)
+                    .toArray(String[]::new);
+        }
+
         return BackupOpertDto.builder()
                 .backupOpertId(entity.getBackupOpertId())
                 .backupOpertNm(entity.getBackupOpertNm())
@@ -46,9 +57,7 @@ public class BackupOpertDto {
                 .executSchdulHour(entity.getExecutSchdulHour())
                 .executSchdulMnt(entity.getExecutSchdulMnt())
                 .executSchdulSecnd(entity.getExecutSchdulSecnd())
-                .executSchdulDfkSes(entity.getExecutSchdulDfkSes().stream()
-                        .map(BackupSchdulDfk::getExecutSchdulDfkSe)
-                        .toArray(String[]::new))
+                .executSchdulDfkSes(dfkSes)
                 .useAt(entity.getUseAt())
                 .lastUpdusrId(entity.getLastUpdusrId())
                 .lastUpdtPnttm(entity.getLastUpdtPnttm())
