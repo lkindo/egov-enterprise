@@ -165,7 +165,6 @@ public class EgovWebUtil {
 	 * LDAP 파라미터에서 특수문자 제거.
 	 * 파라미터 별로 제거를 해야 함.
 	 * 일괄 연결된 파라미터들은 따로 처리해야 함.
-	 * TODO : LDAP Injection Prevent 로직 추가 필요
 	 * @param value
 	 * @return
 	 */
@@ -183,8 +182,12 @@ public class EgovWebUtil {
 		/*특수문자 선택적 제거*/
 		returnValue = returnValue.replaceAll("\\*", "");
 		returnValue = returnValue.replaceAll("&", "");
-		returnValue = returnValue.replaceAll("|", "");
+		returnValue = returnValue.replaceAll("\\|", "");
 		returnValue = returnValue.replaceAll("//", "");
+		returnValue = returnValue.replaceAll("%", "");
+		returnValue = returnValue.replaceAll("\\(", "");
+		returnValue = returnValue.replaceAll("\\)", "");
+		returnValue = returnValue.replaceAll("\\\\", "");
 		//...
 		//개별로 필요한 항목들 추가 필요
 
