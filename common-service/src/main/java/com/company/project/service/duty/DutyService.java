@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,8 +59,17 @@ public class DutyService implements EgovDutyService {
 
     @Override
     public List<DutyDto> getDutyList(String bndtDePrefix) {
-        return dutyRepository.findById_BndtDeStartingWith(bndtDePrefix).stream()
-                .map(this::convertToDto)
+        List<Duty> duties = dutyRepository.findById_BndtDeStartingWith(bndtDePrefix);
+        List<DutyDiary> allDiaries = dutyDiaryRepository.findById_BndtDeStartingWith(bndtDePrefix);
+
+        Map<String, List<DutyDiary>> diariesByDuty = allDiaries.stream()
+                .collect(Collectors.groupingBy(d -> d.getId().getBndtId() + "_" + d.getId().getBndtDe()));
+
+        return duties.stream()
+                .map(d -> {
+                    String key = d.getId().getBndtId() + "_" + d.getId().getBndtDe();
+                    return convertToDto(d, diariesByDuty.getOrDefault(key, Collections.emptyList()));
+                })
                 .collect(Collectors.toList());
     }
 
@@ -104,14 +115,18 @@ public class DutyService implements EgovDutyService {
     }
 
     private DutyDto convertToDto(Duty d) {
+        List<DutyDiary> diaries = dutyDiaryRepository.findById_BndtIdAndId_BndtDe(d.getId().getBndtId(),
+                d.getId().getBndtDe());
+        return convertToDto(d, diaries);
+    }
+
+    private DutyDto convertToDto(Duty d, List<DutyDiary> diaries) {
         DutyDto dto = DutyDto.builder()
                 .bndtId(d.getId().getBndtId())
                 .bndtDe(d.getId().getBndtDe())
                 .remark(d.getRemark())
                 .build();
 
-        List<DutyDiary> diaries = dutyDiaryRepository.findById_BndtIdAndId_BndtDe(d.getId().getBndtId(),
-                d.getId().getBndtDe());
         dto.setDiaries(diaries.stream()
                 .map(diary -> DutyDiaryDto.builder()
                         .bndtId(diary.getId().getBndtId())
