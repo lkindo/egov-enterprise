@@ -1,0 +1,97 @@
+package com.company.project.service.batch;
+
+import com.company.project.domain.batch.BatchJob;
+import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchResult;
+import com.company.project.domain.batch.BatchResultRepository;
+import com.company.project.service.batch.dto.BatchResultDto;
+import com.company.project.service.code.EgovCommonCodeService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BatchResultServiceTest {
+
+    @Mock
+    private BatchResultRepository batchResultRepository;
+
+    @Mock
+    private BatchJobRepository batchJobRepository;
+
+    @Mock
+    private EgovCommonCodeService commonCodeService;
+
+    @InjectMocks
+    private BatchResultService batchResultService;
+
+    @Test
+    @DisplayName("Verify N+1 query issue is resolved in getBatchResultList")
+    void verifyOptimization() {
+        // given
+        int entityCount = 5;
+        List<BatchResult> results = IntStream.range(0, entityCount)
+                .mapToObj(i -> BatchResult.builder()
+                        .batchResultId("RES_" + i)
+                        .batchOpertId("JOB_" + i)
+                        .sttus("01")
+                        .build())
+                .toList();
+
+        Page<BatchResult> page = new PageImpl<>(results);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(batchResultRepository.searchBatchResults(any(), any(), any(), any(), any(), eq(pageable))).thenReturn(page);
+
+        // Mock common codes
+        when(commonCodeService.getCodesByGroup(anyString())).thenReturn(Collections.emptyList());
+
+        // Mock job repository to return list of jobs for findAllById
+        // Note: For the optimization, we expect findAllById to be called.
+        // For the un-optimized code, this mock might be unused or validation will fail.
+        lenient().when(batchJobRepository.findAllById(any())).thenAnswer(invocation -> {
+            Iterable<String> ids = invocation.getArgument(0);
+            List<BatchJob> jobs = new java.util.ArrayList<>();
+            ids.forEach(id -> jobs.add(BatchJob.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
+            return jobs;
+        });
+
+        // Mock findById for the un-optimized code path (so the test doesn't crash before verification)
+        lenient().when(batchJobRepository.findById(anyString())).thenAnswer(invocation -> {
+             String id = invocation.getArgument(0);
+             return java.util.Optional.of(BatchJob.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build());
+        });
+
+        // when
+        Page<BatchResultDto> result = batchResultService.getBatchResultList(null, null, null, null, null, pageable);
+
+        // then
+        // Verify that findAllById is called once
+        verify(batchJobRepository, times(1)).findAllById(any());
+
+        // Verify that findById is NOT called
+        verify(batchJobRepository, never()).findById(anyString());
+
+        // Additional verification: Check if data is correctly mapped
+        result.getContent().forEach(dto -> {
+            if ("JOB_0".equals(dto.getBatchOpertId())) {
+                org.junit.jupiter.api.Assertions.assertEquals("Job Name JOB_0", dto.getBatchOpertNm());
+            }
+        });
+    }
+}
