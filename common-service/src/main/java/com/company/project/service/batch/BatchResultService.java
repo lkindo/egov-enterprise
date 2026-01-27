@@ -35,11 +35,24 @@ public class BatchResultService implements EgovBatchResultService {
                 .collect(java.util.stream.Collectors.toMap(com.company.project.service.code.dto.CommonCodeDto::getCode,
                         com.company.project.service.code.dto.CommonCodeDto::getCodeNm, (a, b) -> a));
 
+        // Optimizing N+1 issue: Fetch all related BatchJobs in one query
+        java.util.Set<String> batchOpertIds = entities.getContent().stream()
+                .map(com.company.project.domain.batch.BatchResult::getBatchOpertId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        java.util.Map<String, com.company.project.domain.batch.BatchJob> jobMap = new java.util.HashMap<>();
+        if (!batchOpertIds.isEmpty()) {
+            java.util.List<com.company.project.domain.batch.BatchJob> jobs = batchJobRepository.findAllById(batchOpertIds);
+            jobMap = jobs.stream()
+                    .collect(java.util.stream.Collectors.toMap(com.company.project.domain.batch.BatchJob::getBatchOpertId, java.util.function.Function.identity()));
+        }
+
+        final java.util.Map<String, com.company.project.domain.batch.BatchJob> finalJobMap = jobMap;
+
         return entities.map(entity -> {
             String batchOpertNm = "";
             String batchProgrm = "";
-            com.company.project.domain.batch.BatchJob job = batchJobRepository.findById(entity.getBatchOpertId())
-                    .orElse(null);
+            com.company.project.domain.batch.BatchJob job = finalJobMap.get(entity.getBatchOpertId());
             if (job != null) {
                 batchOpertNm = job.getBatchOpertNm();
                 batchProgrm = job.getBatchProgrm();
