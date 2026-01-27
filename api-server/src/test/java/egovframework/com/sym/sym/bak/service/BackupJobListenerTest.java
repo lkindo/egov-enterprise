@@ -1,12 +1,13 @@
 package egovframework.com.sym.sym.bak.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,13 +17,12 @@ import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
+import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
-@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class BackupJobListenerTest {
-
-    @InjectMocks
-    private BackupJobListener backupJobListener;
 
     @Mock
     private EgovBackupOpertService egovBackupOpertService;
@@ -37,70 +37,75 @@ class BackupJobListenerTest {
     private JobDetail jobDetail;
 
     @Mock
-    private JobDataMap jobDataMap;
-
-    @Mock
     private JobKey jobKey;
 
-    @BeforeEach
-    void setUp() throws Exception {
+    @InjectMocks
+    private BackupJobListener backupJobListener;
+
+    @Test
+    @DisplayName("jobToBeExecuted: Should not insert result when backupOpertId is null")
+    void jobToBeExecuted_shouldNotInsert_whenBackupOpertIdIsNull(CapturedOutput output) throws Exception {
+        // Arrange
         when(jobContext.getJobDetail()).thenReturn(jobDetail);
-        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
         when(jobDetail.getKey()).thenReturn(jobKey);
         when(jobKey.getName()).thenReturn("testJob");
+
+        JobDataMap jobDataMap = new JobDataMap();
+        // backupOpertId is not set
+        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+
+        when(idgenService.getNextStringId()).thenReturn("RESULT_001");
+
+        // Act
+        backupJobListener.jobToBeExecuted(jobContext);
+
+        // Assert
+        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
+        assertThat(output).contains("Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
     }
 
     @Test
-    void jobToBeExecuted_withValidId_shouldInsertResult() throws Exception {
+    @DisplayName("jobToBeExecuted: Should not insert result when backupOpertId is empty")
+    void jobToBeExecuted_shouldNotInsert_whenBackupOpertIdIsEmpty(CapturedOutput output) throws Exception {
         // Arrange
-        when(idgenService.getNextStringId()).thenReturn("RESULT_001");
-        when(jobDataMap.getString("backupOpertId")).thenReturn("OPERT_001");
-        when(jobDataMap.getString("backupFile")).thenReturn("test.bak");
+        when(jobContext.getJobDetail()).thenReturn(jobDetail);
+        when(jobDetail.getKey()).thenReturn(jobKey);
+        when(jobKey.getName()).thenReturn("testJob");
+
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("backupOpertId", "   "); // Empty or whitespace
+        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+
+        when(idgenService.getNextStringId()).thenReturn("RESULT_002");
+
+        // Act
+        backupJobListener.jobToBeExecuted(jobContext);
+
+        // Assert
+        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
+        assertThat(output).contains("Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+    }
+
+    @Test
+    @DisplayName("jobToBeExecuted: Should insert result when backupOpertId is valid")
+    void jobToBeExecuted_shouldInsert_whenBackupOpertIdIsValid(CapturedOutput output) throws Exception {
+        // Arrange
+        when(jobContext.getJobDetail()).thenReturn(jobDetail);
+        when(jobDetail.getKey()).thenReturn(jobKey);
+        when(jobKey.getName()).thenReturn("testJob");
+
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("backupOpertId", "BACKUP_001");
+        jobDataMap.put("backupFile", "/tmp/backup.zip");
+        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+
+        when(idgenService.getNextStringId()).thenReturn("RESULT_003");
 
         // Act
         backupJobListener.jobToBeExecuted(jobContext);
 
         // Assert
         verify(egovBackupOpertService).insertBackupResult(any(BackupResult.class));
-        verify(jobDataMap).put("backupResultId", "RESULT_001");
-    }
-
-    @Test
-    void jobToBeExecuted_withNullId_shouldLogErrorAndNotInsert() throws Exception {
-        // Arrange
-        when(idgenService.getNextStringId()).thenReturn("RESULT_002");
-        when(jobDataMap.getString("backupOpertId")).thenReturn(null);
-
-        // Act
-        backupJobListener.jobToBeExecuted(jobContext);
-
-        // Assert
-        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
-    }
-
-    @Test
-    void jobToBeExecuted_withEmptyId_shouldLogErrorAndNotInsert() throws Exception {
-        // Arrange
-        when(idgenService.getNextStringId()).thenReturn("RESULT_003");
-        when(jobDataMap.getString("backupOpertId")).thenReturn("");
-
-        // Act
-        backupJobListener.jobToBeExecuted(jobContext);
-
-        // Assert
-        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
-    }
-
-    @Test
-    void jobToBeExecuted_withWhitespaceId_shouldNotInsertResult() throws Exception {
-        // Arrange
-        when(idgenService.getNextStringId()).thenReturn("RESULT_004");
-        when(jobDataMap.getString("backupOpertId")).thenReturn("   ");
-
-        // Act
-        backupJobListener.jobToBeExecuted(jobContext);
-
-        // Assert
-        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
+        assertThat(output).doesNotContain("Backup Result's Backup Operation ID is null or empty");
     }
 }
