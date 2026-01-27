@@ -19,7 +19,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 사용자 관리 컨트롤러
@@ -160,10 +163,12 @@ public class UserManageController {
     public String deleteUser(@RequestParam("checkedIdForDel") String checkedIdForDel, Model model)
             throws Exception {
 
-        String[] userIds = checkedIdForDel.split(",");
-        for (String userId : userIds) {
-            userManageService.deleteUser(userId.trim());
-        }
+        List<String> userIdList = Arrays.stream(checkedIdForDel.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        userManageService.deleteUserList(userIdList);
+
         model.addAttribute("resultMsg", "success.common.delete");
         return "forward:/uss/umt/EgovUserManage.do";
     }
