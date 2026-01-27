@@ -3,6 +3,7 @@ package com.company.project.service.backup;
 import com.company.project.domain.backup.BackupOpert;
 import com.company.project.domain.backup.BackupOpertRepository;
 import com.company.project.domain.backup.BackupSchdulDfk;
+import com.company.project.domain.backup.BackupSchdulDfkRepository;
 import com.company.project.service.backup.dto.BackupOpertDto;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,12 +25,25 @@ import java.util.stream.Collectors;
 public class BackupOpertService extends EgovAbstractServiceImpl implements EgovBackupOpertService {
 
     private final BackupOpertRepository backupOpertRepository;
+    private final BackupSchdulDfkRepository backupSchdulDfkRepository;
     private final EgovCommonCodeService commonCodeService;
 
     @Override
     @Transactional(readOnly = true)
     public Page<BackupOpertDto> getBackupOpertList(String condition, String keyword, Pageable pageable) {
         Page<BackupOpert> page = backupOpertRepository.searchBackupOperts(condition, keyword, pageable);
+
+        List<String> ids = page.getContent().stream()
+                .map(BackupOpert::getBackupOpertId)
+                .collect(Collectors.toList());
+
+        Map<String, List<BackupSchdulDfk>> dfkMapByOpert;
+        if (!ids.isEmpty()) {
+            List<BackupSchdulDfk> dfks = backupSchdulDfkRepository.findByBackupOpertIdIn(ids);
+            dfkMapByOpert = dfks.stream().collect(Collectors.groupingBy(BackupSchdulDfk::getBackupOpertId));
+        } else {
+            dfkMapByOpert = Collections.emptyMap();
+        }
 
         List<CommonCodeDto> cycleCodes = commonCodeService.getCodesByGroup("COM047");
         Map<String, String> cycleMap = cycleCodes.stream()
@@ -40,7 +55,17 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
                 .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
         return page.map(entity -> {
-            BackupOpertDto dto = BackupOpertDto.from(entity);
+            BackupOpertDto dto = BackupOpertDto.from(entity, false);
+
+            List<BackupSchdulDfk> childDfks = dfkMapByOpert.get(entity.getBackupOpertId());
+            if (childDfks != null) {
+                dto.setExecutSchdulDfkSes(childDfks.stream()
+                        .map(BackupSchdulDfk::getExecutSchdulDfkSe)
+                        .toArray(String[]::new));
+            } else {
+                dto.setExecutSchdulDfkSes(new String[0]);
+            }
+
             dto.setExecutCycleNm(cycleMap.getOrDefault(dto.getExecutCycle(), ""));
             formatSchedule(dto, dfkMap);
             return dto;
