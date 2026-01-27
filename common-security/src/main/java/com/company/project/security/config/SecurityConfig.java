@@ -40,18 +40,7 @@ public class SecurityConfig {
 
     public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider,
             Environment environment) {
-        System.out.println(">>> SecurityConfig LOADED! <<<");
         this.jwtTokenProvider = jwtTokenProvider;
-        // this.environment = environment; // Not actually stored in field in original
-        // code I saw?
-        // Wait, line 40 was: "private final JwtTokenProvider jwtTokenProvider;"
-        // Line 41: "public SecurityConfig(..."
-        // I should stick to original signature if possible or add Environment if
-        // needed.
-        // Original code Step 1803 shows NO 'environment' field.
-        // Step 1592 AuthenticInterceptor HAD 'environment' field.
-        // SecurityConfig Step 1803: NO environment field.
-        // So I should NOT verify environment. just print.
     }
 
     @Bean
@@ -90,12 +79,7 @@ public class SecurityConfig {
                             : encodedPassword;
                     String salt = ((CustomUserDetails) userDetails).getUser().getUserId();
 
-                    System.out.println(">>> AuthCheck: User=" + userDetails.getUsername() + ", Salt=" + salt);
-                    System.out.println(">>> AuthCheck: Encoded=" + cleanHash);
-                    System.out.println(">>> AuthCheck: Input=" + presentationPassword);
-
                     boolean match = egovPasswordEncoder.matches(presentationPassword, cleanHash, salt);
-                    System.out.println(">>> AuthCheck: Match Result = " + match);
 
                     if (match) {
                         return; // Success
@@ -139,14 +123,6 @@ public class SecurityConfig {
                 .formLogin(login -> login
                         .loginPage("/uat/uia/egovLoginUsr.do") // Redirect to custom login page
                         .permitAll())
-                .addFilterBefore((request, response, chain) -> {
-                    jakarta.servlet.http.HttpServletRequest req = (jakarta.servlet.http.HttpServletRequest) request;
-                    jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
-                    System.out.println(">>> DEBUG_FILTER_PRE: " + req.getRequestURI());
-                    chain.doFilter(request, response);
-                    System.out.println(
-                            ">>> DEBUG_FILTER_POST: " + req.getRequestURI() + " => Status: " + res.getStatus());
-                }, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 
