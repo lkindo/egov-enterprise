@@ -398,23 +398,30 @@ public class LegacyCollaborationController {
     /**
      * 일지관리 목록
      */
-    @RequestMapping("/cop/smt/dsm/EgovDiaryManageList.do")
-    public String selectDiaryList(@ModelAttribute("searchVO") DiaryManageVO searchVO, ModelMap model) throws Exception {
-        if (!EgovUserDetailsHelper.isAuthenticated())
-            return "redirect:/uat/uia/egovLoginUsr.do";
-
-        PaginationInfo paginationInfo = setupPaging(searchVO.getPageIndex(), searchVO.getPageUnit(), model);
-        PageRequest pageable = PageRequest.of(searchVO.getPageIndex() - 1, paginationInfo.getRecordCountPerPage());
-
-        Page<DutyDto> pageResult = egovDutyService.getDutyList(searchVO.getSearchKeyword(), pageable);
-
-        paginationInfo.setTotalRecordCount((int) pageResult.getTotalElements());
-        model.addAttribute("paginationInfo", paginationInfo);
-
-        model.addAttribute("resultList", DiaryAdapter.toVOList(pageResult.getContent()));
-        model.addAttribute("resultCnt", pageResult.getTotalElements());
-        return "egovframework/com/cop/smt/dsm/EgovDiaryManageList";
-    }
+    /*
+     * @RequestMapping("/cop/smt/dsm/EgovDiaryManageList.do")
+     * public String selectDiaryList(@ModelAttribute("searchVO") DiaryManageVO
+     * searchVO, ModelMap model) throws Exception {
+     * if (!EgovUserDetailsHelper.isAuthenticated())
+     * return "redirect:/uat/uia/egovLoginUsr.do";
+     * 
+     * PaginationInfo paginationInfo = setupPaging(searchVO.getPageIndex(),
+     * searchVO.getPageUnit(), model);
+     * PageRequest pageable = PageRequest.of(searchVO.getPageIndex() - 1,
+     * paginationInfo.getRecordCountPerPage());
+     * 
+     * Page<DutyDto> pageResult =
+     * egovDutyService.getDutyList(searchVO.getSearchKeyword(), pageable);
+     * 
+     * paginationInfo.setTotalRecordCount((int) pageResult.getTotalElements());
+     * model.addAttribute("paginationInfo", paginationInfo);
+     * 
+     * model.addAttribute("resultList",
+     * DiaryAdapter.toVOList(pageResult.getContent()));
+     * model.addAttribute("resultCnt", pageResult.getTotalElements());
+     * return "egovframework/com/cop/smt/dsm/EgovDiaryManageList";
+     * }
+     */
 
     /**
      * 메일발송 등록 화면
