@@ -153,6 +153,19 @@
         
     </select>
 
+    <select id="selectBackupSchdulDfkListIn" parameterType="java.util.List" resultMap="backupSchdulDfkResult">
+
+            SELECT  A.BACKUP_OPERT_ID, A.EXECUT_SCHDUL_DFK_SE, B.CODE_NM EXECUT_SCHDUL_DFK_SE_NM
+            FROM NBACKUPSCHDULDFK A, CCMMNDETAILCODE B
+            WHERE A.EXECUT_SCHDUL_DFK_SE = B.CODE
+              AND B.CODE_ID = 'COM074'
+              AND A.BACKUP_OPERT_ID IN
+              <foreach collection="list" item="item" open="(" separator="," close=")">
+                #{item}
+              </foreach>
+
+    </select>
+
     <insert id="insertBackupSchdulDfk" parameterType="egovframework.com.sym.sym.bak.service.BackupSchdulDfk">
         
             INSERT INTO NBACKUPSCHDULDFK (
