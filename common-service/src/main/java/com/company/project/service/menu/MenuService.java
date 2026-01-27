@@ -311,6 +311,7 @@ public class MenuService {
                 });
     }
 
+    @Cacheable(value = "rootMenuIdByUrl", key = "#url", unless = "#result == null")
     public Long getRootMenuIdByUrl(String url) {
         String progrmFileNm = getProgrmFileNmByUrl(url);
         if (progrmFileNm == null)
