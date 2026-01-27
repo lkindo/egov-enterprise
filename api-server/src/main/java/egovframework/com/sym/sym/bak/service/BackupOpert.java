@@ -169,10 +169,8 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
     	//return executSchdulDfkSes;
     	String[] ret = null;
     	if (this.executSchdulDfkSes != null) {
-    	    ret = new String[executSchdulDfkSes.length];
-    	    for (int i = 0; i < executSchdulDfkSes.length; i++) {
-    		ret[i] = this.executSchdulDfkSes[i];
-    	    }
+            ret = new String[this.executSchdulDfkSes.length];
+            System.arraycopy(this.executSchdulDfkSes, 0, ret, 0, this.executSchdulDfkSes.length);
     	}
 
     	return ret;
@@ -290,10 +288,8 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
 	 */
     public void setExecutSchdulDfkSes(String[] executSchdulDfkSes) {
     	//this.executSchdulDfkSes = executSchdulDfkSes;
-    	this.executSchdulDfkSes = new String[executSchdulDfkSes.length];
-    	for (int i = 0; i < executSchdulDfkSes.length; ++i) {
-    	    this.executSchdulDfkSes[i] = executSchdulDfkSes[i];
-    	}
+        this.executSchdulDfkSes = new String[executSchdulDfkSes.length];
+        System.arraycopy(executSchdulDfkSes, 0, this.executSchdulDfkSes, 0, executSchdulDfkSes.length);
         }
 	/**
 	 * @param useAt the useAt to set
