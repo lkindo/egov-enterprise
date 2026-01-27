@@ -7,6 +7,7 @@ import com.company.project.domain.sms.SmsRecptn;
 import com.company.project.domain.sms.SmsRepository;
 import com.company.project.service.sms.dto.SmsDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 /**
  * SMS 서비스 구현체
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -83,22 +85,31 @@ public class SmsService implements EgovSmsService {
         // 2. Parallel Send (outside transaction)
         List<CompletableFuture<Void>> futures = savedSms.getRecipients().stream()
                 .map(recipient -> CompletableFuture.runAsync(() -> {
-                    boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(), savedSms.getTrnsmitTelno());
-                    if (success) {
-                        recipient.updateResult("0000", "SUCCESS");
-                    } else {
-                        recipient.updateResult("9999", "FAILED");
+                    try {
+                        boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(), savedSms.getTrnsmitTelno());
+                        if (success) {
+                            recipient.updateResult("0000", "SUCCESS");
+                        } else {
+                            recipient.updateResult("9999", "FAILED");
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to send SMS to {}", recipient.getRecptnTelno(), e);
+                        recipient.updateResult("9999", "ERROR: " + e.getMessage());
                     }
                 }, taskExecutor))
                 .collect(Collectors.toList());
 
-        // Wait for all to complete
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        // 3. Final Update (in a transaction)
-        transactionTemplate.executeWithoutResult(status -> {
-            smsRepository.save(savedSms);
-        });
+        // 3. Final Update (async, fire-and-forget)
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenRunAsync(() -> {
+                    try {
+                        transactionTemplate.executeWithoutResult(status -> {
+                            smsRepository.save(savedSms);
+                        });
+                    } catch (Exception e) {
+                        log.error("Failed to save final SMS status for ID {}", smsId, e);
+                    }
+                }, taskExecutor);
 
         return smsId;
     }
