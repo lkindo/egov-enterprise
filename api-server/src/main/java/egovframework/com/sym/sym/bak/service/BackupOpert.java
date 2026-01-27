@@ -346,7 +346,7 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
 	 * @param dfkSeList List<BackupSchdulDfk>형의 요일구분코드정보리스트
 	 */
 	public void makeExecutSchdul(List<BackupSchdulDfk> dfkSeList) {
-		String executSchdul = "";
+		StringBuilder executSchdul = new StringBuilder();
 		String executSchdulDeNm = "";
 
 		// 날짜 출력
@@ -371,7 +371,7 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
 		}
 
 		// 날짜 출력
-		executSchdul = executSchdul + executSchdulDeNm;
+		executSchdul.append(executSchdulDeNm);
 
 		// 요일출력
 		if (this.executCycle.equals("02")) {
@@ -379,20 +379,20 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
 			if (dfkSeList.size() != 0) {
 				for (int i = 0; i < dfkSeList.size(); i++) {
 					if (i != 0) {
-						executSchdul = executSchdul + ",";
+						executSchdul.append(",");
 					}
-					executSchdul = executSchdul + dfkSeList.get(i).getExecutSchdulDfkSeNm();
+					executSchdul.append(dfkSeList.get(i).getExecutSchdulDfkSeNm());
 				}
-				executSchdul = executSchdul + " ";
+				executSchdul.append(" ");
 			}
 		}
 
 		// 시, 분, 초 출력
 		// 시분초는 항상출력한다.
-		executSchdul = executSchdul + this.executSchdulHour + ":" + this.executSchdulMnt + ":" + this.executSchdulSecnd;
+		executSchdul.append(this.executSchdulHour).append(":").append(this.executSchdulMnt).append(":").append(this.executSchdulSecnd);
 
 		// 값지정.
-		this.executSchdul = executSchdul;
+		this.executSchdul = executSchdul.toString();
 
 	}
 
@@ -400,61 +400,61 @@ public class BackupOpert extends ComDefaultVO implements Serializable {
 	 * 실행스케줄을 CronExpression으로 바꿔서 리턴한다.
 	 **/
 	public String toCronExpression() {
-		String cronExpression = "";
+		StringBuilder cronExpression = new StringBuilder();
 
 		// 초변환
-		cronExpression = cronExpression + this.executSchdulSecnd;
+		cronExpression.append(this.executSchdulSecnd);
 
 		// 분변환
-		cronExpression = cronExpression + " " + this.executSchdulMnt;
+		cronExpression.append(" ").append(this.executSchdulMnt);
 
 		// 시변환
-		cronExpression = cronExpression + " " + this.executSchdulHour;
+		cronExpression.append(" ").append(this.executSchdulHour);
 
 		// 일변환
 		if (this.executCycle.equals("01")) {
 			// 매일인경우 "*" 출력
-			cronExpression = cronExpression + " " + "*";
+			cronExpression.append(" *");
 		} else if (this.executCycle.equals("02")) {
 			// 매주인 경우 "?" 출력
-			cronExpression = cronExpression + " " + "?";
+			cronExpression.append(" ?");
 		} else {
 			// 이외의 경우 그대로 출력
-			cronExpression = cronExpression + " " + this.executSchdulDe.substring(6,8);
+			cronExpression.append(" ").append(this.executSchdulDe.substring(6,8));
 		}
 
 		// 월변환
 		if (this.executCycle.equals("01") || this.executCycle.equals("02") || this.executCycle.equals("03")) {
 			// 매일,매월,매주인경우 "*" 출력
-			cronExpression = cronExpression + " " + "*";
+			cronExpression.append(" *");
 		} else {
 			// 이외의 경우 그대로 출력
-			cronExpression = cronExpression + " " + this.executSchdulDe.substring(4,6);
+			cronExpression.append(" ").append(this.executSchdulDe.substring(4,6));
 		}
 
 		// 주 변환
 		if (this.executCycle.equals("02")) {
 			// 매주인경우 day of week를  출력
-			String dayOfWeek = "";
+			StringBuilder dayOfWeek = new StringBuilder();
 			for (int i = 0; i < this.executSchdulDfkSes.length; i++) {
 				if (i != 0) {
-					dayOfWeek = dayOfWeek + ",";
+					dayOfWeek.append(",");
 				}
-				dayOfWeek = dayOfWeek + this.executSchdulDfkSes[i];
+				dayOfWeek.append(this.executSchdulDfkSes[i]);
 			}
-			cronExpression = cronExpression + " " + dayOfWeek;
+			cronExpression.append(" ").append(dayOfWeek);
 		} else {
 			// 이외의 경우 "?" 출력
-			cronExpression = cronExpression + " " + "?";
+			cronExpression.append(" ?");
 		}
 
 		// 년변환
 		if (this.executCycle.equals("05")) {
 			// 한번만인경우 연도 출력
-			cronExpression = cronExpression + " " + this.executSchdulDe.substring(0,4);
+			cronExpression.append(" ").append(this.executSchdulDe.substring(0,4));
 		}
 
-		return cronExpression;
+		return cronExpression.toString();
 
 	}
 
