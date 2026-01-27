@@ -1,0 +1,821 @@
+> Task :common-core:compileJava UP-TO-DATE
+> Task :common-core:processResources UP-TO-DATE
+> Task :common-core:classes UP-TO-DATE
+> Task :common-core:jar UP-TO-DATE
+> Task :common-domain:compileJava UP-TO-DATE
+> Task :common-domain:processResources UP-TO-DATE
+> Task :common-domain:classes UP-TO-DATE
+> Task :common-domain:jar UP-TO-DATE
+> Task :common-security:compileJava UP-TO-DATE
+> Task :common-security:processResources NO-SOURCE
+> Task :common-security:classes UP-TO-DATE
+> Task :common-security:jar UP-TO-DATE
+> Task :common-service:compileJava UP-TO-DATE
+> Task :common-service:processResources NO-SOURCE
+> Task :common-service:classes UP-TO-DATE
+> Task :common-service:compileTestJava UP-TO-DATE
+> Task :common-service:processTestResources UP-TO-DATE
+> Task :common-service:testClasses UP-TO-DATE
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :common-service:test
+
+MenuServicePerformanceTest > measureGetRootMenuIdBenchmark() FAILED
+    java.lang.IllegalArgumentException at MenuServicePerformanceTest.java:98
+
+NoteServiceBenchmarkTest > measureSendNotePerformance() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:180
+        Caused by: org.springframework.beans.factory.BeanCreationException at AbstractAutowireCapableBeanFactory.java:1806
+            Caused by: java.lang.OutOfMemoryError at ConcurrentReferenceHashMap.java:679
+
+2026-01-27T05:06:29.363Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.366Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.380Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-01-27T05:06:29.382Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-01-27T05:06:29.389Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.391Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.408Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.409Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.425Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.425Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.438Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.439Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.457Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.457Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.476Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.477Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.489Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.490Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.496Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2026-01-27T05:06:29.498Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2026-01-27T05:06:29.505Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.505Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful:
+    drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.516Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.517Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.528Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.529Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+Hibernate: drop table if exists ccmmnclcode cascade
+Hibernate: drop table if exists ccmmncode cascade
+Hibernate: drop table if exists ccmmndetailcode cascade
+Hibernate: drop table if exists ccntcinsttinfo cascade
+Hibernate: drop table if exists comtnorgnztinfo cascade
+Hibernate: drop table if exists file_group cascade
+Hibernate: drop table if exists file_item cascade
+Hibernate: drop table if exists hemaildsptchmanage cascade
+Hibernate: drop table if exists nadbkmanage cascade
+Hibernate: drop table if exists nadministrationword cascade
+Hibernate: drop table if exists nannvrsrymanage cascade
+Hibernate: drop table if exists nauthorgroupinfo cascade
+Hibernate: drop table if exists nauthorinfo cascade
+Hibernate: drop table if exists nauthorrolerelate cascade
+Hibernate: drop table if exists nbackupopert cascade
+Hibernate: drop table if exists nbackupresult cascade
+Hibernate: drop table if exists nbackupschduldfk cascade
+Hibernate: drop table if exists nbanner cascade
+Hibernate: drop table if exists nbatchopert cascade
+Hibernate: drop table if exists nbatchresult cascade
+Hibernate: drop table if exists nbatchschdul cascade
+Hibernate: drop table if exists nbatchschduldfk cascade
+Hibernate: drop table if exists nbbs cascade
+Hibernate: drop table if exists nbbsmaster cascade
+Hibernate: drop table if exists nbbssatisfaction cascade
+Hibernate: drop table if exists nbbsuse cascade
+Hibernate: drop table if exists nbndtceckmanage cascade
+Hibernate: drop table if exists nbndtdiary cascade
+Hibernate: drop table if exists nbndtmanage cascade
+Hibernate: drop table if exists ncalrestde cascade
+Hibernate: drop table if exists ncmmnty cascade
+Hibernate: drop table if exists ncmmntyuser cascade
+Hibernate: drop table if exists ncnsltlist cascade
+Hibernate: drop table if exists ncnsltmanage cascade
+Hibernate: drop table if exists ncomment cascade
+Hibernate: drop table if exists ncommute cascade
+Hibernate: drop table if exists ncpyrhtprtcpolicy cascade
+Hibernate: drop table if exists nctsnnmanage cascade
+Hibernate: drop table if exists ndeptjobbx cascade
+Hibernate: drop table if exists ndtausestats cascade
+Hibernate: drop table if exists nemplyrinfo cascade
+Hibernate: drop table if exists nemplyrscrtyestbs cascade
+Hibernate: drop table if exists nentrprsmber cascade
+Hibernate: drop table if exists neventatdrn cascade
+Hibernate: drop table if exists neventinfo cascade
+Hibernate: drop table if exists neventmanage cascade
+Hibernate: drop table if exists nextrlhrinfo cascade
+Hibernate: drop table if exists nfaqinfo cascade
+Hibernate: drop table if exists nfile cascade
+Hibernate: drop table if exists nfiledetail cascade
+Hibernate: drop table if exists ngnrlmber cascade
+Hibernate: drop table if exists nhpcminfo cascade
+Hibernate: drop table if exists nindvdlinfopolicy cascade
+Hibernate: drop table if exists nindvdlpge cascade
+Hibernate: drop table if exists nindvdlpgecntnts cascade
+Hibernate: drop table if exists nindvdlyrycmanage cascade
+Hibernate: drop table if exists ninfrmlsanctn cascade
+Hibernate: drop table if exists nintnetsvc cascade
+Hibernate: drop table if exists nknowledge cascade
+Hibernate: drop table if exists nleaderschdul cascade
+Hibernate: drop table if exists nloginlog cascade
+Hibernate: drop table if exists nloginpolicy cascade
+Hibernate: drop table if exists nloginscrinimage cascade
+Hibernate: drop table if exists nmainimage cascade
+Hibernate: drop table if exists nmemoreprt cascade
+Hibernate: drop table if exists nmemotodo cascade
+Hibernate: drop table if exists nmenucreatdtls cascade
+Hibernate: drop table if exists nmenuinfo cascade
+Hibernate: drop table if exists nmtginfo cascade
+Hibernate: drop table if exists nmtgplacemanage cascade
+Hibernate: drop table if exists nmtgplaceresve cascade
+Hibernate: drop table if exists nncrd cascade
+Hibernate: drop table if exists nnewsinfo cascade
+Hibernate: drop table if exists nnote cascade
+Hibernate: drop table if exists nnoterecptn cascade
+Hibernate: drop table if exists nnotetrnsmit cascade
+Hibernate: drop table if exists nntfcinfo cascade
+Hibernate: drop table if exists nonlinemanual cascade
+Hibernate: drop table if exists nonlinepolliem cascade
+Hibernate: drop table if exists nonlinepollmanage cascade
+Hibernate: drop table if exists nonlinepollresult cascade
+Hibernate: drop table if exists norgnztinfo cascade
+Hibernate: drop table if exists npopupmanage cascade
+Hibernate: drop table if exists nprogrmlist cascade
+Hibernate: drop table if exists nqainfo cascade
+Hibernate: drop table if exists nqestnrinfo cascade
+Hibernate: drop table if exists nqustnriem cascade
+Hibernate: drop table if exists nqustnrqesitm cascade
+Hibernate: drop table if exists nqustnrrespondinfo cascade
+Hibernate: drop table if exists nqustnrrspnsresult cascade
+Hibernate: drop table if exists nqustnrtmplat cascade
+Hibernate: drop table if exists nrecentsrchwrd cascade
+Hibernate: drop table if exists nrecentsrchwrdmanage cascade
+Hibernate: drop table if exists nrecomendsiteinfo cascade
+Hibernate: drop table if exists nreprtstats cascade
+Hibernate: drop table if exists nrestde cascade
+Hibernate: drop table if exists nroleinfo cascade
+Hibernate: drop table if exists nroughmap cascade
+Hibernate: drop table if exists nrss cascade
+Hibernate: drop table if exists nrsstag cascade
+Hibernate: drop table if exists nrwardmanage cascade
+Hibernate: drop table if exists nschdulinfo cascade
+Hibernate: drop table if exists nscrap cascade
+Hibernate: drop table if exists nsiteinfo cascade
+Hibernate: drop table if exists nsitelist cascade
+Hibernate: drop table if exists nsms cascade
+Hibernate: drop table if exists nsmsrecptn cascade
+Hibernate: drop table if exists nstplatinfo cascade
+Hibernate: drop table if exists nsyshistory cascade
+Hibernate: drop table if exists nsyslog cascade
+Hibernate: drop table if exists ntmplatinfo cascade
+Hibernate: drop table if exists ntwitter cascade
+Hibernate: drop table if exists nunitylink cascade
+Hibernate: drop table if exists nuserabsnce cascade
+Hibernate: drop table if exists nvcatnmanage cascade
+Hibernate: drop table if exists nwikibkmk cascade
+Hibernate: drop table if exists nwikmnthngreprt cascade
+Hibernate: drop table if exists nworddicaryinfo cascade
+Hibernate: drop table if exists nwrktminfo cascade
+Hibernate: drop table if exists sbbssummary cascade
+Hibernate: drop table if exists ssyslogsummary cascade
+Hibernate: drop table if exists susersummary cascade
+2026-01-27T05:06:29.572Z  INFO 5701 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-27T05:06:29.575Z ERROR 5701 --- [ionShutdownHook] .SchemaDropperImpl$DelayedDropActionImpl : HHH000478: Unsuccessful: drop table if exists ebt.nczip cascade
+2026-01-27T05:06:29.585Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2026-01-27T05:06:29.592Z  INFO 5701 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+
+> Task :common-service:test FAILED
+
+47 tests completed, 2 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':common-service:test'.
+> There were failing tests. See the report at: file:///app/common-service/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.8/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2m 9s
+12 actionable tasks: 1 executed, 11 up-to-date
