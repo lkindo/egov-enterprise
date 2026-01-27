@@ -24,6 +24,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,25 @@ public class EgovBatchSchdulController {
 
     @Resource(name = "egovCommonCodeService")
     private EgovCommonCodeService commonCodeService;
+
+    private static final Map<String, String> HOURS;
+    private static final Map<String, String> MINUTES;
+
+    static {
+        Map<String, String> hours = new LinkedHashMap<>();
+        for (int i = 0; i < 24; i++) {
+            String s = String.format("%02d", i);
+            hours.put(s, s);
+        }
+        HOURS = Collections.unmodifiableMap(hours);
+
+        Map<String, String> minutes = new LinkedHashMap<>();
+        for (int i = 0; i < 60; i++) {
+            String s = String.format("%02d", i);
+            minutes.put(s, s);
+        }
+        MINUTES = Collections.unmodifiableMap(minutes);
+    }
 
     @IncludedInfo(name = "스케줄처리", listUrl = "/sym/bat/getBatchSchdulList.do", order = 1140, gid = 60)
     @RequestMapping({ "/sym/bat/getBatchSchdulList.do", "/sym/bat/EgovBatchSchdulList.do" })
@@ -177,20 +197,9 @@ public class EgovBatchSchdulController {
         model.addAttribute("executCycleList", convertToLegacyCodes(commonCodeService.getCodesByGroup("COM047")));
         model.addAttribute("executSchdulDfkSeList", convertToLegacyCodes(commonCodeService.getCodesByGroup("COM074")));
 
-        Map<String, String> hours = new LinkedHashMap<>();
-        for (int i = 0; i < 24; i++) {
-            String s = String.format("%02d", i);
-            hours.put(s, s);
-        }
-        model.addAttribute("executSchdulHourList", hours);
-
-        Map<String, String> minutes = new LinkedHashMap<>();
-        for (int i = 0; i < 60; i++) {
-            String s = String.format("%02d", i);
-            minutes.put(s, s);
-        }
-        model.addAttribute("executSchdulMntList", minutes);
-        model.addAttribute("executSchdulSecndList", minutes);
+        model.addAttribute("executSchdulHourList", HOURS);
+        model.addAttribute("executSchdulMntList", MINUTES);
+        model.addAttribute("executSchdulSecndList", MINUTES);
     }
 
     private List<CmmnDetailCode> convertToLegacyCodes(List<CommonCodeDto> codes) {
