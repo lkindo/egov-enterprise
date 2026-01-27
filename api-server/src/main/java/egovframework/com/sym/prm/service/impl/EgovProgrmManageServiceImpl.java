@@ -1,5 +1,6 @@
 package egovframework.com.sym.prm.service.impl;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -287,7 +288,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 		if (checkedProgrmFileNmForDel == null || checkedProgrmFileNmForDel.isEmpty())
 			return;
 		String[] delProgrmFileNm = checkedProgrmFileNmForDel.split(",");
-		programRepository.deleteAllByIdInBatch(java.util.Arrays.asList(delProgrmFileNm));
+		programRepository.deleteAllByIdInBatch(Arrays.asList(delProgrmFileNm));
 	}
 
 	/**
