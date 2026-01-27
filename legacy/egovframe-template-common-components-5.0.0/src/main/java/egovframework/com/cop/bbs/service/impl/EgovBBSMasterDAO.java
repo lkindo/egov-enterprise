@@ -21,6 +21,14 @@ public class EgovBBSMasterDAO extends EgovComAbstractDAO {
 	public int selectBBSMasterInfsCnt(BoardMasterVO boardMasterVO) {
 		return (Integer)selectOne("BBSMaster.selectBBSMasterListTotCnt", boardMasterVO);
 	}
+
+	public List<BoardMasterVO> selectNotUsedBdMstrList(BoardMasterVO boardMasterVO) {
+		return selectList("BBSMaster.selectNotUsedBdMstrList", boardMasterVO);
+	}
+
+	public int selectNotUsedBdMstrListCnt(BoardMasterVO boardMasterVO) {
+		return (Integer)selectOne("BBSMaster.selectNotUsedBdMstrListTotCnt", boardMasterVO);
+	}
 	
 	public BoardMasterVO selectBBSMasterDetail(BoardMasterVO boardMasterVO) {
 		return (BoardMasterVO) selectOne("BBSMaster.selectBBSMasterDetail", boardMasterVO);
