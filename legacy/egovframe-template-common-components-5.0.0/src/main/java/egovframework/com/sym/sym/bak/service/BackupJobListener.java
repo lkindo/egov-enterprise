@@ -95,10 +95,11 @@ public class BackupJobListener implements JobListener {
 			backupResult.setLastUpdusrId("SYSTEM");
 			backupResult.setFrstRegisterId("SYSTEM");
 
-			if (backupResult.getBackupOpertId() != null && !backupResult.getBackupOpertId().equals("")) {	// TODO
+			String backupOpertId = backupResult.getBackupOpertId();
+			if (backupOpertId != null && !backupOpertId.trim().isEmpty()) {
 				egovBackupOpertService.insertBackupResult(backupResult);
 			} else {
-				LOGGER.debug("Backup Result's Backup Operation ID is null...");
+				LOGGER.error("Backup Result's Backup Operation ID is null or empty. Cannot insert backup result.");
 			}
 
 			// 저장이 이상없이 완료되면  datamap에 배치결과ID를 저장한다.
