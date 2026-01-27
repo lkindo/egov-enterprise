@@ -152,7 +152,7 @@ public class LegacyIdGenBeanRegistrar implements ImportBeanDefinitionRegistrar {
                         .genericBeanDefinition(EgovTableIdGnrServiceImpl.class);
                 builder.addPropertyReference("dataSource", "dataSource");
                 builder.addPropertyReference("strategy", strategyBeanName);
-                builder.addPropertyValue("blockSize", 10);
+                builder.addPropertyValue("blockSize", 100);
                 builder.addPropertyValue("table", "IDS");
                 builder.addPropertyValue("tableName", beanName.toUpperCase());
 
