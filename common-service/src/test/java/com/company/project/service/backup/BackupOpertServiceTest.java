@@ -3,6 +3,7 @@ package com.company.project.service.backup;
 import com.company.project.domain.backup.BackupOpert;
 import com.company.project.domain.backup.BackupOpertRepository;
 import com.company.project.domain.backup.BackupSchdulDfk;
+import com.company.project.domain.backup.BackupSchdulDfkRepository;
 import com.company.project.service.backup.dto.BackupOpertDto;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
@@ -29,6 +30,9 @@ class BackupOpertServiceTest {
 
     @Mock
     private BackupOpertRepository backupOpertRepository;
+
+    @Mock
+    private BackupSchdulDfkRepository backupSchdulDfkRepository;
 
     @Mock
     private EgovCommonCodeService commonCodeService;
@@ -69,6 +73,12 @@ class BackupOpertServiceTest {
 
         Page<BackupOpert> page = new PageImpl<>(entities);
         when(backupOpertRepository.searchBackupOperts(any(), any(), any())).thenReturn(page);
+
+        List<BackupSchdulDfk> allDfks = new ArrayList<>();
+        for (BackupOpert entity : entities) {
+            allDfks.addAll(entity.getExecutSchdulDfkSes());
+        }
+        when(backupSchdulDfkRepository.findByBackupOpertIdIn(anyList())).thenReturn(allDfks);
 
         // Mock Cycle Codes (COM047)
         List<CommonCodeDto> cycleCodes = List.of(
