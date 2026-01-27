@@ -127,6 +127,14 @@ public class UserManageService {
     }
 
     /**
+     * 사용자 삭제 (List)
+     */
+    @Transactional
+    public void deleteUserList(List<String> userIds) {
+        userRepository.deleteAllByIdInBatch(userIds);
+    }
+
+    /**
      * 아이디 중복 확인
      */
     public int checkIdDplct(String userId) {
