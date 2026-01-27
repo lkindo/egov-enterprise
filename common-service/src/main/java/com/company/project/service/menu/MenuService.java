@@ -301,6 +301,7 @@ public class MenuService {
                 });
     }
 
+    @Cacheable(value = "rootMenuIdByUrl", key = "#url", unless = "#result == null")
     public Long getRootMenuIdByUrl(String url) {
         String progrmFileNm = getProgrmFileNmByUrl(url);
         if (progrmFileNm == null)
@@ -370,7 +371,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
     public void insertMenuManage(MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
@@ -386,7 +387,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
     public void updateMenuManage(MenuDto vo) {
         Menu menu = menuRepository.findById(vo.getMenuNo())
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
@@ -395,12 +396,12 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
     public void deleteMenuManage(MenuDto vo) {
         menuRepository.deleteById(vo.getMenuNo());
     }
 
-    @CacheEvict(value = {"allMenus", "menuHierarchy"}, allEntries = true)
+    @CacheEvict(value = {"allMenus", "menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;
