@@ -410,6 +410,12 @@ public class EgovAnnvrsryManageController {
 			status.setComplete();
 			annvrsryManage.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
+			// Validate AnnId
+			if (StringUtils.isEmpty(annvrsryManage.getAnnId())) {
+				model.addAttribute("message", "Anniversary ID is required for update.");
+				return "egovframework/com/uss/ion/ans/EgovAnnvrsryManageUpdt";
+			}
+
 			// Duplicate Check (excluding current ID)
 			if (egovAnnvrsryManageService.checkAnniversaryDuplicate(annvrsryManage.getUsid(),
 					EgovStringUtil.removeMinusChar(annvrsryManage.getAnnvrsryDe()),
