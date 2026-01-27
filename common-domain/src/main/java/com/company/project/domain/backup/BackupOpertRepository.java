@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface BackupOpertRepository extends JpaRepository<BackupOpert, String> {
 
-    @EntityGraph(attributePaths = "executSchdulDfkSes")
     @Query("SELECT b FROM BackupOpert b WHERE b.useAt = 'Y' " +
             "AND (:condition = '0' AND b.backupOpertNm LIKE %:keyword% OR " +
             ":condition = '1' AND b.backupOrginlDrctry LIKE %:keyword% OR " +
