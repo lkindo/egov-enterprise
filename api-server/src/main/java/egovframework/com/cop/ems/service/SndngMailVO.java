@@ -1,5 +1,7 @@
 package egovframework.com.cop.ems.service;
 
+import egovframework.com.cmm.ComDefaultVO;
+
 /**
  * 발송메일 VO 클래스
  * 
@@ -18,7 +20,7 @@ package egovframework.com.cop.ems.service;
  *
  *      </pre>
  */
-public class SndngMailVO {
+public class SndngMailVO extends ComDefaultVO {
 
 	/** 메세지ID */
 	private String mssageId;

@@ -1,17 +1,17 @@
 <%
 /**
  * @Class Name : EgovWikMnthngReprtList.jsp
- * @Description : ì£¼ê°„/?”ê°„ë³´ê³  ëª©ë¡ì¡°íšŒ
+ * @Description : ÁÖ°£/¿ù°£º¸°í ¸ñ·ÏÁ¶È¸
  * @Modification Information
  * @
- * @  ?˜ì •??     ?˜ì •??           ?˜ì •?´ìš©
+ * @  ¼öÁ¤ÀÏ      ¼öÁ¤ÀÚ            ¼öÁ¤³»¿ë
  * @ -------        --------    ---------------------------
- * @ 2010.07.19  ?¥ì² ??		ìµœì´ˆ ?ì„±
- * @ 2018.09.27  ?´ì •?€			ê³µí†µì»´í¬?ŒíŠ¸ 3.8 ê°œì„ 
- * @ 2024.10.29  ê¶Œíƒœ??		?”ë²„ê¹…ìš© console.log ?œê±°(fn_egov_select_wikmnthngreprt())
- * @ 2024.10.29  ê¶Œíƒœ??		reprtId ???¬í•¨?˜ê³  ?ˆëŠ” form ?´ë¦„?¼ë¡œ ë³€ê²?fn_egov_inqire_wikmnthngreprt())
+ * @ 2010.07.19  ÀåÃ¶È£			ÃÖÃÊ »ı¼º
+ * @ 2018.09.27  ÀÌÁ¤Àº			°øÅëÄÄÆ÷³ÍÆ® 3.8 °³¼±
+ * @ 2024.10.29  ±ÇÅÂ¼º			µğ¹ö±ë¿ë console.log Á¦°Å(fn_egov_select_wikmnthngreprt())
+ * @ 2024.10.29  ±ÇÅÂ¼º			reprtId À» Æ÷ÇÔÇÏ°í ÀÖ´Â form ÀÌ¸§À¸·Î º¯°æ(fn_egov_inqire_wikmnthngreprt())
  *
- *  @author ê³µí†µì»´í¬?ŒíŠ¸ê°œë°œ?€ ?¥ì² ??
+ *  @author °øÅëÄÄÆ÷³ÍÆ®°³¹ßÆÀ ÀåÃ¶È£
  *  @since 2010.07.19
  *  @version 1.0
  *  @see
@@ -29,7 +29,7 @@
 <html lang="ko">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title><spring:message code="copSmtWmr.wikMnthngReprtList.wikMnthngReprtList"/></title><!-- ì£¼ê°„/?”ê°„ë³´ê³  ëª©ë¡ì¡°íšŒ -->
+<title><spring:message code="copSmtWmr.wikMnthngReprtList.wikMnthngReprtList"/></title><!-- ÁÖ°£/¿ù°£º¸°í ¸ñ·ÏÁ¶È¸ -->
 <link href="<c:url value="/css/egovframework/com/com.css"/>" rel="stylesheet" type="text/css">
 <link href="<c:url value="/css/egovframework/com/button.css"/>" rel="stylesheet" type="text/css">
 <link href="<c:url value="/css/egovframework/com/cmm/jqueryui.css"/>" rel="stylesheet" type="text/css">
@@ -68,20 +68,20 @@
 		var endDe = document.frm.searchEndDe.value.split("-").join("");
 
 		if(bgnDe != ""){
-			if(isDate(bgnDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchBgnDe"/>") == false) {/* ê²€?‰ì‹œ?‘ì¼??*/
+			if(isDate(bgnDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchBgnDe"/>") == false) {/* °Ë»ö½ÃÀÛÀÏÀÚ */
 		        return;
 		    }
 		}
 
 		if(endDe != ""){
-		    if(isDate(endDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchEndDe"/>") == false) {/* ê²€?‰ì¢…ë£Œì¼??*/
+		    if(isDate(endDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchEndDe"/>") == false) {/* °Ë»öÁ¾·áÀÏÀÚ */
 		        return;
 		    }
 		}
 
 		if(bgnDe != "" && endDe != ""){
 			if(eval(bgnDe) > eval(endDe)){
-				alert("<spring:message code="copSmtWmr.wikMnthngReprtList.validate.searchDeAlert"/>");/* ê²€?‰ì¢…ë£Œì¼?ê? ê²€?‰ì‹œ?‘ì¼?ë³´??ë¹ ë????†ìŠµ?ˆë‹¤. */
+				alert("<spring:message code="copSmtWmr.wikMnthngReprtList.validate.searchDeAlert"/>");/* °Ë»öÁ¾·áÀÏÀÚ°¡ °Ë»ö½ÃÀÛÀÏÀÚº¸´Ù ºü¸¦¼ö ¾ø½À´Ï´Ù. */
 				return;
 			}
 		}
@@ -100,7 +100,7 @@
 		document.frm.submit();
 	}
 /* ********************************************************
- * ?¬ë ¥
+ * ´Ş·Â
  ******************************************************** */
 	function fn_egov_init_date(){
 
@@ -114,9 +114,9 @@
 		         , showOtherMonths: true
 			     , selectOtherMonths: true
 					
-		         , changeMonth: true // ?”ì„ ??select box ?œì‹œ (ê¸°ë³¸?€ false)
-		         , changeYear: true  // ?„ì„ ??selectbox ?œì‹œ (ê¸°ë³¸?€ false)
-		         , showButtonPanel: true // ?˜ë‹¨ today, done  ë²„íŠ¼ê¸°ëŠ¥ ì¶”ê? ?œì‹œ (ê¸°ë³¸?€ false)
+		         , changeMonth: true // ¿ù¼±ÅÃ select box Ç¥½Ã (±âº»Àº false)
+		         , changeYear: true  // ³â¼±ÅÃ selectbox Ç¥½Ã (±âº»Àº false)
+		         , showButtonPanel: true // ÇÏ´Ü today, done  ¹öÆ°±â´É Ãß°¡ Ç¥½Ã (±âº»Àº false)
 		         
 		});
 
@@ -131,9 +131,9 @@
 		         , showOtherMonths: true
 			     , selectOtherMonths: true
 					
-		         , changeMonth: true // ?”ì„ ??select box ?œì‹œ (ê¸°ë³¸?€ false)
-		         , changeYear: true  // ?„ì„ ??selectbox ?œì‹œ (ê¸°ë³¸?€ false)
-		         , showButtonPanel: true // ?˜ë‹¨ today, done  ë²„íŠ¼ê¸°ëŠ¥ ì¶”ê? ?œì‹œ (ê¸°ë³¸?€ false)
+		         , changeMonth: true // ¿ù¼±ÅÃ select box Ç¥½Ã (±âº»Àº false)
+		         , changeYear: true  // ³â¼±ÅÃ selectbox Ç¥½Ã (±âº»Àº false)
+		         , showButtonPanel: true // ÇÏ´Ü today, done  ¹öÆ°±â´É Ãß°¡ Ç¥½Ã (±âº»Àº false)
 		});
 	}
 </script>
@@ -141,45 +141,45 @@
 </head>
 <body onLoad="fn_egov_init_wikmnthngreprt(); fn_egov_init_date()">
 
-<noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- ?ë°”?¤í¬ë¦½íŠ¸ë¥?ì§€?í•˜ì§€ ?ŠëŠ” ë¸Œë¼?°ì??ì„œ???¼ë? ê¸°ëŠ¥???¬ìš©?˜ì‹¤ ???†ìŠµ?ˆë‹¤. -->
+<noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- ÀÚ¹Ù½ºÅ©¸³Æ®¸¦ Áö¿øÇÏÁö ¾Ê´Â ºê¶ó¿ìÀú¿¡¼­´Â ÀÏºÎ ±â´ÉÀ» »ç¿ëÇÏ½Ç ¼ö ¾ø½À´Ï´Ù. -->
 
 <div class="board">
 <form name="frm" method="post" action="<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>">
-	<h1><spring:message code="copSmtWmr.wikMnthngReprtList.wikMnthngReprtList"/></h1><!-- ì£¼ê°„/?”ê°„ë³´ê³  ëª©ë¡ -->
+	<h1><spring:message code="copSmtWmr.wikMnthngReprtList.wikMnthngReprtList"/></h1><!-- ÁÖ°£/¿ù°£º¸°í ¸ñ·Ï -->
 
-	<div class="search_box" title="<spring:message code="common.searchCondition.msg" />"><!-- ???ˆì´?„ì›ƒ?€ ?˜ë‹¨ ?•ë³´ë¥??€??ê²€???•ë³´ë¡?êµ¬ì„±?˜ì–´ ?ˆìŠµ?ˆë‹¤. -->
+	<div class="search_box" title="<spring:message code="common.searchCondition.msg" />"><!-- ÀÌ ·¹ÀÌ¾Æ¿ôÀº ÇÏ´Ü Á¤º¸¸¦ ´ëÇÑ °Ë»ö Á¤º¸·Î ±¸¼ºµÇ¾î ÀÖ½À´Ï´Ù. -->
 		<ul style="text-align:left">
 			<li>
-				<select name="searchSttus" class="select" title="<spring:message code="input.cSelect"/>" style="margin-bottom:2px"><!-- ? íƒ -->
-					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSttus"/></option><!-- ?¹ì¸?¬ë? -->
-					<option value="0" <c:if test="${searchVO.searchSttus == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.unapproved"/></option><!-- ë¯¸ìŠ¹??-->
-					<option value="1" <c:if test="${searchVO.searchSttus == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.approval"/></option><!-- ?¹ì¸ -->
+				<select name="searchSttus" class="select" title="<spring:message code="input.cSelect"/>" style="margin-bottom:2px"><!-- ¼±ÅÃ -->
+					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSttus"/></option><!-- ½ÂÀÎ¿©ºÎ -->
+					<option value="0" <c:if test="${searchVO.searchSttus == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.unapproved"/></option><!-- ¹Ì½ÂÀÎ -->
+					<option value="1" <c:if test="${searchVO.searchSttus == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.approval"/></option><!-- ½ÂÀÎ -->
 			   </select>
 			   
-				<select name="searchDe" class="select" title="<spring:message code="input.cSelect"/>" style="width:90px"><!-- ? íƒ -->
+				<select name="searchDe" class="select" title="<spring:message code="input.cSelect"/>" style="width:90px"><!-- ¼±ÅÃ -->
 					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchDe"/></option>
-					<option value="0" <c:if test="${searchVO.searchDe == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtDe"/></option><!-- ë³´ê³ ?¼ì -->
-					<option value="1" <c:if test="${searchVO.searchDe == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtBgnEndDe"/></option><!-- ?´ë‹¹?¼ì -->
+					<option value="0" <c:if test="${searchVO.searchDe == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtDe"/></option><!-- º¸°íÀÏÀÚ -->
+					<option value="1" <c:if test="${searchVO.searchDe == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtBgnEndDe"/></option><!-- ÇØ´çÀÏÀÚ -->
 				</select>
 				
-				<input name="searchBgnDe" id="searchBgnDe" type="text" maxlength="10" value="<c:out value="${searchVO.searchBgnDe}"/>" title="<spring:message code="input.input"/>" style="width:79px" /><!-- ?…ë ¥ -->
-				~<input name="searchEndDe" id="searchEndDe" type="text" maxlength="10" value="<c:out value="${searchVO.searchEndDe}"/>" title="<spring:message code="input.input"/>" style="width:79px" /><!-- ?…ë ¥ -->
+				<input name="searchBgnDe" id="searchBgnDe" type="text" maxlength="10" value="<c:out value="${searchVO.searchBgnDe}"/>" title="<spring:message code="input.input"/>" style="width:79px" /><!-- ÀÔ·Â -->
+				~<input name="searchEndDe" id="searchEndDe" type="text" maxlength="10" value="<c:out value="${searchVO.searchEndDe}"/>" title="<spring:message code="input.input"/>" style="width:79px" /><!-- ÀÔ·Â -->
 				<br />
 				
-				<select name="searchSe" class="select" title="<spring:message code="input.cSelect"/>"><!-- ? íƒ -->
-					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSe"/></option><!-- ë³´ê³ ? í˜• -->
-					<option value="1" <c:if test="${searchVO.searchSe == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.WeeklyReport"/></option><!-- ì£¼ê°„ë³´ê³  -->
-					<option value="2" <c:if test="${searchVO.searchSe == '2'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.MonthlyReport"/></option><!-- ?”ê°„ë³´ê³  -->
+				<select name="searchSe" class="select" title="<spring:message code="input.cSelect"/>"><!-- ¼±ÅÃ -->
+					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSe"/></option><!-- º¸°íÀ¯Çü -->
+					<option value="1" <c:if test="${searchVO.searchSe == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.WeeklyReport"/></option><!-- ÁÖ°£º¸°í -->
+					<option value="2" <c:if test="${searchVO.searchSe == '2'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.MonthlyReport"/></option><!-- ¿ù°£º¸°í -->
 				</select>
-				<select name="searchCnd" class="select" title="<spring:message code="input.cSelect"/>"><!-- ? íƒ -->
-					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchCnd"/></option><!-- ?œëª©/?‘ì„±??-->
-					<option value="0" <c:if test="${searchVO.searchCnd == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtSj"/></option><!-- ?œëª© -->
-					<option value="1" <c:if test="${searchVO.searchCnd == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.wrterNm"/></option><!-- ?‘ì„±??-->
+				<select name="searchCnd" class="select" title="<spring:message code="input.cSelect"/>"><!-- ¼±ÅÃ -->
+					<option value="3"><spring:message code="copSmtWmr.wikMnthngReprtList.searchCnd"/></option><!-- Á¦¸ñ/ÀÛ¼ºÀÚ -->
+					<option value="0" <c:if test="${searchVO.searchCnd == '0'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.reprtSj"/></option><!-- Á¦¸ñ -->
+					<option value="1" <c:if test="${searchVO.searchCnd == '1'}">selected="selected"</c:if> ><spring:message code="copSmtWmr.wikMnthngReprtList.wrterNm"/></option><!-- ÀÛ¼ºÀÚ -->
 				</select>
-				<input name="searchWrd" type="text" value="<c:out value="${searchVO.searchWrd}"/>" maxlength="35" onkeypress="press(event);" title="<spring:message code="title.search"/>" style="width:380px" /><!-- ê²€?‰ì–´  -->
+				<input name="searchWrd" type="text" value="<c:out value="${searchVO.searchWrd}"/>" maxlength="35" onkeypress="press(event);" title="<spring:message code="title.search"/>" style="width:380px" /><!-- °Ë»ö¾î  -->
 				
-				<input class="s_btn" type="submit" value="<spring:message code="button.inquire"/>" title="<spring:message code="button.inquire"/>" onclick="fn_egov_select_wikmnthngreprt(); return false;" /><!-- ì¡°íšŒ -->
-				<input class="s_btn" type="submit" value="<spring:message code="button.create"/>" title="<spring:message code="button.create"/>" onclick="fn_egov_insert_wikmnthngreprt(); return false;" /><!-- ?±ë¡ -->
+				<input class="s_btn" type="submit" value="<spring:message code="button.inquire"/>" title="<spring:message code="button.inquire"/>" onclick="fn_egov_select_wikmnthngreprt(); return false;" /><!-- Á¶È¸ -->
+				<input class="s_btn" type="submit" value="<spring:message code="button.create"/>" title="<spring:message code="button.create"/>" onclick="fn_egov_insert_wikmnthngreprt(); return false;" /><!-- µî·Ï -->
 			</li>
 		</ul>
 	</div>
@@ -199,13 +199,13 @@
 		</colgroup>
 		<thead>
 			<tr>
-			   <th scope="col"><spring:message code="table.num"/></th><!-- ë²ˆí˜¸ -->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSe"/></th><!-- ë³´ê³ ? í˜• -->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtDe"/></th><!-- ë³´ê³ ?¼ì -->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtSuj"/></th><!-- ë³´ê³ ?œì œëª?-->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtBgnEndDe"/></th><!-- ?´ë‹¹?¼ì -->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.wrterNm"/></th><!-- ?‘ì„±??-->
-			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.approval"/></th><!-- ?¹ì¸ -->
+			   <th scope="col"><spring:message code="table.num"/></th><!-- ¹øÈ£ -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.searchSe"/></th><!-- º¸°íÀ¯Çü -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtDe"/></th><!-- º¸°íÀÏÀÚ -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtSuj"/></th><!-- º¸°í¼­Á¦¸ñ -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.reprtBgnEndDe"/></th><!-- ÇØ´çÀÏÀÚ -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.wrterNm"/></th><!-- ÀÛ¼ºÀÚ -->
+			   <th scope="col"><spring:message code="copSmtWmr.wikMnthngReprtList.approval"/></th><!-- ½ÂÀÎ -->
 			</tr>
 		</thead>
 		<tbody>

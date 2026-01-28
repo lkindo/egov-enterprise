@@ -42,10 +42,73 @@ public class EgovIdGenConfig {
         return createIdService(tableName, defaultStrategy());
     }
 
+    @Bean
+    public org.springframework.boot.CommandLineRunner initIdGen(DataSource dataSource) {
+        return args -> {
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(
+                    dataSource);
+            String[] ids = { "DEPT_JOB_ID", "DEPT_JOB_BX_ID", "MEMO_TODO_ID", "WIK_MNTHNG_ID" };
+            for (String id : ids) {
+                try {
+                    Integer count = jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM IDS WHERE table_name = ?", Integer.class, id);
+                    if (count != null && count == 0) {
+                        try {
+                            jdbcTemplate.update("INSERT INTO IDS (table_name, next_id) VALUES (?, 0)", id);
+                            System.out.println("Inserted missing ID row: " + id);
+                        } catch (Exception ex) {
+                            System.err.println("Failed to insert ID row for " + id + ": " + ex.getMessage());
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to check ID row for " + id + ": " + e.getMessage());
+                }
+            }
+        };
+    }
+
     // [1] CMS & Portal Core
     @Bean(destroyMethod = "destroy")
     public EgovIdGnrService egovNttIdGnrService() {
         return createIdService("NTT_ID");
+    }
+
+    @Bean
+    public EgovIdGnrStrategyImpl wikMnthngReprtStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("WR");
+        strategy.setCipers(4);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovWikMnthngReprtIdGnrService() {
+        return createIdService("WIK_MNTHNG_ID", wikMnthngReprtStrategy());
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovAnswerNoGnrService() {
+        return createIdService("ANSWER_NO");
+    }
+
+    @Bean
+    public EgovIdGnrStrategyImpl memoTodoIdStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("MEMOTODO_");
+        strategy.setCipers(11);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovMemoTodoIdGnrService() {
+        return createIdService("MEMO_TODO_ID", memoTodoIdStrategy());
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovMemoRepIdGnrService() {
+        return createIdService("MEMO_REP_ID");
     }
 
     @Bean(destroyMethod = "destroy")
@@ -430,11 +493,6 @@ public class EgovIdGenConfig {
     }
 
     @Bean(destroyMethod = "destroy")
-    public EgovIdGnrService egovMemoTodoIdGnrService() {
-        return createIdService("MEMO_TODO_ID");
-    }
-
-    @Bean(destroyMethod = "destroy")
     public EgovIdGnrService egovMemoReprtIdGnrService() {
         return createIdService("MEMO_REPRT_ID");
     }
@@ -474,11 +532,6 @@ public class EgovIdGenConfig {
         return createIdService("CMT_ID");
     }
 
-    @Bean(destroyMethod = "destroy")
-    public EgovIdGnrService egovWikMnthngReprtIdGnrService() {
-        return createIdService("WIK_MNTHNG_ID");
-    }
-
     // [8] External Systems & Data
     @Bean(destroyMethod = "destroy")
     public EgovIdGnrService egovDeptIdGnrService() {
@@ -500,9 +553,18 @@ public class EgovIdGenConfig {
         return createIdService("RESTDE_ID");
     }
 
+    @Bean
+    public EgovIdGnrStrategyImpl deptJobIdStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("DEPTJOB_");
+        strategy.setCipers(12);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
     @Bean(destroyMethod = "destroy")
     public EgovIdGnrService egovDeptJobIdGnrService() {
-        return createIdService("DEPT_JOB_ID");
+        return createIdService("DEPT_JOB_ID", deptJobIdStrategy());
     }
 
     @Bean(destroyMethod = "destroy")
@@ -510,9 +572,18 @@ public class EgovIdGenConfig {
         return createIdService("DEPT_JOB_LOG_ID");
     }
 
+    @Bean
+    public EgovIdGnrStrategyImpl deptJobBxIdStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("DX_");
+        strategy.setCipers(3);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
     @Bean(destroyMethod = "destroy")
     public EgovIdGnrService egovDeptJobBxIdGnrService() {
-        return createIdService("DEPT_JOB_BX_ID");
+        return createIdService("DEPT_JOB_BX_ID", deptJobBxIdStrategy());
     }
 
     @Bean(destroyMethod = "destroy")
@@ -638,4 +709,33 @@ public class EgovIdGenConfig {
     public EgovIdGnrService egovMailMsgIdGnrService() {
         return createIdService("MAILMSG_ID", mailMsgStrategy());
     }
+
+    @Bean
+    public EgovIdGnrStrategyImpl adbkIdStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("ADBK_");
+        strategy.setCipers(15);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovAdbkIdGnrService() {
+        return createIdService("ADBK_ID", adbkIdStrategy());
+    }
+
+    @Bean
+    public EgovIdGnrStrategyImpl adbkUserIdStrategy() {
+        EgovIdGnrStrategyImpl strategy = new EgovIdGnrStrategyImpl();
+        strategy.setPrefix("ADBKUSER_");
+        strategy.setCipers(11);
+        strategy.setFillChar('0');
+        return strategy;
+    }
+
+    @Bean(destroyMethod = "destroy")
+    public EgovIdGnrService egovAdbkUserIdGnrService() {
+        return createIdService("ADBKUSER_ID", adbkUserIdStrategy());
+    }
+
 }
