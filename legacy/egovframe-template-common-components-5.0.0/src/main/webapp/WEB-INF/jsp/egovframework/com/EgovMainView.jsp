@@ -43,7 +43,7 @@ function chk_all(val) {
 		<div class="l"><!-- right layout -->
 			<h3 class="m_tit01 mt15"><spring:message code="comSymMnuMpm.mainView.subMenuList"/></h3><!-- 부메뉴 목록 보기 -->
 			<div style="height:150px">
-			<iframe name="frmSubMemnuList" src="" width="100%" height="160" border="0" frameborder="no" scrolling="no" marginwidth="0" hspace="0" vspace="0"></iframe>
+			<iframe name="frmSubMemnuList" title="서브메뉴 영역" src="" width="100%" height="160" border="0" frameborder="no" scrolling="no" marginwidth="0" hspace="0" vspace="0"></iframe>
 			</div>
 
 			<!-- 부서일정관리  -->

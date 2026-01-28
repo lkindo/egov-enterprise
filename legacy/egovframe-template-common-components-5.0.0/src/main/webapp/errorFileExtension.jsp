@@ -3,7 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page isErrorPage="true" %>
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
 <meta charset="utf-8">
 <title>▒▒▒  eGovFrame Potal 온라인 지원 포탈  ▒▒▒</title>
@@ -17,7 +17,7 @@ function fncGoAfterErrorPage(){
 </head>
 <body>
 <div style="width: 1000px; margin: 50px auto 50px;">
-	<p style="font-size: 18px; color: #000; margin-bottom: 10px; "><img src="<c:url value='/images/egovframework/com/cmm/er_logo.jpg' />" width="379" height="57" /></p>
+	<p style="font-size: 18px; color: #000; margin-bottom: 10px; "><img src="<c:url value='/images/egovframework/com/cmm/er_logo.jpg' />" width="379" height="57" alt="eGovFrame Logo" /></p>
 	<div style="border: 0px solid #666; padding: 20px;">
 		<!-- 404 -->
 		<p style="color:red; margin-bottom: 8px; ">500 Error</p>
