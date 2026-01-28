@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
-<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <% 
 /**
@@ -132,22 +132,8 @@
 .c_box .btn a {display:block; width:19px; height:19px; margin-bottom:2px; border:1px solid #ddd; color:#666; font-size:15px; text-align:center; line-height:19px; }
 </style>
 
-
-    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
-    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
-    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 <body onLoad="fn_egov_init_deptjobbx()">
-<div class="wrap">
-<c:import url="/sym/mms/EgovHeader.do" />
-<div class="container" style="padding-bottom: 60px;">
-<div class="sub_layout">
-<div class="sub_in">
-<div class="layout">
-
 
 <noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript>
 
@@ -244,13 +230,6 @@
 			<ui:pagination paginationInfo="${paginationInfo}" type="image" jsFunction="fn_egov_select_deptjobbx"/>
 		</ul>
 	</div>
-</div>
-
-</div>
-</div>
-</div>
-</div>
-<c:import url="/sym/mms/EgovFooter.do" />
 </div>
 </body>
 </html>

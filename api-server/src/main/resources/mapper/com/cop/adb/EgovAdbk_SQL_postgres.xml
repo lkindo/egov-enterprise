@@ -98,9 +98,9 @@
 			FROM
 				NADBKMANAGE
 			WHERE USE_AT = 'Y'
-				AND( OTHBC_SCOPE = '?뚯궗	'
+				AND( OTHBC_SCOPE = '회사'
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '遺??
+						OR (OTHBC_SCOPE = '부서'
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)
 
 		
@@ -136,9 +136,9 @@
 			FROM
 				NADBKMANAGE
 			WHERE USE_AT = 'Y'
-				AND (OTHBC_SCOPE = '?뚯궗'
+				AND (OTHBC_SCOPE = '회사'
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '遺??
+						OR (OTHBC_SCOPE = '부서'
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)
 
 

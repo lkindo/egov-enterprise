@@ -1,15 +1,15 @@
 <% 
 /**
  * @Class Name : EgovWikMnthngReprtDetail.jsp
- * @Description : 주간/월간보고 상세보기
+ * @Description : 주간/?�간보고 ?�세보기
  * @Modification Information
  * @
- * @  수정일      수정자            수정내용
+ * @  ?�정??     ?�정??           ?�정?�용
  * @ -------        --------    ---------------------------
- * @ 2010.07.21   장철호          최초 생성
- * @ 2018.10.02   이정은          공통컴포넌트 3.8 개선
+ * @ 2010.07.21   ?�철??         최초 ?�성
+ * @ 2018.10.02   ?�정?�          공통컴포?�트 3.8 개선
  *
- *  @author 공통컴포넌트개발팀 장철호
+ *  @author 공통컴포?�트개발?� ?�철??
  *  @since 2010.07.21
  *  @version 1.0 
  *  @see
@@ -17,9 +17,9 @@
  */
 %>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
-<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="egovc" uri="/WEB-INF/tlds/egovc.tld" %>
@@ -28,7 +28,7 @@
 <html lang="ko">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title><spring:message code="copSmtWmr.wikMnthngReprtDetail.wikMnthngReprtDetail"/></title><!-- 주간/월간보고 상세보기 -->
+<title><spring:message code="copSmtWmr.wikMnthngReprtDetail.wikMnthngReprtDetail"/></title><!-- 주간/?�간보고 ?�세보기 -->
 <link href="<c:url value="/css/egovframework/com/com.css"/>" rel="stylesheet" type="text/css">
 <link href="<c:url value="/css/egovframework/com/button.css"/>" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="<c:url value='/js/egovframework/com/sym/cal/EgovCalPopup.js' />"></script>
@@ -46,21 +46,21 @@
 	}
 
 	function fn_egov_delete_wikmnthngreprt(){
-		if(confirm("<spring:message code="common.delete.msg"/>")){/* 삭제 하시겠습니까? */
+		if(confirm("<spring:message code="common.delete.msg"/>")){/* ??�� ?�시겠습?�까? */
 			document.wikMnthngReprtVO.action = "<c:url value='/cop/smt/wmr/deleteWikMnthngReprt.do'/>";
 			document.wikMnthngReprtVO.submit();
 		}
 	}
 
 	function fn_egov_confirm_wikmnthngreprt(){
-		if(confirm("<spring:message code="common.acknowledgement.msg"/>")){/* 승인 하시겠습니까? */
+		if(confirm("<spring:message code="common.acknowledgement.msg"/>")){/* ?�인 ?�시겠습?�까? */
 			document.wikMnthngReprtVO.action = "<c:url value='/cop/smt/wmr/confirmWikMnthngReprt.do'/>";
 			document.wikMnthngReprtVO.submit();
 		}
 	}
 
 	/* ********************************************************
-	 * 목록 으로 가기
+	 * 목록 ?�로 가�?
 	 ******************************************************** */
 	function fn_egov_list_wikmnthngreprt(){
 		document.wikMnthngReprtVO.action = "<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>";
@@ -69,7 +69,7 @@
 
 
 	/* ********************************************************
-	* 아이디  팝업창열기
+	* ?�이?? ?�업창열�?
 	******************************************************** */
 	function fn_egov_reportr_WikMnthngReprt(strTitle, frmUniqId, frmEmplNo, frmEmplyrNm, frmOrgnztNm){
 		var arrParam = new Array(6);
@@ -84,39 +84,25 @@
 	}
 </script>
 
-
-    <link rel="stylesheet" href="<c:url value='/css/base.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/layout.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/component.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/page.css'/>">
-    <script src="<c:url value='/js/jquery-1.11.2.min.js'/>"></script>
-    <script src="<c:url value='/js/ui.js'/>"></script>
 </head>
 <body onLoad="fn_egov_init_WikMnthngReprt()">
-<div class="wrap">
-<c:import url="/sym/mms/EgovHeader.do" />
-<div class="container" style="padding-bottom: 60px;">
-<div class="sub_layout">
-<div class="sub_in">
-<div class="layout">
 
+<noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- ?�바?�크립트�?지?�하지 ?�는 브라?��??�서???��? 기능???�용?�실 ???�습?�다. -->
 
-<noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- 자바스크립트를 지원하지 않는 브라우저에서는 일부 기능을 사용하실 수 없습니다. -->
-
-<form:form modelAttribute="wikMnthngReprtVO" name="wikMnthngReprtVO" method="post" action="${pageContext.request.contextPath}/cop/smt/wmr/modifyWikMnthngReprt.do' />">
+<form:form modelAttribute="wikMnthngReprtVO" name="wikMnthngReprtVO" method="post" action="${pageContext.request.contextPath}/cop/smt/wmr/modifyWikMnthngReprt.do">
 
 <div class="wTableFrm">
-	<!-- 타이틀 -->
-	<h2><spring:message code="copSmtWmr.wikMnthngReprtDetail.wikMnthngReprtDetail"/></h2><!-- 주간/월간보고 상세보기 -->
+	<!-- ?�?��? -->
+	<h2><spring:message code="copSmtWmr.wikMnthngReprtDetail.wikMnthngReprtDetail"/></h2><!-- 주간/?�간보고 ?�세보기 -->
 
-	<!-- 등록폼 -->
+	<!-- ?�록??-->
 	<table class="wTable">
 		<colgroup>
 			<col style="width:16%" />
 			<col style="" />
 		</colgroup>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSeInfo"/> <span class="pilsu">*</span></th><!-- 보고유형 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSeInfo"/> <span class="pilsu">*</span></th><!-- 보고?�형 -->
 			<td class="left">
 			    <c:forEach items="${reprtSe}" var="reprtSeInfo" varStatus="status">
 				<c:if test="${reprtSeInfo.code eq wikMnthngReprt.reprtSe}">	
@@ -126,13 +112,13 @@
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtDe"/> <span class="pilsu">*</span></th><!-- 보고일자 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtDe"/> <span class="pilsu">*</span></th><!-- 보고?�자 -->
 			<td class="left">
 			    <c:out value="${wikMnthngReprt.reprtDe}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtBgnEndDe"/> <span class="pilsu">*</span></th><!-- 해당일자 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtBgnEndDe"/> <span class="pilsu">*</span></th><!-- ?�당?�자 -->
 			<td class="left">
 			    <c:out value="${wikMnthngReprt.reprtBgnDe}" escapeXml="false" />
 				~
@@ -140,45 +126,45 @@
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.wrterNm"/> <span class="pilsu">*</span></th><!-- 작성자 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.wrterNm"/> <span class="pilsu">*</span></th><!-- ?�성??-->
 			<td class="left">
 				<c:out value="${wikMnthngReprt.wrterClsfNm}" escapeXml="false" />
 				<c:out value="${wikMnthngReprt.wrterNm}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reportrNm"/> <span class="pilsu">*</span></th><!-- 보고대상자 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reportrNm"/> <span class="pilsu">*</span></th><!-- 보고?�?�자 -->
 			<td class="left">
 			    <c:out value="${wikMnthngReprt.reportrClsfNm}" escapeXml="false" />
 				<c:out value="${wikMnthngReprt.reportrNm}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSuj"/> <span class="pilsu">*</span></th><!-- 보고서제목 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSuj"/> <span class="pilsu">*</span></th><!-- 보고?�제�?-->
 			<td class="left">
 			    <c:out value="${wikMnthngReprt.reprtSj}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtThswikCn"/> <span class="pilsu">*</span></th><!-- 금주보고내용 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtThswikCn"/> <span class="pilsu">*</span></th><!-- 금주보고?�용 -->
 			<td class="left">
 			    <c:out value="${fn:replace(wikMnthngReprt.reprtThswikCn , crlf , '<br>')}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtLesseeCn"/> <span class="pilsu">*</span></th><!-- 차주보고내용 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtLesseeCn"/> <span class="pilsu">*</span></th><!-- 차주보고?�용 -->
 			<td class="left">
 			    <c:out value="${fn:replace(wikMnthngReprt.reprtLesseeCn , crlf , '<br>')}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.partclrMatter"/></th><!-- 특이사항 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.partclrMatter"/></th><!-- ?�이?�항 -->
 			<td class="left">
 			    <c:out value="${fn:replace(wikMnthngReprt.partclrMatter , crlf , '<br>')}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.file"/></th><!-- 파일첨부 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.file"/></th><!-- ?�일첨�? -->
 			<td class="left">
 			    <c:import charEncoding="utf-8" url="/cmm/fms/selectFileInfs.do" > 
 				<c:param name="param_atchFileId" value="${egovc:encrypt(wikMnthngReprt.atchFileId)}" /> 
@@ -186,21 +172,21 @@
 			</td>
 		</tr>
 		<tr>
-			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSttus"/></th><!-- 보고서 상태 -->
+			<th><spring:message code="copSmtWmr.wikMnthngReprtDetail.reprtSttus"/></th><!-- 보고???�태 -->
 			<td class="left">
 			    <c:out value="${wikMnthngReprt.reprtSttus}" escapeXml="false" />&nbsp;
 			</td>
 		</tr>
 	</table>
 
-	<!-- 하단 버튼 -->
+	<!-- ?�단 버튼 -->
 	<div class="btn">
-		<c:if test="${fn:substring(wikMnthngReprt.reprtSttus,0,2) eq '등록' && wikMnthngReprt.reportrId eq uniqId}">
-		<span class="btn_s"><a href="<c:url value='/cop/smt/wmr/confirmWikMnthngReprt.do'/>?searchWrd=<c:out value='${wikMnthngReprtVO.searchWrd}'/>&amp;searchCnd=<c:out value='${wikMnthngReprtVO.searchCnd}'/>&amp;pageIndex=<c:out value='${wikMnthngReprtVO.pageIndex}'/>&amp;searchSttus=<c:out value='${wikMnthngReprtVO.searchSttus}'/>&amp;searchDe=<c:out value='${wikMnthngReprtVO.searchDe}'/>&amp;searchBgnDe=<c:out value='${wikMnthngReprtVO.searchBgnDe}'/>&amp;searchEndDe=<c:out value='${wikMnthngReprtVO.searchEndDe}'/>" onclick="fn_egov_confirm_wikmnthngreprt(); return false;"><spring:message code="button.acknowledgment" /></a></span><!-- 승인 -->
+		<c:if test="${fn:substring(wikMnthngReprt.reprtSttus,0,2) eq '?�록' && wikMnthngReprt.reportrId eq uniqId}">
+		<span class="btn_s"><a href="<c:url value='/cop/smt/wmr/confirmWikMnthngReprt.do'/>?searchWrd=<c:out value='${wikMnthngReprtVO.searchWrd}'/>&amp;searchCnd=<c:out value='${wikMnthngReprtVO.searchCnd}'/>&amp;pageIndex=<c:out value='${wikMnthngReprtVO.pageIndex}'/>&amp;searchSttus=<c:out value='${wikMnthngReprtVO.searchSttus}'/>&amp;searchDe=<c:out value='${wikMnthngReprtVO.searchDe}'/>&amp;searchBgnDe=<c:out value='${wikMnthngReprtVO.searchBgnDe}'/>&amp;searchEndDe=<c:out value='${wikMnthngReprtVO.searchEndDe}'/>" onclick="fn_egov_confirm_wikmnthngreprt(); return false;"><spring:message code="button.acknowledgment" /></a></span><!-- ?�인 -->
 		</c:if>
 		
-		<c:if test="${fn:substring(wikMnthngReprt.reprtSttus,0,2) eq '등록' && wikMnthngReprt.wrterId eq uniqId}">	
-		<input class="s_submit" type="submit" value='<spring:message code="button.update" />' onclick="fn_egov_modify_wikmnthngreprt(); return false;" /><!-- 수정 -->
+		<c:if test="${fn:substring(wikMnthngReprt.reprtSttus,0,2) eq '?�록' && wikMnthngReprt.wrterId eq uniqId}">	
+		<input class="s_submit" type="submit" value='<spring:message code="button.update" />' onclick="fn_egov_modify_wikmnthngreprt(); return false;" /><!-- ?�정 -->
 		<span class="btn_s"><a href="<c:url value='/cop/smt/wmr/deleteWikMnthngReprt.do'/>?reprtId=<c:out value='${egovc:encryptId(wikMnthngReprtVO.reprtId)}'/>" onclick="fn_egov_delete_wikmnthngreprt(); return false;"><spring:message code="button.delete" /></a></span>
 		</c:if>
 		
@@ -212,7 +198,7 @@
 	<!--form:hidden path="reprtId" / -->
 	<input type="hidden" name="reprtId" value="<c:out value='${egovc:encryptId(wikMnthngReprtVO.reprtId)}'/>" />
 	
-	<!-- 검색조건 유지 -->
+	<!-- 검?�조�??��? -->
     <input type="hidden" name="searchWrd" value="<c:out value='${wikMnthngReprtVO.searchWrd}'/>" />
     <input type="hidden" name="searchCnd" value="<c:out value='${wikMnthngReprtVO.searchCnd}'/>" />
     <input type="hidden" name="pageIndex" value="<c:out value='${wikMnthngReprtVO.pageIndex}'/>" />
@@ -220,15 +206,8 @@
     <input type="hidden" name="searchDe" value="<c:out value='${wikMnthngReprtVO.searchDe}'/>" />
     <input type="hidden" name="searchBgnDe" value="<c:out value='${wikMnthngReprtVO.searchBgnDe}'/>" />
     <input type="hidden" name="searchEndDe" value="<c:out value='${wikMnthngReprtVO.searchEndDe}'/>" />
-    <!-- 검색조건 유지 -->
+    <!-- 검?�조�??��? -->
 </form:form>
 
-
-</div>
-</div>
-</div>
-</div>
-<c:import url="/sym/mms/EgovFooter.do" />
-</div>
 </body>
 </html>

@@ -1,0 +1,100 @@
+<%
+/**
+ * @Class Name : EgovWikMnthngReprtList.jsp
+ * @Description : 주간/?�간보고 목록조회
+ * @Modification Information
+ * @
+ * @  ?�정??     ?�정??           ?�정?�용
+ * @ -------        --------    ---------------------------
+ * @ 2010.07.19  ?�철??		최초 ?�성
+ * @ 2018.09.27  ?�정?�			공통컴포?�트 3.8 개선
+ * @ 2024.10.29  권태??		?�버깅용 console.log ?�거(fn_egov_select_wikmnthngreprt())
+ * @ 2024.10.29  권태??		reprtId ???�함?�고 ?�는 form ?�름?�로 변�?fn_egov_inqire_wikmnthngreprt())
+ *
+ *  @author 공통컴포?�트개발?� ?�철??
+ *  @since 2010.07.19
+ *  @version 1.0
+ *  @see
+ *
+ */
+%>
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="egovc" uri="/WEB-INF/tlds/egovc.tld" %>
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title><spring:message code="copSmtWmr.wikMnthngReprtList.wikMnthngReprtList"/></title><!-- 주간/?�간보고 목록조회 -->
+<link href="<c:url value="/css/egovframework/com/com.css"/>" rel="stylesheet" type="text/css">
+<link href="<c:url value="/css/egovframework/com/button.css"/>" rel="stylesheet" type="text/css">
+<link href="<c:url value="/css/egovframework/com/cmm/jqueryui.css"/>" rel="stylesheet" type="text/css">
+<script src="<c:url value='/js/egovframework/com/cmm/jquery.js' />"></script>
+<script src="<c:url value='/js/egovframework/com/cmm/jqueryui.js' />"></script>
+<script type="text/javascript" src="<c:url value='/js/egovframework/com/cmm/utl/EgovCmmUtl.js' />"></script>
+<script type="text/javascript">
+
+	function fn_egov_init_wikmnthngreprt(){
+		if(document.frm.searchBgnDe.value != ""){
+			document.frm.searchBgnDe.value = document.frm.searchBgnDe.value.substring(0,4) + "-" + document.frm.searchBgnDe.value.substring(4,6) + "-" + document.frm.searchBgnDe.value.substring(6,8);
+		}
+
+		if(document.frm.searchEndDe.value != ""){
+			document.frm.searchEndDe.value = document.frm.searchEndDe.value.substring(0,4) + "-" + document.frm.searchEndDe.value.substring(4,6) + "-" + document.frm.searchEndDe.value.substring(6,8);
+		}
+	}
+
+	function press(event) {
+		if (event.keyCode==13) {
+			fn_egov_select_linkPage('1');
+		}
+	}
+	
+	function fn_egov_select_linkPage(pageNo){
+		document.frm.pageIndex.value = pageNo;
+		document.frm.action = "<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>";
+	   	document.frm.submit();
+	}
+
+	function fn_egov_select_wikmnthngreprt() {
+		document.frm.pageIndex.value = "1";
+		document.frm.action = "<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>";
+
+		var bgnDe = document.frm.searchBgnDe.value.split("-").join("");
+		var endDe = document.frm.searchEndDe.value.split("-").join("");
+
+		if(bgnDe != ""){
+			if(isDate(bgnDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchBgnDe"/>") == false) {/* 검?�시?�일??*/
+		        return;
+		    }
+		}
+
+		if(endDe != ""){
+		    if(isDate(endDe, "<spring:message code="copSmtWmr.wikMnthngReprtList.searchEndDe"/>") == false) {/* 검?�종료일??*/
+		        return;
+		    }
+		}
+
+		if(bgnDe != "" && endDe != ""){
+			if(eval(bgnDe) > eval(endDe)){
+				alert("<spring:message code="copSmtWmr.wikMnthngReprtList.validate.searchDeAlert"/>");/* 검?�종료일?��? 검?�시?�일?�보??빠�????�습?�다. */
+				return;
+			}
+		}
+
+		document.frm.submit();
+	}
+
+	function fn_egov_inqire_wikmnthngreprt(reprtId) {
+		document.frm.reprtId.value = reprtId;
+		document.frm.action = "<c:url value='/cop/smt/wmr/selectWikMnthngReprt.do'/>";
+		document.frm.submit();
+	}
+
+	function fn_egov_insert_wikmnthngreprt(){
+		document.frm.action = "<c:url value='/cop/smt/wmr/addWikMnthngReprt.do'/>";
+		document.frm.submit();

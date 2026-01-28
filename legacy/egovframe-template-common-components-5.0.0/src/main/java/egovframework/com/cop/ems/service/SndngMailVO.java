@@ -1,13 +1,16 @@
 package egovframework.com.cop.ems.service;
 
+import egovframework.com.cmm.ComDefaultVO;
+
 /**
  * 발송메일 VO 클래스
+ * 
  * @author 공통서비스 개발팀 박지욱
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자          수정내용
@@ -15,9 +18,9 @@ package egovframework.com.cop.ems.service;
  *  2009.03.12  박지욱          최초 생성
  *  2011.12.06  이기하          첨부파일경로(fileStreCours), 첨부파일이름(orignlFileNm) 추가
  *
- *  </pre>
+ *      </pre>
  */
-public class SndngMailVO {
+public class SndngMailVO extends ComDefaultVO {
 
 	/** 메세지ID */
 	private String mssageId;
@@ -48,6 +51,7 @@ public class SndngMailVO {
 
 	/**
 	 * mssageId attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getMssageId() {
@@ -56,6 +60,7 @@ public class SndngMailVO {
 
 	/**
 	 * mssageId attribute 값을 설정한다.
+	 * 
 	 * @param mssageId String
 	 */
 	public void setMssageId(String mssageId) {
@@ -64,6 +69,7 @@ public class SndngMailVO {
 
 	/**
 	 * dsptchPerson attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getDsptchPerson() {
@@ -72,6 +78,7 @@ public class SndngMailVO {
 
 	/**
 	 * dsptchPerson attribute 값을 설정한다.
+	 * 
 	 * @param dsptchPerson String
 	 */
 	public void setDsptchPerson(String dsptchPerson) {
@@ -80,6 +87,7 @@ public class SndngMailVO {
 
 	/**
 	 * recptnPerson attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getRecptnPerson() {
@@ -88,6 +96,7 @@ public class SndngMailVO {
 
 	/**
 	 * recptnPerson attribute 값을 설정한다.
+	 * 
 	 * @param recptnPerson String
 	 */
 	public void setRecptnPerson(String recptnPerson) {
@@ -96,6 +105,7 @@ public class SndngMailVO {
 
 	/**
 	 * sj attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getSj() {
@@ -104,6 +114,7 @@ public class SndngMailVO {
 
 	/**
 	 * sj attribute 값을 설정한다.
+	 * 
 	 * @param sj String
 	 */
 	public void setSj(String sj) {
@@ -112,6 +123,7 @@ public class SndngMailVO {
 
 	/**
 	 * sndngResultCode attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getSndngResultCode() {
@@ -120,6 +132,7 @@ public class SndngMailVO {
 
 	/**
 	 * sndngResultCode attribute 값을 설정한다.
+	 * 
 	 * @param sndngResultCode String
 	 */
 	public void setSndngResultCode(String sndngResultCode) {
@@ -128,6 +141,7 @@ public class SndngMailVO {
 
 	/**
 	 * emailCn attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getEmailCn() {
@@ -136,6 +150,7 @@ public class SndngMailVO {
 
 	/**
 	 * emailCn attribute 값을 설정한다.
+	 * 
 	 * @param emailCn String
 	 */
 	public void setEmailCn(String emailCn) {
@@ -144,6 +159,7 @@ public class SndngMailVO {
 
 	/**
 	 * atchFileId attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getAtchFileId() {
@@ -152,6 +168,7 @@ public class SndngMailVO {
 
 	/**
 	 * atchFileId attribute 값을 설정한다.
+	 * 
 	 * @param atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -176,6 +193,7 @@ public class SndngMailVO {
 
 	/**
 	 * sndngDe attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getSndngDe() {
@@ -184,6 +202,7 @@ public class SndngMailVO {
 
 	/**
 	 * sndngDe attribute 값을 설정한다.
+	 * 
 	 * @param sndngDe String
 	 */
 	public void setSndngDe(String sndngDe) {
@@ -192,6 +211,7 @@ public class SndngMailVO {
 
 	/**
 	 * atchFileIdList attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getAtchFileIdList() {
@@ -200,6 +220,7 @@ public class SndngMailVO {
 
 	/**
 	 * atchFileIdList attribute 값을 설정한다.
+	 * 
 	 * @param atchFileIdList String
 	 */
 	public void setAtchFileIdList(String atchFileIdList) {
@@ -208,6 +229,7 @@ public class SndngMailVO {
 
 	/**
 	 * xmlContent attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getXmlContent() {
@@ -216,6 +238,7 @@ public class SndngMailVO {
 
 	/**
 	 * xmlContent attribute 값을 설정한다.
+	 * 
 	 * @param xmlContent String
 	 */
 	public void setXmlContent(String xmlContent) {
@@ -224,6 +247,7 @@ public class SndngMailVO {
 
 	/**
 	 * link attribute 를 리턴한다.
+	 * 
 	 * @return String
 	 */
 	public String getLink() {
@@ -232,6 +256,7 @@ public class SndngMailVO {
 
 	/**
 	 * link attribute 값을 설정한다.
+	 * 
 	 * @param link String
 	 */
 	public void setLink(String link) {

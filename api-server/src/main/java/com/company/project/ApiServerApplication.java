@@ -70,14 +70,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // COP 패키지: LegacyCollaborationController와 중복되는 컨트롤러만 제외
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
                                 // "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), // 게시판 - 활성화
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.adb\\.web\\..*"), // 주소록
-                                                                                                                                        // -
-                                                                                                                                        // Legacy
-                                                                                                                                        // 처리
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.ncm\\.web\\..*"), // 명함
-                                                                                                                                        // -
-                                                                                                                                        // Legacy
-                                                                                                                                        // 처리
+
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
                                 // "egovframework\\.com\\.cop\\.smt\\.sim\\.web\\..*"), // 개인일정 - 활성화
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =

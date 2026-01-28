@@ -1,5 +1,7 @@
 package com.company.project.service.mail;
 
+import java.util.Objects;
+
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.mail.SentMail;
@@ -44,17 +46,17 @@ public class MailService implements EgovMailService {
     public String sendMail(String userId, SentMailDto dto) {
         String mssageId = "MAIL_" + String.format("%013d", System.currentTimeMillis());
 
-        SentMail sentMail = SentMail.builder()
+        SentMail sentMail = Objects.requireNonNull(SentMail.builder()
                 .mssageId(mssageId)
                 .sj(dto.getSj())
                 .emailCn(dto.getEmailCn())
                 .dsptchPerson(dto.getDsptchPerson())
                 .recptnPerson(dto.getRecptnPerson())
                 .sndngResultCode("P") // Pending
-                .frstRegisterId(userId)
-                .build();
+                .atchFileId(dto.getAtchFileId())
+                .build());
 
-        sentMailRepository.save(sentMail);
+        sentMailRepository.save(Objects.requireNonNull(sentMail));
 
         try {
             emailSender.send(dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
