@@ -35,6 +35,9 @@ spring:
       prefix: /WEB-INF/jsp/
       suffix: .jsp
 
+jwt:
+  secret: change_me_in_production_secret_key_must_be_very_long_at_least_256_bits
+
 logging:
   level:
     root: info
@@ -53,7 +56,7 @@ file:
 server:
   error:
     include-message: always
-    include-exception: true
-    include-stacktrace: always
+    include-exception: false
+    include-stacktrace: never
     whitelabel:
       enabled: true

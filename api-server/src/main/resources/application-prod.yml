@@ -26,6 +26,9 @@ spring:
       prefix: /WEB-INF/jsp/
       suffix: .jsp
 
+jwt:
+  secret: ${JWT_SECRET}
+
 management:
   endpoints:
     web:
