@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
     List<Menu> findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
 
+    List<Menu> findByUpperMenuNoOrderByMenuOrdrAsc(Long upperMenuNo);
+
     Optional<Menu> findByProgrmFileNm(String progrmFileNm);
 
     @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.progrmFileNm LIKE %:searchKeyword%")
