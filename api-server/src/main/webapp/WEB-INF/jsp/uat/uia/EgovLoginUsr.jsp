@@ -113,7 +113,7 @@
                                                         <dl>
                                                             <dt><label for="id">아이디</label></dt>
                                                             <dd><input type="text" title="아이디를 입력하세요." id="id" name="id"
-                                                                    maxlength="20" /></dd>
+                                                    maxlength="20" placeholder="아이디" /></dd>
                                                         </dl>
 
                                                         <dl>
@@ -121,12 +121,12 @@
                                                             <dd>
                                                                 <input type="password" maxlength="25"
                                                                     title="비밀번호를 입력하세요." id="password" name="password"
-                                                                    onkeydown="javascript:if (event.keyCode == 13) { actionLogin(); }" />
+                                                    onkeydown="javascript:if (event.keyCode == 13) { actionLogin(); }" placeholder="비밀번호" />
                                                             </dd>
                                                         </dl>
 
-                                                        <a href="#" class="btn_login"
-                                                            onclick="javascript:actionLogin(); return false;">로그인</a>
+                                        <button type="button" class="btn_login"
+                                            onclick="javascript:actionLogin();" style="border:0; cursor:pointer; padding:0; font-family:inherit;">로그인</button>
 
                                                         <div class="bot">
                                                             <label for="chk" class="f_chk">
