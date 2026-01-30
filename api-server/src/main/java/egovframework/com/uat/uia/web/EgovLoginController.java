@@ -22,6 +22,7 @@ import org.springframework.web.servlet.ModelAndView;
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovComponentChecker;
 import egovframework.com.cmm.EgovMessageSource;
+import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.config.EgovLoginConfig;
@@ -168,7 +169,8 @@ public class EgovLoginController {
 
 		String message = request.getParameter("loginMessage");
 		if (message != null) {
-			model.addAttribute("loginMessage", message);
+			// 2025.01.30 Sentinel: XSS Vulnerability fix using clearXSSMinimum
+			model.addAttribute("loginMessage", EgovWebUtil.clearXSSMinimum(message));
 		}
 
 		return "uat/uia/EgovLoginUsr";
