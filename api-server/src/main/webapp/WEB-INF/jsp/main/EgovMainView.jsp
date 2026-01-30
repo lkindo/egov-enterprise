@@ -9,7 +9,7 @@
                         <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
                             <!DOCTYPE html
                                 PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-                            <html>
+                            <html lang="ko">
 
                             <head>
                                 <meta charset="UTF-8">
@@ -36,7 +36,7 @@
                                     <c:import url="/sym/mms/EgovHeader.do" />
                                     <!--// Header -->
 
-                                    <div class="container main">
+                                    <div class="container main" id="contents">
                                         <div class="P_MAIN">
                                             <div class="inner">
                                                 <p class="visual">
@@ -53,7 +53,7 @@
                                                             <div class="head">
                                                                 <h2>오늘의 <span>할일</span></h2>
                                                                 <a href="<c:url value='/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_CCCCCCCCCCCC'/>"
-                                                                    class="more">더보기</a>
+                                                                    class="more" aria-label="오늘의 할일 더보기">더보기</a>
                                                             </div>
                                                             <h3>DEBUG: ListSize = ${fn:length(bbsList)}</h3>
                                                             <ul class="list">
@@ -81,7 +81,7 @@
                                                             <div class="head">
                                                                 <h2>최신 업무공지 <span>정보</span></h2>
                                                                 <a href="<c:url value='/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA'/>"
-                                                                    class="more">더보기</a>
+                                                                    class="more" aria-label="최신 업무공지 정보 더보기">더보기</a>
                                                             </div>
                                                             <div class="list">
                                                                 <table>
