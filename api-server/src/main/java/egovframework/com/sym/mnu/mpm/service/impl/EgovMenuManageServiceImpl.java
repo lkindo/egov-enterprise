@@ -174,8 +174,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		// 상위메뉴Id가 0(Root)인 메뉴 조회 (eGov 기준)
 		// MenuRepositoryCustom의 selectMainMenuHead는 uniqId를 받으므로, 여기서는 호환성을 위해 수동 조회 또는
 		// 0번 조회
-		return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc().stream()
-				.filter(m -> m.getUpperMenuNo() == 0)
+		return menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(0L).stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
 	}
@@ -183,8 +182,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Override
 	public List<MenuManageVO> selectMainMenuLeft(MenuManageVO vo) throws Exception {
 		// 특정 상위 메뉴의 하위 메뉴 조회
-		return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc().stream()
-				.filter(m -> m.getUpperMenuNo().equals(Long.valueOf(vo.getMenuNo())))
+		return menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(Long.valueOf(vo.getMenuNo())).stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
 	}
@@ -196,9 +194,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		if (menuOpt.isPresent()) {
 			Menu menu = menuOpt.get();
 			// 하위 메뉴가 있는지 확인
-			List<Menu> children = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc().stream()
-					.filter(m -> m.getUpperMenuNo().equals(menuId))
-					.collect(Collectors.toList());
+			List<Menu> children = menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(menuId);
 			if (!children.isEmpty()) {
 				return selectLastMenuURL(children.get(0).getId().intValue(), sUniqId);
 			} else {
