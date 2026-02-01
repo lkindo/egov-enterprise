@@ -4,7 +4,7 @@
             <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
                 <!DOCTYPE html>
-                <html>
+                <html lang="ko">
 
                 <head>
                     <meta charset="UTF-8">
@@ -87,7 +87,7 @@
                         <c:import url="/sym/mms/EgovHeader.do" />
                         <!-- //Header -->
 
-                        <div class="container" style="padding-bottom: 60px;">
+                        <div class="container" id="contents" style="padding-bottom: 60px;">
                             <div class="sub_layout">
                                 <div class="sub_in">
                                     <div class="layout">
@@ -125,8 +125,8 @@
                                                             </dd>
                                                         </dl>
 
-                                                        <a href="#" class="btn_login"
-                                                            onclick="javascript:actionLogin(); return false;">로그인</a>
+                                                        <button type="button" class="btn_login" style="padding: 0;"
+                                                            onclick="javascript:actionLogin();">로그인</button>
 
                                                         <div class="bot">
                                                             <label for="chk" class="f_chk">
