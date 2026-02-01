@@ -53,6 +53,55 @@ public class EgovStringUtilTest {
         }
         long endTime = System.nanoTime();
 
-        System.out.println("Benchmark time: " + (endTime - startTime) / 1_000_000.0 + " ms");
+        System.out.println("Benchmark Replace time: " + (endTime - startTime) / 1_000_000.0 + " ms");
+    }
+
+    @Test
+    public void testGetHtmlStrCnvr() {
+        String input = "<script>alert('XSS');</script> & \" ' ";
+        String expected = "&lt;script&gt;alert('XSS');&lt;/script&gt; &amp; &quot; ' ";
+        // Note: The original implementation does NOT escape single quotes in getHtmlStrCnvr,
+        // it only handles <, >, &, space(nbsp), apos, quot.
+        // Wait, looking at getHtmlStrCnvr implementation:
+        // replaces &lt; to <, &gt; to >, &amp; to &, &nbsp; to space, &apos; to ', &quot; to "
+        // It converts HTML Entities TO Characters?
+        // Let's re-read the code.
+
+        /*
+        public static String getHtmlStrCnvr(String srcString) {
+            String tmpString = srcString;
+            tmpString = tmpString.replaceAll("&lt;", "<");
+            tmpString = tmpString.replaceAll("&gt;", ">");
+            tmpString = tmpString.replaceAll("&amp;", "&");
+            tmpString = tmpString.replaceAll("&nbsp;", " ");
+            tmpString = tmpString.replaceAll("&apos;", "\'");
+            tmpString = tmpString.replaceAll("&quot;", "\"");
+            return tmpString;
+        }
+        */
+        // YES! It converts Entities -> Characters (Unescaping).
+
+        String inputEnt = "&lt;div&gt;Hello &amp; World&lt;/div&gt;";
+        String expectedChar = "<div>Hello & World</div>";
+
+        assertEquals(expectedChar, EgovStringUtil.getHtmlStrCnvr(inputEnt));
+    }
+
+    @Test
+    public void benchmarkGetHtmlStrCnvr() {
+        String input = "&lt;div&gt;Hello &amp; World&lt;/div&gt; ".repeat(100);
+
+        // Warmup
+        for (int i = 0; i < 1000; i++) {
+            EgovStringUtil.getHtmlStrCnvr(input);
+        }
+
+        long startTime = System.nanoTime();
+        for (int i = 0; i < 10000; i++) {
+            EgovStringUtil.getHtmlStrCnvr(input);
+        }
+        long endTime = System.nanoTime();
+
+        System.out.println("Benchmark GetHtmlStrCnvr time: " + (endTime - startTime) / 1_000_000.0 + " ms");
     }
 }

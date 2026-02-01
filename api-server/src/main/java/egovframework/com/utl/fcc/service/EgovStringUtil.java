@@ -205,7 +205,7 @@ public class EgovStringUtil {
 	 * @return sb.toString() 새로운 문자열로 변환된 문자열 / source 특정문자열이 없는 경우 원본 문자열
 	 */
 	public static String replaceOnce(String source, String subject, String object) {
-		StringBuffer rtnStr = new StringBuffer();
+		StringBuilder rtnStr = new StringBuilder();
 		String preStr = "";
 		String nextStr = source;
 		if (source.indexOf(subject) >= 0) {
@@ -228,7 +228,7 @@ public class EgovStringUtil {
 	 * @return sb.toString() 새로운 문자열로 변환된 문자열
 	 */
 	public static String replaceChar(String source, String subject, String object) {
-		StringBuffer rtnStr = new StringBuffer();
+		StringBuilder rtnStr = new StringBuilder();
 		String preStr = "";
 		String nextStr = source;
 		String srcStr = source;
@@ -496,7 +496,7 @@ public class EgovStringUtil {
 	public static String checkHtmlView(String strString) {
 		String strNew = "";
 
-		StringBuffer strTxt = new StringBuffer("");
+		StringBuilder strTxt = new StringBuilder();
 
 		char chrBuff;
 		int len = strString.length();
@@ -811,7 +811,7 @@ public class EgovStringUtil {
 
 		String rtnStr = null;
 
-		StringBuffer strTxt = new StringBuffer("");
+		StringBuilder strTxt = new StringBuilder();
 
 		char chrBuff;
 		int len = srcString.length();
@@ -874,12 +874,12 @@ public class EgovStringUtil {
 
 		String tmpString = srcString;
 
-		tmpString = tmpString.replaceAll("&lt;", "<");
-		tmpString = tmpString.replaceAll("&gt;", ">");
-		tmpString = tmpString.replaceAll("&amp;", "&");
-		tmpString = tmpString.replaceAll("&nbsp;", " ");
-		tmpString = tmpString.replaceAll("&apos;", "\'");
-		tmpString = tmpString.replaceAll("&quot;", "\"");
+		tmpString = tmpString.replace("&lt;", "<");
+		tmpString = tmpString.replace("&gt;", ">");
+		tmpString = tmpString.replace("&amp;", "&");
+		tmpString = tmpString.replace("&nbsp;", " ");
+		tmpString = tmpString.replace("&apos;", "\'");
+		tmpString = tmpString.replace("&quot;", "\"");
 
 		return tmpString;
 
