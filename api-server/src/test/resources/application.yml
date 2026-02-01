@@ -6,3 +6,6 @@ spring:
 file:
   upload:
     path: ./test-uploads
+
+jwt:
+  secret: "technically_this_is_just_for_test_env_secret_key_value"
