@@ -4,7 +4,7 @@
             <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
                 <!DOCTYPE html>
-                <html>
+                <html lang="ko">
 
                 <head>
                     <meta charset="UTF-8">
@@ -87,7 +87,7 @@
                         <c:import url="/sym/mms/EgovHeader.do" />
                         <!-- //Header -->
 
-                        <div class="container" style="padding-bottom: 60px;">
+                        <div class="container" id="contents" style="padding-bottom: 60px;">
                             <div class="sub_layout">
                                 <div class="sub_in">
                                     <div class="layout">
@@ -112,7 +112,7 @@
 
                                                         <dl>
                                                             <dt><label for="id">아이디</label></dt>
-                                                            <dd><input type="text" title="아이디를 입력하세요." id="id" name="id"
+                                                            <dd><input type="text" title="아이디를 입력하세요." placeholder="아이디" id="id" name="id"
                                                                     maxlength="20" /></dd>
                                                         </dl>
 
@@ -120,13 +120,13 @@
                                                             <dt><label for="password">비밀번호</label></dt>
                                                             <dd>
                                                                 <input type="password" maxlength="25"
-                                                                    title="비밀번호를 입력하세요." id="password" name="password"
+                                                                    title="비밀번호를 입력하세요." placeholder="비밀번호" id="password" name="password"
                                                                     onkeydown="javascript:if (event.keyCode == 13) { actionLogin(); }" />
                                                             </dd>
                                                         </dl>
 
-                                                        <a href="#" class="btn_login"
-                                                            onclick="javascript:actionLogin(); return false;">로그인</a>
+                                                        <button type="button" class="btn_login"
+                                                            onclick="javascript:actionLogin();">로그인</button>
 
                                                         <div class="bot">
                                                             <label for="chk" class="f_chk">
