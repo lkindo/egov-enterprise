@@ -48,3 +48,6 @@ logging:
     org.springframework.web: debug
     org.springframework.web.servlet.DispatcherServlet: trace
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: trace
+
+jwt:
+  secret: dev_secret_key_at_least_256_bits_long_for_hs256_algorithm_safe_for_local_development_only

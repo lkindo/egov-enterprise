@@ -50,3 +50,6 @@ logging:
     rollingpolicy:
       max-file-size: 100MB
       max-history: 30
+
+jwt:
+  secret: ${JWT_SECRET}

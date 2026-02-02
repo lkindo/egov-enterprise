@@ -6,3 +6,6 @@ spring:
 file:
   upload:
     path: ./test-uploads
+
+jwt:
+  secret: test_secret_key_at_least_256_bits_long_for_hs256_algorithm_for_unit_tests
