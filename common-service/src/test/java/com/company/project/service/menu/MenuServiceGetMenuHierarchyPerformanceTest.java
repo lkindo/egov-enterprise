@@ -52,7 +52,7 @@ public class MenuServiceGetMenuHierarchyPerformanceTest {
 
         @Bean
         public CacheManager cacheManager() {
-            return new ConcurrentMapCacheManager("menuHierarchy", "allMenus");
+            return new ConcurrentMapCacheManager("menuHierarchy", "allMenus", "allMenuDtos");
         }
     }
 
