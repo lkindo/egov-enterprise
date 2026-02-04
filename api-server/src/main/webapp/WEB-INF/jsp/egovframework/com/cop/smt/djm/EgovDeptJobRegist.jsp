@@ -247,8 +247,7 @@
 
 										<!-- 하단 버튼 -->
 										<div class="btn">
-											<input class="s_submit" type="submit" value="<spring:message code="
-												button.save" />" onclick="fn_egov_insert_deptjob(); return false;" />
+											<input class="s_submit" type="submit" value="<spring:message code="button.save" />" onclick="fn_egov_insert_deptjob(); return false;" />
 											<span class="btn_s"><a
 													href="<c:url value='/cop/smt/djm/selectDeptJobList.do'/>?searchWrd=<c:out value='${deptJobVO.searchWrd}'/>&amp;searchCnd=<c:out value='${deptJobVO.searchCnd}'/>&amp;pageIndex=<c:out value='${deptJobVO.pageIndex}'/>&amp;searchDeptId=<c:out value='${deptJobVO.searchDeptId}'/>&amp;searchDeptJobBxId=<c:out value='${deptJobVO.searchDeptJobBxId}'/>"
 													onclick="fn_egov_list_deptjob(); return false;">

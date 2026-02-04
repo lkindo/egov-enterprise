@@ -1,0 +1,305 @@
+<%
+/**
+ * @Class Name : EgovWikMnthngReprtRegist.jsp
+ * @Description : Ï£ºÍ∞Ñ/?îÍ∞ÑÎ≥¥Í≥† ?±Î°ù
+ * @Modification Information
+ * @
+ * @  ?òÏ†ï??     ?òÏ†ï??           ?òÏ†ï?¥Ïö©
+ * @ -------        --------    ---------------------------
+ * @ 2010.07.21   ?•Ï≤†??         ÏµúÏ¥à ?ùÏÑ±
+ * @ 2018.09.14   ?¥Ï†ï?Ä          Í≥µÌÜµÏª¥Ìè¨?åÌä∏ 3.8 Í∞úÏÑ†
+ * @ 2019.12.06   ?†Ïö©??         KISA Î≥¥Ïïà?ΩÏ†ê Ï°∞Ïπò (?ÑÌóò???ïÏãù ?åÏùº ?ÖÎ°ú??
+ *
+ *  @author Í≥µÌÜµÏª¥Ìè¨?åÌä∏Í∞úÎ∞ú?Ä ?•Ï≤†??
+ *  @since 2010.07.21
+ *  @version 1.0
+ *  @see
+ *
+ */
+%>
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title><spring:message code="copSmtWmr.wikMnthngReprtRegist.wikMnthngReprtRegist"/></title><!-- Ï£ºÍ∞Ñ/?îÍ∞ÑÎ≥¥Í≥† ?±Î°ù -->
+<link href="<c:url value="/css/egovframework/com/com.css"/>" rel="stylesheet" type="text/css">
+<link href="<c:url value="/css/egovframework/com/button.css"/>" rel="stylesheet" type="text/css">
+<link href="<c:url value="/css/egovframework/com/cmm/jqueryui.css"/>" rel="stylesheet" type="text/css">
+<%-- <script type="text/javascript" src="<c:url value='/js/egovframework/com/cmm/fms/EgovMultiFile.js'/>" ></script> --%>
+<script type="text/javascript" src="<c:url value='/js/egovframework/com/cmm/fms/EgovMultiFiles.js'/>" ></script>
+<script type="text/javascript" src="<c:url value='/js/egovframework/com/cmm/utl/EgovCmmUtl.js' />"></script>
+<script type="text/javascript" src="<c:url value='/js/egovframework/com/cmm/showModalDialog.js' />"></script>
+<script type="text/javascript" src="<c:url value="/js/egovframework/com/cmm/EgovValidation.js" />"></script>
+<script src="<c:url value='/js/egovframework/com/cmm/jqueryui.js' />"></script>
+<script type="text/javascript">
+/* ********************************************************
+ * Ï¥àÍ∏∞??
+ ******************************************************** */
+function fn_egov_init_WikMnthngReprt(){
+		var maxFileNum = document.getElementById('posblAtchFileNumber').value;
+
+	   if(maxFileNum==null || maxFileNum==""){
+	     	maxFileNum = 3;
+	   }
+
+	   var multi_selector = new MultiSelector( document.getElementById( 'egovComFileList' ), maxFileNum );
+
+	   multi_selector.addElement( document.getElementById( 'egovComFileUploader' ) );
+	   document.getElementsByName("reprtSe")[0].checked = true;
+	}
+/* ********************************************************
+ * ?Ä??
+ ******************************************************** */
+	function fn_egov_insert_wikmnthngreprt() {
+		if (!validateWikMnthngReprtVO(document.wikMnthngReprtVO)){
+			return;
+		}
+
+		var bgnDe = document.wikMnthngReprtVO.reprtBgnDe.value.split("-").join("");
+		var endDe = document.wikMnthngReprtVO.reprtEndDe.value.split("-").join("");
+
+		if(bgnDe != ""){
+			if(isDate(bgnDe, "<spring:message code="copSmtWmr.wikMnthngReprtRegist.bgnDe"/>") == false) {/* ?¥Îãπ?úÏûë?ºÏûê */
+		        return;
+		    }
+		}
+
+		if(endDe != ""){
+		    if(isDate(endDe, "<spring:message code="copSmtWmr.wikMnthngReprtRegist.endDe"/>") == false) {/* ?¥ÎãπÏ¢ÖÎ£å?ºÏûê */
+		        return;
+		    }
+		}
+
+		if(bgnDe != "" && endDe != ""){
+			if(eval(bgnDe) > eval(endDe)){
+				alert("<spring:message code="copSmtWmr.wikMnthngReprtRegist.validate.searchDeAlert"/>");/* ?¥ÎãπÏ¢ÖÎ£å?ºÏûêÍ∞Ä ?¥Îãπ?úÏûë?ºÏûêÎ≥¥Îã§ Îπ†Î????ÜÏäµ?àÎã§. */
+				return;
+			}
+		}
+
+		var resultExtension = EgovMultiFilesChecker.checkExtensions("egovComFileUploader", "<c:out value='${fileUploadExtensions}'/>"); // Í≤∞Í≥ºÍ∞Ä false?∏Í≤Ω???àÏö©?òÏ? ?äÏùå
+		if (!resultExtension) return true;
+		var resultSize = EgovMultiFilesChecker.checkFileSize("egovComFileUploader", <c:out value='${fileUploadMaxSize}'/>); // ?åÏùº??1MÍπåÏ? ?àÏö© (1K=1024), Í≤∞Í≥ºÍ∞Ä false?∏Í≤Ω???àÏö©?òÏ? ?äÏùå
+		if (!resultSize) return true;
+		
+		if (confirm('<spring:message code="common.regist.msg" />')) {
+			document.wikMnthngReprtVO.action = '<c:url value="/cop/smt/wmr/insertWikMnthngReprt.do"/>';
+			document.wikMnthngReprtVO.submit();
+		}
+	}
+
+/* ********************************************************
+ * Î™©Î°ù ?ºÎ°ú Í∞ÄÍ∏?
+ ******************************************************** */
+	function fn_egov_list_wikmnthngreprt(){
+		document.wikMnthngReprtVO.action = "<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>";
+		document.wikMnthngReprtVO.submit();
+	}
+
+
+/* ********************************************************
+* ?ÑÏù¥?? ?ùÏóÖÏ∞ΩÏó¥Í∏?
+******************************************************** */
+	function fn_egov_reportr_WikMnthngReprt(strTitle, frmUniqId, frmEmplNo, frmEmplyrNm, frmOrgnztNm){
+		var arrParam = new Array(6);
+		arrParam[0] = window;
+		arrParam[1] = strTitle;
+		arrParam[2] = frmUniqId;
+		arrParam[3] = frmEmplNo;
+		arrParam[4] = frmEmplyrNm;
+		arrParam[5] = frmOrgnztNm;
+
+	 	window.showModalDialog("<c:url value='/cop/smt/wmr/selectReportrListPopup.do' />", arrParam,"dialogWidth=800px;dialogHeight=500px;resizable=yes;center=yes");
+	}
+/* ********************************************************
+ * ?¨Î†•
+ ******************************************************** */
+	function fn_egov_init_date(){
+		
+		$("#reprtDe").datepicker(  
+		        {dateFormat:'yy-mm-dd'
+		         , showOn: 'button'
+		         , buttonImage: '<c:url value='/images/egovframework/com/cmm/icon/bu_icon_carlendar.gif'/>'
+		         , buttonImageOnly: true
+		         
+		         , showMonthAfterYear: true
+		         , showOtherMonths: true
+			     , selectOtherMonths: true
+					
+		         , changeMonth: true // ?îÏÑ†??select box ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , changeYear: true  // ?ÑÏÑ†??selectbox ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , showButtonPanel: true // ?òÎã® today, done  Î≤ÑÌäºÍ∏∞Îä• Ï∂îÍ? ?úÏãú (Í∏∞Î≥∏?Ä false)
+		});
+
+		$("#reprtBgnDe").datepicker( 
+		        {dateFormat:'yy-mm-dd'
+		         , showOn: 'button'
+		         , buttonImage: '<c:url value='/images/egovframework/com/cmm/icon/bu_icon_carlendar.gif'/>'  
+		         , buttonImageOnly: true
+		         
+		         , showMonthAfterYear: true
+		         , showOtherMonths: true
+			     , selectOtherMonths: true
+					
+		         , changeMonth: true // ?îÏÑ†??select box ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , changeYear: true  // ?ÑÏÑ†??selectbox ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , showButtonPanel: true // ?òÎã® today, done  Î≤ÑÌäºÍ∏∞Îä• Ï∂îÍ? ?úÏãú (Í∏∞Î≥∏?Ä false)
+		});
+		
+		$("#reprtEndDe").datepicker( 
+		        {dateFormat:'yy-mm-dd'
+		         , showOn: 'button'
+		         , buttonImage: '<c:url value='/images/egovframework/com/cmm/icon/bu_icon_carlendar.gif'/>'  
+		         , buttonImageOnly: true
+		         
+		         , showMonthAfterYear: true
+		         , showOtherMonths: true
+			     , selectOtherMonths: true
+					
+		         , changeMonth: true // ?îÏÑ†??select box ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , changeYear: true  // ?ÑÏÑ†??selectbox ?úÏãú (Í∏∞Î≥∏?Ä false)
+		         , showButtonPanel: true // ?òÎã® today, done  Î≤ÑÌäºÍ∏∞Îä• Ï∂îÍ? ?úÏãú (Í∏∞Î≥∏?Ä false)
+		});
+	}
+</script>
+
+</head>
+<body onLoad="fn_egov_init_WikMnthngReprt(); fn_egov_init_date();">
+
+<noscript class="noScriptTitle"><spring:message code="common.noScriptTitle.msg" /></noscript><!-- ?êÎ∞î?§ÌÅ¨Î¶ΩÌä∏Î•?ÏßÄ?êÌïòÏßÄ ?äÎäî Î∏åÎùº?∞Ï??êÏÑú???ºÎ? Í∏∞Îä•???¨Ïö©?òÏã§ ???ÜÏäµ?àÎã§. -->
+
+<form:form modelAttribute="wikMnthngReprtVO" name="wikMnthngReprtVO" method="post" action="${pageContext.request.contextPath}/cop/smt/wmr/insertWikMnthngReprt.do" enctype="multipart/form-data">
+
+<div class="wTableFrm">
+	<!-- ?Ä?¥Ì? -->
+	<h2><spring:message code="copSmtWmr.wikMnthngReprtRegist.wikMnthngReprtRegist"/></h2><!-- Ï£ºÍ∞Ñ/?îÍ∞ÑÎ≥¥Í≥† ?±Î°ù -->
+
+	<!-- ?±Î°ù??-->
+	<table class="wTable">
+		<colgroup>
+			<col style="width:16%" />
+			<col style="" />
+		</colgroup>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.searchSe"/> <span class="pilsu">*</span></th><!-- Î≥¥Í≥†?†Ìòï -->
+			<td class="left">
+			    <form:radiobutton path="reprtSe" value="1" /><spring:message code="copSmtWmr.wikMnthngReprtRegist.WeeklyReport"/><!-- Ï£ºÍ∞ÑÎ≥¥Í≥† -->
+				<form:radiobutton path="reprtSe" value="2" /><spring:message code="copSmtWmr.wikMnthngReprtRegist.MonthlyReport"/><!-- Ï£ºÍ∞ÑÎ≥¥Í≥† -->
+				<div><form:errors path="reprtSe" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtDe"/> <span class="pilsu">*</span></th><!-- Î≥¥Í≥†?ºÏûê -->
+			<td class="left">
+				<c:set var="reprtDate"><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtDe"/></c:set>
+				<form:input path="reprtDe" size="10" maxlength="10" title="${reprtDate}" cssStyle="width:70px"/><!-- Î≥¥Í≥†?ºÏûê -->
+				<div><form:errors path="reprtDe" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtBgnEndDe"/> <span class="pilsu">*</span></th><!-- ?¥Îãπ?ºÏûê -->
+			<td class="left">
+				<c:set var="reprtBgnDate"><spring:message code="copSmtWmr.wikMnthngReprtRegist.bgnDe"/></c:set>
+				<c:set var="reprtEndDate"><spring:message code="copSmtWmr.wikMnthngReprtRegist.endDe"/></c:set>
+			    <form:input path="reprtBgnDe" size="10" maxlength="10" title="${reprtBgnDate}" cssStyle="width:70px"/><!-- ?¥Îãπ ?úÏûë?ºÏûê -->
+				<form:input path="reprtEndDe" size="10" maxlength="10" title="${reprtEndDate}" cssStyle="width:70px"/><!-- ?¥Îãπ Ï¢ÖÎ£å?ºÏûê -->
+				<div><form:errors path="reprtBgnDe" cssClass="error"/></div>
+				<div><form:errors path="reprtEndDe" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.wrterNm"/> <span class="pilsu">*</span></th><!-- ?ëÏÑ±??-->
+			<td class="left">
+			    <c:out value="${wikMnthngReprtVO.wrterClsfNm}" escapeXml="false" />
+				&nbsp;
+				<c:out value="${wikMnthngReprtVO.wrterNm}" escapeXml="false" />
+				<input type="hidden" name="wrterId" id="wrterId" value="${wikMnthngReprtVO.wrterId}"/>
+				<input type="hidden" name="wrterNm" id="wrterNm" value="${wikMnthngReprtVO.wrterNm}"/>
+				<input type="hidden" name="wrterClsfNm" id="wrterClsfNm" value="${wikMnthngReprtVO.wrterClsfNm}"/>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reportrNm"/> <span class="pilsu">*</span></th><!-- Î≥¥Í≥†?Ä?ÅÏûê -->
+			<td class="left">
+				<c:set var="reportrName"><spring:message code="copSmtWmr.wikMnthngReprtRegist.reportrNm"/></c:set>
+			    <form:input path="reportrNm" size="15" readonly="true" maxlength="10" title="${reportrName}" cssStyle="width:128px"/>
+				<a href="<c:url value='/cop/smt/wmr/selectReportrListPopup.do' />" target="_blank"  title="??Ï∞ΩÏúºÎ°??¥Îèô" onclick="fn_egov_reportr_WikMnthngReprt('Î≥¥Í≥†?Ä?ÅÏûê', 'reportrId', '', 'reportrNm', '');return false;">
+				<img src="<c:url value='/images/egovframework/com/cmm/btn/btn_search.gif' />" alt="Î≥¥Í≥†?Ä?ÅÏûê Í≤Ä?? title="Î≥¥Í≥†?Ä?ÅÏûê Í≤Ä??/>
+				</a>
+				<div><form:errors path="reportrNm" cssClass="error"/></div>
+				<form:hidden path="reportrId" />
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtSuj"/> <span class="pilsu">*</span></th><!-- Î≥¥Í≥†?úÏ†úÎ™?-->
+			<td class="left">
+			    <c:set var="reprtSubject"><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtSuj"/></c:set>
+			    <form:input path="reprtSj" size="75" maxlength="255" title="${reprtSubject}"/>
+	      		<div><form:errors path="reprtSj" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtThswikCn"/> <span class="pilsu">*</span></th><!-- Í∏àÏ£ºÎ≥¥Í≥†?¥Ïö© -->
+			<td class="left">
+			    <c:set var="reprtThswikContent"><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtThswikCn"/></c:set>
+			    <form:textarea path="reprtThswikCn" rows="7" cols="90" title="${reprtThswikContent}"/>
+    	  		<div><form:errors path="reprtThswikCn" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtLesseeCn"/> <span class="pilsu">*</span></th><!-- Ï∞®Ï£ºÎ≥¥Í≥†?¥Ïö© -->
+			<td class="left">
+				<c:set var="reprtLesseeContent"><spring:message code="copSmtWmr.wikMnthngReprtRegist.reprtLesseeCn"/></c:set>
+			    <form:textarea path="reprtLesseeCn" rows="7" cols="90" title="${reprtLesseeContent}"/>
+    	  		<div><form:errors path="reprtLesseeCn" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><spring:message code="copSmtWmr.wikMnthngReprtRegist.partclrMatter"/></th><!-- ?πÏù¥?¨Ìï≠ -->
+			<td class="left">
+			    <c:set var="particularMatter"><spring:message code="copSmtWmr.wikMnthngReprtRegist.partclrMatter"/></c:set>
+			    <form:textarea path="partclrMatter" rows="5" cols="90" title="${particularMatter}"/>
+    	  		<div><form:errors path="partclrMatter" cssClass="error"/></div>
+			</td>
+		</tr>
+		<tr>
+			<th><label for="egovfile_0" id="file_label"><spring:message code="title.attachedFileSelect"/></label><%-- <spring:message code="copSmtWmr.wikMnthngReprtRegist.file"/> --%></th><!-- ?åÏùºÏ≤®Î? -->
+			<td class="left">
+				
+				<input name="file_1" id="egovComFileUploader" type="file" multiple title="<spring:message code="copSmtWmr.wikMnthngReprtRegist.file"/>"/>
+				<div id="egovComFileList"></div>
+			</td>
+		</tr>
+	</table>
+
+	<!-- ?òÎã® Î≤ÑÌäº -->
+	<div class="btn">
+		<input class="s_submit" type="submit" value='<spring:message code="button.save" />' onclick="fn_egov_insert_wikmnthngreprt(); return false;" /><!-- ?Ä??-->
+		<span class="btn_s"><a href="<c:url value='/cop/smt/wmr/selectWikMnthngReprtList.do'/>?searchWrd=<c:out value='${wikMnthngReprtVO.searchWrd}'/>&amp;searchCnd=<c:out value='${wikMnthngReprtVO.searchCnd}'/>&amp;pageIndex=<c:out value='${wikMnthngReprtVO.pageIndex}'/>&amp;searchSttus=<c:out value='${wikMnthngReprtVO.searchSttus}'/>&amp;searchDe=<c:out value='${wikMnthngReprtVO.searchDe}'/>&amp;searchBgnDe=<c:out value='${wikMnthngReprtVO.searchBgnDe}'/>&amp;searchEndDe=<c:out value='${wikMnthngReprtVO.searchEndDe}'/>" onclick="fn_egov_list_wikmnthngreprt(); return false;"><spring:message code="button.list" /></a></span><!-- Î™©Î°ù -->
+	</div>
+	<div style="clear:both;"></div>
+</div>
+
+<!-- Ï≤®Î??åÏùº Í∞úÏàò -->
+	<input type="hidden" name="posblAtchFileNumber" id="posblAtchFileNumber" value="3" />
+	<!-- //Ï≤®Î??åÏùº Í∞úÏàò -->
+	<!-- Í≤Ä?âÏ°∞Í±??†Ï? -->
+    <input type="hidden" name="searchWrd" value="<c:out value='${wikMnthngReprtVO.searchWrd}'/>" />
+    <input type="hidden" name="searchCnd" value="<c:out value='${wikMnthngReprtVO.searchCnd}'/>" />
+    <input type="hidden" name="pageIndex" value="<c:out value='${wikMnthngReprtVO.pageIndex}'/>" />
+    <input type="hidden" name="searchSttus" value="<c:out value='${wikMnthngReprtVO.searchSttus}'/>" />
+    <input type="hidden" name="searchDe" value="<c:out value='${wikMnthngReprtVO.searchDe}'/>" />
+    <input type="hidden" name="searchBgnDe" value="<c:out value='${wikMnthngReprtVO.searchBgnDe}'/>" />
+    <input type="hidden" name="searchEndDe" value="<c:out value='${wikMnthngReprtVO.searchEndDe}'/>" />
+    <!-- Í≤Ä?âÏ°∞Í±??†Ï? -->
+
+</form:form>
+
+</body>
+</html>
