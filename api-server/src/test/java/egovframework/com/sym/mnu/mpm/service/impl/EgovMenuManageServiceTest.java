@@ -95,4 +95,18 @@ class EgovMenuManageServiceTest {
         // VERIFY: The OPTIMIZED method is called
         verify(menuRepository).findByUpperMenuNoOrderByMenuOrdrAsc(1L);
     }
+
+    @Test
+    void deleteMenuManageList_ShouldCallDeleteAllById() throws Exception {
+        // Arrange
+        String checkedMenuNoForDel = "1,2,3";
+        List<Long> expectedIds = Arrays.asList(1L, 2L, 3L);
+
+        // Act
+        menuManageService.deleteMenuManageList(checkedMenuNoForDel);
+
+        // Assert
+        verify(menuRepository).deleteAllById(expectedIds);
+        verify(menuRepository, org.mockito.Mockito.never()).deleteById(any());
+    }
 }
