@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,6 +75,10 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Transactional
 	public void deleteUser(String checkedIdForDel) {
 		String[] delId = EgovStringUtil.isNullToString(checkedIdForDel).split(",");
+		List<String> userIds = new ArrayList<>();
+		List<String> generalUserIds = new ArrayList<>();
+		List<String> enterpriseUserIds = new ArrayList<>();
+
 		for (String element : delId) {
 			String[] id = element.split(":");
 			if (id.length < 2)
@@ -82,12 +87,22 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 			String esntlId = id[1];
 
 			if ("USR03".equals(type)) { // 업무사용자
-				userRepository.deleteById(esntlId);
+				userIds.add(esntlId);
 			} else if ("USR01".equals(type)) { // 일반회원
-				generalUserRepository.deleteById(esntlId);
+				generalUserIds.add(esntlId);
 			} else if ("USR02".equals(type)) { // 기업회원
-				enterpriseUserRepository.deleteById(esntlId);
+				enterpriseUserIds.add(esntlId);
 			}
+		}
+
+		if (!userIds.isEmpty()) {
+			userRepository.deleteAllById(userIds);
+		}
+		if (!generalUserIds.isEmpty()) {
+			generalUserRepository.deleteAllById(generalUserIds);
+		}
+		if (!enterpriseUserIds.isEmpty()) {
+			enterpriseUserRepository.deleteAllById(enterpriseUserIds);
 		}
 	}
 
