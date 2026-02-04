@@ -674,6 +674,7 @@ public class EgovDeptJobController {
 	public String insertDeptJob(final MultipartHttpServletRequest multiRequest,
 			@Valid @ModelAttribute("deptJobVO") DeptJobVO deptJobVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
+
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
@@ -683,6 +684,36 @@ public class EgovDeptJobController {
 
 		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+
+		// [DEBUG] VO Binding Check
+		System.out.println("=== DeptJobVO Binding Check ===");
+		System.out.println("deptJobNm: " + deptJobVO.getDeptJobNm());
+		System.out.println("deptJobCn: " + deptJobVO.getDeptJobCn());
+		System.out.println("priort: " + deptJobVO.getPriort());
+		System.out.println("deptJobBxId: " + deptJobVO.getDeptJobBxId());
+		System.out.println("===============================");
+
+		// [Fallback] MultipartResolver 바인딩 실패 시 수동 바인딩 처리
+		if (deptJobVO.getPriort() == null || deptJobVO.getPriort().isEmpty()) {
+			String priort = multiRequest.getParameter("priort");
+			if (priort != null && !priort.isEmpty()) {
+				deptJobVO.setPriort(priort);
+			} else {
+				deptJobVO.setPriort("3"); // Default: Low
+			}
+		}
+		if (deptJobVO.getDeptJobNm() == null || deptJobVO.getDeptJobNm().isEmpty()) {
+			deptJobVO.setDeptJobNm(multiRequest.getParameter("deptJobNm"));
+		}
+		if (deptJobVO.getDeptJobCn() == null || deptJobVO.getDeptJobCn().isEmpty()) {
+			deptJobVO.setDeptJobCn(multiRequest.getParameter("deptJobCn"));
+		}
+		if (deptJobVO.getDeptId() == null || deptJobVO.getDeptId().isEmpty()) {
+			deptJobVO.setDeptId(multiRequest.getParameter("deptId"));
+		}
+		if (deptJobVO.getDeptJobBxId() == null || deptJobVO.getDeptJobBxId().isEmpty()) {
+			deptJobVO.setDeptJobBxId(multiRequest.getParameter("deptJobBxId"));
+		}
 
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobRegist";
 

@@ -302,6 +302,40 @@ public class EgovWikMnthngReprtController {
 	public String updateWikMnthngReprt(final MultipartHttpServletRequest multiRequest, EgovSecurityMap securityMap,
 			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
+
+		// [DEBUG] VO Binding Check
+		System.out.println("=== WikMnthngReprtVO (Update) Binding Check ===");
+		System.out.println("reprtSe: " + wikMnthngReprtVO.getReprtSe());
+		System.out.println("reprtSj: " + wikMnthngReprtVO.getReprtSj());
+		System.out.println("reprtDe: " + wikMnthngReprtVO.getReprtDe());
+		System.out.println("===============================");
+
+		// [Fallback] Manual Binding
+		if (wikMnthngReprtVO.getReprtSe() == null || wikMnthngReprtVO.getReprtSe().isEmpty()) {
+			wikMnthngReprtVO.setReprtSe(multiRequest.getParameter("reprtSe"));
+		}
+		if (wikMnthngReprtVO.getReprtSj() == null || wikMnthngReprtVO.getReprtSj().isEmpty()) {
+			wikMnthngReprtVO.setReprtSj(multiRequest.getParameter("reprtSj"));
+		}
+		if (wikMnthngReprtVO.getReprtDe() == null || wikMnthngReprtVO.getReprtDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtDe(multiRequest.getParameter("reprtDe"));
+		}
+		if (wikMnthngReprtVO.getReprtBgnDe() == null || wikMnthngReprtVO.getReprtBgnDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtBgnDe(multiRequest.getParameter("reprtBgnDe"));
+		}
+		if (wikMnthngReprtVO.getReprtEndDe() == null || wikMnthngReprtVO.getReprtEndDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtEndDe(multiRequest.getParameter("reprtEndDe"));
+		}
+		if (wikMnthngReprtVO.getReprtThswikCn() == null || wikMnthngReprtVO.getReprtThswikCn().isEmpty()) {
+			wikMnthngReprtVO.setReprtThswikCn(multiRequest.getParameter("reprtThswikCn"));
+		}
+		if (wikMnthngReprtVO.getReprtLesseeCn() == null || wikMnthngReprtVO.getReprtLesseeCn().isEmpty()) {
+			wikMnthngReprtVO.setReprtLesseeCn(multiRequest.getParameter("reprtLesseeCn"));
+		}
+		if (wikMnthngReprtVO.getPartclrMatter() == null || wikMnthngReprtVO.getPartclrMatter().isEmpty()) {
+			wikMnthngReprtVO.setPartclrMatter(multiRequest.getParameter("partclrMatter"));
+		}
+
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
@@ -368,6 +402,47 @@ public class EgovWikMnthngReprtController {
 	public String insertWikMnthngReprt(final MultipartHttpServletRequest multiRequest,
 			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
+
+		// [DEBUG] VO Binding Check
+		System.out.println("=== WikMnthngReprtVO (Insert) Binding Check ===");
+		System.out.println("reprtSe: " + wikMnthngReprtVO.getReprtSe());
+		System.out.println("reprtSj: " + wikMnthngReprtVO.getReprtSj());
+		System.out.println("reprtDe: " + wikMnthngReprtVO.getReprtDe());
+
+		// [DEBUG] Print All Parameters
+		java.util.Enumeration<String> params = multiRequest.getParameterNames();
+		while (params.hasMoreElements()) {
+			String paramName = params.nextElement();
+			System.out.println("Param: " + paramName + " = " + multiRequest.getParameter(paramName));
+		}
+		System.out.println("===============================");
+
+		// [Fallback] Manual Binding
+		if (wikMnthngReprtVO.getReprtSe() == null || wikMnthngReprtVO.getReprtSe().isEmpty()) {
+			wikMnthngReprtVO.setReprtSe(multiRequest.getParameter("reprtSe"));
+		}
+		if (wikMnthngReprtVO.getReprtSj() == null || wikMnthngReprtVO.getReprtSj().isEmpty()) {
+			wikMnthngReprtVO.setReprtSj(multiRequest.getParameter("reprtSj"));
+		}
+		if (wikMnthngReprtVO.getReprtDe() == null || wikMnthngReprtVO.getReprtDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtDe(multiRequest.getParameter("reprtDe"));
+		}
+		if (wikMnthngReprtVO.getReprtBgnDe() == null || wikMnthngReprtVO.getReprtBgnDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtBgnDe(multiRequest.getParameter("reprtBgnDe"));
+		}
+		if (wikMnthngReprtVO.getReprtEndDe() == null || wikMnthngReprtVO.getReprtEndDe().isEmpty()) {
+			wikMnthngReprtVO.setReprtEndDe(multiRequest.getParameter("reprtEndDe"));
+		}
+		if (wikMnthngReprtVO.getReprtThswikCn() == null || wikMnthngReprtVO.getReprtThswikCn().isEmpty()) {
+			wikMnthngReprtVO.setReprtThswikCn(multiRequest.getParameter("reprtThswikCn"));
+		}
+		if (wikMnthngReprtVO.getReprtLesseeCn() == null || wikMnthngReprtVO.getReprtLesseeCn().isEmpty()) {
+			wikMnthngReprtVO.setReprtLesseeCn(multiRequest.getParameter("reprtLesseeCn"));
+		}
+		if (wikMnthngReprtVO.getPartclrMatter() == null || wikMnthngReprtVO.getPartclrMatter().isEmpty()) {
+			wikMnthngReprtVO.setPartclrMatter(multiRequest.getParameter("partclrMatter"));
+		}
+
 		// 0. Spring Security 사용자권한 처리
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {

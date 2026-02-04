@@ -55,13 +55,18 @@
 ### [3단계] 운영 지원 (Service Operations - 예정)
 #### 📦 클러스터 3-A: 업무 지원 (Work Support)
 **구성**: 일정(`cop.smt`) + 약관(`uss.umt`)
-- [ ] **일정 관리 (`cop.smt`)**
+- [ ] **일정 관리 (`cop.smt.sdm`)**
 - [ ] **약관 관리 (`uss.umt`)**
+- [/] **부서업무 관리 (`cop.smt.djm`)**
+    - [x] JSP 메시지 키 줄바꿈/공백 오류 수정 (`button.save` 등)
+    - [x] Multipart/Binding 오류 수정 (`MultipartConfig` 추가 및 Controller 방어코드 적용)
 
 #### 📦 클러스터 3-B: 고객 지원 (Customer Help)
 **구성**: 도움말(`uss.olh`) + 설문(`uss.olp`)
 - [ ] **온라인 도움말** (FAQ/Q&A)
 - [ ] **온라인 설문**
+- [/] **주간/월간보고 관리 (`cop.smt.wmr`)**
+    - [x] Multipart/Binding 오류 수정 (`reprt_se` Null Fix)
 
 ### [4단계] 통합 및 통계 (Integration & Analytics - 후반)
 - [ ] **통계 (`sts`)**
