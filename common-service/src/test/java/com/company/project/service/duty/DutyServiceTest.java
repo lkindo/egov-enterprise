@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class DutyServiceTest {
@@ -38,7 +40,7 @@ class DutyServiceTest {
     private DutyService dutyService;
 
     @Test
-    @DisplayName("당직 일지 페이징 조회 서비스 테스트")
+    @DisplayName("당직 일지 페이징 조회 서비스 테스트 - N+1 문제 해결 검증")
     void getDutyList_Pagination() {
         // given
         Duty duty = Duty.builder()
@@ -52,7 +54,8 @@ class DutyServiceTest {
         given(dutyRepository.findById_BndtDeStartingWith(anyString(), any(Pageable.class)))
                 .willReturn(dutyPage);
 
-        given(dutyDiaryRepository.findById_BndtIdAndId_BndtDe(anyString(), anyString()))
+        // Batch fetch stub (this MUST be called)
+        given(dutyDiaryRepository.findById_BndtDeStartingWith(anyString()))
                 .willReturn(Collections.emptyList());
 
         // when
@@ -61,5 +64,8 @@ class DutyServiceTest {
         // then
         assertThat(resultPage.getTotalElements()).isEqualTo(1);
         assertThat(resultPage.getContent().get(0).getBndtDe()).isEqualTo("20231001");
+
+        // Performance Verification: Single fetch should NEVER be called
+        verify(dutyDiaryRepository, never()).findById_BndtIdAndId_BndtDe(anyString(), anyString());
     }
 }
