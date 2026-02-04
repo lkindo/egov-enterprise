@@ -48,3 +48,6 @@ logging:
     org.springframework.web: debug
     org.springframework.web.servlet.DispatcherServlet: trace
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: trace
+
+jwt:
+  secret: 9dd453ca8e726ed8e34d809cd15ce34477f5c2cd136cf9ce0c035513d8d4b492

@@ -19,7 +19,7 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:default_secret_key_must_be_very_long_at_least_256_bits_for_hs256_algorithm}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     // 1 hour
