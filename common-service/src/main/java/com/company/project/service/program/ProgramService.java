@@ -78,7 +78,7 @@ public class ProgramService {
      * 프로그램 등록
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
     public void insertProgrm(ProgramDto dto) {
         Program program = Program.builder()
                 .progrmFileNm(dto.getProgrmFileNm())
@@ -94,7 +94,7 @@ public class ProgramService {
      * 프로그램 수정
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
     public void updateProgrm(ProgramDto dto) {
         programRepository.findById(dto.getProgrmFileNm()).ifPresent(program -> {
             program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
@@ -105,7 +105,7 @@ public class ProgramService {
      * 프로그램 삭제
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
         programRepository.deleteById(dto.getProgrmFileNm());
     }
@@ -114,7 +114,7 @@ public class ProgramService {
      * 프로그램 목록 멀티 삭제
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl"}, allEntries = true)
+    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
         programRepository.deleteAllByIdInBatch(delProgrmFileNm);

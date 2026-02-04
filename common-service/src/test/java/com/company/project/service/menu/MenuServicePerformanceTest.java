@@ -46,7 +46,7 @@ public class MenuServicePerformanceTest {
 
         @Bean
         public CacheManager cacheManager() {
-            return new ConcurrentMapCacheManager("allMenus", "menuParentMap");
+            return new ConcurrentMapCacheManager("allMenus", "menuParentMap", "allMenuDtos");
         }
     }
 
