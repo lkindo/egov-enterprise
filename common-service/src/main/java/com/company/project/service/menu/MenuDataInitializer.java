@@ -8,11 +8,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -21,6 +20,13 @@ public class MenuDataInitializer implements CommandLineRunner {
 
     private final MenuRepository menuRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    // 하드코딩된 절대 경로 대신 프로젝트 내부의 템플릿 SQL 파일을 참조하도록 수정
+    private File scriptFile = new File("egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
+
+    public void setScriptFile(File scriptFile) {
+        this.scriptFile = scriptFile;
+    }
 
     @Override
     public void run(String... args) throws Exception {
@@ -35,60 +41,70 @@ public class MenuDataInitializer implements CommandLineRunner {
 
         log.info("Initializing menu and program data from legacy SQL file...");
 
-        // 하드코딩된 절대 경로 대신 프로젝트 내부의 템플릿 SQL 파일을 참조하도록 수정
-        File file = new File("egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
-        if (!file.exists()) {
-            log.warn("Legacy SQL file not found at: {}. Current working directory: {}", file.getAbsolutePath(),
+        if (!scriptFile.exists()) {
+            log.warn("Legacy SQL file not found at: {}. Current working directory: {}", scriptFile.getAbsolutePath(),
                     System.getProperty("user.dir"));
             return;
         }
 
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            try {
-                lines = Files.readAllLines(file.toPath(), Charset.forName("EUC-KR"));
-            } catch (Exception e2) {
-                log.error("Failed to read menu data file with UTF-8 or EUC-KR", e2);
-                return;
-            }
+        Charset charset = detectCharset(scriptFile);
+        if (charset == null) {
+            log.error("Failed to detect charset for file: {}", scriptFile.getAbsolutePath());
+            return;
         }
 
         if (!menuExists) {
             log.info("Processing NMENUINFO inserts...");
-            executeInserts(lines, "INSERT INTO NMENUINFO");
+            processInserts(scriptFile, charset, "INSERT INTO NMENUINFO");
         }
 
         if (!programExists) {
             log.info("Processing NPROGRMLIST inserts...");
-            executeInserts(lines, "INSERT INTO NPROGRMLIST");
+            processInserts(scriptFile, charset, "INSERT INTO NPROGRMLIST");
         }
     }
 
-    private void executeInserts(List<String> lines, String tablePattern) {
-        String sql = lines.stream()
-                .filter(line -> line.contains(tablePattern))
-                .collect(Collectors.joining("\n"));
-
-        if (sql.isEmpty()) {
-            log.warn("No {} insert statements found in the legacy SQL file.", tablePattern);
-            return;
-        }
-
-        String[] statements = sql.split(";");
-        int count = 0;
-        for (String stmt : statements) {
-            if (!stmt.trim().isEmpty()) {
-                try {
-                    jdbcTemplate.execute(stmt.trim());
-                    count++;
-                } catch (Exception e) {
-                    log.error("Error executing SQL statement: {}", stmt.trim(), e);
-                }
+    private Charset detectCharset(File file) {
+        try (java.util.stream.Stream<String> stream = Files.lines(file.toPath(), StandardCharsets.UTF_8)) {
+            stream.forEach(line -> {});
+            return StandardCharsets.UTF_8;
+        } catch (Exception e) {
+            try (java.util.stream.Stream<String> stream = Files.lines(file.toPath(), Charset.forName("EUC-KR"))) {
+                stream.forEach(line -> {});
+                return Charset.forName("EUC-KR");
+            } catch (Exception e2) {
+                log.error("Failed to read menu data file with UTF-8 or EUC-KR", e2);
+                return null;
             }
         }
+    }
 
-        log.info("Successfully executed {} insert statements for {}.", count, tablePattern);
+    private void processInserts(File file, Charset charset, String tablePattern) {
+        try (java.util.stream.Stream<String> lines = Files.lines(file.toPath(), charset)) {
+            java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger(0);
+
+            lines.filter(line -> line.contains(tablePattern))
+                    .forEach(line -> {
+                        String[] stmts = line.split(";");
+                        for (String stmt : stmts) {
+                            if (!stmt.trim().isEmpty()) {
+                                try {
+                                    jdbcTemplate.execute(stmt.trim());
+                                    count.incrementAndGet();
+                                } catch (Exception e) {
+                                    log.error("Error executing SQL statement: {}", stmt.trim(), e);
+                                }
+                            }
+                        }
+                    });
+
+            if (count.get() == 0) {
+                log.warn("No {} insert statements found in the legacy SQL file.", tablePattern);
+            } else {
+                log.info("Successfully executed {} insert statements for {}.", count.get(), tablePattern);
+            }
+        } catch (IOException e) {
+            log.error("Error reading file during insert processing", e);
+        }
     }
 }
