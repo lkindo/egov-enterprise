@@ -75,8 +75,20 @@ public class DutyService implements EgovDutyService {
 
     @Override
     public Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable) {
-        return dutyRepository.findById_BndtDeStartingWith(bndtDePrefix, pageable)
-                .map(this::convertToDto);
+        Page<Duty> dutyPage = dutyRepository.findById_BndtDeStartingWith(bndtDePrefix, pageable);
+
+        // Batch fetch all diaries for the prefix (e.g. month) to avoid N+1 queries.
+        // While this might fetch diaries for duties not in the current page, it is more efficient than N+1
+        // and simpler than constructing a custom composite-key IN query.
+        List<DutyDiary> allDiaries = dutyDiaryRepository.findById_BndtDeStartingWith(bndtDePrefix);
+
+        Map<String, List<DutyDiary>> diariesByDuty = allDiaries.stream()
+                .collect(Collectors.groupingBy(d -> d.getId().getBndtId() + "_" + d.getId().getBndtDe()));
+
+        return dutyPage.map(d -> {
+            String key = d.getId().getBndtId() + "_" + d.getId().getBndtDe();
+            return convertToDto(d, diariesByDuty.getOrDefault(key, Collections.emptyList()));
+        });
     }
 
     @Override
