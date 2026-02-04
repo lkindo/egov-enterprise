@@ -1,6 +1,7 @@
 package egovframework.com.sym.mnu.mpm.service.impl;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -152,10 +153,10 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Override
 	@Transactional
 	public void deleteMenuManageList(String checkedMenuNoForDel) throws Exception {
-		String[] delMenuNo = checkedMenuNoForDel.split(",");
-		for (String id : delMenuNo) {
-			menuRepository.deleteById(Long.valueOf(id));
-		}
+		List<Long> delMenuNo = Arrays.stream(checkedMenuNoForDel.split(","))
+				.map(Long::valueOf)
+				.collect(Collectors.toList());
+		menuRepository.deleteAllById(delMenuNo);
 	}
 
 	/**
