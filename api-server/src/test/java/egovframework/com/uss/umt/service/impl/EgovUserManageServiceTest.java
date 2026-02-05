@@ -67,4 +67,23 @@ class EgovUserManageServiceTest {
         verify(generalUserRepository, never()).deleteById(anyString());
         verify(enterpriseUserRepository, never()).deleteById(anyString());
     }
+
+    @Test
+    void deleteUser_shouldHandleMalformedIds() {
+        // Arrange
+        String malformedIds = "USR03:,USR01:GEN_1,USR02:ENT_1,INVALID";
+
+        // Act
+        userManageService.deleteUser(malformedIds);
+
+        // Assert
+        // USR03: has empty ID, should be skipped (so userIds is empty)
+        // INVALID has no colon, should be skipped
+        // USR01:GEN_1 should be processed
+        // USR02:ENT_1 should be processed
+
+        verify(userRepository, never()).deleteAllById(any());
+        verify(generalUserRepository, times(1)).deleteAllById(any());
+        verify(enterpriseUserRepository, times(1)).deleteAllById(any());
+    }
 }
