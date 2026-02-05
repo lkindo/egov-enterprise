@@ -67,6 +67,8 @@
 - [ ] **온라인 설문**
 - [/] **주간/월간보고 관리 (`cop.smt.wmr`)**
     - [x] Multipart/Binding 오류 수정 (`reprt_se` Null Fix)
+    - [/] Date Format 오류 수정 (`C003` Fix) - *Verified*
+    - [x] Crypto Password 오류 수정 (`password not matched` Fix) - *Verified*
 
 ### [4단계] 통합 및 통계 (Integration & Analytics - 후반)
 - [ ] **통계 (`sts`)**

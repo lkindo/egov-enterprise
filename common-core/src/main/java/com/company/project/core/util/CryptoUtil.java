@@ -14,10 +14,17 @@ import java.util.Base64;
 public class CryptoUtil implements ApplicationContextAware {
 
     private static EgovCryptoService cryptoService;
-    private static final String ALGORITHM = "ARIA";
+    private static String algorithmKey;
+
+    @org.springframework.beans.factory.annotation.Value("${Globals.File.algorithmKey:egovframe}")
+    public void setAlgorithmKey(String key) {
+        log.info("### CryptoUtil: algorithmKey injected: {}", key);
+        CryptoUtil.algorithmKey = key;
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
+        log.info("### CryptoUtil: setApplicationContext called");
         CryptoUtil.cryptoService = (EgovCryptoService) applicationContext.getBean("ariacryptoService");
     }
 
@@ -28,7 +35,12 @@ public class CryptoUtil implements ApplicationContextAware {
         try {
             if (data == null)
                 return null;
-            byte[] encrypted = cryptoService.encrypt(data.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            if (cryptoService == null || algorithmKey == null) {
+                log.error("### CryptoUtil Error: cryptoService is {} and algorithmKey is {}",
+                        (cryptoService == null ? "NULL" : "SET"), (algorithmKey == null ? "NULL" : "SET"));
+                throw new RuntimeException("CryptoUtil not initialized properly");
+            }
+            byte[] encrypted = cryptoService.encrypt(data.getBytes(StandardCharsets.UTF_8), algorithmKey);
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
             log.error("Encryption failed", e);
@@ -61,7 +73,7 @@ public class CryptoUtil implements ApplicationContextAware {
             if (encryptedData == null)
                 return null;
             byte[] decoded = Base64.getDecoder().decode(encryptedData);
-            byte[] decrypted = cryptoService.decrypt(decoded, ALGORITHM);
+            byte[] decrypted = cryptoService.decrypt(decoded, algorithmKey);
             return new String(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("Decryption failed", e);

@@ -419,7 +419,14 @@ public class EgovWikMnthngReprtController {
 
 		// [Fallback] Manual Binding
 		if (wikMnthngReprtVO.getReprtSe() == null || wikMnthngReprtVO.getReprtSe().isEmpty()) {
-			wikMnthngReprtVO.setReprtSe(multiRequest.getParameter("reprtSe"));
+			String reprtSeParam = multiRequest.getParameter("reprtSe");
+			// [Defense] Force default to '1' (Weekly Report) to prevent DB Error
+			if (reprtSeParam == null || reprtSeParam.trim().isEmpty()) {
+				System.err.println("########## [WARNING] reprtSe is NULL! Forcing default value '1' ##########");
+				wikMnthngReprtVO.setReprtSe("1");
+			} else {
+				wikMnthngReprtVO.setReprtSe(reprtSeParam);
+			}
 		}
 		if (wikMnthngReprtVO.getReprtSj() == null || wikMnthngReprtVO.getReprtSj().isEmpty()) {
 			wikMnthngReprtVO.setReprtSj(multiRequest.getParameter("reprtSj"));
