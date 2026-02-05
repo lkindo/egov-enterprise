@@ -259,6 +259,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 
 	private boolean progrmRegist(HSSFSheet progrmSheet) {
 		int rows = progrmSheet.getPhysicalNumberOfRows();
+		java.util.List<Program> programs = new java.util.ArrayList<>();
 		for (int j = 1; j < rows; j++) {
 			HSSFRow row = progrmSheet.getRow(j);
 			if (row == null)
@@ -271,13 +272,17 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 					.url(getCellValue(row.getCell(3)))
 					.progrmDc(getCellValue(row.getCell(4)))
 					.build();
-			programRepository.save(program);
+			programs.add(program);
+		}
+		if (!programs.isEmpty()) {
+			programRepository.saveAll(programs);
 		}
 		return true;
 	}
 
 	private boolean menuRegist(HSSFSheet menuSheet) {
 		int rows = menuSheet.getPhysicalNumberOfRows();
+		java.util.List<Menu> menus = new java.util.ArrayList<>();
 		for (int j = 1; j < rows; j++) {
 			HSSFRow row = menuSheet.getRow(j);
 			if (row == null)
@@ -297,7 +302,10 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 					.relateImageNm(getCellValue(row.getCell(6)))
 					.progrmFileNm(progrmFileNm)
 					.build();
-			menuRepository.save(menu);
+			menus.add(menu);
+		}
+		if (!menus.isEmpty()) {
+			menuRepository.saveAll(menus);
 		}
 		return true;
 	}
