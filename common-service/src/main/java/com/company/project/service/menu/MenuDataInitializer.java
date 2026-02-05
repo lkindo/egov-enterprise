@@ -7,11 +7,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -53,24 +56,22 @@ public class MenuDataInitializer implements CommandLineRunner {
             return;
         }
 
-        if (!menuExists) {
-            log.info("Processing NMENUINFO inserts...");
-            processInserts(scriptFile, charset, "INSERT INTO NMENUINFO");
-        }
-
-        if (!programExists) {
-            log.info("Processing NPROGRMLIST inserts...");
-            processInserts(scriptFile, charset, "INSERT INTO NPROGRMLIST");
-        }
+        processFile(scriptFile, charset, !menuExists, !programExists);
     }
 
     private Charset detectCharset(File file) {
-        try (java.util.stream.Stream<String> stream = Files.lines(file.toPath(), StandardCharsets.UTF_8)) {
-            stream.forEach(line -> {});
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            char[] buffer = new char[8192];
+            while (reader.read(buffer) != -1) {
+                // Just read to validate encoding
+            }
             return StandardCharsets.UTF_8;
         } catch (Exception e) {
-            try (java.util.stream.Stream<String> stream = Files.lines(file.toPath(), Charset.forName("EUC-KR"))) {
-                stream.forEach(line -> {});
+            try (BufferedReader reader = Files.newBufferedReader(file.toPath(), Charset.forName("EUC-KR"))) {
+                char[] buffer = new char[8192];
+                while (reader.read(buffer) != -1) {
+                    // Just read to validate encoding
+                }
                 return Charset.forName("EUC-KR");
             } catch (Exception e2) {
                 log.error("Failed to read menu data file with UTF-8 or EUC-KR", e2);
@@ -79,32 +80,46 @@ public class MenuDataInitializer implements CommandLineRunner {
         }
     }
 
-    private void processInserts(File file, Charset charset, String tablePattern) {
-        try (java.util.stream.Stream<String> lines = Files.lines(file.toPath(), charset)) {
-            java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger(0);
+    private void processFile(File file, Charset charset, boolean needMenu, boolean needProgram) {
+        try (Stream<String> lines = Files.lines(file.toPath(), charset)) {
+            AtomicInteger menuCount = new AtomicInteger(0);
+            AtomicInteger programCount = new AtomicInteger(0);
 
-            lines.filter(line -> line.contains(tablePattern))
-                    .forEach(line -> {
-                        String[] stmts = line.split(";");
-                        for (String stmt : stmts) {
-                            if (!stmt.trim().isEmpty()) {
-                                try {
-                                    jdbcTemplate.execute(stmt.trim());
-                                    count.incrementAndGet();
-                                } catch (Exception e) {
-                                    log.error("Error executing SQL statement: {}", stmt.trim(), e);
-                                }
-                            }
-                        }
-                    });
+            lines.forEach(line -> {
+                if (needMenu && line.contains("INSERT INTO NMENUINFO")) {
+                    executeStatements(line, menuCount);
+                } else if (needProgram && line.contains("INSERT INTO NPROGRMLIST")) {
+                    executeStatements(line, programCount);
+                }
+            });
 
-            if (count.get() == 0) {
-                log.warn("No {} insert statements found in the legacy SQL file.", tablePattern);
-            } else {
-                log.info("Successfully executed {} insert statements for {}.", count.get(), tablePattern);
+            if (needMenu && menuCount.get() > 0) {
+                log.info("Successfully executed {} insert statements for NMENUINFO.", menuCount.get());
+            } else if (needMenu) {
+                log.warn("No NMENUINFO insert statements found in the legacy SQL file.");
+            }
+
+            if (needProgram && programCount.get() > 0) {
+                log.info("Successfully executed {} insert statements for NPROGRMLIST.", programCount.get());
+            } else if (needProgram) {
+                log.warn("No NPROGRMLIST insert statements found in the legacy SQL file.");
             }
         } catch (IOException e) {
             log.error("Error reading file during insert processing", e);
+        }
+    }
+
+    private void executeStatements(String line, AtomicInteger count) {
+        String[] stmts = line.split(";");
+        for (String stmt : stmts) {
+            if (!stmt.trim().isEmpty()) {
+                try {
+                    jdbcTemplate.execute(stmt.trim());
+                    count.incrementAndGet();
+                } catch (Exception e) {
+                    log.error("Error executing SQL statement: {}", stmt.trim(), e);
+                }
+            }
         }
     }
 }
