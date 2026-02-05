@@ -12,6 +12,8 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
 
     List<Menu> findByUpperMenuNoOrderByMenuOrdrAsc(Long upperMenuNo);
 
+    Optional<Menu> findFirstByUpperMenuNoOrderByMenuOrdrAsc(Long upperMenuNo);
+
     Optional<Menu> findByProgrmFileNm(String progrmFileNm);
 
     @org.springframework.data.jpa.repository.Query("SELECT m FROM Menu m WHERE m.menuNm LIKE %:searchKeyword% OR m.progrmFileNm LIKE %:searchKeyword%")
