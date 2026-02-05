@@ -192,18 +192,22 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		Long menuId = (long) iMenuNo;
 		Optional<Menu> menuOpt = menuRepository.findById(menuId);
 		if (menuOpt.isPresent()) {
-			Menu menu = menuOpt.get();
-			// 하위 메뉴가 있는지 확인 (Optimized: findAll + filter -> findByUpperMenuNo)
-			List<Menu> children = menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(menuId);
-			if (!children.isEmpty()) {
-				return selectLastMenuURL(children.get(0).getId().intValue(), sUniqId);
-			} else {
-				// 하위 메뉴가 없으면 본인 프로그램 URL 반환
-				if (menu.getProgrmFileNm() != null && !menu.getProgrmFileNm().isEmpty()) {
-					return programRepository.findById(menu.getProgrmFileNm())
-							.map(Program::getUrl)
-							.orElse("");
-				}
+			return selectLastMenuURLRecursive(menuOpt.get(), sUniqId);
+		}
+		return "";
+	}
+
+	private String selectLastMenuURLRecursive(Menu menu, String sUniqId) {
+		// 하위 메뉴가 있는지 확인 (Optimized: findByUpperMenuNo -> findFirstByUpperMenuNo)
+		Optional<Menu> childOpt = menuRepository.findFirstByUpperMenuNoOrderByMenuOrdrAsc(menu.getId());
+		if (childOpt.isPresent()) {
+			return selectLastMenuURLRecursive(childOpt.get(), sUniqId);
+		} else {
+			// 하위 메뉴가 없으면 본인 프로그램 URL 반환
+			if (menu.getProgrmFileNm() != null && !menu.getProgrmFileNm().isEmpty()) {
+				return programRepository.findById(menu.getProgrmFileNm())
+						.map(Program::getUrl)
+						.orElse("");
 			}
 		}
 		return "";
