@@ -13,6 +13,7 @@ import java.util.List;
 
 @SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
 @org.springframework.test.context.ActiveProfiles("dev")
+@org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
 public class SystemHistoryTest {
 
     @Autowired
