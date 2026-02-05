@@ -40,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 BatchAutoConfiguration.class
 })
 @ActiveProfiles("test")
+@org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
 class AuthApiControllerTest {
 
         @Autowired
