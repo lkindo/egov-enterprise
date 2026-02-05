@@ -141,6 +141,10 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Transactional
 	public void deleteMber(String checkedIdForDel) {
 		String[] delId = checkedIdForDel.split(",");
+		List<String> userIds = new java.util.ArrayList<>();
+		List<String> generalUserIds = new java.util.ArrayList<>();
+		List<String> enterpriseUserIds = new java.util.ArrayList<>();
+
 		for (String element : delId) {
 			String[] id = element.split(":");
 			if (id.length < 2)
@@ -149,12 +153,22 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 			String esntlId = id[1];
 
 			if ("USR03".equals(type)) {
-				userRepository.deleteById(esntlId);
+				userIds.add(esntlId);
 			} else if ("USR01".equals(type)) {
-				generalUserRepository.deleteById(esntlId);
+				generalUserIds.add(esntlId);
 			} else if ("USR02".equals(type)) {
-				enterpriseUserRepository.deleteById(esntlId);
+				enterpriseUserIds.add(esntlId);
 			}
+		}
+
+		if (!userIds.isEmpty()) {
+			userRepository.deleteAllById(userIds);
+		}
+		if (!generalUserIds.isEmpty()) {
+			generalUserRepository.deleteAllById(generalUserIds);
+		}
+		if (!enterpriseUserIds.isEmpty()) {
+			enterpriseUserRepository.deleteAllById(enterpriseUserIds);
 		}
 	}
 
