@@ -41,8 +41,8 @@ function fn_egov_modal_remove() {
                                 <h1 class="logo"><a href="<c:url value='/cmm/main/mainPage.do'/>"><img
                                             src="<c:url value='/images/logo.png'/>"
                                             alt="표준프레임워크 포털 eGovFrame 샘플 포털"></a></h1>
-                                <a class="go" href="#LINK" onclick="fn_egov_modal_create(); return false;"><img
-                                        src="<c:url value='/images/ico_question.png'/>" alt="메뉴구성 설명"></a>
+                                <button type="button" class="go" onclick="fn_egov_modal_create();" style="background-color: transparent; border: 0; padding: 0;"><img
+                                        src="<c:url value='/images/ico_question.png'/>" alt="메뉴구성 설명"></button>
                             </div>
 
                             <% LoginVO loginVO=(LoginVO)session.getAttribute("LoginVO"); if(loginVO==null){ %>
