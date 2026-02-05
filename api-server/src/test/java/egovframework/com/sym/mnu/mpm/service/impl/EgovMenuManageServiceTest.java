@@ -4,12 +4,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -106,7 +111,49 @@ class EgovMenuManageServiceTest {
         menuManageService.deleteMenuManageList(checkedMenuNoForDel);
 
         // Assert
-        verify(menuRepository).deleteAllById(expectedIds);
+        verify(menuRepository).deleteAllByIdInBatch(expectedIds);
         verify(menuRepository, org.mockito.Mockito.never()).deleteById(any());
+    }
+
+    @Test
+    void menuBndeRegist_ShouldUseBatchSave() throws Exception {
+        // Arrange
+        HSSFWorkbook workbook = new HSSFWorkbook();
+        HSSFSheet progrmSheet = workbook.createSheet("Program List");
+        HSSFSheet menuSheet = workbook.createSheet("Menu List");
+
+        // Create Header Row (Row 0)
+        progrmSheet.createRow(0);
+        menuSheet.createRow(0);
+
+        // Create Data Row (Row 1) for Program
+        HSSFRow progrmRow = progrmSheet.createRow(1);
+        progrmRow.createCell(0).setCellValue("testProgram.jsp"); // File Nm
+        progrmRow.createCell(1).setCellValue("Test Program"); // Korean Nm
+        progrmRow.createCell(2).setCellValue("/test/path"); // Path
+        progrmRow.createCell(3).setCellValue("/test/url.do"); // URL
+        progrmRow.createCell(4).setCellValue("Test Description"); // Description
+
+        // Create Data Row (Row 1) for Menu
+        HSSFRow menuRow = menuSheet.createRow(1);
+        menuRow.createCell(0).setCellValue(100); // Menu No
+        menuRow.createCell(1).setCellValue(1); // Order
+        menuRow.createCell(2).setCellValue("Test Menu"); // Name
+        menuRow.createCell(3).setCellValue(0); // Upper Menu ID
+        menuRow.createCell(4).setCellValue("Menu Description"); // Description
+        menuRow.createCell(5).setCellValue("/images/"); // Image Path
+        menuRow.createCell(6).setCellValue("icon.png"); // Image Name
+        menuRow.createCell(7).setCellValue("testProgram.jsp"); // Program File Name
+
+        when(excelZipService.loadWorkbook(any(InputStream.class))).thenReturn(workbook);
+        when(programRepository.count()).thenReturn(0L);
+        when(menuRepository.count()).thenReturn(0L);
+
+        // Act
+        menuManageService.menuBndeRegist(new MenuManageVO(), org.mockito.Mockito.mock(InputStream.class));
+
+        // Assert
+        verify(programRepository).saveAll(anyList());
+        verify(menuRepository).saveAll(anyList());
     }
 }
