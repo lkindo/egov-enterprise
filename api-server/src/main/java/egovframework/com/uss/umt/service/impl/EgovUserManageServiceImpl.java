@@ -74,17 +74,29 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Override
 	@Transactional
 	public void deleteUser(String checkedIdForDel) {
-		String[] delId = EgovStringUtil.isNullToString(checkedIdForDel).split(",");
+		String safeCheckedId = EgovStringUtil.isNullToString(checkedIdForDel);
 		List<String> userIds = new ArrayList<>();
 		List<String> generalUserIds = new ArrayList<>();
 		List<String> enterpriseUserIds = new ArrayList<>();
 
-		for (String element : delId) {
-			String[] id = element.split(":");
-			if (id.length < 2)
+		java.util.StringTokenizer st = new java.util.StringTokenizer(safeCheckedId, ",");
+		while (st.hasMoreTokens()) {
+			String element = st.nextToken();
+			int idx = element.indexOf(":");
+			if (idx == -1)
 				continue;
-			String type = id[0];
-			String esntlId = id[1];
+
+			String type = element.substring(0, idx);
+			int nextIdx = element.indexOf(":", idx + 1);
+			String esntlId;
+			if (nextIdx == -1) {
+				esntlId = element.substring(idx + 1);
+			} else {
+				esntlId = element.substring(idx + 1, nextIdx);
+			}
+
+			if (esntlId.length() == 0)
+				continue;
 
 			if ("USR03".equals(type)) { // 업무사용자
 				userIds.add(esntlId);
