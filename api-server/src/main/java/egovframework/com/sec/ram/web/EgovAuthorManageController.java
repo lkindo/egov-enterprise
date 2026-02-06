@@ -2,6 +2,9 @@ package egovframework.com.sec.ram.web;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.SessionVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
@@ -45,6 +48,8 @@ import jakarta.annotation.Resource;
 // @Controller
 @SessionAttributes(types = SessionVO.class)
 public class EgovAuthorManageController {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(EgovAuthorManageController.class);
 
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
@@ -118,18 +123,18 @@ public class EgovAuthorManageController {
 	public String selectAuthor(@RequestParam("authorCode") String authorCode,
 			@ModelAttribute("authorManageVO") AuthorManageVO authorManageVO, ModelMap model) throws Exception {
 
-		System.out.println("DEBUG: selectAuthor called with authorCode=" + authorCode);
+		LOGGER.debug("DEBUG: selectAuthor called with authorCode={}", authorCode);
 
 		AuthorManageDto dto = authorManageService.selectAuthor(authorCode);
 
 		if (dto == null) {
-			System.out.println("DEBUG: selectAuthor dto is NULL for code=" + authorCode);
+			LOGGER.debug("DEBUG: selectAuthor dto is NULL for code={}", authorCode);
 			AuthorManageVO emptyVO = new AuthorManageVO();
 			emptyVO.setAuthorCode(authorCode);
 			model.addAttribute("authorManage", emptyVO);
 			model.addAttribute("message", "해당 권한을 찾을 수 없습니다.");
 		} else {
-			System.out.println("DEBUG: selectAuthor found dto=" + dto);
+			LOGGER.debug("DEBUG: selectAuthor found dto={}", dto);
 			model.addAttribute("authorManage", SecurityAdapter.toVO(dto));
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 		}
