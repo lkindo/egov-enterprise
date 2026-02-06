@@ -163,9 +163,8 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 
 	@Override
 	public List<BndtDiaryVO> selectBndtDiary(BndtDiaryVO bndtDiaryVO) throws Exception {
-		return bndtDiaryRepository.findAll().stream()
-				.filter(e -> e.getBndtId().equals(bndtDiaryVO.getBndtId())
-						&& e.getBndtDe().equals(bndtDiaryVO.getBndtDe()))
+		return bndtDiaryRepository.findByBndtIdAndBndtDe(bndtDiaryVO.getBndtId(), bndtDiaryVO.getBndtDe())
+				.stream()
 				.map(this::toDiaryVO)
 				.collect(Collectors.toList());
 	}
