@@ -2,6 +2,9 @@ package egovframework.com.sec.rmt.web;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -54,6 +57,8 @@ import jakarta.validation.Valid;
 // @Controller
 @SessionAttributes(types = SessionVO.class)
 public class EgovRoleManageController {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(EgovRoleManageController.class);
 
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
@@ -146,10 +151,10 @@ public class EgovRoleManageController {
 		// JPA currently doesn't implement selectAuthorAllList directly, assuming logic
 		// handles it or not needed for detail view yet
 
-		System.out.println("[DEBUG] selectRole roleCode: " + roleCode);
+		LOGGER.debug("[DEBUG] selectRole roleCode: {}", roleCode);
 		RoleManageDto dto = roleManageService.selectRole(roleCode);
 		if (dto == null) {
-			System.out.println("[DEBUG] Role not found for roleCode: " + roleCode);
+			LOGGER.debug("[DEBUG] Role not found for roleCode: {}", roleCode);
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.select"));
 			return "forward:/sec/rmt/EgovRoleList.do";
 		}
