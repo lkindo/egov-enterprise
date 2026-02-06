@@ -29,6 +29,14 @@
                                 alert("비밀번호를 입력하세요");
                                 return false;
                             } else {
+                                var btn = document.getElementById("btnLogin");
+                                if (btn) {
+                                    btn.innerHTML = "로그인 중...";
+                                    btn.disabled = true;
+                                    btn.style.cursor = "wait";
+                                    btn.style.backgroundColor = "#ccc";
+                                    btn.style.borderColor = "#ccc";
+                                }
                                 document.loginForm.action = "<c:url value='/uat/uia/actionLogin.do'/>";
                                 document.loginForm.submit();
                             }
@@ -125,7 +133,7 @@
                                                             </dd>
                                                         </dl>
 
-                                                        <button type="button" class="btn_login"
+                                                        <button type="button" class="btn_login" id="btnLogin"
                                                             onclick="actionLogin();">로그인</button>
 
                                                         <div class="bot">
