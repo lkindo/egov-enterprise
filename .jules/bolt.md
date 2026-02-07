@@ -5,3 +5,7 @@
 ## 2024-05-23 - In-memory Filtering of Large Datasets (BndtDiary)
 **Learning:** Found `EgovBndtManageServiceImpl` fetching the entire diary table (`findAll`) to filter by composite key in memory. This is a severe scalability bottleneck.
 **Action:** Replaced `findAll().stream().filter()` with targeted `BndtDiaryRepository.findByBndtIdAndBndtDe`. Validated the existence of the repository method in `common-domain` before applying.
+
+## 2024-05-24 - Pagination via findAll(Pageable) (NoteRecptn)
+**Learning:** Found `EgovNoteRecptnServiceImpl` fetching the entire `NoteRecptn` table (`findAll`) and streaming it to map to VO, despite the Controller supporting pagination logic. This causes O(N) memory usage and N+1 query potential.
+**Action:** Replaced `findAll()` with `findAll(Pageable)` using `PageRequest` constructed from `searchVO`. This leverages database-level limit/offset.
