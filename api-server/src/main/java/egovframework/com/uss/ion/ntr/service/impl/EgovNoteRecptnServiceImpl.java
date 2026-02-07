@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.company.project.domain.note.NoteRecptn;
@@ -26,7 +29,11 @@ public class EgovNoteRecptnServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public List<EgovMap> selectNoteRecptnList(egovframework.com.uss.ion.ntr.service.NoteRecptn searchVO)
             throws Exception {
-        return noteRecptnRepository.findAll().stream()
+        int pageIndex = searchVO.getPageIndex() > 0 ? searchVO.getPageIndex() - 1 : 0;
+        int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.DESC, "frstRegistPnttm"));
+
+        return noteRecptnRepository.findAll(pageable).getContent().stream()
                 .map(e -> {
                     EgovMap map = new EgovMap();
                     map.put("noteId", e.getNote() != null ? e.getNote().getNoteId() : null);
