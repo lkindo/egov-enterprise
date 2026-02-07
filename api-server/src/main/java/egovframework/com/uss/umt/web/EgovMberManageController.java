@@ -55,7 +55,7 @@ import jakarta.servlet.http.HttpServletRequest;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovMberManageController {
 
 	/** mberManageService */

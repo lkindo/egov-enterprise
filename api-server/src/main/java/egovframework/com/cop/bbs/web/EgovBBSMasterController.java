@@ -65,7 +65,7 @@ import jakarta.validation.Valid;
  *      </pre>
  */
 
-@Controller
+// @Controller
 @RequiredArgsConstructor
 public class EgovBBSMasterController {
 

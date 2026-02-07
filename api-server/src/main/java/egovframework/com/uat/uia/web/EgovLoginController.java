@@ -81,7 +81,7 @@ import org.springframework.security.core.AuthenticationException;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovLoginController {
 
 	// @Resource(name = "loginService")
@@ -201,7 +201,9 @@ public class EgovLoginController {
 		loginVO.setId(request.getParameter("id"));
 		loginVO.setPassword(request.getParameter("password"));
 		loginVO.setUserSe(request.getParameter("userSe"));
-		LOGGER.debug(">>> Manual Binding: id={}, userSe={}", EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getId())), EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getUserSe())));
+		LOGGER.debug(">>> Manual Binding: id={}, userSe={}",
+				EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getId())),
+				EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getUserSe())));
 
 		// 0. AuthenticationManager Check
 		if (authenticationManager == null) {
@@ -220,7 +222,8 @@ public class EgovLoginController {
 			authResult = authenticationManager.authenticate(token);
 			LOGGER.debug(">>> EgovLoginController: Authentication SUCCESS");
 		} catch (AuthenticationException e) {
-			LOGGER.warn("Login failed for user: {}", EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getId())));
+			LOGGER.warn("Login failed for user: {}",
+					EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(loginVO.getId())));
 			LOGGER.debug(">>> EgovLoginController: Authentication FAILED. Exception: {}", e.getMessage());
 			LOGGER.error("Login failed", e);
 			model.addAttribute("loginMessage", egovMessageSource.getMessage("fail.common.login", request.getLocale()));

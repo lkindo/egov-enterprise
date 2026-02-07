@@ -3,13 +3,14 @@
 ## 1. 기술적 목표 (Technical Goals)
 본 문서는 `PRD.MD`에 정의된 요구사항을 달성하기 위한 구체적인 기술 사양과 아키텍처 원칙을 정의합니다.
 *   **Monolithic to Modular Monolith**: 단일 구조의 한계를 극복하고 모듈 단위의 재사용성 확보.
-*   **MyBatis to JPA**: SQL 중심 개발에서 객체 지향적 데이터 처리로 전환하여 생산성 및 유지보수성 향상.
+*   **JPA 중심 데이터 처리**: MyBatis 중심에서 Spring Data JPA 및 QueryDSL로 전환하여 생산성 및 유지보수성 향상.
+*   **Modern Frontend**: JSP 기반 UI에서 Next.js 14 및 React 기반의 모던 프론트엔드로 현대화.
 *   **Stateful to Stateless**: JWT 기반 인증을 통해 MSA 확장성 및 클라이언트 독립성 확보.
 
 ## 2. 시스템 아키텍처 (System Architecture)
 
 ### 2.1. 멀티 모듈 구조 (Multi-Module Structure)
-Gradle 기반의 계층형 멀티 모듈 구조를 채택합니다.
+Gradle 기반의 계층형 멀티 모듈 구조를 채택하여 도메인 중심의 코드 격리를 실현합니다.
 
 ```mermaid
 graph TD
@@ -18,6 +19,7 @@ graph TD
     Root --> Security[common-security]
     Root --> Service[common-service]
     Root --> API[api-server]
+    Root --> Frontend[frontend]
     
     Service --> Domain
     Service --> Core
@@ -25,56 +27,54 @@ graph TD
     Security --> Core
     API --> Service
     API --> Security
+    Frontend -- REST API / JWT --> API
 ```
 
 | 모듈명 | 역할 및 주요 구성요소 | 의존성 |
 | :--- | :--- | :--- |
-| **common-core** | 전사 공통 유틸리티, Global ExceptionHandler, BaseResponse, 기본 설정(Date, Log) | None |
-| **common-domain** | **JPA Entity**, Repository, Enums, DTO(Domain) | common-core, DB Driver |
-| **common-security** | **JWT Provider**, Security Config, Filter Chain, UserDetails | common-domain |
-| **common-service** | 핵심 비즈니스 로직(Service Impl), Transaction 관리 | common-domain |
-| **api-server** | **실행 대상 (Execution Target)**. Controller(REST API), Swagger 설정 | common-service, common-security |
+| **common-core** | 전사 공통 유틸리티, 전역 예외 처리기, 표준 응답 포맷 | None |
+| **common-domain** | **JPA 엔티티**, Repository 인터페이스, QueryDSL 지원 클래스 | common-core |
+| **common-security** | **JWT 인증/인가**, Spring Security 설정, 필터 체인 | common-domain |
+| **common-service** | 핵심 비즈니스 로직, 트랜잭션 관리, 외부 시스템 연계 | common-domain, common-core |
+| **api-server** | **REST 컨트롤러**, 스웨거(Swagger) 문서, 이미지/파일 서빙 | common-service, common-security |
+| **frontend** | **Next.js 14 (App Router)** 기반 UI, 상태 관리, API 클라이언트 | N/A (Server-to-Server) |
 
 ## 3. 기술 스택 및 버전 (Tech Stack & Versions)
 
+### 3.1. Backend
 | 분류 | 기술 및 버전 | 비고 |
 | :--- | :--- | :--- |
-| **Language** | Java 21 (LTS) | 텍스트 블록, Record 등 최신 문법 활용 |
-| **Framework** | **eGovFrame 5.0 (Spring Boot 3.3.x)** | Jakarta EE 9/10 기반 (javax -> jakarta 패키지명 변경 주의) |
-| **Build Tool** | Gradle 8.12 (권장) | 멀티 모듈 구성이 용이한 Gradle 권장 |
-| **Database** | PostgreSQL | Docker 환경 권장 |
-| **Persistence** | **Spring Data JPA**, QueryDSL 5.0 | 복잡한 동적 쿼리는 QueryDSL 원칙 |
-| **Security** | Spring Security 6.x, JWT (jjwt 0.11.x) | Stateless, Method Security 적용 |
-| **API Docs** | Springdoc OpenAPI (Swagger 3.0) | Controller 코드 기반 자동 생성 |
+| **Language** | **Java 21 (LTS)** | Record, Pattern Matching 등 활용 |
+| **Framework** | **Spring Boot 3.3.7** | eGovFrame 5.0 표준 준수 |
+| **Persistence** | **Spring Data JPA**, QueryDSL 5.0 | 복잡한 쿼리는 QueryDSL 원칙 |
+| **Database** | PostgreSQL 16+ | Docker 기반 운영 |
+| **Security** | Spring Security 6.3, JWT (jjwt) | Stateless, OAuth2 확장 가능 구조 |
+| **Build Tool** | Gradle 8.12 | Kotlin DSL / Groovy DSL 혼용 가능 |
+
+### 3.2. Frontend
+| 분류 | 기술 및 버전 | 비고 |
+| :--- | :--- | :--- |
+| **Framework** | **Next.js 14.2 (App Router)** | SSR, ISR, Server Components 활용 |
+| **Language** | TypeScript 5.x | Strict Type Checking 적용 |
+| **Styling** | Tailwind CSS 3.4, **Shadcn UI** | 컴포넌트 기반 디자인 시스템 |
+| **State** | React Context / Zustand | 경량 상태 관리 프레임워크 |
+| **Fetch** | Axios / Fetch API | FetchWithRetry 및 로깅 적용 |
 
 ## 4. 상세 기술 사양 (Detailed Specifications)
 
-### 4.1. 데이터 액세스 계층 (Data Access Layer)
-*   **Entity 규칙**:
-    *   모든 테이블은 1:1로 매핑되는 `@Entity` 보유.
-    *   `@Id`는 가능한 대리키(Long auto_increment) 사용 권장.
-    *   `BaseTimeEntity`(`@MappedSuperclass`)를 상속받아 생성/수정일시 자동 관리 (JPA Auditing).
-*   **Repository 규칙**:
-    *   단순 CRUD: `JpaRepository` 사용.
-    *   조회/동적쿼리: `QuerydslRepositorySupport` 또는 `JPAQueryFactory` 별도 구현.
+### 4.1. 데이터 액세스 전략
+*   **QueryDSL 필수화**: Join이 포함되거나 조건이 복잡한 모든 조회 쿼리는 QueryDSL로 구현하여 Type-Safe 보장.
+*   **Soft Delete**: `is_deleted` 컬럼 및 `@SQLDelete`, `@Where` 어노테이션을 활용한 논리 삭제 권장.
 
-### 4.2. 비즈니스 및 API 계층 (Business & API Layer)
-*   **DTO 사용 의무화**:
-    *   Entity는 절대로 Controller 밖으로 리턴하지 않음.
-    *   Request/Response DTO를 명확히 분리 (e.g., `UserSaveRequest`, `UserResponse`).
-    *   객체 변환은 생성자 패턴 또는 별도 매퍼 클래스 사용.
-*   **예외 처리 (Error Handling)**:
-    *   `@RestControllerAdvice`를 통한 전역 예외 처리.
-    *   표준 응답 포맷(`ApiResponse<T>`) 정의하여 성공/실패 구조 통일.
+### 4.2. 인증 및 보안 전략
+*   **Dual Token 전략**: Access Token (Header, 짧은 만료) + Refresh Token (HttpOnly Cookie, 긴 만료).
+*   **CORS 설정**: 개발 및 운영 환경별 화이트리스트 기반 통제.
 
-### 4.3. 인증 및 인가 (Authentication & Authorization)
-*   **JWT 저장**: Access Token은 Header(`Authorization: Bearer`), Refresh Token은 `HttpOnly Cookie` 또는 서버측 저장소 권장.
-*   **권한 체계**: Role-Based Access Control (RBAC). URL 패턴 통제보다는 Method Level Security(`@PreAuthorize("hasRole('ADMIN')")`) 권장.
+### 4.3. 테스트 및 품질 관리
+*   **JUnit 5 / AssertJ**: 백엔드 비즈니스 로직 검증.
+*   **Vitest**: 프론트엔드 단위 테스트.
+*   **Playwright**: 핵심 사용자 시나리오 E2E 테스트.
 
-## 5. 마이그레이션 전략 (Migration Strategy)
-기존 Legacy(MyBatis) 코드를 점진적으로 전환합니다.
-
-1.  **Phase 1 (Skeleton)**: 멀티 모듈 프로젝트 생성 및 환경 설정 검증.
-2.  **Phase 2 (Core Domain)**: 회원(User), 공통코드(Code) 등 핵심 테이블의 JPA Entity/Repository 구축.
-3.  **Phase 3 (Auth)**: Spring Security + JWT 도입하여 로그인 API 구현.
-4.  **Phase 4 (Expansion)**: 게시판, 파일 등 주변 모듈 순차적 포팅.
+## 5. 실행 환경 (Infrastructure)
+*   **Containerization**: Docker 및 Docker Compose를 통한 개발/운영 환경 단일화.
+*   **CI/CD**: GitHub Actions를 활용한 자동 빌드, 테스트, 보안 스캔 수행.
