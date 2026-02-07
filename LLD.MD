@@ -1,109 +1,68 @@
 # 전자정부프레임워크 5.0 공통 모듈 구축 - 상세 설계서 (LLD)
 
-## 1. 패키지 상세 설계 (Package Structure)
+## 1. 프로젝트 구조 및 패키지 설계
 
-멀티 모듈 구조에 따른 상세 패키지 명명 규칙 및 계층 구조입니다. 기본 패키지 접두사(prefix)는 `com.company.project`를 사용합니다.
+### 1.1. 백엔드 (Multi-Module)
+기본 패키지 접두사: `com.company.project`
 
-```
-com.company.project
-├── core           # [common-core]
-│   ├── config     # 전역 설정 (Async, WebMvc 등)
-│   ├── exception  # 전역 예외 처리 (GlobalExceptionHandler, BusinessException)
-│   ├── response   # 공통 응답 포맷 (ApiResponse, ErrorCode)
-│   └── util       # 공통 유틸리티 (DateUtil, CryptoUtil)
-├── domain         # [common-domain]
-│   ├── user       # 사용자 도메인 (Entity, Repository)
-│   ├── code       # 공통 코드 도메인 (Entity, Repository)
-│   └── file       # 파일 도메인 (Entity, Repository)
-├── security       # [common-security]
-│   ├── config     # 보안 설정 (SecurityConfig, CorsConfig)
-│   ├── jwt        # JWT 처리 (JwtTokenProvider, JwtAuthenticationFilter)
-│   └── service    # 사용자 인증 서비스 (CustomUserDetailsService)
-└── service        # [common-service]
-    ├── user       # 사용자 비즈니스 로직 (UserServiceImpl)
-    ├── code       # 공통 코드 비즈니스 로직 (CommonCodeServiceImpl)
-    └── auth       # 인증 비즈니스 로직 (AuthServiceImpl)
-```
+*   **common-core**: `core.config`, `core.exception`, `core.response`, `core.util`
+*   **common-domain**: `domain.[module].entity`, `domain.[module].repository`, `domain.[module].dto`
+*   **common-service**: `service.[module].impl`, `service.[module].mapper`
+*   **common-security**: `security.config`, `security.jwt`, `security.service`
+*   **api-server**: `api.controller.[module]`, `api.config.swagger`
 
-## 2. 데이터베이스 상세 설계 (Database Schema)
+### 1.2. 프론트엔드 (Next.js 14 App Router)
+*   **src/app**: 페이지 라우팅 및 서버 컴포넌트 (`(auth)`, `(dashboard)`, `api` 등)
+*   **src/components**: 재사용 가능한 UI 컴포넌트 (`ui/`, `common/`, `[module]/`)
+*   **src/services**: API 연동 로직 (Axios 인스턴스, 모듈별 API 호출 함수)
+*   **src/types**: 전역 및 모듈별 TypeScript 인터페이스/타입 정의
+*   **src/lib**: 공통 유틸리티 함수 및 설정 (Zod 스키마, 전역 상수)
 
-기존 전자정부프레임워크 테이블 명명 규칙을 준수하되, JPA 엔티티 매핑을 위해 현대적인 리팩토링을 병행합니다.
+## 2. 도메인 상세 설계 (Domain Details)
 
-### 2.1. 사용자 (Users)
-*   **관련 테이블**: `COMTN_EMPTLYR_INFO` (업무사용자정보)
-*   **엔티티 명**: `User`
-
-| 필드명 | 타입 | 설명 | 제약사항 |
+### 2.1. 주요 모듈 및 엔터티 매핑
+| 모듈 그룹 | 주요 도메인 | 관련 테이블 (Legacy) | 설명 |
 | :--- | :--- | :--- | :--- |
-| `id` | `Long` | 사용자 시퀀스 ID | PK, Auto Inc |
-| `userId` | `String` | 로그인 ID | Unique |
-| `password` | `String` | 암호화된 비밀번호 | |
-| `userNm` | `String` | 사용자명 | |
-| `userStatus` | `Enum` | 상태 (ACTIVE, INACTIVE, LOCK) | |
-| `role` | `Enum` | 권한 (ROLE_USER, ROLE_ADMIN) | |
+| **시스템 (`sym`)** | Code, Menu, Program | `COMTCCMMNCODE`, `COMTNMENUINFO` | 시스템 기반 데이터 관리 |
+| **보안 (`sec`)** | Role, Author, Group | `COMTNAUTHORINFO`, `COMTNROLEINFO` | RBAC 권한 제어 도메인 |
+| **사용자 (`uss`)** | User, Login | `COMTN_EMPTLYR_INFO` | 일반/업무 사용자 및 인증 정보 |
+| **협업 (`cop`)** | Board, File, Comment | `COMTN_BBS`, `COMTN_FILE` | 게시판, 첨부파일 등 협업 기능 |
+| **운영 (`smt`)** | Schedule, Report | `COMTN_SCHDL`, `COMTN_REPRT` | 일정 관리 및 업무 보고 도메인 |
 
-### 2.2. 공통 코드 (Common Codes)
-*   **관련 테이블**: `COMTCCMMNCODE` (분류코드), `COMTCCMMNDETAILCODE` (상세코드)
-*   **엔티티 명**: `CommonCodeGroup`, `CommonCodeDetail`
+### 2.2. 데이터베이스 엔터티 설계 원칙
+*   **BaseEntity**: 모든 엔터티는 `BaseTimeEntity`(생성/수정일)를 상속.
+*   **복합키 처리**: 복합키 사용 시 `@EmbeddedId` 또는 `@IdClass`를 활용하되, 가급적 대리키(ID) 사용을 권장.
+*   **연관관계**: `@ManyToOne` (FetchType.LAZY)을 기본으로 하며, 필요한 경우에만 양방향 관계 설정.
 
-### 2.3. Entity 클래스 다이어그램 (Class Diagram)
-```mermaid
-classDiagram
-    class BaseTimeEntity {
-        LocalDateTime createdDate
-        LocalDateTime modifiedDate
-    }
-    class User {
-        Long id
-        String userId
-        String password
-        String userNm
-        Role role
-    }
-    class CommonCodeDetail {
-        String code
-        String codeNm
-        String codeDesc
-    }
-    BaseTimeEntity <|-- User
-    BaseTimeEntity <|-- CommonCodeDetail
+## 3. 핵심 로직 및 인터페이스 설계
+
+### 3.1. API 응답 표준 (ApiResponse)
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null
+}
 ```
+*   **상태 코드**: HTTP Status Code를 원칙으로 하되, 비즈니스 에러인 경우 별도의 `ErrorCode` 객체 포함.
 
-## 3. 핵심 로직 상세 설계 (Core Logic)
+### 3.2. 프론트엔드 데이터 페칭 가이드라인
+*   **Server Components**: 초기 데이터 로딩은 `src/app` 내 서버 컴포넌트에서 수행.
+*   **Client Components**: 사용자 인터랙션이 필요한 경우 `use hooks`를 활용하여 클라이언트 사이드 페칭.
+*   **Error Boundary**: `error.tsx`를 통한 라우트별 예외 처리.
 
-### 3.1. 인증/인가 흐름 (Security Flow)
-1.  **로그인 요청**: `POST /api/v1/auth/login` (Body: `LoginRequest`)
-2.  **인증 서비스 (AuthService)**: `AuthenticationManager.authenticate()` 호출을 통한 DB 검증.
-3.  **JWT 생성 (JwtProvider)**: 인증 성공 시 `AccessToken` 및 `RefreshToken` 발급.
-4.  **필터 체인 (Filter Chain)**:
-    *   `JwtAuthenticationFilter`: 헤더에서 토큰 추출 -> 유효성 검증 -> `SecurityContextHolder`에 `Authentication` 객체 저장.
+## 4. API 명세 주요 요약 (API Roadmap)
 
-### 3.2. 공통 응답 처리 (Response Handling)
-모든 API 응답은 `ApiResponse` 래퍼 클래스를 사용하여 구조를 통일합니다.
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/v1/auth/login` | JWT 로그인 | No |
+| POST | `/api/v1/auth/logout` | 로그아웃 (토큰 무효화) | Yes |
+| GET | `/api/v1/users/me` | 현재 세션 사용자 정보 | Yes |
+| GET | `/api/v1/codes` | 공통 코드 목록 조회 | Yes |
+| GET | `/api/v1/boards` | 게시판 목록 조회 | Yes |
+| POST | `/api/v1/files/upload` | 멀티파트 파일 업로드 | Yes |
 
-```java
-public record ApiResponse<T>(
-    boolean success,
-    T data,
-    ErrorResponse error
-) {}
-```
-*   **성공 시**: `ApiResponse.success(data)` 반환.
-*   **실패 시**: `BusinessException` 발생 -> `@RestControllerAdvice`에서 가로채어 `ApiResponse.error(...)` 반환.
-
-## 4. API 명세 예시 (Sample API Specification)
-
-### 4.1. 인증 관련 (Auth)
-*   `POST /api/v1/auth/login`: 로그인 및 JWT 발급
-*   `POST /api/v1/auth/refresh`: 토큰 갱신
-*   `POST /api/v1/auth/logout`: 로그아웃
-
-### 4.2. 회원 관리 (User)
-*   `GET /api/v1/users/me`: 내 정보 조회 (SecurityContext 활용)
-*   `POST /api/v1/users`: 회원 가입
-*   `PUT /api/v1/users/{id}`: 회원 정보 수정
-
-## 5. 구현 시 유의사항 (Implementation Notes)
-*   **DTO 변환**: 엔티티의 직접 노출을 지양하고, `Builder` 패턴을 활용하여 DTO로 변환한다.
-*   **QueryDSL**: `QClass` 생성 경로는 `build/generated/querydsl`로 설정하여 소스 코드와 형상 관리를 분리한다.
-*   **설정 파일**: `application-common.yml` (Core)과 `application-api.yml` (API) 등 모듈별로 설정을 분리하여 관리한다.
+## 5. 구현 세부 규칙
+*   **매핑 전략**: Entity ↔ DTO 변환 시 클래스 내부 정적 메서드(`of`, `from`) 또는 생성자 패턴 권장.
+*   **로깅**: SLF4J (Logback) 기반의 레벨별 로깅 적용 (TRACE/DEBUG/INFO/WARN/ERROR).
+*   **타입 안정성**: 프론트엔드에서는 Zod를 사용한 스키마 검증 및 통합 타입 정의 필수.

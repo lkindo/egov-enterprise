@@ -40,7 +40,7 @@ import jakarta.annotation.Resource;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovMainMenuManageController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovMainMenuManageController.class);

@@ -52,7 +52,7 @@ import jakarta.validation.Valid;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovUserManageController {
 
 	/** userManageService */

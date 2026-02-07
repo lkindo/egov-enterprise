@@ -46,7 +46,7 @@ import jakarta.validation.Valid;
  * 게시물 관리를 위한 컨트롤러 클래스
  * Refactored to use EgovBoardService (JPA)
  */
-@Controller
+// @Controller
 @org.springframework.context.annotation.Lazy
 public class EgovArticleController {
 

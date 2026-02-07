@@ -4,96 +4,67 @@
 *테이블명은 `N` 접두어(Legacy 접두어 제거) 정책을 따릅니다.*
 
 ### 범례
-- ✅ **신규 전환 (Modernized)**: `com.company.project` 패키지로 리팩토링 및 아키텍처 개선 완료
+- ✅ **신규 전환 (Modernized)**: `com.company.project` 패키지로 리팩토링 및 Next.js 14 UI 구현 완료
 - 🟦 **기존 유지 (Legacy)**: `egovframework.com` 패키지(Enterprise Template) 그대로 사용 (호환성 유지)
 
 ---
 
-## 1. 사용자디렉토리/통합인증 (사용자 인증 및 권한)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 로그인정책관리 | selectLoginPolicyList | /uat/uap/selectLoginPolicyList.do | NLOGINPOLICY | LoginPolicyManageController |
-| ✅ | 로그인 | egovLoginUsr | /uat/uia/egovLoginUsr.do | NLOGINPOLICY, COMVNUSERMASTER | AuthController |
+## 1. 관리자 및 시스템 서비스 (Admin & System)
 
-## 2. 보안 (보안 관리)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 권한관리 | EgovAuthorList | /sec/ram/EgovAuthorList.do | NAUTHORINFO | AuthorManageController |
-| ✅ | 권한그룹관리 | EgovAuthorGroupList | /sec/rgm/EgovAuthorGroupList.do | NAUTHORGROUPINFO | AuthorRoleManageController |
-| ✅ | 그룹관리 | EgovGroupList | /sec/gmt/EgovGroupList.do | NGROUPINFO | GroupManageController |
-| ✅ | 롤관리 | EgovRoleList | /sec/rmt/EgovRoleList.do | NROLEINFO | RoleManageController |
-| ✅ | 부서권한관리 | EgovDeptAuthorList | /sec/drm/EgovDeptAuthorList.do | NDEPTAUTHOR | AuthorManageController |
+### 1.1. 사용자 및 보안 관리 (`admin/user`, `admin/security`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 로그인정책관리 | `/admin/user/manage` | `/uat/uap/selectLoginPolicyList.do` | NLOGINPOLICY |
+| ✅ | 권한관리 | `/admin/security/authority` | `/sec/ram/EgovAuthorList.do` | NAUTHORINFO |
+| ✅ | 그룹관리 | `/admin/security/group` | `/sec/gmt/EgovGroupList.do` | NGROUPINFO |
+| ✅ | 롤관리 | `/admin/security/role` | `/sec/rmt/EgovRoleList.do` | NROLEINFO |
+| ✅ | 사용자관리 | `/admin/user/manage` | `/uss/umt/EgovUserManage.do` | NENTRPRSUSER |
 
-## 3. 통계/리포팅 (시스템 통계)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 게시물통계 | selectBbsStats | /sts/bst/selectBbsStats.do | NBBS, NSTATISTIC | BbsUserStatsController |
-| ✅ | 사용자통계 | selectUserStats | /sts/ust/selectUserStats.do | NUSERSTATS | StatisticsController |
-| ✅ | 접속통계 | selectConectStats | /sts/cst/selectConectStats.do | NCONECTSTATS | ConnectStatsController |
-| ✅ | 화면통계 | selectScrinStats | /sts/sst/selectScrinStats.do | NSCRINSTATS | StatisticsController |
-| ✅ | 보고서통계 | selectReprtStatsListView | /sts/rst/selectReprtStatsListView.do | NREPRTSTATS | StatisticsController |
-| ✅ | 자료이용현황통계 | selectDtaUseStatsList | /sts/dst/selectDtaUseStatsList.do | NDTAUSESTATS | StatisticsController |
+### 1.2. 시스템 설정 및 로그 (`admin/system`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 공통코드관리 | `/admin/system/common-code` | `/sym/ccm/cca/EgovCcmCmmnCodeList.do` | NCMMNCODE |
+| ✅ | 메뉴관리 | `/admin/system/menus` | `/sym/mnu/mpm/EgovMenuListSelect.do` | NMENUINFO |
+| ✅ | 프로그램관리 | `/admin/system/programs` | `/sym/prm/EgovProgramListManageSelect.do` | NPROGRMLIST |
+| ✅ | 로그관리 | `/admin/system/logs` | `/sym/log/lgm/SelectSysLogList.do` | NSYSLOG |
+| ✅ | 파일관리 | `/admin/system/files` | `/cmm/fms/selectFileInfs.do` | NFILE |
+| ✅ | 댓글관리 | `/admin/system/comments` | `/cop/cmt/selectCommentList.do` | NCOMMENT |
 
-## 4. 협업 (협업 지원)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 게시판속성관리 | SelectBBSMasterInfs | /cop/bbs/SelectBBSMasterInfs.do | NBBSMASTER | BBSManageController |
-| ✅ | 게시판사용정보 | selectBBSUseInfs | /cop/com/selectBBSUseInfs.do | NBBSUSE | BBSManageController |
-| 🟦 | 템플릿관리 | selectTemplateInfs | /cop/tpl/selectTemplateInfs.do | NTMPLATINFO | - |
-| 🟦 | 스크랩 목록 | selectScrapList | /cop/scp/selectScrapList.do | NSCRAP | - |
-| 🟦 | 커뮤니티관리 | selectCmmntyInfs | /cop/cmy/selectCmmntyInfs.do | NCMMNTY | - |
-| 🟦 | 문자메시지 | selectSmsList | /cop/sms/selectSmsList.do | NSMS | - |
-| 🟦 | 부서일정관리 | EgovDeptSchdulManageList | /cop/smt/dsm/EgovDeptSchdulManageList.do | NSCHDULINFO | - |
-| 🟦 | 일정관리 | EgovIndvdlSchdulManageList | /cop/smt/sim/EgovIndvdlSchdulManageList.do | NSCHDULINFO | - |
-| 🟦 | 일지관리 | EgovDiaryManageList | /cop/smt/dsm/EgovDiaryManageList.do | NDIARYINFO | - |
-| 🟦 | 전체일정관리 | EgovAllSchdulManageList | /cop/smt/sam/EgovAllSchdulManageList.do | NSCHDULINFO | - |
-| 🟦 | 메일발송 | insertSndngMailView | /cop/ems/insertSndngMailView.do | NSNDNGMAILREGIST | - |
-| 🟦 | 발송메일내역 | selectSndngMailList | /cop/ems/selectSndngMailList.do | NSNDNGMAILREGIST | - |
-| 🟦 | 명함관리 | selectNcrdInfs | /cop/ncm/selectNcrdInfs.do | NNCRD | - |
-| 🟦 | 주소록관리 | selectAdbkList | /cop/adb/selectAdbkList.do | NADBK | - |
-| 🟦 | 간부일정관리 | selectLeaderSchdulList | /cop/smt/lsm/usr/selectLeaderSchdulList.do | NLEADERSCHDUL | - |
-| 🟦 | 부서업무함관리 | selectDeptJobBxList | /cop/smt/djm/selectDeptJobBxList.do | NDEPTJOBBX | - |
-| 🟦 | 주간/월간보고관리 | selectWikMnthngReprtList | /cop/smt/wmr/selectWikMnthngReprtList.do | NWIKMNTHNGREPRT | - |
-| 🟦 | 메모할일관리 | selectMemoTodoList | /cop/smt/mtm/selectMemoTodoList.do | NMEMOTODO | - |
-| 🟦 | 메모보고 | selectMemoReprtList | /cop/smt/mrm/selectMemoReprtList.do | NMEMOREPRT | - |
+## 2. 협업 및 업무 지원 (Collaboration & Operations)
 
-## 5. 사용자지원 (회원 및 도움말 지원)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 기업회원관리 | EgovEntrprsMberManage | /uss/umt/EgovEntrprsMberManage.do | NENTRPRSMBER | UserManageController |
-| ✅ | 업무사용자관리 | EgovUserManage | /uss/umt/EgovUserManage.do | NENTRPRSUSER, GNRL_MBER | UserManageController |
-| 🟦 | 부서관리 | selectDeptManageListView | /uss/umt/dpt/selectDeptManageListView.do | NDEPT | - |
-| ✅ | 일반회원관리 | EgovMberManage | /uss/umt/EgovMberManage.do | NGNRLMBER | UserManageController |
-| 🟦 | 약관관리 | StplatListInqire | /uss/sam/stp/StplatListInqire.do | NSTPLATINFO | - |
-| 🟦 | 저작권보호정책 | CpyrhtPrtcPolicyListInqire | /uss/sam/cpy/CpyrhtPrtcPolicyListInqire.do | NCPYRHTPRTCPOLICY | - |
-| 🟦 | 개인정보보호정책 | listIndvdlInfoPolicy | /uss/sam/ipm/listIndvdlInfoPolicy.do | NINDVDLINFOPOLICY | - |
-| 🟦 | 온라인매뉴얼 | listOnlineManual | /uss/olh/omm/listOnlineManual.do | NONLINEMANUAL | - |
-| 🟦 | 설문관리 | EgovQustnrManageList | /uss/olp/qmc/EgovQustnrManageList.do | NQUSTNRMANAGE | - |
-| ✅ | 설문조사 | EgovQustnrRespondInfoManageList | /uss/olp/qri/EgovQustnrRespondInfoManageList.do | NQUSTNRRESPONDINFO | QustnrRespondInfoController |
+### 2.1. 게시판 및 컨텐츠 서비스 (`cop`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 게시판 | `/cop/bbs/selectBoardList` | `/cop/bbs/selectBoardList.do` | NBBS |
+| ✅ | 게시판관리 | `/admin/community` | `/cop/bbs/SelectBBSMasterInfs.do` | NBBSMASTER |
+| ✅ | 동호회관리 | `/admin/community` | `/cop/cmy/selectCmmntyInfs.do` | NCMMNTY |
+| ✅ | 스크랩관리 | `/cop/scp/selectScrapList` | `/cop/scp/selectScrapList.do` | NSCRAP |
+| ✅ | 명함/주소록 | `/cop/adb/selectAddressBookList` | `/cop/adb/selectAdbkList.do` | NADBK, NNCRD |
 
-## 6. 시스템관리 (시스템 설정 및 관리)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| ✅ | 공통분류코드 | EgovCcmCmmnClCodeList | /sym/ccm/ccc/EgovCcmCmmnClCodeList.do | NCMMNCLCODE | CcmManageController |
-| ✅ | 공통상세코드 | EgovCcmCmmnDetailCodeList | /sym/ccm/cde/EgovCcmCmmnDetailCodeList.do | NCMMNDETAILCODE | CcmManageController |
-| ✅ | 공통코드 | EgovCcmCmmnCodeList | /sym/ccm/cca/EgovCcmCmmnCodeList.do | NCMMNCODE | CcmManageController |
-| ✅ | 우편번호관리 | EgovCcmZipList | /sym/ccm/zip/EgovCcmZipList.do | NZIP | ZipManageController |
-| ✅ | 행정코드관리 | EgovCcmAdministCodeList | /sym/ccm/adc/EgovCcmAdministCodeList.do | NADMINISTCODE | CcmManageController |
-| ✅ | 로그관리 | SelectSysLogList | /sym/log/lgm/SelectSysLogList.do | NSYSLOG | LogManageController |
-| ✅ | 사용로그관리 | SelectUserLogList | /sym/log/ulg/SelectUserLogList.do | NUSERLOG | LogManageController |
-| ✅ | 시스템이력관리 | SelectSysHistoryList | /sym/log/slg/SelectSysHistoryList.do | NSYSHISTORY | LogManageController |
-| ✅ | 메뉴리스트관리 | EgovMenuListSelect | /sym/mnu/mpm/EgovMenuListSelect.do | NMENUINFO | MenuManageController |
-| ✅ | 메뉴생성관리 | EgovMenuCreatManageSelect | /sym/mnu/mcm/EgovMenuCreatManageSelect.do | NMENUCREATDTLS | MenuCreateController |
-| ✅ | 프로그램관리 | EgovProgramListManageSelect | /sym/prm/EgovProgramListManageSelect.do | NPROGRMLIST | ProgramController |
-| 🟦 | 네트워크관리 | selectNtwrkList | /sym/sym/nwk/selectNtwrkList.do | NNTWRKINFO | - |
-| 🟦 | 서버정보관리 | selectServerEqpmnList | /sym/sym/srv/selectServerEqpmnList.do | NSERVEREQPMNINFO | - |
+### 2.2. 일정 및 보고 (`cop/smt`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 개인일정관리 | `/cop/smt/sim/selectScheduleList` | `/cop/smt/sim/EgovIndvdlSchdulManageList.do` | NSCHDULINFO |
+| ✅ | 부서일정관리 | `/cop/smt/dsm/selectDeptScheduleList` | `/cop/smt/dsm/EgovDeptSchdulManageList.do` | NSCHDULINFO |
+| ✅ | 부서업무관리 | `/cop/smt/djm/selectDeptJobList` | `/cop/smt/djm/selectDeptJobBxList.do` | NDEPTJOBBX |
+| ✅ | 주간/월간보고 | `/cop/smt/wmr/selectReportList` | `/cop/smt/wmr/selectWikMnthngReprtList.do` | NWIKMNTHNGREPRT |
 
-## 7. 시스템/서비스연계 (시스템 간 연계)
-| 이관 상태 | 메뉴명 (중/소) | 프로그램 파일명 | URL | 주요 연결 테이블 | 비고 |
-|:---:|---|---|---|---|---|
-| 🟦 | 시스템연계관리 | getSystemCntcList | /sym/sci/cnt/getSystemCntcList.do | NSYSTEMCNTC | - |
-| 🟦 | 연계기관관리 | getCntcInsttList | /sym/sci/cnt/getCntcInsttList.do | NCNTCINSTT | - |
+## 3. 통계 및 지원 서비스 (Stats & Help)
+
+### 3.1. 시스템 통계 (`admin/stats`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 사용자통계 | `/admin/stats/user` | `/sts/ust/selectUserStats.do` | NUSERSTATS |
+| ✅ | 화면통계 | `/admin/stats/screen` | `/sts/sst/selectScrinStats.do` | NSCRINSTATS |
+
+### 3.2. 도움말 및 설문 (`admin/help`, `survey`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | FAQ | `/admin/help` | `/uss/olh/faq/selectFaqList.do` | NFAQINFO |
+| ✅ | Q&A | `/admin/help` | `/uss/olh/qna/selectQnaList.do` | NQNAINFO |
+| ✅ | 설문조사 | `/survey` | `/uss/olp/qri/EgovQustnrRespondInfoList.do` | NQUSTNRRESPONDINFO |
+| ✅ | 약관관리 | `/admin/terms` | `/uss/sam/stp/StplatListInqire.do` | NSTPLATINFO |
 
 ---
-**작성일**: 2025-12-31
-**작성자**: AntiGravity Agent
+**최종 수정일**: 2026-02-08
+**수정 내용**: 실물 frontend 라우팅 구조 및 task.md 완료 상태 기반 전면 동기화

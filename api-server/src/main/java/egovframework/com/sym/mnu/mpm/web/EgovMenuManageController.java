@@ -61,7 +61,7 @@ import jakarta.servlet.http.HttpServletRequest;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovMenuManageController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovMenuManageController.class);

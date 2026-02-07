@@ -46,7 +46,7 @@ import jakarta.annotation.Resource;
  *
  *      </pre>
  */
-@Controller
+// @Controller
 public class EgovCcmCmmnCodeManageController {
 
 	@Resource(name = "egovCommonCodeService")
