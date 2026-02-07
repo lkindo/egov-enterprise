@@ -242,3 +242,11 @@
 .tree_ui .list > li > ul > li > ul {margin-top: 5px; padding-left: 20px;}
 .tree_ui .list > li > ul > li + li,
 .tree_ui .list > li > ul > li > ul > li + li {margin-top: 7px;}
+
+/* Palette: Password Visibility Toggle */
+.loginbox dd .password-wrapper {position: relative; display: inline-block; width: 336px;}
+.loginbox dd .password-wrapper input[type="text"],
+.loginbox dd .password-wrapper input[type="password"] {width: 100%; padding-right: 40px;}
+.btn-toggle-password {position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; font-size: 18px; line-height: 1; color: #666; padding: 0;}
+.btn-toggle-password:hover {color: #222;}
+.btn-toggle-password:focus-visible {outline: 2px solid #004986; border-radius: 4px;}
