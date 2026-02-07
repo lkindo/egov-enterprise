@@ -11,4 +11,7 @@ import java.util.List;
 @Repository
 public interface FileDetailRepository extends JpaRepository<FileDetail, FileDetailId> {
     List<FileDetail> findByFileMaster(FileMaster fileMaster);
+
+    org.springframework.data.domain.Page<FileDetail> findByOrignlFileNmContaining(String orignlFileNm,
+            org.springframework.data.domain.Pageable pageable);
 }
