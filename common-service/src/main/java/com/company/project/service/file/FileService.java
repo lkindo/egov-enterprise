@@ -14,7 +14,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -37,14 +40,17 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
 
     private final FileMasterRepository fileMasterRepository;
     private final FileDetailRepository fileDetailRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
     public FileService(FileMasterRepository fileMasterRepository,
-            FileDetailRepository fileDetailRepository) {
+            FileDetailRepository fileDetailRepository,
+            PlatformTransactionManager transactionManager) {
         this.fileMasterRepository = fileMasterRepository;
         this.fileDetailRepository = fileDetailRepository;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     /**
@@ -124,27 +130,37 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void deleteFiles(String atchFileId) throws IOException {
-        FileMaster master = fileMasterRepository.findById(atchFileId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        List<FileDetail> details = transactionTemplate.execute(status -> {
+            FileMaster master = fileMasterRepository.findById(atchFileId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        List<FileDetail> details = fileDetailRepository.findByFileMaster(master);
-        for (FileDetail detail : details) {
-            deletePhysicalFile(detail);
+            List<FileDetail> d = fileDetailRepository.findByFileMaster(master);
+            fileMasterRepository.delete(master);
+            return d;
+        });
+
+        if (details != null) {
+            for (FileDetail detail : details) {
+                deletePhysicalFile(detail);
+            }
         }
-
-        fileMasterRepository.delete(master);
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
-        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        FileDetail detail = transactionTemplate.execute(status -> {
+            FileDetail d = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+            fileDetailRepository.delete(d);
+            return d;
+        });
 
-        deletePhysicalFile(detail);
-        fileDetailRepository.delete(detail);
+        if (detail != null) {
+            deletePhysicalFile(detail);
+        }
     }
 
     @Override
@@ -171,7 +187,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         saveFileDetails(master, files, maxSn + 1);
     }
 
-    private void deletePhysicalFile(FileDetail detail) {
+    protected void deletePhysicalFile(FileDetail detail) {
         String streFileNm = detail.getStreFileNm();
         if (streFileNm == null)
             return;
