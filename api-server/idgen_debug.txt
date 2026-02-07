@@ -1,3 +1,0 @@
-IdGenInitializer started
-Checking DEPT_JOB_ID: count=1
-Checking DEPT_JOB_BX_ID: count=1
