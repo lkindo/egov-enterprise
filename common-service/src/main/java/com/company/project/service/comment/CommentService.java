@@ -79,4 +79,15 @@ public class CommentService implements EgovCommentService {
 
         comment.delete(userId);
     }
+
+    @Override
+    public org.springframework.data.domain.Page<CommentDto> getAllCommentList(
+            org.springframework.data.domain.Pageable pageable, String searchKeyword) {
+        if (searchKeyword != null && !searchKeyword.isEmpty()) {
+            return commentRepository.findByCommentCnContaining(searchKeyword, pageable)
+                    .map(CommentDto::from);
+        }
+        return commentRepository.findAll(pageable)
+                .map(CommentDto::from);
+    }
 }

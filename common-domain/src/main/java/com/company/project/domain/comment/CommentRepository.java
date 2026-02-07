@@ -13,4 +13,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @Query("SELECT MAX(c.id) FROM Comment c")
     Long findMaxId();
+
+    Page<Comment> findByCommentCnContaining(String commentCn, Pageable pageable);
 }
