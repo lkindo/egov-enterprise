@@ -1,9 +1,12 @@
 package egovframework.com.cmm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -16,6 +19,31 @@ class EgovBrowserUtilTest {
         HashMap<String, String> result = EgovBrowserUtil.getBrowser(userAgent);
         assertEquals(expectedType, result.get(EgovBrowserUtil.TYPEKEY), "Type mismatch for: " + userAgent);
         assertEquals(expectedVersion, result.get(EgovBrowserUtil.VERSIONKEY), "Version mismatch for: " + userAgent);
+    }
+
+    @Test
+    void testGetDisposition() throws Exception {
+        String filename = "테스트파일.txt";
+        String charSet = "UTF-8";
+        String encodedFilename = URLEncoder.encode(filename, charSet).replaceAll("\\+", "%20");
+        String encodedFilenameWithStar = URLEncoder.encode(filename, charSet);
+
+        // Case 1: MSIE version <= 8.0
+        String userAgentIE8 = "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)";
+        String dispositionIE8 = EgovBrowserUtil.getDisposition(filename, userAgentIE8, charSet);
+        assertEquals("Content-Disposition: attachment; filename=" + encodedFilename, dispositionIE8);
+
+        // Case 2: Other supported browser (Chrome)
+        String userAgentChrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
+        String dispositionChrome = EgovBrowserUtil.getDisposition(filename, userAgentChrome, charSet);
+        assertEquals("attachment; filename*=" + charSet + "''" + encodedFilenameWithStar, dispositionChrome);
+
+        // Case 3: Unsupported browser (OTHER)
+        String userAgentOther = "MyCustomBrowser/1.0";
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            EgovBrowserUtil.getDisposition(filename, userAgentOther, charSet);
+        });
+        assertEquals("Not supported browser", exception.getMessage());
     }
 
     private static Stream<Arguments> provideUserAgents() {
@@ -57,7 +85,9 @@ class EgovBrowserUtilTest {
             // XBOX One (IE 10.0)
             Arguments.of("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0; Xbox; Xbox One)", EgovBrowserUtil.MSIE, "10.0"),
             // XBOX 360 (IE 9.0)
-            Arguments.of("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; Xbox)", EgovBrowserUtil.MSIE, "9.0")
+            Arguments.of("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; Xbox)", EgovBrowserUtil.MSIE, "9.0"),
+            // Whale 0.9.31.20
+            Arguments.of("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Whale/0.9.31.20 Safari/537.36", EgovBrowserUtil.WHALE, "0.9")
         );
     }
 }
