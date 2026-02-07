@@ -80,6 +80,20 @@
                             }
                             getid(document.loginForm);
                         }
+
+                        function togglePasswordVisibility() {
+                            var passwordInput = document.getElementById("password");
+                            var toggleBtn = document.getElementById("btnTogglePassword");
+                            if (passwordInput.type === "password") {
+                                passwordInput.type = "text";
+                                toggleBtn.innerHTML = "🙈"; // Hide icon
+                                toggleBtn.setAttribute("aria-label", "비밀번호 숨기기");
+                            } else {
+                                passwordInput.type = "password";
+                                toggleBtn.innerHTML = "👁️"; // Show icon
+                                toggleBtn.setAttribute("aria-label", "비밀번호 보기");
+                            }
+                        }
                     </script>
                 </head>
 
@@ -127,9 +141,13 @@
                                                         <dl>
                                                             <dt><label for="password">비밀번호</label></dt>
                                                             <dd>
-                                                                <input type="password" maxlength="25"
-                                                                    title="비밀번호를 입력하세요." placeholder="비밀번호" id="password" name="password"
-                                                                    onkeydown="javascript:if (event.keyCode == 13) { actionLogin(); }" />
+                                                                <div class="password-wrapper">
+                                                                    <input type="password" maxlength="25"
+                                                                        title="비밀번호를 입력하세요." placeholder="비밀번호" id="password" name="password"
+                                                                        onkeydown="javascript:if (event.keyCode == 13) { actionLogin(); }" />
+                                                                    <button type="button" id="btnTogglePassword" class="btn-toggle-password"
+                                                                        onclick="togglePasswordVisibility()" aria-label="비밀번호 보기">👁️</button>
+                                                                </div>
                                                             </dd>
                                                         </dl>
 
