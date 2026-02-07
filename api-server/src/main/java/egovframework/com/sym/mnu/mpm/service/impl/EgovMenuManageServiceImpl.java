@@ -27,6 +27,8 @@ import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 
+import jakarta.persistence.EntityManager;
+
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.mnu.mpm.service.EgovMenuManageService;
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
@@ -62,6 +64,8 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	private final ProgramRepository programRepository;
 	private final ProgrmManageDAO progrmManageDAO; // 프로그램 상세(변경요청) 처리를 위해 유지
 	private final EgovExcelService excelZipService;
+
+    private final EntityManager entityManager;
 
 	/**
 	 * 메뉴 상세정보를 조회
@@ -257,6 +261,8 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		return "0"; // 성공
 	}
 
+	private static final int BATCH_SIZE = 1000;
+
 	private boolean progrmRegist(HSSFSheet progrmSheet) {
 		int rows = progrmSheet.getPhysicalNumberOfRows();
 		java.util.List<Program> programs = new java.util.ArrayList<>();
@@ -273,9 +279,18 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 					.progrmDc(getCellValue(row.getCell(4)))
 					.build();
 			programs.add(program);
+
+			if (programs.size() >= BATCH_SIZE) {
+				programRepository.saveAll(programs);
+                entityManager.flush();
+                entityManager.clear();
+				programs.clear();
+			}
 		}
 		if (!programs.isEmpty()) {
 			programRepository.saveAll(programs);
+            entityManager.flush();
+            entityManager.clear();
 		}
 		return true;
 	}
@@ -303,9 +318,18 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 					.progrmFileNm(progrmFileNm)
 					.build();
 			menus.add(menu);
+
+			if (menus.size() >= BATCH_SIZE) {
+				menuRepository.saveAll(menus);
+                entityManager.flush();
+                entityManager.clear();
+				menus.clear();
+			}
 		}
 		if (!menus.isEmpty()) {
 			menuRepository.saveAll(menus);
+            entityManager.flush();
+            entityManager.clear();
 		}
 		return true;
 	}

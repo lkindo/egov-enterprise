@@ -25,6 +25,7 @@ import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
+import jakarta.persistence.EntityManager;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
@@ -45,6 +46,9 @@ class EgovMenuManageServiceTest {
 
     @Mock
     private EgovExcelService excelZipService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private EgovMenuManageServiceImpl menuManageService;
