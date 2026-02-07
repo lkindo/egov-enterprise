@@ -60,26 +60,45 @@ public class QustnrRespondInfoController {
     @Operation(summary = "설문 응답 등록")
     @PostMapping("/response")
     public ResponseEntity<?> registerResponse(@RequestBody QustnrRespondInfoVO qustnrRespondInfoVO) throws Exception {
-        // Assume FrstRegisterId/LastUpdusrId are set from authenticated user context in
-        // real app
-        // Here getting from request body for simplicity or relying on service/client to
-        // provide
-
         egovQustnrRespondInfoService.insertQustnrRespondInfo(qustnrRespondInfoVO);
-
         return ResponseEntity.ok("Successfully registered survey response.");
+    }
+
+    @Operation(summary = "설문 응답 상세 조회")
+    @GetMapping("/response/{id}")
+    public ResponseEntity<?> getResponseDetail(@PathVariable String id) throws Exception {
+        QustnrRespondInfoVO vo = new QustnrRespondInfoVO();
+        vo.setQestnrQesitmId(id);
+
+        List<?> detail = egovQustnrRespondInfoService.selectQustnrRespondInfoDetail(vo);
+        if (detail == null || detail.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(detail.get(0));
+    }
+
+    @Operation(summary = "설문 응답 삭제")
+    @DeleteMapping("/response/{id}")
+    public ResponseEntity<?> deleteResponse(@PathVariable String id) throws Exception {
+        QustnrRespondInfoVO vo = new QustnrRespondInfoVO();
+        vo.setQestnrQesitmId(id);
+
+        egovQustnrRespondInfoService.deleteQustnrRespondInfo(vo);
+        return ResponseEntity.ok("Successfully deleted survey response.");
     }
 
     @Operation(summary = "설문 통계 조회 (객관식/주관식)")
     @GetMapping("/stats")
     public ResponseEntity<?> getSurveyStats(
             @RequestParam String qestnrId,
-            @RequestParam String qestnrTmplatId,
+            @RequestParam(required = false) String qestnrTmplatId,
             @RequestParam(defaultValue = "1") String type) throws Exception {
 
         Map<String, Object> params = new HashMap<>();
         params.put("qestnrId", qestnrId);
-        params.put("qestnrTmplatId", qestnrTmplatId);
+        if (qestnrTmplatId != null) {
+            params.put("qestnrTmplatId", qestnrTmplatId);
+        }
 
         List<?> stats;
         if ("1".equals(type)) {

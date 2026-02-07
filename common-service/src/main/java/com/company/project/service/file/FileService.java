@@ -182,6 +182,17 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         }
     }
 
+    @Override
+    public org.springframework.data.domain.Page<FileDto> getAllFileList(
+            org.springframework.data.domain.Pageable pageable, String searchKeyword) {
+        if (searchKeyword != null && !searchKeyword.isEmpty()) {
+            return fileDetailRepository.findByOrignlFileNmContaining(searchKeyword, pageable)
+                    .map(this::convertToDto);
+        }
+        return fileDetailRepository.findAll(pageable)
+                .map(this::convertToDto);
+    }
+
     private FileDto convertToDto(FileDetail d) {
         return FileDto.builder()
                 .atchFileId(d.getFileMaster().getAtchFileId())

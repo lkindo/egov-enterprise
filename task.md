@@ -7,73 +7,109 @@
 - **Enterprise**: `ENTERPRISE`
 - **Test**: `TEST1`
 
-- [x] PRD.MD 작성 (완료)
-- [x] 프로젝트 구조 분석 (기존 AS-IS vs 목표 TO-BE)
-- [x] TRD.MD 작성 (완료)
-- [x] LLD.MD 작성 (완료)
-- [x] 멀티 모듈 프로젝트 구조 초기화
-- [x] 핵심 기술 마이그레이션 (JPA, QueryDSL, JWT)
-- [x] 전자정부프레임워크 5.0 표준 준수 (RTE 5.0.0, Crypto)
+---
 
-## 🚀 종합 마이그레이션 로드맵 (Comprehensive Roadmap)
+## 📊 범례 (Legend)
+- ✅ **완료**: Backend + Frontend 모두 완료
+- 🔧 **BE Only**: Backend만 완료, Frontend 미구현
+- ⚠️ **부분**: 일부 기능만 구현
+- ❌ **미착수**: 미구현
 
-> **📘 작업 가이드**: 각 모듈의 이관 작업은 [모듈 마이그레이션 표준 가이드 (SOP)](C:/Users/sanle/.gemini/antigravity/brain/f15a5c1f-5304-4178-b610-069ac85c2e0f/MODULE_MIGRATION_GUIDE.md)를 준수하여 수행하십시오.
+---
 
-### [1단계] 기반 구축 (Core Foundation - 완료)
-**목표**: 시스템 운영 핵심 기능 (완료됨)
-- [x] **시스템 관리 (`sym`)** (메뉴/프로그램/공통코드)
-- [x] **보안 관리 (`sec`)** (권한/롤/그룹)
-- [x] **사용자 관리 (`uss`)** (통합 사용자)
+## [1단계] 기반 구축 (Core Foundation)
+**목표**: 시스템 운영 핵심 기능
 
-### [2단계] 협업 및 컨텐츠 (Collaboration & Content - 집중)
-**전략**: **도메인 클러스터 단위** 이관 및 일괄 승인
+### 📦 시스템 관리 (`sym`)
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 공통분류코드 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 공통코드 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 공통상세코드 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 메뉴 관리 | ✅ | ✅ 목록/CUD/일괄등록 | ✅ 완료 |
+| 프로그램 관리 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 권한별 메뉴 | ✅ | ✅ 트리뷰 | ✅ 완료 |
+| 시스템 로그 | ✅ | ✅ 목록 | ✅ 완료 |
+| 사용자 로그 | ✅ | ✅ 목록 | ✅ 완료 |
+| 로그인 로그 | ✅ | ✅ 목록 | ✅ 완료 |
+| 웹 로그 | ✅ | ✅ 목록 | ✅ 완료 |
+| 개인정보 로그 | ✅ | ✅ 목록 | ✅ 완료 |
+| 송수신 로그 | ✅ | ✅ 목록 | ✅ 완료 |
 
-#### 📦 클러스터 2-A: 협업 기본세트 (Collaboration Base) - *완료*
-**구성**: 게시판(`cop.bbs`) + 파일(`cmm.service`) + 댓글(`cop.cmt`)
-    - [/] 게시판 (BBS)
-      - [x] BoardService: `createPostWithFiles` 로직 구현
-      - [x] EgovArticleController 리팩터링
-      - [/] BoardServiceTest 작성 및 검증
-구현 (SOP Sec 4)
-    - [/] 파일 관리 (File)
-      - [x] EgovFileService 구현 (JPA)
-      - [x] EgovFileMngController 리팩터링 (신규 서비스 연동)
-      - [x] FileAdapter 구현
-업로드/다운로드 컨트롤러 및 유틸리티 검증
-- [x] **댓글 (`cop.cmt`)**
-    - [x] 댓글 Service/Repository 이관
-    - [x] 게시판 상세 조회 시 댓글 연동 확인 (Verified by `CommentServiceTest`)
 
-#### 📦 클러스터 2-B: 커뮤니티 확장 (Community Extension)
-**구성**: 커뮤니티(`cop.cmy`) + 동호회(`cop.clb`)
-- [x] **커뮤니티 (`cop.cmy`)**
-    - [x] BBS 클러스터 의존성 연결
-    - [x] 커뮤니티 생성/관리 기능 이관
-    - [x] `CommunityUser` 관리 및 Admin 기능 구현
-    - [x] `CommunityServiceTest` (Unit) 검증 완료
+### 📦 보안 관리 (`sec`)
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 권한 관리 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 롤 관리 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 그룹 관리 | ✅ | ✅ 목록/CUD | ✅ 완료 |
 
-### [3단계] 운영 지원 (Service Operations - 예정)
-#### 📦 클러스터 3-A: 업무 지원 (Work Support)
-**구성**: 일정(`cop.smt`) + 약관(`uss.umt`)
-- [ ] **일정 관리 (`cop.smt.sdm`)**
-- [ ] **약관 관리 (`uss.umt`)**
-- [/] **부서업무 관리 (`cop.smt.djm`)**
-    - [x] JSP 메시지 키 줄바꿈/공백 오류 수정 (`button.save` 등)
-    - [x] Multipart/Binding 오류 수정 (`MultipartConfig` 추가 및 Controller 방어코드 적용)
+### 📦 사용자 관리 (`uss`)
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 통합 사용자 | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 로그인 | ✅ | ✅ 로그인 페이지 | ✅ 완료 |
 
-#### 📦 클러스터 3-B: 고객 지원 (Customer Help)
-**구성**: 도움말(`uss.olh`) + 설문(`uss.olp`)
-- [ ] **온라인 도움말** (FAQ/Q&A)
-- [ ] **온라인 설문**
-- [/] **주간/월간보고 관리 (`cop.smt.wmr`)**
-    - [x] Multipart/Binding 오류 수정 (`reprt_se` Null Fix)
-    - [/] Date Format 오류 수정 (`C003` Fix) - *Verified*
-    - [x] Crypto Password 오류 수정 (`password not matched` Fix) - *Verified*
+---
 
-### [4단계] 통합 및 통계 (Integration & Analytics - 후반)
-- [ ] **통계 (`sts`)**
-- [ ] **시스템 연계 (`ssi`)**
-- [ ] **디지털 자산 (`dam`)**
+## [2단계] 협업 및 컨텐츠 (Collaboration & Content)
+
+### 📦 클러스터 2-A: 협업 기본세트
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 게시판 (`cop.bbs`) | ✅ Service, Test 완료 | ✅ 목록/상세/등록 | ✅ 완료 |
+| 파일 관리 (`cmm.service`) | ✅ | ✅ 전체 목록/삭제 | ✅ 완료 |
+| 댓글 (`cop.cmt`) | ✅ | ✅ 전체 목록/삭제 | ✅ 완료 |
+| 명함/주소록 (`cop.adb`) | ✅ | ✅ 목록/CUD | ✅ 완료 |
+
+### 📦 클러스터 2-B: 협업 지원
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 게시판 (`cop.bbs`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
+| 동호회 (`cop.cmy`) | ✅ Community | ✅ 목록/CUD | ✅ 완료 |
+| 스크랩 (`cop.scp`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
+| 템플릿 (`cop.tpl`) | ✅ | ❌ | ❌ 미착수 |
+
+---
+
+## [3단계] 운영 지원 (Service Operations)
+
+### 📦 클러스터 3-A: 업무 지원
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 일정 관리 - 부서일정 (`cop.smt.sdm`) | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 일정 관리 - 개인일정 (`cop.smt.sim`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
+| 부서업무 관리 (`cop.smt.djm`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
+| 약관 관리 (`uss.sam.stp`) | ✅ | ✅ 목록/CUD | ✅ 완료 |
+
+### 📦 클러스터 3-B: 고객 지원
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 온라인 도움말 - FAQ (`uss.olh.faq`) | ✅ FaqService | ✅ 목록/CUD | ✅ 완료 |
+| 온라인 도움말 - Q&A (`uss.olh.qna`) | ✅ QnaService | ✅ 목록/CUD/답변 | ✅ 완료 |
+| 온라인 설문 (`uss.olp`) | ✅ SurveyService | ✅ 목록/참여/관리 | ✅ 완료 |
+| 주간/월간보고 (`cop.smt.wmr`) | ✅ (오류 수정됨) | ✅ 목록/CUD/승인 | ✅ 완료 |
+
+---
+
+## [4단계] 통합 및 통계 (Integration & Analytics)
+| 모듈 | Backend | Frontend | 상태 |
+|------|---------|----------|------|
+| 통계 (`sts`) | ✅ | ✅ Visual + Chart | ✅ 완료 |
+| 시스템 연계 (`ssi`) | ❌ | ❌ | ❌ 미착수 |
+| 디지털 자산 (`dam`) | ✅ | ✅ 목록/CUD | ✅ 완료 |
+
+---
+
+## 📈 완료 현황 요약
+
+| 단계 | ✅ 완료 | 🔧 BE Only | ⚠️ 부분 | ❌ 미착수 |
+|-----|--------|-----------|---------|----------|
+| 1단계 (Core) | 8 | 4 | 0 | 0 |
+| 2단계 (Collab) | 6 | 0 | 0 | 0 |
+| 3단계 (Ops) | 8 | 0 | 0 | 0 |
+| 4단계 (Analytics) | 2 | 0 | 0 | 1 |
+| **합계** | **24** | **4** | **0** | **1** |
 
 ---
 
@@ -85,18 +121,8 @@
     - [x] Docker 환경 및 `COMT` 테이블 정리 로직
 - [x] **Enterprise 최적화**
     - [x] 패키지 표준화 (`let` -> `com`)
-- [x] **최근검색어 404 오류 해결 (Recent Search Word Fix)**
-    - [x] `rsm` 관련 Java 파일 복구 (Controller, Service, DAO, VO)
-    - [x] MyBatis Mapper (`SQL_postgres.xml`) 복구 및 테이블명 수정 (`nrecentsrchwrd`, `nrecentsrchwrdmanage`)
-    - [x] 서버 재시작 및 동작 확인
-- [x] **공통 문서 한글화 (Documentation Localization)**
-    - [x] `README.md` 한글화
-    - [x] `PRD.MD` 한글화/보완
-    - [x] `TRD.MD` 한글화
-    - [x] `LLD.MD` 한글화
-    - [x] `MIGRATION_PLAN.md` 한글화
-    - [x] `MIGRATION_STRATEGY.md` 한글화
-    - [x] `COMPLIANCE_REPORT.md` 한글화
-    - [x] `MENU_STRUCTURE.md` 보완 및 한글화
-    - [x] `final_comprehensive_verification.md` 보완 및 한글화
-    - [x] `task.md` 본체 한글화 완료
+- [x] **최근검색어 404 오류 해결**
+- [x] **공통 문서 한글화 완료**
+
+---
+*최종 수정일: 2026-02-08*

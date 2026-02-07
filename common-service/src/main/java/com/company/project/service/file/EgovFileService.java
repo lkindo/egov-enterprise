@@ -47,4 +47,10 @@ public interface EgovFileService {
      * 파일 수정 (추가 업로드)
      */
     void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException;
+
+    /**
+     * 모든 파일 목록 조회 (Admin 용)
+     */
+    org.springframework.data.domain.Page<FileDto> getAllFileList(org.springframework.data.domain.Pageable pageable,
+            String searchKeyword);
 }

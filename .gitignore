@@ -2,21 +2,62 @@
 # eGovFrame / Java / Gradle / Next.js .gitignore
 # ==========================================
 
+<<<<<<< HEAD
 # ----- OS & IDE -----
+=======
+# ===== Build 결과물 =====
+target/
+build/
+out/
+.gradle/
+bin/
+*.war
+*.jar
+*.class
+
+# ===== Node.js / Frontend =====
+node_modules/
+.npm/
+.next/
+.vercel/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+playwright-report/
+test-results/
+
+# ===== IDE 설정 =====
+# Eclipse
+.project
+.classpath
+.settings/
+*.launch
+.metadata/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ===== 운영체제 =====
+>>>>>>> dev1
 # Windows
 Thumbs.db
-ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
 # macOS
 .DS_Store
 .AppleDouble
-.LSOverride
 ._*
-.Spotlight-V100
-.Trashes
 
+<<<<<<< HEAD
 # IntelliJ IDEA
 .idea/
 *.iml
@@ -74,6 +115,45 @@ export/
 .env.test.local
 .env.production.local
 *.env
+=======
+# ===== 로그 및 임시 파일 =====
+*.log
+logs/
+*.txt
+!README.md
+!MENU_STRUCTURE.md
+!PRD.MD
+!TRD.MD
+!LLD.MD
+boot_error*
+server_run_*.txt
+
+# ===== 프로젝트 특정 설정 =====
+.jules/
+.sisyphus/
+.agent/
+.gemini/
+
+# ===== Maven / Gradle =====
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== Tomcat =====
+apache-tomcat-*/
+tomcat/
+
+# ===== Docker =====
+docker-data/
+
+# ===== 환경 설정 (민감 정보) =====
+.env*
+!.env.example
+>>>>>>> dev1
 application-local.properties
 application-local.yml
 
@@ -131,5 +211,19 @@ surefire-reports/
 upload/
 uploads/
 files/
+<<<<<<< HEAD
 storage/
 node_modules
+=======
+
+# ===== 기타 =====
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+test-output/
+surefire-reports/
+.cache/
+>>>>>>> dev1

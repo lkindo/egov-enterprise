@@ -14,4 +14,7 @@ public interface EgovCommentService {
     void updateComment(Long commentId, String commentCn, String userId);
 
     void deleteComment(Long commentId, String userId);
+
+    org.springframework.data.domain.Page<CommentDto> getAllCommentList(
+            org.springframework.data.domain.Pageable pageable, String searchKeyword);
 }
