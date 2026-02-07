@@ -5,3 +5,7 @@
 ## 2025-02-06 - Loading States for Programmatic Submits
 **Learning:** Legacy forms often use `type="button"` and JS submission. Adding a loading state (text change + disable) in the JS function is a high-impact, low-risk way to prevent double-submission and improve perceived performance without changing the underlying form architecture.
 **Action:** Identify JS submission functions (e.g., `actionLogin`) and inject DOM manipulation to update button state immediately before `form.submit()`.
+
+## 2025-02-?? - Password Visibility Toggle
+**Learning:** Adding a password visibility toggle significantly improves usability on login forms. For legacy JSPs with fixed layouts, wrapping the input in a `relative` container and absolute positioning the toggle button allows for seamless integration without breaking the existing grid/float layout.
+**Action:** When modernizing authentication forms, check for password visibility toggles. If missing, implement using a wrapper pattern to maintain layout stability while adding modern functionality.
