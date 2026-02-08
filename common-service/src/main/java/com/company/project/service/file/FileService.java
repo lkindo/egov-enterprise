@@ -14,13 +14,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -37,33 +40,52 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
 
     private final FileMasterRepository fileMasterRepository;
     private final FileDetailRepository fileDetailRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
     public FileService(FileMasterRepository fileMasterRepository,
-            FileDetailRepository fileDetailRepository) {
+                       FileDetailRepository fileDetailRepository,
+                       PlatformTransactionManager transactionManager) {
         this.fileMasterRepository = fileMasterRepository;
         this.fileDetailRepository = fileDetailRepository;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     /**
      * 파일 업로드 (멀티파일 지원)
      */
     @Override
-    @Transactional
     public String uploadFiles(List<MultipartFile> files) throws IOException {
         String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
         FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
-        FileMaster savedMaster = fileMasterRepository.save(master);
 
-        saveFileDetails(savedMaster, files, 1);
+        List<File> processedFiles = new ArrayList<>();
 
-        return savedMaster.getAtchFileId();
+        try {
+            // 1. Process files (I/O) - Outside Transaction
+            List<FileDetail> details = storeFilesOnDisk(master, files, 1, processedFiles);
+            for (FileDetail detail : details) {
+                master.addFileDetail(detail);
+            }
+
+            // 2. Save to DB - Inside Transaction
+            return transactionTemplate.execute(status -> {
+                FileMaster savedMaster = fileMasterRepository.save(master);
+                return savedMaster.getAtchFileId();
+            });
+
+        } catch (Exception e) {
+            // 3. Cleanup on failure
+            cleanupFiles(processedFiles);
+            throw e;
+        }
     }
 
-    private void saveFileDetails(FileMaster master, List<MultipartFile> files, int startSn) throws IOException {
+    private List<FileDetail> storeFilesOnDisk(FileMaster master, List<MultipartFile> files, int startSn, List<File> processedFiles) throws IOException {
         int fileSn = startSn;
+        List<FileDetail> details = new ArrayList<>();
         for (MultipartFile file : files) {
             if (file.isEmpty())
                 continue;
@@ -79,6 +101,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                 destDir.mkdirs();
 
             File destFile = new File(destDir, storedFilename);
+            processedFiles.add(destFile);
             file.transferTo(destFile);
 
             FileDetail detail = FileDetail.builder()
@@ -91,9 +114,17 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                     .fileMg(file.getSize())
                     .build();
 
-            master.addFileDetail(detail);
+            details.add(detail);
         }
-        fileMasterRepository.save(master);
+        return details;
+    }
+
+    private void cleanupFiles(List<File> files) {
+        for (File file : files) {
+            if (file.exists()) {
+                file.delete();
+            }
+        }
     }
 
     /**
@@ -155,11 +186,11 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     @Override
-    @Transactional
     public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
         if (atchFileId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
+
         FileMaster master = fileMasterRepository.findById(atchFileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -168,7 +199,26 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                 .max()
                 .orElse(0);
 
-        saveFileDetails(master, files, maxSn + 1);
+        List<File> processedFiles = new ArrayList<>();
+
+        try {
+            List<FileDetail> details = storeFilesOnDisk(master, files, maxSn + 1, processedFiles);
+
+            // Execute write transaction
+            transactionTemplate.execute(status -> {
+                FileMaster attachedMaster = fileMasterRepository.findById(atchFileId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+                for (FileDetail detail : details) {
+                    attachedMaster.addFileDetail(detail);
+                }
+                return fileMasterRepository.save(attachedMaster);
+            });
+
+        } catch (Exception e) {
+            cleanupFiles(processedFiles);
+            throw e;
+        }
     }
 
     private void deletePhysicalFile(FileDetail detail) {
