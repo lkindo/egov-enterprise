@@ -1,6 +1,6 @@
 package com.company.project.web.auth;
 
-import com.company.project.api.controller.AuthController;
+import com.company.project.api.controller.login.AuthController;
 import com.company.project.security.jwt.JwtTokenProvider;
 import com.company.project.service.auth.AuthService;
 import com.company.project.service.auth.dto.LoginRequest;
