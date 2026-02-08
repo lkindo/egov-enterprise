@@ -80,17 +80,20 @@ export default function LoginPage() {
                                     className="pl-9 pr-9"
                                     autoComplete="current-password"
                                 />
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground focus:outline-none"
+                                    className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
                                 >
                                     {showPassword ? (
                                         <EyeOff className="h-4 w-4" />
                                     ) : (
                                         <Eye className="h-4 w-4" />
                                     )}
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
