@@ -108,13 +108,13 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 		}
 
 		if (!userIds.isEmpty()) {
-			userRepository.deleteAllById(userIds);
+			userRepository.deleteAllByIdInBatch(userIds);
 		}
 		if (!generalUserIds.isEmpty()) {
-			generalUserRepository.deleteAllById(generalUserIds);
+			generalUserRepository.deleteAllByIdInBatch(generalUserIds);
 		}
 		if (!enterpriseUserIds.isEmpty()) {
-			enterpriseUserRepository.deleteAllById(enterpriseUserIds);
+			enterpriseUserRepository.deleteAllByIdInBatch(enterpriseUserIds);
 		}
 	}
 
