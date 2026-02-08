@@ -156,7 +156,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		List<Long> delMenuNo = Arrays.stream(checkedMenuNoForDel.split(","))
 				.map(Long::valueOf)
 				.collect(Collectors.toList());
-		menuRepository.deleteAllById(delMenuNo);
+		menuRepository.deleteAllByIdInBatch(delMenuNo);
 	}
 
 	/**
