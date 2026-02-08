@@ -98,7 +98,8 @@ public class BackupJobListener implements JobListener {
 			if (backupResult.getBackupOpertId() != null && !backupResult.getBackupOpertId().trim().isEmpty()) {
 				egovBackupOpertService.insertBackupResult(backupResult);
 			} else {
-				LOGGER.error("Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+				LOGGER.error("(Ko)백업작업ID가 null이거나 비어있습니다. 백업작업 결과를 추적할 수 없습니다.");
+				LOGGER.error("(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
 			}
 
 			// 저장이 이상없이 완료되면  datamap에 배치결과ID를 저장한다.

@@ -61,7 +61,8 @@ class BackupJobListenerTest {
 
         // Assert
         verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
-        assertThat(output).contains("Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+        assertThat(output).contains("(Ko)백업작업ID가 null이거나 비어있습니다. 백업작업 결과를 추적할 수 없습니다.");
+        assertThat(output).contains("(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
     }
 
     @Test
@@ -83,7 +84,8 @@ class BackupJobListenerTest {
 
         // Assert
         verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
-        assertThat(output).contains("Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+        assertThat(output).contains("(Ko)백업작업ID가 null이거나 비어있습니다. 백업작업 결과를 추적할 수 없습니다.");
+        assertThat(output).contains("(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
     }
 
     @Test

@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 웹브라우저 종류및 버전 파악하기 ( IE및 Edge, Safari, Chrome, Firefox, Opera )
+ * 웹브라우저 종류및 버전 파악하기 ( IE및 Edge, Safari, Chrome, Firefox, Opera ).
  *
  * <pre>
  * << 개정이력(Modification Information) >>

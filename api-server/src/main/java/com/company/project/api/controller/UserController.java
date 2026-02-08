@@ -7,6 +7,7 @@ import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class UserController {
 
     @Operation(summary = "Signup")
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody UserSignupRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(userService.signup(request)));
     }
 

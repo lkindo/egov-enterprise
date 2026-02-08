@@ -103,7 +103,7 @@ class EgovMenuManageServiceTest {
     }
 
     @Test
-    void deleteMenuManageList_ShouldCallDeleteAllById() throws Exception {
+    void deleteMenuManageList_ShouldCallDeleteAllByIdInBatch() throws Exception {
         // Arrange
         String checkedMenuNoForDel = "1,2,3";
         List<Long> expectedIds = Arrays.asList(1L, 2L, 3L);
@@ -112,8 +112,9 @@ class EgovMenuManageServiceTest {
         menuManageService.deleteMenuManageList(checkedMenuNoForDel);
 
         // Assert
-        verify(menuRepository).deleteAllById(expectedIds);
+        verify(menuRepository).deleteAllByIdInBatch(expectedIds);
         verify(menuRepository, org.mockito.Mockito.never()).deleteById(any());
+        verify(menuRepository, org.mockito.Mockito.never()).deleteAllById(any());
     }
 
     @Test
