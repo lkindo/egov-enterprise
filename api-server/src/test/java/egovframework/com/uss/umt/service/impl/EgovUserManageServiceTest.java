@@ -59,9 +59,9 @@ class EgovUserManageServiceTest {
         userManageService.deleteUser(allIds);
 
         // Assert (Optimized: deleteAllById called 1 time for each, deleteById called 0 times)
-        verify(userRepository, times(1)).deleteAllById(any());
-        verify(generalUserRepository, times(1)).deleteAllById(any());
-        verify(enterpriseUserRepository, times(1)).deleteAllById(any());
+        verify(userRepository, times(1)).deleteAllByIdInBatch(any());
+        verify(generalUserRepository, times(1)).deleteAllByIdInBatch(any());
+        verify(enterpriseUserRepository, times(1)).deleteAllByIdInBatch(any());
 
         verify(userRepository, never()).deleteById(anyString());
         verify(generalUserRepository, never()).deleteById(anyString());
@@ -82,8 +82,8 @@ class EgovUserManageServiceTest {
         // USR01:GEN_1 should be processed
         // USR02:ENT_1 should be processed
 
-        verify(userRepository, never()).deleteAllById(any());
-        verify(generalUserRepository, times(1)).deleteAllById(any());
-        verify(enterpriseUserRepository, times(1)).deleteAllById(any());
+        verify(userRepository, never()).deleteAllByIdInBatch(any());
+        verify(generalUserRepository, times(1)).deleteAllByIdInBatch(any());
+        verify(enterpriseUserRepository, times(1)).deleteAllByIdInBatch(any());
     }
 }
