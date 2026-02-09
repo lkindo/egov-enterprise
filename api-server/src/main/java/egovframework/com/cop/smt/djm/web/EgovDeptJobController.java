@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -88,7 +90,7 @@ public class EgovDeptJobController {
 	@Resource(name = "EgovFileMngUtil")
 	private EgovFileMngUtil fileUtil;
 
-	// Logger log = Logger.getLogger(this.getClass());
+	private static final Logger LOGGER = LoggerFactory.getLogger(EgovDeptJobController.class);
 
 	/**
 	 * 담당자 정보에 대한 팝업 목록을 조회한다.
@@ -686,12 +688,12 @@ public class EgovDeptJobController {
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		// [DEBUG] VO Binding Check
-		System.out.println("=== DeptJobVO Binding Check ===");
-		System.out.println("deptJobNm: " + deptJobVO.getDeptJobNm());
-		System.out.println("deptJobCn: " + deptJobVO.getDeptJobCn());
-		System.out.println("priort: " + deptJobVO.getPriort());
-		System.out.println("deptJobBxId: " + deptJobVO.getDeptJobBxId());
-		System.out.println("===============================");
+		LOGGER.debug("=== DeptJobVO Binding Check ===");
+		LOGGER.debug("deptJobNm: {}", deptJobVO.getDeptJobNm());
+		LOGGER.debug("deptJobCn: {}", deptJobVO.getDeptJobCn());
+		LOGGER.debug("priort: {}", deptJobVO.getPriort());
+		LOGGER.debug("deptJobBxId: {}", deptJobVO.getDeptJobBxId());
+		LOGGER.debug("===============================");
 
 		// [Fallback] MultipartResolver 바인딩 실패 시 수동 바인딩 처리
 		if (deptJobVO.getPriort() == null || deptJobVO.getPriort().isEmpty()) {
