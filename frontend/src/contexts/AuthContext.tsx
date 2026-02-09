@@ -45,9 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = async (credentials: any) => {
         try {
-            console.log('Attempting login for:', credentials.id);
             const response = await axios.post('/auth/login', credentials);
-            console.log('Login response:', response.data);
             if (response.data.success) {
                 setUser(response.data.user);
             } else {
