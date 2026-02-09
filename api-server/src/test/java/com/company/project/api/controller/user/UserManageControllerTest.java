@@ -1,0 +1,66 @@
+package com.company.project.api.controller.user;
+
+import com.company.project.service.code.CommonCodeService;
+import com.company.project.service.group.GroupManageService;
+import com.company.project.service.user.UserManageService;
+import egovframework.com.cmm.EgovMessageSource;
+import egovframework.com.uss.umt.service.UserDefaultVO;
+import org.egovframe.rte.fdl.property.EgovPropertyService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.ui.ModelMap;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+public class UserManageControllerTest {
+
+    @Mock
+    private UserManageService userManageService;
+
+    @Mock
+    private CommonCodeService commonCodeService;
+
+    @Mock
+    private GroupManageService groupManageService;
+
+    @Mock
+    private EgovPropertyService propertiesService;
+
+    @Mock
+    private EgovMessageSource egovMessageSource;
+
+    @InjectMocks
+    private UserManageController userManageController;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void selectUserList_ShouldLogAndThrow_WhenExceptionOccurs() throws Exception {
+        // Arrange
+        UserDefaultVO searchVO = new UserDefaultVO();
+        ModelMap model = new ModelMap();
+
+        // Mock propertiesService to avoid NullPointerException before the service call
+        when(propertiesService.getInt("pageUnit")).thenReturn(10);
+        when(propertiesService.getInt("pageSize")).thenReturn(10);
+
+        // Simulate an exception in the service layer
+        when(userManageService.selectUserList(any())).thenThrow(new RuntimeException("Test Exception"));
+
+        // Act & Assert
+        // This confirms that the exception is re-thrown as expected.
+        // The logging part happens before the throw, and while we can't easily assert on logs here,
+        // we ensure the method structure remains intact and the exception propagation works.
+        assertThrows(RuntimeException.class, () -> {
+            userManageController.selectUserList(searchVO, model);
+        });
+    }
+}
