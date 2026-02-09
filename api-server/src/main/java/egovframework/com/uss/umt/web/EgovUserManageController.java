@@ -17,6 +17,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovWebUtil;
+import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.service.CmmnDetailCode;
 import egovframework.com.cmm.service.EgovCmmUseService;
@@ -444,16 +445,20 @@ public class EgovUserManageController {
 			return "index";
 		}
 
+		// 2025.02.04 Sentinel: Fix IDOR vulnerability by using authenticated user ID
+		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+
 		String oldPassword = (String) commandMap.get("oldPassword");
 		String newPassword = (String) commandMap.get("newPassword");
 		String newPassword2 = (String) commandMap.get("newPassword2");
-		String uniqId = (String) commandMap.get("uniqId");
+		String uniqId = user.getUniqId();
 
 		boolean isCorrectPassword = false;
 		UserManageVO resultVO = new UserManageVO();
 		userManageVO.setPassword(newPassword);
 		userManageVO.setOldPassword(oldPassword);
 		userManageVO.setUniqId(uniqId);
+		userManageVO.setEmplyrId(user.getId());
 
 		String resultMsg = "";
 		resultVO = userManageService.selectPassword(userManageVO);
