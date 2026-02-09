@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -32,6 +34,8 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
 @Service("egovUserDetailsService")
 public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(EgovUserDetailsSessionServiceImpl.class);
+
 	/**
 	 * 인증된 사용자객체를 VO형식으로 가져온다.
 	 * 
@@ -40,14 +44,13 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 	@Override
 	public Object getAuthenticatedUser() {
 		if (RequestContextHolder.getRequestAttributes() == null) {
-			System.out.println(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: RequestAttributes is NULL");
+			LOGGER.debug(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: RequestAttributes is NULL");
 			return null;
 		}
 		Object loginVO = RequestContextHolder.getRequestAttributes().getAttribute("LoginVO",
 				RequestAttributes.SCOPE_SESSION);
-		System.out
-				.println(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: Retrieved LoginVO from session: "
-						+ loginVO);
+		LOGGER.debug(">>> EgovUserDetailsSessionServiceImpl.getAuthenticatedUser: Retrieved LoginVO from session: {}",
+				loginVO);
 		return loginVO;
 	}
 
@@ -61,7 +64,7 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 	public Boolean isAuthenticated() {
 		// 인증된 유저인지 확인한다.
 		if (RequestContextHolder.getRequestAttributes() == null) {
-			System.out.println(">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: RequestAttributes is NULL");
+			LOGGER.debug(">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: RequestAttributes is NULL");
 			return false;
 		}
 
@@ -73,8 +76,7 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 					RequestAttributes.SCOPE_SESSION);
 		}
 
-		System.out.println(
-				">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: LoginVO present? " + (loginVO != null));
+		LOGGER.debug(">>> EgovUserDetailsSessionServiceImpl.isAuthenticated: LoginVO present? {}", (loginVO != null));
 		return loginVO != null;
 	}
 
