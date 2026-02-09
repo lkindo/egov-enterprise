@@ -1,6 +1,7 @@
 package egovframework.com.cmm;
 
 import org.junit.jupiter.api.Test;
+import java.io.File;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EgovWebUtilTest {
@@ -43,5 +44,53 @@ public class EgovWebUtilTest {
         long duration = endTime - startTime;
         System.out.println("Benchmark result for " + iterations + " iterations: " + duration + " ns");
         System.out.println("Average time per call: " + (duration / iterations) + " ns");
+    }
+
+    @Test
+    public void testFilePathBlackList_Valid() {
+        String basePath = "/tmp/upload/";
+        String value = "file.txt";
+        String expected = "/tmp/upload/file.txt";
+        assertEquals(expected, EgovWebUtil.filePathBlackList(value, basePath));
+    }
+
+    @Test
+    public void testFilePathBlackList_EmptyBasePath() {
+        assertThrows(SecurityException.class, () -> {
+            EgovWebUtil.filePathBlackList("file.txt", null);
+        });
+        assertThrows(SecurityException.class, () -> {
+            EgovWebUtil.filePathBlackList("file.txt", "");
+        });
+    }
+
+    @Test
+    public void testFilePathBlackList_RootBasePath() {
+        assertThrows(SecurityException.class, () -> {
+            EgovWebUtil.filePathBlackList("file.txt", "/");
+        });
+        // Check File.separator if it's different from "/"
+        if (!"/".equals(File.separator)) {
+            assertThrows(SecurityException.class, () -> {
+                EgovWebUtil.filePathBlackList("file.txt", File.separator);
+            });
+        }
+    }
+
+    @Test
+    public void testFilePathBlackList_PathTraversal() {
+        String basePath = "/tmp/upload/";
+
+        // ".." should be removed
+        String value = "../etc/passwd";
+        // /tmp/upload/../etc/passwd -> /tmp/upload//etc/passwd
+        String expected = "/tmp/upload//etc/passwd";
+        assertEquals(expected, EgovWebUtil.filePathBlackList(value, basePath));
+
+        // Test with multiple traversals
+        value = "../../etc/passwd";
+        // /tmp/upload/../../etc/passwd -> /tmp/upload///etc/passwd
+        expected = "/tmp/upload///etc/passwd";
+        assertEquals(expected, EgovWebUtil.filePathBlackList(value, basePath));
     }
 }
