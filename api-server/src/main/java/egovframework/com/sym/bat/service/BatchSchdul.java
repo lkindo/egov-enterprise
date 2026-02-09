@@ -1,6 +1,5 @@
 package egovframework.com.sym.bat.service;
 
-import java.io.Serializable;
 import java.util.List;
 
 import egovframework.com.cmm.ComDefaultVO;
@@ -13,16 +12,18 @@ import egovframework.com.cmm.ComDefaultVO;
  * @version 1.0
  * @updated 17-6-2010 오전 10:27:13
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == 개정이력(Modification Information) ==
  *
  *   수정일       수정자           수정내용
  *  -------     --------    ---------------------------
  *  2010.06.17   김진만     최초 생성
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
-public class BatchSchdul extends ComDefaultVO implements Serializable {
+public class BatchSchdul extends ComDefaultVO {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 배치스케줄ID
@@ -150,7 +151,7 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 	 * @return the executSchdulDfkSes
 	 */
 	public String[] getExecutSchdulDfkSes() {
-		//return executSchdulDfkSes;
+		// return executSchdulDfkSes;
 		String[] ret = null;
 		if (this.executSchdulDfkSes != null) {
 			ret = new String[executSchdulDfkSes.length];
@@ -264,7 +265,7 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 	 * @param executSchdulDfkSes the executSchdulDfkSes to set
 	 */
 	public void setExecutSchdulDfkSes(String[] executSchdulDfkSes) {
-		//this.executSchdulDfkSes = executSchdulDfkSes;
+		// this.executSchdulDfkSes = executSchdulDfkSes;
 		this.executSchdulDfkSes = new String[executSchdulDfkSes.length];
 		for (int i = 0; i < executSchdulDfkSes.length; ++i) {
 			this.executSchdulDfkSes[i] = executSchdulDfkSes[i];
@@ -355,12 +356,14 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 		} else if (this.executCycle.equals("04")) {
 			// 매년의경우 처리
 			if (!"".equals(this.executSchdulDe)) {
-				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(4, 6) + "-" + this.executSchdulDe.substring(6, 8) + " ";
+				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(4, 6) + "-"
+						+ this.executSchdulDe.substring(6, 8) + " ";
 			}
 		} else {
 			// 이외의경우 처리
 			if (!"".equals(this.executSchdulDe)) {
-				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(0, 4) + "-" + this.executSchdulDe.substring(4, 6) + "-" + this.executSchdulDe.substring(6, 8)
+				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(0, 4) + "-"
+						+ this.executSchdulDe.substring(4, 6) + "-" + this.executSchdulDe.substring(6, 8)
 						+ " ";
 			}
 		}
@@ -429,7 +432,7 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 
 		// 주 변환
 		if (this.executCycle.equals("02")) {
-			// 매주인경우 day of week를  출력
+			// 매주인경우 day of week를 출력
 			String dayOfWeek = "";
 			for (int i = 0; i < this.executSchdulDfkSes.length; i++) {
 				if (i != 0) {

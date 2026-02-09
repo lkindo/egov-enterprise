@@ -1,13 +1,9 @@
 package egovframework.com.cop.bbs.web;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -16,7 +12,6 @@ import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -46,11 +41,8 @@ import jakarta.validation.Valid;
  * 게시물 관리를 위한 컨트롤러 클래스
  * Refactored to use EgovBoardService (JPA)
  */
-// @Controller
-@org.springframework.context.annotation.Lazy
+@Controller
 public class EgovArticleController {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovArticleController.class);
 
 	@Resource(name = "egovBoardService")
 	private EgovBoardService egovBoardService; // Replacement for EgovArticleService
@@ -261,11 +253,9 @@ public class EgovArticleController {
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		String userId = (user == null || user.getUniqId() == null) ? "" : user.getUniqId();
-		String ntcrNm = (user == null || user.getName() == null) ? "" : user.getName();
 
 		if (board.getAnonymousAt() != null && board.getAnonymousAt().equals("Y")) {
 			userId = "anonymous";
-			ntcrNm = "익명";
 		}
 
 		board.setNttCn(unscript(board.getNttCn()));
@@ -436,7 +426,7 @@ public class EgovArticleController {
 			@ModelAttribute("searchVO") BoardVO boardVO, @ModelAttribute("bdMstr") BoardMaster bdMstr,
 			@Valid @ModelAttribute("board") Board board, BindingResult bindingResult, ModelMap model) throws Exception {
 
-		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		// LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -489,9 +479,6 @@ public class EgovArticleController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
-		BoardDto dto = egovBoardService.getPostDetail(boardVO.getBbsId(), boardVO.getNttId());
-		BoardVO bdvo = BoardAdapter.toVO(dto);
 
 		if (isAuthenticated) {
 			egovBoardService.deletePost(boardVO.getBbsId(), boardVO.getNttId(), user.getUniqId());

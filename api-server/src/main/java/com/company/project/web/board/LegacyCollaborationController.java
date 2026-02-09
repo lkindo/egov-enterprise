@@ -1,83 +1,25 @@
 package com.company.project.web.board;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.company.project.service.board.EgovBoardMasterService;
-import com.company.project.service.board.EgovBoardService;
-import com.company.project.service.board.dto.BoardDto;
 import com.company.project.service.board.dto.BoardMasterDto;
-import com.company.project.service.template.EgovTemplateService;
-import com.company.project.service.template.dto.TemplateDto;
-import com.company.project.service.addressbook.EgovAddressBookService;
-import com.company.project.service.addressbook.dto.AddressBookDto;
-import com.company.project.service.schedule.EgovScheduleService;
-import com.company.project.service.schedule.EgovMemoTodoService;
-import com.company.project.service.schedule.EgovLeaderScheduleService;
-import com.company.project.service.schedule.dto.ScheduleDto;
-import com.company.project.service.schedule.dto.MemoTodoDto;
-import com.company.project.service.schedule.dto.LeaderScheduleDto;
-import com.company.project.service.namecard.EgovNameCardService;
-import com.company.project.service.namecard.dto.NameCardDto;
-import com.company.project.service.community.EgovCommunityService;
-import com.company.project.service.community.dto.CommunityDto;
-import com.company.project.service.scrap.EgovScrapService;
-import com.company.project.service.scrap.dto.ScrapDto;
-import com.company.project.service.sms.EgovSmsService;
-import com.company.project.service.sms.dto.SmsDto;
 import com.company.project.service.mail.EgovMailService;
 import com.company.project.service.mail.dto.SentMailDto;
-import com.company.project.service.deptjob.EgovDeptJobBoxService;
-import com.company.project.service.deptjob.dto.DeptJobBoxDto;
-import com.company.project.service.memoreport.EgovMemoReportService;
-import com.company.project.service.memoreport.dto.MemoReportDto;
-import com.company.project.service.report.EgovWorkReportService;
-import com.company.project.service.report.dto.WorkReportDto;
-import com.company.project.service.duty.EgovDutyService;
-import com.company.project.service.duty.dto.DutyDto;
 
 import com.company.project.web.adapter.BoardAdapter;
-import com.company.project.web.adapter.ScheduleAdapter;
-import com.company.project.web.adapter.NameCardAdapter;
-import com.company.project.web.adapter.TemplateAdapter;
-import com.company.project.web.adapter.CommunityAdapter;
-import com.company.project.web.adapter.ScrapAdapter;
-import com.company.project.web.adapter.SmsAdapter;
 import com.company.project.web.adapter.MailAdapter;
-import com.company.project.web.adapter.DeptJobBoxAdapter;
-import com.company.project.web.adapter.MemoReportAdapter;
-import com.company.project.web.adapter.DiaryAdapter;
 
-import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cop.bbs.service.BoardMasterVO;
-import egovframework.com.cop.bbs.service.BoardVO;
-import egovframework.com.cop.tpl.service.TemplateInfVO;
-import egovframework.com.cop.adb.service.AddressBookVO;
-import egovframework.com.cop.ncm.service.NameCardVO;
-import egovframework.com.cop.smt.sim.service.IndvdlSchdulManageVO;
-import egovframework.com.cop.smt.sdm.service.DeptSchdulManageVO;
-import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
-import egovframework.com.cop.cmy.service.CommunityVO;
-import egovframework.com.cop.scp.service.ScrapVO;
-import egovframework.com.cop.sms.service.SmsVO;
 import egovframework.com.cop.ems.service.SndngMailVO;
-import egovframework.com.cop.smt.djm.service.DeptJobBxVO;
-import egovframework.com.cop.smt.mrm.service.MemoReprtVO;
-import egovframework.com.cop.smt.lsm.service.LeaderSchdulVO;
-import egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO;
-import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
 
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
@@ -91,21 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class LegacyCollaborationController {
 
     private final EgovBoardMasterService egovBoardMasterService;
-    private final EgovBoardService egovBoardService;
-    private final EgovTemplateService egovTemplateService;
-    private final EgovAddressBookService egovAddressBookService;
-    private final EgovScheduleService egovScheduleService;
-    private final EgovNameCardService egovNameCardService;
-    private final EgovMemoTodoService egovMemoTodoService;
-    private final EgovCommunityService egovCommunityService;
-    private final EgovScrapService egovScrapService;
-    private final EgovSmsService egovSmsService;
     private final EgovMailService egovMailService;
-    private final EgovDeptJobBoxService egovDeptJobBoxService;
-    private final EgovMemoReportService egovMemoReportService;
-    private final EgovLeaderScheduleService egovLeaderScheduleService;
-    private final EgovWorkReportService egovWorkReportService;
-    private final EgovDutyService egovDutyService;
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertyService;
@@ -269,14 +197,14 @@ public class LegacyCollaborationController {
     @RequestMapping("/cop/com/selectBBSUseInfs.do")
     public String selectBBSUseInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model)
             throws Exception {
-        PaginationInfo paginationInfo = setupPaging(boardMasterVO.getPageIndex(), boardMasterVO.getPageUnit(), model);
+        setupPaging(boardMasterVO.getPageIndex(), boardMasterVO.getPageUnit(), model);
 
         PageRequest pageable = PageRequest.of(boardMasterVO.getPageIndex() - 1, boardMasterVO.getPageUnit());
         Page<BoardMasterDto> pageResult = egovBoardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
                 boardMasterVO.getSearchWrd(), pageable);
 
         model.addAttribute("resultList",
-                pageResult.getContent().stream().map(BoardAdapter::toMasterVO).collect(Collectors.toList()));
+                pageResult.getContent().stream().map(BoardAdapter::toMasterVO).toList());
         model.addAttribute("resultCnt", pageResult.getTotalElements());
         return "egovframework/com/cop/com/EgovBBSUseInfList";
     }
@@ -575,10 +503,5 @@ public class LegacyCollaborationController {
 
         model.addAttribute("paginationInfo", paginationInfo);
         return paginationInfo;
-    }
-
-    private String getUserId() {
-        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-        return (user != null) ? user.getUniqId() : "anonymous";
     }
 }

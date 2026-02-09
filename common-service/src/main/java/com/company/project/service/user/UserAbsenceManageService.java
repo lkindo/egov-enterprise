@@ -6,7 +6,6 @@ import com.company.project.domain.user.UserAbsenceRepository;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.user.dto.UserAbsenceDto;
 import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

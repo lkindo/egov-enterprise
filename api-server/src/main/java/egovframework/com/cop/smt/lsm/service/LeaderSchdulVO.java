@@ -20,8 +20,9 @@ package egovframework.com.cop.smt.lsm.service;
  *
  *          </pre>
  */
-@SuppressWarnings("serial")
 public class LeaderSchdulVO extends LeaderSchdul {
+
+	private static final long serialVersionUID = 1L;
 
 	/** 월별/주별/일별 일정조회 조회조건 */
 	private String searchMode;

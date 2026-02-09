@@ -1,30 +1,31 @@
 package egovframework.com.uss.olh.omm.service;
 
-import java.io.Serializable;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * 온라인메뉴얼 VO Class 구현
+ * 
  * @author 공통서비스 장동한
  * @since 2009.07.03
  * @version 1.0
- * @see <pre>
+ * @see
+ * 
+ *      <pre>
  * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.07.03  장동한          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-public class OnlineManualVO extends ComDefaultVO implements Serializable {
+public class OnlineManualVO extends ComDefaultVO {
 
-	private static final long serialVersionUID = -7024282928339275971L;
+    private static final long serialVersionUID = -7024282928339275971L;
 
-	/** 온라인메뉴얼 아이디 */
+    /** 온라인메뉴얼 아이디 */
     private String onlineMnlId;
 
     /** 온라인메뉴얼 명 */
@@ -35,7 +36,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
 
     /** 온라인메뉴얼 구분코드 */
     private String onlineMnlSeCodeNm;
-    
+
     /** 온라인메뉴얼 정의 */
     private String onlineMnlDf;
 
@@ -47,7 +48,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
 
     /** 최초등록아이디 */
     private String frstRegisterId;
-    
+
     /** 최초등록자 */
     private String frstRegisterNm;
 
@@ -131,7 +132,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     public void setOnlineMnlSeCodeNm(String onlineMnlSeCodeNm) {
         this.onlineMnlSeCodeNm = onlineMnlSeCodeNm;
     }
-    
+
     /**
      * onlineMnlDf 리턴
      *
@@ -203,23 +204,23 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     public void setFrstRegisterId(String frstRegisterId) {
         this.frstRegisterId = frstRegisterId;
     }
-    
+
     /**
      * frstRegisterNm 리턴
      *
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
-    	return frstRegisterNm;
+        return frstRegisterNm;
     }
-    
+
     /**
      * frstRegisterNm 설정
      *
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
-    	this.frstRegisterNm = frstRegisterNm;
+        this.frstRegisterNm = frstRegisterNm;
     }
 
     /**
@@ -277,11 +278,10 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-   	 * toString 메소드를 대치한다.
-   	 */
-   	public String toString(){
-   		return ToStringBuilder.reflectionToString(this);
-   	}
-
+     * toString 메소드를 대치한다.
+     */
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 
 }

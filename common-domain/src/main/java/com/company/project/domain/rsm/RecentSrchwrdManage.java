@@ -4,8 +4,6 @@ import com.company.project.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "NRECENTSRCHWRDMANAGE")
 @Getter

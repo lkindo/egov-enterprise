@@ -496,7 +496,6 @@ public class EgovEntrprsManageController {
 		userSearchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
 		List<EntrprsManageVO> resultList = java.util.Collections.emptyList();
-		List<CmmnDetailCode> entrprsMberSttus_result = java.util.Collections.emptyList();
 
 		try {
 			resultList = entrprsManageService.selectEntrprsMberList(userSearchVO);

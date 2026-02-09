@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,16 +52,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EgovDeptSchdulManageController {
 
-	// private static final Logger LOGGER =
-	// LoggerFactory.getLogger(EgovDeptSchdulManageController.class);
-
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
 	private final EgovScheduleService egovScheduleService;
 
-    @Resource(name = "egovDeptManageService")
-    private EgovDeptManageService egovDeptManageService;
+	@Resource(name = "egovDeptManageService")
+	private EgovDeptManageService egovDeptManageService;
 
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
@@ -110,32 +105,32 @@ public class EgovDeptSchdulManageController {
 	public String egovDeptSchdulManageAuthorGroupPopup(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-        DeptManageVO deptManageVO = new DeptManageVO();
-        deptManageVO.setSearchCondition(searchVO.getSearchCondition());
-        deptManageVO.setSearchKeyword(searchVO.getSearchKeyword());
+		DeptManageVO deptManageVO = new DeptManageVO();
+		deptManageVO.setSearchCondition(searchVO.getSearchCondition());
+		deptManageVO.setSearchKeyword(searchVO.getSearchKeyword());
 
-        // Pagination logic
-        deptManageVO.setPageUnit(propertiesService.getInt("pageUnit"));
-        deptManageVO.setPageSize(propertiesService.getInt("pageSize"));
+		// Pagination logic
+		deptManageVO.setPageUnit(propertiesService.getInt("pageUnit"));
+		deptManageVO.setPageSize(propertiesService.getInt("pageSize"));
 
-        PaginationInfo paginationInfo = new PaginationInfo();
+		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
 		paginationInfo.setRecordCountPerPage(deptManageVO.getPageUnit());
 		paginationInfo.setPageSize(deptManageVO.getPageSize());
 
-        deptManageVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+		deptManageVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
 		deptManageVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		deptManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-        deptManageVO.setPageIndex(searchVO.getPageIndex());
+		deptManageVO.setPageIndex(searchVO.getPageIndex());
 
-        // Use selectDeptManageListPaged
-        List<DeptManageVO> resultList = egovDeptManageService.selectDeptManageListPaged(deptManageVO);
-        int totCnt = egovDeptManageService.selectDeptManageListTotCnt(deptManageVO);
+		// Use selectDeptManageListPaged
+		List<DeptManageVO> resultList = egovDeptManageService.selectDeptManageListPaged(deptManageVO);
+		int totCnt = egovDeptManageService.selectDeptManageListTotCnt(deptManageVO);
 
-        paginationInfo.setTotalRecordCount(totCnt);
+		paginationInfo.setTotalRecordCount(totCnt);
 
-        model.addAttribute("resultList", resultList);
-        model.addAttribute("paginationInfo", paginationInfo);
+		model.addAttribute("resultList", resultList);
+		model.addAttribute("paginationInfo", paginationInfo);
 
 		return "egovframework/com/cop/smt/sdm/EgovDeptSchdulManageAuthorGroupPopup";
 	}

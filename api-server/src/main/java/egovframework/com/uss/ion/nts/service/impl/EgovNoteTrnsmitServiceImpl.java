@@ -9,7 +9,6 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
-import com.company.project.domain.note.NoteTrnsmit;
 import com.company.project.domain.note.NoteTrnsmitDomainRepository;
 
 import egovframework.com.uss.ion.nts.service.EgovNoteTrnsmitService;

@@ -1,6 +1,5 @@
 package egovframework.com.uss.ion.bnt.service;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,12 +8,13 @@ import java.util.List;
  *
  * 상세내용
  * - 당직일지의 목록 항목을 관리한다.
+ * 
  * @author 이용
  * @version 1.0
  * @created 06-15-2010 오후 2:08:56
  */
 
-public class BndtDiaryVO extends BndtDiary implements Serializable {
+public class BndtDiaryVO extends BndtDiary {
 
 	private static final long serialVersionUID = 1767342530176012296L;
 	/**
@@ -28,6 +28,7 @@ public class BndtDiaryVO extends BndtDiary implements Serializable {
 	public List<BndtDiaryVO> getBndtDiaryList() {
 		return bndtDiaryList;
 	}
+
 	/**
 	 * @param bannerList the bannerList to set
 	 */
@@ -36,8 +37,8 @@ public class BndtDiaryVO extends BndtDiary implements Serializable {
 	}
 
 	/**
-	*  당직체크코드명
-	*/
+	 * 당직체크코드명
+	 */
 	private String bndtCeckCdNm;
 
 	/**
@@ -46,6 +47,7 @@ public class BndtDiaryVO extends BndtDiary implements Serializable {
 	public String getBndtCeckCdNm() {
 		return bndtCeckCdNm;
 	}
+
 	/**
 	 * @param bndtCeckCdNm the bndtCeckCdNm to set
 	 */

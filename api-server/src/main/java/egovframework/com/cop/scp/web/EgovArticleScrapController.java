@@ -1,7 +1,6 @@
 package egovframework.com.cop.scp.web;
 
 import java.util.List;
-import java.util.Map;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -26,8 +25,6 @@ import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cop.bbs.service.BoardVO;
-import egovframework.com.cop.bbs.service.EgovArticleService;
-import egovframework.com.cop.scp.service.EgovArticleScrapService;
 import egovframework.com.cop.scp.service.Scrap;
 import egovframework.com.cop.scp.service.ScrapVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;

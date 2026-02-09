@@ -1,8 +1,5 @@
 package com.company.project.domain.menu;
 
-import com.company.project.domain.auth.QMenuAuthority;
-import com.company.project.domain.auth.QUserAuthority;
-import com.company.project.domain.user.QUser;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

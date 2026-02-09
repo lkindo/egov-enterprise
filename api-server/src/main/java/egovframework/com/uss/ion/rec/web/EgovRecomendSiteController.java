@@ -20,7 +20,6 @@ import egovframework.com.uss.ion.rec.service.EgovRecomendSiteService;
 import egovframework.com.uss.ion.rec.service.RecomendSiteVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 추천사이트처리를 하는 Controller 클래스

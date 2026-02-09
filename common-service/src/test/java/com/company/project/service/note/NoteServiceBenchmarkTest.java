@@ -11,11 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {TestNoteConfig.class, NoteService.class})
+@SpringBootTest(classes = { TestNoteConfig.class, NoteService.class })
 @ActiveProfiles("test")
 public class NoteServiceBenchmarkTest {
 
@@ -31,16 +30,19 @@ public class NoteServiceBenchmarkTest {
         // Given
         int recipientCount = 1000;
         String noteId = "NOTE_" + System.nanoTime();
-        if (noteId.length() > 20) noteId = noteId.substring(0, 20);
+        if (noteId.length() > 20)
+            noteId = noteId.substring(0, 20);
 
         String noteTrnsmitId = "TRNS_" + System.nanoTime();
-        if (noteTrnsmitId.length() > 20) noteTrnsmitId = noteTrnsmitId.substring(0, 20);
+        if (noteTrnsmitId.length() > 20)
+            noteTrnsmitId = noteTrnsmitId.substring(0, 20);
 
         List<NoteDto.NoteRecptnDto> recipients = new ArrayList<>();
 
         for (int i = 0; i < recipientCount; i++) {
             String noteRecptnId = "RCPT_" + i + "_" + System.nanoTime();
-            if (noteRecptnId.length() > 20) noteRecptnId = noteRecptnId.substring(0, 20);
+            if (noteRecptnId.length() > 20)
+                noteRecptnId = noteRecptnId.substring(0, 20);
 
             recipients.add(NoteDto.NoteRecptnDto.builder()
                     .noteRecptnId(noteRecptnId)

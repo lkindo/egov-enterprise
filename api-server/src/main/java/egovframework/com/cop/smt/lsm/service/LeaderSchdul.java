@@ -7,21 +7,25 @@ import java.io.Serializable;
  * - 간부일정에 대한 model 클래스를 정의한다.
  * 
  * 상세내용
- * - 일정ID, 일정구분, 일정명, 일정내용, 일정장소, 간부ID, 반복구분코드, 일정시작일자, 일정종료일자, 일정담당자ID 항목을 관리한다.
+ * - 일정ID, 일정구분, 일정명, 일정내용, 일정장소, 간부ID, 반복구분코드, 일정시작일자, 일정종료일자, 일정담당자ID 항목을
+ * 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 10:59:06
- * <pre>
+ * 
+ *          <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2010.6.28	장철호          최초 생성
  *
- * </pre>
+ *          </pre>
  */
-@SuppressWarnings("serial")
-public class LeaderSchdul  implements Serializable{
+public class LeaderSchdul implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/** 일정ID */
 	private String schdulId;
@@ -57,22 +61,22 @@ public class LeaderSchdul  implements Serializable{
 	private String lastUpdusrId = "";
 	/** 최종수정시점 */
 	private String lastUpdusrPnttm = "";
-	
+
 	/** 일정시작일자(시간) */
 	private String schdulBgndeHH = "";
-	
+
 	/** 일정시작일자(분) */
 	private String schdulBgndeMM = "";
-	
+
 	/** 일정종료일자(시간) */
 	private String schdulEnddeHH = "";
-	
+
 	/** 일정종료일자(분) */
 	private String schdulEnddeMM = "";
-	
+
 	/** 일정시작일자(Year/Month/Day) */
 	private String schdulBgndeYYYMMDD = "";
-	
+
 	/** 일정종료일자(Year/Month/Day) */
 	private String schdulEnddeYYYMMDD = "";
 

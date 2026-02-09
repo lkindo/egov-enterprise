@@ -1,6 +1,5 @@
 package egovframework.com.cop.cmy.web;
 
-import java.util.stream.Collectors; // Wait, actually List might be used in legacy but replaced. Map is unused. 
 // Lint said "List is never used" and "Map is never used".
 // Checking code: model.addAttribute("resultList", pageResult.getContent().stream().map(CommunityAdapter::toVO).toList());
 // toList() creates a List. But the import is java.util.List.

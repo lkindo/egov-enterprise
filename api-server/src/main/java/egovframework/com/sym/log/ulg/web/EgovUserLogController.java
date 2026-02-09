@@ -1,6 +1,5 @@
 package egovframework.com.sym.log.ulg.web;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
@@ -56,7 +55,6 @@ public class EgovUserLogController {
 	@IncludedInfo(name = "사용로그관리", listUrl = "/sym/log/ulg/SelectUserLogList.do", order = 1040, gid = 60)
 	@RequestMapping(value = "/sym/log/ulg/SelectUserLogList.do")
 	public String selectUserLogInf(@ModelAttribute("searchVO") UserLog userLog, ModelMap model) throws Exception {
-
 
 		/** EgovPropertyService.sample */
 		userLog.setPageUnit(propertyService.getInt("pageUnit"));

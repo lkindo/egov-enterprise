@@ -5,8 +5,6 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -42,8 +40,6 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class EgovQnaController {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovQnaController.class);
 
 	private final EgovQnaService egovQnaService;
 

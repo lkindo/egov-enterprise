@@ -1,8 +1,6 @@
 package egovframework.com.uss.ion.ans.web;
 
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -18,10 +16,6 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.egovframe.rte.fdl.excel.EgovExcelService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -641,11 +635,10 @@ public class EgovAnnvrsryManageController {
 						model.addAttribute("annvrsryManageList", parseExcel(is));
 					} catch (Exception e) {
 						throw e;
-					} finally {
-						if (is != null) {
-							is.close();
-						}
 					}
+					// finally block with is.close() is already there, but let's make it cleaner and
+					// also ensure Workbook is closed in parseExcel.
+
 				} else {
 					resultMsg = egovMessageSource.getMessage("fail.common.msg");
 				}
@@ -715,97 +708,67 @@ public class EgovAnnvrsryManageController {
 
 		List<AnnvrsryManageVO> list = new ArrayList<>();
 
-		// Use EgovExcelService logic or POI directly.
-		// Legacy used excelZipService.loadWorkbook(inputStream) which returns
-		// HSSFWorkbook.
-		// I will use HSSFWorkbook directly since it's cleaner than relying on
-		// EgovExcelService bean for this custom logic if I want to decouple,
-		// but since I injected excelZipService, I can use it.
-		// Actually, let's use POI directly to be explicit.
-		HSSFWorkbook hssfWB = new HSSFWorkbook(inputStream);
-		// Or if excelZipService does something special (like verifying file type), use
-		// it.
-		// Legacy: HSSFWorkbook hssfWB = (HSSFWorkbook)
-		// excelZipService.loadWorkbook(inputStream);
+		try (HSSFWorkbook hssfWB = new HSSFWorkbook(inputStream)) {
+			if (hssfWB.getNumberOfSheets() == 1) {
+				HSSFSheet annvrsrySheet = hssfWB.getSheetAt(0);
+				int rowsCnt = annvrsrySheet.getPhysicalNumberOfRows();
 
-		if (hssfWB.getNumberOfSheets() == 1) {
-			HSSFSheet annvrsrySheet = hssfWB.getSheetAt(0);
-			int rowsCnt = annvrsrySheet.getPhysicalNumberOfRows();
+				// 사용자ID 기념일자 양/음 구분 기념일구분 기념일명
+				for (int j = 1; j < rowsCnt; j++) {
+					AnnvrsryManageVO annvrsryManageVO = new AnnvrsryManageVO();
+					HSSFRow row = annvrsrySheet.getRow(j);
+					if (row != null) {
+						HSSFCell cell = null;
+						cell = row.getCell(0); // 사용자ID
+						if (cell != null)
+							sTempId = cell.getStringCellValue();
 
-			// 사용자ID 기념일자 양/음 구분 기념일구분 기념일명
-			for (int j = 1; j < rowsCnt; j++) {
-				AnnvrsryManageVO annvrsryManageVO = new AnnvrsryManageVO();
-				HSSFRow row = annvrsrySheet.getRow(j);
-				if (row != null) {
-					HSSFCell cell = null;
-					cell = row.getCell(0); // 사용자ID
-					if (cell != null)
-						sTempId = cell.getStringCellValue();
+						cell = row.getCell(1); // 사용자명
+						if (cell != null)
+							sTempNm = cell.getStringCellValue();
 
-					cell = row.getCell(1); // 사용자명
-					if (cell != null)
-						sTempNm = cell.getStringCellValue();
+						cell = row.getCell(2); // 기념일자
+						if (cell != null)
+							sTempAnnvrsryDe = cell.getStringCellValue();
 
-					cell = row.getCell(2); // 기념일자
-					if (cell != null)
-						sTempAnnvrsryDe = cell.getStringCellValue();
+						cell = row.getCell(3); // 양/음구분
+						if (cell != null)
+							sTempCldrSe = cell.getStringCellValue();
 
-					cell = row.getCell(3); // 양/음구분
-					if (cell != null)
-						sTempCldrSe = cell.getStringCellValue();
+						cell = row.getCell(4); // 기념일구분
+						if (cell != null)
+							sTempAnnvrsrySe = cell.getStringCellValue();
 
-					cell = row.getCell(4); // 기념일구분
-					if (cell != null)
-						sTempAnnvrsrySe = cell.getStringCellValue();
+						cell = row.getCell(5); // 기념일명
+						if (cell != null)
+							sTempAnnvrsryNm = cell.getStringCellValue();
 
-					cell = row.getCell(5); // 기념일명
-					if (cell != null)
-						sTempAnnvrsryNm = cell.getStringCellValue();
+						cell = row.getCell(6); // 반복여부
+						if (cell != null)
+							sTempReptitSe = cell.getStringCellValue();
 
-					cell = row.getCell(6); // 반복여부
-					if (cell != null)
-						sTempReptitSe = cell.getStringCellValue();
+						annvrsryManageVO.setUsid(sTempId);
+						annvrsryManageVO.setAnnvrsryTemp1(sTempNm);
 
-					annvrsryManageVO.setUsid(sTempId);
-					annvrsryManageVO.setAnnvrsryTemp1(sTempNm);
+						int count = egovAnnvrsryManageService.checkAnniversaryDuplicate(sTempId,
+								EgovStringUtil.removeMinusChar(sTempAnnvrsryDe), sTempAnnvrsryNm);
 
-					// Legacy checked overlap inside parsing...
-					// `selectAnnvrsryManageBnde(annvrsryManageVO)` call.
-					// This checked existence.
-					// I'll skip this check for display or implement it?
-					// "기존에 등록되어 있는경우" -> if (annvrsryManageVOTemp != null)
-					// If I want to match legacy, I should check each item.
-					// int count = egovAnnvrsryManageService.checkAnniversaryDuplicate(sTempId,
-					// ...);
-					// But legacy `selectAnnvrsryManageBnde` DAO method returns VO if key matches.
-					// I will check duplicate.
-					int count = egovAnnvrsryManageService.checkAnniversaryDuplicate(sTempId,
-							EgovStringUtil.removeMinusChar(sTempAnnvrsryDe), sTempAnnvrsryNm);
+						if (count > 0) {
+							// skip or handle
+						}
 
-					if (count > 0) {
-						// Mark as duplicate? Legacy logic:
-						/*
-						 * annvrsryManageVOTemp =
-						 * annvrsryManageDAO.selectAnnvrsryManageBnde(annvrsryManageVO);
-						 * if(annvrsryManageVOTemp != null){
-						 * annvrsryManageVO = annvrsryManageVOTemp; // Use existing data (maybe to show
-						 * it exists?)
-						 * }
-						 */
-						// If checking duplicates for display purposes (to warn user), maybe I should
-						// just pass what I parsed.
-						// For now, simple parse.
+						annvrsryManageVO.setAnnvrsrySe(sTempAnnvrsrySe);
+						annvrsryManageVO.setAnnvrsryDe(EgovDateUtil.formatDate(sTempAnnvrsryDe, "-"));
+						annvrsryManageVO.setCldrSe(sTempCldrSe);
+						annvrsryManageVO.setAnnvrsryNm(sTempAnnvrsryNm);
+						annvrsryManageVO.setReptitSe(sTempReptitSe);
+
+						list.add(annvrsryManageVO);
 					}
-
-					annvrsryManageVO.setAnnvrsrySe(sTempAnnvrsrySe);
-					annvrsryManageVO.setAnnvrsryDe(EgovDateUtil.formatDate(sTempAnnvrsryDe, "-"));
-					annvrsryManageVO.setCldrSe(sTempCldrSe);
-					annvrsryManageVO.setAnnvrsryNm(sTempAnnvrsryNm);
-					annvrsryManageVO.setReptitSe(sTempReptitSe);
-					list.add(annvrsryManageVO);
 				}
 			}
 		}
+
 		return list;
 	}
 

@@ -22,7 +22,6 @@ import egovframework.com.uss.ion.sit.service.EgovSiteService;
 import egovframework.com.uss.ion.sit.service.SiteVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 사이트정보를 처리하는 Controller 클래스

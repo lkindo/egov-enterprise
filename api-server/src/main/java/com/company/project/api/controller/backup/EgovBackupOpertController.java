@@ -3,7 +3,6 @@ package com.company.project.api.controller.backup;
 import com.company.project.service.backup.EgovBackupOpertService;
 import com.company.project.service.backup.dto.BackupOpertDto;
 import com.company.project.service.code.EgovCommonCodeService;
-import com.company.project.service.code.dto.CommonCodeDto;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
@@ -14,8 +13,6 @@ import jakarta.annotation.Resource;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
@@ -52,8 +49,6 @@ public class EgovBackupOpertController {
 
     @Resource(name = "egovCommonCodeService")
     private EgovCommonCodeService commonCodeService;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(EgovBackupOpertController.class);
 
     /**
      * 백업작업을 삭제한다.
@@ -101,11 +96,6 @@ public class EgovBackupOpertController {
         backupOpertService.createBackupOpert(loginVO.getUniqId(), dto);
 
         // Quartz 연동
-        egovframework.com.sym.sym.bak.service.BackupOpert target = new egovframework.com.sym.sym.bak.service.BackupOpert();
-        // VO에 값 복사 필요 (생략 가능하면 패스, 여기서는 target을 다시 조회해서 사용함)
-        // target = egovBackupOpertService.selectBackupOpert(backupOpert);
-        // Modern Service에서 VO를 리턴하지 않으므로 직접 세팅하거나 조회 로직 필요.
-        // 간소화를 위해 Quartz 연동은 레거시 방식을 존중하며 VO를 활용.
         backupScheduler.insertBackupOpert(backupOpert);
 
         model.addAttribute("resultMsg", "success.common.insert");

@@ -1,7 +1,5 @@
 package egovframework.com.sym.cal.service;
 
-import java.io.Serializable;
-
 /**
  * 휴일 VO 클래스
  * 
@@ -21,7 +19,7 @@ import java.io.Serializable;
  *
  *      </pre>
  */
-public class RestdeVO extends Restde implements Serializable {
+public class RestdeVO extends Restde {
 
 	private static final long serialVersionUID = 2548377950888283294L;
 

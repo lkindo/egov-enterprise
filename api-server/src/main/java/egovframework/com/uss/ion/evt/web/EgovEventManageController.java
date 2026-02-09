@@ -25,7 +25,6 @@ import egovframework.com.uss.ion.evt.service.EventManage;
 import egovframework.com.uss.ion.evt.service.EventManageVO;
 import egovframework.com.utl.fcc.service.EgovDateUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * <pre>

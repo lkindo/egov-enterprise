@@ -1,8 +1,6 @@
 package egovframework.com.sym.ccm.icr.service.impl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -77,7 +75,10 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 		List<HashMap<String, String>> list = apiLink();
 		for (HashMap<String, String> row : list) {
 			InsttCodeRecptn insttCodeRecptn = new InsttCodeRecptn();
-			insttCodeRecptn.setOccrrDe(ObjectUtils.isEmpty(row.get("crtDe")) ? "20000101" : row.get("crtDe")); // 날짜 >> crt_de 생성일 x 20000101
+			insttCodeRecptn.setOccrrDe(ObjectUtils.isEmpty(row.get("crtDe")) ? "20000101" : row.get("crtDe")); // 날짜 >>
+																												// crt_de
+																												// 생성일 x
+																												// 20000101
 			insttCodeRecptn.setInsttCode(row.get("orgCd")); // 기관코드 >> org_cd 기관코드
 			insttCodeRecptn.setOpertSn(idgenService.getNextIntegerId()); // 작업일련번호 >> idgenService.getNextIntegerId()
 			insttCodeRecptn.setChangeSeCode("01"); // 변경구분코드 01 코드생성 02 코드변경 03 코드말소 >> 01 / 02
@@ -177,7 +178,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 
 		String requestString = requestString(1, 1);
 
-		URL url = new URL(requestString);
+		URL url = java.net.URI.create(requestString).toURL();
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 		conn.setRequestMethod("GET");
 		conn.setRequestProperty("Content-Type", "application/json");
@@ -223,7 +224,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 
 			String requestString = requestString(p, numOfRows);
 
-			URL url = new URL(requestString);
+			URL url = java.net.URI.create(requestString).toURL();
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			conn.setRequestProperty("Content-Type", "application/json");

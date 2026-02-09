@@ -1,8 +1,7 @@
 package com.company.project.domain.log;
 
 import com.company.project.domain.code.QCommonCode;
-import com.company.project.domain.user.QUser;
-import com.querydsl.core.types.Projections;
+
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;

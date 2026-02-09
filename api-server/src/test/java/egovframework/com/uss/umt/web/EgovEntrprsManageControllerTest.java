@@ -42,8 +42,6 @@ class EgovEntrprsManageControllerTest {
     @InjectMocks
     private EgovEntrprsManageController controller;
 
-    private EgovUserDetailsService originalUserDetailsService;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -54,16 +52,20 @@ class EgovEntrprsManageControllerTest {
         when(mockUserDetailsService.isAuthenticated()).thenReturn(true);
 
         // Save original and set mock
-        // Since getAuthenticatedUser is static, we assume it uses the helper's static field.
-        // We can't easily get the original via getter if it's private/protected, but we can just set it.
-        // Wait, EgovUserDetailsHelper doesn't expose getter for the service itself easily.
+        // Since getAuthenticatedUser is static, we assume it uses the helper's static
+        // field.
+        // We can't easily get the original via getter if it's private/protected, but we
+        // can just set it.
+        // Wait, EgovUserDetailsHelper doesn't expose getter for the service itself
+        // easily.
         // But we can just overwrite it.
         new EgovUserDetailsHelper().setEgovUserDetailsService(mockUserDetailsService);
     }
 
     @AfterEach
     void tearDown() {
-        // We should try to reset it, but since we don't know the original, we just leave it?
+        // We should try to reset it, but since we don't know the original, we just
+        // leave it?
         // Or set it to null so it re-initializes next time?
         new EgovUserDetailsHelper().setEgovUserDetailsService(null);
     }
@@ -73,18 +75,18 @@ class EgovEntrprsManageControllerTest {
         // Arrange
         // Mock cmmUseService to throw exception when fetching password hints (COM022)
         when(cmmUseService.selectCmmCodeDetail(any(ComDefaultCodeVO.class)))
-            .thenAnswer(invocation -> {
-                ComDefaultCodeVO vo = invocation.getArgument(0);
-                if ("COM022".equals(vo.getCodeId())) {
-                    throw new RuntimeException("Simulated Database Error");
-                }
-                return Collections.emptyList();
-            });
+                .thenAnswer(invocation -> {
+                    ComDefaultCodeVO vo = invocation.getArgument(0);
+                    if ("COM022".equals(vo.getCodeId())) {
+                        throw new RuntimeException("Simulated Database Error");
+                    }
+                    return Collections.emptyList();
+                });
 
         // Act & Assert
         mockMvc.perform(get("/uss/umt/EgovEntrprsMberInsertView.do"))
-               .andExpect(status().isOk())
-               .andExpect(view().name("egovframework/com/uss/umt/EgovEntrprsMberInsert"))
-               .andExpect(model().attribute("passwordHint_result", Collections.emptyList()));
+                .andExpect(status().isOk())
+                .andExpect(view().name("egovframework/com/uss/umt/EgovEntrprsMberInsert"))
+                .andExpect(model().attribute("passwordHint_result", Collections.emptyList()));
     }
 }

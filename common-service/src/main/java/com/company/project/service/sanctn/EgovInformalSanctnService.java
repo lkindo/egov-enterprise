@@ -1,8 +1,6 @@
 package com.company.project.service.sanctn;
 
 import com.company.project.service.sanctn.dto.InformalSanctnDto;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 public interface EgovInformalSanctnService {
     InformalSanctnDto getInfrmlSanctn(String infrmlSanctnId);

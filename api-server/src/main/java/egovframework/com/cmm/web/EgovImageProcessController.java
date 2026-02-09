@@ -48,9 +48,10 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  *      </pre>
  */
-@SuppressWarnings("serial")
 @Controller
 public class EgovImageProcessController extends HttpServlet {
+
+	private static final long serialVersionUID = 1L;
 
 	/** 암호화서비스 */
 	@Resource(name = "egovEnvCryptoService")

@@ -4,7 +4,6 @@ import com.company.project.domain.deptjob.DeptJobBox;
 import com.company.project.domain.deptjob.DeptJobBoxRepository;
 import com.company.project.service.deptjob.dto.DeptJobBoxDto;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

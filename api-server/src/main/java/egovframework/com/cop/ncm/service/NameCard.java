@@ -4,104 +4,104 @@ import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-
 /**
  * 명함정보 관리를 위한 모델 클래스
+ * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.3.28  이삼섭          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class NameCard implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     /** 주소 */
     private String adres = "";
-    
+
     /** 지역번호 */
     private String areaNo = "";
-    
+
     /** 직급명 */
     private String clsfNm = "";
-    
+
     /** 회사명 */
     private String cmpnyNm = "";
-    
+
     /** 부서명 */
     private String deptNm = "";
-    
+
     /** 이메일주소 */
     private String emailAdres = "";
-    
+
     /** 끝휴대폰번호 */
     private String endMbtlNum = "";
-    
+
     /** 끝전화번호 */
     private String endTelNo = "";
-    
+
     /** 외부사용자여부 */
     private String extrlUserAt = "";
-    
+
     /** 최초등록자 아이디 */
     private String frstRegisterId = "";
-    
+
     /** 최초등록시점 */
     private String frstRegisterPnttm = "";
-    
+
     /** 식별번호 */
     private String idntfcNo = "";
-    
+
     /** 최종수정자 아이디 */
     private String lastUpdusrId = "";
-    
+
     /** 최종수정시점 */
     private String lastUpdusrPnttm = "";
-    
+
     /** 휴대폰번호 */
     private String mbtlNum = "";
-    
+
     /** 중간휴대폰번호 */
     private String middleMbtlNum = "";
-    
+
     /** 중간전화번호 */
     private String middleTelNo = "";
-    
+
     /** 국가번호 */
     private String nationNo = "";
-    
+
     /** 명함아이디 */
     private String ncrdId = "";
-    
+
     /** 명함대상자 아이디 */
     private String ncrdTrgterId = "";
-    
+
     /** 이름 */
     private String ncrdNm = "";
-    
+
     /** 직위명 */
     private String ofcpsNm = "";
-    
+
     /** 공개여부 */
     private String othbcAt = "";
-    
+
     /** 비고 */
     private String remark = "";
-    
+
     /** 전화번호 */
     private String telNo = "";
 
     /** 상세주소 */
     private String detailAdres = "";
-    
+
     /** 우편번호 */
     private String zipCode = "";
 
@@ -111,17 +111,17 @@ public class NameCard implements Serializable {
      * @return the adres
      */
     public String getAdres() {
-	return adres;
+        return adres;
     }
 
     /**
      * adres attribute 값을 설정한다.
      * 
      * @param adres
-     *            the adres to set
+     *              the adres to set
      */
     public void setAdres(String adres) {
-	this.adres = adres;
+        this.adres = adres;
     }
 
     /**
@@ -130,17 +130,17 @@ public class NameCard implements Serializable {
      * @return the areaNo
      */
     public String getAreaNo() {
-	return areaNo;
+        return areaNo;
     }
 
     /**
      * areaNo attribute 값을 설정한다.
      * 
      * @param areaNo
-     *            the areaNo to set
+     *               the areaNo to set
      */
     public void setAreaNo(String areaNo) {
-	this.areaNo = areaNo;
+        this.areaNo = areaNo;
     }
 
     /**
@@ -149,17 +149,17 @@ public class NameCard implements Serializable {
      * @return the clsfNm
      */
     public String getClsfNm() {
-	return clsfNm;
+        return clsfNm;
     }
 
     /**
      * clsfNm attribute 값을 설정한다.
      * 
      * @param clsfNm
-     *            the clsfNm to set
+     *               the clsfNm to set
      */
     public void setClsfNm(String clsfNm) {
-	this.clsfNm = clsfNm;
+        this.clsfNm = clsfNm;
     }
 
     /**
@@ -168,17 +168,17 @@ public class NameCard implements Serializable {
      * @return the cmpnyNm
      */
     public String getCmpnyNm() {
-	return cmpnyNm;
+        return cmpnyNm;
     }
 
     /**
      * cmpnyNm attribute 값을 설정한다.
      * 
      * @param cmpnyNm
-     *            the cmpnyNm to set
+     *                the cmpnyNm to set
      */
     public void setCmpnyNm(String cmpnyNm) {
-	this.cmpnyNm = cmpnyNm;
+        this.cmpnyNm = cmpnyNm;
     }
 
     /**
@@ -187,17 +187,17 @@ public class NameCard implements Serializable {
      * @return the deptNm
      */
     public String getDeptNm() {
-	return deptNm;
+        return deptNm;
     }
 
     /**
      * deptNm attribute 값을 설정한다.
      * 
      * @param deptNm
-     *            the deptNm to set
+     *               the deptNm to set
      */
     public void setDeptNm(String deptNm) {
-	this.deptNm = deptNm;
+        this.deptNm = deptNm;
     }
 
     /**
@@ -206,17 +206,17 @@ public class NameCard implements Serializable {
      * @return the emailAdres
      */
     public String getEmailAdres() {
-	return emailAdres;
+        return emailAdres;
     }
 
     /**
      * emailAdres attribute 값을 설정한다.
      * 
      * @param emailAdres
-     *            the emailAdres to set
+     *                   the emailAdres to set
      */
     public void setEmailAdres(String emailAdres) {
-	this.emailAdres = emailAdres;
+        this.emailAdres = emailAdres;
     }
 
     /**
@@ -225,17 +225,17 @@ public class NameCard implements Serializable {
      * @return the endMbtlNum
      */
     public String getEndMbtlNum() {
-	return endMbtlNum;
+        return endMbtlNum;
     }
 
     /**
      * endMbtlNum attribute 값을 설정한다.
      * 
      * @param endMbtlNum
-     *            the endMbtlNum to set
+     *                   the endMbtlNum to set
      */
     public void setEndMbtlNum(String endMbtlNum) {
-	this.endMbtlNum = endMbtlNum;
+        this.endMbtlNum = endMbtlNum;
     }
 
     /**
@@ -244,17 +244,17 @@ public class NameCard implements Serializable {
      * @return the endTelNo
      */
     public String getEndTelNo() {
-	return endTelNo;
+        return endTelNo;
     }
 
     /**
      * endTelNo attribute 값을 설정한다.
      * 
      * @param endTelNo
-     *            the endTelNo to set
+     *                 the endTelNo to set
      */
     public void setEndTelNo(String endTelNo) {
-	this.endTelNo = endTelNo;
+        this.endTelNo = endTelNo;
     }
 
     /**
@@ -263,17 +263,17 @@ public class NameCard implements Serializable {
      * @return the extrlUserAt
      */
     public String getExtrlUserAt() {
-	return extrlUserAt;
+        return extrlUserAt;
     }
 
     /**
      * extrlUserAt attribute 값을 설정한다.
      * 
      * @param extrlUserAt
-     *            the extrlUserAt to set
+     *                    the extrlUserAt to set
      */
     public void setExtrlUserAt(String extrlUserAt) {
-	this.extrlUserAt = extrlUserAt;
+        this.extrlUserAt = extrlUserAt;
     }
 
     /**
@@ -282,17 +282,17 @@ public class NameCard implements Serializable {
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
-	return frstRegisterId;
+        return frstRegisterId;
     }
 
     /**
      * frstRegisterId attribute 값을 설정한다.
      * 
      * @param frstRegisterId
-     *            the frstRegisterId to set
+     *                       the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
-	this.frstRegisterId = frstRegisterId;
+        this.frstRegisterId = frstRegisterId;
     }
 
     /**
@@ -301,17 +301,17 @@ public class NameCard implements Serializable {
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
-	return frstRegisterPnttm;
+        return frstRegisterPnttm;
     }
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
      * 
      * @param frstRegisterPnttm
-     *            the frstRegisterPnttm to set
+     *                          the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
-	this.frstRegisterPnttm = frstRegisterPnttm;
+        this.frstRegisterPnttm = frstRegisterPnttm;
     }
 
     /**
@@ -320,17 +320,17 @@ public class NameCard implements Serializable {
      * @return the idntfcNo
      */
     public String getIdntfcNo() {
-	return idntfcNo;
+        return idntfcNo;
     }
 
     /**
      * idntfcNo attribute 값을 설정한다.
      * 
      * @param idntfcNo
-     *            the idntfcNo to set
+     *                 the idntfcNo to set
      */
     public void setIdntfcNo(String idntfcNo) {
-	this.idntfcNo = idntfcNo;
+        this.idntfcNo = idntfcNo;
     }
 
     /**
@@ -339,17 +339,17 @@ public class NameCard implements Serializable {
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
-	return lastUpdusrId;
+        return lastUpdusrId;
     }
 
     /**
      * lastUpdusrId attribute 값을 설정한다.
      * 
      * @param lastUpdusrId
-     *            the lastUpdusrId to set
+     *                     the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
-	this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = lastUpdusrId;
     }
 
     /**
@@ -358,17 +358,17 @@ public class NameCard implements Serializable {
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
-	return lastUpdusrPnttm;
+        return lastUpdusrPnttm;
     }
 
     /**
      * lastUpdusrPnttm attribute 값을 설정한다.
      * 
      * @param lastUpdusrPnttm
-     *            the lastUpdusrPnttm to set
+     *                        the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
-	this.lastUpdusrPnttm = lastUpdusrPnttm;
+        this.lastUpdusrPnttm = lastUpdusrPnttm;
     }
 
     /**
@@ -377,17 +377,17 @@ public class NameCard implements Serializable {
      * @return the mbtlNum
      */
     public String getMbtlNum() {
-	return mbtlNum;
+        return mbtlNum;
     }
 
     /**
      * mbtlNum attribute 값을 설정한다.
      * 
      * @param mbtlNum
-     *            the mbtlNum to set
+     *                the mbtlNum to set
      */
     public void setMbtlNum(String mbtlNum) {
-	this.mbtlNum = mbtlNum;
+        this.mbtlNum = mbtlNum;
     }
 
     /**
@@ -396,17 +396,17 @@ public class NameCard implements Serializable {
      * @return the middleMbtlNum
      */
     public String getMiddleMbtlNum() {
-	return middleMbtlNum;
+        return middleMbtlNum;
     }
 
     /**
      * middleMbtlNum attribute 값을 설정한다.
      * 
      * @param middleMbtlNum
-     *            the middleMbtlNum to set
+     *                      the middleMbtlNum to set
      */
     public void setMiddleMbtlNum(String middleMbtlNum) {
-	this.middleMbtlNum = middleMbtlNum;
+        this.middleMbtlNum = middleMbtlNum;
     }
 
     /**
@@ -415,17 +415,17 @@ public class NameCard implements Serializable {
      * @return the middleTelNo
      */
     public String getMiddleTelNo() {
-	return middleTelNo;
+        return middleTelNo;
     }
 
     /**
      * middleTelNo attribute 값을 설정한다.
      * 
      * @param middleTelNo
-     *            the middleTelNo to set
+     *                    the middleTelNo to set
      */
     public void setMiddleTelNo(String middleTelNo) {
-	this.middleTelNo = middleTelNo;
+        this.middleTelNo = middleTelNo;
     }
 
     /**
@@ -434,17 +434,17 @@ public class NameCard implements Serializable {
      * @return the nationNo
      */
     public String getNationNo() {
-	return nationNo;
+        return nationNo;
     }
 
     /**
      * nationNo attribute 값을 설정한다.
      * 
      * @param nationNo
-     *            the nationNo to set
+     *                 the nationNo to set
      */
     public void setNationNo(String nationNo) {
-	this.nationNo = nationNo;
+        this.nationNo = nationNo;
     }
 
     /**
@@ -453,17 +453,17 @@ public class NameCard implements Serializable {
      * @return the ncrdId
      */
     public String getNcrdId() {
-	return ncrdId;
+        return ncrdId;
     }
 
     /**
      * ncrdId attribute 값을 설정한다.
      * 
      * @param ncrdId
-     *            the ncrdId to set
+     *               the ncrdId to set
      */
     public void setNcrdId(String ncrdId) {
-	this.ncrdId = ncrdId;
+        this.ncrdId = ncrdId;
     }
 
     /**
@@ -472,17 +472,17 @@ public class NameCard implements Serializable {
      * @return the ncrdTrgterId
      */
     public String getNcrdTrgterId() {
-	return ncrdTrgterId;
+        return ncrdTrgterId;
     }
 
     /**
      * ncrdTrgterId attribute 값을 설정한다.
      * 
      * @param ncrdTrgterId
-     *            the ncrdTrgterId to set
+     *                     the ncrdTrgterId to set
      */
     public void setNcrdTrgterId(String ncrdTrgterId) {
-	this.ncrdTrgterId = ncrdTrgterId;
+        this.ncrdTrgterId = ncrdTrgterId;
     }
 
     /**
@@ -491,17 +491,17 @@ public class NameCard implements Serializable {
      * @return the ncrdNm
      */
     public String getNcrdNm() {
-	return ncrdNm;
+        return ncrdNm;
     }
 
     /**
      * ncrdNm attribute 값을 설정한다.
      * 
      * @param ncrdNm
-     *            the ncrdNm to set
+     *               the ncrdNm to set
      */
     public void setNcrdNm(String ncrdNm) {
-	this.ncrdNm = ncrdNm;
+        this.ncrdNm = ncrdNm;
     }
 
     /**
@@ -510,17 +510,17 @@ public class NameCard implements Serializable {
      * @return the ofcpsNm
      */
     public String getOfcpsNm() {
-	return ofcpsNm;
+        return ofcpsNm;
     }
 
     /**
      * ofcpsNm attribute 값을 설정한다.
      * 
      * @param ofcpsNm
-     *            the ofcpsNm to set
+     *                the ofcpsNm to set
      */
     public void setOfcpsNm(String ofcpsNm) {
-	this.ofcpsNm = ofcpsNm;
+        this.ofcpsNm = ofcpsNm;
     }
 
     /**
@@ -529,17 +529,17 @@ public class NameCard implements Serializable {
      * @return the othbcAt
      */
     public String getOthbcAt() {
-	return othbcAt;
+        return othbcAt;
     }
 
     /**
      * othbcAt attribute 값을 설정한다.
      * 
      * @param othbcAt
-     *            the othbcAt to set
+     *                the othbcAt to set
      */
     public void setOthbcAt(String othbcAt) {
-	this.othbcAt = othbcAt;
+        this.othbcAt = othbcAt;
     }
 
     /**
@@ -548,17 +548,17 @@ public class NameCard implements Serializable {
      * @return the remark
      */
     public String getRemark() {
-	return remark;
+        return remark;
     }
 
     /**
      * remark attribute 값을 설정한다.
      * 
      * @param remark
-     *            the remark to set
+     *               the remark to set
      */
     public void setRemark(String remark) {
-	this.remark = remark;
+        this.remark = remark;
     }
 
     /**
@@ -567,17 +567,17 @@ public class NameCard implements Serializable {
      * @return the telNo
      */
     public String getTelNo() {
-	return telNo;
+        return telNo;
     }
 
     /**
      * telNo attribute 값을 설정한다.
      * 
      * @param telNo
-     *            the telNo to set
+     *              the telNo to set
      */
     public void setTelNo(String telNo) {
-	this.telNo = telNo;
+        this.telNo = telNo;
     }
 
     /**
@@ -586,17 +586,17 @@ public class NameCard implements Serializable {
      * @return the detailAdres
      */
     public String getDetailAdres() {
-	return detailAdres;
+        return detailAdres;
     }
 
     /**
      * detailAdres attribute 값을 설정한다.
      * 
      * @param detailAdres
-     *            the detailAdres to set
+     *                    the detailAdres to set
      */
     public void setDetailAdres(String detailAdres) {
-	this.detailAdres = detailAdres;
+        this.detailAdres = detailAdres;
     }
 
     /**
@@ -605,23 +605,23 @@ public class NameCard implements Serializable {
      * @return the zipCode
      */
     public String getZipCode() {
-	return zipCode;
+        return zipCode;
     }
 
     /**
      * zipCode attribute 값을 설정한다.
      * 
      * @param zipCode
-     *            the zipCode to set
+     *                the zipCode to set
      */
     public void setZipCode(String zipCode) {
-	this.zipCode = zipCode;
+        this.zipCode = zipCode;
     }
 
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

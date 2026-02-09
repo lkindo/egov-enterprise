@@ -2,7 +2,6 @@ package com.company.project.api.controller.menu;
 
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuCreateDto;
-import com.company.project.service.menu.dto.MenuDto;
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import jakarta.annotation.Resource;
@@ -121,7 +120,8 @@ public class MenuCreateController {
             @ModelAttribute("menuCreatVO") MenuCreateDto menuCreatVO,
             Model model, RedirectAttributes redirectAttributes) throws Exception {
 
-        // Security Check: Authentication is handled by ApiSecurityConfig (FilterSecurityInterceptor).
+        // Security Check: Authentication is handled by ApiSecurityConfig
+        // (FilterSecurityInterceptor).
         // Explicit EgovUserDetailsHelper.isAuthenticated() check is not required here.
 
         String resultMsg = "";

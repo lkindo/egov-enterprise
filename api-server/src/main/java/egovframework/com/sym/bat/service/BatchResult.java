@@ -1,7 +1,5 @@
 package egovframework.com.sym.bat.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
@@ -12,15 +10,16 @@ import egovframework.com.cmm.ComDefaultVO;
  * @version 1.0
  * @updated 17-6-2010 오전 10:27:13
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == 개정이력(Modification Information) ==
  *
  *   수정일       수정자           수정내용
  *  -------     --------    ---------------------------
  *  2010.06.17   김진만     최초 생성
- * </pre>
+ *      </pre>
  */
-public class BatchResult extends ComDefaultVO implements Serializable {
+public class BatchResult extends ComDefaultVO {
 
 	private static final long serialVersionUID = 8673713935753272633L;
 	/**

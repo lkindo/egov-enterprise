@@ -22,8 +22,9 @@ import jakarta.validation.constraints.Size;
  * @see
  * 
  */
-@SuppressWarnings("serial")
 public class Board implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 게시물 첨부파일 아이디

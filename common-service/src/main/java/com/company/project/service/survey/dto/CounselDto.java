@@ -1,7 +1,6 @@
 package com.company.project.service.survey.dto;
 
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

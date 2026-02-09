@@ -1,29 +1,31 @@
 package egovframework.com.uss.olh.awm.service;
 
-import java.io.Serializable;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import egovframework.com.cmm.ComDefaultVO;
+
 /**
  * 행정전문용어사전관리 VO Class 구현
+ * 
  * @author 공통서비스 장동한
  * @since 2009.07.03
  * @version 1.0
- * @see <pre>
+ * @see
+ * 
+ *      <pre>
  * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.07.03  장동한          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-public class AdministrationWordVO extends ComDefaultVO implements Serializable {
+public class AdministrationWordVO extends ComDefaultVO {
 
-	private static final long serialVersionUID = -5313141971613650852L;
+    private static final long serialVersionUID = -5313141971613650852L;
 
-	/** 행정용어사전 아이디 */
+    /** 행정용어사전 아이디 */
     private String administWordId;
 
     /** 행정용어사전 명 */
@@ -32,19 +34,19 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     /** 행정용어사전 영문명 */
     private String administWordEngNm;
 
-    /** 행정용어사전 약어  */
+    /** 행정용어사전 약어 */
     private String administWordAbrv;
 
-    /** 주제영역  */
+    /** 주제영역 */
     private String themaRelm;
 
-    /** 용어구분  */
+    /** 용어구분 */
     private String wordDomn;
-    
-    /** 용어구분명  */
+
+    /** 용어구분명 */
     private String wordDomnNm;
 
-    /** 관련표준용어  */
+    /** 관련표준용어 */
     private String stdWord;
 
     /** 행정용어사전 정의 */
@@ -73,7 +75,6 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
 
     /** 컨트롤 명령어 */
     private String cmd;
-
 
     /**
      * administWordId 리턴
@@ -189,18 +190,18 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
      * @return the wordDomn
      */
     public String getWordDomnNm() {
-    	return wordDomnNm;
+        return wordDomnNm;
     }
-    
+
     /**
      * wordDomnNm 설정
      *
      * @param wordDomnNm the wordDomnNm to set
      */
     public void setWordDomnNm(String wordDomnNm) {
-    	this.wordDomnNm = wordDomnNm;
+        this.wordDomnNm = wordDomnNm;
     }
-    
+
     /**
      * stdWord 리턴
      *
@@ -382,10 +383,10 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-	 * toString 메소드를 대치한다.
-	 */
-	public String toString(){
-		return ToStringBuilder.reflectionToString(this);
-	}
+     * toString 메소드를 대치한다.
+     */
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 
 }

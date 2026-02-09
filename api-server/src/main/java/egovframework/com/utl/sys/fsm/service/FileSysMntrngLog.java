@@ -7,13 +7,16 @@ import java.io.Serializable;
  * - 파일시스템 모니터링 로그에 대한 model 클래스를 정의한다.
  *
  * 상세내용
- * - 로그ID, 파일시스템ID, 파일시스템명, 파일시스템관리명, 파일시스템크기, 파일시스템임계치, 파일시스템임계치율, 파일시스템사용량, 파일시스템사용률, 서비스상태, 로그정보, 생성일시 항목을 관리한다.
+ * - 로그ID, 파일시스템ID, 파일시스템명, 파일시스템관리명, 파일시스템크기, 파일시스템임계치, 파일시스템임계치율, 파일시스템사용량,
+ * 파일시스템사용률, 서비스상태, 로그정보, 생성일시 항목을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 11:33:26
  */
-@SuppressWarnings("serial")
-public class FileSysMntrngLog implements Serializable  {
+public class FileSysMntrngLog implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	/**
 	 * 로그ID
 	 */
@@ -78,6 +81,7 @@ public class FileSysMntrngLog implements Serializable  {
 	 * 최종수정시점
 	 */
 	private String lastUpdusrPnttm = "";
+
 	/**
 	 * 로그 ID 반환
 	 */
@@ -301,6 +305,5 @@ public class FileSysMntrngLog implements Serializable  {
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
 		this.lastUpdusrPnttm = lastUpdusrPnttm;
 	}
-
 
 }

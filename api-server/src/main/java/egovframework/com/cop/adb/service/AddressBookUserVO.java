@@ -1,44 +1,43 @@
 package egovframework.com.cop.adb.service;
 
-
 /**
  * 주소록구성원 관리를 위한 VO 모델 클래스
+ * 
  * @author 공통컴포넌트개발팀 윤성록
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.9.25  윤성록          최초 생성
  *   2016.12.13 최두영          클래스명 변경
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
-public class AddressBookUserVO extends AddressBookUser{
-    
-    
+public class AddressBookUserVO extends AddressBookUser {
+    private static final long serialVersionUID = 1L;
+
     /** 사용자 아이디 */
     private String userId = "";
-    
+
     /** 사용자 명 */
-    private String userNm = "";     
+    private String userNm = "";
 
     /** 사용자 이메일 */
     private String userEmail = "";
-    
+
     /** 사용자 접전화 처음 */
     private String areaNo = "";
-    
+
     /** 사용자 집전화 가운데 */
     private String homemiddleTelno = "";
-    
+
     /** 사용자 집전화 마지막 */
     private String homeendTelno = "";
-       
+
     /** 검색시작일 */
     private String searchBgnDe = "";
 
@@ -68,7 +67,7 @@ public class AddressBookUserVO extends AddressBookUser{
 
     /** 첫페이지 인덱스 */
     private int firstIndex = 1;
-    
+
     /** 마지막페이지 인덱스 */
     private int lastIndex = 1;
 
@@ -83,8 +82,7 @@ public class AddressBookUserVO extends AddressBookUser{
 
     /** 최종 수정자명 */
     private String lastUpdusrNm = "";
-    
-       
+
     /**
      * userId attribute를 리턴한다.
      * 
@@ -98,7 +96,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * userId attribute 값을 설정한다.
      * 
      * @param userId
-     *            the userId to set
+     *               the userId to set
      */
     public void setUserId(String userId) {
         this.userId = userId;
@@ -117,7 +115,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * userNm attribute 값을 설정한다.
      * 
      * @param userNm
-     *            the userNm to set
+     *               the userNm to set
      */
     public void setUserNm(String userNm) {
         this.userNm = userNm;
@@ -136,7 +134,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * userEmail attribute 값을 설정한다.
      * 
      * @param userEmail
-     *            the userEmail to set
+     *                  the userEmail to set
      */
     public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
@@ -155,7 +153,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * userEmail attribute 값을 설정한다.
      * 
      * @param userEmail
-     *            the userEmail to set
+     *                  the userEmail to set
      */
     public void setAreaNo(String areaNo) {
         this.areaNo = areaNo;
@@ -174,7 +172,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * userEmail attribute 값을 설정한다.
      * 
      * @param userEmail
-     *            the userEmail to set
+     *                  the userEmail to set
      */
     public void setHomemiddleTelno(String homemiddleTelno) {
         this.homemiddleTelno = homemiddleTelno;
@@ -206,7 +204,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * searchBgnDe attribute 값을 설정한다.
      * 
      * @param searchBgnDe
-     *            the searchBgnDe to set
+     *                    the searchBgnDe to set
      */
     public void setSearchBgnDe(String searchBgnDe) {
         this.searchBgnDe = searchBgnDe;
@@ -225,7 +223,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * searchCnd attribute 값을 설정한다.
      * 
      * @param searchCnd
-     *            the searchCnd to set
+     *                  the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
         this.searchCnd = searchCnd;
@@ -244,7 +242,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * searchEndDe attribute 값을 설정한다.
      * 
      * @param searchEndDe
-     *            the searchEndDe to set
+     *                    the searchEndDe to set
      */
     public void setSearchEndDe(String searchEndDe) {
         this.searchEndDe = searchEndDe;
@@ -263,7 +261,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * searchWrd attribute 값을 설정한다.
      * 
      * @param searchWrd
-     *            the searchWrd to set
+     *                  the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
         this.searchWrd = searchWrd;
@@ -282,7 +280,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * sortOrdr attribute 값을 설정한다.
      * 
      * @param sortOrdr
-     *            the sortOrdr to set
+     *                 the sortOrdr to set
      */
     public void setSortOrdr(long sortOrdr) {
         this.sortOrdr = sortOrdr;
@@ -301,7 +299,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * searchUseYn attribute 값을 설정한다.
      * 
      * @param searchUseYn
-     *            the searchUseYn to set
+     *                    the searchUseYn to set
      */
     public void setSearchUseYn(String searchUseYn) {
         this.searchUseYn = searchUseYn;
@@ -320,7 +318,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * pageIndex attribute 값을 설정한다.
      * 
      * @param pageIndex
-     *            the pageIndex to set
+     *                  the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
         this.pageIndex = pageIndex;
@@ -339,7 +337,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * pageUnit attribute 값을 설정한다.
      * 
      * @param pageUnit
-     *            the pageUnit to set
+     *                 the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
         this.pageUnit = pageUnit;
@@ -358,7 +356,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * pageSize attribute 값을 설정한다.
      * 
      * @param pageSize
-     *            the pageSize to set
+     *                 the pageSize to set
      */
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
@@ -377,12 +375,12 @@ public class AddressBookUserVO extends AddressBookUser{
      * firstIndex attribute 값을 설정한다.
      * 
      * @param firstIndex
-     *            the firstIndex to set
+     *                   the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
         this.firstIndex = firstIndex;
     }
-    
+
     /**
      * lastIndex attribute를 리턴한다.
      * 
@@ -396,7 +394,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * lastIndex attribute 값을 설정한다.
      * 
      * @param lastIndex
-     *            the lastIndex to set
+     *                  the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
         this.lastIndex = lastIndex;
@@ -415,7 +413,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * recordCountPerPage attribute 값을 설정한다.
      * 
      * @param recordCountPerPage
-     *            the recordCountPerPage to set
+     *                           the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
         this.recordCountPerPage = recordCountPerPage;
@@ -434,7 +432,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * getRowNo attribute 값을 설정한다.
      * 
      * @param getRowNo
-     *            the getRowNo to set
+     *                 the getRowNo to set
      */
     public void setRowNo(int rowNo) {
         this.rowNo = rowNo;
@@ -453,7 +451,7 @@ public class AddressBookUserVO extends AddressBookUser{
      * frstRegisterNm attribute 값을 설정한다.
      * 
      * @param frstRegisterNm
-     *            the frstRegisterNm to set
+     *                       the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
         this.frstRegisterNm = frstRegisterNm;
@@ -472,9 +470,9 @@ public class AddressBookUserVO extends AddressBookUser{
      * lastUpdusrNm attribute 값을 설정한다.
      * 
      * @param lastUpdusrNm
-     *            the lastUpdusrNm to set
+     *                     the lastUpdusrNm to set
      */
     public void setLastUpdusrNm(String lastUpdusrNm) {
         this.lastUpdusrNm = lastUpdusrNm;
-    }    
+    }
 }

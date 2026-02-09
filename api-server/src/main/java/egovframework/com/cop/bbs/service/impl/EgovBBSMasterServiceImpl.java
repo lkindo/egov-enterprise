@@ -145,7 +145,7 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 		// 2021 github 반영
 		// String bbsId = idgenService.getNextStringId();
 		// 게시판 ID 채번
-		String bbsId = idgenService.getNextStringId() + RandomStringUtils.randomAlphabetic(10);
+		String bbsId = idgenService.getNextStringId() + RandomStringUtils.secure().nextAlphabetic(10);
 		boardMaster.setBbsId(bbsId);
 
 		egovBBSMasterDao.insertBBSMasterInf(boardMaster);

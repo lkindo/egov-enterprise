@@ -1,6 +1,5 @@
 package egovframework.com.uss.ion.evt.service;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,13 +8,13 @@ import java.util.List;
  *
  * 상세내용
  * - 행사관리의 목록 항목을 관리한다.
+ * 
  * @author 이용
  * @version 1.0
  * @created 06-15-2010 오후 2:08:56
  */
 
-
-public class EventManageVO extends EventManage implements Serializable {
+public class EventManageVO extends EventManage {
 
 	/**
 	 * serialVersionUID
@@ -27,133 +26,133 @@ public class EventManageVO extends EventManage implements Serializable {
 	List<EventManageVO> eventManageList;
 
 	/**
-	*  신청자ID
-	*/
+	 * 신청자ID
+	 */
 	private String applcntId;
 
 	/**
-	*  신청일자
-	*/
+	 * 신청일자
+	 */
 	private String reqstDe;
 
 	/**
-	*  결재자ID
-	*/
+	 * 결재자ID
+	 */
 	private String sanctnerId;
 
 	/**
-	*  승인여부
-	*/
+	 * 승인여부
+	 */
 	private String confmAt;
 
 	/**
-	*  결재일시
-	*/
+	 * 결재일시
+	 */
 	private String sanctnDt;
 
 	/**
-	*  반려사유
-	*/
+	 * 반려사유
+	 */
 	private String returnResn;
 
 	/**
-	*  약식결재ID
-	*/
+	 * 약식결재ID
+	 */
 	private String infrmlSanctnId;
 
 	/**
-	*  eventTemp1
-	*/
+	 * eventTemp1
+	 */
 	private String eventTemp1;
 
 	/**
-	*  eventTemp1
-	*/
+	 * eventTemp1
+	 */
 	private String eventTemp2;
 	/**
-	*  eventTemp1
-	*/
+	 * eventTemp1
+	 */
 
 	private String eventTemp3;
 
 	/**
-	*  eventTemp4
-	*/
+	 * eventTemp4
+	 */
 	private String eventTemp4;
 
 	/**
-	*  eventTemp5
-	*/
+	 * eventTemp5
+	 */
 	private String eventTemp5;
 
 	/**
-	*  eventTemp6
-	*/
+	 * eventTemp6
+	 */
 	private String eventTemp6;
 
 	/**
-	*  eventTemp7
-	*/
+	 * eventTemp7
+	 */
 	private String eventTemp7;
 
 	/**
-	*  결재자명
-	*/
+	 * 결재자명
+	 */
 	private String sanctnerNm;
 
 	/**
-	*  신청자명
-	*/
+	 * 신청자명
+	 */
 	private String applcntNm;
 
 	/**
-	*  행사구분명
-	*/
+	 * 행사구분명
+	 */
 	private String eventSeNm;
 
 	/**
-	*  검색 연도
-	*/
+	 * 검색 연도
+	 */
 	private String searchYear;
 
 	/**
-	*  검색 월
-	*/
+	 * 검색 월
+	 */
 	private String searchMonth;
 
 	/**
-	*  검색 명
-	*/
+	 * 검색 명
+	 */
 	private String searchNm;
 
 	/**
-	*  검색 구분명
-	*/
+	 * 검색 구분명
+	 */
 	private String searchSe;
 
 	/**
-	*  체크 행사접수기간 일수
-	*/
+	 * 체크 행사접수기간 일수
+	 */
 	private int eventDayCount;
 
 	/**
-	*  체크 행사참여인원
-	*/
+	 * 체크 행사참여인원
+	 */
 	private int eventAtdrnCount;
 
 	/**
-	*  searchToDateView
-	*/
+	 * searchToDateView
+	 */
 	private String searchToDateView;
 
 	/**
-	*  searchFromDateView
-	*/
+	 * searchFromDateView
+	 */
 	private String searchFromDateView;
 
 	/**
-	*  검색 승인여부
-	*/
+	 * 검색 승인여부
+	 */
 	private String searchConfmAt;
 
 	/**
@@ -162,30 +161,35 @@ public class EventManageVO extends EventManage implements Serializable {
 	public String getSearchConfmAt() {
 		return searchConfmAt;
 	}
+
 	/**
 	 * @param searchConfmAt the searchConfmAt to set
 	 */
 	public void setSearchConfmAt(String searchConfmAt) {
 		this.searchConfmAt = searchConfmAt;
 	}
+
 	/**
 	 * @return the searchToDateView
 	 */
 	public String getSearchToDateView() {
 		return searchToDateView;
 	}
+
 	/**
 	 * @param searchToDateView the searchToDateView to set
 	 */
 	public void setSearchToDateView(String searchToDateView) {
 		this.searchToDateView = searchToDateView;
 	}
+
 	/**
 	 * @return the searchFromDateView
 	 */
 	public String getSearchFromDateView() {
 		return searchFromDateView;
 	}
+
 	/**
 	 * @param searchFromDateView the searchFromDateView to set
 	 */
@@ -479,6 +483,7 @@ public class EventManageVO extends EventManage implements Serializable {
 	public List<EventManageVO> getEventManageList() {
 		return eventManageList;
 	}
+
 	/**
 	 * @param eventManage the eventManage to set
 	 */

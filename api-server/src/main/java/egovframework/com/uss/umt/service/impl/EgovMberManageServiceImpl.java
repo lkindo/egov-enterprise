@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 import com.company.project.domain.user.GeneralUser;
 import com.company.project.domain.user.GeneralUserRepository;
-import com.company.project.domain.user.TermsInfo;
+// import com.company.project.domain.user.TermsInfo;
 import com.company.project.domain.user.TermsRepository;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.domain.user.EnterpriseUserRepository;

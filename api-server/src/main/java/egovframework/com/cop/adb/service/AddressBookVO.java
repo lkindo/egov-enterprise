@@ -1,30 +1,30 @@
 package egovframework.com.cop.adb.service;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * 주소록관리를 위한 VO 모델 클래스
+ * 
  * @author 공통컴포넌트개발팀 윤성록
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.9.25  윤성록          최초 생성
  *   2016.12.13 최두영          클래스명 변경
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
-public class AddressBookVO extends AddressBook implements Serializable  {
+public class AddressBookVO extends AddressBook {
 
-    
+    private static final long serialVersionUID = 1L;
+
     /** 검색시작일 */
     private String searchBgnDe = "";
 
@@ -54,7 +54,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
 
     /** 첫페이지 인덱스 */
     private int firstIndex = 1;
-    
+
     /** 마지막페이지 인덱스 */
     private int lastIndex = 1;
 
@@ -71,9 +71,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
     private String lastUpdusrNm = "";
 
     /** 주소록구성원 */
-    private List< AddressBookUser > adbkMan = new ArrayList<AddressBookUser>();  
-    
-    
+    private List<AddressBookUser> adbkMan = new ArrayList<AddressBookUser>();
 
     /**
      * searchBgnDe attribute를 리턴한다.
@@ -88,7 +86,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * searchBgnDe attribute 값을 설정한다.
      * 
      * @param searchBgnDe
-     *            the searchBgnDe to set
+     *                    the searchBgnDe to set
      */
     public void setSearchBgnDe(String searchBgnDe) {
         this.searchBgnDe = searchBgnDe;
@@ -107,7 +105,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * searchCnd attribute 값을 설정한다.
      * 
      * @param searchCnd
-     *            the searchCnd to set
+     *                  the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
         this.searchCnd = searchCnd;
@@ -126,7 +124,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * searchEndDe attribute 값을 설정한다.
      * 
      * @param searchEndDe
-     *            the searchEndDe to set
+     *                    the searchEndDe to set
      */
     public void setSearchEndDe(String searchEndDe) {
         this.searchEndDe = searchEndDe;
@@ -145,7 +143,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * searchWrd attribute 값을 설정한다.
      * 
      * @param searchWrd
-     *            the searchWrd to set
+     *                  the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
         this.searchWrd = searchWrd;
@@ -164,7 +162,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * sortOrdr attribute 값을 설정한다.
      * 
      * @param sortOrdr
-     *            the sortOrdr to set
+     *                 the sortOrdr to set
      */
     public void setSortOrdr(long sortOrdr) {
         this.sortOrdr = sortOrdr;
@@ -183,7 +181,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * searchUseYn attribute 값을 설정한다.
      * 
      * @param searchUseYn
-     *            the searchUseYn to set
+     *                    the searchUseYn to set
      */
     public void setSearchUseYn(String searchUseYn) {
         this.searchUseYn = searchUseYn;
@@ -202,7 +200,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * pageIndex attribute 값을 설정한다.
      * 
      * @param pageIndex
-     *            the pageIndex to set
+     *                  the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
         this.pageIndex = pageIndex;
@@ -221,7 +219,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * pageUnit attribute 값을 설정한다.
      * 
      * @param pageUnit
-     *            the pageUnit to set
+     *                 the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
         this.pageUnit = pageUnit;
@@ -240,7 +238,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * pageSize attribute 값을 설정한다.
      * 
      * @param pageSize
-     *            the pageSize to set
+     *                 the pageSize to set
      */
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
@@ -259,12 +257,12 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * firstIndex attribute 값을 설정한다.
      * 
      * @param firstIndex
-     *            the firstIndex to set
+     *                   the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
         this.firstIndex = firstIndex;
     }
-    
+
     /**
      * lastIndex attribute를 리턴한다.
      * 
@@ -278,7 +276,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * lastIndex attribute 값을 설정한다.
      * 
      * @param lastIndex
-     *            the lastIndex to set
+     *                  the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
         this.lastIndex = lastIndex;
@@ -297,7 +295,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * recordCountPerPage attribute 값을 설정한다.
      * 
      * @param recordCountPerPage
-     *            the recordCountPerPage to set
+     *                           the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
         this.recordCountPerPage = recordCountPerPage;
@@ -316,7 +314,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * getRowNo attribute 값을 설정한다.
      * 
      * @param getRowNo
-     *            the getRowNo to set
+     *                 the getRowNo to set
      */
     public void setRowNo(int rowNo) {
         this.rowNo = rowNo;
@@ -335,7 +333,7 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * frstRegisterNm attribute 값을 설정한다.
      * 
      * @param frstRegisterNm
-     *            the frstRegisterNm to set
+     *                       the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
         this.frstRegisterNm = frstRegisterNm;
@@ -354,11 +352,11 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * lastUpdusrNm attribute 값을 설정한다.
      * 
      * @param lastUpdusrNm
-     *            the lastUpdusrNm to set
+     *                     the lastUpdusrNm to set
      */
     public void setLastUpdusrNm(String lastUpdusrNm) {
         this.lastUpdusrNm = lastUpdusrNm;
-    }    
+    }
 
     /**
      * adbkMan attribute를 리턴한다.
@@ -373,11 +371,10 @@ public class AddressBookVO extends AddressBook implements Serializable  {
      * adbkMan attribute 값을 설정한다.
      * 
      * @param adbkMan
-     *            the adbkMan to set
+     *                the adbkMan to set
      */
     public void setAdbkMan(List<AddressBookUser> adbkMan) {
         this.adbkMan = Collections.unmodifiableList(adbkMan);
     }
-    
 
 }

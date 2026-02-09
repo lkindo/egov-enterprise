@@ -16,7 +16,7 @@ import com.company.project.domain.terms.IndvdlInfoPolicyRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.sam.ipm.service.EgovIndvdlInfoPolicyService;
-import egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy;
+// import egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy;
 import jakarta.annotation.Resource;
 
 @Service("egovIndvdlInfoPolicyService")

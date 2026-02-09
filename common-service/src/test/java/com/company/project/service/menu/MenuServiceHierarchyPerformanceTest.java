@@ -1,6 +1,5 @@
 package com.company.project.service.menu;
 
-import com.company.project.domain.auth.AuthorityRepository;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
@@ -45,16 +44,13 @@ public class MenuServiceHierarchyPerformanceTest {
     private ProgramRepository programRepository;
 
     @Mock
-    private AuthorityRepository authorityRepository;
-
-    @Mock
     private MenuAuthorityRepository menuAuthorityRepository;
 
     private MenuService menuService;
 
     @BeforeEach
     void setUp() throws Exception {
-        menuService = new MenuService(menuRepository, programRepository, authorityRepository, menuAuthorityRepository);
+        menuService = new MenuService(menuRepository, programRepository, menuAuthorityRepository);
 
         // Inject self to avoid NPE
         java.lang.reflect.Field selfField = MenuService.class.getDeclaredField("self");
@@ -78,7 +74,8 @@ public class MenuServiceHierarchyPerformanceTest {
                 // Create 10 GrandChildren for each Child
                 for (int k = 0; k < 10; k++) {
                     long grandChildId = idCounter++;
-                    menus.add(createMenu(grandChildId, "GrandChild" + i + "_" + j + "_" + k, "grandchild_" + i + "_" + j + "_" + k + ".do", childId));
+                    menus.add(createMenu(grandChildId, "GrandChild" + i + "_" + j + "_" + k,
+                            "grandchild_" + i + "_" + j + "_" + k + ".do", childId));
                 }
             }
         }
@@ -107,7 +104,7 @@ public class MenuServiceHierarchyPerformanceTest {
         for (int i = 0; i < 100; i++) {
             // Search for a deep node
             // The last one: grandChildId for i=19, j=9, k=9
-            Long rootId = menuService.getRootMenuIdByProgrmFileNm("grandchild_19_9_9.do");
+            menuService.getRootMenuIdByProgrmFileNm("grandchild_19_9_9.do");
         }
 
         long endTime = System.nanoTime();

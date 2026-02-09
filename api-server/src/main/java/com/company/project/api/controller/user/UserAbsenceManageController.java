@@ -3,7 +3,6 @@ package com.company.project.api.controller.user;
 import com.company.project.service.user.UserAbsenceManageService;
 import com.company.project.service.user.dto.UserAbsenceDto;
 import com.company.project.service.user.dto.UserAbsenceVO;
-import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;

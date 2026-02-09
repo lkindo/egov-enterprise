@@ -66,7 +66,7 @@ public class MenuRepositoryTest {
                                 .build());
 
                 // 4. 메뉴 등록
-                Menu rootMenu = menuRepository.save(Menu.builder()
+                menuRepository.save(Menu.builder()
                                 .id(100L)
                                 .menuNm("Root Menu")
                                 .upperMenuNo(0L)

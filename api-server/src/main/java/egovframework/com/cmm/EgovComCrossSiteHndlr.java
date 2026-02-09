@@ -30,8 +30,9 @@ import jakarta.servlet.jsp.tagext.BodyTagSupport;
  *
  *      </pre>
  */
-@SuppressWarnings("serial")
 public class EgovComCrossSiteHndlr extends BodyTagSupport {
+
+	private static final long serialVersionUID = 1L;
 
 	/*
 	 * (One almost wishes XML and JSP could support "anonymous tags," given the

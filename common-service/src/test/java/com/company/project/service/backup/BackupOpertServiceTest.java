@@ -4,7 +4,7 @@ import com.company.project.domain.backup.BackupOpert;
 import com.company.project.domain.backup.BackupOpertRepository;
 import com.company.project.domain.backup.BackupSchdulDfk;
 import com.company.project.domain.backup.BackupSchdulDfkRepository;
-import com.company.project.service.backup.dto.BackupOpertDto;
+
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import org.junit.jupiter.api.DisplayName;
@@ -16,13 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,14 +80,12 @@ class BackupOpertServiceTest {
 
         // Mock Cycle Codes (COM047)
         List<CommonCodeDto> cycleCodes = List.of(
-            new CommonCodeDto("COM047", "02", "Weekly", "Weekly Cycle", "Y")
-        );
+                new CommonCodeDto("COM047", "02", "Weekly", "Weekly Cycle", "Y"));
         when(commonCodeService.getCodesByGroup("COM047")).thenReturn(cycleCodes);
 
         // Mock Weekly Codes (COM074)
         List<CommonCodeDto> dfkCodes = List.of(
-            new CommonCodeDto("COM074", "1", "Mon", "Monday", "Y")
-        );
+                new CommonCodeDto("COM074", "1", "Mon", "Monday", "Y"));
         when(commonCodeService.getCodesByGroup("COM074")).thenReturn(dfkCodes);
 
         // When

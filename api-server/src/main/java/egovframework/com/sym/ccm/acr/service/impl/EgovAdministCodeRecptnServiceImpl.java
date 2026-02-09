@@ -1,8 +1,6 @@
 package egovframework.com.sym.ccm.acr.service.impl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -164,7 +162,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 
 		String requestString = requestString(1, 1);
 
-		URL url = new URL(requestString);
+		URL url = java.net.URI.create(requestString).toURL();
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 		conn.setRequestMethod("GET");
 		conn.setRequestProperty("Content-Type", "application/json");
@@ -210,7 +208,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 
 			String requestString = requestString(p, numOfRows);
 
-			URL url = new URL(requestString);
+			URL url = java.net.URI.create(requestString).toURL();
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
 			conn.setRequestProperty("Content-Type", "application/json");
@@ -228,8 +226,8 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 				JSONObject bodyObject = (JSONObject) jsonArray.get(1);
 				JSONArray row = (JSONArray) bodyObject.get("row");
 
-	            for (Object element : row) {
-	            	JSONObject object = (JSONObject) element;
+				for (Object element : row) {
+					JSONObject object = (JSONObject) element;
 					HashMap<String, String> administCode = new HashMap<>();
 					administCode.put("regionCd", stringValueOf(object.get("region_cd")));
 					administCode.put("sidoCd", stringValueOf(object.get("sido_cd")));

@@ -1,6 +1,5 @@
 package com.company.project.service.menu;
 
-import com.company.project.domain.auth.AuthorityRepository;
 import com.company.project.domain.auth.MenuAuthority;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.menu.Menu;
@@ -38,7 +37,6 @@ public class MenuService {
 
     private final MenuRepository menuRepository;
     private final ProgramRepository programRepository; // Restored
-    private final AuthorityRepository authorityRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
 
     @Autowired
@@ -216,7 +214,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
         // Delete existing mapping
         menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
@@ -378,7 +376,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuManage(MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
@@ -394,7 +392,7 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void updateMenuManage(MenuDto vo) {
         Menu menu = menuRepository.findById(vo.getMenuNo())
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
@@ -403,12 +401,12 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManage(MenuDto vo) {
         menuRepository.deleteById(vo.getMenuNo());
     }
 
-    @CacheEvict(value = {"allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
         if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
             return;

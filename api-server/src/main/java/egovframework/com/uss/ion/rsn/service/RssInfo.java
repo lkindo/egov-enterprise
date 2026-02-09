@@ -1,76 +1,78 @@
 package egovframework.com.uss.ion.rsn.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * RSS서비스 Model and VO Class 구현
+ * 
  * @author 공통서비스 장동한
  * @since 2010.06.16
  * @version 1.0
- * @see <pre>
+ * @see
+ * 
+ *      <pre>
  * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.07.03  장동한          최초 생성
  * 
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
-public class RssInfo extends ComDefaultVO implements Serializable{
-	
+public class RssInfo extends ComDefaultVO {
+
+	private static final long serialVersionUID = 1L;
+
 	/** RSS태그관리 아이디 */
 	private String rssId;
-	
+
 	/** 서비스명 */
 	private String trgetSvcNm;
-	
+
 	/** 서비스TABLE */
 	private String trgetSvcTable;
-	
+
 	/** 헤더 TITLE */
 	private String hderTitle;
-	
-	/** 헤더	LINK */
+
+	/** 헤더 LINK */
 	private String hderLink;
-	
+
 	/** 헤더 DESCRIPTION */
 	private String hderDescription;
-	
+
 	/** 헤더 TAG */
 	private String hderTag;
-	
+
 	/** 헤더 ETC */
 	private String hderEtc;
-	
+
 	/** 본문 TITLE */
 	private String bdtTitle;
-	
+
 	/** 본문 LINK */
 	private String bdtLink;
-	
+
 	/** 본문 DESCRIPTION */
 	private String bdtDescription;
-	
+
 	/** 본문 TAG */
 	private String bdtTag;
-	
+
 	/** 본문 ETC */
 	private String bdtEtc;
-	
-    /** 최초등록시점 */
-    private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
-    private String frstRegisterId;
+	/** 최초등록시점 */
+	private String frstRegisterPnttm;
 
-    /** 최종수정일 */
-    private String lastUpdusrPnttm;
+	/** 최초등록아이디 */
+	private String frstRegisterId;
 
-    /** 최종수정자 아이디 */
-    private String lastUpdusrId;
+	/** 최종수정일 */
+	private String lastUpdusrPnttm;
+
+	/** 최종수정자 아이디 */
+	private String lastUpdusrId;
 
 	/**
 	 * @return the rssId
@@ -310,6 +312,4 @@ public class RssInfo extends ComDefaultVO implements Serializable{
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
-    
-    
 }

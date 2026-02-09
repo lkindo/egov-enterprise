@@ -3,8 +3,6 @@ package com.company.project.web.adapter;
 import com.company.project.service.scrap.dto.ScrapDto;
 import egovframework.com.cop.scp.service.Scrap;
 import egovframework.com.cop.scp.service.ScrapVO;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;

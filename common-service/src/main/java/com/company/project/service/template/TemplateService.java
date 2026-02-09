@@ -5,7 +5,7 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.template.Template;
 import com.company.project.domain.template.TemplateRepository;
 import com.company.project.service.template.dto.TemplateDto;
-import com.company.project.service.template.dto.TemplateDto;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

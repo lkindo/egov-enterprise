@@ -1,4 +1,5 @@
 package egovframework.com.sym.tbm.tbp.web;
+
 import java.util.List;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
@@ -22,7 +23,6 @@ import egovframework.com.sym.tbm.tbp.service.TroblProcess;
 import egovframework.com.sym.tbm.tbp.service.TroblProcessVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * <pre>
@@ -140,7 +140,6 @@ public class EgovTroblProcessController {
 	@RequestMapping(value = "/sym/tbm/tbp/addTroblProcess.do")
 	public String insertTroblProcess(@ModelAttribute("troblProcess") TroblProcess troblProcess,
 			BindingResult bindingResult, SessionStatus status, ModelMap model) throws Exception {
-
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("troblProcessVO", troblProcess);

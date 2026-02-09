@@ -3,7 +3,6 @@ package com.company.project.api.controller.user;
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.group.GroupManageService;
-import com.company.project.service.group.dto.GroupManageDto;
 import com.company.project.service.user.UserManageService;
 import com.company.project.service.user.dto.UserManageDto;
 import egovframework.com.cmm.ComDefaultVO;

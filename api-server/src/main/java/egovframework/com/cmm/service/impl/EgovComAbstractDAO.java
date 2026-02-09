@@ -5,8 +5,6 @@ package egovframework.com.cmm.service.impl;
 
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 
-import jakarta.annotation.Resource;
-
 /**
  * EgovComAbstractDAO.java 클래스
  *

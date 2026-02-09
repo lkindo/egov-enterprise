@@ -1,6 +1,5 @@
 package com.company.project.domain.user;
 
-import com.company.project.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

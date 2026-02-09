@@ -6,53 +6,54 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 블로그게시판 관리를 위한 모델 클래스
+ * 
  * @author 공통서비스개발팀 양희훈
  * @since 2017.09.12
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일            수정자           수정내용
  *  -----------   --------   ---------------------------
  *   2017.09.12  양희훈          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class Blog implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     /** 블로그 아이디 */
     private String blogId = "";
-    
+
     /** 게시판 아이디 */
     private String bbsId = "";
-    
+
     /** 블로그 소개 */
     private String blogIntrcn = "";
-    
+
     /** 블로그 명 */
     private String blogNm = "";
-    
+
     /** 최초등록자 아이디 */
     private String frstRegisterId = "";
-    
+
     /** 최초등록시점 */
     private String frstRegisterPnttm = "";
-    
+
     /** 최종수정자 아이디 */
     private String lastUpdusrId = "";
-    
+
     /** 최종수정시점 */
     private String lastUpdusrPnttm = "";
-    
+
     /** 등록구분코드 */
     private String registSeCode = "";
-    
+
     /** 템플릿 아이디 */
     private String tmplatId = "";
-    
+
     /** 템플릿 아이디 */
     private String useAt = "";
 
@@ -64,9 +65,9 @@ public class Blog implements Serializable {
 
     /** 템플릿 명 */
     private String tmplatNm = "";
-    
-    /**  블로그 게시판 여부 */
-	private String blogAt = "";
+
+    /** 블로그 게시판 여부 */
+    private String blogAt = "";
 
     /**
      * blogId attribute를 리턴한다.
@@ -74,44 +75,44 @@ public class Blog implements Serializable {
      * @return the blogId
      */
     public String getBlogId() {
-	return blogId;
+        return blogId;
     }
 
     /**
      * blogId attribute 값을 설정한다.
      * 
      * @param blogId
-     *            the blogId to set
+     *               the blogId to set
      */
     public void setBlogId(String blogId) {
-	this.blogId = blogId;
+        this.blogId = blogId;
     }
 
     public String getBbsId() {
-		return bbsId;
-	}
+        return bbsId;
+    }
 
-	public void setBbsId(String bbsId) {
-		this.bbsId = bbsId;
-	}
+    public void setBbsId(String bbsId) {
+        this.bbsId = bbsId;
+    }
 
-	/**
+    /**
      * blogIntrcn attribute를 리턴한다.
      * 
      * @return the blogIntrcn
      */
     public String getBlogIntrcn() {
-	return blogIntrcn;
+        return blogIntrcn;
     }
 
     /**
      * blogIntrcn attribute 값을 설정한다.
      * 
      * @param blogIntrcn
-     *            the blogIntrcn to set
+     *                   the blogIntrcn to set
      */
     public void setBlogIntrcn(String blogIntrcn) {
-	this.blogIntrcn = blogIntrcn;
+        this.blogIntrcn = blogIntrcn;
     }
 
     /**
@@ -120,17 +121,17 @@ public class Blog implements Serializable {
      * @return the blogNm
      */
     public String getBlogNm() {
-	return blogNm;
+        return blogNm;
     }
 
     /**
      * blogNm attribute 값을 설정한다.
      * 
      * @param blogNm
-     *            the blogNm to set
+     *               the blogNm to set
      */
     public void setBlogNm(String blogNm) {
-	this.blogNm = blogNm;
+        this.blogNm = blogNm;
     }
 
     /**
@@ -139,17 +140,17 @@ public class Blog implements Serializable {
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
-	return frstRegisterId;
+        return frstRegisterId;
     }
 
     /**
      * frstRegisterId attribute 값을 설정한다.
      * 
      * @param frstRegisterId
-     *            the frstRegisterId to set
+     *                       the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
-	this.frstRegisterId = frstRegisterId;
+        this.frstRegisterId = frstRegisterId;
     }
 
     /**
@@ -158,17 +159,17 @@ public class Blog implements Serializable {
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
-	return frstRegisterPnttm;
+        return frstRegisterPnttm;
     }
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
      * 
      * @param frstRegisterPnttm
-     *            the frstRegisterPnttm to set
+     *                          the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
-	this.frstRegisterPnttm = frstRegisterPnttm;
+        this.frstRegisterPnttm = frstRegisterPnttm;
     }
 
     /**
@@ -177,17 +178,17 @@ public class Blog implements Serializable {
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
-	return lastUpdusrId;
+        return lastUpdusrId;
     }
 
     /**
      * lastUpdusrId attribute 값을 설정한다.
      * 
      * @param lastUpdusrId
-     *            the lastUpdusrId to set
+     *                     the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
-	this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = lastUpdusrId;
     }
 
     /**
@@ -196,17 +197,17 @@ public class Blog implements Serializable {
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
-	return lastUpdusrPnttm;
+        return lastUpdusrPnttm;
     }
 
     /**
      * lastUpdusrPnttm attribute 값을 설정한다.
      * 
      * @param lastUpdusrPnttm
-     *            the lastUpdusrPnttm to set
+     *                        the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
-	this.lastUpdusrPnttm = lastUpdusrPnttm;
+        this.lastUpdusrPnttm = lastUpdusrPnttm;
     }
 
     /**
@@ -215,17 +216,17 @@ public class Blog implements Serializable {
      * @return the registSeCode
      */
     public String getRegistSeCode() {
-	return registSeCode;
+        return registSeCode;
     }
 
     /**
      * registSeCode attribute 값을 설정한다.
      * 
      * @param registSeCode
-     *            the registSeCode to set
+     *                     the registSeCode to set
      */
     public void setRegistSeCode(String registSeCode) {
-	this.registSeCode = registSeCode;
+        this.registSeCode = registSeCode;
     }
 
     /**
@@ -234,17 +235,17 @@ public class Blog implements Serializable {
      * @return the tmplatId
      */
     public String getTmplatId() {
-	return tmplatId;
+        return tmplatId;
     }
 
     /**
      * tmplatId attribute 값을 설정한다.
      * 
      * @param tmplatId
-     *            the tmplatId to set
+     *                 the tmplatId to set
      */
     public void setTmplatId(String tmplatId) {
-	this.tmplatId = tmplatId;
+        this.tmplatId = tmplatId;
     }
 
     /**
@@ -253,17 +254,17 @@ public class Blog implements Serializable {
      * @return the useAt
      */
     public String getUseAt() {
-	return useAt;
+        return useAt;
     }
 
     /**
      * useAt attribute 값을 설정한다.
      * 
      * @param useAt
-     *            the useAt to set
+     *              the useAt to set
      */
     public void setUseAt(String useAt) {
-	this.useAt = useAt;
+        this.useAt = useAt;
     }
 
     /**
@@ -272,17 +273,17 @@ public class Blog implements Serializable {
      * @return the emplyrId
      */
     public String getEmplyrId() {
-	return emplyrId;
+        return emplyrId;
     }
 
     /**
      * emplyrId attribute 값을 설정한다.
      * 
      * @param emplyrId
-     *            the emplyrId to set
+     *                 the emplyrId to set
      */
     public void setEmplyrId(String emplyrId) {
-	this.emplyrId = emplyrId;
+        this.emplyrId = emplyrId;
     }
 
     /**
@@ -291,17 +292,17 @@ public class Blog implements Serializable {
      * @return the userNm
      */
     public String getUserNm() {
-	return userNm;
+        return userNm;
     }
 
     /**
      * userNm attribute 값을 설정한다.
      * 
      * @param userNm
-     *            the userNm to set
+     *               the userNm to set
      */
     public void setUserNm(String userNm) {
-	this.userNm = userNm;
+        this.userNm = userNm;
     }
 
     /**
@@ -310,32 +311,32 @@ public class Blog implements Serializable {
      * @return the tmplatNm
      */
     public String getTmplatNm() {
-	return tmplatNm;
+        return tmplatNm;
     }
 
     /**
      * tmplatNm attribute 값을 설정한다.
      * 
      * @param tmplatNm
-     *            the tmplatNm to set
+     *                 the tmplatNm to set
      */
     public void setTmplatNm(String tmplatNm) {
-	this.tmplatNm = tmplatNm;
+        this.tmplatNm = tmplatNm;
     }
 
     public String getBlogAt() {
-		return blogAt;
-	}
+        return blogAt;
+    }
 
-	public void setBlogAt(String blogAt) {
-		this.blogAt = blogAt;
-	}
+    public void setBlogAt(String blogAt) {
+        this.blogAt = blogAt;
+    }
 
-	/**
+    /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
-	
+
 }

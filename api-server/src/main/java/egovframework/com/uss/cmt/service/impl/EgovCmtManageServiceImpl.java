@@ -10,7 +10,6 @@ import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.stereotype.Service;
 
 import com.company.project.domain.commute.Commute;
-import com.company.project.domain.commute.Commute;
 import com.company.project.domain.commute.CommuteDomainRepository;
 import com.ibm.icu.util.Calendar;
 

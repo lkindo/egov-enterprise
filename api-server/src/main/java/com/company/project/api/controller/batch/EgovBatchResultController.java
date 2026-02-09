@@ -9,8 +9,6 @@ import egovframework.com.sym.bat.service.BatchResult;
 import jakarta.annotation.Resource;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
@@ -35,8 +33,6 @@ public class EgovBatchResultController {
 
     @Resource(name = "egovMessageSource")
     private EgovMessageSource egovMessageSource;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchResultController.class);
 
     /**
      * 배치결과을 삭제한다.

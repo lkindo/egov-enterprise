@@ -1,7 +1,6 @@
 package com.company.project.service.report.dto;
 
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter

@@ -6,50 +6,53 @@ package egovframework.com.cop.smt.djm.service;
  * 
  * 상세내용
  * - 부서업무의 목록 항목, 조회조건 등을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 10:59:05
- *  <pre>
+ * 
+ *          <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2010.6.28	장철호          최초 생성
  *
- * </pre>
+ *          </pre>
  */
-@SuppressWarnings("serial")
 public class DeptJobVO extends DeptJob {
 
+	private static final long serialVersionUID = 1L;
+
 	/** 검색조건 */
-    private String searchCnd = "";
-    
-    /** 검색단어 */
-    private String searchWrd = "";
-    
-    /** 부서ID조회조건 */
-    private String searchDeptId = "";
-    
-    /** 부서업무함ID조회조건 */
-    private String searchDeptJobBxId = "";
+	private String searchCnd = "";
 
-    /** 현재페이지 */
-    private int pageIndex = 1;
+	/** 검색단어 */
+	private String searchWrd = "";
 
-    /** 페이지개수 */
-    private int pageUnit = 10;
+	/** 부서ID조회조건 */
+	private String searchDeptId = "";
 
-    /** 페이지사이즈 */
-    private int pageSize = 10;
+	/** 부서업무함ID조회조건 */
+	private String searchDeptJobBxId = "";
 
-    /** 첫페이지 인덱스 */
-    private int firstIndex = 1;
+	/** 현재페이지 */
+	private int pageIndex = 1;
 
-    /** 마지막페이지 인덱스 */
-    private int lastIndex = 1;
+	/** 페이지개수 */
+	private int pageUnit = 10;
 
-    /** 페이지당 레코드 개수 */
-    private int recordCountPerPage = 10;
+	/** 페이지사이즈 */
+	private int pageSize = 10;
+
+	/** 첫페이지 인덱스 */
+	private int firstIndex = 1;
+
+	/** 마지막페이지 인덱스 */
+	private int lastIndex = 1;
+
+	/** 페이지당 레코드 개수 */
+	private int recordCountPerPage = 10;
 
 	public String getSearchCnd() {
 		return searchCnd;
@@ -130,5 +133,5 @@ public class DeptJobVO extends DeptJob {
 	public void setRecordCountPerPage(int recordCountPerPage) {
 		this.recordCountPerPage = recordCountPerPage;
 	}
-	
+
 }
