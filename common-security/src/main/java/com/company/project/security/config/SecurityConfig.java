@@ -118,7 +118,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**").permitAll()
                         .requestMatchers("/uat/uia/**").permitAll()
-                        .requestMatchers("/sym/mms/**").permitAll()
                         .requestMatchers("/connection").permitAll()
                         .requestMatchers("/WEB-INF/**").permitAll() // Allow internal forwarding to JSPs
                         .anyRequest().authenticated())
