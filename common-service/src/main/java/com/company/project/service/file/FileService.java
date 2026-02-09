@@ -194,10 +194,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         FileMaster master = fileMasterRepository.findById(atchFileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        Integer maxSn = fileDetailRepository.findByFileMaster(master).stream()
-                .mapToInt(FileDetail::getFileSn)
-                .max()
-                .orElse(0);
+        Integer maxSn = fileDetailRepository.findMaxFileSnByFileMaster(master);
 
         List<File> processedFiles = new ArrayList<>();
 
