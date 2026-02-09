@@ -13,6 +13,8 @@ import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
@@ -23,6 +25,8 @@ import jakarta.validation.Valid;
 @Controller
 @RequiredArgsConstructor
 public class AuthorManageController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorManageController.class);
 
     private final AuthorManageService authorManageService;
 
@@ -67,16 +71,16 @@ public class AuthorManageController {
     @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthor.do" })
     public String selectAuthor(@RequestParam("authorCode") String authorCode, ModelMap model)
             throws Exception {
-        System.out.println("DEBUG: AuthorManageController.selectAuthor called with " + authorCode);
+        LOGGER.debug("AuthorManageController.selectAuthor called with {}", authorCode);
 
         AuthorManageDto dto = authorManageService.selectAuthor(authorCode);
         if (dto == null) {
-            System.out.println("DEBUG: dto is null. Creating empty dto.");
+            LOGGER.debug("dto is null. Creating empty dto.");
             dto = new AuthorManageDto();
             dto.setAuthorCode(authorCode);
             model.addAttribute("message", "해당 권한을 찾을 수 없습니다.");
         } else {
-            System.out.println("DEBUG: found dto: " + dto);
+            LOGGER.debug("found dto: {}", dto);
             model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
         }
 
