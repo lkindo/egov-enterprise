@@ -30,7 +30,9 @@ class CryptoUtilTest {
     @BeforeEach
     void setUp() {
         when(applicationContext.getBean("ariacryptoService")).thenReturn(cryptoService);
-        new CryptoUtil().setApplicationContext(applicationContext);
+        CryptoUtil util = new CryptoUtil();
+        util.setApplicationContext(applicationContext);
+        util.setAlgorithmKey("ARIA");
     }
 
     @Test
