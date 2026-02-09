@@ -10,6 +10,7 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.uss.umt.service.UserDefaultVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.stereotype.Controller;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 /**
  * 사용자 관리 컨트롤러
  */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class UserManageController {
@@ -85,7 +87,7 @@ public class UserManageController {
 
             return "cmm/uss/umt/EgovUserManage";
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Exception occurred while selecting user list", e);
             throw e;
         }
     }
