@@ -938,15 +938,11 @@ public class EgovLeaderSchdulController {
 		return "forward:/cop/smt/lsm/mng/selectLeaderSttusList.do";
 	}
 
-	/**
-	 * 시간의 LIST를 반환한다.
-	 * 
-	 * @return List
-	 * @throws
-	 */
-	private List<ComDefaultCodeVO> getTimeHH() {
-		ArrayList<ComDefaultCodeVO> listHH = new ArrayList<>();
-		// HashMap hmHHMM;
+	private static final List<ComDefaultCodeVO> TIME_HH;
+	private static final List<ComDefaultCodeVO> TIME_MM;
+
+	static {
+		TIME_HH = new ArrayList<>();
 		for (int i = 0; i < 24; i++) {
 			String sHH = "";
 			String strI = String.valueOf(i);
@@ -960,23 +956,11 @@ public class EgovLeaderSchdulController {
 			codeVO.setCode(sHH);
 			codeVO.setCodeNm(sHH);
 
-			listHH.add(codeVO);
+			TIME_HH.add(codeVO);
 		}
 
-		return listHH;
-	}
-
-	/**
-	 * 분의 LIST를 반환한다.
-	 * 
-	 * @return List
-	 * @throws
-	 */
-	private List<ComDefaultCodeVO> getTimeMM() {
-		ArrayList<ComDefaultCodeVO> listMM = new ArrayList<>();
-		// HashMap hmHHMM;
+		TIME_MM = new ArrayList<>();
 		for (int i = 0; i < 60; i++) {
-
 			String sMM = "";
 			String strI = String.valueOf(i);
 			if (i < 10) {
@@ -989,9 +973,28 @@ public class EgovLeaderSchdulController {
 			codeVO.setCode(sMM);
 			codeVO.setCodeNm(sMM);
 
-			listMM.add(codeVO);
+			TIME_MM.add(codeVO);
 		}
-		return listMM;
+	}
+
+	/**
+	 * 시간의 LIST를 반환한다.
+	 *
+	 * @return List
+	 * @throws
+	 */
+	private List<ComDefaultCodeVO> getTimeHH() {
+		return new ArrayList<>(TIME_HH);
+	}
+
+	/**
+	 * 분의 LIST를 반환한다.
+	 *
+	 * @return List
+	 * @throws
+	 */
+	private List<ComDefaultCodeVO> getTimeMM() {
+		return new ArrayList<>(TIME_MM);
 	}
 
 	/**
