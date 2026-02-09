@@ -32,15 +32,21 @@ public class EgovBrowserUtil {
 	public static final String TYPEKEY = "type";
 	public static final String VERSIONKEY = "version";
 
+	private static final Pattern PATTERN_MSIE = Pattern.compile("MSIE ([0-9]{1,2}.[0-9])");
+	private static final Pattern PATTERN_EDGE = Pattern.compile("Edge/([0-9]{1,3}.[0-9]{1,5})");
+	private static final Pattern PATTERN_FIREFOX = Pattern.compile("Firefox/([0-9]{1,3}.[0-9]{1,3})");
+	private static final Pattern PATTERN_OPERA = Pattern.compile("OPR/([0-9]{1,3}.[0-9]{1,3})");
+	private static final Pattern PATTERN_WHALE = Pattern.compile("Whale/([0-9]{1,3}\\.[0-9]{1,3})");
+	private static final Pattern PATTERN_CHROME = Pattern.compile("Chrome/([0-9]{1,3}.[0-9]{1,3})");
+	private static final Pattern PATTERN_SAFARI = Pattern.compile("Version/([0-9]{1,2}.[0-9]{1,3})");
+
 	public static HashMap<String,String> getBrowser(String userAgent) {
 		
 		HashMap<String,String> result = new HashMap<String,String>();
-		Pattern pattern = null;
 		Matcher matcher = null;
 		//System.out.println("=====>>>>> userAgent = "+userAgent);
 		
-		pattern = Pattern.compile("MSIE ([0-9]{1,2}.[0-9])");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_MSIE.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,MSIE);
@@ -54,8 +60,7 @@ public class EgovBrowserUtil {
 		    return result;
 		}
 		
-		pattern = Pattern.compile("Edge/([0-9]{1,3}.[0-9]{1,5})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_EDGE.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,EDGE);
@@ -63,8 +68,7 @@ public class EgovBrowserUtil {
 			return result;
 		}
 		
-		pattern = Pattern.compile("Firefox/([0-9]{1,3}.[0-9]{1,3})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_FIREFOX.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,FIREFOX);
@@ -72,8 +76,7 @@ public class EgovBrowserUtil {
 			return result;		    
 		}
 
-		pattern = Pattern.compile("OPR/([0-9]{1,3}.[0-9]{1,3})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_OPERA.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,OPERA);
@@ -81,16 +84,14 @@ public class EgovBrowserUtil {
 			return result;		    
 		}
 
-		pattern = Pattern.compile("Whale/([0-9]{1,3}\\.[0-9]{1,3})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_WHALE.matcher(userAgent);
 		if (matcher.find()) {
 			result.put(TYPEKEY, WHALE);
 			result.put(VERSIONKEY, matcher.group(1));
 			return result;
 		}
 
-		pattern = Pattern.compile("Chrome/([0-9]{1,3}.[0-9]{1,3})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_CHROME.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,CHROME);
@@ -98,8 +99,7 @@ public class EgovBrowserUtil {
 			return result;		    
 		}
 		
-		pattern = Pattern.compile("Version/([0-9]{1,2}.[0-9]{1,3})");
-		matcher = pattern.matcher(userAgent);
+		matcher = PATTERN_SAFARI.matcher(userAgent);
 		if (matcher.find())
 		{
 		    result.put(TYPEKEY,SAFARI);
