@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '../../../../lib/logger';
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -20,7 +21,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `http://localhost:8080/${path}${searchParams ? '?' + searchParams : ''}`;
 
-    console.log(`[Proxy GET] ${url}`);
+    logger.info(`[Proxy GET] ${url}`);
 
     try {
         const response = await fetch(url, {
@@ -39,7 +40,7 @@ export async function GET(
             },
         });
     } catch (error) {
-        console.error('Proxy error:', error);
+        logger.error('Proxy error:', error);
         return NextResponse.json({ error: 'Proxy failed' }, { status: 500 });
     }
 }
@@ -53,7 +54,7 @@ export async function POST(
     const url = `http://localhost:8080/${path}`;
     const body = await request.text();
 
-    console.log(`[Proxy POST] ${url}`);
+    logger.info(`[Proxy POST] ${url}`);
 
     try {
         const response = await fetch(url, {
@@ -75,7 +76,7 @@ export async function POST(
             },
         });
     } catch (error) {
-        console.error('Proxy error:', error);
+        logger.error('Proxy error:', error);
         return NextResponse.json({ error: 'Proxy failed' }, { status: 500 });
     }
 }
