@@ -174,7 +174,6 @@ public class EgovEntrprsManageController {
 			passwordHint_result = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		} catch (Exception e) {
 			passwordHint_result = java.util.Collections.emptyList();
-			// e.printStackTrace();
 		}
 
 		// 성별구분코드를 코드정보로부터 조회
