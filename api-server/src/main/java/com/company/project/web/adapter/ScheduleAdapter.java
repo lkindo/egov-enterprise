@@ -43,6 +43,7 @@ public class ScheduleAdapter {
                 .schdulChargerId(vo.getSchdulChargerId())
                 .atchFileId(vo.getAtchFileId())
                 .reptitSeCode(vo.getReptitSeCode())
+                .frstRegisterId(vo.getFrstRegisterId())
                 .build();
     }
 
