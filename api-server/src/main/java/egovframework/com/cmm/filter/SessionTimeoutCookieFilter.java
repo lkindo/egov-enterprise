@@ -71,17 +71,6 @@ public class SessionTimeoutCookieFilter implements Filter {
 		cookie.setHttpOnly(true);
 		cookie.setPath("/");
 
-//        Date dateServer = new java.util.Date(serverTime);
-//        Date dateExpiry = new java.util.Date(sessionExpireTime);
-//        SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-//        String serverYMD = format.format(dateServer);
-//        String expiryYMD = format.format(dateExpiry);
-		// System.out.println("=====>>> serverYMD = "+serverYMD);
-		// System.out.println("=====>>> expiryYMD = "+expiryYMD);
-		// System.out.println("=====>>> server TimeStamp = "+serverTime);
-		// System.out.println("=====>>> expire TimeStamp = "+sessionExpireTime);
-
 		httpResponse.addCookie(cookie);
 
 		chain.doFilter(request, response);
