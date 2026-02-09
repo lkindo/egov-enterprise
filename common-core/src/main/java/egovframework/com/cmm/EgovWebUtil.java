@@ -41,7 +41,9 @@ public class EgovWebUtil {
         if (returnValue == null || returnValue.trim().equals("")) {
             return "";
         }
-        returnValue = returnValue.replaceAll("\\.\\.", "");
+        while (returnValue.contains("..")) {
+            returnValue = returnValue.replace("..", "");
+        }
         return returnValue;
     }
 
