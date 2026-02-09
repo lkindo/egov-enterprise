@@ -112,8 +112,12 @@ public class EgovDateUtil {
         }
         if (EgovStringUtil.isNullToString(fromDateFormat).trim().equals(""))
             _fromDateFormat = "yyyyMMddHHmmss";
+        else
+            _fromDateFormat = fromDateFormat;
         if (EgovStringUtil.isNullToString(toDateFormat).trim().equals(""))
             _toDateFormat = "yyyy-MM-dd HH:mm:ss";
+        else
+            _toDateFormat = toDateFormat;
 
         try {
             simpledateformat = new SimpleDateFormat(_fromDateFormat, Locale.getDefault());
@@ -134,9 +138,13 @@ public class EgovDateUtil {
     }
 
     public static String formatDate(String sDate, String ch) {
-        String dateStr = validChkDate(sDate);
+        if (sDate == null) return "";
 
-        String str = dateStr.trim();
+        String str = sDate.trim();
+        if (str.length() == 10) {
+            str = str.replace("-", "").replace(".", "").replace("/", "");
+        }
+
         String yyyy = "";
         String mm = "";
         String dd = "";
@@ -210,7 +218,7 @@ public class EgovDateUtil {
                 + ((date < 10) ? "0" + Integer.toString(date) : Integer.toString(date));
 
         if (!"".equals(dateType))
-            strDate = convertDate(strDate, "yyyyMMdd", dateType);
+            strDate = convertDate(strDate, "yyyyMMdd", dateType, "");
 
         return strDate;
     }
