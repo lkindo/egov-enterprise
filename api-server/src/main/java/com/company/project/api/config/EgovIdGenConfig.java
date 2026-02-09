@@ -3,6 +3,8 @@ package com.company.project.api.config;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl;
 import org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,8 @@ import javax.sql.DataSource;
 
 @Configuration
 public class EgovIdGenConfig {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EgovIdGenConfig.class);
 
     private final DataSource dataSource;
 
@@ -55,13 +59,13 @@ public class EgovIdGenConfig {
                     if (count != null && count == 0) {
                         try {
                             jdbcTemplate.update("INSERT INTO IDS (table_name, next_id) VALUES (?, 0)", id);
-                            System.out.println("Inserted missing ID row: " + id);
+                            LOGGER.info("Inserted missing ID row: {}", id);
                         } catch (Exception ex) {
-                            System.err.println("Failed to insert ID row for " + id + ": " + ex.getMessage());
+                            LOGGER.error("Failed to insert ID row for {}: {}", id, ex.getMessage());
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Failed to check ID row for " + id + ": " + e.getMessage());
+                    LOGGER.error("Failed to check ID row for {}: {}", id, e.getMessage());
                 }
             }
         };
