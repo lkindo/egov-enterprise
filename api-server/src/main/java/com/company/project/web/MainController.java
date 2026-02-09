@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -31,6 +34,8 @@ public class MainController {
 
     @Resource(name = "egovBoardService")
     private BoardService boardService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainController.class);
 
     private Map<String, Object> convertToMap(BoardDto dto) {
         Map<String, Object> map = new HashMap<>();
@@ -65,7 +70,7 @@ public class MainController {
             model.addAttribute("bbsList", bbsMapList);
         } catch (Exception e) {
             // Fail graciously if DB tables not ready
-            e.printStackTrace();
+            LOGGER.error("Failed to load main page data", e);
         }
 
         return "main/EgovMainView";
