@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
 /**
