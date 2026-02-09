@@ -62,7 +62,6 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 		for (int i = 0; i < values.length; i++) {
 			if (values[i] != null) {
 				values[i] = getSafeParamData(values[i]);
-				//System.out.println( "[HTMLTagFilter getParameterValues] "+ parameter + "===>>>"+values[i] );
 			} else {
 				values[i] = null;
 			}
@@ -81,7 +80,6 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 		}
 
 		value = getSafeParamData(value);
-		//System.out.println( "[HTMLTagFilter getParameter] "+ parameter + "===>>>"+value );
 		return value;
 	}
 
@@ -101,13 +99,11 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 			for (int i = 0; i < values.length; i++) {
 				if (values[i] != null) {
 					values[i] = getSafeParamData(values[i]);
-    				//System.out.println( "[HTMLTagFilter getParameterMap] "+ key + "===>>>"+values[i] );
 				} else {
 					values[i] = null;
 				}
 			}
 
-            //System.out.println( String.format("키 : %s, 값 : %s", key, valueMap.get(key)) );
 		}
 
 		return valueMap;
@@ -125,7 +121,6 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 				} else {
 					strBuff.append(c);
 				}
-				//System.out.println("checkNextWhiteListTag = "+checkNextWhiteListTag(i, value));
 				break;
 			case '>':
 				if (!checkPrevWhiteListTag(i, value)) {
@@ -133,11 +128,7 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 				} else {
 					strBuff.append(c);
 				}
-				//System.out.println("checkPrevWhiteListTag = "+checkPrevWhiteListTag(i, value));
 				break;
-			// case '&':
-			// strBuff.append("&amp;");
-			// break;
 			case '"':
 				strBuff.append("&quot;");
 				break;
@@ -150,9 +141,6 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 			case ')':
 				strBuff.append("&#41;");
 				break;
-			// case '.':
-			// strBuff.append("&#46;");
-			// break;
 			default:
 				strBuff.append(c);
 				break;
@@ -164,17 +152,14 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 
 	private boolean checkNextWhiteListTag(int index, String data) {
 		String extractData = "";
-		// int beginIndex = 0;
 		int endIndex = 0;
 		for (String whiteListData : whiteListTag) {
-			// System.out.println("===>>> whiteListData="+whiteListData);
 			endIndex = index + whiteListData.length();
 			if (data.length() > endIndex) {
 				extractData = data.substring(index, endIndex);
 			} else {
 				extractData = "";
 			}
-			// System.out.println("extractData="+extractData);
 			if (whiteListData.equals(extractData)) {
 				return true; // whiteList 대상으로 판정
 			}
@@ -188,16 +173,13 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 		int beginIndex = 0;
 		int endIndex = 0;
 		for (String whiteListData : whiteListTag) {
-			// System.out.println("===>>> whiteListData="+whiteListData);
 			beginIndex = index - whiteListData.length() + 1;
 			endIndex = index + 1;
-			// System.out.println(" range ["+beginIndex+" ~ "+endIndex+"]");
 			if (beginIndex >= 0) {
 				extractData = data.substring(beginIndex, endIndex);
 			} else {
 				extractData = "";
 			}
-			// System.out.println("extractData="+extractData);
 			if (whiteListData.equals(extractData)) {
 				return true; // whiteList 대상으로 판정
 			}
