@@ -12,13 +12,13 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
-    jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
-    username: egov
-    password: egov123
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      jdbc-url: jdbc:postgresql://localhost:5433/egovdb?currentSchema=public
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
