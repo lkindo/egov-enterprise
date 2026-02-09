@@ -1,46 +1,48 @@
 package egovframework.com.uss.ion.wik.bmk.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * 위키북마크 Model and VO Class 구현
+ * 
  * @author 공통콤포넌트 장동한
  * @since 2010.10.20
  * @version 1.0
- * @see <pre>
+ * @see
+ * 
+ *      <pre>
  * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2010.10.20  장동한          최초 생성
  * 
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
-public class WikiBookmark extends ComDefaultVO implements Serializable{
-    	
+public class WikiBookmark extends ComDefaultVO {
+
+	private static final long serialVersionUID = 1L;
+
 	/** 위키 북마크 아이디 */
-	private String wikiBkmkId;	
-	
+	private String wikiBkmkId;
+
 	/** 사용자ID */
 	private String usid;
-	
+
 	/** 북마크명 */
 	private String wikiBkmkNm;
-	
-    /** 최초등록시점 */
-    private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
-    private String frstRegisterId;
+	/** 최초등록시점 */
+	private String frstRegisterPnttm;
 
-    /** 최종수정일 */
-    private String lastUpdusrPnttm;
+	/** 최초등록아이디 */
+	private String frstRegisterId;
 
-    /** 최종수정자 아이디 */
-    private String lastUpdusrId;
+	/** 최종수정일 */
+	private String lastUpdusrPnttm;
+
+	/** 최종수정자 아이디 */
+	private String lastUpdusrId;
 
 	/**
 	 * @return the wikiBookMarkId
@@ -140,7 +142,4 @@ public class WikiBookmark extends ComDefaultVO implements Serializable{
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
-	
-    
-    
 }

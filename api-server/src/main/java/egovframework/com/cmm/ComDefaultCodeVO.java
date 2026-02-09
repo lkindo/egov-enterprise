@@ -24,8 +24,9 @@ import jakarta.validation.constraints.Size;
  *
  *      </pre>
  */
-@SuppressWarnings("serial")
 public class ComDefaultCodeVO implements Serializable {
+
+    private static final long serialVersionUID = -339739578190300267L;
     /** 코드 ID */
     @NotBlank(message = "코드 ID는 필수입니다")
     @Size(max = 20, message = "코드 ID는 20자 이하이어야 합니다")

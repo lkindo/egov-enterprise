@@ -1,6 +1,5 @@
 package egovframework.com.uss.ion.evt.service;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,12 +8,13 @@ import java.util.List;
  *
  * 상세내용
  * - 행사참석자의 목록 항목을 관리한다.
+ * 
  * @author 이용
  * @version 1.0
  * @created 06-15-2010 오후 2:08:56
  */
 
-public class EventAtdrnVO extends EventAtdrn implements Serializable {
+public class EventAtdrnVO extends EventAtdrn {
 
 	/**
 	 * serialVersionUID
@@ -31,13 +31,12 @@ public class EventAtdrnVO extends EventAtdrn implements Serializable {
 	public List<EventAtdrnVO> getEventAtdrnList() {
 		return eventAtdrnList;
 	}
+
 	/**
 	 * @param eventManage the eventManage to set
 	 */
 	public void setEventAtdrnList(List<EventAtdrnVO> eventAtdrnList) {
 		this.eventAtdrnList = eventAtdrnList;
 	}
-
-
 
 }

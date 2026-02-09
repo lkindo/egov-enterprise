@@ -8,12 +8,14 @@ import java.io.Serializable;
  * 
  * 상세내용
  * - 조직명, 직위명, 사용자명, 사용자ID 의 항목을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 11:29:26
  */
-@SuppressWarnings("serial")
-public class Sanctner implements Serializable  {
+public class Sanctner implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 조직명
@@ -35,37 +37,45 @@ public class Sanctner implements Serializable  {
 	 * 사원번호
 	 */
 	private String emplNo;
-	
+
 	public String getOrgnztNm() {
 		return orgnztNm;
 	}
+
 	public void setOrgnztNm(String orgnztNm) {
 		this.orgnztNm = orgnztNm;
 	}
+
 	public String getOfcpsNm() {
 		return ofcpsNm;
 	}
+
 	public void setOfcpsNm(String ofcpsNm) {
 		this.ofcpsNm = ofcpsNm;
 	}
+
 	public String getEmplyrNm() {
 		return emplyrNm;
 	}
+
 	public void setEmplyrNm(String emplyrNm) {
 		this.emplyrNm = emplyrNm;
 	}
+
 	public String getUniqId() {
 		return uniqId;
 	}
+
 	public void setUniqId(String uniqId) {
 		this.uniqId = uniqId;
 	}
+
 	public String getEmplNo() {
 		return emplNo;
 	}
+
 	public void setEmplNo(String emplNo) {
 		this.emplNo = emplNo;
 	}
 
-	
 }

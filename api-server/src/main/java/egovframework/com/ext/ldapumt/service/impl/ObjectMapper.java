@@ -73,11 +73,10 @@ public class ObjectMapper<T> implements ContextMapper<Object> {
 		LdapObject vo = null;
 
 		try {
-			vo = (LdapObject) type.newInstance();
+			vo = (LdapObject) type.getDeclaredConstructor().newInstance();
 			// 2017-02-13 이정은 시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
-		} catch (InstantiationException e2) {
-			throw new RuntimeException(e2);
-		} catch (IllegalAccessException e2) {
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
+				| NoSuchMethodException | SecurityException e2) {
 			throw new RuntimeException(e2);
 		}
 

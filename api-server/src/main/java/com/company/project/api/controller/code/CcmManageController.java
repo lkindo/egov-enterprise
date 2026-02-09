@@ -5,7 +5,6 @@ import com.company.project.service.code.dto.CmmnClCodeDto;
 import com.company.project.service.code.dto.CmmnCodeDto;
 import com.company.project.service.code.dto.CmmnDetailCodeDto;
 import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
@@ -32,7 +31,6 @@ public class CcmManageController {
 
     private final CommonCodeService commonCodeService;
     private final EgovPropertyService propertiesService;
-    private final EgovMessageSource egovMessageSource;
 
     // =====================================================
     // 공통분류코드 (CmmnClCode) - /sym/ccm/ccc/...

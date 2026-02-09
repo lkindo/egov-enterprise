@@ -26,7 +26,6 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.uss.ion.vct.service.VcatnManage;
 import egovframework.com.uss.ion.vct.service.VcatnManageVO;
-import egovframework.com.utl.fcc.service.EgovDateUtil;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
@@ -186,8 +185,6 @@ public class EgovVcatnManageController {
 	public String insertVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
 			@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, BindingResult bindingResult,
 			SessionStatus status, @RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
-
-		Map<String, Object> session = (Map<String, Object>) commandMap; // Legacy type mismatch possibility, but okay.
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		if (user == null) {

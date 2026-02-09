@@ -1,10 +1,6 @@
 package egovframework.com.cop.cmt.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,7 +19,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.company.project.service.comment.EgovCommentService;
@@ -33,7 +29,7 @@ import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.cop.cmt.service.CommentVO;
+
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 
 @WebMvcTest(controllers = EgovArticleCommentController.class)
@@ -42,7 +38,8 @@ import org.egovframe.rte.fdl.property.EgovPropertyService;
 public class EgovArticleCommentControllerTest {
 
     @SpringBootApplication
-    static class TestConfig {}
+    static class TestConfig {
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -94,7 +91,8 @@ public class EgovArticleCommentControllerTest {
         when(egovCommentService.getComment(commentId)).thenReturn(mockDto);
 
         // Mock getCommentList call (controller calls this too)
-        when(egovCommentService.getCommentList(any(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(egovCommentService.getCommentList(any(), any(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
                 .param("commentNo", String.valueOf(commentId))
@@ -103,7 +101,8 @@ public class EgovArticleCommentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("egovframework/com/cop/cmt/EgovArticleCommentList"))
                 .andExpect(model().attributeExists("articleCommentVO"))
-                .andExpect(model().attribute("articleCommentVO", org.hamcrest.Matchers.hasProperty("commentCn", org.hamcrest.Matchers.is(commentCn))));
+                .andExpect(model().attribute("articleCommentVO",
+                        org.hamcrest.Matchers.hasProperty("commentCn", org.hamcrest.Matchers.is(commentCn))));
 
         verify(egovCommentService).getComment(commentId);
     }
@@ -116,7 +115,8 @@ public class EgovArticleCommentControllerTest {
         when(egovCommentService.getComment(commentId)).thenReturn(null);
 
         // Mock getCommentList call
-        when(egovCommentService.getCommentList(any(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(egovCommentService.getCommentList(any(), any(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
                 .param("commentNo", String.valueOf(commentId))

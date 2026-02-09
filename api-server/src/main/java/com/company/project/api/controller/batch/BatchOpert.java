@@ -1,13 +1,12 @@
 package com.company.project.api.controller.batch;
 
-import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * 배치작업관리에 대한 model 클래스
  * Relocated to avoid legacy package conflicts.
  */
-public class BatchOpert extends ComDefaultVO implements Serializable {
+public class BatchOpert extends ComDefaultVO {
 
     private static final long serialVersionUID = -8854151716958649397L;
     private String batchOpertId;

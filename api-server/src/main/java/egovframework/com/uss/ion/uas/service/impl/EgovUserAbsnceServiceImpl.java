@@ -14,7 +14,7 @@ import com.company.project.domain.vacation.UserAbsence;
 import com.company.project.domain.vacation.UserAbsenceDomainRepository;
 
 import egovframework.com.uss.ion.uas.service.EgovUserAbsnceService;
-import egovframework.com.uss.ion.uas.service.UserAbsnceVO;
+// import egovframework.com.uss.ion.uas.service.UserAbsnceVO;
 import jakarta.annotation.Resource;
 
 @Service("egovUserAbsnceService")

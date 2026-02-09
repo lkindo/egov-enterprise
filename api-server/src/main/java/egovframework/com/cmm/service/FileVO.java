@@ -20,8 +20,9 @@ import jakarta.validation.constraints.Size;
  * @see
  *
  */
-@SuppressWarnings("serial")
 public class FileVO extends ComDefaultVO {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 첨부파일 아이디

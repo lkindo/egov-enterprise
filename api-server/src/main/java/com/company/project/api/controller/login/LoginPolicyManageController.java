@@ -3,7 +3,6 @@ package com.company.project.api.controller.login;
 import com.company.project.service.login.LoginPolicyManageService;
 import com.company.project.service.login.dto.LoginPolicyDto;
 import com.company.project.service.login.dto.LoginPolicyVO;
-import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.EgovMessageSource;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;

@@ -19,8 +19,8 @@ import java.io.Serializable;
  *
  *      </pre>
  */
-@SuppressWarnings("serial")
 public class DeptSchdulManageVO implements Serializable {
+	private static final long serialVersionUID = 1L;
 
 	/** 일정ID */
 	private String schdulId;

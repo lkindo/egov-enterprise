@@ -6,8 +6,6 @@ import java.util.Map;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -28,7 +26,6 @@ import egovframework.com.uss.olp.opm.service.OnlinePollItem;
 import egovframework.com.uss.olp.opm.service.OnlinePollManage;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 온라인POLL관리를 처리하는 Controller Class 구현
@@ -52,8 +49,6 @@ import jakarta.validation.Valid;
  */
 @Controller
 public class EgovOnlinePollManageController {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovOnlinePollManageController.class);
 
 	/** EgovMessageSource */
 	@Resource(name = "egovMessageSource")

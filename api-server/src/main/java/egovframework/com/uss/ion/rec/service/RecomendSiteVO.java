@@ -1,62 +1,63 @@
 package egovframework.com.uss.ion.rec.service;
 
-
 /**
  * 
  * 추천사이트정보를 처리하는 VO 클래스
+ * 
  * @author 공통서비스 개발팀 박정규
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.04.01  박정규          최초 생성
  *
- * </pre>
+ *      </pre>
  */
 public class RecomendSiteVO extends RecomendSiteDefaultVO {
-	
-    private static final long serialVersionUID = 1L;
-    
-    /** 추천사이트 ID */
-    private String recomendSiteId;
-    
-    /** 추천사이트 URL */
-    private String recomendSiteUrl;
-    
-    /** 추천사이트명 */
-    private String recomendSiteNm;
-    
-    /** 추천사이트설명 */
-    private String recomendSiteDc;
-    
-    /** 추천사유내용 */
-    private String recomendResnCn;
 
-    /** 추천승인여부 */
-    private String recomendConfmAt;
-    
-    /** 승인일자 */
-    private String confmDe;
+	private static final long serialVersionUID = 1L;
 
-    /** 최초등록시점 */
-    private String frstRegisterPnttm;
+	/** 추천사이트 ID */
+	private String recomendSiteId;
 
-    /** 최초등록자ID */
-    private String frstRegisterId;
+	/** 추천사이트 URL */
+	private String recomendSiteUrl;
 
-    /** 최종수정시점 */
-    private String lastUpdusrPnttm;
+	/** 추천사이트명 */
+	private String recomendSiteNm;
 
-    /** 최종수정자ID */
-    private String lastUpdusrId;
+	/** 추천사이트설명 */
+	private String recomendSiteDc;
+
+	/** 추천사유내용 */
+	private String recomendResnCn;
+
+	/** 추천승인여부 */
+	private String recomendConfmAt;
+
+	/** 승인일자 */
+	private String confmDe;
+
+	/** 최초등록시점 */
+	private String frstRegisterPnttm;
+
+	/** 최초등록자ID */
+	private String frstRegisterId;
+
+	/** 최종수정시점 */
+	private String lastUpdusrPnttm;
+
+	/** 최종수정자ID */
+	private String lastUpdusrId;
 
 	/**
 	 * recomendSiteId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendSiteId() {
@@ -65,6 +66,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteId attribute 값을 설정한다.
+	 * 
 	 * @return recomendSiteId String
 	 */
 	public void setRecomendSiteId(String recomendSiteId) {
@@ -73,6 +75,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteUrl attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendSiteUrl() {
@@ -81,6 +84,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteUrl attribute 값을 설정한다.
+	 * 
 	 * @return recomendSiteUrl String
 	 */
 	public void setRecomendSiteUrl(String recomendSiteUrl) {
@@ -89,6 +93,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendSiteNm() {
@@ -97,6 +102,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteNm attribute 값을 설정한다.
+	 * 
 	 * @return recomendSiteNm String
 	 */
 	public void setRecomendSiteNm(String recomendSiteNm) {
@@ -105,6 +111,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteDc attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendSiteDc() {
@@ -113,6 +120,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendSiteDc attribute 값을 설정한다.
+	 * 
 	 * @return recomendSiteDc String
 	 */
 	public void setRecomendSiteDc(String recomendSiteDc) {
@@ -121,6 +129,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendResnCn attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendResnCn() {
@@ -129,6 +138,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendResnCn attribute 값을 설정한다.
+	 * 
 	 * @return recomendResnCn String
 	 */
 	public void setRecomendResnCn(String recomendResnCn) {
@@ -137,6 +147,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendConfmAt attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getRecomendConfmAt() {
@@ -145,6 +156,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * recomendConfmAt attribute 값을 설정한다.
+	 * 
 	 * @return recomendConfmAt String
 	 */
 	public void setRecomendConfmAt(String recomendConfmAt) {
@@ -153,6 +165,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * confmDe attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getConfmDe() {
@@ -161,6 +174,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * confmDe attribute 값을 설정한다.
+	 * 
 	 * @return confmDe String
 	 */
 	public void setConfmDe(String confmDe) {
@@ -169,6 +183,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -177,6 +192,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -185,6 +201,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * frstRegisterId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -193,6 +210,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * frstRegisterId attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -201,6 +219,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -209,6 +228,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -217,6 +237,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * lastUpdusrId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -225,13 +246,11 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 
 	/**
 	 * lastUpdusrId attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
-    
-
-   
 }

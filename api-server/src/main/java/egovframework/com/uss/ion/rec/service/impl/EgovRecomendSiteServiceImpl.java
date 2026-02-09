@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import com.company.project.domain.recomendsite.RecomendSite;
 import com.company.project.domain.recomendsite.RecomendSiteDomainRepository;
 
-import egovframework.com.cmm.ComDefaultVO;
+// import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.ion.rec.service.EgovRecomendSiteService;
 import egovframework.com.uss.ion.rec.service.RecomendSiteVO;
 import jakarta.annotation.Resource;

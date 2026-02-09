@@ -1,7 +1,5 @@
 package egovframework.com.sym.bat.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
@@ -21,7 +19,7 @@ import egovframework.com.cmm.ComDefaultVO;
  *  2010.06.17   김진만     최초 생성
  *      </pre>
  */
-public class BatchOpert extends ComDefaultVO implements Serializable {
+public class BatchOpert extends ComDefaultVO {
 
     private static final long serialVersionUID = -8854151716958649397L;
     /**

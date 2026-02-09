@@ -1,6 +1,5 @@
 package egovframework.com.uss.ion.mtg.service;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,12 +8,13 @@ import java.util.List;
  *
  * 상세내용
  * - 회의실예약의 목록 항목을 관리한다.
+ * 
  * @author 이용
  * @version 1.0
  * @created 06-15-2010 오후 2:08:56
  */
 
-public class MtgPlaceResveVO extends MtgPlaceResve implements Serializable {
+public class MtgPlaceResveVO extends MtgPlaceResve {
 
 	/**
 	 * serialVersionUID
@@ -31,13 +31,12 @@ public class MtgPlaceResveVO extends MtgPlaceResve implements Serializable {
 	public List<MtgPlaceResveVO> getMtgPlaceResveList() {
 		return mtgPlaceResveList;
 	}
+
 	/**
 	 * @param MtgPlaceResve the mtgPlaceResve to set
 	 */
 	public void setMtgPlaceResveList(List<MtgPlaceResveVO> mtgPlaceResveList) {
 		this.mtgPlaceResveList = mtgPlaceResveList;
 	}
-
-
 
 }

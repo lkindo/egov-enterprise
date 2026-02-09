@@ -1,11 +1,6 @@
 package egovframework.com.uss.ion.mtg.web;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,7 +40,6 @@ import egovframework.com.uss.ion.mtg.service.MtgPlaceResve;
 import egovframework.com.utl.fcc.service.EgovDateUtil;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * <pre>
@@ -205,7 +199,6 @@ public class EgovMtgPlaceManageController {
 	 * @param mtgPlaceManage - 회의실관리 model
 	 * @return String - 리턴 Url
 	 */
-	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/insertMtgPlace.do")
 	public String insertMtgPlaceManage(final MultipartHttpServletRequest multiRequest,
 			@ModelAttribute("mtgPlaceManage") MtgPlaceManage mtgPlaceManage,
@@ -257,7 +250,6 @@ public class EgovMtgPlaceManageController {
 	 * @param mtgPlaceManage - 회의실관리 model
 	 * @return String - 리턴 Url
 	 */
-	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/updtMtgPlace.do")
 	public String updateMtgPlaceManage(final MultipartHttpServletRequest multiRequest,
 			@RequestParam("atchFileAt") String atchFileAt,
@@ -436,13 +428,11 @@ public class EgovMtgPlaceManageController {
 	 * @param mtgPlaceManageVO - 회의실관리 VO
 	 * @return String - 리턴 Url
 	 */
-	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceResveManage.do")
 	public String selectMtgPlaceResveManage(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve, BindingResult bindingResult,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
 		String sTempResveDe = mtgPlaceManageVO.getResveDe();
 		String sTempResveBeginTm = mtgPlaceManageVO.getResveBeginTm();
 		String sTempResveEndTm = mtgPlaceManageVO.getResveEndTm();
@@ -563,7 +553,6 @@ public class EgovMtgPlaceManageController {
 	 * @param mtgPlaceResve - 회의실예약 model
 	 * @return String - 리턴 Url
 	 */
-	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/updtMtgPlaceResve.do")
 	public String updtMtgPlaceResveManage(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve, BindingResult bindingResult,

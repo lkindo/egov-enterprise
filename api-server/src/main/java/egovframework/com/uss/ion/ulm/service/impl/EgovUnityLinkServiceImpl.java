@@ -11,7 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.company.project.domain.notification.UnityLink;
+// import com.company.project.domain.notification.UnityLink;
 import com.company.project.domain.notification.UnityLinkRepository;
 
 import jakarta.annotation.Resource;

@@ -3,71 +3,73 @@ package egovframework.com.uss.ion.sit.service;
 /**
  * 
  * 사이트정보를 처리하는 VO 클래스
+ * 
  * @author 공통서비스 개발팀 박정규
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.04.01  박정규          최초 생성
  *
- * </pre>
+ *      </pre>
  */
 public class SiteVO extends SiteDefaultVO {
-	
-    private static final long serialVersionUID = 1L;
-    
-    /** 사이트 ID */
-    private String siteId;
-    
-    /** 사이트 URL */
-    private String siteUrl;
-    
-    /** 사이트명 */
-    private String siteNm;
-    
-    /** 사이트설명 */
-    private String siteDc;
-    
-    /** 사이트주제분류코드 */
-    private String siteThemaClCode;
 
-    /** 사이트주제분류명 */
-    private String siteThemaClNm;
-    
-    /** 활성여부 */
-    private String actvtyAt;
+	private static final long serialVersionUID = 1L;
 
-    /** 활성여부명 */
-    private String actvtyAtNm;
-    
-    /** 사용여부 */
-    private String useAt;
-    
-    /** 사용여부명 */
-    private String useAtNm;
-    
-    /** 등록자명 */
-    private String emplyrNm;        
+	/** 사이트 ID */
+	private String siteId;
 
-    /** 최초등록시점 */
-    private String frstRegisterPnttm;
+	/** 사이트 URL */
+	private String siteUrl;
 
-    /** 최초등록자ID */
-    private String frstRegisterId;
+	/** 사이트명 */
+	private String siteNm;
 
-    /** 최종수정시점 */
-    private String lastUpdusrPnttm;
+	/** 사이트설명 */
+	private String siteDc;
 
-    /** 최종수정자ID */
-    private String lastUpdusrId;
+	/** 사이트주제분류코드 */
+	private String siteThemaClCode;
+
+	/** 사이트주제분류명 */
+	private String siteThemaClNm;
+
+	/** 활성여부 */
+	private String actvtyAt;
+
+	/** 활성여부명 */
+	private String actvtyAtNm;
+
+	/** 사용여부 */
+	private String useAt;
+
+	/** 사용여부명 */
+	private String useAtNm;
+
+	/** 등록자명 */
+	private String emplyrNm;
+
+	/** 최초등록시점 */
+	private String frstRegisterPnttm;
+
+	/** 최초등록자ID */
+	private String frstRegisterId;
+
+	/** 최종수정시점 */
+	private String lastUpdusrPnttm;
+
+	/** 최종수정자ID */
+	private String lastUpdusrId;
 
 	/**
 	 * siteId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteId() {
@@ -76,6 +78,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteId attribute 값을 설정한다.
+	 * 
 	 * @return siteId String
 	 */
 	public void setSiteId(String siteId) {
@@ -84,6 +87,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteUrl attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteUrl() {
@@ -92,6 +96,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteUrl attribute 값을 설정한다.
+	 * 
 	 * @return siteUrl String
 	 */
 	public void setSiteUrl(String siteUrl) {
@@ -100,6 +105,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteNm() {
@@ -108,6 +114,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteNm attribute 값을 설정한다.
+	 * 
 	 * @return siteNm String
 	 */
 	public void setSiteNm(String siteNm) {
@@ -116,6 +123,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteDc attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteDc() {
@@ -124,6 +132,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteDc attribute 값을 설정한다.
+	 * 
 	 * @return siteDc String
 	 */
 	public void setSiteDc(String siteDc) {
@@ -132,6 +141,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteThemaClCode attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteThemaClCode() {
@@ -140,6 +150,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteThemaClCode attribute 값을 설정한다.
+	 * 
 	 * @return siteThemaClCode String
 	 */
 	public void setSiteThemaClCode(String siteThemaClCode) {
@@ -148,6 +159,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteThemaClNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSiteThemaClNm() {
@@ -156,6 +168,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * siteThemaClNm attribute 값을 설정한다.
+	 * 
 	 * @return siteThemaClNm String
 	 */
 	public void setSiteThemaClNm(String siteThemaClNm) {
@@ -164,6 +177,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * actvtyAt attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getActvtyAt() {
@@ -172,6 +186,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * actvtyAt attribute 값을 설정한다.
+	 * 
 	 * @return actvtyAt String
 	 */
 	public void setActvtyAt(String actvtyAt) {
@@ -180,6 +195,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * actvtyAtNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getActvtyAtNm() {
@@ -188,6 +204,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * actvtyAtNm attribute 값을 설정한다.
+	 * 
 	 * @return actvtyAtNm String
 	 */
 	public void setActvtyAtNm(String actvtyAtNm) {
@@ -196,6 +213,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * useAt attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getUseAt() {
@@ -204,6 +222,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * useAt attribute 값을 설정한다.
+	 * 
 	 * @return useAt String
 	 */
 	public void setUseAt(String useAt) {
@@ -212,6 +231,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * useAtNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getUseAtNm() {
@@ -220,6 +240,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * useAtNm attribute 값을 설정한다.
+	 * 
 	 * @return useAtNm String
 	 */
 	public void setUseAtNm(String useAtNm) {
@@ -228,6 +249,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * emplyrNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getEmplyrNm() {
@@ -236,6 +258,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * emplyrNm attribute 값을 설정한다.
+	 * 
 	 * @return emplyrNm String
 	 */
 	public void setEmplyrNm(String emplyrNm) {
@@ -244,6 +267,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -252,6 +276,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -260,6 +285,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * frstRegisterId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -268,6 +294,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * frstRegisterId attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -276,6 +303,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -284,6 +312,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -292,6 +321,7 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * lastUpdusrId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -300,13 +330,11 @@ public class SiteVO extends SiteDefaultVO {
 
 	/**
 	 * lastUpdusrId attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
-    
-    
-   
 }

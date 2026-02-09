@@ -12,10 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.company.project.domain.note.NoteRecptn;
 import com.company.project.domain.note.NoteRecptnDomainRepository;
 
-import egovframework.com.cmm.ComDefaultVO;
+// import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.uss.ion.ntr.service.EgovNoteRecptnService;
 // import egovframework.com.uss.ion.ntr.service.NoteRecptnVO;
 import jakarta.annotation.Resource;

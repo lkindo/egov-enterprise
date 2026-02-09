@@ -35,7 +35,6 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 
 /**
  * 상담내용을 처리하는 컨트롤러 클래스

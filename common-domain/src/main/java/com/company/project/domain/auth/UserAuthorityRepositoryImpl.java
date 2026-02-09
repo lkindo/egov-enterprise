@@ -1,6 +1,5 @@
 package com.company.project.domain.auth;
 
-import com.company.project.domain.user.QUser;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;

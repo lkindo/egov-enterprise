@@ -4,7 +4,6 @@ import com.company.project.service.batch.EgovBatchSchdulService;
 import com.company.project.service.batch.dto.BatchSchdulDto;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
-import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.service.CmmnDetailCode;

@@ -5,14 +5,13 @@ import com.company.project.domain.code.CommonCode;
 import com.company.project.domain.code.CommonCodeCategoryRepository;
 import com.company.project.domain.code.CommonCodeGroupRepository;
 import com.company.project.domain.code.CommonCodeRepository;
-import com.company.project.service.code.dto.CommonCodeDto;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
@@ -54,11 +53,12 @@ public class CommonCodeServiceBenchmarkTest {
         long startTime = System.nanoTime();
         int iterations = 1000;
         for (int i = 0; i < iterations; i++) {
-            List<CommonCodeDto> result = commonCodeService.getCodesByGroup(codeGroupId);
+            commonCodeService.getCodesByGroup(codeGroupId);
         }
         long endTime = System.nanoTime();
 
-        System.out.println("Execution time for " + iterations + " iterations: " + (endTime - startTime) / 1_000_000.0 + " ms");
+        System.out.println(
+                "Execution time for " + iterations + " iterations: " + (endTime - startTime) / 1_000_000.0 + " ms");
 
         // Should be called only once due to caching
         verify(commonCodeRepository, times(1)).findByCodeGroupIdAndUseAt(codeGroupId, "Y");

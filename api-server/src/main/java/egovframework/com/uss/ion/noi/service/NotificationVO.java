@@ -19,8 +19,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  *      </pre>
  */
-@SuppressWarnings("serial")
 public class NotificationVO extends Notification {
+
+    private static final long serialVersionUID = 1L;
 
     /** 검색조건 */
     private String searchCnd = "";

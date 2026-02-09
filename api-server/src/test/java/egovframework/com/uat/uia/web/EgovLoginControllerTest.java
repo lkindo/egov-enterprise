@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
+
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -54,14 +54,11 @@ public class EgovLoginControllerTest {
     @TestConfiguration
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @ComponentScan(
-        basePackageClasses = {EgovLoginController.class, EgovComponentChecker.class},
-        useDefaultFilters = false,
-        includeFilters = {
-            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = EgovLoginController.class),
-            @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = EgovComponentChecker.class)
-        }
-    )
+    @ComponentScan(basePackageClasses = { EgovLoginController.class,
+            EgovComponentChecker.class }, useDefaultFilters = false, includeFilters = {
+                    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = EgovLoginController.class),
+                    @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = EgovComponentChecker.class)
+            })
     static class Config {
     }
 

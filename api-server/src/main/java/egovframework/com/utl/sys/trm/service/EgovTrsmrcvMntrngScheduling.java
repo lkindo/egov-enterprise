@@ -20,12 +20,12 @@ import jakarta.annotation.Resource;
  * @Description : 송수신모니터링을 위한 스케쥴링 클래스
  * @Modification Information
  *
- *    수정일       수정자         수정내용
- *    -------        -------     -------------------
- *    2010.08.16     김진만   최초생성
- *    2022.11.11   	 김혜준   시큐어코딩 처리
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2010.08.16 김진만 최초생성
+ *               2022.11.11 김혜준 시큐어코딩 처리
  *
- * @author  김진만
+ * @author 김진만
  * @version
  * @see
  *
@@ -84,7 +84,7 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			try {
 				// Checker 클래스 생성.
 				klass = Class.forName(target.getTestClassNm());
-				checker = (TrsmrcvMntrngChecker)klass.newInstance();
+				checker = (TrsmrcvMntrngChecker) klass.getDeclaredConstructor().newInstance();
 				LOGGER.debug("Just made: {}", checker);
 				// 서비스 체크 수행.
 				result = checker.check(target.getCntcId());
@@ -126,7 +126,8 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 
 				if (result.getCause().getMessage() != null) {
 					trsmrcvMntrngLog
-						.setLogInfo(result.getCause().getClass().getName() + " - " + result.getCause().getMessage());
+							.setLogInfo(
+									result.getCause().getClass().getName() + " - " + result.getCause().getMessage());
 				} else {
 					trsmrcvMntrngLog.setLogInfo("");
 				}
@@ -142,7 +143,7 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			LOGGER.debug(" email전송할 송수신모니터링로그 Data : {}", trsmrcvMntrngLog);
 
 			// email 전송.
-			if (result != null && !result.isNrmltAt()) { //2022.01. Possible null pointer dereference
+			if (result != null && !result.isNrmltAt()) { // 2022.01. Possible null pointer dereference
 				sendEmail(trsmrcvMntrngLog);
 			}
 
@@ -153,7 +154,7 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 	/**
 	 * 이메일을 전송한다.
 	 *
-	 * @param   mntrngLog   모니터링 대상정보
+	 * @param mntrngLog 모니터링 대상정보
 	 * @return
 	 *
 	 */

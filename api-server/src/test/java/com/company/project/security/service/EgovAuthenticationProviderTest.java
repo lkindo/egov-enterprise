@@ -1,7 +1,6 @@
 package com.company.project.security.service;
 
 import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.uat.uia.service.EgovLoginService;
 import org.junit.jupiter.api.BeforeEach;

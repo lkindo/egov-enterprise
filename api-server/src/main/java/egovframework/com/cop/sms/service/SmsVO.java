@@ -4,31 +4,33 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 문자메시지 서비스를 위한 VO 클래스
+ * 
  * @author 공통컴포넌트개발팀 한성곤
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.06.18  한성곤          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class SmsVO extends Sms {
+
+    private static final long serialVersionUID = 1L;
     /** 검색조건 */
     private String searchCnd = "";
-    
+
     /** 검색단어 */
     private String searchWrd = "";
-    
+
     /** 정렬순서(DESC,ASC) */
     private String sortOrdr = "";
-    
+
     /** 현재페이지 */
     private int pageIndex = 1;
 
@@ -52,6 +54,7 @@ public class SmsVO extends Sms {
 
     /**
      * searchCnd attribute를 리턴한다.
+     * 
      * @return the searchCnd
      */
     public String getSearchCnd() {
@@ -60,6 +63,7 @@ public class SmsVO extends Sms {
 
     /**
      * searchCnd attribute 값을 설정한다.
+     * 
      * @param searchCnd the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
@@ -68,6 +72,7 @@ public class SmsVO extends Sms {
 
     /**
      * searchWrd attribute를 리턴한다.
+     * 
      * @return the searchWrd
      */
     public String getSearchWrd() {
@@ -76,6 +81,7 @@ public class SmsVO extends Sms {
 
     /**
      * searchWrd attribute 값을 설정한다.
+     * 
      * @param searchWrd the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
@@ -84,6 +90,7 @@ public class SmsVO extends Sms {
 
     /**
      * sortOrdr attribute를 리턴한다.
+     * 
      * @return the sortOrdr
      */
     public String getSortOrdr() {
@@ -92,6 +99,7 @@ public class SmsVO extends Sms {
 
     /**
      * sortOrdr attribute 값을 설정한다.
+     * 
      * @param sortOrdr the sortOrdr to set
      */
     public void setSortOrdr(String sortOrdr) {
@@ -100,6 +108,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageIndex attribute를 리턴한다.
+     * 
      * @return the pageIndex
      */
     public int getPageIndex() {
@@ -108,6 +117,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageIndex attribute 값을 설정한다.
+     * 
      * @param pageIndex the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
@@ -116,6 +126,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageUnit attribute를 리턴한다.
+     * 
      * @return the pageUnit
      */
     public int getPageUnit() {
@@ -124,6 +135,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageUnit attribute 값을 설정한다.
+     * 
      * @param pageUnit the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
@@ -132,6 +144,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageSize attribute를 리턴한다.
+     * 
      * @return the pageSize
      */
     public int getPageSize() {
@@ -140,6 +153,7 @@ public class SmsVO extends Sms {
 
     /**
      * pageSize attribute 값을 설정한다.
+     * 
      * @param pageSize the pageSize to set
      */
     public void setPageSize(int pageSize) {
@@ -148,6 +162,7 @@ public class SmsVO extends Sms {
 
     /**
      * firstIndex attribute를 리턴한다.
+     * 
      * @return the firstIndex
      */
     public int getFirstIndex() {
@@ -156,6 +171,7 @@ public class SmsVO extends Sms {
 
     /**
      * firstIndex attribute 값을 설정한다.
+     * 
      * @param firstIndex the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
@@ -164,6 +180,7 @@ public class SmsVO extends Sms {
 
     /**
      * lastIndex attribute를 리턴한다.
+     * 
      * @return the lastIndex
      */
     public int getLastIndex() {
@@ -172,6 +189,7 @@ public class SmsVO extends Sms {
 
     /**
      * lastIndex attribute 값을 설정한다.
+     * 
      * @param lastIndex the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
@@ -180,6 +198,7 @@ public class SmsVO extends Sms {
 
     /**
      * recordCountPerPage attribute를 리턴한다.
+     * 
      * @return the recordCountPerPage
      */
     public int getRecordCountPerPage() {
@@ -188,6 +207,7 @@ public class SmsVO extends Sms {
 
     /**
      * recordCountPerPage attribute 값을 설정한다.
+     * 
      * @param recordCountPerPage the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
@@ -196,6 +216,7 @@ public class SmsVO extends Sms {
 
     /**
      * rowNo attribute를 리턴한다.
+     * 
      * @return the rowNo
      */
     public int getRowNo() {
@@ -204,16 +225,17 @@ public class SmsVO extends Sms {
 
     /**
      * rowNo attribute 값을 설정한다.
+     * 
      * @param rowNo the rowNo to set
      */
     public void setRowNo(int rowNo) {
         this.rowNo = rowNo;
     }
-    
+
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

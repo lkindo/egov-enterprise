@@ -1,25 +1,25 @@
 package egovframework.com.uss.ion.ecc.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
+
 /**
  * 외부인사관리 VO Class 구현
+ * 
  * @author 공통서비스 장동한
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.03.20  장동한          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-public class TnextrlHrVO extends ComDefaultVO implements Serializable {
+public class TnextrlHrVO extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1739374172177710041L;
 
@@ -27,7 +27,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	 * 성별코드
 	 */
 	private String sexdstnCode = "";
-	
+
 	/**
 	 * 성별코드명
 	 */
@@ -47,7 +47,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	 * 직업유형코드
 	 */
 	private String occpTyCode = "";
-	
+
 	/**
 	 * 직업유형코드명
 	 */
@@ -67,7 +67,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	 * 행사/이벤트/캠페인 아이디
 	 */
 	private String eventId = "";
-	
+
 	/**
 	 * 행사/이벤트/캠페인내용
 	 */
@@ -117,7 +117,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	 * 최초등록ID
 	 */
 	private String frstRegisterId = "";
-	
+
 	/**
 	 * 최초등록ID
 	 */
@@ -135,6 +135,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * sexdstnCode attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSexdstnCode() {
@@ -143,22 +144,25 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * sexdstnCode attribute 값을 설정한다.
+	 * 
 	 * @return sexdstnCode String
 	 */
 	public void setSexdstnCode(String sexdstnCode) {
 		this.sexdstnCode = sexdstnCode;
 	}
-	
+
 	/**
 	 * sexdstnCodeNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getSexdstnCodeNm() {
 		return sexdstnCodeNm;
 	}
-	
+
 	/**
 	 * sexdstnCodeNm attribute 값을 설정한다.
+	 * 
 	 * @return sexdstnCodeNm String
 	 */
 	public void setSexdstnCodeNm(String sexdstnCodeNm) {
@@ -167,6 +171,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * extrlHrNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getExtrlHrNm() {
@@ -175,6 +180,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * extrlHrNm attribute 값을 설정한다.
+	 * 
 	 * @return extrlHrNm String
 	 */
 	public void setExtrlHrNm(String extrlHrNm) {
@@ -183,6 +189,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * emailAdres attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getEmailAdres() {
@@ -191,6 +198,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * emailAdres attribute 값을 설정한다.
+	 * 
 	 * @return emailAdres String
 	 */
 	public void setEmailAdres(String emailAdres) {
@@ -199,6 +207,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * occpTyCode attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getOccpTyCode() {
@@ -207,22 +216,25 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * occpTyCode attribute 값을 설정한다.
+	 * 
 	 * @return occpTyCode String
 	 */
 	public void setOccpTyCode(String occpTyCode) {
 		this.occpTyCode = occpTyCode;
 	}
-	
+
 	/**
 	 * occpTyCodeNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getOccpTyCodeNm() {
 		return occpTyCodeNm;
 	}
-	
+
 	/**
 	 * occpTyCodeNm attribute 값을 설정한다.
+	 * 
 	 * @return occpTyCodeNm String
 	 */
 	public void setOccpTyCodeNm(String occpTyCodeNm) {
@@ -231,6 +243,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * psitnInsttNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getPsitnInsttNm() {
@@ -239,6 +252,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * psitnInsttNm attribute 값을 설정한다.
+	 * 
 	 * @return psitnInsttNm String
 	 */
 	public void setPsitnInsttNm(String psitnInsttNm) {
@@ -247,6 +261,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * extrlHrId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getExtrlHrId() {
@@ -255,6 +270,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * extrlHrId attribute 값을 설정한다.
+	 * 
 	 * @return extrlHrId String
 	 */
 	public void setExtrlHrId(String extrlHrId) {
@@ -263,6 +279,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * eventId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getEventId() {
@@ -271,22 +288,25 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * eventId attribute 값을 설정한다.
+	 * 
 	 * @return eventId String
 	 */
 	public void setEventId(String eventId) {
 		this.eventId = eventId;
 	}
-	
+
 	/**
 	 * eventCn attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getEventCn() {
 		return eventCn;
 	}
-	
+
 	/**
 	 * eventCn attribute 값을 설정한다.
+	 * 
 	 * @return eventCn String
 	 */
 	public void setEventCn(String eventCn) {
@@ -295,6 +315,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brth attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getBrth() {
@@ -303,6 +324,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brth attribute 값을 설정한다.
+	 * 
 	 * @return brth String
 	 */
 	public void setBrth(String brth) {
@@ -311,6 +333,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * areaNo attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getAreaNo() {
@@ -319,6 +342,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * areaNo attribute 값을 설정한다.
+	 * 
 	 * @return areaNo String
 	 */
 	public void setAreaNo(String areaNo) {
@@ -327,6 +351,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * middleTelno attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getMiddleTelno() {
@@ -335,6 +360,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * middleTelno attribute 값을 설정한다.
+	 * 
 	 * @return middleTelno String
 	 */
 	public void setMiddleTelno(String middleTelno) {
@@ -343,6 +369,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * endTelno attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getEndTelno() {
@@ -351,6 +378,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * endTelno attribute 값을 설정한다.
+	 * 
 	 * @return endTelno String
 	 */
 	public void setEndTelno(String endTelno) {
@@ -359,6 +387,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthYYYY attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getBrthYYYY() {
@@ -367,6 +396,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthYYYY attribute 값을 설정한다.
+	 * 
 	 * @return brthYYYY String
 	 */
 	public void setBrthYYYY(String brthYYYY) {
@@ -375,6 +405,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthMM attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getBrthMM() {
@@ -383,6 +414,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthMM attribute 값을 설정한다.
+	 * 
 	 * @return brthMM String
 	 */
 	public void setBrthMM(String brthMM) {
@@ -391,6 +423,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthDD attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getBrthDD() {
@@ -399,6 +432,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * brthDD attribute 값을 설정한다.
+	 * 
 	 * @return brthDD String
 	 */
 	public void setBrthDD(String brthDD) {
@@ -407,6 +441,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -415,6 +450,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -423,6 +459,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * frstRegisterId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -431,22 +468,25 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * frstRegisterId attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
 		this.frstRegisterId = frstRegisterId;
 	}
-	
+
 	/**
 	 * frstRegisterNm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getFrstRegisterNm() {
 		return frstRegisterNm;
 	}
-	
+
 	/**
 	 * frstRegisterNm attribute 값을 설정한다.
+	 * 
 	 * @return frstRegisterNm String
 	 */
 	public void setFrstRegisterNm(String frstRegisterNm) {
@@ -455,6 +495,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -463,6 +504,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -471,6 +513,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * lastUpdusrId attribute 를 리턴한다.
+	 * 
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -479,14 +522,11 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 
 	/**
 	 * lastUpdusrId attribute 값을 설정한다.
+	 * 
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
-
-
-
-
 
 }

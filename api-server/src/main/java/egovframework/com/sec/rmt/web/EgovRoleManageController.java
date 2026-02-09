@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -30,7 +29,6 @@ import egovframework.com.sec.rmt.service.RoleManageVO;
 import com.company.project.service.auth.RoleManageService;
 import com.company.project.service.auth.AuthorManageService;
 import com.company.project.service.auth.dto.RoleManageDto;
-import com.company.project.service.auth.dto.AuthorManageDto;
 import com.company.project.web.adapter.SecurityAdapter;
 
 import jakarta.annotation.Resource;
@@ -233,8 +231,9 @@ public class EgovRoleManageController {
 			model.addAttribute("cmmCodeDetailList", getCmmCodeDetailList(new ComDefaultCodeVO(), "COM029"));
 
 			// JPA Insert
-			RoleManageDto dto = SecurityAdapter.toDto(roleManageVO); // roleManage inherits from VO effectively or share
-																		// fields
+			// RoleManageDto dto = SecurityAdapter.toDto(roleManageVO); // roleManage
+			// inherits from VO effectively or share
+			// fields
 			// Assuming RoleManage fields need to be mapped if not VO compatible directly.
 			// Since RoleManageVO extends RoleManage, we can use SecurityAdapter with
 			// mapping logic.

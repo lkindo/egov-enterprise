@@ -27,7 +27,6 @@ import egovframework.com.utl.sys.pxy.service.ProxyLogVO;
 import egovframework.com.utl.sys.pxy.service.ProxySvc;
 import egovframework.com.utl.sys.pxy.service.ProxySvcVO;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * <pre>

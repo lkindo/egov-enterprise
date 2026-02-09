@@ -1,7 +1,5 @@
 package egovframework.com.uss.ion.pwm.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
@@ -11,88 +9,90 @@ import egovframework.com.cmm.ComDefaultVO;
  * 상세내용
  * - 팝업창의 팝업창아이디, 팝업창 타이틀명, 실파일 URL, 파업창이 화면에 보여지는 위치정보, 팝업창의 사이즈, 게시시작일, 게시종료일,
  * 그만보기 설정 여부, 게시여부 항목을 관리한다.
+ * 
  * @author 이창원
  * @version 1.0
  * @created 05-8-2009 오후 2:21:03
  */
-public class PopupManage extends ComDefaultVO implements Serializable {
+public class PopupManage extends ComDefaultVO {
 
-	private static final long serialVersionUID = -9172690166674188881L;
-	/**
-	 * 팝업창아이디
-	 */
-	private String popupId;
-	/**
-	 * 팝업창 타이틀명
-	 */
-	private String popupTitleNm;
-	/**
-	 * 실파일 URL
-	 */
-	private String fileUrl;
-	/**
-	 * 팝업창이 화면에 보여지는 가로 위치정보
-	 */
-	private String popupWlc;
+    private static final long serialVersionUID = -9172690166674188881L;
+    /**
+     * 팝업창아이디
+     */
+    private String popupId;
+    /**
+     * 팝업창 타이틀명
+     */
+    private String popupTitleNm;
+    /**
+     * 실파일 URL
+     */
+    private String fileUrl;
+    /**
+     * 팝업창이 화면에 보여지는 가로 위치정보
+     */
+    private String popupWlc;
 
-        /**
-         * 팝업창이 화면에 보여지는 세로 위치정보
-         */
-        private String popupHlc;
+    /**
+     * 팝업창이 화면에 보여지는 세로 위치정보
+     */
+    private String popupHlc;
 
-	/**
-	 * 팝업창의 높이
-	 */
-	private String popupHSize;
+    /**
+     * 팝업창의 높이
+     */
+    private String popupHSize;
 
-        /**
-         * 팝업창의 넚이
-         */
-        private String popupWSize;
+    /**
+     * 팝업창의 넚이
+     */
+    private String popupWSize;
 
-	/**
-	 * 게시시작일
-	 */
-	private String ntceBgnde;
-	/**
-	 * 게시종료일
-	 */
-	private String ntceEndde;
+    /**
+     * 게시시작일
+     */
+    private String ntceBgnde;
+    /**
+     * 게시종료일
+     */
+    private String ntceEndde;
 
-	/** 게시시작일(시간) */
-        private String ntceBgndeHH;
+    /** 게시시작일(시간) */
+    private String ntceBgndeHH;
 
-        /** 게시시작일(분) */
-        private String ntceBgndeMM;
+    /** 게시시작일(분) */
+    private String ntceBgndeMM;
 
-        /** 게시종료일(시간) */
-        private String ntceEnddeHH;
+    /** 게시종료일(시간) */
+    private String ntceEnddeHH;
 
-        /** 게시종료일(분) */
-        private String ntceEnddeMM;
+    /** 게시종료일(분) */
+    private String ntceEnddeMM;
 
-	/**
-	 * 그만보기 설정 여부
-	 */
-	private String stopVewAt;
-	/**
-	 * 게시여부
-	 */
-	private String ntceAt;
+    /**
+     * 그만보기 설정 여부
+     */
+    private String stopVewAt;
+    /**
+     * 게시여부
+     */
+    private String ntceAt;
 
-	/** 최초등록시점 */
-	private String frstRegisterPnttm;
+    /** 최초등록시점 */
+    private String frstRegisterPnttm;
 
-	/** 최초등록아이디 */
-	private String frstRegisterId;
+    /** 최초등록아이디 */
+    private String frstRegisterId;
 
-	/** 최종수정일 */
-	private String lastUpdusrPnttm;
+    /** 최종수정일 */
+    private String lastUpdusrPnttm;
 
-	/** 최종수정자 아이디 */
-	private String lastUpdusrId;
+    /** 최종수정자 아이디 */
+    private String lastUpdusrId;
 
-	public PopupManage(){}
+    public PopupManage() {
+    }
 
     /**
      * popupId 리턴
@@ -435,8 +435,5 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     public void setLastUpdusrId(String lastUpdusrId) {
         this.lastUpdusrId = lastUpdusrId;
     }
-
-
-
 
 }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import com.company.project.domain.vacation.AnnualLeave;
 import com.company.project.domain.vacation.AnnualLeaveRepository;
 
-import egovframework.com.uss.ion.yrc.service.EgovIndvdlYrycManageService;
+// import egovframework.com.uss.ion.yrc.service.EgovIndvdlYrycManageService;
 import jakarta.annotation.Resource;
 
 @Service("egovIndvdlYrycManageService")

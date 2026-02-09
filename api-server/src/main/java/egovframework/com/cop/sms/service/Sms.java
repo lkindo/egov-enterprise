@@ -8,12 +8,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 문자메시지 서비스 데이터 처리 모델
+ * 
  * @author 공통컴포넌트개발팀 한성곤
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -21,10 +22,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *   2009.06.18  한성곤          최초 생성
  *	 2011.10.07	 이기하		보안취약점 수정(private 배열 처리)
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class Sms implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /** 문자메시지 ID */
     private String smsId = "";
 
@@ -57,6 +59,7 @@ public class Sms implements Serializable {
 
     /**
      * smsId attribute를 리턴한다.
+     * 
      * @return the smsId
      */
     public String getSmsId() {
@@ -65,6 +68,7 @@ public class Sms implements Serializable {
 
     /**
      * smsId attribute 값을 설정한다.
+     * 
      * @param smsId the smsId to set
      */
     public void setSmsId(String smsId) {
@@ -73,6 +77,7 @@ public class Sms implements Serializable {
 
     /**
      * trnsmitTelno attribute를 리턴한다.
+     * 
      * @return the trnsmitTelno
      */
     public String getTrnsmitTelno() {
@@ -81,6 +86,7 @@ public class Sms implements Serializable {
 
     /**
      * trnsmitTelno attribute 값을 설정한다.
+     * 
      * @param trnsmitTelno the trnsmitTelno to set
      */
     public void setTrnsmitTelno(String trnsmitTelno) {
@@ -89,6 +95,7 @@ public class Sms implements Serializable {
 
     /**
      * trnsmitCn attribute를 리턴한다.
+     * 
      * @return the trnsmitCn
      */
     public String getTrnsmitCn() {
@@ -97,6 +104,7 @@ public class Sms implements Serializable {
 
     /**
      * trnsmitCn attribute 값을 설정한다.
+     * 
      * @param trnsmitCn the trnsmitCn to set
      */
     public void setTrnsmitCn(String trnsmitCn) {
@@ -105,6 +113,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterId attribute를 리턴한다.
+     * 
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
@@ -113,6 +122,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterId attribute 값을 설정한다.
+     * 
      * @param frstRegisterId the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
@@ -121,6 +131,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterNm attribute를 리턴한다.
+     * 
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -129,6 +140,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterNm attribute 값을 설정한다.
+     * 
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -137,6 +149,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterPnttm attribute를 리턴한다.
+     * 
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
@@ -145,6 +158,7 @@ public class Sms implements Serializable {
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
+     * 
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -153,6 +167,7 @@ public class Sms implements Serializable {
 
     /**
      * recptn attribute를 리턴한다.
+     * 
      * @return the recptn
      */
     public List<SmsRecptn> getRecptn() {
@@ -161,6 +176,7 @@ public class Sms implements Serializable {
 
     /**
      * recptn attribute 값을 설정한다.
+     * 
      * @param recptn the recptn to set
      */
     public void setRecptn(List<SmsRecptn> recptn) {
@@ -169,6 +185,7 @@ public class Sms implements Serializable {
 
     /**
      * uniqId attribute를 리턴한다.
+     * 
      * @return the uniqId
      */
     public String getUniqId() {
@@ -177,6 +194,7 @@ public class Sms implements Serializable {
 
     /**
      * uniqId attribute 값을 설정한다.
+     * 
      * @param uniqId the uniqId to set
      */
     public void setUniqId(String uniqId) {
@@ -185,6 +203,7 @@ public class Sms implements Serializable {
 
     /**
      * recptnCnt attribute를 리턴한다.
+     * 
      * @return the recptnCnt
      */
     public int getRecptnCnt() {
@@ -193,6 +212,7 @@ public class Sms implements Serializable {
 
     /**
      * recptnCnt attribute 값을 설정한다.
+     * 
      * @param recptnCnt the recptnCnt to set
      */
     public void setRecptnCnt(int recptnCnt) {
@@ -201,44 +221,46 @@ public class Sms implements Serializable {
 
     /**
      * recptnTelno attribute를 리턴한다.
+     * 
      * @return the recptnTelno
      */
-//    public String[] getRecptnTelno() {
-//        return recptnTelno;
-//    }
+    // public String[] getRecptnTelno() {
+    // return recptnTelno;
+    // }
     // 2011.10.07 private 배열을 public 함수가 반환되지 않도록 함
     public String[] getRecptnTelno() {
-    	// 메소드를 private으로 하거나, 복제본을 반환하거나,
-    	// 수정을 제어하는 public메소드를 별도로 만든다.
-    	String[] ret = null;
-    	if(this.recptnTelno != null) {
-    		ret = new String[recptnTelno.length];
-    		for (int i=0; i<recptnTelno.length; i++) {
-    			ret[i] = this.recptnTelno[i];
-    		}
-    	}
-    	return ret;
+        // 메소드를 private으로 하거나, 복제본을 반환하거나,
+        // 수정을 제어하는 public메소드를 별도로 만든다.
+        String[] ret = null;
+        if (this.recptnTelno != null) {
+            ret = new String[recptnTelno.length];
+            for (int i = 0; i < recptnTelno.length; i++) {
+                ret[i] = this.recptnTelno[i];
+            }
+        }
+        return ret;
     }
 
     /**
      * recptnTelno attribute 값을 설정한다.
+     * 
      * @param recptnTelno the recptnTelno to set
      */
-//    public void setRecptnTelno(String[] recptnTelno) {
-//        this.recptnTelno = recptnTelno;
-//    }
+    // public void setRecptnTelno(String[] recptnTelno) {
+    // this.recptnTelno = recptnTelno;
+    // }
     // 2011.10.07 private 배열-유형 필드에 공용 데이터 할당되지 않도록 함
-	public void setRecptnTelno(String[] recptnTelno) {
-		this.recptnTelno = new String[recptnTelno.length];
-		for (int i = 0; i < recptnTelno.length; ++i) {
-			this.recptnTelno[i] = recptnTelno[i];
-		}
-	}
+    public void setRecptnTelno(String[] recptnTelno) {
+        this.recptnTelno = new String[recptnTelno.length];
+        for (int i = 0; i < recptnTelno.length; ++i) {
+            this.recptnTelno[i] = recptnTelno[i];
+        }
+    }
 
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

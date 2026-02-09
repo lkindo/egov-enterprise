@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
@@ -40,8 +38,6 @@ import jakarta.servlet.http.HttpServletRequest;
 // 기존 서비스(EgovCommuManageService 등)는 제거되거나 대체됨.
 @Controller
 public class EgovCommuManageController {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovCommuManageController.class);
 
 	@Resource(name = "egovCommunityService")
 	private EgovCommunityService egovCommunityService;

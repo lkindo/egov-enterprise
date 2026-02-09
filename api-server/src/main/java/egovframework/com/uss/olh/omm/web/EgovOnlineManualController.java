@@ -27,7 +27,6 @@ import egovframework.com.uss.olh.omm.service.OnlineManualVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 
 /**
  * 온라인메뉴얼를 처리하는 Controller Class 구현

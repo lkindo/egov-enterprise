@@ -6,12 +6,9 @@ import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 배치작업관리에 대한 controller 클래스
@@ -33,8 +29,6 @@ import jakarta.validation.Valid;
 @Controller
 @RequiredArgsConstructor
 public class EgovBatchOpertController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchOpertController.class);
 
     private final EgovBatchJobService batchJobService;
 

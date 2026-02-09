@@ -8,7 +8,7 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.stereotype.Service;
 
 import com.company.project.domain.survey.OnlinePollManageRepository;
-import com.company.project.domain.survey.OnlinePollResult;
+// import com.company.project.domain.survey.OnlinePollResult;
 import com.company.project.domain.survey.OnlinePollResultRepository;
 
 import egovframework.com.uss.olp.opr.service.EgovOnlinePollResultService;

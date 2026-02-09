@@ -6,69 +6,72 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 만족도조사 서비스 데이터 처리 모델
+ * 
  * @author 공통컴포넌트개발팀 한성곤
  * @since 2009.06.29
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.06.29  한성곤          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class Satisfaction implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /** 만족도 번호 */
     private String stsfdgNo = "";
-    
+
     /** 게시판 ID */
     private String bbsId = "";
-    
+
     /** 게시물 번호 */
     private long nttId = 0L;
-    
+
     /** 작성자 ID */
     private String wrterId = "";
-    
+
     /** 작성자명 */
     private String wrterNm = "";
-    
+
     /** 패스워드 */
     private String stsfdgPassword = "";
-    
+
     /** 만족도 내용 */
     private String stsfdgCn = "";
-    
+
     /** 만족도 */
     private int stsfdg = 0;
-    
+
     /** 사용 여부 */
     private String useAt = "";
 
     /** 최초등록자 아이디 */
     private String frstRegisterId = "";
-    
+
     /** 최초 등록자명 */
     private String frstRegisterNm = "";
-    
+
     /** 최초등록시점 */
     private String frstRegisterPnttm = "";
-    
+
     /** 최종수정자 아이디 */
     private String lastUpdusrId = "";
-    
+
     /** 최종수정시점 */
     private String lastUpdusrPnttm = "";
-    
+
     /** 확인 패스워드 */
     private String confirmPassword = "";
 
     /**
      * stsfdgNo attribute를 리턴한다.
+     * 
      * @return the stsfdgNo
      */
     public String getStsfdgNo() {
@@ -77,6 +80,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdgNo attribute 값을 설정한다.
+     * 
      * @param stsfdgNo the stsfdgNo to set
      */
     public void setStsfdgNo(String stsfdgNo) {
@@ -85,6 +89,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * bbsId attribute를 리턴한다.
+     * 
      * @return the bbsId
      */
     public String getBbsId() {
@@ -93,6 +98,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * bbsId attribute 값을 설정한다.
+     * 
      * @param bbsId the bbsId to set
      */
     public void setBbsId(String bbsId) {
@@ -101,6 +107,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * nttId attribute를 리턴한다.
+     * 
      * @return the nttId
      */
     public long getNttId() {
@@ -109,6 +116,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * nttId attribute 값을 설정한다.
+     * 
      * @param nttId the nttId to set
      */
     public void setNttId(long nttId) {
@@ -117,6 +125,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * wrterId attribute를 리턴한다.
+     * 
      * @return the wrterId
      */
     public String getWrterId() {
@@ -125,6 +134,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * wrterId attribute 값을 설정한다.
+     * 
      * @param wrterId the wrterId to set
      */
     public void setWrterId(String wrterId) {
@@ -133,6 +143,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * wrterNm attribute를 리턴한다.
+     * 
      * @return the wrterNm
      */
     public String getWrterNm() {
@@ -141,6 +152,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * wrterNm attribute 값을 설정한다.
+     * 
      * @param wrterNm the wrterNm to set
      */
     public void setWrterNm(String wrterNm) {
@@ -149,6 +161,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdgPassword attribute를 리턴한다.
+     * 
      * @return the stsfdgPassword
      */
     public String getStsfdgPassword() {
@@ -157,6 +170,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdgPassword attribute 값을 설정한다.
+     * 
      * @param stsfdgPassword the stsfdgPassword to set
      */
     public void setStsfdgPassword(String stsfdgPassword) {
@@ -165,6 +179,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdgCn attribute를 리턴한다.
+     * 
      * @return the stsfdgCn
      */
     public String getStsfdgCn() {
@@ -173,6 +188,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdgCn attribute 값을 설정한다.
+     * 
      * @param stsfdgCn the stsfdgCn to set
      */
     public void setStsfdgCn(String stsfdgCn) {
@@ -181,6 +197,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdg attribute를 리턴한다.
+     * 
      * @return the stsfdg
      */
     public int getStsfdg() {
@@ -189,6 +206,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * stsfdg attribute 값을 설정한다.
+     * 
      * @param stsfdg the stsfdg to set
      */
     public void setStsfdg(int stsfdg) {
@@ -197,6 +215,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * useAt attribute를 리턴한다.
+     * 
      * @return the useAt
      */
     public String getUseAt() {
@@ -205,6 +224,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * useAt attribute 값을 설정한다.
+     * 
      * @param useAt the useAt to set
      */
     public void setUseAt(String useAt) {
@@ -213,6 +233,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterId attribute를 리턴한다.
+     * 
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
@@ -221,6 +242,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterId attribute 값을 설정한다.
+     * 
      * @param frstRegisterId the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
@@ -229,6 +251,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterNm attribute를 리턴한다.
+     * 
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -237,6 +260,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterNm attribute 값을 설정한다.
+     * 
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -245,6 +269,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterPnttm attribute를 리턴한다.
+     * 
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
@@ -253,6 +278,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
+     * 
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -261,6 +287,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * lastUpdusrId attribute를 리턴한다.
+     * 
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
@@ -269,6 +296,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * lastUpdusrId attribute 값을 설정한다.
+     * 
      * @param lastUpdusrId the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
@@ -277,6 +305,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * lastUpdusrPnttm attribute를 리턴한다.
+     * 
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
@@ -285,6 +314,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * lastUpdusrPnttm attribute 값을 설정한다.
+     * 
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -293,6 +323,7 @@ public class Satisfaction implements Serializable {
 
     /**
      * confirmPassword attribute를 리턴한다.
+     * 
      * @return the confirmPassword
      */
     public String getConfirmPassword() {
@@ -301,16 +332,17 @@ public class Satisfaction implements Serializable {
 
     /**
      * confirmPassword attribute 값을 설정한다.
+     * 
      * @param confirmPassword the confirmPassword to set
      */
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
     }
-    
+
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

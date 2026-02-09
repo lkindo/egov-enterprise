@@ -236,19 +236,20 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 				return "99"; // 데이터 존재 오류
 			}
 
-			HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream);
-			if (hssfWB.getNumberOfSheets() != 2) {
-				return "93"; // 시트 개수 오류
+			try (HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream)) {
+				if (hssfWB.getNumberOfSheets() != 2) {
+					return "93"; // 시트 개수 오류
+				}
+
+				HSSFSheet progrmSheet = hssfWB.getSheetAt(0);
+				HSSFSheet menuSheet = hssfWB.getSheetAt(1);
+
+				// 데이터 검증 및 등록 로직
+				if (!progrmRegist(progrmSheet))
+					return "96";
+				if (!menuRegist(menuSheet))
+					return "95";
 			}
-
-			HSSFSheet progrmSheet = hssfWB.getSheetAt(0);
-			HSSFSheet menuSheet = hssfWB.getSheetAt(1);
-
-			// 데이터 검증 및 등록 로직
-			if (!progrmRegist(progrmSheet))
-				return "96";
-			if (!menuRegist(menuSheet))
-				return "95";
 
 		} catch (Exception e) {
 			LOGGER.error("Menu Bundle Regist Error: {}", e.getMessage());

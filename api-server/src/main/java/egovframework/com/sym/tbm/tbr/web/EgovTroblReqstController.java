@@ -1,4 +1,5 @@
 package egovframework.com.sym.tbm.tbr.web;
+
 import java.util.List;
 
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -24,7 +25,6 @@ import egovframework.com.sym.tbm.tbr.service.TroblReqst;
 import egovframework.com.sym.tbm.tbr.service.TroblReqstVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * <pre>
@@ -163,7 +163,6 @@ public class EgovTroblReqstController {
 			@ModelAttribute("troblReqst") TroblReqst troblReqst, BindingResult bindingResult, ModelMap model)
 			throws Exception {
 
-
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("troblReqstVO", troblReqstVO);
 			return "egovframework/com/sym/tbm/tbr/EgovTroblReqstRegist";
@@ -208,7 +207,6 @@ public class EgovTroblReqstController {
 	@RequestMapping(value = "/sym/tbm/tbr/updtTroblReqst.do")
 	public String updateTroblReqst(@ModelAttribute("troblReqst") TroblReqst troblReqst, BindingResult bindingResult,
 			SessionStatus status, ModelMap model) throws Exception {
-
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("troblReqstVO", troblReqst);

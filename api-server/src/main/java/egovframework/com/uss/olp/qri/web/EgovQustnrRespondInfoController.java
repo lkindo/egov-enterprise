@@ -31,7 +31,6 @@ import egovframework.com.uss.olp.qrm.service.QustnrRespondManageVO;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 
 /**
  * 설문조사 Controller Class 구현

@@ -25,7 +25,6 @@ import egovframework.com.uss.ion.nws.service.EgovNewsService;
 import egovframework.com.uss.ion.nws.service.NewsVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 뉴스정보를 처리하는 Controller 클래스

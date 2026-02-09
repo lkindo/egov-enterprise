@@ -6,50 +6,52 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 커뮤니티 관리를 위한 모델 클래스
+ * 
  * @author 공통서비스개발팀 이삼섭
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.4.2  이삼섭          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class Community implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** 커뮤니티 아이디 */
     private String cmmntyId = "";
-    
+
     /** 커뮤니티 소개 */
     private String cmmntyIntrcn = "";
-    
+
     /** 커뮤니티 명 */
     private String cmmntyNm = "";
-    
+
     /** 최초등록자 아이디 */
     private String frstRegisterId = "";
-    
+
     /** 최초등록시점 */
     private String frstRegisterPnttm = "";
-    
+
     /** 최종수정자 아이디 */
     private String lastUpdusrId = "";
-    
+
     /** 최종수정시점 */
     private String lastUpdusrPnttm = "";
-    
+
     /** 등록구분코드 */
     private String registSeCode = "";
-    
+
     /** 템플릿 아이디 */
     private String tmplatId = "";
-    
+
     /** 템플릿 아이디 */
     private String useAt = "";
 
@@ -68,17 +70,17 @@ public class Community implements Serializable {
      * @return the cmmntyId
      */
     public String getCmmntyId() {
-	return cmmntyId;
+        return cmmntyId;
     }
 
     /**
      * cmmntyId attribute 값을 설정한다.
      * 
      * @param cmmntyId
-     *            the cmmntyId to set
+     *                 the cmmntyId to set
      */
     public void setCmmntyId(String cmmntyId) {
-	this.cmmntyId = cmmntyId;
+        this.cmmntyId = cmmntyId;
     }
 
     /**
@@ -87,17 +89,17 @@ public class Community implements Serializable {
      * @return the cmmntyIntrcn
      */
     public String getCmmntyIntrcn() {
-	return cmmntyIntrcn;
+        return cmmntyIntrcn;
     }
 
     /**
      * cmmntyIntrcn attribute 값을 설정한다.
      * 
      * @param cmmntyIntrcn
-     *            the cmmntyIntrcn to set
+     *                     the cmmntyIntrcn to set
      */
     public void setCmmntyIntrcn(String cmmntyIntrcn) {
-	this.cmmntyIntrcn = cmmntyIntrcn;
+        this.cmmntyIntrcn = cmmntyIntrcn;
     }
 
     /**
@@ -106,17 +108,17 @@ public class Community implements Serializable {
      * @return the cmmntyNm
      */
     public String getCmmntyNm() {
-	return cmmntyNm;
+        return cmmntyNm;
     }
 
     /**
      * cmmntyNm attribute 값을 설정한다.
      * 
      * @param cmmntyNm
-     *            the cmmntyNm to set
+     *                 the cmmntyNm to set
      */
     public void setCmmntyNm(String cmmntyNm) {
-	this.cmmntyNm = cmmntyNm;
+        this.cmmntyNm = cmmntyNm;
     }
 
     /**
@@ -125,17 +127,17 @@ public class Community implements Serializable {
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
-	return frstRegisterId;
+        return frstRegisterId;
     }
 
     /**
      * frstRegisterId attribute 값을 설정한다.
      * 
      * @param frstRegisterId
-     *            the frstRegisterId to set
+     *                       the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
-	this.frstRegisterId = frstRegisterId;
+        this.frstRegisterId = frstRegisterId;
     }
 
     /**
@@ -144,17 +146,17 @@ public class Community implements Serializable {
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
-	return frstRegisterPnttm;
+        return frstRegisterPnttm;
     }
 
     /**
      * frstRegisterPnttm attribute 값을 설정한다.
      * 
      * @param frstRegisterPnttm
-     *            the frstRegisterPnttm to set
+     *                          the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
-	this.frstRegisterPnttm = frstRegisterPnttm;
+        this.frstRegisterPnttm = frstRegisterPnttm;
     }
 
     /**
@@ -163,17 +165,17 @@ public class Community implements Serializable {
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
-	return lastUpdusrId;
+        return lastUpdusrId;
     }
 
     /**
      * lastUpdusrId attribute 값을 설정한다.
      * 
      * @param lastUpdusrId
-     *            the lastUpdusrId to set
+     *                     the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
-	this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = lastUpdusrId;
     }
 
     /**
@@ -182,17 +184,17 @@ public class Community implements Serializable {
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
-	return lastUpdusrPnttm;
+        return lastUpdusrPnttm;
     }
 
     /**
      * lastUpdusrPnttm attribute 값을 설정한다.
      * 
      * @param lastUpdusrPnttm
-     *            the lastUpdusrPnttm to set
+     *                        the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
-	this.lastUpdusrPnttm = lastUpdusrPnttm;
+        this.lastUpdusrPnttm = lastUpdusrPnttm;
     }
 
     /**
@@ -201,17 +203,17 @@ public class Community implements Serializable {
      * @return the registSeCode
      */
     public String getRegistSeCode() {
-	return registSeCode;
+        return registSeCode;
     }
 
     /**
      * registSeCode attribute 값을 설정한다.
      * 
      * @param registSeCode
-     *            the registSeCode to set
+     *                     the registSeCode to set
      */
     public void setRegistSeCode(String registSeCode) {
-	this.registSeCode = registSeCode;
+        this.registSeCode = registSeCode;
     }
 
     /**
@@ -220,17 +222,17 @@ public class Community implements Serializable {
      * @return the tmplatId
      */
     public String getTmplatId() {
-	return tmplatId;
+        return tmplatId;
     }
 
     /**
      * tmplatId attribute 값을 설정한다.
      * 
      * @param tmplatId
-     *            the tmplatId to set
+     *                 the tmplatId to set
      */
     public void setTmplatId(String tmplatId) {
-	this.tmplatId = tmplatId;
+        this.tmplatId = tmplatId;
     }
 
     /**
@@ -239,17 +241,17 @@ public class Community implements Serializable {
      * @return the useAt
      */
     public String getUseAt() {
-	return useAt;
+        return useAt;
     }
 
     /**
      * useAt attribute 값을 설정한다.
      * 
      * @param useAt
-     *            the useAt to set
+     *              the useAt to set
      */
     public void setUseAt(String useAt) {
-	this.useAt = useAt;
+        this.useAt = useAt;
     }
 
     /**
@@ -258,17 +260,17 @@ public class Community implements Serializable {
      * @return the emplyrId
      */
     public String getEmplyrId() {
-	return emplyrId;
+        return emplyrId;
     }
 
     /**
      * emplyrId attribute 값을 설정한다.
      * 
      * @param emplyrId
-     *            the emplyrId to set
+     *                 the emplyrId to set
      */
     public void setEmplyrId(String emplyrId) {
-	this.emplyrId = emplyrId;
+        this.emplyrId = emplyrId;
     }
 
     /**
@@ -277,17 +279,17 @@ public class Community implements Serializable {
      * @return the userNm
      */
     public String getUserNm() {
-	return userNm;
+        return userNm;
     }
 
     /**
      * userNm attribute 값을 설정한다.
      * 
      * @param userNm
-     *            the userNm to set
+     *               the userNm to set
      */
     public void setUserNm(String userNm) {
-	this.userNm = userNm;
+        this.userNm = userNm;
     }
 
     /**
@@ -296,24 +298,24 @@ public class Community implements Serializable {
      * @return the tmplatNm
      */
     public String getTmplatNm() {
-	return tmplatNm;
+        return tmplatNm;
     }
 
     /**
      * tmplatNm attribute 값을 설정한다.
      * 
      * @param tmplatNm
-     *            the tmplatNm to set
+     *                 the tmplatNm to set
      */
     public void setTmplatNm(String tmplatNm) {
-	this.tmplatNm = tmplatNm;
+        this.tmplatNm = tmplatNm;
     }
 
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
-	
+
 }

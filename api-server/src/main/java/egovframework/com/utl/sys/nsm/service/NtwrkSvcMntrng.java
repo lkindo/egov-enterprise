@@ -1,19 +1,20 @@
 package egovframework.com.utl.sys.nsm.service;
 
-import java.io.Serializable;
-
 /**
  * 개요
  * - 네트워크서비스 모니터링대상에 대한 model 클래스를 정의한다.
  *
  * 상세내용
- * - 시스템IP, 시스템IP 1, 시스템IP 2, 시스템IP 3, 시스템IP 4, 구 시스템IP, 시스템포트, 구 시스템포트, 시스템명, 관리자명, 관리자이메일주소, 모니터링상태, 생성일시, 로그정보 항목을 관리한다.
+ * - 시스템IP, 시스템IP 1, 시스템IP 2, 시스템IP 3, 시스템IP 4, 구 시스템IP, 시스템포트, 구 시스템포트, 시스템명,
+ * 관리자명, 관리자이메일주소, 모니터링상태, 생성일시, 로그정보 항목을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 11:33:43
  */
-@SuppressWarnings("serial")
-public class NtwrkSvcMntrng implements Serializable {
+public class NtwrkSvcMntrng implements java.io.Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 시스템IP
@@ -87,6 +88,7 @@ public class NtwrkSvcMntrng implements Serializable {
 	 * 최종수정시점
 	 */
 	private String lastUpdusrPnttm = "";
+
 	/**
 	 * 시스템 IP를 반환합니다.
 	 */

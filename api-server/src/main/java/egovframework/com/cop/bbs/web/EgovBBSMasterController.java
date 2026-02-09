@@ -1,7 +1,6 @@
 package egovframework.com.cop.bbs.web;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -9,8 +8,6 @@ import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;

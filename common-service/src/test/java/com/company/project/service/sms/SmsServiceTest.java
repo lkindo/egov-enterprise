@@ -76,8 +76,7 @@ class SmsServiceTest {
         when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(true);
         when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
-        String smsId = smsService.sendSms(userId, smsDto);
+        smsService.sendSms(userId, smsDto);
 
         // Then
         ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
@@ -131,8 +130,7 @@ class SmsServiceTest {
         when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(false);
         when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
-        String smsId = smsService.sendSms(userId, smsDto);
+        smsService.sendSms(userId, smsDto);
 
         // Then
         ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);

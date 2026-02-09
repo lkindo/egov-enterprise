@@ -1,6 +1,5 @@
 package egovframework.com.uss.umt.service.impl;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,29 +30,29 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 		return entities.stream().map(this::toVO).collect(Collectors.toList());
 	}
 
-    @Override
-    public List<DeptManageVO> selectDeptManageListPaged(DeptManageVO deptManageVO) throws Exception {
-        int pageIndex = Math.max(0, deptManageVO.getPageIndex() - 1);
-        // Use getRecordCountPerPage for rows per page
-        int pageSize = deptManageVO.getRecordCountPerPage() > 0 ? deptManageVO.getRecordCountPerPage() : 10;
+	@Override
+	public List<DeptManageVO> selectDeptManageListPaged(DeptManageVO deptManageVO) throws Exception {
+		int pageIndex = Math.max(0, deptManageVO.getPageIndex() - 1);
+		// Use getRecordCountPerPage for rows per page
+		int pageSize = deptManageVO.getRecordCountPerPage() > 0 ? deptManageVO.getRecordCountPerPage() : 10;
 
-        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.ASC, "orgnztId"));
-        Page<DeptManage> page;
+		Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.ASC, "orgnztId"));
+		Page<DeptManage> page;
 
-        if ("ORGNZT_NM".equals(deptManageVO.getSearchCondition())) {
-            page = deptManageRepository.findByOrgnztNmContainingIgnoreCase(deptManageVO.getSearchKeyword(), pageable);
-        } else if ("ORGNZT_DC".equals(deptManageVO.getSearchCondition())) {
-            page = deptManageRepository.findByOrgnztDcContainingIgnoreCase(deptManageVO.getSearchKeyword(), pageable);
-        } else {
-            page = deptManageRepository.findAll(pageable);
-        }
+		if ("ORGNZT_NM".equals(deptManageVO.getSearchCondition())) {
+			page = deptManageRepository.findByOrgnztNmContainingIgnoreCase(deptManageVO.getSearchKeyword(), pageable);
+		} else if ("ORGNZT_DC".equals(deptManageVO.getSearchCondition())) {
+			page = deptManageRepository.findByOrgnztDcContainingIgnoreCase(deptManageVO.getSearchKeyword(), pageable);
+		} else {
+			page = deptManageRepository.findAll(pageable);
+		}
 
-        return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
-    }
+		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
+	}
 
 	@Override
 	public int selectDeptManageListTotCnt(DeptManageVO deptManageVO) throws Exception {
-        // Supports search
+		// Supports search
 		if ("ORGNZT_NM".equals(deptManageVO.getSearchCondition())) {
 			return (int) deptManageRepository.countByOrgnztNmContainingIgnoreCase(deptManageVO.getSearchKeyword());
 		} else if ("ORGNZT_DC".equals(deptManageVO.getSearchCondition())) {

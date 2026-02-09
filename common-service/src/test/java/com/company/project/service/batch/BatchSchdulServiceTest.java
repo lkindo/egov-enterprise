@@ -6,7 +6,7 @@ import com.company.project.domain.batch.BatchSchdul;
 import com.company.project.domain.batch.BatchSchdulRepository;
 import com.company.project.service.batch.dto.BatchSchdulDto;
 import com.company.project.service.code.EgovCommonCodeService;
-import com.company.project.service.code.dto.CommonCodeDto;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.stream.IntStream;
 
 import static org.mockito.ArgumentMatchers.any;

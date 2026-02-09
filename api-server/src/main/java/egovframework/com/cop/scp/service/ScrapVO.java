@@ -4,28 +4,29 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * 스크랩 서비스를 위한 VO 클래스
+ * 
  * @author 공통컴포넌트개발팀 한성곤
  * @since 2009.07.10
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.07.10  한성곤          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-@SuppressWarnings("serial")
 public class ScrapVO extends Scrap {
+    private static final long serialVersionUID = 1L;
     /** 검색조건 */
     private String searchCnd = "";
-    
+
     /** 검색단어 */
     private String searchWrd = "";
-    
+
     /** 정렬순서(DESC,ASC) */
     private long sortOrdr = 0L;
 
@@ -61,6 +62,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchCnd attribute를 리턴한다.
+     * 
      * @return the searchCnd
      */
     public String getSearchCnd() {
@@ -69,6 +71,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchCnd attribute 값을 설정한다.
+     * 
      * @param searchCnd the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
@@ -77,6 +80,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchWrd attribute를 리턴한다.
+     * 
      * @return the searchWrd
      */
     public String getSearchWrd() {
@@ -85,6 +89,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchWrd attribute 값을 설정한다.
+     * 
      * @param searchWrd the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
@@ -93,6 +98,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * sortOrdr attribute를 리턴한다.
+     * 
      * @return the sortOrdr
      */
     public long getSortOrdr() {
@@ -101,6 +107,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * sortOrdr attribute 값을 설정한다.
+     * 
      * @param sortOrdr the sortOrdr to set
      */
     public void setSortOrdr(long sortOrdr) {
@@ -109,6 +116,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchUseYn attribute를 리턴한다.
+     * 
      * @return the searchUseYn
      */
     public String getSearchUseYn() {
@@ -117,6 +125,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * searchUseYn attribute 값을 설정한다.
+     * 
      * @param searchUseYn the searchUseYn to set
      */
     public void setSearchUseYn(String searchUseYn) {
@@ -125,6 +134,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageIndex attribute를 리턴한다.
+     * 
      * @return the pageIndex
      */
     public int getPageIndex() {
@@ -133,6 +143,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageIndex attribute 값을 설정한다.
+     * 
      * @param pageIndex the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
@@ -141,6 +152,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageUnit attribute를 리턴한다.
+     * 
      * @return the pageUnit
      */
     public int getPageUnit() {
@@ -149,6 +161,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageUnit attribute 값을 설정한다.
+     * 
      * @param pageUnit the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
@@ -157,6 +170,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageSize attribute를 리턴한다.
+     * 
      * @return the pageSize
      */
     public int getPageSize() {
@@ -165,6 +179,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * pageSize attribute 값을 설정한다.
+     * 
      * @param pageSize the pageSize to set
      */
     public void setPageSize(int pageSize) {
@@ -173,6 +188,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * firstIndex attribute를 리턴한다.
+     * 
      * @return the firstIndex
      */
     public int getFirstIndex() {
@@ -181,6 +197,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * firstIndex attribute 값을 설정한다.
+     * 
      * @param firstIndex the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
@@ -189,6 +206,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * lastIndex attribute를 리턴한다.
+     * 
      * @return the lastIndex
      */
     public int getLastIndex() {
@@ -197,6 +215,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * lastIndex attribute 값을 설정한다.
+     * 
      * @param lastIndex the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
@@ -205,6 +224,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * recordCountPerPage attribute를 리턴한다.
+     * 
      * @return the recordCountPerPage
      */
     public int getRecordCountPerPage() {
@@ -213,6 +233,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * recordCountPerPage attribute 값을 설정한다.
+     * 
      * @param recordCountPerPage the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
@@ -221,6 +242,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * rowNo attribute를 리턴한다.
+     * 
      * @return the rowNo
      */
     public int getRowNo() {
@@ -229,6 +251,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * rowNo attribute 값을 설정한다.
+     * 
      * @param rowNo the rowNo to set
      */
     public void setRowNo(int rowNo) {
@@ -237,6 +260,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * frstRegisterNm attribute를 리턴한다.
+     * 
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -245,6 +269,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * frstRegisterNm attribute 값을 설정한다.
+     * 
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -253,6 +278,7 @@ public class ScrapVO extends Scrap {
 
     /**
      * lastUpdusrNm attribute를 리턴한다.
+     * 
      * @return the lastUpdusrNm
      */
     public String getLastUpdusrNm() {
@@ -261,16 +287,17 @@ public class ScrapVO extends Scrap {
 
     /**
      * lastUpdusrNm attribute 값을 설정한다.
+     * 
      * @param lastUpdusrNm the lastUpdusrNm to set
      */
     public void setLastUpdusrNm(String lastUpdusrNm) {
         this.lastUpdusrNm = lastUpdusrNm;
     }
-    
+
     /**
      * toString 메소드를 대치한다.
      */
     public String toString() {
-	return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this);
     }
 }

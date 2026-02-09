@@ -1,7 +1,7 @@
 package com.company.project.service.menu;
 
 import com.company.project.BenchmarkTestConfig;
-import com.company.project.domain.auth.MenuAuthority;
+
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

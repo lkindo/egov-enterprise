@@ -4,13 +4,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -26,7 +24,6 @@ import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 
-import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 import egovframework.com.sym.prm.service.impl.ProgrmManageDAO;
 import org.egovframe.rte.fdl.excel.EgovExcelService;
@@ -139,9 +136,9 @@ class EgovMenuManageServiceTest {
         // Create Data Row 1 for Menu
         HSSFRow menuRow = menuSheet.createRow(1);
         menuRow.createCell(0).setCellValue(100); // menuNo
-        menuRow.createCell(1).setCellValue(1);   // menuOrdr
+        menuRow.createCell(1).setCellValue(1); // menuOrdr
         menuRow.createCell(2).setCellValue("Test Menu");
-        menuRow.createCell(3).setCellValue(0);   // upperMenuId
+        menuRow.createCell(3).setCellValue(0); // upperMenuId
         menuRow.createCell(4).setCellValue("Menu Desc");
         menuRow.createCell(5).setCellValue("/img/path");
         menuRow.createCell(6).setCellValue("img.png");
@@ -156,8 +153,8 @@ class EgovMenuManageServiceTest {
 
         // Assert
         // Expect saveAll to be called once for each repository
-        verify(programRepository).saveAll(any(List.class));
-        verify(menuRepository).saveAll(any(List.class));
+        verify(programRepository).saveAll(any());
+        verify(menuRepository).saveAll(any());
 
         // Ensure individual save is NOT called
         verify(programRepository, times(0)).save(any(Program.class));

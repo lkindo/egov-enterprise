@@ -1,28 +1,29 @@
 package egovframework.com.uss.ion.rsm.service;
 
-import java.io.Serializable;
-
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * 최근검색어 VO Class 구현
+ * 
  * @author 공통서비스 장동한
  * @since 2009.07.03
  * @version 1.0
- * @see <pre>
+ * @see
+ * 
+ *      <pre>
  * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
  *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.07.03  장동한          최초 생성
  *
- * </pre>
+ *      </pre>
  */
-public class RecentSrchwrd extends ComDefaultVO implements Serializable {
+public class RecentSrchwrd extends ComDefaultVO {
 
-	private static final long serialVersionUID = 4031295690314547576L;
+    private static final long serialVersionUID = 4031295690314547576L;
 
-	/** 최근검색어관리ID */
+    /** 최근검색어관리ID */
     private String srchwrdManageId;
 
     /** 최근검색어관리명 */
@@ -296,4 +297,3 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
 }
-

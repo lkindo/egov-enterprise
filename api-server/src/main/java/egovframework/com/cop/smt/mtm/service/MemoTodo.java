@@ -8,20 +8,22 @@ import java.io.Serializable;
  * 
  * 상세내용
  * - 할일ID, 할일제목, 할일시작시간, 할일종료시간, 작성자ID, 할일내용 항목을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 19-7-2010 오전 10:12:47
- *   <pre>
+ * 
+ *          <pre>
  * << 개정이력(Modification Information) >>
  *   
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2010.7.19	장철호          최초 생성
  *
- * </pre>
+ *          </pre>
  */
-@SuppressWarnings("serial")
 public class MemoTodo implements Serializable {
+	private static final long serialVersionUID = 1L;
 
 	/** 할일ID */
 	private String todoId;

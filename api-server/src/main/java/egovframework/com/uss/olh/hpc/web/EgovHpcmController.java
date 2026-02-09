@@ -23,7 +23,6 @@ import egovframework.com.uss.olh.hpc.service.EgovHpcmService;
 import egovframework.com.uss.olh.hpc.service.HpcmVO;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 
 /**
  * 도움말을 처리하는 비즈니스 구현 클래스

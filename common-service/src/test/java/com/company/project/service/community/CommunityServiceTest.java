@@ -1,9 +1,8 @@
 package com.company.project.service.community;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.company.project.core.exception.BusinessException;
 import com.company.project.domain.community.Community;
 import com.company.project.domain.community.CommunityRepository;
 import com.company.project.domain.community.CommunityUser;

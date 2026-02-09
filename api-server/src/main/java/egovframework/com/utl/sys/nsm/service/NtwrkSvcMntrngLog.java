@@ -1,19 +1,19 @@
 package egovframework.com.utl.sys.nsm.service;
 
-import java.io.Serializable;
-
 /**
  * 개요
  * - 네트워크서비스 모니터링 로그에 대한 model 클래스를 정의한다.
  *
  * 상세내용
  * - 시스템IP, 시스템포트, 로그ID, 시스템명, 서비스상태, 로그정보, 생성일시 항목을 관리한다.
+ * 
  * @author 장철호
  * @version 1.0
  * @created 28-6-2010 오전 11:33:43
  */
-@SuppressWarnings("serial")
-public class NtwrkSvcMntrngLog implements Serializable {
+public class NtwrkSvcMntrngLog implements java.io.Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 시스템IP
@@ -59,6 +59,7 @@ public class NtwrkSvcMntrngLog implements Serializable {
 	 * 최종수정시점
 	 */
 	private String lastUpdusrPnttm = "";
+
 	/**
 	 * 현재 시스템 IP를 반환합니다.
 	 */

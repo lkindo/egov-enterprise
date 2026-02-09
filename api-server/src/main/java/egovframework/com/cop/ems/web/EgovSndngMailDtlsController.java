@@ -1,20 +1,12 @@
 package egovframework.com.cop.ems.web;
 
-import java.util.List;
-
-import org.egovframe.rte.fdl.property.EgovPropertyService;
-import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.cmm.EgovMessageSource;
-import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cop.ems.service.EgovSndngMailDtlsService;
 import egovframework.com.cop.ems.service.SndngMailVO;
+import org.springframework.stereotype.Controller;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.ui.ModelMap;
 
 /**
  * 발송메일 내역을 조회하는 컨트롤러 클래스
@@ -39,14 +31,6 @@ public class EgovSndngMailDtlsController {
 	/** EgovSndngMailDtlsService */
 	@Resource(name = "sndngMailDtlsService")
 	private EgovSndngMailDtlsService sndngMailDtlsService;
-
-	/** EgovPropertyService */
-	@Resource(name = "propertiesService")
-	protected EgovPropertyService propertiesService;
-
-	/** EgovMessageSource */
-	@Resource(name = "egovMessageSource")
-	EgovMessageSource egovMessageSource;
 
 	/**
 	 * 발송메일 내역을 조회한다
