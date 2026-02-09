@@ -44,4 +44,37 @@ public class EgovWebUtilTest {
         System.out.println("Benchmark result for " + iterations + " iterations: " + duration + " ns");
         System.out.println("Average time per call: " + (duration / iterations) + " ns");
     }
+
+    @Test
+    public void testClearXSSMinimum() {
+        // Test null
+        assertEquals("", EgovWebUtil.clearXSSMinimum(null), "Null should return empty string");
+
+        // Test empty
+        assertEquals("", EgovWebUtil.clearXSSMinimum(""), "Empty string should return empty string");
+
+        // Test whitespace
+        assertEquals("", EgovWebUtil.clearXSSMinimum("   "), "Whitespace string should return empty string");
+
+        // Test normal string
+        assertEquals("normalString", EgovWebUtil.clearXSSMinimum("normalString"), "Normal string should be unchanged");
+
+        // Test individual replacements
+        assertEquals("&amp;", EgovWebUtil.clearXSSMinimum("&"), "& should be replaced with &amp;");
+        assertEquals("&lt;", EgovWebUtil.clearXSSMinimum("<"), "< should be replaced with &lt;");
+        assertEquals("&gt;", EgovWebUtil.clearXSSMinimum(">"), "> should be replaced with &gt;");
+        assertEquals("&#34;", EgovWebUtil.clearXSSMinimum("\""), "\" should be replaced with &#34;");
+        assertEquals("&#39;", EgovWebUtil.clearXSSMinimum("'"), "' should be replaced with &#39;");
+        assertEquals("&#46;", EgovWebUtil.clearXSSMinimum("."), ". should be replaced with &#46;");
+        assertEquals("&#46;", EgovWebUtil.clearXSSMinimum("%2E"), "%2E should be replaced with &#46;");
+        assertEquals("&#47;", EgovWebUtil.clearXSSMinimum("%2F"), "%2F should be replaced with &#47;");
+
+        // Test mixed string
+        String input = "& < > \" ' . %2E %2F";
+        String expected = "&amp; &lt; &gt; &#34; &#39; &#46; &#46; &#47;";
+        assertEquals(expected, EgovWebUtil.clearXSSMinimum(input), "Mixed string should be correctly replaced");
+
+        // Test multiple occurrences
+        assertEquals("&amp;&amp;", EgovWebUtil.clearXSSMinimum("&&"), "Multiple & should be replaced");
+    }
 }
