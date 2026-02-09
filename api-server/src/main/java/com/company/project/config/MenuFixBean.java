@@ -4,7 +4,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MenuFixBean {
@@ -16,9 +18,9 @@ public class MenuFixBean {
         try {
             String sql = "UPDATE NPROGRMLIST SET URL = '/sym/mnu/mpm/EgovMenuListSelect.do' WHERE PROGRM_FILE_NM = 'EgovMenuListSelect'";
             jdbcTemplate.update(sql);
-            System.out.println("FIX_MENU_URL_LOG: EgovMenuListSelect updated via MenuFixBean.");
+            log.info("FIX_MENU_URL_LOG: EgovMenuListSelect updated via MenuFixBean.");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error updating menu URL", e);
         }
     }
 }
