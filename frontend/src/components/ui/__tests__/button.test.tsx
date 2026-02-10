@@ -27,4 +27,11 @@ describe('Button', () => {
         render(<Button disabled>Disabled</Button>);
         expect(screen.getByRole('button')).toBeDisabled();
     });
+
+    it('shows loading state', () => {
+        render(<Button isLoading>Loading</Button>);
+        expect(screen.getByRole('button')).toBeDisabled();
+        const loader = screen.getByRole('button').querySelector('.animate-spin');
+        expect(loader).not.toBeNull();
+    });
 });
