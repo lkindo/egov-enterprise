@@ -449,8 +449,11 @@ public class EgovMtgPlaceManageController {
 
 		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		resultVO.setMtgPlaceTemp4(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()));
-		resultVO.setMtgPlaceTemp5(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getOrgnztNm()));
+		if (loginVO == null) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
+		resultVO.setMtgPlaceTemp4(EgovStringUtil.isNullToString(loginVO.getName()));
+		resultVO.setMtgPlaceTemp5(EgovStringUtil.isNullToString(loginVO.getOrgnztNm()));
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.select"));
 
 		model.addAttribute("mtgPlaceManageVO", resultVO);
@@ -482,7 +485,10 @@ public class EgovMtgPlaceManageController {
 
 		if (sCmd.equals("detail")) {
 			LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-			resultVO.setUsidTemp(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
+			if (loginVO == null) {
+				return "redirect:/uat/uia/egovLoginUsr.do";
+			}
+			resultVO.setUsidTemp(EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			String resveBeginTm = resultVO.getResveBeginTm();
 			String resveEndTm = resultVO.getResveEndTm();
 			if (resveBeginTm.length() == 3) {
@@ -523,10 +529,13 @@ public class EgovMtgPlaceManageController {
 		} else {
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+			if (user == null) {
+				return "redirect:/uat/uia/egovLoginUsr.do";
+			}
 			status.setComplete();
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
-			mtgPlaceResve.setResveManId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-			mtgPlaceResve.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
+			mtgPlaceResve.setResveManId(EgovStringUtil.isNullToString(user.getUniqId()));
+			mtgPlaceResve.setFrstRegisterId(EgovStringUtil.isNullToString(user.getUniqId()));
 
 			MeetingReservationDto dto = MeetingReservationDto.builder()
 					.mtgPlaceId(mtgPlaceResve.getMtgPlaceId())
@@ -563,6 +572,9 @@ public class EgovMtgPlaceManageController {
 			return "egovframework/com/uss/ion/mtg/EgovMtgPlaceResveUpdt";
 		} else {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+			if (user == null) {
+				return "redirect:/uat/uia/egovLoginUsr.do";
+			}
 
 			status.setComplete();
 
