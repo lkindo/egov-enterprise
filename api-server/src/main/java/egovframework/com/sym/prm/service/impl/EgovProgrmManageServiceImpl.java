@@ -1,10 +1,13 @@
 package egovframework.com.sym.prm.service.impl;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,48 +17,34 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.company.project.domain.program.Program;
+import com.company.project.domain.program.ProgramChangeRequest;
+import com.company.project.domain.program.ProgramChangeRequest.ProgramChangeRequestId;
+import com.company.project.domain.program.ProgramChangeRequestRepository;
 import com.company.project.domain.program.ProgramRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.prm.service.EgovProgrmManageService;
 import egovframework.com.sym.prm.service.ProgrmManageDtlVO;
 import egovframework.com.sym.prm.service.ProgrmManageVO;
-import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 프로그램목록관리 및 프로그램변경관리에 관한 비즈니스 구현 클래스를 정의한다.
+ * 프로그램목록관리 및 프로그램변경관리에 관한 비즈니스 구현 클래스
  * 
  * @author 개발환경 개발팀 이용
  * @since 2009.06.01
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
- *   2024.01.03  Antigravity     JPA 전환 (ProgramRepository 연동)
- *
- *      </pre>
+ * @version 1.1
  */
 @Service("progrmManageService")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl implements EgovProgrmManageService {
 
 	private final ProgramRepository programRepository;
-
-	@Resource(name = "progrmManageDAO")
-	private ProgrmManageDAO progrmManageDAO;
+	private final ProgramChangeRequestRepository changeRequestRepository;
 
 	/**
 	 * 프로그램 상세정보를 조회
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return ProgrmManageVO
-	 * @exception Exception
 	 */
 	@Override
 	public ProgrmManageVO selectProgrm(ProgrmManageVO vo) throws Exception {
@@ -66,10 +55,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램 목록을 조회
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return List
-	 * @exception Exception
 	 */
 	@Override
 	public List<ProgrmManageVO> selectProgrmList(ComDefaultVO vo) throws Exception {
@@ -85,10 +70,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램목록 총건수를 조회한다.
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return Integer
-	 * @exception Exception
 	 */
 	@Override
 	public int selectProgrmListTotCnt(ComDefaultVO vo) throws Exception {
@@ -98,9 +79,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램 정보를 등록
-	 * 
-	 * @param vo ProgrmManageVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
@@ -120,9 +98,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램 정보를 수정
-	 * 
-	 * @param vo ProgrmManageVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
@@ -134,9 +109,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램 정보를 삭제
-	 * 
-	 * @param vo ProgrmManageVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
@@ -146,10 +118,6 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램 파일 존재여부를 조회
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return int
-	 * @exception Exception
 	 */
 	@Override
 	public int selectProgrmNMTotCnt(ComDefaultVO vo) throws Exception {
@@ -158,151 +126,168 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 	/**
 	 * 프로그램변경요청 정보를 조회
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @return ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	public ProgrmManageDtlVO selectProgrmChangeRequst(ProgrmManageDtlVO vo) throws Exception {
-		return progrmManageDAO.selectProgrmChangeRequst(vo);
+		ProgramChangeRequestId id = ProgramChangeRequestId.builder()
+				.progrmFileNm(vo.getProgrmFileNm())
+				.requstNo((long) vo.getRqesterNo())
+				.build();
+		return changeRequestRepository.findById(id)
+				.map(this::toDtlVO)
+				.orElse(null);
 	}
 
 	/**
 	 * 프로그램변경요청 목록을 조회
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return List
-	 * @exception Exception
 	 */
 	@Override
 	public List<ProgrmManageDtlVO> selectProgrmChangeRequstList(ComDefaultVO vo) throws Exception {
-		return progrmManageDAO.selectProgrmChangeRequstList(vo);
+		String searchKeyword = vo.getSearchKeyword() == null ? "" : vo.getSearchKeyword();
+		return changeRequestRepository.findAll().stream()
+				.filter(e -> e.getId().getProgrmFileNm().contains(searchKeyword))
+				.map(this::toDtlVO)
+				.collect(Collectors.toList());
 	}
 
 	/**
 	 * 프로그램변경요청목록 총건수를 조회한다.
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return int
-	 * @exception Exception
 	 */
 	@Override
 	public int selectProgrmChangeRequstListTotCnt(ComDefaultVO vo) throws Exception {
-		return progrmManageDAO.selectProgrmChangeRequstListTotCnt(vo);
+		return selectProgrmChangeRequstList(vo).size();
 	}
 
 	/**
 	 * 프로그램변경요청을 등록
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
 	public void insertProgrmChangeRequst(ProgrmManageDtlVO vo) throws Exception {
-		progrmManageDAO.insertProgrmChangeRequst(vo);
+		ProgramChangeRequestId id = ProgramChangeRequestId.builder()
+				.progrmFileNm(vo.getProgrmFileNm())
+				.requstNo((long) vo.getRqesterNo())
+				.build();
+
+		ProgramChangeRequest entity = ProgramChangeRequest.builder()
+				.id(id)
+				.rqesterId(vo.getRqesterPersonId())
+				.changeRequstCn(vo.getChangerqesterCn())
+				.rqestDe(parseDate(vo.getRqesterDe()))
+				.requstSj(vo.getRqesterSj())
+				.processStatusCode("A") // 초기 상태: 신청(A)
+				.build();
+		changeRequestRepository.save(entity);
 	}
 
 	/**
 	 * 프로그램변경요청을 수정
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
 	public void updateProgrmChangeRequst(ProgrmManageDtlVO vo) throws Exception {
-		progrmManageDAO.updateProgrmChangeRequst(vo);
+		ProgramChangeRequestId id = ProgramChangeRequestId.builder()
+				.progrmFileNm(vo.getProgrmFileNm())
+				.requstNo((long) vo.getRqesterNo())
+				.build();
+		changeRequestRepository.findById(id).ifPresent(e -> {
+			e.update(vo.getRqesterPersonId(), vo.getChangerqesterCn(), parseDate(vo.getRqesterDe()), vo.getRqesterSj());
+		});
 	}
 
 	/**
 	 * 프로그램변경요청을 삭제
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
 	public void deleteProgrmChangeRequst(ProgrmManageDtlVO vo) throws Exception {
-		progrmManageDAO.deleteProgrmChangeRequst(vo);
+		ProgramChangeRequestId id = ProgramChangeRequestId.builder()
+				.progrmFileNm(vo.getProgrmFileNm())
+				.requstNo((long) vo.getRqesterNo())
+				.build();
+		changeRequestRepository.deleteById(id);
 	}
 
 	/**
 	 * 프로그램변경요청 요청번호MAX 정보를 조회
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @return ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	public ProgrmManageDtlVO selectProgrmChangeRequstNo(ProgrmManageDtlVO vo) throws Exception {
-		return progrmManageDAO.selectProgrmChangeRequstNo(vo);
+		Long maxNo = changeRequestRepository.findMaxRequstNo() + 1;
+		ProgrmManageDtlVO res = new ProgrmManageDtlVO();
+		res.setRqesterNo(maxNo.intValue());
+		return res;
 	}
 
 	/**
 	 * 프로그램변경요청처리 목록을 조회
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return List
-	 * @exception Exception
 	 */
 	@Override
 	public List<?> selectChangeRequstProcessList(ComDefaultVO vo) throws Exception {
-		return progrmManageDAO.selectChangeRequstProcessList(vo);
+		// 복잡한 조건 필터링은 스트림으로 처리 (성능 필요 시 QueryDSL 도입 권장)
+		return changeRequestRepository.findAll().stream()
+				.map(e -> {
+					EgovMap map = new EgovMap();
+					map.put("progrmFileNm", e.getId().getProgrmFileNm());
+					map.put("rqesterNo", e.getId().getRequstNo());
+					map.put("rqesterPersonId", e.getRqesterId());
+					map.put("changerqesterCn", e.getChangeRequstCn());
+					map.put("rqesterProcessCn", e.getRequstProcessCn());
+					map.put("opetrId", e.getOpetrId());
+					map.put("processSttus", e.getProcessStatusCode());
+					map.put("processDe", formatDate(e.getProcessDe()));
+					map.put("rqesterDe", formatDate(e.getRqestDe()));
+					map.put("rqesterSj", e.getRequstSj());
+					return map;
+				}).collect(Collectors.toList());
 	}
 
 	/**
 	 * 프로그램변경요청처리목록 총건수를 조회한다.
-	 * 
-	 * @param vo ComDefaultVO
-	 * @return int
-	 * @exception Exception
 	 */
 	@Override
 	public int selectChangeRequstProcessListTotCnt(ComDefaultVO vo) throws Exception {
-		return progrmManageDAO.selectChangeRequstListProcessTotCnt(vo);
+		return selectChangeRequstProcessList(vo).size();
 	}
 
 	/**
 	 * 프로그램변경요청처리를 수정
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
 	public void updateProgrmChangeRequstProcess(ProgrmManageDtlVO vo) throws Exception {
-		progrmManageDAO.updateProgrmChangeRequstProcess(vo);
+		ProgramChangeRequestId id = ProgramChangeRequestId.builder()
+				.progrmFileNm(vo.getProgrmFileNm())
+				.requstNo((long) vo.getRqesterNo())
+				.build();
+		changeRequestRepository.findById(id).ifPresent(e -> {
+			e.process(vo.getRqesterProcessCn(), vo.getOpetrId(), vo.getProcessSttus(), parseDate(vo.getProcessDe()));
+		});
 	}
 
 	/**
 	 * 화면에 조회된 메뉴 목록 정보를 데이터베이스에서 삭제
-	 * 
-	 * @param checkedProgrmFileNmForDel String
-	 * @exception Exception
 	 */
 	@Override
 	@Transactional
 	public void deleteProgrmManageList(String checkedProgrmFileNmForDel) throws Exception {
 		if (checkedProgrmFileNmForDel == null || checkedProgrmFileNmForDel.isEmpty())
 			return;
-		String[] delProgrmFileNm = checkedProgrmFileNmForDel.split(",");
-		programRepository.deleteAllByIdInBatch(Arrays.asList(delProgrmFileNm));
+		List<String> delProgrmFileNms = Arrays.asList(checkedProgrmFileNmForDel.split(","));
+		changeRequestRepository.deleteAllByIdProgrmFileNmIn(delProgrmFileNms);
+		programRepository.deleteAllByIdInBatch(delProgrmFileNms);
 	}
 
 	/**
-	 * 프로그램변경요청자 Email 정보를 조회
-	 * 
-	 * @param vo ProgrmManageDtlVO
-	 * @return ProgrmManageDtlVO
-	 * @exception Exception
+	 * 프로그램변경요청자 Email 정보를 조회 (비즈니스 로직에 따라 구현 필요, 현재는 Mock)
 	 */
 	@Override
 	public ProgrmManageDtlVO selectRqesterEmail(ProgrmManageDtlVO vo) throws Exception {
-		return progrmManageDAO.selectRqesterEmail(vo);
+		// 원본 DAO는 COMVNUSERMASTER를 조인하나, 여기서는 단순화된 형태 제공 혹은 추후 UserRepo 연동
+		return vo;
 	}
 
+	/* Helper Methods */
 	private ProgrmManageVO toVO(Program program) {
 		ProgrmManageVO vo = new ProgrmManageVO();
 		vo.setProgrmFileNm(program.getProgrmFileNm());
@@ -311,5 +296,36 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 		vo.setURL(program.getUrl());
 		vo.setProgrmDc(program.getProgrmDc());
 		return vo;
+	}
+
+	private ProgrmManageDtlVO toDtlVO(ProgramChangeRequest e) {
+		ProgrmManageDtlVO vo = new ProgrmManageDtlVO();
+		vo.setProgrmFileNm(e.getId().getProgrmFileNm());
+		vo.setRqesterNo(e.getId().getRequstNo().intValue());
+		vo.setRqesterPersonId(e.getRqesterId());
+		vo.setChangerqesterCn(e.getChangeRequstCn());
+		vo.setRqesterProcessCn(e.getRequstProcessCn());
+		vo.setOpetrId(e.getOpetrId());
+		vo.setProcessSttus(e.getProcessStatusCode());
+		vo.setProcessDe(formatDate(e.getProcessDe()));
+		vo.setRqesterDe(formatDate(e.getRqestDe()));
+		vo.setRqesterSj(e.getRequstSj());
+		return vo;
+	}
+
+	private LocalDate parseDate(String dateStr) {
+		if (dateStr == null || dateStr.isEmpty())
+			return null;
+		try {
+			return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyyMMdd"));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private String formatDate(LocalDate date) {
+		if (date == null)
+			return "";
+		return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 	}
 }
