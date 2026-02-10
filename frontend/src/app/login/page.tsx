@@ -111,10 +111,8 @@ export default function LoginPage() {
                         )}
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full h-11 text-base" type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? (
-                                <span className="animate-pulse">로그인 중...</span>
-                            ) : (
+                        <Button className="w-full h-11 text-base" type="submit" isLoading={isSubmitting}>
+                            {isSubmitting ? "로그인 중..." : (
                                 <>
                                     <LogIn className="mr-2 h-4 w-4" /> 로그인
                                 </>
