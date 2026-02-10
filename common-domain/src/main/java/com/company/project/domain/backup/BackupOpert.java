@@ -1,44 +1,39 @@
 package com.company.project.domain.backup;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NBACKUPOPERT")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
 public class BackupOpert {
 
     @Id
     @Column(name = "BACKUP_OPERT_ID", length = 20)
     private String backupOpertId;
 
-    @Column(name = "BACKUP_OPERT_NM", nullable = false, length = 100)
+    @Column(name = "BACKUP_OPERT_NM", length = 60)
     private String backupOpertNm;
 
-    @Column(name = "BACKUP_ORGINL_DRCTRY", nullable = false, length = 255)
+    @Column(name = "BACKUP_ORGINL_DRCTRY", length = 255)
     private String backupOrginlDrctry;
 
-    @Column(name = "BACKUP_STRE_DRCTRY", nullable = false, length = 255)
+    @Column(name = "BACKUP_STRE_DRCTRY", length = 255)
     private String backupStreDrctry;
 
-    @Column(name = "CMPRS_SE", nullable = false, length = 2)
+    @Column(name = "CMPRS_SE", length = 2)
     private String cmprsSe;
 
-    @Column(name = "EXECUT_CYCLE", nullable = false, length = 2)
+    @Column(name = "EXECUT_CYCLE", length = 2)
     private String executCycle;
 
     @Column(name = "EXECUT_SCHDUL_DE", length = 20)
@@ -53,26 +48,43 @@ public class BackupOpert {
     @Column(name = "EXECUT_SCHDUL_SECND", length = 2)
     private String executSchdulSecnd;
 
-    @Column(name = "USE_AT", nullable = false, length = 1)
+    @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @CreatedBy
-    @Column(name = "FRST_REGISTER_ID", updatable = false, length = 20)
+    @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime frstRegistPnttm;
+    @Column(name = "FRST_REGIST_PNTTM")
+    private LocalDateTime frstRegisterPnttm;
 
-    @LastModifiedBy
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @LastModifiedDate
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime lastUpdusrPnttm;
 
-    @OneToMany(mappedBy = "backupOpert", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<BackupSchdulDfk> executSchdulDfkSes = new ArrayList<>();
+    @Builder
+    public BackupOpert(String backupOpertId, String backupOpertNm, String backupOrginlDrctry, String backupStreDrctry,
+            String cmprsSe, String executCycle, String executSchdulDe, String executSchdulHour, String executSchdulMnt,
+            String executSchdulSecnd, String useAt, String frstRegisterId) {
+        this.backupOpertId = backupOpertId;
+        this.backupOpertNm = backupOpertNm;
+        this.backupOrginlDrctry = backupOrginlDrctry;
+        this.backupStreDrctry = backupStreDrctry;
+        this.cmprsSe = cmprsSe;
+        this.executCycle = executCycle;
+        this.executSchdulDe = executSchdulDe;
+        this.executSchdulHour = executSchdulHour;
+        this.executSchdulMnt = executSchdulMnt;
+        this.executSchdulSecnd = executSchdulSecnd;
+        this.useAt = useAt;
+        this.frstRegisterId = frstRegisterId;
+        this.frstRegisterPnttm = LocalDateTime.now();
+        this.lastUpdusrPnttm = LocalDateTime.now();
+    }
+
+    public void delete() {
+        this.useAt = "N";
+        this.lastUpdusrPnttm = LocalDateTime.now();
+    }
 }

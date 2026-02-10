@@ -1,6 +1,7 @@
 package com.company.project.domain.login;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,11 +11,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NLOGINPOLICY")
-public class LoginPolicy extends BaseTimeEntity {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class LoginPolicy {
 
     @Id
     @Column(name = "EMPLYR_ID", length = 20)
@@ -32,18 +33,25 @@ public class LoginPolicy extends BaseTimeEntity {
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
+    @Column(name = "FRST_REGIST_PNTTM")
+    private LocalDateTime frstRegistPnttm;
+
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
+    @Column(name = "LAST_UPDT_PNTTM")
+    private LocalDateTime lastUpdtPnttm;
+
     @Builder
-    public LoginPolicy(String emplyrId, String ipInfo, String dplctPermAt, String lmttAt, String frstRegisterId,
-            String lastUpdusrId) {
+    public LoginPolicy(String emplyrId, String ipInfo, String dplctPermAt, String lmttAt, String frstRegisterId) {
         this.emplyrId = emplyrId;
         this.ipInfo = ipInfo;
         this.dplctPermAt = dplctPermAt;
         this.lmttAt = lmttAt;
         this.frstRegisterId = frstRegisterId;
-        this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdusrId = frstRegisterId;
+        this.frstRegistPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
     public void update(String ipInfo, String dplctPermAt, String lmttAt, String lastUpdusrId) {
@@ -51,5 +59,6 @@ public class LoginPolicy extends BaseTimeEntity {
         this.dplctPermAt = dplctPermAt;
         this.lmttAt = lmttAt;
         this.lastUpdusrId = lastUpdusrId;
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 }

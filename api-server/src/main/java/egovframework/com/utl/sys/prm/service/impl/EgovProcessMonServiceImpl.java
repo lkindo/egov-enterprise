@@ -1,181 +1,158 @@
 package egovframework.com.utl.sys.prm.service.impl;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.monitoring.ProcessMonitoring;
+import com.company.project.domain.monitoring.ProcessMonitoringLog;
+import com.company.project.domain.monitoring.ProcessMonitoringLogRepository;
+import com.company.project.domain.monitoring.ProcessMonitoringRepository;
 
 import egovframework.com.utl.sys.prm.service.EgovProcessMonService;
 import egovframework.com.utl.sys.prm.service.ProcessMon;
 import egovframework.com.utl.sys.prm.service.ProcessMonLog;
 import egovframework.com.utl.sys.prm.service.ProcessMonLogVO;
 import egovframework.com.utl.sys.prm.service.ProcessMonVO;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 개요
- * - PROCESS모니터링에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - PROCESS모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - PROCESS모니터링의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
- * @version 1.0
- * @created 08-9-2010 오후 3:54:46
+ * 프로세스모니터링관리에 대한 ServiceImpl 클래스
+ * 
+ * @author 김진만
+ * @since 2010.06.21
+ * @version 1.1
  */
-
-@Service("EgovProcessMonService")
+@Service("egovProcessMonService")
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implements EgovProcessMonService {
 
-	@Resource(name = "ProcessMonDAO")
-	private ProcessMonDAO processMonDAO;
+	private final ProcessMonitoringRepository processMonitoringRepository;
+	private final ProcessMonitoringLogRepository processMonitoringLogRepository;
 
-	@Resource(name="egovProcessMonIdGnrService")
-	private EgovIdGnrService idgenServiceProcessMon;
-
-	@Resource(name="egovProcessMonLogIdGnrService")
-	private EgovIdGnrService idgenServiceProcessMonLog;
-
-	/**
-     * 등록된 PROCESS모니터링 목록을 조회한다.
-     *
-     * @param processMonVO - PROCESS모니터링 Vo
-     * @return List - PROCESS모니터링 목록
-     *
-     * @param processMonVO
-     */
-    @Override
-    public List<ProcessMonVO> selectProcessMonList(ProcessMonVO processMonVO) throws Exception {
-        return processMonDAO.selectProcessMonList(processMonVO);
-    }
-
-	/**
-	 * PROCESS모니터링 목록 총 개수를 조회한다.
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return int - PROCESS모니터링 토탈 카운트 수
-	 *
-	 * @param processMonVO
-	 */
 	@Override
-	public int selectProcessMonTotCnt(ProcessMonVO processMonVO) throws Exception {
-        return processMonDAO.selectProcessMonTotCnt(processMonVO);
+	@Transactional
+	public void deleteProcessMon(ProcessMon vo) throws Exception {
+		processMonitoringRepository.deleteById(vo.getProcessId());
 	}
 
-	/**
-	 * 등록된 PROCESS모니터링의 상세정보를 조회한다.
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return processMonVO - PROCESS모니터링 Vo
-	 *
-	 * @param processMonVO
-	 */
 	@Override
-	public ProcessMonVO selectProcessMon(ProcessMonVO processMonVO) throws Exception {
-		return processMonDAO.selectProcessMon(processMonVO);
+	@Transactional
+	public void insertProcessMon(ProcessMon vo) throws Exception {
+		ProcessMonitoring entity = ProcessMonitoring.builder()
+				.processId(vo.getProcessId())
+				.processNm(vo.getProcessNm())
+				.procsSttus(vo.getProcsSttus())
+				.creatDt(vo.getCreatDt())
+				.mngrNm(vo.getMngrNm())
+				.mngrEmailAddr(vo.getMngrEmailAddr())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		processMonitoringRepository.save(entity);
 	}
 
-	/**
-	 * PROCESS모니터링 정보를 신규로 등록한다.
-	 * @param processNm - PROCESS모니터링 model
-	 *
-	 * @param processNm
-	 */
 	@Override
-	public void insertProcessMon(ProcessMon processMon) throws Exception {
-		processMon.setProcessId(idgenServiceProcessMon.getNextStringId());
-		processMonDAO.insertProcessMon(processMon);
+	@Transactional
+	public void insertProcessMonLog(ProcessMonLog vo) throws Exception {
+		ProcessMonitoringLog entity = ProcessMonitoringLog.builder()
+				.logId(vo.getLogId())
+				.processId(vo.getProcessId())
+				.processNm(vo.getProcessNm())
+				.procsSttus(vo.getProcsSttus())
+				.logInfo(vo.getLogInfo())
+				.mngrNm(vo.getMngrNm())
+				.mngrEmailAddr(vo.getMngrEmailAddr())
+				.creatDt(vo.getCreatDt())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		processMonitoringLogRepository.save(entity);
 	}
 
-	/**
-	 * 기 등록된 PROCESS모니터링 정보를 수정한다.
-	 * @param processNm - PROCESS모니터링 model
-	 *
-	 * @param processNm
-	 */
 	@Override
-	public void updateProcessMon(ProcessMon processMon) throws Exception {
-		processMonDAO.updateProcessMon(processMon);
+	public ProcessMonVO selectProcessMon(ProcessMonVO vo) throws Exception {
+		return processMonitoringRepository.findById(vo.getProcessId())
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 기 등록된 PROCESS모니터링 정보를 삭제한다.
-	 * @param processNm - PROCESS모니터링 model
-	 *
-	 * @param processNm
-	 */
 	@Override
-	public void deleteProcessMon(ProcessMon processMon) throws Exception {
-		processMonDAO.deleteProcessMon(processMon);
+	public ProcessMonLogVO selectProcessMonLog(ProcessMonLogVO vo) throws Exception {
+		return processMonitoringLogRepository.findById(vo.getLogId())
+				.map(this::toLogVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 프로세스 모니터링로그 목록을 조회한다.
-	 * @param ProcessMonVO - 프로세스모니터링로그 VO
-	 * @return  List<ProcessMonVO> - 프로세스모니터링로그 List
-	 *
-	 * @param processMonLogVO
-	 */
 	@Override
-	public Map<String, Object> selectProcessMonLogList(ProcessMonLogVO processMonLogVO) throws Exception {
-		List<ProcessMonLogVO> result = processMonDAO.selectProcessMonLogList(processMonLogVO);
-		int cnt = processMonDAO.selectProcessMonLogTotCnt(processMonLogVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
+	public List<ProcessMonVO> selectProcessMonList(ProcessMonVO searchVO) throws Exception {
+		return processMonitoringRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("createdDate").descending()))
+				.getContent().stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 프로세스 모니터링로그의 상세정보를 조회한다.
-	 * @param ProcessMonVO - 프로세스모니터링로그 model
-	 * @return  ProcessMonVO - 프로세스모니터링로그 model
-	 *
-	 * @param processMonLogVO
-	 */
 	@Override
-	public ProcessMonLogVO selectProcessMonLog(ProcessMonLogVO processMonLogVO) throws Exception {
-		return processMonDAO.selectProcessMonLog(processMonLogVO);
+	public int selectProcessMonTotCnt(ProcessMonVO searchVO) throws Exception {
+		return (int) processMonitoringRepository.count();
 	}
 
-	/**
-	 * 프로세스 모니터링로그를 등록한다.
-	 * @param processMonLog - 프로세스 모니터링로그 model
-	 *
-	 * @param processMonLog
-	 */
 	@Override
-	public void insertProcessMonLog(ProcessMonLog processMonLog) throws Exception{
-		processMonDAO.insertProcessMonLog(processMonLog);
+	public List<ProcessMonLogVO> selectProcessMonLogList(ProcessMonLogVO searchVO) throws Exception {
+		return processMonitoringLogRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("creatDt").descending()))
+				.getContent().stream()
+				.map(this::toLogVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 프로세스 모니터링 결과를 수정한다.
-	 * @param processMonLog - 프로세스 모니터링대상 model
-	 *
-	 * @param processMonLog
-	 */
 	@Override
-	public void updateProcessMonSttus(ProcessMon processMon) throws Exception{
-		processMonDAO.updateProcessMonSttus(processMon);
-
-		ProcessMonLog processMonLog = new ProcessMonLog();
-		processMonLog.setProcessId(processMon.getProcessId());
-		processMonLog.setLogId(idgenServiceProcessMonLog.getNextStringId());
-		processMonLog.setProcessNm(processMon.getProcessNm());
-		processMonLog.setProcsSttus(processMon.getProcsSttus());
-		processMonLog.setCreatDt(processMon.getCreatDt());
-		processMonLog.setLogInfo(processMon.getLogInfo());
-		processMonLog.setMngrNm(processMon.getMngrNm());
-		processMonLog.setMngrEmailAddr(processMon.getMngrEmailAddr());
-		processMonLog.setFrstRegisterId(processMon.getFrstRegisterId());
-		processMonLog.setFrstRegisterPnttm(processMon.getFrstRegisterPnttm());
-		processMonLog.setLastUpdusrId(processMon.getLastUpdusrId());
-		insertProcessMonLog(processMonLog);
+	public int selectProcessMonLogTotCnt(ProcessMonLogVO searchVO) throws Exception {
+		return (int) processMonitoringLogRepository.count();
 	}
 
+	@Override
+	@Transactional
+	public void updateProcessMon(ProcessMon vo) throws Exception {
+		processMonitoringRepository.findById(vo.getProcessId()).ifPresent(e -> {
+			e.update(vo.getProcessNm(), vo.getMngrNm(), vo.getMngrEmailAddr(), vo.getLastUpdusrId());
+		});
+	}
+
+	@Override
+	@Transactional
+	public void updateProcessMonSttus(ProcessMon vo) throws Exception {
+		processMonitoringRepository.findById(vo.getProcessId()).ifPresent(e -> {
+			e.updateStatus(vo.getProcsSttus(), vo.getCreatDt(), vo.getLastUpdusrId());
+		});
+	}
+
+	private ProcessMonVO toVO(ProcessMonitoring entity) {
+		ProcessMonVO vo = new ProcessMonVO();
+		vo.setProcessId(entity.getProcessId());
+		vo.setProcessNm(entity.getProcessNm());
+		vo.setProcsSttus(entity.getProcsSttus());
+		vo.setMngrNm(entity.getMngrNm());
+		vo.setMngrEmailAddr(entity.getMngrEmailAddr());
+		return vo;
+	}
+
+	private ProcessMonLogVO toLogVO(ProcessMonitoringLog entity) {
+		ProcessMonLogVO vo = new ProcessMonLogVO();
+		vo.setLogId(entity.getLogId());
+		vo.setProcessId(entity.getProcessId());
+		vo.setProcessNm(entity.getProcessNm());
+		vo.setProcsSttus(entity.getProcsSttus());
+		vo.setLogInfo(entity.getLogInfo());
+		vo.setMngrNm(entity.getMngrNm());
+		vo.setMngrEmailAddr(entity.getMngrEmailAddr());
+		return vo;
+	}
 }

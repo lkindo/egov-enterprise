@@ -1,23 +1,16 @@
 package com.company.project.domain.batch;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- * 배치스케줄 JPA Entity
- * 레거시 테이블: COMTNBATCHSCHDUL
- */
-@Entity
-@Table(name = "NBATCHSCHDUL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "NBATCHSCHDUL")
 public class BatchSchdul {
 
     @Id
@@ -54,22 +47,14 @@ public class BatchSchdul {
     @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastUpdusrPnttm;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "BATCH_SCHDUL_ID")
-    private List<BatchSchdulDfk> batchSchdulDfks = new ArrayList<>();
-
-    @Builder
-    public BatchSchdul(String batchSchdulId, String batchOpertId, String executCycle,
-            String executSchdulDe, String executSchdulHour, String executSchdulMnt,
-            String executSchdulSecnd, String frstRegisterId) {
-        this.batchSchdulId = batchSchdulId;
-        this.batchOpertId = batchOpertId;
-        this.executCycle = executCycle;
-        this.executSchdulDe = executSchdulDe;
-        this.executSchdulHour = executSchdulHour;
-        this.executSchdulMnt = executSchdulMnt;
-        this.executSchdulSecnd = executSchdulSecnd;
-        this.frstRegisterId = frstRegisterId;
+    @PrePersist
+    public void prePersist() {
         this.frstRegisterPnttm = LocalDateTime.now();
+        this.lastUpdusrPnttm = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }
