@@ -82,7 +82,9 @@ public class EgovWebUtil {
 			return "";
 		}
 
-		returnValue = returnValue.replaceAll("\\.\\.", "");
+		while (returnValue.contains("..")) {
+			returnValue = returnValue.replace("..", "");
+		}
 
 		return returnValue;
 	}
