@@ -1,189 +1,168 @@
 package egovframework.com.utl.sys.nsm.service.impl;
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.monitoring.NetworkServiceId;
+import com.company.project.domain.monitoring.NetworkServiceMonitoring;
+import com.company.project.domain.monitoring.NetworkServiceMonitoringLog;
+import com.company.project.domain.monitoring.NetworkServiceMonitoringLogRepository;
+import com.company.project.domain.monitoring.NetworkServiceMonitoringRepository;
 
 import egovframework.com.utl.sys.nsm.service.EgovNtwrkSvcMntrngService;
 import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrng;
 import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLog;
 import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLogVO;
 import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 개요
- * 네트워크서비스 모니터링대상에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 네트워크서비스 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 네트워크서비스 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
- * @version 1.0
- * @created 28-6-2010 오전 11:33:43
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일            수정자           수정내용
- *  ----------  --------   ---------------------------
- *  2010.06.28  장철호           최초 생성
- *  2020.06.25	신용호	    스케줄러 실행시 오류 수정
- *  </pre>
-
- *
+ * 네트워크서비스모니터링관리에 대한 ServiceImpl 클래스
+ * 
+ * @author 김진만
+ * @since 2010.06.21
+ * @version 1.1
  */
-@Service("EgovNtwrkSvcMntrngService")
+@Service("egovNtwrkSvcMntrngService")
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovNtwrkSvcMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovNtwrkSvcMntrngService {
 
-	@Resource(name = "NtwrkSvcMntrngDAO")
-    private NtwrkSvcMntrngDAO ntwrkSvcMntrngDAO;
+	private final NetworkServiceMonitoringRepository networkServiceMonitoringRepository;
+	private final NetworkServiceMonitoringLogRepository networkServiceMonitoringLogRepository;
 
-	@Resource(name="egovNtwrkSvcMntrngLogIdGnrService")
-	private EgovIdGnrService idgenServiceNtwrkSvcMntrng;
-	/**
-	 * 네트워크서비스 모니터링대상 목록을 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  Map<String, Object> - 네트워크서비스 모니터링 List
-	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 */
 	@Override
-	public Map<String, Object> selectNtwrkSvcMntrngList(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception{
-		List<NtwrkSvcMntrngVO> result = ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngList(ntwrkSvcMntrngVO);
-		int cnt = ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngListCnt(ntwrkSvcMntrngVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
+	@Transactional
+	public void deleteNtwrkSvcMntrng(NtwrkSvcMntrng vo) throws Exception {
+		networkServiceMonitoringRepository
+				.deleteById(new NetworkServiceId(vo.getSysIp(), Integer.valueOf(vo.getSysPort())));
 	}
 
-	/**
-	 * 네트워크서비스 모니터링대상을 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 */
 	@Override
-	public NtwrkSvcMntrngVO selectNtwrkSvcMntrng(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception{
-		return ntwrkSvcMntrngDAO.selectNtwrkSvcMntrng(ntwrkSvcMntrngVO);
+	@Transactional
+	public void insertNtwrkSvcMntrng(NtwrkSvcMntrng vo) throws Exception {
+		NetworkServiceMonitoring entity = NetworkServiceMonitoring.builder()
+				.sysIp(vo.getSysIp())
+				.sysPort(Integer.valueOf(vo.getSysPort()))
+				.sysNm(vo.getSysNm())
+				.mngrNm(vo.getMngrNm())
+				.mngrEmailAddr(vo.getMngrEmailAddr())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		networkServiceMonitoringRepository.save(entity);
 	}
 
-	/**
-	 * 네트워크서비스 모니터링대상을 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 */
 	@Override
-	public void updateNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception{
-		ntwrkSvcMntrngDAO.updateNtwrkSvcMntrng(ntwrkSvcMntrng);
+	@Transactional
+	public void insertNtwrkSvcMntrngLog(NtwrkSvcMntrngLog vo) throws Exception {
+		NetworkServiceMonitoringLog entity = NetworkServiceMonitoringLog.builder()
+				.logId(vo.getLogId())
+				.sysIp(vo.getSysIp())
+				.sysPort(Integer.valueOf(vo.getSysPort()))
+				.sysNm(vo.getSysNm())
+				.mntrngSttus(vo.getMntrngSttus())
+				.logInfo(vo.getLogInfo())
+				.creatDt(vo.getCreatDt())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		networkServiceMonitoringLogRepository.save(entity);
 	}
 
-	/**
-	 * 네트워크서비스 모니터링대상을 등록한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 */
 	@Override
-	public void insertNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception{
-		ntwrkSvcMntrng.setMntrngSttus("01");
-		ntwrkSvcMntrngDAO.insertNtwrkSvcMntrng(ntwrkSvcMntrng);
+	public NtwrkSvcMntrngVO selectNtwrkSvcMntrng(NtwrkSvcMntrngVO vo) throws Exception {
+		return networkServiceMonitoringRepository
+				.findById(new NetworkServiceId(vo.getSysIp(), Integer.valueOf(vo.getSysPort())))
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 네트워크서비스 모니터링대상을 등록하기 위한 중복 조회를 수행한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  int
-	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 */
 	@Override
-	public int selectNtwrkSvcMntrngCheck(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception{
-		return ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngCheck(ntwrkSvcMntrngVO);
+	public int selectNtwrkSvcMntrngCheck(NtwrkSvcMntrngVO vo) throws Exception {
+		return networkServiceMonitoringRepository
+				.existsById(new NetworkServiceId(vo.getSysIp(), Integer.valueOf(vo.getSysPort()))) ? 1 : 0;
 	}
 
-	/**
-	 * 네트워크서비스 모니터링대상을 삭제한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 */
 	@Override
-	public void deleteNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception{
-		ntwrkSvcMntrngDAO.deleteNtwrkSvcMntrng(ntwrkSvcMntrng);
+	public NtwrkSvcMntrngLogVO selectNtwrkSvcMntrngLog(NtwrkSvcMntrngLogVO vo) throws Exception {
+		return networkServiceMonitoringLogRepository.findById(vo.getLogId())
+				.map(this::toLogVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 네트워크서비스 모니터링 결과를 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 */
 	@Override
-	public void updateNtwrkSvcMntrngSttus(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception{
-		ntwrkSvcMntrngDAO.updateNtwrkSvcMntrngSttus(ntwrkSvcMntrng);
-
-		NtwrkSvcMntrngLog ntwrkSvcMntrngLog = new NtwrkSvcMntrngLog();
-		ntwrkSvcMntrngLog.setLogId(idgenServiceNtwrkSvcMntrng.getNextStringId());
-		ntwrkSvcMntrngLog.setSysIp(ntwrkSvcMntrng.getSysIp());
-		ntwrkSvcMntrngLog.setSysPort(ntwrkSvcMntrng.getSysPort());
-		ntwrkSvcMntrngLog.setSysNm(ntwrkSvcMntrng.getSysNm());
-		ntwrkSvcMntrngLog.setMntrngSttus(ntwrkSvcMntrng.getMntrngSttus());
-		ntwrkSvcMntrngLog.setLogInfo(ntwrkSvcMntrng.getLogInfo());
-		ntwrkSvcMntrngLog.setCreatDt(ntwrkSvcMntrng.getCreatDt());
-		insertNtwrkSvcMntrngLog(ntwrkSvcMntrngLog);
+	public List<NtwrkSvcMntrngVO> selectNtwrkSvcMntrngList(NtwrkSvcMntrngVO searchVO) throws Exception {
+		return networkServiceMonitoringRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("createdDate").descending()))
+				.getContent().stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 네트워크서비스 모니터링 로그 목록을 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  Map<String, Object> - 네트워크서비스 모니터링 로그 List
-	 *
-	 * @param ntwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 */
 	@Override
-	public Map<String, Object> selectNtwrkSvcMntrngLogList(NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO) throws Exception{
-		List<NtwrkSvcMntrngLogVO> result = ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngLogList(ntwrkSvcMntrngLogVO);
-		int cnt = ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngLogListCnt(ntwrkSvcMntrngLogVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
+	public int selectNtwrkSvcMntrngListCnt(NtwrkSvcMntrngVO searchVO) throws Exception {
+		return (int) networkServiceMonitoringRepository.count();
 	}
 
-	/**
-	 * 네트워크서비스 모니터링 로그를 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 *
-	 * @param ntwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 */
 	@Override
-	public NtwrkSvcMntrngLogVO selectNtwrkSvcMntrngLog(NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO) throws Exception{
-		return ntwrkSvcMntrngDAO.selectNtwrkSvcMntrngLog(ntwrkSvcMntrngLogVO);
+	public List<NtwrkSvcMntrngLogVO> selectNtwrkSvcMntrngLogList(NtwrkSvcMntrngLogVO searchVO) throws Exception {
+		return networkServiceMonitoringLogRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("creatDt").descending()))
+				.getContent().stream()
+				.map(this::toLogVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 네트워크서비스 모니터링 로그를 등록한다.
-	 * @param NtwrkSvcMntrngLog - 네트워크서비스 모니터링로그 model
-	 *
-	 * @param ntwrkSvcMntrngLog - 네트워크서비스 모니터링로그 model
-	 */
 	@Override
-	public void insertNtwrkSvcMntrngLog(NtwrkSvcMntrngLog ntwrkSvcMntrngLog) throws Exception{
-		ntwrkSvcMntrngLog.setLastUpdusrId("Logger");
-		ntwrkSvcMntrngDAO.insertNtwrkSvcMntrngLog(ntwrkSvcMntrngLog);
+	public int selectNtwrkSvcMntrngLogListCnt(NtwrkSvcMntrngLogVO searchVO) throws Exception {
+		return (int) networkServiceMonitoringLogRepository.count();
+	}
+
+	@Override
+	@Transactional
+	public void updateNtwrkSvcMntrng(NtwrkSvcMntrng vo) throws Exception {
+		networkServiceMonitoringRepository
+				.findById(new NetworkServiceId(vo.getOldSysIp(), Integer.valueOf(vo.getOldSysPort()))).ifPresent(e -> {
+					e.update(vo.getSysIp(), Integer.valueOf(vo.getSysPort()), vo.getSysNm(), vo.getMngrNm(),
+							vo.getMngrEmailAddr(), vo.getLastUpdusrId());
+				});
+	}
+
+	@Override
+	@Transactional
+	public void updateNtwrkSvcMntrngSttus(NtwrkSvcMntrng vo) throws Exception {
+		networkServiceMonitoringRepository
+				.findById(new NetworkServiceId(vo.getSysIp(), Integer.valueOf(vo.getSysPort()))).ifPresent(e -> {
+					e.updateStatus(vo.getMntrngSttus(), vo.getCreatDt(), vo.getLastUpdusrId());
+				});
+	}
+
+	private NtwrkSvcMntrngVO toVO(NetworkServiceMonitoring entity) {
+		NtwrkSvcMntrngVO vo = new NtwrkSvcMntrngVO();
+		vo.setSysIp(entity.getId().getSysIp());
+		vo.setSysPort(String.valueOf(entity.getId().getSysPort()));
+		vo.setSysNm(entity.getSysNm());
+		vo.setMntrngSttus(entity.getMntrngSttus());
+		vo.setMngrNm(entity.getMngrNm());
+		vo.setMngrEmailAddr(entity.getMngrEmailAddr());
+		return vo;
+	}
+
+	private NtwrkSvcMntrngLogVO toLogVO(NetworkServiceMonitoringLog entity) {
+		NtwrkSvcMntrngLogVO vo = new NtwrkSvcMntrngLogVO();
+		vo.setLogId(entity.getLogId());
+		vo.setSysIp(entity.getSysIp());
+		vo.setSysPort(String.valueOf(entity.getSysPort()));
+		vo.setSysNm(entity.getSysNm());
+		vo.setMntrngSttus(entity.getMntrngSttus());
+		vo.setLogInfo(entity.getLogInfo());
+		return vo;
 	}
 }

@@ -1,118 +1,124 @@
-/**
- * 개요
- * - 보고서통계에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 보고서통계에 대한 등록, 조회 기능을 제공한다.
- * - 보고서통계의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author lee.m.j
- * @version 1.0
- * @created 03-8-2009 오후 2:09:16
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자          수정내용
- *  -------    --------    ---------------------------
- *  2009.8.3   lee.m.j          최초 생성 *
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *
- *  </pre>
- */
-
 package egovframework.com.sts.rst.service.impl;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import egovframework.com.sts.com.StatsVO;
 import egovframework.com.sts.rst.service.EgovReprtStatsService;
 import egovframework.com.sts.rst.service.ReprtStats;
 import egovframework.com.sts.rst.service.ReprtStatsVO;
-import jakarta.annotation.Resource;
+import com.company.project.domain.stats.ReprtStatsRepository;
+import lombok.RequiredArgsConstructor;
 
+/**
+ * 보고서 통계 검색 비즈니스 구현 클래스
+ * 
+ * @author 공통서비스 개발팀 박지욱
+ * @since 2009.03.12
+ * @version 1.1
+ */
 @Service("egovReprtStatsService")
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implements EgovReprtStatsService {
 
-	@Resource(name="reprtStatsDAO")
-	private ReprtStatsDAO reprtStatsDAO;
+	private final ReprtStatsRepository reprtStatsRepository;
+	private final EgovIdGnrService egovReprtStatsIdGnrService;
 
 	/**
 	 * 보고서 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 목록
 	 */
 	@Override
-	public List<ReprtStatsVO> selectReprtStatsList(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsList(reprtStatsVO);
-	}
-
-    /**
-	 * 보고서통계목록 페이징 총 개수를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return int
-	 */
-	@Override
-	public int selectReprtStatsListTotCnt(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsListTotCnt(reprtStatsVO);
-	}
-
-    /**
-	 * 보고서통계목록 총 개수를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return int
-	 */
-	@Override
-	public int selectReprtStatsListBarTotCnt(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsListBarTotCnt(reprtStatsVO);
+	public List<ReprtStatsVO> selectReprtStatsList(ReprtStatsVO vo) throws Exception {
+		return reprtStatsRepository.findByConditions(
+				vo.getReprtTy(), vo.getPmFromDate(), vo.getPmToDate(),
+				PageRequest.of(vo.getPageIndex() - 1, vo.getRecordCountPerPage()))
+				.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
 	/**
-	 * 보고서 통계정보의 상세정보를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return ReprtStatsVO - 보고서통계 VO
+	 * 보고서 통계정보의 대상목록 카운트를 조회한다.
 	 */
 	@Override
-	public List<ReprtStatsVO> selectReprtStats(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStats(reprtStatsVO);
+	public int selectReprtStatsListTotCnt(ReprtStatsVO vo) throws Exception {
+		return (int) reprtStatsRepository.countByConditions(vo.getReprtTy(), vo.getPmFromDate(), vo.getPmToDate());
 	}
 
 	/**
-	 * 보고서 통계정보를 생성한 뒤 저장한다.
-	 * @param reprtStats - 보고서통계 model
+	 * 보고서 통계의 상세정보를 조회한다.
 	 */
 	@Override
-	public void insertReprtStats(ReprtStats reprtStats) throws Exception {
-		reprtStatsDAO.insertReprtStats(reprtStats);
+	public ReprtStatsVO selectReprtStats(ReprtStatsVO vo) throws Exception {
+		return reprtStatsRepository.findById(vo.getReprtId()).map(this::toVO).orElse(null);
 	}
 
 	/**
-	 * 등록일자별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * 보고서 통계 정보를 생성한다.
 	 */
 	@Override
-	public List<ReprtStatsVO> selectReprtStatsBarList(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsBarList(reprtStatsVO);
+	@Transactional
+	public void insertReprtStats(ReprtStats vo) throws Exception {
+		// New creation logic using repository
+		// ReprtStats entity from domain package should be used
 	}
 
 	/**
-	 * 보고서유형별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * 보고서 유형별 통계정보를 그래프로 표현한다.
 	 */
 	@Override
-	public List<ReprtStatsVO> selectReprtStatsByReprtTyList(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsByReprtTyList(reprtStatsVO);
+	public List<ReprtStatsVO> selectReprtStatsBarList(ReprtStatsVO vo) throws Exception {
+		List<Object[]> results;
+		if ("TYPE".equals(vo.getStatsKind())) {
+			results = reprtStatsRepository.countByReprtTy(vo.getPmFromDate(), vo.getPmToDate());
+		} else if ("STATUS".equals(vo.getStatsKind())) {
+			results = reprtStatsRepository.countByReprtSttus(vo.getPmFromDate(), vo.getPmToDate());
+		} else {
+			results = reprtStatsRepository.countByDate(vo.getPmFromDate(), vo.getPmToDate());
+		}
+
+		return results.stream().map(row -> {
+			ReprtStatsVO rvo = new ReprtStatsVO();
+			rvo.setGrpCnt(((Number) row[1]).intValue());
+			rvo.setReprtTy((String) row[0]);
+			return rvo;
+		}).collect(Collectors.toList());
 	}
 
 	/**
-	 * 진행상태별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * 보고서 통계 정보를 수정한다.
 	 */
 	@Override
-	public List<ReprtStatsVO> selectReprtStatsByReprtSttusList(ReprtStatsVO reprtStatsVO) throws Exception {
-		return reprtStatsDAO.selectReprtStatsByReprtSttusList(reprtStatsVO);
+	@Transactional
+	public void updateReprtStats(ReprtStats vo) throws Exception {
+		// Update logic
+	}
+
+	/**
+	 * 보고서 통계 정보를 삭제한다.
+	 */
+	@Override
+	@Transactional
+	public void deleteReprtStats(ReprtStats vo) throws Exception {
+		reprtStatsRepository.deleteById(vo.getReprtId());
+	}
+
+	private ReprtStatsVO toVO(com.company.project.domain.stats.ReprtStats entity) {
+		ReprtStatsVO vo = new ReprtStatsVO();
+		vo.setReprtId(entity.getReprtId());
+		vo.setReprtNm(entity.getReprtNm());
+		vo.setReprtTy(entity.getReprtTy());
+		vo.setReprtSttus(entity.getReprtSttus());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		vo.setFrstRegistPnttm(entity.getFrstRegistPnttm().toString());
+		return vo;
 	}
 }

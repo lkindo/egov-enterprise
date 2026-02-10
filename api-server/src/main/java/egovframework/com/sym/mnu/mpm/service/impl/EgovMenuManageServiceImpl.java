@@ -25,31 +25,20 @@ import org.springframework.transaction.annotation.Transactional;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.Program;
+import com.company.project.domain.program.ProgramChangeRequestRepository;
 import com.company.project.domain.program.ProgramRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.mnu.mpm.service.EgovMenuManageService;
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
-import egovframework.com.sym.prm.service.impl.ProgrmManageDAO;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 메뉴목록관리, 생성, 사이트맵을 처리하는 비즈니스 구현 클래스를 정의한다.
+ * 메뉴목록관리, 생성, 사이트맵을 처리하는 비즈니스 구현 클래스
  * 
  * @author 개발환경 개발팀 이용
  * @since 2009.03.20
- * @version 1.0
- * @see
- *
- *      <pre>
- *  == 개정이력(Modification Information) ==
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2024.03.20  Antigravity    JPA 전환 및 현대화
- *
- *      </pre>
+ * @version 1.1
  */
 @Service("meunManageService")
 @RequiredArgsConstructor
@@ -60,7 +49,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 
 	private final MenuRepository menuRepository;
 	private final ProgramRepository programRepository;
-	private final ProgrmManageDAO progrmManageDAO; // 프로그램 상세(변경요청) 처리를 위해 유지
+	private final ProgramChangeRequestRepository changeRequestRepository;
 	private final EgovExcelService excelZipService;
 
 	/**
@@ -78,7 +67,8 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	 */
 	@Override
 	public List<MenuManageVO> selectMenuManageList(ComDefaultVO vo) throws Exception {
-		Pageable pageable = PageRequest.of(vo.getPageIndex() - 1, vo.getPageSize(), Sort.by("id").ascending());
+		int pageIndex = vo.getPageIndex() > 0 ? vo.getPageIndex() - 1 : 0;
+		Pageable pageable = PageRequest.of(pageIndex, vo.getPageSize(), Sort.by("id").ascending());
 		Page<Menu> menuPage;
 
 		if (vo.getSearchKeyword() != null && !vo.getSearchKeyword().isEmpty()) {
@@ -172,8 +162,6 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	/* ### 메뉴관련 프로세스 ### */
 	@Override
 	public List<MenuManageVO> selectMainMenuHead(MenuManageVO vo) throws Exception {
-		// 상위메뉴Id가 0(Root)인 메뉴 조회 (eGov 기준)
-		// 0번 조회 (Optimized: findAll + filter -> findByUpperMenuNo)
 		return menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(0L).stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
@@ -181,7 +169,6 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 
 	@Override
 	public List<MenuManageVO> selectMainMenuLeft(MenuManageVO vo) throws Exception {
-		// 특정 상위 메뉴의 하위 메뉴 조회 (Optimized: findAll + filter -> findByUpperMenuNo)
 		return menuRepository.findByUpperMenuNoOrderByMenuOrdrAsc(Long.valueOf(vo.getMenuNo())).stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
@@ -198,12 +185,10 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	private String selectLastMenuURLRecursive(Menu menu, String sUniqId) {
-		// 하위 메뉴가 있는지 확인 (Optimized: findByUpperMenuNo -> findFirstByUpperMenuNo)
 		Optional<Menu> childOpt = menuRepository.findFirstByUpperMenuNoOrderByMenuOrdrAsc(menu.getId());
 		if (childOpt.isPresent()) {
 			return selectLastMenuURLRecursive(childOpt.get(), sUniqId);
 		} else {
-			// 하위 메뉴가 없으면 본인 프로그램 URL 반환
 			if (menu.getProgrmFileNm() != null && !menu.getProgrmFileNm().isEmpty()) {
 				return programRepository.findById(menu.getProgrmFileNm())
 						.map(Program::getUrl)
@@ -218,7 +203,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Transactional
 	public boolean menuBndeAllDelete() throws Exception {
 		try {
-			progrmManageDAO.deleteAllProgrmDtls(); // 변경요청 내역 삭제 (MyBatis 유지)
+			changeRequestRepository.deleteAllInBatch(); // 프로그램 변경요청 내역 삭제
 			menuRepository.deleteAllInBatch(); // 메뉴 삭제
 			programRepository.deleteAllInBatch(); // 프로그램 삭제
 			return true;
@@ -233,18 +218,17 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	public String menuBndeRegist(MenuManageVO vo, InputStream inputStream) throws Exception {
 		try {
 			if (programRepository.count() > 0 || menuRepository.count() > 0) {
-				return "99"; // 데이터 존재 오류
+				return "99";
 			}
 
 			try (HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream)) {
 				if (hssfWB.getNumberOfSheets() != 2) {
-					return "93"; // 시트 개수 오류
+					return "93";
 				}
 
 				HSSFSheet progrmSheet = hssfWB.getSheetAt(0);
 				HSSFSheet menuSheet = hssfWB.getSheetAt(1);
 
-				// 데이터 검증 및 등록 로직
 				if (!progrmRegist(progrmSheet))
 					return "96";
 				if (!menuRegist(menuSheet))
@@ -255,7 +239,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 			LOGGER.error("Menu Bundle Regist Error: {}", e.getMessage());
 			return "99";
 		}
-		return "0"; // 성공
+		return "0";
 	}
 
 	private boolean progrmRegist(HSSFSheet progrmSheet) {
@@ -321,7 +305,6 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		return "";
 	}
 
-	/* VO <-> Entity Mapping */
 	private MenuManageVO toVO(Menu menu) {
 		if (menu == null)
 			return null;
