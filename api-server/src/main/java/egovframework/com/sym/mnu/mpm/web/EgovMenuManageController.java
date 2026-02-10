@@ -3,6 +3,7 @@ package egovframework.com.sym.mnu.mpm.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.util.WebUtils;
@@ -583,5 +585,79 @@ public class EgovMenuManageController {
 		}
 
 		return sLocationUrl;
+	}
+
+	/**
+	 * 메뉴일괄등록처리 프로세스 (API)
+	 *
+	 * @param commandMap   Map
+	 * @param menuManageVO MenuManageVO
+	 * @param request      HttpServletRequest
+	 * @return JSON Response
+	 * @exception Exception
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuBndeRegistAPI.do")
+	public Map<String, Object> menuBndeRegistAPI(final HttpServletRequest request,
+			@ModelAttribute("menuManageVO") MenuManageVO menuManageVO) throws Exception {
+
+		Map<String, Object> result = new HashMap<>();
+		// 0. Spring Security 사용자권한 처리
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
+		if (!isAuthenticated) {
+			result.put("status", "error");
+			result.put("message", egovMessageSource.getMessage("fail.common.login"));
+			return result;
+		}
+
+		String[] fileExtension = { "XLS", "XLSX" };
+		final MultipartHttpServletRequest multiRequest = WebUtils.getNativeRequest(request,
+				MultipartHttpServletRequest.class);
+
+		if (multiRequest != null) {
+			final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			if (files.isEmpty()) {
+				result.put("status", "error");
+				result.put("message", "No file provided");
+				return result;
+			}
+			for (Entry<String, MultipartFile> entry : files.entrySet()) {
+				MultipartFile file = entry.getValue();
+				String originalFilename = file.getOriginalFilename();
+				if (StringUtils.isEmpty(originalFilename)) {
+					continue;
+				}
+				String fileExtensionName = FilenameUtils.getExtension(originalFilename).toUpperCase();
+				boolean isExist = Arrays.stream(fileExtension).anyMatch(fileExtensionName::equals);
+
+				if (isExist) {
+					if (menuManageService.menuBndeAllDelete()) {
+						String sMessage = "";
+						try (InputStream is = file.getInputStream()) {
+							sMessage = menuManageService.menuBndeRegist(menuManageVO, is);
+						} catch (IOException e) {
+							LOGGER.error("File upload error", e);
+							result.put("status", "error");
+							result.put("message", "File upload failed");
+							return result;
+						}
+
+						result.put("status", "success");
+						result.put("message", sMessage);
+					} else {
+						result.put("status", "error");
+						result.put("message", egovMessageSource.getMessage("fail.common.msg"));
+					}
+				} else {
+					result.put("status", "error");
+					result.put("message", "xls, xlsx 파일 타입만 등록이 가능합니다.");
+				}
+			}
+		} else {
+			result.put("status", "error");
+			result.put("message", "No file provided");
+		}
+
+		return result;
 	}
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import client from '@/lib/api/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,12 +52,24 @@ export default function MenuBatchPage() {
         }
         setIsProcessing(true);
         try {
-            // TODO: API 호출
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            alert('메뉴가 일괄 등록되었습니다.');
-            setFile(null);
-            setPreviewData([]);
-        } catch {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await client.post('/sym/mnu/mpm/EgovMenuBndeRegistAPI.do', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.data.status === 'success') {
+                alert('메뉴가 일괄 등록되었습니다.');
+                setFile(null);
+                setPreviewData([]);
+            } else {
+                setError(response.data.message || '일괄 등록 중 오류가 발생했습니다.');
+            }
+        } catch (err) {
+            console.error(err);
             setError('일괄 등록 중 오류가 발생했습니다.');
         } finally {
             setIsProcessing(false);

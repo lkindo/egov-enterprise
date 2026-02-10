@@ -52,7 +52,7 @@ export async function POST(
     const resolvedParams = await params;
     const path = resolvedParams.path.join('/');
     const url = `http://localhost:8080/${path}`;
-    const body = await request.text();
+    const body = await request.arrayBuffer();
 
     logger.info(`[Proxy POST] ${url}`);
 
