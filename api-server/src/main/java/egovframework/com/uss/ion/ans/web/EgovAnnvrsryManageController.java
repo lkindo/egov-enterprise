@@ -303,8 +303,11 @@ public class EgovAnnvrsryManageController {
 			@ModelAttribute("annvrsryManageVO") AnnvrsryManageVO annvrsryManageVO, ModelMap model) throws Exception {
 		// 로그인 객체 선언
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (loginVO == null) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
-		annvrsryManage.setUsid(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
+		annvrsryManage.setUsid(EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		annvrsryManage.setAnnvrsrySetup("Y");
 		annvrsryManage.setCldrSe("1"); // 1:양력 2:음력
 		annvrsryManageVO.setUsid(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId())); // 사용자ID
@@ -344,9 +347,12 @@ public class EgovAnnvrsryManageController {
 		} else {
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+			if (user == null) {
+				return "redirect:/uat/uia/egovLoginUsr.do";
+			}
 			status.setComplete();
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
-			annvrsryManage.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
+			annvrsryManage.setFrstRegisterId(user.getUniqId() == null ? "" : user.getUniqId());
 
 			// Duplicate Check
 			if (egovAnnvrsryManageService.checkAnniversaryDuplicate(annvrsryManage.getUsid(),
@@ -401,8 +407,11 @@ public class EgovAnnvrsryManageController {
 		} else {
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+			if (user == null) {
+				return "redirect:/uat/uia/egovLoginUsr.do";
+			}
 			status.setComplete();
-			annvrsryManage.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
+			annvrsryManage.setLastUpdusrId(user.getUniqId() == null ? "" : user.getUniqId());
 
 			// Validate AnnId
 			if (StringUtils.isEmpty(annvrsryManage.getAnnId())) {
@@ -662,6 +671,9 @@ public class EgovAnnvrsryManageController {
 			throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+		if (user == null) {
+			return "redirect:/uat/uia/egovLoginUsr.do";
+		}
 
 		// Parse string and insert
 		if (StringUtils.isNotEmpty(checkedAnnvrsryManageForInsert)) {

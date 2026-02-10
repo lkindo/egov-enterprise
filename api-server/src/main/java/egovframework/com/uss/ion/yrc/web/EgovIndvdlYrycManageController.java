@@ -73,8 +73,11 @@ public class EgovIndvdlYrycManageController {
             throws Exception {
 
         LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-        indvdlYrycManage.setMberId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-        indvdlYrycManage.setMberNm(user == null ? "" : EgovStringUtil.isNullToString(user.getName()));
+        if (user == null) {
+            return "redirect:/uat/uia/egovLoginUsr.do";
+        }
+        indvdlYrycManage.setMberId(EgovStringUtil.isNullToString(user.getUniqId()));
+        indvdlYrycManage.setMberNm(EgovStringUtil.isNullToString(user.getName()));
 
         String year = EgovDateUtil.getCurrentYearAsString();
         indvdlYrycManage.setOccrrncYear(year);
@@ -104,7 +107,10 @@ public class EgovIndvdlYrycManageController {
             return "egovframework/com/uss/ion/yrc/EgovIndvdlYrycRegist";
         } else {
             LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-            indvdlYrycManage.setMberId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
+            if (user == null) {
+                return "redirect:/uat/uia/egovLoginUsr.do";
+            }
+            indvdlYrycManage.setMberId(user.getUniqId() == null ? "" : user.getUniqId());
 
             // Calc Remainder
             double remainder = indvdlYrycManage.getOccrncYrycCo() - indvdlYrycManage.getUseYrycCo();

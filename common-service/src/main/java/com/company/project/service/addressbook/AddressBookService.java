@@ -25,6 +25,7 @@ public class AddressBookService implements EgovAddressBookService {
     private final AddressBookRepository addressBookRepository;
 
     @Override
+
     public Page<AddressBookDto> getAddressBookList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
             return addressBookRepository.findAll(pageable).map(AddressBookDto::from);
@@ -33,11 +34,13 @@ public class AddressBookService implements EgovAddressBookService {
     }
 
     @Override
+
     public Page<AddressBookDto> getMyAddressBooks(String userId, Pageable pageable) {
         return addressBookRepository.findByWrterId(userId, pageable).map(AddressBookDto::from);
     }
 
     @Override
+
     public AddressBookDto getAddressBook(String adbkId) {
         AddressBook addressBook = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -46,6 +49,7 @@ public class AddressBookService implements EgovAddressBookService {
 
     @Override
     @Transactional
+
     public String createAddressBook(String userId, AddressBookDto dto) {
         String adbkId = "ADBK_" + String.format("%013d", System.currentTimeMillis());
 
@@ -65,6 +69,7 @@ public class AddressBookService implements EgovAddressBookService {
 
     @Override
     @Transactional
+
     public void updateAddressBook(String adbkId, String userId, AddressBookDto dto) {
         AddressBook addressBook = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -74,6 +79,7 @@ public class AddressBookService implements EgovAddressBookService {
 
     @Override
     @Transactional
+
     public void deleteAddressBook(String adbkId) {
         AddressBook addressBook = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -81,6 +87,7 @@ public class AddressBookService implements EgovAddressBookService {
     }
 
     @Override
+
     public List<AddressBookDto> getActiveAddressBooks() {
         return addressBookRepository.findByUseAt("Y").stream()
                 .map(AddressBookDto::from)
