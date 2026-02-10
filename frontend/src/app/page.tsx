@@ -12,13 +12,11 @@ import {
   CalendarCheck,
   CheckSquare,
   FileText,
-  LayoutDashboard,
-  MoreHorizontal,
   Vote
 } from "lucide-react";
 import { getPollList } from '@/services/poll/pollService';
 import { OnlinePollManageVO } from '@/types/poll';
-import axios from '@/lib/api/client';
+import client from '@/lib/api/client';
 
 interface BoardItem {
   nttId: number;
@@ -37,36 +35,36 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // 1. Fetch Board Data (Legacy Dashboard API or separate calls)
-      // Trying legacy endpoint first as seen in previous code
-      try {
-        // If this fails, we might need to use boardService directly
-        // Assuming the backend endpoint /api/v1/dashboard exists or /dashboard is proxied
-        const dashboardRes = await axios.get('/dashboard').catch(() => null);
+      // Parallelize fetching of Dashboard Data and Active Polls to improve performance
+      // We catch errors individually so one failure doesn't block the other
+      const dashboardPromise = client.get('/dashboard')
+        .catch((e) => {
+          console.error("Dashboard fetch error", e);
+          return null;
+        });
 
-        if (dashboardRes && dashboardRes.data.success) {
-          setTaskList(dashboardRes.data.taskList || []);
-          setNotiList(dashboardRes.data.notiList || []);
-        } else {
-          // Fallback: Fetch directly if /dashboard fails (Example structure)
-          // const notiRes = await getBoardList('BBSMSTR_AAAAAAAAAAAA');
-        }
-      } catch (e) {
-        console.error("Dashboard fetch error", e);
+      const pollPromise = getPollList({ pageIndex: 1 })
+        .catch((e) => {
+          console.error("Poll fetch error", e);
+          return null;
+        });
+
+      // Await both promises simultaneously
+      const [dashboardRes, pollRes] = await Promise.all([dashboardPromise, pollPromise]);
+
+      // 1. Process Dashboard Data
+      if (dashboardRes && dashboardRes.data && dashboardRes.data.success) {
+        setTaskList(dashboardRes.data.taskList || []);
+        setNotiList(dashboardRes.data.notiList || []);
       }
 
-      // 2. Fetch Active Polls
-      try {
-        const pollRes = await getPollList({ pageIndex: 1 });
-        if (pollRes && pollRes.resultList) {
-          const today = new Date().toISOString().slice(0, 10);
-          const active = pollRes.resultList.find(p =>
-            p.pollBeginDe <= today && p.pollEndDe >= today
-          );
-          setActivePoll(active || null);
-        }
-      } catch (e) {
-        console.error("Poll fetch error", e);
+      // 2. Process Active Polls
+      if (pollRes && pollRes.resultList) {
+        const today = new Date().toISOString().slice(0, 10);
+        const active = pollRes.resultList.find(p =>
+          p.pollBeginDe <= today && p.pollEndDe >= today
+        );
+        setActivePoll(active || null);
       }
 
       setLoading(false);
