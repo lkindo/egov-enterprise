@@ -14,6 +14,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -78,7 +79,7 @@ import org.springframework.security.core.AuthenticationException;
  *
  *      </pre>
  */
-// @Controller
+@org.springframework.stereotype.Controller
 public class EgovLoginController {
 
 	// @Resource(name = "loginService")
@@ -185,7 +186,7 @@ public class EgovLoginController {
 		response.flushBuffer();
 	}
 
-	@RequestMapping(value = "/uat/uia/actionLogin.do")
+	@RequestMapping(value = "/uat/uia/actionLogin.do", method = RequestMethod.POST)
 	public String actionLogin(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
@@ -257,7 +258,7 @@ public class EgovLoginController {
 		return "redirect:/cmm/main/mainPage.do";
 	}
 
-	@RequestMapping(value = "/uat/uia/actionSecurityProcess.do")
+	@RequestMapping(value = "/uat/uia/actionSecurityProcess.do", method = RequestMethod.POST)
 	public void actionSecurityProcess(LoginVO resultVO, HttpServletRequest request, HttpServletResponse response) {
 		// 1. 인증 토큰 구성
 		UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken
@@ -280,7 +281,7 @@ public class EgovLoginController {
 	 * @return result - 로그인결과(세션정보)
 	 * @exception Exception
 	 */
-	@RequestMapping(value = "/uat/uia/actionCrtfctLogin.do")
+	@RequestMapping(value = "/uat/uia/actionCrtfctLogin.do", method = RequestMethod.POST)
 	public String actionCrtfctLogin(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) throws Exception {
 
@@ -469,7 +470,7 @@ public class EgovLoginController {
 	 * @return result - 아이디
 	 * @exception Exception
 	 */
-	@RequestMapping(value = "/uat/uia/searchId.do")
+	@RequestMapping(value = "/uat/uia/searchId.do", method = RequestMethod.POST)
 	public String searchId(@ModelAttribute("loginVO") LoginVO loginVO, ModelMap model) throws Exception {
 
 		if (loginVO == null || loginVO.getName() == null || loginVO.getName().equals("") && loginVO.getEmail() == null
@@ -498,7 +499,7 @@ public class EgovLoginController {
 	 * @return result - 임시비밀번호전송결과
 	 * @exception Exception
 	 */
-	@RequestMapping(value = "/uat/uia/searchPassword.do")
+	@RequestMapping(value = "/uat/uia/searchPassword.do", method = RequestMethod.POST)
 	public String searchPassword(@ModelAttribute("loginVO") LoginVO loginVO, ModelMap model) throws Exception {
 
 		// KISA 보안약점 조치 (2018-10-29, 윤창원)
@@ -589,7 +590,7 @@ public class EgovLoginController {
 	 * @return result - dn값
 	 * @exception Exception
 	 */
-	@RequestMapping(value = "/uat/uia/actionGpkiRegist.do")
+	@RequestMapping(value = "/uat/uia/actionGpkiRegist.do", method = RequestMethod.POST)
 	public String actionGpkiRegist(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
