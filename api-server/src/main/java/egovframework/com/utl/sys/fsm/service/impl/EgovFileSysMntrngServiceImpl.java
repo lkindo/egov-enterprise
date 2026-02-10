@@ -1,199 +1,167 @@
 package egovframework.com.utl.sys.fsm.service.impl;
-import java.io.IOException;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.monitoring.FileSystemMonitoring;
+import com.company.project.domain.monitoring.FileSystemMonitoringLog;
+import com.company.project.domain.monitoring.FileSystemMonitoringLogRepository;
+import com.company.project.domain.monitoring.FileSystemMonitoringRepository;
 
 import egovframework.com.utl.sys.fsm.service.EgovFileSysMntrngService;
 import egovframework.com.utl.sys.fsm.service.FileSysMntrng;
 import egovframework.com.utl.sys.fsm.service.FileSysMntrngLog;
 import egovframework.com.utl.sys.fsm.service.FileSysMntrngLogVO;
 import egovframework.com.utl.sys.fsm.service.FileSysMntrngVO;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
- * 개요
- * 파일시스템 모니터링대상에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 파일시스템 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 파일시스템 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
- * @version 1.0
- * @created 28-6-2010 오전 11:33:26
+ * 파일시스템모니터링관리에 대한 ServiceImpl 클래스
+ * 
+ * @author 김진만
+ * @since 2010.06.21
+ * @version 1.1
  */
-@Service("EgovFileSysMntrngService")
+@Service("egovFileSysMntrngService")
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovFileSysMntrngService {
 
-	@Resource(name = "FileSysMntrngDAO")
-    private FileSysMntrngDAO fileSysMntrngDAO;
+	private final FileSystemMonitoringRepository fileSystemMonitoringRepository;
+	private final FileSystemMonitoringLogRepository fileSystemMonitoringLogRepository;
 
-	@Resource(name="egovFileSysMntrngIdGnrService")
-	private EgovIdGnrService idgenServiceFileSysMntrng;
-
-	@Resource(name="egovFileSysMntrngLogIdGnrService")
-	private EgovIdGnrService idgenServiceFileSysMntrngLog;
-	/**
-	 * 파일시스템 모니터링대상 목록을 조회한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링대상 VO
-	 * @return  Map<String, Object> - 파일시스템 모니터링 List
-	 *
-	 * @param fileSysMntrngVO
-	 */
 	@Override
-	public Map<String, Object> selectFileSysMntrngList(FileSysMntrngVO fileSysMntrngVO) throws Exception{
-		List<FileSysMntrngVO> result = fileSysMntrngDAO.selectFileSysMntrngList(fileSysMntrngVO);
-		int cnt = fileSysMntrngDAO.selectFileSysMntrngListCnt(fileSysMntrngVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
+	@Transactional
+	public void deleteFileSysMntrng(FileSysMntrng vo) throws Exception {
+		fileSystemMonitoringRepository.deleteById(vo.getFileSysId());
 	}
 
-	/**
-	 * 파일시스템 모니터링대상을 조회한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링대상 VO
-	 * @return  FileSysMntrngVO - 파일시스템 모니터링대상 VO
-	 *
-	 * @param fileSysMntrngVO
-	 */
 	@Override
-	public FileSysMntrngVO selectFileSysMntrng(FileSysMntrngVO fileSysMntrngVO) throws Exception{
-		return fileSysMntrngDAO.selectFileSysMntrng(fileSysMntrngVO);
+	@Transactional
+	public void insertFileSysMntrng(FileSysMntrng vo) throws Exception {
+		FileSystemMonitoring entity = FileSystemMonitoring.builder()
+				.fileSysId(vo.getFileSysId())
+				.fileSysNm(vo.getFileSysNm())
+				.fileSysManageNm(vo.getFileSysManageNm())
+				.fileSysSize(vo.getFileSysMg())
+				.fileSysThrhld(vo.getFileSysThrhld())
+				.fileSysUsgQty(vo.getFileSysUsgQty())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		fileSystemMonitoringRepository.save(entity);
 	}
 
-	/**
-	 * 파일시스템 모니터링대상을 수정한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
-	 *
-	 * @param fileSysMntrng
-	 */
 	@Override
-	public void updateFileSysMntrng(FileSysMntrng fileSysMntrng) throws Exception{
-		fileSysMntrngDAO.updateFileSysMntrng(fileSysMntrng);
+	@Transactional
+	public void insertFileSysMntrngLog(FileSysMntrngLog vo) throws Exception {
+		FileSystemMonitoringLog entity = FileSystemMonitoringLog.builder()
+				.logId(vo.getLogId())
+				.fileSysId(vo.getFileSysId())
+				.fileSysNm(vo.getFileSysNm())
+				.fileSysManageNm(vo.getFileSysManageNm())
+				.fileSysSize(vo.getFileSysMg())
+				.fileSysThrhld(vo.getFileSysThrhld())
+				.fileSysUsgQty(vo.getFileSysUsgQty())
+				.mntrngSttus(vo.getMntrngSttus())
+				.logInfo(vo.getLogInfo())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.build();
+		fileSystemMonitoringLogRepository.save(entity);
 	}
 
-	/**
-	 * 파일시스템 모니터링대상을 등록한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
-	 *
-	 * @param fileSysMntrng
-	 */
 	@Override
-	public void insertFileSysMntrng(FileSysMntrng fileSysMntrng) throws Exception{
-		fileSysMntrng.setFileSysId(idgenServiceFileSysMntrng.getNextStringId());
-		fileSysMntrngDAO.insertFileSysMntrng(fileSysMntrng);
+	public FileSysMntrngVO selectFileSysMntrng(FileSysMntrngVO vo) throws Exception {
+		return fileSystemMonitoringRepository.findById(vo.getFileSysId())
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 파일시스템 모니터링대상을 삭제한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
-	 *
-	 * @param fileSysMntrng
-	 */
 	@Override
-	public void deleteFileSysMntrng(FileSysMntrng fileSysMntrng) throws Exception{
-		fileSysMntrngDAO.deleteFileSysMntrng(fileSysMntrng);
+	public FileSysMntrngLogVO selectFileSysMntrngLog(FileSysMntrngLogVO vo) throws Exception {
+		return fileSystemMonitoringLogRepository.findById(vo.getLogId())
+				.map(this::toLogVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 파일시스템의 크기를 조회한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
-	 * @return  int
-	 *
-	 * @param fileSysMntrng
-	 */
 	@Override
-	public int selectFileSysMg(FileSysMntrng fileSysMntrng) throws Exception{
-		Path path = Paths.get("");
-		FileStore fs = null;
-		long usableSpaceBytes = 0;
-		try {
-			fs = Files.getFileStore(path);
-			usableSpaceBytes = fs.getUsableSpace();
-		} catch (IOException e) {
-			egovLogger.error("IOException");
-		}
-		long usableSpaceKb = usableSpaceBytes / 1024;
-		return  Math.toIntExact(usableSpaceKb);
+	public List<FileSysMntrngVO> selectFileSysMntrngList(FileSysMntrngVO searchVO) throws Exception {
+		return fileSystemMonitoringRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("createdDate").descending()))
+				.getContent().stream()
+				.map(this::toVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 파일시스템 모니터링 결과를 수정한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
-	 *
-	 * @param fileSysMntrng
-	 */
 	@Override
-	public void updateFileSysMntrngSttus(FileSysMntrng fileSysMntrng) throws Exception{
-		fileSysMntrngDAO.updateFileSysMntrngSttus(fileSysMntrng);
-
-		FileSysMntrngLog fileSysMntrngLog = new FileSysMntrngLog();
-		fileSysMntrngLog.setFileSysId(fileSysMntrng.getFileSysId());
-		fileSysMntrngLog.setLogId(idgenServiceFileSysMntrngLog.getNextStringId());
-		fileSysMntrngLog.setFileSysNm(fileSysMntrng.getFileSysNm());
-		fileSysMntrngLog.setFileSysManageNm(fileSysMntrng.getFileSysManageNm());
-		fileSysMntrngLog.setFileSysMg(fileSysMntrng.getFileSysMg());
-		fileSysMntrngLog.setFileSysThrhld(fileSysMntrng.getFileSysThrhld());
-		fileSysMntrngLog.setFileSysUsgQty(fileSysMntrng.getFileSysUsgQty());
-		fileSysMntrngLog.setLogInfo(fileSysMntrng.getLogInfo());
-		fileSysMntrngLog.setMntrngSttus(fileSysMntrng.getMntrngSttus());
-		fileSysMntrngLog.setCreatDt(fileSysMntrng.getCreatDt());
-		insertFileSysMntrngLog(fileSysMntrngLog);
+	public int selectFileSysMntrngListCnt(FileSysMntrngVO searchVO) throws Exception {
+		return (int) fileSystemMonitoringRepository.count();
 	}
 
-	/**
-	 * 파일시스템 모니터링로그 목록을 조회한다.
-	 * @param FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
-	 * @return  Map<String, Object> - 파일시스템 모니터링로그 List
-	 *
-	 * @param fileSysMntrngLogVO
-	 */
 	@Override
-	public Map<String, Object> selectFileSysMntrngLogList(FileSysMntrngLogVO fileSysMntrngLogVO) throws Exception{
-		List<FileSysMntrngLogVO> result = fileSysMntrngDAO.selectFileSysMntrngLogList(fileSysMntrngLogVO);
-		int cnt = fileSysMntrngDAO.selectFileSysMntrngLogListCnt(fileSysMntrngLogVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
+	public List<FileSysMntrngLogVO> selectFileSysMntrngLogList(FileSysMntrngLogVO searchVO) throws Exception {
+		return fileSystemMonitoringLogRepository
+				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+						Sort.by("creatDt").descending()))
+				.getContent().stream()
+				.map(this::toLogVO)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 파일시스템 모니터링로그를 조회한다.
-	 * @param FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
-	 * @return  FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
-	 *
-	 * @param fileSysMntrngLogVO
-	 */
 	@Override
-	public FileSysMntrngLogVO selectFileSysMntrngLog(FileSysMntrngLogVO fileSysMntrngLogVO) throws Exception{
-		return fileSysMntrngDAO.selectFileSysMntrngLog(fileSysMntrngLogVO);
+	public int selectFileSysMntrngLogListCnt(FileSysMntrngLogVO searchVO) throws Exception {
+		return (int) fileSystemMonitoringLogRepository.count();
 	}
 
-	/**
-	 * 파일시스템 모니터링로그를 등록한다.
-	 * @param FileSysMntrngLog - 파일시스템 모니터링로그 model
-	 *
-	 * @param fileSysMntrngLog
-	 */
 	@Override
-	public void insertFileSysMntrngLog(FileSysMntrngLog fileSysMntrngLog) throws Exception{
-		fileSysMntrngDAO.insertFileSysMntrngLog(fileSysMntrngLog);
+	@Transactional
+	public void updateFileSysMntrng(FileSysMntrng vo) throws Exception {
+		fileSystemMonitoringRepository.findById(vo.getFileSysId()).ifPresent(e -> {
+			e.update(vo.getFileSysNm(), vo.getFileSysManageNm(), vo.getFileSysMg(), vo.getFileSysThrhld(),
+					vo.getFileSysUsgQty(), vo.getMngrNm(), vo.getMngrEmailAddr(), vo.getLastUpdusrId());
+		});
 	}
 
+	@Override
+	@Transactional
+	public void updateFileSysMntrngSttus(FileSysMntrng vo) throws Exception {
+		fileSystemMonitoringRepository.findById(vo.getFileSysId()).ifPresent(e -> {
+			e.updateStatus(vo.getFileSysMg(), vo.getFileSysUsgQty(), vo.getMntrngSttus(), null, vo.getLastUpdusrId());
+		});
+	}
+
+	private FileSysMntrngVO toVO(FileSystemMonitoring entity) {
+		FileSysMntrngVO vo = new FileSysMntrngVO();
+		vo.setFileSysId(entity.getFileSysId());
+		vo.setFileSysNm(entity.getFileSysNm());
+		vo.setFileSysManageNm(entity.getFileSysManageNm());
+		vo.setFileSysMg(entity.getFileSysSize());
+		vo.setFileSysThrhld(entity.getFileSysThrhld());
+		vo.setFileSysUsgQty(entity.getFileSysUsgQty());
+		vo.setMntrngSttus(entity.getMntrngSttus());
+		vo.setMngrNm(entity.getMngrNm());
+		vo.setMngrEmailAddr(entity.getMngrEmailAddr());
+		return vo;
+	}
+
+	private FileSysMntrngLogVO toLogVO(FileSystemMonitoringLog entity) {
+		FileSysMntrngLogVO vo = new FileSysMntrngLogVO();
+		vo.setLogId(entity.getLogId());
+		vo.setFileSysId(entity.getFileSysId());
+		vo.setFileSysNm(entity.getFileSysNm());
+		vo.setFileSysManageNm(entity.getFileSysManageNm());
+		vo.setFileSysMg(entity.getFileSysSize());
+		vo.setFileSysThrhld(entity.getFileSysThrhld());
+		vo.setFileSysUsgQty(entity.getFileSysUsgQty());
+		vo.setMntrngSttus(entity.getMntrngSttus());
+		vo.setLogInfo(entity.getLogInfo());
+		return vo;
+	}
 }

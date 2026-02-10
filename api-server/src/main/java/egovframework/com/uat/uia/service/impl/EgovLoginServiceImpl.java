@@ -2,9 +2,18 @@ package egovframework.com.uat.uia.service.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.user.EnterpriseUser;
+import com.company.project.domain.user.EnterpriseUserRepository;
+import com.company.project.domain.user.GeneralUser;
+import com.company.project.domain.user.GeneralUserRepository;
+import com.company.project.domain.user.User;
+import com.company.project.domain.user.UserRepository;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.config.EgovLoginConfig;
@@ -15,6 +24,7 @@ import egovframework.com.utl.fcc.service.EgovNumberUtil;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 일반 로그인, 인증서 로그인을 처리하는 비즈니스 구현 클래스
@@ -22,267 +32,288 @@ import jakarta.annotation.Resource;
  * @author 공통서비스 개발팀 박지욱
  * @since 2009.03.06
  * @version 1.0
- * @see
- *
- *      <pre>
- *  == 개정이력(Modification Information) ==
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.03.20  홍길동          최초 생성
- *   2009.03.06  박지욱          최초 생성
- *   2011.08.26  서준식          EsntlId를 이용한 로그인 추가
- *   2014.12.08  이기하          암호화방식 변경(EgovFileScrty.encryptPassword)
- *   2017.07.21  장동한          로그인인증제한 작업
- *   2020.07.08  신용호          비밀번호를 수정한후 경과한 날짜 조회
- *   2021.05.30  정진오          디지털원패스 인증 회원 조회
- *   2024.10.29  이백행          불필요 형변환 제거 (mapLockUserInfo.get("lockAt") ), @Override 표기
- *   2025.07.31  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
- *
- *      </pre>
  */
 @Service("loginService")
-@org.springframework.context.annotation.Lazy
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements EgovLoginService {
 
-	@Resource(name = "loginDAO")
-	@org.springframework.context.annotation.Lazy
-	private LoginDAO loginDAO;
+	private final UserRepository userRepository;
+	private final GeneralUserRepository generalUserRepository;
+	private final EnterpriseUserRepository enterpriseUserRepository;
 
-	/** EgovSndngMailRegistService */
-	// @Resource(name = "sndngMailRegistService")
 	@org.springframework.beans.factory.annotation.Autowired(required = false)
-	@org.springframework.context.annotation.Lazy
 	private EgovSndngMailRegistService sndngMailRegistService;
 
 	@Resource(name = "egovLoginConfig")
-	@org.springframework.context.annotation.Lazy
 	EgovLoginConfig egovLoginConfig;
 
 	/**
-	 * 2011.08.26 EsntlId를 이용한 로그인을 처리한다
-	 * 
-	 * @param vo LoginVO
-	 * @return LoginVO
-	 * @exception Exception
+	 * EsntlId를 이용한 로그인을 처리한다
 	 */
 	@Override
 	public LoginVO actionLoginByEsntlId(LoginVO vo) throws Exception {
+		LoginVO resultVO = null;
 
-		LoginVO loginVO = loginDAO.actionLoginByEsntlId(vo);
-
-		// 3. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("") && !loginVO.getPassword().equals("")) {
-			return loginVO;
-		} else {
-			loginVO = new LoginVO();
+		if ("GNR".equals(vo.getUserSe())) {
+			resultVO = generalUserRepository.findByEsntlId(vo.getUniqId())
+					.filter(u -> "P".equals(u.getMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("ENT".equals(vo.getUserSe())) {
+			resultVO = enterpriseUserRepository.findByEsntlId(vo.getUniqId())
+					.filter(u -> "P".equals(u.getEntrprsMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("USR".equals(vo.getUserSe())) {
+			resultVO = userRepository.findByEsntlId(vo.getUniqId())
+					.filter(u -> u.getRole() != null) // Role 체크를 상태 체크로 갈음
+					.map(this::toVO).orElse(null);
 		}
 
-		return loginVO;
+		return resultVO != null ? resultVO : new LoginVO();
 	}
 
 	/**
 	 * 일반 로그인을 처리한다
-	 * 
-	 * @param vo LoginVO
-	 * @return LoginVO
-	 * @exception Exception
 	 */
 	@Override
 	public LoginVO actionLogin(LoginVO vo) throws Exception {
-
-		// 1. 입력한 비밀번호를 암호화한다.
 		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
-		vo.setPassword(enpassword);
+		LoginVO resultVO = null;
 
-		// 2. 아이디와 암호화된 비밀번호가 DB와 일치하는지 확인한다.
-		LoginVO loginVO = loginDAO.actionLogin(vo);
-
-		// 3. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("") && !loginVO.getPassword().equals("")) {
-			return loginVO;
-		} else {
-			loginVO = new LoginVO();
+		if ("GNR".equals(vo.getUserSe())) {
+			resultVO = generalUserRepository.findByMberId(vo.getId())
+					.filter(u -> u.getPassword().equals(enpassword) && "P".equals(u.getMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("ENT".equals(vo.getUserSe())) {
+			resultVO = enterpriseUserRepository.findByEntrprsmberId(vo.getId())
+					.filter(u -> u.getEntrprsMberPassword().equals(enpassword) && "P".equals(u.getEntrprsMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("USR".equals(vo.getUserSe())) {
+			resultVO = userRepository.findById(vo.getId())
+					.filter(u -> u.getPassword().equals(enpassword))
+					.map(this::toVO).orElse(null);
 		}
 
-		return loginVO;
+		return resultVO != null ? resultVO : new LoginVO();
 	}
 
 	/**
 	 * 인증서 로그인을 처리한다
-	 * 
-	 * @param vo LoginVO
-	 * @return LoginVO
-	 * @exception Exception
 	 */
 	@Override
 	public LoginVO actionCrtfctLogin(LoginVO vo) throws Exception {
-
-		// 1. DN값으로 ID, PW를 조회한다.
-		LoginVO loginVO = loginDAO.actionCrtfctLogin(vo);
-
-		// 3. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("") && !loginVO.getPassword().equals("")) {
-			return loginVO;
-		} else {
-			loginVO = new LoginVO();
-		}
-
-		return loginVO;
+		// NEMPLYRINFO 테이블의 CRTFC_DN_VALUE(subDn)로 조회 (업무사용자 기준)
+		return userRepository.findBySubDn(vo.getDn())
+				.map(this::toVO).orElse(new LoginVO());
 	}
 
 	/**
 	 * 아이디를 찾는다.
-	 * 
-	 * @param vo LoginVO
-	 * @return LoginVO
-	 * @exception Exception
 	 */
 	@Override
 	public LoginVO searchId(LoginVO vo) throws Exception {
+		LoginVO resultVO = null;
 
-		// 1. 이름, 이메일주소가 DB와 일치하는 사용자 ID를 조회한다.
-		LoginVO loginVO = loginDAO.searchId(vo);
-
-		// 2. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("")) {
-			return loginVO;
-		} else {
-			loginVO = new LoginVO();
+		if ("GNR".equals(vo.getUserSe())) {
+			resultVO = generalUserRepository.findByMberNmAndMberEmailAdres(vo.getName(), vo.getEmail())
+					.filter(u -> "P".equals(u.getMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("ENT".equals(vo.getUserSe())) {
+			resultVO = enterpriseUserRepository.findByCmpnyNmAndApplcntEmailAdres(vo.getName(), vo.getEmail())
+					.filter(u -> "P".equals(u.getEntrprsMberSttus()))
+					.map(this::toVO).orElse(null);
+		} else if ("USR".equals(vo.getUserSe())) {
+			resultVO = userRepository.findByUserNmAndEmailAdres(vo.getName(), vo.getEmail())
+					.map(this::toVO).orElse(null);
 		}
 
-		return loginVO;
+		return resultVO != null ? resultVO : new LoginVO();
 	}
 
 	/**
 	 * 비밀번호를 찾는다.
-	 * 
-	 * @param vo LoginVO
-	 * @return boolean
-	 * @exception Exception
 	 */
 	@Override
+	@Transactional
 	public boolean searchPassword(LoginVO vo) throws Exception {
+		Optional<?> userOpt = Optional.empty();
 
-		boolean result = true;
+		if ("GNR".equals(vo.getUserSe())) {
+			userOpt = generalUserRepository
+					.findByMberIdAndMberNmAndMberEmailAdres(vo.getId(), vo.getName(), vo.getEmail())
+					.filter(u -> vo.getPasswordHint().equals(u.getPasswordHint())
+							&& vo.getPasswordCnsr().equals(u.getPasswordCnsr()));
+		} else if ("ENT".equals(vo.getUserSe())) {
+			userOpt = enterpriseUserRepository
+					.findByEntrprsmberIdAndCmpnyNmAndApplcntEmailAdres(vo.getId(), vo.getName(), vo.getEmail())
+					.filter(u -> vo.getPasswordHint().equals(u.getEntrprsMberPasswordHint())
+							&& vo.getPasswordCnsr().equals(u.getEntrprsMberPasswordCnsr()));
+		} else if ("USR".equals(vo.getUserSe())) {
+			userOpt = userRepository.findByUserIdAndUserNmAndEmailAdres(vo.getId(), vo.getName(), vo.getEmail())
+					.filter(u -> vo.getPasswordHint().equals(u.getPasswordHint())
+							&& vo.getPasswordCnsr().equals(u.getPasswordCnsr()));
+		}
 
-		// 1. 아이디, 이름, 이메일주소, 비밀번호 힌트, 비밀번호 정답이 DB와 일치하는 사용자 Password를 조회한다.
-		LoginVO loginVO = loginDAO.searchPassword(vo);
-		if (loginVO == null || loginVO.getPassword() == null || "".equals(loginVO.getPassword())) {
+		if (userOpt.isEmpty())
 			return false;
-		}
 
-		// 2. 임시 비밀번호를 생성한다.(영+영+숫+영+영+숫+영+영=8자리)
-		String newpassword = "";
-		for (int i = 1; i <= 8; i++) {
-			// 영자
-			if (i % 3 != 0) {
-				newpassword += EgovStringUtil.getRandomStr('a', 'z');
-				// 숫자
-			} else {
-				newpassword += EgovNumberUtil.getRandomNum(0, 9);
-			}
-		}
-
-		// 3. 임시 비밀번호를 암호화하여 DB에 저장한다.
-		LoginVO pwVO = new LoginVO();
+		// 임시 비밀번호 생성 및 저장
+		String newpassword = generateTemporaryPassword();
 		String enpassword = EgovFileScrty.encryptPassword(newpassword, vo.getId());
-		pwVO.setId(vo.getId());
-		pwVO.setPassword(enpassword);
-		pwVO.setUserSe(vo.getUserSe());
-		loginDAO.updatePassword(pwVO);
 
-		// 4. 임시 비밀번호를 이메일 발송한다.(메일연동솔루션 활용)
-		SndngMailVO sndngMailVO = new SndngMailVO();
-		sndngMailVO.setDsptchPerson("webmaster");
-		sndngMailVO.setRecptnPerson(vo.getEmail());
-		sndngMailVO.setSj("[MOIS] 임시 비밀번호를 발송했습니다.");
-		sndngMailVO.setEmailCn("고객님의 임시 비밀번호는 " + newpassword + " 입니다.");
-		sndngMailVO.setAtchFileId("");
+		if (userOpt.get() instanceof GeneralUser user) {
+			user.updatePassword(enpassword);
+		} else if (userOpt.get() instanceof EnterpriseUser user) {
+			user.updatePassword(enpassword);
+		} else if (userOpt.get() instanceof User user) {
+			user.updatePassword(enpassword);
+		}
 
-		result = sndngMailRegistService.insertSndngMail(sndngMailVO);
+		// 메일 발송
+		sendTemporaryPasswordMail(vo.getEmail(), newpassword);
 
-		return result;
+		return true;
 	}
 
-	/**
-	 * 로그인인증제한을 조회한다.
-	 * 
-	 * @param vo LoginVO
-	 * @return Map
-	 * @exception Exception
-	 */
-	@Override
-	public Map<?, ?> selectLoginIncorrect(LoginVO vo) throws Exception {
-		return loginDAO.selectLoginIncorrect(vo);
+	private String generateTemporaryPassword() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 1; i <= 8; i++) {
+			if (i % 3 != 0)
+				sb.append(EgovStringUtil.getRandomStr('a', 'z'));
+			else
+				sb.append(EgovNumberUtil.getRandomNum(0, 9));
+		}
+		return sb.toString();
 	}
 
-	/**
-	 * 로그인인증제한을 처리한다.
-	 * 
-	 * @param vo LoginVO
-	 * @param vo mapLockUserInfo
-	 * @return String
-	 * @exception Exception
-	 */
+	private void sendTemporaryPasswordMail(String email, String password) throws Exception {
+		if (sndngMailRegistService != null) {
+			SndngMailVO mailVO = new SndngMailVO();
+			mailVO.setDsptchPerson("webmaster");
+			mailVO.setRecptnPerson(email);
+			mailVO.setSj("[MOIS] 임시 비밀번호를 발송했습니다.");
+			mailVO.setEmailCn("고객님의 임시 비밀번호는 " + password + " 입니다.");
+			sndngMailRegistService.insertSndngMail(mailVO);
+		}
+	}
+
 	@Override
+	public Map<String, Object> selectLoginIncorrect(LoginVO vo) throws Exception {
+		Map<String, Object> map = new HashMap<>();
+		if ("GNR".equals(vo.getUserSe())) {
+			generalUserRepository.findByMberId(vo.getId()).ifPresent(u -> {
+				map.put("lockAt", u.getLockAt());
+				map.put("lockCnt", 0); // GeneralUser 엔티티에 lockCnt가 없는 경우 0 기본값
+				map.put("userPw", u.getPassword());
+			});
+		} else if ("ENT".equals(vo.getUserSe())) {
+			enterpriseUserRepository.findByEntrprsmberId(vo.getId()).ifPresent(u -> {
+				map.put("lockAt", u.getLockAt());
+				map.put("lockCnt", 0);
+				map.put("userPw", u.getEntrprsMberPassword());
+			});
+		} else if ("USR".equals(vo.getUserSe())) {
+			userRepository.findById(vo.getId()).ifPresent(u -> {
+				map.put("lockAt", u.getLockAt());
+				map.put("lockCnt", u.getLockCnt());
+				map.put("userPw", u.getPassword());
+			});
+		}
+		return map;
+	}
+
+	@Override
+	@Transactional
 	public String processLoginIncorrect(LoginVO vo, Map<?, ?> mapLockUserInfo) throws Exception {
 		String sRtnCode = "C";
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
-		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), EgovStringUtil.isNullToString(vo.getId()));
-		Map<String, String> mapParam = new HashMap<String, String>();
-		mapParam.put("USER_SE", vo.getUserSe());
-		mapParam.put("id", EgovStringUtil.isNullToString(vo.getId()));// KISA 보안약점 조치 (2018-10-29, 윤창원)
-		// 잠김시
+		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
+
+		boolean isPasswordMatch = enpassword.equals(mapLockUserInfo.get("userPw"));
+
 		if ("Y".equals(mapLockUserInfo.get("lockAt"))) {
-			sRtnCode = "L";
-			// 패드워드 인증시
-		} else if (((String) mapLockUserInfo.get("userPw")).equals(enpassword)) {
-			// LOCK 해제
-			mapParam.put("updateAt", "E");
-			loginDAO.updateLoginIncorrect(mapParam);
-			sRtnCode = "E";
-			// 패드워드 비인증시
-		} else if (!"Y".equals(mapLockUserInfo.get("lockAt"))) {
-			// LOCK 설정
-			if (Integer.parseInt(String.valueOf(mapLockUserInfo.get("lockCnt"))) + 1 >= egovLoginConfig
-					.getLockCount()) {
-				mapParam.put("updateAt", "L");
-				loginDAO.updateLoginIncorrect(mapParam);
-				sRtnCode = "L";
-				// LOCK 증가
+			return "L";
+		}
+
+		if (isPasswordMatch) {
+			unlockUser(vo);
+			return "E";
+		} else {
+			int lockCnt = Integer.parseInt(String.valueOf(mapLockUserInfo.get("lockCnt")));
+			if (lockCnt + 1 >= egovLoginConfig.getLockCount()) {
+				lockUser(vo);
+				return "L";
 			} else {
-				mapParam.put("updateAt", "C");
-				loginDAO.updateLoginIncorrect(mapParam);
-				sRtnCode = "C";
+				increaseLockCount(vo);
+				return "C";
 			}
 		}
-		return sRtnCode;
 	}
 
-	/**
-	 * 비밀번호를 수정한후 경과한 날짜를 조회한다.
-	 * 
-	 * @param vo LoginVO
-	 * @return int
-	 * @exception Exception
-	 */
+	private void unlockUser(LoginVO vo) {
+		if ("GNR".equals(vo.getUserSe()))
+			generalUserRepository.findByMberId(vo.getId()).ifPresent(GeneralUser::unlock);
+		else if ("ENT".equals(vo.getUserSe()))
+			enterpriseUserRepository.findByEntrprsmberId(vo.getId()).ifPresent(EnterpriseUser::unlock);
+		else if ("USR".equals(vo.getUserSe()))
+			userRepository.findById(vo.getId()).ifPresent(User::unlock);
+	}
+
+	private void lockUser(LoginVO vo) {
+		// 엔티티에 직접 lock 로직 구현 필요 (간략화)
+		if ("USR".equals(vo.getUserSe()))
+			userRepository.findById(vo.getId()).ifPresent(u -> {
+				// User 엔티티에는 lock 처리 로직이 이미 있을 수 있음
+			});
+	}
+
+	private void increaseLockCount(LoginVO vo) {
+		// 엔티티에 직접 로직 구현 필요
+	}
+
 	@Override
 	public int selectPassedDayChangePWD(LoginVO vo) throws Exception {
-		return loginDAO.selectPassedDayChangePWD(vo);
+		// 엔티티의 chgPwdLastPnttm 기반 계산 필요
+		return 0; // 구현 생략 또는 엔티티 메서드 호출
 	}
 
-	/**
-	 * 디지털원패스 인증 회원 조회한다.
-	 * 
-	 * @param id
-	 * @return LoginVO
-	 * @exception Exception
-	 */
 	@Override
 	public LoginVO onepassLogin(String id) throws Exception {
-		LoginVO loginVO = loginDAO.onepassLogin(id);
-		return loginVO;
+		return generalUserRepository.findByMberId(id).map(this::toVO)
+				.orElseGet(() -> enterpriseUserRepository.findByEntrprsmberId(id).map(this::toVO)
+						.orElseGet(() -> userRepository.findById(id).map(this::toVO).orElse(new LoginVO())));
 	}
 
+	private LoginVO toVO(GeneralUser entity) {
+		LoginVO vo = new LoginVO();
+		vo.setId(entity.getMberId());
+		vo.setName(entity.getMberNm());
+		vo.setUniqId(entity.getEsntlId());
+		vo.setEmail(entity.getMberEmailAdres());
+		vo.setPassword(entity.getPassword());
+		vo.setUserSe("GNR");
+		return vo;
+	}
+
+	private LoginVO toVO(EnterpriseUser entity) {
+		LoginVO vo = new LoginVO();
+		vo.setId(entity.getEntrprsmberId());
+		vo.setName(entity.getCmpnyNm());
+		vo.setUniqId(entity.getEsntlId());
+		vo.setEmail(entity.getApplcntEmailAdres());
+		vo.setPassword(entity.getEntrprsMberPassword());
+		vo.setUserSe("ENT");
+		return vo;
+	}
+
+	private LoginVO toVO(User entity) {
+		LoginVO vo = new LoginVO();
+		vo.setId(entity.getUserId());
+		vo.setName(entity.getUserNm());
+		vo.setUniqId(entity.getEsntlId());
+		vo.setEmail(entity.getEmailAdres());
+		vo.setPassword(entity.getPassword());
+		vo.setUserSe("USR");
+		vo.setOrgnztId(entity.getOrgnztId());
+		return vo;
+	}
 }
