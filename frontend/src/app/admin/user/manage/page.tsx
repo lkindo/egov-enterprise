@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 import { UserManage, UserSearchParams } from '@/types/user';
 import { getUserList, createUser, updateUser, deleteUser } from '@/services/user/userService';
 import { Pencil, Trash2, Plus } from 'lucide-react';
@@ -222,47 +223,11 @@ export default function UserManagePage() {
                 </Table>
             </div>
 
-            {pagination && pagination.totalPageCount > 1 && (
-                <div className="flex justify-center mt-4">
-                    <Pagination>
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious
-                                    href="#"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        if (params.pageIndex! > 1) setParams(p => ({ ...p, pageIndex: p.pageIndex! - 1 }));
-                                    }}
-                                />
-                            </PaginationItem>
-
-                            {Array.from({ length: pagination.totalPageCount }).map((_, i) => (
-                                <PaginationItem key={i}>
-                                    <PaginationLink
-                                        href="#"
-                                        isActive={params.pageIndex === i + 1}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            setParams(p => ({ ...p, pageIndex: i + 1 }));
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            ))}
-
-                            <PaginationItem>
-                                <PaginationNext
-                                    href="#"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        if (params.pageIndex! < pagination.totalPageCount) setParams(p => ({ ...p, pageIndex: p.pageIndex! + 1 }));
-                                    }}
-                                />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
             )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

@@ -1,19 +1,21 @@
+export interface PaginationInfo {
+    currentPageNo: number;
+    recordCountPerPage: number;
+    pageSize: number;
+    totalRecordCount: number;
+    totalPageCount: number;
+    firstPageNoOnPageList: number;
+    lastPageNoOnPageList: number;
+    firstRecordIndex: number;
+    lastRecordIndex: number;
+}
+
 export interface PaginationResponse<T> {
     success?: boolean;
     list?: T[];
     totalRecordCount?: number;
     resultList: T[];
-    paginationInfo: {
-        currentPageNo: number;
-        recordCountPerPage: number;
-        pageSize: number;
-        totalRecordCount: number;
-        totalPageCount: number;
-        firstPageNoOnPageList: number;
-        lastPageNoOnPageList: number;
-        firstRecordIndex: number;
-        lastRecordIndex: number;
-    };
+    paginationInfo: PaginationInfo;
 }
 
 export interface SearchParams {

@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,13 +21,15 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 import { getRoleList, createRole, deleteRole } from '@/services/security/securityService';
 import { RoleManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function RoleManagePage() {
-    const [roles, setRoles] = useState<RoleManage[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<SearchParams>({
         pageIndex: 1,
         searchKeyword: '',
@@ -44,23 +44,30 @@ export default function RoleManagePage() {
         roleSort: '',
     });
 
-    const fetchList = useCallback(async () => {
-        try {
-            const response = await getRoleList(params);
-            if (response && response.resultList) {
-                setRoles(response.resultList);
-            } else {
-                setRoles([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setRoles([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['admin-roles', params],
+        queryFn: () => getRoleList(params),
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [fetchList]);
+    const roles = data?.resultList || [];
+    const pagination = data?.paginationInfo;
+
+    const createMutation = useMutation({
+        mutationFn: createRole,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+            setIsDialogOpen(false);
+        },
+        onError: () => alert('저장 중 오류가 발생했습니다.')
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteRole,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+        },
+        onError: () => alert('삭제 중 오류가 발생했습니다.')
+    });
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,22 +88,11 @@ export default function RoleManagePage() {
 
     const handleDelete = async (roleCode: string) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
-        try {
-            await deleteRole(roleCode);
-            fetchList();
-        } catch (error) {
-            alert('삭제 중 오류가 발생했습니다.');
-        }
+        deleteMutation.mutate(roleCode);
     };
 
     const handleSubmit = async () => {
-        try {
-            await createRole(formData);
-            setIsDialogOpen(false);
-            fetchList();
-        } catch (error) {
-            alert('저장 중 오류가 발생했습니다.');
-        }
+        createMutation.mutate(formData);
     };
 
     return (
@@ -109,15 +105,15 @@ export default function RoleManagePage() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Input
                     placeholder="롤코드 또는 롤명으로 검색"
                     className="max-w-sm"
-                    value={params.searchKeyword}
+                    value={params.searchKeyword || ''}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>조회</Button>
-            </div>
+                <Button type="submit">조회</Button>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -133,7 +129,9 @@ export default function RoleManagePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {roles.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={7} rowCount={10} />
+                        ) : roles.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -142,14 +140,14 @@ export default function RoleManagePage() {
                         ) : (
                             roles.map((role, index) => (
                                 <TableRow key={role.roleCode}>
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell className="font-mono">{role.roleCode}</TableCell>
                                     <TableCell>{role.roleNm}</TableCell>
                                     <TableCell className="max-w-xs truncate">{role.rolePtn}</TableCell>
                                     <TableCell>{role.roleTyp}</TableCell>
                                     <TableCell>{role.roleSort}</TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(role.roleCode)}>
+                                        <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(role.roleCode)}>
                                             <Trash2 className="h-4 w-4 text-red-500" />
                                         </Button>
                                     </TableCell>
@@ -159,6 +157,13 @@ export default function RoleManagePage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
@@ -224,7 +229,10 @@ export default function RoleManagePage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
-                        <Button onClick={handleSubmit}>저장</Button>
+                        <Button onClick={handleSubmit} disabled={createMutation.isPending}>
+                            {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            저장
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

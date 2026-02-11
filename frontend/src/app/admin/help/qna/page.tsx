@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,12 +22,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, Eye, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, Plus, Eye, MessageSquare, Loader2 } from "lucide-react";
 import { getQnaList, createQna, updateQna, deleteQna, updateQnaAnswer } from '@/services/help/onlineHelpService';
 import { QnaVO, OnlineHelpSearchParams } from '@/types/onlineHelp';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function QnaManagePage() {
-    const [qnas, setQnas] = useState<QnaVO[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<OnlineHelpSearchParams>({
         pageIndex: 1,
         searchCondition: '0',
@@ -44,23 +44,48 @@ export default function QnaManagePage() {
         answerCn: '',
     });
 
-    const fetchList = useCallback(async () => {
-        try {
-            const response = await getQnaList(params);
-            if (response && response.resultList) {
-                setQnas(response.resultList);
-            } else {
-                setQnas([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setQnas([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['admin-qnas', params],
+        queryFn: () => getQnaList(params),
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [fetchList]);
+    const qnas = data?.resultList || [];
+    const pagination = data?.paginationInfo;
+
+    const createMutation = useMutation({
+        mutationFn: createQna,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-qnas'] });
+            setIsDialogOpen(false);
+        },
+        onError: () => alert('저장 중 오류가 발생했습니다.')
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: updateQna,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-qnas'] });
+            setIsDialogOpen(false);
+        },
+        onError: () => alert('저장 중 오류가 발생했습니다.')
+    });
+
+    const answerMutation = useMutation({
+        mutationFn: updateQnaAnswer,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-qnas'] });
+            setIsDialogOpen(false);
+        },
+        onError: () => alert('답변 저장 중 오류가 발생했습니다.')
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteQna,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-qnas'] });
+        },
+        onError: () => alert('삭제 중 오류가 발생했습니다.')
+    });
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,27 +115,16 @@ export default function QnaManagePage() {
 
     const handleDelete = async (qaId: string) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
-        try {
-            await deleteQna(qaId);
-            fetchList();
-        } catch (error) {
-            alert('삭제 중 오류가 발생했습니다.');
-        }
+        deleteMutation.mutate(qaId);
     };
 
     const handleSubmit = async () => {
-        try {
-            if (isAnswerMode && editingQna) {
-                await updateQnaAnswer(formData);
-            } else if (editingQna) {
-                await updateQna(formData);
-            } else {
-                await createQna(formData);
-            }
-            setIsDialogOpen(false);
-            fetchList();
-        } catch (error) {
-            alert('저장 중 오류가 발생했습니다.');
+        if (isAnswerMode && editingQna) {
+            answerMutation.mutate(formData);
+        } else if (editingQna) {
+            updateMutation.mutate(formData);
+        } else {
+            createMutation.mutate(formData);
         }
     };
 
@@ -132,15 +146,15 @@ export default function QnaManagePage() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Input
                     placeholder="제목 또는 내용으로 검색"
                     className="max-w-sm"
-                    value={params.searchKeyword}
+                    value={params.searchKeyword || ''}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>조회</Button>
-            </div>
+                <Button type="submit">조회</Button>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -156,7 +170,9 @@ export default function QnaManagePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {qnas.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={7} rowCount={10} />
+                        ) : qnas.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -165,7 +181,7 @@ export default function QnaManagePage() {
                         ) : (
                             qnas.map((qna, index) => (
                                 <TableRow key={qna.qaId}>
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell className="font-medium">{qna.qestnSj}</TableCell>
                                     <TableCell>{qna.wrterNm || qna.frstRegisterNm}</TableCell>
                                     <TableCell>{qna.inqireCo || 0}</TableCell>
@@ -179,7 +195,7 @@ export default function QnaManagePage() {
                                             <Button variant="ghost" size="icon" onClick={() => handleAnswer(qna)}>
                                                 <MessageSquare className="h-4 w-4 text-blue-500" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(qna.qaId!)}>
+                                            <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(qna.qaId!)}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                             </Button>
                                         </div>
@@ -190,6 +206,13 @@ export default function QnaManagePage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl">
@@ -238,7 +261,8 @@ export default function QnaManagePage() {
                         ) : (
                             <>
                                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
-                                <Button onClick={handleSubmit}>
+                                <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending || answerMutation.isPending}>
+                                    {(createMutation.isPending || updateMutation.isPending || answerMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {isAnswerMode ? '답변 등록' : '저장'}
                                 </Button>
                             </>
