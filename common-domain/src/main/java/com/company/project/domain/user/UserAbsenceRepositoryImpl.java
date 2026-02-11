@@ -49,11 +49,11 @@ public class UserAbsenceRepositoryImpl implements UserAbsenceRepositoryCustom {
                                 .stringTemplate("CASE WHEN {0} IS NULL THEN 'N' ELSE 'Y' END", userAbsence.userAbsnceAt)
                                 .as("regYn"),
                         userAbsence.lastUpdusrId,
-                        userAbsence.modifiedDate.as("lastUpdtPnttm")))
+                        userAbsence.lastModifiedDate.as("lastUpdtPnttm")))
                 .from(user)
                 .leftJoin(userAbsence).on(user.userId.eq(userAbsence.userId))
                 .where(builder)
-                .orderBy(userAbsence.modifiedDate.desc().nullsLast()) // Order by modified date desc
+                .orderBy(userAbsence.lastModifiedDate.desc().nullsLast()) // Order by modified date desc
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

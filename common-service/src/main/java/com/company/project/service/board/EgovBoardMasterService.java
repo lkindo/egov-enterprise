@@ -15,4 +15,8 @@ public interface EgovBoardMasterService {
     void updateBoardMaster(BoardMasterDto dto);
 
     void deleteBoardMaster(String bbsId, String userId);
+
+    boolean canUseSatisfaction(String bbsId);
+
+    boolean canUseComment(String bbsId);
 }

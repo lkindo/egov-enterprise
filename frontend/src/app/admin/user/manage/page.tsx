@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -13,29 +11,39 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus } from "lucide-react";
-import { getUserList, createUser, updateUser, deleteUser } from '@/services/user/userService';
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 import { UserManage, UserSearchParams } from '@/types/user';
+import { getUserList, createUser, updateUser, deleteUser } from '@/services/user/userService';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 
 export default function UserManagePage() {
-    const [users, setUsers] = useState<UserManage[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<UserSearchParams>({
         pageIndex: 1,
         searchCondition: '0',
@@ -52,28 +60,36 @@ export default function UserManagePage() {
         userSttusCode: 'P',
     });
 
-    const fetchList = useCallback(async () => {
-        try {
-            const response = await getUserList(params);
-            if (response && response.resultList) {
-                setUsers(response.resultList);
-            } else {
-                setUsers([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setUsers([]);
-        }
-    }, [params]);
+    // useQuery for fetching users
+    const { data, isLoading } = useQuery({
+        queryKey: ['users', params],
+        queryFn: () => getUserList(params),
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [fetchList]);
+    const users = data?.resultList || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setParams(prev => ({ ...prev, pageIndex: 1 }));
     };
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+        onError: () => alert('삭제 중 오류가 발생했습니다.')
+    });
+
+    const saveMutation = useMutation({
+        mutationFn: (data: UserManage) => editingUser ? updateUser(data) : createUser(data),
+        onSuccess: () => {
+            setIsDialogOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+        onError: () => alert('저장 중 오류가 발생했습니다.')
+    });
 
     const handleCreate = () => {
         setEditingUser(null);
@@ -95,26 +111,11 @@ export default function UserManagePage() {
 
     const handleDelete = async (userId: string) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
-        try {
-            await deleteUser(userId);
-            fetchList();
-        } catch (error) {
-            alert('삭제 중 오류가 발생했습니다.');
-        }
+        deleteMutation.mutate(userId);
     };
 
     const handleSubmit = async () => {
-        try {
-            if (editingUser) {
-                await updateUser(formData);
-            } else {
-                await createUser(formData);
-            }
-            setIsDialogOpen(false);
-            fetchList();
-        } catch (error) {
-            alert('저장 중 오류가 발생했습니다.');
-        }
+        saveMutation.mutate(formData);
     };
 
     const getStatusBadge = (status: string) => {
@@ -186,7 +187,9 @@ export default function UserManagePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={7} rowCount={10} />
+                        ) : users.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -195,7 +198,9 @@ export default function UserManagePage() {
                         ) : (
                             users.map((user, index) => (
                                 <TableRow key={user.userId}>
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>
+                                        {(pagination?.currentPageNo ?? 1 - 1) * (pagination?.recordCountPerPage ?? 10) + index + 1}
+                                    </TableCell>
                                     <TableCell className="font-mono">{user.userId}</TableCell>
                                     <TableCell>{user.userNm}</TableCell>
                                     <TableCell>{user.email}</TableCell>
@@ -206,7 +211,7 @@ export default function UserManagePage() {
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(user.userId)}>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(user.userId)} disabled={deleteMutation.isPending}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                             </Button>
                                         </div>
@@ -217,6 +222,13 @@ export default function UserManagePage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-md">
@@ -273,7 +285,9 @@ export default function UserManagePage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
-                        <Button onClick={handleSubmit}>저장</Button>
+                        <Button onClick={handleSubmit} disabled={saveMutation.isPending}>
+                            {saveMutation.isPending ? '저장 중...' : '저장'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

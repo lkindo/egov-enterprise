@@ -85,6 +85,8 @@ public class BoardAdapter {
         vo.setCmmntyId(dto.getCmmntyId());
         vo.setBlogId(dto.getBlogId());
         vo.setBlogAt(dto.getBlogAt());
+        vo.setCommentAt(dto.getCommentAt());
+        vo.setStsfdgAt(dto.getStsfdgAt());
 
         // Handling optional fields that might be missing in DTO
         vo.setAuthFlag(dto.getAuthFlag());
@@ -123,6 +125,8 @@ public class BoardAdapter {
                 .cmmntyId(vo.getCmmntyId())
                 .blogId(vo.getBlogId())
                 .blogAt(vo.getBlogAt())
+                .commentAt(vo.getCommentAt())
+                .stsfdgAt(vo.getStsfdgAt())
                 .build();
     }
 }

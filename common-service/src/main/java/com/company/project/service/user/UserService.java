@@ -45,6 +45,16 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
     }
 
     /**
+     * 사용자 목록 페이징 조회 구현
+     */
+    @Override
+    public org.springframework.data.domain.Page<UserDto> getPagedUserList(
+            org.springframework.data.domain.Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::convertToDto);
+    }
+
+    /**
      * 사용자 상세 조회
      */
     @Override

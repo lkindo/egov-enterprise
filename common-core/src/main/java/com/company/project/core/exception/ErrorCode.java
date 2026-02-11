@@ -4,27 +4,37 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
+/**
+ * 전사 표준 에러 코드
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
+
     // Common
-    INVALID_INPUT(HttpStatus.BAD_REQUEST, "C001", "Invalid input value"),
-    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C002", "Method not allowed"),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C003", "Internal server error"),
-    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "C004", "Resource not found"),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "C005", "Resource already exists"),
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "C001", "Invalid Input Value"),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C002", "Method Not Allowed"),
+    ENTITY_NOT_FOUND(HttpStatus.BAD_REQUEST, "C003", "Entity Not Found"),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C004", "Server Error"),
+    INVALID_TYPE_VALUE(HttpStatus.BAD_REQUEST, "C005", " Invalid Type Value"),
+    HANDLE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "C006", "Access is Denied"),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "C007", "Resource Not Found"),
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "C008", "Duplicate Resource"),
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "C009", "Invalid Input"),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "C010", "Access Denied"),
 
     // Auth
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "A002", "Access denied"),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Invalid token"),
-
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized Access"),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "Invalid JWT Token"),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Expired JWT Token"),
+    AUTH_ERROR(HttpStatus.UNAUTHORIZED, "A004", "Authentication Failed"),
+    
     // User
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User not found"),
-    DUPLICATE_USER_ID(HttpStatus.BAD_REQUEST, "U002", "User ID already exists"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User Not Found"),
+    DUPLICATE_USER_ID(HttpStatus.CONFLICT, "U002", "Duplicate User ID"),
 
     // Code
-    DUPLICATE_CODE(HttpStatus.BAD_REQUEST, "D001", "Common code already exists");
+    DUPLICATE_CODE(HttpStatus.CONFLICT, "CD01", "Duplicate Code");
 
     private final HttpStatus status;
     private final String code;

@@ -8,13 +8,13 @@ public interface EgovSatisfactionService {
 
     void updateSatisfaction(SatisfactionDto dto);
 
-    void deleteSatisfaction(String satisfactionId);
+    void deleteSatisfaction(Long satisfactionId);
 
     List<SatisfactionDto> getSatisfactionList(Long articleId, String boardId);
 
-    SatisfactionDto getSatisfaction(String satisfactionId);
+    SatisfactionDto getSatisfaction(Long satisfactionId);
 
-    boolean checkPassword(String satisfactionId, String password);
+    boolean checkPassword(Long satisfactionId, String password);
 
     Double getAverageSatisfaction(Long articleId, String boardId);
 }

@@ -30,8 +30,6 @@ import egovframework.com.cop.bbs.service.Board;
 import egovframework.com.cop.bbs.service.BoardMaster;
 import egovframework.com.cop.bbs.service.BoardMasterVO;
 import egovframework.com.cop.bbs.service.BoardVO;
-import egovframework.com.cop.bbs.service.EgovBBSSatisfactionService;
-import egovframework.com.cop.cmt.service.EgovArticleCommentService;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,11 +57,8 @@ public class EgovArticleController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	@Resource(name = "EgovArticleCommentService")
-	protected EgovArticleCommentService egovArticleCommentService;
-
-	@Resource(name = "EgovBBSSatisfactionService")
-	private EgovBBSSatisfactionService bbsSatisfactionService;
+	// Removed legacy comment/satisfaction services as we use egovBoardMasterService
+	// now
 
 	protected String unscript(String data) {
 		if (data == null || data.trim().equals("")) {
@@ -181,15 +176,11 @@ public class EgovArticleController {
 			masterVo.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
 		}
 
-		if (egovArticleCommentService != null) {
-			if (egovArticleCommentService.canUseComment(boardVO.getBbsId())) {
-				model.addAttribute("useComment", "true");
-			}
+		if (egovBoardMasterService.canUseComment(boardVO.getBbsId())) {
+			model.addAttribute("useComment", "true");
 		}
-		if (bbsSatisfactionService != null) {
-			if (bbsSatisfactionService.canUseSatisfaction(boardVO.getBbsId())) {
-				model.addAttribute("useSatisfaction", "true");
-			}
+		if (egovBoardMasterService.canUseSatisfaction(boardVO.getBbsId())) {
+			model.addAttribute("useSatisfaction", "true");
 		}
 
 		model.addAttribute("boardMasterVO", masterVo);

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;

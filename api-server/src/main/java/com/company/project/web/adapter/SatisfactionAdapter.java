@@ -14,7 +14,7 @@ public class SatisfactionAdapter {
         if (dto == null)
             return null;
         SatisfactionVO vo = new SatisfactionVO();
-        vo.setStsfdgNo(dto.getSatisfactionId());
+        vo.setStsfdgNo(dto.getSatisfactionId() != null ? String.valueOf(dto.getSatisfactionId()) : "");
         vo.setNttId(dto.getArticleId() != null ? dto.getArticleId() : 0L);
         vo.setBbsId(dto.getBoardId());
         vo.setWrterId(dto.getWriterId());
@@ -22,7 +22,7 @@ public class SatisfactionAdapter {
         vo.setStsfdg(dto.getSatisfactionLevel() != null ? dto.getSatisfactionLevel() : 0);
         vo.setStsfdgCn(dto.getSatisfactionOpinion());
         vo.setUseAt(dto.getUseAt());
-        vo.setFrstRegisterId(dto.getWriterId()); // Assuming Writer is First Register
+        vo.setFrstRegisterId(dto.getWriterId());
 
         if (dto.getCreatedDate() != null) {
             vo.setFrstRegisterPnttm(dto.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
@@ -35,7 +35,8 @@ public class SatisfactionAdapter {
         if (vo == null)
             return null;
         return SatisfactionDto.builder()
-                .satisfactionId(vo.getStsfdgNo())
+                .satisfactionId(
+                        vo.getStsfdgNo() != null && !vo.getStsfdgNo().isEmpty() ? Long.valueOf(vo.getStsfdgNo()) : null)
                 .articleId(vo.getNttId())
                 .boardId(vo.getBbsId())
                 .writerId(vo.getWrterId())
@@ -50,17 +51,16 @@ public class SatisfactionAdapter {
         if (vo == null)
             return null;
         return SatisfactionDto.builder()
-                .satisfactionId(vo.getStsfdgNo()) // Mapped from stsfdgNo
+                .satisfactionId(
+                        vo.getStsfdgNo() != null && !vo.getStsfdgNo().isEmpty() ? Long.valueOf(vo.getStsfdgNo()) : null)
                 .articleId(vo.getNttId())
                 .boardId(vo.getBbsId())
                 .writerId(vo.getWrterId())
                 .writerNm(vo.getWrterNm())
-                .satisfactionLevel(vo.getStsfdg()) // Mapped from stsfdg
-                .satisfactionOpinion(vo.getStsfdgCn()) // Mapped from stsfdgCn
+                .satisfactionLevel(vo.getStsfdg())
+                .satisfactionOpinion(vo.getStsfdgCn())
                 .useAt(vo.getUseAt())
-                .satisfactionPassword(vo.getStsfdgPassword()) // Added
-                // .frstRegisterId(vo.getFrstRegisterId())
-                // .lastUpdusrId(vo.getLastUpdusrId())
+                .satisfactionPassword(vo.getStsfdgPassword())
                 .build();
     }
 
@@ -68,7 +68,7 @@ public class SatisfactionAdapter {
         if (dto == null)
             return null;
         Satisfaction vo = new Satisfaction();
-        vo.setStsfdgNo(dto.getSatisfactionId());
+        vo.setStsfdgNo(dto.getSatisfactionId() != null ? String.valueOf(dto.getSatisfactionId()) : "");
         vo.setNttId(dto.getArticleId() != null ? dto.getArticleId() : 0L);
         vo.setBbsId(dto.getBoardId());
         vo.setWrterId(dto.getWriterId());
@@ -76,7 +76,6 @@ public class SatisfactionAdapter {
         vo.setStsfdg(dto.getSatisfactionLevel() != null ? dto.getSatisfactionLevel() : 0);
         vo.setStsfdgCn(dto.getSatisfactionOpinion());
         vo.setUseAt(dto.getUseAt());
-        // Password not in DTO usually for security in list, but needed for update
         return vo;
     }
 

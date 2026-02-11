@@ -1,12 +1,13 @@
 import client from '@/lib/api/client';
 import { FileVO, FileSearchParams } from '@/types/file';
+import { PaginationResponse } from '@/types/system';
 
 const fileService = {
     /**
      * 전역 파일 목록 조회 (Admin)
      */
     getAdminFileList: async (params: FileSearchParams) => {
-        const response = await client.get('/admin/cmm/fms/selectFileList.do', { params });
+        const response = await client.get<PaginationResponse<FileVO>>('/admin/cmm/fms/selectFileList.do', { params });
         return response.data;
     },
 
