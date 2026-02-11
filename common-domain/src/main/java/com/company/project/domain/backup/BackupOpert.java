@@ -1,18 +1,17 @@
 package com.company.project.domain.backup;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "NBACKUPOPERT")
 public class BackupOpert {
@@ -20,6 +19,10 @@ public class BackupOpert {
     @Id
     @Column(name = "BACKUP_OPERT_ID", length = 20)
     private String backupOpertId;
+
+    @OneToMany(mappedBy = "backupOpert", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<BackupSchdulDfk> executSchdulDfkSes = new ArrayList<>();
 
     @Column(name = "BACKUP_OPERT_NM", length = 60)
     private String backupOpertNm;
@@ -55,15 +58,14 @@ public class BackupOpert {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime frstRegistPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime lastUpdtPnttm;
 
-    @Builder
     public BackupOpert(String backupOpertId, String backupOpertNm, String backupOrginlDrctry, String backupStreDrctry,
             String cmprsSe, String executCycle, String executSchdulDe, String executSchdulHour, String executSchdulMnt,
             String executSchdulSecnd, String useAt, String frstRegisterId) {
@@ -79,12 +81,12 @@ public class BackupOpert {
         this.executSchdulSecnd = executSchdulSecnd;
         this.useAt = useAt;
         this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.frstRegistPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
     public void delete() {
         this.useAt = "N";
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 }

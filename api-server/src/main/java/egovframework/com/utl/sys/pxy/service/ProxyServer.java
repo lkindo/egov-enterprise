@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -16,9 +16,10 @@ import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.company.project.domain.monitoring.ProxyLogRepository;
+
 import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.cmm.util.EgovResourceCloseHelper;
-import egovframework.com.utl.sys.pxy.service.impl.ProxySvcDAO;
 
 /**
  * 프록시서비스 처리 클래스
@@ -27,20 +28,21 @@ import egovframework.com.utl.sys.pxy.service.impl.ProxySvcDAO;
  * @since 2010.07.15
  * @version 1.0
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == 개정이력(Modification Information) ==
  *
  *  수정일                수정자             수정내용
  *  ----------   --------    ---------------------------
  *  2019.12.05   신용호              KISA 보안약점 조치 (경로조작및 자원 삽입, 부적절한 예외처리)
- * </pre>
+ *      </pre>
  */
 public class ProxyServer extends Thread {
 	/** logger */
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyServer.class);
 
-	ProxySvcDAO proxySvcDAO;
-	EgovIdGnrService egovProxyLogIdGnrService;
+	private final ProxyLogRepository proxyLogRepository;
+	private final EgovIdGnrService egovProxyLogIdGnrService;
 
 	ServerSocket serverSocket = null;
 	Socket client = null;
@@ -58,10 +60,8 @@ public class ProxyServer extends Thread {
 	byte[] request = new byte[1024];
 	byte[] reply = new byte[4096];
 
-	ProxyLog proxyLog = null;
-
 	public ProxyServer(String svcHost, String localIp, int localPort, int remotePort, String threadName,
-		ProxySvcDAO proxySvcDAO, EgovIdGnrService egovProxyLogIdGnrService) {
+			ProxyLogRepository proxyLogRepository, EgovIdGnrService egovProxyLogIdGnrService) {
 
 		try {
 			setSvcIp(svcHost);
@@ -70,10 +70,11 @@ public class ProxyServer extends Thread {
 			setRemotePort(remotePort);
 			setThreadName(threadName);
 
-			this.proxySvcDAO = proxySvcDAO;
+			this.proxyLogRepository = proxyLogRepository;
 			this.egovProxyLogIdGnrService = egovProxyLogIdGnrService;
 
-			serverSocket = SSLServerSocketFactory.getDefault().createServerSocket(localPort);//2022.01. Unencrypted Socket
+			serverSocket = SSLServerSocketFactory.getDefault().createServerSocket(localPort);// 2022.01. Unencrypted
+																								// Socket
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -113,13 +114,14 @@ public class ProxyServer extends Thread {
 					OutputStream streamToClient = client.getOutputStream();
 
 					String svcIp = EgovWebUtil.filePathBlackList(getSvcIp());
-					server = SSLSocketFactory.getDefault().createSocket(svcIp, remotePort);//2022.01. Unencrypted Socket 처리
+					server = SSLSocketFactory.getDefault().createSocket(svcIp, remotePort);// 2022.01. Unencrypted
+																							// Socket 처리
 
 					InputStream streamFromServer = server.getInputStream();
 					OutputStream streamToServer = server.getOutputStream();
 
 					ProxyThread proxyThread = new ProxyThread(client, streamFromClient, streamToClient,
-						streamFromServer, streamToServer);
+							streamFromServer, streamToServer);
 					Thread thread = new Thread(proxyThread, getThreadName() + "-" + server.getLocalPort());
 					thread.start();
 
@@ -153,34 +155,35 @@ public class ProxyServer extends Thread {
 
 		try {
 
-			proxyLog = new ProxyLog();
-
-			proxyLog.setProxyId(getThreadName());
-
-			proxyLog.setLogId(egovProxyLogIdGnrService.getNextStringId());
-
-			//KISA 보안약점 조치 (2018-10-29, 윤창원)
+			String clntIp = "";
+			// KISA 보안약점 조치 (2018-10-29, 윤창원)
 			if (client.getInetAddress() != null) {
 				if (!EgovWebUtil.isIPAddress((client.getInetAddress().getHostAddress()))) {
 					throw new RuntimeException("IP is needed. (" + client.getInetAddress().getHostAddress() + ")");
 				}
-				proxyLog.setClntIp(client.getInetAddress().getHostAddress());
+				clntIp = client.getInetAddress().getHostAddress();
 			}
-			proxyLog.setClntPort(String.valueOf(getLocalPort()));
-			proxyLog.setFrstRegisterId("SYSTEM");
-			proxyLog.setLastUpdusrId("SYSTEM");
 
-			LOGGER.info(proxyLog.getProxyId());
-			LOGGER.info(proxyLog.getLogId());
-			LOGGER.info(proxyLog.getClntIp());
-			LOGGER.info(proxyLog.getClntPort());
-			LOGGER.info(proxyLog.getFrstRegisterId());
-			LOGGER.info(proxyLog.getLastUpdusrId());
+			com.company.project.domain.monitoring.ProxyLog entity = com.company.project.domain.monitoring.ProxyLog
+					.builder()
+					.proxyId(getThreadName())
+					.logId(egovProxyLogIdGnrService.getNextStringId())
+					.clntIp(clntIp)
+					.clntPort(String.valueOf(getLocalPort()))
+					.conectTime(LocalDateTime.now())
+					.frstRegisterId("SYSTEM")
+					.frstRegisterPnttm(LocalDateTime.now())
+					.lastUpdusrId("SYSTEM")
+					.lastUpdusrPnttm(LocalDateTime.now())
+					.build();
 
-			proxySvcDAO.insertProxyLog(proxyLog);
+			LOGGER.info(entity.getProxyId());
+			LOGGER.info(entity.getLogId());
+			LOGGER.info(entity.getClntIp());
+			LOGGER.info(entity.getClntPort());
 
-		} catch (SQLException e) {
-			LOGGER.debug("proxyLog Insert Error", e);
+			proxyLogRepository.save(entity);
+
 		} catch (Exception e) {
 			LOGGER.debug("proxyLog Insert Error", e);
 		}

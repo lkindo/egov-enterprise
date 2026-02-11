@@ -3,8 +3,6 @@ package com.company.project.config;
 import egovframework.com.sym.sym.bak.service.BackupScheduler;
 import egovframework.com.sym.sym.bak.service.EgovBackupOpertService;
 import egovframework.com.sym.sym.bak.service.EgovBackupResultService;
-import egovframework.com.sym.sym.bak.service.impl.BackupOpertDao;
-import egovframework.com.sym.sym.bak.service.impl.BackupResultDao;
 import egovframework.com.sym.sym.bak.service.impl.EgovBackupOpertServiceImpl;
 import egovframework.com.sym.sym.bak.service.impl.EgovBackupResultServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -71,27 +69,13 @@ public class BackupConfig {
     }
 
     @Bean(name = "egovBackupOpertService")
-    public EgovBackupOpertService egovBackupOpertService(BackupOpertDao backupOpertDao,
-            BackupResultDao backupResultDao) {
-        // Dependencies are injected via @Resource in the implementation
-        EgovBackupOpertServiceImpl service = new EgovBackupOpertServiceImpl();
-        return service;
+    public EgovBackupOpertService egovBackupOpertService() {
+        return new EgovBackupOpertServiceImpl();
     }
 
     @Bean(name = "egovBackupResultService")
-    public EgovBackupResultService egovBackupResultService(BackupResultDao backupResultDao) {
-        // Dependencies are injected via @Resource in the implementation
-        EgovBackupResultServiceImpl service = new EgovBackupResultServiceImpl();
-        return service;
+    public EgovBackupResultService egovBackupResultService() {
+        return new EgovBackupResultServiceImpl();
     }
 
-    @Bean(name = "backupOpertDao")
-    public BackupOpertDao backupOpertDao() {
-        return new BackupOpertDao();
-    }
-
-    @Bean(name = "backupResultDao")
-    public BackupResultDao backupResultDao() {
-        return new BackupResultDao();
-    }
 }

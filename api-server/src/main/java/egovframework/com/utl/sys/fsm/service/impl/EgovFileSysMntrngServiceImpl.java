@@ -50,9 +50,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 				.fileSysId(vo.getFileSysId())
 				.fileSysNm(vo.getFileSysNm())
 				.fileSysManageNm(vo.getFileSysManageNm())
-				.fileSysSize(vo.getFileSysMg())
-				.fileSysThrhld(vo.getFileSysThrhld())
-				.fileSysUsgQty(vo.getFileSysUsgQty())
+				.fileSysSize((long) vo.getFileSysMg())
+				.fileSysThrhld((long) vo.getFileSysThrhld())
+				.fileSysUsgQty((long) vo.getFileSysUsgQty())
 				.frstRegisterId(vo.getFrstRegisterId())
 				.build();
 		fileSystemMonitoringRepository.save(entity);
@@ -66,9 +66,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 				.fileSysId(vo.getFileSysId())
 				.fileSysNm(vo.getFileSysNm())
 				.fileSysManageNm(vo.getFileSysManageNm())
-				.fileSysSize(vo.getFileSysMg())
-				.fileSysThrhld(vo.getFileSysThrhld())
-				.fileSysUsgQty(vo.getFileSysUsgQty())
+				.fileSysSize((long) vo.getFileSysMg())
+				.fileSysThrhld((long) vo.getFileSysThrhld())
+				.fileSysUsgQty((long) vo.getFileSysUsgQty())
 				.mntrngSttus(vo.getMntrngSttus())
 				.logInfo(vo.getLogInfo())
 				.frstRegisterId(vo.getFrstRegisterId())
@@ -124,8 +124,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	@Transactional
 	public void updateFileSysMntrng(FileSysMntrng vo) throws Exception {
 		fileSystemMonitoringRepository.findById(vo.getFileSysId()).ifPresent(e -> {
-			e.update(vo.getFileSysNm(), vo.getFileSysManageNm(), vo.getFileSysMg(), vo.getFileSysThrhld(),
-					vo.getFileSysUsgQty(), vo.getMngrNm(), vo.getMngrEmailAddr(), vo.getLastUpdusrId());
+			e.update(vo.getFileSysNm(), vo.getFileSysManageNm(), (long) vo.getFileSysMg(), (long) vo.getFileSysThrhld(),
+					(long) vo.getFileSysUsgQty(), vo.getMngrNm(), vo.getMngrEmailAddr(), vo.getLastUpdusrId());
 		});
 	}
 
@@ -133,7 +133,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	@Transactional
 	public void updateFileSysMntrngSttus(FileSysMntrng vo) throws Exception {
 		fileSystemMonitoringRepository.findById(vo.getFileSysId()).ifPresent(e -> {
-			e.updateStatus(vo.getFileSysMg(), vo.getFileSysUsgQty(), vo.getMntrngSttus(), null, vo.getLastUpdusrId());
+			e.updateStatus((long) vo.getFileSysMg(), (long) vo.getFileSysUsgQty(), vo.getMntrngSttus(), null,
+					vo.getLastUpdusrId());
 		});
 	}
 
@@ -142,9 +143,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 		vo.setFileSysId(entity.getFileSysId());
 		vo.setFileSysNm(entity.getFileSysNm());
 		vo.setFileSysManageNm(entity.getFileSysManageNm());
-		vo.setFileSysMg(entity.getFileSysSize());
-		vo.setFileSysThrhld(entity.getFileSysThrhld());
-		vo.setFileSysUsgQty(entity.getFileSysUsgQty());
+		vo.setFileSysMg(entity.getFileSysSize() != null ? entity.getFileSysSize().intValue() : 0);
+		vo.setFileSysThrhld(entity.getFileSysThrhld() != null ? entity.getFileSysThrhld().intValue() : 0);
+		vo.setFileSysUsgQty(entity.getFileSysUsgQty() != null ? entity.getFileSysUsgQty().intValue() : 0);
 		vo.setMntrngSttus(entity.getMntrngSttus());
 		vo.setMngrNm(entity.getMngrNm());
 		vo.setMngrEmailAddr(entity.getMngrEmailAddr());
@@ -157,9 +158,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 		vo.setFileSysId(entity.getFileSysId());
 		vo.setFileSysNm(entity.getFileSysNm());
 		vo.setFileSysManageNm(entity.getFileSysManageNm());
-		vo.setFileSysMg(entity.getFileSysSize());
-		vo.setFileSysThrhld(entity.getFileSysThrhld());
-		vo.setFileSysUsgQty(entity.getFileSysUsgQty());
+		vo.setFileSysMg(entity.getFileSysSize() != null ? entity.getFileSysSize().intValue() : 0);
+		vo.setFileSysThrhld(entity.getFileSysThrhld() != null ? entity.getFileSysThrhld().intValue() : 0);
+		vo.setFileSysUsgQty(entity.getFileSysUsgQty() != null ? entity.getFileSysUsgQty().intValue() : 0);
 		vo.setMntrngSttus(entity.getMntrngSttus());
 		vo.setLogInfo(entity.getLogInfo());
 		return vo;
