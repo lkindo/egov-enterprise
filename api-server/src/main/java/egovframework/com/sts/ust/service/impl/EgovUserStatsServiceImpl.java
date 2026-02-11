@@ -42,6 +42,11 @@ public class EgovUserStatsServiceImpl extends EgovAbstractServiceImpl implements
 		return mapToStatsVO(resultList);
 	}
 
+	@Override
+	public void summaryUserStats() throws Exception {
+		// Implementation for daily user stats summary
+	}
+
 	private List<StatsVO> mapToStatsVO(List<Object[]> resultList) {
 		List<StatsVO> statsList = new ArrayList<>();
 		if (resultList == null)

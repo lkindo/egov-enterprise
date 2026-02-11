@@ -12,52 +12,44 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class BatchResultDto {
+
     private String batchResultId;
     private String batchSchdulId;
     private String batchOpertId;
-    private String paramtr;
-    private String sttus;
-    private String executBeginTime;
-    private String executEndTime;
-    private String errorInfo;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-
-    // Display fields
     private String batchOpertNm;
     private String batchProgrm;
+    private String paramtr;
+    private String sttus;
     private String sttusNm;
-
-    public static BatchResultDto from(BatchResult entity) {
-        return BatchResultDto.builder()
-                .batchResultId(entity.getBatchResultId())
-                .batchSchdulId(entity.getBatchSchdulId())
-                .batchOpertId(entity.getBatchOpertId())
-                .paramtr(entity.getParamtr())
-                .sttus(entity.getSttus())
-                .executBeginTime(entity.getExecutBeginTime())
-                .executEndTime(entity.getExecutEndTime())
-                .errorInfo(entity.getErrorInfo())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .build();
-    }
+    private String errorInfo;
+    private String executBeginTime;
+    private String executEndTime;
+    private String frstRegisterId;
+    private LocalDateTime frstRegistPnttm;
+    private String lastUpdusrId;
+    private LocalDateTime lastUpdtPnttm;
 
     public static BatchResultDto from(BatchResult entity, String batchOpertNm, String batchProgrm, String sttusNm) {
+        if (entity == null) {
+            return null;
+        }
+
         return BatchResultDto.builder()
                 .batchResultId(entity.getBatchResultId())
                 .batchSchdulId(entity.getBatchSchdulId())
                 .batchOpertId(entity.getBatchOpertId())
-                .paramtr(entity.getParamtr())
-                .sttus(entity.getSttus())
-                .executBeginTime(entity.getExecutBeginTime())
-                .executEndTime(entity.getExecutEndTime())
-                .errorInfo(entity.getErrorInfo())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
                 .batchOpertNm(batchOpertNm)
                 .batchProgrm(batchProgrm)
+                .paramtr(entity.getParamtr())
+                .sttus(entity.getSttus())
                 .sttusNm(sttusNm)
+                .errorInfo(entity.getErrorInfo())
+                .executBeginTime(entity.getExecutBeginTime())
+                .executEndTime(entity.getExecutEndTime())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .frstRegistPnttm(entity.getFrstRegistPnttm())
+                .lastUpdusrId(entity.getLastUpdusrId())
+                .lastUpdtPnttm(entity.getLastUpdtPnttm())
                 .build();
     }
 }

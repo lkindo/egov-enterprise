@@ -1,6 +1,5 @@
 package com.company.project.config;
 
-import egovframework.com.sym.sym.nwk.service.impl.NtwrkDAO;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl;
 import org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl;
@@ -9,9 +8,6 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 
-/**
- * 네트워크 관리 ID 생성 및 DAO 빈 등록 설정 클래스
- */
 @Configuration
 public class NtwrkConfig {
 
@@ -35,8 +31,4 @@ public class NtwrkConfig {
         return strategy;
     }
 
-    @Bean(name = "ntwrkDAO")
-    public NtwrkDAO ntwrkDAO() {
-        return new NtwrkDAO();
-    }
 }

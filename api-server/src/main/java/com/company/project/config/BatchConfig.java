@@ -2,9 +2,7 @@ package com.company.project.config;
 
 import egovframework.com.sym.bat.service.BatchScheduler;
 import egovframework.com.sym.bat.service.EgovBatchSchdulService;
-import egovframework.com.sym.bat.service.impl.BatchSchdulDao;
 import egovframework.com.sym.bat.service.impl.EgovBatchSchdulServiceImpl;
-import egovframework.com.sym.bat.service.impl.BatchResultDao;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl;
 import org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl;
@@ -73,25 +71,13 @@ public class BatchConfig {
      * (ApiServerApplication에서 sym.bat 패키지가 스캔 제외되어 있으므로 수동 등록)
      */
     @Bean(name = "egovBatchSchdulService")
-    public EgovBatchSchdulService egovBatchSchdulService(BatchSchdulDao batchSchdulDao, BatchResultDao batchResultDao) {
-        EgovBatchSchdulServiceImpl service = new EgovBatchSchdulServiceImpl();
-        return service;
+    public EgovBatchSchdulService egovBatchSchdulService() {
+        return new EgovBatchSchdulServiceImpl();
     }
 
     @Bean(name = "egovBatchResultService")
-    public egovframework.com.sym.bat.service.EgovBatchResultService egovBatchResultService(
-            BatchResultDao batchResultDao) {
-        egovframework.com.sym.bat.service.impl.EgovBatchResultServiceImpl service = new egovframework.com.sym.bat.service.impl.EgovBatchResultServiceImpl();
-        return service;
+    public egovframework.com.sym.bat.service.EgovBatchResultService egovBatchResultService() {
+        return new egovframework.com.sym.bat.service.impl.EgovBatchResultServiceImpl();
     }
 
-    @Bean(name = "batchSchdulDao")
-    public BatchSchdulDao batchSchdulDao() {
-        return new BatchSchdulDao();
-    }
-
-    @Bean(name = "batchResultDao")
-    public BatchResultDao batchResultDao() {
-        return new BatchResultDao();
-    }
 }

@@ -24,9 +24,9 @@ public class IntegrationInstitutionDto {
                 .insttId(entity.getInsttId())
                 .insttNm(entity.getInsttNm())
                 .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .frstRegisterPnttm(entity.getFrstRegistPnttm())
                 .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                .lastUpdusrPnttm(entity.getLastUpdtPnttm())
                 .build();
     }
 }

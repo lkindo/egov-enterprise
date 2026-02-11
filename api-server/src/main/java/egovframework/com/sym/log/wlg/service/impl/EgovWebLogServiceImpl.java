@@ -8,19 +8,28 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.log.WebLogRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
+
 import egovframework.com.sym.log.wlg.service.EgovWebLogService;
 import egovframework.com.sym.log.wlg.service.WebLog;
 import jakarta.annotation.Resource;
+
+import java.time.LocalDateTime;
 
 /**
  * @Class Name : EgovWebLogServiceImpl.java
  * @Description : 웹로그 관리를 위한 서비스 구현 클래스
  * @Modification Information
  *
- *    수정일         수정자         수정내용
- *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.wlg)
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2009. 3. 11. 이삼섭 최초생성
+ *               2011. 7. 01. 이기하 패키지 분리(sym.log -> sym.log.wlg)
  *
  * @author 공통 서비스 개발팀 이삼섭
  * @since 2009. 3. 11.
@@ -29,68 +38,70 @@ import jakarta.annotation.Resource;
  *
  */
 @Service("EgovWebLogService")
-public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements
-	EgovWebLogService {
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements EgovWebLogService {
 
-	@Resource(name="webLogDAO")
-	private WebLogDAO webLogDAO;
+	private final WebLogRepository webLogRepository;
 
-    /** ID Generation */
-	@Resource(name="egovWebLogIdGnrService")
+	/** ID Generation */
+	@Resource(name = "egovWebLogIdGnrService")
 	private EgovIdGnrService egovWebLogIdGnrService;
 
-	/**
-	 * 웹 로그를 기록한다.
-	 *
-	 * @param WebLog
-	 */
 	@Override
+	@Transactional
 	public void logInsertWebLog(WebLog webLog) throws Exception {
 		String requstId = egovWebLogIdGnrService.getNextStringId();
 		webLog.setRequstId(requstId);
 
-		webLogDAO.logInsertWebLog(webLog);
+		com.company.project.domain.log.WebLog entity = com.company.project.domain.log.WebLog.builder()
+				.requstId(webLog.getRequstId())
+				.url(webLog.getUrl())
+				.rqesterId(webLog.getRqesterId())
+				.rqesterIp(webLog.getRqesterIp())
+				.occrrncDe(LocalDateTime.now())
+				.build();
+
+		webLogRepository.save(entity);
 	}
 
-	/**
-	 * 웹 로그정보를 요약한다.
-	 *
-	 * @param
-	 */
 	@Override
+	@Transactional
 	public void logInsertWebLogSummary() throws Exception {
-
-		webLogDAO.logInsertWebLogSummary();
+		webLogRepository.insertLogSummary();
+		webLogRepository.deleteOldLogs(210); // Matches legacy logic
 	}
 
-	/**
-	 * 웹 로그정보 상제정보를 조회한다.
-	 *
-	 * @param webLog
-	 * @return webLog
-	 * @throws Exception
-	 */
 	@Override
-	public WebLog selectWebLog(WebLog webLog) throws Exception{
-
-		return webLogDAO.selectWebLog(webLog);
+	public WebLog selectWebLog(WebLog webLog) throws Exception {
+		return webLogRepository.findById(webLog.getRequstId())
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 웹 로그정보 목록을 조회한다.
-	 *
-	 * @param WebLog
-	 */
 	@Override
 	public Map<String, Object> selectWebLogInf(WebLog webLog) throws Exception {
-		List<WebLog> resultList = webLogDAO.selectWebLogInf(webLog);
-		int totCnt = webLogDAO.selectWebLogInfCnt(webLog);
+		Pageable pageable = PageRequest.of(webLog.getPageIndex() - 1, webLog.getRecordCountPerPage());
+		Page<com.company.project.domain.log.WebLog> page = webLogRepository.searchWebLogs(
+				webLog.getSearchWrd(), webLog.getSearchBgnDe(), webLog.getSearchEndDe(), pageable);
 
 		Map<String, Object> map = new HashMap<>();
-        map.put("resultList", resultList);
-        map.put("resultCnt", totCnt);
+		map.put("resultList", page.getContent().stream().map(this::toVO).collect(java.util.stream.Collectors.toList()));
+		map.put("resultCnt", (int) page.getTotalElements());
 
-        return map;
+		return map;
+	}
+
+	private WebLog toVO(com.company.project.domain.log.WebLog entity) {
+		WebLog vo = new WebLog();
+		vo.setRequstId(entity.getRequstId());
+		vo.setUrl(entity.getUrl());
+		vo.setRqesterId(entity.getRqesterId());
+		vo.setRqesterIp(entity.getRqesterIp());
+		if (entity.getOccrrncDe() != null) {
+			vo.setOccrrncDe(entity.getOccrrncDe().toString());
+		}
+		return vo;
 	}
 
 }

@@ -39,7 +39,7 @@ public class BatchSchdulDto {
                 .executSchdulMnt(entity.getExecutSchdulMnt())
                 .executSchdulSecnd(entity.getExecutSchdulSecnd())
                 .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .frstRegisterPnttm(entity.getFrstRegistPnttm())
                 .build();
     }
 
@@ -54,7 +54,7 @@ public class BatchSchdulDto {
                 .executSchdulMnt(entity.getExecutSchdulMnt())
                 .executSchdulSecnd(entity.getExecutSchdulSecnd())
                 .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .frstRegisterPnttm(entity.getFrstRegistPnttm())
                 .batchOpertNm(batchOpertNm)
                 .batchProgrm(batchProgrm)
                 .executCycleNm(executCycleNm)

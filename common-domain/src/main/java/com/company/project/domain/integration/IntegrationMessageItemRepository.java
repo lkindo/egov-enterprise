@@ -6,6 +6,7 @@ import java.util.List;
 
 @Repository
 public interface IntegrationMessageItemRepository
-        extends JpaRepository<IntegrationMessageItem, IntegrationMessageItem.IntegrationMessageItemId> {
+        extends JpaRepository<IntegrationMessageItem, IntegrationMessageItem.IntegrationMessageItemId>,
+        IntegrationMessageItemRepositoryCustom {
     List<IntegrationMessageItem> findByIdCntcMessageIdAndUseAt(String cntcMessageId, String useAt);
 }

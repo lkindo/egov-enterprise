@@ -1,6 +1,8 @@
 package egovframework.com.utl.sys.htm.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -66,12 +68,15 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 				.webKind(vo.getWebKind())
 				.siteUrl(vo.getSiteUrl())
 				.httpSttusCd(vo.getHttpSttusCd())
-				.creatDt(vo.getCreatDt())
+				.creatDt(vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+						: java.time.LocalDateTime.now())
 				.logInfo(vo.getLogInfo())
 				.mngrNm(vo.getMngrNm())
 				.mngrEmailAddr(vo.getMngrEmailAddr())
 				.frstRegisterId(vo.getFrstRegisterId())
-				.frstRegisterPnttm(vo.getFrstRegisterPnttm())
+				.frstRegisterPnttm(
+						vo.getFrstRegisterPnttm() != null ? java.time.LocalDateTime.parse(vo.getFrstRegisterPnttm())
+								: java.time.LocalDateTime.now())
 				.build();
 		httpMonitoringLogRepository.save(entity);
 	}
@@ -102,16 +107,20 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	@Override
-	public List<HttpMonLogVO> selectHttpMonLogList(HttpMonLogVO searchVO) throws Exception {
-		return httpMonitoringLogRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectHttpMonLogList(HttpMonLogVO httpMonLogVO) throws Exception {
+		List<HttpMonLogVO> result = httpMonitoringLogRepository
+				.findAll(PageRequest.of(httpMonLogVO.getPageIndex() - 1, httpMonLogVO.getRecordCountPerPage(),
 						Sort.by("createdDate").descending()))
 				.getContent().stream()
 				.map(this::toLogVO)
 				.collect(Collectors.toList());
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", httpMonitoringLogRepository.count());
+		return map;
 	}
 
-	@Override
 	public int selectHttpMonLogTotCnt(HttpMonLogVO searchVO) throws Exception {
 		return (int) httpMonitoringLogRepository.count();
 	}
@@ -133,7 +142,8 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	@Transactional
 	public void updateHttpMonSttus(HttpMon vo) throws Exception {
 		httpMonitoringRepository.findById(vo.getSysId()).ifPresent(e -> {
-			e.updateStatus(vo.getHttpSttusCd(), vo.getCreatDt(), vo.getLastUpdusrId());
+			e.updateStatus(vo.getHttpSttusCd(), vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+					: java.time.LocalDateTime.now(), vo.getLastUpdusrId());
 		});
 	}
 
