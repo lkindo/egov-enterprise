@@ -1,6 +1,8 @@
 package egovframework.com.utl.sys.nsm.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -68,7 +70,8 @@ public class EgovNtwrkSvcMntrngServiceImpl extends EgovAbstractServiceImpl imple
 				.sysNm(vo.getSysNm())
 				.mntrngSttus(vo.getMntrngSttus())
 				.logInfo(vo.getLogInfo())
-				.creatDt(vo.getCreatDt())
+				.creatDt(vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+						: java.time.LocalDateTime.now())
 				.frstRegisterId(vo.getFrstRegisterId())
 				.build();
 		networkServiceMonitoringLogRepository.save(entity);
@@ -96,31 +99,40 @@ public class EgovNtwrkSvcMntrngServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	@Override
-	public List<NtwrkSvcMntrngVO> selectNtwrkSvcMntrngList(NtwrkSvcMntrngVO searchVO) throws Exception {
-		return networkServiceMonitoringRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectNtwrkSvcMntrngList(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception {
+		List<NtwrkSvcMntrngVO> result = networkServiceMonitoringRepository
+				.findAll(PageRequest.of(ntwrkSvcMntrngVO.getPageIndex() - 1, ntwrkSvcMntrngVO.getRecordCountPerPage(),
 						Sort.by("createdDate").descending()))
 				.getContent().stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", networkServiceMonitoringRepository.count());
+		return map;
 	}
 
-	@Override
 	public int selectNtwrkSvcMntrngListCnt(NtwrkSvcMntrngVO searchVO) throws Exception {
 		return (int) networkServiceMonitoringRepository.count();
 	}
 
 	@Override
-	public List<NtwrkSvcMntrngLogVO> selectNtwrkSvcMntrngLogList(NtwrkSvcMntrngLogVO searchVO) throws Exception {
-		return networkServiceMonitoringLogRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectNtwrkSvcMntrngLogList(NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO) throws Exception {
+		List<NtwrkSvcMntrngLogVO> result = networkServiceMonitoringLogRepository
+				.findAll(PageRequest.of(ntwrkSvcMntrngLogVO.getPageIndex() - 1,
+						ntwrkSvcMntrngLogVO.getRecordCountPerPage(),
 						Sort.by("creatDt").descending()))
 				.getContent().stream()
 				.map(this::toLogVO)
 				.collect(Collectors.toList());
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", networkServiceMonitoringLogRepository.count());
+		return map;
 	}
 
-	@Override
 	public int selectNtwrkSvcMntrngLogListCnt(NtwrkSvcMntrngLogVO searchVO) throws Exception {
 		return (int) networkServiceMonitoringLogRepository.count();
 	}
@@ -140,7 +152,10 @@ public class EgovNtwrkSvcMntrngServiceImpl extends EgovAbstractServiceImpl imple
 	public void updateNtwrkSvcMntrngSttus(NtwrkSvcMntrng vo) throws Exception {
 		networkServiceMonitoringRepository
 				.findById(new NetworkServiceId(vo.getSysIp(), Integer.valueOf(vo.getSysPort()))).ifPresent(e -> {
-					e.updateStatus(vo.getMntrngSttus(), vo.getCreatDt(), vo.getLastUpdusrId());
+					e.updateStatus(vo.getMntrngSttus(),
+							vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+									: java.time.LocalDateTime.now(),
+							vo.getLastUpdusrId());
 				});
 	}
 

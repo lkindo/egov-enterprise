@@ -1,8 +1,7 @@
 package egovframework.com.ssi.syi.iis.service.impl;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -49,11 +48,9 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public List<EgovMap> selectCntcInsttList(CntcInsttVO cntcInsttVO) throws Exception {
-		List<IntegrationInstitution> entities = integrationInstitutionRepository.findAll();
+		List<IntegrationInstitution> entities = integrationInstitutionRepository
+				.searchInstitutions(cntcInsttVO.getSearchKeyword());
 		return entities.stream()
-				.filter(e -> "Y".equals(e.getUseAt()))
-				.filter(e -> cntcInsttVO.getSearchKeyword() == null || cntcInsttVO.getSearchKeyword().isEmpty()
-						|| e.getInsttNm().contains(cntcInsttVO.getSearchKeyword()))
 				.map(e -> {
 					EgovMap map = new EgovMap();
 					map.put("insttId", e.getInsttId());
@@ -67,11 +64,7 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public int selectCntcInsttListTotCnt(CntcInsttVO cntcInsttVO) throws Exception {
-		return (int) integrationInstitutionRepository.findAll().stream()
-				.filter(e -> "Y".equals(e.getUseAt()))
-				.filter(e -> cntcInsttVO.getSearchKeyword() == null || cntcInsttVO.getSearchKeyword().isEmpty()
-						|| e.getInsttNm().contains(cntcInsttVO.getSearchKeyword()))
-				.count();
+		return (int) integrationInstitutionRepository.countInstitutions(cntcInsttVO.getSearchKeyword());
 	}
 
 	/**
@@ -79,13 +72,7 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public List<EgovMap> selectCntcSystemList(CntcSystemVO cntcSystemVO) throws Exception {
-		List<IntegrationSystem> entities;
-		if (cntcSystemVO.getInsttId() != null && !cntcSystemVO.getInsttId().isEmpty()) {
-			entities = integrationSystemRepository.findByIdInsttIdAndUseAt(cntcSystemVO.getInsttId(), "Y");
-		} else {
-			entities = integrationSystemRepository.findAll().stream().filter(e -> "Y".equals(e.getUseAt()))
-					.collect(Collectors.toList());
-		}
+		List<IntegrationSystem> entities = integrationSystemRepository.searchSystems(cntcSystemVO.getInsttId());
 
 		return entities.stream().map(e -> {
 			EgovMap map = new EgovMap();
@@ -102,7 +89,7 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public int selectCntcSystemListTotCnt(CntcSystemVO cntcSystemVO) throws Exception {
-		return selectCntcSystemList(cntcSystemVO).size();
+		return (int) integrationSystemRepository.countSystems(cntcSystemVO.getInsttId());
 	}
 
 	/**
@@ -110,14 +97,8 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public List<EgovMap> selectCntcServiceList(CntcServiceVO cntcServiceVO) throws Exception {
-		List<IntegrationService> entities;
-		if (cntcServiceVO.getInsttId() != null && cntcServiceVO.getSysId() != null) {
-			entities = integrationServiceRepository.findByIdInsttIdAndIdSysIdAndUseAt(cntcServiceVO.getInsttId(),
-					cntcServiceVO.getSysId(), "Y");
-		} else {
-			entities = integrationServiceRepository.findAll().stream().filter(e -> "Y".equals(e.getUseAt()))
-					.collect(Collectors.toList());
-		}
+		List<IntegrationService> entities = integrationServiceRepository.searchServices(cntcServiceVO.getInsttId(),
+				cntcServiceVO.getSysId());
 
 		return entities.stream().map(e -> {
 			EgovMap map = new EgovMap();
@@ -136,7 +117,7 @@ public class EgovCntcInsttServiceImpl extends EgovAbstractServiceImpl implements
 	 */
 	@Override
 	public int selectCntcServiceListTotCnt(CntcServiceVO cntcServiceVO) throws Exception {
-		return selectCntcServiceList(cntcServiceVO).size();
+		return (int) integrationServiceRepository.countServices(cntcServiceVO.getInsttId(), cntcServiceVO.getSysId());
 	}
 
 	/**

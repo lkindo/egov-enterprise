@@ -54,11 +54,23 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
+	 * 보고서통계목록 총 개수를 조회한다.
+	 */
+	@Override
+	public int selectReprtStatsListBarTotCnt(ReprtStatsVO vo) throws Exception {
+		return (int) reprtStatsRepository.countByConditions(vo.getReprtTy(), vo.getPmFromDate(), vo.getPmToDate());
+	}
+
+	/**
 	 * 보고서 통계의 상세정보를 조회한다.
 	 */
 	@Override
-	public ReprtStatsVO selectReprtStats(ReprtStatsVO vo) throws Exception {
-		return reprtStatsRepository.findById(vo.getReprtId()).map(this::toVO).orElse(null);
+	public List<ReprtStatsVO> selectReprtStats(ReprtStatsVO vo) throws Exception {
+		return reprtStatsRepository.findById(vo.getReprtId()).map(entity -> {
+			List<ReprtStatsVO> list = new ArrayList<>();
+			list.add(this.toVO(entity));
+			return list;
+		}).orElse(new ArrayList<>());
 	}
 
 	/**
@@ -87,8 +99,36 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 
 		return results.stream().map(row -> {
 			ReprtStatsVO rvo = new ReprtStatsVO();
-			rvo.setGrpCnt(((Number) row[1]).intValue());
+			rvo.setGrpCnt(((Number) row[1]).toString());
 			rvo.setReprtTy((String) row[0]);
+			return rvo;
+		}).collect(Collectors.toList());
+	}
+
+	/**
+	 * 보고서유형별 통계정보를 그래프로 표현한다.
+	 */
+	@Override
+	public List<ReprtStatsVO> selectReprtStatsByReprtTyList(ReprtStatsVO vo) throws Exception {
+		List<Object[]> results = reprtStatsRepository.countByReprtTy(vo.getPmFromDate(), vo.getPmToDate());
+		return results.stream().map(row -> {
+			ReprtStatsVO rvo = new ReprtStatsVO();
+			rvo.setGrpCnt(((Number) row[1]).toString());
+			rvo.setReprtTy((String) row[0]);
+			return rvo;
+		}).collect(Collectors.toList());
+	}
+
+	/**
+	 * 진행상태별 통계정보를 그래프로 표현한다.
+	 */
+	@Override
+	public List<ReprtStatsVO> selectReprtStatsByReprtSttusList(ReprtStatsVO vo) throws Exception {
+		List<Object[]> results = reprtStatsRepository.countByReprtSttus(vo.getPmFromDate(), vo.getPmToDate());
+		return results.stream().map(row -> {
+			ReprtStatsVO rvo = new ReprtStatsVO();
+			rvo.setGrpCnt(((Number) row[1]).toString());
+			rvo.setReprtSttus((String) row[0]);
 			return rvo;
 		}).collect(Collectors.toList());
 	}
@@ -96,7 +136,6 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	/**
 	 * 보고서 통계 정보를 수정한다.
 	 */
-	@Override
 	@Transactional
 	public void updateReprtStats(ReprtStats vo) throws Exception {
 		// Update logic
@@ -105,7 +144,6 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	/**
 	 * 보고서 통계 정보를 삭제한다.
 	 */
-	@Override
 	@Transactional
 	public void deleteReprtStats(ReprtStats vo) throws Exception {
 		reprtStatsRepository.deleteById(vo.getReprtId());

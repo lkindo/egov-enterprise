@@ -1,6 +1,8 @@
 package egovframework.com.utl.sys.fsm.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -91,31 +93,43 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	@Override
-	public List<FileSysMntrngVO> selectFileSysMntrngList(FileSysMntrngVO searchVO) throws Exception {
-		return fileSystemMonitoringRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectFileSysMntrngList(FileSysMntrngVO fileSysMntrngVO) throws Exception {
+		List<FileSysMntrngVO> result = fileSystemMonitoringRepository
+				.findAll(PageRequest.of(fileSysMntrngVO.getPageIndex() - 1, fileSysMntrngVO.getRecordCountPerPage(),
 						Sort.by("createdDate").descending()))
 				.getContent().stream()
 				.map(this::toVO)
 				.collect(Collectors.toList());
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", fileSystemMonitoringRepository.count());
+		return map;
 	}
 
 	@Override
-	public int selectFileSysMntrngListCnt(FileSysMntrngVO searchVO) throws Exception {
-		return (int) fileSystemMonitoringRepository.count();
+	public int selectFileSysMg(FileSysMntrng fileSysMntrng) throws Exception {
+		return fileSystemMonitoringRepository.findById(fileSysMntrng.getFileSysId())
+				.map(e -> e.getFileSysSize() != null ? e.getFileSysSize().intValue() : 0)
+				.orElse(0);
 	}
 
 	@Override
-	public List<FileSysMntrngLogVO> selectFileSysMntrngLogList(FileSysMntrngLogVO searchVO) throws Exception {
-		return fileSystemMonitoringLogRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectFileSysMntrngLogList(FileSysMntrngLogVO fileSysMntrngLogVO) throws Exception {
+		List<FileSysMntrngLogVO> result = fileSystemMonitoringLogRepository
+				.findAll(PageRequest.of(fileSysMntrngLogVO.getPageIndex() - 1,
+						fileSysMntrngLogVO.getRecordCountPerPage(),
 						Sort.by("creatDt").descending()))
 				.getContent().stream()
 				.map(this::toLogVO)
 				.collect(Collectors.toList());
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", fileSystemMonitoringLogRepository.count());
+		return map;
 	}
 
-	@Override
 	public int selectFileSysMntrngLogListCnt(FileSysMntrngLogVO searchVO) throws Exception {
 		return (int) fileSystemMonitoringLogRepository.count();
 	}

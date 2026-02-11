@@ -1,11 +1,18 @@
 package egovframework.com.sym.log.ulg.service.impl;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.company.project.domain.log.UserLogId;
+import com.company.project.domain.log.UserLogRepository;
+import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import egovframework.com.sym.log.ulg.service.EgovUserLogService;
 import egovframework.com.sym.log.ulg.service.UserLog;
@@ -31,50 +38,54 @@ import jakarta.annotation.Resource;
  *      </pre>
  */
 @Service("EgovUserLogService")
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EgovUserLogServiceImpl extends EgovAbstractServiceImpl implements EgovUserLogService {
 
-	@Resource(name = "userLogDAO")
-	private UserLogDAO userLogDAO;
+	private final UserLogRepository userLogRepository;
 
-	/**
-	 * 사용자 로그정보를 생성한다.
-	 *
-	 * @param
-	 */
 	@Override
+	@Transactional
 	public void logInsertUserLog() throws Exception {
-
-		userLogDAO.logInsertUserLog();
+		userLogRepository.insertLogSummary();
+		userLogRepository.deleteOldLogs(210); // Matches legacy logic
 	}
 
-	/**
-	 * 사용자 로그정보 상제정보를 조회한다.
-	 *
-	 * @param userLog
-	 * @return userLog
-	 * @throws Exception
-	 */
 	@Override
 	public UserLog selectUserLog(UserLog userLog) throws Exception {
-
-		return userLogDAO.selectUserLog(userLog);
+		UserLogId id = new UserLogId(userLog.getOccrrncDe(), userLog.getRqesterId(), userLog.getSrvcNm(),
+				userLog.getMethodNm());
+		return userLogRepository.findById(id)
+				.map(this::toVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 사용자 로그정보 목록을 조회한다.
-	 *
-	 * @param UserLog
-	 */
 	@Override
 	public Map<String, Object> selectUserLogInf(UserLog userLog) throws Exception {
-		List<UserLog> resultList = userLogDAO.selectUserLogInf(userLog);
-		int resultCnt = userLogDAO.selectUserLogInfCnt(userLog);
+		Pageable pageable = PageRequest.of(userLog.getPageIndex() - 1, userLog.getRecordCountPerPage());
+		Page<com.company.project.domain.log.UserLog> page = userLogRepository.searchUserLogs(
+				userLog.getSearchWrd(), userLog.getSearchBgnDe(), userLog.getSearchEndDe(), pageable);
 
 		Map<String, Object> resultMap = new HashMap<>();
-		resultMap.put("resultList", resultList);
-		resultMap.put("resultCnt", resultCnt); // 또는 Integer.toString(resultCnt) 필요시
+		resultMap.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+		resultMap.put("resultCnt", (int) page.getTotalElements());
 
 		return resultMap;
+	}
+
+	private UserLog toVO(com.company.project.domain.log.UserLog entity) {
+		UserLog vo = new UserLog();
+		vo.setOccrrncDe(entity.getOccrrncDe());
+		vo.setRqesterId(entity.getRqesterId());
+		vo.setSrvcNm(entity.getSrvcNm());
+		vo.setMethodNm(entity.getMethodNm());
+		vo.setCreatCo(String.valueOf(entity.getCreatCo()));
+		vo.setUpdtCo(String.valueOf(entity.getUpdtCo()));
+		vo.setRdCnt(String.valueOf(entity.getRdCnt()));
+		vo.setDeleteCo(String.valueOf(entity.getDeleteCo()));
+		vo.setOutptCo(String.valueOf(entity.getOutptCo()));
+		vo.setErrorCo(String.valueOf(entity.getErrorCo()));
+		return vo;
 	}
 
 }
