@@ -26,7 +26,6 @@ dependencies {
     implementation 'commons-io:commons-io:2.17.0'
     implementation 'com.google.guava:guava:33.3.1-jre'
     implementation 'org.apache.commons:commons-lang3:3.17.0'
-    implementation 'commons-lang:commons-lang:2.6' // Legacy support
     implementation 'jakarta.json:jakarta.json-api:2.1.3'
     implementation 'org.eclipse.parsson:parsson:1.1.5' // JSON-P implementation
     implementation 'org.postgresql:postgresql:42.7.3'
@@ -49,8 +48,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
     
-    // JSON Simple (Legacy Support)
-    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    // JSON Simple (Legacy Support) - Removed
+    // implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     
     // Apache Commons Net (FTP)
     implementation 'commons-net:commons-net:3.9.0'
@@ -62,8 +61,8 @@ dependencies {
     // Database Connection Pool (Legacy)
     implementation 'org.apache.commons:commons-dbcp2:2.9.0'
     
-    // File Upload (Legacy)
-    implementation 'commons-fileupload:commons-fileupload:1.5'
+    // File Upload (Legacy) - Removed
+    // implementation 'commons-fileupload:commons-fileupload:1.5'
 
     // Social Login (ScribeJava)
     implementation 'com.github.scribejava:scribejava-apis:8.3.3'
