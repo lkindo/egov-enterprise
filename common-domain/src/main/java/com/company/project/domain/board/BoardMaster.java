@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NBBSMASTER")
+@SecondaryTable(name = "NBBSMASTEROPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
 public class BoardMaster {
 
     @Id
@@ -68,11 +69,17 @@ public class BoardMaster {
     @Column(name = "CMMNTY_ID", length = 20)
     private String cmmntyId;
 
+    @Column(table = "NBBSMASTEROPTN", name = "ANSWER_AT", length = 1)
+    private String commentAt;
+
+    @Column(table = "NBBSMASTEROPTN", name = "STSFDG_AT", length = 1)
+    private String stsfdgAt;
+
     @Builder
     public BoardMaster(String bbsId, String bbsNm, String bbsIntrcn, String bbsTyCode, String bbsAttrbCode,
             String replyPosblAt, String fileAtchPosblAt, Integer atchPosblFileNumber, Long atchPosblFileSize,
             String useAt, String tmplatId, String frstRegisterId, String lastUpdusrId, String blogId, String blogAt,
-            String cmmntyId) {
+            String cmmntyId, String commentAt, String stsfdgAt) {
         this.bbsId = bbsId;
         this.bbsNm = bbsNm;
         this.bbsIntrcn = bbsIntrcn;
@@ -90,10 +97,13 @@ public class BoardMaster {
         this.blogId = blogId;
         this.blogAt = blogAt == null ? "N" : blogAt;
         this.cmmntyId = cmmntyId;
+        this.commentAt = commentAt == null ? "N" : commentAt;
+        this.stsfdgAt = stsfdgAt == null ? "N" : stsfdgAt;
     }
 
     public void update(String bbsNm, String bbsIntrcn, String replyPosblAt, String fileAtchPosblAt,
-            Integer atchPosblFileNumber, Long atchPosblFileSize, String tmplatId, String useAt, String lastUpdusrId) {
+            Integer atchPosblFileNumber, Long atchPosblFileSize, String tmplatId, String useAt, String lastUpdusrId,
+            String commentAt, String stsfdgAt) {
         this.bbsNm = bbsNm;
         this.bbsIntrcn = bbsIntrcn;
         this.replyPosblAt = replyPosblAt;
@@ -103,6 +113,8 @@ public class BoardMaster {
         this.tmplatId = tmplatId;
         this.useAt = useAt;
         this.lastUpdusrId = lastUpdusrId;
+        this.commentAt = commentAt;
+        this.stsfdgAt = stsfdgAt;
         this.lastModifiedDate = LocalDateTime.now();
     }
 

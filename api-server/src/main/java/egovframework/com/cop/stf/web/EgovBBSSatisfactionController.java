@@ -327,7 +327,7 @@ public class EgovBBSSatisfactionController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (isAuthenticated) {
-			egovSatisfactionService.deleteSatisfaction(satisfactionVO.getStsfdgNo());
+			egovSatisfactionService.deleteSatisfaction(Long.valueOf(satisfactionVO.getStsfdgNo()));
 		}
 
 		satisfactionVO.setStsfdgCn("");
@@ -360,7 +360,7 @@ public class EgovBBSSatisfactionController {
 		String enpassword = EgovFileScrty.encryptPassword(satisfactionVO.getConfirmPassword(),
 				satisfaction.getStsfdgNo());
 
-		if (!egovSatisfactionService.checkPassword(satisfactionVO.getStsfdgNo(), enpassword)) {
+		if (!egovSatisfactionService.checkPassword(Long.valueOf(satisfactionVO.getStsfdgNo()), enpassword)) {
 
 			model.addAttribute("subMsg", egovMessageSource.getMessage("cop.password.not.same.msg"));
 
@@ -368,7 +368,7 @@ public class EgovBBSSatisfactionController {
 		}
 		//// -----------------------------
 
-		egovSatisfactionService.deleteSatisfaction(satisfactionVO.getStsfdgNo());
+		egovSatisfactionService.deleteSatisfaction(Long.valueOf(satisfactionVO.getStsfdgNo()));
 
 		satisfactionVO.setStsfdgNo("");
 		satisfactionVO.setStsfdgCn("");
@@ -434,7 +434,7 @@ public class EgovBBSSatisfactionController {
 
 		// Satisfaction data =
 		// bbsSatisfactionService.selectSatisfaction(satisfactionVO);
-		SatisfactionDto dto = egovSatisfactionService.getSatisfaction(satisfactionVO.getStsfdgNo());
+		SatisfactionDto dto = egovSatisfactionService.getSatisfaction(Long.valueOf(satisfactionVO.getStsfdgNo()));
 		SatisfactionVO data = SatisfactionAdapter.toVO(dto);
 
 		satisfactionVO.setStsfdgNo(data.getStsfdgNo());
@@ -510,7 +510,7 @@ public class EgovBBSSatisfactionController {
 		String enpassword = EgovFileScrty.encryptPassword(satisfactionVO.getConfirmPassword(),
 				satisfactionVO.getStsfdgNo());
 
-		if (!egovSatisfactionService.checkPassword(satisfactionVO.getStsfdgNo(), enpassword)) {
+		if (!egovSatisfactionService.checkPassword(Long.valueOf(satisfactionVO.getStsfdgNo()), enpassword)) {
 
 			model.addAttribute("subMsg", egovMessageSource.getMessage("cop.password.not.same.msg"));
 
@@ -521,7 +521,7 @@ public class EgovBBSSatisfactionController {
 
 		} else {
 
-			SatisfactionDto dto = egovSatisfactionService.getSatisfaction(satisfactionVO.getStsfdgNo());
+			SatisfactionDto dto = egovSatisfactionService.getSatisfaction(Long.valueOf(satisfactionVO.getStsfdgNo()));
 			SatisfactionVO data = SatisfactionAdapter.toVO(dto);
 
 			satisfactionVO.setStsfdgNo(data.getStsfdgNo());
