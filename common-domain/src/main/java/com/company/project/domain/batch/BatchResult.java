@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -42,22 +43,42 @@ public class BatchResult {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime frstRegistPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime lastUpdtPnttm;
 
     @PrePersist
     public void prePersist() {
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.frstRegistPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
+    }
+
+    public void setFrstRegistPnttm(String pnttm) {
+        if (pnttm != null) {
+            try {
+                this.frstRegistPnttm = LocalDateTime.parse(pnttm);
+            } catch (Exception e) {
+                // handle parsing error if necessary
+            }
+        }
+    }
+
+    public void setLastUpdtPnttm(String pnttm) {
+        if (pnttm != null) {
+            try {
+                this.lastUpdtPnttm = LocalDateTime.parse(pnttm);
+            } catch (Exception e) {
+                // handle parsing error if necessary
+            }
+        }
     }
 }

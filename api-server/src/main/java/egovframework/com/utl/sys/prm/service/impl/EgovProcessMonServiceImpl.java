@@ -1,6 +1,8 @@
 package egovframework.com.utl.sys.prm.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -49,7 +51,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 				.processId(vo.getProcessId())
 				.processNm(vo.getProcessNm())
 				.procsSttus(vo.getProcsSttus())
-				.creatDt(vo.getCreatDt())
+				.creatDt(vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+						: java.time.LocalDateTime.now())
 				.mngrNm(vo.getMngrNm())
 				.mngrEmailAddr(vo.getMngrEmailAddr())
 				.frstRegisterId(vo.getFrstRegisterId())
@@ -68,7 +71,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 				.logInfo(vo.getLogInfo())
 				.mngrNm(vo.getMngrNm())
 				.mngrEmailAddr(vo.getMngrEmailAddr())
-				.creatDt(vo.getCreatDt())
+				.creatDt(vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+						: java.time.LocalDateTime.now())
 				.frstRegisterId(vo.getFrstRegisterId())
 				.build();
 		processMonitoringLogRepository.save(entity);
@@ -89,9 +93,9 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	@Override
-	public List<ProcessMonVO> selectProcessMonList(ProcessMonVO searchVO) throws Exception {
+	public List<ProcessMonVO> selectProcessMonList(ProcessMonVO processMonVO) throws Exception {
 		return processMonitoringRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+				.findAll(PageRequest.of(processMonVO.getPageIndex() - 1, processMonVO.getRecordCountPerPage(),
 						Sort.by("createdDate").descending()))
 				.getContent().stream()
 				.map(this::toVO)
@@ -104,18 +108,18 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	@Override
-	public List<ProcessMonLogVO> selectProcessMonLogList(ProcessMonLogVO searchVO) throws Exception {
-		return processMonitoringLogRepository
-				.findAll(PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
+	public Map<String, Object> selectProcessMonLogList(ProcessMonLogVO processMonLogVO) throws Exception {
+		List<ProcessMonLogVO> result = processMonitoringLogRepository
+				.findAll(PageRequest.of(processMonLogVO.getPageIndex() - 1, processMonLogVO.getRecordCountPerPage(),
 						Sort.by("creatDt").descending()))
 				.getContent().stream()
 				.map(this::toLogVO)
 				.collect(Collectors.toList());
-	}
 
-	@Override
-	public int selectProcessMonLogTotCnt(ProcessMonLogVO searchVO) throws Exception {
-		return (int) processMonitoringLogRepository.count();
+		Map<String, Object> map = new HashMap<>();
+		map.put("resultList", result);
+		map.put("resultCnt", processMonitoringLogRepository.count());
+		return map;
 	}
 
 	@Override
@@ -130,7 +134,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	@Transactional
 	public void updateProcessMonSttus(ProcessMon vo) throws Exception {
 		processMonitoringRepository.findById(vo.getProcessId()).ifPresent(e -> {
-			e.updateStatus(vo.getProcsSttus(), vo.getCreatDt(), vo.getLastUpdusrId());
+			e.updateStatus(vo.getProcsSttus(), vo.getCreatDt() != null ? java.time.LocalDateTime.parse(vo.getCreatDt())
+					: java.time.LocalDateTime.now(), vo.getLastUpdusrId());
 		});
 	}
 

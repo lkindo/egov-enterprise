@@ -40,9 +40,18 @@ public class SysLog {
     @Column(name = "OCCRRNC_DE", length = 20)
     private String occrrncDe;
 
+    @Column(name = "RSPNS_CODE", length = 3)
+    private String rspnsCode;
+
+    @Column(name = "ERROR_CODE", length = 15)
+    private String errorCode;
+
+    @Column(name = "ERROR_SE", length = 3)
+    private String errorSe;
+
     @Builder
     public SysLog(String requstId, String srvcNm, String methodNm, String processSeCode, String processTime,
-            String rqesterId, String rqesterIp, String occrrncDe) {
+            String rqesterId, String rqesterIp, String occrrncDe, String rspnsCode, String errorCode, String errorSe) {
         this.requstId = requstId;
         this.srvcNm = srvcNm;
         this.methodNm = methodNm;
@@ -51,5 +60,8 @@ public class SysLog {
         this.rqesterId = rqesterId;
         this.rqesterIp = rqesterIp;
         this.occrrncDe = occrrncDe;
+        this.rspnsCode = rspnsCode;
+        this.errorCode = errorCode;
+        this.errorSe = errorSe;
     }
 }

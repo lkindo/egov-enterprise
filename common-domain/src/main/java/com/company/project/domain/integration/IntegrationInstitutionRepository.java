@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * 연계 기관 Repository
  */
-public interface IntegrationInstitutionRepository extends JpaRepository<IntegrationInstitution, String> {
+public interface IntegrationInstitutionRepository
+        extends JpaRepository<IntegrationInstitution, String>, IntegrationInstitutionRepositoryCustom {
 
     Page<IntegrationInstitution> findByInsttNmContaining(String insttNm, Pageable pageable);
 }

@@ -6,7 +6,8 @@ import java.util.List;
 
 @Repository
 public interface IntegrationServiceRepository
-        extends JpaRepository<IntegrationService, IntegrationService.IntegrationServiceId> {
+        extends JpaRepository<IntegrationService, IntegrationService.IntegrationServiceId>,
+        IntegrationServiceRepositoryCustom {
     List<IntegrationService> findByIdInsttIdAndUseAt(String insttId, String useAt);
 
     List<IntegrationService> findByIdInsttIdAndIdSysIdAndUseAt(String insttId, String sysId, String useAt);

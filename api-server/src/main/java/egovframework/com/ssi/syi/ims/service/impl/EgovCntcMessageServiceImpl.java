@@ -41,10 +41,9 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	@Override
 	public List<EgovMap> selectCntcMessageList(CntcMessageVO cntcMessageVO) throws Exception {
-		List<IntegrationMessage> entities = integrationMessageRepository.findAllByUseAt("Y");
+		List<IntegrationMessage> entities = integrationMessageRepository
+				.searchMessages(cntcMessageVO.getSearchKeyword());
 		return entities.stream()
-				.filter(e -> cntcMessageVO.getSearchKeyword() == null || cntcMessageVO.getSearchKeyword().isEmpty()
-						|| e.getCntcMessageNm().contains(cntcMessageVO.getSearchKeyword()))
 				.map(e -> {
 					EgovMap map = new EgovMap();
 					map.put("cntcMessageId", e.getCntcMessageId());
@@ -59,7 +58,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	@Override
 	public int selectCntcMessageListTotCnt(CntcMessageVO cntcMessageVO) throws Exception {
-		return selectCntcMessageList(cntcMessageVO).size();
+		return (int) integrationMessageRepository.countMessages(cntcMessageVO.getSearchKeyword());
 	}
 
 	/**
@@ -67,19 +66,10 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	@Override
 	public List<EgovMap> selectCntcMessageItemList(CntcMessageItemVO cntcMessageItemVO) throws Exception {
-		List<IntegrationMessageItem> entities;
-		if (cntcMessageItemVO.getCntcMessageId() != null && !cntcMessageItemVO.getCntcMessageId().isEmpty()) {
-			entities = integrationMessageItemRepository
-					.findByIdCntcMessageIdAndUseAt(cntcMessageItemVO.getCntcMessageId(), "Y");
-		} else {
-			entities = integrationMessageItemRepository.findAll().stream().filter(e -> "Y".equals(e.getUseAt()))
-					.collect(Collectors.toList());
-		}
+		List<IntegrationMessageItem> entities = integrationMessageItemRepository
+				.searchMessageItems(cntcMessageItemVO.getCntcMessageId(), cntcMessageItemVO.getSearchKeyword());
 
 		return entities.stream()
-				.filter(e -> cntcMessageItemVO.getSearchKeyword() == null
-						|| cntcMessageItemVO.getSearchKeyword().isEmpty()
-						|| e.getItemNm().contains(cntcMessageItemVO.getSearchKeyword()))
 				.map(e -> {
 					EgovMap map = new EgovMap();
 					map.put("cntcMessageId", e.getId().getCntcMessageId());
@@ -96,7 +86,8 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	@Override
 	public int selectCntcMessageItemListTotCnt(CntcMessageItemVO cntcMessageItemVO) throws Exception {
-		return selectCntcMessageItemList(cntcMessageItemVO).size();
+		return (int) integrationMessageItemRepository.countMessageItems(cntcMessageItemVO.getCntcMessageId(),
+				cntcMessageItemVO.getSearchKeyword());
 	}
 
 	/**

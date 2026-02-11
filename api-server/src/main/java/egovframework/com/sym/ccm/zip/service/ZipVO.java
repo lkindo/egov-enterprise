@@ -79,7 +79,7 @@ public class ZipVO extends Zip {
 	 * 
 	 * @return String
 	 */
-	public String getsearchCondition() {
+	public String getSearchCondition() {
 		return searchCondition;
 	}
 
@@ -88,7 +88,7 @@ public class ZipVO extends Zip {
 	 * 
 	 * @param searchCondition String
 	 */
-	public void setsearchCondition(String searchCondition) {
+	public void setSearchCondition(String searchCondition) {
 		this.searchCondition = searchCondition;
 	}
 

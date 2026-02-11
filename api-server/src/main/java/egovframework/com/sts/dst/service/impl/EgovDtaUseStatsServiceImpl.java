@@ -48,7 +48,7 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 			dvo.setAtchFileId((String) row[4]);
 			dvo.setFileSn(((Number) row[5]).toString());
 			dvo.setFileNm((String) row[6]);
-			dvo.setDownCnt(((Number) row[7]).intValue());
+			dvo.setDownCnt(((Number) row[7]).toString());
 			return dvo;
 		}).collect(Collectors.toList());
 	}
@@ -107,7 +107,7 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 		List<Object[]> results = dtaUseStatsRepository.selectDtaUseStatsBarList(internalPdKind, start, end);
 		return results.stream().map(row -> {
 			DtaUseStatsVO dvo = new DtaUseStatsVO();
-			dvo.setGrpCnt(((Number) row[0]).intValue());
+			dvo.setGrpCnt(((Number) row[0]).toString());
 			dvo.setGrpRegDate((String) row[1]);
 			return dvo;
 		}).collect(Collectors.toList());

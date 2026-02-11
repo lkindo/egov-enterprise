@@ -1,13 +1,7 @@
 package com.company.project.domain.backup;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +17,10 @@ public class BackupResult {
 
     @Column(name = "BACKUP_OPERT_ID", length = 20)
     private String backupOpertId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BACKUP_OPERT_ID", insertable = false, updatable = false)
+    private BackupOpert backupOpert;
 
     @Column(name = "BACKUP_FILE", length = 255)
     private String backupFile;
@@ -43,13 +41,13 @@ public class BackupResult {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime frstRegistPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime lastUpdtPnttm;
 
     @Builder
     public BackupResult(String backupResultId, String backupOpertId, String backupFile, String sttus, String errorInfo,
@@ -62,7 +60,7 @@ public class BackupResult {
         this.executBeginTime = executBeginTime;
         this.executEndTime = executEndTime;
         this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.frstRegistPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 }

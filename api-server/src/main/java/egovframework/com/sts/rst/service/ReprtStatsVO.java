@@ -63,7 +63,23 @@ public class ReprtStatsVO extends ReprtStats {
 	/** 보고서유형별 통계 그래프 목록 */
 	List<ReprtStatsVO> reprtStatsByReprtTyList;
 	/** 진행상태별 통계 그래프 목록 */
-	List<ReprtStatsVO> reprtStatsByReprtSttusList;
+	private List<ReprtStatsVO> reprtStatsByReprtSttusList;
+	/** 그래프용 진행상태 카운트 */
+	private String grpReprtSttusCnt;
+
+	/**
+	 * @return the grpReprtSttusCnt
+	 */
+	public String getGrpReprtSttusCnt() {
+		return grpReprtSttusCnt;
+	}
+
+	/**
+	 * @param grpReprtSttusCnt the grpReprtSttusCnt to set
+	 */
+	public void setGrpReprtSttusCnt(String grpReprtSttusCnt) {
+		this.grpReprtSttusCnt = grpReprtSttusCnt;
+	}
 
 	/** 삭제여부 */
 	@Getter
