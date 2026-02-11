@@ -67,19 +67,19 @@ const Sidebar = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
-    const [parentMenuName, setParentMenuName] = useState('');
+
+    // Performance: Memoize menu calculation to avoid redundant fetches on route changes
+    const { menuNo, parentMenuName } = React.useMemo(() => {
+        if (pathname.includes('/survey')) {
+            return { menuNo: 3000000, parentMenuName: '협업' };
+        } else if (pathname.includes('/cop')) {
+            return { menuNo: 2000000, parentMenuName: '알림' };
+        }
+        return { menuNo: 0, parentMenuName: '' };
+    }, [pathname]);
 
     useEffect(() => {
         const fetchLeftMenus = async () => {
-            let menuNo = 0;
-            if (pathname.includes('/survey')) {
-                menuNo = 3000000;
-                setParentMenuName('협업');
-            } else if (pathname.includes('/cop')) {
-                menuNo = 2000000;
-                setParentMenuName('알림');
-            }
-
             if (menuNo > 0) {
                 try {
                     const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
@@ -95,7 +95,7 @@ const Sidebar = () => {
         };
 
         fetchLeftMenus();
-    }, [pathname]);
+    }, [menuNo]);
 
     if (pathname === '/' || pathname === '/login' || leftMenus.length === 0) {
         return null;
