@@ -118,8 +118,8 @@ public class EgovBatchResultController {
         vo.setExecutBeginTime(dto.getExecutBeginTime());
         vo.setExecutEndTime(dto.getExecutEndTime());
         vo.setFrstRegisterId(dto.getFrstRegisterId());
-        if (dto.getFrstRegisterPnttm() != null) {
-            vo.setFrstRegisterPnttm(dto.getFrstRegisterPnttm().toString());
+        if (dto.getFrstRegistPnttm() != null) {
+            vo.setFrstRegisterPnttm(dto.getFrstRegistPnttm().toString());
         }
         return vo;
     }

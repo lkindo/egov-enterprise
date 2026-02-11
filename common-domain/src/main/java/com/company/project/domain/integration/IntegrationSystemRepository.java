@@ -6,6 +6,7 @@ import java.util.List;
 
 @Repository
 public interface IntegrationSystemRepository
-        extends JpaRepository<IntegrationSystem, IntegrationSystem.IntegrationSystemId> {
+        extends JpaRepository<IntegrationSystem, IntegrationSystem.IntegrationSystemId>,
+        IntegrationSystemRepositoryCustom {
     List<IntegrationSystem> findByIdInsttIdAndUseAt(String insttId, String useAt);
 }

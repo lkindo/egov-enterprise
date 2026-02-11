@@ -100,6 +100,13 @@ public class EgovLoginLogServiceImpl extends EgovAbstractServiceImpl implements 
 		return map;
 	}
 
+	@Override
+	@Transactional
+	public void logInsertLoginLogSummary() throws Exception {
+		loginLogRepository.insertLogSummary();
+		loginLogRepository.deleteOldLogs(210); // Matches legacy logic
+	}
+
 	private LoginLog toVO(com.company.project.domain.log.LoginLog entity) {
 		LoginLog vo = new LoginLog();
 		vo.setLogId(entity.getLogId());
