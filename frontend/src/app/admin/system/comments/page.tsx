@@ -13,15 +13,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
 import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 import commentService from '@/services/comment/commentService';
 import { CommentVO } from '@/types/comment';
 import { Trash2, MessageSquare } from 'lucide-react';
@@ -46,8 +39,7 @@ function CommentListContent() {
     });
 
     const commentList = data?.list || [];
-    const totalRecordCount = data?.totalRecordCount || 0;
-    const totalPages = Math.ceil(totalRecordCount / 10);
+    const pagination = data?.paginationInfo;
 
     const handleSearch = () => {
         router.push(`/admin/system/comments?page=1&search=${keywordInput}`);
@@ -147,43 +139,11 @@ function CommentListContent() {
                 </Table>
             </div>
 
-            {totalPages > 1 && (
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious
-                                href="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    if (page > 1) router.push(`/admin/system/comments?page=${page - 1}&search=${searchKeyword}`);
-                                }}
-                            />
-                        </PaginationItem>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                            <PaginationItem key={p}>
-                                <PaginationLink
-                                    href="#"
-                                    isActive={page === p}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        router.push(`/admin/system/comments?page=${p}&search=${searchKeyword}`);
-                                    }}
-                                >
-                                    {p}
-                                </PaginationLink>
-                            </PaginationItem>
-                        ))}
-                        <PaginationItem>
-                            <PaginationNext
-                                href="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    if (page < totalPages) router.push(`/admin/system/comments?page=${page + 1}&search=${searchKeyword}`);
-                                }}
-                            />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => router.push(`/admin/system/comments?page=${page}&search=${searchKeyword}`)}
+                />
             )}
         </div>
     );

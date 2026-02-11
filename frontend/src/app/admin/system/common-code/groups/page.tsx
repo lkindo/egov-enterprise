@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,11 +20,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { getClCodeList } from '@/services/system/codeService';
-import { CmmnClCode, SearchParams } from '@/types/system';
+import { SearchParams, CmmnClCode } from '@/types/system';
 import { CommonClCodeForm } from '@/components/admin/system/CommonClCodeForm';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function CommonClCodePage() {
-    const [codes, setCodes] = useState<CmmnClCode[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<SearchParams>({
         pageIndex: 1,
         searchCondition: '1',
@@ -35,23 +35,13 @@ export default function CommonClCodePage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedCode, setSelectedCode] = useState<CmmnClCode | undefined>(undefined);
 
-    const fetchCodes = useCallback(async () => {
-        try {
-            const response = await getClCodeList(params);
-            if (response && response.resultList) {
-                setCodes(response.resultList);
-            } else {
-                setCodes([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setCodes([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['common-cl-codes', params],
+        queryFn: () => getClCodeList(params),
+    });
 
-    useEffect(() => {
-        fetchCodes();
-    }, [fetchCodes]);
+    const codes = data?.resultList || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +58,10 @@ export default function CommonClCodePage() {
         setIsFormOpen(true);
     }
 
+    const handleSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ['common-cl-codes'] });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -75,7 +69,7 @@ export default function CommonClCodePage() {
                 <Button onClick={handleCreate}>신규 등록</Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Select
                     value={params.searchCondition}
                     onValueChange={(value) => setParams(prev => ({ ...prev, searchCondition: value }))}
@@ -94,8 +88,8 @@ export default function CommonClCodePage() {
                     value={params.searchKeyword}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>조회</Button>
-            </div>
+                <Button type="submit">조회</Button>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -108,7 +102,8 @@ export default function CommonClCodePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {codes.length === 0 ? (
+                        {isLoading && <TableSkeleton columnCount={4} />}
+                        {!isLoading && codes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -121,7 +116,7 @@ export default function CommonClCodePage() {
                                     className="cursor-pointer hover:bg-slate-50"
                                     onClick={() => handleEdit(code)}
                                 >
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell>{code.clCode}</TableCell>
                                     <TableCell>{code.clCodeNm}</TableCell>
                                     <TableCell>{code.useAt}</TableCell>
@@ -132,11 +127,18 @@ export default function CommonClCodePage() {
                 </Table>
             </div>
 
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
+
             <CommonClCodeForm
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 data={selectedCode}
-                onSuccess={fetchCodes}
+                onSuccess={handleSuccess}
             />
         </div>
     );
