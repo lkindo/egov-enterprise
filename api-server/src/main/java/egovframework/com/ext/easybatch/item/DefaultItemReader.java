@@ -20,7 +20,7 @@ package egovframework.com.ext.easybatch.item;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.egovframe.rte.bat.core.item.file.mapping.EgovDefaultLineMapper;
 import org.egovframe.rte.bat.core.item.file.mapping.EgovObjectMapper;
 import org.egovframe.rte.bat.core.item.file.transform.EgovDelimitedLineTokenizer;

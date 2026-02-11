@@ -1,42 +1,32 @@
 package com.company.project.core.response;
 
-import lombok.Getter;
+import lombok.Builder;
 
-import java.time.LocalDateTime;
-
-@Getter
-public class ApiResponse<T> {
-    private final boolean success;
-    private final T data;
-    private final String code;
-    private final String message;
-    private final LocalDateTime timestamp;
-
-    private ApiResponse(boolean success, T data, String code, String message) {
-        this.success = success;
-        this.data = data;
-        this.code = code;
-        this.message = message;
-        this.timestamp = LocalDateTime.now();
-    }
-
+/**
+ * 전사 표준 응답 포맷 (Java 21 Record)
+ */
+@Builder
+public record ApiResponse<T>(
+    boolean success,
+    int status,
+    String message,
+    T data
+) {
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, data, "SUCCESS", "Operation successful");
+        return ApiResponse.<T>builder()
+                .success(true)
+                .status(200)
+                .message("Success")
+                .data(data)
+                .build();
     }
 
-    public static <T> ApiResponse<T> success(T data, String message) {
-        return new ApiResponse<>(true, data, "SUCCESS", message);
-    }
-
-    public static <T> ApiResponse<T> failure(String message) {
-        return new ApiResponse<>(false, null, "FAILURE", message);
-    }
-
-    public static <T> ApiResponse<T> error(String code, String message) {
-        return new ApiResponse<>(false, null, code, message);
-    }
-
-    public static <T> ApiResponse<T> error(String code, String message, T data) {
-        return new ApiResponse<>(false, data, code, message);
+    public static <T> ApiResponse<T> error(int status, String message) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .status(status)
+                .message(message)
+                .data(null)
+                .build();
     }
 }

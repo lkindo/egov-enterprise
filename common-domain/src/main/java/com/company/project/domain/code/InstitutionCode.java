@@ -1,7 +1,6 @@
 package com.company.project.domain.code;
 
-import java.time.LocalDateTime;
-
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -15,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "NINSTTCODE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class InstitutionCode {
+public class InstitutionCode extends BaseEntity {
 
     @Id
     @Column(name = "INSTT_CODE", length = 10)
@@ -84,25 +83,13 @@ public class InstitutionCode {
     @Column(name = "SORT_ORDR")
     private Integer sortOrdr;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
     @Builder
     public InstitutionCode(String insttCode, String allInsttNm, String lowestInsttNm, String insttAbrvNm,
             String odr, String ord, String insttOdr, String bestInsttCode,
             String upperInsttCode, String reprsntInsttCode, String insttTyLclas,
             String insttTyMclas, String insttTySclas, String telno, String fxnum,
             String creatDe, String ablDe, String ablEnnc, String changede,
-            String changeTime, String bsisDe, Integer sortOrdr, String frstRegisterId) {
+            String changeTime, String bsisDe, Integer sortOrdr) {
         this.insttCode = insttCode;
         this.allInsttNm = allInsttNm;
         this.lowestInsttNm = lowestInsttNm;
@@ -125,17 +112,13 @@ public class InstitutionCode {
         this.changeTime = changeTime;
         this.bsisDe = bsisDe;
         this.sortOrdr = sortOrdr;
-        this.frstRegisterId = frstRegisterId;
-        this.lastUpdusrId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
     public void update(String allInsttNm, String lowestInsttNm, String insttAbrvNm, String odr, String ord,
             String insttOdr, String bestInsttCode, String upperInsttCode, String reprsntInsttCode,
             String insttTyLclas, String insttTyMclas, String insttTySclas, String telno,
             String fxnum, String creatDe, String ablDe, String ablEnnc, String changede,
-            String changeTime, String bsisDe, Integer sortOrdr, String lastUpdusrId) {
+            String changeTime, String bsisDe, Integer sortOrdr) {
         this.allInsttNm = allInsttNm;
         this.lowestInsttNm = lowestInsttNm;
         this.insttAbrvNm = insttAbrvNm;
@@ -157,16 +140,12 @@ public class InstitutionCode {
         this.changeTime = changeTime;
         this.bsisDe = bsisDe;
         this.sortOrdr = sortOrdr;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
-    public void softDelete(String ablDe, String changede, String changeTime, String lastUpdusrId) {
+    public void softDelete(String ablDe, String changede, String changeTime) {
         this.ablEnnc = "1";
         this.ablDe = ablDe;
         this.changede = changede;
         this.changeTime = changeTime;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdtPnttm = LocalDateTime.now();
     }
 }

@@ -14,10 +14,8 @@ import org.apache.commons.io.IOUtils;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -56,6 +54,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	private final AdministCodeRepository administCodeRepository;
 	private final AdministCodeRecptnLogRepository administCodeRecptnLogRepository;
 	private final EgovIdGnrService idgenService;
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	/**
 	 * 법정동코드수신을 처리한다.
@@ -129,7 +128,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		return sb.toString();
 	}
 
-	public static int numberOfRows() throws IOException, ParseException {
+	public static int numberOfRows() throws IOException {
 		String requestString = requestString(1, 1);
 		URL url = java.net.URI.create(requestString).toURL();
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -137,14 +136,12 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		conn.setRequestProperty("Content-Type", "application/json");
 		try {
 			if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-				JSONParser jsonParser = new JSONParser();
-				JSONObject jsonObject = (JSONObject) jsonParser
-						.parse(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
-				JSONArray jsonArray = (JSONArray) jsonObject.get("StanReginCd");
-				JSONObject headObject = (JSONObject) jsonArray.get(0);
-				JSONArray headArray = (JSONArray) headObject.get("head");
-				JSONObject object = (JSONObject) headArray.get(0);
-				int totalCount = Integer.parseInt(object.get("totalCount").toString());
+				JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+				JsonNode jsonArray = jsonObject.get("StanReginCd");
+				JsonNode headObject = jsonArray.get(0);
+				JsonNode headArray = headObject.get("head");
+				JsonNode object = headArray.get(0);
+				int totalCount = object.get("totalCount").asInt();
 				return (int) Math.ceil((double) totalCount / 1000);
 			}
 		} finally {
@@ -153,7 +150,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		return 1;
 	}
 
-	public static List<HashMap<String, String>> apiLink() throws IOException, ParseException {
+	public static List<HashMap<String, String>> apiLink() throws IOException {
 		List<HashMap<String, String>> administCodeList = new ArrayList<>();
 		int totalPages = numberOfRows();
 		for (int p = 1; p <= totalPages; p++) {
@@ -163,24 +160,23 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 			conn.setRequestProperty("Content-Type", "application/json");
 			try {
 				if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-					JSONParser jsonParser = new JSONParser();
-					JSONObject jsonObject = (JSONObject) jsonParser
-							.parse(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
-					JSONArray jsonArray = (JSONArray) jsonObject.get("StanReginCd");
-					JSONObject bodyObject = (JSONObject) jsonArray.get(1);
-					JSONArray row = (JSONArray) bodyObject.get("row");
-					for (Object element : row) {
-						JSONObject object = (JSONObject) element;
-						HashMap<String, String> map = new HashMap<>();
-						map.put("regionCd", stringValueOf(object.get("region_cd")));
-						map.put("sidoCd", stringValueOf(object.get("sido_cd")));
-						map.put("sggCd", stringValueOf(object.get("sgg_cd")));
-						map.put("umdCd", stringValueOf(object.get("umd_cd")));
-						map.put("riCd", stringValueOf(object.get("ri_cd")));
-						map.put("locataddNm", stringValueOf(object.get("locatadd_nm")));
-						map.put("locallowNm", stringValueOf(object.get("locallow_nm")));
-						map.put("adptDe", stringValueOf(object.get("adpt_de")));
-						administCodeList.add(map);
+					JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+					JsonNode jsonArray = jsonObject.get("StanReginCd");
+					JsonNode bodyObject = jsonArray.get(1);
+					JsonNode row = bodyObject.get("row");
+					if (row.isArray()) {
+						for (JsonNode object : row) {
+							HashMap<String, String> map = new HashMap<>();
+							map.put("regionCd", stringValueOf(object.get("region_cd")));
+							map.put("sidoCd", stringValueOf(object.get("sido_cd")));
+							map.put("sggCd", stringValueOf(object.get("sgg_cd")));
+							map.put("umdCd", stringValueOf(object.get("umd_cd")));
+							map.put("riCd", stringValueOf(object.get("ri_cd")));
+							map.put("locataddNm", stringValueOf(object.get("locatadd_nm")));
+							map.put("locallowNm", stringValueOf(object.get("locallow_nm")));
+							map.put("adptDe", stringValueOf(object.get("adpt_de")));
+							administCodeList.add(map);
+						}
 					}
 				}
 			} finally {
@@ -190,8 +186,8 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		return administCodeList;
 	}
 
-	private static String stringValueOf(Object object) {
-		return object == null ? "" : String.valueOf(object);
+	private static String stringValueOf(JsonNode node) {
+		return (node == null || node.isNull()) ? "" : node.asText();
 	}
 
 	/**
