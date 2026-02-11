@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,10 +22,11 @@ import {
 import { getCmmnCodeList, getClCodeList } from '@/services/system/codeService';
 import { CmmnCode, SearchParams, CmmnClCode } from '@/types/system';
 import { CommonCodeForm } from '@/components/admin/system/CommonCodeForm';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function CommonCodePage() {
-    const [codes, setCodes] = useState<CmmnCode[]>([]);
-    const [clCodes, setClCodes] = useState<CmmnClCode[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<SearchParams>({
         pageIndex: 1,
         searchCondition: '1',
@@ -36,36 +35,19 @@ export default function CommonCodePage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedCode, setSelectedCode] = useState<CmmnCode | undefined>(undefined);
 
-    const fetchCodes = useCallback(async () => {
-        try {
-            const response = await getCmmnCodeList(params);
-            if (response && response.resultList) {
-                setCodes(response.resultList);
-            } else {
-                setCodes([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setCodes([]);
-        }
-    }, [params]);
+    const { data: clCodesData } = useQuery({
+        queryKey: ['common-cl-codes-all'],
+        queryFn: () => getClCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' }),
+    });
 
-    const fetchClCodes = useCallback(async () => {
-        try {
-            // Fetch all classification codes for dropdown (no paging ideally, or large page size)
-            const response = await getClCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' });
-            if (response && response.resultList) {
-                setClCodes(response.resultList);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }, []);
+    const { data, isLoading } = useQuery({
+        queryKey: ['common-codes', params],
+        queryFn: () => getCmmnCodeList(params),
+    });
 
-    useEffect(() => {
-        fetchCodes();
-        fetchClCodes();
-    }, [fetchCodes, fetchClCodes]);
+    const codes = data?.resultList || [];
+    const pagination = data?.paginationInfo;
+    const clCodes = clCodesData?.resultList || [];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,6 +64,10 @@ export default function CommonCodePage() {
         setIsFormOpen(true);
     }
 
+    const handleSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ['common-codes'] });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -89,7 +75,7 @@ export default function CommonCodePage() {
                 <Button onClick={handleCreate}>신규 등록</Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Select
                     value={params.searchCondition}
                     onValueChange={(value) => setParams(prev => ({ ...prev, searchCondition: value }))}
@@ -108,8 +94,8 @@ export default function CommonCodePage() {
                     value={params.searchKeyword}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>조회</Button>
-            </div>
+                <Button type="submit">조회</Button>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -123,7 +109,8 @@ export default function CommonCodePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {codes.length === 0 ? (
+                        {isLoading && <TableSkeleton columnCount={5} />}
+                        {!isLoading && codes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -136,7 +123,7 @@ export default function CommonCodePage() {
                                     className="cursor-pointer hover:bg-slate-50"
                                     onClick={() => handleEdit(code)}
                                 >
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell>{code.clCodeNm}</TableCell>
                                     <TableCell>{code.codeId}</TableCell>
                                     <TableCell>{code.codeIdNm}</TableCell>
@@ -148,11 +135,18 @@ export default function CommonCodePage() {
                 </Table>
             </div>
 
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
+
             <CommonCodeForm
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 data={selectedCode}
-                onSuccess={fetchCodes}
+                onSuccess={handleSuccess}
                 clCodes={clCodes.map(c => ({ label: c.clCodeNm, value: c.clCode }))}
             />
         </div>

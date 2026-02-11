@@ -1,9 +1,8 @@
 'use client';
 
-export const dynamic = "force-dynamic";
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,36 +15,24 @@ import {
 } from "@/components/ui/table";
 import { Plus, Search } from "lucide-react";
 import { getTermsList } from '@/services/terms/termsService';
-import { StplatManageVO, TermsSearchParams } from '@/types/terms';
-import { PaginationResponse } from '@/types/system';
+import { TermsSearchParams } from '@/types/terms';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function TermsListPage() {
     const router = useRouter();
-    const [termsList, setTermsList] = useState<StplatManageVO[]>([]);
     const [params, setParams] = useState<TermsSearchParams>({
         pageIndex: 1,
         searchKeyword: '',
     });
-    const [pagination, setPagination] = useState<PaginationResponse<any>['paginationInfo'] | null>(null);
 
-    const fetchList = useCallback(async () => {
-        try {
-            const response = await getTermsList(params);
-            if (response && response.resultList) {
-                setTermsList(response.resultList);
-                setPagination(response.paginationInfo);
-            } else {
-                setTermsList([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setTermsList([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['admin-terms', params],
+        queryFn: () => getTermsList(params),
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [fetchList]);
+    const termsList = data?.resultList || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,18 +49,18 @@ export default function TermsListPage() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Input
                     placeholder="약관명 검색"
                     className="max-w-sm"
-                    value={params.searchKeyword}
+                    value={params.searchKeyword || ''}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>
+                <Button type="submit">
                     <Search className="mr-2 h-4 w-4" />
                     조회
                 </Button>
-            </div>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -85,7 +72,9 @@ export default function TermsListPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {termsList.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={3} rowCount={10} />
+                        ) : termsList.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="h-24 text-center">
                                     등록된 약관이 없습니다.
@@ -98,7 +87,7 @@ export default function TermsListPage() {
                                     className="cursor-pointer hover:bg-slate-50"
                                     onClick={() => router.push(`/admin/terms/${term.useStplatId}`)}
                                 >
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell className="font-medium">{term.useStplatNm}</TableCell>
                                     <TableCell>{term.frstRegistPnttm?.slice(0, 10)}</TableCell>
                                 </TableRow>
@@ -107,6 +96,13 @@ export default function TermsListPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
         </div>
     );
 }

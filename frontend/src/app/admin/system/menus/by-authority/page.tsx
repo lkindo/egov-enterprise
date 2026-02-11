@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select,
@@ -12,7 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ChevronRight, Folder, File } from "lucide-react";
+import { ChevronRight, Folder, File, Loader2 } from "lucide-react";
 import client from '@/lib/api/client';
 
 interface AuthorInfo {
@@ -30,27 +28,24 @@ interface MenuTreeItem {
 }
 
 export default function MenuByAuthorityPage() {
-    const [authorities, setAuthorities] = useState<AuthorInfo[]>([]);
     const [selectedAuthority, setSelectedAuthority] = useState<string>('');
-    const [menuTree, setMenuTree] = useState<MenuTreeItem[]>([]);
     const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
-    const fetchAuthorities = useCallback(async () => {
-        try {
+    const { data: authorities = [] } = useQuery({
+        queryKey: ['admin-authorities-all'],
+        queryFn: async () => {
             const { data } = await client.get('/sec/ram/EgovAuthorList.do', { params: { pageIndex: 1 } });
-            if (data && data.resultList) {
-                setAuthorities(data.resultList);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }, []);
+            return (data?.resultList || []) as AuthorInfo[];
+        },
+    });
 
-    const fetchMenusByAuthority = useCallback(async (authorCode: string) => {
-        try {
-            const { data } = await client.get('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode } });
+    const { data: menuTree = [], isLoading: isMenuLoading } = useQuery({
+        queryKey: ['admin-menu-tree', selectedAuthority],
+        queryFn: async () => {
+            if (!selectedAuthority) return [];
+            const { data } = await client.get('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode: selectedAuthority } });
+
             if (data && data.resultList) {
-                // 계층 구조로 변환
                 const menuList = data.resultList as MenuTreeItem[];
                 const menuMap = new Map<number, MenuTreeItem>();
                 const rootMenus: MenuTreeItem[] = [];
@@ -71,26 +66,12 @@ export default function MenuByAuthorityPage() {
                         }
                     }
                 });
-
-                setMenuTree(rootMenus);
-            } else {
-                setMenuTree([]);
+                return rootMenus;
             }
-        } catch (error) {
-            console.error(error);
-            setMenuTree([]);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchAuthorities();
-    }, [fetchAuthorities]);
-
-    useEffect(() => {
-        if (selectedAuthority) {
-            fetchMenusByAuthority(selectedAuthority);
-        }
-    }, [selectedAuthority, fetchMenusByAuthority]);
+            return [];
+        },
+        enabled: !!selectedAuthority,
+    });
 
     const toggleExpand = (menuNo: number) => {
         setExpandedMenus(prev => {
@@ -164,10 +145,17 @@ export default function MenuByAuthorityPage() {
             {selectedAuthority && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>메뉴 구조</CardTitle>
+                        <CardTitle className="flex items-center justify-between">
+                            <span>메뉴 구조</span>
+                            {isMenuLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {menuTree.length === 0 ? (
+                        {isMenuLoading ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : menuTree.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
                                 해당 권한에 할당된 메뉴가 없습니다.
                             </div>

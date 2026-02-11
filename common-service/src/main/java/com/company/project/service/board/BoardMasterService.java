@@ -84,6 +84,8 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .cmmntyId(dto.getCmmntyId())
                 .blogId(dto.getBlogId())
                 .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
+                .commentAt(dto.getCommentAt() != null ? dto.getCommentAt() : "N")
+                .stsfdgAt(dto.getStsfdgAt() != null ? dto.getStsfdgAt() : "N")
                 .build();
 
         boardMasterRepository.save(entity);
@@ -104,7 +106,9 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 dto.getAtchPosblFileSize(),
                 dto.getTmplatId(),
                 dto.getUseAt(),
-                dto.getLastUpdusrId());
+                dto.getLastUpdusrId(),
+                dto.getCommentAt(),
+                dto.getStsfdgAt());
     }
 
     @Override
@@ -114,5 +118,19 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.delete(userId);
+    }
+
+    @Override
+    public boolean canUseSatisfaction(String bbsId) {
+        return boardMasterRepository.findById(bbsId)
+                .map(bm -> "Y".equals(bm.getStsfdgAt()))
+                .orElse(false);
+    }
+
+    @Override
+    public boolean canUseComment(String bbsId) {
+        return boardMasterRepository.findById(bbsId)
+                .map(bm -> "Y".equals(bm.getCommentAt()))
+                .orElse(false);
     }
 }

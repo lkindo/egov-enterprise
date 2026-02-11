@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,65 +13,50 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 import commentService from '@/services/comment/commentService';
 import { CommentVO } from '@/types/comment';
 import { Trash2, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 function CommentListContent() {
-    const router = useRouter();
+    const queryClient = useQueryClient();
     const searchParams = useSearchParams();
-    const [commentList, setCommentList] = useState<CommentVO[]>([]);
-    const [searchKeyword, setSearchKeyword] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const router = useRouter();
 
-    const fetchComments = async (page: number) => {
-        try {
-            const response = await commentService.getAdminCommentList({
-                pageIndex: page,
-                searchKeyword: searchKeyword
-            });
-            if (response.success) {
-                setCommentList(response.list || []);
-                setTotalPages(Math.ceil((response.totalRecordCount || 0) / 10));
-            }
-        } catch (error) {
-            console.error('Failed to fetch comments:', error);
-            alert('댓글 목록을 불러오는데 실패했습니다.');
-        }
-    };
+    const page = Number(searchParams.get('page')) || 1;
+    const searchKeyword = searchParams.get('search') || '';
 
-    useEffect(() => {
-        const page = Number(searchParams.get('page')) || 1;
-        setCurrentPage(page);
-        fetchComments(page);
-    }, [searchParams]);
+    const [keywordInput, setKeywordInput] = useState(searchKeyword);
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['admin-comments', page, searchKeyword],
+        queryFn: () => commentService.getAdminCommentList({
+            pageIndex: page,
+            searchKeyword: searchKeyword
+        }),
+    });
+
+    const commentList = data?.list || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = () => {
-        router.push(`/admin/system/comments?page=1&search=${searchKeyword}`);
+        router.push(`/admin/system/comments?page=1&search=${keywordInput}`);
     };
+
+    const deleteMutation = useMutation({
+        mutationFn: commentService.deleteAdminComment,
+        onSuccess: () => {
+            alert('댓글이 삭제되었습니다.');
+            queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
+        },
+        onError: () => alert('댓글 삭제에 실패했습니다.')
+    });
 
     const handleDelete = async (commentNo: number) => {
         if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
-        try {
-            const response = await commentService.deleteAdminComment(commentNo);
-            if (response.success) {
-                alert('댓글이 삭제되었습니다.');
-                fetchComments(currentPage);
-            }
-        } catch (error) {
-            console.error('Delete failed:', error);
-            alert('댓글 삭제에 실패했습니다.');
-        }
+        deleteMutation.mutate(commentNo);
     };
 
     return (
@@ -82,8 +68,8 @@ function CommentListContent() {
             <div className="flex items-center space-x-2">
                 <Input
                     placeholder="댓글 내용 검색"
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    value={keywordInput}
+                    onChange={(e) => setKeywordInput(e.target.value)}
                     className="max-w-sm"
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
@@ -104,7 +90,9 @@ function CommentListContent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {commentList.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={7} rowCount={10} />
+                        ) : commentList.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="h-24 text-center">
                                     등록된 댓글이 없습니다.
@@ -139,7 +127,7 @@ function CommentListContent() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-center">
-                                            <Button variant="destructive" size="icon-sm" disabled={comment.useAt === 'N'} onClick={() => handleDelete(comment.id)}>
+                                            <Button variant="destructive" size="icon" disabled={comment.useAt === 'N' || deleteMutation.isPending} onClick={() => handleDelete(comment.id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -151,24 +139,11 @@ function CommentListContent() {
                 </Table>
             </div>
 
-            {totalPages > 1 && (
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious href={`/admin/system/comments?page=${Math.max(1, currentPage - 1)}`} />
-                        </PaginationItem>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <PaginationItem key={page}>
-                                <PaginationLink href={`/admin/system/comments?page=${page}`} isActive={currentPage === page}>
-                                    {page}
-                                </PaginationLink>
-                            </PaginationItem>
-                        ))}
-                        <PaginationItem>
-                            <PaginationNext href={`/admin/system/comments?page=${Math.min(totalPages, currentPage + 1)}`} />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => router.push(`/admin/system/comments?page=${page}&search=${searchKeyword}`)}
+                />
             )}
         </div>
     );

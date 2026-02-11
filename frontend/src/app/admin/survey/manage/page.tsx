@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,36 +17,23 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search } from "lucide-react";
 import { getPollList } from '@/services/poll/pollService';
 import { OnlinePollManageVO, PollSearchParams } from '@/types/poll';
-import { PaginationResponse } from '@/types/system';
-import { format } from "date-fns";
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function PollManagePage() {
     const router = useRouter();
-    const [polls, setPolls] = useState<OnlinePollManageVO[]>([]);
     const [params, setParams] = useState<PollSearchParams>({
         pageIndex: 1,
         searchKeyword: '',
     });
-    const [pagination, setPagination] = useState<PaginationResponse<any>['paginationInfo'] | null>(null);
 
-    const fetchList = useCallback(async () => {
-        try {
-            const response = await getPollList(params);
-            if (response && response.resultList) {
-                setPolls(response.resultList);
-                setPagination(response.paginationInfo);
-            } else {
-                setPolls([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setPolls([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['admin-polls', params],
+        queryFn: () => getPollList(params),
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [fetchList]);
+    const polls = data?.resultList || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,18 +57,18 @@ export default function PollManagePage() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Input
                     placeholder="설문명 검색"
                     className="max-w-sm"
-                    value={params.searchKeyword}
+                    value={params.searchKeyword || ''}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>
+                <Button type="submit">
                     <Search className="mr-2 h-4 w-4" />
                     조회
                 </Button>
-            </div>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -95,7 +83,9 @@ export default function PollManagePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {polls.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={6} rowCount={10} />
+                        ) : polls.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
                                     설문 데이터가 없습니다.
@@ -108,7 +98,7 @@ export default function PollManagePage() {
                                     className="cursor-pointer hover:bg-slate-50"
                                     onClick={() => router.push(`/admin/survey/manage/${poll.pollId}`)}
                                 >
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
                                     <TableCell className="font-medium">{poll.pollNm}</TableCell>
                                     <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
                                     <TableCell>{getStatusBadge(poll.pollEndDe)}</TableCell>
@@ -121,7 +111,12 @@ export default function PollManagePage() {
                 </Table>
             </div>
 
-            {/* Pagination UI can be added here using pagination state */}
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
         </div>
     );
 }

@@ -25,8 +25,6 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +32,7 @@ import java.util.Map;
 @Configuration
 @EnableWebSecurity
 @org.springframework.context.annotation.Profile("!test")
-@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = false)
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -103,31 +101,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
-    }
-
-    @Bean
     @org.springframework.core.annotation.Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .securityContext(
-                        securityContext -> securityContext.securityContextRepository(securityContextRepository()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**").permitAll()
-                        .requestMatchers("/uat/uia/**").permitAll()
+                        .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
+                        .requestMatchers("/sym/mms/**").permitAll()
                         .requestMatchers("/connection").permitAll()
-                        .requestMatchers("/WEB-INF/**").permitAll() // Allow internal forwarding to JSPs
+                        .requestMatchers("/WEB-INF/**").permitAll()
                         .anyRequest().authenticated())
-                .formLogin(login -> login
-                        .loginPage("/uat/uia/egovLoginUsr.do") // Redirect to custom login page
-                        .permitAll())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 
-        // H2 콘솔 사용을 위한 설정
+        // Header Security
         http.headers(headers -> headers
                 .frameOptions(
                         org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin)

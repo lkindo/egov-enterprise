@@ -18,6 +18,11 @@ public interface EgovUserService {
     List<UserDto> getUserList();
 
     /**
+     * 사용자 목록 페이징 조회
+     */
+    org.springframework.data.domain.Page<UserDto> getPagedUserList(org.springframework.data.domain.Pageable pageable);
+
+    /**
      * 사용자 상세 조회
      */
     UserDto getUserById(String userId);

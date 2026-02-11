@@ -38,8 +38,9 @@ public class AuthService extends EgovAbstractServiceImpl implements EgovAuthServ
                 .findFirst()
                 .orElse("ROLE_USER");
 
-        String accessToken = jwtTokenProvider.createToken(authentication.getName(), role);
+        String accessToken = jwtTokenProvider.createAccessToken(authentication.getName(), role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication.getName());
 
-        return new TokenResponse(accessToken, null);
+        return new TokenResponse(accessToken, refreshToken);
     }
 }

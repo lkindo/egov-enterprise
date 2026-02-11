@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
-
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,9 +22,11 @@ import {
 import { getMenuList } from '@/services/system/menuService';
 import { MenuManage, SearchParams } from '@/types/system';
 import { MenuForm } from '@/components/admin/system/MenuForm';
+import { TableSkeleton } from "@/components/common/TableSkeleton";
+import { PagePagination } from "@/components/common/PagePagination";
 
 export default function MenuPage() {
-    const [menus, setMenus] = useState<MenuManage[]>([]);
+    const queryClient = useQueryClient();
     const [params, setParams] = useState<SearchParams>({
         pageIndex: 1,
         searchCondition: '1',
@@ -35,23 +35,13 @@ export default function MenuPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedMenu, setSelectedMenu] = useState<MenuManage | undefined>(undefined);
 
-    const fetchMenus = useCallback(async () => {
-        try {
-            const response = await getMenuList(params);
-            if (response && response.resultList) {
-                setMenus(response.resultList);
-            } else {
-                setMenus([]);
-            }
-        } catch (error) {
-            console.error(error);
-            setMenus([]);
-        }
-    }, [params]);
+    const { data, isLoading } = useQuery({
+        queryKey: ['admin-menus', params],
+        queryFn: () => getMenuList(params),
+    });
 
-    useEffect(() => {
-        fetchMenus();
-    }, [fetchMenus]);
+    const menus = data?.resultList || [];
+    const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +58,10 @@ export default function MenuPage() {
         setIsFormOpen(true);
     }
 
+    const handleSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -75,7 +69,7 @@ export default function MenuPage() {
                 <Button onClick={handleCreate}>신규 등록</Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
                 <Select
                     value={params.searchCondition}
                     onValueChange={(value) => setParams(prev => ({ ...prev, searchCondition: value }))}
@@ -91,11 +85,11 @@ export default function MenuPage() {
                 <Input
                     placeholder="검색어를 입력하세요"
                     className="max-w-sm"
-                    value={params.searchKeyword}
+                    value={params.searchKeyword || ''}
                     onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button onClick={handleSearch}>조회</Button>
-            </div>
+                <Button type="submit">조회</Button>
+            </form>
 
             <div className="rounded-md border">
                 <Table>
@@ -109,7 +103,9 @@ export default function MenuPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {menus.length === 0 ? (
+                        {isLoading ? (
+                            <TableSkeleton columnCount={5} rowCount={10} />
+                        ) : menus.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
                                     데이터가 없습니다.
@@ -134,11 +130,18 @@ export default function MenuPage() {
                 </Table>
             </div>
 
+            {pagination && (
+                <PagePagination
+                    pagination={pagination}
+                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                />
+            )}
+
             <MenuForm
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 data={selectedMenu}
-                onSuccess={fetchMenus}
+                onSuccess={handleSuccess}
             />
         </div>
     );

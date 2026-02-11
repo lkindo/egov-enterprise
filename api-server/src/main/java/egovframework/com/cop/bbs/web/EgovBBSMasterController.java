@@ -22,7 +22,6 @@ import com.company.project.web.adapter.BoardAdapter;
 import lombok.RequiredArgsConstructor;
 
 import egovframework.com.cmm.ComDefaultCodeVO;
-import egovframework.com.cmm.EgovComponentChecker;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
@@ -111,12 +110,8 @@ public class EgovBBSMasterController {
         // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
         // ---------------------------------
 
-        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
-            model.addAttribute("useComment", "true");
-        }
-        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
-            model.addAttribute("useSatisfaction", "true");
-        }
+        model.addAttribute("useComment", "true");
+        model.addAttribute("useSatisfaction", "true");
 
         return "egovframework/com/cop/bbs/EgovBBSMasterRegist";
     }
@@ -387,12 +382,8 @@ public class EgovBBSMasterController {
         // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
         // ---------------------------------
 
-        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
-            model.addAttribute("useComment", "true");
-        }
-        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
-            model.addAttribute("useSatisfaction", "true");
-        }
+        model.addAttribute("useComment", "true");
+        model.addAttribute("useSatisfaction", "true");
 
         return "egovframework/com/cop/bbs/EgovBBSMasterDetail";
     }
@@ -431,12 +422,8 @@ public class EgovBBSMasterController {
         // 2011.09.15 : 2단계 기능 추가 반영 방법 변경
         // ---------------------------------
 
-        if (EgovComponentChecker.hasComponent("EgovArticleCommentService")) {
-            model.addAttribute("useComment", "true");
-        }
-        if (EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {
-            model.addAttribute("useSatisfaction", "true");
-        }
+        model.addAttribute("useComment", "true");
+        model.addAttribute("useSatisfaction", "true");
 
         return "egovframework/com/cop/bbs/EgovBBSMasterUpdt";
     }
