@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -19,6 +20,14 @@ public class BatchSchdul {
 
     @Column(name = "BATCH_OPERT_ID", length = 20)
     private String batchOpertId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BATCH_OPERT_ID", insertable = false, updatable = false)
+    private BatchOpert batchOpert;
+
+    @OneToMany(mappedBy = "batchSchdul", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<BatchSchdulDfk> batchSchdulDfks = new java.util.ArrayList<>();
 
     @Column(name = "EXECUT_CYCLE", length = 2)
     private String executCycle;
@@ -39,22 +48,22 @@ public class BatchSchdul {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
+    private LocalDateTime frstRegistPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private LocalDateTime lastUpdtPnttm;
 
     @PrePersist
     public void prePersist() {
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.frstRegistPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.lastUpdtPnttm = LocalDateTime.now();
     }
 }
