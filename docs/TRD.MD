@@ -54,9 +54,9 @@ graph TD
 ### 3.2. Frontend
 | 분류 | 기술 및 버전 | 비고 |
 | :--- | :--- | :--- |
-| **Framework** | **Next.js 14.2 (App Router)** | SSR, ISR, Server Components 활용 |
+| **Framework** | **Next.js 16.1 (App Router)** | SSR, ISR, Server Components 활용 |
 | **Language** | TypeScript 5.x | Strict Type Checking 적용 |
-| **Styling** | Tailwind CSS 3.4, **Shadcn UI** | 컴포넌트 기반 디자인 시스템 |
+| **Styling** | **Tailwind CSS 4.0**, **Shadcn UI** | 컴포넌트 기반 디자인 시스템 |
 | **State** | React Context / Zustand | 경량 상태 관리 프레임워크 |
 | **Fetch** | Axios / Fetch API | FetchWithRetry 및 로깅 적용 |
 

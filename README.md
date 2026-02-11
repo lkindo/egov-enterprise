@@ -18,20 +18,20 @@
 ## 🛠 기술 스택 (Modern Tech Stack)
 
 ### Frontend
-- **Framework**: Next.js 14.1+ (App Router)
+- **Framework**: Next.js 16.x (App Router)
 - **Language**: TypeScript 5.0+ (Strict Mode)
-- **Styling**: Tailwind CSS, Shadcn/UI (Modern Component System)
+- **Styling**: Tailwind CSS 4.x, Shadcn/UI (Modern Component System)
 - **State/Data**: Axios, React Hooks, Client/Server Components
 - **Visualization**: Recharts (Chart components)
 - **Icons**: Lucide React
 
 ### Backend
-- **Core**: Spring Boot 3.3.x, Java 17
+- **Core**: Spring Boot 3.3.x, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
 - **Service**: Domain-driven Architecture (Modular structure)
 - **Security**: Spring Security 6, JWT (Json Web Token)
 - **API**: RESTful API with JSON
-- **Build**: Gradle
+- **Build**: Gradle 8.x
 
 ---
 

@@ -32,6 +32,8 @@ public class BoardMasterDto {
     private String cmmntyId;
     private String blogId;
     private String blogAt;
+    private String commentAt;
+    private String stsfdgAt;
 
     // Additional fields for completeness
     private String authFlag;
@@ -59,6 +61,8 @@ public class BoardMasterDto {
                 .cmmntyId(entity.getCmmntyId())
                 .blogId(entity.getBlogId())
                 .blogAt(entity.getBlogAt())
+                .commentAt(entity.getCommentAt())
+                .stsfdgAt(entity.getStsfdgAt())
                 .build();
     }
 }

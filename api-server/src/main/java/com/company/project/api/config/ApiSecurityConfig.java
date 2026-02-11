@@ -61,7 +61,7 @@ public class ApiSecurityConfig {
                                                 .authenticationEntryPoint(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
                 return http.build();
         }
@@ -90,7 +90,7 @@ public class ApiSecurityConfig {
                                                 .logoutUrl("/uat/uia/actionLogout.do")
                                                 .logoutSuccessUrl("/uat/uia/egovLoginUsr.do"))
                                 .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
                 return http.build();
         }

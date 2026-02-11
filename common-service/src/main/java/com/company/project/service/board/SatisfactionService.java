@@ -23,14 +23,14 @@ public class SatisfactionService implements EgovSatisfactionService {
     @Transactional
     public void registerSatisfaction(SatisfactionDto dto) {
         Satisfaction satisfaction = Satisfaction.builder()
-                .satisfactionId(dto.getSatisfactionId())
+                .id(dto.getSatisfactionId())
                 .articleId(dto.getArticleId())
                 .boardId(dto.getBoardId())
                 .writerId(dto.getWriterId())
                 .writerNm(dto.getWriterNm())
                 .satisfactionLevel(dto.getSatisfactionLevel())
                 .satisfactionOpinion(dto.getSatisfactionOpinion())
-                .password(dto.getSatisfactionPassword()) // Set password
+                .password(dto.getSatisfactionPassword())
                 .useAt("Y")
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
@@ -48,15 +48,15 @@ public class SatisfactionService implements EgovSatisfactionService {
 
     @Override
     @Transactional
-    public void deleteSatisfaction(String satisfactionId) {
+    public void deleteSatisfaction(Long satisfactionId) {
         satisfactionRepository.deleteById(satisfactionId);
     }
 
     @Override
     public List<SatisfactionDto> getSatisfactionList(Long articleId, String boardId) {
-        return satisfactionRepository.findByArticleIdAndBoardId(articleId, boardId).stream()
+        return satisfactionRepository.findByArticleIdAndBoardIdAndUseAt(articleId, boardId, "Y").stream()
                 .map(s -> SatisfactionDto.builder()
-                        .satisfactionId(s.getSatisfactionId())
+                        .satisfactionId(s.getId())
                         .articleId(s.getArticleId())
                         .boardId(s.getBoardId())
                         .writerId(s.getWriterId())
@@ -74,11 +74,11 @@ public class SatisfactionService implements EgovSatisfactionService {
     }
 
     @Override
-    public SatisfactionDto getSatisfaction(String satisfactionId) {
+    public SatisfactionDto getSatisfaction(Long satisfactionId) {
         Satisfaction satisfaction = satisfactionRepository.findById(satisfactionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return SatisfactionDto.builder()
-                .satisfactionId(satisfaction.getSatisfactionId())
+                .satisfactionId(satisfaction.getId())
                 .articleId(satisfaction.getArticleId())
                 .boardId(satisfaction.getBoardId())
                 .writerId(satisfaction.getWriterId())
@@ -91,15 +91,9 @@ public class SatisfactionService implements EgovSatisfactionService {
     }
 
     @Override
-    public boolean checkPassword(String satisfactionId, String password) {
+    public boolean checkPassword(Long satisfactionId, String password) {
         Satisfaction satisfaction = satisfactionRepository.findById(satisfactionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        // Simple string comparison for legacy support, ideally use encoder
-        // Legacy controller encrypts before calling service usually?
-        // EgovArticleCommentController encrypts in controller.
-        // Assuming password passed here is already encrypted if needed or raw.
-        // Legacy: EgovFileScrty.encryptPassword(satisfactionVO.getConfirmPassword()...)
-        // The service should likely compare strictly.
         if (satisfaction.getPassword() == null)
             return false;
         return satisfaction.getPassword().equals(password);

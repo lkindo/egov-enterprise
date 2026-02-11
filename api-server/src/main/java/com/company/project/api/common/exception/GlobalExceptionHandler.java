@@ -1,5 +1,8 @@
 package com.company.project.api.common.exception;
 
+import java.util.stream.Collectors;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.FieldError;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.response.ApiResponse;
@@ -24,6 +27,21 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         ApiResponse<Void> response = ApiResponse.error(errorCode.getStatus().value(), e.getMessage());
         return new ResponseEntity<>(response, errorCode.getStatus());
+    }
+
+    /**
+     * 유효성 검증 예외 처리 (@Valid)
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<ApiResponse<Object>> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e) {
+        log.error("handleMethodArgumentNotValidException", e);
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+
+        ApiResponse<Object> response = ApiResponse.error(400, message);
+        return ResponseEntity.badRequest().body(response);
     }
 
     /**

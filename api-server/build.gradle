@@ -13,12 +13,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
     
-    // JSP Support
-    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
-    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
-    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
+    // JSP Support - Disabled for Phase A optimization
+    // implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+    // implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
+    // implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
     
-    // MyBATIS Support
+    // MyBATIS Support - Migration to JPA in progress (Phase A modules completed)
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
     
     // Legacy Dependencies
@@ -78,6 +78,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    
+    // Performance Optimization
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 bootJar {
