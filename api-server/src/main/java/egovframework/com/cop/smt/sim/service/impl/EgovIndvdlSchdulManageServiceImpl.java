@@ -28,6 +28,11 @@ import jakarta.annotation.Resource;
  *
  * </pre>
  */
+/**
+ * 일정관리를 처리하는 ServiceImpl 클래스
+ * @deprecated JPA 기반의 ScheduleService 사용을 권장합니다.
+ */
+@Deprecated
 @Service("egovIndvdlSchdulManageService")
 public class EgovIndvdlSchdulManageServiceImpl extends EgovAbstractServiceImpl implements EgovIndvdlSchdulManageService{
 

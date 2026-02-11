@@ -9,6 +9,11 @@ import egovframework.com.cop.bbs.service.Board;
 import egovframework.com.cop.bbs.service.BoardMasterVO;
 import egovframework.com.cop.bbs.service.BoardVO;
 
+/**
+ * 게시판 조회를 위한 DAO 클래스
+ * @deprecated JPA 기반의 BoardService 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("EgovArticleDAO")
 public class EgovArticleDAO extends EgovComAbstractDAO {
 

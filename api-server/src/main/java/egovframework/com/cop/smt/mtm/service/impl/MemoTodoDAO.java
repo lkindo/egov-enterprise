@@ -26,6 +26,11 @@ import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
  *
  * </pre>
  */
+/**
+ * 메모할일을 처리하는 DAO 클래스
+ * @deprecated JPA 기반의 MemoTodoRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("MemoTodoDAO")
 public class MemoTodoDAO extends EgovComAbstractDAO {
 
