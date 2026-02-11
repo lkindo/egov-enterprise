@@ -1,33 +1,41 @@
 package egovframework.com.uss.ion.rsm.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.rsm.RecentSrchwrd;
+import com.company.project.domain.rsm.RecentSrchwrdManage;
+import com.company.project.domain.rsm.RecentSrchwrdManageRepository;
+import com.company.project.domain.rsm.RecentSrchwrdRepository;
 
 import egovframework.com.uss.ion.rsm.service.EgovRecentSrchwrdService;
-import egovframework.com.uss.ion.rsm.service.RecentSrchwrd;
 import jakarta.annotation.Resource;
 
 /**
  * 최근검색어를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
- * @since 2009.07.03
- * @version 1.0
- * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *
- * </pre>
+ * Refactored to use JPA (RecentSrchwrdRepository, RecentSrchwrdManageRepository)
  */
 @Service("egovRecentSrchwrdService")
+@Transactional(readOnly = true)
 public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
         implements EgovRecentSrchwrdService {
+
+    @Resource
+    private RecentSrchwrdRepository recentSrchwrdRepository;
+
+    @Resource
+    private RecentSrchwrdManageRepository recentSrchwrdManageRepository;
 
     @Resource(name = "onlineRecentSrchwrdDao")
     private RecentSrchwrdDao dao;
@@ -37,136 +45,198 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
 
     @Resource(name = "egovSrchwrdManageIdGnrService")
     private EgovIdGnrService egovSrchwrdManageIdGnrService;
+
     /**
      * 최근검색어관리를(을) 목록을 조회 한다.
-     * @param searchVO 조회할 정보가 담김 VO
-     * @return List
-     * @throws Exception
      */
     @Override
-	public List<EgovMap> selectRecentSrchwrdList(RecentSrchwrd searchVO) throws Exception {
-        return dao.selectRecentSrchwrdList(searchVO);
+    public List<EgovMap> selectRecentSrchwrdList(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
+            throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
+                searchVO.getRecordCountPerPage());
+
+        Page<RecentSrchwrdManage> page = recentSrchwrdManageRepository.searchManages(
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+
+        return page.getContent().stream().map(this::toManageEgovMap).collect(Collectors.toList());
     }
 
     /**
      * 최근검색어관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
-     * @return int
-     * @throws Exception
      */
     @Override
-	public int selectRecentSrchwrdListCnt(RecentSrchwrd searchVO) throws Exception {
-        return dao.selectRecentSrchwrdListCnt(searchVO);
+    public int selectRecentSrchwrdListCnt(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
+            throws Exception {
+        Pageable pageable = PageRequest.of(0, 1);
+        return (int) recentSrchwrdManageRepository.searchManages(
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
     /**
      * 최근검색어관리를(을) 상세조회 한다.
-     * @param recentSrchwrd 최근검색어관리 정보가 담김 VO
-     * @return List
-     * @throws Exception
      */
     @Override
-	public RecentSrchwrd selectRecentSrchwrdDetail( RecentSrchwrd recentSrchwrd) throws Exception {
-        return dao.selectRecentSrchwrdDetail(recentSrchwrd);
+    public egovframework.com.uss.ion.rsm.service.RecentSrchwrd selectRecentSrchwrdDetail(
+            egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd) throws Exception {
+        return recentSrchwrdManageRepository.findById(recentSrchwrd.getSrchwrdManageId())
+                .map(this::toManageVO)
+                .orElse(null);
     }
 
     /**
      * 최근검색어관리를(을) 등록한다.
-     * @param recentSrchwrd 최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void insertRecentSrchwrd(RecentSrchwrd recentSrchwrd)throws Exception {
-        String sMakeId = egovSrchwrdManageIdGnrService.getNextStringId();
-        recentSrchwrd.setSrchwrdManageId(sMakeId);
-        dao.insertRecentSrchwrd(recentSrchwrd);
+    @Transactional
+    public void insertRecentSrchwrd(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd) throws Exception {
+        String id = egovSrchwrdManageIdGnrService.getNextStringId();
+
+        RecentSrchwrdManage entity = RecentSrchwrdManage.builder()
+                .srchwrdManageId(id)
+                .srchwrdManageNm(recentSrchwrd.getSrchwrdManageNm())
+                .srchwrdManageUrl(recentSrchwrd.getSrchwrdManageUrl())
+                .srchwrdManageUseYn(recentSrchwrd.getSrchwrdManageUseYn())
+                .frstRegisterId(recentSrchwrd.getFrstRegisterId())
+                .build();
+
+        recentSrchwrdManageRepository.save(entity);
     }
 
     /**
      * 최근검색어관리를(을) 수정한다.
-     * @param recentSrchwrd 최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void updateRecentSrchwrd(RecentSrchwrd recentSrchwrd) throws Exception {
-        dao.updateRecentSrchwrd(recentSrchwrd);
+    @Transactional
+    public void updateRecentSrchwrd(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd) throws Exception {
+        recentSrchwrdManageRepository.findById(recentSrchwrd.getSrchwrdManageId()).ifPresent(entity -> {
+            entity.update(
+                    recentSrchwrd.getSrchwrdManageNm(),
+                    recentSrchwrd.getSrchwrdManageUrl(),
+                    recentSrchwrd.getSrchwrdManageUseYn(),
+                    recentSrchwrd.getLastUpdusrId());
+        });
     }
 
     /**
      * 최근검색어관리를(을) 삭제한다.
-     * @param recentSrchwrd 최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void deleteRecentSrchwrd(RecentSrchwrd recentSrchwrd) throws Exception {
-        dao.deleteRecentSrchwrd(recentSrchwrd);
-    }
-
-
-    /**
-     * 최근검색어결과를(을) 목록을 조회 한다.
-     * @param searchVO 조회할 정보가 담김 VO
-     * @return List
-     * @throws Exception
-     */
-    @Override
-	public List<EgovMap> selectRecentSrchwrdResultInquire(RecentSrchwrd recentSrchwrd) throws Exception {
-        return dao.selectRecentSrchwrdResultInquire(recentSrchwrd);
+    @Transactional
+    public void deleteRecentSrchwrd(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd) throws Exception {
+        recentSrchwrdManageRepository.deleteById(recentSrchwrd.getSrchwrdManageId());
     }
 
     /**
      * 최근검색어결과를(을) 목록을 조회 한다.
-     * @param searchVO 조회할 정보가 담김 VO
-     * @return List
-     * @throws Exception
      */
     @Override
-	public List<?> selectRecentSrchwrdResultList(RecentSrchwrd searchVO) throws Exception {
-        return dao.selectRecentSrchwrdResultList(searchVO);
+    public List<EgovMap> selectRecentSrchwrdResultInquire(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd)
+            throws Exception {
+        List<Map<String, Object>> results = recentSrchwrdRepository.selectRecentSrchwrdResultInquire(
+                recentSrchwrd.getSrchwrdManageId(), recentSrchwrd.getQ());
+
+        return results.stream().map(res -> {
+            EgovMap map = new EgovMap();
+            map.put("recentSrchwrdNm", res.get("recentSrchwrdNm"));
+            map.put("recentSrchwrdCo", res.get("recentSrchwrdCo"));
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 최근검색어결과를(을) 목록을 조회 한다.
+     */
+    @Override
+    public List<?> selectRecentSrchwrdResultList(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
+            throws Exception {
+        Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
+                searchVO.getRecordCountPerPage());
+
+        Page<RecentSrchwrd> page = recentSrchwrdRepository.searchResults(
+                searchVO.getSrchwrdManageId(), searchVO.getSearchKeyword(), pageable);
+
+        return page.getContent().stream().map(this::toResultEgovMap).collect(Collectors.toList());
     }
 
     /**
      * 최근검색어결과를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
-     * @return int
-     * @throws Exception
      */
     @Override
-	public int selectRecentSrchwrdResultListCnt(RecentSrchwrd searchVO) throws Exception {
-        return dao.selectRecentSrchwrdResultListCnt(searchVO);
+    public int selectRecentSrchwrdResultListCnt(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
+            throws Exception {
+        Pageable pageable = PageRequest.of(0, 1);
+        return (int) recentSrchwrdRepository.searchResults(
+                searchVO.getSrchwrdManageId(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
     /**
      * 최근검색어결과를(을) 등록한다.
-     * @param recentSrchwrd 최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void insertRecentSrchwrdResult(RecentSrchwrd recentSrchwrd)throws Exception {
-        String sMakeId = egovSrchwrdIdGnrService.getNextStringId();
-        recentSrchwrd.setSrchwrdId(sMakeId);
-        dao.insertRecentSrchwrdResult(recentSrchwrd);
+    @Transactional
+    public void insertRecentSrchwrdResult(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd)
+            throws Exception {
+        String id = egovSrchwrdIdGnrService.getNextStringId();
+
+        RecentSrchwrd entity = RecentSrchwrd.builder()
+                .recentSrchwrdId(id)
+                .srchwrdManageId(recentSrchwrd.getSrchwrdManageId())
+                .recentSrchwrdNm(recentSrchwrd.getSrchwrdNm())
+                .frstRegisterId(recentSrchwrd.getFrstRegisterId())
+                .build();
+
+        recentSrchwrdRepository.save(entity);
     }
 
     /**
      * 최근검색어결과를(을) 건별로 삭제 한다.
-     * @param recentSrchwrd  최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void deleteRecentSrchwrdResult(RecentSrchwrd recentSrchwrd) throws Exception {
-        dao.deleteRecentSrchwrdResult(recentSrchwrd);
+    @Transactional
+    public void deleteRecentSrchwrdResult(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd)
+            throws Exception {
+        recentSrchwrdRepository.deleteById(recentSrchwrd.getSrchwrdId());
     }
 
     /**
      * 최근검색어결과를(을) 관리별로 삭제 한다.
-     * @param recentSrchwrd  최근검색어관리 정보가 담김 VO
-     * @throws Exception
      */
     @Override
-	public void deleteRecentSrchwrdResultAll(RecentSrchwrd recentSrchwrd) throws Exception {
-        dao.deleteRecentSrchwrdResultAll(recentSrchwrd);
+    @Transactional
+    public void deleteRecentSrchwrdResultAll(egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd)
+            throws Exception {
+        recentSrchwrdRepository.deleteBySrchwrdManageId(recentSrchwrd.getSrchwrdManageId());
     }
 
+    private EgovMap toManageEgovMap(RecentSrchwrdManage entity) {
+        EgovMap map = new EgovMap();
+        map.put("srchwrdManageId", entity.getSrchwrdManageId());
+        map.put("srchwrdManageNm", entity.getSrchwrdManageNm());
+        map.put("srchwrdManageUrl", entity.getSrchwrdManageUrl());
+        map.put("srchwrdManageUseYn", entity.getSrchwrdManageUseYn());
+        map.put("frstRegisterId", entity.getFrstRegisterId());
+        map.put("frstRegisterPnttm", entity.getCreatedDate());
+        return map;
+    }
+
+    private EgovMap toResultEgovMap(RecentSrchwrd entity) {
+        EgovMap map = new EgovMap();
+        map.put("srchwrdManageId", entity.getSrchwrdManageId());
+        map.put("srchwrdId", entity.getRecentSrchwrdId());
+        map.put("srchwrdNm", entity.getRecentSrchwrdNm());
+        map.put("frstRegisterId", entity.getFrstRegisterId());
+        map.put("frstRegisterPnttm", entity.getCreatedDate());
+        return map;
+    }
+
+    private egovframework.com.uss.ion.rsm.service.RecentSrchwrd toManageVO(RecentSrchwrdManage entity) {
+        egovframework.com.uss.ion.rsm.service.RecentSrchwrd vo = new egovframework.com.uss.ion.rsm.service.RecentSrchwrd();
+        vo.setSrchwrdManageId(entity.getSrchwrdManageId());
+        vo.setSrchwrdManageNm(entity.getSrchwrdManageNm());
+        vo.setSrchwrdManageUrl(entity.getSrchwrdManageUrl());
+        vo.setSrchwrdManageUseYn(entity.getSrchwrdManageUseYn());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        return vo;
+    }
 
 }

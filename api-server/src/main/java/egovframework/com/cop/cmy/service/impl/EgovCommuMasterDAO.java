@@ -9,6 +9,11 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.cop.cmy.service.Community;
 import egovframework.com.cop.cmy.service.CommunityVO;
 
+/**
+ * 커뮤니티 정보 관리를 위한 DAO 클래스
+ * @deprecated JPA 기반의 CommunityRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("EgovCommuMasterDAO")
 public class EgovCommuMasterDAO extends EgovComAbstractDAO {
 

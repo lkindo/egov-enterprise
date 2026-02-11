@@ -3,141 +3,163 @@ package egovframework.com.cop.cmy.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import egovframework.com.cop.cmy.service.CommunityUser;
+import com.company.project.domain.community.CommunityUser;
+import com.company.project.domain.community.CommunityUserRepository;
+import com.company.project.web.adapter.CommunityAdapter;
+
 import egovframework.com.cop.cmy.service.CommunityUserVO;
 import egovframework.com.cop.cmy.service.CommunityVO;
 import egovframework.com.cop.cmy.service.EgovCommuManageService;
 import jakarta.annotation.Resource;
 
+/**
+ * 커뮤니티 사용자 관리를 위한 서비스 구현 클래스
+ * Refactored to use JPA (CommunityUserRepository)
+ */
 @Service("EgovCommuManageService")
+@Transactional(readOnly = true)
 public class EgovCommuManageServiceImpl extends EgovAbstractServiceImpl implements EgovCommuManageService {
 
-	@Resource(name = "EgovCommuMasterDAO")
-	EgovCommuMasterDAO egovCommuMasterDao;
+    @Resource
+    private CommunityUserRepository communityUserRepository;
 
-	@Resource(name = "EgovCommuManageDAO")
-	EgovCommuManageDAO egovCommuManageDao;
+    @Resource(name = "EgovCommuMasterDAO")
+    EgovCommuMasterDAO egovCommuMasterDao;
 
-	@Resource(name = "egovCmmntyIdGnrService")
-    private EgovIdGnrService idgenService;
+    @Resource(name = "EgovCommuManageDAO")
+    private EgovCommuManageDAO egovCommuManageDAO;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EgovCommuManageServiceImpl.class);
+    /**
+     * 커뮤니티 사용자 상세 정보를 조회한다.
+     */
+    @Override
+    public egovframework.com.cop.cmy.service.CommunityUser selectSingleCommuUserDetail(CommunityUserVO cmmntyUserVO)
+            throws Exception {
+        return communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .map(CommunityAdapter::toVO)
+                .orElse(null);
+    }
 
-	@Override
-	public Map<String, Object> selectCommuInf(CommunityVO cmmntyVO) {
+    /**
+     * 커뮤니티 관리자 목록을 조회한다.
+     */
+    @Override
+    public List<egovframework.com.cop.cmy.service.CommunityUser> selectCommuManagerList(CommunityVO cmmntyVO)
+            throws Exception {
+        // Simple filter for managers
+        return communityUserRepository.findByCmmntyIdAndUseAt(cmmntyVO.getCmmntyId(), "Y", Pageable.unpaged())
+                .getContent().stream()
+                .filter(u -> "Y".equals(u.getMngrAt()))
+                .map(CommunityAdapter::toVO)
+                .collect(Collectors.toList());
+    }
 
-		//커뮤니티 기본정보 확인
-		CommunityVO vo = egovCommuMasterDao.selectCommuMasterDetail(cmmntyVO);
+    /**
+     * 커뮤니티에 이미 등록된 사용자인지 확인한다.
+     */
+    @Override
+    public int checkExistUser(CommunityUserVO cmmntyUserVO) throws Exception {
+        return communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .isPresent() ? 1 : 0;
+    }
 
-		CommunityUser cmmntyUser = new CommunityUser();
+    /**
+     * 커뮤니티 사용자를 등록 신청한다.
+     */
+    @Override
+    @Transactional
+    public void insertCommuUserRqst(CommunityUserVO cmmntyUserVO) throws Exception {
+        CommunityUser entity = CommunityUser.builder()
+                .cmmntyId(cmmntyUserVO.getCmmntyId())
+                .emplyrId(cmmntyUserVO.getEmplyrId())
+                .mngrAt(cmmntyUserVO.getMngrAt())
+                .mberSttus(cmmntyUserVO.getMberSttus())
+                .useAt(cmmntyUserVO.getUseAt())
+                .frstRegisterId(cmmntyUserVO.getFrstRegisterId())
+                .build();
+        communityUserRepository.save(entity);
+    }
 
-		cmmntyUser.setCmmntyId(cmmntyVO.getCmmntyId());
-		cmmntyUser.setEmplyrId(cmmntyVO.getEmplyrId());
+    /**
+     * 커뮤니티 사용자 목록을 조회한다.
+     */
+    @Override
+    public Map<String, Object> selectCommuUserList(CommunityUserVO cmmntyUserVO) throws Exception {
+        Pageable pageable = PageRequest.of(cmmntyUserVO.getFirstIndex() / cmmntyUserVO.getRecordCountPerPage(),
+                cmmntyUserVO.getRecordCountPerPage());
 
-		cmmntyUser = egovCommuManageDao.selectSingleCommuUserDetail(cmmntyUser);
+        Page<CommunityUser> page = communityUserRepository.findByCmmntyIdAndUseAt(cmmntyUserVO.getCmmntyId(), "Y",
+                pageable);
 
-		//-----------------------------------------------------------------
-		// 관리자 정보를 처리한다. (여러 명이 있을 수 있음 - DB 설계 문제상 문제)
-		// 위의 처리는 cmmntyVO.getEmplyrId()가 ""이기 때문에 의미 없음..
-		//-----------------------------------------------------------------
-		List<CommunityUser> managers = egovCommuManageDao.selectCommuManagerList(cmmntyVO);
+        Map<String, Object> map = new HashMap<>();
+        map.put("resultList", page.getContent().stream().map(CommunityAdapter::toVO).collect(Collectors.toList()));
+        map.put("resultCnt", Integer.toString((int) page.getTotalElements()));
 
-		if (cmmntyUser == null) {
-		    cmmntyUser = new CommunityUser();
-		}
-		if (managers.size() == 1) {
+        return map;
+    }
 
-		    cmmntyUser.setEmplyrId(managers.get(0).getEmplyrId());
-		    cmmntyUser.setEmplyrNm(managers.get(0).getEmplyrNm());
-		} else if (managers.size() > 1) {
-		    cmmntyUser.setEmplyrId(managers.get(0).getEmplyrId());
-		    cmmntyUser.setEmplyrNm(managers.get(0).getEmplyrNm() + "외 " + (managers.size() - 1) + "명");
-		} else {
-			LOGGER.debug("No managers...");
-		}
-		////---------------------------------------------------------------
+    /**
+     * 커뮤니티 사용자 목록 총 개수를 조회한다.
+     */
+    @Override
+    public int selectCommuUserListCnt(CommunityUserVO cmmntyUserVO) throws Exception {
+        return (int) communityUserRepository.findByCmmntyIdAndUseAt(cmmntyUserVO.getCmmntyId(), "Y", Pageable.unpaged())
+                .getTotalElements();
+    }
 
-		Map<String, Object> map = new HashMap<>();
+    /**
+     * 커뮤니티 사용자를 승인 처리한다.
+     */
+    @Override
+    @Transactional
+    public void insertCommuUser(CommunityUserVO cmmntyUserVO) throws Exception {
+        communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .ifPresent(u -> {
+                    u.updateStatus("P", cmmntyUserVO.getLastUpdusrId());
+                });
+    }
 
-		map.put("cmmntyVO", vo);
-		map.put("cmmntyUser", cmmntyUser);
+    /**
+     * 커뮤니티 사용자를 탈퇴 처리한다.
+     */
+    @Override
+    @Transactional
+    public void deleteCommuUser(CommunityUserVO cmmntyUserVO) throws Exception {
+        communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .ifPresent(communityUserRepository::delete);
+    }
 
-		return map;
-	}
+    /**
+     * 커뮤니티 사용자를 관리자로 등록한다.
+     */
+    @Override
+    @Transactional
+    public void insertCommuUserAdmin(CommunityUserVO cmmntyUserVO) throws Exception {
+        communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .ifPresent(u -> {
+                    u.assignManager("Y", cmmntyUserVO.getLastUpdusrId());
+                });
+    }
 
-	@Override
-	public String checkCommuUserDetail(CommunityUser cmmntyUser) {
-
-		//cmmntyId
-		CommunityVO vo = new CommunityVO();
-		vo.setCmmntyId(cmmntyUser.getCmmntyId());
-
-		int userCnt = egovCommuManageDao.checkExistUser(cmmntyUser);
-
-		if (userCnt == 0) {
-		    return "";
-		} else {
-		    return "EXIST";
-		}
-	}
-
-	@Override
-	public void insertCommuUserRqst(CommunityUser cmmntyUser) {
-		egovCommuManageDao.insertCommuUserRqst(cmmntyUser);
-	}
-
-	@Override
-	public Map<String, Object> selectCommuUserList(CommunityUserVO cmmntyUserVO) {
-		List<CommunityUser> result = egovCommuManageDao.selectCommuUserList(cmmntyUserVO);
-		int cnt = egovCommuManageDao.selectCommuUserListCnt(cmmntyUserVO);
-
-		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
-		return map;
-	}
-
-	@Override
-	public Boolean selectIsCommuAdmin(CommunityUserVO userVO) {
-
-		CommunityUser cmmntyUser = egovCommuManageDao.selectSingleCommuUserDetail(userVO);
-
-		if(cmmntyUser==null) {
-			return false;
-		} else if(cmmntyUser.getMngrAt().equals("Y")) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public void insertCommuUser(CommunityUserVO cmmntyUserVO) {
-		egovCommuManageDao.insertCommuUser(cmmntyUserVO);
-	}
-
-	@Override
-	public void deleteCommuUser(CommunityUserVO cmmntyUserVO) {
-		egovCommuManageDao.deleteCommuUser(cmmntyUserVO);
-	}
-
-	@Override
-	public void insertCommuUserAdmin(CommunityUserVO cmmntyUserVO) {
-		egovCommuManageDao.insertCommuUserAdmin(cmmntyUserVO);
-	}
-
-	@Override
-	public void deleteCommuUserAdmin(CommunityUserVO cmmntyUserVO) {
-		egovCommuManageDao.deleteCommuUserAdmin(cmmntyUserVO);
-	}
+    /**
+     * 커뮤니티 사용자를 관리자에서 해제한다.
+     */
+    @Override
+    @Transactional
+    public void deleteCommuUserAdmin(CommunityUserVO cmmntyUserVO) throws Exception {
+        communityUserRepository.findByCmmntyIdAndEmplyrId(cmmntyUserVO.getCmmntyId(), cmmntyUserVO.getEmplyrId())
+                .ifPresent(u -> {
+                    u.assignManager("N", cmmntyUserVO.getLastUpdusrId());
+                });
+    }
 
 }

@@ -28,90 +28,46 @@ import jakarta.annotation.Resource;
  *
  * </pre>
  */
+import com.company.project.domain.calendar.RestdeRepository;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service("RestdeManageService")
 public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl implements EgovCalRestdeManageService {
 
+    @Resource
+    private RestdeRepository restdeRepository;
+
     @Resource(name="RestdeManageDAO")
     private RestdeManageDAO restdeManageDAO;
-
-	/**
-	 * 일반달력 팝업 정보를 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectNormalRestdePopup(Restde restde) throws Exception {
-		return restdeManageDAO.selectNormalRestdePopup(restde);
-	}
-
-	/**
-	 * 행정달력 팝업 정보를 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectAdministRestdePopup(Restde restde) throws Exception {
-		return restdeManageDAO.selectAdministRestdePopup(restde);
-	}
-
-	/**
-	 * 일반달력 일간 정보를 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectNormalDayCal(Restde restde) throws Exception {
-		return restdeManageDAO.selectNormalDayCal(restde);
-	}
-
-	/**
-	 * 일반달력 일간 휴일을 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectNormalDayRestde(Restde restde) throws Exception {
-		return restdeManageDAO.selectNormalDayRestde(restde);
-	}
-
-	/**
-	 * 일반달력 월간 휴일을 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectNormalMonthRestde(Restde restde) throws Exception {
-		return restdeManageDAO.selectNormalMonthRestde(restde);
-	}
-
-	/**
-	 * 행정달력 일간 정보를 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectAdministDayCal(Restde restde) throws Exception {
-		return restdeManageDAO.selectAdministDayCal(restde);
-	}
-
-	/**
-	 * 행정달력 일간 휴일을 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectAdministDayRestde(Restde restde) throws Exception {
-		return restdeManageDAO.selectAdministDayRestde(restde);
-	}
-
-    /**
-	 * 행정달력 월간 휴일을 조회한다.
-	 */
-    @Override
-	public List<EgovMap> selectAdministMonthRestde(Restde restde) throws Exception {
-		return restdeManageDAO.selectAdministMonthRestde(restde);
-	}
 
     /**
 	 * 휴일을 삭제한다.
 	 */
 	@Override
+	@Transactional
 	public void deleteRestde(Restde restde) throws Exception {
-		restdeManageDAO.deleteRestde(restde);
+		restdeRepository.deleteById(restde.getRestdeNo());
 	}
 
 	/**
 	 * 휴일을 등록한다.
 	 */
 	@Override
+	@Transactional
 	public void insertRestde(Restde restde) throws Exception {
-    	restdeManageDAO.insertRestde(restde);
+        com.company.project.domain.calendar.Restde entity = com.company.project.domain.calendar.Restde.builder()
+                .restdeDe(restde.getRestdeDe())
+                .restdeNm(restde.getRestdeNm())
+                .restdeDc(restde.getRestdeDc())
+                .restdeSeCode(restde.getRestdeSeCode())
+                .frstRegisterId(restde.getFrstRegisterId())
+                .build();
+    	restdeRepository.save(entity);
 	}
 
 	/**
@@ -119,8 +75,16 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public Restde selectRestdeDetail(Restde restde) throws Exception {
-    	Restde ret = restdeManageDAO.selectRestdeDetail(restde);
-    	return ret;
+    	return restdeRepository.findById(restde.getRestdeNo())
+                .map(entity -> {
+                    Restde vo = new Restde();
+                    vo.setRestdeNo(entity.getRestdeNo());
+                    vo.setRestdeDe(entity.getRestdeDe());
+                    vo.setRestdeNm(entity.getRestdeNm());
+                    vo.setRestdeDc(entity.getRestdeDc());
+                    vo.setRestdeSeCode(entity.getRestdeSeCode());
+                    return vo;
+                }).orElse(null);
 	}
 
 	/**
@@ -128,7 +92,22 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public List<EgovMap> selectRestdeList(RestdeVO searchVO) throws Exception {
-        return restdeManageDAO.selectRestdeList(searchVO);
+        Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
+                searchVO.getRecordCountPerPage());
+        
+        Page<com.company.project.domain.calendar.Restde> page = restdeRepository.searchRestde(
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+        
+        // Convert to EgovMap for legacy compatibility
+        return page.getContent().stream().map(entity -> {
+            EgovMap map = new EgovMap();
+            map.put("restdeNo", entity.getRestdeNo());
+            map.put("restdeDe", entity.getRestdeDe());
+            map.put("restdeNm", entity.getRestdeNm());
+            map.put("restdeDc", entity.getRestdeDc());
+            map.put("restdeSeCode", entity.getRestdeSeCode());
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
 	}
 
 	/**
@@ -136,15 +115,21 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public int selectRestdeListTotCnt(RestdeVO searchVO) throws Exception {
-        return restdeManageDAO.selectRestdeListTotCnt(searchVO);
+        Pageable pageable = PageRequest.of(0, 1);
+        return (int) restdeRepository.searchRestde(
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
 	}
 
 	/**
 	 * 휴일을 수정한다.
 	 */
 	@Override
+	@Transactional
 	public void updateRestde(Restde restde) throws Exception {
-		restdeManageDAO.updateRestde(restde);
+		restdeRepository.findById(restde.getRestdeNo()).ifPresent(entity -> {
+            entity.update(restde.getRestdeDe(), restde.getRestdeNm(), 
+                    restde.getRestdeDc(), restde.getRestdeSeCode(), restde.getLastUpdusrId());
+        });
 	}
 
 }
