@@ -9,8 +9,19 @@ import egovframework.com.cop.cmy.service.CommunityUser;
 import egovframework.com.cop.cmy.service.CommunityUserVO;
 import egovframework.com.cop.cmy.service.CommunityVO;
 
+/**
+
+ * 커뮤니티 사용자 관리를 위한 DAO 클래스
+
+ * @deprecated JPA 기반의 CommunityUserRepository 사용을 권장합니다.
+
+ */
+
+@Deprecated
+
 @Repository("EgovCommuManageDAO")
-public class EgovCommuManageDAO extends EgovComAbstractDAO{
+
+public class EgovCommuManageDAO extends EgovComAbstractDAO {
 
 	public CommunityUser selectSingleCommuUserDetail(CommunityUser cmmntyUser) {
 		return (CommunityUser) selectOne("CommuManage.selectSingleCommuUserDetail", cmmntyUser);

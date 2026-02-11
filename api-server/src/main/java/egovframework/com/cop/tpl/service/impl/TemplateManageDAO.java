@@ -25,6 +25,11 @@ import egovframework.com.cop.tpl.service.TemplateInfVO;
  *
  * </pre>
  */
+/**
+ * 템플릿 정보 관리를 위한 DAO 클래스
+ * @deprecated JPA 기반의 TemplateRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("TemplateManageDAO")
 public class TemplateManageDAO extends EgovComAbstractDAO {
 

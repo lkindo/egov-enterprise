@@ -2,7 +2,8 @@ package com.company.project.service.board;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.board.Board;
+import com.company.project.domain.board.BoardDetailResult;
+import com.company.project.domain.board.BoardSearchResult;
 import com.company.project.domain.board.BoardId;
 import com.company.project.domain.board.BoardMaster;
 import com.company.project.domain.board.BoardMasterRepository;
@@ -64,9 +65,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 condition.setSearchCnd(searchCnd);
                 condition.setSearchWrd(searchWrd);
 
-                Page<Board> result = boardRepository.search(condition, pageable);
-
-                return result.map(BoardDto::from);
+                return boardRepository.searchArticles(condition, pageable).map(BoardDto::from);
         }
 
         @Override
@@ -173,11 +172,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Override
         @Transactional
         public BoardDto getPostDetail(String bbsId, Long nttId) {
-                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
+                BoardId id = new BoardId(nttId, bbsId);
+                BoardDetailResult detail = boardRepository.findArticleDetail(id)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                board.increaseInqireCo();
-                return BoardDto.from(board);
+                boardRepository.findById(id).ifPresent(Board::increaseInqireCo);
+
+                return BoardDto.from(detail);
         }
 
         @Override

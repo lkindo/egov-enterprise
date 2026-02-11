@@ -7,5 +7,9 @@ import java.util.Optional;
 public interface BoardRepositoryCustom {
     Page<Board> search(BoardSearchCondition condition, Pageable pageable);
 
+    Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, Pageable pageable);
+
+    Optional<BoardDetailResult> findArticleDetail(BoardId id);
+
     Optional<Board> findByIdCustom(BoardId id);
 }

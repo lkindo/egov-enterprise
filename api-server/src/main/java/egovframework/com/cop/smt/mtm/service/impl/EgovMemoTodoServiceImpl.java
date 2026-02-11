@@ -1,121 +1,148 @@
 package egovframework.com.cop.smt.mtm.service.impl;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.schedule.MemoTodo;
+import com.company.project.domain.schedule.MemoTodoRepository;
 
 import egovframework.com.cop.smt.mtm.service.EgovMemoTodoService;
-import egovframework.com.cop.smt.mtm.service.MemoTodo;
 import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
 import jakarta.annotation.Resource;
 
 /**
  * 개요
  * 메모할일에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 메모할일에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 메모할일의 조회기능은 목록조회, 상세조회, 오늘의 할일조회로 구분된다.
- * @author 장철호
- * @version 1.0
- * @created 28-6-2010 오전 10:59:06
- *   <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
- *
- * </pre>
+ * Refactored to use JPA (MemoTodoRepository)
  */
 @Service("EgovMemoTodoService")
 public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements EgovMemoTodoService {
 
-	@Resource(name = "MemoTodoDAO")
+    @Resource
+    private MemoTodoRepository memoTodoRepository;
+
+    @Resource(name = "MemoTodoDAO")
     private MemoTodoDAO memoTodoDAO;
 
-	@Resource(name="egovMemoTodoIdGnrService")
-	private EgovIdGnrService idgenServiceMemoTodo;
+    @Resource(name = "egovMemoTodoIdGnrService")
+    private EgovIdGnrService idgenServiceMemoTodo;
 
-	/**
-	 * 메모할일 목록을 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  Map<String, Object> - 메모할일 List
-	 *
-	 * @param memoTodoVO
-	 */
-	@Override
-	public Map<String, Object> selectMemoTodoList(MemoTodoVO memoTodoVO) throws Exception{
-		List<MemoTodoVO> result = memoTodoDAO.selectMemoTodoList(memoTodoVO);
-		int cnt = memoTodoDAO.selectMemoTodoListCnt(memoTodoVO);
+    /**
+     * 메모할일 목록을 조회한다.
+     */
+    @Override
+    public Map<String, Object> selectMemoTodoList(MemoTodoVO memoTodoVO) throws Exception {
+        Pageable pageable = PageRequest.of(memoTodoVO.getFirstIndex() / memoTodoVO.getRecordCountPerPage(),
+                memoTodoVO.getRecordCountPerPage());
 
-		Map<String, Object> map = new HashMap<>();
+        // Simple string based date search for now to match legacy behavior
+        Page<MemoTodo> page = memoTodoRepository.searchMemoTodos(
+                memoTodoVO.getSearchId(),
+                memoTodoVO.getSearchDe(),
+                memoTodoVO.getSearchBgnDe(),
+                memoTodoVO.getSearchEndDe(),
+                memoTodoVO.getSearchCondition(),
+                memoTodoVO.getSearchWrd(),
+                pageable);
 
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
+        Map<String, Object> map = new HashMap<>();
+        map.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+        map.put("resultCnt", Long.toString(page.getTotalElements()));
 
-		return map;
-	}
+        return map;
+    }
 
-	/**
-	 * 메모할일 정보를 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  MemoTodoVO - 메모할일 VO
-	 *
-	 * @param memoTodoVO - 메모할일 VO
-	 */
-	@Override
-	public MemoTodoVO selectMemoTodo(MemoTodoVO memoTodoVO) throws Exception{
-		return memoTodoDAO.selectMemoTodo(memoTodoVO);
-	}
+    /**
+     * 메모할일 정보를 조회한다.
+     */
+    @Override
+    public MemoTodoVO selectMemoTodo(MemoTodoVO memoTodoVO) throws Exception {
+        return memoTodoRepository.findById(memoTodoVO.getTodoId())
+                .map(this::toVO)
+                .orElse(null);
+    }
 
-	/**
-	 * 메모할일 정보를 수정한다.
-	 * @param MemoTodo - 메모할일 model
-	 *
-	 * @param memoTodo - 메모할일 model
-	 */
-	@Override
-	public void updateMemoTodo(MemoTodo memoTodo) throws Exception{
-		memoTodoDAO.updateMemoTodo(memoTodo);
-	}
+    /**
+     * 메모할일 정보를 수정한다.
+     */
+    @Override
+    @Transactional
+    public void updateMemoTodo(egovframework.com.cop.smt.mtm.service.MemoTodo memoTodo) throws Exception {
+        memoTodoRepository.findById(memoTodo.getTodoId()).ifPresent(entity -> {
+            entity.update(
+                    memoTodo.getTodoNm(),
+                    memoTodo.getTodoBeginTime(),
+                    memoTodo.getTodoEndTime(),
+                    memoTodo.getTodoCn(),
+                    memoTodo.getLastUpdusrId());
+        });
+    }
 
-	/**
-	 * 메모할일 정보를 등록한다.
-	 * @param MemoTodo - 메모할일 model
-	 *
-	 * @param memoTodo - 메모할일 model
-	 */
-	@Override
-	public void insertMemoTodo(MemoTodo memoTodo) throws Exception{
-		memoTodo.setTodoId(idgenServiceMemoTodo.getNextStringId());
-		memoTodoDAO.insertMemoTodo(memoTodo);
-	}
+    /**
+     * 메모할일 정보를 등록한다.
+     */
+    @Override
+    @Transactional
+    public void insertMemoTodo(egovframework.com.cop.smt.mtm.service.MemoTodo memoTodo) throws Exception {
+        String id = idgenServiceMemoTodo.getNextStringId();
+        
+        MemoTodo entity = MemoTodo.builder()
+                .todoId(id)
+                .todoNm(memoTodo.getTodoNm())
+                .todoBeginTime(memoTodo.getTodoBeginTime())
+                .todoEndTime(memoTodo.getTodoEndTime())
+                .wrterId(memoTodo.getWrterId())
+                .todoCn(memoTodo.getTodoCn())
+                .frstRegisterId(memoTodo.getFrstRegisterId())
+                .build();
+                
+        memoTodoRepository.save(entity);
+    }
 
-	/**
-	 * 메모할일 정보를 삭제한다.
-	 * @param MemoTodo - 메모할일 model
-	 *
-	 * @param memoTodo - 메모할일 model
-	 */
-	@Override
-	public void deleteMemoTodo(MemoTodo memoTodo) throws Exception{
-		memoTodoDAO.deleteMemoTodo(memoTodo);
-	}
+    /**
+     * 메모할일 정보를 삭제한다.
+     */
+    @Override
+    @Transactional
+    public void deleteMemoTodo(egovframework.com.cop.smt.mtm.service.MemoTodo memoTodo) throws Exception {
+        memoTodoRepository.deleteById(memoTodo.getTodoId());
+    }
 
-	/**
-	 * 메모할일 목록 중 오늘의 할일을 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  List<MemoTodoVO> - 메모할일 List
-	 *
-	 * @param memoTodoVO - 메모할일 VO
-	 */
-	@Override
-	public List<MemoTodoVO> selectMemoTodoListToday(MemoTodoVO memoTodoVO) throws Exception{
-		return memoTodoDAO.selectMemoTodoListToday(memoTodoVO);
-	}
+    /**
+     * 메모할일 목록 중 오늘의 할일을 조회한다.
+     */
+    @Override
+    public List<MemoTodoVO> selectMemoTodoListToday(MemoTodoVO memoTodoVO) throws Exception {
+        return memoTodoRepository.selectMemoTodoListToday(
+                memoTodoVO.getSearchId(),
+                memoTodoVO.getSearchBgnDe(),
+                memoTodoVO.getSearchEndDe())
+                .stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
+    }
+
+    private MemoTodoVO toVO(MemoTodo entity) {
+        MemoTodoVO vo = new MemoTodoVO();
+        vo.setTodoId(entity.getTodoId());
+        vo.setTodoNm(entity.getTodoNm());
+        vo.setTodoBeginTime(entity.getTodoBeginTime());
+        vo.setTodoEndTime(entity.getTodoEndTime());
+        vo.setWrterId(entity.getWrterId());
+        vo.setTodoCn(entity.getTodoCn());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        vo.setFrstRegisterPnttm(entity.getCreatedDate() != null ? entity.getCreatedDate().toString() : "");
+        return vo;
+    }
 
 }
