@@ -22,6 +22,11 @@ import egovframework.com.uss.ion.rsm.service.RecentSrchwrd;
  *
  * </pre>
  */
+/**
+ * 최근검색어를 처리하는 DAO 클래스
+ * @deprecated JPA 기반의 RecentSrchwrdRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("onlineRecentSrchwrdDao")
 public class RecentSrchwrdDao extends EgovComAbstractDAO {
 

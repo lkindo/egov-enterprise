@@ -3,10 +3,18 @@ package egovframework.com.cop.tpl.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.template.Template;
+import com.company.project.domain.template.TemplateRepository;
 
 import egovframework.com.cop.tpl.service.EgovTemplateManageService;
 import egovframework.com.cop.tpl.service.TemplateInf;
@@ -14,127 +22,135 @@ import egovframework.com.cop.tpl.service.TemplateInfVO;
 import jakarta.annotation.Resource;
 
 /**
- * 템플릿 정보관리를 위한 서비스 구현 클래스
- * @author 공통서비스개발팀 이삼섭
- * @since 2009.06.01
- * @version 1.0
- * @see
- *
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *  수정일               수정자            수정내용
- *  ----------   --------   ---------------------------
- *  2009.03.17   이삼섭           최초 생성
- *  2019.05.17   신용호           selectTemplateWhiteList() 추가
- *
- * </pre>
+ * 템플릿 정보 관리를 위한 서비스 구현 클래스
+ * Refactored to use JPA (TemplateRepository)
  */
 @Service("EgovTemplateManageService")
 public class EgovTemplateManageServiceImpl extends EgovAbstractServiceImpl implements EgovTemplateManageService {
 
+    @Resource(name = "commonTemplateRepository")
+    private TemplateRepository templateRepository;
+
     @Resource(name = "TemplateManageDAO")
     private TemplateManageDAO tmplatDAO;
 
-    @Resource(name = "egovTmplatIdGnrService")
-    private EgovIdGnrService idgenService;
-
     /**
      * 템플릿 정보를 삭제한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#deleteTemplateInf(egovframework.com.cop.bbs.com.service.TemplateInf)
      */
     @Override
-	public void deleteTemplateInf(TemplateInf tmplatInf) throws Exception {
-	tmplatDAO.deleteTemplateInf(tmplatInf);
+    @Transactional
+    public void deleteTemplateInf(TemplateInf tmplatInf) throws Exception {
+        templateRepository.findById(tmplatInf.getTmplatId()).ifPresent(entity -> {
+            // Usually logical delete
+            Template updated = Template.builder()
+                    .tmplatId(entity.getTmplatId())
+                    .tmplatNm(entity.getTmplatNm())
+                    .tmplatCours(entity.getTmplatCours())
+                    .tmplatSeCode(entity.getTmplatSeCode())
+                    .useAt("N")
+                    .frstRegisterId(entity.getFrstRegisterId())
+                    .build();
+            templateRepository.save(updated);
+        });
     }
 
     /**
      * 템플릿 정보를 등록한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#insertTemplateInf(egovframework.com.cop.bbs.com.service.TemplateInf)
      */
     @Override
-	public void insertTemplateInf(TemplateInf tmplatInf) throws Exception {
-
-	tmplatInf.setTmplatId(idgenService.getNextStringId());
-
-	tmplatDAO.insertTemplateInf(tmplatInf);
-    }
-
-    /**
-     * 템플릿에 대한 상세정보를 조회한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#selectTemplateInf(egovframework.com.cop.bbs.com.service.TemplateInfVO)
-     */
-    @Override
-	public TemplateInfVO selectTemplateInf(TemplateInfVO tmplatInfVO) throws Exception {
-	TemplateInfVO vo = new TemplateInfVO();
-	vo = tmplatDAO.selectTemplateInf(tmplatInfVO);
-	return vo;
-    }
-
-    /**
-     * 템플릿에 대한 화이트리스트 목록을 조회한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#selectTemplateInfs(egovframework.com.cop.bbs.com.service.TemplateInfVO)
-     */
-    @Override
-	public List<TemplateInfVO> selectTemplateWhiteList() throws Exception {
-    	List<TemplateInfVO> resultWhiteList = tmplatDAO.selectTemplateWhiteList();
-
-    	return resultWhiteList;
-    }
-
-    /**
-     * 템플릿에 대한 목록를 조회한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#selectTemplateInfs(egovframework.com.cop.bbs.com.service.TemplateInfVO)
-     */
-    @Override
-	public Map<String, Object> selectTemplateInfs(TemplateInfVO tmplatInfVO) throws Exception {
-	List<TemplateInfVO> result = tmplatDAO.selectTemplateInfs(tmplatInfVO);
-	int cnt = tmplatDAO.selectTemplateInfsCnt(tmplatInfVO);
-
-	Map<String, Object> map = new HashMap<>();
-
-	map.put("resultList", result);
-	map.put("resultCnt", Integer.toString(cnt));
-
-	return map;
-    }
-
-    /**
-     * 템플릿에 대한 미리보기 정보를 조회한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#selectTemplatePreview(egovframework.com.cop.bbs.com.service.TemplateInfVO)
-     */
-    @Override
-	public TemplateInfVO selectTemplatePreview(TemplateInfVO tmplatInfVO) throws Exception {
-	TemplateInfVO vo = new TemplateInfVO();
-
-	vo = tmplatDAO.selectTemplatePreview(tmplatInfVO);
-
-	return vo;
+    @Transactional
+    public void insertTemplateInf(TemplateInf tmplatInf) throws Exception {
+        Template entity = Template.builder()
+                .tmplatId(tmplatInf.getTmplatId())
+                .tmplatNm(tmplatInf.getTmplatNm())
+                .tmplatSeCode(tmplatInf.getTmplatSeCode())
+                .tmplatCours(tmplatInf.getTmplatCours())
+                .useAt(tmplatInf.getUseAt())
+                .frstRegisterId(tmplatInf.getFrstRegisterId())
+                .build();
+        templateRepository.save(entity);
     }
 
     /**
      * 템플릿 정보를 수정한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#updateTemplateInf(egovframework.com.cop.bbs.com.service.TemplateInf)
      */
     @Override
-	public void updateTemplateInf(TemplateInf tmplatInf) throws Exception {
-	tmplatDAO.updateTemplateInf(tmplatInf);
+    @Transactional
+    public void updateTemplateInf(TemplateInf tmplatInf) throws Exception {
+        templateRepository.findById(tmplatInf.getTmplatId()).ifPresent(entity -> {
+            entity.update(tmplatInf.getTmplatNm(), tmplatInf.getTmplatCours(),
+                    tmplatInf.getTmplatSeCode(), tmplatInf.getUseAt(), tmplatInf.getLastUpdusrId());
+        });
     }
 
     /**
-     * 템플릿 구분에 따른 목록을 조회한다.
-     *
-     * @see egovframework.com.cop.bbs.com.service.EgovTemplateManageService#selectAllTemplateInfs(egovframework.com.cop.bbs.com.service.TemplateInfVO)
+     * 템플릿에 대한 상세정보를 조회한다.
      */
     @Override
-	public List<TemplateInfVO> selectTemplateInfsByCode(TemplateInfVO tmplatInfVO) throws Exception {
-	return tmplatDAO.selectTemplateInfsByCode(tmplatInfVO);
+    public TemplateInfVO selectTemplateInf(TemplateInfVO tmplatInfVO) throws Exception {
+        return templateRepository.findById(tmplatInfVO.getTmplatId())
+                .map(this::toVO)
+                .orElse(null);
+    }
+
+    /**
+     * 템플릿 목록을 조회한다.
+     */
+    @Override
+    public Map<String, Object> selectTemplateInfs(TemplateInfVO tmplatInfVO) throws Exception {
+        Pageable pageable = PageRequest.of(tmplatInfVO.getFirstIndex() / tmplatInfVO.getRecordCountPerPage(),
+                tmplatInfVO.getRecordCountPerPage(), Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+
+        Page<Template> page;
+        if ("0".equals(tmplatInfVO.getSearchCnd())) {
+            page = templateRepository.findByTmplatNmContaining(tmplatInfVO.getSearchWrd(), pageable);
+        } else {
+            page = templateRepository.findAll(pageable);
+        }
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+        map.put("resultCnt", Long.toString(page.getTotalElements()));
+
+        return map;
+    }
+
+    /**
+     * 템플릿에 대한 목록 전체 건수를 조회한다.
+     */
+    @Override
+    public int selectTemplateInfsCnt(TemplateInfVO tmplatInfVO) throws Exception {
+        return (int) templateRepository.count();
+    }
+
+    /**
+     * 템플릿에 대한 외화이트 리스트를 조회한다.
+     */
+    @Override
+    public List<TemplateInfVO> selectTemplateWhiteList() throws Exception {
+        return templateRepository.findByUseAt("Y").stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 동일 유형의 템플릿 목록을 조회한다.
+     */
+    @Override
+    public List<TemplateInfVO> selectTemplateInfsByCode(TemplateInfVO tmplatInfVO) throws Exception {
+        return templateRepository.findByTmplatSeCodeAndUseAt(tmplatInfVO.getTmplatSeCode(), "Y").stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
+    }
+
+    private TemplateInfVO toVO(Template entity) {
+        TemplateInfVO vo = new TemplateInfVO();
+        vo.setTmplatId(entity.getTmplatId());
+        vo.setTmplatNm(entity.getTmplatNm());
+        vo.setTmplatSeCode(entity.getTmplatSeCode());
+        vo.setTmplatCours(entity.getTmplatCours());
+        vo.setUseAt(entity.getUseAt());
+        vo.setFrstRegisterId(entity.getFrstRegisterId());
+        return vo;
     }
 }

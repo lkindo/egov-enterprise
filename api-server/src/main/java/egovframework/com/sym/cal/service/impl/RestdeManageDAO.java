@@ -26,6 +26,11 @@ import egovframework.com.sym.cal.service.RestdeVO;
  *
  * </pre>
  */
+/**
+ * 휴일 관리를 위한 DAO 클래스
+ * @deprecated JPA 기반의 RestdeRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("RestdeManageDAO")
 public class RestdeManageDAO extends EgovComAbstractDAO {
 

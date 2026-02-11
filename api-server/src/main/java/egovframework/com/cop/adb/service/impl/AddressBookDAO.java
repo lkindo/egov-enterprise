@@ -25,6 +25,7 @@ import egovframework.com.cop.adb.service.AddressBookVO;
  * @see
  *
  */
+@Deprecated
 @Repository("AdressBookDAO")
 @org.springframework.context.annotation.Lazy
 public class AddressBookDAO extends EgovComAbstractDAO {

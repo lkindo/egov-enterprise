@@ -24,6 +24,11 @@ import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
  *
  * </pre>
  */
+/**
+ * 일지관리를 처리하는 DAO 클래스
+ * @deprecated JPA 기반의 DiaryRepository 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("diaryManageDao")
 public class DiaryManageDao extends EgovComAbstractDAO {
 	

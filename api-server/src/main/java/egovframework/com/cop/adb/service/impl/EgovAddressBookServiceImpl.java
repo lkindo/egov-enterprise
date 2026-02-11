@@ -33,9 +33,22 @@ import jakarta.annotation.Resource;
  *
  *      </pre>
  */
+import com.company.project.domain.addressbook.AddressBookRepository;
+import com.company.project.domain.namecard.NameCard;
+import com.company.project.domain.namecard.NameCardRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 @Service("EgovAdressBookService")
 @org.springframework.context.annotation.Lazy
 public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implements EgovAddressBookService {
+
+    @Resource
+    private AddressBookRepository addressBookRepository;
+
+    @Resource
+    private NameCardRepository nameCardRepository;
 
     @Resource(name = "AdressBookDAO")
     private AddressBookDAO adbkDAO;
@@ -55,15 +68,16 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     public Map<String, Object> selectAdressBookList(AddressBookVO adbkVO) throws Exception {
+        Pageable pageable = PageRequest.of(adbkVO.getFirstIndex() / adbkVO.getRecordCountPerPage(),
+                adbkVO.getRecordCountPerPage());
 
-        List<AddressBookVO> result = adbkDAO.selectAdressBookList(adbkVO);
-
-        int cnt = adbkDAO.selectAdressBookListCnt(adbkVO);
+        Page<com.company.project.domain.addressbook.AddressBook> page = addressBookRepository.searchAddressBooks(
+                adbkVO.getWrterId(), adbkVO.getTrgetOrgnztId(),
+                adbkVO.getSearchCnd(), adbkVO.getSearchWrd(), pageable);
 
         Map<String, Object> map = new HashMap<>();
-
-        map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
+        map.put("resultList", page.getContent());
+        map.put("resultCnt", String.valueOf(page.getTotalElements()));
 
         return map;
     }
@@ -108,14 +122,16 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     public Map<String, Object> selectManList(AddressBookUserVO addressBookUserVO) throws Exception {
+        Pageable pageable = PageRequest.of(addressBookUserVO.getFirstIndex() / addressBookUserVO.getRecordCountPerPage(),
+                addressBookUserVO.getRecordCountPerPage());
 
-        List<AddressBookUserVO> result = adbkDAO.selectManList(addressBookUserVO);
-        int cnt = adbkDAO.selectManListCnt(addressBookUserVO);
+        Page<com.company.project.domain.addressbook.AddressBookUserSearchResult> page = addressBookRepository.searchAddressBookUsers(
+                addressBookUserVO.getSearchWrd(), pageable);
 
         Map<String, Object> map = new HashMap<>();
 
-        map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
+        map.put("resultList", page.getContent());
+        map.put("resultCnt", String.valueOf(page.getTotalElements()));
 
         return map;
     }
@@ -129,14 +145,15 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     public Map<String, Object> selectCardList(AddressBookUserVO addressBookUserVO) throws Exception {
+        Pageable pageable = PageRequest.of(addressBookUserVO.getFirstIndex() / addressBookUserVO.getRecordCountPerPage(),
+                addressBookUserVO.getRecordCountPerPage());
 
-        List<AddressBookUserVO> result = adbkDAO.selectCardList(addressBookUserVO);
-        int cnt = adbkDAO.selectCardListCnt(addressBookUserVO);
+        Page<NameCard> page = nameCardRepository.findByNmContaining(addressBookUserVO.getSearchWrd(), pageable);
 
         Map<String, Object> map = new HashMap<>();
 
-        map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
+        map.put("resultList", page.getContent());
+        map.put("resultCnt", String.valueOf(page.getTotalElements()));
 
         return map;
     }

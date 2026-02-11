@@ -10,7 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.company.project.domain.batch.BatchOpertRepository;
+import com.company.project.domain.batch.BatchJob;
+import com.company.project.domain.batch.BatchJobRepository;
 
 import egovframework.com.sym.bat.service.BatchOpert;
 import egovframework.com.sym.bat.service.EgovBatchOpertService;
@@ -18,52 +19,34 @@ import jakarta.annotation.Resource;
 
 /**
  * 배치작업관리에 대한 ServiceImpl 클래스를 정의한다.
- *
- * @author 김진만
- * @since 2010.06.17
- * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
- * @see
- * 
- *      <pre>
- * == 개정이력(Modification Information) ==
- *
- *   수정일       수정자           수정내용
- *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
- *      </pre>
+ * 리팩토링: 중복 엔티티 제거를 위해 BatchJobRepository를 사용하도록 통합됨.
  */
 @Service("egovBatchOpertService")
 public class EgovBatchOpertServiceImpl extends EgovAbstractServiceImpl implements EgovBatchOpertService {
 
 	@Resource
-	private BatchOpertRepository batchOpertRepository;
+	private BatchJobRepository batchJobRepository;
 
-	/**
-	 * 배치작업을 삭제한다.
-	 * 
-	 * @param batchOpert 삭제대상 배치작업model
-	 * @exception Exception Exception
-	 */
 	@Override
 	@Transactional
 	public void deleteBatchOpert(BatchOpert batchOpert) throws Exception {
-		batchOpertRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
-			entity.delete(); // useAt = 'N'
-			batchOpertRepository.save(entity);
+		batchJobRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
+			BatchJob updated = BatchJob.builder()
+					.batchOpertId(entity.getBatchOpertId())
+					.batchOpertNm(entity.getBatchOpertNm())
+					.batchProgrm(entity.getBatchProgrm())
+					.paramtr(entity.getParamtr())
+					.useAt("N")
+					.frstRegisterId(entity.getFrstRegisterId())
+					.build();
+			batchJobRepository.save(updated);
 		});
 	}
 
-	/**
-	 * 배치작업을 등록한다.
-	 * 
-	 * @param batchOpert 등록대상 배치작업model
-	 * @exception Exception Exception
-	 */
 	@Override
 	@Transactional
 	public void insertBatchOpert(BatchOpert batchOpert) throws Exception {
-		com.company.project.domain.batch.BatchOpert entity = com.company.project.domain.batch.BatchOpert.builder()
+		BatchJob entity = BatchJob.builder()
 				.batchOpertId(batchOpert.getBatchOpertId())
 				.batchOpertNm(batchOpert.getBatchOpertNm())
 				.batchProgrm(batchOpert.getBatchProgrm())
@@ -71,79 +54,50 @@ public class EgovBatchOpertServiceImpl extends EgovAbstractServiceImpl implement
 				.useAt("Y")
 				.frstRegisterId(batchOpert.getFrstRegisterId())
 				.build();
-		batchOpertRepository.save(entity);
+		batchJobRepository.save(entity);
 	}
 
-	/**
-	 * 배치작업을 상세조회 한다.
-	 * 
-	 * @return 배치작업정보
-	 *
-	 * @param batchOpert 조회대상 배치작업model
-	 * @exception Exception Exception
-	 */
 	@Override
 	public BatchOpert selectBatchOpert(BatchOpert batchOpert) throws Exception {
-		return batchOpertRepository.findById(batchOpert.getBatchOpertId())
+		return batchJobRepository.findById(batchOpert.getBatchOpertId())
 				.map(this::mapToBatchOpert)
 				.orElse(null);
 	}
 
-	/**
-	 * 배치작업의 목록을 조회 한다.
-	 * 
-	 * @return 배치작업목록
-	 *
-	 * @param searchVO 조회정보가 담긴 VO
-	 * @exception Exception Exception
-	 */
 	@Override
 	public List<BatchOpert> selectBatchOpertList(BatchOpert searchVO) throws Exception {
 		Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
 				searchVO.getRecordCountPerPage());
-		Page<com.company.project.domain.batch.BatchOpert> page = batchOpertRepository.selectBatchOpertList(
+		
+		Page<BatchJob> page = batchJobRepository.search(
 				String.valueOf(searchVO.getSearchCondition()),
 				searchVO.getSearchKeyword(),
 				pageable);
+				
 		return page.getContent().stream().map(this::mapToBatchOpert).collect(Collectors.toList());
 	}
 
-	/**
-	 * 배치작업 목록 전체 건수를(을) 조회한다.
-	 * 
-	 * @return 목록건수
-	 *
-	 * @param searchVO 조회할 정보가 담긴 VO
-	 * @exception Exception Exception
-	 */
 	@Override
 	public int selectBatchOpertListCnt(BatchOpert searchVO) throws Exception {
-		return (int) batchOpertRepository.count(); // Approximate
+		Pageable pageable = PageRequest.of(0, 1);
+		Page<BatchJob> page = batchJobRepository.search(
+				String.valueOf(searchVO.getSearchCondition()),
+				searchVO.getSearchKeyword(),
+				pageable);
+		return (int) page.getTotalElements();
 	}
 
-	/**
-	 * 배치작업정보를 수정한다.
-	 *
-	 * @param batchOpert 수정대상 배치작업model
-	 * @exception Exception Exception
-	 */
 	@Override
 	@Transactional
 	public void updateBatchOpert(BatchOpert batchOpert) throws Exception {
-		batchOpertRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
-			com.company.project.domain.batch.BatchOpert updated = com.company.project.domain.batch.BatchOpert.builder()
-					.batchOpertId(entity.getBatchOpertId())
-					.batchOpertNm(batchOpert.getBatchOpertNm())
-					.batchProgrm(batchOpert.getBatchProgrm())
-					.paramtr(batchOpert.getParamtr())
-					.useAt("Y")
-					.frstRegisterId(entity.getFrstRegisterId())
-					.build();
-			batchOpertRepository.save(updated);
+		batchJobRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
+			entity.update(batchOpert.getBatchOpertNm(), batchOpert.getBatchProgrm(), 
+					batchOpert.getParamtr(), "Y", entity.getFrstRegisterId());
+			batchJobRepository.save(entity);
 		});
 	}
 
-	private BatchOpert mapToBatchOpert(com.company.project.domain.batch.BatchOpert entity) {
+	private BatchOpert mapToBatchOpert(BatchJob entity) {
 		BatchOpert vo = new BatchOpert();
 		vo.setBatchOpertId(entity.getBatchOpertId());
 		vo.setBatchOpertNm(entity.getBatchOpertNm());

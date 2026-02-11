@@ -26,8 +26,13 @@ import egovframework.com.cop.smt.sim.service.IndvdlSchdulManageVO;
  *
  * </pre>
  */
+/**
+ * 일정관리를 처리하는 DAO 클래스
+ * @deprecated JPA 기반의 ScheduleService 사용을 권장합니다.
+ */
+@Deprecated
 @Repository("indvdlSchdulManageDao")
-public class IndvdlSchdulManageDao extends EgovComAbstractDAO {
+public class IndvdlSchdulManageDao extends EgovComAbstractDAO{
 
 
     /**

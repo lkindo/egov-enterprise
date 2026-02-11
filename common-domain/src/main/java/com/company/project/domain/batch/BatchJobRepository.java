@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 배치작업 Repository
  */
-public interface BatchJobRepository extends JpaRepository<BatchJob, String> {
+public interface BatchJobRepository extends JpaRepository<BatchJob, String>, BatchJobRepositoryCustom {
 
     Page<BatchJob> findByBatchOpertNmContaining(String batchOpertNm, Pageable pageable);
 
