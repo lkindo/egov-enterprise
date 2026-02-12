@@ -35,6 +35,11 @@ public class MailService implements EgovMailService {
     }
 
     @Override
+    public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
+        return sentMailRepository.searchSentMails(searchCondition, searchKeyword, pageable).map(SentMailDto::from);
+    }
+
+    @Override
     public SentMailDto getSentMail(String mssageId) {
         SentMail sentMail = sentMailRepository.findById(mssageId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -76,5 +81,13 @@ public class MailService implements EgovMailService {
         SentMail sentMail = sentMailRepository.findById(mssageId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         sentMail.updateResult(resultCode);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMail(String mssageId) {
+        SentMail sentMail = sentMailRepository.findById(mssageId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        sentMailRepository.delete(sentMail);
     }
 }

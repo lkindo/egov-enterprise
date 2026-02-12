@@ -28,14 +28,14 @@ public class BatchJobRepositoryImpl implements BatchJobRepositoryCustom {
                 .orderBy(batchJob.batchOpertId.asc())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(batchJob.count())
                 .from(batchJob)
                 .where(batchJob.useAt.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+        return new PageImpl<>(content, pageable, total != null ? total.longValue() : 0L);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

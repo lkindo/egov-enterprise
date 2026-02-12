@@ -18,6 +18,7 @@ public class DeptJobBoxDto {
     private String deptJobbxId;
     private String deptJobbxNm;
     private String deptId;
+    private String deptNm;
     private Integer indictOrdr;
     private String frstRegisterId;
     private LocalDateTime frstRegistPnttm;

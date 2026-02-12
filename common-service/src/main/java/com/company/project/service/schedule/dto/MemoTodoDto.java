@@ -9,9 +9,10 @@ import lombok.*;
 @Builder
 public class MemoTodoDto {
     private String todoId;
-    private String todoSubject;
+    private String todoNm;
     private String todoCn;
-    private String beginTime;
-    private String endTime;
+    private String todoBeginTime;
+    private String todoEndTime;
     private String writerId;
+    private String frstRegisterId;
 }

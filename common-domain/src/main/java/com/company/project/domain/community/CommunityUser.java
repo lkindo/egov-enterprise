@@ -1,94 +1,86 @@
 package com.company.project.domain.community;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import jakarta.persistence.*;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+@Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
-@Table(name = "NCMMNTYUSER")
-@IdClass(CommunityUserId.class) // Composite Key
 @EntityListeners(AuditingEntityListener.class)
+@Table(name = "COMTNCMMNTYUSER")
 public class CommunityUser implements Serializable {
 
-    @Id
-    @Column(name = "CMMNTY_ID", length = 20)
-    private String cmmntyId;
-
-    @Id
-    @Column(name = "EMPLYR_ID", length = 20)
-    private String emplyrId;
+    @EmbeddedId
+    private CommunityUserId id;
 
     @Column(name = "MNGR_AT", length = 1)
-    private String mngrAt; // Y: Manager, N: Member
-
-    @Column(name = "MBER_STTUS", length = 15)
-    private String mberSttus; // A: Approved, P: Pending, etc.
+    private String mngrAt;
 
     @Column(name = "SBSCRB_DE")
-    private LocalDateTime sbscrbDe; // Subscription Date
+    private LocalDateTime sbscrbDe;
 
     @Column(name = "SECSN_DE")
-    private String secsnDe; // Secession Date (Legacy is String?)
+    private LocalDateTime secsnDe;
+
+    @Column(name = "MBER_STTUS", length = 15)
+    private String mberSttus;
 
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
+    @CreatedDate
+    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
+    private LocalDateTime frstRegisterPnttm;
+
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
-    @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime createdDate;
+    @LastModifiedDate
+    @Column(name = "LAST_UPDT_PNTTM")
+    private LocalDateTime lastUpdusrPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime modifiedDate;
-
     @Builder
-    public CommunityUser(String cmmntyId, String emplyrId, String mngrAt, String mberSttus,
-            String useAt, String frstRegisterId) {
-        this.cmmntyId = cmmntyId;
-        this.emplyrId = emplyrId;
-        this.mngrAt = mngrAt == null ? "N" : mngrAt;
-        this.mberSttus = mberSttus == null ? "P" : mberSttus; // Default Pending
-        this.useAt = useAt == null ? "Y" : useAt;
+    public CommunityUser(CommunityUserId id, String mngrAt, LocalDateTime sbscrbDe, String mberSttus, String useAt,
+            String frstRegisterId) {
+        this.id = id;
+        this.mngrAt = mngrAt;
+        this.sbscrbDe = sbscrbDe;
+        this.mberSttus = mberSttus;
+        this.useAt = useAt;
         this.frstRegisterId = frstRegisterId;
-        this.sbscrbDe = LocalDateTime.now();
     }
 
-    public void approve() {
-        this.mberSttus = "A";
-    }
-
-    public void promoteToManager() {
-        this.mngrAt = "Y";
-    }
-
-    public void demoteFromManager() {
-        this.mngrAt = "N";
-    }
-
-    public void leave(String lastUpdusrId) { // 탈퇴
-        this.useAt = "N";
-        this.mberSttus = "D"; // Deleted/Seceded
+    public void approve(String lastUpdusrId) {
+        this.mberSttus = "P"; // Example status for approved
         this.lastUpdusrId = lastUpdusrId;
-        this.modifiedDate = LocalDateTime.now();
+    }
+
+    public void withdraw(String lastUpdusrId) {
+        this.useAt = "N";
+        this.secsnDe = LocalDateTime.now();
+        this.mngrAt = "N";
+        this.lastUpdusrId = lastUpdusrId;
+    }
+
+    public void grantAdmin(String lastUpdusrId) {
+        this.mngrAt = "Y";
+        this.lastUpdusrId = lastUpdusrId;
+    }
+
+    public void revokeAdmin(String lastUpdusrId) {
+        this.mngrAt = "N";
+        this.lastUpdusrId = lastUpdusrId;
     }
 }

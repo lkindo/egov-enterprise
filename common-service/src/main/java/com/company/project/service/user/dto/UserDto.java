@@ -15,5 +15,7 @@ public class UserDto {
     private String userNm;
     private String esntlId;
     private String role;
+    private String emplNo;
+    private String ofcpsNm;
     private LocalDateTime createdDate;
 }

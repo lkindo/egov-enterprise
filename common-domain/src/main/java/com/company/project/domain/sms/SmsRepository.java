@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * SMS Repository
  */
-public interface SmsRepository extends JpaRepository<Sms, String> {
+public interface SmsRepository extends JpaRepository<Sms, String>, SmsRepositoryCustom {
 
     Page<Sms> findByTrnsmitCnContaining(String keyword, Pageable pageable);
 

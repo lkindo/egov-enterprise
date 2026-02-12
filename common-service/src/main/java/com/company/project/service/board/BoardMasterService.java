@@ -2,28 +2,37 @@ package com.company.project.service.board;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.board.BoardMaster;
-import com.company.project.domain.board.BoardMasterRepository;
-import com.company.project.domain.board.BoardMasterSearchCondition;
-import com.company.project.domain.board.BoardMasterSearchResult;
+import com.company.project.domain.board.*;
+import com.company.project.service.board.dto.BlogDto;
 import com.company.project.service.board.dto.BoardMasterDto;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service("egovBoardMasterService")
 public class BoardMasterService extends EgovAbstractServiceImpl implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
+    private final BlogRepository blogRepository;
+    private final BlogUserRepository blogUserRepository;
     private final EgovIdGnrService idgenService;
 
     public BoardMasterService(BoardMasterRepository boardMasterRepository,
+            BlogRepository blogRepository,
+            BlogUserRepository blogUserRepository,
             @Qualifier("egovBBSMstrIdGnrService") EgovIdGnrService idgenService) {
         this.boardMasterRepository = boardMasterRepository;
+        this.blogRepository = blogRepository;
+        this.blogUserRepository = blogUserRepository;
         this.idgenService = idgenService;
     }
 
@@ -132,5 +141,81 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
         return boardMasterRepository.findById(bbsId)
                 .map(bm -> "Y".equals(bm.getCommentAt()))
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, Pageable pageable) {
+        // QueryDSL 기반 검색이 필요할 수 있으나 일단 findAll로 처리 (필요시 Custom Repository에 추가)
+        return blogRepository.findAll(pageable).map(BlogDto::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BlogDto getBlog(String blogId) {
+        return blogRepository.findById(blogId).map(BlogDto::from).orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean checkBlogUser(String frstRegisterId) {
+        return blogRepository.existsByFrstRegisterId(frstRegisterId);
+    }
+
+    @Override
+    @Transactional
+    public void createBlog(BlogDto dto) {
+        Blog entity = Blog.builder()
+                .blogId(dto.getBlogId())
+                .bbsId(dto.getBbsId())
+                .blogNm(dto.getBlogNm())
+                .blogIntrcn(dto.getBlogIntrcn())
+                .registSeCode(dto.getRegistSeCode())
+                .tmplatId(dto.getTmplatId())
+                .useAt(dto.getUseAt())
+                .frstRegisterId(dto.getFrstRegisterId())
+                .blogAt(dto.getBlogAt())
+                .build();
+        blogRepository.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void joinBlog(String blogId, String userId, String mngrAt) {
+        BlogUser user = BlogUser.builder()
+                .blogId(blogId)
+                .emplyrId(userId)
+                .mngrAt(mngrAt)
+                .useAt("Y")
+                .frstRegisterId(userId)
+                .build();
+        blogUserRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BlogDto> getBlogListPortlet() {
+        return blogRepository.findAll(PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "frstRegisterPnttm")))
+                .getContent().stream()
+                .map(BlogDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BoardMasterDto> getBoardMasterListPortlet() {
+        return boardMasterRepository.findAll(PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "frstRegisterPnttm")))
+                .getContent().stream()
+                .map(BoardMasterDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BoardMasterDto> getBoardMasterListByCommunity(String cmmntyId) {
+        return boardMasterRepository.findByCmmntyIdAndUseAt(cmmntyId, "Y")
+                .stream()
+                .map(BoardMasterDto::from)
+                .collect(Collectors.toList());
     }
 }

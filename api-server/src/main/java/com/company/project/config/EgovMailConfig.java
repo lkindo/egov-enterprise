@@ -13,26 +13,5 @@ import egovframework.com.cop.ems.service.SndngMailVO;
 @Configuration
 public class EgovMailConfig {
 
-    @Bean
-    public EgovSndngMailRegistService sndngMailRegistService() {
-        return new EgovSndngMailRegistService() {
-            @Override
-            public boolean insertSndngMail(SndngMailVO vo) throws Exception {
-                // Dummy implementation
-                return true;
-            }
-
-            @Override
-            public boolean trnsmitXmlData(SndngMailVO sndngMailVO) throws Exception {
-                // Dummy implementation
-                return true;
-            }
-
-            @Override
-            public boolean recptnXmlData(String xml) throws Exception {
-                // Dummy implementation
-                return true;
-            }
-        };
-    }
+    // Removed dummy bean as it is now implemented in EgovSndngMailRegistServiceImpl
 }

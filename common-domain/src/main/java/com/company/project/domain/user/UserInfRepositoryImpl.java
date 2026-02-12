@@ -64,9 +64,9 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 user.emailAdres.as("userEmail"),
                                                 communityUser.useAt))
                                 .from(user)
-                                .join(communityUser).on(user.esntlId.eq(communityUser.emplyrId))
+                                .join(communityUser).on(user.esntlId.eq(communityUser.id.emplyrId))
                                 .where(
-                                                communityUser.cmmntyId.eq(trgetId),
+                                                communityUser.id.cmmntyId.eq(trgetId),
                                                 conditionEq(searchCondition, searchKeyword))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
@@ -77,7 +77,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .select(user.count())
                                 .from(communityUser)
                                 .where(
-                                                communityUser.cmmntyId.eq(trgetId))
+                                                communityUser.id.cmmntyId.eq(trgetId))
                                 .fetchOne();
 
                 return new PageImpl<>(content, pageable, total);
@@ -97,9 +97,9 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 user.emailAdres.as("userEmail"),
                                                 communityUser.useAt))
                                 .from(user)
-                                .join(communityUser).on(user.esntlId.eq(communityUser.emplyrId))
+                                .join(communityUser).on(user.esntlId.eq(communityUser.id.emplyrId))
                                 .where(
-                                                communityUser.cmmntyId.eq(trgetId),
+                                                communityUser.id.cmmntyId.eq(trgetId),
                                                 communityUser.mngrAt.eq("Y"),
                                                 conditionEq(searchCondition, searchKeyword))
                                 .offset(pageable.getOffset())
@@ -111,7 +111,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .select(user.count())
                                 .from(communityUser)
                                 .where(
-                                                communityUser.cmmntyId.eq(trgetId),
+                                                communityUser.id.cmmntyId.eq(trgetId),
                                                 communityUser.mngrAt.eq("Y"))
                                 .fetchOne();
 
@@ -122,11 +122,11 @@ public class UserInfRepositoryImpl implements UserInfRepository {
         public List<UserInfSearchResult> selectAllCmmntyUser(String trgetId) {
                 return queryFactory
                                 .select(Projections.fields(UserInfSearchResult.class,
-                                                communityUser.emplyrId.as("uniqId"),
-                                                communityUser.cmmntyId.as("trgetId")))
+                                                communityUser.id.emplyrId.as("uniqId"),
+                                                communityUser.id.cmmntyId.as("trgetId")))
                                 .from(communityUser)
                                 .where(
-                                                communityUser.cmmntyId.eq(trgetId),
+                                                communityUser.id.cmmntyId.eq(trgetId),
                                                 communityUser.useAt.eq("Y"))
                                 .fetch();
         }

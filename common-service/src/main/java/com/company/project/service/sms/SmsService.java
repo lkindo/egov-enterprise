@@ -43,6 +43,11 @@ public class SmsService implements EgovSmsService {
     }
 
     @Override
+    public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
+        return smsRepository.searchSmsUnits(searchCondition, searchKeyword, pageable).map(SmsDto::from);
+    }
+
+    @Override
     public SmsDto getSms(String smsId) {
         Sms sms = smsRepository.findById(smsId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -86,7 +91,8 @@ public class SmsService implements EgovSmsService {
         List<CompletableFuture<Void>> futures = savedSms.getRecipients().stream()
                 .map(recipient -> CompletableFuture.runAsync(() -> {
                     try {
-                        boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(), savedSms.getTrnsmitTelno());
+                        boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(),
+                                savedSms.getTrnsmitTelno());
                         if (success) {
                             recipient.updateResult("0000", "SUCCESS");
                         } else {

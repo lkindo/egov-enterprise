@@ -155,4 +155,8 @@ public class MemoTodoVO extends MemoTodo {
 		this.recordCountPerPage = recordCountPerPage;
 	}
 
+	public String getSearchCondition() {
+		return searchCnd;
+	}
+
 }

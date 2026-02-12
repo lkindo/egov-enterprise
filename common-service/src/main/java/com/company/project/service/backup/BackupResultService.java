@@ -59,6 +59,34 @@ public class BackupResultService extends EgovAbstractServiceImpl implements Egov
 
     @Override
     @Transactional
+    public void createBackupResult(String userId, BackupResultDto dto) {
+        BackupResult entity = BackupResult.builder()
+                .backupResultId(dto.getBackupResultId())
+                .backupOpertId(dto.getBackupOpertId())
+                .backupFile(dto.getBackupFile())
+                .sttus(dto.getSttus())
+                .errorInfo(dto.getErrorInfo())
+                .executBeginTime(dto.getExecutBeginTime())
+                .executEndTime(dto.getExecutEndTime())
+                .frstRegisterId(userId)
+                .build();
+        backupResultRepository.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void updateBackupResult(String backupResultId, String userId, BackupResultDto dto) {
+        BackupResult entity = backupResultRepository.findById(backupResultId)
+                .orElseThrow(() -> new RuntimeException("BackupResult not found: " + backupResultId));
+
+        entity.setSttus(dto.getSttus());
+        entity.setErrorInfo(dto.getErrorInfo());
+        entity.setExecutEndTime(dto.getExecutEndTime());
+        entity.setLastUpdusrId(userId);
+    }
+
+    @Override
+    @Transactional
     public void deleteBackupResult(String backupResultId) {
         backupResultRepository.deleteById(backupResultId);
     }
