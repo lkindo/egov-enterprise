@@ -116,7 +116,7 @@ const Sidebar = () => {
     };
 
     return (
-        <div className="nav">
+        <nav className="nav" aria-label="서브 메뉴">
             <div className="inner">
                 <h2>{parentMenuName}</h2>
                 <ul className="menu_list">
@@ -125,6 +125,7 @@ const Sidebar = () => {
                             <Link
                                 href={mapLegacyUrl(menu.chkURL)}
                                 className={isActive(menu.chkURL) ? 'on' : ''}
+                                aria-current={isActive(menu.chkURL) ? 'page' : undefined}
                             >
                                 {menu.menuNm}
                             </Link>
@@ -132,7 +133,7 @@ const Sidebar = () => {
                     ))}
                 </ul>
             </div>
-        </div>
+        </nav>
     );
 };
 
