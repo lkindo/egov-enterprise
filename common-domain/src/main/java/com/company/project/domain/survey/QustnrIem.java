@@ -1,38 +1,39 @@
 package com.company.project.domain.survey;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
- * ?ㅻЦ ??ぉ ?뷀떚??
- * ?뚯씠釉? NQUSTNRIEM
+ * 설문 항목 정보 Entity
+ * 레거시 테이블: NQUSTNRIEM
  */
 @Entity
 @Table(name = "NQUSTNRIEM")
 @Getter
-@Setter
-@NoArgsConstructor
-public class QustnrIem {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class QustnrIem extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_IEM_ID", length = 20)
     private String qustnrIemId;
 
-    @Column(name = "QUSTNR_QESITM_ID", length = 20)
+    @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
     private String qestnrQesitmId;
 
-    @Column(name = "QESTNR_ID", length = 20)
+    @Column(name = "QESTNR_ID", length = 20, nullable = false)
     private String qestnrId;
 
     @Column(name = "IEM_SN")
     private Long iemSn;
 
-    @Column(name = "IEM_CN", length = 1000)
+    @Column(name = "IEM_CN", length = 1000, nullable = false)
     private String iemCn;
 
     @Column(name = "ETC_ANSWER_AT", length = 1)
@@ -41,15 +42,21 @@ public class QustnrIem {
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
     private String qestnrTmplatId;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private String frstRegisterPnttm;
+    @Builder
+    public QustnrIem(String qustnrIemId, String qestnrQesitmId, String qestnrId, Long iemSn,
+                    String iemCn, String etcAnswerAt, String qestnrTmplatId) {
+        this.qustnrIemId = qustnrIemId;
+        this.qestnrQesitmId = qestnrQesitmId;
+        this.qestnrId = qestnrId;
+        this.iemSn = iemSn;
+        this.iemCn = iemCn;
+        this.etcAnswerAt = etcAnswerAt != null ? etcAnswerAt : "N";
+        this.qestnrTmplatId = qestnrTmplatId;
+    }
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private String lastUpdtPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
+    public void update(Long iemSn, String iemCn, String etcAnswerAt) {
+        this.iemSn = iemSn;
+        this.iemCn = iemCn;
+        this.etcAnswerAt = etcAnswerAt;
+    }
 }

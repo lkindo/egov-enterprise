@@ -1,57 +1,55 @@
 package com.company.project.domain.ulm;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
-import java.time.LocalDateTime;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Entity(name = "UnityLinkDomain")
+/**
+ * 통합 링크 정보 Entity
+ * 레거시 테이블: NUNITYLINK
+ */
+@Entity
 @Table(name = "NUNITYLINK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-@DynamicInsert
-@DynamicUpdate
-public class UnityLink {
+public class UnityLink extends BaseEntity {
 
     @Id
     @Column(name = "UNITY_LINK_ID", length = 20)
     private String unityLinkId;
 
-    @Column(name = "UNITY_LINK_SE_CODE", length = 3)
+    @Column(name = "UNITY_LINK_SE_CODE", length = 3, nullable = false)
     private String unityLinkSeCode;
 
-    @Column(name = "UNITY_LINK_NM", length = 255)
+    @Column(name = "UNITY_LINK_NM", length = 255, nullable = false)
     private String unityLinkNm;
 
-    @Column(name = "UNITY_LINK_URL", length = 255)
+    @Column(name = "UNITY_LINK_URL", length = 255, nullable = false)
     private String unityLinkUrl;
 
     @Column(name = "UNITY_LINK_DC", length = 1000)
     private String unityLinkDc;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
-    @PrePersist
-    protected void onCreate() {
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
+    @Builder
+    public UnityLink(String unityLinkId, String unityLinkSeCode, String unityLinkNm,
+                    String unityLinkUrl, String unityLinkDc) {
+        this.unityLinkId = unityLinkId;
+        this.unityLinkSeCode = unityLinkSeCode;
+        this.unityLinkNm = unityLinkNm;
+        this.unityLinkUrl = unityLinkUrl;
+        this.unityLinkDc = unityLinkDc;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.lastUpdtPnttm = LocalDateTime.now();
+    public void update(String unityLinkSeCode, String unityLinkNm, String unityLinkUrl, String unityLinkDc) {
+        this.unityLinkSeCode = unityLinkSeCode;
+        this.unityLinkNm = unityLinkNm;
+        this.unityLinkUrl = unityLinkUrl;
+        this.unityLinkDc = unityLinkDc;
     }
 }

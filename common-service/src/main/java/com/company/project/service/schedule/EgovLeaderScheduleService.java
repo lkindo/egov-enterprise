@@ -1,17 +1,26 @@
 package com.company.project.service.schedule;
 
 import com.company.project.service.schedule.dto.LeaderScheduleDto;
+import com.company.project.service.schedule.dto.LeaderStatusDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EgovLeaderScheduleService {
+
+    Page<LeaderScheduleDto> getLeaderScheduleList(String searchKeyword, Pageable pageable);
+
+    LeaderScheduleDto getLeaderSchedule(String scheduleId);
+
     void registerLeaderSchedule(LeaderScheduleDto dto);
 
     void updateLeaderSchedule(LeaderScheduleDto dto);
 
     void deleteLeaderSchedule(String scheduleId);
 
-    LeaderScheduleDto getLeaderSchedule(String scheduleId);
+    // 간부 상태 관리
+    Page<LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable);
 
-    Page<LeaderScheduleDto> getLeaderScheduleList(String searchKeyword, Pageable pageable);
+    LeaderStatusDto getLeaderStatus(String leaderId);
+
+    void updateLeaderStatus(LeaderStatusDto dto);
 }

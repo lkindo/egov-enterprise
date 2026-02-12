@@ -1,20 +1,24 @@
 package com.company.project.domain.roughmap;
 
-import com.company.project.domain.common.BaseTimeEntity;
-import lombok.*;
-
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
- * 약도 관리 엔티티
+ * 약도 정보 Entity
+ * 레거시 테이블: NROUGHMAP
  */
-@Entity(name = "RoughMapDomain")
+@Entity
 @Table(name = "NROUGHMAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class RoughMap extends BaseTimeEntity {
+public class RoughMap extends BaseEntity {
 
     @Id
     @Column(name = "ROUGHMAP_ID", length = 20)
@@ -44,14 +48,10 @@ public class RoughMap extends BaseTimeEntity {
     @Column(name = "ZOOMLEVEL", length = 3)
     private String zoomLevel;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String roughMapSj, String roughMapAddress, String la, String lo, String markerLa,
-            String markerLo, String infoWindow, String zoomLevel, String lastUpdusrId) {
+    @Builder
+    public RoughMap(String roughMapId, String roughMapSj, String roughMapAddress, String la, String lo,
+                    String markerLa, String markerLo, String infoWindow, String zoomLevel) {
+        this.roughMapId = roughMapId;
         this.roughMapSj = roughMapSj;
         this.roughMapAddress = roughMapAddress;
         this.la = la;
@@ -60,6 +60,17 @@ public class RoughMap extends BaseTimeEntity {
         this.markerLo = markerLo;
         this.infoWindow = infoWindow;
         this.zoomLevel = zoomLevel;
-        this.lastUpdusrId = lastUpdusrId;
+    }
+
+    public void update(String roughMapSj, String roughMapAddress, String la, String lo,
+                      String markerLa, String markerLo, String infoWindow, String zoomLevel) {
+        this.roughMapSj = roughMapSj;
+        this.roughMapAddress = roughMapAddress;
+        this.la = la;
+        this.lo = lo;
+        this.markerLa = markerLa;
+        this.markerLo = markerLo;
+        this.infoWindow = infoWindow;
+        this.zoomLevel = zoomLevel;
     }
 }

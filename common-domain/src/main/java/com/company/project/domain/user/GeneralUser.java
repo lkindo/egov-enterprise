@@ -1,5 +1,6 @@
 package com.company.project.domain.user;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,11 +12,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+/**
+ * 일반 회원 정보 Entity
+ * 레거시 테이블: NGNRLMBER
+ */
 @Entity
 @Table(name = "NGNRLMBER")
-public class GeneralUser {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class GeneralUser extends BaseEntity {
 
     @Id
     @Column(name = "ESNTL_ID", length = 20)
@@ -86,10 +91,9 @@ public class GeneralUser {
 
     @Builder
     public GeneralUser(String esntlId, String mberId, String mberNm, String password, String passwordHint,
-            String passwordCnsr,
-            String ihidnum, String sexdstnCode, String zip, String adres, String areaNo, String mberSttus,
-            String detailAdres, String endTelno, String moblphonNo, String groupId, String mberFxnum,
-            String mberEmailAdres, String middleTelno, String lockAt) {
+            String passwordCnsr, String ihidnum, String sexdstnCode, String zip, String adres, String areaNo,
+            String mberSttus, String detailAdres, String endTelno, String moblphonNo, String groupId,
+            String mberFxnum, String mberEmailAdres, String middleTelno, String lockAt) {
         this.esntlId = esntlId;
         this.mberId = mberId;
         this.mberNm = mberNm;

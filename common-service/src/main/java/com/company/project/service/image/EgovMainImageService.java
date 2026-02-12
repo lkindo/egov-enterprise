@@ -1,17 +1,16 @@
 package com.company.project.service.image;
 
-import com.company.project.service.image.dto.ImageDto;
+import com.company.project.service.image.dto.MainImageDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface EgovMainImageService {
-    ImageDto getMainImage(String imageId);
-
-    void registerMainImage(ImageDto dto);
-
-    void updateMainImage(ImageDto dto);
-
+    Page<MainImageDto> getMainImageList(String keyword, Pageable pageable);
+    MainImageDto getMainImage(String imageId);
+    void insertMainImage(MainImageDto dto);
+    void updateMainImage(MainImageDto dto);
     void deleteMainImage(String imageId);
-
-    Page<ImageDto> getMainImageList(String searchKeyword, Pageable pageable);
+    List<MainImageDto> getReflectedMainImages();
 }

@@ -1,13 +1,14 @@
 package com.company.project.domain.survey;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
+/**
+ * 온라인 투표 항목 Repository
+ */
 public interface OnlinePollItemRepository extends JpaRepository<OnlinePollItem, String> {
     List<OnlinePollItem> findByPollId(String pollId);
-
-    void deleteByPollId(String pollId);
 }

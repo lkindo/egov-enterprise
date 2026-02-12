@@ -1,31 +1,36 @@
 package com.company.project.domain.rsm;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+/**
+ * 최근 검색어 정보 Entity
+ * 레거시 테이블: NRECENTSRCHWRD
+ */
 @Entity
 @Table(name = "NRECENTSRCHWRD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class RecentSrchwrd extends BaseTimeEntity {
+public class RecentSrchwrd extends BaseEntity {
 
     @Id
     @Column(name = "RECENT_SRCHWRD_ID", length = 20)
     private String srchwrdId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SRCHWRD_MANAGE_ID")
-    private RecentSrchwrdManage recentSrchwrdManage;
+    @Column(name = "SRCHWRD_MANAGE_ID", length = 20, nullable = false)
+    private String srchwrdManageId;
 
     @Column(name = "RECENT_SRCHWRD_NM", length = 255, nullable = false)
     private String srchwrdNm;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
+    @Builder
+    public RecentSrchwrd(String srchwrdId, String srchwrdManageId, String srchwrdNm) {
+        this.srchwrdId = srchwrdId;
+        this.srchwrdManageId = srchwrdManageId;
+        this.srchwrdNm = srchwrdNm;
+    }
 }

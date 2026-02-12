@@ -11,43 +11,34 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 설문응답자 서비스 구현체
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SurveyRespondentService implements EgovSurveyRespondentService {
 
-    private final SurveyRespondentRepository surveyRespondentRepository;
+    private final SurveyRespondentRepository respondentRepository;
 
     @Override
-    public Page<SurveyRespondentDto> getSurveyRespondentList(String qestnrId, String keyword, Pageable pageable) {
-        if (qestnrId != null && !qestnrId.isEmpty()) {
-            if (keyword != null && !keyword.isEmpty()) {
-                return surveyRespondentRepository.searchByQestnrIdAndKeyword(qestnrId, keyword, pageable)
-                        .map(SurveyRespondentDto::from);
-            }
-            return surveyRespondentRepository.findByQestnrId(qestnrId, pageable)
-                    .map(SurveyRespondentDto::from);
+    public Page<SurveyRespondentDto> getRespondentList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return respondentRepository.findAll(pageable).map(SurveyRespondentDto::from);
         }
-        return surveyRespondentRepository.findAll(pageable).map(SurveyRespondentDto::from);
+        return respondentRepository.findByRespondNmContaining(keyword, pageable).map(SurveyRespondentDto::from);
     }
 
     @Override
-    public SurveyRespondentDto getSurveyRespondent(String qestnrRespondId) {
-        SurveyRespondent respondent = surveyRespondentRepository.findById(qestnrRespondId)
+    public SurveyRespondentDto getRespondent(String respondentId) {
+        return respondentRepository.findById(respondentId)
+                .map(SurveyRespondentDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return SurveyRespondentDto.from(respondent);
     }
 
     @Override
     @Transactional
-    public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
-        String qestnrRespondId = "RESP_" + String.format("%013d", System.currentTimeMillis());
-
-        SurveyRespondent respondent = SurveyRespondent.builder()
-                .qestnrRespondId(qestnrRespondId)
+    public void insertRespondent(SurveyRespondentDto dto) {
+        String id = "RESPOND_" + String.format("%013d", System.currentTimeMillis());
+        respondentRepository.save(SurveyRespondent.builder()
+                .qestnrRespondId(id)
                 .qestnrId(dto.getQestnrId())
                 .qestnrTmplatId(dto.getQestnrTmplatId())
                 .sexdstnCode(dto.getSexdstnCode())
@@ -57,28 +48,21 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 .areaNo(dto.getAreaNo())
                 .middleTelno(dto.getMiddleTelno())
                 .endTelno(dto.getEndTelno())
-                .frstRegisterId(userId)
-                .build();
-
-        surveyRespondentRepository.save(respondent);
-        return qestnrRespondId;
+                .build());
     }
 
     @Override
     @Transactional
-    public void updateSurveyRespondent(String qestnrRespondId, String userId, SurveyRespondentDto dto) {
-        SurveyRespondent respondent = surveyRespondentRepository.findById(qestnrRespondId)
+    public void updateRespondent(SurveyRespondentDto dto) {
+        SurveyRespondent entity = respondentRepository.findById(dto.getQestnrRespondId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        respondent.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
-                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
+        entity.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
+                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
     }
 
     @Override
     @Transactional
-    public void deleteSurveyRespondent(String qestnrRespondId) {
-        SurveyRespondent respondent = surveyRespondentRepository.findById(qestnrRespondId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        surveyRespondentRepository.delete(respondent);
+    public void deleteRespondent(String respondentId) {
+        respondentRepository.deleteById(respondentId);
     }
 }

@@ -1,63 +1,82 @@
 package com.company.project.domain.memoreport;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 /**
  * 메모보고 엔티티
- * 
- * @see NMEMOREPRT 테이블 매핑
+ * 레거시 테이블: NMEMOREPRT
  */
 @Entity
-@Table(name = "nmemoreprt")
+@Table(name = "NMEMOREPRT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class MemoReport {
+public class MemoReport extends BaseEntity {
 
     @Id
-    @Column(name = "reprt_id", length = 20)
+    @Column(name = "REPRT_ID", length = 20)
     private String reprtId;
 
-    @Column(name = "reprt_sj", length = 200)
+    @Column(name = "REPRT_SJ", length = 255, nullable = false)
     private String reprtSj;
 
-    @Column(name = "report_de", length = 8)
+    @Column(name = "REPORT_DE", length = 10)
     private String reportDe;
 
-    @Column(name = "wrter_id", length = 20)
+    @Column(name = "WRTER_ID", length = 20, nullable = false)
     private String wrterId;
 
-    @Column(name = "reportr_id", length = 20)
+    @Column(name = "REPORTR_ID", length = 20, nullable = false)
     private String reportrId;
 
-    @Column(name = "report_cn", length = 4000)
+    @Column(name = "REPORT_CN", columnDefinition = "TEXT")
     private String reportCn;
 
-    @Column(name = "atch_file_id", length = 20)
+    @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "drct_matter", length = 2000)
+    @Column(name = "DRCT_MATTER", length = 2000)
     private String drctMatter;
 
-    @Column(name = "drct_matter_regist_dt", length = 20)
+    @Column(name = "DRCT_MATTER_REGIST_DT", length = 20)
     private String drctMatterRegistDt;
 
-    @Column(name = "reportr_inqire_dt", length = 20)
+    @Column(name = "REPORTR_INQIRE_DT", length = 20)
     private String reportrInqireDt;
 
-    @Column(name = "frst_register_id", length = 20)
-    private String frstRegisterId;
+    @Builder
+    public MemoReport(String reprtId, String reprtSj, String reportDe, String wrterId,
+                      String reportrId, String reportCn, String atchFileId,
+                      String drctMatter, String drctMatterRegistDt, String reportrInqireDt) {
+        this.reprtId = reprtId;
+        this.reprtSj = reprtSj;
+        this.reportDe = reportDe;
+        this.wrterId = wrterId;
+        this.reportrId = reportrId;
+        this.reportCn = reportCn;
+        this.atchFileId = atchFileId;
+        this.drctMatter = drctMatter;
+        this.drctMatterRegistDt = drctMatterRegistDt;
+        this.reportrInqireDt = reportrInqireDt;
+    }
 
-    @Column(name = "frst_regist_pnttm")
-    private LocalDateTime frstRegistPnttm;
+    public void update(String reprtSj, String reportDe, String wrterId, String reportrId,
+                      String reportCn, String atchFileId) {
+        this.reprtSj = reprtSj;
+        this.reportDe = reportDe;
+        this.wrterId = wrterId;
+        this.reportrId = reportrId;
+        this.reportCn = reportCn;
+        this.atchFileId = atchFileId;
+    }
 
-    @Column(name = "last_updusr_id", length = 20)
-    private String lastUpdusrId;
+    public void updateDrctMatter(String drctMatter, String drctMatterRegistDt) {
+        this.drctMatter = drctMatter;
+        this.drctMatterRegistDt = drctMatterRegistDt;
+    }
 
-    @Column(name = "last_updt_pnttm")
-    private LocalDateTime lastUpdtPnttm;
+    public void updateInqireDt(String reportrInqireDt) {
+        this.reportrInqireDt = reportrInqireDt;
+    }
 }

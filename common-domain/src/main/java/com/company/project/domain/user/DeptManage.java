@@ -1,5 +1,6 @@
 package com.company.project.domain.user;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,20 +10,24 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+/**
+ * 부서(조직) 정보 Entity
+ * 레거시 테이블: NORGNZTINFO
+ */
 @Entity
 @Table(name = "NORGNZTINFO")
-public class DeptManage {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class DeptManage extends BaseEntity {
 
     @Id
     @Column(name = "ORGNZT_ID", length = 20)
     private String orgnztId;
 
-    @Column(name = "ORGNZT_NM", length = 20)
+    @Column(name = "ORGNZT_NM", length = 100, nullable = false)
     private String orgnztNm;
 
-    @Column(name = "ORGNZT_DC", length = 100)
+    @Column(name = "ORGNZT_DC", length = 255)
     private String orgnztDc;
 
     @Builder

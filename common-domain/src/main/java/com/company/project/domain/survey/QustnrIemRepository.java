@@ -1,11 +1,15 @@
 package com.company.project.domain.survey;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
+/**
+ * 설문 항목 Repository
+ */
 public interface QustnrIemRepository extends JpaRepository<QustnrIem, String> {
-    List<QustnrIem> findByQestnrIdAndQestnrTmplatId(String qestnrId, String qestnrTmplatId);
+    Page<QustnrIem> findByQestnrQesitmId(String qestnrQesitmId, Pageable pageable);
+    List<QustnrIem> findByQestnrQesitmIdOrderByIemSnAsc(String qestnrQesitmId);
 }

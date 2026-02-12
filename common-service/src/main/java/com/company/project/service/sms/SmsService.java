@@ -4,119 +4,79 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.sms.Sms;
 import com.company.project.domain.sms.SmsRecptn;
+import com.company.project.domain.sms.SmsRecptnRepository;
 import com.company.project.domain.sms.SmsRepository;
 import com.company.project.service.sms.dto.SmsDto;
+import com.company.project.service.sms.dto.SmsRecptnDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-/**
- * SMS 서비스 구현체
- */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SmsService implements EgovSmsService {
 
     private final SmsRepository smsRepository;
+    private final SmsRecptnRepository smsRecptnRepository;
     private final SmsSender smsSender;
-    private final TransactionTemplate transactionTemplate;
-    private final Executor taskExecutor;
-
-    @Override
-    public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return smsRepository.findAll(pageable).map(SmsDto::from);
-        }
-        return smsRepository.findByTrnsmitCnContaining(keyword, pageable).map(SmsDto::from);
-    }
 
     @Override
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
-        return smsRepository.searchSmsUnits(searchCondition, searchKeyword, pageable).map(SmsDto::from);
+        return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(SmsDto::from);
     }
 
     @Override
     public SmsDto getSms(String smsId) {
-        Sms sms = smsRepository.findById(smsId)
+        return smsRepository.findById(smsId)
+                .map(SmsDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return SmsDto.from(sms);
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional
     public String sendSms(String userId, SmsDto dto) {
-        String smsId = "SMS_" + String.format("%016d", System.currentTimeMillis());
+        String smsId = "SMS_" + String.format("%013d", System.currentTimeMillis());
+        
+        Sms sms = Sms.builder()
+                .smsId(smsId)
+                .trnsmitTelno(dto.getTrnsmitTelno())
+                .trnsmitCn(dto.getTrnsmitCn())
+                .build();
+        
+        smsRepository.save(sms);
 
-        // 1. Initial Save (in a transaction)
-        Sms savedSms = transactionTemplate.execute(status -> {
-            Sms sms = Sms.builder()
-                    .smsId(smsId)
-                    .trnsmitTelno(dto.getTrnsmitTelno())
-                    .trnsmitCn(dto.getTrnsmitCn())
-                    .recptnCnt(dto.getRecipients().size())
-                    .uniqId(userId)
-                    .frstRegisterId(userId)
-                    .build();
-
-            // 수신자 목록 추가
-            sms.getRecipients().addAll(dto.getRecipients().stream()
-                    .map(r -> SmsRecptn.builder()
-                            .smsId(smsId)
-                            .recptnTelno(r.getRecptnTelno())
-                            .resultCode("9000") // Ready to send
-                            .resultMssage("Ready")
-                            .build())
-                    .collect(Collectors.toList()));
-
-            return smsRepository.save(sms);
-        });
-
-        if (savedSms == null) {
-            throw new BusinessException("Failed to save SMS", ErrorCode.INTERNAL_SERVER_ERROR);
+        if (dto.getRecipients() != null) {
+            for (SmsRecptnDto recptnDto : dto.getRecipients()) {
+                SmsRecptn recptn = SmsRecptn.builder()
+                        .smsId(smsId)
+                        .recptnTelno(recptnDto.getRecptnTelno())
+                        .resultCode("P") // Pending
+                        .build();
+                smsRecptnRepository.save(recptn);
+                
+                // 실제 SMS 발송 처리 (비동기 처리 고려 가능)
+                try {
+                    smsSender.send(dto.getTrnsmitTelno(), recptnDto.getRecptnTelno(), dto.getTrnsmitCn());
+                    recptn.updateResult("S", "Success");
+                } catch (Exception e) {
+                    recptn.updateResult("F", e.getMessage());
+                }
+            }
         }
 
-        // 2. Parallel Send (outside transaction)
-        List<CompletableFuture<Void>> futures = savedSms.getRecipients().stream()
-                .map(recipient -> CompletableFuture.runAsync(() -> {
-                    try {
-                        boolean success = smsSender.send(recipient.getRecptnTelno(), savedSms.getTrnsmitCn(),
-                                savedSms.getTrnsmitTelno());
-                        if (success) {
-                            recipient.updateResult("0000", "SUCCESS");
-                        } else {
-                            recipient.updateResult("9999", "FAILED");
-                        }
-                    } catch (Exception e) {
-                        log.error("Failed to send SMS to {}", recipient.getRecptnTelno(), e);
-                        recipient.updateResult("9999", "ERROR: " + e.getMessage());
-                    }
-                }, taskExecutor))
-                .collect(Collectors.toList());
-
-        // 3. Final Update (async, fire-and-forget)
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenRunAsync(() -> {
-                    try {
-                        transactionTemplate.executeWithoutResult(status -> {
-                            smsRepository.save(savedSms);
-                        });
-                    } catch (Exception e) {
-                        log.error("Failed to save final SMS status for ID {}", smsId, e);
-                    }
-                }, taskExecutor);
-
         return smsId;
+    }
+
+    @Override
+    public List<SmsRecptnDto> getSmsRecipients(String smsId) {
+        return smsRecptnRepository.findBySmsId(smsId).stream()
+                .map(SmsRecptnDto::from)
+                .collect(Collectors.toList());
     }
 }

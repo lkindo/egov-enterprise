@@ -1,7 +1,6 @@
 package com.company.project.domain.help;
 
-import java.time.LocalDateTime;
-
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,17 +10,21 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 용어사전 정보 Entity
+ * 레거시 테이블: NWORDDICARYINFO
+ */
 @Entity
+@Table(name = "NWORDDICARYINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NWORDDICARYINFO")
-public class WordDicary {
+public class WordDicary extends BaseEntity {
 
     @Id
     @Column(name = "WORD_ID", length = 20)
     private String wordId;
 
-    @Column(name = "WORD_NM", length = 255)
+    @Column(name = "WORD_NM", length = 255, nullable = false)
     private String wordNm;
 
     @Column(name = "ENG_NM", length = 60)
@@ -33,35 +36,19 @@ public class WordDicary {
     @Column(name = "SYNONM", length = 100)
     private String synonm;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
-    public WordDicary(String wordId, String wordNm, String engNm, String wordDc, String synonm, String frstRegisterId) {
+    public WordDicary(String wordId, String wordNm, String engNm, String wordDc, String synonm) {
         this.wordId = wordId;
         this.wordNm = wordNm;
         this.engNm = engNm;
         this.wordDc = wordDc;
         this.synonm = synonm;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 
-    public void update(String wordNm, String engNm, String wordDc, String synonm, String lastUpdusrId) {
+    public void update(String wordNm, String engNm, String wordDc, String synonm) {
         this.wordNm = wordNm;
         this.engNm = engNm;
         this.wordDc = wordDc;
         this.synonm = synonm;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

@@ -1,7 +1,9 @@
 package com.company.project.service.roughmap;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.roughmap.RoughMap;
-import com.company.project.domain.roughmap.RoughMapDomainRepository;
+import com.company.project.domain.roughmap.RoughMapRepository;
 import com.company.project.service.roughmap.dto.RoughMapDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,20 +16,29 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RoughMapService implements EgovRoughMapService {
 
-    private final RoughMapDomainRepository roughMapRepository;
+    private final RoughMapRepository roughMapRepository;
+
+    @Override
+    public Page<RoughMapDto> getRoughMapList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return roughMapRepository.findAll(pageable).map(RoughMapDto::from);
+        }
+        return roughMapRepository.findByRoughMapSjContaining(keyword, pageable).map(RoughMapDto::from);
+    }
 
     @Override
     public RoughMapDto getRoughMap(String roughMapId) {
         return roughMapRepository.findById(roughMapId)
-                .map(this::convertToDto)
-                .orElse(null);
+                .map(RoughMapDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void registerRoughMap(RoughMapDto dto) {
-        RoughMap roughMap = RoughMap.builder()
-                .roughMapId(dto.getRoughMapId())
+    public void insertRoughMap(RoughMapDto dto) {
+        String id = "ROUGH_" + String.format("%013d", System.currentTimeMillis());
+        RoughMap entity = RoughMap.builder()
+                .roughMapId(id)
                 .roughMapSj(dto.getRoughMapSj())
                 .roughMapAddress(dto.getRoughMapAddress())
                 .la(dto.getLa())
@@ -36,43 +47,22 @@ public class RoughMapService implements EgovRoughMapService {
                 .markerLo(dto.getMarkerLo())
                 .infoWindow(dto.getInfoWindow())
                 .zoomLevel(dto.getZoomLevel())
-                .frstRegisterId("SYSTEM")
-                .lastUpdusrId("SYSTEM")
                 .build();
-        roughMapRepository.save(roughMap);
+        roughMapRepository.save(entity);
     }
 
     @Override
     @Transactional
     public void updateRoughMap(RoughMapDto dto) {
-        roughMapRepository.findById(dto.getRoughMapId())
-                .ifPresent(rm -> rm.update(dto.getRoughMapSj(), dto.getRoughMapAddress(), dto.getLa(), dto.getLo(),
-                        dto.getMarkerLa(), dto.getMarkerLo(), dto.getInfoWindow(), dto.getZoomLevel(), "SYSTEM"));
+        RoughMap entity = roughMapRepository.findById(dto.getRoughMapId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getRoughMapSj(), dto.getRoughMapAddress(), dto.getLa(), dto.getLo(),
+                dto.getMarkerLa(), dto.getMarkerLo(), dto.getInfoWindow(), dto.getZoomLevel());
     }
 
     @Override
     @Transactional
     public void deleteRoughMap(String roughMapId) {
         roughMapRepository.deleteById(roughMapId);
-    }
-
-    @Override
-    public Page<RoughMapDto> getRoughMapList(String searchKeyword, Pageable pageable) {
-        return roughMapRepository.findAll(pageable)
-                .map(this::convertToDto);
-    }
-
-    private RoughMapDto convertToDto(RoughMap rm) {
-        return RoughMapDto.builder()
-                .roughMapId(rm.getRoughMapId())
-                .roughMapSj(rm.getRoughMapSj())
-                .roughMapAddress(rm.getRoughMapAddress())
-                .la(rm.getLa())
-                .lo(rm.getLo())
-                .markerLa(rm.getMarkerLa())
-                .markerLo(rm.getMarkerLo())
-                .infoWindow(rm.getInfoWindow())
-                .zoomLevel(rm.getZoomLevel())
-                .build();
     }
 }

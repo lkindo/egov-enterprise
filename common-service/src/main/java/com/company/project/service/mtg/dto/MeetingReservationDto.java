@@ -1,29 +1,59 @@
 package com.company.project.service.mtg.dto;
 
 import com.company.project.domain.meeting.MeetingReservation;
-import lombok.*;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Schema(description = "회의실 예약 정보 DTO")
 public class MeetingReservationDto {
+
+    @Schema(description = "예약 ID")
     private String resveId;
+
+    @Schema(description = "회의실 ID")
     private String mtgPlaceId;
+
+    @Schema(description = "회의실 명")
     private String mtgPlaceNm;
+
+    @Schema(description = "회의 제목")
     private String mtgSj;
+
+    @Schema(description = "예약자 ID")
     private String resveManId;
+
+    @Schema(description = "예약자 명")
     private String resveManNm;
+
+    @Schema(description = "예약 일자")
     private String resveDe;
+
+    @Schema(description = "예약 시작 시간")
     private String resveBeginTm;
+
+    @Schema(description = "예약 종료 시간")
     private String resveEndTm;
+
+    @Schema(description = "참석 인원")
     private Integer atndncNmpr;
+
+    @Schema(description = "회의 내용")
     private String mtgCn;
-    private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+
+    @Schema(description = "등록자 ID")
+    private String createdBy;
+
+    @Schema(description = "등록일시")
+    private LocalDateTime createdDate;
 
     public static MeetingReservationDto from(MeetingReservation entity) {
         if (entity == null) return null;
@@ -37,8 +67,8 @@ public class MeetingReservationDto {
                 .resveEndTm(entity.getResveEndTm())
                 .atndncNmpr(entity.getAtndncNmpr())
                 .mtgCn(entity.getMtgCn())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegisterPnttm())
+                .createdBy(entity.getCreatedBy())
+                .createdDate(entity.getCreatedDate())
                 .build();
     }
 }

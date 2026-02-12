@@ -1,5 +1,7 @@
 package com.company.project.service.memoreport;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.memoreport.MemoReport;
 import com.company.project.domain.memoreport.MemoReportRepository;
 import com.company.project.service.memoreport.dto.MemoReportDto;
@@ -10,11 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-/**
- * 메모보고 서비스 구현체
- */
-@Service("memoReportService")
+@Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MemoReportService implements EgovMemoReportService {
@@ -23,33 +23,31 @@ public class MemoReportService implements EgovMemoReportService {
 
     @Override
     public Page<MemoReportDto> getMemoReportList(String keyword, Pageable pageable) {
-        return memoReportRepository.findByKeyword(keyword, pageable)
-                .map(MemoReportDto::fromEntity);
+        // Basic find all or search could be implemented with QueryDSL if complex
+        return memoReportRepository.findAll(pageable).map(MemoReportDto::from);
     }
 
     @Override
     public Page<MemoReportDto> getMyReportList(String wrterId, Pageable pageable) {
-        return memoReportRepository.findByWrterId(wrterId, pageable)
-                .map(MemoReportDto::fromEntity);
+        return memoReportRepository.findByWrterId(wrterId, pageable).map(MemoReportDto::from);
     }
 
     @Override
     public Page<MemoReportDto> getReceivedReportList(String reportrId, Pageable pageable) {
-        return memoReportRepository.findByReportrId(reportrId, pageable)
-                .map(MemoReportDto::fromEntity);
+        return memoReportRepository.findByReportrId(reportrId, pageable).map(MemoReportDto::from);
     }
 
     @Override
     public MemoReportDto getMemoReport(String reprtId) {
         return memoReportRepository.findById(reprtId)
-                .map(MemoReportDto::fromEntity)
-                .orElse(null);
+                .map(MemoReportDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
     public String createMemoReport(String userId, MemoReportDto dto) {
-        String id = "MEMOREPRT_" + System.currentTimeMillis();
+        String id = "MRM_" + String.format("%013d", System.currentTimeMillis());
         MemoReport entity = MemoReport.builder()
                 .reprtId(id)
                 .reprtSj(dto.getReprtSj())
@@ -58,8 +56,6 @@ public class MemoReportService implements EgovMemoReportService {
                 .reportrId(dto.getReportrId())
                 .reportCn(dto.getReportCn())
                 .atchFileId(dto.getAtchFileId())
-                .frstRegisterId(userId)
-                .frstRegistPnttm(LocalDateTime.now())
                 .build();
         memoReportRepository.save(entity);
         return id;
@@ -69,30 +65,31 @@ public class MemoReportService implements EgovMemoReportService {
     @Transactional
     public void updateMemoReport(String reprtId, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findById(reprtId)
-                .orElseThrow(() -> new IllegalArgumentException("MemoReport not found: " + reprtId));
-
-        MemoReport updated = MemoReport.builder()
-                .reprtId(entity.getReprtId())
-                .reprtSj(dto.getReprtSj())
-                .reportDe(dto.getReportDe())
-                .wrterId(entity.getWrterId())
-                .reportrId(dto.getReportrId())
-                .reportCn(dto.getReportCn())
-                .atchFileId(dto.getAtchFileId())
-                .drctMatter(dto.getDrctMatter()) // 지시사항 업데이트 등
-                .drctMatterRegistDt(dto.getDrctMatterRegistDt())
-                .reportrInqireDt(dto.getReportrInqireDt())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
-                .lastUpdusrId(userId)
-                .lastUpdtPnttm(LocalDateTime.now())
-                .build();
-        memoReportRepository.save(updated);
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        
+        entity.update(dto.getReprtSj(), dto.getReportDe(), userId, dto.getReportrId(),
+                dto.getReportCn(), dto.getAtchFileId());
     }
 
     @Override
     @Transactional
     public void deleteMemoReport(String reprtId) {
         memoReportRepository.deleteById(reprtId);
+    }
+
+    @Override
+    @Transactional
+    public void readMemoReport(String reprtId) {
+        MemoReport entity = memoReportRepository.findById(reprtId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.updateInqireDt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
+
+    @Override
+    @Transactional
+    public void updateDrctMatter(String reprtId, String drctMatter) {
+        MemoReport entity = memoReportRepository.findById(reprtId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.updateDrctMatter(drctMatter, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
 }

@@ -1,7 +1,6 @@
 package com.company.project.domain.survey;
 
-import java.time.LocalDateTime;
-
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,17 +10,24 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 온라인 투표 관리 정보 Entity
+ * 레거시 테이블: NONLINEPOLLMANAGE
+ */
 @Entity
+@Table(name = "NONLINEPOLLMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NONLINEPOLLMANAGE")
-public class OnlinePollManage {
+public class OnlinePollManage extends BaseEntity {
 
     @Id
     @Column(name = "POLL_ID", length = 20)
     private String pollId;
 
-    @Column(name = "POLL_NM", length = 255)
+    @Column(name = "POLL_NM", length = 255, nullable = false)
     private String pollNm;
 
     @Column(name = "POLL_BGNDE", length = 10)
@@ -39,41 +45,28 @@ public class OnlinePollManage {
     @Column(name = "POLL_ATMC_DSUSE_ENNC", length = 1)
     private String pollAutoDsuseYn;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
+    @OneToMany(mappedBy = "pollId", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OnlinePollItem> pollItems = new ArrayList<>();
 
     @Builder
-    public OnlinePollManage(String pollId, String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode,
-            String pollDsuseYn, String pollAutoDsuseYn, String frstRegisterId) {
+    public OnlinePollManage(String pollId, String pollNm, String pollBeginDe, String pollEndDe,
+                           String pollKindCode, String pollDsuseYn, String pollAutoDsuseYn) {
         this.pollId = pollId;
         this.pollNm = pollNm;
         this.pollBeginDe = pollBeginDe;
         this.pollEndDe = pollEndDe;
         this.pollKindCode = pollKindCode;
-        this.pollDsuseYn = pollDsuseYn;
-        this.pollAutoDsuseYn = pollAutoDsuseYn;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.pollDsuseYn = pollDsuseYn != null ? pollDsuseYn : "N";
+        this.pollAutoDsuseYn = pollAutoDsuseYn != null ? pollAutoDsuseYn : "N";
     }
 
-    public void update(String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode, String pollDsuseYn,
-            String pollAutoDsuseYn, String lastUpdusrId) {
+    public void update(String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode,
+                      String pollDsuseYn, String pollAutoDsuseYn) {
         this.pollNm = pollNm;
         this.pollBeginDe = pollBeginDe;
         this.pollEndDe = pollEndDe;
         this.pollKindCode = pollKindCode;
         this.pollDsuseYn = pollDsuseYn;
         this.pollAutoDsuseYn = pollAutoDsuseYn;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

@@ -1,6 +1,7 @@
 package com.company.project.service.namecard;
 
 import com.company.project.service.namecard.dto.NameCardDto;
+import com.company.project.service.namecard.dto.NameCardUserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,4 +21,11 @@ public interface EgovNameCardService {
     void updateNameCard(String ncrdId, String userId, NameCardDto dto);
 
     void deleteNameCard(String ncrdId);
+
+    // 내 명함첩 관리
+    Page<NameCardUserDto> getMyNameCardFolder(String userId, Pageable pageable);
+
+    void addMyNameCard(String userId, String ncrdId);
+
+    void removeMyNameCard(String userId, String ncrdId);
 }

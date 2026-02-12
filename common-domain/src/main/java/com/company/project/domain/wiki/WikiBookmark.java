@@ -1,51 +1,43 @@
 package com.company.project.domain.wiki;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
-import java.time.LocalDateTime;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Entity(name = "WikiBookmarkDomain")
+/**
+ * 위키 북마크 정보 Entity
+ * 레거시 테이블: NWIKIBKMK
+ */
+@Entity
 @Table(name = "NWIKIBKMK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-@DynamicInsert
-@DynamicUpdate
-public class WikiBookmark {
+public class WikiBookmark extends BaseEntity {
 
     @Id
     @Column(name = "WIKI_BKMK_ID", length = 20)
     private String wikiBkmkId;
 
-    @Column(name = "USER_ID", length = 20)
+    @Column(name = "USER_ID", length = 20, nullable = false)
     private String userId;
 
-    @Column(name = "WIKI_BKMK_NM", length = 255)
+    @Column(name = "WIKI_BKMK_NM", length = 255, nullable = false)
     private String wikiBkmkNm;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
-    @PrePersist
-    protected void onCreate() {
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
+    @Builder
+    public WikiBookmark(String wikiBkmkId, String userId, String wikiBkmkNm) {
+        this.wikiBkmkId = wikiBkmkId;
+        this.userId = userId;
+        this.wikiBkmkNm = wikiBkmkNm;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.lastUpdtPnttm = LocalDateTime.now();
+    public void update(String wikiBkmkNm) {
+        this.wikiBkmkNm = wikiBkmkNm;
     }
 }

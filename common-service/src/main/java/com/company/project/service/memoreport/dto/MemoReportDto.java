@@ -1,38 +1,62 @@
 package com.company.project.service.memoreport.dto;
 
 import com.company.project.domain.memoreport.MemoReport;
-import lombok.*;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * 메모보고 DTO
- */
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Schema(description = "메모보고 정보 DTO")
 public class MemoReportDto {
 
+    @Schema(description = "보고 ID")
     private String reprtId;
-    private String reprtSj;
-    private String reportDe;
-    private String wrterId;
-    private String reportrId;
-    private String reportCn;
-    private String atchFileId;
-    private String drctMatter;
-    private String drctMatterRegistDt;
-    private String reportrInqireDt;
-    private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
 
-    public static MemoReportDto fromEntity(MemoReport entity) {
-        if (entity == null)
-            return null;
+    @Schema(description = "보고 제목")
+    private String reprtSj;
+
+    @Schema(description = "보고 일자")
+    private String reportDe;
+
+    @Schema(description = "작성자 ID")
+    private String wrterId;
+
+    @Schema(description = "작성자 명")
+    private String wrterNm;
+
+    @Schema(description = "보고대상자 ID")
+    private String reportrId;
+
+    @Schema(description = "보고대상자 명")
+    private String reportrNm;
+
+    @Schema(description = "보고 내용")
+    private String reportCn;
+
+    @Schema(description = "첨부파일 ID")
+    private String atchFileId;
+
+    @Schema(description = "지시 사항")
+    private String drctMatter;
+
+    @Schema(description = "지시 사항 등록 일시")
+    private String drctMatterRegistDt;
+
+    @Schema(description = "보고대상자 확인 일시")
+    private String reportrInqireDt;
+
+    @Schema(description = "등록일시")
+    private LocalDateTime createdDate;
+
+    public static MemoReportDto from(MemoReport entity) {
+        if (entity == null) return null;
         return MemoReportDto.builder()
                 .reprtId(entity.getReprtId())
                 .reprtSj(entity.getReprtSj())
@@ -44,29 +68,7 @@ public class MemoReportDto {
                 .drctMatter(entity.getDrctMatter())
                 .drctMatterRegistDt(entity.getDrctMatterRegistDt())
                 .reportrInqireDt(entity.getReportrInqireDt())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdtPnttm(entity.getLastUpdtPnttm())
-                .build();
-    }
-
-    public MemoReport toEntity() {
-        return MemoReport.builder()
-                .reprtId(this.reprtId)
-                .reprtSj(this.reprtSj)
-                .reportDe(this.reportDe)
-                .wrterId(this.wrterId)
-                .reportrId(this.reportrId)
-                .reportCn(this.reportCn)
-                .atchFileId(this.atchFileId)
-                .drctMatter(this.drctMatter)
-                .drctMatterRegistDt(this.drctMatterRegistDt)
-                .reportrInqireDt(this.reportrInqireDt)
-                .frstRegisterId(this.frstRegisterId)
-                .frstRegistPnttm(this.frstRegistPnttm)
-                .lastUpdusrId(this.lastUpdusrId)
-                .lastUpdtPnttm(this.lastUpdtPnttm)
+                .createdDate(entity.getCreatedDate())
                 .build();
     }
 }
