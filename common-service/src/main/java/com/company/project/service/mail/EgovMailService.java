@@ -11,9 +11,13 @@ public interface EgovMailService {
 
     Page<SentMailDto> getSentMailList(String keyword, Pageable pageable);
 
+    Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable);
+
     SentMailDto getSentMail(String mssageId);
 
     String sendMail(String userId, SentMailDto dto);
 
     void updateMailResult(String mssageId, String resultCode);
+
+    void deleteMail(String mssageId);
 }

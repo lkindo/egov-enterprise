@@ -31,9 +31,6 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
     @Resource
     private MemoTodoRepository memoTodoRepository;
 
-    @Resource(name = "MemoTodoDAO")
-    private MemoTodoDAO memoTodoDAO;
-
     @Resource(name = "egovMemoTodoIdGnrService")
     private EgovIdGnrService idgenServiceMemoTodo;
 
@@ -95,7 +92,7 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
     @Transactional
     public void insertMemoTodo(egovframework.com.cop.smt.mtm.service.MemoTodo memoTodo) throws Exception {
         String id = idgenServiceMemoTodo.getNextStringId();
-        
+
         MemoTodo entity = MemoTodo.builder()
                 .todoId(id)
                 .todoNm(memoTodo.getTodoNm())
@@ -105,7 +102,7 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
                 .todoCn(memoTodo.getTodoCn())
                 .frstRegisterId(memoTodo.getFrstRegisterId())
                 .build();
-                
+
         memoTodoRepository.save(entity);
     }
 

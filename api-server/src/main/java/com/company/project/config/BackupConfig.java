@@ -1,10 +1,8 @@
 package com.company.project.config;
 
+import com.company.project.service.backup.EgovBackupOpertService;
+import com.company.project.service.backup.EgovBackupResultService;
 import egovframework.com.sym.sym.bak.service.BackupScheduler;
-import egovframework.com.sym.sym.bak.service.EgovBackupOpertService;
-import egovframework.com.sym.sym.bak.service.EgovBackupResultService;
-import egovframework.com.sym.sym.bak.service.impl.EgovBackupOpertServiceImpl;
-import egovframework.com.sym.sym.bak.service.impl.EgovBackupResultServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl;
 import org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl;
@@ -14,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 /**
- * 백업 자동 실행(Quartz) 및 ID 생성을 위한 설정 클래스
+ * 백업 자동 실행(Quartz) 및 ID 생성을 위한 설정 클래스 (Modernized)
  */
 @Configuration
 public class BackupConfig {
@@ -46,7 +44,7 @@ public class BackupConfig {
         service.setStrategy(backupResultIdStrategy());
         service.setBlockSize(1);
         service.setTable("COMTECOPSEQ");
-        service.setTableName("BACKUP_RESULT_ID"); // Different row from Batch's BATCH_RESULT_ID
+        service.setTableName("BACKUP_RESULT_ID");
         return service;
     }
 
@@ -60,22 +58,13 @@ public class BackupConfig {
     }
 
     @Bean(name = "backupScheduler", initMethod = "init", destroyMethod = "destroy")
-    public BackupScheduler backupScheduler(EgovBackupOpertService egovBackupOpertService,
+    public BackupScheduler backupScheduler(EgovBackupOpertService backupOpertService,
+            EgovBackupResultService backupResultService,
             EgovIdGnrService egovBackupResultIdGnrService) {
         BackupScheduler scheduler = new BackupScheduler();
-        scheduler.setEgovBackupOpertService(egovBackupOpertService);
+        scheduler.setBackupOpertService(backupOpertService);
+        scheduler.setBackupResultService(backupResultService);
         scheduler.setIdgenService(egovBackupResultIdGnrService);
         return scheduler;
     }
-
-    @Bean(name = "egovBackupOpertService")
-    public EgovBackupOpertService egovBackupOpertService() {
-        return new EgovBackupOpertServiceImpl();
-    }
-
-    @Bean(name = "egovBackupResultService")
-    public EgovBackupResultService egovBackupResultService() {
-        return new EgovBackupResultServiceImpl();
-    }
-
 }

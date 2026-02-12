@@ -11,6 +11,8 @@ public interface EgovSmsService {
 
     Page<SmsDto> getSmsList(String keyword, Pageable pageable);
 
+    Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable);
+
     SmsDto getSms(String smsId);
 
     String sendSms(String userId, SmsDto dto);

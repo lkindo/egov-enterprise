@@ -47,6 +47,9 @@ public class Board implements Serializable {
     @Column(name = "SORT_ORDR")
     private Long sortOrdr;
 
+    @Column(name = "SJ_BOLD_AT", length = 1)
+    private String sjBoldAt;
+
     @Column(name = "RDCNT")
     private Integer inqireCo;
 
@@ -87,6 +90,9 @@ public class Board implements Serializable {
 
     @Column(name = "SECRET_AT", length = 1)
     private String secretAt;
+
+    @Column(name = "NOTICE_AT", length = 1)
+    private String noticeAt;
 
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;

@@ -21,11 +21,11 @@ public class MemoTodoService implements EgovMemoTodoService {
     public void registerMemoTodo(MemoTodoDto dto) {
         MemoTodo todo = MemoTodo.builder()
                 .todoId(dto.getTodoId())
-                .todoSubject(dto.getTodoSubject())
+                .todoNm(dto.getTodoNm())
                 .todoCn(dto.getTodoCn())
-                .beginTime(dto.getBeginTime())
-                .endTime(dto.getEndTime())
-                .writerId(dto.getWriterId())
+                .todoBeginTime(dto.getTodoBeginTime())
+                .todoEndTime(dto.getTodoEndTime())
+                .wrterId(dto.getWriterId())
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
@@ -37,10 +37,10 @@ public class MemoTodoService implements EgovMemoTodoService {
     public void updateMemoTodo(MemoTodoDto dto) {
         memoTodoRepository.findById(dto.getTodoId())
                 .ifPresent(t -> t.update(
-                        dto.getTodoSubject(),
+                        dto.getTodoNm(),
+                        dto.getTodoBeginTime(),
+                        dto.getTodoEndTime(),
                         dto.getTodoCn(),
-                        dto.getBeginTime(),
-                        dto.getEndTime(),
                         dto.getWriterId()));
     }
 
@@ -55,11 +55,11 @@ public class MemoTodoService implements EgovMemoTodoService {
         return memoTodoRepository.findById(todoId)
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
-                        .todoSubject(t.getTodoSubject())
+                        .todoNm(t.getTodoNm())
                         .todoCn(t.getTodoCn())
-                        .beginTime(t.getBeginTime())
-                        .endTime(t.getEndTime())
-                        .writerId(t.getWriterId())
+                        .todoBeginTime(t.getTodoBeginTime())
+                        .todoEndTime(t.getTodoEndTime())
+                        .writerId(t.getWrterId())
                         .build())
                 .orElse(null);
     }
@@ -70,9 +70,9 @@ public class MemoTodoService implements EgovMemoTodoService {
         return memoTodoRepository.findAll(pageable)
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
-                        .todoSubject(t.getTodoSubject())
-                        .writerId(t.getWriterId())
-                        .beginTime(t.getBeginTime())
+                        .todoNm(t.getTodoNm())
+                        .writerId(t.getWrterId())
+                        .todoBeginTime(t.getTodoBeginTime())
                         .build());
     }
 }

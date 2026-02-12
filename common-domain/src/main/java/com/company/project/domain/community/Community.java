@@ -1,8 +1,9 @@
 package com.company.project.domain.community;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -12,21 +13,19 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
+@Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
-@Table(name = "NCMMNTY")
 @EntityListeners(AuditingEntityListener.class)
+@Table(name = "COMTNCMMNTY")
 public class Community implements Serializable {
 
     @Id
-    @Column(name = "CMMNTY_ID", length = 20)
-    private String id;
+    @Column(name = "CMMNTY_ID", length = 20, nullable = false)
+    private String cmmntyId;
 
     @Column(name = "CMMNTY_NM", length = 255)
     private String cmmntyNm;
@@ -35,7 +34,7 @@ public class Community implements Serializable {
     private String cmmntyIntrcn;
 
     @Column(name = "REGIST_SE_CODE", length = 6)
-    private String registSeCode; // REGC01: Registration, REGC02: ...
+    private String registSeCode;
 
     @Column(name = "TMPLAT_ID", length = 20)
     private String tmplatId;
@@ -48,34 +47,32 @@ public class Community implements Serializable {
 
     @CreatedDate
     @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime createdDate;
+    private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @LastModifiedDate
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime modifiedDate;
-
-    // Additional fields mapped in legacy but might be logic-based or joined
-    // emplyrId is likely the owner/creator, which matches frstRegisterId usually.
+    private LocalDateTime lastUpdusrPnttm;
 
     @Builder
-    public Community(String id, String cmmntyNm, String cmmntyIntrcn, String registSeCode,
+    public Community(String cmmntyId, String cmmntyNm, String cmmntyIntrcn, String registSeCode,
             String tmplatId, String useAt, String frstRegisterId) {
-        this.id = id;
+        this.cmmntyId = cmmntyId;
         this.cmmntyNm = cmmntyNm;
         this.cmmntyIntrcn = cmmntyIntrcn;
         this.registSeCode = registSeCode;
         this.tmplatId = tmplatId;
-        this.useAt = useAt == null ? "Y" : useAt;
+        this.useAt = useAt;
         this.frstRegisterId = frstRegisterId;
     }
 
-    public void update(String cmmntyNm, String cmmntyIntrcn, String tmplatId, String lastUpdusrId) {
+    public void update(String cmmntyNm, String cmmntyIntrcn, String tmplatId, String useAt, String lastUpdusrId) {
         this.cmmntyNm = cmmntyNm;
         this.cmmntyIntrcn = cmmntyIntrcn;
         this.tmplatId = tmplatId;
+        this.useAt = useAt;
         this.lastUpdusrId = lastUpdusrId;
     }
 

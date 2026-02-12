@@ -31,9 +31,6 @@ public class EgovTemplateManageServiceImpl extends EgovAbstractServiceImpl imple
     @Resource(name = "commonTemplateRepository")
     private TemplateRepository templateRepository;
 
-    @Resource(name = "TemplateManageDAO")
-    private TemplateManageDAO tmplatDAO;
-
     /**
      * 템플릿 정보를 삭제한다.
      */
@@ -141,6 +138,14 @@ public class EgovTemplateManageServiceImpl extends EgovAbstractServiceImpl imple
         return templateRepository.findByTmplatSeCodeAndUseAt(tmplatInfVO.getTmplatSeCode(), "Y").stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 템플릿에 대한 미리보기 정보를 조회한다.
+     */
+    @Override
+    public TemplateInfVO selectTemplatePreview(TemplateInfVO tmplatInfVO) throws Exception {
+        return selectTemplateInf(tmplatInfVO);
     }
 
     private TemplateInfVO toVO(Template entity) {

@@ -61,6 +61,16 @@ public class LeaderSchdul implements Serializable {
 	private String lastUpdusrId = "";
 	/** 최종수정시점 */
 	private String lastUpdusrPnttm = "";
+	/** 일정중요도코드 */
+	private String schdulIpcrCode;
+
+	public String getSchdulIpcrCode() {
+		return schdulIpcrCode;
+	}
+
+	public void setSchdulIpcrCode(String schdulIpcrCode) {
+		this.schdulIpcrCode = schdulIpcrCode;
+	}
 
 	/** 일정시작일자(시간) */
 	private String schdulBgndeHH = "";

@@ -124,7 +124,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 						.ablEnnc(row.get("stopSelt"))
 						.changede(row.get("chgDe"))
 						.bsisDe(row.get("baseDate"))
-						.frstRegisterId("System Batch")
+						.createdBy("System Batch")
 						.build());
 			}
 		}
@@ -159,7 +159,8 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 		conn.setRequestProperty("Content-Type", "application/json");
 		try {
 			if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-				JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+				JsonNode jsonObject = OBJECT_MAPPER
+						.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
 				JsonNode jsonArray = jsonObject.get("StanOrgCd");
 				JsonNode headObject = jsonArray.get(0);
 				JsonNode headArray = headObject.get("head");
@@ -183,7 +184,8 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 			conn.setRequestProperty("Content-Type", "application/json");
 			try {
 				if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-					JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+					JsonNode jsonObject = OBJECT_MAPPER
+							.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
 					JsonNode jsonArray = jsonObject.get("StanOrgCd");
 					JsonNode bodyObject = jsonArray.get(1);
 					JsonNode row = bodyObject.get("row");

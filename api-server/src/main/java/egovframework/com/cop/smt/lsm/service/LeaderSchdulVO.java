@@ -222,4 +222,8 @@ public class LeaderSchdulVO extends LeaderSchdul {
 		this.searchKeywordEx = searchKeywordEx;
 	}
 
+	public String getSearchWrd() {
+		return searchKeyword;
+	}
+
 }
