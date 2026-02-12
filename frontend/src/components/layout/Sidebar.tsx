@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import axios from '@/lib/api/client';
@@ -69,15 +69,22 @@ const Sidebar = () => {
     const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
     const [parentMenuName, setParentMenuName] = useState('');
 
+    // Optimize: Memoize menuNo to prevent redundant API calls on route changes within same section
+    const menuNo = useMemo(() => {
+        if (pathname.includes('/survey')) return 3000000;
+        if (pathname.includes('/cop')) return 2000000;
+        return 0;
+    }, [pathname]);
+
     useEffect(() => {
         const fetchLeftMenus = async () => {
-            let menuNo = 0;
-            if (pathname.includes('/survey')) {
-                menuNo = 3000000;
+            // Update parent menu name based on active menu number
+            if (menuNo === 3000000) {
                 setParentMenuName('협업');
-            } else if (pathname.includes('/cop')) {
-                menuNo = 2000000;
+            } else if (menuNo === 2000000) {
                 setParentMenuName('알림');
+            } else {
+                setParentMenuName('');
             }
 
             if (menuNo > 0) {
@@ -95,7 +102,7 @@ const Sidebar = () => {
         };
 
         fetchLeftMenus();
-    }, [pathname]);
+    }, [menuNo]);
 
     if (pathname === '/' || pathname === '/login' || leftMenus.length === 0) {
         return null;
