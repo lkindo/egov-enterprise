@@ -27,13 +27,13 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
                 .orderBy(restde.restdeDe.desc())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(restde.count())
                 .from(restde)
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+        return new PageImpl<>(content, pageable, total != null ? total.longValue() : 0L);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

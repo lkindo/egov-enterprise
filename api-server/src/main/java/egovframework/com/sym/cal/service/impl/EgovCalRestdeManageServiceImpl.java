@@ -39,13 +39,53 @@ import org.springframework.transaction.annotation.Transactional;
 @Service("RestdeManageService")
 public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl implements EgovCalRestdeManageService {
 
-    @Resource
-    private RestdeRepository restdeRepository;
+	@Resource
+	private RestdeRepository restdeRepository;
 
-    @Resource(name="RestdeManageDAO")
-    private RestdeManageDAO restdeManageDAO;
+	@Resource(name = "RestdeManageDAO")
+	private RestdeManageDAO restdeManageDAO;
 
-    /**
+	@Override
+	public List<EgovMap> selectNormalRestdePopup(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectAdministRestdePopup(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectNormalDayCal(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectNormalDayRestde(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectNormalMonthRestde(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectAdministDayCal(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<EgovMap> selectAdministDayRestde(Restde restde) throws Exception {
+		return null;
+	}
+
+	@Override
+	public List<?> selectAdministMonthRestde(Restde restde) throws Exception {
+		return null;
+	}
+
+	/**
 	 * 휴일을 삭제한다.
 	 */
 	@Override
@@ -60,14 +100,14 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	@Override
 	@Transactional
 	public void insertRestde(Restde restde) throws Exception {
-        com.company.project.domain.calendar.Restde entity = com.company.project.domain.calendar.Restde.builder()
-                .restdeDe(restde.getRestdeDe())
-                .restdeNm(restde.getRestdeNm())
-                .restdeDc(restde.getRestdeDc())
-                .restdeSeCode(restde.getRestdeSeCode())
-                .frstRegisterId(restde.getFrstRegisterId())
-                .build();
-    	restdeRepository.save(entity);
+		com.company.project.domain.calendar.Restde entity = com.company.project.domain.calendar.Restde.builder()
+				.restdeDe(restde.getRestdeDe())
+				.restdeNm(restde.getRestdeNm())
+				.restdeDc(restde.getRestdeDc())
+				.restdeSeCode(restde.getRestdeSeCode())
+				.frstRegisterId(restde.getFrstRegisterId())
+				.build();
+		restdeRepository.save(entity);
 	}
 
 	/**
@@ -75,16 +115,16 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public Restde selectRestdeDetail(Restde restde) throws Exception {
-    	return restdeRepository.findById(restde.getRestdeNo())
-                .map(entity -> {
-                    Restde vo = new Restde();
-                    vo.setRestdeNo(entity.getRestdeNo());
-                    vo.setRestdeDe(entity.getRestdeDe());
-                    vo.setRestdeNm(entity.getRestdeNm());
-                    vo.setRestdeDc(entity.getRestdeDc());
-                    vo.setRestdeSeCode(entity.getRestdeSeCode());
-                    return vo;
-                }).orElse(null);
+		return restdeRepository.findById(restde.getRestdeNo())
+				.map(entity -> {
+					Restde vo = new Restde();
+					vo.setRestdeNo(entity.getRestdeNo());
+					vo.setRestdeDe(entity.getRestdeDe());
+					vo.setRestdeNm(entity.getRestdeNm());
+					vo.setRestdeDc(entity.getRestdeDc());
+					vo.setRestdeSeCode(entity.getRestdeSeCode());
+					return vo;
+				}).orElse(null);
 	}
 
 	/**
@@ -92,22 +132,22 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public List<EgovMap> selectRestdeList(RestdeVO searchVO) throws Exception {
-        Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
-                searchVO.getRecordCountPerPage());
-        
-        Page<com.company.project.domain.calendar.Restde> page = restdeRepository.searchRestde(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
-        
-        // Convert to EgovMap for legacy compatibility
-        return page.getContent().stream().map(entity -> {
-            EgovMap map = new EgovMap();
-            map.put("restdeNo", entity.getRestdeNo());
-            map.put("restdeDe", entity.getRestdeDe());
-            map.put("restdeNm", entity.getRestdeNm());
-            map.put("restdeDc", entity.getRestdeDc());
-            map.put("restdeSeCode", entity.getRestdeSeCode());
-            return map;
-        }).collect(java.util.stream.Collectors.toList());
+		Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
+				searchVO.getRecordCountPerPage());
+
+		Page<com.company.project.domain.calendar.Restde> page = restdeRepository.searchRestde(
+				searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+
+		// Convert to EgovMap for legacy compatibility
+		return page.getContent().stream().map(entity -> {
+			EgovMap map = new EgovMap();
+			map.put("restdeNo", entity.getRestdeNo());
+			map.put("restdeDe", entity.getRestdeDe());
+			map.put("restdeNm", entity.getRestdeNm());
+			map.put("restdeDc", entity.getRestdeDc());
+			map.put("restdeSeCode", entity.getRestdeSeCode());
+			return map;
+		}).collect(java.util.stream.Collectors.toList());
 	}
 
 	/**
@@ -115,9 +155,9 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public int selectRestdeListTotCnt(RestdeVO searchVO) throws Exception {
-        Pageable pageable = PageRequest.of(0, 1);
-        return (int) restdeRepository.searchRestde(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
+		Pageable pageable = PageRequest.of(0, 1);
+		return (int) restdeRepository.searchRestde(
+				searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
 	}
 
 	/**
@@ -127,9 +167,9 @@ public class EgovCalRestdeManageServiceImpl extends EgovAbstractServiceImpl impl
 	@Transactional
 	public void updateRestde(Restde restde) throws Exception {
 		restdeRepository.findById(restde.getRestdeNo()).ifPresent(entity -> {
-            entity.update(restde.getRestdeDe(), restde.getRestdeNm(), 
-                    restde.getRestdeDc(), restde.getRestdeSeCode(), restde.getLastUpdusrId());
-        });
+			entity.update(restde.getRestdeDe(), restde.getRestdeNm(),
+					restde.getRestdeDc(), restde.getRestdeSeCode(), restde.getLastUpdusrId());
+		});
 	}
 
 }

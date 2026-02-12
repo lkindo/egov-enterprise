@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 /**
  * 게시판 마스터 JPA Repository
  */
+import java.util.List;
+
 @Repository
 public interface BoardMasterRepository extends JpaRepository<BoardMaster, String>, BoardMasterRepositoryCustom {
+    List<BoardMaster> findByCmmntyIdAndUseAt(String cmmntyId, String useAt);
 }

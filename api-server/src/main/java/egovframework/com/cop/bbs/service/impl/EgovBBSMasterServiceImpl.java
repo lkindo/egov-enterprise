@@ -3,51 +3,38 @@ package egovframework.com.cop.bbs.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import jakarta.annotation.Resource;
+
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.cmmn.exception.FdlException;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.cmm.EgovComponentChecker;
+import com.company.project.service.board.EgovBoardMasterService;
+import com.company.project.service.board.dto.BlogDto;
+import com.company.project.service.board.dto.BoardMasterDto;
+
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cop.bbs.service.Blog;
 import egovframework.com.cop.bbs.service.BlogUser;
-import egovframework.com.cop.bbs.service.BlogUserVO;
 import egovframework.com.cop.bbs.service.BlogVO;
 import egovframework.com.cop.bbs.service.BoardMaster;
 import egovframework.com.cop.bbs.service.BoardMasterVO;
 import egovframework.com.cop.bbs.service.EgovBBSMasterService;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
-import jakarta.annotation.Resource;
 
 /**
- * <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일			수정자		수정내용
- *  -------			--------	---------------------------
- *   2024.10.29		inganyoyo	Controller는 Transaction 처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
- * </pre>
+ * 게시판 마스터 관리를 위한 서비스 구현 클래스 (JPA 전환 버전)
  */
-
 @Service("EgovBBSMasterService")
 @org.springframework.context.annotation.Lazy
 public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements EgovBBSMasterService {
 
-	@Resource(name = "EgovBBSMasterDAO")
-	private EgovBBSMasterDAO egovBBSMasterDao;
-
-	@Resource(name = "egovBBSMstrIdGnrService")
-	private EgovIdGnrService idgenService;
-
-	// ---------------------------------
-	// 2009.06.26 : 2단계 기능 추가
-	// ---------------------------------
-	@Resource(name = "BBSAddedOptionsDAO")
-	private BBSAddedOptionsDAO addedOptionsDAO;
-	//// -------------------------------
+	@Resource(name = "egovBoardMasterService")
+	private EgovBoardMasterService boardMasterService;
 
 	@Resource(name = "egovBlogIdGnrService")
 	private EgovIdGnrService idgenServiceBlog;
@@ -57,182 +44,191 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 
 	@Override
 	public Map<String, Object> selectNotUsedBdMstrList(BoardMasterVO boardMasterVO) {
-		List<BoardMasterVO> result = egovBBSMasterDao.selectNotUsedBdMstrList(boardMasterVO);
-		int cnt = egovBBSMasterDao.selectNotUsedBdMstrListCnt(boardMasterVO);
+		Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
+				boardMasterVO.getSearchWrd(),
+				PageRequest.of(boardMasterVO.getFirstIndex() / boardMasterVO.getRecordCountPerPage(),
+						boardMasterVO.getRecordCountPerPage()));
 
 		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
+		map.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+		map.put("resultCnt", Long.toString(page.getTotalElements()));
 		return map;
 	}
 
 	@Override
 	public void deleteBBSMasterInf(BoardMaster boardMaster) {
-		egovBBSMasterDao.deleteBBSMaster(boardMaster);
+		boardMasterService.deleteBoardMaster(boardMaster.getBbsId(), boardMaster.getLastUpdusrId());
 	}
 
 	@Override
 	public void updateBBSMasterInf(BoardMaster boardMaster) throws Exception {
-		egovBBSMasterDao.updateBBSMaster(boardMaster);
-
-		// ---------------------------------
-		// 2009.06.26 : 2단계 기능 추가
-		// ---------------------------------
-		if (boardMaster.getOption().equals("comment") || boardMaster.getOption().equals("stsfdg")) {
-			addedOptionsDAO.insertAddedOptionsInf(boardMaster);
-		}
-
+		BoardMasterDto dto = toDto(boardMaster);
+		boardMasterService.updateBoardMaster(dto);
 	}
 
 	@Override
 	public BoardMasterVO selectBBSMasterInf(BoardMasterVO boardMasterVO) throws Exception {
-		BoardMasterVO resultVO = egovBBSMasterDao.selectBBSMasterDetail(boardMasterVO);
-		if (resultVO == null) {
-			throw processException("info.nodata.msg");
-		}
-
-		if (EgovComponentChecker.hasComponent("EgovBBSCommentService")
-				|| EgovComponentChecker.hasComponent("EgovBBSSatisfactionService")) {// 2011.09.15
-			BoardMasterVO options = addedOptionsDAO.selectAddedOptionsInf(boardMasterVO);
-
-			if (options != null) {
-				if (options.getCommentAt().equals("Y")) {
-					resultVO.setOption("comment");
-				}
-
-				if (options.getStsfdgAt().equals("Y")) {
-					resultVO.setOption("stsfdg");
-				}
-			} else {
-				resultVO.setOption("na"); // 미지정 상태로 수정 가능 (이미 지정된 경우는 수정 불가로 처리)
-			}
-		}
-
-		return resultVO;
+		BoardMasterDto dto = boardMasterService.getBoardMaster(boardMasterVO.getBbsId());
+		return toVO(dto);
 	}
 
 	@Override
 	public Map<String, Object> selectBBSMasterInfs(BoardMasterVO boardMasterVO) {
-		List<BoardMasterVO> result = egovBBSMasterDao.selectBBSMasterInfs(boardMasterVO);
-		int cnt = egovBBSMasterDao.selectBBSMasterInfsCnt(boardMasterVO);
+		Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(boardMasterVO.getSearchCnd(),
+				boardMasterVO.getSearchWrd(),
+				PageRequest.of(boardMasterVO.getFirstIndex() / boardMasterVO.getRecordCountPerPage(),
+						boardMasterVO.getRecordCountPerPage()));
 
 		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
+		map.put("resultList", page.getContent().stream().map(this::toVO).collect(Collectors.toList()));
+		map.put("resultCnt", Long.toString(page.getTotalElements()));
 		return map;
 	}
 
 	@Override
 	public Map<String, Object> selectBlogMasterInfs(BoardMasterVO boardMasterVO) {
-		List<BlogVO> result = egovBBSMasterDao.selectBlogMasterInfs(boardMasterVO);
-		int cnt = egovBBSMasterDao.selectBlogMasterInfsCnt(boardMasterVO);
+		Page<BlogDto> page = boardMasterService.getBlogList(boardMasterVO.getSearchCnd(), boardMasterVO.getSearchWrd(),
+				PageRequest.of(boardMasterVO.getFirstIndex() / boardMasterVO.getRecordCountPerPage(),
+						boardMasterVO.getRecordCountPerPage()));
 
 		Map<String, Object> map = new HashMap<>();
-
-		map.put("resultList", result);
-		map.put("resultCnt", Integer.toString(cnt));
-
+		map.put("resultList", page.getContent().stream().map(this::toBlogVO).collect(Collectors.toList()));
+		map.put("resultCnt", Long.toString(page.getTotalElements()));
 		return map;
 	}
 
 	@Override
 	public void insertBBSMasterInf(BoardMaster boardMaster) throws Exception {
-
-		// 2021 github 반영
-		// String bbsId = idgenService.getNextStringId();
-		// 게시판 ID 채번
-		String bbsId = idgenService.getNextStringId() + RandomStringUtils.secure().nextAlphabetic(10);
-		boardMaster.setBbsId(bbsId);
-
-		egovBBSMasterDao.insertBBSMasterInf(boardMaster);
-
-		// ---------------------------------
-		// 2009.06.26 : 2단계 기능 추가
-		// ---------------------------------
-		if (boardMaster.getOption().equals("comment") || boardMaster.getOption().equals("stsfdg")) {
-			addedOptionsDAO.insertAddedOptionsInf(boardMaster);
-		}
-
+		BoardMasterDto dto = toDto(boardMaster);
+		boardMasterService.createBoardMaster(dto);
 	}
 
 	@Override
 	public String checkBlogUser(BlogVO blogVO) {
-
-		int userCnt = egovBBSMasterDao.checkExistUser(blogVO);
-
-		if (userCnt == 0) {
-			return "";
-		} else {
-			return "EXIST";
-		}
+		boolean exists = boardMasterService.checkBlogUser(blogVO.getFrstRegisterId());
+		return exists ? "EXIST" : "";
 	}
 
 	@Override
 	public BlogVO checkBlogUser2(BlogVO blogVO) {
-		BlogVO userBlog = egovBBSMasterDao.checkExistUser2(blogVO);
-		return userBlog;
+		BlogDto dto = boardMasterService.getBlog(blogVO.getBlogId());
+		return toBlogVO(dto);
 	}
 
 	@Override
 	public void insertBoardBlogUserRqst(BlogUser blogUser) {
-		egovBBSMasterDao.insertBoardBlogUserRqst(blogUser);
+		boardMasterService.joinBlog(blogUser.getBlogId(), blogUser.getEmplyrId(), blogUser.getMngrAt());
 	}
 
 	@Override
 	public void insertBlogMaster(Blog blog) throws FdlException {
-		egovBBSMasterDao.insertBlogMaster(blog);
+		BlogDto dto = toBlogDto(blog);
+		boardMasterService.createBlog(dto);
 	}
 
 	@Override
 	public void insertBlogMasterAndBoardBlogUserRqst(Blog blog, LoginVO user) throws Exception {
+		String blogId = idgenServiceBlog.getNextStringId();
+		String bbsId = idgenServiceBbs.getNextStringId();
 
-		String blogId = idgenServiceBlog.getNextStringId(); // 블로그 아이디 채번
-		String bbsId = idgenServiceBbs.getNextStringId(); // 게시판 아이디 채번
-
-		blog.setRegistSeCode("REGC02");
-		blog.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		blog.setBbsId(bbsId);
 		blog.setBlogId(blogId);
+		blog.setBbsId(bbsId);
+		blog.setFrstRegisterId(user != null ? user.getUniqId() : "");
 		blog.setBlogAt("Y");
 
-		// 블로그 개설자의 정보를 등록한다.
-		// 2022.11.11 시큐어코딩 처리
-		BlogUserVO blogUserVO = new BlogUserVO();
-		blogUserVO.setBlogId(blogId);
-		blogUserVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		blogUserVO.setMngrAt("Y");
-		blogUserVO.setMberSttus("P");
-		blogUserVO.setUseAt("Y");
-		blogUserVO.setFrstRegisterId(
-				user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		// 블로그 정보와 개설자 정보 등록한다
-		// Controller는 Transaction처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
-
 		this.insertBlogMaster(blog);
-		this.insertBoardBlogUserRqst(blogUserVO);
+		this.boardMasterService.joinBlog(blogId, user != null ? user.getUniqId() : "", "Y");
 	}
 
 	@Override
 	public BlogVO selectBlogDetail(BlogVO blogVO) throws Exception {
-		BlogVO resultVO = egovBBSMasterDao.selectBlogDetail(blogVO);
-		if (resultVO == null) {
-			throw processException("info.nodata.msg");
-		}
-		return resultVO;
+		BlogDto dto = boardMasterService.getBlog(blogVO.getBlogId());
+		return toBlogVO(dto);
 	}
 
 	@Override
 	public List<BlogVO> selectBlogListPortlet(BlogVO blogVO) throws Exception {
-		return egovBBSMasterDao.selectBlogListPortlet(blogVO);
+		return boardMasterService.getBlogListPortlet().stream().map(this::toBlogVO).collect(Collectors.toList());
 	}
 
 	@Override
 	public List<BoardMasterVO> selectBBSListPortlet(BoardMasterVO boardMasterVO) throws Exception {
-		return egovBBSMasterDao.selectBBSListPortlet(boardMasterVO);
+		return boardMasterService.getBoardMasterListPortlet().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
+	private BoardMasterVO toVO(BoardMasterDto dto) {
+		if (dto == null)
+			return null;
+		BoardMasterVO vo = new BoardMasterVO();
+		vo.setBbsId(dto.getBbsId());
+		vo.setBbsNm(dto.getBbsNm());
+		vo.setBbsIntrcn(dto.getBbsIntrcn());
+		vo.setBbsTyCode(dto.getBbsTyCode());
+		vo.setTmplatId(dto.getTmplatId());
+		vo.setUseAt(dto.getUseAt());
+		vo.setReplyPosblAt(dto.getReplyPosblAt());
+		vo.setFileAtchPosblAt(dto.getFileAtchPosblAt());
+		vo.setAtchPosblFileNumber(dto.getAtchPosblFileNumber());
+		vo.setAtchPosblFileSize(dto.getAtchPosblFileSize() != null ? dto.getAtchPosblFileSize().toString() : "");
+		vo.setCmmntyId(dto.getCmmntyId());
+		vo.setBlogId(dto.getBlogId());
+		vo.setCommentAt("Y".equals(dto.getCommentAt()) ? "comment" : "");
+		vo.setStsfdgAt("Y".equals(dto.getStsfdgAt()) ? "stsfdg" : "");
+		return vo;
+	}
+
+	private BoardMasterDto toDto(BoardMaster vo) {
+		if (vo == null)
+			return null;
+		return BoardMasterDto.builder()
+				.bbsId(vo.getBbsId())
+				.bbsNm(vo.getBbsNm())
+				.bbsIntrcn(vo.getBbsIntrcn())
+				.bbsTyCode(vo.getBbsTyCode())
+				.tmplatId(vo.getTmplatId())
+				.useAt(vo.getUseAt())
+				.replyPosblAt(vo.getReplyPosblAt())
+				.fileAtchPosblAt(vo.getFileAtchPosblAt())
+				.atchPosblFileNumber(vo.getAtchPosblFileNumber())
+				.atchPosblFileSize(vo.getAtchPosblFileSize() != null && !vo.getAtchPosblFileSize().isEmpty()
+						? Long.parseLong(vo.getAtchPosblFileSize())
+						: 0L)
+				.frstRegisterId(vo.getFrstRegisterId())
+				.lastUpdusrId(vo.getLastUpdusrId())
+				.cmmntyId(vo.getCmmntyId())
+				.blogId(vo.getBlogId())
+				.blogAt(vo.getBlogAt())
+				.commentAt("comment".equals(vo.getOption()) ? "Y" : "N")
+				.stsfdgAt("stsfdg".equals(vo.getOption()) ? "Y" : "N")
+				.build();
+	}
+
+	private BlogVO toBlogVO(BlogDto dto) {
+		if (dto == null)
+			return null;
+		BlogVO vo = new BlogVO();
+		vo.setBlogId(dto.getBlogId());
+		vo.setBbsId(dto.getBbsId());
+		vo.setBlogNm(dto.getBlogNm());
+		vo.setBlogIntrcn(dto.getBlogIntrcn());
+		vo.setUseAt(dto.getUseAt());
+		vo.setFrstRegisterId(dto.getFrstRegisterId());
+		return vo;
+	}
+
+	private BlogDto toBlogDto(Blog vo) {
+		if (vo == null)
+			return null;
+		return BlogDto.builder()
+				.blogId(vo.getBlogId())
+				.bbsId(vo.getBbsId())
+				.blogNm(vo.getBlogNm())
+				.blogIntrcn(vo.getBlogIntrcn())
+				.registSeCode(vo.getRegistSeCode())
+				.tmplatId(vo.getTmplatId())
+				.useAt(vo.getUseAt())
+				.frstRegisterId(vo.getFrstRegisterId())
+				.blogAt(vo.getBlogAt())
+				.build();
+	}
 }

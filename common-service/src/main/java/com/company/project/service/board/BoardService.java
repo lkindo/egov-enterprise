@@ -2,8 +2,8 @@ package com.company.project.service.board;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
+import com.company.project.domain.board.Board;
 import com.company.project.domain.board.BoardDetailResult;
-import com.company.project.domain.board.BoardSearchResult;
 import com.company.project.domain.board.BoardId;
 import com.company.project.domain.board.BoardMaster;
 import com.company.project.domain.board.BoardMasterRepository;

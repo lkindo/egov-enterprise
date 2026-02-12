@@ -17,19 +17,19 @@ public class MemoTodo extends BaseTimeEntity {
     private String todoId;
 
     @Column(name = "TODO_SJ", length = 255, nullable = false)
-    private String todoSubject;
+    private String todoNm;
 
     @Column(name = "TODO_CN", length = 2500)
     private String todoCn;
 
     @Column(name = "TODO_BEGIN_TIME", length = 20)
-    private String beginTime;
+    private String todoBeginTime;
 
     @Column(name = "TODO_END_TIME", length = 20)
-    private String endTime;
+    private String todoEndTime;
 
     @Column(name = "WRTER_ID", length = 20, nullable = false)
-    private String writerId;
+    private String wrterId;
 
     @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
     private String frstRegisterId;
@@ -37,11 +37,11 @@ public class MemoTodo extends BaseTimeEntity {
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
-    public void update(String todoSubject, String todoCn, String beginTime, String endTime, String lastUpdusrId) {
-        this.todoSubject = todoSubject;
+    public void update(String todoNm, String todoBeginTime, String todoEndTime, String todoCn, String lastUpdusrId) {
+        this.todoNm = todoNm;
+        this.todoBeginTime = todoBeginTime;
+        this.todoEndTime = todoEndTime;
         this.todoCn = todoCn;
-        this.beginTime = beginTime;
-        this.endTime = endTime;
         this.lastUpdusrId = lastUpdusrId;
     }
 }

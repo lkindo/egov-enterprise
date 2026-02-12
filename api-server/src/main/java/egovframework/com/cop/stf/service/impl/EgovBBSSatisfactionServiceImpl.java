@@ -3,73 +3,45 @@ package egovframework.com.cop.stf.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import jakarta.annotation.Resource;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.cop.bbs.service.BoardMaster;
-import egovframework.com.cop.bbs.service.BoardMasterVO;
+import com.company.project.service.board.EgovBoardMasterService;
+import com.company.project.service.board.EgovSatisfactionService;
+import com.company.project.service.board.dto.BoardMasterDto;
+import com.company.project.service.board.dto.SatisfactionDto;
+
 import egovframework.com.cop.bbs.service.EgovBBSSatisfactionService;
 import egovframework.com.cop.bbs.service.Satisfaction;
 import egovframework.com.cop.bbs.service.SatisfactionVO;
-import egovframework.com.cop.bbs.service.impl.BBSAddedOptionsDAO;
-import jakarta.annotation.Resource;
 
 /**
- * 만족도조사를 위한 서비스 구현 클래스
- * 
- * @author 공통컴포넌트개발팀 한성곤
- * @since 2009.06.29
- * @version 1.0
- * @see
- *
- *      <pre>
- * << 개정이력(Modification Information) >>
- *
- *   수정일      수정자           수정내용
- *  -------    --------    ---------------------------
- *   2009.06.29  한성곤          최초 생성
- *   2011.09.15  서준식          addedOptions 적용 방법 수정
- *   2011.10.18  서준식          StsfdgNo 자동 생성 방식으로 변경
- *      </pre>
+ * 만족도조사를 위한 서비스 구현 클래스 (JPA 전환 버전)
  */
 @Service("EgovBBSSatisfactionService")
 @org.springframework.context.annotation.Lazy
 public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl implements EgovBBSSatisfactionService {
 
-    @Resource(name = "BBSAddedOptionsDAO")
-    private BBSAddedOptionsDAO addedOptionsDAO;
+    @Resource(name = "egovSatisfactionService")
+    private EgovSatisfactionService satisfactionService;
 
-    @Resource(name = "BBSSatisfactionDAO")
-    private BBSSatisfactionDAO bbsSatisfactionDAO;
-
-    @Resource(name = "egovStsfdgNoGnrService")
-    private EgovIdGnrService egovStsfdgNoGnrService;
+    @Resource(name = "egovBoardMasterService")
+    private EgovBoardMasterService boardMasterService;
 
     /**
      * 만족도조사 사용 가능 여부를 확인한다.
      */
     @Override
     public boolean canUseSatisfaction(String bbsId) throws Exception {
-        // String flag = EgovProperties.getProperty("Globals.addedOptions");
-        // if (flag != null && flag.trim().equalsIgnoreCase("true")) {//2011.09.15
-        BoardMaster vo = new BoardMaster();
-
-        vo.setBbsId(bbsId);
-
-        BoardMasterVO options = addedOptionsDAO.selectAddedOptionsInf(vo);
-
+        BoardMasterDto options = boardMasterService.getBoardMaster(bbsId);
         if (options == null) {
             return false;
         }
-
-        if (options.getStsfdgAt().equals("Y")) {
-            return true;
-        }
-        // }
-
-        return false;
+        return "Y".equals(options.getStsfdgAt());
     }
 
     /**
@@ -77,15 +49,15 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public Map<String, Object> selectSatisfactionList(SatisfactionVO satisfactionVO) throws Exception {
-        List<SatisfactionVO> result = bbsSatisfactionDAO.selectSatisfactionList(satisfactionVO);
-        int cnt = bbsSatisfactionDAO.selectSatisfactionListCnt(satisfactionVO);
-        float summary = bbsSatisfactionDAO.getSummary(satisfactionVO);
+        List<SatisfactionDto> list = satisfactionService.getSatisfactionList(satisfactionVO.getNttId(),
+                satisfactionVO.getBbsId());
+        Double summary = satisfactionService.getAverageSatisfaction(satisfactionVO.getNttId(),
+                satisfactionVO.getBbsId());
 
         Map<String, Object> map = new HashMap<>();
-
-        map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
-        map.put("summary", Float.toString(summary));
+        map.put("resultList", list.stream().map(this::toVO).collect(Collectors.toList()));
+        map.put("resultCnt", Integer.toString(list.size()));
+        map.put("summary", summary != null ? summary.toString() : "0.0");
 
         return map;
     }
@@ -95,9 +67,8 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public void insertSatisfaction(Satisfaction satisfaction) throws Exception {
-
-        satisfaction.setStsfdgNo(egovStsfdgNoGnrService.getNextLongId() + "");// 2011.10.18
-        bbsSatisfactionDAO.insertSatisfaction(satisfaction);
+        SatisfactionDto dto = toDto(satisfaction);
+        satisfactionService.registerSatisfaction(dto);
     }
 
     /**
@@ -105,7 +76,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public void deleteSatisfaction(SatisfactionVO satisfactionVO) throws Exception {
-        bbsSatisfactionDAO.deleteSatisfaction(satisfactionVO);
+        satisfactionService.deleteSatisfaction(Long.parseLong(satisfactionVO.getStsfdgNo()));
     }
 
     /**
@@ -113,7 +84,8 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public Satisfaction selectSatisfaction(SatisfactionVO satisfactionVO) throws Exception {
-        return bbsSatisfactionDAO.selectSatisfaction(satisfactionVO);
+        SatisfactionDto dto = satisfactionService.getSatisfaction(Long.parseLong(satisfactionVO.getStsfdgNo()));
+        return toVO(dto);
     }
 
     /**
@@ -121,7 +93,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public void updateSatisfaction(Satisfaction satisfaction) throws Exception {
-        bbsSatisfactionDAO.updateSatisfaction(satisfaction);
+        satisfactionService.updateSatisfaction(toDto(satisfaction));
     }
 
     /**
@@ -129,6 +101,41 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
      */
     @Override
     public String getSatisfactionPassword(Satisfaction satisfaction) throws Exception {
-        return bbsSatisfactionDAO.getSatisfactionPassword(satisfaction);
+        SatisfactionDto dto = satisfactionService.getSatisfaction(Long.parseLong(satisfaction.getStsfdgNo()));
+        return dto != null ? dto.getSatisfactionPassword() : "";
+    }
+
+    private SatisfactionVO toVO(SatisfactionDto dto) {
+        if (dto == null)
+            return null;
+        SatisfactionVO vo = new SatisfactionVO();
+        vo.setStsfdgNo(dto.getSatisfactionId() != null ? dto.getSatisfactionId().toString() : "");
+        vo.setNttId(dto.getArticleId());
+        vo.setBbsId(dto.getBoardId());
+        vo.setWrterId(dto.getWriterId());
+        vo.setWrterNm(dto.getWriterNm());
+        vo.setStsfdg(dto.getSatisfactionLevel());
+        vo.setStsfdgCn(dto.getSatisfactionOpinion());
+        vo.setStsfdgPassword(dto.getSatisfactionPassword());
+        vo.setUseAt(dto.getUseAt());
+        return vo;
+    }
+
+    private SatisfactionDto toDto(Satisfaction vo) {
+        if (vo == null)
+            return null;
+        return SatisfactionDto.builder()
+                .satisfactionId(
+                        vo.getStsfdgNo() != null && !vo.getStsfdgNo().isEmpty() ? Long.parseLong(vo.getStsfdgNo())
+                                : null)
+                .articleId(vo.getNttId())
+                .boardId(vo.getBbsId())
+                .writerId(vo.getWrterId())
+                .writerNm(vo.getWrterNm())
+                .satisfactionLevel(vo.getStsfdg())
+                .satisfactionOpinion(vo.getStsfdgCn())
+                .satisfactionPassword(vo.getStsfdgPassword())
+                .useAt(vo.getUseAt())
+                .build();
     }
 }

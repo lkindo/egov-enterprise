@@ -1,39 +1,14 @@
 package com.company.project.web.adapter;
 
 import com.company.project.service.community.dto.CommunityDto;
-import com.company.project.service.community.dto.CommunityUserDto;
-
 import egovframework.com.cop.cmy.service.Community;
-import egovframework.com.cop.cmy.service.CommunityUser;
 import egovframework.com.cop.cmy.service.CommunityVO;
-import egovframework.com.cop.cmy.service.CommunityUserVO;
 
 public class CommunityAdapter {
-
-    public static CommunityVO toVO(CommunityDto dto) {
-        if (dto == null)
-            return null;
-
-        CommunityVO vo = new CommunityVO();
-        vo.setCmmntyId(dto.getCmmntyId());
-        vo.setCmmntyNm(dto.getCmmntyNm());
-        vo.setCmmntyIntrcn(dto.getCmmntyIntrcn());
-        vo.setRegistSeCode(dto.getRegistSeCode());
-        vo.setTmplatId(dto.getTmplatId());
-        vo.setUseAt(dto.getUseAt());
-        vo.setFrstRegisterId(dto.getFrstRegisterId());
-
-        if (dto.getFrstRegisterPnttm() != null) {
-            vo.setFrstRegisterPnttm(dto.getFrstRegisterPnttm().toString());
-        }
-
-        return vo;
-    }
 
     public static CommunityDto toDto(CommunityVO vo) {
         if (vo == null)
             return null;
-
         return CommunityDto.builder()
                 .cmmntyId(vo.getCmmntyId())
                 .cmmntyNm(vo.getCmmntyNm())
@@ -45,73 +20,49 @@ public class CommunityAdapter {
                 .build();
     }
 
-    public static CommunityDto toDto(Community legacyCommunity) {
-        if (legacyCommunity == null)
+    public static CommunityDto toDto(Community community) {
+        if (community == null)
             return null;
-
         return CommunityDto.builder()
-                .cmmntyId(legacyCommunity.getCmmntyId())
-                .cmmntyNm(legacyCommunity.getCmmntyNm())
-                .cmmntyIntrcn(legacyCommunity.getCmmntyIntrcn())
-                .registSeCode(legacyCommunity.getRegistSeCode())
-                .tmplatId(legacyCommunity.getTmplatId())
-                .useAt(legacyCommunity.getUseAt())
-                .frstRegisterId(legacyCommunity.getFrstRegisterId())
+                .cmmntyId(community.getCmmntyId())
+                .cmmntyNm(community.getCmmntyNm())
+                .cmmntyIntrcn(community.getCmmntyIntrcn())
+                .registSeCode(community.getRegistSeCode())
+                .tmplatId(community.getTmplatId())
+                .useAt(community.getUseAt())
+                .frstRegisterId(community.getFrstRegisterId())
                 .build();
     }
 
-    public static CommunityUserVO toUserVO(CommunityUserDto dto) {
+    public static CommunityVO toVO(CommunityDto dto) {
         if (dto == null)
             return null;
-
-        CommunityUserVO vo = new CommunityUserVO();
+        CommunityVO vo = new CommunityVO();
         vo.setCmmntyId(dto.getCmmntyId());
-        vo.setEmplyrId(dto.getEmplyrId());
-        vo.setEmplyrNm(dto.getEmplyrNm());
-        vo.setMngrAt(dto.getMngrAt());
-        vo.setMberSttus(dto.getMberSttus());
+        vo.setCmmntyNm(dto.getCmmntyNm());
+        vo.setCmmntyIntrcn(dto.getCmmntyIntrcn());
+        vo.setRegistSeCode(dto.getRegistSeCode());
+        vo.setRegistSeCodeNm(dto.getRegistSeCodeNm());
+        vo.setTmplatId(dto.getTmplatId());
+        vo.setTmplatNm(dto.getTmplatNm());
         vo.setUseAt(dto.getUseAt());
-
-        if (dto.getFrstRegisterPnttm() != null) {
-            vo.setFrstRegisterPnttm(dto.getFrstRegisterPnttm().toString());
-        }
-
+        vo.setFrstRegisterId(dto.getFrstRegisterId());
+        vo.setFrstRegisterNm(dto.getFrstRegisterNm());
+        vo.setFrstRegisterPnttm(dto.getFrstRegisterPnttm());
         return vo;
     }
 
-    public static CommunityUserDto toUserDto(CommunityUserVO vo) {
-        if (vo == null)
+    public static egovframework.com.cop.cmy.service.CommunityUserVO toUserVO(
+            com.company.project.service.community.dto.CommunityUserDto dto) {
+        if (dto == null)
             return null;
-
-        return CommunityUserDto.builder()
-                .cmmntyId(vo.getCmmntyId())
-                .emplyrId(vo.getEmplyrId())
-                .mngrAt(vo.getMngrAt())
-                .mberSttus(vo.getMberSttus())
-                .useAt(vo.getUseAt())
-                .frstRegisterId(vo.getFrstRegisterId())
-                .build();
-    }
-
-    public static CommunityUserDto toUserDto(CommunityUser legacyUser) {
-        if (legacyUser == null)
-            return null;
-
-        return CommunityUserDto.builder()
-                .cmmntyId(legacyUser.getCmmntyId())
-                .emplyrId(legacyUser.getEmplyrId())
-                .mngrAt(legacyUser.getMngrAt())
-                .mberSttus(legacyUser.getMberSttus())
-                .useAt(legacyUser.getUseAt())
-                .frstRegisterId(legacyUser.getFrstRegisterId())
-                .build();
-    }
-
-    public static java.util.List<CommunityVO> toVOList(java.util.List<CommunityDto> dtoList) {
-        if (dtoList == null)
-            return null;
-        return dtoList.stream()
-                .map(CommunityAdapter::toVO)
-                .collect(java.util.stream.Collectors.toList());
+        egovframework.com.cop.cmy.service.CommunityUserVO vo = new egovframework.com.cop.cmy.service.CommunityUserVO();
+        vo.setCmmntyId(dto.getCmmntyId());
+        vo.setEmplyrId(dto.getEmplyrId());
+        vo.setEmplyrNm(dto.getEmplyrNm());
+        vo.setMberSttus(dto.getMberSttus());
+        vo.setSbscrbDe(dto.getSbscrbDe());
+        vo.setMngrAt(dto.getMngrAt());
+        return vo;
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.validation.Validator;
 
 import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.cmm.service.EgovProperties;
-import egovframework.com.sym.sym.bak.service.BackupOpert;
+import com.company.project.service.backup.dto.BackupOpertDto;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
@@ -18,14 +18,15 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
  * @author 김진만
  * @version 1.0
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == 개정이력(Modification Information) ==
  *
  *   수정일       수정자           수정내용
  *  -------     --------    ---------------------------
  *  2010.09.02   김진만     최초 생성
  *  2022.11.16   신용호     시큐어코딩 조치
- * </pre>
+ *      </pre>
  */
 @Component("backupOpertValidator")
 public class BackupOpertValidator implements Validator {
@@ -35,69 +36,72 @@ public class BackupOpertValidator implements Validator {
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see org.springframework.validation.Validator#supports(java.lang.Class)
 	 */
-    @Override
+	@Override
 	public boolean supports(Class<?> clazz) {
-        return BackupOpert.class.isAssignableFrom(clazz);
-     }
+		return BackupOpertDto.class.isAssignableFrom(clazz);
+	}
 
-    /*
-     * (non-Javadoc)
-     * @see org.springframework.validation.Validator#validate(java.lang.Object, org.springframework.validation.Errors)
-     */
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.springframework.validation.Validator#validate(java.lang.Object,
+	 * org.springframework.validation.Errors)
+	 */
 	@Override
 	public void validate(Object obj, Errors errors) {
 		// 배치프로그램으로 지정된 값이 파일로 존재하는지 검사한다.
-		BackupOpert backupOpert = (BackupOpert) obj;
+		BackupOpertDto backupOpert = (BackupOpertDto) obj;
 		File dir = null;
 		String srcDir = backupOpert.getBackupOrginlDrctry();
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 보안약점 조치 (2018-10-29, 윤창원)
 		dir = new File(SOURCE_BASE_DIRECTORY + EgovWebUtil.filePathBlackList(srcDir));
 		try {
 			if (!dir.exists()) {
-				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-			    "디렉토리 {0}이  존재하지 않습니다.");
-				return ;
+				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object[] { srcDir },
+						"디렉토리 {0}이  존재하지 않습니다.");
+				return;
 			}
 			if (!dir.isDirectory()) {
-				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-			    "본디렉토리 {0}이 디렉토리가 아닙니다.");
-				return ;
+				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object[] { srcDir },
+						"본디렉토리 {0}이 디렉토리가 아닙니다.");
+				return;
 			}
-		} catch (SecurityException  se) {
-			errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-		    " 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
-			return ;
+		} catch (SecurityException se) {
+			errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object[] { srcDir },
+					" 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
+			return;
 		}
 
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 보안약점 조치 (2018-10-29, 윤창원)
 		String targetDir = EgovStringUtil.isNullToString(backupOpert.getBackupStreDrctry());
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
-		dir = new File(TARGET_BASE_DIRECTORY + EgovWebUtil.filePathBlackList(EgovStringUtil.isNullToString(backupOpert.getBackupStreDrctry())));
+		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		dir = new File(TARGET_BASE_DIRECTORY
+				+ EgovWebUtil.filePathBlackList(EgovStringUtil.isNullToString(backupOpert.getBackupStreDrctry())));
 		try {
 			if (!dir.exists()) {
-				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-			    "디렉토리 {0}이  존재하지 않습니다.");
-				return ;
+				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object[] { targetDir },
+						"디렉토리 {0}이  존재하지 않습니다.");
+				return;
 			}
 			if (!dir.isDirectory()) {
-				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-			    "디렉토리 {0}이 디렉토리가 아닙니다.");
-				return ;
+				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object[] { targetDir },
+						"디렉토리 {0}이 디렉토리가 아닙니다.");
+				return;
 			}
-		} catch (SecurityException  se) {
-			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-		    " 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
-			return ;
+		} catch (SecurityException se) {
+			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object[] { targetDir },
+					" 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
+			return;
 		}
 
-		if ( targetDir.equals(srcDir)) {
-			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { srcDir, targetDir },
-		    "백업원본디렉토리{0}과 백업저장디렉토리 {1}이 같은 값을 가질수 없습니다.");
-			return ;
+		if (targetDir.equals(srcDir)) {
+			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object[] { srcDir, targetDir },
+					"백업원본디렉토리{0}과 백업저장디렉토리 {1}이 같은 값을 가질수 없습니다.");
+			return;
 		}
-
 
 	}
 

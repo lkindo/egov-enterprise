@@ -13,6 +13,8 @@ public interface NameCardRepository extends JpaRepository<NameCard, String> {
 
     Page<NameCard> findByNcrdNmContaining(String ncrdNm, Pageable pageable);
 
+    Page<NameCard> findByNmContaining(String nm, Pageable pageable);
+
     Page<NameCard> findByCmpnyNmContaining(String cmpnyNm, Pageable pageable);
 
     Page<NameCard> findByNcrdTrgterId(String ncrdTrgterId, Pageable pageable);

@@ -1,24 +1,26 @@
 package egovframework.com.cop.sms.service.impl;
 
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import egovframework.com.cmm.service.EgovProperties;
+import com.company.project.service.sms.EgovSmsService;
+import com.company.project.service.sms.dto.SmsDto;
+
 import egovframework.com.cop.sms.service.EgovSmsInfoService;
 import egovframework.com.cop.sms.service.Sms;
 import egovframework.com.cop.sms.service.SmsConnection;
 import egovframework.com.cop.sms.service.SmsRecptn;
 import egovframework.com.cop.sms.service.SmsVO;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 문자메시지를 위한 서비스 구현 클래스
@@ -38,41 +40,14 @@ import jakarta.annotation.Resource;
  *      </pre>
  */
 @Service("EgovSmsInfoService")
+@RequiredArgsConstructor
 public class EgovSmsInfoServiceImpl extends EgovAbstractServiceImpl implements EgovSmsInfoService {
-    @Resource(name = "SmsDAO")
-    private SmsDAO smsDao;
 
-    @Resource(name = "egovSmsIdGnrService")
-    private EgovIdGnrService idgenService;
-
-    private String smeConfigPath = null;
+    private final EgovSmsService smsService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovSmsInfoServiceImpl.class);
 
-    @PostConstruct
-    public void init() {
-        // --------------------------------
-        // 속성 정보 얻기
-        // --------------------------------
-        this.smeConfigPath = EgovProperties.getPathProperty("Globals.SMEConfigPath");
-    }
-
-    private String getPhoneNumber(String number) {
-        String result = number;
-
-        if (number == null || number.trim().equals("")) {
-            return "";
-        }
-
-        result = result.replace("-", "");
-        result = result.replace("(", "");
-        result = result.replace(")", "");
-        result = result.replace(" ", "");
-
-        return result;
-    }
-
-    private String formatPhoneNumber(String number) throws ParseException {
+    private String formatPhoneNumber(String number) {
         if (number == null || number.trim().equals("")) {
             return "";
         }
@@ -123,13 +98,12 @@ public class EgovSmsInfoServiceImpl extends EgovAbstractServiceImpl implements E
         return buffer.toString();
     }
 
-    /**
-     * 문자메시지 목록을 조회 한다.
-     */
     @Override
     public Map<String, Object> selectSmsInfs(SmsVO searchVO) throws Exception {
-        List<SmsVO> result = smsDao.selectSmsInfs(searchVO);
-        int cnt = smsDao.selectSmsInfsCnt(searchVO);
+        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize());
+        Page<SmsDto> page = smsService.getSmsList(searchVO.getSearchCnd(), searchVO.getSearchWrd(), pageable);
+
+        List<SmsVO> result = EgovSmsAdapter.toVOList(page);
 
         // 전화번호 포맷 처리
         for (SmsVO element : result) {
@@ -138,217 +112,44 @@ public class EgovSmsInfoServiceImpl extends EgovAbstractServiceImpl implements E
         }
 
         Map<String, Object> map = new HashMap<>();
-
         map.put("resultList", result);
-        map.put("resultCnt", Integer.toString(cnt));
+        map.put("resultCnt", Long.toString(page.getTotalElements()));
 
         return map;
     }
 
-    /**
-     * 문자메시지를 전송(등록)한다.
-     */
     @Override
     public void insertSmsInf(Sms sms) throws Exception {
-        HashMap<String, SmsRecptn> check = new HashMap<>();
-
-        String smsId = idgenService.getNextStringId();
-
-        sms.setSmsId(smsId);
-
-        sms.setTrnsmitTelno(getPhoneNumber(sms.getTrnsmitTelno()));
-
-        // ---------------------------------------
-        // 마스터 정보 등록
-        // ---------------------------------------
-        smsDao.insertSmsInf(sms);
-
-        // ---------------------------------------
-        // 전송 요청 및 상세(수신자)정보 등록
-        // ---------------------------------------
-        SmsRecptn smsRecptn = null;
-        if (sms != null && sms.getRecptnTelno() != null) {
-            for (int i = 0; i < sms.getRecptnTelno().length; i++) {
-                if (getPhoneNumber(sms.getRecptnTelno()[i]).equals("")) {
-                    continue;
-                }
-                smsRecptn = new SmsRecptn();
-
-                smsRecptn.setSmsId(smsId);
-                smsRecptn
-                        .setRecptnTelno(getPhoneNumber(sms.getRecptnTelno()[i]));
-
-                // 동일 전화번호면 SKIP
-                if (check.containsKey(smsRecptn.getRecptnTelno())) {
-                    continue;
-                } else {
-                    check.put(smsRecptn.getRecptnTelno(), smsRecptn);
-                }
-
-                // ---------------------------------------
-                // 실 전송 요청 저장
-                // ---------------------------------------
-                SmsConnection smsConn = new SmsConnection();
-
-                smsConn.setCallFrom(sms.getTrnsmitTelno());
-                smsConn.setCallTo(smsRecptn.getRecptnTelno());
-                smsConn.setCallBack(smsRecptn.getRecptnTelno());
-                smsConn.setCallBackUrl("");
-                smsConn.setText(sms.getTrnsmitCn());
-
-                smsConn.setMessageId(smsId + "-" + smsRecptn.getRecptnTelno());
-
-                // SMS 전송 요청
-                EgovSmsInfoSender sender = null;
-                SmsConnection result = null;
-                try {
-                    sender = new EgovSmsInfoSender(smeConfigPath);
-
-                    sender.open();
-                    result = sender.send(smsConn);
-                } finally {
-                    if (sender != null) {
-                        sender.close();
-                    }
-                }
-                // //-------------------------------------
-
-                // Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-                // 이동통신사의 오류는 별도의 Receiver에서 수신 처리함
-                // 수신 처리시 MessageId의 구성 형식(SMS_ID + "-" + 수신전화번호)를 통해 DB에 결과를 반영
-
-                // 2011.10.21 보안점검 후속조치
-                if (result != null) {
-                    smsRecptn
-                            .setResultCode(Integer.toString(result.getResult()));
-                    smsRecptn.setResultMssage(result.getResultMessage());
-                }
-                smsDao.insertSmsRecptnInf(smsRecptn);
-            }
-        }
+        smsService.sendSms(sms.getFrstRegisterId(), EgovSmsAdapter.toDto(sms));
     }
 
-    /**
-     * 문자메시지에 대한 상세정보를 조회한다.
-     */
     @Override
     public SmsVO selectSmsInf(SmsVO searchVO) throws Exception {
-        SmsVO vo = smsDao.selectSmsInf(searchVO);
+        SmsDto dto = smsService.getSms(searchVO.getSmsId());
+        SmsVO vo = EgovSmsAdapter.toVO(dto);
 
         // 전화번호 포맷 처리
-        vo.setTrnsmitTelno(formatPhoneNumber(vo.getTrnsmitTelno()));
-
-        SmsRecptn recptn = new SmsRecptn();
-
-        recptn.setSmsId(searchVO.getSmsId());
-
-        List<SmsRecptn> list = smsDao.selectSmsRecptnInfs(recptn);
-
-        // 전화번호 포맷 처리
-        for (SmsRecptn element : list) {
-            String phone = element.getRecptnTelno();
-            element.setRecptnTelno(formatPhoneNumber(phone));
+        if (vo != null) {
+            vo.setTrnsmitTelno(formatPhoneNumber(vo.getTrnsmitTelno()));
+            if (vo.getRecptn() != null) {
+                for (SmsRecptn element : vo.getRecptn()) {
+                    element.setRecptnTelno(formatPhoneNumber(element.getRecptnTelno()));
+                }
+            }
         }
-
-        vo.setRecptn(list);
 
         return vo;
     }
 
-    /**
-     * 문자메시지 실 전송을 요청한다.
-     */
     @Override
     public SmsConnection sendRequsest(SmsConnection smsConn) throws Exception {
-        String callTo = smsConn.getCallTo();
-        String callFrom = smsConn.getCallFrom();
-        String callBack = smsConn.getCallBack();
-        String callBackUrl = smsConn.getCallBackUrl();
-        String text = smsConn.getText();
-        String messageId = smsConn.getMessageId(); // messageId 지정 필요
-
-        LOGGER.info("------------------------");
-        LOGGER.info("callTo = {}", callTo);
-        LOGGER.info("callFrom = {}", callFrom);
-        LOGGER.info("callBack = {}", callBack);
-        LOGGER.info("callBackUrl = {}", callBackUrl);
-        LOGGER.info("text = {}", text);
-        LOGGER.info("messageId = {}", messageId);
-
-        // SMS 전송 요청
-        EgovSmsInfoSender sender = null;
-        SmsConnection result = null;
-        try {
-            sender = new EgovSmsInfoSender(smeConfigPath);
-
-            sender.open();
-            result = sender.send(smsConn);
-        } finally {
-            if (sender != null) {
-                sender.close();
-            }
-        }
-
-        // Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-        // 이동통신사의 오류는 별도의 Receiver에서 수신 처리함 (로그 기록)
-
-        if (result != null) { // 2011.10.21 보안점검 후속조치
-            smsConn.setResult(result.getResult());
-            smsConn.setResultMessage(result.getResultMessage());
-        }
+        // Direct request sending is deprecated in favor of SmsService.sendSms
         return smsConn;
     }
 
-    /**
-     * 여러 건의 문자메시지 실 전송을 요청한다.
-     *
-     * @param smsConn
-     * @return
-     * @throws Exception
-     */
     @Override
     public SmsConnection[] sendRequsest(SmsConnection[] smsConn) throws Exception {
-        EgovSmsInfoSender sender = null;
-
-        try {
-            sender = new EgovSmsInfoSender(smeConfigPath);
-
-            sender.open();
-
-            // SMS 전송 요청
-            SmsConnection result = null;
-            for (int i = 0; i < smsConn.length; i++) {
-                String callTo = smsConn[i].getCallTo();
-                String callFrom = smsConn[i].getCallFrom();
-                String callBack = smsConn[i].getCallBack();
-                String callBackUrl = smsConn[i].getCallBackUrl();
-                String text = smsConn[i].getText();
-                String messageId = smsConn[i].getMessageId(); // messageId 지정 필요
-
-                LOGGER.info("------------------------");
-                LOGGER.info("callTo[{}] = {}", i, callTo);
-                LOGGER.info("callFrom[{}] = {}", i, callFrom);
-                LOGGER.info("callBack[{}] = {}", i, callBack);
-                LOGGER.info("callBackUrl[{}] = {}", i, callBackUrl);
-                LOGGER.info("text =[{}] = {}", i, text);
-                LOGGER.info("messageId[{}] = {}", i, messageId);
-
-                // smsConn[i] = sendRequsest(smsConn[i]);
-                result = sender.send(smsConn[i]);
-
-                // Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-                // 이동통신사의 오류는 별도의 Receiver에서 수신 처리함 (로그 기록)
-
-                smsConn[i].setResult(result.getResult());
-                smsConn[i].setResultMessage(result.getResultMessage());
-            }
-
-        } finally {
-            if (sender != null) {
-                sender.close();
-            }
-        }
-
+        // Direct multiple request sending is deprecated in favor of SmsService.sendSms
         return smsConn;
     }
 }
