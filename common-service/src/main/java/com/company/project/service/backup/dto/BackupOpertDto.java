@@ -63,4 +63,54 @@ public class BackupOpertDto {
                 .frstRegistPnttm(entity.getFrstRegistPnttm())
                 .build();
     }
+
+    public String toCronExpression() {
+        StringBuilder cronExpression = new StringBuilder();
+
+        // Seconds
+        cronExpression.append(this.executSchdulSecnd);
+
+        // Minutes
+        cronExpression.append(" ").append(this.executSchdulMnt);
+
+        // Hours
+        cronExpression.append(" ").append(this.executSchdulHour);
+
+        // Day of Month
+        if ("01".equals(this.executCycle)) {
+            cronExpression.append(" *");
+        } else if ("02".equals(this.executCycle)) {
+            cronExpression.append(" ?");
+        } else {
+            cronExpression.append(" ").append(this.executSchdulDe.substring(6, 8));
+        }
+
+        // Month
+        if ("01".equals(this.executCycle) || "02".equals(this.executCycle) || "03".equals(this.executCycle)) {
+            cronExpression.append(" *");
+        } else {
+            cronExpression.append(" ").append(this.executSchdulDe.substring(4, 6));
+        }
+
+        // Day of Week
+        if ("02".equals(this.executCycle)) {
+            StringBuilder dayOfWeek = new StringBuilder();
+            for (int i = 0; i < this.executSchdulDfkSes.length; i++) {
+                if (i != 0) {
+                    dayOfWeek.append(",");
+                }
+                dayOfWeek.append(this.executSchdulDfkSes[i]);
+            }
+            cronExpression.append(" ").append(dayOfWeek);
+        } else {
+            cronExpression.append(" ?");
+        }
+
+        // Year
+        if ("05".equals(this.executCycle)) {
+            cronExpression.append(" ").append(this.executSchdulDe.substring(0, 4));
+        }
+
+        return cronExpression.toString();
+    }
 }

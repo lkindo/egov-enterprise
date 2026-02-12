@@ -89,7 +89,7 @@ public class InstitutionCode extends BaseEntity {
             String upperInsttCode, String reprsntInsttCode, String insttTyLclas,
             String insttTyMclas, String insttTySclas, String telno, String fxnum,
             String creatDe, String ablDe, String ablEnnc, String changede,
-            String changeTime, String bsisDe, Integer sortOrdr) {
+            String changeTime, String bsisDe, Integer sortOrdr, String createdBy) {
         this.insttCode = insttCode;
         this.allInsttNm = allInsttNm;
         this.lowestInsttNm = lowestInsttNm;
@@ -112,13 +112,14 @@ public class InstitutionCode extends BaseEntity {
         this.changeTime = changeTime;
         this.bsisDe = bsisDe;
         this.sortOrdr = sortOrdr;
+        this.createdBy = createdBy;
     }
 
     public void update(String allInsttNm, String lowestInsttNm, String insttAbrvNm, String odr, String ord,
             String insttOdr, String bestInsttCode, String upperInsttCode, String reprsntInsttCode,
             String insttTyLclas, String insttTyMclas, String insttTySclas, String telno,
             String fxnum, String creatDe, String ablDe, String ablEnnc, String changede,
-            String changeTime, String bsisDe, Integer sortOrdr) {
+            String changeTime, String bsisDe, Integer sortOrdr, String lastModifiedBy) {
         this.allInsttNm = allInsttNm;
         this.lowestInsttNm = lowestInsttNm;
         this.insttAbrvNm = insttAbrvNm;
@@ -140,6 +141,7 @@ public class InstitutionCode extends BaseEntity {
         this.changeTime = changeTime;
         this.bsisDe = bsisDe;
         this.sortOrdr = sortOrdr;
+        this.lastModifiedBy = lastModifiedBy;
     }
 
     public void softDelete(String ablDe, String changede, String changeTime) {

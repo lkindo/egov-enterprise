@@ -11,31 +11,29 @@ import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.company.project.domain.community.CommunityRepository;
+import com.company.project.service.community.CommunityService;
+import com.company.project.service.community.dto.CommunityDto;
 import com.company.project.web.adapter.CommunityAdapter;
 
 import egovframework.com.cop.cmy.service.Community;
 import egovframework.com.cop.cmy.service.CommunityVO;
 import egovframework.com.cop.cmy.service.EgovCommuMasterService;
 import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 커뮤니티 정보 관리를 위한 서비스 구현 클래스
- * Refactored to use JPA (CommunityRepository)
+ * Modernized to use CommunityService
  */
 @Service("EgovCommuMasterService")
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implements EgovCommuMasterService {
 
-    @Resource
-    private CommunityRepository communityRepository;
-
-    @Resource(name = "EgovCommuMasterDAO")
-    private EgovCommuMasterDAO egovCommuMasterDAO;
+    private final CommunityService communityService;
 
     @Resource(name = "egovCommunityIdGnrService")
     private EgovIdGnrService idgenService;
@@ -46,13 +44,18 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
     @Override
     public Map<String, Object> selectCommuMasterList(CommunityVO cmmntyVO) {
         Pageable pageable = PageRequest.of(cmmntyVO.getFirstIndex() / cmmntyVO.getRecordCountPerPage(),
-                cmmntyVO.getRecordCountPerPage(), Sort.by(Sort.Direction.DESC, "createdDate"));
+                cmmntyVO.getRecordCountPerPage());
 
-        Page<com.company.project.domain.community.Community> page = communityRepository
-                .searchCommunities(cmmntyVO.getSearchWrd(), pageable);
+        // Adapting search conditions
+        Page<CommunityDto> page = communityService.getCommunityList(
+                cmmntyVO.getSearchCnd(),
+                cmmntyVO.getSearchWrd(),
+                pageable);
 
         Map<String, Object> map = new HashMap<>();
-        map.put("resultList", page.getContent().stream().map(CommunityAdapter::toVO).collect(Collectors.toList()));
+        map.put("resultList", page.getContent().stream()
+                .map(CommunityAdapter::toVO)
+                .collect(Collectors.toList()));
         map.put("resultCnt", Integer.toString((int) page.getTotalElements()));
 
         return map;
@@ -65,18 +68,13 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
     @Transactional
     public String insertCommuMaster(Community community) throws FdlException {
         String id = idgenService.getNextStringId();
+        community.setCmmntyId(id);
 
-        com.company.project.domain.community.Community entity = com.company.project.domain.community.Community.builder()
-                .id(id)
-                .cmmntyNm(community.getCmmntyNm())
-                .cmmntyIntrcn(community.getCmmntyIntrcn())
-                .registSeCode(community.getRegistSeCode())
-                .tmplatId(community.getTmplatId())
-                .useAt(community.getUseAt())
-                .frstRegisterId(community.getFrstRegisterId())
-                .build();
+        // Convert to DTO
+        CommunityDto dto = CommunityAdapter.toDto(community);
 
-        communityRepository.save(entity);
+        communityService.createCommunity(dto);
+
         return id;
     }
 
@@ -85,9 +83,8 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     public CommunityVO selectCommuMaster(CommunityVO cmmntyVO) throws Exception {
-        return communityRepository.findById(cmmntyVO.getCmmntyId())
-                .map(CommunityAdapter::toVO)
-                .orElse(null);
+        CommunityDto dto = communityService.getCommunity(cmmntyVO.getCmmntyId());
+        return CommunityAdapter.toVO(dto);
     }
 
     /**
@@ -96,10 +93,8 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
     @Override
     @Transactional
     public void updateCommuMaster(Community community) {
-        communityRepository.findById(community.getCmmntyId()).ifPresent(entity -> {
-            entity.update(community.getCmmntyNm(), community.getCmmntyIntrcn(),
-                    community.getTmplatId(), community.getLastUpdusrId());
-        });
+        CommunityDto dto = CommunityAdapter.toDto(community);
+        communityService.updateCommunity(dto);
     }
 
     /**
@@ -107,10 +102,8 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     @Transactional
-    public void deleteCommuMaster(Community community) {
-        communityRepository.findById(community.getCmmntyId()).ifPresent(entity -> {
-            entity.delete(community.getLastUpdusrId());
-        });
+    public void deleteBBSMasterInf(Community community) {
+        communityService.deleteCommunity(community.getCmmntyId(), community.getLastUpdusrId());
     }
 
     /**
@@ -118,8 +111,7 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
      */
     @Override
     public List<CommunityVO> selectCommuMasterListPortlet(CommunityVO cmmntyVO) throws Exception {
-        return communityRepository.searchCommunities("", PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdDate")))
-                .getContent().stream()
+        return communityService.getCommunityListPortlet().stream()
                 .map(CommunityAdapter::toVO)
                 .collect(Collectors.toList());
     }

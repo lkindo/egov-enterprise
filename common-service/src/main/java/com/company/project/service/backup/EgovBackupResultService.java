@@ -10,5 +10,9 @@ public interface EgovBackupResultService {
 
     BackupResultDto getBackupResult(String backupResultId);
 
+    void createBackupResult(String userId, BackupResultDto dto);
+
+    void updateBackupResult(String backupResultId, String userId, BackupResultDto dto);
+
     void deleteBackupResult(String backupResultId);
 }

@@ -1,36 +1,44 @@
 package com.company.project.service.community.dto;
 
-import java.time.LocalDateTime;
 import com.company.project.domain.community.Community;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
+import java.time.format.DateTimeFormatter;
+
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommunityDto {
     private String cmmntyId;
     private String cmmntyNm;
     private String cmmntyIntrcn;
     private String registSeCode;
+    private String registSeCodeNm; // For display
     private String tmplatId;
+    private String tmplatNm; // For display
     private String useAt;
     private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
-    private String lastUpdusrId;
-    private LocalDateTime lastUpdusrPnttm;
+    private String frstRegisterNm; // For display
+    private String frstRegisterPnttm;
 
-    public static CommunityDto from(Community entity) {
+    public static CommunityDto from(Community community) {
+        if (community == null)
+            return null;
         return CommunityDto.builder()
-                .cmmntyId(entity.getId())
-                .cmmntyNm(entity.getCmmntyNm())
-                .cmmntyIntrcn(entity.getCmmntyIntrcn())
-                .registSeCode(entity.getRegistSeCode())
-                .tmplatId(entity.getTmplatId())
-                .useAt(entity.getUseAt())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdusrPnttm(entity.getModifiedDate())
+                .cmmntyId(community.getCmmntyId())
+                .cmmntyNm(community.getCmmntyNm())
+                .cmmntyIntrcn(community.getCmmntyIntrcn())
+                .registSeCode(community.getRegistSeCode())
+                .tmplatId(community.getTmplatId())
+                .useAt(community.getUseAt())
+                .frstRegisterId(community.getFrstRegisterId())
+                .frstRegisterPnttm(community.getFrstRegisterPnttm() != null
+                        ? community.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        : null)
                 .build();
     }
 }
