@@ -11,9 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Q&A 서비스 구현체
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,23 +23,24 @@ public class QnaService implements EgovQnaService {
         if (keyword == null || keyword.isEmpty()) {
             return qnaRepository.findAll(pageable).map(QnaDto::from);
         }
-        return qnaRepository.searchByKeyword(keyword, pageable).map(QnaDto::from);
-    }
-
-    @Override
-    public QnaDto getQna(String qaId) {
-        Qna qna = qnaRepository.findById(qaId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return QnaDto.from(qna);
+        return qnaRepository.findByQestnSjContaining(keyword, pageable).map(QnaDto::from);
     }
 
     @Override
     @Transactional
-    public String createQna(String userId, QnaDto dto) {
-        String qaId = "QNA_" + String.format("%013d", System.currentTimeMillis());
+    public QnaDto getQna(String qaId) {
+        Qna entity = qnaRepository.findById(qaId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.increaseInqireCo();
+        return QnaDto.from(entity);
+    }
 
-        Qna qna = Qna.builder()
-                .qaId(qaId)
+    @Override
+    @Transactional
+    public void insertQna(String userId, QnaDto dto) {
+        String id = "QA_" + String.format("%013d", System.currentTimeMillis());
+        qnaRepository.save(Qna.builder()
+                .qaId(id)
                 .qestnSj(dto.getQestnSj())
                 .qestnCn(dto.getQestnCn())
                 .writngPassword(dto.getWritngPassword())
@@ -52,51 +50,29 @@ public class QnaService implements EgovQnaService {
                 .areaNo(dto.getAreaNo())
                 .middleTelno(dto.getMiddleTelno())
                 .endTelno(dto.getEndTelno())
-                .frstRegisterId(userId)
-                .build();
-
-        qnaRepository.save(qna);
-        return qaId;
+                .build());
     }
 
     @Override
     @Transactional
     public void updateQna(String qaId, String userId, QnaDto dto) {
-        Qna qna = qnaRepository.findById(qaId)
+        Qna entity = qnaRepository.findById(qaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        qna.updateQuestion(dto.getQestnSj(), dto.getQestnCn(), dto.getEmailAdres(),
-                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
+        entity.updateQuestion(dto.getQestnSj(), dto.getQestnCn(), dto.getEmailAdres(),
+                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
     }
 
     @Override
     @Transactional
-    public void deleteQna(String qaId, String userId) {
-        Qna qna = qnaRepository.findById(qaId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        qnaRepository.delete(qna);
+    public void deleteQna(String qaId) {
+        qnaRepository.deleteById(qaId);
     }
 
     @Override
     @Transactional
-    public void updateAnswer(String qaId, String userId, String answerCn) {
-        Qna qna = qnaRepository.findById(qaId)
+    public void answerQna(String qaId, String userId, String answerCn) {
+        Qna entity = qnaRepository.findById(qaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        qna.updateAnswer(answerCn, userId);
-    }
-
-    @Override
-    @Transactional
-    public void increaseViewCount(String qaId) {
-        Qna qna = qnaRepository.findById(qaId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        qna.increaseViewCount();
-    }
-
-    @Override
-    public boolean checkPassword(String qaId, String password) {
-        Qna qna = qnaRepository.findById(qaId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return qna.checkPassword(password);
+        entity.answer(answerCn);
     }
 }

@@ -1,16 +1,24 @@
 package com.company.project.domain.rsm;
 
-import com.company.project.domain.common.BaseTimeEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+/**
+ * 최근 검색어 관리 정보 Entity
+ * 레거시 테이블: NRECENTSRCHWRDMANAGE
+ */
 @Entity
 @Table(name = "NRECENTSRCHWRDMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class RecentSrchwrdManage extends BaseTimeEntity {
+public class RecentSrchwrdManage extends BaseEntity {
 
     @Id
     @Column(name = "SRCHWRD_MANAGE_ID", length = 20)
@@ -25,16 +33,17 @@ public class RecentSrchwrdManage extends BaseTimeEntity {
     @Column(name = "USER_SEARCH_AT", length = 1)
     private String userSearchAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
+    @Builder
+    public RecentSrchwrdManage(String srchwrdManageId, String srchwrdManageNm, String srchwrdConectUrl, String userSearchAt) {
+        this.srchwrdManageId = srchwrdManageId;
+        this.srchwrdManageNm = srchwrdManageNm;
+        this.srchwrdConectUrl = srchwrdConectUrl;
+        this.userSearchAt = userSearchAt != null ? userSearchAt : "Y";
+    }
 
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String srchwrdManageNm, String srchwrdConectUrl, String userSearchAt, String lastUpdusrId) {
+    public void update(String srchwrdManageNm, String srchwrdConectUrl, String userSearchAt) {
         this.srchwrdManageNm = srchwrdManageNm;
         this.srchwrdConectUrl = srchwrdConectUrl;
         this.userSearchAt = userSearchAt;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

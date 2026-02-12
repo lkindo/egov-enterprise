@@ -1,7 +1,6 @@
 package com.company.project.domain.help;
 
-import java.time.LocalDateTime;
-
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,17 +10,21 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 행정용어 정보 Entity
+ * 레거시 테이블: NADMINISTRATIONWORD
+ */
 @Entity
+@Table(name = "NADMINISTRATIONWORD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NADMINISTRATIONWORD")
-public class AdministrationWord {
+public class AdministrationWord extends BaseEntity {
 
     @Id
     @Column(name = "ADMINIST_WORD_ID", length = 20)
     private String administWordId;
 
-    @Column(name = "ADMINIST_WORD_NM", length = 255)
+    @Column(name = "ADMINIST_WORD_NM", length = 255, nullable = false)
     private String administWordNm;
 
     @Column(name = "ADMINIST_WORD_ENG_NM", length = 255)
@@ -45,23 +48,10 @@ public class AdministrationWord {
     @Column(name = "ADMINIST_WORD_DC", columnDefinition = "TEXT")
     private String administWordDc;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
     public AdministrationWord(String administWordId, String administWordNm, String administWordEngNm,
-            String administWordAbrv,
-            String themaRelm, String wordDomn, String stdWord, String administWordDf, String administWordDc,
-            String frstRegisterId) {
+                             String administWordAbrv, String themaRelm, String wordDomn, String stdWord,
+                             String administWordDf, String administWordDc) {
         this.administWordId = administWordId;
         this.administWordNm = administWordNm;
         this.administWordEngNm = administWordEngNm;
@@ -71,13 +61,10 @@ public class AdministrationWord {
         this.stdWord = stdWord;
         this.administWordDf = administWordDf;
         this.administWordDc = administWordDc;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 
     public void update(String administWordNm, String administWordEngNm, String administWordAbrv,
-            String themaRelm, String wordDomn, String stdWord, String administWordDf, String administWordDc,
-            String lastUpdusrId) {
+                      String themaRelm, String wordDomn, String stdWord, String administWordDf, String administWordDc) {
         this.administWordNm = administWordNm;
         this.administWordEngNm = administWordEngNm;
         this.administWordAbrv = administWordAbrv;
@@ -86,7 +73,5 @@ public class AdministrationWord {
         this.stdWord = stdWord;
         this.administWordDf = administWordDf;
         this.administWordDc = administWordDc;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

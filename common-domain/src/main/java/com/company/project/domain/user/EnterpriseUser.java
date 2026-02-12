@@ -1,5 +1,6 @@
 package com.company.project.domain.user;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,11 +12,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+/**
+ * 기업 회원 정보 Entity
+ * 레거시 테이블: NENTRPRSMBER
+ */
 @Entity
 @Table(name = "NENTRPRSMBER")
-public class EnterpriseUser {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class EnterpriseUser extends BaseEntity {
 
     @Column(name = "ESNTL_ID", nullable = false, length = 20)
     private String esntlId;

@@ -27,10 +27,7 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public Page<MeetingPlaceDto> getMeetingPlaceList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return meetingPlaceRepository.findAll(pageable).map(MeetingPlaceDto::from);
-        }
-        return meetingPlaceRepository.findByMtgPlaceNmContaining(keyword, pageable).map(MeetingPlaceDto::from);
+        return meetingPlaceRepository.searchMeetingPlaces(keyword, pageable).map(MeetingPlaceDto::from);
     }
 
     @Override
@@ -54,7 +51,6 @@ public class MeetingServiceImpl implements MeetingService {
                     .lcSe(dto.getLcSe())
                     .lcDetail(dto.getLcDetail())
                     .atchFileId(dto.getAtchFileId())
-                    .frstRegisterId(userId)
                     .build();
             meetingPlaceRepository.save(entity);
             return id;
@@ -70,7 +66,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getMtgPlaceNm(), dto.getOpnBeginTm(), dto.getOpnEndTm(),
                 dto.getAceptncPosblNmpr(), dto.getLcSe(), dto.getLcDetail(),
-                dto.getAtchFileId(), userId);
+                dto.getAtchFileId());
     }
 
     @Override
@@ -81,6 +77,7 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public Page<MeetingReservationDto> getMeetingReservationList(String keyword, Pageable pageable) {
+        // Simple search for now, could be expanded with QueryDSL if needed
         if (keyword == null || keyword.isEmpty()) {
             return meetingReservationRepository.findAll(pageable).map(MeetingReservationDto::from);
         }
@@ -97,6 +94,12 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public String reserveMeetingPlace(String userId, MeetingReservationDto dto) {
+        // Check for conflicts before reserving
+        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(), 
+                dto.getResveBeginTm(), dto.getResveEndTm(), null) > 0) {
+            throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE); // Or a more specific error
+        }
+
         try {
             String id = egovMtgPlaceResveManageIdGnrService.getNextStringId();
             MeetingReservation entity = MeetingReservation.builder()
@@ -109,7 +112,6 @@ public class MeetingServiceImpl implements MeetingService {
                     .resveEndTm(dto.getResveEndTm())
                     .atndncNmpr(dto.getAtndncNmpr())
                     .mtgCn(dto.getMtgCn())
-                    .frstRegisterId(userId)
                     .build();
             meetingReservationRepository.save(entity);
             return id;
@@ -123,9 +125,16 @@ public class MeetingServiceImpl implements MeetingService {
     public void updateMeetingReservation(String resveId, String userId, MeetingReservationDto dto) {
         MeetingReservation entity = meetingReservationRepository.findById(resveId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        
+        // Check for conflicts excluding current reservation
+        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(), 
+                dto.getResveBeginTm(), dto.getResveEndTm(), resveId) > 0) {
+            throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
+        }
+
         entity.update(dto.getMtgPlaceId(), dto.getMtgSj(), dto.getResveDe(),
                 dto.getResveBeginTm(), dto.getResveEndTm(), dto.getAtndncNmpr(),
-                dto.getMtgCn(), userId);
+                dto.getMtgCn());
     }
 
     @Override
@@ -137,9 +146,9 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     public int checkReservationConflict(String mtgPlaceId, String resveDe, String startTime, String endTime,
             String excludeResveId) {
-        if (excludeResveId == null)
-            excludeResveId = "";
-        return meetingReservationRepository.countConflictingReservations(mtgPlaceId, resveDe, startTime, endTime,
+        // Use the native query in repository or just simple count
+        // For simplicity and correctness, I'll rely on the repository method
+        return (int) meetingReservationRepository.countConflictingReservations(mtgPlaceId, resveDe, startTime, endTime,
                 excludeResveId);
     }
 }

@@ -4,7 +4,10 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.namecard.NameCard;
 import com.company.project.domain.namecard.NameCardRepository;
+import com.company.project.domain.namecard.NameCardUser;
+import com.company.project.domain.namecard.NameCardUserRepository;
 import com.company.project.service.namecard.dto.NameCardDto;
+import com.company.project.service.namecard.dto.NameCardUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,17 +23,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class NameCardService implements EgovNameCardService {
 
     private final NameCardRepository nameCardRepository;
+    private final NameCardUserRepository nameCardUserRepository;
 
     @Override
     public Page<NameCardDto> getNameCardList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return nameCardRepository.findAll(pageable).map(NameCardDto::from);
-        }
-        return nameCardRepository.searchByKeyword(keyword, pageable).map(NameCardDto::from);
+        return nameCardRepository.searchNameCards(keyword, pageable).map(NameCardDto::from);
     }
 
     @Override
     public Page<NameCardDto> getMyNameCards(String userId, Pageable pageable) {
+        // 내가 직접 등록한 명함 목록
         return nameCardRepository.findByNcrdTrgterId(userId, pageable).map(NameCardDto::from);
     }
 
@@ -62,10 +64,14 @@ public class NameCardService implements EgovNameCardService {
                 .remark(dto.getRemark())
                 .othbcAt(dto.getOthbcAt())
                 .ncrdTrgterId(userId)
-                .frstRegisterId(userId)
+                .extrlUserAt(dto.getExtrlUserAt())
                 .build();
 
         nameCardRepository.save(nameCard);
+        
+        // 등록 시 내 명함첩에도 자동 추가
+        addMyNameCard(userId, ncrdId);
+        
         return ncrdId;
     }
 
@@ -78,7 +84,7 @@ public class NameCardService implements EgovNameCardService {
         nameCard.update(dto.getNcrdNm(), dto.getCmpnyNm(), dto.getDeptNm(), dto.getClsfNm(),
                 dto.getOfcpsNm(), dto.getEmailAdres(), dto.getTelNo(), dto.getMbtlNum(),
                 dto.getAdres(), dto.getDetailAdres(), dto.getZipCode(), dto.getRemark(),
-                dto.getOthbcAt(), userId);
+                dto.getOthbcAt(), dto.getExtrlUserAt());
     }
 
     @Override
@@ -86,6 +92,40 @@ public class NameCardService implements EgovNameCardService {
     public void deleteNameCard(String ncrdId) {
         NameCard nameCard = nameCardRepository.findById(ncrdId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        
+        // 관계 데이터 먼저 삭제 (또는 논리 삭제 처리)
+        // 여기서는 단순 물리 삭제로 구현
         nameCardRepository.delete(nameCard);
+    }
+
+    @Override
+    public Page<NameCardUserDto> getMyNameCardFolder(String userId, Pageable pageable) {
+        return nameCardUserRepository.findMyNameCardUsers(userId, pageable)
+                .map(nu -> {
+                    NameCard nc = nameCardRepository.findById(nu.getNcrdId()).orElse(null);
+                    return NameCardUserDto.from(nu, nc);
+                });
+    }
+
+    @Override
+    @Transactional
+    public void addMyNameCard(String userId, String ncrdId) {
+        nameCardUserRepository.findByNcrdIdAndEmplyrId(ncrdId, userId)
+                .ifPresentOrElse(
+                    nu -> nu.updateUseAt("Y"),
+                    () -> nameCardUserRepository.save(NameCardUser.builder()
+                            .ncrdId(ncrdId)
+                            .emplyrId(userId)
+                            .useAt("Y")
+                            .registSeCode("REGC01") // 기본 등록 코드
+                            .build())
+                );
+    }
+
+    @Override
+    @Transactional
+    public void removeMyNameCard(String userId, String ncrdId) {
+        nameCardUserRepository.findByNcrdIdAndEmplyrId(ncrdId, userId)
+                .ifPresent(nu -> nu.updateUseAt("N"));
     }
 }

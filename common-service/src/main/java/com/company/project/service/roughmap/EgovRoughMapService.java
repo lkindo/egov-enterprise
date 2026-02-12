@@ -5,13 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EgovRoughMapService {
+    Page<RoughMapDto> getRoughMapList(String keyword, Pageable pageable);
     RoughMapDto getRoughMap(String roughMapId);
-
-    void registerRoughMap(RoughMapDto dto);
-
+    void insertRoughMap(RoughMapDto dto);
     void updateRoughMap(RoughMapDto dto);
-
     void deleteRoughMap(String roughMapId);
-
-    Page<RoughMapDto> getRoughMapList(String searchKeyword, Pageable pageable);
 }

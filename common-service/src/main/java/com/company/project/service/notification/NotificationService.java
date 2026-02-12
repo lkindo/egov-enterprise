@@ -11,13 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 정보알림 서비스 구현체
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,60 +23,46 @@ public class NotificationService implements EgovNotificationService {
 
     @Override
     public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return notificationRepository.findAll(pageable).map(NotificationDto::from);
-        }
-        return notificationRepository.searchByKeyword(keyword, pageable).map(NotificationDto::from);
+        return notificationRepository.searchNotifications(keyword, pageable).map(NotificationDto::from);
     }
 
     @Override
     public NotificationDto getNotification(String ntfcNo) {
-        Notification notification = notificationRepository.findById(ntfcNo)
+        return notificationRepository.findById(ntfcNo)
+                .map(NotificationDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return NotificationDto.from(notification);
     }
 
     @Override
     @Transactional
-    public String createNotification(String userId, NotificationDto dto) {
-        String ntfcNo = "NTFC_" + String.format("%013d", System.currentTimeMillis());
-
-        Notification notification = Notification.builder()
-                .ntfcNo(ntfcNo)
+    public void insertNotification(NotificationDto dto) {
+        String id = "NTFC_" + String.format("%013d", System.currentTimeMillis());
+        Notification entity = Notification.builder()
+                .ntfcNo(id)
                 .ntfcSj(dto.getNtfcSj())
                 .ntfcCn(dto.getNtfcCn())
-                .ntfcDate(dto.getNtfcDate())
                 .ntfcTime(dto.getNtfcTime())
                 .bhNtfcIntrvl(dto.getBhNtfcIntrvl())
-                .uniqId(dto.getUniqId())
-                .frstRegisterId(userId)
                 .build();
-
-        notificationRepository.save(notification);
-        return ntfcNo;
+        notificationRepository.save(entity);
     }
 
     @Override
     @Transactional
-    public void updateNotification(String ntfcNo, String userId, NotificationDto dto) {
-        Notification notification = notificationRepository.findById(ntfcNo)
+    public void updateNotification(NotificationDto dto) {
+        Notification entity = notificationRepository.findById(dto.getNtfcNo())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        notification.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcDate(),
-                dto.getNtfcTime(), dto.getBhNtfcIntrvl(), userId);
+        entity.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcTime(), dto.getBhNtfcIntrvl());
     }
 
     @Override
     @Transactional
     public void deleteNotification(String ntfcNo) {
-        Notification notification = notificationRepository.findById(ntfcNo)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        notificationRepository.delete(notification);
+        notificationRepository.deleteById(ntfcNo);
     }
 
     @Override
-    public List<NotificationDto> getActiveNotifications() {
-        String today = LocalDate.now().toString().replace("-", "");
+    public List<NotificationDto> getActiveNotifications(String today) {
         return notificationRepository.findActiveNotifications(today).stream()
                 .map(NotificationDto::from)
                 .collect(Collectors.toList());

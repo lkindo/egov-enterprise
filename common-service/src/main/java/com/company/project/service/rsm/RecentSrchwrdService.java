@@ -1,6 +1,11 @@
 package com.company.project.service.rsm;
 
-import com.company.project.domain.rsm.*;
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
+import com.company.project.domain.rsm.RecentSrchwrd;
+import com.company.project.domain.rsm.RecentSrchwrdManage;
+import com.company.project.domain.rsm.RecentSrchwrdManageRepository;
+import com.company.project.domain.rsm.RecentSrchwrdRepository;
 import com.company.project.service.rsm.dto.RecentSrchwrdDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,92 +18,72 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RecentSrchwrdService implements EgovRecentSrchwrdService {
 
-    private final RecentSrchwrdManageRepository manageRepository;
-    private final RecentSrchwrdRepository srchwrdRepository;
+    private final RecentSrchwrdManageRepository recentSrchwrdManageRepository;
+    private final RecentSrchwrdRepository recentSrchwrdRepository;
+
+    @Override
+    public Page<RecentSrchwrdDto> getRecentSrchwrdManageList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return recentSrchwrdManageRepository.findAll(pageable).map(RecentSrchwrdDto::from);
+        }
+        return recentSrchwrdManageRepository.findBySrchwrdManageNmContaining(keyword, pageable).map(RecentSrchwrdDto::from);
+    }
 
     @Override
     public RecentSrchwrdDto getRecentSrchwrdManage(String manageId) {
-        return manageRepository.findById(manageId)
-                .map(m -> RecentSrchwrdDto.builder()
-                        .srchwrdManageId(m.getSrchwrdManageId())
-                        .srchwrdManageNm(m.getSrchwrdManageNm())
-                        .srchwrdConectUrl(m.getSrchwrdConectUrl())
-                        .userSearchAt(m.getUserSearchAt())
-                        .frstRegisterId(m.getFrstRegisterId())
-                        .frstRegisterPnttm(m.getCreatedDate())
-                        .build())
-                .orElse(null);
+        return recentSrchwrdManageRepository.findById(manageId)
+                .map(RecentSrchwrdDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void registerRecentSrchwrdManage(RecentSrchwrdDto dto) {
-        RecentSrchwrdManage manage = RecentSrchwrdManage.builder()
-                .srchwrdManageId(dto.getSrchwrdManageId())
+    public void insertRecentSrchwrdManage(RecentSrchwrdDto dto) {
+        String id = "RSM_" + String.format("%013d", System.currentTimeMillis());
+        RecentSrchwrdManage entity = RecentSrchwrdManage.builder()
+                .srchwrdManageId(id)
                 .srchwrdManageNm(dto.getSrchwrdManageNm())
                 .srchwrdConectUrl(dto.getSrchwrdConectUrl())
                 .userSearchAt(dto.getUserSearchAt())
-                .frstRegisterId(dto.getFrstRegisterId())
-                .lastUpdusrId(dto.getFrstRegisterId())
                 .build();
-        manageRepository.save(manage);
+        recentSrchwrdManageRepository.save(entity);
     }
 
     @Override
     @Transactional
     public void updateRecentSrchwrdManage(RecentSrchwrdDto dto) {
-        manageRepository.findById(dto.getSrchwrdManageId())
-                .ifPresent(m -> m.update(dto.getSrchwrdManageNm(), dto.getSrchwrdConectUrl(), dto.getUserSearchAt(),
-                        dto.getFrstRegisterId()));
+        RecentSrchwrdManage entity = recentSrchwrdManageRepository.findById(dto.getSrchwrdManageId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getSrchwrdManageNm(), dto.getSrchwrdConectUrl(), dto.getUserSearchAt());
     }
 
     @Override
     @Transactional
     public void deleteRecentSrchwrdManage(String manageId) {
-        manageRepository.deleteById(manageId);
+        recentSrchwrdRepository.deleteBySrchwrdManageId(manageId);
+        recentSrchwrdManageRepository.deleteById(manageId);
     }
 
     @Override
-    public Page<RecentSrchwrdDto> getRecentSrchwrdManageList(String searchKeyword, Pageable pageable) {
-        return manageRepository.findAll(pageable)
-                .map(m -> RecentSrchwrdDto.builder()
-                        .srchwrdManageId(m.getSrchwrdManageId())
-                        .srchwrdManageNm(m.getSrchwrdManageNm())
-                        .srchwrdConectUrl(m.getSrchwrdConectUrl())
-                        .userSearchAt(m.getUserSearchAt())
-                        .build());
+    public Page<RecentSrchwrdDto> getRecentSrchwrdList(String manageId, Pageable pageable) {
+        return recentSrchwrdRepository.findBySrchwrdManageId(manageId, pageable).map(RecentSrchwrdDto::from);
     }
 
     @Override
     @Transactional
-    public void registerRecentSrchwrd(RecentSrchwrdDto dto) {
-        RecentSrchwrdManage manage = manageRepository.findById(dto.getSrchwrdManageId()).orElse(null);
-        if (manage != null) {
-            RecentSrchwrd srchwrd = RecentSrchwrd.builder()
-                    .srchwrdId(dto.getSrchwrdId())
-                    .recentSrchwrdManage(manage)
-                    .srchwrdNm(dto.getSrchwrdNm())
-                    .frstRegisterId(dto.getFrstRegisterId())
-                    .lastUpdusrId(dto.getFrstRegisterId())
-                    .build();
-            srchwrdRepository.save(srchwrd);
-        }
+    public void insertRecentSrchwrd(String manageId, String srchwrdNm) {
+        String id = "RSW_" + String.format("%013d", System.currentTimeMillis());
+        RecentSrchwrd entity = RecentSrchwrd.builder()
+                .srchwrdId(id)
+                .srchwrdManageId(manageId)
+                .srchwrdNm(srchwrdNm)
+                .build();
+        recentSrchwrdRepository.save(entity);
     }
 
     @Override
     @Transactional
     public void deleteRecentSrchwrd(String srchwrdId) {
-        srchwrdRepository.deleteById(srchwrdId);
-    }
-
-    @Override
-    public Page<RecentSrchwrdDto> getRecentSrchwrdList(String manageId, String searchKeyword, Pageable pageable) {
-        // manageId 기반 필터링 필요 (Repository 확장 시 반영 가능)
-        return srchwrdRepository.findAll(pageable)
-                .map(s -> RecentSrchwrdDto.builder()
-                        .srchwrdId(s.getSrchwrdId())
-                        .srchwrdNm(s.getSrchwrdNm())
-                        .frstRegisterPnttm(s.getCreatedDate())
-                        .build());
+        recentSrchwrdRepository.deleteById(srchwrdId);
     }
 }

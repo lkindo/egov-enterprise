@@ -1,8 +1,12 @@
 package com.company.project.domain.help;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-@Repository
+/**
+ * 온라인매뉴얼 Repository
+ */
 public interface OnlineManualRepository extends JpaRepository<OnlineManual, String> {
+    Page<OnlineManual> findByOnlineMnlNmContaining(String onlineMnlNm, Pageable pageable);
 }

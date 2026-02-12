@@ -1,28 +1,31 @@
 package com.company.project.domain.namecard;
 
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
  * 명함 JPA Entity
- * 레거시 테이블: COMTNNCRDINFO
+ * 레거시 테이블: NNCRD
  */
 @Entity
-@Table(name = "nncrd")
+@Table(name = "NNCRD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class NameCard {
+public class NameCard extends BaseEntity {
 
     @Id
-    @Column(name = "ncrd_id", length = 20)
+    @Column(name = "NCRD_ID", length = 20)
     private String ncrdId;
 
-    @Column(name = "nm", length = 100, nullable = false)
+    @Column(name = "NM", length = 100, nullable = false)
     private String ncrdNm;
 
     @Column(name = "CMPNY_NM", length = 100)
@@ -37,50 +40,41 @@ public class NameCard {
     @Column(name = "OFCPS_NM", length = 50)
     private String ofcpsNm;
 
-    @Column(name = "email_adres", length = 100)
+    @Column(name = "EMAIL_ADRES", length = 100)
     private String emailAdres;
 
-    @Column(name = "telno", length = 20)
+    @Column(name = "TELNO", length = 20)
     private String telNo;
 
-    @Column(name = "mbtlnum", length = 20)
+    @Column(name = "MBTLNUM", length = 20)
     private String mbtlNum;
 
-    @Column(name = "adres", length = 255)
+    @Column(name = "ADRES", length = 255)
     private String adres;
 
-    @Column(name = "detail_adres", length = 255)
+    @Column(name = "DETAIL_ADRES", length = 255)
     private String detailAdres;
 
     @Transient
     private String zipCode;
 
-    @Column(name = "rm", length = 500)
+    @Column(name = "RM", length = 500)
     private String remark;
 
-    @Column(name = "othbc_at", length = 1)
+    @Column(name = "OTHBC_AT", length = 1)
     private String othbcAt;
 
-    @Column(name = "ncrd_trgter_id", length = 20)
+    @Column(name = "NCRD_TRGTER_ID", length = 20)
     private String ncrdTrgterId;
 
-    @Column(name = "frst_register_id", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "frst_regist_pnttm")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "last_updusr_id", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "last_updt_pnttm")
-    private LocalDateTime lastUpdusrPnttm;
+    @Column(name = "EXTRL_USER_AT", length = 1)
+    private String extrlUserAt;
 
     @Builder
     public NameCard(String ncrdId, String ncrdNm, String cmpnyNm, String deptNm, String clsfNm,
             String ofcpsNm, String emailAdres, String telNo, String mbtlNum, String adres,
             String detailAdres, String zipCode, String remark, String othbcAt,
-            String ncrdTrgterId, String frstRegisterId) {
+            String ncrdTrgterId, String extrlUserAt) {
         this.ncrdId = ncrdId;
         this.ncrdNm = ncrdNm;
         this.cmpnyNm = cmpnyNm;
@@ -96,13 +90,12 @@ public class NameCard {
         this.remark = remark;
         this.othbcAt = othbcAt;
         this.ncrdTrgterId = ncrdTrgterId;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.extrlUserAt = extrlUserAt;
     }
 
     public void update(String ncrdNm, String cmpnyNm, String deptNm, String clsfNm, String ofcpsNm,
             String emailAdres, String telNo, String mbtlNum, String adres, String detailAdres,
-            String zipCode, String remark, String othbcAt, String updusrId) {
+            String zipCode, String remark, String othbcAt, String extrlUserAt) {
         this.ncrdNm = ncrdNm;
         this.cmpnyNm = cmpnyNm;
         this.deptNm = deptNm;
@@ -116,7 +109,6 @@ public class NameCard {
         this.zipCode = zipCode;
         this.remark = remark;
         this.othbcAt = othbcAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.extrlUserAt = extrlUserAt;
     }
 }

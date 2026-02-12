@@ -10,8 +10,6 @@ import java.util.List;
  * 배너 Repository
  */
 public interface BannerRepository extends JpaRepository<Banner, String> {
-
     Page<Banner> findByBannerNmContaining(String bannerNm, Pageable pageable);
-
     List<Banner> findByReflctAtOrderBySortOrdrAsc(String reflctAt);
 }

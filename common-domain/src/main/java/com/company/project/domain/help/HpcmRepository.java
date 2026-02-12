@@ -1,8 +1,12 @@
 package com.company.project.domain.help;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-@Repository
+/**
+ * 도움말 Repository
+ */
 public interface HpcmRepository extends JpaRepository<Hpcm, String> {
+    Page<Hpcm> findByHpcmDfContaining(String hpcmDf, Pageable pageable);
 }

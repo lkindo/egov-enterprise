@@ -1,9 +1,13 @@
 package com.company.project.service.sanctn;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.sanctn.InformalSanctn;
 import com.company.project.domain.sanctn.InformalSanctnRepository;
 import com.company.project.service.sanctn.dto.InformalSanctnDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,35 +19,43 @@ public class InformalSanctnService implements EgovInformalSanctnService {
     private final InformalSanctnRepository informalSanctnRepository;
 
     @Override
+    public Page<InformalSanctnDto> getInfrmlSanctnList(String applcntId, Pageable pageable) {
+        return informalSanctnRepository.findByApplcntId(applcntId, pageable).map(InformalSanctnDto::from);
+    }
+
+    @Override
+    public Page<InformalSanctnDto> getReceivedInfrmlSanctnList(String sanctnerId, Pageable pageable) {
+        return informalSanctnRepository.findBySanctnerId(sanctnerId, pageable).map(InformalSanctnDto::from);
+    }
+
+    @Override
     public InformalSanctnDto getInfrmlSanctn(String infrmlSanctnId) {
         return informalSanctnRepository.findById(infrmlSanctnId)
-                .map(this::convertToDto)
-                .orElse(null);
+                .map(InformalSanctnDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
     public void registerInfrmlSanctn(InformalSanctnDto dto) {
-        InformalSanctn sanctn = InformalSanctn.builder()
-                .infrmlSanctnId(dto.getInfrmlSanctnId())
+        String id = "ISM_" + String.format("%013d", System.currentTimeMillis());
+        InformalSanctn entity = InformalSanctn.builder()
+                .infrmlSanctnId(id)
                 .jobSeCode(dto.getJobSeCode())
                 .applcntId(dto.getApplcntId())
                 .reqstDe(dto.getReqstDe())
                 .sanctnerId(dto.getSanctnerId())
                 .confmAt("N")
-                .frstRegisterId(dto.getApplcntId())
-                .lastUpdusrId(dto.getApplcntId())
                 .build();
-        informalSanctnRepository.save(sanctn);
+        informalSanctnRepository.save(entity);
     }
 
     @Override
     @Transactional
     public void updateInfrmlSanctn(InformalSanctnDto dto) {
-        informalSanctnRepository.findById(dto.getInfrmlSanctnId())
-                .ifPresent(s -> {
-                    // 필드 업데이트 로직
-                });
+        InformalSanctn entity = informalSanctnRepository.findById(dto.getInfrmlSanctnId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getJobSeCode(), dto.getReqstDe(), dto.getSanctnerId());
     }
 
     @Override
@@ -54,23 +66,9 @@ public class InformalSanctnService implements EgovInformalSanctnService {
 
     @Override
     @Transactional
-    public void confirmInfrmlSanctn(InformalSanctnDto dto) {
-        informalSanctnRepository.findById(dto.getInfrmlSanctnId())
-                .ifPresent(s -> {
-                    // 승인 여부 및 반려 사유 업데이트
-                });
-    }
-
-    private InformalSanctnDto convertToDto(InformalSanctn s) {
-        return InformalSanctnDto.builder()
-                .infrmlSanctnId(s.getInfrmlSanctnId())
-                .jobSeCode(s.getJobSeCode())
-                .applcntId(s.getApplcntId())
-                .reqstDe(s.getReqstDe())
-                .sanctnerId(s.getSanctnerId())
-                .confmAt(s.getConfmAt())
-                .sanctnDt(s.getSanctnDt())
-                .returnResn(s.getReturnResn())
-                .build();
+    public void confirmInfrmlSanctn(String infrmlSanctnId, String confmAt, String returnResn) {
+        InformalSanctn entity = informalSanctnRepository.findById(infrmlSanctnId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.confirm(confmAt, returnResn);
     }
 }

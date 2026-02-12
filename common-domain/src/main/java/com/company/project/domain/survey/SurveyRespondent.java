@@ -1,28 +1,30 @@
 package com.company.project.domain.survey;
 
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
- * 설문응답자 JPA Entity
- * 레거시 테이블: COMTNQUSTNRRESPONDINFO
+ * 설문 응답자 정보 Entity
+ * 레거시 테이블: NQUSTNRRESPONDINFO
  */
 @Entity
 @Table(name = "NQUSTNRRESPONDINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SurveyRespondent {
+public class SurveyRespondent extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_RESPOND_ID", length = 20)
     private String qestnrRespondId;
 
-    @Column(name = "QESTNR_ID", length = 20)
+    @Column(name = "QESTNR_ID", length = 20, nullable = false)
     private String qestnrId;
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
@@ -34,7 +36,7 @@ public class SurveyRespondent {
     @Column(name = "OCCP_TY_CODE", length = 20)
     private String occpTyCode;
 
-    @Column(name = "RESPOND_NM", length = 100)
+    @Column(name = "RESPOND_NM", length = 100, nullable = false)
     private String respondNm;
 
     @Column(name = "BRTHDY", length = 20)
@@ -49,22 +51,10 @@ public class SurveyRespondent {
     @Column(name = "END_TELNO", length = 10)
     private String endTelno;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
     public SurveyRespondent(String qestnrRespondId, String qestnrId, String qestnrTmplatId,
-            String sexdstnCode, String occpTyCode, String respondNm, String brth,
-            String areaNo, String middleTelno, String endTelno, String frstRegisterId) {
+                           String sexdstnCode, String occpTyCode, String respondNm, String brth,
+                           String areaNo, String middleTelno, String endTelno) {
         this.qestnrRespondId = qestnrRespondId;
         this.qestnrId = qestnrId;
         this.qestnrTmplatId = qestnrTmplatId;
@@ -75,12 +65,10 @@ public class SurveyRespondent {
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 
     public void update(String sexdstnCode, String occpTyCode, String respondNm, String brth,
-            String areaNo, String middleTelno, String endTelno, String updusrId) {
+                      String areaNo, String middleTelno, String endTelno) {
         this.sexdstnCode = sexdstnCode;
         this.occpTyCode = occpTyCode;
         this.respondNm = respondNm;
@@ -88,7 +76,5 @@ public class SurveyRespondent {
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

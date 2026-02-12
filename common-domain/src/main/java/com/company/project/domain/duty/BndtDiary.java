@@ -1,23 +1,24 @@
 package com.company.project.domain.duty;
 
-import java.time.LocalDateTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
+/**
+ * 당직 일지 정보 Entity
+ * 레거시 테이블: NBNDTDIARY
+ */
 @Entity
+@Table(name = "NBNDTDIARY")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NBNDTDIARY")
 @IdClass(BndtDiaryId.class)
-public class BndtDiary {
+public class BndtDiary extends BaseEntity {
 
     @Id
     @Column(name = "BNDT_ID", length = 20)
@@ -38,33 +39,16 @@ public class BndtDiary {
     @Column(name = "CHCK_STTUS", length = 1)
     private String chckSttus;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
-    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus,
-            String frstRegisterId) {
+    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus) {
         this.bndtId = bndtId;
         this.bndtDe = bndtDe;
         this.bndtCeckSe = bndtCeckSe;
         this.bndtCeckCd = bndtCeckCd;
         this.chckSttus = chckSttus;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 
-    public void update(String chckSttus, String lastUpdusrId) {
+    public void update(String chckSttus) {
         this.chckSttus = chckSttus;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

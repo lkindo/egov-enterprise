@@ -1,50 +1,62 @@
 package com.company.project.service.image;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.image.MainImage;
-import com.company.project.domain.image.MainImageDomainRepository;
-import com.company.project.service.image.dto.ImageDto;
+import com.company.project.domain.image.MainImageRepository;
+import com.company.project.service.image.dto.MainImageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MainImageService implements EgovMainImageService {
 
-    private final MainImageDomainRepository mainImageRepository;
+    private final MainImageRepository mainImageRepository;
 
     @Override
-    public ImageDto getMainImage(String imageId) {
+    public Page<MainImageDto> getMainImageList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return mainImageRepository.findAll(pageable).map(MainImageDto::from);
+        }
+        return mainImageRepository.findByImageNmContaining(keyword, pageable).map(MainImageDto::from);
+    }
+
+    @Override
+    public MainImageDto getMainImage(String imageId) {
         return mainImageRepository.findById(imageId)
-                .map(this::convertToDto)
-                .orElse(null);
+                .map(MainImageDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void registerMainImage(ImageDto dto) {
-        MainImage mainImage = MainImage.builder()
-                .imageId(dto.getImageId())
+    public void insertMainImage(MainImageDto dto) {
+        String id = "IMAGE_" + String.format("%013d", System.currentTimeMillis());
+        MainImage entity = MainImage.builder()
+                .imageId(id)
                 .imageNm(dto.getImageNm())
                 .image(dto.getImage())
                 .imageFile(dto.getImageFile())
                 .imageDc(dto.getImageDc())
                 .reflctAt(dto.getReflctAt())
-                .frstRegisterId("SYSTEM")
-                .lastUpdusrId("SYSTEM")
                 .build();
-        mainImageRepository.save(mainImage);
+        mainImageRepository.save(entity);
     }
 
     @Override
     @Transactional
-    public void updateMainImage(ImageDto dto) {
-        mainImageRepository.findById(dto.getImageId())
-                .ifPresent(mi -> mi.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(),
-                        dto.getReflctAt(), "SYSTEM"));
+    public void updateMainImage(MainImageDto dto) {
+        MainImage entity = mainImageRepository.findById(dto.getImageId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(), dto.getReflctAt());
     }
 
     @Override
@@ -54,19 +66,9 @@ public class MainImageService implements EgovMainImageService {
     }
 
     @Override
-    public Page<ImageDto> getMainImageList(String searchKeyword, Pageable pageable) {
-        return mainImageRepository.findAll(pageable)
-                .map(this::convertToDto);
-    }
-
-    private ImageDto convertToDto(MainImage mi) {
-        return ImageDto.builder()
-                .imageId(mi.getImageId())
-                .imageNm(mi.getImageNm())
-                .image(mi.getImage())
-                .imageFile(mi.getImageFile())
-                .imageDc(mi.getImageDc())
-                .reflctAt(mi.getReflctAt())
-                .build();
+    public List<MainImageDto> getReflectedMainImages() {
+        return mainImageRepository.findByReflctAt("Y").stream()
+                .map(MainImageDto::from)
+                .collect(Collectors.toList());
     }
 }

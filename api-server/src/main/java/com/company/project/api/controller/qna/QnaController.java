@@ -1,0 +1,71 @@
+package com.company.project.api.controller.qna;
+
+import com.company.project.core.response.ApiResponse;
+import com.company.project.service.qna.EgovQnaService;
+import com.company.project.service.qna.dto.QnaDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = "Qna", description = "Q&A Management APIs")
+@RestController
+@RequestMapping("/api/v1/qnas")
+@RequiredArgsConstructor
+public class QnaController {
+
+    private final EgovQnaService qnaService;
+
+    @Operation(summary = "Q&A 목록 조회")
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<QnaDto>>> getQnas(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(qnaService.getQnaList(keyword, pageable)));
+    }
+
+    @Operation(summary = "Q&A 상세 조회")
+    @GetMapping("/{qaId}")
+    public ResponseEntity<ApiResponse<QnaDto>> getQna(
+            @Parameter(description = "Q&A ID") @PathVariable String qaId) {
+        return ResponseEntity.ok(ApiResponse.success(qnaService.getQna(qaId)));
+    }
+
+    @Operation(summary = "Q&A 질문 등록")
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> insertQna(@RequestBody QnaDto dto) {
+        qnaService.insertQna(null, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Q&A 질문 수정")
+    @PutMapping("/{qaId}")
+    public ResponseEntity<ApiResponse<Void>> updateQna(
+            @PathVariable String qaId,
+            @RequestBody QnaDto dto) {
+        qnaService.updateQna(qaId, null, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Q&A 답변 등록")
+    @PatchMapping("/{qaId}/answer")
+    public ResponseEntity<ApiResponse<Void>> answerQna(
+            @PathVariable String qaId,
+            @RequestBody String answerCn) {
+        qnaService.answerQna(qaId, null, answerCn);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Q&A 삭제")
+    @DeleteMapping("/{qaId}")
+    public ResponseEntity<ApiResponse<Void>> deleteQna(
+            @PathVariable String qaId) {
+        qnaService.deleteQna(qaId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+}

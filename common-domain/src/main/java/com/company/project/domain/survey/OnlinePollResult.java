@@ -1,7 +1,6 @@
 package com.company.project.domain.survey;
 
-import java.time.LocalDateTime;
-
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,40 +10,30 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 온라인 투표 결과 정보 Entity
+ * 레거시 테이블: NONLINEPOLLRESULT
+ */
 @Entity
+@Table(name = "NONLINEPOLLRESULT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "NONLINEPOLLRESULT")
-public class OnlinePollResult {
+public class OnlinePollResult extends BaseEntity {
 
     @Id
     @Column(name = "POLL_RESULT_ID", length = 20)
     private String pollResultId;
 
-    @Column(name = "POLL_ID", length = 20)
+    @Column(name = "POLL_ID", length = 20, nullable = false)
     private String pollId;
 
-    @Column(name = "POLL_IEM_ID", length = 20)
+    @Column(name = "POLL_IEM_ID", length = 20, nullable = false)
     private String pollIemId;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
     @Builder
-    public OnlinePollResult(String pollResultId, String pollId, String pollIemId, String frstRegisterId) {
+    public OnlinePollResult(String pollResultId, String pollId, String pollIemId) {
         this.pollResultId = pollResultId;
         this.pollId = pollId;
         this.pollIemId = pollIemId;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 }

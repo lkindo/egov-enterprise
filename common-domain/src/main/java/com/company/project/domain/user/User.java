@@ -1,16 +1,21 @@
 package com.company.project.domain.user;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+/**
+ * 업무 사용자 정보 Entity
+ * 레거시 테이블: NEMPLYRINFO
+ */
 @Entity
 @Table(name = "NEMPLYRINFO")
-public class User implements Serializable {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseEntity implements Serializable {
 
     @Id
     @Column(name = "EMPLYR_ID", length = 60)

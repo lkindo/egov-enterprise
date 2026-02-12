@@ -11,9 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * FAQ 서비스 구현체
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,58 +23,42 @@ public class FaqService implements EgovFaqService {
         if (keyword == null || keyword.isEmpty()) {
             return faqRepository.findAll(pageable).map(FaqDto::from);
         }
-        return faqRepository.searchByKeyword(keyword, pageable).map(FaqDto::from);
-    }
-
-    @Override
-    public FaqDto getFaq(String faqId) {
-        Faq faq = faqRepository.findById(faqId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return FaqDto.from(faq);
+        return faqRepository.findByQestnSjContaining(keyword, pageable).map(FaqDto::from);
     }
 
     @Override
     @Transactional
-    public String createFaq(String userId, FaqDto dto) {
-        // ID 생성: FAQ_ + timestamp
-        String faqId = "FAQ_" + String.format("%013d", System.currentTimeMillis());
+    public FaqDto getFaq(String faqId) {
+        Faq entity = faqRepository.findById(faqId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.increaseInqireCo();
+        return FaqDto.from(entity);
+    }
 
-        Faq faq = Faq.builder()
-                .faqId(faqId)
+    @Override
+    @Transactional
+    public void insertFaq(String userId, FaqDto dto) {
+        String id = "FAQ_" + String.format("%013d", System.currentTimeMillis());
+        faqRepository.save(Faq.builder()
+                .faqId(id)
                 .qestnSj(dto.getQestnSj())
                 .qestnCn(dto.getQestnCn())
                 .answerCn(dto.getAnswerCn())
                 .atchFileId(dto.getAtchFileId())
-                .frstRegisterId(userId)
-                .build();
-
-        faqRepository.save(faq);
-        return faqId;
+                .build());
     }
 
     @Override
     @Transactional
     public void updateFaq(String faqId, String userId, FaqDto dto) {
-        Faq faq = faqRepository.findById(faqId)
+        Faq entity = faqRepository.findById(faqId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        faq.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(),
-                dto.getAtchFileId(), userId);
+        entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId());
     }
 
     @Override
     @Transactional
-    public void deleteFaq(String faqId, String userId) {
-        Faq faq = faqRepository.findById(faqId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        faqRepository.delete(faq);
-    }
-
-    @Override
-    @Transactional
-    public void increaseViewCount(String faqId) {
-        Faq faq = faqRepository.findById(faqId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        faq.increaseViewCount();
+    public void deleteFaq(String faqId) {
+        faqRepository.deleteById(faqId);
     }
 }

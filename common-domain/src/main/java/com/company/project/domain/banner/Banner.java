@@ -1,22 +1,24 @@
 package com.company.project.domain.banner;
 
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
- * 배너 JPA Entity
- * 레거시 테이블: COMTNBANNER
+ * 배너 정보 Entity
+ * 레거시 테이블: NBANNER
  */
 @Entity
 @Table(name = "NBANNER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Banner {
+public class Banner extends BaseEntity {
 
     @Id
     @Column(name = "BANNER_ID", length = 20)
@@ -40,15 +42,12 @@ public class Banner {
     @Column(name = "REFLCT_AT", length = 1)
     private String reflctAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String userId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime regDate;
+    @Column(name = "BANNER_IMAGE_FILE", length = 20)
+    private String bannerImageFile;
 
     @Builder
     public Banner(String bannerId, String bannerNm, String linkUrl, String bannerImage,
-            String bannerDc, Integer sortOrdr, String reflctAt, String userId) {
+                  String bannerDc, Integer sortOrdr, String reflctAt, String bannerImageFile) {
         this.bannerId = bannerId;
         this.bannerNm = bannerNm;
         this.linkUrl = linkUrl;
@@ -56,17 +55,17 @@ public class Banner {
         this.bannerDc = bannerDc;
         this.sortOrdr = sortOrdr;
         this.reflctAt = reflctAt;
-        this.userId = userId;
-        this.regDate = LocalDateTime.now();
+        this.bannerImageFile = bannerImageFile;
     }
 
     public void update(String bannerNm, String linkUrl, String bannerImage,
-            String bannerDc, Integer sortOrdr, String reflctAt) {
+                      String bannerDc, Integer sortOrdr, String reflctAt, String bannerImageFile) {
         this.bannerNm = bannerNm;
         this.linkUrl = linkUrl;
-        this.bannerImage = bannerImage;
+        if (bannerImage != null) this.bannerImage = bannerImage;
         this.bannerDc = bannerDc;
         this.sortOrdr = sortOrdr;
         this.reflctAt = reflctAt;
+        if (bannerImageFile != null) this.bannerImageFile = bannerImageFile;
     }
 }

@@ -1,6 +1,10 @@
 package com.company.project.domain.qna;
 
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,14 +13,14 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Q&A JPA Entity
- * 레거시 테이블: COMTNQNA
+ * Q&A 정보 Entity
+ * 레거시 테이블: NQAINFO
  */
 @Entity
 @Table(name = "NQAINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Qna {
+public class Qna extends BaseEntity {
 
     @Id
     @Column(name = "QA_ID", length = 20)
@@ -25,7 +29,7 @@ public class Qna {
     @Column(name = "QESTN_SJ", length = 255, nullable = false)
     private String qestnSj;
 
-    @Column(name = "QESTN_CN", length = 4000)
+    @Column(name = "QESTN_CN", columnDefinition = "TEXT")
     private String qestnCn;
 
     @Column(name = "WRITNG_PASSWORD", length = 100)
@@ -52,7 +56,7 @@ public class Qna {
     @Column(name = "QNA_PROCESS_STTUS_CODE", length = 20)
     private String qnaProcessSttusCode;
 
-    @Column(name = "ANSWER_CN", length = 4000)
+    @Column(name = "ANSWER_CN", columnDefinition = "TEXT")
     private String answerCn;
 
     @Column(name = "ANSWER_DE", length = 20)
@@ -64,23 +68,10 @@ public class Qna {
     @Column(name = "WRITNG_DE", length = 20)
     private String writngDe;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
-    public Qna(String qaId, String qestnSj, String qestnCn, String writngPassword,
-            String wrterNm, String emailAdres, String emailAnswerAt,
-            String areaNo, String middleTelno, String endTelno,
-            String frstRegisterId) {
+    public Qna(String qaId, String qestnSj, String qestnCn, String writngPassword, String wrterNm,
+               String emailAdres, String emailAnswerAt, String areaNo, String middleTelno, String endTelno,
+               String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe) {
         this.qaId = qaId;
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
@@ -91,63 +82,29 @@ public class Qna {
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.qnaProcessSttusCode = "Q"; // 질문상태
-        this.inqireCo = 0;
-        this.writngDe = java.time.LocalDate.now().toString().replace("-", "");
+        this.qnaProcessSttusCode = qnaProcessSttusCode != null ? qnaProcessSttusCode : "Q";
+        this.answerCn = answerCn;
+        this.answerDe = answerDe;
+        this.inqireCo = inqireCo != null ? inqireCo : 0;
+        this.writngDe = writngDe != null ? writngDe : java.time.LocalDate.now().toString().replace("-", "");
     }
 
-    /**
-     * Q&A 수정 (질문자)
-     */
-    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres,
-            String areaNo, String middleTelno, String endTelno, String updusrId) {
+    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno, String endTelno) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.emailAdres = emailAdres;
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 
-    /**
-     * Q&A 답변 등록
-     */
-    public void updateAnswer(String answerCn, String updusrId) {
+    public void answer(String answerCn) {
         this.answerCn = answerCn;
         this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
-        this.qnaProcessSttusCode = "A"; // 답변완료
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.qnaProcessSttusCode = "A"; // 답변 완료
     }
 
-    /**
-     * 조회수 증가
-     */
-    public void increaseViewCount() {
+    public void increaseInqireCo() {
         this.inqireCo = (this.inqireCo == null ? 0 : this.inqireCo) + 1;
-    }
-
-    /**
-     * 비밀번호 확인
-     */
-    public boolean checkPassword(String password) {
-        if (this.writngPassword == null)
-            return true;
-        return this.writngPassword.equals(password);
-    }
-
-    /**
-     * 답변 등록
-     */
-    public void answer(String answerCn, String updusrId) {
-        this.answerCn = answerCn;
-        this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
-        this.qnaProcessSttusCode = "A"; // 답변완료
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

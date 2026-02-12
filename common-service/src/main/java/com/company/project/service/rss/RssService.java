@@ -1,7 +1,11 @@
 package com.company.project.service.rss;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.rss.Rss;
-import com.company.project.domain.rss.RssDomainRepository;
+import com.company.project.domain.rss.RssRepository;
+import com.company.project.domain.rss.RssTag;
+import com.company.project.domain.rss.RssTagRepository;
 import com.company.project.service.rss.dto.RssDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,20 +18,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RssService implements EgovRssService {
 
-    private final RssDomainRepository rssRepository;
+    private final RssRepository rssRepository;
+    private final RssTagRepository rssTagRepository;
+
+    @Override
+    public Page<RssDto> getRssList(String keyword, Pageable pageable) {
+        return rssTagRepository.findByTrgetSvcNmContaining(keyword, pageable).map(RssDto::from);
+    }
 
     @Override
     public RssDto getRss(String rssId) {
+        // Try finding in RssInfo (NRSS) first, then fallback to RssTag (NRSSTAG)
         return rssRepository.findById(rssId)
-                .map(this::convertToDto)
-                .orElse(null);
+                .map(RssDto::from)
+                .orElseGet(() -> rssTagRepository.findById(rssId)
+                        .map(RssDto::from)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND)));
     }
 
     @Override
     @Transactional
-    public void registerRss(RssDto dto) {
+    public void insertRss(RssDto dto) {
+        String id = "RSS_" + String.format("%013d", System.currentTimeMillis());
+        
+        // Save to Rss (NRSS)
         Rss rss = Rss.builder()
-                .rssId(dto.getRssId())
+                .rssId(id)
                 .trgetSvcNm(dto.getTrgetSvcNm())
                 .trgetSvcTable(dto.getTrgetSvcTable())
                 .trgetSvcListCo(dto.getTrgetSvcListCo())
@@ -41,49 +57,43 @@ public class RssService implements EgovRssService {
                 .bdtDc(dto.getBdtDc())
                 .bdtTag(dto.getBdtTag())
                 .bdtEtcTag(dto.getBdtEtcTag())
-                .frstRegisterId("SYSTEM")
-                .lastUpdusrId("SYSTEM")
                 .build();
         rssRepository.save(rss);
+
+        // Also save to RssTag (NRSSTAG) for legacy compatibility
+        RssTag rssTag = RssTag.builder()
+                .rssId(id)
+                .trgetSvcNm(dto.getTrgetSvcNm())
+                .trgetSvcTable(dto.getTrgetSvcTable())
+                .trgetSvcListCo(dto.getTrgetSvcListCo())
+                .hderTag(dto.getHderTag())
+                .itemTag(dto.getBdtTag())
+                .titleTag(dto.getBdtTitle())
+                .linkTag(dto.getBdtLink())
+                .descriptionTag(dto.getBdtDc())
+                .build();
+        rssTagRepository.save(rssTag);
     }
 
     @Override
     @Transactional
     public void updateRss(RssDto dto) {
-        rssRepository.findById(dto.getRssId())
-                .ifPresent(r -> {
-                    // Rss 엔티티에 update 메소드 추가 필요 시 반영
-                });
+        Rss rss = rssRepository.findById(dto.getRssId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        rss.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(), dto.getTrgetSvcListCo(),
+                dto.getHderTitle(), dto.getHderLink(), dto.getHderDc(), dto.getHderTag(), dto.getHderEtc(),
+                dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc(), dto.getBdtTag(), dto.getBdtEtcTag());
+
+        rssTagRepository.findById(dto.getRssId()).ifPresent(tag -> 
+            tag.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(), dto.getTrgetSvcListCo(),
+                    dto.getHderTag(), dto.getBdtTag(), dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc())
+        );
     }
 
     @Override
     @Transactional
     public void deleteRss(String rssId) {
         rssRepository.deleteById(rssId);
-    }
-
-    @Override
-    public Page<RssDto> getRssList(String searchKeyword, Pageable pageable) {
-        return rssRepository.findAll(pageable)
-                .map(this::convertToDto);
-    }
-
-    private RssDto convertToDto(Rss r) {
-        return RssDto.builder()
-                .rssId(r.getRssId())
-                .trgetSvcNm(r.getTrgetSvcNm())
-                .trgetSvcTable(r.getTrgetSvcTable())
-                .trgetSvcListCo(r.getTrgetSvcListCo())
-                .hderTitle(r.getHderTitle())
-                .hderLink(r.getHderLink())
-                .hderDc(r.getHderDc())
-                .hderTag(r.getHderTag())
-                .hderEtc(r.getHderEtc())
-                .bdtTitle(r.getBdtTitle())
-                .bdtLink(r.getBdtLink())
-                .bdtDc(r.getBdtDc())
-                .bdtTag(r.getBdtTag())
-                .bdtEtcTag(r.getBdtEtcTag())
-                .build();
+        rssTagRepository.deleteById(rssId);
     }
 }

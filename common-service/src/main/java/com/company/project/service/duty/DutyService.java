@@ -1,18 +1,20 @@
 package com.company.project.service.duty;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.duty.*;
 import com.company.project.service.duty.dto.DutyCheckDto;
-import com.company.project.service.duty.dto.DutyDto;
 import com.company.project.service.duty.dto.DutyDiaryDto;
+import com.company.project.service.duty.dto.DutyDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,135 +22,93 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class DutyService implements EgovDutyService {
 
-    private final DutyRepository dutyRepository;
-    private final DutyCheckRepository dutyCheckRepository;
-    private final DutyDiaryRepository dutyDiaryRepository;
+    private final BndtManageRepository bndtManageRepository;
+    private final BndtCeckManageRepository bndtCeckManageRepository;
+    private final BndtDiaryRepository bndtDiaryRepository;
 
     @Override
     public DutyDto getDuty(String bndtId, String bndtDe) {
-        return dutyRepository.findById(new Duty.DutyId(bndtId, bndtDe))
-                .map(this::convertToDto)
-                .orElse(null);
+        return bndtManageRepository.findById(new BndtManageId(bndtId, bndtDe))
+                .map(entity -> {
+                    DutyDto dto = DutyDto.from(entity);
+                    dto.setDiaries(bndtDiaryRepository.findByBndtIdAndBndtDe(bndtId, bndtDe)
+                            .stream().map(DutyDiaryDto::from).collect(Collectors.toList()));
+                    return dto;
+                })
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
     public void registerDuty(DutyDto dto) {
-        Duty duty = Duty.builder()
-                .id(new Duty.DutyId(dto.getBndtId(), dto.getBndtDe()))
+        BndtManage entity = BndtManage.builder()
+                .bndtId(dto.getBndtId())
+                .bndtDe(dto.getBndtDe())
                 .remark(dto.getRemark())
-                .frstRegisterId("SYSTEM")
-                .lastUpdusrId("SYSTEM")
                 .build();
-        dutyRepository.save(duty);
+        bndtManageRepository.save(entity);
     }
 
     @Override
     @Transactional
     public void updateDuty(DutyDto dto) {
-        dutyRepository.findById(new Duty.DutyId(dto.getBndtId(), dto.getBndtDe()))
-                .ifPresent(d -> d.update(dto.getRemark(), "SYSTEM"));
+        BndtManage entity = bndtManageRepository.findById(new BndtManageId(dto.getBndtId(), dto.getBndtDe()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getRemark());
     }
 
     @Override
     @Transactional
     public void deleteDuty(String bndtId, String bndtDe) {
-        dutyDiaryRepository.deleteById_BndtIdAndId_BndtDe(bndtId, bndtDe);
-        dutyRepository.deleteById(new Duty.DutyId(bndtId, bndtDe));
-    }
-
-    @Override
-    public List<DutyDto> getDutyList(String bndtDePrefix) {
-        List<Duty> duties = dutyRepository.findById_BndtDeStartingWith(bndtDePrefix);
-        List<DutyDiary> allDiaries = dutyDiaryRepository.findById_BndtDeStartingWith(bndtDePrefix);
-
-        Map<String, List<DutyDiary>> diariesByDuty = allDiaries.stream()
-                .collect(Collectors.groupingBy(d -> d.getId().getBndtId() + "_" + d.getId().getBndtDe()));
-
-        return duties.stream()
-                .map(d -> {
-                    String key = d.getId().getBndtId() + "_" + d.getId().getBndtDe();
-                    return convertToDto(d, diariesByDuty.getOrDefault(key, Collections.emptyList()));
-                })
-                .collect(Collectors.toList());
+        bndtDiaryRepository.deleteByBndtIdAndBndtDe(bndtId, bndtDe);
+        bndtManageRepository.deleteById(new BndtManageId(bndtId, bndtDe));
     }
 
     @Override
     public Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable) {
-        Page<Duty> dutyPage = dutyRepository.findById_BndtDeStartingWith(bndtDePrefix, pageable);
+        Page<BndtManage> page = bndtManageRepository.findByBndtDeStartingWith(bndtDePrefix, pageable);
+        
+        List<BndtDiary> allDiaries = bndtDiaryRepository.findByBndtDeStartingWith(bndtDePrefix);
+        Map<String, List<BndtDiary>> diariesByDuty = allDiaries.stream()
+                .collect(Collectors.groupingBy(d -> d.getBndtId() + "_" + d.getBndtDe()));
 
-        // Batch fetch all diaries for the prefix (e.g. month) to avoid N+1 queries.
-        // While this might fetch diaries for duties not in the current page, it is more efficient than N+1
-        // and simpler than constructing a custom composite-key IN query.
-        List<DutyDiary> allDiaries = dutyDiaryRepository.findById_BndtDeStartingWith(bndtDePrefix);
-
-        Map<String, List<DutyDiary>> diariesByDuty = allDiaries.stream()
-                .collect(Collectors.groupingBy(d -> d.getId().getBndtId() + "_" + d.getId().getBndtDe()));
-
-        return dutyPage.map(d -> {
-            String key = d.getId().getBndtId() + "_" + d.getId().getBndtDe();
-            return convertToDto(d, diariesByDuty.getOrDefault(key, Collections.emptyList()));
+        return page.map(entity -> {
+            DutyDto dto = DutyDto.from(entity);
+            String key = entity.getBndtId() + "_" + entity.getBndtDe();
+            dto.setDiaries(diariesByDuty.getOrDefault(key, Collections.emptyList())
+                    .stream().map(DutyDiaryDto::from).collect(Collectors.toList()));
+            return dto;
         });
     }
 
     @Override
     public List<DutyCheckDto> getDutyCheckList(String useAt) {
-        return dutyCheckRepository.findByUseAt(useAt).stream()
-                .map(c -> DutyCheckDto.builder()
-                        .bndtCeckSe(c.getId().getBndtCeckSe())
-                        .bndtCeckCd(c.getId().getBndtCeckCd())
-                        .bndtCeckCdNm(c.getBndtCeckCdNm())
-                        .useAt(c.getUseAt())
-                        .build())
+        // Simple list retrieval for checks
+        return bndtCeckManageRepository.findAll().stream()
+                .filter(c -> useAt == null || useAt.equals(c.getUseAt()))
+                .map(DutyCheckDto::from)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public void saveDutyDiary(List<DutyDiaryDto> diaryList) {
-        if (diaryList == null || diaryList.isEmpty())
-            return;
+        if (diaryList == null || diaryList.isEmpty()) return;
 
         String bndtId = diaryList.get(0).getBndtId();
         String bndtDe = diaryList.get(0).getBndtDe();
 
-        dutyDiaryRepository.deleteById_BndtIdAndId_BndtDe(bndtId, bndtDe);
+        bndtDiaryRepository.deleteByBndtIdAndBndtDe(bndtId, bndtDe);
 
         for (DutyDiaryDto dto : diaryList) {
-            DutyDiary diary = DutyDiary.builder()
-                    .id(new DutyDiary.DutyDiaryId(dto.getBndtId(), dto.getBndtDe(), dto.getBndtCeckSe(),
-                            dto.getBndtCeckCd()))
+            BndtDiary entity = BndtDiary.builder()
+                    .bndtId(bndtId)
+                    .bndtDe(bndtDe)
+                    .bndtCeckSe(dto.getBndtCeckSe())
+                    .bndtCeckCd(dto.getBndtCeckCd())
                     .chckSttus(dto.getChckSttus())
-                    .frstRegisterId("SYSTEM")
-                    .lastUpdusrId("SYSTEM")
                     .build();
-            dutyDiaryRepository.save(diary);
+            bndtDiaryRepository.save(entity);
         }
-    }
-
-    private DutyDto convertToDto(Duty d) {
-        List<DutyDiary> diaries = dutyDiaryRepository.findById_BndtIdAndId_BndtDe(d.getId().getBndtId(),
-                d.getId().getBndtDe());
-        return convertToDto(d, diaries);
-    }
-
-    private DutyDto convertToDto(Duty d, List<DutyDiary> diaries) {
-        DutyDto dto = DutyDto.builder()
-                .bndtId(d.getId().getBndtId())
-                .bndtDe(d.getId().getBndtDe())
-                .remark(d.getRemark())
-                .build();
-
-        dto.setDiaries(diaries.stream()
-                .map(diary -> DutyDiaryDto.builder()
-                        .bndtId(diary.getId().getBndtId())
-                        .bndtDe(diary.getId().getBndtDe())
-                        .bndtCeckSe(diary.getId().getBndtCeckSe())
-                        .bndtCeckCd(diary.getId().getBndtCeckCd())
-                        .chckSttus(diary.getChckSttus())
-                        .build())
-                .collect(Collectors.toList()));
-
-        return dto;
     }
 }
