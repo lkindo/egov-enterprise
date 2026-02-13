@@ -4,16 +4,20 @@ import com.company.project.domain.syshistory.SystemHistory;
 import com.company.project.domain.syshistory.SystemHistoryRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-@SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
-@org.springframework.test.context.ActiveProfiles("dev")
-@org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // Use H2 for tests
+@EnableAutoConfiguration
+@ActiveProfiles("test")
 public class SystemHistoryTest {
 
     @Autowired

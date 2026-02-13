@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,14 +28,21 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<TroblDto> getTroblList(String strTroblNm, String strTroblKnd, String strProcessSttus, Pageable pageable) {
-        Page<Object[]> page = troblRepository.selectTroblList(strTroblNm, strTroblKnd, strProcessSttus, pageable);
-        return page.map(this::mapToDto);
+        List<String> statuses = (strProcessSttus != null && !strProcessSttus.equals("00")) ? Collections.singletonList(strProcessSttus) : null;
+        Page<Trobl> page = troblRepository.searchTroblReqsts(strTroblNm, strTroblKnd, statuses, pageable);
+        return mapToDtoPage(page);
     }
 
     @Transactional(readOnly = true)
     public Page<TroblDto> getTroblProcessList(String strTroblNm, String strTroblKnd, String strProcessSttus, Pageable pageable) {
-        Page<Object[]> page = troblRepository.selectTroblProcessList(strTroblNm, strTroblKnd, strProcessSttus, pageable);
-        return page.map(this::mapToDto);
+        List<String> statuses;
+        if (strProcessSttus != null && !strProcessSttus.equals("00")) {
+            statuses = Collections.singletonList(strProcessSttus);
+        } else {
+            statuses = Arrays.asList("R", "C");
+        }
+        Page<Trobl> page = troblRepository.searchTroblReqsts(strTroblNm, strTroblKnd, statuses, pageable);
+        return mapToDtoPage(page);
     }
 
     @Transactional(readOnly = true)
@@ -116,25 +125,18 @@ public class TroblService extends EgovAbstractServiceImpl {
         troblRepository.deleteById(troblId);
     }
 
-    private TroblDto mapToDto(Object[] row) {
-        return TroblDto.builder()
-                .troblId((String) row[0])
-                .troblNm((String) row[1])
-                .troblKnd((String) row[2])
-                .troblKndNm((String) row[3])
-                .troblDc((String) row[4])
-                .troblOccrrncTime((String) row[5])
-                .troblRqesterNm((String) row[6])
-                .troblRequstTime((String) row[7])
-                .troblProcessResult((String) row[8])
-                .troblOpetrNm((String) row[9])
-                .troblProcessTime((String) row[10])
-                .processSttus((String) row[11])
-                .processSttusNm((String) row[12])
-                .frstRegisterPnttm((LocalDateTime) row[13])
-                .frstRegisterId((String) row[14])
-                .lastUpdusrPnttm((LocalDateTime) row[15])
-                .lastUpdusrId((String) row[16])
-                .build();
+    private Page<TroblDto> mapToDtoPage(Page<Trobl> page) {
+        List<CommonCodeDto> kndCodes = commonCodeService.getCodesByGroup("COM065");
+        Map<String, String> kndMap = kndCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+        
+        List<CommonCodeDto> sttusCodes = commonCodeService.getCodesByGroup("COM068");
+        Map<String, String> sttusMap = sttusCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+
+        return page.map(entity -> {
+            TroblDto dto = TroblDto.from(entity);
+            dto.setTroblKndNm(kndMap.getOrDefault(dto.getTroblKnd(), ""));
+            dto.setProcessSttusNm(sttusMap.getOrDefault(dto.getProcessSttus(), ""));
+            return dto;
+        });
     }
 }

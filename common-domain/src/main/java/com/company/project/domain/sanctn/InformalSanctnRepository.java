@@ -10,4 +10,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface InformalSanctnRepository extends JpaRepository<InformalSanctn, String> {
     Page<InformalSanctn> findByApplcntId(String applcntId, Pageable pageable);
     Page<InformalSanctn> findBySanctnerId(String sanctnerId, Pageable pageable);
+    Page<InformalSanctn> findBySanctnerIdAndConfmAt(String sanctnerId, String confmAt, Pageable pageable);
 }

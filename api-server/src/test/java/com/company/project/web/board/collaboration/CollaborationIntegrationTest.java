@@ -1,24 +1,10 @@
 package com.company.project.web.board.collaboration;
 
 import com.company.project.security.jwt.JwtTokenProvider;
-import com.company.project.service.addressbook.EgovAddressBookService;
 import com.company.project.service.board.EgovBoardMasterService;
-import com.company.project.service.board.EgovBoardService;
 import com.company.project.service.board.dto.BoardMasterDto;
-import com.company.project.service.community.EgovCommunityService;
-import com.company.project.service.deptjob.EgovDeptJobBoxService;
-import com.company.project.service.duty.EgovDutyService;
 import com.company.project.service.mail.EgovMailService;
 import com.company.project.service.mail.dto.SentMailDto;
-import com.company.project.service.memoreport.EgovMemoReportService;
-import com.company.project.service.namecard.EgovNameCardService;
-import com.company.project.service.report.EgovWorkReportService;
-import com.company.project.service.schedule.EgovLeaderScheduleService;
-import com.company.project.service.schedule.EgovMemoTodoService;
-import com.company.project.service.schedule.EgovScheduleService;
-import com.company.project.service.scrap.EgovScrapService;
-import com.company.project.service.sms.EgovSmsService;
-import com.company.project.service.template.EgovTemplateService;
 import com.company.project.web.board.LegacyCollaborationController;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
@@ -27,11 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -39,12 +22,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.company.project.api.config.WebMvcConfig;
-import com.company.project.config.TestSecurityConfig;
-
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
-import javax.sql.DataSource;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -60,56 +39,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class CollaborationIntegrationTest {
 
-    @SpringBootConfiguration
-    @EnableAutoConfiguration
-    @Import({ LegacyCollaborationController.class, WebMvcConfig.class, TestSecurityConfig.class })
-    static class TestConfig {
-    }
-
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean(name = "dataSource")
-    private DataSource dataSource;
-
     @MockBean
     private EgovUserDetailsService egovUserDetailsService;
 
     @MockBean
     private EgovBoardMasterService egovBoardMasterService;
-    @MockBean
-    private EgovBoardService egovBoardService;
-    @MockBean
-    private EgovTemplateService egovTemplateService;
-    @MockBean
-    private EgovAddressBookService egovAddressBookService;
-    @MockBean
-    private EgovScheduleService egovScheduleService;
-    @MockBean
-    private EgovNameCardService egovNameCardService;
-    @MockBean
-    private EgovMemoTodoService egovMemoTodoService;
-    @MockBean
-    private EgovCommunityService egovCommunityService;
-    @MockBean
-    private EgovScrapService egovScrapService;
-    @MockBean
-    private EgovSmsService egovSmsService;
+
     @MockBean
     private EgovMailService egovMailService;
-    @MockBean
-    private EgovDeptJobBoxService egovDeptJobBoxService;
-    @MockBean
-    private EgovMemoReportService egovMemoReportService;
-    @MockBean
-    private EgovLeaderScheduleService egovLeaderScheduleService;
-    @MockBean
-    private EgovWorkReportService egovWorkReportService;
-    @MockBean
-    private EgovDutyService egovDutyService;
 
     // GlobalMenuAdvice dependency
     @MockBean

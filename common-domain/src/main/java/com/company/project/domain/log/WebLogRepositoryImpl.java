@@ -17,8 +17,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.company.project.domain.log.QWebLog.webLog;
-
 @RequiredArgsConstructor
 public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
 
@@ -28,18 +26,18 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
     @Override
     public Page<WebLog> searchWebLogs(String searchWrd, String searchBgnDe, String searchEndDe, Pageable pageable) {
         List<WebLog> content = queryFactory
-                .selectFrom(webLog)
+                .selectFrom(QWebLog.webLog)
                 .where(
                         urlLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(webLog.occrrncDe.desc())
+                .orderBy(QWebLog.webLog.occrrncDe.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(webLog.count())
-                .from(webLog)
+                .select(QWebLog.webLog.count())
+                .from(QWebLog.webLog)
                 .where(
                         urlLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
@@ -48,7 +46,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
     }
 
     private BooleanExpression urlLike(String searchWrd) {
-        return StringUtils.hasText(searchWrd) ? webLog.url.contains(searchWrd) : null;
+        return StringUtils.hasText(searchWrd) ? QWebLog.webLog.url.contains(searchWrd) : null;
     }
 
     private BooleanExpression occrrncDeBetween(String searchBgnDe, String searchEndDe) {
@@ -60,7 +58,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                     .atStartOfDay();
             LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                     .atTime(LocalTime.MAX);
-            return webLog.occrrncDe.between(start, end);
+            return QWebLog.webLog.occrrncDe.between(start, end);
         } catch (Exception e) {
             return null;
         }

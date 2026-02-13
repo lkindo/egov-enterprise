@@ -51,7 +51,7 @@ public class VacationController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> requestVacation(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody VacationDto dto) {
+            @Valid @RequestBody VacationDto dto) {
         vacationService.requestVacation(userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -60,7 +60,7 @@ public class VacationController {
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> updateVacation(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody VacationDto dto) {
+            @Valid @RequestBody VacationDto dto) {
         vacationService.updateVacation(userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

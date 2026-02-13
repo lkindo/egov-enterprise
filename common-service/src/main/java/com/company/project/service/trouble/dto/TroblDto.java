@@ -24,9 +24,9 @@ public class TroblDto {
     private String troblProcessTime;
     private String processSttus;
     private String processSttusNm;
-    private LocalDateTime frstRegisterPnttm;
+    private String frstRegisterPnttm;
     private String frstRegisterId;
-    private LocalDateTime lastUpdusrPnttm;
+    private String lastUpdusrPnttm;
     private String lastUpdusrId;
 
     public static TroblDto from(Trobl entity) {

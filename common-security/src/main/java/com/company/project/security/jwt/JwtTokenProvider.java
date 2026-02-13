@@ -1,6 +1,7 @@
 package com.company.project.security.jwt;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,10 @@ import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 
 @Slf4j
 @Component
@@ -122,10 +127,52 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            log.error("Expired or invalid JWT token: {}", e.getMessage());
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.error("Expired JWT token: {}", e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            log.error("Unsupported JWT token: {}", e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.error("JWT claims string is empty: {}", e.getMessage());
             return false;
         }
+    }
+
+    // Create and Add Refresh Token Cookie to Response
+    public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // Set to true for production (HTTPS)
+        cookie.setPath("/");
+        cookie.setMaxAge((int) (refreshTokenValidityInMilliseconds / 1000));
+        response.addCookie(cookie);
+    }
+
+    // Resolve Refresh Token from Request Cookie
+    public String resolveRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> "refreshToken".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    // Remove Refresh Token Cookie
+    public void removeRefreshTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // Set to true for production (HTTPS)
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 
     // Check if Refresh Token is valid in DB
@@ -134,5 +181,10 @@ public class JwtTokenProvider {
         
         Optional<RefreshToken> storedToken = refreshTokenRepository.findByToken(token);
         return storedToken.isPresent() && storedToken.get().getExpiryDate().isAfter(Instant.now());
+    }
+    
+    // Test helper method to access the key
+    public SecretKey getKeyForTest() {
+        return this.key;
     }
 }

@@ -1,8 +1,6 @@
 version: "3.8"
 
 services:
-
-
   db:
     image: postgres:16
     container_name: egov-postgres
@@ -14,6 +12,36 @@ services:
       POSTGRES_PASSWORD: egov123
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - egov-net
+
+  api:
+    build:
+      context: .
+      dockerfile: api-server/Dockerfile
+    container_name: egov-api
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/egovdb
+      DB_USERNAME: egov
+      DB_PASSWORD: egov123
+      JWT_SECRET: ${JWT_SECRET:-4s3cr3tK3yF0rJWT51gn1ngMu5tB3L0ngEn0ughT0M33tTh3R3qu1r3m3nt5!}
+    depends_on:
+      - db
+    networks:
+      - egov-net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: egov-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8080/api/v1
+    depends_on:
+      - api
     networks:
       - egov-net
 

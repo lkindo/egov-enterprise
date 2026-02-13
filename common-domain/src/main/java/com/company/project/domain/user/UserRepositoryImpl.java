@@ -10,6 +10,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
+import static com.company.project.domain.user.QEnterpriseUser.enterpriseUser;
+import static com.company.project.domain.user.QGeneralUser.generalUser;
 import static com.company.project.domain.user.QUser.user;
 
 @RequiredArgsConstructor
@@ -42,14 +44,25 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     @Override
     public int checkIdDplct(String checkId) {
-        // NEMPLYRINFO (User 엔티티) 대상 중복 체크
-        // eGovFrame은 다른 테이블(회원, 기업)도 체크하지만 현재 엔티티 기반으로 우선 구현
-        long count = queryFactory
+        long userCount = queryFactory
                 .select(user.count())
                 .from(user)
                 .where(user.userId.eq(checkId))
                 .fetchOne();
-        return (int) count;
+
+        long enterpriseCount = queryFactory
+                .select(enterpriseUser.count())
+                .from(enterpriseUser)
+                .where(enterpriseUser.entrprsmberId.eq(checkId))
+                .fetchOne();
+
+        long generalCount = queryFactory
+                .select(generalUser.count())
+                .from(generalUser)
+                .where(generalUser.mberId.eq(checkId))
+                .fetchOne();
+
+        return (int) (userCount + enterpriseCount + generalCount);
     }
 
     private BooleanExpression statusEq(String sbscrbSttus) {

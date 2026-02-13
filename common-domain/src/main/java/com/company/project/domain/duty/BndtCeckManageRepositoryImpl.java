@@ -10,8 +10,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-import static com.company.project.domain.duty.QBndtCeckManage.bndtCeckManage;
-
 /**
  * 당직 체크 관리 Repository Custom 구현체
  */
@@ -21,41 +19,42 @@ public class BndtCeckManageRepositoryImpl implements BndtCeckManageRepositoryCus
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<BndtCeckManage> searchBndtCeckManageList(String bndtCeckSe, String useAt, String bndtCeckCdNm, Pageable pageable) {
+    public Page<BndtCeckManage> searchBndtCeckManageList(String bndtCeckSe, String useAt, String bndtCeckCdNm,
+            Pageable pageable) {
         List<BndtCeckManage> content = queryFactory
-                .selectFrom(bndtCeckManage)
+                .selectFrom(QBndtCeckManage.bndtCeckManage)
                 .where(
                         bndtCeckSeEq(bndtCeckSe),
                         useAtEq(useAt),
-                        bndtCeckCdNmContains(bndtCeckCdNm)
-                )
+                        bndtCeckCdNmContains(bndtCeckCdNm))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(bndtCeckManage.createdDate.desc())
+                .orderBy(QBndtCeckManage.bndtCeckManage.createdDate.desc())
                 .fetch();
 
         long total = queryFactory
-                .select(bndtCeckManage.count())
-                .from(bndtCeckManage)
+                .select(QBndtCeckManage.bndtCeckManage.count())
+                .from(QBndtCeckManage.bndtCeckManage)
                 .where(
                         bndtCeckSeEq(bndtCeckSe),
                         useAtEq(useAt),
-                        bndtCeckCdNmContains(bndtCeckCdNm)
-                )
+                        bndtCeckCdNmContains(bndtCeckCdNm))
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
     }
 
     private BooleanExpression bndtCeckSeEq(String bndtCeckSe) {
-        return StringUtils.hasText(bndtCeckSe) ? bndtCeckManage.bndtCeckSe.eq(bndtCeckSe) : null;
+        return StringUtils.hasText(bndtCeckSe) ? QBndtCeckManage.bndtCeckManage.bndtCeckSe.eq(bndtCeckSe) : null;
     }
 
     private BooleanExpression useAtEq(String useAt) {
-        return StringUtils.hasText(useAt) ? bndtCeckManage.useAt.eq(useAt) : null;
+        return StringUtils.hasText(useAt) ? QBndtCeckManage.bndtCeckManage.useAt.eq(useAt) : null;
     }
 
     private BooleanExpression bndtCeckCdNmContains(String bndtCeckCdNm) {
-        return StringUtils.hasText(bndtCeckCdNm) ? bndtCeckManage.bndtCeckCdNm.containsIgnoreCase(bndtCeckCdNm) : null;
+        return StringUtils.hasText(bndtCeckCdNm)
+                ? QBndtCeckManage.bndtCeckManage.bndtCeckCdNm.containsIgnoreCase(bndtCeckCdNm)
+                : null;
     }
 }

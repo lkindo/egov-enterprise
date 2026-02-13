@@ -23,7 +23,7 @@ public class BackupResultDto {
     private String backupOrginlDrctry;
     private String backupStreDrctry;
     private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+    private String frstRegistPnttm;
 
     public static BackupResultDto from(BackupResult entity) {
         return BackupResultDto.builder()

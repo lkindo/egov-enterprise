@@ -19,9 +19,6 @@ public class EgovProgrmManageServiceImplUnitTest {
     @Mock
     private ProgramRepository programRepository;
 
-    @Mock
-    private ProgrmManageDAO progrmManageDAO;
-
     @InjectMocks
     private EgovProgrmManageServiceImpl progrmManageService;
 

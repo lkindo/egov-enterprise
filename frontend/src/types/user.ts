@@ -31,3 +31,15 @@ export interface UserSearchParams {
     searchKeyword?: string;
     sbscrbSttus?: string;
 }
+
+export interface UserDto {
+    userId: string;
+    userNm: string;
+    esntlId: string;
+    role: string;
+    emplNo?: string;
+    ofcpsNm?: string;
+    createdDate?: string;
+    emailAdres?: string;
+    moblphonNo?: string;
+}

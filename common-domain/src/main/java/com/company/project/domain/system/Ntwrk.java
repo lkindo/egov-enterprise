@@ -1,5 +1,6 @@
 package com.company.project.domain.system;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -12,7 +13,6 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "NNTWRKINFO")
-public class Ntwrk {
+public class Ntwrk extends BaseEntity {
 
     @Id
     @Column(name = "NTWRK_ID", length = 20)
@@ -50,16 +50,13 @@ public class Ntwrk {
 
     @Column(name = "RGSDE")
     private LocalDate regstYmd;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    
+    // Missing method for compatibility
+    public String getFrstRegisterId() {
+        return this.getCreatedBy();
+    }
+    
+    public void setFrstRegisterId(String frstRegisterId) {
+        this.setCreatedBy(frstRegisterId);
+    }
 }

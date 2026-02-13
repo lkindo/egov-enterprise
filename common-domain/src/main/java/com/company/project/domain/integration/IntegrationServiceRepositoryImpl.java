@@ -1,7 +1,5 @@
 package com.company.project.domain.integration;
 
-import static com.company.project.domain.integration.QIntegrationService.integrationService;
-
 import java.util.List;
 
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -23,9 +21,9 @@ public class IntegrationServiceRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public List<IntegrationService> searchServices(String insttId, String sysId) {
         return queryFactory
-                .selectFrom(integrationService)
+                .selectFrom(QIntegrationService.integrationService)
                 .where(
-                        integrationService.useAt.eq("Y"),
+                        QIntegrationService.integrationService.useAt.eq("Y"),
                         insttIdEq(insttId),
                         sysIdEq(sysId))
                 .fetch();
@@ -34,20 +32,20 @@ public class IntegrationServiceRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public long countServices(String insttId, String sysId) {
         return queryFactory
-                .select(integrationService.count())
-                .from(integrationService)
+                .select(QIntegrationService.integrationService.count())
+                .from(QIntegrationService.integrationService)
                 .where(
-                        integrationService.useAt.eq("Y"),
+                        QIntegrationService.integrationService.useAt.eq("Y"),
                         insttIdEq(insttId),
                         sysIdEq(sysId))
                 .fetchOne();
     }
 
     private BooleanExpression insttIdEq(String insttId) {
-        return StringUtils.hasText(insttId) ? integrationService.id.insttId.eq(insttId) : null;
+        return StringUtils.hasText(insttId) ? QIntegrationService.integrationService.id.insttId.eq(insttId) : null;
     }
 
     private BooleanExpression sysIdEq(String sysId) {
-        return StringUtils.hasText(sysId) ? integrationService.id.sysId.eq(sysId) : null;
+        return StringUtils.hasText(sysId) ? QIntegrationService.integrationService.id.sysId.eq(sysId) : null;
     }
 }

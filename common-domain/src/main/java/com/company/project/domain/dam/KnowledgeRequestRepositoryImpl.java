@@ -1,7 +1,5 @@
 package com.company.project.domain.dam;
 
-import com.company.project.domain.user.QUser;
-import com.company.project.domain.dam.QKnowledgeRequest;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +20,6 @@ public class KnowledgeRequestRepositoryImpl implements KnowledgeRequestRepositor
     public Page<KnowledgeRequest> searchKnowledgeRequest(String searchCondition, String searchKeyword,
             Pageable pageable) {
         QKnowledgeRequest knowledgeRequest = QKnowledgeRequest.knowledgeRequest;
-        QUser user = QUser.user;
 
         BooleanBuilder predicate = new BooleanBuilder();
 

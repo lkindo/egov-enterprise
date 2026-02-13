@@ -25,7 +25,6 @@ import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
-import egovframework.com.sym.prm.service.impl.ProgrmManageDAO;
 import org.egovframe.rte.fdl.excel.EgovExcelService;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,9 +35,6 @@ class EgovMenuManageServiceTest {
 
     @Mock
     private ProgramRepository programRepository;
-
-    @Mock
-    private ProgrmManageDAO progrmManageDAO;
 
     @Mock
     private EgovExcelService excelZipService;

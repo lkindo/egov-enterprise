@@ -10,9 +10,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-import static com.company.project.domain.sms.QSms.sms;
-import static com.company.project.domain.sms.QSmsRecptn.smsRecptn;
-
 @RequiredArgsConstructor
 public class SmsRepositoryImpl implements SmsRepositoryCustom {
 
@@ -21,18 +18,18 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
     @Override
     public Page<Sms> searchSmsUnits(String searchCondition, String searchKeyword, Pageable pageable) {
         List<Sms> content = queryFactory
-                .selectFrom(sms)
-                .leftJoin(smsRecptn).on(sms.smsId.eq(smsRecptn.id.smsId))
+                .selectFrom(QSms.sms)
+                .leftJoin(QSmsRecptn.smsRecptn).on(QSms.sms.smsId.eq(QSmsRecptn.smsRecptn.id.smsId))
                 .where(searchExpression(searchCondition, searchKeyword))
-                .orderBy(sms.smsId.desc())
+                .orderBy(QSms.sms.smsId.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         long total = queryFactory
-                .select(sms.countDistinct())
-                .from(sms)
-                .leftJoin(smsRecptn).on(sms.smsId.eq(smsRecptn.id.smsId))
+                .select(QSms.sms.countDistinct())
+                .from(QSms.sms)
+                .leftJoin(QSmsRecptn.smsRecptn).on(QSms.sms.smsId.eq(QSmsRecptn.smsRecptn.id.smsId))
                 .where(searchExpression(searchCondition, searchKeyword))
                 .fetchOne();
 
@@ -50,9 +47,9 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         }
 
         if ("0".equals(searchCondition)) { // 수신번호 (RECPTN_TELNO)
-            return smsRecptn.id.recptnTelno.contains(searchKeyword);
+            return QSmsRecptn.smsRecptn.id.recptnTelno.contains(searchKeyword);
         } else if ("1".equals(searchCondition)) { // 내용 (TRNSMIS_CN)
-            return sms.trnsmitCn.contains(searchKeyword);
+            return QSms.sms.trnsmitCn.contains(searchKeyword);
         }
 
         return null;

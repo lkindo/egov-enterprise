@@ -1,9 +1,9 @@
 package com.company.project.domain.backup;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "NBACKUPOPERT")
-public class BackupOpert {
+public class BackupOpert extends BaseEntity {
 
     @Id
     @Column(name = "BACKUP_OPERT_ID", length = 20)
@@ -54,18 +54,6 @@ public class BackupOpert {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
     public BackupOpert(String backupOpertId, String backupOpertNm, String backupOrginlDrctry, String backupStreDrctry,
             String cmprsSe, String executCycle, String executSchdulDe, String executSchdulHour, String executSchdulMnt,
             String executSchdulSecnd, String useAt, String frstRegisterId) {
@@ -80,13 +68,35 @@ public class BackupOpert {
         this.executSchdulMnt = executSchdulMnt;
         this.executSchdulSecnd = executSchdulSecnd;
         this.useAt = useAt;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
+        this.setFrstRegisterId(frstRegisterId);
     }
 
     public void delete() {
         this.useAt = "N";
-        this.lastUpdtPnttm = LocalDateTime.now();
+    }
+    
+    // Missing methods for compatibility
+    public void setFrstRegisterId(String frstRegisterId) {
+        this.setCreatedBy(frstRegisterId);
+    }
+    
+    public String getFrstRegisterId() {
+        return this.getCreatedBy();
+    }
+    
+    public String getLastUpdtPnttm() {
+        return this.getLastModifiedDate() != null ? this.getLastModifiedDate().toString() : null;
+    }
+    
+    public String getFrstRegistPnttm() {
+        return this.getCreatedDate() != null ? this.getCreatedDate().toString() : null;
+    }
+    
+    public void setExecutCycle(String executCycle) {
+        this.executCycle = executCycle;
+    }
+    
+    public String getExecutCycle() {
+        return this.executCycle;
     }
 }

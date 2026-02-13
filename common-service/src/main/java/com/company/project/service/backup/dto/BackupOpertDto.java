@@ -28,9 +28,9 @@ public class BackupOpertDto {
     private String useAt;
     private String executSchdul;
     private String lastUpdusrId;
-    private LocalDateTime lastUpdtPnttm;
+    private String lastUpdtPnttm;
     private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+    private String frstRegistPnttm;
 
     public static BackupOpertDto from(BackupOpert entity) {
         return from(entity, true);
@@ -112,5 +112,22 @@ public class BackupOpertDto {
         }
 
         return cronExpression.toString();
+    }
+    
+    // 누락된 메서드들 추가
+    public void setFrstRegisterId(String frstRegisterId) {
+        this.frstRegisterId = frstRegisterId;
+    }
+    
+    public String getFrstRegisterId() {
+        return this.frstRegisterId;
+    }
+    
+    public void setLastUpdusrId(String lastUpdusrId) {
+        this.lastUpdusrId = lastUpdusrId;
+    }
+    
+    public String getLastUpdusrId() {
+        return this.lastUpdusrId;
     }
 }

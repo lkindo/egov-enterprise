@@ -19,7 +19,7 @@ public class ScrapDto {
     private String useAt;
     private String uniqId;
     private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String frstRegisterPnttm;
 
     public static ScrapDto from(Scrap entity) {
         return ScrapDto.builder()

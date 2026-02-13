@@ -6,11 +6,11 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "게시글 저장 요청")
 public record BoardSaveRequest(
-                @Schema(description = "게시판 ID", example = "BBS_000000000001") @NotBlank(message = "{validation.required}") String bbsId,
+                @Schema(description = "게시판 ID", example = "BBS_000000000001") @NotBlank(message = "게시판 ID는 필수 입력 항목입니다.") String bbsId,
 
-                @Schema(description = "게시글 제목", example = "공지사항 테스트입니다.") @NotBlank(message = "{validation.required}") @Size(min = 1, max = 100, message = "{validation.size}") String nttSj,
+                @Schema(description = "게시글 제목", example = "공지사항 테스트입니다.") @NotBlank(message = "제목은 필수 입력 항목입니다.") @Size(min = 1, max = 100, message = "제목은 1자 이상 100자 이하로 입력해주세요.") String nttSj,
 
-                @Schema(description = "게시글 내용", example = "테스트 내용입니다.") @NotBlank(message = "{validation.required}") String nttCn,
+                @Schema(description = "게시글 내용", example = "테스트 내용입니다.") @NotBlank(message = "내용은 필수 입력 항목입니다.") String nttCn,
 
                 @Schema(description = "게시 시작일", example = "2023-01-01") String ntceBgnde,
 

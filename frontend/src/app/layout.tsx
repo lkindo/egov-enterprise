@@ -1,45 +1,45 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import "./globals.css";
-import "@/styles/legacy.css";
-import Providers from './providers';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import Sidebar from '@/components/layout/Sidebar';
+import type { Metadata } from 'next';
+import './globals.css';
+import { ThemeProvider } from './components/theme-provider';
+import { Header } from './components/layout/header';
+import { Sidebar } from './components/layout/sidebar';
+import { Footer } from './components/layout/footer';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: "eGovFrame Next.js Portal",
-  description: "전자정부프레임워크 경량환경 Next.js 마이그레이션 포털",
+  title: '전자정부 현대화 프로젝트',
+  description: 'KRDS 기반 모던 전사 공통 모듈',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="ko">
-      <body className="antialiased legacy-container">
-        <Providers>
-          <div className="wrap">
-            <Header />
-            <main className="container" id="contents">
-              <div className="sub_in">
-                <div className="layout">
-                  <Suspense fallback={<div className="w-[250px] bg-slate-50" />}>
-                    <Sidebar />
-                  </Suspense>
-                  <div className="content_wrap">
-                    <Suspense fallback={<div className="p-4">Loading...</div>}>
-                      {children}
-                    </Suspense>
+    <html lang="ko" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <div className="flex flex-1">
+                <Sidebar />
+                <main className="flex-1 pl-64 pt-4">
+                  <div className="container mx-auto p-6 min-h-[calc(100vh-10rem)]">
+                    {children}
                   </div>
-                </div>
+                  <Footer />
+                </main>
               </div>
-            </main>
-            <Footer />
-          </div>
-        </Providers>
+            </div>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

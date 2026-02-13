@@ -1,5 +1,7 @@
 package com.company.project.service.user;
 
+import com.company.project.constants.Constants;
+import com.company.project.common.util.UserDtoMapper;
 import com.company.project.domain.user.Role;
 import com.company.project.domain.user.User;
 import com.company.project.domain.user.UserRepository;
@@ -38,7 +40,7 @@ public class UserManageService {
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
         Page<User> page = userRepository.findAll(pageable);
-        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return page.getContent().stream().map(UserDtoMapper::toUserManageDto).collect(Collectors.toList());
     }
 
     /**
@@ -53,7 +55,7 @@ public class UserManageService {
      */
     public UserManageDto selectUser(String userId) {
         return userRepository.findById(userId)
-                .map(this::toDto)
+                .map(UserDtoMapper::toUserManageDto)
                 .orElse(null);
     }
 
@@ -62,7 +64,7 @@ public class UserManageService {
      */
     public UserManageDto selectUserByEsntlId(String esntlId) {
         return userRepository.findByEsntlId(esntlId)
-                .map(this::toDto)
+                .map(UserDtoMapper::toUserManageDto)
                 .orElse(null);
     }
 
@@ -71,7 +73,7 @@ public class UserManageService {
      */
     @Transactional
     public void insertUser(UserManageDto dto) {
-        String esntlId = "USRCNFRM_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        String esntlId = Constants.User.USRCNFRM_PREFIX + UUID.randomUUID().toString().substring(0, Constants.User.ESNTL_ID_UUID_LENGTH).toUpperCase();
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         User entity = User.builder()
@@ -150,32 +152,5 @@ public class UserManageService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         String encodedPassword = passwordEncoder.encode(newPassword);
         entity.updatePassword(encodedPassword);
-    }
-
-    private UserManageDto toDto(User entity) {
-        return UserManageDto.builder()
-                .userId(entity.getUserId())
-                .esntlId(entity.getEsntlId())
-                .userNm(entity.getUserNm())
-                .sexdstnCode(entity.getSexdstnCode())
-                .brthdy(entity.getBrth())
-                .areaNo(entity.getAreaNo())
-                .homemiddleTelno(entity.getHomemiddleTelno())
-                .homeendTelno(entity.getHomeendTelno())
-                .moblphonNo(entity.getMoblphonNo())
-                .emailAdres(entity.getEmailAdres())
-                .zip(entity.getZip())
-                .homeadres(entity.getHomeadres())
-                .detailAdres(entity.getDetailAdres())
-                .ofcpsNm(entity.getOfcpsNm())
-                .groupId(entity.getGroupId())
-                .orgnztId(entity.getOrgnztId())
-                .insttCode(entity.getInsttCode())
-                .emplyrSttusCode(entity.getRole() != null ? entity.getRole().name() : null)
-                .sbscrbDe(entity.getSbscrbDe() != null
-                        ? entity.getSbscrbDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : null)
-                .subDn(entity.getSubDn())
-                .build();
     }
 }

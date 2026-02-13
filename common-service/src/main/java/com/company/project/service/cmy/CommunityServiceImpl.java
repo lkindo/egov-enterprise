@@ -31,7 +31,7 @@ public class CommunityServiceImpl implements CommunityService {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
-        builder.and(qCommunity.registSeCode.eq("REGC01")); 
+        builder.and(qCommunity.registSeCode.eq("REGC01"));
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
             if ("0".equals(searchCnd)) {
@@ -50,7 +50,7 @@ public class CommunityServiceImpl implements CommunityService {
         long total = queryFactory
                 .selectFrom(qCommunity)
                 .where(builder)
-                .fetchCount();
+                .fetch().size();
 
         return new PageImpl<>(content.stream().map(CommunityDto::from).collect(Collectors.toList()), pageable, total);
     }
@@ -93,8 +93,7 @@ public class CommunityServiceImpl implements CommunityService {
                 dto.getCmmntyIntrcn(),
                 dto.getTmplatId(),
                 dto.getUseAt(),
-                userId
-        );
+                userId);
     }
 
     @Override
