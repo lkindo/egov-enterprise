@@ -1,78 +1,120 @@
 package egovframework.com.sym.tbm.tbp.service.impl;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.project.domain.trouble.Trobl;
+import com.company.project.domain.trouble.TroblRepository;
 
 import egovframework.com.sym.tbm.tbp.service.EgovTroblProcessService;
 import egovframework.com.sym.tbm.tbp.service.TroblProcess;
 import egovframework.com.sym.tbm.tbp.service.TroblProcessVO;
 import jakarta.annotation.Resource;
 
-/**
- * 개요
- * - 장애처리결과 관리정보에 대한 ServiceImpl 클래스를 정의한다.
- *
- * 상세내용
- * - 장애처리결과 관리정보에 대한 등록, 수정, 삭제, 조회 등의 기능을 제공한다.
- * - 장애처리결과 관리정보의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author lee.m.j
- * @version 1.0
- * @created 28-6-2010 오전 10:44:35
- */
 @Service("egovTroblProcessService")
 public class EgovTroblProcessServiceImpl extends EgovAbstractServiceImpl implements EgovTroblProcessService {
 
-	@Resource(name="troblProcessDAO")
-	private TroblProcessDAO troblProcessDAO;
+	@Resource
+	private TroblRepository troblRepository;
 
-	/**
-	 * 장애처리정보를 관리하기 위해 대상 장애처리목록을 조회한다.
-	 * @param troblProcessVO - 장애처리결과 Vo
-	 * @return List - 장애처리결과 목록
-	 */
 	@Override
 	public List<TroblProcessVO> selectTroblProcessList(TroblProcessVO troblProcessVO) throws Exception {
-		return troblProcessDAO.selectTroblProcessList(troblProcessVO);
+		Pageable pageable = PageRequest.of(troblProcessVO.getFirstIndex() / troblProcessVO.getRecordCountPerPage(),
+				troblProcessVO.getRecordCountPerPage());
+		
+		List<String> statuses;
+		if (troblProcessVO.getStrProcessSttus() != null && !troblProcessVO.getStrProcessSttus().equals("00")) {
+			statuses = Collections.singletonList(troblProcessVO.getStrProcessSttus());
+		} else {
+			statuses = Arrays.asList("R", "C");
+		}
+				
+		Page<Trobl> page = troblRepository.searchTroblReqsts(
+				troblProcessVO.getStrTroblNm(),
+				troblProcessVO.getStrTroblKnd(),
+				statuses,
+				pageable);
+				
+		return page.getContent().stream().map(this::mapToVO).collect(Collectors.toList());
 	}
 
-	/**
-	 * 장애처리목록 총 개수를 조회한다.
-	 * @param troblProcessVO - 장애처리결과 Vo
-	 * @return int - 장애처리결과 카운트 수
-	 */
 	@Override
 	public int selectTroblProcessListTotCnt(TroblProcessVO troblProcessVO) throws Exception {
-		return troblProcessDAO.selectTroblProcessListTotCnt(troblProcessVO);
+		List<String> statuses;
+		if (troblProcessVO.getStrProcessSttus() != null && !troblProcessVO.getStrProcessSttus().equals("00")) {
+			statuses = Collections.singletonList(troblProcessVO.getStrProcessSttus());
+		} else {
+			statuses = Arrays.asList("R", "C");
+		}
+				
+		Page<Trobl> page = troblRepository.searchTroblReqsts(
+				troblProcessVO.getStrTroblNm(),
+				troblProcessVO.getStrTroblKnd(),
+				statuses,
+				PageRequest.of(0, 1));
+		return (int) page.getTotalElements();
 	}
 
-	/**
-	 * 등록된 장애처리의 상세정보를 조회한다.
-	 * @param troblProcessVO - 장애처리결과 Vo
-	 * @return troblProcessVO - 장애처리결과 Vo
-	 */
 	@Override
 	public TroblProcessVO selectTroblProcess(TroblProcessVO troblProcessVO) throws Exception {
-		return troblProcessDAO.selectTroblProcess(troblProcessVO);
+		return troblRepository.findById(troblProcessVO.getTroblId())
+				.map(this::mapToVO)
+				.orElse(null);
 	}
 
-	/**
-	 * 장애처리정보를 신규로 등록한다.
-	 * @param troblProcessVO - 장애처리결과 model
-	 */
 	@Override
+	@Transactional
 	public void insertTroblProcess(TroblProcess troblProcess) throws Exception {
-		troblProcessDAO.insertTroblProcess(troblProcess);
+		troblRepository.findById(troblProcess.getTroblId()).ifPresent(entity -> {
+			entity.setTroblProcessResult(troblProcess.getTroblProcessResult());
+			entity.setTroblOpetrNm(troblProcess.getTroblOpetrNm());
+			entity.setTroblProcessTime(troblProcess.getTroblProcessTime());
+			entity.setProcessSttus(troblProcess.getProcessSttus());
+			entity.setLastUpdusrId(troblProcess.getLastUpdusrId());
+			entity.setLastUpdusrPnttm(java.time.LocalDateTime.now());
+		});
 	}
 
-	/**
-	 * 기 등록된 장애처리정보를 삭제한다.
-	 * @param troblProcessVO - 장애처리결과 model
-	 */
 	@Override
+	@Transactional
 	public void deleteTroblProcess(TroblProcess troblProcess) throws Exception {
-		troblProcessDAO.deleteTroblProcess(troblProcess);
+		troblRepository.findById(troblProcess.getTroblId()).ifPresent(entity -> {
+			entity.setTroblProcessResult(null);
+			entity.setTroblOpetrNm(null);
+			entity.setTroblProcessTime(null);
+			entity.setProcessSttus(troblProcess.getProcessSttus());
+			entity.setLastUpdusrId(troblProcess.getLastUpdusrId());
+			entity.setLastUpdusrPnttm(java.time.LocalDateTime.now());
+		});
 	}
 
+	private TroblProcessVO mapToVO(Trobl entity) {
+		TroblProcessVO vo = new TroblProcessVO();
+		vo.setTroblId(entity.getTroblId());
+		vo.setTroblNm(entity.getTroblNm());
+		vo.setTroblKnd(entity.getTroblKnd());
+		vo.setTroblDc(entity.getTroblDc());
+		vo.setTroblOccrrncTime(entity.getTroblOccrrncTime());
+		vo.setTroblRqesterNm(entity.getTroblRqesterNm());
+		vo.setTroblRequstTime(entity.getTroblRequstTime());
+		vo.setTroblProcessResult(entity.getTroblProcessResult());
+		vo.setTroblOpetrNm(entity.getTroblOpetrNm());
+		vo.setTroblProcessTime(entity.getTroblProcessTime());
+		vo.setProcessSttus(entity.getProcessSttus());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm() != null ? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		vo.setLastUpdusrId(entity.getLastUpdusrId());
+		vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm() != null ? entity.getLastUpdusrPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		return vo;
+	}
 }

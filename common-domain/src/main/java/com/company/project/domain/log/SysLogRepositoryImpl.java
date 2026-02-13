@@ -16,8 +16,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-import static com.company.project.domain.log.QSysLog.sysLog;
-
 @RequiredArgsConstructor
 public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
 
@@ -31,21 +29,21 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         QCommonCode commonCode = QCommonCode.commonCode;
 
         List<SysLog> content = queryFactory
-                .selectFrom(sysLog)
-                .leftJoin(commonCode).on(sysLog.processSeCode.trim().eq(commonCode.code)
+                .selectFrom(QSysLog.sysLog)
+                .leftJoin(commonCode).on(QSysLog.sysLog.processSeCode.trim().eq(commonCode.code)
                         .and(commonCode.codeGroupId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(sysLog.occrrncDe.desc())
+                .orderBy(QSysLog.sysLog.occrrncDe.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(sysLog.count())
-                .from(sysLog)
-                .leftJoin(commonCode).on(sysLog.processSeCode.trim().eq(commonCode.code)
+                .select(QSysLog.sysLog.count())
+                .from(QSysLog.sysLog)
+                .leftJoin(commonCode).on(QSysLog.sysLog.processSeCode.trim().eq(commonCode.code)
                         .and(commonCode.codeGroupId.eq("COM033")))
                 .where(
                         processSeCodeNmLike(searchWrd, commonCode),
@@ -87,6 +85,6 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        return sysLog.occrrncDe.trim().between(searchBgnDe, searchEndDe);
+        return QSysLog.sysLog.occrrncDe.trim().between(searchBgnDe, searchEndDe);
     }
 }

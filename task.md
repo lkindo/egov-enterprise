@@ -81,6 +81,9 @@
 | 일정 관리 - 개인일정 (`cop.smt.sim`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
 | 부서업무 관리 (`cop.smt.djm`) | ✅ | ✅ 목록/상세/등록 | ✅ 완료 |
 | 약관 관리 (`uss.sam.stp`) | ✅ | ✅ 목록/CUD | ✅ 완료 |
+| 휴가 관리 (`vct`) | ✅ VacationController | ❌ 미구현 | 🔧 BE Only |
+| 당직 관리 (`duty`) | ✅ DutyController | ❌ 미구현 | 🔧 BE Only |
+| 부재 관리 (`uss.ion.uas`) | ✅ | ❌ 미구현 | 🔧 BE Only |
 
 ### 📦 클러스터 3-B: 고객 지원
 | 모듈 | Backend | Frontend | 상태 |
@@ -88,7 +91,9 @@
 | 온라인 도움말 - FAQ (`uss.olh.faq`) | ✅ FaqService | ✅ 목록/CUD | ✅ 완료 |
 | 온라인 도움말 - Q&A (`uss.olh.qna`) | ✅ QnaService | ✅ 목록/CUD/답변 | ✅ 완료 |
 | 온라인 설문 (`uss.olp`) | ✅ SurveyService | ✅ 목록/참여/관리 | ✅ 완료 |
-| 주간/월간보고 (`cop.smt.wmr`) | ✅ (오류 수정됨) | ✅ 목록/CUD/승인 | ✅ 완료 |
+| 주간/월간보고 (`cop.smt.wmr`) | ✅ | ✅ 목록/CUD/승인 | ✅ 완료 |
+| 배너 관리 (`uss.ion.bnr`) | ✅ BannerController | ❌ 미구현 | 🔧 BE Only |
+| 팝업 관리 (`uss.ion.pwm`) | ✅ PopupController | ❌ 미구현 | 🔧 BE Only |
 
 ---
 

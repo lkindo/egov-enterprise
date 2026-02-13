@@ -1,7 +1,5 @@
 package com.company.project.domain.integration;
 
-import static com.company.project.domain.integration.QIntegrationInstitution.integrationInstitution;
-
 import java.util.List;
 
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -23,9 +21,9 @@ public class IntegrationInstitutionRepositoryImpl extends QuerydslRepositorySupp
     @Override
     public List<IntegrationInstitution> searchInstitutions(String searchKeyword) {
         return queryFactory
-                .selectFrom(integrationInstitution)
+                .selectFrom(QIntegrationInstitution.integrationInstitution)
                 .where(
-                        integrationInstitution.useAt.eq("Y"),
+                        QIntegrationInstitution.integrationInstitution.useAt.eq("Y"),
                         nameContains(searchKeyword))
                 .fetch();
     }
@@ -33,15 +31,17 @@ public class IntegrationInstitutionRepositoryImpl extends QuerydslRepositorySupp
     @Override
     public long countInstitutions(String searchKeyword) {
         return queryFactory
-                .select(integrationInstitution.count())
-                .from(integrationInstitution)
+                .select(QIntegrationInstitution.integrationInstitution.count())
+                .from(QIntegrationInstitution.integrationInstitution)
                 .where(
-                        integrationInstitution.useAt.eq("Y"),
+                        QIntegrationInstitution.integrationInstitution.useAt.eq("Y"),
                         nameContains(searchKeyword))
                 .fetchOne();
     }
 
     private BooleanExpression nameContains(String searchKeyword) {
-        return StringUtils.hasText(searchKeyword) ? integrationInstitution.insttNm.contains(searchKeyword) : null;
+        return StringUtils.hasText(searchKeyword)
+                ? QIntegrationInstitution.integrationInstitution.insttNm.contains(searchKeyword)
+                : null;
     }
 }

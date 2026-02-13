@@ -23,9 +23,9 @@ public class NtwrkDto {
     private String useAt;
     private LocalDate regstYmd;
     private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String frstRegisterPnttm;
     private String lastUpdusrId;
-    private LocalDateTime lastUpdusrPnttm;
+    private String lastUpdusrPnttm;
 
     public static NtwrkDto from(Ntwrk entity) {
         return NtwrkDto.builder()

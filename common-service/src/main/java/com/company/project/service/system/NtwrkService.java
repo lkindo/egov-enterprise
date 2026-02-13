@@ -27,14 +27,7 @@ public class NtwrkService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<NtwrkDto> getNtwrkList(String manageIem, String userNm, Pageable pageable) {
-        Page<Ntwrk> page;
-        String effectiveUserNm = (userNm == null) ? "" : userNm;
-
-        if (manageIem != null && !manageIem.equals("00") && !manageIem.isEmpty()) {
-             page = ntwrkRepository.findByManageIemAndUserNmContaining(manageIem, effectiveUserNm, pageable);
-        } else {
-             page = ntwrkRepository.findByUserNmContaining(effectiveUserNm, pageable);
-        }
+        Page<Ntwrk> page = ntwrkRepository.searchNtwrks(manageIem, userNm, pageable);
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM067");
         Map<String, String> codeMap = codes.stream()

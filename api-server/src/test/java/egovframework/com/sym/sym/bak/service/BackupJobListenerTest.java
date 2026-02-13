@@ -20,12 +20,15 @@ import org.quartz.JobKey;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
+import com.company.project.service.backup.EgovBackupResultService;
+import com.company.project.service.backup.dto.BackupResultDto;
+
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(OutputCaptureExtension.class)
 class BackupJobListenerTest {
 
     @Mock
-    private EgovBackupOpertService egovBackupOpertService;
+    private EgovBackupResultService backupResultService;
 
     @Mock
     private EgovIdGnrService idgenService;
@@ -60,9 +63,10 @@ class BackupJobListenerTest {
         backupJobListener.jobToBeExecuted(jobContext);
 
         // Assert
-        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
+        verify(backupResultService, never()).createBackupResult(any(String.class), any(BackupResultDto.class));
         assertThat(output).contains("(Ko)백업작업ID가 null이거나 비어있습니다. 백업작업 결과를 추적할 수 없습니다.");
-        assertThat(output).contains("(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+        assertThat(output).contains(
+                "(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
     }
 
     @Test
@@ -83,9 +87,10 @@ class BackupJobListenerTest {
         backupJobListener.jobToBeExecuted(jobContext);
 
         // Assert
-        verify(egovBackupOpertService, never()).insertBackupResult(any(BackupResult.class));
+        verify(backupResultService, never()).createBackupResult(any(String.class), any(BackupResultDto.class));
         assertThat(output).contains("(Ko)백업작업ID가 null이거나 비어있습니다. 백업작업 결과를 추적할 수 없습니다.");
-        assertThat(output).contains("(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
+        assertThat(output).contains(
+                "(En)Backup Result's Backup Operation ID is null or empty. Backup Job execution cannot be tracked.");
     }
 
     @Test
@@ -107,7 +112,7 @@ class BackupJobListenerTest {
         backupJobListener.jobToBeExecuted(jobContext);
 
         // Assert
-        verify(egovBackupOpertService).insertBackupResult(any(BackupResult.class));
+        verify(backupResultService).createBackupResult(any(String.class), any(BackupResultDto.class));
         assertThat(output).doesNotContain("Backup Result's Backup Operation ID is null or empty");
     }
 }

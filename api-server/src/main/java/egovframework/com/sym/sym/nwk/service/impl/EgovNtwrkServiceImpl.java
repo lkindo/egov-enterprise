@@ -36,11 +36,11 @@ public class EgovNtwrkServiceImpl extends EgovAbstractServiceImpl implements Ego
 	public List<NtwrkVO> selectNtwrkList(NtwrkVO ntwrkVO) throws Exception {
 		Pageable pageable = PageRequest.of(ntwrkVO.getFirstIndex() / ntwrkVO.getRecordCountPerPage(),
 				ntwrkVO.getRecordCountPerPage());
-		Page<Object[]> page = ntwrkRepository.selectNtwrkList(
+		Page<com.company.project.domain.system.Ntwrk> page = ntwrkRepository.searchNtwrks(
 				ntwrkVO.getStrManageIem() == null ? "00" : ntwrkVO.getStrManageIem(),
 				ntwrkVO.getStrUserNm(),
 				pageable);
-		return page.getContent().stream().map(this::mapToNtwrkVO).collect(Collectors.toList());
+		return page.getContent().stream().map(this::mapToEntityNtwrkVO).collect(Collectors.toList());
 	}
 
 	/**

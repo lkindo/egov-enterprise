@@ -1,7 +1,5 @@
 package com.company.project.domain.integration;
 
-import static com.company.project.domain.integration.QTransmitReceiveLog.transmitReceiveLog;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -31,11 +29,11 @@ public class TransmitReceiveLogRepositoryImpl extends QuerydslRepositorySupport
     public List<TransmitReceiveLog> searchLogs(String searchWrd, String searchBgnDe, String searchEndDe, int offset,
             int limit) {
         return queryFactory
-                .selectFrom(transmitReceiveLog)
+                .selectFrom(QTransmitReceiveLog.transmitReceiveLog)
                 .where(
                         containsWord(searchWrd),
                         betweenDates(searchBgnDe, searchEndDe))
-                .orderBy(transmitReceiveLog.occurrenceDe.desc())
+                .orderBy(QTransmitReceiveLog.transmitReceiveLog.occurrenceDe.desc())
                 .offset(offset)
                 .limit(limit)
                 .fetch();
@@ -44,8 +42,8 @@ public class TransmitReceiveLogRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public long countLogs(String searchWrd, String searchBgnDe, String searchEndDe) {
         return queryFactory
-                .select(transmitReceiveLog.count())
-                .from(transmitReceiveLog)
+                .select(QTransmitReceiveLog.transmitReceiveLog.count())
+                .from(QTransmitReceiveLog.transmitReceiveLog)
                 .where(
                         containsWord(searchWrd),
                         betweenDates(searchBgnDe, searchEndDe))
@@ -87,8 +85,7 @@ public class TransmitReceiveLogRepositoryImpl extends QuerydslRepositorySupport
 
     private BooleanExpression containsWord(String searchWrd) {
         return (searchWrd == null || searchWrd.isEmpty()) ? null
-                : transmitReceiveLog.transmitReceiveSeCode.contains(searchWrd); // Logic from XML: LIKE CONCAT ('%',
-                                                                                // #{searchWrd},'%')
+                : QTransmitReceiveLog.transmitReceiveLog.transmitReceiveSeCode.contains(searchWrd);
     }
 
     private BooleanExpression betweenDates(String searchBgnDe, String searchEndDe) {
@@ -97,6 +94,6 @@ public class TransmitReceiveLogRepositoryImpl extends QuerydslRepositorySupport
         }
         String bgn = searchBgnDe.replace("-", "");
         String end = searchEndDe.replace("-", "");
-        return transmitReceiveLog.occurrenceDe.between(bgn, end);
+        return QTransmitReceiveLog.transmitReceiveLog.occurrenceDe.between(bgn, end);
     }
 }

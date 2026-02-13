@@ -10,8 +10,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-import static com.company.project.domain.duty.QBndtManage.bndtManage;
-
 /**
  * 당직 정보 Repository Custom 구현체
  */
@@ -23,16 +21,16 @@ public class BndtManageRepositoryImpl implements BndtManageRepositoryCustom {
     @Override
     public Page<BndtManage> searchBndtManageList(String bndtDe, Pageable pageable) {
         List<BndtManage> content = queryFactory
-                .selectFrom(bndtManage)
+                .selectFrom(QBndtManage.bndtManage)
                 .where(bndtDeContains(bndtDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(bndtManage.createdDate.desc())
+                .orderBy(QBndtManage.bndtManage.createdDate.desc())
                 .fetch();
 
         long total = queryFactory
-                .select(bndtManage.count())
-                .from(bndtManage)
+                .select(QBndtManage.bndtManage.count())
+                .from(QBndtManage.bndtManage)
                 .where(bndtDeContains(bndtDe))
                 .fetchOne();
 
@@ -40,6 +38,6 @@ public class BndtManageRepositoryImpl implements BndtManageRepositoryCustom {
     }
 
     private BooleanExpression bndtDeContains(String bndtDe) {
-        return StringUtils.hasText(bndtDe) ? bndtManage.bndtDe.contains(bndtDe) : null;
+        return StringUtils.hasText(bndtDe) ? QBndtManage.bndtManage.bndtDe.contains(bndtDe) : null;
     }
 }

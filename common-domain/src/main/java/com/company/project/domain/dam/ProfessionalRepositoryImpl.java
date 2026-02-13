@@ -1,9 +1,6 @@
 package com.company.project.domain.dam;
 
 import com.company.project.domain.user.QUser;
-import com.company.project.domain.dam.QProfessional;
-import com.company.project.domain.dam.QMapKno;
-import com.company.project.domain.dam.QMapTeam;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;

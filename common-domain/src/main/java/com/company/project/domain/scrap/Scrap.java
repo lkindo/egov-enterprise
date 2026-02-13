@@ -8,6 +8,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 /**
  * 스크랩 JPA Entity
  * 레거시 테이블: COMTNSCRAP
@@ -16,7 +23,7 @@ import java.time.LocalDateTime;
 @Table(name = "NSCRAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Scrap {
+public class Scrap extends BaseEntity {
 
     @Id
     @Column(name = "SCRAP_ID", length = 20)
@@ -34,18 +41,6 @@ public class Scrap {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
     public Scrap(String scrapId, String bbsId, Long nttId, String scrapNm,
             String useAt, String uniqId, String frstRegisterId) {
@@ -54,20 +49,16 @@ public class Scrap {
         this.nttId = nttId;
         this.scrapNm = scrapNm;
         this.useAt = useAt;
-        // logic to handle uniqId if necessary, but prefer frstRegisterId if both
-        // provided
-        this.frstRegisterId = (frstRegisterId != null) ? frstRegisterId : uniqId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.setFrstRegisterId(frstRegisterId != null ? frstRegisterId : uniqId);
     }
 
     public String getUniqId() {
-        return frstRegisterId;
+        return getFrstRegisterId();
     }
 
     public void update(String scrapNm, String useAt, String updusrId) {
         this.scrapNm = scrapNm;
         this.useAt = useAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.setLastUpdusrId(updusrId);
     }
 }

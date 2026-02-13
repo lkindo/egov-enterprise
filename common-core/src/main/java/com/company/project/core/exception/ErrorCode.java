@@ -32,6 +32,10 @@ public enum ErrorCode {
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User Not Found"),
     DUPLICATE_USER_ID(HttpStatus.CONFLICT, "U002", "Duplicate User ID"),
+    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "U003", "Invalid Password"),
+    AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "U004", "Authentication Error"),
+    USER_RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "U005", "Resource Not Found"),
+    USER_INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "U006", "Invalid Input Value"),
 
     // Code
     DUPLICATE_CODE(HttpStatus.CONFLICT, "CD01", "Duplicate Code");

@@ -1,16 +1,15 @@
 package com.company.project.domain.backup;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NBACKUPRESULT")
-public class BackupResult {
+public class BackupResult extends BaseEntity {
 
     @Id
     @Column(name = "BACKUP_RESULT_ID", length = 20)
@@ -38,18 +37,6 @@ public class BackupResult {
     @Column(name = "EXECUT_END_TM", length = 14)
     private String executEndTime;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
     @Builder
     public BackupResult(String backupResultId, String backupOpertId, BackupOpert backupOpert, String backupFile,
             String sttus, String errorInfo,
@@ -62,8 +49,11 @@ public class BackupResult {
         this.errorInfo = errorInfo;
         this.executBeginTime = executBeginTime;
         this.executEndTime = executEndTime;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
+        this.setFrstRegisterId(frstRegisterId);
+    }
+    
+    // Missing method for compatibility
+    public String getFrstRegistPnttm() {
+        return this.getCreatedDate() != null ? this.getCreatedDate().toString() : null;
     }
 }

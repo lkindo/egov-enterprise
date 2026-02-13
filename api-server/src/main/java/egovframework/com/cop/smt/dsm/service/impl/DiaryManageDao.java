@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
+
 /**
  * 일지관리를 처리하는 Dao Class 구현
  * @author 공통서비스 장동한
@@ -17,23 +18,18 @@ import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
  *
  * <pre>
  * << 개정이력(Modification Information) >>
- *   
+ *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2009.04.10  장동한          최초 생성
  *
  * </pre>
  */
-/**
- * 일지관리를 처리하는 DAO 클래스
- * @deprecated JPA 기반의 DiaryRepository 사용을 권장합니다.
- */
-@Deprecated
 @Repository("diaryManageDao")
 public class DiaryManageDao extends EgovComAbstractDAO {
-	
+
     /**
-	 * 일지관리 목록을 조회한다. 
+	 * 일지관리 목록을 조회한다.
 	 * @param searchVO - 조회할 정보가 담긴 VO
 	 * @return List
 	 * @throws Exception
@@ -41,7 +37,7 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	public List<EgovMap> selectDiaryManageList(ComDefaultVO searchVO) throws Exception{
 		return selectList("DiaryManage.selectDiaryManage", searchVO);
 	}
-	
+
     /**
 	 * 일지관리를(을) 상세조회 한다.
 	 * @param diaryManageVO - 일지관리 정보 담김 VO
@@ -61,7 +57,7 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	public int selectDiaryManageListCnt(ComDefaultVO searchVO) throws Exception{
 		return (Integer)selectOne("DiaryManage.selectDiaryManageCnt", searchVO);
 	}
-	
+
     /**
 	 * 일지관리를(을) 등록한다.
 	 * @param qdiaryManageVO - 일지관리 정보 담김 VO
@@ -77,16 +73,16 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	 * @throws Exception
 	 */
 	public void updateDiaryManage(DiaryManageVO diaryManageVO) throws Exception{
-		insert("DiaryManage.updateDiaryManage", diaryManageVO);
+		update("DiaryManage.updateDiaryManage", diaryManageVO);
 	}
-	
+
     /**
 	 * 일지관리를(을) 삭제한다.
 	 * @param diaryManageVO - 일지관리 정보 담김 VO
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	public void deleteDiaryManage(DiaryManageVO diaryManageVO) throws Exception{
-		insert("DiaryManage.deleteDiaryManage", diaryManageVO);
+		delete("DiaryManage.deleteDiaryManage", diaryManageVO);
 	}
 }

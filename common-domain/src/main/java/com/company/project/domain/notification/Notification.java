@@ -31,25 +31,42 @@ public class Notification extends BaseEntity {
     @Column(name = "NTCN_CN", length = 4000)
     private String ntfcCn;
 
-    @Column(name = "NTCN_TM", length = 14)
-    private String ntfcTime;
+    @Column(name = "RECEIVER_ID", length = 20, nullable = false)
+    private String receiverId;
 
-    @Column(name = "BH_NTCN_INTRVL", length = 100)
-    private String bhNtfcIntrvl;
+    @Column(name = "IS_READ", length = 1)
+    private String isRead; // Y, N
+
+    @Column(name = "LINK_URL", length = 255)
+    private String linkUrl;
 
     @Builder
-    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
+    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String linkUrl) {
         this.ntfcNo = ntfcNo;
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        this.ntfcTime = ntfcTime;
-        this.bhNtfcIntrvl = bhNtfcIntrvl;
+        this.receiverId = receiverId;
+        this.linkUrl = linkUrl;
+        this.isRead = "N";
     }
 
+    public void markAsRead() {
+        this.isRead = "Y";
+    }
+    
+    // 누락된 메서드들 추가
+    public String getNtfcTime() {
+        return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
+    }
+    
+    public String getBhNtfcIntrvl() {
+        // 알림 간격 정보는 별도 필드가 없으므로 null 반환
+        return null;
+    }
+    
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        this.ntfcTime = ntfcTime;
-        this.bhNtfcIntrvl = bhNtfcIntrvl;
+        // 시간 관련 정보는 BaseEntity에서 관리
     }
 }

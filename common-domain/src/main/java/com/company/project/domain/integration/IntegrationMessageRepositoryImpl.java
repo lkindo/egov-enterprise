@@ -1,7 +1,5 @@
 package com.company.project.domain.integration;
 
-import static com.company.project.domain.integration.QIntegrationMessage.integrationMessage;
-
 import java.util.List;
 
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -23,9 +21,9 @@ public class IntegrationMessageRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public List<IntegrationMessage> searchMessages(String searchKeyword) {
         return queryFactory
-                .selectFrom(integrationMessage)
+                .selectFrom(QIntegrationMessage.integrationMessage)
                 .where(
-                        integrationMessage.useAt.eq("Y"),
+                        QIntegrationMessage.integrationMessage.useAt.eq("Y"),
                         nameContains(searchKeyword))
                 .fetch();
     }
@@ -33,15 +31,17 @@ public class IntegrationMessageRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public long countMessages(String searchKeyword) {
         return queryFactory
-                .select(integrationMessage.count())
-                .from(integrationMessage)
+                .select(QIntegrationMessage.integrationMessage.count())
+                .from(QIntegrationMessage.integrationMessage)
                 .where(
-                        integrationMessage.useAt.eq("Y"),
+                        QIntegrationMessage.integrationMessage.useAt.eq("Y"),
                         nameContains(searchKeyword))
                 .fetchOne();
     }
 
     private BooleanExpression nameContains(String searchKeyword) {
-        return StringUtils.hasText(searchKeyword) ? integrationMessage.cntcMessageNm.contains(searchKeyword) : null;
+        return StringUtils.hasText(searchKeyword)
+                ? QIntegrationMessage.integrationMessage.cntcMessageNm.contains(searchKeyword)
+                : null;
     }
 }

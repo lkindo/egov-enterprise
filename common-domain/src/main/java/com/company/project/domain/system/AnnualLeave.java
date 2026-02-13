@@ -11,6 +11,7 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "NINDVDLYRYCMANAGE")
+@IdClass(AnnualLeaveId.class)
 public class AnnualLeave extends BaseEntity {
 
     @Id
@@ -29,4 +30,22 @@ public class AnnualLeave extends BaseEntity {
 
     @Column(name = "REMNDR_YRYC_CO")
     private Double remndrYrycCo;
+
+    /**
+     * 사용 연차 차감 및 잔여 일수 갱신
+     */
+    public void deductLeave(Double days) {
+        if (this.useYrycCo == null) this.useYrycCo = 0.0;
+        this.useYrycCo += days;
+        syncRemaining();
+    }
+
+    /**
+     * 잔여 일수 동기화
+     */
+    public void syncRemaining() {
+        if (this.occrncYrycCo == null) this.occrncYrycCo = 0.0;
+        if (this.useYrycCo == null) this.useYrycCo = 0.0;
+        this.remndrYrycCo = this.occrncYrycCo - this.useYrycCo;
+    }
 }

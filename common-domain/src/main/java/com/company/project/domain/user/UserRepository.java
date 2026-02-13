@@ -1,6 +1,11 @@
 package com.company.project.domain.user;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -14,4 +19,11 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     Optional<User> findByUserNmAndEmailAdres(String userNm, String emailAdres);
 
     Optional<User> findByUserIdAndUserNmAndEmailAdres(String userId, String userNm, String emailAdres);
+
+    @EntityGraph(attributePaths = {"role"})
+    @Query("SELECT u FROM User u")
+    List<User> findAllWithRole();
+
+    @EntityGraph(attributePaths = {"role"})
+    Optional<User> findById(@Param("userId") String userId);
 }

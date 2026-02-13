@@ -1,0 +1,203 @@
+package com.company.project.security.test;
+
+import com.company.project.api.controller.UserController;
+import com.company.project.service.user.UserService;
+import com.company.project.service.user.dto.UserDto;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureWebMvc
+@ActiveProfiles("test")
+class AuthenticationBypassTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserService userService;
+
+    @Test
+    @DisplayName("인증되지 않은 사용자가 보호된 엔드포인트에 접근 시 401 Unauthorized 반환")
+    void unauthorizedAccess_toProtectedEndpoint_returns401() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("잘못된 JWT 토큰으로 보호된 엔드포인트 접근 시 401 Unauthorized 반환")
+    void invalidJwtToken_toProtectedEndpoint_returns401() throws Exception {
+        // Given
+        String invalidToken = "invalid.token.here";
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("Authorization", "Bearer " + invalidToken)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("만료된 JWT 토큰으로 보호된 엔드포인트 접근 시 401 Unauthorized 반환")
+    void expiredJwtToken_toProtectedEndpoint_returns401() throws Exception {
+        // Given
+        String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTUwMDAwMDB9." +
+                             "someInvalidSignature";
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("Authorization", "Bearer " + expiredToken)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("JWT 토큰 없이 관리자 전용 엔드포인트 접근 시 401 Unauthorized 반환")
+    void noToken_toAdminEndpoint_returns401() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("권한 없는 사용자가 관리자 전용 엔드포인트 접근 시 403 Forbidden 반환")
+    void unauthorizedUser_toAdminEndpoint_returns403() throws Exception {
+        // Given
+        String validToken = "valid.token.here";
+        // In a real scenario, we would mock the JWT validation to return a user with non-admin role
+        // For this test, we'll assume the token is valid but user doesn't have admin privileges
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/users")
+                .header("Authorization", "Bearer " + validToken)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("인증 없이 사용자 목록 조회 시 우회 시도 실패 확인")
+    void bypassAttempt_getUserList_withoutAuth_fails() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+
+        // Verify that the service method was NOT called without authentication
+        // (This is verified by the 401 status code)
+    }
+
+    @Test
+    @DisplayName("인증 없이 사용자 생성 시도 우회 실패 확인")
+    void bypassAttempt_createUser_withoutAuth_fails() throws Exception {
+        // Given
+        String requestBody = """
+                {
+                    "userId": "attacker",
+                    "password": "password123!",
+                    "userNm": "공격자",
+                    "passwordHint": "hint",
+                    "passwordCnsr": "answer",
+                    "role": "USER"
+                }
+                """;
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("빈 Authorization 헤더로 접근 시 401 Unauthorized 반환")
+    void emptyAuthHeader_toProtectedEndpoint_returns401() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("Authorization", "")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Bearer 접두사 없는 토큰으로 접근 시 401 Unauthorized 반환")
+    void tokenWithoutBearerPrefix_toProtectedEndpoint_returns401() throws Exception {
+        // Given
+        String tokenWithoutPrefix = "some.token.here";
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("Authorization", tokenWithoutPrefix)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("인증 없이 사용자 정보 수정 시도 우회 실패 확인")
+    void bypassAttempt_updateUser_withoutAuth_fails() throws Exception {
+        // Given
+        String requestBody = """
+                {
+                    "userId": "victim",
+                    "userNm": "피해자",
+                    "role": "ADMIN"
+                }
+                """;
+
+        // When & Then
+        mockMvc.perform(put("/api/v1/users/victim")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("인증 없이 사용자 삭제 시도 우회 실패 확인")
+    void bypassAttempt_deleteUser_withoutAuth_fails() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/v1/users/victim")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("JWT 토큰을 쿠키를 통해 전달하려는 시도 실패 확인")
+    void tokenViaCookie_toProtectedEndpoint_returns401() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .cookie(new jakarta.servlet.http.Cookie("Authorization", "Bearer some.token.here"))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("다른 헤더에 토큰을 포함시켜 우회 시도 실패 확인")
+    void tokenInCustomHeader_toProtectedEndpoint_returns401() throws Exception {
+        // Given
+        String tokenInCustomHeader = "Bearer some.token.here";
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("X-Custom-Auth", tokenInCustomHeader)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+}

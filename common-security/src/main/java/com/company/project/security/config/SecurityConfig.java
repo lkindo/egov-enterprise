@@ -107,23 +107,38 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**", "/static/**").permitAll()
                         .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
                         .requestMatchers("/sym/mms/**").permitAll()
                         .requestMatchers("/connection").permitAll()
-                        .requestMatchers("/WEB-INF/**").permitAll()
+                        .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 
-        // Header Security
+        // Enhanced Header Security
         http.headers(headers -> headers
-                .frameOptions(
-                        org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::sameOrigin)
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 .contentTypeOptions(Customizer.withDefaults())
                 .xssProtection(xss -> xss.headerValue(
                         org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)));
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .maxAgeInSeconds(31536000L)
+                        .includeSubDomains(true)
+                        .preload(true))
+                .cacheControl(Customizer.withDefaults())
+                .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
+
+        // Add security headers for additional protection
+        http.headers(headers -> headers
+                .defaultsDisabled()
+                .cacheControl(Customizer.withDefaults())
+                .contentTypeOptions(Customizer.withDefaults())
+                .httpStrictTransportSecurity(Customizer.withDefaults())
+                .frameOptions(Customizer.withDefaults())
+                .xssProtection(Customizer.withDefaults())
+                .referrerPolicy(Customizer.withDefaults()));
 
         return http.build();
     }

@@ -117,6 +117,17 @@ public class BoardVO extends Board {
     /** 비밀글 여부 */
     private String secretAt;
 
+    /** 댓글 번호 (Legacy 지원용) */
+    private Long commentNo;
+
+    public Long getCommentNo() {
+        return commentNo;
+    }
+
+    public void setCommentNo(Long commentNo) {
+        this.commentNo = commentNo;
+    }
+
     /**
      * searchBgnDe attribute를 리턴한다.
      * 

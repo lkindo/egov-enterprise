@@ -24,7 +24,7 @@ public class NameCardUserDto {
     private String emplyrId;
 
     @Schema(description = "등록일시")
-    private LocalDateTime creatDt;
+    private String creatDt;
 
     @Schema(description = "등록구분코드")
     private String registSeCode;
@@ -44,5 +44,10 @@ public class NameCardUserDto {
                 .useAt(entity.getUseAt())
                 .nameCard(NameCardDto.from(nameCard))
                 .build();
+    }
+    
+    // 누락된 메서드들 추가
+    public String getCreatDt() {
+        return this.creatDt != null ? this.creatDt.toString() : null;
     }
 }

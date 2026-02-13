@@ -1,55 +1,29 @@
-// Schedule Management Types
-
-export interface DeptSchedule {
-    schdulId?: string;
-    schdulNm: string;
-    schdulCn: string;
-    schdulBgnDe: string;
-    schdulEndDe: string;
-    schdulPlace?: string;
-    schdulIpcrCode?: string;
-    schdulCharger?: string;
-    schdulDeptId?: string;
-    schdulDeptName?: string;
-    frstRegisterId?: string;
-    frstRegisterNm?: string;
-    frstRegistPnttm?: string;
+export interface Schedule {
+  schdulId: string;
+  schdulSe: string; // 1: 부서, 2: 개인
+  schdulDeptId?: string;
+  schdulKindCode?: string;
+  schdulBgnde: string; // yyyyMMddHHmm
+  schdulEndde: string;
+  schdulNm: string;
+  schdulCn: string;
+  schdulPlace?: string;
+  schdulIpcrCode?: string;
+  schdulChargerId?: string;
+  atchFileId?: string;
+  reptitSeCode?: string;
+  frstRegisterId?: string;
+  createdDate?: string;
 }
 
-export interface WikMnthngReprt {
-    reprtId?: string;
-    reprtSe: string; // W: Weekly, M: Monthly
-    reprtThstrn?: string;
-    reprtBgnEndDe?: string;
-    reprtBgnDe?: string;
-    reprtEndDe?: string;
-    thsWikEno?: number;
-    wikWorkCn?: string;
-    nextWikWorkCn?: string;
-    partclrMatter?: string;
-    reporterId?: string;
-    reporterNm?: string;
-    confirmAt?: string;
-    confmDt?: string;
-    confmerId?: string;
-    frstRegisterId?: string;
-    frstRegisterNm?: string;
-    frstRegistPnttm?: string;
-    atchFileId?: string;
+export interface ScheduleResponse {
+  resultList: Schedule[];
+  totalCount: number;
+  pageIndex: number;
+  totalPages: number;
 }
 
-export interface ScheduleSearchParams {
-    pageIndex?: number;
-    searchCondition?: string;
-    searchKeyword?: string;
-    schdulDeptId?: string;
-    searchYear?: string;
-    searchMonth?: string;
-}
-
-export interface ReportSearchParams {
-    pageIndex?: number;
-    searchCondition?: string;
-    searchKeyword?: string;
-    searchDate?: string;
+export interface MonthlyScheduleResponse {
+  schedules: Schedule[];
+  yearMonth: string;
 }

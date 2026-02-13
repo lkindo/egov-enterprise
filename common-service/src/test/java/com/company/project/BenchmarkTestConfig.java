@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Import;
 @Import(CommonCodeService.class)
 public class BenchmarkTestConfig {
 
-    @Bean(name = "reprtStatsIdGnrService")
+    @Bean(name = "mockReprtStatsIdGnrService")
     public EgovIdGnrService reprtStatsIdGnrService() {
         return Mockito.mock(EgovIdGnrService.class);
     }

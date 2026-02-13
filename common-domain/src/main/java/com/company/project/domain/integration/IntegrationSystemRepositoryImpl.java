@@ -1,7 +1,5 @@
 package com.company.project.domain.integration;
 
-import static com.company.project.domain.integration.QIntegrationSystem.integrationSystem;
-
 import java.util.List;
 
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
@@ -23,9 +21,9 @@ public class IntegrationSystemRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public List<IntegrationSystem> searchSystems(String insttId) {
         return queryFactory
-                .selectFrom(integrationSystem)
+                .selectFrom(QIntegrationSystem.integrationSystem)
                 .where(
-                        integrationSystem.useAt.eq("Y"),
+                        QIntegrationSystem.integrationSystem.useAt.eq("Y"),
                         insttIdEq(insttId))
                 .fetch();
     }
@@ -33,15 +31,15 @@ public class IntegrationSystemRepositoryImpl extends QuerydslRepositorySupport
     @Override
     public long countSystems(String insttId) {
         return queryFactory
-                .select(integrationSystem.count())
-                .from(integrationSystem)
+                .select(QIntegrationSystem.integrationSystem.count())
+                .from(QIntegrationSystem.integrationSystem)
                 .where(
-                        integrationSystem.useAt.eq("Y"),
+                        QIntegrationSystem.integrationSystem.useAt.eq("Y"),
                         insttIdEq(insttId))
                 .fetchOne();
     }
 
     private BooleanExpression insttIdEq(String insttId) {
-        return StringUtils.hasText(insttId) ? integrationSystem.id.insttId.eq(insttId) : null;
+        return StringUtils.hasText(insttId) ? QIntegrationSystem.integrationSystem.id.insttId.eq(insttId) : null;
     }
 }

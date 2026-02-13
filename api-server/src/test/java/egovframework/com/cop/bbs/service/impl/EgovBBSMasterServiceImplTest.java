@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,26 +23,33 @@ public class EgovBBSMasterServiceImplTest {
     private EgovBBSMasterServiceImpl egovBBSMasterService;
 
     @Mock
-    private EgovBBSMasterDAO egovBBSMasterDAO;
+    private com.company.project.service.board.EgovBoardMasterService boardMasterService;
 
     @Test
     public void selectNotUsedBdMstrList_test() {
         // given
         BoardMasterVO boardMasterVO = new BoardMasterVO();
-        List<BoardMasterVO> expectedList = new ArrayList<>();
-        BoardMasterVO vo = new BoardMasterVO();
-        vo.setBbsId("BBS_0000000000001");
-        expectedList.add(vo);
+        boardMasterVO.setFirstIndex(0);
+        boardMasterVO.setRecordCountPerPage(10);
 
-        when(egovBBSMasterDAO.selectNotUsedBdMstrList(any(BoardMasterVO.class))).thenReturn(expectedList);
-        when(egovBBSMasterDAO.selectNotUsedBdMstrListCnt(any(BoardMasterVO.class))).thenReturn(1);
+        List<com.company.project.service.board.dto.BoardMasterDto> content = new java.util.ArrayList<>();
+        content.add(com.company.project.service.board.dto.BoardMasterDto.builder()
+                .bbsId("BBS_0000000000001")
+                .build());
+
+        org.springframework.data.domain.Page<com.company.project.service.board.dto.BoardMasterDto> page = new org.springframework.data.domain.PageImpl<>(
+                content, org.springframework.data.domain.PageRequest.of(0, 10), 1L);
+
+        when(boardMasterService.getBoardMasterList(any(), any(), any())).thenReturn(page);
 
         // when
         Map<String, Object> result = egovBBSMasterService.selectNotUsedBdMstrList(boardMasterVO);
 
         // then
         assertNotNull(result);
-        assertEquals(expectedList, result.get("resultList"));
+        List<?> resultList = (List<?>) result.get("resultList");
+        assertEquals(1, resultList.size());
+        assertEquals("BBS_0000000000001", ((BoardMasterVO) resultList.get(0)).getBbsId());
         assertEquals("1", result.get("resultCnt"));
     }
 }

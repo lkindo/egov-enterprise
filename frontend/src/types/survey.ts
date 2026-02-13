@@ -1,25 +1,31 @@
-export interface QustnrRespondInfo {
-    qestnrQesrspnsId: string;
-    qestnrQesitmId: string;
-    qestnrId: string;
-    qestnrTmplatId: string;
-    qustnrIemId: string;
-    respondAnswerCn: string;
-    respondNm: string;
-    etcAnswerCn: string;
-    frstRegisterPnttm: string;
-    frstRegisterId: string;
-    lastUpdtPnttm: string;
-    lastUpdusrId: string;
+export interface Survey {
+  qestnrId: string;
+  qestnrSj: string;
+  qestnrPurps: string;
+  qestnrWritngGuidanceCn: string;
+  qestnrTrget: string;
+  qestnrBgnde: string;
+  qestnrEndde: string;
+  frstRegisterNm?: string;
+  createdDate: string;
+  status: 'OPEN' | 'CLOSED' | 'UPCOMING';
 }
 
-export interface QustnrRespondInfoVO extends QustnrRespondInfo {
-    searchCondition?: string;
-    searchKeyword?: string;
-    pageIndex?: number;
-    pageUnit?: number;
-    pageSize?: number;
-    firstIndex?: number;
-    lastIndex?: number;
-    recordCountPerPage?: number;
+export interface SurveyQuestion {
+  qestnrQesitmId: string;
+  qestnCn: string;
+  qestnTyCode: string; // 1: 객관식, 2: 주관식
+  mxmmChoiseCo: number;
+}
+
+export interface SurveyAnswer {
+  qustnrIemId: string;
+  iemCn: string;
+  etcAnswerAt: string;
+}
+
+export interface SurveyResultStats {
+  iemCn: string;
+  count: number;
+  percentage: number;
 }

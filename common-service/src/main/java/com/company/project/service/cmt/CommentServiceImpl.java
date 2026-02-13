@@ -26,6 +26,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    public CommentDto getComment(Long id) {
+        return commentRepository.findById(id)
+                .map(this::convertToDto)
+                .orElse(null);
+    }
+
+    @Override
     @Transactional
     public Long createComment(String userId, String userNm, CommentSaveRequest request) {
         Long nextId = commentRepository.findMaxId();

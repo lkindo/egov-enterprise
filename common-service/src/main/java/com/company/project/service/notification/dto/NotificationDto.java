@@ -63,4 +63,21 @@ public class NotificationDto {
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
+    
+    // 누락된 메서드들 추가
+    public String getNtfcTime() {
+        return this.ntfcTime;
+    }
+    
+    public String getBhNtfcIntrvl() {
+        return this.bhNtfcIntrvl;
+    }
+    
+    public void setNtfcTime(String ntfcTime) {
+        this.ntfcTime = ntfcTime;
+    }
+    
+    public void setBhNtfcIntrvl(String bhNtfcIntrvl) {
+        this.bhNtfcIntrvl = bhNtfcIntrvl;
+    }
 }

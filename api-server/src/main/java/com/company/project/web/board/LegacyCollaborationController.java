@@ -34,6 +34,7 @@ public class LegacyCollaborationController {
 
     private final EgovBoardMasterService egovBoardMasterService;
     private final EgovMailService egovMailService;
+    private final com.company.project.service.cmt.CommentService commentService;
 
     @Resource(name = "propertiesService")
     protected EgovPropertyService propertyService;
@@ -490,6 +491,25 @@ public class LegacyCollaborationController {
      * model.addAttribute("resultCnt", pageResult.getTotalElements()); return
      * "egovframework/com/cop/smt/mrm/EgovMemoReprtList"; }
      */
+
+    /**
+     * 댓글 수정 화면
+     */
+    @RequestMapping("/cop/cmt/updateArticleCommentView.do")
+    public String updateArticleCommentView(
+            @ModelAttribute("searchVO") egovframework.com.cop.bbs.service.BoardVO boardVO,
+            ModelMap model) throws Exception {
+
+        setupPaging(boardVO.getPageIndex(), boardVO.getPageUnit(), model);
+
+        com.company.project.service.cmt.dto.CommentDto commentDto = commentService.getComment(boardVO.getCommentNo());
+
+        model.addAttribute("articleCommentVO", commentDto);
+        model.addAttribute("resultList", commentService.getComments(boardVO.getNttId(), boardVO.getBbsId(),
+                PageRequest.of(boardVO.getPageIndex() - 1, propertyService.getInt("pageUnit"))).getContent());
+
+        return "egovframework/com/cop/cmt/EgovArticleCommentList";
+    }
 
     private PaginationInfo setupPaging(int pageIndex, int pageUnit, ModelMap model) {
         if (pageUnit <= 0)

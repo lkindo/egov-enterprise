@@ -1,13 +1,16 @@
 package egovframework.com.sym.sym.bak.service.impl;
 
-import egovframework.com.sym.sym.bak.service.BackupOpert;
+import com.company.project.domain.backup.BackupOpert;
+import com.company.project.domain.backup.BackupOpertRepository;
+import com.company.project.domain.backup.BackupSchdulDfk;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,26 +20,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.sql.init.mode=always",
-    "spring.sql.init.schema-locations=classpath:schema-h2.sql",
-    "mybatis.mapper-locations=classpath:mapper/com/sym/sym/bak/EgovBackupOpert_SQL_postgres.xml",
-    "logging.level.egovframework.com.sym.sym.bak.service.impl=DEBUG"
+        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.sql.init.mode=always",
+        "spring.sql.init.schema-locations=classpath:schema-h2.sql",
+        "logging.level.com.company.project.domain.backup=DEBUG"
 })
 @Transactional
 public class BackupOpertDaoTest {
 
     @Configuration
-    @Import(BackupOpertDao.class)
     @EnableAutoConfiguration
+    @EntityScan(basePackages = "com.company.project.domain.backup")
+    @EnableJpaRepositories(basePackages = "com.company.project.domain.backup")
     static class TestConfig {
     }
 
     @Autowired
-    private BackupOpertDao backupOpertDao;
+    private BackupOpertRepository backupOpertRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -58,7 +61,8 @@ public class BackupOpertDaoTest {
     }
 
     private void insertCode(String codeId, String code, String codeNm) {
-        jdbcTemplate.update("INSERT INTO CCMMNDETAILCODE (CODE_ID, CODE, CODE_NM, USE_AT, LAST_UPDT_PNTTM) VALUES (?, ?, ?, 'Y', NOW())",
+        jdbcTemplate.update(
+                "INSERT INTO CCMMNDETAILCODE (CODE_ID, CODE, CODE_NM, USE_AT, LAST_UPDT_PNTTM) VALUES (?, ?, ?, 'Y', NOW())",
                 codeId, code, codeNm);
     }
 
@@ -67,34 +71,33 @@ public class BackupOpertDaoTest {
         // 1. Prepare Data (100 records)
         int count = 100;
         for (int i = 0; i < count; i++) {
-            BackupOpert vo = new BackupOpert();
-            vo.setBackupOpertId("BKP_" + String.format("%04d", i));
-            vo.setBackupOpertNm("Backup Job " + i);
-            vo.setBackupOrginlDrctry("/origin/" + i);
-            vo.setBackupStreDrctry("/target/" + i);
-            vo.setCmprsSe("01");
-            vo.setExecutCycle("02"); // Weekly
-            vo.setExecutSchdulDe("20231001");
-            vo.setExecutSchdulHour("00");
-            vo.setExecutSchdulMnt("00");
-            vo.setExecutSchdulSecnd("00");
-            vo.setFrstRegisterId("admin");
-            vo.setLastUpdusrId("admin");
+            String opertId = "BKP_" + String.format("%04d", i);
+            BackupOpert vo = BackupOpert.builder()
+                    .backupOpertId(opertId)
+                    .backupOpertNm("Backup Job " + i)
+                    .backupOrginlDrctry("/origin/" + i)
+                    .backupStreDrctry("/target/" + i)
+                    .cmprsSe("01")
+                    .executCycle("02") // Weekly
+                    .executSchdulDe("20231001")
+                    .executSchdulHour("00")
+                    .executSchdulMnt("00")
+                    .executSchdulSecnd("00")
+                    .useAt("Y")
+                    .frstRegisterId("admin")
+                    .lastUpdusrId("admin")
+                    .build();
 
             // Set Schedules (Mon, Tue)
-            String[] schedules = {"1", "2"};
-            vo.setExecutSchdulDfkSes(schedules);
+            vo.getExecutSchdulDfkSes().add(new BackupSchdulDfk(opertId, "1", vo));
+            vo.getExecutSchdulDfkSes().add(new BackupSchdulDfk(opertId, "2", vo));
 
-            backupOpertDao.insertBackupOpert(vo);
+            backupOpertRepository.save(vo);
         }
 
         // 2. Measure Performance
-        BackupOpert searchVO = new BackupOpert();
-        searchVO.setFirstIndex(0);
-        searchVO.setRecordCountPerPage(1000); // Fetch all
-
         long start = System.currentTimeMillis();
-        List<BackupOpert> resultList = backupOpertDao.selectBackupOpertList(searchVO);
+        List<BackupOpert> resultList = backupOpertRepository.findAll();
         long end = System.currentTimeMillis();
 
         System.out.println("Execution Time: " + (end - start) + " ms");
@@ -104,7 +107,7 @@ public class BackupOpertDaoTest {
         assertEquals(count, resultList.size());
         for (BackupOpert result : resultList) {
             assertNotNull(result.getExecutSchdulDfkSes());
-            assertEquals(2, result.getExecutSchdulDfkSes().length);
+            assertEquals(2, result.getExecutSchdulDfkSes().size());
         }
     }
 }

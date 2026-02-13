@@ -8,6 +8,7 @@ import com.company.project.service.notification.dto.NotificationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class NotificationService implements EgovNotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
@@ -45,6 +47,13 @@ public class NotificationService implements EgovNotificationService {
                 .bhNtfcIntrvl(dto.getBhNtfcIntrvl())
                 .build();
         notificationRepository.save(entity);
+
+        // Send Real-time notification via WebSocket
+        messagingTemplate.convertAndSend("/topic/public", NotificationDto.from(entity));
+        if (userId != null) {
+            messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", NotificationDto.from(entity));
+        }
+
         return id;
     }
 

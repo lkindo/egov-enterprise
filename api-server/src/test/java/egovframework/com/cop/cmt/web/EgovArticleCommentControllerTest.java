@@ -16,14 +16,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.company.project.service.comment.EgovCommentService;
-import com.company.project.service.comment.dto.CommentDto;
+import com.company.project.service.cmt.CommentService;
+import com.company.project.service.cmt.dto.CommentDto;
+import com.company.project.web.board.LegacyCollaborationController;
 
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
@@ -32,100 +33,101 @@ import egovframework.com.cmm.util.EgovUserDetailsHelper;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 
-@WebMvcTest(controllers = EgovArticleCommentController.class)
+@WebMvcTest(controllers = LegacyCollaborationController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(EgovArticleCommentController.class)
+@Import(LegacyCollaborationController.class)
 public class EgovArticleCommentControllerTest {
 
-    @SpringBootApplication
-    static class TestConfig {
-    }
+        @Configuration
+        static class TestConfig {
+        }
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockBean(name = "egovCommentService")
-    private EgovCommentService egovCommentService;
+        @MockBean
+        private CommentService egovCommentService;
 
-    @MockBean(name = "propertiesService")
-    private EgovPropertyService propertyService;
+        @MockBean(name = "propertiesService")
+        private EgovPropertyService propertyService;
 
-    @MockBean(name = "egovMessageSource")
-    private EgovMessageSource egovMessageSource;
+        @MockBean(name = "egovMessageSource")
+        private EgovMessageSource egovMessageSource;
 
-    @MockBean
-    private EgovUserDetailsService egovUserDetailsService;
+        @MockBean
+        private EgovUserDetailsService egovUserDetailsService;
 
-    @BeforeEach
-    void setUp() {
-        // Mock Authentication
-        LoginVO loginVO = new LoginVO();
-        loginVO.setUniqId("TEST_USER_ID");
-        loginVO.setName("TEST_USER_NAME");
+        @BeforeEach
+        void setUp() {
+                // Mock Authentication
+                LoginVO loginVO = new LoginVO();
+                loginVO.setUniqId("TEST_USER_ID");
+                loginVO.setName("TEST_USER_NAME");
 
-        when(egovUserDetailsService.isAuthenticated()).thenReturn(true);
-        when(egovUserDetailsService.getAuthenticatedUser()).thenReturn(loginVO);
+                when(egovUserDetailsService.isAuthenticated()).thenReturn(true);
+                when(egovUserDetailsService.getAuthenticatedUser()).thenReturn(loginVO);
 
-        new EgovUserDetailsHelper().setEgovUserDetailsService(egovUserDetailsService);
+                new EgovUserDetailsHelper().setEgovUserDetailsService(egovUserDetailsService);
 
-        // Mock PropertyService
-        when(propertyService.getInt("pageUnit")).thenReturn(10);
-        when(propertyService.getInt("pageSize")).thenReturn(10);
-    }
+                // Mock PropertyService
+                when(propertyService.getInt("pageUnit")).thenReturn(10);
+                when(propertyService.getInt("pageSize")).thenReturn(10);
+        }
 
-    @Test
-    void updateArticleCommentView_validId_populatesModel() throws Exception {
-        Long commentId = 123L;
-        String commentCn = "Test Comment Content";
+        @Test
+        void updateArticleCommentView_validId_populatesModel() throws Exception {
+                Long commentId = 123L;
+                String commentCn = "Test Comment Content";
 
-        CommentDto mockDto = CommentDto.builder()
-                .commentNo(commentId)
-                .commentCn(commentCn)
-                .nttId(10L)
-                .bbsId("BBS_1")
-                .wrterId("TEST_USER_ID")
-                .wrterNm("TEST_USER_NAME")
-                .build();
+                CommentDto mockDto = CommentDto.builder()
+                                .id(commentId)
+                                .commentCn(commentCn)
+                                .nttId(10L)
+                                .bbsId("BBS_1")
+                                .wrterId("TEST_USER_ID")
+                                .wrterNm("TEST_USER_NAME")
+                                .build();
 
-        // Mock getComment call
-        when(egovCommentService.getComment(commentId)).thenReturn(mockDto);
+                // Mock getComment call
+                when(egovCommentService.getComment(commentId)).thenReturn(mockDto);
 
-        // Mock getCommentList call (controller calls this too)
-        when(egovCommentService.getCommentList(any(), any(), any()))
-                .thenReturn(new PageImpl<>(Collections.emptyList()));
+                // Mock getCommentList call (controller calls this too)
+                when(egovCommentService.getComments(any(), any(), any()))
+                                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
-                .param("commentNo", String.valueOf(commentId))
-                .param("bbsId", "BBS_1")
-                .param("nttId", "10"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("egovframework/com/cop/cmt/EgovArticleCommentList"))
-                .andExpect(model().attributeExists("articleCommentVO"))
-                .andExpect(model().attribute("articleCommentVO",
-                        org.hamcrest.Matchers.hasProperty("commentCn", org.hamcrest.Matchers.is(commentCn))));
+                mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
+                                .param("commentNo", String.valueOf(commentId))
+                                .param("bbsId", "BBS_1")
+                                .param("nttId", "10"))
+                                .andExpect(status().isOk())
+                                .andExpect(view().name("egovframework/com/cop/cmt/EgovArticleCommentList"))
+                                .andExpect(model().attributeExists("articleCommentVO"))
+                                .andExpect(model().attribute("articleCommentVO",
+                                                org.hamcrest.Matchers.hasProperty("commentCn",
+                                                                org.hamcrest.Matchers.is(commentCn))));
 
-        verify(egovCommentService).getComment(commentId);
-    }
+                verify(egovCommentService).getComment(commentId);
+        }
 
-    @Test
-    void updateArticleCommentView_invalidId_handlesGracefully() throws Exception {
-        Long commentId = 999L;
+        @Test
+        void updateArticleCommentView_invalidId_handlesGracefully() throws Exception {
+                Long commentId = 999L;
 
-        // Mock getComment call to return null
-        when(egovCommentService.getComment(commentId)).thenReturn(null);
+                // Mock getComment call to return null
+                when(egovCommentService.getComment(commentId)).thenReturn(null);
 
-        // Mock getCommentList call
-        when(egovCommentService.getCommentList(any(), any(), any()))
-                .thenReturn(new PageImpl<>(Collections.emptyList()));
+                // Mock getCommentList call
+                when(egovCommentService.getComments(any(), any(), any()))
+                                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
-                .param("commentNo", String.valueOf(commentId))
-                .param("bbsId", "BBS_1")
-                .param("nttId", "10"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("egovframework/com/cop/cmt/EgovArticleCommentList"))
-                .andExpect(model().attributeExists("articleCommentVO"));
+                mockMvc.perform(post("/cop/cmt/updateArticleCommentView.do")
+                                .param("commentNo", String.valueOf(commentId))
+                                .param("bbsId", "BBS_1")
+                                .param("nttId", "10"))
+                                .andExpect(status().isOk())
+                                .andExpect(view().name("egovframework/com/cop/cmt/EgovArticleCommentList"))
+                                .andExpect(model().attributeExists("articleCommentVO"));
 
-        // Ensure that articleCommentVO is not null (it should be an empty VO)
-    }
+                // Ensure that articleCommentVO is not null (it should be an empty VO)
+        }
 }

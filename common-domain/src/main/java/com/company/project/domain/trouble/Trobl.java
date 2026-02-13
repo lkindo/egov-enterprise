@@ -1,9 +1,8 @@
 package com.company.project.domain.trouble;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "NTROBLINFO")
-public class Trobl {
+public class Trobl extends BaseEntity {
 
     @Id
     @Column(name = "TROBL_ID", length = 20)
@@ -47,16 +46,13 @@ public class Trobl {
 
     @Column(name = "PROCESS_STTUS", length = 1)
     private String processSttus;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
+    
+    // Missing method for compatibility
+    public String getFrstRegisterId() {
+        return this.getCreatedBy();
+    }
+    
+    public void setFrstRegisterId(String frstRegisterId) {
+        this.setCreatedBy(frstRegisterId);
+    }
 }
