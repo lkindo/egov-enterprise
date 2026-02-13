@@ -26,7 +26,8 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
         if (keyword == null || keyword.isEmpty()) {
             return recentSrchwrdManageRepository.findAll(pageable).map(RecentSrchwrdDto::from);
         }
-        return recentSrchwrdManageRepository.findBySrchwrdManageNmContaining(keyword, pageable).map(RecentSrchwrdDto::from);
+        return recentSrchwrdManageRepository.findBySrchwrdManageNmContaining(keyword, pageable)
+                .map(RecentSrchwrdDto::from);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
     public void updateRecentSrchwrdManage(RecentSrchwrdDto dto) {
         RecentSrchwrdManage entity = recentSrchwrdManageRepository.findById(dto.getSrchwrdManageId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getSrchwrdManageNm(), dto.getSrchwrdConectUrl(), dto.getUserSearchAt());
+        entity.update(dto.getSrchwrdManageNm(), dto.getSrchwrdConectUrl(), dto.getUserSearchAt(), null);
     }
 
     @Override

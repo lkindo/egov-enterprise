@@ -38,9 +38,9 @@ public class QnaController {
 
     @Operation(summary = "Q&A 질문 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertQna(@RequestBody QnaDto dto) {
-        qnaService.insertQna(null, dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> insertQna(@RequestBody QnaDto dto) {
+        String id = qnaService.createQna("ADMIN", dto);
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "Q&A 질문 수정")
@@ -48,7 +48,7 @@ public class QnaController {
     public ResponseEntity<ApiResponse<Void>> updateQna(
             @PathVariable String qaId,
             @RequestBody QnaDto dto) {
-        qnaService.updateQna(qaId, null, dto);
+        qnaService.updateQna(qaId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -57,7 +57,7 @@ public class QnaController {
     public ResponseEntity<ApiResponse<Void>> answerQna(
             @PathVariable String qaId,
             @RequestBody String answerCn) {
-        qnaService.answerQna(qaId, null, answerCn);
+        qnaService.updateAnswer(qaId, "ADMIN", answerCn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -65,7 +65,7 @@ public class QnaController {
     @DeleteMapping("/{qaId}")
     public ResponseEntity<ApiResponse<Void>> deleteQna(
             @PathVariable String qaId) {
-        qnaService.deleteQna(qaId);
+        qnaService.deleteQna(qaId, "ADMIN");
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -31,4 +31,6 @@ public interface ServerRepository extends JpaRepository<Server, String> {
              ORDER BY A.SERVER_ID
             """, nativeQuery = true)
     Page<Object[]> selectServerList(@Param("serverNm") String serverNm, Pageable pageable);
+
+    Page<Server> findByServerNmContaining(String serverNm, Pageable pageable);
 }

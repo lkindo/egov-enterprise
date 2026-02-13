@@ -22,4 +22,8 @@ public interface EgovMemoReportService {
     void updateMemoReport(String reprtId, String userId, MemoReportDto dto);
 
     void deleteMemoReport(String reprtId);
+
+    void readMemoReport(String reprtId);
+
+    void updateDrctMatter(String reprtId, String drctMatter);
 }

@@ -7,9 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * SMS JPA Entity
  * 레거시 테이블: NSMS
@@ -29,9 +26,6 @@ public class Sms extends BaseEntity {
 
     @Column(name = "TRNSMIS_CN", length = 2000)
     private String trnsmitCn;
-
-    @OneToMany(mappedBy = "smsId", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SmsRecptn> recipients = new ArrayList<>();
 
     @Builder
     public Sms(String smsId, String trnsmitTelno, String trnsmitCn) {

@@ -40,7 +40,7 @@ public class RssController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> insertRss(
             @RequestBody RssDto dto) {
-        rssService.insertRss(dto);
+        rssService.registerRss(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

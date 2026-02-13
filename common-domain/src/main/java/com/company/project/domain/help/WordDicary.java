@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 용어사전 정보 Entity
@@ -17,7 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NWORDDICARYINFO")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class WordDicary extends BaseEntity {
 
     @Id
@@ -37,18 +37,22 @@ public class WordDicary extends BaseEntity {
     private String synonm;
 
     @Builder
-    public WordDicary(String wordId, String wordNm, String engNm, String wordDc, String synonm) {
+    public WordDicary(String wordId, String wordNm, String engNm, String wordDc, String synonm, String frstRegisterId) {
         this.wordId = wordId;
         this.wordNm = wordNm;
         this.engNm = engNm;
         this.wordDc = wordDc;
         this.synonm = synonm;
+        this.createdBy = frstRegisterId;
     }
 
-    public void update(String wordNm, String engNm, String wordDc, String synonm) {
+    public void update(String wordNm, String engNm, String wordDc, String synonm, String userId) {
         this.wordNm = wordNm;
         this.engNm = engNm;
         this.wordDc = wordDc;
         this.synonm = synonm;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

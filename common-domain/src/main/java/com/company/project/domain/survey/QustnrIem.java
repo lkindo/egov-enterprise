@@ -1,14 +1,8 @@
 package com.company.project.domain.survey;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 /**
  * 설문 항목 정보 Entity
@@ -17,7 +11,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NQUSTNRIEM")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QustnrIem extends BaseEntity {
 
     @Id
@@ -42,21 +39,13 @@ public class QustnrIem extends BaseEntity {
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
     private String qestnrTmplatId;
 
-    @Builder
-    public QustnrIem(String qustnrIemId, String qestnrQesitmId, String qestnrId, Long iemSn,
-                    String iemCn, String etcAnswerAt, String qestnrTmplatId) {
-        this.qustnrIemId = qustnrIemId;
-        this.qestnrQesitmId = qestnrQesitmId;
-        this.qestnrId = qestnrId;
-        this.iemSn = iemSn;
-        this.iemCn = iemCn;
-        this.etcAnswerAt = etcAnswerAt != null ? etcAnswerAt : "N";
-        this.qestnrTmplatId = qestnrTmplatId;
-    }
-
     public void update(Long iemSn, String iemCn, String etcAnswerAt) {
         this.iemSn = iemSn;
         this.iemCn = iemCn;
         this.etcAnswerAt = etcAnswerAt;
+    }
+
+    public void setLastUpdtPnttm(String pnttm) {
+        // Compatibility
     }
 }

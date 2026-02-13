@@ -2,10 +2,7 @@ package com.company.project.domain.duty;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -16,8 +13,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "NBNDTCECKMANAGE")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@IdClass(BndtCeckManageId.class)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BndtCeckManage extends BaseEntity {
 
     @Id
@@ -35,15 +34,23 @@ public class BndtCeckManage extends BaseEntity {
     private String useAt;
 
     @Builder
-    public BndtCeckManage(String bndtCeckSe, String bndtCeckCd, String bndtCeckCdNm, String useAt) {
+    public BndtCeckManage(String bndtCeckSe, String bndtCeckCd, String bndtCeckCdNm, String useAt, String frstRegisterId) {
         this.bndtCeckSe = bndtCeckSe;
         this.bndtCeckCd = bndtCeckCd;
         this.bndtCeckCdNm = bndtCeckCdNm;
-        this.useAt = useAt != null ? useAt : "Y";
+        this.useAt = useAt;
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String bndtCeckCdNm, String useAt) {
+        this.update(bndtCeckCdNm, useAt, null);
+    }
+
+    public void update(String bndtCeckCdNm, String useAt, String userId) {
         this.bndtCeckCdNm = bndtCeckCdNm;
         this.useAt = useAt;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

@@ -34,9 +34,6 @@ public class Scrap {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, insertable = false, updatable = false)
-    private String uniqId;
-
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
 
@@ -57,9 +54,14 @@ public class Scrap {
         this.nttId = nttId;
         this.scrapNm = scrapNm;
         this.useAt = useAt;
-        this.uniqId = uniqId;
-        this.frstRegisterId = frstRegisterId;
+        // logic to handle uniqId if necessary, but prefer frstRegisterId if both
+        // provided
+        this.frstRegisterId = (frstRegisterId != null) ? frstRegisterId : uniqId;
         this.frstRegisterPnttm = LocalDateTime.now();
+    }
+
+    public String getUniqId() {
+        return frstRegisterId;
     }
 
     public void update(String scrapNm, String useAt, String updusrId) {

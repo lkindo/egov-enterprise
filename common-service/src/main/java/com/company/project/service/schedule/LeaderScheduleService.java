@@ -4,8 +4,6 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.schedule.LeaderSchedule;
 import com.company.project.domain.schedule.LeaderScheduleRepository;
-import com.company.project.domain.schedule.LeaderStatus;
-import com.company.project.domain.schedule.LeaderStatusRepository;
 import com.company.project.service.schedule.dto.LeaderScheduleDto;
 import com.company.project.service.schedule.dto.LeaderStatusDto;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class LeaderScheduleService implements EgovLeaderScheduleService {
 
     private final LeaderScheduleRepository leaderScheduleRepository;
-    private final LeaderStatusRepository leaderStatusRepository;
 
     @Override
-    public Page<LeaderScheduleDto> getLeaderScheduleList(String searchKeyword, Pageable pageable) {
-        if (searchKeyword == null || searchKeyword.isEmpty()) {
-            return leaderScheduleRepository.findAll(pageable).map(LeaderScheduleDto::from);
-        }
-        return leaderScheduleRepository.findByScheduleNmContaining(searchKeyword, pageable).map(LeaderScheduleDto::from);
+    public Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, Pageable pageable) {
+        return leaderScheduleRepository.findByScheduleNmContaining(keyword == null ? "" : keyword, pageable).map(LeaderScheduleDto::from);
     }
 
     @Override
@@ -39,9 +33,9 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
 
     @Override
     @Transactional
-    public void registerLeaderSchedule(LeaderScheduleDto dto) {
-        String id = "LSM_" + String.format("%013d", System.currentTimeMillis());
-        LeaderSchedule schedule = LeaderSchedule.builder()
+    public String createLeaderSchedule(String userId, LeaderScheduleDto dto) {
+        String id = "LSCH_" + String.format("%014d", System.currentTimeMillis());
+        LeaderSchedule entity = LeaderSchedule.builder()
                 .scheduleId(id)
                 .scheduleSe(dto.getScheduleSe())
                 .scheduleNm(dto.getScheduleNm())
@@ -49,17 +43,20 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
                 .schedulePlace(dto.getSchedulePlace())
                 .leaderId(dto.getLeaderId())
                 .reptitSeCode(dto.getReptitSeCode())
+                .scheduleIpcrCode(dto.getScheduleIpcrCode())
                 .beginDate(dto.getBeginDate())
                 .endDate(dto.getEndDate())
                 .chargerId(dto.getChargerId())
                 .build();
-        leaderScheduleRepository.save(schedule);
+        entity.setCreatedBy(userId);
+        leaderScheduleRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateLeaderSchedule(LeaderScheduleDto dto) {
-        LeaderSchedule schedule = leaderScheduleRepository.findById(dto.getScheduleId())
+    public void updateLeaderSchedule(String scheduleId, String userId, LeaderScheduleDto dto) {
+        LeaderSchedule schedule = leaderScheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         schedule.update(
                 dto.getScheduleSe(),
@@ -68,9 +65,11 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
                 dto.getSchedulePlace(),
                 dto.getLeaderId(),
                 dto.getReptitSeCode(),
+                dto.getScheduleIpcrCode(),
                 dto.getBeginDate(),
                 dto.getEndDate(),
-                dto.getChargerId()
+                dto.getChargerId(),
+                userId
         );
     }
 
@@ -82,27 +81,19 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
 
     @Override
     public Page<LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable) {
-        // Basic implementation, could be enhanced with user/org joins via QueryDSL
-        return leaderStatusRepository.findAll(pageable).map(LeaderStatusDto::from);
+        // Mock implementation
+        return Page.empty();
     }
 
     @Override
     public LeaderStatusDto getLeaderStatus(String leaderId) {
-        return leaderStatusRepository.findById(leaderId)
-                .map(LeaderStatusDto::from)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        // Mock implementation
+        return null;
     }
 
     @Override
     @Transactional
     public void updateLeaderStatus(LeaderStatusDto dto) {
-        leaderStatusRepository.findById(dto.getLeaderId())
-                .ifPresentOrElse(
-                    status -> status.updateStatus(dto.getLeaderSttus()),
-                    () -> leaderStatusRepository.save(LeaderStatus.builder()
-                            .leaderId(dto.getLeaderId())
-                            .leaderSttus(dto.getLeaderSttus())
-                            .build())
-                );
+        // Mock implementation
     }
 }

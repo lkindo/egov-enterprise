@@ -12,10 +12,13 @@ import org.springframework.stereotype.Repository;
  */
 @Repository("noteTrnsmitDomainRepository")
 public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {
-    
+
     @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.trnsmiterId = :trnsmiterId AND (n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.deleteAt = 'N'")
-    Page<NoteTrnsmit> searchSentNotes(@Param("trnsmiterId") String trnsmiterId, @Param("searchWrd") String searchWrd, Pageable pageable);
+    Page<NoteTrnsmit> searchSentNotes(@Param("trnsmiterId") String trnsmiterId, @Param("searchWrd") String searchWrd,
+            Pageable pageable);
 
     @Query("SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.trnsmiterId = :trnsmiterId AND t.deleteAt = 'N'")
     Page<NoteTrnsmit> findByTrnsmiterId(@Param("trnsmiterId") String trnsmiterId, Pageable pageable);
+
+    Page<NoteTrnsmit> findByTrnsmiterIdAndDeleteAt(String trnsmiterId, String deleteAt, Pageable pageable);
 }

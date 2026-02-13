@@ -40,6 +40,9 @@ public class LeaderScheduleDto {
     @Schema(description = "반복 구분 코드")
     private String reptitSeCode;
 
+    @Schema(description = "중요도 코드")
+    private String scheduleIpcrCode;
+
     @Schema(description = "시작 일자")
     private String beginDate;
 
@@ -58,6 +61,11 @@ public class LeaderScheduleDto {
     @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
+    // Aliases for legacy compatibility
+    public String getRepeatYn() { return reptitSeCode; }
+    public String getImportanceCode() { return scheduleIpcrCode; }
+    public String getScheduleType() { return scheduleSe; }
+
     public static LeaderScheduleDto from(LeaderSchedule entity) {
         if (entity == null) return null;
         return LeaderScheduleDto.builder()
@@ -68,6 +76,7 @@ public class LeaderScheduleDto {
                 .schedulePlace(entity.getSchedulePlace())
                 .leaderId(entity.getLeaderId())
                 .reptitSeCode(entity.getReptitSeCode())
+                .scheduleIpcrCode(entity.getScheduleIpcrCode())
                 .beginDate(entity.getBeginDate())
                 .endDate(entity.getEndDate())
                 .chargerId(entity.getChargerId())

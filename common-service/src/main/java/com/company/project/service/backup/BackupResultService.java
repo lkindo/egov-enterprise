@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class BackupResultService extends EgovAbstractServiceImpl implements EgovBackupResultService {
 
     private final BackupResultRepository backupResultRepository;
+    private final com.company.project.domain.backup.BackupOpertRepository backupOpertRepository;
     private final EgovCommonCodeService commonCodeService;
 
     @Override
@@ -63,6 +64,7 @@ public class BackupResultService extends EgovAbstractServiceImpl implements Egov
         BackupResult entity = BackupResult.builder()
                 .backupResultId(dto.getBackupResultId())
                 .backupOpertId(dto.getBackupOpertId())
+                .backupOpert(backupOpertRepository.getReferenceById(dto.getBackupOpertId()))
                 .backupFile(dto.getBackupFile())
                 .sttus(dto.getSttus())
                 .errorInfo(dto.getErrorInfo())

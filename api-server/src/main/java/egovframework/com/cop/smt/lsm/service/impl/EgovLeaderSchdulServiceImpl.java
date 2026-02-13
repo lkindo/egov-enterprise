@@ -1,5 +1,6 @@
 package egovframework.com.cop.smt.lsm.service.impl;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,23 +8,30 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.company.project.domain.schedule.LeaderSchedule;
+import com.company.project.domain.schedule.LeaderScheduleRepository;
 import com.company.project.service.schedule.LeaderScheduleService;
 import com.company.project.service.schedule.dto.LeaderScheduleDto;
 
 import egovframework.com.cop.smt.lsm.service.EgovLeaderSchdulService;
-import egovframework.com.cop.smt.lsm.service.EmplyrVO;
 import egovframework.com.cop.smt.lsm.service.LeaderSchdul;
 import egovframework.com.cop.smt.lsm.service.LeaderSchdulVO;
 import egovframework.com.cop.smt.lsm.service.LeaderSttus;
 import egovframework.com.cop.smt.lsm.service.LeaderSttusVO;
 import jakarta.annotation.Resource;
 
-@Service("EgovLeaderSchdulService")
+@Service("egovLeaderSchdulService")
 public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl implements EgovLeaderSchdulService {
+
+	@Resource(name = "leaderScheduleRepository")
+	private LeaderScheduleRepository leaderScheduleRepository;
 
 	@Resource(name = "leaderScheduleService")
 	private LeaderScheduleService leaderScheduleService;
@@ -32,44 +40,34 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	private EgovIdGnrService idgenService;
 
 	@Override
-	public Map<String, Object> selectEmplyrList(EmplyrVO emplyrVO) throws Exception {
-		// egov standard logic: use modern user service if available, but for now
-		// delegation to LeaderScheduleService if it has user list capabilities.
-		// Since modern LeaderScheduleService doesn't have it, we might need to use
-		// Organization/User service or return empty for now if it's not the core focus.
-		// For consistency, let's keep it empty or mock if needed, but the priority is
-		// Schedule.
-		Map<String, Object> map = new HashMap<>();
-		map.put("resultList", List.of());
-		map.put("resultCnt", "0");
-		return map;
-	}
-
-	@Override
-	public List<LeaderSchdulVO> selectLeaderSchdulList(LeaderSchdulVO leaderSchdulVo) throws Exception {
-		Page<LeaderScheduleDto> page = leaderScheduleService.getLeaderScheduleList(
-				leaderSchdulVo.getSearchWrd(),
-				PageRequest.of(leaderSchdulVo.getPageIndex() - 1, leaderSchdulVo.getPageSize()));
+	public List<LeaderSchdulVO> selectLeaderSchdulList(LeaderSchdulVO searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<LeaderSchedule> page = leaderScheduleRepository.findByScheduleNmContaining(
+				searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword(), pageable);
 		return page.getContent().stream().map(this::toVO).collect(Collectors.toList());
 	}
 
 	@Override
-	public LeaderSchdulVO selectLeaderSchdul(LeaderSchdulVO leaderSchdulVO) throws Exception {
-		LeaderScheduleDto dto = leaderScheduleService.getLeaderSchedule(leaderSchdulVO.getSchdulId());
-		return toVO(dto);
+	public int selectLeaderSchdulListCnt(LeaderSchdulVO searchVO) throws Exception {
+		return (int) leaderScheduleRepository.count();
 	}
 
 	@Override
-	public void updateLeaderSchdul(LeaderSchdul leaderSchdul) throws Exception {
-		leaderScheduleService.updateLeaderSchedule(toDto(leaderSchdul));
+	public LeaderSchdulVO selectLeaderSchdul(LeaderSchdulVO leaderSchdulVO) throws Exception {
+		return leaderScheduleRepository.findById(leaderSchdulVO.getSchdulId())
+				.map(this::toVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
 	@Override
 	public void insertLeaderSchdul(LeaderSchdul leaderSchdul) throws Exception {
-		if (leaderSchdul.getSchdulId() == null || leaderSchdul.getSchdulId().isEmpty()) {
-			leaderSchdul.setSchdulId(idgenService.getNextStringId());
-		}
-		leaderScheduleService.registerLeaderSchedule(toDto(leaderSchdul));
+		leaderScheduleService.createLeaderSchedule(leaderSchdul.getFrstRegisterId(), toDto(leaderSchdul));
+	}
+
+	@Override
+	public void updateLeaderSchdul(LeaderSchdul leaderSchdul) throws Exception {
+		leaderScheduleService.updateLeaderSchedule(leaderSchdul.getSchdulId(), leaderSchdul.getLastUpdusrId(), toDto(leaderSchdul));
 	}
 
 	@Override
@@ -78,15 +76,16 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	@Override
-	public Map<String, Object> selectLeaderSttusList(LeaderSttusVO leaderSttusVO) throws Exception {
-		// Modern service doesn't have LeaderSttus yet.
-		// For complete cleanup, we might need a Status domain,
-		// but since the objective is DAO replacement, we can provide a stub or
-		// implement Status and delegate if it exists.
+	public Map<String, Object> selectLeaderSttusList(LeaderSttusVO searchVO) throws Exception {
 		Map<String, Object> map = new HashMap<>();
-		map.put("resultList", List.of());
-		map.put("resultCnt", "0");
+		map.put("resultList", Collections.emptyList());
+		map.put("resultCnt", 0);
 		return map;
+	}
+
+	@Override
+	public int selectLeaderSttusListCnt(LeaderSttusVO searchVO) throws Exception {
+		return 0;
 	}
 
 	@Override
@@ -95,11 +94,15 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	@Override
+	public void insertLeaderSttus(LeaderSttus leaderSttus) throws Exception {
+	}
+
+	@Override
 	public void updateLeaderSttus(LeaderSttus leaderSttus) throws Exception {
 	}
 
 	@Override
-	public void insertLeaderSttus(LeaderSttus leaderSttus) throws Exception {
+	public void deleteLeaderSttus(LeaderSttus leaderSttus) throws Exception {
 	}
 
 	@Override
@@ -107,39 +110,35 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 		return 0;
 	}
 
-	@Override
-	public void deleteLeaderSttus(LeaderSttus leaderSttus) throws Exception {
-	}
-
-	private LeaderSchdulVO toVO(LeaderScheduleDto dto) {
-		if (dto == null)
-			return null;
+	private LeaderSchdulVO toVO(LeaderSchedule entity) {
 		LeaderSchdulVO vo = new LeaderSchdulVO();
-		vo.setSchdulId(dto.getScheduleId());
-		vo.setSchdulNm(dto.getScheduleNm());
-		vo.setSchdulCn(dto.getScheduleCn());
-		vo.setLeaderId(dto.getLeaderId());
-		vo.setSchdulChargerId(dto.getChargerId());
-		vo.setSchdulBgnDe(dto.getBeginDate());
-		vo.setSchdulEndDe(dto.getEndDate());
-		vo.setReptitSeCode(dto.getRepeatYn());
-		vo.setSchdulIpcrCode(dto.getImportanceCode());
-		vo.setSchdulSe(dto.getScheduleType());
+		vo.setSchdulId(entity.getScheduleId());
+		vo.setSchdulNm(entity.getScheduleNm());
+		vo.setSchdulCn(entity.getScheduleCn());
+		vo.setSchdulPlace(entity.getSchedulePlace());
+		vo.setLeaderId(entity.getLeaderId());
+		vo.setReptitSeCode(entity.getReptitSeCode());
+		vo.setSchdulIpcrCode(entity.getScheduleIpcrCode());
+		vo.setSchdulBgnDe(entity.getBeginDate());
+		vo.setSchdulEndDe(entity.getEndDate());
+		vo.setSchdulChargerId(entity.getChargerId());
+		vo.setFrstRegisterId(entity.getFrstRegisterId());
 		return vo;
 	}
 
 	private LeaderScheduleDto toDto(LeaderSchdul model) {
 		return LeaderScheduleDto.builder()
 				.scheduleId(model.getSchdulId())
+				.scheduleSe(model.getSchdulSe())
 				.scheduleNm(model.getSchdulNm())
 				.scheduleCn(model.getSchdulCn())
+				.schedulePlace(model.getSchdulPlace())
 				.leaderId(model.getLeaderId())
-				.chargerId(model.getSchdulChargerId())
+				.reptitSeCode(model.getReptitSeCode())
+				.scheduleIpcrCode(model.getSchdulIpcrCode())
 				.beginDate(model.getSchdulBgnDe())
 				.endDate(model.getSchdulEndDe())
-				.repeatYn(model.getReptitSeCode())
-				.importanceCode(model.getSchdulIpcrCode())
-				.scheduleType(model.getSchdulSe())
+				.chargerId(model.getSchdulChargerId())
 				.build();
 	}
 }

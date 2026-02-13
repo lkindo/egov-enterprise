@@ -63,8 +63,7 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
                 .markerLa(searchVO.getMarkerLa())
                 .markerLo(searchVO.getMarkerLo())
                 .infoWindow(searchVO.getInfoWindow())
-                .zoomLevel(searchVO.getZoomLevel() != null ? Integer.parseInt(searchVO.getZoomLevel()) : null)
-                .frstRegisterId(searchVO.getFrstRegisterId())
+                .zoomLevel(searchVO.getZoomLevel())
                 .build();
 
         roughMapRepository.save(entity);
@@ -74,8 +73,8 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
     public void updateRoughMap(RoughMapVO searchVO) throws Exception {
         roughMapRepository.findById(searchVO.getRoughMapId()).ifPresent(entity -> {
             entity.update(searchVO.getRoughMapSj(), searchVO.getRoughMapAddress(), searchVO.getLa(), searchVO.getLo(),
-                    searchVO.getMarkerLa(), searchVO.getMarkerLo(), searchVO.getInfoWindow(),
-                    searchVO.getZoomLevel() != null ? Integer.parseInt(searchVO.getZoomLevel()) : null,
+                    searchVO.getMarkerLa(), searchVO.getMarkerLo(), searchVO.getZoomLevel(),
+                    searchVO.getInfoWindow() != null ? Integer.parseInt(searchVO.getInfoWindow()) : null,
                     searchVO.getLastUpdusrId());
             roughMapRepository.save(entity);
         });

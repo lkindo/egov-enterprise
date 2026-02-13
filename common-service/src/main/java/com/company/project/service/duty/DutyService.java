@@ -65,9 +65,26 @@ public class DutyService implements EgovDutyService {
     }
 
     @Override
+    public List<DutyDto> getDutyList(String bndtDePrefix) {
+        List<BndtManage> list = bndtManageRepository.findByBndtDeStartingWith(bndtDePrefix);
+
+        List<BndtDiary> allDiaries = bndtDiaryRepository.findByBndtDeStartingWith(bndtDePrefix);
+        Map<String, List<BndtDiary>> diariesByDuty = allDiaries.stream()
+                .collect(Collectors.groupingBy(d -> d.getBndtId() + "_" + d.getBndtDe()));
+
+        return list.stream().map(entity -> {
+            DutyDto dto = DutyDto.from(entity);
+            String key = entity.getBndtId() + "_" + entity.getBndtDe();
+            dto.setDiaries(diariesByDuty.getOrDefault(key, Collections.emptyList())
+                    .stream().map(DutyDiaryDto::from).collect(Collectors.toList()));
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable) {
         Page<BndtManage> page = bndtManageRepository.findByBndtDeStartingWith(bndtDePrefix, pageable);
-        
+
         List<BndtDiary> allDiaries = bndtDiaryRepository.findByBndtDeStartingWith(bndtDePrefix);
         Map<String, List<BndtDiary>> diariesByDuty = allDiaries.stream()
                 .collect(Collectors.groupingBy(d -> d.getBndtId() + "_" + d.getBndtDe()));
@@ -93,7 +110,8 @@ public class DutyService implements EgovDutyService {
     @Override
     @Transactional
     public void saveDutyDiary(List<DutyDiaryDto> diaryList) {
-        if (diaryList == null || diaryList.isEmpty()) return;
+        if (diaryList == null || diaryList.isEmpty())
+            return;
 
         String bndtId = diaryList.get(0).getBndtId();
         String bndtDe = diaryList.get(0).getBndtDe();

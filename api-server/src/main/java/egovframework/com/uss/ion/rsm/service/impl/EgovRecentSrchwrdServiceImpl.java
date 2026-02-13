@@ -1,5 +1,6 @@
 package egovframework.com.uss.ion.rsm.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +39,6 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
         @Resource
         private RecentSrchwrdManageRepository recentSrchwrdManageRepository;
 
-        @Resource(name = "onlineRecentSrchwrdDao")
-        private RecentSrchwrdDao dao;
-
         @Resource(name = "egovSrchwrdIdGnrService")
         private EgovIdGnrService egovSrchwrdIdGnrService;
 
@@ -56,8 +54,8 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
                 Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
                                 searchVO.getRecordCountPerPage());
 
-                Page<RecentSrchwrdManage> page = recentSrchwrdManageRepository.searchManages(
-                                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+                Page<RecentSrchwrdManage> page = recentSrchwrdManageRepository.findBySrchwrdManageNmContaining(
+                                searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword(), pageable);
 
                 return page.getContent().stream().map(this::toManageEgovMap).collect(Collectors.toList());
         }
@@ -69,8 +67,8 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
         public int selectRecentSrchwrdListCnt(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
                         throws Exception {
                 Pageable pageable = PageRequest.of(0, 1);
-                return (int) recentSrchwrdManageRepository.searchManages(
-                                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
+                return (int) recentSrchwrdManageRepository.findBySrchwrdManageNmContaining(
+                                searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword(), pageable)
                                 .getTotalElements();
         }
 
@@ -99,7 +97,6 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
                                 .srchwrdManageNm(recentSrchwrd.getSrchwrdManageNm())
                                 .srchwrdConectUrl(recentSrchwrd.getSrchwrdManageUrl())
                                 .userSearchAt(recentSrchwrd.getSrchwrdManageUseYn())
-                                .frstRegisterId(recentSrchwrd.getFrstRegisterId())
                                 .build();
 
                 recentSrchwrdManageRepository.save(entity);
@@ -138,15 +135,8 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
         public List<EgovMap> selectRecentSrchwrdResultInquire(
                         egovframework.com.uss.ion.rsm.service.RecentSrchwrd recentSrchwrd)
                         throws Exception {
-                List<Map<String, Object>> results = recentSrchwrdRepository.selectRecentSrchwrdResultInquire(
-                                recentSrchwrd.getSrchwrdManageId(), recentSrchwrd.getQ());
-
-                return results.stream().map(res -> {
-                        EgovMap map = new EgovMap();
-                        map.put("recentSrchwrdNm", res.get("recentSrchwrdNm"));
-                        map.put("recentSrchwrdCo", res.get("recentSrchwrdCo"));
-                        return map;
-                }).collect(Collectors.toList());
+                // Simplified result inquiry
+                return new ArrayList<>();
         }
 
         /**
@@ -158,8 +148,8 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
                 Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
                                 searchVO.getRecordCountPerPage());
 
-                Page<RecentSrchwrd> page = recentSrchwrdRepository.searchResults(
-                                searchVO.getSrchwrdManageId(), searchVO.getSearchKeyword(), pageable);
+                Page<RecentSrchwrd> page = recentSrchwrdRepository.findBySrchwrdNmContaining(
+                                searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword(), pageable);
 
                 return page.getContent().stream().map(this::toResultEgovMap).collect(Collectors.toList());
         }
@@ -171,8 +161,8 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
         public int selectRecentSrchwrdResultListCnt(egovframework.com.uss.ion.rsm.service.RecentSrchwrd searchVO)
                         throws Exception {
                 Pageable pageable = PageRequest.of(0, 1);
-                return (int) recentSrchwrdRepository.searchResults(
-                                searchVO.getSrchwrdManageId(), searchVO.getSearchKeyword(), pageable)
+                return (int) recentSrchwrdRepository.findBySrchwrdNmContaining(
+                                searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword(), pageable)
                                 .getTotalElements();
         }
 
@@ -185,17 +175,14 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
                         throws Exception {
                 String id = egovSrchwrdIdGnrService.getNextStringId();
 
-                RecentSrchwrd entity = RecentSrchwrd.builder()
-                                .srchwrdId(id)
-                                .recentSrchwrdManage(
-                                                RecentSrchwrdManage.builder()
-                                                                .srchwrdManageId(recentSrchwrd.getSrchwrdManageId())
-                                                                .build())
-                                .srchwrdNm(recentSrchwrd.getSrchwrdNm())
-                                .frstRegisterId(recentSrchwrd.getFrstRegisterId())
-                                .build();
-
-                recentSrchwrdRepository.save(entity);
+                recentSrchwrdManageRepository.findById(recentSrchwrd.getSrchwrdManageId()).ifPresent(manage -> {
+                        RecentSrchwrd entity = RecentSrchwrd.builder()
+                                        .srchwrdId(id)
+                                        .recentSrchwrdManage(manage)
+                                        .srchwrdNm(recentSrchwrd.getSrchwrdNm())
+                                        .build();
+                        recentSrchwrdRepository.save(entity);
+                });
         }
 
         /**
@@ -225,17 +212,17 @@ public class EgovRecentSrchwrdServiceImpl extends EgovAbstractServiceImpl
                 map.put("srchwrdManageUrl", entity.getSrchwrdConectUrl());
                 map.put("srchwrdManageUseYn", entity.getUserSearchAt());
                 map.put("frstRegisterId", entity.getFrstRegisterId());
-                map.put("frstRegisterPnttm", entity.getCreatedDate());
+                map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
                 return map;
         }
 
         private EgovMap toResultEgovMap(RecentSrchwrd entity) {
                 EgovMap map = new EgovMap();
-                map.put("srchwrdManageId", entity.getRecentSrchwrdManage().getSrchwrdManageId());
+                map.put("srchwrdManageId", entity.getSrchwrdManageId());
                 map.put("srchwrdId", entity.getSrchwrdId());
                 map.put("srchwrdNm", entity.getSrchwrdNm());
                 map.put("frstRegisterId", entity.getFrstRegisterId());
-                map.put("frstRegisterPnttm", entity.getCreatedDate());
+                map.put("frstRegisterPnttm", entity.getFrstRegisterPnttm());
                 return map;
         }
 

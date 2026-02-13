@@ -72,4 +72,16 @@ public class AnniversaryService implements EgovAnniversaryService {
     public void deleteAnniversary(String annId) {
         anniversaryRepository.deleteById(annId);
     }
+
+    @Override
+    public int checkAnniversaryDuplicate(String userId, String annvrsryDe, String annvrsryNm, String annId) {
+        // Implement logic: count anniversaries with same userId, date, and name, but
+        // different ID (if provided)
+        if (annId == null || annId.isEmpty()) {
+            return (int) anniversaryRepository.countByUsidAndAnnvrsryDeAndAnnvrsryNm(userId, annvrsryDe, annvrsryNm);
+        } else {
+            return (int) anniversaryRepository.countByUsidAndAnnvrsryDeAndAnnvrsryNmAndAnnIdNot(userId, annvrsryDe,
+                    annvrsryNm, annId);
+        }
+    }
 }

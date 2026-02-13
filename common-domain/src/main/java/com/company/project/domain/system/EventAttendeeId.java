@@ -1,0 +1,15 @@
+package com.company.project.domain.system;
+
+import lombok.*;
+
+import java.io.Serializable;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+public class EventAttendeeId implements Serializable {
+    private String applcntId;
+    private String eventId;
+}

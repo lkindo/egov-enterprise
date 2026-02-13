@@ -62,7 +62,8 @@ public class MeetingManageDto {
     private LocalDateTime createdDate;
 
     public static MeetingManageDto from(MeetingManage entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return MeetingManageDto.builder()
                 .mtgId(entity.getMtgId())
                 .mtgNm(entity.getMtgNm())
@@ -77,8 +78,8 @@ public class MeetingManageDto {
                 .mtgResultCn(entity.getMtgResultCn())
                 .mngtDeptId(entity.getMngtDeptId())
                 .mnaerId(entity.getMnaerId())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
+                .createdBy(entity.getFrstRegisterId())
+                .createdDate(entity.getFrstRegisterPnttm())
                 .build();
     }
 }

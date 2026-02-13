@@ -53,7 +53,8 @@ public class CnsltManageDto {
     private LocalDateTime createdDate;
 
     public static CnsltManageDto from(CnsltManage entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return CnsltManageDto.builder()
                 .cnsltId(entity.getCnsltId())
                 .cnsltSj(entity.getCnsltSj())
@@ -65,8 +66,8 @@ public class CnsltManageDto {
                 .qnaProcessSttusCode(entity.getQnaProcessSttusCode())
                 .managtCn(entity.getManagtCn())
                 .managtDe(entity.getManagtDe())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
+                .createdBy(entity.getFrstRegisterId())
+                .createdDate(entity.getFrstRegisterPnttm())
                 .build();
     }
 }

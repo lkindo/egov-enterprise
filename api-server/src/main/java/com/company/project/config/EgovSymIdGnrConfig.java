@@ -41,6 +41,70 @@ public class EgovSymIdGnrConfig {
         return createIdGnrService("BACKUP_OPERT_ID", "BACKUP_", 10);
     }
 
+    // ========== 약식 결재 관리 (uss.ion.ism) ==========
+
+    @Bean
+    public EgovIdGnrService egovInfrmlSanctnIdGnrService() {
+        return createIdGnrService("INFRML_SANCTN_ID", "ISM_", 10);
+    }
+
+    // ========== 쪽지 관리 (uss.ion.nts/ntr/ntm) ==========
+
+    @Bean
+    public EgovIdGnrService egovNoteIdGnrService() {
+        return createIdGnrService("NOTE_ID", "NOTE_", 10);
+    }
+
+    @Bean
+    public EgovIdGnrService egovNoteTrnsmitIdGnrService() {
+        return createIdGnrService("NOTE_TRNSMIT_ID", "NOTETR_", 10);
+    }
+
+    @Bean
+    public EgovIdGnrService egovNoteRecptnIdGnrService() {
+        return createIdGnrService("NOTE_RECPTN_ID", "NOTERC_", 10);
+    }
+
+    // ========== 서버 동기화 관리 (utl.sys.ssy) ==========
+
+    @Bean
+    public EgovIdGnrService egovSynchrnServerIdGnrService() {
+        return createIdGnrService("SYNCHRN_SERVER_ID", "SYNCH_", 10);
+    }
+
+    // ========== 행사 관리 (uss.ion.evt) ==========
+
+    @Bean
+    public EgovIdGnrService egovEventIdGnrService() {
+        return createIdGnrService("EVENT_ID", "EVENT_", 10);
+    }
+
+    @Bean
+    public EgovIdGnrService egovEventCmpgnIdGnrService() {
+        return createIdGnrService("EVENT_CMPGN_ID", "ECC_", 10);
+    }
+
+    // ========== 포상 관리 (uss.ion.rwd) ==========
+
+    @Bean
+    public EgovIdGnrService egovRwardIdGnrService() {
+        return createIdGnrService("RWARD_ID", "RWARD_", 10);
+    }
+
+    // ========== 기념일 관리 (uss.ion.ans) ==========
+
+    @Bean
+    public EgovIdGnrService egovAnnvrsryIdGnrService() {
+        return createIdGnrService("ANNVRSRY_ID", "ANN_", 10);
+    }
+
+    // ========== 경조사 관리 (uss.ion.ctn) ==========
+
+    @Bean
+    public EgovIdGnrService egovCtsnnIdGnrService() {
+        return createIdGnrService("CTSNN_ID", "CTSNN_", 10);
+    }
+
     // ========== 캘린더/공휴일 관리 (sym.cal) ==========
 
     @Bean
@@ -65,6 +129,51 @@ public class EgovSymIdGnrConfig {
     @Bean
     public EgovIdGnrService egovServerEqpmnIdGnrService() {
         return createIdGnrService("SERVER_EQPMN_ID", "SVREQ_", 10);
+    }
+
+    @Bean
+    public EgovIdGnrService egovServerResrceMntrngIdGnrService() {
+        return createIdGnrService("SERVER_RESRCE_MNT_ID", "SRM_", 10);
+    }
+
+    // ========== 프로세스 모니터링 (utl.sys.prm) ==========
+
+    @Bean
+    public EgovIdGnrService egovProcessMonLogIdGnrService() {
+        return createIdGnrService("PROCESS_MON_LOG_ID", "PRMLOG_", 10);
+    }
+
+    // ========== 데이터베이스 모니터링 (utl.sys.dbm) ==========
+
+    @Bean
+    public EgovIdGnrService egovDbMntrngLogIdGnrService() {
+        return createIdGnrService("DB_MNTRNG_LOG_ID", "DBMLOG_", 10);
+    }
+
+    // ========== 파일 시스템 모니터링 (utl.sys.fsm) ==========
+
+    @Bean
+    public EgovIdGnrService egovFileSysMntrngLogIdGnrService() {
+        return createIdGnrService("FILE_SYS_LOG_ID", "FSMLOG_", 10);
+    }
+
+    // ========== HTTP 모니터링 (utl.sys.htm) ==========
+
+    @Bean
+    public EgovIdGnrService egovHttpMonLogIdGnrService() {
+        return createIdGnrService("HTTP_MON_LOG_ID", "HTMLOG_", 10);
+    }
+
+    // ========== 네트워크 서비스 모니터링 (utl.sys.nsm) ==========
+
+    @Bean
+    public EgovIdGnrService egovNtwrkSvcMntrngLogIdGnrService() {
+        return createIdGnrService("NTWRK_SVC_LOG_ID", "NSMLOG_", 10);
+    }
+
+    @Bean
+    public EgovIdGnrService egovTrsmrcvMntrngLogIdGnrService() {
+        return createIdGnrService("TRSMRCV_MNT_LOG_ID", "TRMLOG_", 10);
     }
 
     // ========== 장애 관리 (sym.tbm) ==========

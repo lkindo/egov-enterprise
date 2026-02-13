@@ -16,4 +16,6 @@ public interface EgovSmsService {
     SmsDto getSms(String smsId);
 
     String sendSms(String userId, SmsDto dto);
+
+    java.util.List<com.company.project.service.sms.dto.SmsRecptnDto> getSmsRecipients(String smsId);
 }

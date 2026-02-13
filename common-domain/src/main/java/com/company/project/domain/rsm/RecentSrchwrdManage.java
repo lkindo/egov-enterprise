@@ -42,8 +42,15 @@ public class RecentSrchwrdManage extends BaseEntity {
     }
 
     public void update(String srchwrdManageNm, String srchwrdConectUrl, String userSearchAt) {
+        this.update(srchwrdManageNm, srchwrdConectUrl, userSearchAt, null);
+    }
+
+    public void update(String srchwrdManageNm, String srchwrdConectUrl, String userSearchAt, String userId) {
         this.srchwrdManageNm = srchwrdManageNm;
         this.srchwrdConectUrl = srchwrdConectUrl;
         this.userSearchAt = userSearchAt;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,7 +52,7 @@ public class OnlinePollManage extends BaseEntity {
 
     @Builder
     public OnlinePollManage(String pollId, String pollNm, String pollBeginDe, String pollEndDe,
-                           String pollKindCode, String pollDsuseYn, String pollAutoDsuseYn) {
+            String pollKindCode, String pollDsuseYn, String pollAutoDsuseYn, String frstRegisterId) {
         this.pollId = pollId;
         this.pollNm = pollNm;
         this.pollBeginDe = pollBeginDe;
@@ -58,15 +60,24 @@ public class OnlinePollManage extends BaseEntity {
         this.pollKindCode = pollKindCode;
         this.pollDsuseYn = pollDsuseYn != null ? pollDsuseYn : "N";
         this.pollAutoDsuseYn = pollAutoDsuseYn != null ? pollAutoDsuseYn : "N";
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode,
-                      String pollDsuseYn, String pollAutoDsuseYn) {
+            String pollDsuseYn, String pollAutoDsuseYn) {
+        this.update(pollNm, pollBeginDe, pollEndDe, pollKindCode, pollDsuseYn, pollAutoDsuseYn, null);
+    }
+
+    public void update(String pollNm, String pollBeginDe, String pollEndDe, String pollKindCode,
+            String pollDsuseYn, String pollAutoDsuseYn, String userId) {
         this.pollNm = pollNm;
         this.pollBeginDe = pollBeginDe;
         this.pollEndDe = pollEndDe;
         this.pollKindCode = pollKindCode;
         this.pollDsuseYn = pollDsuseYn;
         this.pollAutoDsuseYn = pollAutoDsuseYn;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

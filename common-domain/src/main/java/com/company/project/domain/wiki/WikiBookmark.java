@@ -5,10 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 위키 북마크 정보 Entity
@@ -17,7 +16,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NWIKIBKMK")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class WikiBookmark extends BaseEntity {
 
     @Id
@@ -31,13 +33,20 @@ public class WikiBookmark extends BaseEntity {
     private String wikiBkmkNm;
 
     @Builder
-    public WikiBookmark(String wikiBkmkId, String userId, String wikiBkmkNm) {
+    public WikiBookmark(String wikiBkmkId, String userId, String wikiBkmkNm, String frstRegisterId,
+            String lastUpdusrId) {
         this.wikiBkmkId = wikiBkmkId;
         this.userId = userId;
         this.wikiBkmkNm = wikiBkmkNm;
+        this.createdBy = frstRegisterId;
+        this.lastModifiedBy = lastUpdusrId;
     }
 
     public void update(String wikiBkmkNm) {
         this.wikiBkmkNm = wikiBkmkNm;
+    }
+
+    public LocalDateTime getFrstRegistPnttm() {
+        return getCreatedDate();
     }
 }

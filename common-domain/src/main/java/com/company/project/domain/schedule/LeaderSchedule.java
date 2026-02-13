@@ -11,7 +11,10 @@ import lombok.*;
 @Entity
 @Table(name = "NLEADERSCHDUL")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LeaderSchedule extends BaseEntity {
 
     @Id
@@ -36,6 +39,9 @@ public class LeaderSchedule extends BaseEntity {
     @Column(name = "REPTIT_SE_CODE", length = 1)
     private String reptitSeCode;
 
+    @Column(name = "SCHDUL_IPCR_CODE", length = 1)
+    private String scheduleIpcrCode;
+
     @Column(name = "SCHDUL_BGNDE", length = 20)
     private String beginDate;
 
@@ -45,32 +51,19 @@ public class LeaderSchedule extends BaseEntity {
     @Column(name = "SCHDUL_CHARGER_ID", length = 20)
     private String chargerId;
 
-    @Builder
-    public LeaderSchedule(String scheduleId, String scheduleSe, String scheduleNm, String scheduleCn,
-                         String schedulePlace, String leaderId, String reptitSeCode,
-                         String beginDate, String endDate, String chargerId) {
-        this.scheduleId = scheduleId;
-        this.scheduleSe = scheduleSe;
-        this.scheduleNm = scheduleNm;
-        this.scheduleCn = scheduleCn;
-        this.schedulePlace = schedulePlace;
-        this.leaderId = leaderId;
-        this.reptitSeCode = reptitSeCode;
-        this.beginDate = beginDate;
-        this.endDate = endDate;
-        this.chargerId = chargerId;
-    }
-
     public void update(String scheduleSe, String scheduleNm, String scheduleCn, String schedulePlace,
-                      String leaderId, String reptitSeCode, String beginDate, String endDate, String chargerId) {
+                      String leaderId, String reptitSeCode, String scheduleIpcrCode,
+                      String beginDate, String endDate, String chargerId, String userId) {
         this.scheduleSe = scheduleSe;
         this.scheduleNm = scheduleNm;
         this.scheduleCn = scheduleCn;
         this.schedulePlace = schedulePlace;
         this.leaderId = leaderId;
         this.reptitSeCode = reptitSeCode;
+        this.scheduleIpcrCode = scheduleIpcrCode;
         this.beginDate = beginDate;
         this.endDate = endDate;
         this.chargerId = chargerId;
+        this.lastModifiedBy = userId;
     }
 }

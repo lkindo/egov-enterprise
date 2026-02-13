@@ -64,7 +64,7 @@ public class VacationServiceImpl implements VacationService {
         VcatnManageId id = new VcatnManageId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde());
         VcatnManage entity = vacationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        
+
         entity.update(dto.getVcatnResn(), userId);
     }
 
@@ -80,11 +80,12 @@ public class VacationServiceImpl implements VacationService {
 
     @Override
     @Transactional
-    public void confirmVacation(String userId, String applcntId, String vcatnSe, String bgnde, String confmAt, String returnResn) {
+    public void confirmVacation(String userId, String applcntId, String vcatnSe, String bgnde, String confmAt,
+            String returnResn) {
         VcatnManageId id = new VcatnManageId(applcntId, vcatnSe, bgnde);
         VcatnManage entity = vacationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        
+
         entity.confirm(confmAt, LocalDateTime.now(), returnResn, userId);
     }
 
@@ -109,19 +110,18 @@ public class VacationServiceImpl implements VacationService {
     public void saveYearlyLeave(String userId, YearlyLeaveDto dto) {
         IndvdlYrycManageId id = new IndvdlYrycManageId(dto.getOccrrncYear(), dto.getUserId());
         yearlyLeaveRepository.findById(id).ifPresentOrElse(
-            entity -> entity.update(dto.getUseYrycCo(), dto.getRemndrYrycCo(), userId),
-            () -> {
-                IndvdlYrycManage entity = IndvdlYrycManage.builder()
-                        .occrrncYear(dto.getOccrrncYear())
-                        .userId(dto.getUserId())
-                        .yrycOccrrncCo(dto.getYrycOccrrncCo())
-                        .useYrycCo(dto.getUseYrycCo())
-                        .remndrYrycCo(dto.getRemndrYrycCo())
-                        .frstRegisterId(userId)
-                        .build();
-                yearlyLeaveRepository.save(entity);
-            }
-        );
+                entity -> entity.update(dto.getUseYrycCo(), dto.getRemndrYrycCo(), userId),
+                () -> {
+                    IndvdlYrycManage entity = IndvdlYrycManage.builder()
+                            .occrrncYear(dto.getOccrrncYear())
+                            .userId(dto.getUserId())
+                            .yrycOccrrncCo(dto.getYrycOccrrncCo())
+                            .useYrycCo(dto.getUseYrycCo())
+                            .remndrYrycCo(dto.getRemndrYrycCo())
+                            .frstRegisterId(userId)
+                            .build();
+                    yearlyLeaveRepository.save(entity);
+                });
     }
 
     @Override
@@ -140,17 +140,16 @@ public class VacationServiceImpl implements VacationService {
     @Transactional
     public void saveUserAbsence(String userId, UserAbsenceDto dto) {
         userAbsenceRepository.findById(dto.getUserId()).ifPresentOrElse(
-            entity -> entity.updateAbsence(dto.getUserAbsnceAt(), userId),
-            () -> {
-                UserAbsence entity = UserAbsence.builder()
-                        .userId(dto.getUserId())
-                        .userAbsnceAt(dto.getUserAbsnceAt())
-                        .frstRegisterId(userId)
-                        .lastUpdusrId(userId)
-                        .build();
-                userAbsenceRepository.save(entity);
-            }
-        );
+                entity -> entity.updateAbsence(dto.getUserAbsnceAt(), userId),
+                () -> {
+                    UserAbsenceVct entity = UserAbsenceVct.builder()
+                            .userId(dto.getUserId())
+                            .userAbsnceAt(dto.getUserAbsnceAt())
+                            .frstRegisterId(userId)
+                            .lastUpdusrId(userId)
+                            .build();
+                    userAbsenceRepository.save(entity);
+                });
     }
 
     @Override

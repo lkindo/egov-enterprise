@@ -1,14 +1,10 @@
 package com.company.project.domain.survey;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 설문 정보 Entity
@@ -17,7 +13,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NQESTNRINFO")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QestnrInfo extends BaseEntity {
 
     @Id
@@ -44,19 +43,6 @@ public class QestnrInfo extends BaseEntity {
 
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
     private String qestnrTmplatId;
-
-    @Builder
-    public QestnrInfo(String qestnrId, String qestnrSj, String qestnrPurps, String qestnrWritngGuidanceCn,
-                     String qestnrBeginDe, String qestnrEndDe, String qestnrTrget, String qestnrTmplatId) {
-        this.qestnrId = qestnrId;
-        this.qestnrSj = qestnrSj;
-        this.qestnrPurps = qestnrPurps;
-        this.qestnrWritngGuidanceCn = qestnrWritngGuidanceCn;
-        this.qestnrBeginDe = qestnrBeginDe;
-        this.qestnrEndDe = qestnrEndDe;
-        this.qestnrTrget = qestnrTrget;
-        this.qestnrTmplatId = qestnrTmplatId;
-    }
 
     public void update(String qestnrSj, String qestnrPurps, String qestnrWritngGuidanceCn,
                       String qestnrBeginDe, String qestnrEndDe, String qestnrTrget, String qestnrTmplatId) {

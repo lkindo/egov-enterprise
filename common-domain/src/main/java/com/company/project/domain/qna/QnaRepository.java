@@ -27,6 +27,10 @@ public interface QnaRepository extends JpaRepository<Qna, String> {
     @Query("SELECT q FROM Qna q WHERE q.qestnSj LIKE %:keyword% OR q.qestnCn LIKE %:keyword%")
     Page<Qna> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+    default Page<Qna> searchQnas(String keyword, Pageable pageable) {
+        return searchByKeyword(keyword == null ? "" : keyword, pageable);
+    }
+
     /**
      * 미답변 Q&A 목록
      */

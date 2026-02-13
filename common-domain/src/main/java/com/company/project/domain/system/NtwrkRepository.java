@@ -36,4 +36,8 @@ public interface NtwrkRepository extends JpaRepository<Ntwrk, String> {
     Page<Object[]> selectNtwrkList(@Param("manageIem") String manageIem,
             @Param("userNm") String userNm,
             Pageable pageable);
+
+    Page<Ntwrk> findByUserNmContaining(String userNm, Pageable pageable);
+
+    Page<Ntwrk> findByManageIemAndUserNmContaining(String manageIem, String userNm, Pageable pageable);
 }

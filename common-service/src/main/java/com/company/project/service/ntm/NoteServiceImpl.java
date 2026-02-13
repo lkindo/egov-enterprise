@@ -10,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,7 +18,7 @@ public class NoteServiceImpl implements NoteService {
     private final NoteDomainRepository noteRepository;
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
     private final NoteRecptnDomainRepository noteRecptnRepository;
-    
+
     private final EgovIdGnrService egovNoteManageIdGnrService;
     private final EgovIdGnrService egovNoteTrnsmitIdGnrService;
     private final EgovIdGnrService egovNoteRecptnIdGnrService;
@@ -49,7 +47,7 @@ public class NoteServiceImpl implements NoteService {
     public NoteDto getNoteDetail(String noteId, String type, String relationId) {
         Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found: " + noteId));
-        
+
         NoteDto dto = NoteDto.builder()
                 .noteId(note.getNoteId())
                 .noteSj(note.getNoteSj())
@@ -70,7 +68,7 @@ public class NoteServiceImpl implements NoteService {
                 }
             }
         }
-        
+
         return dto;
     }
 

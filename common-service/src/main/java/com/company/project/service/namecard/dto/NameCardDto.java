@@ -65,10 +65,18 @@ public class NameCardDto {
     private String extrlUserAt;
 
     @Schema(description = "등록자 ID")
-    private String createdBy;
+    private String frstRegisterId;
 
     @Schema(description = "등록일시")
     private LocalDateTime createdDate;
+
+    public String getFrstRegisterId() {
+        return frstRegisterId;
+    }
+
+    public LocalDateTime getFrstRegisterPnttm() {
+        return createdDate;
+    }
 
     public static NameCardDto from(NameCard entity) {
         if (entity == null) return null;
@@ -89,7 +97,7 @@ public class NameCardDto {
                 .othbcAt(entity.getOthbcAt())
                 .ncrdTrgterId(entity.getNcrdTrgterId())
                 .extrlUserAt(entity.getExtrlUserAt())
-                .createdBy(entity.getCreatedBy())
+                .frstRegisterId(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

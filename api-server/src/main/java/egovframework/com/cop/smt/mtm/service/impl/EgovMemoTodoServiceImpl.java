@@ -1,5 +1,9 @@
 package egovframework.com.cop.smt.mtm.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +47,32 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
                 memoTodoVO.getRecordCountPerPage());
 
         // Simple string based date search for now to match legacy behavior
+        LocalDateTime searchBgnDt = null;
+        LocalDateTime searchEndDt = null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        if (memoTodoVO.getSearchBgnDe() != null && !memoTodoVO.getSearchBgnDe().isEmpty()) {
+            try {
+                searchBgnDt = LocalDate.parse(memoTodoVO.getSearchBgnDe(), formatter).atStartOfDay();
+            } catch (Exception e) {
+                // Ignore parsing errors, pass null
+            }
+        }
+        if (memoTodoVO.getSearchEndDe() != null && !memoTodoVO.getSearchEndDe().isEmpty()) {
+            try {
+                searchEndDt = LocalDate.parse(memoTodoVO.getSearchEndDe(), formatter).atTime(LocalTime.MAX);
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
         Page<MemoTodo> page = memoTodoRepository.searchMemoTodos(
                 memoTodoVO.getSearchId(),
                 memoTodoVO.getSearchDe(),
                 memoTodoVO.getSearchBgnDe(),
                 memoTodoVO.getSearchEndDe(),
+                searchBgnDt,
+                searchEndDt,
                 memoTodoVO.getSearchCondition(),
                 memoTodoVO.getSearchWrd(),
                 pageable);

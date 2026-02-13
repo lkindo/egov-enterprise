@@ -23,12 +23,9 @@ public class HelpService implements EgovHelpService {
     private final OnlineManualRepository onlineManualRepository;
     private final WordDicaryRepository wordDicaryRepository;
 
-    // 행정용어
+    // Administration Word
     @Override
     public Page<AdministrationWordDto> getAdministrationWordList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return administrationWordRepository.findAll(pageable).map(AdministrationWordDto::from);
-        }
         return administrationWordRepository.findByAdministWordNmContaining(keyword, pageable).map(AdministrationWordDto::from);
     }
 
@@ -41,9 +38,9 @@ public class HelpService implements EgovHelpService {
 
     @Override
     @Transactional
-    public void insertAdministrationWord(AdministrationWordDto dto) {
-        String id = "AWM_" + String.format("%013d", System.currentTimeMillis());
-        administrationWordRepository.save(AdministrationWord.builder()
+    public String createAdministrationWord(String userId, AdministrationWordDto dto) {
+        String id = "AWORD_" + String.format("%014d", System.currentTimeMillis());
+        AdministrationWord entity = AdministrationWord.builder()
                 .administWordId(id)
                 .administWordNm(dto.getAdministWordNm())
                 .administWordEngNm(dto.getAdministWordEngNm())
@@ -53,16 +50,19 @@ public class HelpService implements EgovHelpService {
                 .stdWord(dto.getStdWord())
                 .administWordDf(dto.getAdministWordDf())
                 .administWordDc(dto.getAdministWordDc())
-                .build());
+                .frstRegisterId(userId)
+                .build();
+        administrationWordRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateAdministrationWord(AdministrationWordDto dto) {
-        AdministrationWord entity = administrationWordRepository.findById(dto.getAdministWordId())
+    public void updateAdministrationWord(String wordId, String userId, AdministrationWordDto dto) {
+        AdministrationWord entity = administrationWordRepository.findById(wordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getAdministWordNm(), dto.getAdministWordEngNm(), dto.getAdministWordAbrv(),
-                dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(), dto.getAdministWordDc());
+                dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(), dto.getAdministWordDc(), userId);
     }
 
     @Override
@@ -71,12 +71,9 @@ public class HelpService implements EgovHelpService {
         administrationWordRepository.deleteById(wordId);
     }
 
-    // 도움말
+    // HPCM (Help)
     @Override
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return hpcmRepository.findAll(pageable).map(HpcmDto::from);
-        }
         return hpcmRepository.findByHpcmDfContaining(keyword, pageable).map(HpcmDto::from);
     }
 
@@ -89,22 +86,25 @@ public class HelpService implements EgovHelpService {
 
     @Override
     @Transactional
-    public void insertHpcm(HpcmDto dto) {
-        String id = "HPC_" + String.format("%013d", System.currentTimeMillis());
-        hpcmRepository.save(Hpcm.builder()
+    public String createHpcm(String userId, HpcmDto dto) {
+        String id = "HPCM_" + String.format("%015d", System.currentTimeMillis());
+        Hpcm entity = Hpcm.builder()
                 .hpcmId(id)
                 .hpcmSeCode(dto.getHpcmSeCode())
                 .hpcmDf(dto.getHpcmDf())
                 .hpcmDc(dto.getHpcmDc())
-                .build());
+                .frstRegisterId(userId)
+                .build();
+        hpcmRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateHpcm(HpcmDto dto) {
-        Hpcm entity = hpcmRepository.findById(dto.getHpcmId())
+    public void updateHpcm(String hpcmId, String userId, HpcmDto dto) {
+        Hpcm entity = hpcmRepository.findById(hpcmId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getHpcmSeCode(), dto.getHpcmDf(), dto.getHpcmDc());
+        entity.update(dto.getHpcmSeCode(), dto.getHpcmDf(), dto.getHpcmDc(), userId);
     }
 
     @Override
@@ -113,12 +113,9 @@ public class HelpService implements EgovHelpService {
         hpcmRepository.deleteById(hpcmId);
     }
 
-    // 온라인매뉴얼
+    // Online Manual
     @Override
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return onlineManualRepository.findAll(pageable).map(OnlineManualDto::from);
-        }
         return onlineManualRepository.findByOnlineMnlNmContaining(keyword, pageable).map(OnlineManualDto::from);
     }
 
@@ -131,23 +128,26 @@ public class HelpService implements EgovHelpService {
 
     @Override
     @Transactional
-    public void insertOnlineManual(OnlineManualDto dto) {
-        String id = "OMM_" + String.format("%013d", System.currentTimeMillis());
-        onlineManualRepository.save(OnlineManual.builder()
+    public String createOnlineManual(String userId, OnlineManualDto dto) {
+        String id = "MNL_" + String.format("%016d", System.currentTimeMillis());
+        OnlineManual entity = OnlineManual.builder()
                 .onlineMnlId(id)
                 .onlineMnlNm(dto.getOnlineMnlNm())
                 .onlineMnlSeCode(dto.getOnlineMnlSeCode())
                 .onlineMnlDf(dto.getOnlineMnlDf())
                 .onlineMnlDc(dto.getOnlineMnlDc())
-                .build());
+                .frstRegisterId(userId)
+                .build();
+        onlineManualRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateOnlineManual(OnlineManualDto dto) {
-        OnlineManual entity = onlineManualRepository.findById(dto.getOnlineMnlId())
+    public void updateOnlineManual(String mnlId, String userId, OnlineManualDto dto) {
+        OnlineManual entity = onlineManualRepository.findById(mnlId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc());
+        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc(), userId);
     }
 
     @Override
@@ -156,12 +156,9 @@ public class HelpService implements EgovHelpService {
         onlineManualRepository.deleteById(mnlId);
     }
 
-    // 용어사전
+    // Word Dictionary
     @Override
     public Page<WordDicaryDto> getWordDicaryList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return wordDicaryRepository.findAll(pageable).map(WordDicaryDto::from);
-        }
         return wordDicaryRepository.findByWordNmContaining(keyword, pageable).map(WordDicaryDto::from);
     }
 
@@ -174,23 +171,26 @@ public class HelpService implements EgovHelpService {
 
     @Override
     @Transactional
-    public void insertWordDicary(WordDicaryDto dto) {
-        String id = "WOR_" + String.format("%013d", System.currentTimeMillis());
-        wordDicaryRepository.save(WordDicary.builder()
+    public String createWordDicary(String userId, WordDicaryDto dto) {
+        String id = "WDIC_" + String.format("%015d", System.currentTimeMillis());
+        WordDicary entity = WordDicary.builder()
                 .wordId(id)
                 .wordNm(dto.getWordNm())
                 .engNm(dto.getEngNm())
                 .wordDc(dto.getWordDc())
                 .synonm(dto.getSynonm())
-                .build());
+                .frstRegisterId(userId)
+                .build();
+        wordDicaryRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateWordDicary(WordDicaryDto dto) {
-        WordDicary entity = wordDicaryRepository.findById(dto.getWordId())
+    public void updateWordDicary(String wordId, String userId, WordDicaryDto dto) {
+        WordDicary entity = wordDicaryRepository.findById(wordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm());
+        entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm(), userId);
     }
 
     @Override

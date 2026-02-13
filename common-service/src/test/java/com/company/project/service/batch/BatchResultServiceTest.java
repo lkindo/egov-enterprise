@@ -1,7 +1,7 @@
 package com.company.project.service.batch;
 
-import com.company.project.domain.batch.BatchJob;
-import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchOpert;
+import com.company.project.domain.batch.BatchOpertRepository;
 import com.company.project.domain.batch.BatchResult;
 import com.company.project.domain.batch.BatchResultRepository;
 import com.company.project.service.batch.dto.BatchResultDto;
@@ -32,7 +32,7 @@ class BatchResultServiceTest {
     private BatchResultRepository batchResultRepository;
 
     @Mock
-    private BatchJobRepository batchJobRepository;
+    private BatchOpertRepository batchOpertRepository;
 
     @Mock
     private EgovCommonCodeService commonCodeService;
@@ -64,17 +64,17 @@ class BatchResultServiceTest {
         // Mock job repository to return list of jobs for findAllById
         // Note: For the optimization, we expect findAllById to be called.
         // For the un-optimized code, this mock might be unused or validation will fail.
-        lenient().when(batchJobRepository.findAllById(any())).thenAnswer(invocation -> {
+        lenient().when(batchOpertRepository.findAllById(any())).thenAnswer(invocation -> {
             Iterable<String> ids = invocation.getArgument(0);
-            List<BatchJob> jobs = new java.util.ArrayList<>();
-            ids.forEach(id -> jobs.add(BatchJob.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
+            List<BatchOpert> jobs = new java.util.ArrayList<>();
+            ids.forEach(id -> jobs.add(BatchOpert.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
             return jobs;
         });
 
         // Mock findById for the un-optimized code path (so the test doesn't crash before verification)
-        lenient().when(batchJobRepository.findById(anyString())).thenAnswer(invocation -> {
+        lenient().when(batchOpertRepository.findById(anyString())).thenAnswer(invocation -> {
              String id = invocation.getArgument(0);
-             return java.util.Optional.of(BatchJob.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build());
+             return java.util.Optional.of(BatchOpert.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build());
         });
 
         // when
@@ -82,10 +82,10 @@ class BatchResultServiceTest {
 
         // then
         // Verify that findAllById is called once
-        verify(batchJobRepository, times(1)).findAllById(any());
+        verify(batchOpertRepository, times(1)).findAllById(any());
 
         // Verify that findById is NOT called
-        verify(batchJobRepository, never()).findById(anyString());
+        verify(batchOpertRepository, never()).findById(anyString());
 
         // Additional verification: Check if data is correctly mapped
         result.getContent().forEach(dto -> {

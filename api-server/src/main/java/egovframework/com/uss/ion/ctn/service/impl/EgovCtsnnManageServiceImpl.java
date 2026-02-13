@@ -11,8 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.company.project.domain.notification.CtsnnManage;
-import com.company.project.domain.notification.CtsnnManageRepository;
+import com.company.project.domain.ctsnn.CtsnnManage;
+import com.company.project.domain.ctsnn.CtsnnManageRepository;
 
 import egovframework.com.uss.ion.ctn.service.CtsnnManageVO;
 import egovframework.com.uss.ion.ctn.service.EgovCtsnnManageService;
@@ -65,7 +65,6 @@ public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implemen
 				.sanctnerId(ctsnnManage.getSanctnerId())
 				.confmAt(ctsnnManage.getConfmAt())
 				.infrmlSanctnId(ctsnnManage.getInfrmlSanctnId())
-				.frstRegisterId(ctsnnManage.getFrstRegisterId())
 				.build();
 
 		ctsnnManageRepository.save(entity);
@@ -82,8 +81,7 @@ public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implemen
 					ctsnnManage.getBrth(),
 					ctsnnManage.getOccrrDe(),
 					ctsnnManage.getRelate(),
-					ctsnnManage.getRemark(),
-					ctsnnManage.getLastUpdusrId());
+					ctsnnManage.getRemark());
 			ctsnnManageRepository.save(entity);
 		});
 	}
@@ -111,9 +109,7 @@ public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		ctsnnManageRepository.findById(ctsnnManage.getCtsnnId()).ifPresent(entity -> {
 			entity.confirm(
 					ctsnnManage.getConfmAt(),
-					null,
-					ctsnnManage.getReturnResn(),
-					ctsnnManage.getLastUpdusrId());
+					ctsnnManage.getReturnResn());
 			ctsnnManageRepository.save(entity);
 		});
 	}
@@ -134,13 +130,13 @@ public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		vo.setConfmAt(entity.getConfmAt());
 		vo.setReturnResn(entity.getReturnResn());
 		vo.setInfrmlSanctnId(entity.getInfrmlSanctnId());
-		vo.setFrstRegisterId(entity.getFrstRegisterId());
-		if (entity.getFrstRegisterPnttm() != null) {
-			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+		vo.setFrstRegisterId(entity.getCreatedBy());
+		if (entity.getCreatedDate() != null) {
+			vo.setFrstRegisterPnttm(entity.getCreatedDate().toString());
 		}
-		vo.setLastUpdusrId(entity.getLastUpdusrId());
-		if (entity.getLastUpdusrPnttm() != null) {
-			vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm().toString());
+		vo.setLastUpdusrId(entity.getLastModifiedBy());
+		if (entity.getLastModifiedDate() != null) {
+			vo.setLastUpdusrPnttm(entity.getLastModifiedDate().toString());
 		}
 		return vo;
 	}

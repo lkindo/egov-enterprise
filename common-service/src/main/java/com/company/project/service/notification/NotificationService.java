@@ -35,7 +35,7 @@ public class NotificationService implements EgovNotificationService {
 
     @Override
     @Transactional
-    public void insertNotification(NotificationDto dto) {
+    public String createNotification(String userId, NotificationDto dto) {
         String id = "NTFC_" + String.format("%013d", System.currentTimeMillis());
         Notification entity = Notification.builder()
                 .ntfcNo(id)
@@ -45,12 +45,13 @@ public class NotificationService implements EgovNotificationService {
                 .bhNtfcIntrvl(dto.getBhNtfcIntrvl())
                 .build();
         notificationRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateNotification(NotificationDto dto) {
-        Notification entity = notificationRepository.findById(dto.getNtfcNo())
+    public void updateNotification(String ntfcNo, String userId, NotificationDto dto) {
+        Notification entity = notificationRepository.findById(ntfcNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcTime(), dto.getBhNtfcIntrvl());
     }
@@ -62,8 +63,8 @@ public class NotificationService implements EgovNotificationService {
     }
 
     @Override
-    public List<NotificationDto> getActiveNotifications(String today) {
-        return notificationRepository.findActiveNotifications(today).stream()
+    public List<NotificationDto> getActiveNotifications() {
+        return notificationRepository.findAll().stream() // Or custom logic
                 .map(NotificationDto::from)
                 .collect(Collectors.toList());
     }

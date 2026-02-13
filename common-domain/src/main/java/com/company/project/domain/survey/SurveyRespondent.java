@@ -54,7 +54,7 @@ public class SurveyRespondent extends BaseEntity {
     @Builder
     public SurveyRespondent(String qestnrRespondId, String qestnrId, String qestnrTmplatId,
                            String sexdstnCode, String occpTyCode, String respondNm, String brth,
-                           String areaNo, String middleTelno, String endTelno) {
+                           String areaNo, String middleTelno, String endTelno, String frstRegisterId) {
         this.qestnrRespondId = qestnrRespondId;
         this.qestnrId = qestnrId;
         this.qestnrTmplatId = qestnrTmplatId;
@@ -65,10 +65,11 @@ public class SurveyRespondent extends BaseEntity {
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String sexdstnCode, String occpTyCode, String respondNm, String brth,
-                      String areaNo, String middleTelno, String endTelno) {
+                      String areaNo, String middleTelno, String endTelno, String userId) {
         this.sexdstnCode = sexdstnCode;
         this.occpTyCode = occpTyCode;
         this.respondNm = respondNm;
@@ -76,5 +77,6 @@ public class SurveyRespondent extends BaseEntity {
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
+        this.lastModifiedBy = userId;
     }
 }

@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +16,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "NQAINFO")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Qna extends BaseEntity {
 
     @Id
@@ -71,7 +71,7 @@ public class Qna extends BaseEntity {
     @Builder
     public Qna(String qaId, String qestnSj, String qestnCn, String writngPassword, String wrterNm,
                String emailAdres, String emailAnswerAt, String areaNo, String middleTelno, String endTelno,
-               String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe) {
+               String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe, String frstRegisterId) {
         this.qaId = qaId;
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
@@ -87,24 +87,35 @@ public class Qna extends BaseEntity {
         this.answerDe = answerDe;
         this.inqireCo = inqireCo != null ? inqireCo : 0;
         this.writngDe = writngDe != null ? writngDe : java.time.LocalDate.now().toString().replace("-", "");
+        this.createdBy = frstRegisterId;
     }
 
-    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno, String endTelno) {
+    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno, String endTelno, String userId) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.emailAdres = emailAdres;
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 
-    public void answer(String answerCn) {
+    public void answer(String answerCn, String userId) {
         this.answerCn = answerCn;
         this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
         this.qnaProcessSttusCode = "A"; // 답변 완료
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 
     public void increaseInqireCo() {
         this.inqireCo = (this.inqireCo == null ? 0 : this.inqireCo) + 1;
+    }
+
+    public void increaseViewCount() {
+        this.increaseInqireCo();
     }
 }

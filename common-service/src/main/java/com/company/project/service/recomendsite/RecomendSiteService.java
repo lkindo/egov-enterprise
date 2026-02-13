@@ -32,7 +32,7 @@ public class RecomendSiteService implements EgovRecomendSiteService {
 
     @Override
     @Transactional
-    public void insertRecomendSite(RecomendSiteDto dto) {
+    public String createRecomendSite(String userId, RecomendSiteDto dto) {
         String id = "RECSITE_" + String.format("%013d", System.currentTimeMillis());
         RecomendSite entity = RecomendSite.builder()
                 .recomendSiteId(id)
@@ -42,17 +42,19 @@ public class RecomendSiteService implements EgovRecomendSiteService {
                 .recomendResnCn(dto.getRecomendResnCn())
                 .recomendConfmAt(dto.getRecomendConfmAt())
                 .confmDe(dto.getConfmDe())
+                .frstRegisterId(userId)
                 .build();
         recomendSiteRepository.save(entity);
+        return id;
     }
 
     @Override
     @Transactional
-    public void updateRecomendSite(RecomendSiteDto dto) {
-        RecomendSite entity = recomendSiteRepository.findById(dto.getRecomendSiteId())
+    public void updateRecomendSite(String recomendSiteId, String userId, RecomendSiteDto dto) {
+        RecomendSite entity = recomendSiteRepository.findById(recomendSiteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRecomendSiteUrl(), dto.getRecomendSiteNm(), dto.getRecomendSiteDc(),
-                dto.getRecomendResnCn(), dto.getRecomendConfmAt(), dto.getConfmDe());
+                dto.getRecomendResnCn(), dto.getRecomendConfmAt(), dto.getConfmDe(), userId);
     }
 
     @Override

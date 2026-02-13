@@ -39,10 +39,10 @@ public class SurveyRespondentDto {
                 .areaNo(entity.getAreaNo())
                 .middleTelno(entity.getMiddleTelno())
                 .endTelno(entity.getEndTelno())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

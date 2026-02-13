@@ -4,108 +4,96 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.company.project.domain.batch.BatchJob;
-import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchOpert;
+import com.company.project.domain.batch.BatchOpertRepository;
 
-import egovframework.com.sym.bat.service.BatchOpert;
 import egovframework.com.sym.bat.service.EgovBatchOpertService;
 import jakarta.annotation.Resource;
 
 /**
- * 배치작업관리에 대한 ServiceImpl 클래스를 정의한다.
- * 리팩토링: 중복 엔티티 제거를 위해 BatchJobRepository를 사용하도록 통합됨.
+ * 배치작업관리에 대한 서비스 구현 클래스
  */
 @Service("egovBatchOpertService")
 public class EgovBatchOpertServiceImpl extends EgovAbstractServiceImpl implements EgovBatchOpertService {
 
-	@Resource
-	private BatchJobRepository batchJobRepository;
+	@Resource(name = "batchOpertRepository")
+	private BatchOpertRepository batchOpertRepository;
+
+	@Resource(name = "egovBatchOpertIdGnrService")
+	private EgovIdGnrService idgenService;
 
 	@Override
-	@Transactional
-	public void deleteBatchOpert(BatchOpert batchOpert) throws Exception {
-		batchJobRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
-			BatchJob updated = BatchJob.builder()
-					.batchOpertId(entity.getBatchOpertId())
-					.batchOpertNm(entity.getBatchOpertNm())
-					.batchProgrm(entity.getBatchProgrm())
-					.paramtr(entity.getParamtr())
-					.useAt("N")
-					.frstRegisterId(entity.getFrstRegisterId())
-					.build();
-			batchJobRepository.save(updated);
-		});
+	public void deleteBatchOpert(egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
+		batchOpertRepository.deleteById(batchOpertVO.getBatchOpertId());
 	}
 
 	@Override
-	@Transactional
-	public void insertBatchOpert(BatchOpert batchOpert) throws Exception {
-		BatchJob entity = BatchJob.builder()
-				.batchOpertId(batchOpert.getBatchOpertId())
-				.batchOpertNm(batchOpert.getBatchOpertNm())
-				.batchProgrm(batchOpert.getBatchProgrm())
-				.paramtr(batchOpert.getParamtr())
+	public void insertBatchOpert(egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
+		String id = idgenService.getNextStringId();
+		batchOpertVO.setBatchOpertId(id);
+
+		BatchOpert entity = BatchOpert.builder()
+				.batchOpertId(id)
+				.batchOpertNm(batchOpertVO.getBatchOpertNm())
+				.batchProgrm(batchOpertVO.getBatchProgrm())
+				.paramtr(batchOpertVO.getParamtr())
 				.useAt("Y")
-				.frstRegisterId(batchOpert.getFrstRegisterId())
+				.frstRegisterId(batchOpertVO.getFrstRegisterId())
 				.build();
-		batchJobRepository.save(entity);
+
+		batchOpertRepository.save(entity);
 	}
 
 	@Override
-	public BatchOpert selectBatchOpert(BatchOpert batchOpert) throws Exception {
-		return batchJobRepository.findById(batchOpert.getBatchOpertId())
-				.map(this::mapToBatchOpert)
-				.orElse(null);
+	public egovframework.com.sym.bat.service.BatchOpert selectBatchOpert(egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
+		return batchOpertRepository.findById(batchOpertVO.getBatchOpertId())
+				.map(this::mapToVO)
+				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
 	@Override
-	public List<BatchOpert> selectBatchOpertList(BatchOpert searchVO) throws Exception {
-		Pageable pageable = PageRequest.of(searchVO.getFirstIndex() / searchVO.getRecordCountPerPage(),
-				searchVO.getRecordCountPerPage());
-		
-		Page<BatchJob> page = batchJobRepository.search(
-				String.valueOf(searchVO.getSearchCondition()),
-				searchVO.getSearchKeyword(),
-				pageable);
-				
-		return page.getContent().stream().map(this::mapToBatchOpert).collect(Collectors.toList());
+	public List<egovframework.com.sym.bat.service.BatchOpert> selectBatchOpertList(egovframework.com.sym.bat.service.BatchOpert searchVO) throws Exception {
+		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
+				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
+		Page<BatchOpert> page = batchOpertRepository.searchBatchOperts(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+		return page.getContent().stream().map(this::mapToVO).collect(Collectors.toList());
 	}
 
 	@Override
-	public int selectBatchOpertListCnt(BatchOpert searchVO) throws Exception {
+	public int selectBatchOpertListCnt(egovframework.com.sym.bat.service.BatchOpert searchVO) throws Exception {
 		Pageable pageable = PageRequest.of(0, 1);
-		Page<BatchJob> page = batchJobRepository.search(
-				String.valueOf(searchVO.getSearchCondition()),
-				searchVO.getSearchKeyword(),
-				pageable);
-		return (int) page.getTotalElements();
+		return (int) batchOpertRepository.searchBatchOperts(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
+				.getTotalElements();
 	}
 
 	@Override
-	@Transactional
-	public void updateBatchOpert(BatchOpert batchOpert) throws Exception {
-		batchJobRepository.findById(batchOpert.getBatchOpertId()).ifPresent(entity -> {
-			entity.update(batchOpert.getBatchOpertNm(), batchOpert.getBatchProgrm(), 
-					batchOpert.getParamtr(), "Y", entity.getFrstRegisterId());
-			batchJobRepository.save(entity);
+	public void updateBatchOpert(egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
+		batchOpertRepository.findById(batchOpertVO.getBatchOpertId()).ifPresent(entity -> {
+			entity.update(batchOpertVO.getBatchOpertNm(), batchOpertVO.getBatchProgrm(),
+					batchOpertVO.getParamtr(), "Y", batchOpertVO.getLastUpdusrId());
+			batchOpertRepository.save(entity);
 		});
 	}
 
-	private BatchOpert mapToBatchOpert(BatchJob entity) {
-		BatchOpert vo = new BatchOpert();
+	private egovframework.com.sym.bat.service.BatchOpert mapToVO(BatchOpert entity) {
+		egovframework.com.sym.bat.service.BatchOpert vo = new egovframework.com.sym.bat.service.BatchOpert();
 		vo.setBatchOpertId(entity.getBatchOpertId());
 		vo.setBatchOpertNm(entity.getBatchOpertNm());
 		vo.setBatchProgrm(entity.getBatchProgrm());
 		vo.setParamtr(entity.getParamtr());
 		vo.setUseAt(entity.getUseAt());
 		vo.setFrstRegisterId(entity.getFrstRegisterId());
+		if (entity.getFrstRegisterPnttm() != null) {
+			vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm().toString());
+		}
 		return vo;
 	}
-
 }

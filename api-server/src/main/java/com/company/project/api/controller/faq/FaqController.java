@@ -38,9 +38,9 @@ public class FaqController {
 
     @Operation(summary = "FAQ 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertFaq(@RequestBody FaqDto dto) {
-        faqService.insertFaq(null, dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> insertFaq(@RequestBody FaqDto dto) {
+        String id = faqService.createFaq("ADMIN", dto);
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "FAQ 수정")
@@ -48,7 +48,7 @@ public class FaqController {
     public ResponseEntity<ApiResponse<Void>> updateFaq(
             @PathVariable String faqId,
             @RequestBody FaqDto dto) {
-        faqService.updateFaq(faqId, null, dto);
+        faqService.updateFaq(faqId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -56,7 +56,7 @@ public class FaqController {
     @DeleteMapping("/{faqId}")
     public ResponseEntity<ApiResponse<Void>> deleteFaq(
             @PathVariable String faqId) {
-        faqService.deleteFaq(faqId);
+        faqService.deleteFaq(faqId, "ADMIN");
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

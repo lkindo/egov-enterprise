@@ -7,15 +7,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * 받은쪽지 Repository
  */
 @Repository("noteRecptnDomainRepository")
 public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {
-    
+
     @Query("SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId AND (n.noteSj LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)")
-    Page<NoteRecptn> searchReceivedNotes(@Param("rcverId") String rcverId, @Param("searchWrd") String searchWrd, Pageable pageable);
+    Page<NoteRecptn> searchReceivedNotes(@Param("rcverId") String rcverId, @Param("searchWrd") String searchWrd,
+            Pageable pageable);
 
     @Query("SELECT r FROM NoteRecptn r JOIN FETCH r.note n WHERE r.rcverId = :rcverId")
     Page<NoteRecptn> findByRcverId(@Param("rcverId") String rcverId, Pageable pageable);
+
+    Optional<NoteRecptn> findByNoteNoteIdAndRcverId(String noteId, String rcverId);
 }

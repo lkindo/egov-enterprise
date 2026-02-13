@@ -19,63 +19,66 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DutyRepositoryTest {
 
     @Autowired
-    private DutyRepository dutyRepository;
+    private BndtManageRepository dutyRepository;
 
     @Test
     @DisplayName("당직 일지 페이징 조회 테스트")
-    void findById_BndtDeStartingWith_Pagination() {
+    void findByBndtDeStartingWith_Pagination() {
         // given
         // create 20 duties
         for (int i = 1; i <= 20; i++) {
             String bndtDe = String.format("202310%02d", i);
-            Duty duty = Duty.builder()
-                    .id(new Duty.DutyId("TEST_ID", bndtDe))
+            BndtManage duty = BndtManage.builder()
+                    .bndtId("TEST_ID")
+                    .bndtDe(bndtDe)
                     .remark("Remark " + i)
-                    .frstRegisterId("SYSTEM")
-                    .lastUpdusrId("SYSTEM")
                     .build();
+            duty.setCreatedBy("SYSTEM");
+            duty.setLastModifiedBy("SYSTEM");
             dutyRepository.save(duty);
         }
 
         // when
         // page 0, size 10
-        PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id.bndtDe"));
-        Page<Duty> page = dutyRepository.findById_BndtDeStartingWith("202310", pageRequest);
+        PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "bndtDe"));
+        Page<BndtManage> page = dutyRepository.findByBndtDeStartingWith("202310", pageRequest);
 
         // then
         assertThat(page.getTotalElements()).isEqualTo(20);
         assertThat(page.getContent()).hasSize(10);
-        assertThat(page.getContent().get(0).getId().getBndtDe()).isEqualTo("20231001");
-        assertThat(page.getContent().get(9).getId().getBndtDe()).isEqualTo("20231010");
+        assertThat(page.getContent().get(0).getBndtDe()).isEqualTo("20231001");
+        assertThat(page.getContent().get(9).getBndtDe()).isEqualTo("20231010");
 
         // next page
-        PageRequest pageRequest2 = PageRequest.of(1, 10, Sort.by(Sort.Direction.ASC, "id.bndtDe"));
-        Page<Duty> page2 = dutyRepository.findById_BndtDeStartingWith("202310", pageRequest2);
+        PageRequest pageRequest2 = PageRequest.of(1, 10, Sort.by(Sort.Direction.ASC, "bndtDe"));
+        Page<BndtManage> page2 = dutyRepository.findByBndtDeStartingWith("202310", pageRequest2);
 
         assertThat(page2.getContent()).hasSize(10);
-        assertThat(page2.getContent().get(0).getId().getBndtDe()).isEqualTo("20231011");
+        assertThat(page2.getContent().get(0).getBndtDe()).isEqualTo("20231011");
     }
 
     @Test
     @DisplayName("당직 일지 페이징 조회 - 검색어 없음")
-    void findById_BndtDeStartingWith_Pagination_NoKeyword() {
+    void findByBndtDeStartingWith_Pagination_NoKeyword() {
          // given
-        Duty duty1 = Duty.builder()
-                .id(new Duty.DutyId("TEST_ID", "20231001"))
-                .frstRegisterId("SYSTEM")
+        BndtManage duty1 = BndtManage.builder()
+                .bndtId("TEST_ID")
+                .bndtDe("20231001")
                 .build();
+        duty1.setCreatedBy("SYSTEM");
         dutyRepository.save(duty1);
 
-        Duty duty2 = Duty.builder()
-                .id(new Duty.DutyId("TEST_ID", "20231101"))
-                .frstRegisterId("SYSTEM")
+        BndtManage duty2 = BndtManage.builder()
+                .bndtId("TEST_ID")
+                .bndtDe("20231101")
                 .build();
+        duty2.setCreatedBy("SYSTEM");
         dutyRepository.save(duty2);
 
         // when
         // empty string should match all
         PageRequest pageRequest = PageRequest.of(0, 10);
-        Page<Duty> page = dutyRepository.findById_BndtDeStartingWith("", pageRequest);
+        Page<BndtManage> page = dutyRepository.findByBndtDeStartingWith("", pageRequest);
 
         // then
         assertThat(page.getTotalElements()).isEqualTo(2);

@@ -94,10 +94,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
                                 // 단, UserManageController는 Modern Controller가 존재하므로 제외
                                 // USS 패키지 활성화 (기업회원, 일반회원 관리 등)
                                 // 단, UserManageController는 Modern Controller가 존재하므로 제외
-                                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-                                                egovframework.com.uss.umt.web.EgovUserManageController.class,
-                                                egovframework.com.uss.ion.uas.web.EgovUserAbsnceController.class
-                                }),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.umt\\.web\\.EgovUserManageController"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsnceController"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsenceManageController.*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"), // 설문/투표
                                                                                                                                   // 도구
