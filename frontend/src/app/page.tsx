@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Bell,
   CalendarCheck,
@@ -117,7 +118,7 @@ export default function DashboardPage() {
 
         {/* Poll Widget */}
         <Card className="col-span-2 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="absolute top-0 right-0 p-4 opacity-10" aria-hidden="true">
             <Vote size={120} />
           </div>
           <CardHeader>
@@ -160,14 +161,18 @@ export default function DashboardPage() {
               </CardTitle>
               <CardDescription>최신 업무 공지</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/cop/bbs/selectBoardList?bbsId=BBSMSTR_AAAAAAAAAAAA">더보기</Link>
-            </Button>
+            <Link
+              href="/cop/bbs/selectBoardList?bbsId=BBSMSTR_AAAAAAAAAAAA"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+              aria-label="공지사항 더보기"
+            >
+              더보기
+            </Link>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-2">
-                {[1, 2, 3].map(i => <div key={i} className="h-10 bg-slate-100 animate-pulse rounded" />)}
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : (
               <div className="space-y-1">
@@ -197,14 +202,18 @@ export default function DashboardPage() {
               </CardTitle>
               <CardDescription>부서 업무 게시판</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/cop/bbs/selectBoardList?bbsId=BBSMSTR_CCCCCCCCCCCC">더보기</Link>
-            </Button>
+            <Link
+              href="/cop/bbs/selectBoardList?bbsId=BBSMSTR_CCCCCCCCCCCC"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+              aria-label="오늘의 할일 더보기"
+            >
+              더보기
+            </Link>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-2">
-                {[1, 2, 3].map(i => <div key={i} className="h-10 bg-slate-100 animate-pulse rounded" />)}
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : (
               <div className="space-y-1">
