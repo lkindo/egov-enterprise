@@ -2,8 +2,8 @@ package com.company.project.service.batch;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.batch.BatchJob;
-import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchOpert;
+import com.company.project.domain.batch.BatchOpertRepository;
 import com.company.project.domain.batch.BatchSchdul;
 import com.company.project.domain.batch.BatchSchdulDfk;
 import com.company.project.domain.batch.BatchSchdulRepository;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class BatchSchdulService implements EgovBatchSchdulService {
 
     private final BatchSchdulRepository batchSchdulRepository;
-    private final BatchJobRepository batchJobRepository;
+    private final BatchOpertRepository batchOpertRepository;
     private final EgovCommonCodeService commonCodeService;
 
     private final java.util.concurrent.ConcurrentHashMap<String, Map<String, String>> codeMapCache = new java.util.concurrent.ConcurrentHashMap<>();
@@ -41,24 +41,21 @@ public class BatchSchdulService implements EgovBatchSchdulService {
         Page<BatchSchdul> entities = batchSchdulRepository
                 .searchBatchSchduls(searchCondition, searchKeyword, pageable);
 
-        // Get common codes for cycle names and day of week names
         Map<String, String> cycleMap = getCodeMap("COM047");
         Map<String, String> dfkMap = getCodeMap("COM074");
 
-        // Collect BatchJob IDs to prevent N+1 queries
         Set<String> batchOpertIds = entities.stream()
                 .map(BatchSchdul::getBatchOpertId)
                 .filter(id -> id != null && !id.isEmpty())
                 .collect(Collectors.toSet());
 
-        Map<String, BatchJob> jobMap = batchJobRepository
+        Map<String, BatchOpert> jobMap = batchOpertRepository
                 .findAllById(batchOpertIds).stream()
                 .collect(Collectors.toMap(
-                        BatchJob::getBatchOpertId,
+                        BatchOpert::getBatchOpertId,
                         job -> job,
                         (existing, replacement) -> existing));
 
-        // Collect BatchSchdul IDs and fetch all related BatchSchdulDfk entities
         Set<String> batchSchdulIds = entities.stream()
                 .map(BatchSchdul::getBatchSchdulId)
                 .collect(Collectors.toSet());
@@ -83,9 +80,9 @@ public class BatchSchdulService implements EgovBatchSchdulService {
         Map<String, String> cycleMap = getCodeMap("COM047");
         Map<String, String> dfkMap = getCodeMap("COM074");
 
-        Map<String, BatchJob> jobMap = new HashMap<>();
+        Map<String, BatchOpert> jobMap = new HashMap<>();
         if (entity.getBatchOpertId() != null) {
-            batchJobRepository.findById(entity.getBatchOpertId())
+            batchOpertRepository.findById(entity.getBatchOpertId())
                     .ifPresent(job -> jobMap.put(job.getBatchOpertId(), job));
         }
 
@@ -94,16 +91,16 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
     private Map<String, String> getCodeMap(String codeGroupId) {
         return codeMapCache.computeIfAbsent(codeGroupId, key -> commonCodeService.getCodesByGroup(key).stream()
-                .collect(Collectors.toMap(CommonCodeDto::getCode,
-                        CommonCodeDto::getCodeNm, (a, b) -> a)));
+                .collect(Collectors.toMap(CommonCodeDto::code,
+                        CommonCodeDto::codeNm, (a, b) -> a)));
     }
 
     private BatchSchdulDto convertToDto(BatchSchdul entity,
             Map<String, String> cycleMap, Map<String, String> dfkMap,
-            Map<String, BatchJob> jobMap, Map<String, List<BatchSchdulDfk>> dfkMapBySchdulId) {
+            Map<String, BatchOpert> jobMap, Map<String, List<BatchSchdulDfk>> dfkMapBySchdulId) {
         String batchOpertNm = "";
         String batchProgrm = "";
-        BatchJob job = jobMap.get(entity.getBatchOpertId());
+        BatchOpert job = jobMap.get(entity.getBatchOpertId());
         if (job != null) {
             batchOpertNm = job.getBatchOpertNm();
             batchProgrm = job.getBatchProgrm();
@@ -168,7 +165,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
         BatchSchdul batchSchdul = BatchSchdul.builder()
                 .batchSchdulId(batchSchdulId)
-                .batchOpertId(dto.getBatchOpertId())
+                .batchOpert(batchOpertRepository.getReferenceById(dto.getBatchOpertId()))
                 .executCycle(dto.getExecutCycle())
                 .executSchdulDe(dto.getExecutSchdulDe())
                 .executSchdulHour(dto.getExecutSchdulHour())
@@ -181,6 +178,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
             for (String dfkSe : dto.getExecutSchdulDfkSes()) {
                 batchSchdul.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
                         .batchSchdulId(batchSchdulId)
+                        .batchSchdul(batchSchdul)
                         .executSchdulDfkSe(dfkSe)
                         .build());
             }
@@ -196,31 +194,26 @@ public class BatchSchdulService implements EgovBatchSchdulService {
         BatchSchdul batchSchdul = batchSchdulRepository.findById(batchSchdulId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // Use a more robust update logic
-        // For simplicity, we create a new entity but keep the IDs and creator info
-        // In a real project, we'd use setter or a domain method.
-
-        BatchSchdul updated = BatchSchdul.builder()
-                .batchSchdulId(batchSchdulId)
-                .batchOpertId(dto.getBatchOpertId())
-                .executCycle(dto.getExecutCycle())
-                .executSchdulDe(dto.getExecutSchdulDe())
-                .executSchdulHour(dto.getExecutSchdulHour())
-                .executSchdulMnt(dto.getExecutSchdulMnt())
-                .executSchdulSecnd(dto.getExecutSchdulSecnd())
-                .frstRegisterId(batchSchdul.getFrstRegisterId())
-                .build();
+        batchSchdul.setBatchOpert(batchOpertRepository.getReferenceById(dto.getBatchOpertId()));
+        batchSchdul.setExecutCycle(dto.getExecutCycle());
+        batchSchdul.setExecutSchdulDe(dto.getExecutSchdulDe());
+        batchSchdul.setExecutSchdulHour(dto.getExecutSchdulHour());
+        batchSchdul.setExecutSchdulMnt(dto.getExecutSchdulMnt());
+        batchSchdul.setExecutSchdulSecnd(dto.getExecutSchdulSecnd());
+        batchSchdul.setLastUpdusrId(userId);
 
         if (dto.getExecutSchdulDfkSes() != null) {
+            batchSchdul.getBatchSchdulDfks().clear();
             for (String dfkSe : dto.getExecutSchdulDfkSes()) {
-                updated.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
+                batchSchdul.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
                         .batchSchdulId(batchSchdulId)
+                        .batchSchdul(batchSchdul)
                         .executSchdulDfkSe(dfkSe)
                         .build());
             }
         }
 
-        batchSchdulRepository.save(updated);
+        batchSchdulRepository.save(batchSchdul);
     }
 
     @Override

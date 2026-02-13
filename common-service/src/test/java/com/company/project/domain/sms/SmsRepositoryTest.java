@@ -29,6 +29,9 @@ class SmsRepositoryTest {
     private SmsRepository smsRepository;
 
     @Autowired
+    private SmsRecptnRepository smsRecptnRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Test
@@ -39,8 +42,6 @@ class SmsRepositoryTest {
                 .smsId(smsId)
                 .trnsmitTelno("0200000000")
                 .trnsmitCn("Test Message")
-                .uniqId("USER_01")
-                .frstRegisterId("USER_01")
                 .build();
 
         SmsRecptn recptn1 = SmsRecptn.builder()
@@ -50,19 +51,18 @@ class SmsRepositoryTest {
                 .resultMssage("Ready")
                 .build();
 
-        sms.getRecipients().add(recptn1);
-
         // When
         smsRepository.save(sms);
+        smsRecptnRepository.save(recptn1);
         entityManager.flush();
         entityManager.clear();
 
         // Then
         Sms savedSms = smsRepository.findById(smsId).orElseThrow();
         assertThat(savedSms).isNotNull();
-        assertThat(savedSms.getRecipients()).hasSize(1);
-
-        SmsRecptn savedRecptn = savedSms.getRecipients().get(0);
+        // SmsRecptn savedRecptn = savedSms.getRecipients().get(0); // Removed
+        // relationship
+        SmsRecptn savedRecptn = smsRecptnRepository.findById(new SmsRecptnId(smsId, "01011112222")).orElseThrow();
         assertThat(savedRecptn.getSmsId()).isEqualTo(smsId);
         assertThat(savedRecptn.getRecptnTelno()).isEqualTo("01011112222");
     }
@@ -75,8 +75,6 @@ class SmsRepositoryTest {
                 .smsId(smsId)
                 .trnsmitTelno("0200000000")
                 .trnsmitCn("Test Message")
-                .uniqId("USER_01")
-                .frstRegisterId("USER_01")
                 .build();
 
         SmsRecptn recptn1 = SmsRecptn.builder()
@@ -85,23 +83,25 @@ class SmsRepositoryTest {
                 .resultCode("9000")
                 .resultMssage("Ready")
                 .build();
-        sms.getRecipients().add(recptn1);
 
         smsRepository.save(sms);
+        smsRecptnRepository.save(recptn1);
         entityManager.flush();
         entityManager.clear();
 
         // When
-        Sms loadedSms = smsRepository.findById(smsId).orElseThrow();
-        SmsRecptn loadedRecptn = loadedSms.getRecipients().get(0);
+        // Sms loadedSms = smsRepository.findById(smsId).orElseThrow();
+        // SmsRecptn loadedRecptn = loadedSms.getRecipients().get(0);
+        SmsRecptn loadedRecptn = smsRecptnRepository.findById(new SmsRecptnId(smsId, "01011112222")).orElseThrow();
         loadedRecptn.updateResult("0000", "SUCCESS");
 
         entityManager.flush();
         entityManager.clear();
 
         // Then
-        Sms finalSms = smsRepository.findById(smsId).orElseThrow();
-        SmsRecptn finalRecptn = finalSms.getRecipients().get(0);
+        // Sms finalSms = smsRepository.findById(smsId).orElseThrow();
+        // SmsRecptn finalRecptn = finalSms.getRecipients().get(0);
+        SmsRecptn finalRecptn = smsRecptnRepository.findById(new SmsRecptnId(smsId, "01011112222")).orElseThrow();
         assertThat(finalRecptn.getResultCode()).isEqualTo("0000");
         assertThat(finalRecptn.getResultMssage()).isEqualTo("SUCCESS");
     }

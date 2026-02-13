@@ -40,10 +40,10 @@ public class NotificationController {
 
     @Operation(summary = "알림 등록", description = "새로운 정보 알림을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertNotification(
+    public ResponseEntity<ApiResponse<String>> insertNotification(
             @RequestBody NotificationDto dto) {
-        notificationService.insertNotification(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        String id = notificationService.createNotification("ADMIN", dto);
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "알림 수정", description = "기존 정보 알림을 수정합니다.")
@@ -51,8 +51,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<Void>> updateNotification(
             @PathVariable String ntfcNo,
             @RequestBody NotificationDto dto) {
-        dto.setNtfcNo(ntfcNo);
-        notificationService.updateNotification(dto);
+        notificationService.updateNotification(ntfcNo, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -64,10 +63,9 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "활성 알림 조회", description = "현재 유효한(오늘 이후의) 알림 목록을 조회합니다.")
+    @Operation(summary = "활성 알림 조회", description = "현재 유효한 알림 목록을 조회합니다.")
     @GetMapping("/active")
-    public ResponseEntity<ApiResponse<List<NotificationDto>>> getActiveNotifications(
-            @RequestParam String today) {
-        return ResponseEntity.ok(ApiResponse.success(notificationService.getActiveNotifications(today)));
+    public ResponseEntity<ApiResponse<List<NotificationDto>>> getActiveNotifications() {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.getActiveNotifications()));
     }
 }

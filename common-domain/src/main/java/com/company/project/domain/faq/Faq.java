@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * FAQ 정보 Entity
@@ -17,7 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NFAQINFO")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Faq extends BaseEntity {
 
     @Id
@@ -40,23 +40,31 @@ public class Faq extends BaseEntity {
     private String atchFileId;
 
     @Builder
-    public Faq(String faqId, String qestnSj, String qestnCn, String answerCn, Integer inqireCo, String atchFileId) {
+    public Faq(String faqId, String qestnSj, String qestnCn, String answerCn, Integer inqireCo, String atchFileId, String frstRegisterId) {
         this.faqId = faqId;
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.answerCn = answerCn;
         this.inqireCo = inqireCo != null ? inqireCo : 0;
         this.atchFileId = atchFileId;
+        this.createdBy = frstRegisterId;
     }
 
-    public void update(String qestnSj, String qestnCn, String answerCn, String atchFileId) {
+    public void update(String qestnSj, String qestnCn, String answerCn, String atchFileId, String userId) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.answerCn = answerCn;
         this.atchFileId = atchFileId;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 
     public void increaseInqireCo() {
         this.inqireCo = (this.inqireCo == null ? 0 : this.inqireCo) + 1;
+    }
+
+    public void increaseViewCount() {
+        this.increaseInqireCo();
     }
 }

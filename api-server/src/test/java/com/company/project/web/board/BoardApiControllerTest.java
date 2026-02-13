@@ -42,7 +42,7 @@ class BoardApiControllerTest {
         @SpringBootConfiguration
         @EnableAutoConfiguration
         @Import({ BoardController.class, WebMvcConfig.class, TestSecurityConfig.class,
-                        com.company.project.core.exception.GlobalExceptionHandler.class })
+                        com.company.project.api.common.exception.GlobalExceptionHandler.class })
         static class TestConfig {
         }
 

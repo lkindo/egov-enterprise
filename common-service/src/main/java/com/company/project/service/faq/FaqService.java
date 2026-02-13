@@ -20,32 +20,30 @@ public class FaqService implements EgovFaqService {
 
     @Override
     public Page<FaqDto> getFaqList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return faqRepository.findAll(pageable).map(FaqDto::from);
-        }
-        return faqRepository.findByQestnSjContaining(keyword, pageable).map(FaqDto::from);
+        return faqRepository.searchFaqs(keyword, pageable).map(FaqDto::from);
     }
 
     @Override
-    @Transactional
     public FaqDto getFaq(String faqId) {
-        Faq entity = faqRepository.findById(faqId)
+        return faqRepository.findById(faqId)
+                .map(FaqDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.increaseInqireCo();
-        return FaqDto.from(entity);
     }
 
     @Override
     @Transactional
-    public void insertFaq(String userId, FaqDto dto) {
-        String id = "FAQ_" + String.format("%013d", System.currentTimeMillis());
-        faqRepository.save(Faq.builder()
+    public String createFaq(String userId, FaqDto dto) {
+        String id = "FAQ_" + String.format("%016d", System.currentTimeMillis());
+        Faq entity = Faq.builder()
                 .faqId(id)
                 .qestnSj(dto.getQestnSj())
                 .qestnCn(dto.getQestnCn())
                 .answerCn(dto.getAnswerCn())
                 .atchFileId(dto.getAtchFileId())
-                .build());
+                .frstRegisterId(userId)
+                .build();
+        faqRepository.save(entity);
+        return id;
     }
 
     @Override
@@ -53,12 +51,18 @@ public class FaqService implements EgovFaqService {
     public void updateFaq(String faqId, String userId, FaqDto dto) {
         Faq entity = faqRepository.findById(faqId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId());
+        entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId(), userId);
     }
 
     @Override
     @Transactional
-    public void deleteFaq(String faqId) {
+    public void deleteFaq(String faqId, String userId) {
         faqRepository.deleteById(faqId);
+    }
+
+    @Override
+    @Transactional
+    public void increaseViewCount(String faqId) {
+        faqRepository.findById(faqId).ifPresent(Faq::increaseViewCount);
     }
 }

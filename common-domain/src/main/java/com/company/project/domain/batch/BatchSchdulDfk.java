@@ -2,9 +2,11 @@ package com.company.project.domain.batch;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * 배치스케줄요일 JPA Entity
@@ -13,21 +15,30 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NBATCHSCHDULDFK")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@IdClass(BatchSchdulDfkId.class)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class BatchSchdulDfk {
 
-    @Id
-    @Column(name = "BATCH_SCHDUL_ID", length = 20)
-    private String batchSchdulId;
+    @EmbeddedId
+    private BatchSchdulDfkId id;
 
-    @Id
-    @Column(name = "EXECUT_SCHDUL_DFK_SE", length = 2)
-    private String executSchdulDfkSe;
+    @MapsId("batchSchdulId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BATCH_SCHDUL_ID")
+    private BatchSchdul batchSchdul;
 
     @Builder
-    public BatchSchdulDfk(String batchSchdulId, String executSchdulDfkSe) {
-        this.batchSchdulId = batchSchdulId;
-        this.executSchdulDfkSe = executSchdulDfkSe;
+    public BatchSchdulDfk(String batchSchdulId, String executSchdulDfkSe, BatchSchdul batchSchdul) {
+        this.id = new BatchSchdulDfkId(batchSchdulId, executSchdulDfkSe);
+        this.batchSchdul = batchSchdul;
+    }
+
+    public String getBatchSchdulId() {
+        return id != null ? id.getBatchSchdulId() : null;
+    }
+
+    public String getExecutSchdulDfkSe() {
+        return id != null ? id.getExecutSchdulDfkSe() : null;
     }
 }

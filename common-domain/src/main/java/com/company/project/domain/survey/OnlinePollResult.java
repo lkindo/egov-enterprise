@@ -31,9 +31,10 @@ public class OnlinePollResult extends BaseEntity {
     private String pollIemId;
 
     @Builder
-    public OnlinePollResult(String pollResultId, String pollId, String pollIemId) {
+    public OnlinePollResult(String pollResultId, String pollId, String pollIemId, String frstRegisterId) {
         this.pollResultId = pollResultId;
         this.pollId = pollId;
         this.pollIemId = pollIemId;
+        this.createdBy = frstRegisterId;
     }
 }

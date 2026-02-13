@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 온라인매뉴얼 정보 Entity
@@ -17,7 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NONLINEMANUAL")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OnlineManual extends BaseEntity {
 
     @Id
@@ -38,18 +38,22 @@ public class OnlineManual extends BaseEntity {
 
     @Builder
     public OnlineManual(String onlineMnlId, String onlineMnlNm, String onlineMnlSeCode,
-                        String onlineMnlDf, String onlineMnlDc) {
+                        String onlineMnlDf, String onlineMnlDc, String frstRegisterId) {
         this.onlineMnlId = onlineMnlId;
         this.onlineMnlNm = onlineMnlNm;
         this.onlineMnlSeCode = onlineMnlSeCode;
         this.onlineMnlDf = onlineMnlDf;
         this.onlineMnlDc = onlineMnlDc;
+        this.createdBy = frstRegisterId;
     }
 
-    public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc) {
+    public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc, String userId) {
         this.onlineMnlNm = onlineMnlNm;
         this.onlineMnlSeCode = onlineMnlSeCode;
         this.onlineMnlDf = onlineMnlDf;
         this.onlineMnlDc = onlineMnlDc;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

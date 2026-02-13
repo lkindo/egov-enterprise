@@ -22,7 +22,7 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
     public Page<Sms> searchSmsUnits(String searchCondition, String searchKeyword, Pageable pageable) {
         List<Sms> content = queryFactory
                 .selectFrom(sms)
-                .leftJoin(sms.recipients, smsRecptn)
+                .leftJoin(smsRecptn).on(sms.smsId.eq(smsRecptn.id.smsId))
                 .where(searchExpression(searchCondition, searchKeyword))
                 .orderBy(sms.smsId.desc())
                 .offset(pageable.getOffset())
@@ -32,11 +32,16 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         long total = queryFactory
                 .select(sms.countDistinct())
                 .from(sms)
-                .leftJoin(sms.recipients, smsRecptn)
+                .leftJoin(smsRecptn).on(sms.smsId.eq(smsRecptn.id.smsId))
                 .where(searchExpression(searchCondition, searchKeyword))
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Page<Sms> searchSms(String searchCondition, String searchKeyword, Pageable pageable) {
+        return searchSmsUnits(searchCondition, searchKeyword, pageable);
     }
 
     private BooleanExpression searchExpression(String searchCondition, String searchKeyword) {
@@ -45,7 +50,7 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         }
 
         if ("0".equals(searchCondition)) { // 수신번호 (RECPTN_TELNO)
-            return smsRecptn.recptnTelno.contains(searchKeyword);
+            return smsRecptn.id.recptnTelno.contains(searchKeyword);
         } else if ("1".equals(searchCondition)) { // 내용 (TRNSMIS_CN)
             return sms.trnsmitCn.contains(searchKeyword);
         }

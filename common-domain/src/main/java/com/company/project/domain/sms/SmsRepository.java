@@ -10,6 +10,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SmsRepository extends JpaRepository<Sms, String>, SmsRepositoryCustom {
 
     Page<Sms> findByTrnsmitCnContaining(String keyword, Pageable pageable);
-
-    Page<Sms> findByUniqId(String uniqId, Pageable pageable);
 }

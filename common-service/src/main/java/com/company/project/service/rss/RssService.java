@@ -38,9 +38,9 @@ public class RssService implements EgovRssService {
 
     @Override
     @Transactional
-    public void insertRss(RssDto dto) {
+    public void registerRss(RssDto dto) {
         String id = "RSS_" + String.format("%013d", System.currentTimeMillis());
-        
+
         // Save to Rss (NRSS)
         Rss rss = Rss.builder()
                 .rssId(id)
@@ -84,10 +84,9 @@ public class RssService implements EgovRssService {
                 dto.getHderTitle(), dto.getHderLink(), dto.getHderDc(), dto.getHderTag(), dto.getHderEtc(),
                 dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc(), dto.getBdtTag(), dto.getBdtEtcTag());
 
-        rssTagRepository.findById(dto.getRssId()).ifPresent(tag -> 
-            tag.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(), dto.getTrgetSvcListCo(),
-                    dto.getHderTag(), dto.getBdtTag(), dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc())
-        );
+        rssTagRepository.findById(dto.getRssId())
+                .ifPresent(tag -> tag.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(), dto.getTrgetSvcListCo(),
+                        dto.getHderTag(), dto.getBdtTag(), dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc()));
     }
 
     @Override

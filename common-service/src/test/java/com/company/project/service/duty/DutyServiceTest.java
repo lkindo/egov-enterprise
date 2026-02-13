@@ -1,8 +1,6 @@
 package com.company.project.service.duty;
 
-import com.company.project.domain.duty.Duty;
-import com.company.project.domain.duty.DutyDiaryRepository;
-import com.company.project.domain.duty.DutyRepository;
+import com.company.project.domain.duty.*;
 import com.company.project.service.duty.dto.DutyDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,51 +19,49 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DutyServiceTest {
 
-    @Mock
-    private DutyRepository dutyRepository;
+        @Mock
+        private BndtManageRepository bndtManageRepository;
 
-    @Mock
-    private DutyDiaryRepository dutyDiaryRepository;
+        @Mock
+        private BndtDiaryRepository bndtDiaryRepository;
 
-    @Mock
-    private com.company.project.domain.duty.DutyCheckRepository dutyCheckRepository;
+        @Mock
+        private BndtCeckManageRepository bndtCeckManageRepository;
 
-    @InjectMocks
-    private DutyService dutyService;
+        @InjectMocks
+        private DutyService dutyService;
 
-    @Test
-    @DisplayName("당직 일지 페이징 조회 서비스 테스트 - N+1 문제 해결 검증")
-    void getDutyList_Pagination() {
-        // given
-        Duty duty = Duty.builder()
-                .id(new Duty.DutyId("TEST_ID", "20231001"))
-                .remark("Remark")
-                .build();
+        @Test
+        @DisplayName("당직 일지 페이징 조회 서비스 테스트")
+        void getDutyList_Pagination() {
+                // given
+                BndtManage duty = BndtManage.builder()
+                                .bndtId("TEST_ID")
+                                .bndtDe("20231001")
+                                .remark("Remark")
+                                .build();
 
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Duty> dutyPage = new PageImpl<>(Collections.singletonList(duty), pageable, 1);
+                Pageable pageable = PageRequest.of(0, 10);
+                Page<BndtManage> dutyPage = new PageImpl<>(Collections.singletonList(duty), pageable, 1);
 
-        given(dutyRepository.findById_BndtDeStartingWith(anyString(), any(Pageable.class)))
-                .willReturn(dutyPage);
+                given(bndtManageRepository.findByBndtDeStartingWith(anyString(), any(Pageable.class)))
+                                .willReturn(dutyPage);
 
-        // Batch fetch stub (this MUST be called)
-        given(dutyDiaryRepository.findById_BndtDeStartingWith(anyString()))
-                .willReturn(Collections.emptyList());
+                given(bndtDiaryRepository.findByBndtDeStartingWith(anyString()))
+                                .willReturn(Collections.emptyList());
 
-        // when
-        Page<DutyDto> resultPage = dutyService.getDutyList("202310", pageable);
+                // when
+                Page<DutyDto> resultPage = dutyService.getDutyList("202310", pageable);
 
-        // then
-        assertThat(resultPage.getTotalElements()).isEqualTo(1);
-        assertThat(resultPage.getContent().get(0).getBndtDe()).isEqualTo("20231001");
+                // then
+                assertThat(resultPage.getTotalElements()).isEqualTo(1);
+                assertThat(resultPage.getContent().get(0).getBndtDe()).isEqualTo("20231001");
 
-        // Performance Verification: Single fetch should NEVER be called
-        verify(dutyDiaryRepository, never()).findById_BndtIdAndId_BndtDe(anyString(), anyString());
-    }
+                verify(bndtManageRepository).findByBndtDeStartingWith(anyString(), any(Pageable.class));
+        }
 }

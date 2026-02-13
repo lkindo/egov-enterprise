@@ -25,17 +25,29 @@ public class NotificationDto {
     @Schema(description = "알림 내용")
     private String ntfcCn;
 
+    @Schema(description = "알림 일자")
+    private String ntfcDate;
+
     @Schema(description = "알림 시간")
     private String ntfcTime;
 
     @Schema(description = "사전 알림 간격")
     private String bhNtfcIntrvl;
 
-    @Schema(description = "등록자 ID")
-    private String createdBy;
+    @Schema(description = "고유 ID")
+    private String uniqId;
 
-    @Schema(description = "등록일시")
-    private LocalDateTime createdDate;
+    @Schema(description = "최초등록자 ID")
+    private String frstRegisterId;
+
+    @Schema(description = "최초등록시점")
+    private LocalDateTime frstRegisterPnttm;
+
+    @Schema(description = "최종수정자 ID")
+    private String lastUpdusrId;
+
+    @Schema(description = "최종수정시점")
+    private LocalDateTime lastUpdusrPnttm;
 
     public static NotificationDto from(Notification entity) {
         if (entity == null) return null;
@@ -45,8 +57,10 @@ public class NotificationDto {
                 .ntfcCn(entity.getNtfcCn())
                 .ntfcTime(entity.getNtfcTime())
                 .bhNtfcIntrvl(entity.getBhNtfcIntrvl())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

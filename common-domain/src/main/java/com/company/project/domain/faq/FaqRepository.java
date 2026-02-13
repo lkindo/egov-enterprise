@@ -21,4 +21,8 @@ public interface FaqRepository extends JpaRepository<Faq, String> {
      */
     @Query("SELECT f FROM Faq f WHERE f.qestnSj LIKE %:keyword% OR f.qestnCn LIKE %:keyword%")
     Page<Faq> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    default Page<Faq> searchFaqs(String keyword, Pageable pageable) {
+        return searchByKeyword(keyword == null ? "" : keyword, pageable);
+    }
 }

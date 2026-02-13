@@ -4,6 +4,7 @@ dependencies {
     api project(':common-security') // For Security Utils if needed
     api 'org.springframework.boot:spring-boot-starter-validation'
     api 'org.springframework.boot:spring-boot-starter-mail'
+    api 'commons-net:commons-net:3.11.1'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     
     // Swagger Annotations (DTO에서 @Schema 사용)

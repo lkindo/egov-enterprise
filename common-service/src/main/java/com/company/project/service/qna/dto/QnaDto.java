@@ -28,7 +28,7 @@ public class QnaDto {
     @Schema(description = "작성 비밀번호")
     private String writngPassword;
 
-    @Schema(description = "작성자 명")
+    @Schema(description = "작성자 이름")
     private String wrterNm;
 
     @Schema(description = "이메일 주소")
@@ -46,7 +46,7 @@ public class QnaDto {
     @Schema(description = "끝 전화번호")
     private String endTelno;
 
-    @Schema(description = "진행 상태 코드")
+    @Schema(description = "질문 처리 상태 코드")
     private String qnaProcessSttusCode;
 
     @Schema(description = "답변 내용")
@@ -61,11 +61,17 @@ public class QnaDto {
     @Schema(description = "작성 일자")
     private String writngDe;
 
-    @Schema(description = "등록자 ID")
-    private String createdBy;
+    @Schema(description = "최초등록자 ID")
+    private String frstRegisterId;
 
-    @Schema(description = "등록일시")
-    private LocalDateTime createdDate;
+    @Schema(description = "최초등록시점")
+    private LocalDateTime frstRegisterPnttm;
+
+    @Schema(description = "최종수정자 ID")
+    private String lastUpdusrId;
+
+    @Schema(description = "최종수정시점")
+    private LocalDateTime lastUpdusrPnttm;
 
     public static QnaDto from(Qna entity) {
         if (entity == null) return null;
@@ -85,8 +91,10 @@ public class QnaDto {
                 .answerDe(entity.getAnswerDe())
                 .inqireCo(entity.getInqireCo())
                 .writngDe(entity.getWritngDe())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

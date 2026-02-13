@@ -1,7 +1,7 @@
 package com.company.project.service.batch;
 
-import com.company.project.domain.batch.BatchJob;
-import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchOpert;
+import com.company.project.domain.batch.BatchOpertRepository;
 import com.company.project.domain.batch.BatchSchdul;
 import com.company.project.domain.batch.BatchSchdulRepository;
 import com.company.project.service.batch.dto.BatchSchdulDto;
@@ -34,7 +34,7 @@ class BatchSchdulServiceTest {
     private BatchSchdulRepository batchSchdulRepository;
 
     @Mock
-    private BatchJobRepository batchJobRepository;
+    private BatchOpertRepository batchOpertRepository;
 
     @Mock
     private EgovCommonCodeService commonCodeService;
@@ -64,10 +64,10 @@ class BatchSchdulServiceTest {
         when(commonCodeService.getCodesByGroup(anyString())).thenReturn(Collections.emptyList());
 
         // Mock job repository to return list of jobs for findAllById
-        when(batchJobRepository.findAllById(any())).thenAnswer(invocation -> {
+        when(batchOpertRepository.findAllById(any())).thenAnswer(invocation -> {
             Iterable<String> ids = invocation.getArgument(0);
-            List<BatchJob> jobs = new java.util.ArrayList<>();
-            ids.forEach(id -> jobs.add(BatchJob.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
+            List<BatchOpert> jobs = new java.util.ArrayList<>();
+            ids.forEach(id -> jobs.add(BatchOpert.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
             return jobs;
         });
 
@@ -79,12 +79,12 @@ class BatchSchdulServiceTest {
 
         // then
         // Verify that findAllById is called once
-        verify(batchJobRepository, times(1)).findAllById(any());
+        verify(batchOpertRepository, times(1)).findAllById(any());
         // Verify that findAllDfksByBatchSchdulIdIn is called once
         verify(batchSchdulRepository, times(1)).findAllDfksByBatchSchdulIdIn(any());
 
         // Verify that findById is NOT called
-        verify(batchJobRepository, never()).findById(anyString());
+        verify(batchOpertRepository, never()).findById(anyString());
 
         // Additional verification: Check if data is correctly mapped
         result.getContent().forEach(dto -> {

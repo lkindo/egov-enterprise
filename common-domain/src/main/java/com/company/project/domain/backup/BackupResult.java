@@ -16,11 +16,11 @@ public class BackupResult {
     @Column(name = "BACKUP_RESULT_ID", length = 20)
     private String backupResultId;
 
-    @Column(name = "BACKUP_OPERT_ID", length = 20)
+    @Transient
     private String backupOpertId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BACKUP_OPERT_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "BACKUP_OPERT_ID")
     private BackupOpert backupOpert;
 
     @Column(name = "BACKUP_FILE", length = 255)
@@ -51,10 +51,12 @@ public class BackupResult {
     private LocalDateTime lastUpdtPnttm;
 
     @Builder
-    public BackupResult(String backupResultId, String backupOpertId, String backupFile, String sttus, String errorInfo,
+    public BackupResult(String backupResultId, String backupOpertId, BackupOpert backupOpert, String backupFile,
+            String sttus, String errorInfo,
             String executBeginTime, String executEndTime, String frstRegisterId) {
         this.backupResultId = backupResultId;
         this.backupOpertId = backupOpertId;
+        this.backupOpert = backupOpert;
         this.backupFile = backupFile;
         this.sttus = sttus;
         this.errorInfo = errorInfo;

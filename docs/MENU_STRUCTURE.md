@@ -29,6 +29,18 @@
 | ✅ | 로그관리 | `/admin/system/logs` | `/sym/log/lgm/SelectSysLogList.do` | NSYSLOG |
 | ✅ | 파일관리 | `/admin/system/files` | `/cmm/fms/selectFileInfs.do` | NFILE |
 | ✅ | 댓글관리 | `/admin/system/comments` | `/cop/cmt/selectCommentList.do` | NCOMMENT |
+| ✅ | 네트워크관리 | `/admin/system/network` | `/sym/sym/nwk/selectNtwrkList.do` | NNTWRKINFO |
+| ✅ | 서버정보관리 | `/admin/system/server` | `/sym/sym/srv/selectServerList.do` | NSERVERINFO |
+| ✅ | 백업작업관리 | `/admin/system/backup` | `/sym/sym/bak/getBackupOpertList.do` | NBACKUPOPERT |
+| ✅ | 장애관리 | `/admin/system/trouble` | `/sym/tbm/tbr/selectTroblReqstList.do` | NTROBLINFO |
+| ✅ | 서버자원모니터링 | `/admin/system/monitoring/resource` | `/utl/sys/srm/selectServerResrceMntrngList.do` | NSERVERRESRCELOGINFO |
+| ✅ | 프로세스모니터링 | `/admin/system/monitoring/process` | `/utl/sys/prm/selectProcessMonList.do` | NPROCESSMON |
+| ✅ | 데이터베이스모니터링 | `/admin/system/monitoring/db` | `/utl/sys/dbm/selectDbMntrngList.do` | NDBMNTRNG |
+| ✅ | 파일시스템모니터링 | `/admin/system/monitoring/filesys` | `/utl/sys/fsm/selectFileSysMntrngList.do` | NFILESYSMNTRNG |
+| ✅ | HTTP모니터링 | `/admin/system/monitoring/http` | `/utl/sys/htm/selectHttpMonList.do` | NHTTPMON |
+| ✅ | 네트워크서비스모니터링 | `/admin/system/monitoring/ntwrksvc` | `/utl/sys/nsm/selectNtwrkSvcMntrngList.do` | NNTWRKSVCMNTRNG |
+| ✅ | 송수신모니터링 | `/admin/system/monitoring/trsmrcv` | `/utl/sys/trm/selectTrsmrcvMntrngList.do` | NTRSMRCVMNTRNG |
+| ✅ | 서버동기화관리 | `/admin/system/sync-server` | `/utl/sys/ssy/selectSynchrnServerList.do` | NSYNCSRVINFO |
 
 ## 2. 협업 및 업무 지원 (Collaboration & Operations)
 
@@ -40,6 +52,8 @@
 | ✅ | 동호회관리 | `/admin/community` | `/cop/cmy/selectCmmntyInfs.do` | NCMMNTY |
 | ✅ | 스크랩관리 | `/cop/scp/selectScrapList` | `/cop/scp/selectScrapList.do` | NSCRAP |
 | ✅ | 명함/주소록 | `/cop/adb/selectAddressBookList` | `/cop/adb/selectAdbkList.do` | NADBK, NNCRD |
+| ✅ | 약식결재관리 | `/admin/system/ism` | `/uss/ion/ism/selectInfrmlSanctnList.do` | NINFRMLSANCTN |
+| ✅ | 쪽지관리 | `/note` | `/uss/ion/ntm/selectNoteManageList.do` | NNOTE |
 
 ### 2.2. 일정 및 보고 (`cop/smt`)
 | 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
@@ -48,6 +62,17 @@
 | ✅ | 부서일정관리 | `/cop/smt/dsm/selectDeptScheduleList` | `/cop/smt/dsm/EgovDeptSchdulManageList.do` | NSCHDULINFO |
 | ✅ | 부서업무관리 | `/cop/smt/djm/selectDeptJobList` | `/cop/smt/djm/selectDeptJobBxList.do` | NDEPTJOBBX |
 | ✅ | 주간/월간보고 | `/cop/smt/wmr/selectReportList` | `/cop/smt/wmr/selectWikMnthngReprtList.do` | NWIKMNTHNGREPRT |
+
+### 2.3. 부가 서비스 (`uss/ion`)
+| 이관 상태 | 메뉴명 | Modern URL (Next.js) | Legacy URL (.do) | 주요 테이블 |
+|:---:|---|---|---|---|
+| ✅ | 행사관리 | `/uss/ion/events` | `/uss/ion/evt/selectEventManageList.do` | NEVENTINFO |
+| ✅ | 행사/캠페인관리 | `/uss/ion/event-campaigns` | `/uss/ion/ecc/selectEventCmpgnList.do` | NEVENTCMPGN |
+| ✅ | 휴가관리 | `/uss/ion/vacations` | `/uss/ion/vct/selectVcatnManageList.do` | NVCATNMANAGE |
+| ✅ | 포상관리 | `/uss/ion/rewards` | `/uss/ion/rwd/selectRwardManageList.do` | NRWARDMANAGE |
+| ✅ | 기념일관리 | `/uss/ion/anniversaries` | `/uss/ion/ans/selectAnnvrsryManageList.do` | NANNVRSRYMANAGE |
+| ✅ | 경조사관리 | `/uss/ion/ctsnn` | `/uss/ion/ctn/selectCtsnnManageList.do` | NCTSNNMANAGE |
+| ✅ | 사용자부재관리 | `/uss/ion/user-absences` | `/uss/ion/uas/selectUserAbsnceList.do` | NUSERABSNCE |
 
 ## 3. 통계 및 지원 서비스 (Stats & Help)
 

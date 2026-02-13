@@ -5,26 +5,30 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * 배치작업 JPA Entity
+ * 레거시 테이블: COMTNBATCHOPERT
+ */
+@Entity
+@Table(name = "NBATCHOPERT")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "NBATCHOPERT")
 public class BatchOpert {
 
     @Id
     @Column(name = "BATCH_OPERT_ID", length = 20)
     private String batchOpertId;
 
-    @Column(name = "BATCH_OPERT_NM", length = 60)
+    @Column(name = "BATCH_OPERT_NM", length = 100, nullable = false)
     private String batchOpertNm;
 
     @Column(name = "BATCH_PROGRM", length = 255)
     private String batchProgrm;
 
-    @Column(name = "PARAMTR", length = 250)
+    @Column(name = "PARAMTR", length = 500)
     private String paramtr;
 
     @Column(name = "USE_AT", length = 1)
@@ -34,22 +38,21 @@ public class BatchOpert {
     private String frstRegisterId;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
+    private LocalDateTime lastUpdusrPnttm;
 
-    @PrePersist
-    public void prePersist() {
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.lastUpdtPnttm = LocalDateTime.now();
+    public void update(String batchOpertNm, String batchProgrm, String paramtr,
+            String useAt, String updusrId) {
+        this.batchOpertNm = batchOpertNm;
+        this.batchProgrm = batchProgrm;
+        this.paramtr = paramtr;
+        this.useAt = useAt;
+        this.lastUpdusrId = updusrId;
+        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

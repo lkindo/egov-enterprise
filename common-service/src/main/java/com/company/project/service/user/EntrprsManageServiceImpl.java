@@ -17,14 +17,15 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class EntrprsManageService implements EgovEntrprsManageService {
+public class EntrprsManageServiceImpl implements EgovEntrprsManageService {
 
     private final EnterpriseUserRepository enterpriseUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public Page<EnterpriseUserDto> getEntrprsList(String keyword, Pageable pageable) {
-        return enterpriseUserRepository.searchEnterpriseUsers(keyword, pageable).map(EnterpriseUserDto::from);
+        return enterpriseUserRepository.searchEnterpriseUsers(null, "1", keyword, pageable)
+                .map(EnterpriseUserDto::from);
     }
 
     @Override

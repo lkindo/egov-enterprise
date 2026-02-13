@@ -2,10 +2,7 @@ package com.company.project.domain.duty;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -16,6 +13,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "NBNDTMANAGE")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(BndtManageId.class)
 public class BndtManage extends BaseEntity {
@@ -32,13 +30,21 @@ public class BndtManage extends BaseEntity {
     private String remark;
 
     @Builder
-    public BndtManage(String bndtId, String bndtDe, String remark) {
+    public BndtManage(String bndtId, String bndtDe, String remark, String frstRegisterId) {
         this.bndtId = bndtId;
         this.bndtDe = bndtDe;
         this.remark = remark;
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String remark) {
+        this.update(remark, null);
+    }
+
+    public void update(String remark, String userId) {
         this.remark = remark;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

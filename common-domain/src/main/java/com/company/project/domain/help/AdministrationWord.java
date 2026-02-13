@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 행정용어 정보 Entity
@@ -17,7 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NADMINISTRATIONWORD")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class AdministrationWord extends BaseEntity {
 
     @Id
@@ -51,7 +51,7 @@ public class AdministrationWord extends BaseEntity {
     @Builder
     public AdministrationWord(String administWordId, String administWordNm, String administWordEngNm,
                              String administWordAbrv, String themaRelm, String wordDomn, String stdWord,
-                             String administWordDf, String administWordDc) {
+                             String administWordDf, String administWordDc, String frstRegisterId) {
         this.administWordId = administWordId;
         this.administWordNm = administWordNm;
         this.administWordEngNm = administWordEngNm;
@@ -61,10 +61,11 @@ public class AdministrationWord extends BaseEntity {
         this.stdWord = stdWord;
         this.administWordDf = administWordDf;
         this.administWordDc = administWordDc;
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String administWordNm, String administWordEngNm, String administWordAbrv,
-                      String themaRelm, String wordDomn, String stdWord, String administWordDf, String administWordDc) {
+                      String themaRelm, String wordDomn, String stdWord, String administWordDf, String administWordDc, String userId) {
         this.administWordNm = administWordNm;
         this.administWordEngNm = administWordEngNm;
         this.administWordAbrv = administWordAbrv;
@@ -73,5 +74,8 @@ public class AdministrationWord extends BaseEntity {
         this.stdWord = stdWord;
         this.administWordDf = administWordDf;
         this.administWordDc = administWordDc;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

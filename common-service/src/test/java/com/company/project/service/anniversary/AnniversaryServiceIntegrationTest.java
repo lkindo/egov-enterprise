@@ -1,7 +1,7 @@
 package com.company.project.service.anniversary;
 
 import com.company.project.domain.anniversary.Anniversary;
-import com.company.project.domain.anniversary.AnniversaryDomainRepository;
+import com.company.project.domain.anniversary.AnniversaryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class AnniversaryServiceIntegrationTest {
     private AnniversaryService anniversaryService;
 
     @Autowired
-    private AnniversaryDomainRepository anniversaryRepository;
+    private AnniversaryRepository anniversaryRepository;
 
     private Anniversary ann1;
     private Anniversary ann2;
@@ -32,8 +32,7 @@ public class AnniversaryServiceIntegrationTest {
                 .annvrsryNm("Birthday")
                 .annvrsryDe("20231010")
                 .cldrSe("1")
-                .reptitSe("1")
-                .frstRegisterId("USER_001")
+                .reptitAt("1")
                 .build();
         anniversaryRepository.save(ann1);
 
@@ -44,15 +43,15 @@ public class AnniversaryServiceIntegrationTest {
                 .annvrsryNm("Wedding")
                 .annvrsryDe("20231225")
                 .cldrSe("1")
-                .reptitSe("1")
-                .frstRegisterId("USER_001")
+                .reptitAt("1")
                 .build();
         anniversaryRepository.save(ann2);
     }
 
     @Test
     void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
-        // Checking if "Birthday" on "20231010" is a duplicate, EXCLUDING ANN_001 (itself)
+        // Checking if "Birthday" on "20231010" is a duplicate, EXCLUDING ANN_001
+        // (itself)
         // Should be 0
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
         assertThat(count).isEqualTo(0);
@@ -60,7 +59,8 @@ public class AnniversaryServiceIntegrationTest {
 
     @Test
     void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
-        // Checking if "Birthday" on "20231010" is a duplicate, EXCLUDING ANN_002 (other)
+        // Checking if "Birthday" on "20231010" is a duplicate, EXCLUDING ANN_002
+        // (other)
         // Should be 1 (because ANN_001 exists with these details)
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
         assertThat(count).isEqualTo(1);

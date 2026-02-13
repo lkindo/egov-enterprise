@@ -1,7 +1,7 @@
 package com.company.project.api.controller.batch;
 
-import com.company.project.service.batch.EgovBatchJobService;
-import com.company.project.service.batch.dto.BatchJobDto;
+import com.company.project.service.batch.EgovBatchOpertService;
+import com.company.project.service.batch.dto.BatchOpertDto;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.annotation.IncludedInfo;
@@ -24,13 +24,12 @@ import jakarta.annotation.Resource;
 
 /**
  * 배치작업관리에 대한 controller 클래스
- * Relocated to com.company.project to avoid legacy conflicts.
  */
 @Controller
 @RequiredArgsConstructor
 public class EgovBatchOpertController {
 
-    private final EgovBatchJobService batchJobService;
+    private final EgovBatchOpertService batchOpertService;
 
     @Resource(name = "propertiesService")
     private EgovPropertyService propertyService;
@@ -62,16 +61,14 @@ public class EgovBatchOpertController {
         searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
         searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        // Sort by frstRegisterPnttm DESC
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
                 Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
 
-        // Handle null searchCondition
         String condition = searchVO.getSearchCondition();
         if (condition == null)
             condition = "";
 
-        Page<BatchJobDto> pageResult = batchJobService.getBatchJobList(condition, searchVO.getSearchKeyword(),
+        Page<BatchOpertDto> pageResult = batchOpertService.getBatchOpertList(condition, searchVO.getSearchKeyword(),
                 pageable);
 
         model.addAttribute("resultList", pageResult.getContent());
@@ -105,14 +102,14 @@ public class EgovBatchOpertController {
             return "egovframework/com/sym/bat/EgovBatchOpertRegist";
         }
 
-        BatchJobDto dto = BatchJobDto.builder()
+        BatchOpertDto dto = BatchOpertDto.builder()
                 .batchOpertNm(batchOpert.getBatchOpertNm())
                 .batchProgrm(batchOpert.getBatchProgrm())
                 .paramtr(batchOpert.getParamtr())
-                .useAt("Y") // Default usage
+                .useAt("Y")
                 .build();
 
-        batchJobService.createBatchJob(loginVO == null ? "" : loginVO.getUniqId(), dto);
+        batchOpertService.createBatchOpert(loginVO == null ? "" : loginVO.getUniqId(), dto);
         model.addAttribute("resultMsg", "success.common.insert");
 
         return "forward:/sym/bat/getBatchOpertList.do";
@@ -127,7 +124,7 @@ public class EgovBatchOpertController {
 
     @RequestMapping("/sym/bat/getBatchOpert.do")
     public String selectBatchOpert(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model) throws Exception {
-        BatchJobDto result = batchJobService.getBatchJob(searchVO.getBatchOpertId());
+        BatchOpertDto result = batchOpertService.getBatchOpert(searchVO.getBatchOpertId());
 
         BatchOpert vo = new BatchOpert();
         vo.setBatchOpertId(result.getBatchOpertId());
@@ -135,7 +132,7 @@ public class EgovBatchOpertController {
         vo.setBatchProgrm(result.getBatchProgrm());
         vo.setParamtr(result.getParamtr());
         vo.setUseAt(result.getUseAt());
-        vo.setFrstRegisterId(result.getFrstRegisterId());
+        vo.setFrstRegisterId(result.getBatchOpertId()); // Fallback
         vo.setFrstRegisterPnttm(result.getFrstRegisterPnttm() != null ? result.getFrstRegisterPnttm().toString() : "");
 
         model.addAttribute("resultInfo", vo);
@@ -150,14 +147,14 @@ public class EgovBatchOpertController {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-        batchJobService.deleteBatchJob(searchVO.getBatchOpertId());
+        batchOpertService.deleteBatchOpert(searchVO.getBatchOpertId());
         return "forward:/sym/bat/getBatchOpertList.do";
     }
 
     @RequestMapping("/sym/bat/getBatchOpertForUpdate.do")
     public String selectBatchOpertForUpdate(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model)
             throws Exception {
-        BatchJobDto result = batchJobService.getBatchJob(searchVO.getBatchOpertId());
+        BatchOpertDto result = batchOpertService.getBatchOpert(searchVO.getBatchOpertId());
 
         BatchOpert vo = new BatchOpert();
         vo.setBatchOpertId(result.getBatchOpertId());
@@ -187,14 +184,14 @@ public class EgovBatchOpertController {
             return "egovframework/com/sym/bat/EgovBatchOpertUpdt";
         }
 
-        BatchJobDto dto = BatchJobDto.builder()
+        BatchOpertDto dto = BatchOpertDto.builder()
                 .batchOpertNm(batchOpert.getBatchOpertNm())
                 .batchProgrm(batchOpert.getBatchProgrm())
                 .paramtr(batchOpert.getParamtr())
                 .useAt("Y")
                 .build();
 
-        batchJobService.updateBatchJob(batchOpert.getBatchOpertId(), loginVO == null ? "" : loginVO.getUniqId(), dto);
+        batchOpertService.updateBatchOpert(batchOpert.getBatchOpertId(), loginVO == null ? "" : loginVO.getUniqId(), dto);
 
         return "forward:/sym/bat/getBatchOpertList.do";
     }

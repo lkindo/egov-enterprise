@@ -27,6 +27,11 @@ public class SmsService implements EgovSmsService {
     private final SmsSender smsSender;
 
     @Override
+    public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
+        return getSmsList("1", keyword, pageable); // Default to content search
+    }
+
+    @Override
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(SmsDto::from);
     }
@@ -42,13 +47,13 @@ public class SmsService implements EgovSmsService {
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
         String smsId = "SMS_" + String.format("%013d", System.currentTimeMillis());
-        
+
         Sms sms = Sms.builder()
                 .smsId(smsId)
                 .trnsmitTelno(dto.getTrnsmitTelno())
                 .trnsmitCn(dto.getTrnsmitCn())
                 .build();
-        
+
         smsRepository.save(sms);
 
         if (dto.getRecipients() != null) {
@@ -59,7 +64,7 @@ public class SmsService implements EgovSmsService {
                         .resultCode("P") // Pending
                         .build();
                 smsRecptnRepository.save(recptn);
-                
+
                 // 실제 SMS 발송 처리 (비동기 처리 고려 가능)
                 try {
                     smsSender.send(dto.getTrnsmitTelno(), recptnDto.getRecptnTelno(), dto.getTrnsmitCn());

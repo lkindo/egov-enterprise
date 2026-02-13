@@ -1,14 +1,8 @@
 package com.company.project.domain.survey;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 /**
  * 설문 문항 정보 Entity
@@ -17,7 +11,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NQUSTNRQESITM")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QustnrQesitm extends BaseEntity {
 
     @Id
@@ -26,6 +23,9 @@ public class QustnrQesitm extends BaseEntity {
 
     @Column(name = "QESTNR_ID", length = 20, nullable = false)
     private String qestnrId;
+
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    private String qestnrTmplatId;
 
     @Column(name = "QESTN_SN")
     private Long qestnSn;
@@ -39,25 +39,18 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "MXMM_CHOISE_CO")
     private Integer mxmmChoiseCo;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
-    private String qestnrTmplatId;
-
-    @Builder
-    public QustnrQesitm(String qestnrQesitmId, String qestnrId, Long qestnSn, String qestnTyCode,
-                       String qestnCn, Integer mxmmChoiseCo, String qestnrTmplatId) {
-        this.qestnrQesitmId = qestnrQesitmId;
-        this.qestnrId = qestnrId;
-        this.qestnSn = qestnSn;
-        this.qestnTyCode = qestnTyCode;
-        this.qestnCn = qestnCn;
-        this.mxmmChoiseCo = mxmmChoiseCo;
-        this.qestnrTmplatId = qestnrTmplatId;
-    }
-
     public void update(Long qestnSn, String qestnTyCode, String qestnCn, Integer mxmmChoiseCo) {
         this.qestnSn = qestnSn;
         this.qestnTyCode = qestnTyCode;
         this.qestnCn = qestnCn;
         this.mxmmChoiseCo = mxmmChoiseCo;
+    }
+
+    public void setLastUpdtPnttm(String pnttm) {
+        // Compatibility
+    }
+
+    public void setFrstRegisterPnttm(String pnttm) {
+        // Compatibility
     }
 }

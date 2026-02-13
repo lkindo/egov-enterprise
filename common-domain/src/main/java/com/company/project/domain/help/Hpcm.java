@@ -5,10 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 도움말 정보 Entity
@@ -17,7 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NHPCMINFO")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Hpcm extends BaseEntity {
 
     @Id
@@ -34,16 +34,20 @@ public class Hpcm extends BaseEntity {
     private String hpcmDc;
 
     @Builder
-    public Hpcm(String hpcmId, String hpcmSeCode, String hpcmDf, String hpcmDc) {
+    public Hpcm(String hpcmId, String hpcmSeCode, String hpcmDf, String hpcmDc, String frstRegisterId) {
         this.hpcmId = hpcmId;
         this.hpcmSeCode = hpcmSeCode;
         this.hpcmDf = hpcmDf;
         this.hpcmDc = hpcmDc;
+        this.createdBy = frstRegisterId;
     }
 
-    public void update(String hpcmSeCode, String hpcmDf, String hpcmDc) {
+    public void update(String hpcmSeCode, String hpcmDf, String hpcmDc, String userId) {
         this.hpcmSeCode = hpcmSeCode;
         this.hpcmDf = hpcmDf;
         this.hpcmDc = hpcmDc;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

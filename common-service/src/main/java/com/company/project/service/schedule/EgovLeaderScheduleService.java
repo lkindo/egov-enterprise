@@ -7,13 +7,13 @@ import org.springframework.data.domain.Pageable;
 
 public interface EgovLeaderScheduleService {
 
-    Page<LeaderScheduleDto> getLeaderScheduleList(String searchKeyword, Pageable pageable);
+    Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, Pageable pageable);
 
     LeaderScheduleDto getLeaderSchedule(String scheduleId);
 
-    void registerLeaderSchedule(LeaderScheduleDto dto);
+    String createLeaderSchedule(String userId, LeaderScheduleDto dto);
 
-    void updateLeaderSchedule(LeaderScheduleDto dto);
+    void updateLeaderSchedule(String scheduleId, String userId, LeaderScheduleDto dto);
 
     void deleteLeaderSchedule(String scheduleId);
 

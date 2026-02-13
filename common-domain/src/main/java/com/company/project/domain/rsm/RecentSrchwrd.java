@@ -2,10 +2,7 @@ package com.company.project.domain.rsm;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 최근 검색어 정보 Entity
@@ -14,23 +11,27 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NRECENTSRCHWRD")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RecentSrchwrd extends BaseEntity {
 
     @Id
     @Column(name = "RECENT_SRCHWRD_ID", length = 20)
     private String srchwrdId;
 
-    @Column(name = "SRCHWRD_MANAGE_ID", length = 20, nullable = false)
-    private String srchwrdManageId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SRCHWRD_MANAGE_ID")
+    private RecentSrchwrdManage recentSrchwrdManage;
 
     @Column(name = "RECENT_SRCHWRD_NM", length = 255, nullable = false)
     private String srchwrdNm;
 
-    @Builder
-    public RecentSrchwrd(String srchwrdId, String srchwrdManageId, String srchwrdNm) {
-        this.srchwrdId = srchwrdId;
-        this.srchwrdManageId = srchwrdManageId;
-        this.srchwrdNm = srchwrdNm;
+    @Column(name = "SRCHWRD_MANAGE_ID", insertable = false, updatable = false)
+    private String srchwrdManageId;
+
+    public String getSrchwrdManageId() {
+        return recentSrchwrdManage != null ? recentSrchwrdManage.getSrchwrdManageId() : srchwrdManageId;
     }
 }

@@ -2,10 +2,7 @@ package com.company.project.domain.duty;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -16,8 +13,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "NBNDTDIARY")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@IdClass(BndtDiaryId.class)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BndtDiary extends BaseEntity {
 
     @Id
@@ -40,15 +39,23 @@ public class BndtDiary extends BaseEntity {
     private String chckSttus;
 
     @Builder
-    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus) {
+    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus, String frstRegisterId) {
         this.bndtId = bndtId;
         this.bndtDe = bndtDe;
         this.bndtCeckSe = bndtCeckSe;
         this.bndtCeckCd = bndtCeckCd;
         this.chckSttus = chckSttus;
+        this.createdBy = frstRegisterId;
     }
 
     public void update(String chckSttus) {
+        this.update(chckSttus, null);
+    }
+
+    public void update(String chckSttus, String userId) {
         this.chckSttus = chckSttus;
+        if (userId != null) {
+            this.lastModifiedBy = userId;
+        }
     }
 }

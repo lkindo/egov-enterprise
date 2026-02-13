@@ -55,6 +55,14 @@ public class MemoReportDto {
     @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
+    public String getFrstRegisterId() {
+        return wrterId;
+    }
+
+    public LocalDateTime getFrstRegistPnttm() {
+        return createdDate;
+    }
+
     public static MemoReportDto from(MemoReport entity) {
         if (entity == null) return null;
         return MemoReportDto.builder()

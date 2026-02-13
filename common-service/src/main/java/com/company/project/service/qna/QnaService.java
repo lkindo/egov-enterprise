@@ -20,26 +20,21 @@ public class QnaService implements EgovQnaService {
 
     @Override
     public Page<QnaDto> getQnaList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return qnaRepository.findAll(pageable).map(QnaDto::from);
-        }
-        return qnaRepository.findByQestnSjContaining(keyword, pageable).map(QnaDto::from);
+        return qnaRepository.searchQnas(keyword, pageable).map(QnaDto::from);
     }
 
     @Override
-    @Transactional
     public QnaDto getQna(String qaId) {
-        Qna entity = qnaRepository.findById(qaId)
+        return qnaRepository.findById(qaId)
+                .map(QnaDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.increaseInqireCo();
-        return QnaDto.from(entity);
     }
 
     @Override
     @Transactional
-    public void insertQna(String userId, QnaDto dto) {
-        String id = "QA_" + String.format("%013d", System.currentTimeMillis());
-        qnaRepository.save(Qna.builder()
+    public String createQna(String userId, QnaDto dto) {
+        String id = "QNA_" + String.format("%016d", System.currentTimeMillis());
+        Qna entity = Qna.builder()
                 .qaId(id)
                 .qestnSj(dto.getQestnSj())
                 .qestnCn(dto.getQestnCn())
@@ -50,7 +45,12 @@ public class QnaService implements EgovQnaService {
                 .areaNo(dto.getAreaNo())
                 .middleTelno(dto.getMiddleTelno())
                 .endTelno(dto.getEndTelno())
-                .build());
+                .qnaProcessSttusCode("Q")
+                .writngDe(java.time.LocalDate.now().toString().replace("-", ""))
+                .frstRegisterId(userId)
+                .build();
+        qnaRepository.save(entity);
+        return id;
     }
 
     @Override
@@ -59,20 +59,33 @@ public class QnaService implements EgovQnaService {
         Qna entity = qnaRepository.findById(qaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updateQuestion(dto.getQestnSj(), dto.getQestnCn(), dto.getEmailAdres(),
-                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
+                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
     }
 
     @Override
     @Transactional
-    public void deleteQna(String qaId) {
+    public void deleteQna(String qaId, String userId) {
         qnaRepository.deleteById(qaId);
     }
 
     @Override
     @Transactional
-    public void answerQna(String qaId, String userId, String answerCn) {
+    public void updateAnswer(String qaId, String userId, String answerCn) {
         Qna entity = qnaRepository.findById(qaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.answer(answerCn);
+        entity.answer(answerCn, userId);
+    }
+
+    @Override
+    @Transactional
+    public void increaseViewCount(String qaId) {
+        qnaRepository.findById(qaId).ifPresent(Qna::increaseInqireCo);
+    }
+
+    @Override
+    public boolean checkPassword(String qaId, String password) {
+        return qnaRepository.findById(qaId)
+                .map(e -> e.getWritngPassword() != null && e.getWritngPassword().equals(password))
+                .orElse(false);
     }
 }

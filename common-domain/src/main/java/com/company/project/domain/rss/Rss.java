@@ -1,23 +1,16 @@
 package com.company.project.domain.rss;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
-/**
- * RSS 정보 Entity
- * 레거시 테이블: NRSS
- */
-@Entity
-@Table(name = "NRSS")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "NRSSMANAGE")
 public class Rss extends BaseEntity {
 
     @Id
@@ -39,7 +32,7 @@ public class Rss extends BaseEntity {
     @Column(name = "HDER_LINK", length = 255)
     private String hderLink;
 
-    @Column(name = "HDER_DC", columnDefinition = "TEXT")
+    @Column(name = "HDER_DC", length = 255)
     private String hderDc;
 
     @Column(name = "HDER_TAG", length = 255)
@@ -54,7 +47,7 @@ public class Rss extends BaseEntity {
     @Column(name = "BDT_LINK", length = 255)
     private String bdtLink;
 
-    @Column(name = "BDT_DC", columnDefinition = "TEXT")
+    @Column(name = "BDT_DC", length = 255)
     private String bdtDc;
 
     @Column(name = "BDT_TAG", length = 255)
@@ -63,29 +56,9 @@ public class Rss extends BaseEntity {
     @Column(name = "BDT_ETC_TAG", length = 255)
     private String bdtEtcTag;
 
-    @Builder
-    public Rss(String rssId, String trgetSvcNm, String trgetSvcTable, Integer trgetSvcListCo,
-               String hderTitle, String hderLink, String hderDc, String hderTag, String hderEtc,
-               String bdtTitle, String bdtLink, String bdtDc, String bdtTag, String bdtEtcTag) {
-        this.rssId = rssId;
-        this.trgetSvcNm = trgetSvcNm;
-        this.trgetSvcTable = trgetSvcTable;
-        this.trgetSvcListCo = trgetSvcListCo;
-        this.hderTitle = hderTitle;
-        this.hderLink = hderLink;
-        this.hderDc = hderDc;
-        this.hderTag = hderTag;
-        this.hderEtc = hderEtc;
-        this.bdtTitle = bdtTitle;
-        this.bdtLink = bdtLink;
-        this.bdtDc = bdtDc;
-        this.bdtTag = bdtTag;
-        this.bdtEtcTag = bdtEtcTag;
-    }
-
     public void update(String trgetSvcNm, String trgetSvcTable, Integer trgetSvcListCo,
-                      String hderTitle, String hderLink, String hderDc, String hderTag, String hderEtc,
-                      String bdtTitle, String bdtLink, String bdtDc, String bdtTag, String bdtEtcTag) {
+                       String hderTitle, String hderLink, String hderDc, String hderTag, String hderEtc,
+                       String bdtTitle, String bdtLink, String bdtDc, String bdtTag, String bdtEtcTag) {
         this.trgetSvcNm = trgetSvcNm;
         this.trgetSvcTable = trgetSvcTable;
         this.trgetSvcListCo = trgetSvcListCo;

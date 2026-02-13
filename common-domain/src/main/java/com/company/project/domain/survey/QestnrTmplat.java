@@ -1,14 +1,10 @@
 package com.company.project.domain.survey;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 설문템플릿 정보 Entity
@@ -17,7 +13,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "NQUSTNRTMPLAT")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QestnrTmplat extends BaseEntity {
 
     @Id
@@ -32,14 +31,6 @@ public class QestnrTmplat extends BaseEntity {
 
     @Column(name = "QUSTNR_TMPLAT_DC", length = 2000)
     private String qestnrTmplatCn;
-
-    @Builder
-    public QestnrTmplat(String qestnrTmplatId, String qestnrTmplatTy, String qestnrTmplatImagepathnm, String qestnrTmplatCn) {
-        this.qestnrTmplatId = qestnrTmplatId;
-        this.qestnrTmplatTy = qestnrTmplatTy;
-        this.qestnrTmplatImagepathnm = qestnrTmplatImagepathnm;
-        this.qestnrTmplatCn = qestnrTmplatCn;
-    }
 
     public void update(String qestnrTmplatTy, String qestnrTmplatImagepathnm, String qestnrTmplatCn) {
         this.qestnrTmplatTy = qestnrTmplatTy;

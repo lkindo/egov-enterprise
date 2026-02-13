@@ -1,8 +1,8 @@
 package com.company.project.service.batch;
 
 import com.company.project.BenchmarkTestConfig;
-import com.company.project.domain.batch.BatchJob;
-import com.company.project.domain.batch.BatchJobRepository;
+import com.company.project.domain.batch.BatchOpert;
+import com.company.project.domain.batch.BatchOpertRepository;
 import com.company.project.domain.batch.BatchSchdul;
 import com.company.project.domain.batch.BatchSchdulDfk;
 import com.company.project.domain.batch.BatchSchdulRepository;
@@ -38,7 +38,7 @@ public class BatchSchdulServiceBenchmarkTest {
     private BatchSchdulRepository batchSchdulRepository;
 
     @Autowired
-    private BatchJobRepository batchJobRepository;
+    private BatchOpertRepository batchOpertRepository;
 
     @Test
     @Transactional
@@ -47,12 +47,12 @@ public class BatchSchdulServiceBenchmarkTest {
         int count = 200;
 
         // Create BatchJob
-        BatchJob job = BatchJob.builder()
+        BatchOpert job = BatchOpert.builder()
                 .batchOpertId("JOB_TEST")
                 .batchOpertNm("Test Job")
                 .batchProgrm("Test Program")
                 .build();
-        batchJobRepository.save(job);
+        batchOpertRepository.save(job);
 
         List<BatchSchdul> schduls = new ArrayList<>();
 

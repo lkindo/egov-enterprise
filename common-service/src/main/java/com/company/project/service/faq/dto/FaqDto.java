@@ -34,11 +34,17 @@ public class FaqDto {
     @Schema(description = "첨부파일 ID")
     private String atchFileId;
 
-    @Schema(description = "등록자 ID")
-    private String createdBy;
+    @Schema(description = "최초등록자 ID")
+    private String frstRegisterId;
 
-    @Schema(description = "등록일시")
-    private LocalDateTime createdDate;
+    @Schema(description = "최초등록시점")
+    private LocalDateTime frstRegisterPnttm;
+
+    @Schema(description = "최종수정자 ID")
+    private String lastUpdusrId;
+
+    @Schema(description = "최종수정시점")
+    private LocalDateTime lastUpdusrPnttm;
 
     public static FaqDto from(Faq entity) {
         if (entity == null) return null;
@@ -49,8 +55,10 @@ public class FaqDto {
                 .answerCn(entity.getAnswerCn())
                 .inqireCo(entity.getInqireCo())
                 .atchFileId(entity.getAtchFileId())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

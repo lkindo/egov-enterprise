@@ -32,6 +32,6 @@ public interface BatchSchdulRepository extends JpaRepository<BatchSchdul, String
                             .map(row -> findById((String) row[0]).orElse(null));
        }
 
-       @Query("select d from BatchSchdulDfk d where d.batchSchdulId in :ids")
+       @Query("select d from BatchSchdulDfk d where d.id.batchSchdulId in :ids")
        java.util.List<BatchSchdulDfk> findAllDfksByBatchSchdulIdIn(@Param("ids") java.util.Collection<String> ids);
 }

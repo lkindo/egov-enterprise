@@ -17,14 +17,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MberManageService implements EgovMberManageService {
+public class MberManageServiceImpl implements EgovMberManageService {
 
     private final GeneralUserRepository generalUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public Page<GeneralUserDto> getMberList(String keyword, Pageable pageable) {
-        return generalUserRepository.searchGeneralUsers(keyword, pageable).map(GeneralUserDto::from);
+        return generalUserRepository.searchGeneralUsers(null, "1", keyword, pageable).map(GeneralUserDto::from);
     }
 
     @Override

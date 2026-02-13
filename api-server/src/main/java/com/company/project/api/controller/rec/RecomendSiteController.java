@@ -38,10 +38,10 @@ public class RecomendSiteController {
 
     @Operation(summary = "추천사이트 등록", description = "새로운 추천 사이트를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertRecomendSite(
+    public ResponseEntity<ApiResponse<String>> insertRecomendSite(
             @RequestBody RecomendSiteDto dto) {
-        recomendSiteService.insertRecomendSite(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        String id = recomendSiteService.createRecomendSite("ADMIN", dto);
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "추천사이트 수정", description = "기존 추천 사이트 정보를 수정합니다.")
@@ -49,8 +49,7 @@ public class RecomendSiteController {
     public ResponseEntity<ApiResponse<Void>> updateRecomendSite(
             @PathVariable String recomendSiteId,
             @RequestBody RecomendSiteDto dto) {
-        dto.setRecomendSiteId(recomendSiteId);
-        recomendSiteService.updateRecomendSite(dto);
+        recomendSiteService.updateRecomendSite(recomendSiteId, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

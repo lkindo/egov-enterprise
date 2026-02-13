@@ -1,0 +1,45 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ main, master, 'feature/**' ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build and Test with Gradle
+      run: ./gradlew build jacocoTestReport
+      
+    - name: Upload JaCoCo Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: jacoco-report
+        path: "**/build/reports/jacoco/test/html/"
+        
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: JUnit Tests
+        path: "**/build/test-results/test/*.xml"
+        reporter: java-junit

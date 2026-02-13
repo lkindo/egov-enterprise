@@ -3,25 +3,33 @@ package com.company.project.domain.backup;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Table(name = "NBACKUPSCHDULDFK")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@IdClass(BackupSchdulDfkId.class)
+@Entity
+@Table(name = "NBACKUPSCHDULDFK")
 public class BackupSchdulDfk {
 
-    @Id
-    @Column(name = "BACKUP_OPERT_ID", length = 20)
-    private String backupOpertId;
+    @EmbeddedId
+    private BackupSchdulDfkId id;
 
-    @Id
-    @Column(name = "EXECUT_SCHDUL_DFK_SE", length = 1)
-    private String executSchdulDfkSe;
+    @Builder
+    public BackupSchdulDfk(String backupOpertId, String executSchdulDfkSe, BackupOpert backupOpert) {
+        this.id = new BackupSchdulDfkId(backupOpertId, executSchdulDfkSe);
+        this.backupOpert = backupOpert;
+    }
 
+    @MapsId("backupOpertId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BACKUP_OPERT_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "BACKUP_OPERT_ID")
     private BackupOpert backupOpert;
+
+    public String getBackupOpertId() {
+        return id != null ? id.getBackupOpertId() : null;
+    }
+
+    public String getExecutSchdulDfkSe() {
+        return id != null ? id.getExecutSchdulDfkSe() : null;
+    }
 }

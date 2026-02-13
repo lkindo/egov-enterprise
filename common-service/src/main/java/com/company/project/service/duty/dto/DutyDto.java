@@ -29,8 +29,19 @@ public class DutyDto {
     @Schema(description = "비고")
     private String remark;
 
+    @Schema(description = "등록자 ID")
+    private String createdBy;
+
     @Schema(description = "등록일시")
     private LocalDateTime createdDate;
+
+    public String getFrstRegisterId() {
+        return createdBy;
+    }
+
+    public LocalDateTime getFrstRegistPnttm() {
+        return createdDate;
+    }
 
     @Schema(description = "당직 일지 목록")
     private List<DutyDiaryDto> diaries;
@@ -41,6 +52,7 @@ public class DutyDto {
                 .bndtId(entity.getBndtId())
                 .bndtDe(entity.getBndtDe())
                 .remark(entity.getRemark())
+                .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

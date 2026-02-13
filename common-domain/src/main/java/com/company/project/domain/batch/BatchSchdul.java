@@ -18,12 +18,16 @@ public class BatchSchdul {
     @Column(name = "BATCH_SCHDUL_ID", length = 20)
     private String batchSchdulId;
 
-    @Column(name = "BATCH_OPERT_ID", length = 20)
+    @Transient
     private String batchOpertId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BATCH_OPERT_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "BATCH_OPERT_ID")
     private BatchOpert batchOpert;
+
+    public String getBatchOpertId() {
+        return batchOpert != null ? batchOpert.getBatchOpertId() : batchOpertId;
+    }
 
     @OneToMany(mappedBy = "batchSchdul", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
