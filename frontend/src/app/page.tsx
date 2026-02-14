@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { vacationService } from '@/services/vacationService';
@@ -20,6 +21,15 @@ import { cn } from '@/lib/utils';
 import { StandardChartWrapper } from './components/ui/standard-chart-wrapper';
 import { StatusBadge } from './components/ui/status-badge';
 import { useToast } from './components/ui/toast';
+
+// 가상 차트 데이터 (Static data moved outside to prevent recreation)
+const chartData = [
+  { name: '월', work: 4 },
+  { name: '화', work: 7 },
+  { name: '수', work: 5 },
+  { name: '목', work: 8 },
+  { name: '금', work: 3 },
+];
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
@@ -55,15 +65,6 @@ export default function UnifiedDashboard() {
     }
     loadDashboardData();
   }, [toast]);
-
-  // 가상 차트 데이터
-  const chartData = [
-    { name: '월', work: 4 },
-    { name: '화', work: 7 },
-    { name: '수', work: 5 },
-    { name: '목', work: 8 },
-    { name: '금', work: 3 },
-  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -202,9 +203,18 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
           {icon}
           {title}
         </h3>
-        <button className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors">
-          전체보기 <ArrowRight size={12} />
-        </button>
+        {moreHref ? (
+          <Link
+            href={moreHref}
+            className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors"
+          >
+            전체보기 <ArrowRight size={12} />
+          </Link>
+        ) : (
+          <button className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors">
+            전체보기 <ArrowRight size={12} />
+          </button>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-2">
         {loading ? (
@@ -236,11 +246,11 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
 
 function QuickLink({ href, label }: { href: string; label: string }) {
   return (
-    <a 
+    <Link
       href={href} 
       className="p-3 border rounded-xl bg-card text-center text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all shadow-sm"
     >
       {label}
-    </a>
+    </Link>
   );
 }

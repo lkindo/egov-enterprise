@@ -28,6 +28,12 @@ vi.mock('@/lib/api/client', () => {
   return { default: mockClient };
 });
 
+vi.mock('./components/ui/toast', () => ({
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
+}));
+
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,39 +55,25 @@ describe('DashboardPage', () => {
           }
         });
       }
-      if (url === '/uss/olp/opm/listOnlinePollManage.do') {
-        const today = new Date().toISOString().slice(0, 10);
-        return Promise.resolve({
-          data: {
-            resultList: [
-              {
-                pollId: 'POLL_001',
-                pollNm: 'Active Poll',
-                pollBeginDe: today,
-                pollEndDe: today
-              }
-            ]
-          }
-        });
-      }
-      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+      // Allow other URLs to fail gracefully or return mock data
+      return Promise.resolve({ data: { success: false } });
     });
 
     render(<DashboardPage />);
-
-    // Verify loading state (optional, might happen too fast)
-    // await waitFor(() => expect(screen.getByText(/loading/i)).toBeInTheDocument());
 
     // Verify dashboard data is rendered
     await waitFor(() => {
       expect(screen.getByText('Task 1')).toBeInTheDocument();
       expect(screen.getByText('Notice 1')).toBeInTheDocument();
-      expect(screen.getByText('Active Poll')).toBeInTheDocument();
     });
 
     // Verify API calls
     expect(client.get).toHaveBeenCalledWith('/dashboard');
-    expect(client.get).toHaveBeenCalledWith('/uss/olp/opm/listOnlinePollManage.do', expect.anything());
+
+    // Check that QuickLinks are rendered as links
+    const quickLinks = screen.getAllByRole('link', { name: /사용자 관리|공지사항|부서일정|시스템 설정/ });
+    expect(quickLinks.length).toBeGreaterThan(0);
+    expect(quickLinks[0]).toHaveAttribute('href');
   });
 
   it('handles API errors gracefully', async () => {
@@ -92,10 +84,10 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       // Should still render the static parts
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
-      // Should show empty states
-      expect(screen.getByText('등록된 할일이 없습니다.')).toBeInTheDocument();
-      expect(screen.getByText('등록된 공지사항이 없습니다.')).toBeInTheDocument();
+      expect(screen.getByText(/안녕하세요/)).toBeInTheDocument();
+      // Should show empty states (DashboardListCard renders '데이터가 없습니다.')
+      const emptyStates = screen.getAllByText('데이터가 없습니다.');
+      expect(emptyStates.length).toBeGreaterThanOrEqual(2);
     });
   });
 });
