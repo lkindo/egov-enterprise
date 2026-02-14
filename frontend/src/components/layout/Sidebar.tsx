@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import axios from '@/lib/api/client';
+import { SidebarSkeleton } from './SidebarSkeleton';
 
 interface MenuItem {
     menuNo: number;
@@ -66,8 +67,6 @@ const mapLegacyUrl = (url: string) => {
 const Sidebar = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
-    const [parentMenuName, setParentMenuName] = useState('');
 
     // Optimize: Memoize menuNo to prevent redundant API calls on route changes within same section
     const menuNo = useMemo(() => {
@@ -76,18 +75,36 @@ const Sidebar = () => {
         return 0;
     }, [pathname]);
 
+    const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
+    const [parentMenuName, setParentMenuName] = useState('');
+
+    // State for tracking loading and previous menuNo
+    const [prevMenuNo, setPrevMenuNo] = useState(menuNo);
+    const [isLoading, setIsLoading] = useState(menuNo > 0);
+
+    // Update state during render when menuNo changes to prevent stale content flash
+    if (menuNo !== prevMenuNo) {
+        setPrevMenuNo(menuNo);
+        setLeftMenus([]);
+        if (menuNo > 0) {
+            setIsLoading(true);
+            if (menuNo === 3000000) setParentMenuName('협업');
+            else if (menuNo === 2000000) setParentMenuName('알림');
+            else setParentMenuName('');
+        } else {
+            setIsLoading(false);
+            setParentMenuName('');
+        }
+    }
+
     useEffect(() => {
         const fetchLeftMenus = async () => {
-            // Update parent menu name based on active menu number
-            if (menuNo === 3000000) {
-                setParentMenuName('협업');
-            } else if (menuNo === 2000000) {
-                setParentMenuName('알림');
-            } else {
-                setParentMenuName('');
-            }
-
             if (menuNo > 0) {
+                // Determine parent menu name (also done in render, but safe to keep here or rely on render)
+                // We'll rely on render for immediate update, but ensure it's correct here too if needed
+                if (menuNo === 3000000) setParentMenuName('협업');
+                else if (menuNo === 2000000) setParentMenuName('알림');
+
                 try {
                     const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
                     if (response.data.success) {
@@ -95,16 +112,29 @@ const Sidebar = () => {
                     }
                 } catch (error) {
                     console.error('Failed to fetch left menus', error);
+                } finally {
+                    setIsLoading(false);
                 }
             } else {
                 setLeftMenus([]);
+                setIsLoading(false);
             }
         };
 
+        // Only fetch if we are in a loading state or if menuNo changed (which triggers loading state)
+        // But useEffect runs after render.
         fetchLeftMenus();
     }, [menuNo]);
 
-    if (pathname === '/' || pathname === '/login' || leftMenus.length === 0) {
+    if (pathname === '/' || pathname === '/login') {
+        return null;
+    }
+
+    if (isLoading && menuNo > 0) {
+        return <SidebarSkeleton />;
+    }
+
+    if (leftMenus.length === 0) {
         return null;
     }
 

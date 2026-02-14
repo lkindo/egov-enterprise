@@ -80,4 +80,24 @@ describe('Sidebar Component Optimization', () => {
       expect(client.get).toHaveBeenCalledWith('/menu/left?menuNo=3000000');
     });
   });
+
+  it('shows loading skeleton while fetching data', async () => {
+    (usePathname as any).mockReturnValue('/cop/bbs/selectBoardList');
+    // Mock response
+    (client.get as any).mockResolvedValue({
+      data: { success: true, list: [] }
+    });
+
+    const { getByLabelText, queryByLabelText } = render(<Sidebar />);
+
+    // Should show skeleton initially because menuNo > 0 and loading starts immediately
+    expect(getByLabelText('Loading menu')).toBeDefined();
+
+    // Eventually finishes
+    await waitFor(() => {
+      // Skeleton should be gone if list is empty (returns null)
+      // or if list has items (returns nav with '서브 메뉴')
+      expect(queryByLabelText('Loading menu')).toBeNull();
+    });
+  });
 });
