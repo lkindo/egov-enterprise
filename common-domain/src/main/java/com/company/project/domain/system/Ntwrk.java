@@ -7,10 +7,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NNTWRKINFO")
 public class Ntwrk extends BaseEntity {
@@ -50,12 +50,12 @@ public class Ntwrk extends BaseEntity {
 
     @Column(name = "RGSDE")
     private LocalDate regstYmd;
-    
+
     // Missing method for compatibility
     public String getFrstRegisterId() {
         return this.getCreatedBy();
     }
-    
+
     public void setFrstRegisterId(String frstRegisterId) {
         this.setCreatedBy(frstRegisterId);
     }

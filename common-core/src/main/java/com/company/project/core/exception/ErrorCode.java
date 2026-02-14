@@ -28,7 +28,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "Invalid JWT Token"),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Expired JWT Token"),
     AUTH_ERROR(HttpStatus.UNAUTHORIZED, "A004", "Authentication Failed"),
-    
+
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User Not Found"),
     DUPLICATE_USER_ID(HttpStatus.CONFLICT, "U002", "Duplicate User ID"),
@@ -38,7 +38,11 @@ public enum ErrorCode {
     USER_INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "U006", "Invalid Input Value"),
 
     // Code
-    DUPLICATE_CODE(HttpStatus.CONFLICT, "CD01", "Duplicate Code");
+    DUPLICATE_CODE(HttpStatus.CONFLICT, "CD01", "Duplicate Code"),
+
+    // Server
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S001", "Internal Server Error"),
+    SERVER_OVERLOAD(HttpStatus.SERVICE_UNAVAILABLE, "S002", "Server Overload");
 
     private final HttpStatus status;
     private final String code;

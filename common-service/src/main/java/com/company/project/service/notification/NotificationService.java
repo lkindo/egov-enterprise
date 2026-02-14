@@ -43,9 +43,10 @@ public class NotificationService implements EgovNotificationService {
                 .ntfcNo(id)
                 .ntfcSj(dto.getNtfcSj())
                 .ntfcCn(dto.getNtfcCn())
-                .ntfcTime(dto.getNtfcTime())
-                .bhNtfcIntrvl(dto.getBhNtfcIntrvl())
+                .receiverId(userId)
+                .linkUrl(dto.getUniqId()) // Assuming linkUrl mapping
                 .build();
+        entity.setFrstRegisterId(userId);
         notificationRepository.save(entity);
 
         // Send Real-time notification via WebSocket

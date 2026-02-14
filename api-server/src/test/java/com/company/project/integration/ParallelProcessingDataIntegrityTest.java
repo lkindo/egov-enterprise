@@ -122,7 +122,7 @@ class ParallelProcessingDataIntegrityTest {
                 .userNm("일관된 사용자")
                 .esntlId("USR00001")
                 .build();
-        
+
         when(userService.getUserById("consistentUser")).thenReturn(UserDto.from(mockUser));
 
         int numberOfRequests = 20;
@@ -143,11 +143,7 @@ class ParallelProcessingDataIntegrityTest {
                     // Parse and return the user data
                     String content = result.getResponse().getContentAsString();
                     // In a real scenario, we would parse the JSON response
-                    return UserDto.builder()
-                            .userId("consistentUser")
-                            .userNm("일관된 사용자")
-                            .esntlId("USR00001")
-                            .build();
+                    return new UserDto("consistentUser", "일관된 사용자", "USR00001", null, null, null, null);
                 } finally {
                     latch.countDown();
                 }
@@ -182,7 +178,7 @@ class ParallelProcessingDataIntegrityTest {
                 .userNm("초기 사용자")
                 .esntlId("USR00001")
                 .build();
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(initialUser));
         when(userService.getUserById(userId)).thenReturn(UserDto.from(initialUser));
 
@@ -224,7 +220,7 @@ class ParallelProcessingDataIntegrityTest {
 
         // Then
         assertThat(successCount.get()).isEqualTo(numberOfUpdates);
-        
+
         // Verify that the service was called the correct number of times
         verify(userService, timeout(30000).atLeast(numberOfUpdates)).updateUser(any());
     }
@@ -607,7 +603,7 @@ class ParallelProcessingDataIntegrityTest {
                 try {
                     String userId = "authUser" + index;
                     String password = "password123!";
-                    
+
                     String requestBody = """
                             {
                                 "userId": "%s",
@@ -642,7 +638,7 @@ class ParallelProcessingDataIntegrityTest {
 
         // Verify that all authentication requests were processed
         assertThat(results).hasSize(numberOfAuthRequests);
-        // Note: We can't guarantee all will succeed as users might not exist, 
+        // Note: We can't guarantee all will succeed as users might not exist,
         // but all requests should be processed without data corruption
 
         // Verify that the authentication service was called the correct number of times
@@ -703,7 +699,8 @@ class ParallelProcessingDataIntegrityTest {
             createdUsers.add(future.get(5, TimeUnit.SECONDS));
         }
 
-        // Verify that all operations completed (some might fail due to constraints, but should not corrupt data)
+        // Verify that all operations completed (some might fail due to constraints, but
+        // should not corrupt data)
         assertThat(successCount.get()).isGreaterThanOrEqualTo(0); // At least some should succeed
         assertThat(createdUsers).hasSize(numberOfWrites);
 

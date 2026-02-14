@@ -31,9 +31,6 @@ public class EgovDiaryManageServiceImpl extends EgovAbstractServiceImpl implemen
     @Resource
     private DiaryRepository diaryRepository;
 
-    @Resource(name = "diaryManageDao")
-    private DiaryManageDao dao;
-
     @Resource(name = "diaryManageIdGnrService")
     private EgovIdGnrService idgenService;
 

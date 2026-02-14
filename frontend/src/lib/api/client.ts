@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+// Determine the base URL based on environment
+const getBaseURL = () => {
+  if (typeof window === 'undefined') {
+    // Server-side (SSR) - use the backend server directly
+    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+  } else {
+    // Client-side - use relative path for proxy
+    return '/api/v1';
+  }
+};
+
 const client = axios.create({
-    baseURL: '/api/v1',
+    baseURL: getBaseURL(),
     headers: {
         'Content-Type': 'application/json',
     },

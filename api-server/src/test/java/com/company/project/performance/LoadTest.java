@@ -74,7 +74,7 @@ class LoadTest {
 
         // When: 100개의 동시 요청 실행
         long startTime = System.currentTimeMillis();
-        
+
         for (int i = 0; i < numberOfRequests; i++) {
             final int requestId = i;
             Future<Boolean> future = executorService.submit(() -> {
@@ -99,7 +99,7 @@ class LoadTest {
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS); // 최대 60초 대기
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
@@ -115,8 +115,9 @@ class LoadTest {
                 .filter(Boolean::booleanValue)
                 .count();
 
-        System.out.printf("로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n", 
-                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration, requestsPerSecond);
+        System.out.printf("로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n",
+                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
+                requestsPerSecond);
 
         // 성공률이 95% 이상이어야 함
         assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
@@ -169,7 +170,7 @@ class LoadTest {
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS); // 최대 60초 대기
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
@@ -185,8 +186,9 @@ class LoadTest {
                 .filter(Boolean::booleanValue)
                 .count();
 
-        System.out.printf("사용자 등록 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n", 
-                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration, requestsPerSecond);
+        System.out.printf("사용자 등록 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n",
+                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
+                requestsPerSecond);
 
         // 성공률이 90% 이상이어야 함 (중복 ID로 인한 실패 고려)
         assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.90));
@@ -202,10 +204,9 @@ class LoadTest {
                         "perfUser" + i,
                         "Password123!",
                         "성능 테스트 사용자" + i,
+                        com.company.project.domain.user.Role.USER,
                         "hint",
-                        "answer",
-                        com.company.project.domain.user.Role.USER
-                );
+                        "answer");
                 userService.signup(request);
             } catch (Exception e) {
                 // 이미 존재하는 경우 무시
@@ -244,7 +245,7 @@ class LoadTest {
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(90, TimeUnit.SECONDS); // 최대 90초 대기 (더 많은 요청 처리를 위해)
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
@@ -260,8 +261,9 @@ class LoadTest {
                 .filter(Boolean::booleanValue)
                 .count();
 
-        System.out.printf("사용자 단일 조회 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n", 
-                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration, requestsPerSecond);
+        System.out.printf("사용자 단일 조회 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n",
+                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
+                requestsPerSecond);
 
         // 성공률이 95% 이상이어야 함
         assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
@@ -303,7 +305,7 @@ class LoadTest {
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS); // 최대 60초 대기
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
@@ -319,8 +321,9 @@ class LoadTest {
                 .filter(Boolean::booleanValue)
                 .count();
 
-        System.out.printf("페이징 사용자 목록 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n", 
-                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration, requestsPerSecond);
+        System.out.printf("페이징 사용자 목록 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n",
+                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
+                requestsPerSecond);
 
         // 성공률이 95% 이상이어야 함
         assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
@@ -336,10 +339,9 @@ class LoadTest {
                         "mixedUser" + i,
                         "Password123!",
                         "혼합 테스트 사용자" + i,
+                        com.company.project.domain.user.Role.USER,
                         "hint",
-                        "answer",
-                        com.company.project.domain.user.Role.USER
-                );
+                        "answer");
                 userService.signup(request);
             } catch (Exception e) {
                 // 이미 존재하는 경우 무시
@@ -356,7 +358,7 @@ class LoadTest {
         for (int i = 0; i < numberOfRequests; i++) {
             final int requestType = i % 10; // 0-9
             Future<Boolean> future;
-            
+
             if (requestType < 6) { // 60% - 사용자 목록 조회
                 future = executorService.submit(() -> {
                     try {
@@ -426,7 +428,7 @@ class LoadTest {
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(120, TimeUnit.SECONDS); // 최대 120초 대기 (혼합 요청 처리를 위해)
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
@@ -442,8 +444,9 @@ class LoadTest {
                 .filter(Boolean::booleanValue)
                 .count();
 
-        System.out.printf("혼합 API 요청 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n", 
-                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration, requestsPerSecond);
+        System.out.printf("혼합 API 요청 로드 테스트 결과 - 요청 수: %d, 성공: %d, 실패: %d, 시간: %d ms, TPS: %.2f%n",
+                numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
+                requestsPerSecond);
 
         // 성공률이 90% 이상이어야 함 (등록 요청 중 일부는 중복 ID로 인해 실패할 수 있음)
         assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.90));
@@ -484,8 +487,8 @@ class LoadTest {
             long avgResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0).longValue();
             long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
             long minResponseTime = responseTimes.stream().mapToLong(Long::longValue).min().orElse(0L);
-            
-            System.out.printf("응답 시간 분석 - 평균: %d ms, 최대: %d ms, 최소: %d ms, 요청 수: %d%n", 
+
+            System.out.printf("응답 시간 분석 - 평균: %d ms, 최대: %d ms, 최소: %d ms, 요청 수: %d%n",
                     avgResponseTime, maxResponseTime, minResponseTime, responseTimes.size());
 
             // 평균 응답 시간이 1000ms 이하여야 함 (성능 기준)
@@ -526,7 +529,7 @@ class LoadTest {
         long finalUsedMemory = runtime.totalMemory() - runtime.freeMemory();
         long memoryIncrease = finalUsedMemory - initialUsedMemory;
 
-        System.out.printf("메모리 사용량 - 초기: %d bytes, 최종: %d bytes, 증가: %d bytes%n", 
+        System.out.printf("메모리 사용량 - 초기: %d bytes, 최종: %d bytes, 증가: %d bytes%n",
                 initialUsedMemory, finalUsedMemory, memoryIncrease);
 
         // 메모리 증가량이 50MB 이하여야 함 (메모리 누수 방지 기준)

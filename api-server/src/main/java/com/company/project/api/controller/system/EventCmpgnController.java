@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Event/Campaign Management", description = "Collaboration Event/Campaign Management APIs")
-@RestController
+@RestController("systemEventCmpgnController")
 @RequestMapping("/api/v1/admin/system/event-campaigns")
 @RequiredArgsConstructor
 public class EventCmpgnController {

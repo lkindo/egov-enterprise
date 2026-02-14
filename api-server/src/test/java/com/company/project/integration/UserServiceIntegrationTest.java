@@ -49,10 +49,9 @@ class UserServiceIntegrationTest {
                 "integrationTestUser",
                 "password123!",
                 "통합 테스트 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
     }
 
     @Test
@@ -86,8 +85,8 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(userList).isNotEmpty();
         UserDto user = userList.get(0);
-        assertThat(user.userId()).isEqualTo("integrationTestUser");
-        assertThat(user.userNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(user.getUserId()).isEqualTo("integrationTestUser");
+        assertThat(user.getUserNm()).isEqualTo("통합 테스트 사용자");
         // 권한 정보가 포함되어 있는지 확인 (권한 코드가 UserAuthority에서 가져온 것인지 확인)
     }
 
@@ -102,8 +101,8 @@ class UserServiceIntegrationTest {
 
         // Then
         assertThat(retrievedUser).isNotNull();
-        assertThat(retrievedUser.userId()).isEqualTo("integrationTestUser");
-        assertThat(retrievedUser.userNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(retrievedUser.getUserId()).isEqualTo("integrationTestUser");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("통합 테스트 사용자");
     }
 
     @Test
@@ -114,18 +113,16 @@ class UserServiceIntegrationTest {
                 "user1",
                 "password123!",
                 "사용자1",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
         UserSignupRequest request2 = new UserSignupRequest(
                 "user2",
                 "password123!",
                 "사용자2",
+                Role.ADMIN,
                 "hint",
-                "answer",
-                Role.ADMIN
-        );
+                "answer");
 
         // When
         userService.signup(request1);
@@ -134,8 +131,8 @@ class UserServiceIntegrationTest {
 
         // Then
         assertThat(userList).hasSize(2);
-        assertThat(userList).extracting(UserDto::userId).containsExactlyInAnyOrder("user1", "user2");
-        assertThat(userList).extracting(UserDto::userNm).containsExactlyInAnyOrder("사용자1", "사용자2");
+        assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("user1", "user2");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("사용자1", "사용자2");
     }
 
     @Test
@@ -174,8 +171,8 @@ class UserServiceIntegrationTest {
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.userId()).isEqualTo("integrationTestUser");
-        assertThat(result.userNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(result.getUserId()).isEqualTo("integrationTestUser");
+        assertThat(result.getUserNm()).isEqualTo("통합 테스트 사용자");
     }
 
     @Test
@@ -196,7 +193,8 @@ class UserServiceIntegrationTest {
         // When & Then
         assertThatThrownBy(() -> userService.signup(signupRequest))
                 .isInstanceOf(com.company.project.core.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
+                .hasFieldOrPropertyWithValue("errorCode",
+                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
     }
 
     @Test
@@ -204,19 +202,14 @@ class UserServiceIntegrationTest {
     void updateUser_success() {
         // Given
         userService.signup(signupRequest);
-        UserDto updatedUserDto = UserDto.builder()
-                .userId("integrationTestUser")
-                .userNm("수정된 사용자")
-                .esntlId("USR_TEST")
-                .role("ADMIN")
-                .build();
+        UserDto updatedUserDto = new UserDto("integrationTestUser", "수정된 사용자", "USR_TEST", "ADMIN", null, null, null);
 
         // When
         userService.updateUser("integrationTestUser", updatedUserDto);
 
         // Then
         UserDto result = userService.getUserById("integrationTestUser");
-        assertThat(result.userNm()).isEqualTo("수정된 사용자");
+        assertThat(result.getUserNm()).isEqualTo("수정된 사용자");
     }
 
     @Test
@@ -227,8 +220,8 @@ class UserServiceIntegrationTest {
 
         // When & Then
         // 비밀번호 변경이 성공적으로 수행되는지 확인
-        assertThatNoException().isThrownBy(() -> 
-            userService.changePassword("integrationTestUser", "password123!", "newPassword123!"));
+        assertThatNoException()
+                .isThrownBy(() -> userService.changePassword("integrationTestUser", "password123!", "newPassword123!"));
     }
 
     @Test
@@ -238,10 +231,10 @@ class UserServiceIntegrationTest {
         userService.signup(signupRequest);
 
         // When & Then
-        assertThatThrownBy(() -> 
-            userService.changePassword("integrationTestUser", "wrongPassword", "newPassword123!"))
+        assertThatThrownBy(() -> userService.changePassword("integrationTestUser", "wrongPassword", "newPassword123!"))
                 .isInstanceOf(com.company.project.core.exception.BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.company.project.core.exception.ErrorCode.INVALID_PASSWORD);
+                .hasFieldOrPropertyWithValue("errorCode",
+                        com.company.project.core.exception.ErrorCode.INVALID_PASSWORD);
     }
 
     @Test
@@ -253,10 +246,9 @@ class UserServiceIntegrationTest {
                     "pagedUser" + i,
                     "password123!",
                     "페이징 테스트 사용자" + i,
+                    Role.USER,
                     "hint",
-                    "answer",
-                    Role.USER
-            );
+                    "answer");
             userService.signup(request);
         }
 

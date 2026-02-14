@@ -45,12 +45,12 @@ public class NtwrkService extends EgovAbstractServiceImpl {
         Ntwrk entity = ntwrkRepository.findById(ntwrkId)
                 .orElseThrow(() -> new RuntimeException("Ntwrk not found: " + ntwrkId));
         NtwrkDto dto = NtwrkDto.from(entity);
-        
+
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM067");
         dto.setManageIemNm(codes.stream()
                 .filter(c -> c.code().equals(dto.getManageIem()))
                 .findFirst().map(CommonCodeDto::codeNm).orElse(""));
-                
+
         return dto;
     }
 
@@ -66,11 +66,12 @@ public class NtwrkService extends EgovAbstractServiceImpl {
                 .userNm(dto.getUserNm())
                 .useAt("Y")
                 .regstYmd(LocalDate.now())
-                .frstRegisterId(dto.getFrstRegisterId())
-                .frstRegisterPnttm(LocalDateTime.now())
-                .lastUpdusrId(dto.getLastUpdusrId())
-                .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
+
+        entity.setFrstRegisterId(dto.getFrstRegisterId());
+        entity.setFrstRegisterPnttm(LocalDateTime.now());
+        entity.setLastUpdusrId(dto.getLastUpdusrId());
+        entity.setLastUpdusrPnttm(LocalDateTime.now());
         ntwrkRepository.save(entity);
     }
 
@@ -78,7 +79,7 @@ public class NtwrkService extends EgovAbstractServiceImpl {
     public void updateNtwrk(NtwrkDto dto) {
         Ntwrk entity = ntwrkRepository.findById(dto.getNtwrkId())
                 .orElseThrow(() -> new RuntimeException("Ntwrk not found"));
-        
+
         entity.setNtwrkIp(dto.getNtwrkIp());
         entity.setGtwy(dto.getGtwy());
         entity.setSubnet(dto.getSubnet());

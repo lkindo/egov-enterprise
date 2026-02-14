@@ -3,8 +3,6 @@ package com.company.project.service.trouble.dto;
 import com.company.project.domain.trouble.Trobl;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor

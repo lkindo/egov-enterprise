@@ -43,10 +43,9 @@ class DatabaseServiceIntegrationTest {
                 "dbIntegrationUser",
                 "password123!",
                 "DB 통합 테스트 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
     }
 
     @Test
@@ -82,8 +81,8 @@ class DatabaseServiceIntegrationTest {
         // Then
         // Verify that the service returned data from the database
         assertThat(retrievedUser).isNotNull();
-        assertThat(retrievedUser.userId()).isEqualTo("dbIntegrationUser");
-        assertThat(retrievedUser.userNm()).isEqualTo("DB 통합 테스트 사용자");
+        assertThat(retrievedUser.getUserId()).isEqualTo("dbIntegrationUser");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("DB 통합 테스트 사용자");
 
         // Also verify directly from database
         User dbUser = userRepository.findById("dbIntegrationUser")
@@ -99,18 +98,16 @@ class DatabaseServiceIntegrationTest {
                 "listUser1",
                 "password123!",
                 "리스트 사용자1",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
         UserSignupRequest request2 = new UserSignupRequest(
                 "listUser2",
                 "password123!",
                 "리스트 사용자2",
+                Role.ADMIN,
                 "hint",
-                "answer",
-                Role.ADMIN
-        );
+                "answer");
 
         userService.signup(request1);
         userService.signup(request2);
@@ -121,8 +118,8 @@ class DatabaseServiceIntegrationTest {
         // Then
         // Verify that the service returned data from the database
         assertThat(userList).hasSize(2);
-        assertThat(userList).extracting(UserDto::userId).containsExactlyInAnyOrder("listUser1", "listUser2");
-        assertThat(userList).extracting(UserDto::userNm).containsExactlyInAnyOrder("리스트 사용자1", "리스트 사용자2");
+        assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("listUser1", "listUser2");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("리스트 사용자1", "리스트 사용자2");
 
         // Also verify directly from database
         List<User> dbUsers = userRepository.findAll();
@@ -141,10 +138,9 @@ class DatabaseServiceIntegrationTest {
                     "pagedUser" + i,
                     "password123!",
                     "페이징 사용자" + i,
+                    Role.USER,
                     "hint",
-                    "answer",
-                    Role.USER
-            );
+                    "answer");
             userService.signup(request);
         }
 
@@ -177,8 +173,7 @@ class DatabaseServiceIntegrationTest {
                 "영속성 테스트 사용자",
                 "hint",
                 "answer",
-                Role.USER
-        );
+                Role.USER);
 
         // Then
         // Verify that user exists in database
@@ -199,19 +194,13 @@ class DatabaseServiceIntegrationTest {
                 "updateUser",
                 "password123!",
                 "수정 전 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
         userService.signup(request);
 
         // When
-        UserDto updatedUserDto = UserDto.builder()
-                .userId("updateUser")
-                .userNm("수정 후 사용자")
-                .esntlId("USR_TEST")
-                .role("ADMIN")
-                .build();
+        UserDto updatedUserDto = new UserDto("updateUser", "수정 후 사용자", "USR_TEST", "ADMIN", null, null, null);
         userService.updateUser("updateUser", updatedUserDto);
 
         // Then
@@ -245,13 +234,12 @@ class DatabaseServiceIntegrationTest {
 
         // When & Then - Second signup with same ID should fail
         UserSignupRequest duplicateRequest = new UserSignupRequest(
-                "dbIntegrationUser",  // Same ID as before
+                "dbIntegrationUser", // Same ID as before
                 "password456!",
                 "중복 테스트 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
 
         try {
             userService.signup(duplicateRequest);
@@ -276,13 +264,12 @@ class DatabaseServiceIntegrationTest {
 
         // When - Attempt to create user with invalid data that causes service to fail
         UserSignupRequest invalidRequest = new UserSignupRequest(
-                null,  // Invalid: null user ID
+                null, // Invalid: null user ID
                 "password123!",
                 "트랜잭션 테스트 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
 
         try {
             userService.signup(invalidRequest);
@@ -309,10 +296,9 @@ class DatabaseServiceIntegrationTest {
                     "multiUser" + i,
                     "password123!",
                     "다중 사용자" + i,
+                    Role.USER,
                     "hint",
-                    "answer",
-                    Role.USER
-            );
+                    "answer");
             userService.signup(request);
         }
 
@@ -338,7 +324,8 @@ class DatabaseServiceIntegrationTest {
                 .orElseThrow(() -> new AssertionError("User not found in database"));
 
         // Direct database update (bypassing service)
-        user.update("직접 수정된 사용자", "newHint", "newAnswer", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, Role.ADMIN, null);
+        user.update("직접 수정된 사용자", "newHint", "newAnswer", null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, Role.ADMIN, null);
         userRepository.save(user);
 
         // When
@@ -346,7 +333,7 @@ class DatabaseServiceIntegrationTest {
 
         // Then
         // Verify that the service returns the updated data from database
-        assertThat(retrievedUser.userNm()).isEqualTo("직접 수정된 사용자");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("직접 수정된 사용자");
         // Note: Role might not be directly mapped to the role field in UserDto
     }
 
@@ -360,10 +347,9 @@ class DatabaseServiceIntegrationTest {
                     "perfUser" + i,
                     "password123!",
                     "성능 테스트 사용자" + i,
+                    Role.USER,
                     "hint",
-                    "answer",
-                    Role.USER
-            );
+                    "answer");
             userService.signup(request);
         }
 
@@ -376,7 +362,7 @@ class DatabaseServiceIntegrationTest {
         assertThat(userList).hasSize(datasetSize + 1); // +1 for the initial signupRequest user
         long executionTime = endTime - startTime;
         System.out.println("Retrieved " + userList.size() + " users in " + executionTime + " ms");
-        
+
         // Performance should be reasonable (under 2 seconds for 100+ users)
         assertThat(executionTime).isLessThan(2000);
     }

@@ -3,6 +3,7 @@ package com.company.project.domain.user;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -14,7 +15,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "NEMPLYRINFO")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class User extends BaseEntity implements Serializable {
 
     @Id

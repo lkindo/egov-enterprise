@@ -3,6 +3,7 @@ package com.company.project.domain.backup;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NBACKUPOPERT")
 public class BackupOpert extends BaseEntity {
@@ -74,28 +75,28 @@ public class BackupOpert extends BaseEntity {
     public void delete() {
         this.useAt = "N";
     }
-    
+
     // Missing methods for compatibility
     public void setFrstRegisterId(String frstRegisterId) {
         this.setCreatedBy(frstRegisterId);
     }
-    
+
     public String getFrstRegisterId() {
         return this.getCreatedBy();
     }
-    
+
     public String getLastUpdtPnttm() {
         return this.getLastModifiedDate() != null ? this.getLastModifiedDate().toString() : null;
     }
-    
+
     public String getFrstRegistPnttm() {
         return this.getCreatedDate() != null ? this.getCreatedDate().toString() : null;
     }
-    
+
     public void setExecutCycle(String executCycle) {
         this.executCycle = executCycle;
     }
-    
+
     public String getExecutCycle() {
         return this.executCycle;
     }

@@ -43,10 +43,9 @@ class UserServiceDatabaseIntegrationTest {
                 "dbIntegrationUser",
                 "password123!",
                 "DB 통합 테스트 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
     }
 
     @Test
@@ -98,10 +97,9 @@ class UserServiceDatabaseIntegrationTest {
                 "dbIntegrationUser2",
                 "password123!",
                 "DB 통합 테스트 사용자2",
+                Role.ADMIN,
                 "hint",
-                "answer",
-                Role.ADMIN
-        );
+                "answer");
         userService.signup(request2);
 
         // When
@@ -109,7 +107,8 @@ class UserServiceDatabaseIntegrationTest {
 
         // Then
         assertThat(userList).hasSize(2);
-        assertThat(userList).extracting(UserDto::userId).containsExactlyInAnyOrder("dbIntegrationUser", "dbIntegrationUser2");
+        assertThat(userList).extracting(UserDto::userId).containsExactlyInAnyOrder("dbIntegrationUser",
+                "dbIntegrationUser2");
         assertThat(userList).extracting(UserDto::userNm).containsExactlyInAnyOrder("DB 통합 테스트 사용자", "DB 통합 테스트 사용자2");
 
         // 데이터베이스에서 직접 확인
@@ -161,8 +160,7 @@ class UserServiceDatabaseIntegrationTest {
                 "수정된 사용자",
                 "newHint",
                 "newAnswer",
-                Role.ADMIN
-        );
+                Role.ADMIN);
 
         // Then
         Optional<User> updatedUser = userRepository.findById("updatedUser");
@@ -207,7 +205,8 @@ class UserServiceDatabaseIntegrationTest {
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(
                 com.company.project.core.exception.BusinessException.class,
                 () -> userService.signup(signupRequest)))
-                .hasFieldOrPropertyWithValue("errorCode", com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
+                .hasFieldOrPropertyWithValue("errorCode",
+                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
 
         // 데이터베이스에 중복 데이터가 삽입되지 않았는지 확인
         List<User> allUsers = userRepository.findAll();
@@ -235,26 +234,23 @@ class UserServiceDatabaseIntegrationTest {
                 "multiUser1",
                 "password123!",
                 "다중 사용자1",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
         UserSignupRequest request2 = new UserSignupRequest(
                 "multiUser2",
                 "password123!",
                 "다중 사용자2",
+                Role.ADMIN,
                 "hint",
-                "answer",
-                Role.ADMIN
-        );
+                "answer");
         UserSignupRequest request3 = new UserSignupRequest(
                 "multiUser3",
                 "password123!",
                 "다중 사용자3",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
 
         // When
         userService.signup(request1);
@@ -264,7 +260,8 @@ class UserServiceDatabaseIntegrationTest {
         // Then
         List<User> allUsers = userRepository.findAll();
         assertThat(allUsers).hasSize(3);
-        assertThat(allUsers).extracting(User::getUserId).containsExactlyInAnyOrder("multiUser1", "multiUser2", "multiUser3");
+        assertThat(allUsers).extracting(User::getUserId).containsExactlyInAnyOrder("multiUser1", "multiUser2",
+                "multiUser3");
         assertThat(allUsers).extracting(User::getUserNm).containsExactlyInAnyOrder("다중 사용자1", "다중 사용자2", "다중 사용자3");
 
         // 각 사용자의 권한 정보도 확인
@@ -283,7 +280,7 @@ class UserServiceDatabaseIntegrationTest {
         try {
             // When - 일부러 실패 유도
             userService.signup(signupRequest);
-            
+
             // 중복된 ID로 다시 시도하여 실패 유도
             userService.signup(signupRequest);
         } catch (Exception e) {

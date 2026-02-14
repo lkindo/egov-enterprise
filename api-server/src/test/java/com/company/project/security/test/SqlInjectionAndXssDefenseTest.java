@@ -272,11 +272,7 @@ class SqlInjectionAndXssDefenseTest {
         String safeUserId = "normalUser";
         String safeUserName = "<script>alert('XSS')</script>"; // This should be sanitized if returned in response
 
-        UserDto userDto = UserDto.builder()
-                .userId(safeUserId)
-                .userNm(safeUserName) // This should be sanitized
-                .esntlId("USR00001")
-                .build();
+        UserDto userDto = new UserDto(safeUserId, safeUserName, "USR00001", null, null, null, null);
 
         when(userService.getUserById(safeUserId)).thenReturn(userDto);
 
@@ -284,7 +280,8 @@ class SqlInjectionAndXssDefenseTest {
         mockMvc.perform(get("/api/v1/users/{id}", safeUserId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userNm").value("<script>alert('XSS')</script>")); // If not sanitized, this would be vulnerable
+                .andExpect(jsonPath("$.data.userNm").value("<script>alert('XSS')</script>")); // If not sanitized, this
+                                                                                              // would be vulnerable
     }
 
     @Test

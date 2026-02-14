@@ -27,14 +27,18 @@ public class TroblService extends EgovAbstractServiceImpl {
     private final EgovCommonCodeService commonCodeService;
 
     @Transactional(readOnly = true)
-    public Page<TroblDto> getTroblList(String strTroblNm, String strTroblKnd, String strProcessSttus, Pageable pageable) {
-        List<String> statuses = (strProcessSttus != null && !strProcessSttus.equals("00")) ? Collections.singletonList(strProcessSttus) : null;
+    public Page<TroblDto> getTroblList(String strTroblNm, String strTroblKnd, String strProcessSttus,
+            Pageable pageable) {
+        List<String> statuses = (strProcessSttus != null && !strProcessSttus.equals("00"))
+                ? Collections.singletonList(strProcessSttus)
+                : null;
         Page<Trobl> page = troblRepository.searchTroblReqsts(strTroblNm, strTroblKnd, statuses, pageable);
         return mapToDtoPage(page);
     }
 
     @Transactional(readOnly = true)
-    public Page<TroblDto> getTroblProcessList(String strTroblNm, String strTroblKnd, String strProcessSttus, Pageable pageable) {
+    public Page<TroblDto> getTroblProcessList(String strTroblNm, String strTroblKnd, String strProcessSttus,
+            Pageable pageable) {
         List<String> statuses;
         if (strProcessSttus != null && !strProcessSttus.equals("00")) {
             statuses = Collections.singletonList(strProcessSttus);
@@ -49,9 +53,9 @@ public class TroblService extends EgovAbstractServiceImpl {
     public TroblDto getTrobl(String troblId) {
         Trobl entity = troblRepository.findById(troblId)
                 .orElseThrow(() -> new RuntimeException("Trobl not found: " + troblId));
-        
+
         TroblDto dto = TroblDto.from(entity);
-        
+
         List<CommonCodeDto> kndCodes = commonCodeService.getCodesByGroup("COM065");
         dto.setTroblKndNm(kndCodes.stream()
                 .filter(c -> c.code().equals(dto.getTroblKnd()))
@@ -61,7 +65,7 @@ public class TroblService extends EgovAbstractServiceImpl {
         dto.setProcessSttusNm(sttusCodes.stream()
                 .filter(c -> c.code().equals(dto.getProcessSttus()))
                 .findFirst().map(CommonCodeDto::codeNm).orElse(""));
-                
+
         return dto;
     }
 
@@ -75,11 +79,12 @@ public class TroblService extends EgovAbstractServiceImpl {
                 .troblOccrrncTime(dto.getTroblOccrrncTime())
                 .troblRqesterNm(dto.getTroblRqesterNm())
                 .processSttus("A") // Initial status: Applied
-                .frstRegisterId(dto.getFrstRegisterId())
-                .frstRegisterPnttm(LocalDateTime.now())
-                .lastUpdusrId(dto.getLastUpdusrId())
-                .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
+
+        entity.setFrstRegisterId(dto.getFrstRegisterId());
+        entity.setFrstRegisterPnttm(LocalDateTime.now());
+        entity.setLastUpdusrId(dto.getLastUpdusrId());
+        entity.setLastUpdusrPnttm(LocalDateTime.now());
         troblRepository.save(entity);
     }
 
@@ -87,7 +92,7 @@ public class TroblService extends EgovAbstractServiceImpl {
     public void updateTrobl(TroblDto dto) {
         Trobl entity = troblRepository.findById(dto.getTroblId())
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
-        
+
         entity.setTroblNm(dto.getTroblNm());
         entity.setTroblKnd(dto.getTroblKnd());
         entity.setTroblDc(dto.getTroblDc());
@@ -102,7 +107,8 @@ public class TroblService extends EgovAbstractServiceImpl {
         Trobl entity = troblRepository.findById(troblId)
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
         entity.setProcessSttus("R"); // Status: Requested
-        entity.setTroblRequstTime(LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        entity.setTroblRequstTime(
+                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         entity.setLastUpdusrId(userId);
         entity.setLastUpdusrPnttm(LocalDateTime.now());
     }
@@ -111,7 +117,7 @@ public class TroblService extends EgovAbstractServiceImpl {
     public void processTrobl(TroblDto dto) {
         Trobl entity = troblRepository.findById(dto.getTroblId())
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
-        
+
         entity.setTroblProcessResult(dto.getTroblProcessResult());
         entity.setTroblOpetrNm(dto.getTroblOpetrNm());
         entity.setTroblProcessTime(dto.getTroblProcessTime());
@@ -127,10 +133,12 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     private Page<TroblDto> mapToDtoPage(Page<Trobl> page) {
         List<CommonCodeDto> kndCodes = commonCodeService.getCodesByGroup("COM065");
-        Map<String, String> kndMap = kndCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
-        
+        Map<String, String> kndMap = kndCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+
         List<CommonCodeDto> sttusCodes = commonCodeService.getCodesByGroup("COM068");
-        Map<String, String> sttusMap = sttusCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+        Map<String, String> sttusMap = sttusCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
         return page.map(entity -> {
             TroblDto dto = TroblDto.from(entity);

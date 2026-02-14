@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "Note", description = "Internal Note/Message Management APIs")
-@RestController
+@RestController("prototypeNoteController")
 @RequestMapping("/api/v1/notes")
 @RequiredArgsConstructor
 public class NoteController {
@@ -25,7 +25,8 @@ public class NoteController {
 
     @Operation(summary = "Send Note")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> sendNote(@RequestBody NoteDto noteDto, @RequestParam List<String> receiverIds) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> sendNote(@RequestBody NoteDto noteDto,
+            @RequestParam List<String> receiverIds) throws Exception {
         // Placeholder for senderId.
         noteService.sendNote(noteDto, receiverIds, "ADMIN");
         return ResponseEntity.ok(ApiResponse.success(null));

@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * 인증 관련 REST API 컨트롤러 (Modernized with Dual Token support)
  */
-@RestController
+@RestController("modernAuthController")
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
@@ -33,14 +33,14 @@ public class AuthController {
      * REST 로그인 (Access Token + HttpOnly Refresh Token)
      */
     @PostMapping("/login")
-    public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest, HttpServletResponse response) {
+    public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest,
+            HttpServletResponse response) {
         String userId = loginRequest.get("id");
         String password = loginRequest.get("password");
 
         // 1. Authenticate via Spring Security
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userId, password)
-        );
+                new UsernamePasswordAuthenticationToken(userId, password));
 
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
