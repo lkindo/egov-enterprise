@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,11 +37,13 @@ public class AdminDashboardController {
 
         // 2. 오늘의 신규 가입자 (가상 로직: createdDate 기준)
         // 실제로는 LocalDateTime.now()의 시작/끝으로 범위 검색 필요하나, 여기선 전체 카운트로 대체 (데모용)
-        summary.put("newUsersToday", 0); 
+        summary.put("newUsersToday", 0);
 
         // 3. 미처리 장애 접수 (상태: R-접수)
         // searchTroblReqsts 메서드 활용 (이름/종류 null, 상태 "R")
-        long pendingTroubles = troblRepository.searchTroblReqsts(null, null, "R", PageRequest.of(0, 1)).getTotalElements();
+        long pendingTroubles = troblRepository
+                .searchTroblReqsts(null, null, java.util.Collections.singletonList("R"), PageRequest.of(0, 1))
+                .getTotalElements();
         summary.put("pendingTroubles", pendingTroubles);
 
         // 4. 총 게시글 수

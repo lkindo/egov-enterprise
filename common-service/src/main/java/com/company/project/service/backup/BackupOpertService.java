@@ -114,9 +114,10 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
                 .executSchdulMnt(dto.getExecutSchdulMnt())
                 .executSchdulSecnd(dto.getExecutSchdulSecnd())
                 .useAt("Y")
-                .frstRegisterId(userId)
-                .lastUpdusrId(userId)
                 .build();
+
+        entity.setFrstRegisterId(userId);
+        entity.setLastUpdusrId(userId);
 
         if (dto.getExecutSchdulDfkSes() != null) {
             for (String dfk : dto.getExecutSchdulDfkSes()) {

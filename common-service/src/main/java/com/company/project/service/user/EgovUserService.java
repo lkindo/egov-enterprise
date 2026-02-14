@@ -43,4 +43,14 @@ public interface EgovUserService {
      * 비밀번호 검증
      */
     boolean verifyPassword(String rawPassword, String encodedPassword);
+
+    /**
+     * 사용자 정보 수정
+     */
+    void updateUser(String userId, UserDto userDto);
+
+    /**
+     * 사용자 삭제
+     */
+    void deleteUser(String userId);
 }

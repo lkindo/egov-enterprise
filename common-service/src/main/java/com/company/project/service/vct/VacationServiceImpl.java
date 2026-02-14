@@ -56,7 +56,7 @@ public class VacationServiceImpl implements VacationService {
             double requestDays = calculateVacationDays(dto);
             AnnualLeave leaveMaster = annualLeaveRepository.findById(new AnnualLeaveId(dto.getOccrrncYear(), userId))
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_RESOURCE_NOT_FOUND));
-            
+
             if (leaveMaster.getRemndrYrycCo() < requestDays) {
                 throw new BusinessException(ErrorCode.USER_INVALID_INPUT_VALUE);
             }
@@ -70,11 +70,10 @@ public class VacationServiceImpl implements VacationService {
                 .endde(dto.getEndde())
                 .vcatnResn(dto.getVcatnResn())
                 .reqstDe(LocalDate.now().format(DATE_FORMATTER))
-                .occrrncYear(dto.getOccrrncYear())
                 .noonSe(dto.getNoonSe())
                 .confmAt("R") // 신청(Requested)
-                .frstRegisterId(userId)
                 .build();
+        entity.setFrstRegisterId(userId);
         vacationRepository.save(entity);
     }
 
@@ -107,9 +106,10 @@ public class VacationServiceImpl implements VacationService {
         // 1. 승인 처리인 경우 연차 차감 로직 실행
         if ("Y".equals(confmAt) && ("01".equals(vcatnSe) || "02".equals(vcatnSe))) {
             double useDays = calculateVacationDays(VacationDto.from(entity));
-            AnnualLeave leaveMaster = annualLeaveRepository.findById(new AnnualLeaveId(entity.getOccrrncYear(), applcntId))
+            AnnualLeave leaveMaster = annualLeaveRepository
+                    .findById(new AnnualLeaveId(entity.getOccrrncYear(), applcntId))
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-            
+
             leaveMaster.deductLeave(useDays);
         }
 
@@ -135,14 +135,14 @@ public class VacationServiceImpl implements VacationService {
     public List<YearlyLeaveDto> getYearlyLeaveList(String occrrncYear, String searchWrd) {
         return annualLeaveRepository.findAll().stream()
                 .filter(e -> occrrncYear.equals(e.getOccrrncYear()))
-                .map(YearlyLeaveDto::from)
+                .map(e -> YearlyLeaveDto.from(e))
                 .collect(Collectors.toList());
     }
 
     @Override
     public YearlyLeaveDto getYearlyLeave(String occrrncYear, String userId) {
         return annualLeaveRepository.findById(new AnnualLeaveId(occrrncYear, userId))
-                .map(YearlyLeaveDto::from)
+                .map(e -> YearlyLeaveDto.from(e))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -178,7 +178,7 @@ public class VacationServiceImpl implements VacationService {
         if (dto.getNoonSe() != null && !dto.getNoonSe().isEmpty()) {
             return 0.5;
         }
-        
+
         // 일반 휴가인 경우 날짜 차이 계산
         try {
             LocalDate start = LocalDate.parse(dto.getBgnde(), DATE_FORMATTER);
@@ -192,13 +192,13 @@ public class VacationServiceImpl implements VacationService {
     // --- User Absence (Basic CRUD) ---
     @Override
     public Page<UserAbsenceDto> getUserAbsenceList(String searchWrd, Pageable pageable) {
-        return userAbsenceRepository.findAll(pageable).map(UserAbsenceDto::from);
+        return userAbsenceRepository.findAll(pageable).map(e -> UserAbsenceDto.from(e));
     }
 
     @Override
     public UserAbsenceDto getUserAbsence(String userId) {
         return userAbsenceRepository.findById(userId)
-                .map(UserAbsenceDto::from)
+                .map(e -> UserAbsenceDto.from(e))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 

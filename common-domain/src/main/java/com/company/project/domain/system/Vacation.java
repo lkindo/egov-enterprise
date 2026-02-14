@@ -3,12 +3,13 @@ package com.company.project.domain.system;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NVCATNMANAGE")
 public class Vacation extends BaseEntity {

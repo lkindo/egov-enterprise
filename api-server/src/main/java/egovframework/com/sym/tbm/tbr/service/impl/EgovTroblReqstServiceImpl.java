@@ -30,24 +30,28 @@ public class EgovTroblReqstServiceImpl extends EgovAbstractServiceImpl implement
 	public List<TroblReqstVO> selectTroblReqstList(TroblReqstVO troblReqstVO) throws Exception {
 		Pageable pageable = PageRequest.of(troblReqstVO.getFirstIndex() / troblReqstVO.getRecordCountPerPage(),
 				troblReqstVO.getRecordCountPerPage());
-		
-		List<String> statuses = (troblReqstVO.getStrProcessSttus() != null && !troblReqstVO.getStrProcessSttus().equals("00")) 
-				? Collections.singletonList(troblReqstVO.getStrProcessSttus()) : null;
-				
+
+		List<String> statuses = (troblReqstVO.getStrProcessSttus() != null
+				&& !troblReqstVO.getStrProcessSttus().equals("00"))
+						? Collections.singletonList(troblReqstVO.getStrProcessSttus())
+						: null;
+
 		Page<Trobl> page = troblRepository.searchTroblReqsts(
 				troblReqstVO.getStrTroblNm(),
 				troblReqstVO.getStrTroblKnd(),
 				statuses,
 				pageable);
-				
+
 		return page.getContent().stream().map(this::mapToVO).collect(Collectors.toList());
 	}
 
 	@Override
 	public int selectTroblReqstListTotCnt(TroblReqstVO troblReqstVO) throws Exception {
-		List<String> statuses = (troblReqstVO.getStrProcessSttus() != null && !troblReqstVO.getStrProcessSttus().equals("00")) 
-				? Collections.singletonList(troblReqstVO.getStrProcessSttus()) : null;
-				
+		List<String> statuses = (troblReqstVO.getStrProcessSttus() != null
+				&& !troblReqstVO.getStrProcessSttus().equals("00"))
+						? Collections.singletonList(troblReqstVO.getStrProcessSttus())
+						: null;
+
 		Page<Trobl> page = troblRepository.searchTroblReqsts(
 				troblReqstVO.getStrTroblNm(),
 				troblReqstVO.getStrTroblKnd(),
@@ -74,11 +78,11 @@ public class EgovTroblReqstServiceImpl extends EgovAbstractServiceImpl implement
 				.troblOccrrncTime(troblReqst.getTroblOccrrncTime())
 				.troblRqesterNm(troblReqst.getTroblRqesterNm())
 				.processSttus(troblReqst.getProcessSttus())
-				.frstRegisterId(troblReqst.getFrstRegisterId())
-				.frstRegisterPnttm(java.time.LocalDateTime.now())
-				.lastUpdusrId(troblReqst.getLastUpdusrId())
-				.lastUpdusrPnttm(java.time.LocalDateTime.now())
 				.build();
+		entity.setFrstRegisterId(troblReqst.getFrstRegisterId());
+		entity.setFrstRegisterPnttm(java.time.LocalDateTime.now());
+		entity.setLastUpdusrId(troblReqst.getLastUpdusrId());
+		entity.setLastUpdusrPnttm(java.time.LocalDateTime.now());
 		troblRepository.save(entity);
 		troblReqstVO.setTroblId(entity.getTroblId());
 		return selectTroblReqst(troblReqstVO);
@@ -111,7 +115,8 @@ public class EgovTroblReqstServiceImpl extends EgovAbstractServiceImpl implement
 		troblRepository.findById(troblReqst.getTroblId()).ifPresent(entity -> {
 			entity.setProcessSttus(troblReqst.getProcessSttus());
 			if ("R".equals(troblReqst.getProcessSttus())) {
-				entity.setTroblRequstTime(java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+				entity.setTroblRequstTime(
+						java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
 			} else if ("A".equals(troblReqst.getProcessSttus())) {
 				entity.setTroblRequstTime(null);
 			}
@@ -134,9 +139,13 @@ public class EgovTroblReqstServiceImpl extends EgovAbstractServiceImpl implement
 		vo.setTroblProcessTime(entity.getTroblProcessTime());
 		vo.setProcessSttus(entity.getProcessSttus());
 		vo.setFrstRegisterId(entity.getFrstRegisterId());
-		vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm() != null ? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		vo.setFrstRegisterPnttm(entity.getCreatedDate() != null
+				? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+				: "");
 		vo.setLastUpdusrId(entity.getLastUpdusrId());
-		vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm() != null ? entity.getLastUpdusrPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		vo.setLastUpdusrPnttm(entity.getLastModifiedDate() != null
+				? entity.getLastModifiedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+				: "");
 		return vo;
 	}
 }

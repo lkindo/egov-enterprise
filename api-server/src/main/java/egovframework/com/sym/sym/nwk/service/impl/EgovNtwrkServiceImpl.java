@@ -86,8 +86,8 @@ public class EgovNtwrkServiceImpl extends EgovAbstractServiceImpl implements Ego
 				.userNm(ntwrk.getUserNm())
 				.useAt(ntwrk.getUseAt())
 				.regstYmd(parseLocalDate(EgovStringUtil.removeMinusChar(ntwrk.getRegstYmd())))
-				.frstRegisterId(ntwrk.getFrstRegisterId())
 				.build();
+		entity.setFrstRegisterId(ntwrk.getFrstRegisterId());
 		ntwrkRepository.save(entity);
 		ntwrkVO.setNtwrkId(entity.getNtwrkId());
 		return selectNtwrk(ntwrkVO);
@@ -112,8 +112,8 @@ public class EgovNtwrkServiceImpl extends EgovAbstractServiceImpl implements Ego
 					.userNm(ntwrk.getUserNm())
 					.useAt(ntwrk.getUseAt())
 					.regstYmd(parseLocalDate(EgovStringUtil.removeMinusChar(ntwrk.getRegstYmd())))
-					.frstRegisterId(entity.getFrstRegisterId())
 					.build();
+			updated.setFrstRegisterId(entity.getFrstRegisterId());
 			ntwrkRepository.save(updated);
 		});
 	}
@@ -142,12 +142,12 @@ public class EgovNtwrkServiceImpl extends EgovAbstractServiceImpl implements Ego
 		vo.setRegstYmd(
 				entity.getRegstYmd() != null ? entity.getRegstYmd().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
 						: "");
-		vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm() != null
-				? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+		vo.setFrstRegisterPnttm(entity.getCreatedDate() != null
+				? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 				: "");
 		vo.setFrstRegisterId(entity.getFrstRegisterId());
-		vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm() != null
-				? entity.getLastUpdusrPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+		vo.setLastUpdusrPnttm(entity.getLastModifiedDate() != null
+				? entity.getLastModifiedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 				: "");
 		vo.setLastUpdusrId(entity.getLastUpdusrId());
 		return vo;

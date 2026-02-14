@@ -3,12 +3,13 @@ package com.company.project.domain.system;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NINDVDLYRYCMANAGE")
 @IdClass(AnnualLeaveId.class)
@@ -35,7 +36,8 @@ public class AnnualLeave extends BaseEntity {
      * 사용 연차 차감 및 잔여 일수 갱신
      */
     public void deductLeave(Double days) {
-        if (this.useYrycCo == null) this.useYrycCo = 0.0;
+        if (this.useYrycCo == null)
+            this.useYrycCo = 0.0;
         this.useYrycCo += days;
         syncRemaining();
     }
@@ -44,8 +46,10 @@ public class AnnualLeave extends BaseEntity {
      * 잔여 일수 동기화
      */
     public void syncRemaining() {
-        if (this.occrncYrycCo == null) this.occrncYrycCo = 0.0;
-        if (this.useYrycCo == null) this.useYrycCo = 0.0;
+        if (this.occrncYrycCo == null)
+            this.occrncYrycCo = 0.0;
+        if (this.useYrycCo == null)
+            this.useYrycCo = 0.0;
         this.remndrYrycCo = this.occrncYrycCo - this.useYrycCo;
     }
 }

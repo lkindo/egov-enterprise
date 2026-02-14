@@ -4,7 +4,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
-import { Providers } from './providers';
+import Providers from './providers';
 
 export const metadata: Metadata = {
   title: '전자정부 현대화 프로젝트',

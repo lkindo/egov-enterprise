@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -35,7 +36,8 @@ public class VacationController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
+        return ResponseEntity.ok(
+                ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
     }
 
     @Operation(summary = "휴가 상세 조회", description = "특정 휴가 신청 상세 정보를 조회합니다.")
@@ -103,7 +105,8 @@ public class VacationController {
     public ResponseEntity<ApiResponse<YearlyLeaveDto>> getMyYearlyLeave(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String occrrncYear) {
-        return ResponseEntity.ok(ApiResponse.success(vacationService.getYearlyLeave(occrrncYear, userDetails.getUsername())));
+        return ResponseEntity
+                .ok(ApiResponse.success(vacationService.getYearlyLeave(occrrncYear, userDetails.getUsername())));
     }
 
     @Operation(summary = "연차 정보 저장", description = "사용자의 연차 정보를 등록하거나 수정합니다.")

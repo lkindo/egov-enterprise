@@ -32,7 +32,7 @@ public class ApprovalDto {
                 .approverId(entity.getSanctnerId())
                 .status(entity.getConfmAt())
                 .approvalDate(entity.getSanctnDt())
-                .returnReason(entity.getReturnReason())
+                .returnReason(entity.getReturnResn())
                 .build();
     }
 }

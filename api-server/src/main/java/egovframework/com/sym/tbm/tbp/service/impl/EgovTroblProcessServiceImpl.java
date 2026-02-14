@@ -31,20 +31,20 @@ public class EgovTroblProcessServiceImpl extends EgovAbstractServiceImpl impleme
 	public List<TroblProcessVO> selectTroblProcessList(TroblProcessVO troblProcessVO) throws Exception {
 		Pageable pageable = PageRequest.of(troblProcessVO.getFirstIndex() / troblProcessVO.getRecordCountPerPage(),
 				troblProcessVO.getRecordCountPerPage());
-		
+
 		List<String> statuses;
 		if (troblProcessVO.getStrProcessSttus() != null && !troblProcessVO.getStrProcessSttus().equals("00")) {
 			statuses = Collections.singletonList(troblProcessVO.getStrProcessSttus());
 		} else {
 			statuses = Arrays.asList("R", "C");
 		}
-				
+
 		Page<Trobl> page = troblRepository.searchTroblReqsts(
 				troblProcessVO.getStrTroblNm(),
 				troblProcessVO.getStrTroblKnd(),
 				statuses,
 				pageable);
-				
+
 		return page.getContent().stream().map(this::mapToVO).collect(Collectors.toList());
 	}
 
@@ -56,7 +56,7 @@ public class EgovTroblProcessServiceImpl extends EgovAbstractServiceImpl impleme
 		} else {
 			statuses = Arrays.asList("R", "C");
 		}
-				
+
 		Page<Trobl> page = troblRepository.searchTroblReqsts(
 				troblProcessVO.getStrTroblNm(),
 				troblProcessVO.getStrTroblKnd(),
@@ -112,9 +112,13 @@ public class EgovTroblProcessServiceImpl extends EgovAbstractServiceImpl impleme
 		vo.setTroblProcessTime(entity.getTroblProcessTime());
 		vo.setProcessSttus(entity.getProcessSttus());
 		vo.setFrstRegisterId(entity.getFrstRegisterId());
-		vo.setFrstRegisterPnttm(entity.getFrstRegisterPnttm() != null ? entity.getFrstRegisterPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		vo.setFrstRegisterPnttm(entity.getCreatedDate() != null
+				? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+				: "");
 		vo.setLastUpdusrId(entity.getLastUpdusrId());
-		vo.setLastUpdusrPnttm(entity.getLastUpdusrPnttm() != null ? entity.getLastUpdusrPnttm().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
+		vo.setLastUpdusrPnttm(entity.getLastModifiedDate() != null
+				? entity.getLastModifiedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+				: "");
 		return vo;
 	}
 }

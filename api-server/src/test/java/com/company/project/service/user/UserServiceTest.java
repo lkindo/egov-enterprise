@@ -24,12 +24,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+
 import static org.mockito.Mockito.*;
 
 /**
@@ -63,10 +62,9 @@ class UserServiceTest {
                 "newUser",
                 "password123",
                 "신규 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
     }
 
     @Test
@@ -81,8 +79,8 @@ class UserServiceTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).userId()).isEqualTo("testUser");
-        assertThat(result.get(0).userNm()).isEqualTo("테스트 사용자");
+        assertThat(result.get(0).getUserId()).isEqualTo("testUser");
+        assertThat(result.get(0).getUserNm()).isEqualTo("테스트 사용자");
     }
 
     @Test
@@ -99,7 +97,7 @@ class UserServiceTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");
+        assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
     }
 
     @Test
@@ -112,8 +110,8 @@ class UserServiceTest {
         UserDto result = userService.getUserById("testUser");
 
         // Then
-        assertThat(result.userId()).isEqualTo("testUser");
-        assertThat(result.userNm()).isEqualTo("테스트 사용자");
+        assertThat(result.getUserId()).isEqualTo("testUser");
+        assertThat(result.getUserNm()).isEqualTo("테스트 사용자");
     }
 
     @Test
@@ -127,8 +125,8 @@ class UserServiceTest {
         UserDto result = userService.getUserById("USR_1234567890123456");
 
         // Then
-        assertThat(result.userId()).isEqualTo("testUser");
-        assertThat(result.esntlId()).isEqualTo("USR_1234567890123456");
+        assertThat(result.getUserId()).isEqualTo("testUser");
+        assertThat(result.getEsntlId()).isEqualTo("USR_1234567890123456");
     }
 
     @Test

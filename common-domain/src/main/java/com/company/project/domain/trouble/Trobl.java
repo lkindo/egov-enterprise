@@ -3,12 +3,13 @@ package com.company.project.domain.trouble;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NTROBLINFO")
 public class Trobl extends BaseEntity {
@@ -46,12 +47,12 @@ public class Trobl extends BaseEntity {
 
     @Column(name = "PROCESS_STTUS", length = 1)
     private String processSttus;
-    
+
     // Missing method for compatibility
     public String getFrstRegisterId() {
         return this.getCreatedBy();
     }
-    
+
     public void setFrstRegisterId(String frstRegisterId) {
         this.setCreatedBy(frstRegisterId);
     }

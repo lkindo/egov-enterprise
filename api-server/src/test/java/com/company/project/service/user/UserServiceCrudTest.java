@@ -67,10 +67,9 @@ class UserServiceCrudTest {
                 "newUser",
                 "password123!",
                 "신규 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
     }
 
     @Test
@@ -129,8 +128,8 @@ class UserServiceCrudTest {
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.userId()).isEqualTo("testUser");
-        assertThat(result.userNm()).isEqualTo("테스트 사용자");
+        assertThat(result.getUserId()).isEqualTo("testUser");
+        assertThat(result.getUserNm()).isEqualTo("테스트 사용자");
     }
 
     @Test
@@ -158,8 +157,8 @@ class UserServiceCrudTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).userId()).isEqualTo("testUser");
-        assertThat(result.get(0).userNm()).isEqualTo("테스트 사용자");
+        assertThat(result.get(0).getUserId()).isEqualTo("testUser");
+        assertThat(result.get(0).getUserNm()).isEqualTo("테스트 사용자");
     }
 
     @Test
@@ -176,7 +175,7 @@ class UserServiceCrudTest {
 
         // Then
         assertThat(result).hasSize(1);
-        assertThat(result.getContent().get(0).userId()).isEqualTo("testUser");
+        assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
     }
 
     @Test
@@ -223,13 +222,12 @@ class UserServiceCrudTest {
     void signup_fail_withNullValues() {
         // Given
         UserSignupRequest nullRequest = new UserSignupRequest(
-                null,  // userId is null
+                null, // userId is null
                 "password123!",
                 "신규 사용자",
+                Role.USER,
                 "hint",
-                "answer",
-                Role.USER
-        );
+                "answer");
 
         // When & Then
         assertThatThrownBy(() -> userService.signup(nullRequest))

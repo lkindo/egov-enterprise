@@ -105,7 +105,7 @@ class BottleneckIdentificationAndImprovementTest {
         double multiThreadTPS = (double) numberOfRequests / (multiThreadDuration / 1000.0);
         double performanceRatio = multiThreadTPS / singleThreadTPS;
 
-        System.out.printf("성능 비교 결과 - 단일 스레드: %d ms (%.2f TPS), 다중 스레드: %d ms (%.2f TPS), 비율: %.2fx%n", 
+        System.out.printf("성능 비교 결과 - 단일 스레드: %d ms (%.2f TPS), 다중 스레드: %d ms (%.2f TPS), 비율: %.2fx%n",
                 singleThreadDuration, singleThreadTPS, multiThreadDuration, multiThreadTPS, performanceRatio);
 
         // 다중 스레드가 단일 스레드보다 빨라야 함 (병목이 없다면)
@@ -156,7 +156,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("DB 연결 풀 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("DB 연결 풀 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // DB 연결 풀 병목이 없다면 평균 응답 시간이 500ms 이하여야 함
@@ -192,7 +192,7 @@ class BottleneckIdentificationAndImprovementTest {
         double withCacheTPS = (double) numberOfRequests / (withCacheDuration / 1000.0);
         double improvementRatio = withCacheTPS / noCacheTPS;
 
-        System.out.printf("캐시 성능 비교 - 캐시 미사용: %d ms (%.2f TPS), 캐시 사용: %d ms (%.2f TPS), 향상 비율: %.2fx%n", 
+        System.out.printf("캐시 성능 비교 - 캐시 미사용: %d ms (%.2f TPS), 캐시 사용: %d ms (%.2f TPS), 향상 비율: %.2fx%n",
                 noCacheDuration, noCacheTPS, withCacheDuration, withCacheTPS, improvementRatio);
 
         // 캐시 사용 시 성능이 향상되어야 함
@@ -209,10 +209,9 @@ class BottleneckIdentificationAndImprovementTest {
                         "nPlusOneUser" + i,
                         "Password123!",
                         "N+1 쿼리 테스트 사용자" + i,
+                        com.company.project.domain.user.Role.USER,
                         "hint",
-                        "answer",
-                        com.company.project.domain.user.Role.USER
-                );
+                        "answer");
                 userService.signup(request);
             } catch (Exception e) {
                 // 이미 존재하는 경우 무시
@@ -258,7 +257,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("N+1 쿼리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("N+1 쿼리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // N+1 쿼리 문제가 해결되었다면 평균 응답 시간이 300ms 이하여야 함
@@ -298,7 +297,7 @@ class BottleneckIdentificationAndImprovementTest {
         long finalUsedMemory = runtime.totalMemory() - runtime.freeMemory();
         long memoryIncrease = finalUsedMemory - initialUsedMemory;
 
-        System.out.printf("메모리 사용량 병목 분석 - 초기: %d bytes, 최종: %d bytes, 증가: %d bytes%n", 
+        System.out.printf("메모리 사용량 병목 분석 - 초기: %d bytes, 최종: %d bytes, 증가: %d bytes%n",
                 initialUsedMemory, finalUsedMemory, memoryIncrease);
 
         // 메모리 누수가 없다면 증가량이 20MB 이하여야 함
@@ -353,7 +352,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .min()
                 .orElse(0L);
 
-        System.out.printf("CPU 사용량 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms, 최소 응답 시간: %d ms%n", 
+        System.out.printf("CPU 사용량 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms, 최소 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime, minResponseTime);
 
         // CPU 병목이 없다면 평균 응답 시간이 1000ms 이하여야 함
@@ -405,7 +404,7 @@ class BottleneckIdentificationAndImprovementTest {
         double asyncTPS = (double) numberOfRequests / (asyncDuration / 1000.0);
         double performanceRatio = asyncTPS / syncTPS;
 
-        System.out.printf("동기/비동기 처리 성능 비교 - 동기: %d ms (%.2f TPS), 비동기: %d ms (%.2f TPS), 비율: %.2fx%n", 
+        System.out.printf("동기/비동기 처리 성능 비교 - 동기: %d ms (%.2f TPS), 비동기: %d ms (%.2f TPS), 비율: %.2fx%n",
                 syncDuration, syncTPS, asyncDuration, asyncTPS, performanceRatio);
 
         // 비동기 처리가 더 빨라야 함 (병목이 없다면)
@@ -422,10 +421,9 @@ class BottleneckIdentificationAndImprovementTest {
                         "pagingUser" + i,
                         "Password123!",
                         "페이징 테스트 사용자" + i,
+                        com.company.project.domain.user.Role.USER,
                         "hint",
-                        "answer",
-                        com.company.project.domain.user.Role.USER
-                );
+                        "answer");
                 userService.signup(request);
             } catch (Exception e) {
                 // 이미 존재하는 경우 무시
@@ -472,7 +470,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("페이징 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("페이징 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // 페이징 처리 병목이 없다면 평균 응답 시간이 400ms 이하여야 함
@@ -489,10 +487,9 @@ class BottleneckIdentificationAndImprovementTest {
                         "searchUser" + i,
                         "Password123!",
                         "검색 테스트 사용자" + i,
+                        com.company.project.domain.user.Role.USER,
                         "hint",
-                        "answer",
-                        com.company.project.domain.user.Role.USER
-                );
+                        "answer");
                 userService.signup(request);
             } catch (Exception e) {
                 // 이미 존재하는 경우 무시
@@ -539,7 +536,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("검색 쿼리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("검색 쿼리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // 검색 쿼리 병목이 없다면 평균 응답 시간이 500ms 이하여야 함
@@ -602,7 +599,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("트랜잭션 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("트랜잭션 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // 트랜잭션 처리 병목이 없다면 평균 응답 시간이 1500ms 이하여야 함
@@ -617,10 +614,9 @@ class BottleneckIdentificationAndImprovementTest {
                 "authUser",
                 "Password123!",
                 "인증 테스트 사용자",
+                com.company.project.domain.user.Role.USER,
                 "hint",
-                "answer",
-                com.company.project.domain.user.Role.USER
-        );
+                "answer");
         userService.signup(signupRequest);
 
         int numberOfRequests = 80;
@@ -662,7 +658,7 @@ class BottleneckIdentificationAndImprovementTest {
                 .max()
                 .orElse(0L);
 
-        System.out.printf("인증 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n", 
+        System.out.printf("인증 처리 병목 분석 - 요청 수: %d, 평균 응답 시간: %d ms, 최대 응답 시간: %d ms%n",
                 numberOfRequests, avgResponseTime, maxResponseTime);
 
         // 인증 처리 병목이 없다면 평균 응답 시간이 600ms 이하여야 함

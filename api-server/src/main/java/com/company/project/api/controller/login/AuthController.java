@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
+@RestController("legacyAuthController")
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Authentication", description = "로그인 및 인증 관리")
 public class AuthController {

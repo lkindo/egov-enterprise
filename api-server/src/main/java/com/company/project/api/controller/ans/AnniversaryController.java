@@ -16,7 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Anniversary", description = "Anniversary Management APIs")
-@RestController
+@RestController("ansAnniversaryController")
 @RequestMapping("/api/v1/anniversaries")
 @RequiredArgsConstructor
 public class AnniversaryController {
@@ -36,7 +36,8 @@ public class AnniversaryController {
     public ResponseEntity<ApiResponse<Page<AnniversaryDto>>> getMyAnniversaries(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(anniversaryService.getMyAnniversaryList(userDetails.getUsername(), pageable)));
+        return ResponseEntity
+                .ok(ApiResponse.success(anniversaryService.getMyAnniversaryList(userDetails.getUsername(), pageable)));
     }
 
     @Operation(summary = "기념일 상세 조회", description = "특정 기념일의 상세 정보를 조회합니다.")
