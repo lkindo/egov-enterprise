@@ -15,10 +15,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.Arrays;
-import java.util.List;
 
+import com.company.project.domain.user.Role;
+import com.company.project.service.user.dto.UserResponse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -27,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
-class FaultRecoveryFunctionTest {
+public class FaultRecoveryFunctionTest { // Changed to public for better visibility, though package-private is fine for
+                                         // JUnit 5
 
         @Autowired
         private MockMvc mockMvc;
@@ -93,7 +95,7 @@ class FaultRecoveryFunctionTest {
                 when(userService.signup(any(UserSignupRequest.class)))
                                 .thenThrow(new RuntimeException("Service temporarily unavailable"))
                                 .thenThrow(new RuntimeException("Service still unavailable"))
-                                .thenReturn("successfulUser"); // 세 번째 시도에 성공
+                                .thenReturn(new UserResponse("successfulUser", "재시도 사용자", Role.USER)); // 세 번째 시도에 성공
 
                 String requestBody = """
                                 {
@@ -414,13 +416,15 @@ class FaultRecoveryFunctionTest {
                                 "transactionUser",
                                 "password123!",
                                 "트랜잭션 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                Role.USER, // Fixed: Role should be passed directly
                                 "hint",
                                 "answer");
 
                 when(userService.signup(any(UserSignupRequest.class)))
                                 .thenThrow(new RuntimeException("Transaction failed"))
-                                .thenReturn("successfulTransactionUser"); // 다음 요청은 성공
+                                .thenReturn(new UserResponse("successfulTransactionUser", "트랜잭션 사용자", Role.USER)); // 다음
+                                                                                                                   // 요청은
+                                                                                                                   // 성공
 
                 String requestBody = """
                                 {
@@ -506,7 +510,8 @@ class FaultRecoveryFunctionTest {
                 long finalMemory = Runtime.getRuntime().freeMemory();
 
                 // Memory should not have significantly decreased after multiple operations
-                assertThat(Math.abs(initialMemory - finalMemory)).isLessThan(initialMemory * 0.1); // Within 10% range
+                assertThat(Math.abs(initialMemory - finalMemory)).isLessThan((long) (initialMemory * 0.1)); // Within
+                                                                                                            // 10% range
         }
 
         @Test

@@ -12,7 +12,6 @@ import com.company.project.service.mail.EgovMailService;
 import com.company.project.service.mail.dto.SentMailDto;
 
 import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.cmm.service.FileVO;
 import egovframework.com.cop.ems.service.EgovSndngMailDetailService;
 import egovframework.com.cop.ems.service.EgovSndngMailDtlsService;
 import egovframework.com.cop.ems.service.SndngMailVO;

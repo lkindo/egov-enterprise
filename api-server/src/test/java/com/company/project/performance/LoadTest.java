@@ -1,4 +1,4 @@
-package com.company.project.performance.test;
+package com.company.project.performance;
 
 import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
@@ -486,7 +486,7 @@ class LoadTest {
 
         // 응답 시간 분석
         if (!responseTimes.isEmpty()) {
-            long avgResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0).longValue();
+            long avgResponseTime = (long) responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
             long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
             long minResponseTime = responseTimes.stream().mapToLong(Long::longValue).min().orElse(0L);
 

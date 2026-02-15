@@ -4,8 +4,6 @@ import com.company.project.domain.backup.BackupOpert;
 import com.company.project.domain.backup.BackupSchdulDfk;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -113,20 +111,20 @@ public class BackupOpertDto {
 
         return cronExpression.toString();
     }
-    
+
     // 누락된 메서드들 추가
     public void setFrstRegisterId(String frstRegisterId) {
         this.frstRegisterId = frstRegisterId;
     }
-    
+
     public String getFrstRegisterId() {
         return this.frstRegisterId;
     }
-    
+
     public void setLastUpdusrId(String lastUpdusrId) {
         this.lastUpdusrId = lastUpdusrId;
     }
-    
+
     public String getLastUpdusrId() {
         return this.lastUpdusrId;
     }

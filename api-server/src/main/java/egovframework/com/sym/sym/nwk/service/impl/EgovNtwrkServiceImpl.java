@@ -153,19 +153,6 @@ public class EgovNtwrkServiceImpl extends EgovAbstractServiceImpl implements Ego
 		return vo;
 	}
 
-	private NtwrkVO mapToNtwrkVO(Object[] row) {
-		NtwrkVO vo = new NtwrkVO();
-		vo.setNtwrkId((String) row[0]);
-		vo.setNtwrkIp((String) row[1]);
-		vo.setManageIem((String) row[3]); // Use the Name instead of the Code if possible, or mapping logic needed
-		vo.setUserNm((String) row[6]);
-		vo.setUseAt((String) row[7]);
-		vo.setRegstYmd(
-				row[8] != null ? ((java.sql.Date) row[8]).toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-						: "");
-		return vo;
-	}
-
 	private LocalDate parseLocalDate(String dateStr) {
 		if (dateStr == null || dateStr.isEmpty())
 			return null;

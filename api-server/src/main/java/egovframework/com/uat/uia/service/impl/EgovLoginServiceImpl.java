@@ -225,7 +225,6 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	@Override
 	@Transactional
 	public String processLoginIncorrect(LoginVO vo, Map<?, ?> mapLockUserInfo) throws Exception {
-		String sRtnCode = "C";
 		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
 
 		boolean isPasswordMatch = enpassword.equals(mapLockUserInfo.get("userPw"));

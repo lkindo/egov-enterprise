@@ -1,6 +1,6 @@
 package com.company.project.domain.user;
 
-import com.company.project.config.TestJpaConfig;
+import com.company.project.TestJpaConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -230,7 +230,8 @@ class UserRepositoryPagingLogicTest {
 
         // Then
         assertThat(result.getContent()).hasSize(3);
-        // Verify that the users are ordered by creation date (which depends on the order of saving)
+        // Verify that the users are ordered by creation date (which depends on the
+        // order of saving)
     }
 
     @Test
@@ -255,7 +256,7 @@ class UserRepositoryPagingLogicTest {
 
         // When & Then
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(
-                org.springframework.dao.InvalidDataAccessApiUsageException.class, 
+                org.springframework.dao.InvalidDataAccessApiUsageException.class,
                 () -> userRepository.findAll(PageRequest.of(0, 0))))
                 .hasMessageContaining("Page size must not be less than one!");
     }
@@ -268,7 +269,7 @@ class UserRepositoryPagingLogicTest {
 
         // When & Then
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(
-                org.springframework.dao.InvalidDataAccessApiUsageException.class, 
+                org.springframework.dao.InvalidDataAccessApiUsageException.class,
                 () -> userRepository.findAll(PageRequest.of(-1, 10))))
                 .hasMessageContaining("Page index must not be less than zero!");
     }

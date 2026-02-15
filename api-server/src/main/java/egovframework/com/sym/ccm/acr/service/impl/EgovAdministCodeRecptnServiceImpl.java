@@ -16,8 +16,6 @@ import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,8 +46,6 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		implements EgovAdministCodeRecptnService {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovAdministCodeRecptnServiceImpl.class);
 
 	private final AdministCodeRepository administCodeRepository;
 	private final AdministCodeRecptnLogRepository administCodeRecptnLogRepository;
@@ -136,7 +132,8 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		conn.setRequestProperty("Content-Type", "application/json");
 		try {
 			if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-				JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+				JsonNode jsonObject = OBJECT_MAPPER
+						.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
 				JsonNode jsonArray = jsonObject.get("StanReginCd");
 				JsonNode headObject = jsonArray.get(0);
 				JsonNode headArray = headObject.get("head");
@@ -160,7 +157,8 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 			conn.setRequestProperty("Content-Type", "application/json");
 			try {
 				if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-					JsonNode jsonObject = OBJECT_MAPPER.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
+					JsonNode jsonObject = OBJECT_MAPPER
+							.readTree(IOUtils.toString(conn.getInputStream(), StandardCharsets.UTF_8));
 					JsonNode jsonArray = jsonObject.get("StanReginCd");
 					JsonNode bodyObject = jsonArray.get(1);
 					JsonNode row = bodyObject.get("row");

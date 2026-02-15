@@ -39,6 +39,7 @@ class JwtAuthenticationFilterTest {
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         filterChain = new MockFilterChain();
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -47,7 +48,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
-        
+
         request.addHeader("Authorization", "Bearer " + token);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(true);
@@ -60,7 +61,7 @@ class JwtAuthenticationFilterTest {
         verify(tokenProvider).resolveToken(request);
         verify(tokenProvider).validateToken(token);
         verify(tokenProvider).getAuthentication(token);
-        
+
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isEqualTo(mockAuth);
     }
 
@@ -77,7 +78,7 @@ class JwtAuthenticationFilterTest {
         verify(tokenProvider).resolveToken(request);
         verify(tokenProvider, never()).validateToken(any());
         verify(tokenProvider, never()).getAuthentication(any());
-        
+
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
@@ -86,7 +87,7 @@ class JwtAuthenticationFilterTest {
     void doFilterInternal_withInvalidToken_authenticationFailure() throws ServletException, IOException {
         // Given
         String token = "invalidToken123";
-        
+
         request.addHeader("Authorization", "Bearer " + token);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(false); // Invalid token
@@ -98,7 +99,7 @@ class JwtAuthenticationFilterTest {
         verify(tokenProvider).resolveToken(request);
         verify(tokenProvider).validateToken(token);
         verify(tokenProvider, never()).getAuthentication(any()); // Should not be called for invalid token
-        
+
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
@@ -116,7 +117,7 @@ class JwtAuthenticationFilterTest {
         verify(tokenProvider).resolveToken(request);
         verify(tokenProvider, never()).validateToken(any());
         verify(tokenProvider, never()).getAuthentication(any());
-        
+
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
@@ -125,7 +126,7 @@ class JwtAuthenticationFilterTest {
     void doFilterInternal_withTokenValidationException_authenticationFailure() throws ServletException, IOException {
         // Given
         String token = "exceptionToken123";
-        
+
         request.addHeader("Authorization", "Bearer " + token);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenThrow(new RuntimeException("Token validation error"));
@@ -137,7 +138,7 @@ class JwtAuthenticationFilterTest {
         verify(tokenProvider).resolveToken(request);
         verify(tokenProvider).validateToken(token);
         verify(tokenProvider, never()).getAuthentication(any()); // Should not be called when validation fails
-        
+
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
@@ -147,7 +148,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
-        
+
         request.addHeader("Authorization", "Bearer " + token);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(true);
@@ -168,7 +169,7 @@ class JwtAuthenticationFilterTest {
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
         when(mockAuth.getName()).thenReturn("testUser");
-        
+
         request.addHeader("Authorization", "Bearer " + token);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(true);

@@ -1,4 +1,4 @@
-package com.company.project.openapi.test;
+package com.company.project.openapi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ class ApiSpecificationComplianceTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validUserSignupRequest))
-                .andExpect(status().isOk())  // 명세에 따라 200 OK 반환
+                .andExpect(status().isOk()) // 명세에 따라 200 OK 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
@@ -53,10 +53,10 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 GET /api/v1/users 엔드포인트가 동작해야 함
         mockMvc.perform(get("/api/v1/users")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())  // 명세에 따라 200 OK 반환
+                .andExpect(status().isOk()) // 명세에 따라 200 OK 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray());  // 명세에 따라 배열 형태의 데이터 반환
+                .andExpect(jsonPath("$.data").isArray()); // 명세에 따라 배열 형태의 데이터 반환
     }
 
     @Test
@@ -65,10 +65,10 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 GET /api/v1/users/{id} 엔드포인트가 동작해야 함
         mockMvc.perform(get("/api/v1/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())  // 명세에 따라 200 OK 반환
+                .andExpect(status().isOk()) // 명세에 따라 200 OK 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").exists());  // 명세에 따라 단일 객체 형태의 데이터 반환
+                .andExpect(jsonPath("$.data").exists()); // 명세에 따라 단일 객체 형태의 데이터 반환
     }
 
     @Test
@@ -81,13 +81,13 @@ class ApiSpecificationComplianceTest {
                     "password": "short",
                     "userNm": ""
                 }
-                """;  // Invalid request according to API spec
+                """; // Invalid request according to API spec
 
         // When & Then - API 명세에 따라 잘못된 요청 시 400 Bad Request 반환
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequest))
-                .andExpect(status().isBadRequest())  // 명세에 따라 400 Bad Request 반환
+                .andExpect(status().isBadRequest()) // 명세에 따라 400 Bad Request 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -98,7 +98,7 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 인증이 필요한 엔드포인트에 접근 시 401 Unauthorized 반환
         mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized())  // 명세에 따라 401 Unauthorized 반환
+                .andExpect(status().isUnauthorized()) // 명세에 따라 401 Unauthorized 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -109,7 +109,7 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 존재하지 않는 리소스 요청 시 404 Not Found 반환
         mockMvc.perform(get("/api/v1/users/nonexistentUser")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())  // 명세에 따라 404 Not Found 반환
+                .andExpect(status().isNotFound()) // 명세에 따라 404 Not Found 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(false));
     }
@@ -118,9 +118,9 @@ class ApiSpecificationComplianceTest {
     @DisplayName("API 명세에 따른 HTTP 메서드 불일치 시 405 반환 확인")
     void methodNotAllowed_specification_compliance() throws Exception {
         // When & Then - API 명세에 따라 허용되지 않는 HTTP 메서드 사용 시 405 Method Not Allowed 반환
-        mockMvc.perform(put("/api/v1/users")  // PUT은 명세에 없음, GET만 있을 경우
+        mockMvc.perform(put("/api/v1/users") // PUT은 명세에 없음, GET만 있을 경우
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isMethodNotAllowed())  // 명세에 따라 405 Method Not Allowed 반환
+                .andExpect(status().isMethodNotAllowed()) // 명세에 따라 405 Method Not Allowed 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
@@ -130,7 +130,7 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 페이징 파라미터를 사용하는 엔드포인트 테스트
         mockMvc.perform(get("/api/v1/users?page=0&size=10&sort=userId,asc")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())  // 명세에 따라 200 OK 반환
+                .andExpect(status().isOk()) // 명세에 따라 200 OK 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").exists())
@@ -143,7 +143,7 @@ class ApiSpecificationComplianceTest {
         // When & Then - API 명세에 따라 쿼리 파라미터를 사용하는 엔드포인트 테스트
         mockMvc.perform(get("/api/v1/users/search?searchType=name&searchKeyword=test")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())  // 명세에 따라 200 OK 반환
+                .andExpect(status().isOk()) // 명세에 따라 200 OK 반환
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -153,7 +153,7 @@ class ApiSpecificationComplianceTest {
     void requiredHeaders_specification_compliance() throws Exception {
         // When & Then - API 명세에 따라 특정 헤더가 필요한 엔드포인트 테스트
         mockMvc.perform(post("/api/v1/users/signup")
-                .header("Content-Type", "application/json")  // 명세에 따라 Content-Type 헤더 필요
+                .header("Content-Type", "application/json") // 명세에 따라 Content-Type 헤더 필요
                 .content("""
                         {
                             "userId": "headerTestUser",
@@ -173,9 +173,9 @@ class ApiSpecificationComplianceTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.success").exists())      // 명세에 따라 success 필드 존재
-                .andExpect(jsonPath("$.data").exists())          // 명세에 따라 data 필드 존재
-                .andExpect(jsonPath("$.error").doesNotExist());  // 명세에 따라 error 필드는 성공 시 없음
+                .andExpect(jsonPath("$.success").exists()) // 명세에 따라 success 필드 존재
+                .andExpect(jsonPath("$.data").exists()) // 명세에 따라 data 필드 존재
+                .andExpect(jsonPath("$.error").doesNotExist()); // 명세에 따라 error 필드는 성공 시 없음
     }
 
     @Test
@@ -196,9 +196,9 @@ class ApiSpecificationComplianceTest {
                 .content(invalidRequest))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.success").value(false))  // 명세에 따라 success는 false
-                .andExpect(jsonPath("$.data").value(null))       // 명세에 따라 data는 null
-                .andExpect(jsonPath("$.error").exists());       // 명세에 따라 error 필드 존재
+                .andExpect(jsonPath("$.success").value(false)) // 명세에 따라 success는 false
+                .andExpect(jsonPath("$.data").value(null)) // 명세에 따라 data는 null
+                .andExpect(jsonPath("$.error").exists()); // 명세에 따라 error 필드 존재
     }
 
     @Test
@@ -211,13 +211,13 @@ class ApiSpecificationComplianceTest {
                     "password": "Password123!",
                     "userNm": "%s"
                 }
-                """.formatted("A".repeat(10000));  // Large string exceeding limits
+                """.formatted("A".repeat(10000)); // Large string exceeding limits
 
         // When & Then - API 명세에 따라 요청 본문 크기 제한이 있는 경우
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(largeRequest))
-                .andExpect(status().isPayloadTooLarge());  // 명세에 따라 413 Payload Too Large 또는 400
+                .andExpect(status().isPayloadTooLarge()); // 명세에 따라 413 Payload Too Large 또는 400
     }
 
     @Test
@@ -225,7 +225,7 @@ class ApiSpecificationComplianceTest {
     void supportedMediaTypes_specification_compliance() throws Exception {
         // When & Then - API 명세에 따라 지원되는 미디어 타입 확인
         mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)  // 명세에 따라 JSON 지원
+                .contentType(MediaType.APPLICATION_JSON) // 명세에 따라 JSON 지원
                 .content("""
                         {
                             "userId": "mediaTypeUser",
@@ -237,7 +237,7 @@ class ApiSpecificationComplianceTest {
 
         // When & Then - 명세에 따라 지원되지 않는 미디어 타입은 거부되어야 함
         mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.TEXT_PLAIN)  // 명세에 따라 지원되지 않는 타입
+                .contentType(MediaType.TEXT_PLAIN) // 명세에 따라 지원되지 않는 타입
                 .content("plain text"))
                 .andExpect(status().isUnsupportedMediaType());
     }
@@ -246,7 +246,7 @@ class ApiSpecificationComplianceTest {
     @DisplayName("API 명세에 따른 URL 경로 패턴 확인")
     void urlPathPattern_specification_compliance() throws Exception {
         // When & Then - API 명세에 따라 정의된 URL 패턴이어야 함
-        mockMvc.perform(get("/api/v1/users/valid-user_123")  // Valid pattern according to spec
+        mockMvc.perform(get("/api/v1/users/valid-user_123") // Valid pattern according to spec
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
@@ -258,7 +258,7 @@ class ApiSpecificationComplianceTest {
     void authTokenUsage_specification_compliance() throws Exception {
         // When & Then - API 명세에 따라 인증이 필요한 엔드포인트에 토큰 포함 요청
         mockMvc.perform(get("/api/v1/users/my-info")
-                .header("Authorization", "Bearer valid-token")  // 명세에 따라 Bearer 토큰 사용
+                .header("Authorization", "Bearer valid-token") // 명세에 따라 Bearer 토큰 사용
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));

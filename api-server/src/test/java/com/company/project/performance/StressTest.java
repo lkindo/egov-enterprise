@@ -1,4 +1,4 @@
-package com.company.project.performance.test;
+package com.company.project.performance;
 
 import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
@@ -383,16 +383,18 @@ class StressTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long testEndTime = System.currentTimeMillis();
 
         // 응답 시간 분석
+        if (responseTimes.isEmpty()) {
+            responseTimes.add(0L);
+        }
+
         long successfulRequests = responseTimes.stream().filter(time -> time > 0).count();
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .filter(time -> time > 0)
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .filter(time -> time > 0)
                 .mapToLong(Long::longValue)

@@ -22,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
@@ -292,7 +293,8 @@ class JwtTokenProviderTest {
     void validateRefreshToken_success() throws Exception {
         // Given
         String userId = "testUser";
-        String refreshToken = jwtTokenProvider.createAccessToken(userId, "ROLE_USER"); // Using access token for test simplicity
+        String refreshToken = jwtTokenProvider.createAccessToken(userId, "ROLE_USER"); // Using access token for test
+                                                                                       // simplicity
         RefreshToken mockRefreshToken = RefreshToken.builder()
                 .userId(userId)
                 .token(refreshToken)
@@ -327,7 +329,8 @@ class JwtTokenProviderTest {
     void validateRefreshToken_fail_expiredToken() throws Exception {
         // Given
         String userId = "testUser";
-        String refreshToken = jwtTokenProvider.createAccessToken(userId, "ROLE_USER"); // Using access token for test simplicity
+        String refreshToken = jwtTokenProvider.createAccessToken(userId, "ROLE_USER"); // Using access token for test
+                                                                                       // simplicity
         RefreshToken expiredRefreshToken = RefreshToken.builder()
                 .userId(userId)
                 .token(refreshToken)
@@ -345,13 +348,13 @@ class JwtTokenProviderTest {
 
     // Helper method to access the key for testing purposes
     public static class TestHelper {
-        public static io.jsonwebtoken.security.SecretKey getKeyForTest(JwtTokenProvider provider) {
-            return (io.jsonwebtoken.security.SecretKey) ReflectionTestUtils.getField(provider, "key");
+        public static SecretKey getKeyForTest(JwtTokenProvider provider) {
+            return (SecretKey) ReflectionTestUtils.getField(provider, "key");
         }
     }
 
     // Add a helper method to access the key for testing
-    public io.jsonwebtoken.security.SecretKey getKeyForTest() {
-        return (io.jsonwebtoken.security.SecretKey) ReflectionTestUtils.getField(jwtTokenProvider, "key");
+    public SecretKey getKeyForTest() {
+        return (SecretKey) ReflectionTestUtils.getField(jwtTokenProvider, "key");
     }
 }

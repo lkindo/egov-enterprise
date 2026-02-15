@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -23,56 +22,51 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class UserControllerTest {
 
-    private MockMvc mockMvc;
+        private MockMvc mockMvc;
 
-    @Mock
-    private UserService userService;
+        @Mock
+        private UserService userService;
 
-    @InjectMocks
-    private UserController userController;
+        @InjectMocks
+        private UserController userController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+        private ObjectMapper objectMapper = new ObjectMapper();
 
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        // setup message source if needed, e.g. setBasename("messages");
+        @BeforeEach
+        public void setup() {
+                MockitoAnnotations.openMocks(this);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
+                mockMvc = MockMvcBuilders.standaloneSetup(userController)
+                                .setControllerAdvice(new GlobalExceptionHandler())
+                                .build();
+        }
 
-    @Test
-    public void signup_ShouldFail_WhenInputIsInvalid() throws Exception {
-        // Invalid request: empty userId, short password, empty userNm
-        UserSignupRequest request = new UserSignupRequest(
-                "", "123", "", Role.USER, "hint", "123"
-        );
+        @Test
+        public void signup_ShouldFail_WhenInputIsInvalid() throws Exception {
+                // Invalid request: empty userId, short password, empty userNm
+                UserSignupRequest request = new UserSignupRequest(
+                                "", "123", "", Role.USER, "hint", "123");
 
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post("/api/v1/users/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    public void signup_ShouldSucceed_WhenInputIsValid() throws Exception {
-        // Valid request
-        UserSignupRequest request = new UserSignupRequest(
-                "validUser", "ValidPass123!", "Valid Name", Role.USER, "hint", "ValidPass123!"
-        );
+        @Test
+        public void signup_ShouldSucceed_WhenInputIsValid() throws Exception {
+                // Valid request
+                UserSignupRequest request = new UserSignupRequest(
+                                "validUser", "ValidPass123!", "Valid Name", Role.USER, "hint", "ValidPass123!");
 
-        UserResponse response = new UserResponse(
-                "validUser", "Valid Name", Role.USER
-        );
+                UserResponse response = new UserResponse(
+                                "validUser", "Valid Name", Role.USER);
 
-        when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
+                when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(post("/api/v1/users/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+        }
 }

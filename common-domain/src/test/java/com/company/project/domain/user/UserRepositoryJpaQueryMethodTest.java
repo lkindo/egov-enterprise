@@ -1,6 +1,6 @@
 package com.company.project.domain.user;
 
-import com.company.project.config.TestJpaConfig;
+import com.company.project.TestJpaConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +100,8 @@ class UserRepositoryJpaQueryMethodTest {
         userRepository.save(user);
 
         // When
-        Optional<User> result = userRepository.findByUserIdAndUserNmAndEmailAdres("testUser", "테스트 사용자", "test@example.com");
+        Optional<User> result = userRepository.findByUserIdAndUserNmAndEmailAdres("testUser", "테스트 사용자",
+                "test@example.com");
 
         // Then
         assertThat(result).isPresent();
@@ -229,7 +230,9 @@ class UserRepositoryJpaQueryMethodTest {
         User savedUser = userRepository.save(user);
 
         // When
-        savedUser.update("수정된 사용자", "hint", "answer", "empNo", "ihidnum", "M", "1990-01-01", "02", "123", "456", "010-1234-5678", "test@test.com", "과장", "GRP001", "ORG001", "INST001", com.company.project.domain.user.Role.USER, "subDn");
+        savedUser.update("수정된 사용자", "hint", "answer", "empNo", "ihidnum", "M", "1990-01-01", "02", "123", "456",
+                "010-1234-5678", "homeadres", "detailAdres", "zip", "offmTelno", "moblphonNo", "test@test.com", "과장",
+                "GRP001", "ORG001", "INST001", com.company.project.domain.user.Role.USER, "subDn");
         User updatedUser = userRepository.save(savedUser);
 
         // Then

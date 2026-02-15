@@ -3,7 +3,6 @@ package com.company.project.domain.dam;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**

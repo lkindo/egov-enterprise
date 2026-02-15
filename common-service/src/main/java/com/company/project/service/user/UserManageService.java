@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -73,7 +72,8 @@ public class UserManageService {
      */
     @Transactional
     public void insertUser(UserManageDto dto) {
-        String esntlId = Constants.User.USRCNFRM_PREFIX + UUID.randomUUID().toString().substring(0, Constants.User.ESNTL_ID_UUID_LENGTH).toUpperCase();
+        String esntlId = Constants.User.USRCNFRM_PREFIX
+                + UUID.randomUUID().toString().substring(0, Constants.User.ESNTL_ID_UUID_LENGTH).toUpperCase();
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         User entity = User.builder()

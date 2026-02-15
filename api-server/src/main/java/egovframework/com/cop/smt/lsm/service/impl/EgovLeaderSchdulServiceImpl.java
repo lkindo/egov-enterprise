@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -67,7 +66,8 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 
 	@Override
 	public void updateLeaderSchdul(LeaderSchdul leaderSchdul) throws Exception {
-		leaderScheduleService.updateLeaderSchedule(leaderSchdul.getSchdulId(), leaderSchdul.getLastUpdusrId(), toDto(leaderSchdul));
+		leaderScheduleService.updateLeaderSchedule(leaderSchdul.getSchdulId(), leaderSchdul.getLastUpdusrId(),
+				toDto(leaderSchdul));
 	}
 
 	@Override

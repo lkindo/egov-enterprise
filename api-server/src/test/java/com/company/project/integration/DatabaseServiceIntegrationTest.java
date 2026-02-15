@@ -56,6 +56,8 @@ class DatabaseServiceIntegrationTest {
 
         // When
         UserResponse response = userService.signup(signupRequest);
+        assertThat(response).isNotNull();
+        assertThat(response.userId()).isEqualTo("dbIntegrationUser");
 
         // Then
         long finalCount = userRepository.count();
@@ -174,6 +176,7 @@ class DatabaseServiceIntegrationTest {
                 "hint",
                 "answer",
                 Role.USER);
+        assertThat(returnedUserId).isEqualTo(userId);
 
         // Then
         // Verify that user exists in database

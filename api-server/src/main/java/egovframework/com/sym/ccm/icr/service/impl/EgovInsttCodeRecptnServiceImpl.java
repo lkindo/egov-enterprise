@@ -16,8 +16,6 @@ import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,8 +44,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl implements EgovInsttCodeRecptnService {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(EgovInsttCodeRecptnServiceImpl.class);
 
 	private final InstitutionCodeRepository institutionCodeRepository;
 	private final InstitutionCodeRecptnLogRepository institutionCodeRecptnLogRepository;

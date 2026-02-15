@@ -2,7 +2,6 @@ package com.company.project.api.controller.survey;
 
 import com.company.project.core.response.ApiResponse;
 import com.company.project.service.survey.EgovOnlinePollService;
-import com.company.project.service.survey.dto.OnlinePollItemDto;
 import com.company.project.service.survey.dto.OnlinePollManageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,8 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "OnlinePoll", description = "Online Poll Management APIs")
 @RestController
