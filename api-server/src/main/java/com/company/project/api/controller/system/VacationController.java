@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Vacation Management", description = "Vacation and Annual Leave Management APIs")
-@RestController
+@RestController("systemVacationController")
 @RequestMapping("/api/v1/admin/system/vacations")
 @RequiredArgsConstructor
 public class VacationController {

@@ -9,8 +9,8 @@ import {
   User, 
   Settings, 
   History, 
-  ShieldLock, 
-  Mail, 
+  Shield, 
+  Mail,
   Phone, 
   Briefcase,
   Edit3
@@ -74,7 +74,7 @@ export default function MyPageDashboard() {
 
           <div className="p-6 bg-muted/20 border border-dashed rounded-2xl space-y-4">
             <h3 className="text-sm font-bold flex items-center gap-2">
-              <ShieldLock size={16} className="text-primary" /> 보안 설정
+              <Shield size={16} className="text-primary" /> 보안 설정
             </h3>
             <Link 
               href="/mypage/password"

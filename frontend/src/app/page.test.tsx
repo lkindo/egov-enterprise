@@ -64,6 +64,19 @@ describe('DashboardPage', () => {
           }
         });
       }
+      if (url.startsWith('/vacations/yearly-leaves/my')) {
+        return Promise.resolve({
+          data: {
+            result: {
+              occrrncYear: '2026',
+              usid: 'TEST_USER',
+              totalVacationDays: 15,
+              usedVacationDays: 5,
+              remainedVacationDays: 10
+            }
+          }
+        });
+      }
       return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
 

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "NotificationUnityLink")
 @Table(name = "NUNITYLINK")
 public class UnityLink extends BaseEntity {
 
@@ -34,7 +34,8 @@ public class UnityLink extends BaseEntity {
     private String unityLinkSeCode;
 
     @Builder
-    public UnityLink(String unityLinkId, String unityLinkGroup, String unityLinkNm, String unityLinkUrl, String unityLinkDc, String unityLinkSeCode, String frstRegisterId) {
+    public UnityLink(String unityLinkId, String unityLinkGroup, String unityLinkNm, String unityLinkUrl,
+            String unityLinkDc, String unityLinkSeCode, String frstRegisterId) {
         this.unityLinkId = unityLinkId;
         this.unityLinkGroup = unityLinkGroup;
         this.unityLinkNm = unityLinkNm;
@@ -44,7 +45,8 @@ public class UnityLink extends BaseEntity {
         this.createdBy = frstRegisterId;
     }
 
-    public void update(String unityLinkSeCode, String unityLinkNm, String unityLinkUrl, String unityLinkDc, String userId) {
+    public void update(String unityLinkSeCode, String unityLinkNm, String unityLinkUrl, String unityLinkDc,
+            String userId) {
         this.unityLinkSeCode = unityLinkSeCode;
         this.unityLinkNm = unityLinkNm;
         this.unityLinkUrl = unityLinkUrl;
@@ -52,7 +54,8 @@ public class UnityLink extends BaseEntity {
         this.lastModifiedBy = userId;
     }
 
-    public void update(String unityLinkGroup, String unityLinkSeCode, String unityLinkNm, String unityLinkUrl, String unityLinkDc, String userId) {
+    public void update(String unityLinkGroup, String unityLinkSeCode, String unityLinkNm, String unityLinkUrl,
+            String unityLinkDc, String userId) {
         this.unityLinkGroup = unityLinkGroup;
         this.unityLinkSeCode = unityLinkSeCode;
         this.unityLinkNm = unityLinkNm;

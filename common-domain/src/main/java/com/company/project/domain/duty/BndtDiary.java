@@ -12,6 +12,7 @@ import java.io.Serializable;
  */
 @Entity
 @Table(name = "NBNDTDIARY")
+@IdClass(BndtDiaryId.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,7 +40,8 @@ public class BndtDiary extends BaseEntity {
     private String chckSttus;
 
     @Builder
-    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus, String frstRegisterId) {
+    public BndtDiary(String bndtId, String bndtDe, String bndtCeckSe, String bndtCeckCd, String chckSttus,
+            String frstRegisterId) {
         this.bndtId = bndtId;
         this.bndtDe = bndtDe;
         this.bndtCeckSe = bndtCeckSe;

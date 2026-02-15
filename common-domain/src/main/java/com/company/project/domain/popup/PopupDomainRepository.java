@@ -11,10 +11,11 @@ import java.util.List;
 /**
  * 팝업창 Repository
  */
+@org.springframework.stereotype.Repository("popupPopupDomainRepository")
 public interface PopupDomainRepository extends JpaRepository<Popup, String> {
 
     Page<Popup> findByPopupTitleNmContaining(String popupTitleNm, Pageable pageable);
 
-    @Query("SELECT p FROM Popup p WHERE p.ntceAt = 'Y' AND :now BETWEEN p.ntceBgnde AND p.ntceEndde")
+    @Query("SELECT p FROM PopupDomain p WHERE p.ntceAt = 'Y' AND :now BETWEEN p.ntceBgnde AND p.ntceEndde")
     List<Popup> findActivePopups(@Param("now") String now);
 }

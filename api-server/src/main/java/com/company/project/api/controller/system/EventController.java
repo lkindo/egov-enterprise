@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Event Management", description = "Internal/General Event Management APIs")
-@RestController
+@RestController("systemEventController")
 @RequestMapping("/api/v1/admin/system/events")
 @RequiredArgsConstructor
 public class EventController {

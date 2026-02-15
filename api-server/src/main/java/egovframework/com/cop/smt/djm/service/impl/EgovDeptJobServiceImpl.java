@@ -35,10 +35,10 @@ public class EgovDeptJobServiceImpl extends EgovAbstractServiceImpl
 	@Resource(name = "egovDeptJobService")
 	private com.company.project.service.deptjob.EgovDeptJobService modernDeptJobService;
 
-	@Resource(name = "EgovDeptJobBoxService")
+	@Resource(name = "deptJobBoxService")
 	private DeptJobBoxService deptJobBoxService;
 
-	@Resource(name = "userService")
+	@Resource(name = "egovUserService")
 	private EgovUserService userService;
 
 	@Resource(name = "organizationManageRepository")

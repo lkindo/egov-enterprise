@@ -63,6 +63,7 @@ public class Qna extends BaseEntity {
     private String answerDe;
 
     @Column(name = "RDCNT")
+    @Builder.Default
     private Integer inqireCo = 0;
 
     @Column(name = "WRITNG_DE", length = 20)

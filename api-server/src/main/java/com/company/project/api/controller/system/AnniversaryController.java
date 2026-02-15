@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Anniversary Management", description = "Personal/General Anniversary Management APIs")
-@RestController
+@RestController("systemAnniversaryController")
 @RequestMapping("/api/v1/admin/system/anniversaries")
 @RequiredArgsConstructor
 public class AnniversaryController {
@@ -46,7 +46,8 @@ public class AnniversaryController {
 
     @Operation(summary = "Update Anniversary")
     @PutMapping("/{annId}")
-    public ResponseEntity<ApiResponse<Void>> updateAnniversary(@PathVariable String annId, @RequestBody AnniversaryDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateAnniversary(@PathVariable String annId,
+            @RequestBody AnniversaryDto dto) {
         dto.setAnnId(annId);
         anniversaryService.updateAnniversary(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

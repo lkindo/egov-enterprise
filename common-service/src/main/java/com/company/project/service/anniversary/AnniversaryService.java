@@ -5,18 +5,21 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.anniversary.Anniversary;
 import com.company.project.domain.anniversary.AnniversaryRepository;
 import com.company.project.service.anniversary.dto.AnniversaryDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AnniversaryService implements EgovAnniversaryService {
 
     private final AnniversaryRepository anniversaryRepository;
+
+    public AnniversaryService(
+            @org.springframework.beans.factory.annotation.Qualifier("ansAnniversaryRepository") AnniversaryRepository anniversaryRepository) {
+        this.anniversaryRepository = anniversaryRepository;
+    }
 
     @Override
     public Page<AnniversaryDto> getAnniversaryList(String keyword, Pageable pageable) {

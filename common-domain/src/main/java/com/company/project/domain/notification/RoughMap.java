@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "NotificationRoughMap")
 @Table(name = "NROUGHMAP")
 public class RoughMap extends BaseEntity {
 
@@ -42,8 +42,8 @@ public class RoughMap extends BaseEntity {
     @Column(name = "INFOWINDOW", length = 20)
     private String infoWindow;
 
-    public void update(String roughMapSj, String roughMapAddress, String la, String lo, 
-                       String markerLa, String markerLo, String zoomLevel, Integer infoWindow, String userId) {
+    public void update(String roughMapSj, String roughMapAddress, String la, String lo,
+            String markerLa, String markerLo, String zoomLevel, Integer infoWindow, String userId) {
         this.roughMapSj = roughMapSj;
         this.roughMapAddress = roughMapAddress;
         this.la = la;

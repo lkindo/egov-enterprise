@@ -3,18 +3,21 @@ package com.company.project.service.system;
 import com.company.project.domain.system.EventCmpgn;
 import com.company.project.domain.system.EventCmpgnRepository;
 import com.company.project.service.system.dto.EventCmpgnDto;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
-@RequiredArgsConstructor
+@Service("systemEventCmpgnService")
 public class EventCmpgnService extends EgovAbstractServiceImpl {
 
     private final EventCmpgnRepository eventCmpgnRepository;
+
+    public EventCmpgnService(
+            @org.springframework.beans.factory.annotation.Qualifier("systemEventCmpgnRepository") EventCmpgnRepository eventCmpgnRepository) {
+        this.eventCmpgnRepository = eventCmpgnRepository;
+    }
 
     @Transactional(readOnly = true)
     public Page<EventCmpgnDto> getEventCmpgnList(String eventCn, Pageable pageable) {

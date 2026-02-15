@@ -7,7 +7,7 @@ import java.util.List;
 
 @Repository
 public interface BatchSchdulDfkRepository extends JpaRepository<BatchSchdulDfk, BatchSchdulDfkId> {
-    List<BatchSchdulDfk> findByBatchSchdulId(String batchSchdulId);
+    List<BatchSchdulDfk> findByIdBatchSchdulId(String batchSchdulId);
 
-    void deleteByBatchSchdulId(String batchSchdulId);
+    void deleteByIdBatchSchdulId(String batchSchdulId);
 }

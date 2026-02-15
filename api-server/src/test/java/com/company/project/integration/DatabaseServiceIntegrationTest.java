@@ -167,8 +167,8 @@ class DatabaseServiceIntegrationTest {
         String userId = "persistenceTestUser";
 
         // When
-        UserResponse response = userService.registerUser(
-                userId,
+        String returnedUserId = userService.registerUser(
+                "persistenceTestUser",
                 "password123!",
                 "영속성 테스트 사용자",
                 "hint",

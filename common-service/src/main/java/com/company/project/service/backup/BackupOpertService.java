@@ -39,7 +39,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
 
         Map<String, List<BackupSchdulDfk>> dfkMapByOpert;
         if (!ids.isEmpty()) {
-            List<BackupSchdulDfk> dfks = backupSchdulDfkRepository.findByBackupOpertIdIn(ids);
+            List<BackupSchdulDfk> dfks = backupSchdulDfkRepository.findByIdBackupOpertIdIn(ids);
             dfkMapByOpert = dfks.stream().collect(Collectors.groupingBy(BackupSchdulDfk::getBackupOpertId));
         } else {
             dfkMapByOpert = Collections.emptyMap();

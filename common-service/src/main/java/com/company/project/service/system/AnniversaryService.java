@@ -3,22 +3,26 @@ package com.company.project.service.system;
 import com.company.project.domain.system.Anniversary;
 import com.company.project.domain.system.AnniversaryRepository;
 import com.company.project.service.system.dto.AnniversaryDto;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
-@RequiredArgsConstructor
+@Service("systemAnniversaryService")
 public class AnniversaryService extends EgovAbstractServiceImpl {
 
     private final AnniversaryRepository anniversaryRepository;
 
+    public AnniversaryService(
+            @org.springframework.beans.factory.annotation.Qualifier("systemAnniversaryRepository") AnniversaryRepository anniversaryRepository) {
+        this.anniversaryRepository = anniversaryRepository;
+    }
+
     @Transactional(readOnly = true)
     public Page<AnniversaryDto> getAnniversaryList(String annvrsryNm, Pageable pageable) {
-        return anniversaryRepository.findByAnnvrsryNmContaining(annvrsryNm == null ? "" : annvrsryNm, pageable).map(AnniversaryDto::from);
+        return anniversaryRepository.findByAnnvrsryNmContaining(annvrsryNm == null ? "" : annvrsryNm, pageable)
+                .map(AnniversaryDto::from);
     }
 
     @Transactional(readOnly = true)

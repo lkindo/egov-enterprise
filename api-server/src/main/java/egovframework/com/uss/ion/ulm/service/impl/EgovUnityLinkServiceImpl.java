@@ -20,7 +20,7 @@ import jakarta.annotation.Resource;
 public class EgovUnityLinkServiceImpl extends EgovAbstractServiceImpl
         implements egovframework.com.uss.ion.ulm.service.EgovUnityLinkService {
 
-    @Resource(name = "unityLinkRepository")
+    @Resource(name = "notificationUnityLinkRepository")
     private UnityLinkRepository unityLinkRepository;
 
     @Resource(name = "egovUnityLinkIdGnrService")

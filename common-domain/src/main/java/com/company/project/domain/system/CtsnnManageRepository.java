@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
+@Repository("systemCtsnnManageRepository")
 public interface CtsnnManageRepository extends JpaRepository<CtsnnManage, String> {
     Page<CtsnnManage> findByUsid(String usid, Pageable pageable);
 }

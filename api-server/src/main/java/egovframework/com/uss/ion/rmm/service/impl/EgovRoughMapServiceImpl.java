@@ -23,7 +23,7 @@ import jakarta.annotation.Resource;
 @Service("egovRoughMapService")
 public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements EgovRoughMapService {
 
-    @Resource(name = "roughMapRepository")
+    @Resource(name = "notificationRoughMapRepository")
     private RoughMapRepository roughMapRepository;
 
     @Resource(name = "egovRoughMapIdGnrService")

@@ -29,8 +29,7 @@ export function DataExportExcel({ data, headers, filename = "export_data", class
     }
 
     // 3. Create blob and download (with BOM for Excel Korean support)
-    const csvContent = "\uFEFF" + csvRows.join('
-');
+    const csvContent = "\uFEFF" + csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

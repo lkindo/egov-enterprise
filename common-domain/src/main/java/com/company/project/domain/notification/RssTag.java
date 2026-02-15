@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "NotificationRssTag")
 @Table(name = "NRSSTAG")
 public class RssTag extends BaseEntity {
 
@@ -43,7 +43,8 @@ public class RssTag extends BaseEntity {
 
     @Builder
     public RssTag(String rssId, String trgetSvcNm, String trgetSvcTable, Integer trgetSvcListCo,
-                  String hderTag, String itemTag, String titleTag, String linkTag, String descriptionTag, String frstRegisterId) {
+            String hderTag, String itemTag, String titleTag, String linkTag, String descriptionTag,
+            String frstRegisterId) {
         this.rssId = rssId;
         this.trgetSvcNm = trgetSvcNm;
         this.trgetSvcTable = trgetSvcTable;
@@ -57,7 +58,7 @@ public class RssTag extends BaseEntity {
     }
 
     public void update(String trgetSvcNm, String trgetSvcTable, Integer trgetSvcListCo,
-                       String hderTag, String itemTag, String titleTag, String linkTag, String descriptionTag, String userId) {
+            String hderTag, String itemTag, String titleTag, String linkTag, String descriptionTag, String userId) {
         this.trgetSvcNm = trgetSvcNm;
         this.trgetSvcTable = trgetSvcTable;
         this.trgetSvcListCo = trgetSvcListCo;

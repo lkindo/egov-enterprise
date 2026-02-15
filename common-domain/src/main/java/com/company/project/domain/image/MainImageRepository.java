@@ -9,7 +9,9 @@ import java.util.List;
 /**
  * 메인 이미지 Repository
  */
+@org.springframework.stereotype.Repository("imageMainImageRepository")
 public interface MainImageRepository extends JpaRepository<MainImage, String> {
     Page<MainImage> findByImageNmContaining(String imageNm, Pageable pageable);
+
     List<MainImage> findByReflctAt(String reflctAt);
 }

@@ -107,7 +107,7 @@ public class HttpMonService extends EgovAbstractServiceImpl {
         String logInfo = "";
 
         try {
-            URL url = new URL(entity.getSiteUrl());
+            URL url = java.net.URI.create(entity.getSiteUrl()).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);

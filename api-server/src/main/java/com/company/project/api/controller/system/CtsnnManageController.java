@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Congratulation/Condolence Management", description = "Employee Events Management APIs")
-@RestController
+@RestController("systemCtsnnManageController")
 @RequestMapping("/api/v1/admin/system/ctsnn")
 @RequiredArgsConstructor
 public class CtsnnManageController {
@@ -46,7 +46,8 @@ public class CtsnnManageController {
 
     @Operation(summary = "Update Ctsnn")
     @PutMapping("/{ctsnnId}")
-    public ResponseEntity<ApiResponse<Void>> updateCtsnn(@PathVariable String ctsnnId, @RequestBody CtsnnManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> updateCtsnn(@PathVariable String ctsnnId,
+            @RequestBody CtsnnManageDto dto) {
         dto.setCtsnnId(ctsnnId);
         ctsnnManageService.updateCtsnn(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

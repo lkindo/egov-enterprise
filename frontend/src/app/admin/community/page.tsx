@@ -28,7 +28,7 @@ export default function CommunityAdminPage() {
     loadData();
   }, [toast]);
 
-  const columns = [
+  const columns: { header: string; accessor: keyof Community | ((item: Community) => React.ReactNode); className?: string }[] = [
     { 
       header: '구분', 
       accessor: (item: Community) => (

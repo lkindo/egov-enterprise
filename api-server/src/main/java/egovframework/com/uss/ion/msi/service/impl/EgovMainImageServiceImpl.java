@@ -21,7 +21,7 @@ import jakarta.annotation.Resource;
 @Service("egovMainImageService")
 public class EgovMainImageServiceImpl extends EgovAbstractServiceImpl implements EgovMainImageService {
 
-	@Resource(name = "mainImageRepository")
+	@Resource(name = "notificationMainImageRepository")
 	private MainImageRepository mainImageRepository;
 
 	@Resource(name = "egovMainImageIdGnrService")

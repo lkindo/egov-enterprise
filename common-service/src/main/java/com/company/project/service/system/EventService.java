@@ -3,7 +3,6 @@ package com.company.project.service.system;
 import com.company.project.domain.system.*;
 import com.company.project.service.system.dto.EventAttendeeDto;
 import com.company.project.service.system.dto.EventDto;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,11 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 @Service
-@RequiredArgsConstructor
 public class EventService extends EgovAbstractServiceImpl {
 
     private final EventRepository eventRepository;
     private final EventAttendeeRepository eventAttendeeRepository;
+
+    public EventService(
+            @org.springframework.beans.factory.annotation.Qualifier("systemEventRepository") EventRepository eventRepository,
+            EventAttendeeRepository eventAttendeeRepository) {
+        this.eventRepository = eventRepository;
+        this.eventAttendeeRepository = eventAttendeeRepository;
+    }
 
     @Transactional(readOnly = true)
     public Page<EventDto> getEventList(String eventNm, Pageable pageable) {

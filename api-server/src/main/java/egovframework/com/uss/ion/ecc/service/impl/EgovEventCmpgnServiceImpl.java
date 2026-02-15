@@ -25,7 +25,7 @@ import jakarta.annotation.Resource;
 @Service("egovEventCmpgnService")
 public class EgovEventCmpgnServiceImpl extends EgovAbstractServiceImpl implements EgovEventCmpgnService {
 
-	@Resource(name = "eventCmpgnRepository")
+	@Resource(name = "notificationEventCmpgnRepository")
 	private EventCmpgnRepository eventCmpgnRepository;
 
 	@Resource(name = "extrlHrRepository")

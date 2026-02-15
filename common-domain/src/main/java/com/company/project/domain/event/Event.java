@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 행사관리 JPA Entity
  * 레거시 테이블: COMTNEVENTMANAGE
  */
-@Entity
+@Entity(name = "DomainEvent")
 @Table(name = "NEVENTMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

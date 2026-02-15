@@ -28,7 +28,7 @@ import jakarta.annotation.Resource;
 public class EgovUserStatsScheduling extends EgovAbstractServiceImpl {
 
 	/** EgovUserStatsService */
-	@Resource(name = "egovUserStatsService")
+	@Resource(name = "userStatsService")
 	private EgovUserStatsService userStatsService;
 
 	/**

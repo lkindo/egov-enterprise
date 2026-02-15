@@ -84,8 +84,8 @@ public class BackupOpertDaoTest {
                     .executSchdulMnt("00")
                     .executSchdulSecnd("00")
                     .useAt("Y")
-                    .frstRegisterId("admin")
-                    .lastUpdusrId("admin")
+                    .createdBy("admin")
+                    .lastModifiedBy("admin")
                     .build();
 
             // Set Schedules (Mon, Tue)

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * RSS 태그 정보 Repository
  */
+@org.springframework.stereotype.Repository("rssRssTagRepository")
 public interface RssTagRepository extends JpaRepository<RssTag, String> {
     Page<RssTag> findByTrgetSvcNmContaining(String trgetSvcNm, Pageable pageable);
 }

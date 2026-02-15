@@ -3,7 +3,6 @@ package com.company.project.service.system;
 import com.company.project.domain.system.Reward;
 import com.company.project.domain.system.RewardRepository;
 import com.company.project.service.system.dto.RewardDto;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-@Service
-@RequiredArgsConstructor
+@Service("systemRewardService")
 public class RewardService extends EgovAbstractServiceImpl {
 
     private final RewardRepository rewardRepository;
+
+    public RewardService(
+            @org.springframework.beans.factory.annotation.Qualifier("systemRewardRepository") RewardRepository rewardRepository) {
+        this.rewardRepository = rewardRepository;
+    }
 
     @Transactional(readOnly = true)
     public Page<RewardDto> getRewardList(String rwardManId, Pageable pageable) {

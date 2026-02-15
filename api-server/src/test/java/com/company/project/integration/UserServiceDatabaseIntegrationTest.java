@@ -78,8 +78,8 @@ class UserServiceDatabaseIntegrationTest {
 
         // Then
         assertThat(retrievedUser).isNotNull();
-        assertThat(retrievedUser.userId()).isEqualTo("dbIntegrationUser");
-        assertThat(retrievedUser.userNm()).isEqualTo("DB 통합 테스트 사용자");
+        assertThat(retrievedUser.getUserId()).isEqualTo("dbIntegrationUser");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("DB 통합 테스트 사용자");
 
         // 데이터베이스에서 직접 확인
         Optional<User> dbUser = userRepository.findById("dbIntegrationUser");
@@ -107,9 +107,9 @@ class UserServiceDatabaseIntegrationTest {
 
         // Then
         assertThat(userList).hasSize(2);
-        assertThat(userList).extracting(UserDto::userId).containsExactlyInAnyOrder("dbIntegrationUser",
+        assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("dbIntegrationUser",
                 "dbIntegrationUser2");
-        assertThat(userList).extracting(UserDto::userNm).containsExactlyInAnyOrder("DB 통합 테스트 사용자", "DB 통합 테스트 사용자2");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("DB 통합 테스트 사용자", "DB 통합 테스트 사용자2");
 
         // 데이터베이스에서 직접 확인
         List<User> dbUsers = userRepository.findAll();
@@ -171,8 +171,8 @@ class UserServiceDatabaseIntegrationTest {
         // 서비스 계층을 통해 조회해도 동일한 결과 확인
         UserDto serviceUser = userService.getUserById("updatedUser");
         assertThat(serviceUser).isNotNull();
-        assertThat(serviceUser.userNm()).isEqualTo("수정된 사용자");
-        assertThat(serviceUser.role()).isEqualTo("ADMIN");
+        assertThat(serviceUser.getUserNm()).isEqualTo("수정된 사용자");
+        assertThat(serviceUser.getRole()).isEqualTo("ADMIN");
     }
 
     @Test

@@ -40,6 +40,7 @@ import jakarta.annotation.Resource;
 @Service("EgovFileMngService")
 @Transactional(readOnly = true)
 @org.springframework.context.annotation.Lazy
+@org.springframework.context.annotation.Primary
 public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements EgovFileMngService {
 
     @Resource(name = "fileMasterRepository")
@@ -129,7 +130,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
                     .fileMg(Long.parseLong(fvo.getFileMg()))
                     .fileCn(fvo.getFileCn())
                     .build();
-            
+
             master.addFileDetail(detail);
             fileDetailRepository.save(detail);
         }
@@ -146,7 +147,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public List<FileVO> selectFileInfs(FileVO fvo) throws Exception {
         FileMaster master = fileMasterRepository.findById(fvo.getAtchFileId())
                 .orElse(null);
-        
+
         if (master != null) {
             return master.getFileDetails().stream()
                     .map(this::toFileVO)
@@ -187,7 +188,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
                     .fileMg(Long.parseLong(fvo.getFileMg()))
                     .fileCn(fvo.getFileCn())
                     .build();
-            
+
             master.addFileDetail(detail);
             fileDetailRepository.save(detail);
         }
@@ -203,10 +204,10 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public void deleteFileInf(FileVO fvo) throws Exception {
         FileDetail detail = fileDetailRepository.findById(
                 new com.company.project.domain.file.FileDetailId(
-                    fvo.getAtchFileId(), 
-                    Integer.parseInt(fvo.getFileSn())))
+                        fvo.getAtchFileId(),
+                        Integer.parseInt(fvo.getFileSn())))
                 .orElse(null);
-        
+
         if (detail != null) {
             fileDetailRepository.delete(detail);
         }
@@ -221,10 +222,10 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public FileVO selectFileInf(FileVO fvo) throws Exception {
         FileDetail detail = fileDetailRepository.findById(
                 new com.company.project.domain.file.FileDetailId(
-                    fvo.getAtchFileId(), 
-                    Integer.parseInt(fvo.getFileSn())))
+                        fvo.getAtchFileId(),
+                        Integer.parseInt(fvo.getFileSn())))
                 .orElse(null);
-        
+
         return detail != null ? toFileVO(detail) : null;
     }
 
@@ -237,12 +238,13 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public int getMaxFileSN(FileVO fvo) throws Exception {
         List<FileDetail> details = fileDetailRepository.findByFileMaster(
                 fileMasterRepository.findById(fvo.getAtchFileId())
-                    .orElseThrow(() -> new IllegalArgumentException("File master not found: " + fvo.getAtchFileId())));
-        
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("File master not found: " + fvo.getAtchFileId())));
+
         if (details.isEmpty()) {
             return 0;
         }
-        
+
         return details.stream()
                 .mapToInt(detail -> detail.getFileSn())
                 .max()
@@ -259,7 +261,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public void deleteAllFileInf(FileVO fvo) throws Exception {
         FileMaster master = fileMasterRepository.findById(fvo.getAtchFileId())
                 .orElse(null);
-        
+
         if (master != null) {
             fileDetailRepository.deleteAll(master.getFileDetails());
             fileMasterRepository.delete(master);
@@ -274,18 +276,18 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     @Override
     public Map<String, Object> selectFileListByFileNm(FileVO fvo) throws Exception {
         Pageable pageable = PageRequest.of(fvo.getPageIndex() - 1, fvo.getPageSize());
-        
-        org.springframework.data.domain.Page<FileDetail> page = 
-                fileDetailRepository.findByOrignlFileNmContaining(fvo.getOrignlFileNm(), pageable);
-        
+
+        org.springframework.data.domain.Page<FileDetail> page = fileDetailRepository
+                .findByOrignlFileNmContaining(fvo.getOrignlFileNm(), pageable);
+
         List<FileVO> result = page.getContent().stream()
                 .map(this::toFileVO)
                 .collect(Collectors.toList());
-        
+
         Map<String, Object> map = new HashMap<>();
         map.put("resultList", result);
         map.put("resultCnt", (int) page.getTotalElements());
-        
+
         return map;
     }
 
@@ -298,7 +300,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
     public List<FileVO> selectImageFileList(FileVO vo) throws Exception {
         FileMaster master = fileMasterRepository.findById(vo.getAtchFileId())
                 .orElse(null);
-        
+
         if (master != null) {
             return master.getFileDetails().stream()
                     .filter(detail -> isImageFile(detail.getFileExtsn()))
@@ -328,9 +330,10 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
      * 이미지 파일인지 확인
      */
     private boolean isImageFile(String fileExtsn) {
-        if (fileExtsn == null) return false;
+        if (fileExtsn == null)
+            return false;
         String ext = fileExtsn.toLowerCase();
-        return ext.equals(".jpg") || ext.equals(".jpeg") || ext.equals(".gif") || 
-               ext.equals(".png") || ext.equals(".bmp") || ext.equals(".svg");
+        return ext.equals(".jpg") || ext.equals(".jpeg") || ext.equals(".gif") ||
+                ext.equals(".png") || ext.equals(".bmp") || ext.equals(".svg");
     }
 }

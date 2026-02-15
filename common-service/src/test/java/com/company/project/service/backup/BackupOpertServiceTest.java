@@ -76,7 +76,7 @@ class BackupOpertServiceTest {
         for (BackupOpert entity : entities) {
             allDfks.addAll(entity.getExecutSchdulDfkSes());
         }
-        when(backupSchdulDfkRepository.findByBackupOpertIdIn(anyList())).thenReturn(allDfks);
+        when(backupSchdulDfkRepository.findByIdBackupOpertIdIn(anyList())).thenReturn(allDfks);
 
         // Mock Cycle Codes (COM047)
         List<CommonCodeDto> cycleCodes = List.of(

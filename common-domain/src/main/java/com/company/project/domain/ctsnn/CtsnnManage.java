@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 경조사 관리 정보 Entity
  * 레거시 테이블: NCTSNNMANAGE
  */
-@Entity
+@Entity(name = "DomainCtsnnManage")
 @Table(name = "NCTSNNMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -70,9 +70,9 @@ public class CtsnnManage extends BaseEntity {
 
     @Builder
     public CtsnnManage(String ctsnnId, String usid, String ctsnnCd, String reqstDe, String ctsnnNm,
-                      String trgterNm, String brth, String occrrDe, String relate, String remark,
-                      String sanctnerId, String confmAt, LocalDateTime sanctnDt, String returnResn,
-                      String infrmlSanctnId) {
+            String trgterNm, String brth, String occrrDe, String relate, String remark,
+            String sanctnerId, String confmAt, LocalDateTime sanctnDt, String returnResn,
+            String infrmlSanctnId) {
         this.ctsnnId = ctsnnId;
         this.usid = usid;
         this.ctsnnCd = ctsnnCd;
@@ -91,7 +91,7 @@ public class CtsnnManage extends BaseEntity {
     }
 
     public void update(String ctsnnCd, String ctsnnNm, String reqstDe, String trgterNm,
-                      String brth, String occrrDe, String relate, String remark) {
+            String brth, String occrrDe, String relate, String remark) {
         this.ctsnnCd = ctsnnCd;
         this.ctsnnNm = ctsnnNm;
         this.reqstDe = reqstDe;

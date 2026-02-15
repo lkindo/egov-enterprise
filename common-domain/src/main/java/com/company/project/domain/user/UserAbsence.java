@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
+@Entity(name = "DomainUserAbsence")
 @Table(name = "NUSERABSNCE")
 public class UserAbsence extends BaseTimeEntity {
 
