@@ -76,6 +76,14 @@ const Sidebar = () => {
         return 0;
     }, [pathname]);
 
+    // Optimize: Memoize mapped menus to avoid re-parsing URLs on every render
+    const mappedMenus = useMemo(() => {
+        return leftMenus.map(menu => ({
+            ...menu,
+            mappedUrl: mapLegacyUrl(menu.chkURL)
+        }));
+    }, [leftMenus]);
+
     useEffect(() => {
         const fetchLeftMenus = async () => {
             // Update parent menu name based on active menu number
@@ -108,14 +116,13 @@ const Sidebar = () => {
         return null;
     }
 
-    const isActive = (menuUrl: string) => {
-        const mapped = mapLegacyUrl(menuUrl);
-        if (mapped === pathname) return true;
+    const isActive = (mappedUrl: string) => {
+        if (mappedUrl === pathname) return true;
 
         // Handle board detail active state when list is selected
-        if (pathname.includes('selectBoardArticle') && mapped.includes('selectBoardList')) {
+        if (pathname.includes('selectBoardArticle') && mappedUrl.includes('selectBoardList')) {
             const pathBbsId = searchParams.get('bbsId');
-            const menuBbsId = new URLSearchParams(mapped.split('?')[1]).get('bbsId');
+            const menuBbsId = new URLSearchParams(mappedUrl.split('?')[1]).get('bbsId');
             return pathBbsId === menuBbsId;
         }
 
@@ -127,12 +134,12 @@ const Sidebar = () => {
             <div className="inner">
                 <h2>{parentMenuName}</h2>
                 <ul className="menu_list">
-                    {leftMenus.map((menu) => (
+                    {mappedMenus.map((menu) => (
                         <li key={menu.menuNo}>
                             <Link
-                                href={mapLegacyUrl(menu.chkURL)}
-                                className={isActive(menu.chkURL) ? 'on' : ''}
-                                aria-current={isActive(menu.chkURL) ? 'page' : undefined}
+                                href={menu.mappedUrl}
+                                className={isActive(menu.mappedUrl) ? 'on' : ''}
+                                aria-current={isActive(menu.mappedUrl) ? 'page' : undefined}
                             >
                                 {menu.menuNm}
                             </Link>
