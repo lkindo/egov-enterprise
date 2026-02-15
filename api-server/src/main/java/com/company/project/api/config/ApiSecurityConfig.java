@@ -18,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import java.util.List;
 
 @Configuration
@@ -28,6 +30,11 @@ public class ApiSecurityConfig {
 
         public ApiSecurityConfig(@Lazy EgovAuthenticationProvider egovAuthenticationProvider) {
                 this.egovAuthenticationProvider = egovAuthenticationProvider;
+        }
+
+        @Bean
+        public SecurityContextRepository securityContextRepository() {
+                return new HttpSessionSecurityContextRepository();
         }
 
         @Bean

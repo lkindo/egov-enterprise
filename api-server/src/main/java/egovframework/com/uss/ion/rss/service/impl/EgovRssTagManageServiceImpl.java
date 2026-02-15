@@ -22,7 +22,7 @@ import jakarta.annotation.Resource;
 @Service("egovRssTagManageService")
 public class EgovRssTagManageServiceImpl extends EgovAbstractServiceImpl implements EgovRssTagManageService {
 
-    @Resource(name = "rssTagRepository")
+    @Resource(name = "notificationRssTagRepository")
     private RssTagRepository rssTagRepository;
 
     @Resource(name = "egovRssManageIdGnrService")

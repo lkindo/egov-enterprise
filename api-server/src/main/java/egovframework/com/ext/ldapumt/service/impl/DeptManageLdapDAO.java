@@ -42,14 +42,15 @@ import egovframework.com.ext.ldapumt.service.UcorgVO;
 import jakarta.annotation.Resource;
 
 /**
-*
-* 부서 관련 기능을 제공하는 DAO객체
-* @author 전우성
-* @since 2014.10.12
-* @version 1.0
-* @see
-*
-* <pre>
+ *
+ * 부서 관련 기능을 제공하는 DAO객체
+ * 
+ * @author 전우성
+ * @since 2014.10.12
+ * @version 1.0
+ * @see
+ *
+ *      <pre>
 * << 개정이력(Modification Information) >>
 *
 *  수정일               수정자            수정내용
@@ -57,10 +58,11 @@ import jakarta.annotation.Resource;
 *  2014.10.12   전우성            최초 생성
 *  2017-02-13   이정은            시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
 *  2020.08.28   정진오            표준프레임워크 v3.10 개선
-*
-* </pre>
-*/
+ *
+ *      </pre>
+ */
 @Repository("DeptManageLdapDAO")
+@org.springframework.context.annotation.Lazy
 public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	@Resource(name = "ldapTemplate")
@@ -68,6 +70,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * DN의 하위부서 목록을 조회
+	 * 
 	 * @param dn 조회할 객체의 Distinguished Name
 	 * @return
 	 * @throws Exception
@@ -78,10 +81,10 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 		try {
 			ucorgList = ldapTemplate.search(EgovWebUtil.removeLDAPInjectionRisk(dn), filter,
-				SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
-					UcorgVO.class));
+					SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
+							UcorgVO.class));
 		} catch (NameNotFoundException e) {
-			logger.error("[NameNotFoundException] : search fail");//KISA 보안약점 조치 (2018-10-29, 윤창원)
+			logger.error("[NameNotFoundException] : search fail");// KISA 보안약점 조치 (2018-10-29, 윤창원)
 		}
 
 		return ucorgList;
@@ -89,6 +92,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * ouCode를 활용하여 하위 부서를 조
+	 * 
 	 * @param ouCode
 	 * @return
 	 * @throws Exception
@@ -103,6 +107,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 등록된 부서의 상세정보를 조회한다.
+	 * 
 	 * @param vo 부서 Vo
 	 * @return deptManageVO 부서 Vo
 	 * @param bannerVO
@@ -114,31 +119,33 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 		for (Object key : introspected.keySet()) {
 			if (key.equals("dn") || key.equals("class") || introspected.get(key) == null
-				|| introspected.get(key).equals("")) {
+					|| introspected.get(key).equals("")) {
 				continue;
 			}
 
-			ContainerCriteria c = query().where((String)key).is(String.valueOf(introspected.get(key)));
+			ContainerCriteria c = query().where((String) key).is(String.valueOf(introspected.get(key)));
 			criteria.and(c);
 		}
 
 		List<Object> list = null;
 		list = ldapTemplate.search(criteria, new ObjectMapper<>(UcorgVO.class));
 
-		return list == null ? null : (UcorgVO)list.get(0);
+		return list == null ? null : (UcorgVO) list.get(0);
 	}
 
 	/**
 	 * 등록된 부서의 상세정보를 조회한다.
+	 * 
 	 * @param dn
 	 * @return
 	 */
 	public UcorgVO selectDeptManageByDn(String dn) {
-		return (UcorgVO)selectOrgManageByDn(dn, UcorgVO.class);
+		return (UcorgVO) selectOrgManageByDn(dn, UcorgVO.class);
 	}
 
 	/**
 	 * 기 등록된 부서정보를 수정한다.
+	 * 
 	 * @param vo 부서 vo
 	 */
 	public void updateDeptManage(UcorgVO vo) throws Exception {
@@ -147,6 +154,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 부서정보를 등한다.
+	 * 
 	 * @param vo 부서 vo
 	 */
 	public void insertDeptManage(UcorgVO vo) throws Exception {
@@ -159,6 +167,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 부서를 이동한다.
+	 * 
 	 * @param oldDn 이동대상 부서
 	 * @param newDn 이동할 부서
 	 */
@@ -168,6 +177,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 부서를 삭한다.
+	 * 
 	 * @param vo 부서 vo
 	 */
 	public void deleteDeptManage(String dn) {
@@ -176,6 +186,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 하위 부서 존재여부를 확인한다.
+	 * 
 	 * @param vo 부서 vo
 	 */
 	public boolean hasChildren(String dn) throws NamingException {
@@ -186,7 +197,10 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 		SearchControls control = new SearchControls();
 		control.setSearchScope(SearchControls.ONELEVEL_SCOPE);
 
-		NamingEnumeration<SearchResult> n = ctx.search(EgovWebUtil.removeLDAPInjectionRisk(dn), filter, control);//2022.01 Potential LDAP Injection
+		NamingEnumeration<SearchResult> n = ctx.search(EgovWebUtil.removeLDAPInjectionRisk(dn), filter, control);// 2022.01
+																													// Potential
+																													// LDAP
+																													// Injection
 
 		if (n != null && n.hasMore()) {
 			return true;

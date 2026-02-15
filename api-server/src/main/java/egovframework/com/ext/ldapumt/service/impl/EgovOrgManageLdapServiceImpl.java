@@ -31,14 +31,15 @@ import egovframework.com.ext.ldapumt.service.UserVO;
 import jakarta.annotation.Resource;
 
 /**
-*
-* 조직도 기능 관련 서비스 객체
-* @author 전우성
-* @since 2014.10.12
-* @version 1.0
-* @see
-*
-* <pre>
+ *
+ * 조직도 기능 관련 서비스 객체
+ * 
+ * @author 전우성
+ * @since 2014.10.12
+ * @version 1.0
+ * @see
+ *
+ *      <pre>
 * << 개정이력(Modification Information) >>
 *
 *  수정일               수정자             수정내용
@@ -46,10 +47,11 @@ import jakarta.annotation.Resource;
 *  2014.10.12   전우성            최초 생성
 *  2020.08.28   정진오            표준프레임워크 v3.10 개선
 *  2023.08.10   신용호            LDAP 오류 수정
-*
-* </pre>
-*/
+ *
+ *      </pre>
+ */
 @Service("orgManageLdapService")
+@org.springframework.context.annotation.Lazy
 public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implements EgovOrgManageLdapService {
 
 	@Resource(name = "DeptManageLdapDAO")
@@ -126,7 +128,6 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	public UcorgVO selectDeptManage(UcorgVO vo) throws Exception {
 		return deptManageLdapDAO.selectDeptManage(vo);
 	}
-
 
 	/**
 	 * 기등록된 부서정보를 수정한다.

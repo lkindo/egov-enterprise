@@ -136,7 +136,7 @@ public class JwtTokenProvider {
         } catch (io.jsonwebtoken.UnsupportedJwtException e) {
             log.error("Unsupported JWT token: {}", e.getMessage());
             return false;
-        } catch (io.jsonwebtoken.SignatureException e) {
+        } catch (io.jsonwebtoken.security.SignatureException e) {
             log.error("Invalid JWT signature: {}", e.getMessage());
             return false;
         } catch (IllegalArgumentException e) {

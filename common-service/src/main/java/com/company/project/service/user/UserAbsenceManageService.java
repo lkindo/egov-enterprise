@@ -27,7 +27,7 @@ public class UserAbsenceManageService {
     private final UserRepository userRepository;
 
     public UserAbsenceManageService(
-            @org.springframework.beans.factory.annotation.Qualifier("userAbsenceRepository") UserAbsenceRepository userAbsenceRepository,
+            @org.springframework.beans.factory.annotation.Qualifier("userUserAbsenceRepository") UserAbsenceRepository userAbsenceRepository,
             UserRepository userRepository) {
         this.userAbsenceRepository = userAbsenceRepository;
         this.userRepository = userRepository;

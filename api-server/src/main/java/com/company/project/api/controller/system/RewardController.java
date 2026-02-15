@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Reward Management", description = "Employee Reward Management APIs")
-@RestController
+@RestController("systemRewardController")
 @RequestMapping("/api/v1/admin/system/rewards")
 @RequiredArgsConstructor
 public class RewardController {

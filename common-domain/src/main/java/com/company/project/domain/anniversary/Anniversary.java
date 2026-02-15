@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  * 기념일 정보 Entity
  * 레거시 테이블: NANNVRSRYMANAGE
  */
-@Entity
+@Entity(name = "DomainAnniversary")
 @Table(name = "NANNVRSRYMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -53,7 +53,7 @@ public class Anniversary extends BaseEntity {
 
     @Builder
     public Anniversary(String annId, String usid, String annvrsrySe, String annvrsryNm, String annvrsryDe,
-                      String cldrSe, String annvrsrySetup, String annvrsryBeginDe, String memo, String reptitAt) {
+            String cldrSe, String annvrsrySetup, String annvrsryBeginDe, String memo, String reptitAt) {
         this.annId = annId;
         this.usid = usid;
         this.annvrsrySe = annvrsrySe;
@@ -67,7 +67,7 @@ public class Anniversary extends BaseEntity {
     }
 
     public void update(String annvrsrySe, String annvrsryNm, String annvrsryDe, String cldrSe,
-                      String annvrsrySetup, String annvrsryBeginDe, String memo, String reptitAt) {
+            String annvrsrySetup, String annvrsryBeginDe, String memo, String reptitAt) {
         this.annvrsrySe = annvrsrySe;
         this.annvrsryNm = annvrsryNm;
         this.annvrsryDe = annvrsryDe;

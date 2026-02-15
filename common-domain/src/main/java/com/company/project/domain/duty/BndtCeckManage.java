@@ -12,6 +12,7 @@ import java.io.Serializable;
  */
 @Entity
 @Table(name = "NBNDTCECKMANAGE")
+@IdClass(BndtCeckManageId.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,7 +35,8 @@ public class BndtCeckManage extends BaseEntity {
     private String useAt;
 
     @Builder
-    public BndtCeckManage(String bndtCeckSe, String bndtCeckCd, String bndtCeckCdNm, String useAt, String frstRegisterId) {
+    public BndtCeckManage(String bndtCeckSe, String bndtCeckCd, String bndtCeckCdNm, String useAt,
+            String frstRegisterId) {
         this.bndtCeckSe = bndtCeckSe;
         this.bndtCeckCd = bndtCeckCd;
         this.bndtCeckCdNm = bndtCeckCdNm;

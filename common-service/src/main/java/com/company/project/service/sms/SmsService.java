@@ -80,7 +80,7 @@ public class SmsService implements EgovSmsService {
 
     @Override
     public List<SmsRecptnDto> getSmsRecipients(String smsId) {
-        return smsRecptnRepository.findBySmsId(smsId).stream()
+        return smsRecptnRepository.findByIdSmsId(smsId).stream()
                 .map(SmsRecptnDto::from)
                 .collect(Collectors.toList());
     }

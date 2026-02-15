@@ -57,7 +57,7 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	@Override
 	@Transactional
 	public void deleteBatchSchdul(BatchSchdul batchSchdul) throws Exception {
-		batchSchdulDfkRepository.deleteByBatchSchdulId(batchSchdul.getBatchSchdulId());
+		batchSchdulDfkRepository.deleteByIdBatchSchdulId(batchSchdul.getBatchSchdulId());
 		batchSchdulRepository.deleteById(batchSchdul.getBatchSchdulId());
 	}
 
@@ -108,7 +108,7 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 				.map(entity -> {
 					BatchSchdul vo = mapToBatchSchdul(entity);
 					List<com.company.project.domain.batch.BatchSchdulDfk> dfks = batchSchdulDfkRepository
-							.findByBatchSchdulId(entity.getBatchSchdulId());
+							.findByIdBatchSchdulId(entity.getBatchSchdulId());
 					if (!dfks.isEmpty()) {
 						String[] dfkSes = new String[dfks.size()];
 						for (int i = 0; i < dfks.size(); i++) {
@@ -176,7 +176,7 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 					.build();
 			batchSchdulRepository.save(updated);
 
-			batchSchdulDfkRepository.deleteByBatchSchdulId(batchSchdul.getBatchSchdulId());
+			batchSchdulDfkRepository.deleteByIdBatchSchdulId(batchSchdul.getBatchSchdulId());
 			if (batchSchdul.getExecutSchdulDfkSes() != null) {
 				for (String dfk : batchSchdul.getExecutSchdulDfkSes()) {
 					com.company.project.domain.batch.BatchSchdulDfk dfkEntity = com.company.project.domain.batch.BatchSchdulDfk

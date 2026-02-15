@@ -5,18 +5,21 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.ulm.UnityLink;
 import com.company.project.domain.ulm.UnityLinkRepository;
 import com.company.project.service.ulm.dto.UnityLinkDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UnityLinkService implements EgovUnityLinkService {
 
     private final UnityLinkRepository unityLinkRepository;
+
+    public UnityLinkService(
+            @org.springframework.beans.factory.annotation.Qualifier("ulmUnityLinkRepository") UnityLinkRepository unityLinkRepository) {
+        this.unityLinkRepository = unityLinkRepository;
+    }
 
     @Override
     public Page<UnityLinkDto> getUnityLinkList(String keyword, Pageable pageable) {

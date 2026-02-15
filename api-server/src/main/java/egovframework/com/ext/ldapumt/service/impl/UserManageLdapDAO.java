@@ -30,23 +30,25 @@ import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.ext.ldapumt.service.UserVO;
 
 /**
-*
-* 사용자 관련 기능을 제공하는 DAO객체
-* @author 전우성
-* @since 2014.10.12
-* @version 1.0
-* @see
-*
-* <pre>
+ *
+ * 사용자 관련 기능을 제공하는 DAO객체
+ * 
+ * @author 전우성
+ * @since 2014.10.12
+ * @version 1.0
+ * @see
+ *
+ *      <pre>
 * << 개정이력(Modification Information) >>
 *
 *   수정일      수정자           수정내용
 *  -------    --------    ---------------------------
 *   2014.10.12  전우성          최초 생성
-*
-* </pre>
-*/
+ *
+ *      </pre>
+ */
 @Repository("UserManageLdapDAO")
+@org.springframework.context.annotation.Lazy
 public class UserManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
@@ -60,10 +62,10 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 
 		try {
 			ucorgList = ldapTemplate.search(EgovWebUtil.removeLDAPInjectionRisk(dn), filter,
-				SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
-					UserVO.class));
+					SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
+							UserVO.class));
 		} catch (NameNotFoundException e) {
-			logger.error("[NameNotFoundException] : search fail");//KISA 보안약점 조치 (2018-10-29, 윤창원)
+			logger.error("[NameNotFoundException] : search fail");// KISA 보안약점 조치 (2018-10-29, 윤창원)
 		}
 
 		return ucorgList;
@@ -72,6 +74,7 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 사용자를 추가한다.
+	 * 
 	 * @param vo
 	 */
 	public void insertUserManage(UserVO vo) {
@@ -85,6 +88,7 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 사용자를 이동한다
+	 * 
 	 * @param oldDn 이동 대상 사용자
 	 * @param newDn 이동 부서
 	 */
@@ -94,15 +98,17 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 
 	/**
 	 * 등록된 사용자를 조회한다
+	 * 
 	 * @param dn
 	 * @return
 	 */
 	public UserVO selectUserManageByDn(String dn) {
-		return (UserVO)selectOrgManageByDn(dn, UserVO.class);
+		return (UserVO) selectOrgManageByDn(dn, UserVO.class);
 	}
 
 	/**
 	 * 사용자 정보를 수정한다.
+	 * 
 	 * @param vo
 	 */
 	public void updateUserManage(UserVO vo) {

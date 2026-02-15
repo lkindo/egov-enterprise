@@ -5,18 +5,21 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.roughmap.RoughMap;
 import com.company.project.domain.roughmap.RoughMapRepository;
 import com.company.project.service.roughmap.dto.RoughMapDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RoughMapService implements EgovRoughMapService {
 
     private final RoughMapRepository roughMapRepository;
+
+    public RoughMapService(
+            @org.springframework.beans.factory.annotation.Qualifier("roughmapRoughMapRepository") RoughMapRepository roughMapRepository) {
+        this.roughMapRepository = roughMapRepository;
+    }
 
     @Override
     public Page<RoughMapDto> getRoughMapList(String keyword, Pageable pageable) {

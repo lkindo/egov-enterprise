@@ -21,7 +21,7 @@ import jakarta.annotation.Resource;
 @Service("egovCtsnnManageService")
 public class EgovCtsnnManageServiceImpl extends EgovAbstractServiceImpl implements EgovCtsnnManageService {
 
-	@Resource(name = "ctsnnManageRepository")
+	@Resource(name = "ctsnnCtsnnManageRepository")
 	private CtsnnManageRepository ctsnnManageRepository;
 
 	@Resource(name = "egovCtsnnManageIdGnrService")

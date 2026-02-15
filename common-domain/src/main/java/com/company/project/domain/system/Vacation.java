@@ -12,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Entity
 @Table(name = "NVCATNMANAGE")
+@IdClass(VacationId.class)
 public class Vacation extends BaseEntity {
 
     @Id

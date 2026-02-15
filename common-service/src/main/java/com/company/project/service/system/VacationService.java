@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@Service("systemVacationService")
 @RequiredArgsConstructor
 public class VacationService extends EgovAbstractServiceImpl {
 
@@ -47,7 +47,8 @@ public class VacationService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void updateVacation(VacationDto dto) {
-        Vacation entity = vacationRepository.findById(new VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
+        Vacation entity = vacationRepository
+                .findById(new VacationId(dto.getApplcntId(), dto.getVcatnSe(), dto.getBgnde()))
                 .orElseThrow(() -> new RuntimeException("Vacation record not found"));
 
         entity.setEndde(dto.getEndde());
@@ -62,7 +63,8 @@ public class VacationService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<AnnualLeaveDto> getAnnualLeaveList(String occrrncYear, Pageable pageable) {
-        return annualLeaveRepository.findByOccrrncYear(occrrncYear == null ? "" : occrrncYear, pageable).map(AnnualLeaveDto::from);
+        return annualLeaveRepository.findByOccrrncYear(occrrncYear == null ? "" : occrrncYear, pageable)
+                .map(AnnualLeaveDto::from);
     }
 
     @Transactional
@@ -72,11 +74,11 @@ public class VacationService extends EgovAbstractServiceImpl {
                         .occrrncYear(dto.getOccrrncYear())
                         .usid(dto.getUsid())
                         .build());
-        
+
         entity.setOccrncYrycCo(dto.getOccrncYrycCo());
         entity.setUseYrycCo(dto.getUseYrycCo());
         entity.setRemndrYrycCo(dto.getRemndrYrycCo());
-        
+
         annualLeaveRepository.save(entity);
     }
 }

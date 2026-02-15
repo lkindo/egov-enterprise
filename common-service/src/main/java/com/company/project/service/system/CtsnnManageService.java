@@ -3,7 +3,6 @@ package com.company.project.service.system;
 import com.company.project.domain.system.CtsnnManage;
 import com.company.project.domain.system.CtsnnManageRepository;
 import com.company.project.service.system.dto.CtsnnManageDto;
-import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-@Service
-@RequiredArgsConstructor
+@Service("systemCtsnnManageService")
 public class CtsnnManageService extends EgovAbstractServiceImpl {
 
     private final CtsnnManageRepository ctsnnManageRepository;
+
+    public CtsnnManageService(
+            @org.springframework.beans.factory.annotation.Qualifier("systemCtsnnManageRepository") CtsnnManageRepository ctsnnManageRepository) {
+        this.ctsnnManageRepository = ctsnnManageRepository;
+    }
 
     @Transactional(readOnly = true)
     public Page<CtsnnManageDto> getCtsnnList(String usid, Pageable pageable) {

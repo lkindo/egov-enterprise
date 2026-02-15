@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * 사용자 관리 컨트롤러
  */
 @Slf4j
-@Controller
+@Controller("userPkgUserManageController")
 @RequiredArgsConstructor
 public class UserManageController {
 

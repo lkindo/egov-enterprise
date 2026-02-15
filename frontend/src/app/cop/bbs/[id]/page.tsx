@@ -83,8 +83,7 @@ export default function BoardDetailPage() {
 
         {/* Content Body */}
         <div className="p-8 prose prose-slate dark:prose-invert max-w-none min-h-[400px]">
-          <div dangerouslySetInnerHTML={{ __html: post.nttCn.replace(/
-/g, '<br/>') }} />
+          <div dangerouslySetInnerHTML={{ __html: post.nttCn.replace(/\n/g, '<br/>') }} />
         </div>
 
         {/* Attachments Section */}

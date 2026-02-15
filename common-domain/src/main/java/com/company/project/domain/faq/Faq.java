@@ -34,6 +34,7 @@ public class Faq extends BaseEntity {
     private String answerCn;
 
     @Column(name = "RDCNT")
+    @Builder.Default
     private Integer inqireCo = 0;
 
     @Column(name = "ATCH_FILE_ID", length = 20)

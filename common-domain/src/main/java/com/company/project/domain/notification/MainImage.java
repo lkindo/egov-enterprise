@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "NotificationMainImage")
 @Table(name = "NMAINIMAGE")
 public class MainImage extends BaseEntity {
 
@@ -34,7 +34,8 @@ public class MainImage extends BaseEntity {
     private String imageFile;
 
     @Builder
-    public MainImage(String imageId, String imageNm, String image, String imageDc, String reflctAt, String imageFile, String frstRegisterId) {
+    public MainImage(String imageId, String imageNm, String image, String imageDc, String reflctAt, String imageFile,
+            String frstRegisterId) {
         this.imageId = imageId;
         this.imageNm = imageNm;
         this.image = image;

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
+@Repository("systemUserAbsenceRepository")
 public interface UserAbsenceRepository extends JpaRepository<UserAbsence, String> {
     Page<UserAbsence> findByUserNmContaining(String userNm, Pageable pageable);
 }

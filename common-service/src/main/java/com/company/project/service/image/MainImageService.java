@@ -5,7 +5,6 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.image.MainImage;
 import com.company.project.domain.image.MainImageRepository;
 import com.company.project.service.image.dto.MainImageDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,11 +14,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MainImageService implements EgovMainImageService {
 
     private final MainImageRepository mainImageRepository;
+
+    public MainImageService(
+            @org.springframework.beans.factory.annotation.Qualifier("imageMainImageRepository") MainImageRepository mainImageRepository) {
+        this.mainImageRepository = mainImageRepository;
+    }
 
     @Override
     public Page<MainImageDto> getMainImageList(String keyword, Pageable pageable) {

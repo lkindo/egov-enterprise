@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * 기념일 Repository
  */
+@org.springframework.stereotype.Repository("ansAnniversaryRepository")
 public interface AnniversaryRepository extends JpaRepository<Anniversary, String> {
     Page<Anniversary> findByAnnvrsryNmContaining(String annvrsryNm, Pageable pageable);
 
