@@ -345,13 +345,13 @@ class JwtTokenProviderTest {
 
     // Helper method to access the key for testing purposes
     public static class TestHelper {
-        public static io.jsonwebtoken.security.SecretKey getKeyForTest(JwtTokenProvider provider) {
-            return (io.jsonwebtoken.security.SecretKey) ReflectionTestUtils.getField(provider, "key");
+        public static javax.crypto.SecretKey getKeyForTest(JwtTokenProvider provider) {
+            return (javax.crypto.SecretKey) ReflectionTestUtils.getField(provider, "key");
         }
     }
 
     // Add a helper method to access the key for testing
-    public io.jsonwebtoken.security.SecretKey getKeyForTest() {
-        return (io.jsonwebtoken.security.SecretKey) ReflectionTestUtils.getField(jwtTokenProvider, "key");
+    public javax.crypto.SecretKey getKeyForTest() {
+        return (javax.crypto.SecretKey) ReflectionTestUtils.getField(jwtTokenProvider, "key");
     }
 }

@@ -45,4 +45,6 @@ logging:
     org.springframework.security: debug
 
 jwt:
-  secret: ${JWT_SECRET:4s3cr3tK3yF0rJWT51gn1ngMu5tB3L0ngEn0ughT0M33tTh3R3qu1r3m3nt5!}
+  # Sentinel: Removed hardcoded default secret to prevent insecure defaults.
+  # Must be provided via environment variable JWT_SECRET.
+  secret: ${JWT_SECRET}

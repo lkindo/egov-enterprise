@@ -49,6 +49,14 @@ public class JwtTokenProvider {
 
     @PostConstruct
     protected void init() {
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("JWT Secret Key is not configured or empty.");
+        }
+        // Enforce minimum key length for HS512 (which JJWT might default to or we should ensure safety)
+        // 32 bytes = 256 bits (minimum for HS256)
+        if (secretKey.getBytes().length < 32) {
+             throw new IllegalArgumentException("JWT Secret Key is too short. It must be at least 32 bytes (256 bits) long.");
+        }
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
