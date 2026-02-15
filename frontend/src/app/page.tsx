@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { vacationService } from '@/services/vacationService';
@@ -282,18 +283,18 @@ export default function UnifiedDashboard() {
           <p className="text-muted-foreground mt-1 font-medium">오늘도 활기찬 하루 되세요. 현재 주요 업무 현황입니다.</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => router.push('/cop/smt/vct')}
+          <Link
+            href="/cop/smt/vct"
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
             <Plus size={18} /> 휴가 신청
-          </button>
-          <button
-            onClick={() => router.push('/cop/bbs')}
+          </Link>
+          <Link
+            href="/cop/bbs"
             className="flex items-center gap-2 px-4 py-2 border bg-card rounded-xl font-bold hover:bg-accent transition-all"
           >
             <MessageSquare size={18} /> 게시글 작성
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -408,12 +409,14 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
           {icon}
           {title}
         </h3>
-        <button 
-          onClick={() => moreHref && window.location.assign(moreHref)}
-          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors"
-        >
-          전체보기 <ArrowRight size={12} />
-        </button>
+        {moreHref && (
+          <Link
+            href={moreHref}
+            className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors"
+          >
+            전체보기 <ArrowRight size={12} />
+          </Link>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-2">
         {loading ? (
@@ -445,12 +448,12 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
 
 function QuickLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
       className="p-3 border rounded-xl bg-card text-center text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all shadow-sm flex flex-col items-center justify-center gap-1"
     >
       {icon}
       {label}
-    </a>
+    </Link>
   );
 }

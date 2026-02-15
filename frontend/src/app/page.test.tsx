@@ -28,6 +28,13 @@ vi.mock('@/lib/api/client', () => {
   return { default: mockClient };
 });
 
+// Mock useToast
+vi.mock('./components/ui/toast', () => ({
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
+}));
+
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,53 +56,67 @@ describe('DashboardPage', () => {
           }
         });
       }
-      if (url === '/uss/olp/opm/listOnlinePollManage.do') {
-        const today = new Date().toISOString().slice(0, 10);
+      if (url.includes('/vacations/yearly-leaves/my')) {
         return Promise.resolve({
           data: {
-            resultList: [
-              {
-                pollId: 'POLL_001',
-                pollNm: 'Active Poll',
-                pollBeginDe: today,
-                pollEndDe: today
-              }
-            ]
+            success: true,
+            data: {
+              remndrYrycCo: 15
+            }
           }
         });
       }
+      // Also mock health check which is called first
+      if (url === '/auth/me') {
+          return Promise.resolve({});
+      }
+
       return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
 
-    render(<DashboardPage />);
+    // We need to mock fetch for /api/v1/health call inside useEffect
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 'ok' }),
+      })
+    ) as Mock;
 
-    // Verify loading state (optional, might happen too fast)
-    // await waitFor(() => expect(screen.getByText(/loading/i)).toBeInTheDocument());
+    render(<DashboardPage />);
 
     // Verify dashboard data is rendered
     await waitFor(() => {
       expect(screen.getByText('Task 1')).toBeInTheDocument();
       expect(screen.getByText('Notice 1')).toBeInTheDocument();
-      expect(screen.getByText('Active Poll')).toBeInTheDocument();
+      // Verify remaining leave is rendered (15 days)
+      expect(screen.getByText(/15 일/)).toBeInTheDocument();
     });
 
     // Verify API calls
     expect(client.get).toHaveBeenCalledWith('/dashboard');
-    expect(client.get).toHaveBeenCalledWith('/uss/olp/opm/listOnlinePollManage.do', expect.anything());
+    // We can't easily verify the vacation call arguments because of dynamic year,
+    // but checking that '15 일' is rendered proves it was called and worked.
   });
 
   it('handles API errors gracefully', async () => {
     // Mock API failures
     (client.get as Mock).mockRejectedValue(new Error('API Error'));
 
+    // Also mock fetch for health check
+    global.fetch = vi.fn(() => Promise.reject('Network Error')) as Mock;
+
     render(<DashboardPage />);
 
     await waitFor(() => {
-      // Should still render the static parts
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
-      // Should show empty states
-      expect(screen.getByText('등록된 할일이 없습니다.')).toBeInTheDocument();
-      expect(screen.getByText('등록된 공지사항이 없습니다.')).toBeInTheDocument();
+       // Should show error state because API status check failed or dashboard load failed
+       // The component shows "서버 연결에 실패했습니다" if health check fails
+       // Or "대시보드 데이터를 불러올 수 없습니다" if dashboard load fails.
+
+       // Since we mocked fetch to reject, apiStatus will be 'error'.
+       // But wait, checkApiStatus tries client.get('/auth/me') if fetch fails.
+       // And client.get is mocked to reject.
+       // So apiStatus will be 'error'.
+       expect(screen.getByText(/서버 연결에 실패했습니다/)).toBeInTheDocument();
     });
   });
 });
