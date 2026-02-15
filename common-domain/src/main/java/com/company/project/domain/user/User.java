@@ -120,7 +120,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "CHG_PWD_LAST_PNTTM")
     private LocalDateTime chgPwdLastPnttm;
 
-    @Builder
+    // @Builder removed to avoid conflict with @SuperBuilder at class level
     public User(String userId, String esntlId, String userNm, String password, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth, String areaNo, String homemiddleTelno,
             String homeendTelno, String fxnum, String homeadres, String detailAdres, String zip, String offmTelno,

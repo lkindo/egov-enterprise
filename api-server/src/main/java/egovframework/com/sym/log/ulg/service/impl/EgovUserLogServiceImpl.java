@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 import egovframework.com.sym.log.ulg.service.EgovUserLogService;
 import egovframework.com.sym.log.ulg.service.UserLog;
-import jakarta.annotation.Resource;
 
 /**
  * 사용로그 관리를 위한 서비스 구현 클래스

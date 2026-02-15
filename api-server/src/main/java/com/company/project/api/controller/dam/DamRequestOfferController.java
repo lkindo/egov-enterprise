@@ -5,7 +5,6 @@ import com.company.project.service.dam.EgovMapKnoService;
 import com.company.project.service.dam.EgovMapTeamService;
 import com.company.project.service.dam.EgovRequestOfferService;
 import com.company.project.service.dam.dto.KnowledgeRequestDto;
-import com.company.project.service.dam.dto.MapKnoDto;
 import com.company.project.service.dam.dto.MapTeamDto;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;

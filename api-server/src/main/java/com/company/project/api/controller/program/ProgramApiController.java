@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +27,7 @@ public class ProgramApiController {
     public ResponseEntity<ApiResponse<Page<ProgramDto>>> getProgramList(
             @RequestParam(required = false) String searchWrd,
             Pageable pageable) throws Exception {
-        
+
         ComDefaultVO searchVO = new ComDefaultVO();
         searchVO.setSearchKeyword(searchWrd);
         searchVO.setFirstIndex((int) pageable.getOffset());
@@ -38,8 +37,7 @@ public class ProgramApiController {
         int total = programService.selectProgrmListTotCnt(searchVO);
 
         return ResponseEntity.ok(ApiResponse.success(
-                new org.springframework.data.domain.PageImpl<>(list, pageable, total)
-        ));
+                new org.springframework.data.domain.PageImpl<>(list, pageable, total)));
     }
 
     @Operation(summary = "Get Program Detail")
@@ -57,7 +55,8 @@ public class ProgramApiController {
 
     @Operation(summary = "Update Program")
     @PutMapping("/{progrmFileNm}")
-    public ResponseEntity<ApiResponse<Void>> updateProgram(@PathVariable String progrmFileNm, @RequestBody ProgramDto dto) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> updateProgram(@PathVariable String progrmFileNm,
+            @RequestBody ProgramDto dto) throws Exception {
         dto.setProgrmFileNm(progrmFileNm);
         programService.updateProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));

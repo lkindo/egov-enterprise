@@ -52,7 +52,7 @@ class UserServiceDatabaseIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 등록 시 데이터베이스에 실제 저장됨")
     void signup_persistsToDatabase() {
         // When
-        var response = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // Then
         // 사용자 테이블에 저장되었는지 확인
@@ -71,7 +71,7 @@ class UserServiceDatabaseIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 조회 시 데이터베이스에서 실제 데이터 가져옴")
     void getUserById_retrievesFromDatabase() {
         // Given
-        var signupResponse = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // When
         UserDto retrievedUser = userService.getUserById("dbIntegrationUser");
@@ -109,7 +109,8 @@ class UserServiceDatabaseIntegrationTest {
         assertThat(userList).hasSize(2);
         assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("dbIntegrationUser",
                 "dbIntegrationUser2");
-        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("DB 통합 테스트 사용자", "DB 통합 테스트 사용자2");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("DB 통합 테스트 사용자",
+                "DB 통합 테스트 사용자2");
 
         // 데이터베이스에서 직접 확인
         List<User> dbUsers = userRepository.findAll();
@@ -125,7 +126,7 @@ class UserServiceDatabaseIntegrationTest {
         long initialAuthorityCount = userAuthorityRepository.count();
 
         // When
-        var response = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // Then
         long currentUserCount = userRepository.count();
@@ -151,10 +152,10 @@ class UserServiceDatabaseIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 정보 수정 시 데이터베이스에 반영됨")
     void updateUser_updatesDatabase() {
         // Given
-        var signupResponse = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // When
-        String updatedUserId = userService.registerUser(
+        userService.registerUser(
                 "updatedUser",
                 "newPassword123!",
                 "수정된 사용자",
@@ -179,7 +180,7 @@ class UserServiceDatabaseIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 삭제 시 데이터베이스에서 삭제됨")
     void deleteUser_removesFromDatabase() {
         // Given
-        var signupResponse = userService.signup(signupRequest);
+        userService.signup(signupRequest);
         Optional<User> initialUser = userRepository.findById("dbIntegrationUser");
         assertThat(initialUser).isPresent();
 
@@ -218,7 +219,7 @@ class UserServiceDatabaseIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 등록 시 생성일자 자동 설정 확인")
     void signup_autoSetCreatedAt() {
         // When
-        var response = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // Then
         Optional<User> savedUser = userRepository.findById("dbIntegrationUser");

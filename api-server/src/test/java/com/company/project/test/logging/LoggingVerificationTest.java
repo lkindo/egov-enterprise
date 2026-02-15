@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.company.project.domain.user.Role;
+import com.company.project.service.user.dto.UserResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -130,7 +132,8 @@ class LoggingVerificationTest {
         @DisplayName("정상 요청 시 정보 로그 기록 확인")
         void normalRequest_logsInfo() throws Exception {
                 // Given
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn("testUser");
+                when(userService.signup(any(UserSignupRequest.class)))
+                                .thenReturn(new UserResponse("testUser", "신규 사용자", Role.USER));
 
                 String requestBody = """
                                 {

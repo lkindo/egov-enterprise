@@ -7,11 +7,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import egovframework.com.cmm.ComDefaultVO;
 
 @Tag(name = "UserManage", description = "Internal User Management APIs")
 @RestController
@@ -26,7 +26,8 @@ public class UserManageController {
     public ResponseEntity<ApiResponse<java.util.List<UserManageDto>>> getUsers(
             @PageableDefault(size = 10) Pageable pageable) {
         // Current implementation returns List, could be updated to Page
-        return ResponseEntity.ok(ApiResponse.success(userManageService.selectUserList(new egovframework.com.cmm.ComDefaultVO())));
+        return ResponseEntity
+                .ok(ApiResponse.success(userManageService.selectUserList(new ComDefaultVO())));
     }
 
     @Operation(summary = "업무 사용자 상세 조회", description = "특정 업무 사용자의 상세 정보를 조회합니다.")

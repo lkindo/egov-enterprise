@@ -1,18 +1,14 @@
 package egovframework.com.sts.rst.service.impl;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import egovframework.com.sts.com.StatsVO;
 import egovframework.com.sts.rst.service.EgovReprtStatsService;
 import egovframework.com.sts.rst.service.ReprtStats;
 import egovframework.com.sts.rst.service.ReprtStatsVO;
@@ -32,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implements EgovReprtStatsService {
 
 	private final ReprtStatsRepository reprtStatsRepository;
-	private final EgovIdGnrService egovReprtStatsIdGnrService;
+	// private final EgovIdGnrService egovReprtStatsIdGnrService;
 
 	/**
 	 * 보고서 통계정보의 대상목록을 조회한다.

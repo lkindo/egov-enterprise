@@ -4,7 +4,6 @@ import com.company.project.core.response.ApiResponse;
 import com.company.project.service.wiki.EgovWikiBookmarkService;
 import com.company.project.service.wiki.dto.WikiBookmarkDto;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,7 +28,8 @@ public class WikiBookmarkController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(wikiBookmarkService.getWikiBookmarkList(userDetails.getUsername(), keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse
+                .success(wikiBookmarkService.getWikiBookmarkList(userDetails.getUsername(), keyword, pageable)));
     }
 
     @Operation(summary = "위키 북마크 등록", description = "새로운 위키 북마크를 등록합니다.")
@@ -54,6 +54,7 @@ public class WikiBookmarkController {
     public ResponseEntity<ApiResponse<Boolean>> checkDuplication(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String wikiBkmkNm) {
-        return ResponseEntity.ok(ApiResponse.success(wikiBookmarkService.checkDuplication(userDetails.getUsername(), wikiBkmkNm)));
+        return ResponseEntity
+                .ok(ApiResponse.success(wikiBookmarkService.checkDuplication(userDetails.getUsername(), wikiBkmkNm)));
     }
 }

@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,24 +52,28 @@ public class EgovBatchOpertServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	@Override
-	public egovframework.com.sym.bat.service.BatchOpert selectBatchOpert(egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
+	public egovframework.com.sym.bat.service.BatchOpert selectBatchOpert(
+			egovframework.com.sym.bat.service.BatchOpert batchOpertVO) throws Exception {
 		return batchOpertRepository.findById(batchOpertVO.getBatchOpertId())
 				.map(this::mapToVO)
 				.orElseThrow(() -> processException("info.nodata.msg"));
 	}
 
 	@Override
-	public List<egovframework.com.sym.bat.service.BatchOpert> selectBatchOpertList(egovframework.com.sym.bat.service.BatchOpert searchVO) throws Exception {
+	public List<egovframework.com.sym.bat.service.BatchOpert> selectBatchOpertList(
+			egovframework.com.sym.bat.service.BatchOpert searchVO) throws Exception {
 		Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
 				Sort.by(Sort.Direction.DESC, "frstRegisterPnttm"));
-		Page<BatchOpert> page = batchOpertRepository.searchBatchOperts(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+		Page<BatchOpert> page = batchOpertRepository.searchBatchOperts(searchVO.getSearchCondition(),
+				searchVO.getSearchKeyword(), pageable);
 		return page.getContent().stream().map(this::mapToVO).collect(Collectors.toList());
 	}
 
 	@Override
 	public int selectBatchOpertListCnt(egovframework.com.sym.bat.service.BatchOpert searchVO) throws Exception {
 		Pageable pageable = PageRequest.of(0, 1);
-		return (int) batchOpertRepository.searchBatchOperts(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
+		return (int) batchOpertRepository
+				.searchBatchOperts(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
 				.getTotalElements();
 	}
 

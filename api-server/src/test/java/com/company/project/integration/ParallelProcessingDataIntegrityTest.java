@@ -1,7 +1,6 @@
-package com.company.project.test.async;
+package com.company.project.integration;
 
 import com.company.project.domain.user.User;
-import com.company.project.domain.user.Role;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
@@ -31,7 +30,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -147,7 +145,6 @@ class ParallelProcessingDataIntegrityTest {
                             .andReturn();
 
                     // Parse and return the user data
-                    String content = result.getResponse().getContentAsString();
                     // In a real scenario, we would parse the JSON response
                     return new UserDto("consistentUser", "일관된 사용자", "USR00001", null, null, null, null);
                 } finally {
@@ -195,6 +192,7 @@ class ParallelProcessingDataIntegrityTest {
         List<Callable<Void>> tasks = new ArrayList<>();
 
         for (int i = 0; i < numberOfUpdates; i++) {
+            final int index = i;
             tasks.add(() -> {
                 try {
                     // Simulate updating user information
@@ -203,7 +201,7 @@ class ParallelProcessingDataIntegrityTest {
                                 "userId": "%s",
                                 "userNm": "업데이트된 사용자-%d"
                             }
-                            """.formatted(userId, i);
+                            """.formatted(userId, index);
 
                     mockMvc.perform(put("/api/v1/users/" + userId)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -274,6 +272,8 @@ class ParallelProcessingDataIntegrityTest {
                         failureCount.incrementAndGet();
                     }
                     return String.valueOf(status);
+                } catch (Exception e) {
+                    return "500";
                 } finally {
                     latch.countDown();
                 }
@@ -281,7 +281,7 @@ class ParallelProcessingDataIntegrityTest {
         }
 
         // When
-        List<Future<String>> futures = executorService.invokeAll(tasks);
+        executorService.invokeAll(tasks);
 
         // Wait for all operations to complete
         latch.await(30, TimeUnit.SECONDS);
@@ -320,12 +320,11 @@ class ParallelProcessingDataIntegrityTest {
             tasks.add(() -> {
                 try {
                     // When
-                    var result = mockMvc.perform(get("/api/v1/users")
+                    mockMvc.perform(get("/api/v1/users")
                             .contentType(MediaType.APPLICATION_JSON))
                             .andExpect(status().isOk())
                             .andExpect(jsonPath("$.success").value(true))
-                            .andExpect(jsonPath("$.data").isArray())
-                            .andReturn();
+                            .andExpect(jsonPath("$.data").isArray());
 
                     // In a real scenario, we would parse the JSON response
                     return users.stream().map(UserDto::from).collect(Collectors.toList());
@@ -596,11 +595,12 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     /*
-    @Test
-    @DisplayName("병렬 인증 요청 시 세션 무결성 유지")
-    void parallelAuthentication_sessionIntegrity_maintained() throws Exception {
-    }
-    */
+     * @Test
+     * 
+     * @DisplayName("병렬 인증 요청 시 세션 무결성 유지")
+     * void parallelAuthentication_sessionIntegrity_maintained() throws Exception {
+     * }
+     */
 
     @Test
     @DisplayName("병렬 데이터베이스 쓰기 작업 시 ACID 속성 유지")
@@ -666,16 +666,18 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     /*
-    @Test
-    @DisplayName("병렬 사용자 역할 변경 시 데이터 일관성 유지")
-    void parallelUserRoleChange_dataConsistency_maintained() throws Exception {
-    }
-    */
+     * @Test
+     * 
+     * @DisplayName("병렬 사용자 역할 변경 시 데이터 일관성 유지")
+     * void parallelUserRoleChange_dataConsistency_maintained() throws Exception {
+     * }
+     */
 
     /*
-    @Test
-    @DisplayName("병렬 파일 업로드 시 리소스 경쟁 없음")
-    void parallelFileUpload_resourceCompetition_absent() throws Exception {
-    }
-    */
-
+     * @Test
+     * 
+     * @DisplayName("병렬 파일 업로드 시 리소스 경쟁 없음")
+     * void parallelFileUpload_resourceCompetition_absent() throws Exception {
+     * }
+     */
+}

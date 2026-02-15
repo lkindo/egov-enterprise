@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.company.project.domain.auth.MenuAuthority;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.menu.SiteMap;
 import com.company.project.domain.menu.SiteMapRepository;
 
 import egovframework.com.cmm.ComDefaultVO;

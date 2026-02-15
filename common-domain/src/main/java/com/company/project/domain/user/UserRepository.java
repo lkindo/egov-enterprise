@@ -20,10 +20,22 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     Optional<User> findByUserIdAndUserNmAndEmailAdres(String userId, String userNm, String emailAdres);
 
-    @EntityGraph(attributePaths = {"role"})
+    @EntityGraph(attributePaths = { "role" })
     @Query("SELECT u FROM User u")
     List<User> findAllWithRole();
 
-    @EntityGraph(attributePaths = {"role"})
+    @EntityGraph(attributePaths = { "role" })
     Optional<User> findById(@Param("userId") String userId);
+
+    List<User> findByUserNmContaining(String userNm);
+
+    List<User> findByEmailAdresContaining(String emailAdres);
+
+    List<User> findByOrgnztId(String orgnztId);
+
+    List<User> findByRole(Role role);
+
+    List<User> findByOrgnztIdAndRole(String orgnztId, Role role);
+
+    List<User> findByUserNmContainingOrEmailAdresContaining(String userNm, String emailAdres);
 }

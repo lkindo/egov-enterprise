@@ -1,4 +1,4 @@
-package com.company.project.openapi.test;
+package com.company.project.openapi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -17,7 +17,6 @@ import com.company.project.domain.namecard.NameCardUserRepository;
 
 import egovframework.com.cop.ncm.service.EgovNcrdManageService;
 import egovframework.com.cop.ncm.service.NameCard;
-import egovframework.com.cop.ncm.service.NameCardUser;
 import egovframework.com.cop.ncm.service.NameCardVO;
 import jakarta.annotation.Resource;
 
@@ -39,8 +38,8 @@ public class EgovNcrdManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     @Transactional
     public void deleteNcrdItem(NameCardVO nameCardVO) throws Exception {
-        com.company.project.domain.namecard.NameCardUserId id = 
-            new com.company.project.domain.namecard.NameCardUserId(nameCardVO.getNcrdId(), nameCardVO.getEmplyrId());
+        com.company.project.domain.namecard.NameCardUserId id = new com.company.project.domain.namecard.NameCardUserId(
+                nameCardVO.getNcrdId(), nameCardVO.getEmplyrId());
         nameCardUserRepository.deleteById(id);
         nameCardRepository.deleteById(nameCardVO.getNcrdId());
     }
@@ -61,7 +60,8 @@ public class EgovNcrdManageServiceImpl extends EgovAbstractServiceImpl implement
 
         nameCardRepository.save(entity);
 
-        com.company.project.domain.namecard.NameCardUser ncrdUser = com.company.project.domain.namecard.NameCardUser.builder()
+        com.company.project.domain.namecard.NameCardUser ncrdUser = com.company.project.domain.namecard.NameCardUser
+                .builder()
                 .ncrdId(ncrdId)
                 .emplyrId(nameCard.getFrstRegisterId())
                 .registSeCode("REGC04")
@@ -73,7 +73,8 @@ public class EgovNcrdManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     @Transactional
     public void insertNcrdUseInf(egovframework.com.cop.ncm.service.NameCardUser ncrdUser) throws Exception {
-        com.company.project.domain.namecard.NameCardUser entity = com.company.project.domain.namecard.NameCardUser.builder()
+        com.company.project.domain.namecard.NameCardUser entity = com.company.project.domain.namecard.NameCardUser
+                .builder()
                 .ncrdId(ncrdUser.getNcrdId())
                 .emplyrId(ncrdUser.getEmplyrId())
                 .registSeCode("REGC04")
@@ -107,7 +108,8 @@ public class EgovNcrdManageServiceImpl extends EgovAbstractServiceImpl implement
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> selectNcrdUseInfs(egovframework.com.cop.ncm.service.NameCardUser ncrdUser) throws Exception {
+    public Map<String, Object> selectNcrdUseInfs(egovframework.com.cop.ncm.service.NameCardUser ncrdUser)
+            throws Exception {
         // Implement logic using nameCardUserRepository if needed
         return new HashMap<>();
     }
@@ -117,20 +119,20 @@ public class EgovNcrdManageServiceImpl extends EgovAbstractServiceImpl implement
     public void updateNcrdItem(NameCard nameCard) throws Exception {
         nameCardRepository.findById(nameCard.getNcrdId()).ifPresent(entity -> {
             entity.update(
-                nameCard.getNcrdNm(), 
-                nameCard.getCmpnyNm(), 
-                nameCard.getDeptNm(), 
-                null, // clsfNm
-                null, // ofcpsNm
-                nameCard.getEmailAdres(),
-                null, // telNo
-                null, // mbtlNum
-                null, // adres
-                null, // detailAdres
-                null, // zipCode
-                null, // remark
-                null, // othbcAt
-                null  // extrlUserAt
+                    nameCard.getNcrdNm(),
+                    nameCard.getCmpnyNm(),
+                    nameCard.getDeptNm(),
+                    null, // clsfNm
+                    null, // ofcpsNm
+                    nameCard.getEmailAdres(),
+                    null, // telNo
+                    null, // mbtlNum
+                    null, // adres
+                    null, // detailAdres
+                    null, // zipCode
+                    null, // remark
+                    null, // othbcAt
+                    null // extrlUserAt
             );
         });
     }

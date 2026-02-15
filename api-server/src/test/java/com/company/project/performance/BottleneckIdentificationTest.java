@@ -1,4 +1,4 @@
-package com.company.project.performance.test;
+package com.company.project.performance;
 
 import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
@@ -146,11 +146,10 @@ class BottleneckIdentificationAndImprovementTest {
         long testEndTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -173,7 +172,7 @@ class BottleneckIdentificationAndImprovementTest {
         long noCacheStartTime = System.currentTimeMillis();
         for (int i = 0; i < numberOfRequests; i++) {
             mockMvc.perform(get("/api/v1/users")
-                    .contentType(MediaType.APPLICATION.JSON))
+                    .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
         }
         long noCacheDuration = System.currentTimeMillis() - noCacheStartTime;
@@ -247,11 +246,10 @@ class BottleneckIdentificationAndImprovementTest {
         long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -338,11 +336,10 @@ class BottleneckIdentificationAndImprovementTest {
         long testEndTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -460,11 +457,10 @@ class BottleneckIdentificationAndImprovementTest {
         long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -526,11 +522,10 @@ class BottleneckIdentificationAndImprovementTest {
         long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -589,11 +584,10 @@ class BottleneckIdentificationAndImprovementTest {
         long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()
@@ -648,11 +642,10 @@ class BottleneckIdentificationAndImprovementTest {
         long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
-        long avgResponseTime = responseTimes.stream()
+        long avgResponseTime = (long) responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .average()
-                .orElse(0.0)
-                .longValue();
+                .orElse(0.0);
         long maxResponseTime = responseTimes.stream()
                 .mapToLong(Long::longValue)
                 .max()

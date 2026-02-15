@@ -3,23 +3,18 @@ package egovframework.com.sts.dst.service.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import egovframework.com.cmm.LoginVO;
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.sts.dst.service.DtaUseStatsVO;
 import egovframework.com.sts.dst.service.EgovDtaUseStatsService;
-import egovframework.com.utl.fcc.service.EgovStringUtil;
 import com.company.project.domain.stats.DtaUseStats;
 import com.company.project.domain.stats.DtaUseStatsRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +26,7 @@ import org.aspectj.lang.JoinPoint;
 public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implements EgovDtaUseStatsService {
 
 	private final DtaUseStatsRepository dtaUseStatsRepository;
-	private final EgovIdGnrService egovDtaUseStatsIdGnrService;
+	// private final EgovIdGnrService egovDtaUseStatsIdGnrService;
 
 	@Override
 	public List<DtaUseStatsVO> selectDtaUseStatsList(DtaUseStatsVO vo) throws Exception {
@@ -84,13 +79,6 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 		// Implementation logic for intercepting file downloads stayed here or moved to
 		// Interceptor.
 		// For actual insertion:
-		String atchFileId = (String) commandMap.get("atchFileId");
-		String fileSn = (String) commandMap.get("fileSn");
-
-		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// Skip insertion logic here if it needs complex MyBatis selectInsertDtaUseStats
-		// Assuming we have already checked if it's a board download in the caller or
-		// Interceptor.
 	}
 
 	@Override

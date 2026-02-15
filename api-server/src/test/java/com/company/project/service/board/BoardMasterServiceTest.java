@@ -125,11 +125,17 @@ class BoardMasterServiceTest {
     void getBoardMasterList_success() {
         // Given
         List<BoardMasterSearchResult> searchResults = Arrays.asList(
-                new BoardMasterSearchResult("BBS_0000000001", "테스트 게시판1", "BBST01", "BBSA01", "TMPL01", "Y")
-        );
+                BoardMasterSearchResult.builder()
+                        .bbsId("BBS_0000000001")
+                        .bbsNm("테스트 게시판1")
+                        .bbsTyCode("BBST01")
+                        .bbsAttrbCode("BBSA01")
+                        .tmplatId("TMPL01")
+                        .useAt("Y")
+                        .build());
         Page<BoardMasterSearchResult> searchResultPage = new PageImpl<>(searchResults);
         Pageable pageable = PageRequest.of(0, 10);
-        
+
         when(boardMasterRepository.searchBoardMasters(any(BoardMasterSearchCondition.class), eq(pageable)))
                 .thenReturn(searchResultPage);
 

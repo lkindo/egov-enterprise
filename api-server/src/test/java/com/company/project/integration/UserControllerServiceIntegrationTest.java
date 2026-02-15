@@ -5,7 +5,6 @@ import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,19 +34,6 @@ class UserControllerServiceIntegrationTest {
 
         @MockBean
         private UserService userService;
-
-        private UserSignupRequest signupRequest;
-
-        @BeforeEach
-        void setUp() {
-                signupRequest = new UserSignupRequest(
-                                "apiTestUser",
-                                "password123!",
-                                "API 통합 테스트 사용자",
-                                com.company.project.domain.user.Role.USER,
-                                "hint",
-                                "answer");
-        }
 
         @Test
         @DisplayName("POST /api/v1/users/signup - API 엔드포인트에서 서비스 호출 확인")
@@ -156,9 +142,6 @@ class UserControllerServiceIntegrationTest {
         @Test
         @DisplayName("PUT /api/v1/users/{userId} - API 엔드포인트에서 서비스 호출 확인")
         void updateUser_api_callsService() throws Exception {
-                // Given
-                UserDto userDto = new UserDto("updateUser", "수정된 사용자", "USR001", null, null, null, null);
-
                 // When & Then
                 mockMvc.perform(put("/api/v1/users/updateUser")
                                 .contentType(MediaType.APPLICATION_JSON)

@@ -115,9 +115,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 null, // password is null
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -133,9 +133,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "1234567", // Less than 8 characters
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -151,9 +151,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123", // No special characters
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -169,9 +169,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password!", // No numbers
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -187,9 +187,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 null, // user name is null
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -205,9 +205,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "", // user name is empty
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -223,9 +223,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "User@Name123", // Contains @ and numbers which are not allowed
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -242,9 +242,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 longHint,
-                                "answer",
-                                com.company.project.domain.user.Role.USER);
+                                "answer");
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
@@ -261,9 +261,9 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "신규 사용자",
+                                com.company.project.domain.user.Role.USER,
                                 "hint",
-                                longCnsr,
-                                com.company.project.domain.user.Role.USER);
+                                longCnsr);
 
                 // When & Then
                 assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))

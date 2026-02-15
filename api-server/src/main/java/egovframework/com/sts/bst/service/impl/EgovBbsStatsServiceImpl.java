@@ -1,7 +1,5 @@
 package egovframework.com.sts.bst.service.impl;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +7,6 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.company.project.domain.log.BbsSummary;
 import com.company.project.domain.log.BbsSummaryRepository;
 
 import egovframework.com.sts.bst.service.EgovBbsStatsService;
