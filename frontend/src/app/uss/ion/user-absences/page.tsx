@@ -29,11 +29,24 @@ export default function UserAbsencePage() {
     loadData();
   }, [loadData]);
 
+  const handleToggleAbsence = async (item: UserAbsence) => {
+    try {
+      const newStatus = item.userAbsnceAt === 'N'; // toggle
+      const res = await absenceService.updateAbsence(item.userId, newStatus);
+      if (res.success) {
+        toast('부재 상태가 업데이트되었습니다.', 'success');
+        loadData();
+      }
+    } catch (error) {
+      toast('상태 변경 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
   const columns = [
     { header: '사용자 ID', accessor: 'userId', className: 'font-mono' },
     { header: '성명', accessor: 'userNm', className: 'font-bold text-foreground' },
-    { 
-      header: '부재 여부', 
+    {
+      header: '부재 여부',
       accessor: (item: UserAbsence) => (
         <div className="flex items-center gap-2">
           {item.userAbsnceAt === 'Y' ? (
@@ -53,9 +66,10 @@ export default function UserAbsencePage() {
       header: '상태 변경',
       className: 'text-right',
       accessor: (item: UserAbsence) => (
-        <button 
-          onClick={() => toast('상태가 변경되었습니다(Mock)', 'success')}
+        <button
+          onClick={() => handleToggleAbsence(item)}
           className="p-2 hover:bg-accent rounded-lg text-primary transition-all"
+          title={item.userAbsnceAt === 'Y' ? '정상으로 변경' : '부재로 변경'}
         >
           <Save size={16} />
         </button>
@@ -65,8 +79,8 @@ export default function UserAbsencePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="사용자 부재 현황 관리" 
+      <PageHeader
+        title="사용자 부재 현황 관리"
         breadcrumbs={[{ label: '부가서비스' }, { label: '부재관리' }]}
       />
 
@@ -79,9 +93,9 @@ export default function UserAbsencePage() {
       </div>
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={columns} 
-          data={data} 
+        <StandardDataTable
+          columns={columns}
+          data={data}
           loading={loading}
           emptyMessage="등록된 사용자 정보가 없습니다."
           className="border-none rounded-none"

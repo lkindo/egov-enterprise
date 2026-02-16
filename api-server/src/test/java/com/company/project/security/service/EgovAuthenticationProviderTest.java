@@ -17,7 +17,6 @@ import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Optional;
 
@@ -88,9 +87,9 @@ class EgovAuthenticationProviderTest {
         CustomUserDetails userDetails = (CustomUserDetails) result.getPrincipal();
         assertThat(userDetails.getUsername()).isEqualTo("testUser");
         assertThat(userDetails.getUser().getUserNm()).isEqualTo("테스트 사용자");
-        assertThat(
-                (java.util.Collection<org.springframework.security.core.GrantedAuthority>) userDetails.getAuthorities())
-                .contains(new SimpleGrantedAuthority("ROLE_USER"));
+        assertThat(userDetails.getAuthorities())
+                .extracting(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .contains("ROLE_USER");
     }
 
     @Test

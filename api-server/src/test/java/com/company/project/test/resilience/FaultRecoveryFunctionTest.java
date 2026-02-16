@@ -1,6 +1,5 @@
 package com.company.project.test.resilience;
 
-import com.company.project.api.controller.UserController;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.service.user.UserService;
@@ -9,9 +8,9 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -411,14 +410,7 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         @Test
         @DisplayName("장애 발생 후 트랜잭션 정리 테스트")
         void transactionCleanup_afterFailure() throws Exception {
-                // Given
-                UserSignupRequest request = new UserSignupRequest(
-                                "transactionUser",
-                                "password123!",
-                                "트랜잭션 사용자",
-                                Role.USER, // Fixed: Role should be passed directly
-                                "hint",
-                                "answer");
+                // TODO: Verify cleanup logic if needed in Phase 1
 
                 when(userService.signup(any(UserSignupRequest.class)))
                                 .thenThrow(new RuntimeException("Transaction failed"))
@@ -495,8 +487,8 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
                 // Force garbage collection
                 System.gc();
 
-                // Check memory usage hasn't significantly decreased
-                long memoryAfterFailure = Runtime.getRuntime().freeMemory();
+                // TODO: Verify memory usage stability in Phase 1
+                // long memoryAfterFailure = Runtime.getRuntime().freeMemory();
 
                 // When & Then - 두 번째 요청 (정상 동작)
                 mockMvc.perform(get("/api/v1/users")

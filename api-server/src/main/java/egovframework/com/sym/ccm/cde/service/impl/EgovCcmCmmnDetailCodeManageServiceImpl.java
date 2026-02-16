@@ -6,6 +6,8 @@ import egovframework.com.sym.ccm.cde.service.CmmnDetailCodeVO;
 import egovframework.com.sym.ccm.cde.service.EgovCcmCmmnDetailCodeManageService;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	 * 공통상세코드 목록을 조회한다.
 	 */
 	@Override
+	@Cacheable(value = "commonCodes", key = "#searchVO.toString()")
 	public List<CmmnDetailCodeVO> selectCmmnDetailCodeList(CmmnDetailCodeVO searchVO) throws Exception {
 		PageRequest pageRequest = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage());
 		Page<CommonCodeDetailProjection> result = detailRepository.searchCommonCodeDetails(
@@ -51,6 +54,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	 * 공통상세코드 상세항목을 조회한다.
 	 */
 	@Override
+	@Cacheable(value = "commonCodes", key = "#cmmnDetailCodeVO.codeId + ':' + #cmmnDetailCodeVO.code")
 	public CmmnDetailCode selectCmmnDetailCodeDetail(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {
 		CommonCodeId id = new CommonCodeId(cmmnDetailCodeVO.getCodeId(), cmmnDetailCodeVO.getCode());
 		return detailRepository.findById(id)
@@ -63,6 +67,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	 */
 	@Override
 	@Transactional
+	@CacheEvict(value = "commonCodes", allEntries = true)
 	public void deleteCmmnDetailCode(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {
 		CommonCodeId id = new CommonCodeId(cmmnDetailCodeVO.getCodeId(), cmmnDetailCodeVO.getCode());
 		detailRepository.findById(id)
@@ -74,6 +79,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	 */
 	@Override
 	@Transactional
+	@CacheEvict(value = "commonCodes", allEntries = true)
 	public void insertCmmnDetailCode(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {
 		detailRepository.save(CommonCode.builder()
 				.codeGroupId(cmmnDetailCodeVO.getCodeId())
@@ -90,6 +96,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	 */
 	@Override
 	@Transactional
+	@CacheEvict(value = "commonCodes", allEntries = true)
 	public void updateCmmnDetailCode(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {
 		CommonCodeId id = new CommonCodeId(cmmnDetailCodeVO.getCodeId(), cmmnDetailCodeVO.getCode());
 		detailRepository.findById(id)

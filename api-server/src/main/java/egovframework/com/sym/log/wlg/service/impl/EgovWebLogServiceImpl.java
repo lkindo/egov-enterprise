@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
 import egovframework.com.sym.log.wlg.service.EgovWebLogService;
@@ -49,6 +50,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 
 	@Override
 	@Transactional
+	@Async("taskExecutor")
 	public void logInsertWebLog(WebLog webLog) throws Exception {
 		String requstId = egovWebLogIdGnrService.getNextStringId();
 		webLog.setRequstId(requstId);
@@ -66,6 +68,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 
 	@Override
 	@Transactional
+	@Async("taskExecutor")
 	public void logInsertWebLogSummary() throws Exception {
 		webLogRepository.insertLogSummary();
 		webLogRepository.deleteOldLogs(210); // Matches legacy logic

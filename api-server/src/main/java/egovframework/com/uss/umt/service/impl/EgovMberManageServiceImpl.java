@@ -20,10 +20,9 @@ import java.util.stream.Collectors;
 
 import com.company.project.domain.user.GeneralUser;
 import com.company.project.domain.user.GeneralUserRepository;
-// import com.company.project.domain.user.TermsInfo;
-import com.company.project.domain.user.TermsRepository;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.domain.user.EnterpriseUserRepository;
+import com.company.project.domain.terms.TermsRepository;
 
 /**
  * 일반회원관리에 관한비지니스클래스를 정의한다.
@@ -56,7 +55,7 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	@Resource(name = "enterpriseUserDomainRepository")
 	private EnterpriseUserRepository enterpriseUserRepository;
 
-	@Resource(name = "userTermsRepository")
+	@Resource(name = "termsRepository")
 	private TermsRepository termsRepository;
 
 	@Resource(name = "egovUsrCnfrmIdGnrService")

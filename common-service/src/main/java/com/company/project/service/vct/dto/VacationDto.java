@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,7 +44,8 @@ public class VacationDto {
     private String frstRegisterPnttm;
 
     public static VacationDto from(Vacation entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return VacationDto.builder()
                 .applcntId(entity.getApplcntId())
                 .vcatnSe(entity.getVcatnSe())

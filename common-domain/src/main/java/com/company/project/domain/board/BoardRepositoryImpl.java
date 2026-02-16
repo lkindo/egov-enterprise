@@ -27,8 +27,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     public Optional<BoardDetailResult> findArticleDetail(BoardId id) {
         BoardDetailResult result = queryFactory
                 .select(Projections.fields(BoardDetailResult.class,
-                        QBoard.board.id.bbsId,
-                        QBoard.board.id.nttId,
+                        QBoard.board.id.bbsId.as("bbsId"),
+                        QBoard.board.id.nttId.as("nttId"),
                         QBoard.board.nttSj,
                         QBoard.board.ntcrId,
                         QBoard.board.ntcrNm,
@@ -92,8 +92,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
         List<BoardSearchResult> results = queryFactory
                 .select(Projections.fields(BoardSearchResult.class,
-                        QBoard.board.id.bbsId,
-                        QBoard.board.id.nttId,
+                        QBoard.board.id.bbsId.as("bbsId"),
+                        QBoard.board.id.nttId.as("nttId"),
                         QBoard.board.nttSj,
                         QBoard.board.frstRegisterId,
                         QUser.user.userNm.coalesce(QBoard.board.ntcrNm).as("frstRegisterNm"),

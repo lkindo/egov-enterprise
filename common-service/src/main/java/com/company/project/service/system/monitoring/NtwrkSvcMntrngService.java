@@ -8,7 +8,6 @@ import com.company.project.domain.system.monitoring.NtwrkSvcMntrngRepository;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.monitoring.dto.NtwrkSvcMntrngDto;
-import com.company.project.service.system.monitoring.dto.NtwrkSvcMntrngLogDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -35,7 +34,8 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<NtwrkSvcMntrngDto> getNtwrkSvcMntrngList(String sysNm, Pageable pageable) {
-        Page<NtwrkSvcMntrng> page = ntwrkSvcMntrngRepository.findBySysNmContaining(sysNm == null ? "" : sysNm, pageable);
+        Page<NtwrkSvcMntrng> page = ntwrkSvcMntrngRepository.findBySysNmContaining(sysNm == null ? "" : sysNm,
+                pageable);
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM046"); // Status codes
         Map<String, String> codeMap = codes.stream()
@@ -74,7 +74,8 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void updateNtwrkSvcMntrng(NtwrkSvcMntrngDto dto) {
-        NtwrkSvcMntrng entity = ntwrkSvcMntrngRepository.findById(new NtwrkSvcMntrngId(dto.getSysIp(), dto.getSysPort()))
+        NtwrkSvcMntrng entity = ntwrkSvcMntrngRepository
+                .findById(new NtwrkSvcMntrngId(dto.getSysIp(), dto.getSysPort()))
                 .orElseThrow(() -> new RuntimeException("Network service monitor not found"));
 
         entity.setSysNm(dto.getSysNm());
@@ -124,7 +125,7 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        
+
         ntwrkSvcMntrngLogRepository.save(log);
     }
 }

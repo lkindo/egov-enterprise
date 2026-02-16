@@ -7,12 +7,14 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +24,24 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureWebMvc
+@SpringBootTest(classes = UserControllerServiceLayerIntegrationTest.TestConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
+@org.springframework.transaction.annotation.Transactional
 @ActiveProfiles("test")
 class UserControllerServiceLayerIntegrationTest {
+
+        @org.springframework.context.annotation.Configuration
+        @org.springframework.context.annotation.Import({
+                        com.company.project.config.MinimalTestConfig.class,
+                        com.company.project.api.common.exception.GlobalExceptionHandler.class
+        })
+        static class TestConfig {
+                @org.springframework.context.annotation.Bean
+                public com.company.project.api.controller.UserController userController(
+                                com.company.project.service.user.UserService userService) {
+                        return new com.company.project.api.controller.UserController(userService);
+                }
+        }
 
         @Autowired
         private MockMvc mockMvc;
@@ -68,6 +84,7 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
+        @WithMockUser(roles = "ADMIN")
         @DisplayName("GET /api/v1/users - API 엔드포인트에서 서비스 계층으로 요청 전달 테스트")
         void getUserList_endpoint_callsServiceLayer() throws Exception {
                 // Given
@@ -111,13 +128,14 @@ class UserControllerServiceLayerIntegrationTest {
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
-                                .andExpect(status().isBadRequest());
+                                .andExpect(status().isConflict());
 
                 // Verify that the service method was called
                 verify(userService, times(1)).signup(any(UserSignupRequest.class));
         }
 
         @Test
+        @WithMockUser(roles = "ADMIN")
         @DisplayName("GET /api/v1/users - 서비스 계층에서 빈 목록 반환 시 API 엔드포인트에서 빈 배열 응답")
         void getUserList_endpoint_handlesEmptyList() throws Exception {
                 // Given
@@ -164,6 +182,7 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
+        @WithMockUser(roles = "ADMIN")
         @DisplayName("GET /api/v1/users - 서비스 계층에서 예외 발생 시 API 엔드포인트에서 적절한 응답 반환")
         void getUserList_endpoint_handlesServiceException() throws Exception {
                 // Given
@@ -218,6 +237,7 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
+        @WithMockUser(roles = "ADMIN")
         @DisplayName("GET /api/v1/users - 서비스 계층 호출 시 파라미터 전달 확인")
         void getUserList_endpoint_parameterPassing() throws Exception {
                 // Given

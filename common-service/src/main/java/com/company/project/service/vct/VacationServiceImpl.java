@@ -3,6 +3,8 @@ package com.company.project.service.vct;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.system.*;
+import com.company.project.domain.user.UserAbsence;
+import com.company.project.domain.user.UserAbsenceRepository;
 import com.company.project.service.vct.dto.UserAbsenceDto;
 import com.company.project.service.vct.dto.VacationDto;
 import com.company.project.service.vct.dto.YearlyLeaveDto;
@@ -37,6 +39,9 @@ public class VacationServiceImpl implements VacationService {
 
     @Override
     public Page<VacationDto> getVacationList(String userId, String searchWrd, Pageable pageable) {
+        if (userId != null && !userId.isEmpty()) {
+            return vacationRepository.findByApplcntId(userId, pageable).map(VacationDto::from);
+        }
         return vacationRepository.findAll(pageable).map(VacationDto::from);
     }
 
@@ -135,14 +140,14 @@ public class VacationServiceImpl implements VacationService {
     public List<YearlyLeaveDto> getYearlyLeaveList(String occrrncYear, String searchWrd) {
         return annualLeaveRepository.findAll().stream()
                 .filter(e -> occrrncYear.equals(e.getOccrrncYear()))
-                .map(e -> YearlyLeaveDto.from(e))
+                .map(YearlyLeaveDto::from)
                 .collect(Collectors.toList());
     }
 
     @Override
     public YearlyLeaveDto getYearlyLeave(String occrrncYear, String userId) {
         return annualLeaveRepository.findById(new AnnualLeaveId(occrrncYear, userId))
-                .map(e -> YearlyLeaveDto.from(e))
+                .map(YearlyLeaveDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -192,20 +197,27 @@ public class VacationServiceImpl implements VacationService {
     // --- User Absence (Basic CRUD) ---
     @Override
     public Page<UserAbsenceDto> getUserAbsenceList(String searchWrd, Pageable pageable) {
-        return userAbsenceRepository.findAll(pageable).map(e -> UserAbsenceDto.from(e));
+        return userAbsenceRepository.findAll(pageable).map(UserAbsenceDto::from);
     }
 
     @Override
     public UserAbsenceDto getUserAbsence(String userId) {
         return userAbsenceRepository.findById(userId)
-                .map(e -> UserAbsenceDto.from(e))
+                .map(UserAbsenceDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
     public void saveUserAbsence(String userId, UserAbsenceDto dto) {
-        // Implementation logic...
+        UserAbsence entity = userAbsenceRepository.findById(dto.getUserId())
+                .orElseGet(() -> UserAbsence.builder()
+                        .userId(dto.getUserId())
+                        .frstRegisterId(userId)
+                        .build());
+
+        entity.update(dto.getUserAbsnceAt(), userId);
+        userAbsenceRepository.save(entity);
     }
 
     @Override

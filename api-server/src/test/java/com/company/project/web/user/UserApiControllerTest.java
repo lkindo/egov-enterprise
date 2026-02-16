@@ -1,8 +1,11 @@
 package com.company.project.web.user;
 
 import com.company.project.api.controller.UserController;
+import com.company.project.api.common.exception.GlobalExceptionHandler;
 import com.company.project.domain.user.Role;
 import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
+import com.company.project.service.menu.MenuService;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
@@ -10,16 +13,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -32,17 +34,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * 사용자 API 컨트롤러 슬라이스 테스트
- */
-@WebMvcTest(controllers = UserController.class, excludeAutoConfiguration = {
-                DataSourceAutoConfiguration.class,
-                JpaRepositoriesAutoConfiguration.class,
-                HibernateJpaAutoConfiguration.class,
-                BatchAutoConfiguration.class
+@WebMvcTest(controllers = UserController.class)
+@ContextConfiguration(classes = {
+                UserController.class,
+                GlobalExceptionHandler.class,
+                UserApiControllerTest.TestConfig.class
 })
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserApiControllerTest {
+
+        @org.springframework.boot.SpringBootConfiguration
+        @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
+                        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
+        })
+        static class TestConfig {
+        }
 
         @Autowired
         private MockMvc mockMvc;
@@ -61,6 +71,18 @@ class UserApiControllerTest {
 
         @MockBean
         private AuthenticationManager authenticationManager;
+
+        @MockBean
+        private OperationalAuditInterceptor operationalAuditInterceptor;
+
+        @MockBean
+        private MenuService menuService;
+
+        @MockBean
+        private com.company.project.security.service.EgovAuthenticationProvider egovAuthenticationProvider;
+
+        @MockBean
+        private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
 
         @Test
         @DisplayName("사용자 목록 조회 - 관리자")
@@ -100,7 +122,7 @@ class UserApiControllerTest {
         }
 
         @Test
-        @DisplayName("회원가입 - 중복 사용자 ID (400)")
+        @DisplayName("회원가입 - 중복 사용자 ID (409)")
         void signup_duplicateUserId() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -117,6 +139,6 @@ class UserApiControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andDo(print())
-                                .andExpect(status().isBadRequest());
+                                .andExpect(status().isConflict());
         }
 }

@@ -57,7 +57,8 @@ public class ApiSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/api/v1/auth/login", "/api/v1/menu/**",
+                                                .requestMatchers("/api/v1/auth/login", "/api/v1/users/signup",
+                                                                "/api/v1/menu/**",
                                                                 "/api/v1/images/**", "/api/v1/dashboard",
                                                                 "/api/v1/bbs/**", "/api/v1/community/**",
                                                                 "/api/v1/deptjob/**", "/api/v1/addressbook/**",

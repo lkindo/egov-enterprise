@@ -1,8 +1,6 @@
 package com.company.project.performance;
 
-import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +76,6 @@ class StressTest {
         long startTime = System.currentTimeMillis();
 
         for (int i = 0; i < numberOfRequests; i++) {
-            final int requestId = i;
             Future<Boolean> future = executorService.submit(() -> {
                 try {
                     mockMvc.perform(get("/api/v1/users")
@@ -284,8 +281,8 @@ class StressTest {
         ExecutorService continuousExecutor = Executors.newFixedThreadPool(threads);
 
         // When: 5분간 지속적인 요청
-        long testStartTime = System.currentTimeMillis();
         long testDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+        long testStartTime = System.currentTimeMillis();
 
         for (int threadId = 0; threadId < threads; threadId++) {
             final int threadIdFinal = threadId;
@@ -360,10 +357,9 @@ class StressTest {
         CountDownLatch latch = new CountDownLatch(numberOfRequests);
 
         // When: 고부하 상황에서 응답 시간 측정
-        long testStartTime = System.currentTimeMillis();
+        // long testStartTime = System.currentTimeMillis(); // Removed unused variable
 
         for (int i = 0; i < numberOfRequests; i++) {
-            final int requestId = i;
             executorService.submit(() -> {
                 try {
                     long requestStartTime = System.currentTimeMillis();
@@ -465,6 +461,8 @@ class StressTest {
         for (int i = 0; i < numberOfRequests; i++) {
             final int requestId = i;
             Future<Integer> future = executorService.submit(() -> {
+                if (requestId % 50 == 0)
+                    System.out.println("Error rate check request #" + requestId);
                 try {
                     var result = mockMvc.perform(get("/api/v1/users")
                             .contentType(MediaType.APPLICATION_JSON))

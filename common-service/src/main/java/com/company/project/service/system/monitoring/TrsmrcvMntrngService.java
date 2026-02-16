@@ -7,7 +7,6 @@ import com.company.project.domain.system.monitoring.TrsmrcvMntrngRepository;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.monitoring.dto.TrsmrcvMntrngDto;
-import com.company.project.service.system.monitoring.dto.TrsmrcvMntrngLogDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -32,7 +31,8 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<TrsmrcvMntrngDto> getTrsmrcvMntrngList(String mngrNm, Pageable pageable) {
-        Page<TrsmrcvMntrng> page = trsmrcvMntrngRepository.findByMngrNmContaining(mngrNm == null ? "" : mngrNm, pageable);
+        Page<TrsmrcvMntrng> page = trsmrcvMntrngRepository.findByMngrNmContaining(mngrNm == null ? "" : mngrNm,
+                pageable);
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM046"); // Status codes
         Map<String, String> codeMap = codes.stream()
@@ -123,7 +123,7 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        
+
         trsmrcvMntrngLogRepository.save(log);
     }
 }

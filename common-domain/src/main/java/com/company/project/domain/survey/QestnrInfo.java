@@ -4,8 +4,6 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 /**
  * 설문 정보 Entity
  * 레거시 테이블: NQESTNRINFO
@@ -45,7 +43,7 @@ public class QestnrInfo extends BaseEntity {
     private String qestnrTmplatId;
 
     public void update(String qestnrSj, String qestnrPurps, String qestnrWritngGuidanceCn,
-                      String qestnrBeginDe, String qestnrEndDe, String qestnrTrget, String qestnrTmplatId) {
+            String qestnrBeginDe, String qestnrEndDe, String qestnrTrget, String qestnrTmplatId) {
         this.qestnrSj = qestnrSj;
         this.qestnrPurps = qestnrPurps;
         this.qestnrWritngGuidanceCn = qestnrWritngGuidanceCn;

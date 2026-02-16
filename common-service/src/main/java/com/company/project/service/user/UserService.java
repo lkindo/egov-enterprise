@@ -11,6 +11,7 @@ import com.company.project.domain.user.UserRepository;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.service.user.mapper.UserMapper;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,12 +37,14 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
         private final PasswordEncoder passwordEncoder;
+        private final UserMapper userMapper;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
-                        PasswordEncoder passwordEncoder) {
+                        PasswordEncoder passwordEncoder, UserMapper userMapper) {
                 this.userRepository = userRepository;
                 this.userAuthorityRepository = userAuthorityRepository;
                 this.passwordEncoder = passwordEncoder;
+                this.userMapper = userMapper;
         }
 
         /**
@@ -64,7 +67,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 Map<String, UserAuthority> authorityMap = authorities.stream()
                                 .collect(Collectors.toMap(UserAuthority::getUniqId, authority -> authority));
 
-                // 사용자 정보와 권한 정보를 결합하여 DTO 생성
+                // 사용자 정보와 권한 정보를 결합하여 DTO 생성 (MapStruct 활용)
                 return users.stream()
                                 .map(user -> convertToDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
@@ -91,7 +94,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 Map<String, UserAuthority> authorityMap = authorities.stream()
                                 .collect(Collectors.toMap(UserAuthority::getUniqId, authority -> authority));
 
-                // 사용자 정보와 권한 정보를 결합하여 DTO 생성
+                // 사용자 정보와 권한 정보를 결합하여 DTO 생성 (MapStruct 활용)
                 List<UserDto> userDtos = userPage.getContent().stream()
                                 .map(user -> convertToDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
@@ -124,7 +127,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          * 사용자 등록 (비밀번호 암호화 적용)
          */
         @Transactional
-        @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true) // 사용자 목록 캐시 전체 무효화
+        @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
         public String registerUser(String userId, String password, String userNm,
                         String passwordHint, String passwordCnsr, Role role) {
                 String esntlId = Constants.User.USER_PREFIX
@@ -143,20 +146,6 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
 
                 userRepository.save(user);
                 return userId;
-        }
-
-        private UserDto convertToDto(User user) {
-                if (user == null) {
-                        return null;
-                }
-
-                return UserDto.builder()
-                                .userId(user.getUserId())
-                                .userNm(user.getUserNm())
-                                .esntlId(user.getEsntlId())
-                                .role(user.getRole() != null ? user.getRole().name() : null)
-                                .createdDate(user.getSbscrbDe())
-                                .build();
         }
 
         /**
@@ -223,9 +212,9 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         private UserDto convertToDtoWithAuthority(User user, UserAuthority authority) {
-                UserDto userDto = convertToDto(user);
+                UserDto userDto = userMapper.toDto(user);
                 if (userDto != null && authority != null && authority.getAuthorCode() != null) {
-                        // 권한 코드가 있는 경우, 해당 권한 코드로 역할을 덮어씀
+                        // 권한 코드가 있는 경우, 해당 권한 코드로 역할을 덮어씀 (MapStruct 이후 커스텀 오버라이드)
                         return UserDto.builder()
                                         .userId(userDto.getUserId())
                                         .userNm(userDto.getUserNm())
@@ -244,12 +233,10 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Override
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true) // 사용자 목록 캐시 전체 무효화
+        @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
-                // 입력값 검증
                 UserValidator.validateUserSignupRequest(request);
 
-                // 중복 사용자 체크
                 if (userRepository.existsById(request.userId())) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
@@ -268,7 +255,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .build();
 
                 userRepository.save(user);
-                return UserResponse.from(user);
+                return userMapper.toResponse(user);
         }
 
         /**

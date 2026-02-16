@@ -1,18 +1,5 @@
 package com.company.project.domain.namecard;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +10,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.io.Serializable;
 
 /**
  * 명함 사용 정보 JPA Entity
@@ -62,7 +47,7 @@ public class NameCardUser extends BaseEntity {
     public void updateUseAt(String useAt) {
         this.useAt = useAt;
     }
-    
+
     // 누락된 메서드들 추가
     public String getCreatDt() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;

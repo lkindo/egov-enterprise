@@ -17,7 +17,7 @@ export default function DutyPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [duties, setDuties] = useState<Duty[]>([]);
-  
+
   // 모달 및 피커 상태
   const [isModalOpen, setIsOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -60,10 +60,23 @@ export default function DutyPage() {
     }
   };
 
+  const handleDelete = async (item: Duty) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      const res = await dutyService.deleteDuty(item.dutyId);
+      if (res.success) {
+        toast('당직 정보가 삭제되었습니다.', 'success');
+        loadData();
+      }
+    } catch (error) {
+      toast('삭제 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
   const columns = [
     { header: '당직일자', accessor: 'dutyDe', className: 'font-mono font-bold' },
-    { 
-      header: '당직자', 
+    {
+      header: '당직자',
       accessor: (item: Duty) => (
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-black">
@@ -79,8 +92,8 @@ export default function DutyPage() {
       header: '관리',
       className: 'text-right',
       accessor: (item: Duty) => (
-        <button 
-          onClick={() => toast('삭제되었습니다(Mock)', 'info')}
+        <button
+          onClick={() => handleDelete(item)}
           className="p-1.5 hover:bg-destructive/10 text-destructive rounded-md transition-all"
         >
           <Trash2 size={16} />
@@ -91,11 +104,11 @@ export default function DutyPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="당직 및 비상 대기 관리" 
+      <PageHeader
+        title="당직 및 비상 대기 관리"
         breadcrumbs={[{ label: '부가서비스' }, { label: '당직관리' }]}
         actions={
-          <button 
+          <button
             onClick={() => setIsOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
@@ -111,9 +124,9 @@ export default function DutyPage() {
       </div>
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={columns} 
-          data={duties} 
+        <StandardDataTable
+          columns={columns}
+          data={duties}
           loading={loading}
           emptyMessage="편성된 당직 내역이 없습니다."
           className="border-none rounded-none"
@@ -128,14 +141,14 @@ export default function DutyPage() {
           </FormField>
           <FormField label="당직자 선택" required>
             <div className="flex gap-2">
-              <input 
-                type="text" 
-                value={selectedUser ? `${selectedUser.ncrdNm} (${selectedUser.ncrdId})` : ''} 
+              <input
+                type="text"
+                value={selectedUser ? `${selectedUser.ncrdNm} (${selectedUser.ncrdId})` : ''}
                 placeholder="사용자를 검색하세요."
                 readOnly
                 className="flex-1 h-10 px-3 rounded-md border bg-muted/20 text-sm outline-none"
               />
-              <button 
+              <button
                 onClick={() => setPickerOpen(true)}
                 className="px-4 border border-primary text-primary rounded-md font-bold text-xs hover:bg-primary/5 transition-all"
               >

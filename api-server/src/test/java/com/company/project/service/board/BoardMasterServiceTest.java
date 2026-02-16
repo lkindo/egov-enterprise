@@ -3,7 +3,6 @@ package com.company.project.service.board;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.board.*;
-import com.company.project.service.board.dto.BlogDto;
 import com.company.project.service.board.dto.BoardMasterDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.BeforeEach;

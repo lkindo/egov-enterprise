@@ -17,7 +17,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,8 +33,8 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     private final FileStorageService storageService;
 
     public FileService(FileMasterRepository fileMasterRepository,
-                       FileDetailRepository fileDetailRepository,
-                       FileStorageService storageService) {
+            FileDetailRepository fileDetailRepository,
+            FileStorageService storageService) {
         this.fileMasterRepository = fileMasterRepository;
         this.fileDetailRepository = fileDetailRepository;
         this.storageService = storageService;
@@ -53,7 +52,8 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
 
         int fileSn = 1;
         for (MultipartFile file : files) {
-            if (file.isEmpty()) continue;
+            if (file.isEmpty())
+                continue;
 
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);
@@ -79,7 +79,8 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
      */
     @Override
     public List<FileDto> getFileList(String atchFileId) {
-        if (atchFileId == null) return List.of();
+        if (atchFileId == null)
+            return List.of();
         FileMaster master = fileMasterRepository.findById(atchFileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return fileDetailRepository.findByFileMaster(master).stream()
@@ -142,7 +143,8 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
 
         int fileSn = maxSn + 1;
         for (MultipartFile file : files) {
-            if (file.isEmpty()) continue;
+            if (file.isEmpty())
+                continue;
 
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);

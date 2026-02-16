@@ -2,7 +2,6 @@ package com.company.project.security.service;
 
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.User;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.uat.uia.service.EgovLoginService;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +56,7 @@ class EgovAuthenticationProviderDetailedTest {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(successLoginVO);
         when(userAuthorityRepository.findById("USR00001")).thenReturn(Optional.empty()); // No specific authority
-        
+
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("testUser", "password123");
 
         // When
@@ -83,10 +82,10 @@ class EgovAuthenticationProviderDetailedTest {
                 .uniqId("USR00001")
                 .authorCode("ROLE_ADMIN")
                 .build();
-                
+
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(successLoginVO);
         when(userAuthorityRepository.findById("USR00001")).thenReturn(Optional.of(mockAuthority));
-        
+
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("testUser", "password123");
 
         // When
@@ -108,7 +107,8 @@ class EgovAuthenticationProviderDetailedTest {
     void authenticate_failWithNullResult() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(null);
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("invalidUser", "wrongPassword");
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("invalidUser",
+                "wrongPassword");
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(token))

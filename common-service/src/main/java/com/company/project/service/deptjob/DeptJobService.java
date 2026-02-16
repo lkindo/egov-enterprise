@@ -7,12 +7,11 @@ import com.company.project.domain.deptjob.DeptJob;
 import com.company.project.domain.deptjob.DeptJobRepository;
 import com.company.project.domain.deptjob.DeptJobBoxRepository;
 // import com.company.project.domain.deptjob.QDeptJob;
-import com.company.project.domain.organization.OrganizationManage;
 import com.company.project.domain.organization.OrganizationManageRepository;
-import com.company.project.domain.user.User;
 import com.company.project.domain.user.UserRepository;
 import com.company.project.service.deptjob.dto.DeptJobDto;
-// import com.querydsl.core.BooleanBuilder;
+import com.company.project.domain.deptjob.QDeptJob;
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
@@ -33,37 +32,33 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
     @Override
     public Page<DeptJobDto> getDeptJobList(String deptId, String deptJobbxId, String searchCondition, String keyword,
             Pageable pageable) {
-        /*
-         * QDeptJob deptJob = QDeptJob.deptJob;
-         * BooleanBuilder builder = new BooleanBuilder();
-         * 
-         * if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
-         * builder.and(deptJob.deptJobbxId.eq(deptJobbxId));
-         * } else if (deptId != null && !deptId.isEmpty()) {
-         * List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
-         * .map(box -> box.getDeptJobbxId())
-         * .collect(java.util.stream.Collectors.toList());
-         * if (!boxIds.isEmpty()) {
-         * builder.and(deptJob.deptJobbxId.in(boxIds));
-         * } else {
-         * builder.and(deptJob.deptJobbxId.eq("NONE"));
-         * }
-         * }
-         * 
-         * if (keyword != null && !keyword.isEmpty()) {
-         * if ("0".equals(searchCondition)) { // 부서업무명
-         * builder.and(deptJob.deptJobNm.contains(keyword));
-         * } else if ("1".equals(searchCondition)) { // 부서업무내용
-         * builder.and(deptJob.deptJobCn.contains(keyword));
-         * } else if ("2".equals(searchCondition)) { // 담당자명
-         * builder.and(deptJob.chargerId.contains(keyword));
-         * }
-         * }
-         * 
-         * return deptJobRepository.findAll(builder, pageable).map(this::toDto);
-         */
-        // TODO: Restore QueryDSL logic once QDeptJob is available
-        return deptJobRepository.findAll(pageable).map(this::toDto);
+        QDeptJob deptJob = QDeptJob.deptJob;
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
+            builder.and(deptJob.deptJobbxId.eq(deptJobbxId));
+        } else if (deptId != null && !deptId.isEmpty()) {
+            java.util.List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
+                    .map(box -> box.getDeptJobbxId())
+                    .collect(java.util.stream.Collectors.toList());
+            if (!boxIds.isEmpty()) {
+                builder.and(deptJob.deptJobbxId.in(boxIds));
+            } else {
+                builder.and(deptJob.deptJobbxId.eq("NONE_BOX"));
+            }
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            if ("0".equals(searchCondition)) { // 부서업무명
+                builder.and(deptJob.deptJobNm.contains(keyword));
+            } else if ("1".equals(searchCondition)) { // 부서업무내용
+                builder.and(deptJob.deptJobCn.contains(keyword));
+            } else if ("2".equals(searchCondition)) { // 담당자명
+                builder.and(deptJob.chargerId.contains(keyword));
+            }
+        }
+
+        return deptJobRepository.findAll(builder, pageable).map(this::toDto);
     }
 
     @Override

@@ -1,8 +1,6 @@
 package com.company.project.security.test;
 
-import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,7 +53,7 @@ class AuthenticationBypassTest {
     void expiredJwtToken_toProtectedEndpoint_returns401() throws Exception {
         // Given
         String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTUwMDAwMDB9." +
-                             "someInvalidSignature";
+                "someInvalidSignature";
 
         // When & Then
         mockMvc.perform(get("/api/v1/users")
@@ -83,8 +76,10 @@ class AuthenticationBypassTest {
     void unauthorizedUser_toAdminEndpoint_returns403() throws Exception {
         // Given
         String validToken = "valid.token.here";
-        // In a real scenario, we would mock the JWT validation to return a user with non-admin role
-        // For this test, we'll assume the token is valid but user doesn't have admin privileges
+        // In a real scenario, we would mock the JWT validation to return a user with
+        // non-admin role
+        // For this test, we'll assume the token is valid but user doesn't have admin
+        // privileges
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/users")

@@ -2,12 +2,7 @@ package com.company.project.security.jwt;
 
 import com.company.project.domain.auth.RefreshToken;
 import com.company.project.domain.auth.RefreshTokenRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -28,9 +22,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,17 +62,6 @@ class JwtTokenProviderTest {
     void createRefreshToken_success() throws Exception {
         // Given
         String userId = "testUser";
-        String expectedToken = "refreshToken123";
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-        // Mock JWT creation
-        String token = Jwts.builder()
-                .subject(userId)
-                .issuedAt(now)
-                .expiration(validity)
-                .signWith(jwtTokenProvider.getKeyForTest()) // Using a test helper method
-                .compact();
 
         when(refreshTokenRepository.findById(userId)).thenReturn(Optional.empty());
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));

@@ -96,6 +96,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .replyAt("N")
                                 .replyLc(0)
                                 .useAt("Y")
+                                .frstRegisterId(userId)
                                 .build();
 
                 return boardRepository.save(board).getNttId();
@@ -148,6 +149,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .replyAt("Y")
                                 .replyLc(parent.getReplyLc() + 1)
                                 .useAt("Y")
+                                .frstRegisterId(userId)
                                 .build();
 
                 return boardRepository.save(board).getNttId();

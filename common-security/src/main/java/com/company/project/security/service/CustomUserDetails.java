@@ -2,7 +2,6 @@ package com.company.project.security.service;
 
 import com.company.project.domain.user.User;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,15 +10,25 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Getter
-@RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
     private final String authorCode;
 
+    public CustomUserDetails(User user) {
+        this.user = user;
+        this.authorCode = user.getAuthorCode();
+    }
+
+    public CustomUserDetails(User user, String authorCode) {
+        this.user = user;
+        this.authorCode = authorCode != null ? authorCode : user.getAuthorCode();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String role = (authorCode != null) ? authorCode : "ROLE_" + user.getRole().name();
+        String role = (authorCode != null) ? authorCode
+                : (user.getRole() != null ? "ROLE_" + user.getRole().name() : "ROLE_USER");
         return Collections.singleton(new SimpleGrantedAuthority(role));
     }
 
@@ -40,7 +49,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !"Y".equalsIgnoreCase(user.getLockAt());
     }
 
     @Override
@@ -50,7 +59,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        // user.getUserStatus() == ACTIVE check can be added
         return true;
     }
 }
