@@ -11,6 +11,10 @@ interface MenuItem {
     chkURL: string;
 }
 
+interface MappedMenuItem extends MenuItem {
+    mappedUrl: string;
+}
+
 // Helper to map legacy .do URLs to Next.js routes
 const mapLegacyUrl = (url: string) => {
     if (!url) return '#';
@@ -66,7 +70,7 @@ const mapLegacyUrl = (url: string) => {
 const Sidebar = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
+    const [leftMenus, setLeftMenus] = useState<MappedMenuItem[]>([]);
     const [parentMenuName, setParentMenuName] = useState('');
 
     // Optimize: Memoize menuNo to prevent redundant API calls on route changes within same section
@@ -91,7 +95,12 @@ const Sidebar = () => {
                 try {
                     const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
                     if (response.data.success) {
-                        setLeftMenus(response.data.list);
+                        // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
+                        const mappedList = response.data.list.map((item: MenuItem) => ({
+                            ...item,
+                            mappedUrl: mapLegacyUrl(item.chkURL)
+                        }));
+                        setLeftMenus(mappedList);
                     }
                 } catch (error) {
                     console.error('Failed to fetch left menus', error);
@@ -108,8 +117,8 @@ const Sidebar = () => {
         return null;
     }
 
-    const isActive = (menuUrl: string) => {
-        const mapped = mapLegacyUrl(menuUrl);
+    const isActive = (menu: MappedMenuItem) => {
+        const mapped = menu.mappedUrl;
         if (mapped === pathname) return true;
 
         // Handle board detail active state when list is selected
@@ -130,9 +139,9 @@ const Sidebar = () => {
                     {leftMenus.map((menu) => (
                         <li key={menu.menuNo}>
                             <Link
-                                href={mapLegacyUrl(menu.chkURL)}
-                                className={isActive(menu.chkURL) ? 'on' : ''}
-                                aria-current={isActive(menu.chkURL) ? 'page' : undefined}
+                                href={menu.mappedUrl}
+                                className={isActive(menu) ? 'on' : ''}
+                                aria-current={isActive(menu) ? 'page' : undefined}
                             >
                                 {menu.menuNm}
                             </Link>
