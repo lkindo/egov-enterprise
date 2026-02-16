@@ -70,10 +70,14 @@ describe('Sidebar', () => {
             const activeLink = screen.getByRole('link', { name: 'Active Menu' });
             expect(activeLink).toHaveAttribute('aria-current', 'page');
             expect(activeLink).toHaveClass('on');
+            // Verify mapped URL is used
+            expect(activeLink).toHaveAttribute('href', '/cop/cmy/selectCommunityList');
 
             const inactiveLink = screen.getByRole('link', { name: 'Inactive Menu' });
             expect(inactiveLink).not.toHaveAttribute('aria-current');
             expect(inactiveLink).not.toHaveClass('on');
+            // Verify mapped URL is used (default mapping)
+            expect(inactiveLink).toHaveAttribute('href', '/cop/bbs/other.do');
         });
     });
 });
