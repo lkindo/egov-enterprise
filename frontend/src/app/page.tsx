@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { vacationService } from '@/services/vacationService';
@@ -17,13 +18,20 @@ import {
   AlertCircle,
   Users,
   Settings,
-  FileText,
   ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StandardChartWrapper } from './components/ui/standard-chart-wrapper';
-import { StatusBadge } from './components/ui/status-badge';
 import { useToast } from './components/ui/toast';
+
+// 가상 차트 데이터
+const chartData = [
+  { name: '월', work: 4 },
+  { name: '화', work: 7 },
+  { name: '수', work: 5 },
+  { name: '목', work: 8 },
+  { name: '금', work: 3 },
+];
 
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -51,9 +59,9 @@ export default function UnifiedDashboard() {
       } catch (err) {
         // health check가 없을 수 있으므로, 기본 API 호출로 확인
         try {
-          const response = await client.get('/auth/me');
+          await client.get('/auth/me');
           setApiStatus('ok');
-        } catch (apiErr) {
+        } catch {
           setApiStatus('error');
         }
       }
@@ -101,15 +109,6 @@ export default function UnifiedDashboard() {
       loadDashboardData();
     }
   }, [user, authLoading, toast]);
-
-  // 가상 차트 데이터
-  const chartData = [
-    { name: '월', work: 4 },
-    { name: '화', work: 7 },
-    { name: '수', work: 5 },
-    { name: '목', work: 8 },
-    { name: '금', work: 3 },
-  ];
 
   // API 서버 상태 확인 중
   if (apiStatus === 'checking') {
@@ -408,12 +407,12 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
           {icon}
           {title}
         </h3>
-        <button 
-          onClick={() => moreHref && window.location.assign(moreHref)}
+        <Link
+          href={moreHref || '#'}
           className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors"
         >
           전체보기 <ArrowRight size={12} />
-        </button>
+        </Link>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
         {loading ? (
@@ -445,12 +444,12 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
 
 function QuickLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
       className="p-3 border rounded-xl bg-card text-center text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all shadow-sm flex flex-col items-center justify-center gap-1"
     >
       {icon}
       {label}
-    </a>
+    </Link>
   );
 }
