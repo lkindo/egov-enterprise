@@ -58,7 +58,7 @@ class UserServiceIntegrationTest {
     @DisplayName("사용자 서비스 - 사용자 등록 시 사용자 정보와 권한 정보가 함께 저장됨")
     void signup_createsUserAndAuthority() {
         // When
-        UserResponse response = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // Then
         // 사용자 정보가 저장되었는지 확인
@@ -143,7 +143,7 @@ class UserServiceIntegrationTest {
         long initialAuthorityCount = userAuthorityRepository.count();
 
         // When
-        UserResponse response = userService.signup(signupRequest);
+        userService.signup(signupRequest);
 
         // Then
         long currentUserCount = userRepository.count();

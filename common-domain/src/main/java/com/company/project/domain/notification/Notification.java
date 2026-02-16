@@ -5,7 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,17 +52,17 @@ public class Notification extends BaseEntity {
     public void markAsRead() {
         this.isRead = "Y";
     }
-    
+
     // 누락된 메서드들 추가
     public String getNtfcTime() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
     }
-    
+
     public String getBhNtfcIntrvl() {
         // 알림 간격 정보는 별도 필드가 없으므로 null 반환
         return null;
     }
-    
+
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;

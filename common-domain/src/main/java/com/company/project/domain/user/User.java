@@ -4,6 +4,7 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.envers.Audited;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@Audited
 public class User extends BaseEntity implements Serializable {
 
     @Id
@@ -98,10 +100,6 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "EMPLYR_STTUS_CODE", length = 45)
     private Role role;
 
-    @Transient
-    @Setter
-    private String authorCode;
-
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
@@ -120,42 +118,11 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "CHG_PWD_LAST_PNTTM")
     private LocalDateTime chgPwdLastPnttm;
 
-    // @Builder removed to avoid conflict with @SuperBuilder at class level
-    public User(String userId, String esntlId, String userNm, String password, String passwordHint, String passwordCnsr,
-            String emplNo, String ihidnum, String sexdstnCode, String brth, String areaNo, String homemiddleTelno,
-            String homeendTelno, String fxnum, String homeadres, String detailAdres, String zip, String offmTelno,
-            String moblphonNo, String emailAdres, String ofcpsNm, String groupId, String orgnztId, String insttCode,
-            Role role, String subDn, String authorCode, String lockAt) {
-        this.userId = userId;
-        this.esntlId = esntlId;
-        this.userNm = userNm;
-        this.password = password;
-        this.passwordHint = passwordHint;
-        this.passwordCnsr = passwordCnsr;
-        this.emplNo = emplNo;
-        this.ihidnum = ihidnum;
-        this.sexdstnCode = sexdstnCode;
-        this.brth = brth;
-        this.areaNo = areaNo;
-        this.homemiddleTelno = homemiddleTelno;
-        this.homeendTelno = homeendTelno;
-        this.fxnum = fxnum;
-        this.homeadres = homeadres;
-        this.detailAdres = detailAdres;
-        this.zip = zip;
-        this.offmTelno = offmTelno;
-        this.moblphonNo = moblphonNo;
-        this.emailAdres = emailAdres;
-        this.ofcpsNm = ofcpsNm;
-        this.groupId = groupId;
-        this.orgnztId = orgnztId;
-        this.insttCode = insttCode;
-        this.role = role != null ? role : Role.USER;
-        this.sbscrbDe = LocalDateTime.now();
-        this.subDn = subDn;
-        this.authorCode = authorCode;
-        this.lockAt = lockAt;
-    }
+    @Version
+    private Long version;
+
+    @Transient
+    private String authorCode;
 
     public void update(String userNm, String passwordHint, String passwordCnsr, String emplNo, String ihidnum,
             String sexdstnCode, String brth, String areaNo, String homemiddleTelno, String homeendTelno,
@@ -196,5 +163,19 @@ public class User extends BaseEntity implements Serializable {
         this.lockAt = "N";
         this.lockCnt = 0;
         this.lockLastPnttm = null;
+    }
+
+    public void lockAccount() {
+        this.lockAt = "Y";
+        this.lockLastPnttm = LocalDateTime.now();
+    }
+
+    public void incrementLockCount() {
+        if (this.lockCnt == null)
+            this.lockCnt = 0;
+        this.lockCnt++;
+        if (this.lockCnt >= 5) {
+            lockAccount();
+        }
     }
 }

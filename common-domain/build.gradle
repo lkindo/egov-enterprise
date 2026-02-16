@@ -1,6 +1,8 @@
 dependencies {
     api project(':common-core')
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.data:spring-data-envers'
+    api 'org.hibernate.orm:hibernate-envers:6.5.3.Final'
     
     // QueryDSL 5.1.0 (최신 안정 버전)
     api 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
@@ -21,17 +23,4 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 }
 
-// QueryDSL Config
-def querydslDir = "$buildDir/generated/querydsl"
 
-sourceSets {
-    main.java.srcDirs += [ querydslDir ]
-}
-
-tasks.withType(JavaCompile) {
-    options.generatedSourceOutputDirectory = file(querydslDir)
-}
-
-clean.doLast {
-    file(querydslDir).deleteDir()
-}

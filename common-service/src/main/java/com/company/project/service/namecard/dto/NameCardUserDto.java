@@ -8,8 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -45,7 +43,7 @@ public class NameCardUserDto {
                 .nameCard(NameCardDto.from(nameCard))
                 .build();
     }
-    
+
     // 누락된 메서드들 추가
     public String getCreatDt() {
         return this.creatDt != null ? this.creatDt.toString() : null;

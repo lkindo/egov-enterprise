@@ -7,7 +7,6 @@ import com.company.project.domain.system.monitoring.HttpMonRepository;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.monitoring.dto.HttpMonDto;
-import com.company.project.service.system.monitoring.dto.HttpMonLogDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -112,7 +111,7 @@ public class HttpMonService extends EgovAbstractServiceImpl {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            
+
             int responseCode = conn.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 sttus = "01"; // Normal
@@ -145,7 +144,7 @@ public class HttpMonService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        
+
         httpMonLogRepository.save(log);
     }
 }

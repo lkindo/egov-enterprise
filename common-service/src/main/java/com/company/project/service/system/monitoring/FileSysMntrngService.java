@@ -7,7 +7,6 @@ import com.company.project.domain.system.monitoring.FileSysMntrngRepository;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.monitoring.dto.FileSysMntrngDto;
-import com.company.project.service.system.monitoring.dto.FileSysMntrngLogDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -33,7 +32,8 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<FileSysMntrngDto> getFileSysMntrngList(String fileSysNm, Pageable pageable) {
-        Page<FileSysMntrng> page = fileSysMntrngRepository.findByFileSysNmContaining(fileSysNm == null ? "" : fileSysNm, pageable);
+        Page<FileSysMntrng> page = fileSysMntrngRepository.findByFileSysNmContaining(fileSysNm == null ? "" : fileSysNm,
+                pageable);
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM046"); // Status codes
         Map<String, String> codeMap = codes.stream()
@@ -132,7 +132,7 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        
+
         fileSysMntrngLogRepository.save(log);
     }
 }

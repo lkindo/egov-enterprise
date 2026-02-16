@@ -7,8 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 /**
  * Q&A 정보 Entity
  * 레거시 테이블: NQAINFO
@@ -71,8 +69,9 @@ public class Qna extends BaseEntity {
 
     @Builder
     public Qna(String qaId, String qestnSj, String qestnCn, String writngPassword, String wrterNm,
-               String emailAdres, String emailAnswerAt, String areaNo, String middleTelno, String endTelno,
-               String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe, String frstRegisterId) {
+            String emailAdres, String emailAnswerAt, String areaNo, String middleTelno, String endTelno,
+            String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe,
+            String frstRegisterId) {
         this.qaId = qaId;
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
@@ -91,7 +90,8 @@ public class Qna extends BaseEntity {
         this.createdBy = frstRegisterId;
     }
 
-    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno, String endTelno, String userId) {
+    public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno,
+            String endTelno, String userId) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.emailAdres = emailAdres;

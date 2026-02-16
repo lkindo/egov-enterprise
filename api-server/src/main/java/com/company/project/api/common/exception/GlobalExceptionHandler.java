@@ -1,37 +1,33 @@
 package com.company.project.api.common.exception;
 
-import java.util.stream.Collectors;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.validation.FieldError;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.stream.Collectors;
+
 /**
- * 전역 예외 처리기
+ * 전역 예외 처리기 (ApiResponse 표준화 적용)
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * 비즈니스 로직 예외 처리
-     */
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.error("handleBusinessException", e);
         ErrorCode errorCode = e.getErrorCode();
-        ApiResponse<Void> response = ApiResponse.error(errorCode.getStatus().value(), e.getMessage());
-        return new ResponseEntity<>(response, errorCode.getStatus());
+        return new ResponseEntity<>(ApiResponse.error(errorCode, e.getMessage()), errorCode.getStatus());
     }
 
-    /**
-     * 유효성 검증 예외 처리 (@Valid)
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<ApiResponse<Object>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException e) {
@@ -40,17 +36,21 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        ApiResponse<Object> response = ApiResponse.error(400, message);
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, message));
     }
 
-    /**
-     * 나머지 예외 처리
-     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailureException(
+            OptimisticLockingFailureException e) {
+        log.error("handleOptimisticLockingFailureException", e);
+        return new ResponseEntity<>(
+                ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "Concurrency conflict: Please try again."),
+                HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error("handleException", e);
-        ApiResponse<Void> response = ApiResponse.error(500, "Internal Server Error: " + e.getMessage());
-        return ResponseEntity.internalServerError().body(response);
+        return ResponseEntity.internalServerError().body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR));
     }
 }

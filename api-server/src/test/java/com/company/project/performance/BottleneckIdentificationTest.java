@@ -1,8 +1,6 @@
 package com.company.project.performance;
 
-import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,10 +119,7 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: 데이터베이스 연결 풀 사용량 모니터링
-        long testStartTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
-            final int requestId = i;
             executorService.submit(() -> {
                 try {
                     long requestStartTime = System.currentTimeMillis();
@@ -143,7 +138,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long testEndTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -222,8 +216,6 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: 사용자 목록 조회 (N+1 쿼리가 발생할 수 있는 상황)
-        long startTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
             executorService.submit(() -> {
                 try {
@@ -243,7 +235,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -311,10 +302,7 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: CPU 사용량 증가 추세 분석
-        long testStartTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
-            final int requestId = i;
             executorService.submit(() -> {
                 try {
                     long requestStartTime = System.currentTimeMillis();
@@ -333,7 +321,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(120, TimeUnit.SECONDS); // 더 긴 시간 대기
-        long testEndTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -432,8 +419,6 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: 페이징 처리 성능 분석
-        long startTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
             final int page = i % 10; // 0~9 페이지 순환
             executorService.submit(() -> {
@@ -454,7 +439,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -497,8 +481,6 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: 검색 쿼리 성능 분석
-        long startTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
             final String searchKeyword = "검색 테스트 사용자" + (i % 10); // 일부 키워드 반복
             executorService.submit(() -> {
@@ -519,7 +501,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -547,8 +528,6 @@ class BottleneckIdentificationAndImprovementTest {
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         // When: 트랜잭션 처리 성능 분석
-        long startTime = System.currentTimeMillis();
-
         for (int i = 0; i < numberOfRequests; i++) {
             final int requestId = i;
             executorService.submit(() -> {
@@ -581,7 +560,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(90, TimeUnit.SECONDS); // 트랜잭션 처리에 더 많은 시간 필요
-        long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()
@@ -617,9 +595,7 @@ class BottleneckIdentificationAndImprovementTest {
         CountDownLatch latch = new CountDownLatch(numberOfRequests);
         List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-        // When: 인증 처리 성능 분
-        long startTime = System.currentTimeMillis();
-
+        // When: 인증 처리 성능 분석
         for (int i = 0; i < numberOfRequests; i++) {
             executorService.submit(() -> {
                 try {
@@ -639,7 +615,6 @@ class BottleneckIdentificationAndImprovementTest {
 
         // Then: 모든 요청이 완료될 때까지 대기
         latch.await(60, TimeUnit.SECONDS);
-        long endTime = System.currentTimeMillis();
 
         // 응답 시간 분석
         long avgResponseTime = (long) responseTimes.stream()

@@ -137,12 +137,11 @@ class ParallelProcessingDataIntegrityTest {
             tasks.add(() -> {
                 try {
                     // When
-                    var result = mockMvc.perform(get("/api/v1/users/consistentUser")
+                    mockMvc.perform(get("/api/v1/users/consistentUser")
                             .contentType(MediaType.APPLICATION_JSON))
                             .andExpect(status().isOk())
                             .andExpect(jsonPath("$.success").value(true))
-                            .andExpect(jsonPath("$.data.userId").value("consistentUser"))
-                            .andReturn();
+                            .andExpect(jsonPath("$.data.userId").value("consistentUser"));
 
                     // Parse and return the user data
                     // In a real scenario, we would parse the JSON response

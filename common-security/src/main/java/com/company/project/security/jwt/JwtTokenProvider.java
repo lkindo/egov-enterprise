@@ -1,6 +1,5 @@
 package com.company.project.security.jwt;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -157,7 +156,8 @@ public class JwtTokenProvider {
 
     // Resolve Refresh Token from Request Cookie
     public String resolveRefreshToken(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
+        if (request.getCookies() == null)
+            return null;
         return Arrays.stream(request.getCookies())
                 .filter(cookie -> "refreshToken".equals(cookie.getName()))
                 .map(Cookie::getValue)
@@ -177,12 +177,13 @@ public class JwtTokenProvider {
 
     // Check if Refresh Token is valid in DB
     public boolean validateRefreshToken(String token) {
-        if (!validateToken(token)) return false;
-        
+        if (!validateToken(token))
+            return false;
+
         Optional<RefreshToken> storedToken = refreshTokenRepository.findByToken(token);
         return storedToken.isPresent() && storedToken.get().getExpiryDate().isAfter(Instant.now());
     }
-    
+
     // Test helper method to access the key
     public SecretKey getKeyForTest() {
         return this.key;

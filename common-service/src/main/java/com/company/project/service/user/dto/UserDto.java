@@ -24,7 +24,8 @@ public class UserDto {
     private LocalDateTime createdDate;
 
     public static UserDto from(com.company.project.domain.user.User user) {
-        if (user == null) return null;
+        if (user == null)
+            return null;
         return UserDto.builder()
                 .userId(user.getUserId())
                 .userNm(user.getUserNm())

@@ -39,6 +39,15 @@ public class VacationController {
                 ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
     }
 
+    @Operation(summary = "전사 휴가 목록 조회 (관리자)", description = "관리자 권한으로 모든 사용자의 휴가 신청 내역을 조회합니다.")
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<Page<VacationDto>>> getAllVacations(
+            @RequestParam(required = false) String searchWrd,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(
+                ApiResponse.success(vacationService.getVacationList(null, searchWrd, pageable)));
+    }
+
     @Operation(summary = "휴가 상세 조회", description = "특정 휴가 신청 상세 정보를 조회합니다.")
     @GetMapping("/detail")
     public ResponseEntity<ApiResponse<VacationDto>> getVacation(

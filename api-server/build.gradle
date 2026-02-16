@@ -36,7 +36,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.batch:spring-batch-infrastructure'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
-    implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
+    // implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
     
     // eGovFrame Batch
     implementation 'org.egovframe.rte:egovframe-rte-bat-core:5.0.0'

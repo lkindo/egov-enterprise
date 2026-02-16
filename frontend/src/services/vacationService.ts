@@ -1,6 +1,5 @@
 import client from '@/lib/api/client';
 import { Vacation, YearlyLeave } from '@/types/vacation';
-import { ApiResponse } from '@/types/api'; // Assuming a standard ApiResponse type exists
 
 export const vacationService = {
   /**
@@ -8,6 +7,14 @@ export const vacationService = {
    */
   getMyVacations: async (params: { page?: number; size?: number; searchWrd?: string }) => {
     const response = await client.get('/vacations', { params });
+    return response.data;
+  },
+
+  /**
+   * 휴가 상세 조회
+   */
+  getVacationDetail: async (params: { applcntId: string, vcatnSe: string, bgnde: string }) => {
+    const response = await client.get('/vacations/detail', { params });
     return response.data;
   },
 
@@ -28,10 +35,26 @@ export const vacationService = {
   },
 
   /**
+   * 휴가 수정
+   */
+  updateVacation: async (data: Partial<Vacation>) => {
+    const response = await client.put('/vacations', data);
+    return response.data;
+  },
+
+  /**
+   * 휴가 삭제
+   */
+  deleteVacation: async (params: { applcntId: string, vcatnSe: string, bgnde: string }) => {
+    const response = await client.delete('/vacations', { params });
+    return response.data;
+  },
+
+  /**
    * 전사 휴가 신청 목록 조회 (Admin)
    */
   getAllVacations: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/vacations', { params });
+    const response = await client.get('/vacations/admin/all', { params });
     return response.data;
   },
 

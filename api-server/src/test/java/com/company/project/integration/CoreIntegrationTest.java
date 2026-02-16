@@ -18,8 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 핵심 기능 중심의 통합 테스트
+ * MinimalTestConfig를 사용하여 필요한 컴포넌트만 로드
  */
-@SpringBootTest
+@SpringBootTest(classes = com.company.project.config.MinimalTestConfig.class, properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"
+})
 @Transactional
 @ActiveProfiles("test")
 class CoreIntegrationTest {

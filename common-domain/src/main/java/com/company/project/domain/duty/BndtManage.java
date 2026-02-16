@@ -4,8 +4,6 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
-
 /**
  * 당직 정보 Entity
  * 레거시 테이블: NBNDTMANAGE

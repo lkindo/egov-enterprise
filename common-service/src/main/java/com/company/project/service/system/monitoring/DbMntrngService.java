@@ -7,7 +7,6 @@ import com.company.project.domain.system.monitoring.DbMntrngRepository;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.monitoring.dto.DbMntrngDto;
-import com.company.project.service.system.monitoring.dto.DbMntrngLogDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -36,13 +35,16 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<DbMntrngDto> getDbMntrngList(String dataSourcNm, Pageable pageable) {
-        Page<DbMntrng> page = dbMntrngRepository.findByDataSourcNmContaining(dataSourcNm == null ? "" : dataSourcNm, pageable);
+        Page<DbMntrng> page = dbMntrngRepository.findByDataSourcNmContaining(dataSourcNm == null ? "" : dataSourcNm,
+                pageable);
 
         List<CommonCodeDto> dbmsCodes = commonCodeService.getCodesByGroup("COM048");
-        Map<String, String> dbmsMap = dbmsCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+        Map<String, String> dbmsMap = dbmsCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
         List<CommonCodeDto> sttusCodes = commonCodeService.getCodesByGroup("COM046");
-        Map<String, String> sttusMap = sttusCodes.stream().collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+        Map<String, String> sttusMap = sttusCodes.stream()
+                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
         return page.map(entity -> {
             DbMntrngDto dto = DbMntrngDto.from(entity);
@@ -105,11 +107,12 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
         String sttus = "02"; // Abnormal
         String logInfo = "";
 
-        // Check using default data source for prototype. 
-        // In real legacy, it might try to connect to the specific dataSourcNm using JNDI or specific config.
+        // Check using default data source for prototype.
+        // In real legacy, it might try to connect to the specific dataSourcNm using
+        // JNDI or specific config.
         try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            
+                Statement stmt = conn.createStatement()) {
+
             stmt.execute(entity.getCeckSql());
             sttus = "01"; // Normal
             logInfo = "Connection check successful with SQL: " + entity.getCeckSql();
@@ -138,7 +141,21 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        
+
         dbMntrngLogRepository.save(log);
-    }
-}
+    }}
+
+    
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            

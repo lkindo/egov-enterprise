@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class EgovAuthenticationProvider implements AuthenticationProvider {
@@ -30,9 +31,17 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
+    @Transactional
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
+
+        // 1. 사용자 존재 여부 및 잠금 상태 먼저 확인
+        User userEntity = userRepository.findById(userId)
+                .orElseGet(() -> userRepository.findByEsntlId(userId)
+                        .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
+
+        validateAccountStatus(userEntity);
 
         LoginVO loginVO = new LoginVO();
         loginVO.setId(userId);
@@ -42,58 +51,40 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             LoginVO resultVO = loginService.actionLogin(loginVO);
 
             if (resultVO != null && resultVO.getId() != null && !resultVO.getId().isEmpty()) {
-                // Check if user account is locked
-                User userEntity = userRepository.findById(resultVO.getId())
-                    .orElseThrow(() -> new BadCredentialsException("User not found"));
-
-                // Check account status
-                validateAccountStatus(userEntity);
+                // 로그인 성공 시 잠금 횟수 초기화
+                userEntity.unlock();
+                userRepository.save(userEntity);
 
                 // Fetch actual authority from NEMPLYRSCRTYESTBS
                 String authorCode = userAuthorityRepository.findById(resultVO.getUniqId())
                         .map(ua -> ua.getAuthorCode())
-                        .orElse("ROLE_USER"); // Default fallback
+                        .orElse("ROLE_USER");
 
-                // Map LoginVO to User Domain
-                User user = User.builder()
-                        .userId(resultVO.getId())
-                        .userNm(resultVO.getName())
-                        .esntlId(resultVO.getUniqId())
-                        .emailAdres(resultVO.getEmail())
-                        .ihidnum(resultVO.getIhidNum())
-                        .orgnztId(resultVO.getOrgnztId())
-                        .authorCode(authorCode) // Use authorCode instead of static Role.USER
-                        .password(resultVO.getPassword())
-                        .lockAt(userEntity.getLockAt())
-                        .lockCnt(userEntity.getLockCnt())
-                        .lockLastPnttm(userEntity.getLockLastPnttm())
-                        .build();
-
-                CustomUserDetails userDetails = new CustomUserDetails(user);
+                // Map to CustomUserDetails
+                userEntity.setAuthorCode(authorCode);
+                CustomUserDetails userDetails = new CustomUserDetails(userEntity);
 
                 return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
             } else {
+                // 로그인 실패 시 잠금 횟수 증가
+                userEntity.incrementLockCount();
+                userRepository.save(userEntity);
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
         } catch (BadCredentialsException e) {
-            throw e; // Re-throw bad credentials exception
+            throw e;
         } catch (Exception e) {
+            // 기타 예외 발생 시에도 계정 보호를 위해 실패 처리 고려 가능 (현재는 로깅 후 재투척)
             throw new BadCredentialsException("Authentication failed: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Validate user account status (locked, suspended, etc.)
-     */
     private void validateAccountStatus(User user) {
         if ("Y".equalsIgnoreCase(user.getLockAt())) {
-            throw new AccountStatusException("User account is locked") {
+            throw new AccountStatusException("User account is locked due to multiple login failures.") {
                 private static final long serialVersionUID = 1L;
             };
         }
-        
-        // Additional account status checks can be added here
-        // For example: check if account is expired, disabled, etc.
     }
 
     @Override

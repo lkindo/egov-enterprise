@@ -1,6 +1,6 @@
 package com.company.project.service.vct.dto;
 
-import com.company.project.domain.system.UserAbsence;
+import com.company.project.domain.user.UserAbsence;
 import lombok.*;
 
 import java.time.LocalDateTime;
