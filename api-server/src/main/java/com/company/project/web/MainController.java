@@ -1,5 +1,6 @@
 package com.company.project.web;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,9 +79,15 @@ public class MainController {
 
     @RequestMapping(value = "/sym/mms/EgovHeader.do")
     public String selectHeader(ModelMap model) throws Exception {
-        // Expose menus to all users (including unauthenticated) for Login Page
-        model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
-        model.addAttribute("list_menulist", menuService.getAllMenus());
+        // Expose menus only if authenticated to prevent information disclosure
+        if (EgovUserDetailsHelper.isAuthenticated()) {
+            model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
+            model.addAttribute("list_menulist", menuService.getAllMenus());
+        } else {
+            // Unauthenticated users get empty lists to prevent view errors
+            model.addAttribute("list_headmenu", new ArrayList<>());
+            model.addAttribute("list_menulist", new ArrayList<>());
+        }
 
         return "main/inc/EgovIncHeader";
     }
