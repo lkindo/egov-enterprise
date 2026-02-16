@@ -160,7 +160,10 @@ public class EgovWebUtil {
 	}
 
 	public static String removeOSCmdRisk(String parameter) {
-		return parameter.replaceAll("\\p{Space}", "").replaceAll("\\*", "").replaceAll("\\|", "").replaceAll(";", "").replaceAll("&", "");
+		if (parameter == null || parameter.trim().equals("")) {
+			return "";
+		}
+		return parameter.replaceAll("[^a-zA-Z0-9\\.\\_\\-]", "");
 	}
 
 	/**
