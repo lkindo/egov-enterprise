@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @created 28-6-2010 오전 10:44:27
  */
-@Service("egovProxySvcService")
+@Service("EgovProxySvcService")
 @RequiredArgsConstructor
 public class EgovProxySvcServiceImpl extends EgovAbstractServiceImpl implements EgovProxySvcService {
 

@@ -22,12 +22,12 @@ import jakarta.annotation.Resource;
  * @Description : DB서비스모니터링을 위한 스케쥴링 클래스
  * @Modification Information
  *
- *    수정일       수정자         수정내용
- *    -------        -------     -------------------
- *    2010.06.30     김진만   최초생성
- *    2022.11.11   	 김혜준   시큐어코딩 처리
+ *               수정일 수정자 수정내용
+ *               ------- ------- -------------------
+ *               2010.06.30 김진만 최초생성
+ *               2022.11.11 김혜준 시큐어코딩 처리
  *
- * @author  김진만
+ * @author 김진만
  * @since 2010.06.30
  * @version
  * @see
@@ -36,7 +36,7 @@ import jakarta.annotation.Resource;
 @Service("egovDbMntrngScheduling")
 public class EgovDbMntrngScheduling extends EgovAbstractServiceImpl {
 
-	@Resource(name = "egovDbMntrngService")
+	@Resource(name = "EgovDbMntrngService")
 	private EgovDbMntrngService dbMntrngService;
 
 	@Resource(name = "mntrngMailSender")
@@ -136,7 +136,7 @@ public class EgovDbMntrngScheduling extends EgovAbstractServiceImpl {
 	/**
 	 * 이메일을 전송한다.
 	 *
-	 * @param   mntrngLog   모니터링 대상정보
+	 * @param mntrngLog 모니터링 대상정보
 	 * @return
 	 *
 	 */

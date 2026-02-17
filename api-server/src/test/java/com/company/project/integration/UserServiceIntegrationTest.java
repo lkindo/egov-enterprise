@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+@SpringBootTest(classes = com.company.project.config.MinimalTestConfig.class)
 @Transactional
 @ActiveProfiles("test")
 class UserServiceIntegrationTest {

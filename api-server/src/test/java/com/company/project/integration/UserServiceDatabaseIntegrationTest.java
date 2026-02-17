@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(classes = com.company.project.config.MinimalTestConfig.class)
 @Transactional
 @ActiveProfiles("test")
 class UserServiceDatabaseIntegrationTest {

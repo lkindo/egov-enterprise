@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 데이터베이스와 서비스 간의 통합 테스트
  */
-@SpringBootTest
+@SpringBootTest(classes = com.company.project.config.MinimalTestConfig.class)
 @Transactional
 @ActiveProfiles("test")
 class DatabaseServiceIntegrationTest {

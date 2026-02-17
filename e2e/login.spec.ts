@@ -3,35 +3,31 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication', () => {
     test('should login successfully with admin account', async ({ page }) => {
         // Go to login page
-        await page.goto('/uat/uia/egovLoginUsr.do');
+        await page.goto('/login');
 
         // Fill login form
-        await page.fill('#id', 'admin');
-        await page.fill('#password', 'admin123'); // Updated password
+        await page.fill('#id', 'webmaster');
+        await page.fill('#password', '1');
 
         // Click login button
-        await page.click('.btn_login');
+        await page.click('button[type="submit"]');
 
-        // Wait for navigation and verify URL
-        await page.waitForURL(/.*mainPage.do/, { timeout: 10000 });
-        await expect(page).toHaveURL(/.*mainPage.do/);
-
-        // Check if logout button is visible
-        await expect(page.getByRole('link', { name: '로그아웃' })).toBeVisible();
+        // Wait for navigation to dashboard (root)
+        await page.waitForURL('**/', { timeout: 10000 });
+        
+        // Check if welcome message is visible
+        await expect(page.getByText('안녕하세요')).toBeVisible();
     });
 
     test('should show error message on failed login', async ({ page }) => {
-        await page.goto('/uat/uia/egovLoginUsr.do');
+        await page.goto('/login');
 
         await page.fill('#id', 'wronguser');
         await page.fill('#password', 'wrongpass');
 
-        // Handle dialog
-        page.on('dialog', async dialog => {
-            expect(dialog.message()).toContain('로그인에 실패하였습니다');
-            await dialog.dismiss();
-        });
+        await page.click('button[type="submit"]');
 
-        await page.click('.btn_login');
+        // Check for error message in the UI
+        await expect(page.getByText('로그인에 실패했습니다')).toBeVisible();
     });
 });

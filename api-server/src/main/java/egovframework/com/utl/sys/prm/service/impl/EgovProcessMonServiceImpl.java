@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2010.06.21
  * @version 1.1
  */
-@Service("egovProcessMonService")
+@Service("EgovProcessMonService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implements EgovProcessMonService {
