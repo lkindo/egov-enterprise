@@ -1,0 +1,2 @@
+jwt:
+  secret: test-secret-key-for-unit-testing-purposes-only-12345678901234567890

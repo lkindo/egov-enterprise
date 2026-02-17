@@ -87,8 +87,8 @@ egov-enterprise/
 
 ### 1. Backend (Java/Spring)
 ```bash
-# 루트 디렉토리에서 실행
-./gradlew bootRun
+# 루트 디렉토리에서 실행 (JWT_SECRET 환경변수 설정 필수)
+JWT_SECRET=your_secure_secret_key ./gradlew bootRun
 ```
 - API Endpoint: `http://localhost:8080/api/v1`
 
