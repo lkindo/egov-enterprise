@@ -1,27 +1,41 @@
 import client from '@/lib/api/client';
 
-export interface NetworkServiceStatus {
-  sysIp: string;
-  sysPort: string;
-  sysNm: string;
-  svcSttus: string; // 01:정상, 02:비정상
-  logDt: string;
+export interface Network {
+  ntwrkId: string;
+  ntwrkIp: string;
+  gtwy: string;
+  subnet: string;
+  domnServer: string;
+  manageIem: string;
+  userNm: string;
+  useAt: 'Y' | 'N';
+  regstYmd?: string;
+  lastUpdusrPnttm?: string;
 }
 
 export const networkService = {
-  /**
-   * 네트워크 서비스 모니터링 로그 조회
-   */
-  getNetworkLogs: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/admin/system/monitoring/network/logs', { params });
+  getNetworks: async (params: { page?: number; size?: number; manageIem?: string; userNm?: string }) => {
+    const response = await client.get('/admin/system/networks', { params });
     return response.data;
   },
 
-  /**
-   * 실시간 상태 체크 실행
-   */
-  checkNow: async (serverId: string) => {
-    const response = await client.post(`/admin/system/monitoring/network/check?serverId=${serverId}`);
+  getNetwork: async (id: string) => {
+    const response = await client.get(`/admin/system/networks/${id}`);
+    return response.data;
+  },
+
+  createNetwork: async (data: Omit<Network, 'ntwrkId'>) => {
+    const response = await client.post('/admin/system/networks', data);
+    return response.data;
+  },
+
+  updateNetwork: async (id: string, data: Partial<Network>) => {
+    const response = await client.put(`/admin/system/networks/${id}`, data);
+    return response.data;
+  },
+
+  deleteNetwork: async (id: string) => {
+    const response = await client.delete(`/admin/system/networks/${id}`);
     return response.data;
   }
 };

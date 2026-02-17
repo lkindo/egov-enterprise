@@ -2,7 +2,6 @@ package com.company.project.api.controller.login;
 
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.utl.sim.service.EgovClntInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -81,9 +80,24 @@ public class AuthController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             LOGGER.error("Login failed", e);
+            System.err.println("Login failed for user " + id);
+            e.printStackTrace(); // Print stack trace to console for debugging
+
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", egovMessageSource.getMessage("fail.common.login", request.getLocale()));
+            
+            String message = "Login failed";
+            try {
+                if (egovMessageSource != null) {
+                    message = egovMessageSource.getMessage("fail.common.login", null, request.getLocale());
+                } else {
+                    System.err.println("egovMessageSource is null");
+                }
+            } catch (Exception msgEx) {
+                System.err.println("Failed to get message: " + msgEx.getMessage());
+            }
+            error.put("message", message);
+            
             return ResponseEntity.status(401).body(error);
         }
     }
@@ -99,17 +113,21 @@ public class AuthController {
     @Operation(summary = "현재 사용자 정보 확인")
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
-        LoginVO loginVO = (LoginVO) request.getSession().getAttribute("LoginVO");
-        if (loginVO != null) {
-            return ResponseEntity.ok(Map.of("success", true, "user", loginVO));
+        try {
+            LoginVO loginVO = (LoginVO) request.getSession().getAttribute("LoginVO");
+            if (loginVO != null) {
+                return ResponseEntity.ok(Map.of("success", true, "user", loginVO));
+            }
+
+            // Check Spring Security context as fallback
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+                return ResponseEntity.ok(Map.of("success", true, "principal", auth.getPrincipal()));
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error checking auth status", e);
         }
 
-        // Check Spring Security context as fallback
-        if (EgovUserDetailsHelper.isAuthenticated()) {
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            return ResponseEntity.ok(Map.of("success", true, "principal", principal));
-        }
-
-        return ResponseEntity.status(401).body(Map.of("success", false));
+        return ResponseEntity.status(401).body(Map.of("success", false, "message", "Not Authenticated"));
     }
 }

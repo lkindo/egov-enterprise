@@ -22,7 +22,7 @@ import java.util.Map;
 @Tag(name = "Menu", description = "메뉴 관리 API")
 public class MenuController {
 
-    @Resource(name = "meunManageService")
+    @Resource(name = "menuManageService")
     private EgovMenuManageService menuManageService;
 
     @Operation(summary = "GNB 헤더 메뉴 조회")

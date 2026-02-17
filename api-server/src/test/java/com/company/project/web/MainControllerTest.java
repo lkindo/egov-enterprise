@@ -24,7 +24,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.company.project.service.board.BoardService;
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuDto;
-import egovframework.com.cmm.EgovComponentChecker;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
 @WebMvcTest(controllers = MainController.class,

@@ -70,7 +70,7 @@ public class EgovMenuManageController {
 	protected EgovPropertyService propertiesService;
 
 	/** EgovMenuManageService */
-	@Resource(name = "meunManageService")
+	@Resource(name = "menuManageService")
 	private EgovMenuManageService menuManageService;
 
 	/** EgovMenuManageService */

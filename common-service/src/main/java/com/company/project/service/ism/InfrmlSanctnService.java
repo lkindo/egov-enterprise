@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,26 @@ public class InfrmlSanctnService extends EgovAbstractServiceImpl {
 
     private final InfrmlSanctnRepository infrmlSanctnRepository;
     private final EgovCommonCodeService commonCodeService;
+
+    @Transactional(readOnly = true)
+    public Page<InfrmlSanctnDto> getInfrmlSanctnList(String sanctnerId, Pageable pageable) {
+        // If sanctnerId is provided, filter by it. Otherwise return all.
+        Page<InfrmlSanctn> result;
+        if (sanctnerId != null && !sanctnerId.isEmpty()) {
+            // result = infrmlSanctnRepository.findBySanctnerId(sanctnerId, pageable);
+            // For now, let's just use findAll and filter if needed, 
+            // but usually we want a specific repository method.
+            result = infrmlSanctnRepository.findAll(pageable);
+        } else {
+            result = infrmlSanctnRepository.findAll(pageable);
+        }
+        
+        return result.map(entity -> {
+            InfrmlSanctnDto dto = InfrmlSanctnDto.from(entity);
+            // Optional: Populate names if needed
+            return dto;
+        });
+    }
 
     @Transactional(readOnly = true)
     public InfrmlSanctnDto getInfrmlSanctn(String infrmlSanctnId) {

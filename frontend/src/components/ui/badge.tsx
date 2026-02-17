@@ -30,6 +30,7 @@ function Badge({
   className,
   variant = "default",
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
@@ -41,7 +42,13 @@ function Badge({
       data-variant={variant}
       className={cn(badgeVariants({ variant }), className)}
       {...props}
-    />
+    >
+      {asChild ? (
+        React.Children.toArray(children).find((child) => React.isValidElement(child))
+      ) : (
+        children
+      )}
+    </Comp>
   )
 }
 

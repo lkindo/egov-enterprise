@@ -16,6 +16,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import com.company.project.core.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.http.ResponseEntity;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 로그인 정책 관리 컨트롤러
@@ -31,6 +37,78 @@ public class LoginPolicyManageController {
 
     @Resource(name = "egovMessageSource")
     EgovMessageSource egovMessageSource;
+
+    // --- REST API Integration ---
+
+    /**
+     * 로그인 정책 목록 조회 (REST API)
+     */
+    @Operation(summary = "로그인 정책 목록 조회", description = "시스템 사용자의 로그인 정책 목록을 조회합니다.")
+    @GetMapping("/admin/user/login-policies")
+    @ResponseBody
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getLoginPolicyList(
+            @ModelAttribute LoginPolicyVO searchVO) throws Exception {
+        
+        searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
+        searchVO.setPageSize(propertiesService.getInt("pageSize"));
+
+        PaginationInfo paginationInfo = new PaginationInfo();
+        paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
+        paginationInfo.setRecordCountPerPage(searchVO.getPageUnit());
+        paginationInfo.setPageSize(searchVO.getPageSize());
+
+        searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
+        searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
+        searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+
+        List<LoginPolicyDto> resultList = loginPolicyManageService.selectLoginPolicyList(searchVO);
+        int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchVO);
+        paginationInfo.setTotalRecordCount(totCnt);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("content", resultList);
+        responseData.put("totalElements", totCnt);
+        responseData.put("totalPages", paginationInfo.getTotalPageCount());
+        responseData.put("page", searchVO.getPageIndex());
+
+        return ResponseEntity.ok(ApiResponse.success(responseData));
+    }
+
+    /**
+     * 로그인 정책 상세 조회 (REST API)
+     */
+    @Operation(summary = "로그인 정책 상세 조회", description = "특정 사용자의 로그인 정책 상세 정보를 조회합니다.")
+    @GetMapping("/admin/user/login-policies/{emplyrId}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse<LoginPolicyDto>> getLoginPolicy(
+            @PathVariable("emplyrId") String emplyrId) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(loginPolicyManageService.selectLoginPolicy(emplyrId)));
+    }
+
+    /**
+     * 로그인 정책 저장/수정 (REST API)
+     */
+    @Operation(summary = "로그인 정책 저장", description = "로그인 정책을 등록하거나 수정합니다.")
+    @PutMapping("/admin/user/login-policies/{emplyrId}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse<Void>> saveLoginPolicy(
+            @PathVariable("emplyrId") String emplyrId,
+            @RequestBody LoginPolicyDto loginPolicy) throws Exception {
+        
+        loginPolicy.setEmplyrId(emplyrId);
+        
+        // regYn이 'Y'이면 수정, 'N'이면 등록
+        LoginPolicyDto existing = loginPolicyManageService.selectLoginPolicy(emplyrId);
+        if (existing != null && "Y".equals(existing.getRegYn())) {
+            loginPolicyManageService.updateLoginPolicy(loginPolicy);
+        } else {
+            loginPolicyManageService.insertLoginPolicy(loginPolicy);
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // --- Legacy JSP Endpoints ---
 
     /**
      * 로그인 정책 목록 화면

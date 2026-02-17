@@ -16,7 +16,7 @@ export function GlobalShortcutProvider({ children }: { children: React.ReactNode
   const registerShortcut = useCallback((key: string, ctrl: boolean, callback: ShortcutCallback) => {
     const fullKey = `${ctrl ? 'ctrl+' : ''}${key.toLowerCase()}`;
     shortcuts.current.set(fullKey, callback);
-    
+
     return () => {
       shortcuts.current.delete(fullKey);
     };
@@ -24,6 +24,7 @@ export function GlobalShortcutProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.key) return;
       const pressedKey = e.key.toLowerCase();
       const isCtrl = e.ctrlKey || e.metaKey;
       const fullKey = `${isCtrl ? 'ctrl+' : ''}${pressedKey}`;
