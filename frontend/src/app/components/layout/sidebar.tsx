@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -9,17 +8,16 @@ import {
   MessageSquare, 
   Settings, 
   Users, 
-  FileText,
   ShieldCheck,
   CircleDot,
-  ChevronRight,
-  UserCircle
+  UserCircle,
+  LucideIcon
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { menuService } from '@/services/menuService';
 import { MenuInfo } from '@/types/menu';
+import { SidebarItem } from './sidebar-item';
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   '대시보드': LayoutDashboard,
   '휴가 관리': CalendarDays,
   '게시판': MessageSquare,
@@ -74,24 +72,15 @@ export function Sidebar() {
             const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
             // Map program URL to Next.js route if available, otherwise fallback
             const href = item.chkURL || `/${item.progrmFileNm?.toLowerCase() || ''}`;
+            const isActive = pathname === href;
             
             return (
-              <Link
+              <SidebarItem
                 key={item.menuNo}
-                href={href}
-                className={cn(
-                  "flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors",
-                  pathname === href 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} />
-                  {item.menuNm}
-                </div>
-                <ChevronRight size={14} className="opacity-50" />
-              </Link>
+                item={item}
+                isActive={isActive}
+                Icon={Icon}
+              />
             );
           })}
         </nav>
