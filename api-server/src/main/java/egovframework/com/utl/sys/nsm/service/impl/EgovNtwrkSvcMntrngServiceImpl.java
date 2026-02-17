@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2010.06.21
  * @version 1.1
  */
-@Service("egovNtwrkSvcMntrngService")
+@Service("EgovNtwrkSvcMntrngService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovNtwrkSvcMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovNtwrkSvcMntrngService {

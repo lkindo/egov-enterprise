@@ -21,7 +21,7 @@ import org.springframework.web.servlet.ModelAndView;
 @RequiredArgsConstructor
 public class OperationalAuditInterceptor implements HandlerInterceptor {
 
-    private final EgovWebLogService webLogService;
+    // private final EgovWebLogService webLogService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -53,11 +53,13 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
         webLog.setUrl(reqURL);
         webLog.setRqesterIp(getRemoteAddr(request));
 
-        try {
-            webLogService.logInsertWebLog(webLog);
-        } catch (Exception e) {
-            log.error("Failed to insert web log for auditing: {}", e.getMessage());
-        }
+        // try {
+        // webLogService.logInsertWebLog(webLog);
+        // } catch (Exception e) {
+        // log.error("Failed to insert web log for auditing: {}", e.getMessage());
+        // }
+        log.info("API Audit Log: URL={}, User={}, IP={}", webLog.getUrl(), webLog.getRqesterId(),
+                webLog.getRqesterIp());
     }
 
     private String getRemoteAddr(HttpServletRequest request) {

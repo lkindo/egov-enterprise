@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  * @created 06-9-2010 오전 11:23:59
  */
-@Service("egovServerResrceMntrngService")
+@Service("EgovServerResrceMntrngService")
 @RequiredArgsConstructor
 public class EgovServerResrceMntrngServiceImpl extends EgovAbstractServiceImpl
 		implements EgovServerResrceMntrngService {

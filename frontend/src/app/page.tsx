@@ -23,6 +23,8 @@ import {
 import { cn } from '@/lib/utils';
 import { StandardChartWrapper } from './components/ui/standard-chart-wrapper';
 import { useToast } from './components/ui/toast';
+import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
+import { PopupManager } from '@/app/components/dashboard/PopupManager';
 
 // 가상 차트 데이터
 const chartData = [
@@ -272,6 +274,8 @@ export default function UnifiedDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <PopupManager />
+      
       {/* 1. Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -295,6 +299,9 @@ export default function UnifiedDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Banner Section */}
+      <BannerSlider />
 
       {/* 2. Top Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

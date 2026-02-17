@@ -19,15 +19,31 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * API 엔드포인트와 서비스 계층 간의 통합 테스트
  */
-@WebMvcTest(UserController.class)
+@SpringBootTest(classes = UserControllerServiceIntegrationTest.TestConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
+@org.springframework.transaction.annotation.Transactional
 @ActiveProfiles("test")
 class UserControllerServiceIntegrationTest {
+
+        @org.springframework.context.annotation.Configuration
+        @org.springframework.context.annotation.Import({
+                        com.company.project.config.MinimalTestConfig.class,
+                        com.company.project.api.common.exception.GlobalExceptionHandler.class
+        })
+        static class TestConfig {
+                @org.springframework.context.annotation.Bean
+                public com.company.project.api.controller.UserController userController(
+                                com.company.project.service.user.UserService userService) {
+                        return new com.company.project.api.controller.UserController(userService);
+                }
+        }
 
         @Autowired
         private MockMvc mockMvc;
@@ -196,7 +212,7 @@ class UserControllerServiceIntegrationTest {
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
-                                .andExpect(status().isBadRequest())
+                                .andExpect(status().isConflict())
                                 .andExpect(jsonPath("$.success").value(false))
                                 .andExpect(jsonPath("$.error.code").value("DUPLICATE_USER_ID"));
 

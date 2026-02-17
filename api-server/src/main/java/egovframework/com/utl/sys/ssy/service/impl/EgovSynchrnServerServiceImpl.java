@@ -59,7 +59,7 @@ import lombok.RequiredArgsConstructor;
  *          2018-11-12 이정은 processFtp() FILE_TYPE 설정 수정
  *
  */
-@Service("egovSynchrnServerService")
+@Service("EgovSynchrnServerService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implements EgovSynchrnServerService {
