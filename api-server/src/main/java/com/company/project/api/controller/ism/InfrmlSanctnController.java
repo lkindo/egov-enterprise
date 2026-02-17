@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Tag(name = "Informal Sanction", description = "Informal Sanction (ISM) Management APIs")
 @RestController
@@ -18,6 +20,14 @@ public class InfrmlSanctnController {
 
     private final InfrmlSanctnService infrmlSanctnService;
     private final EgovIdGnrService egovInfrmlSanctnIdGnrService;
+
+    @Operation(summary = "Get Informal Sanction List")
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<InfrmlSanctnDto>>> getInfrmlSanctnList(
+            @RequestParam(required = false) String sanctnerId,
+            Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(infrmlSanctnService.getInfrmlSanctnList(sanctnerId, pageable)));
+    }
 
     @Operation(summary = "Get Informal Sanction Detail")
     @GetMapping("/{infrmlSanctnId}")

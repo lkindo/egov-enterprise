@@ -9,10 +9,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit3, Send, ArrowLeft, Home, ChevronRight, MessageSquare, Info, Type, FileText } from "lucide-react";
+import { 
+  Edit3, 
+  Send, 
+  ArrowLeft, 
+  Home, 
+  ChevronRight, 
+  MessageSquare, 
+  Info, 
+  Type, 
+  FileText, 
+  Paperclip,
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react";
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { StandardForm, FormField } from '@/app/components/ui/standard-form';
+import { useToast } from '@/app/components/ui/toast';
 
 const InsertBBSContent = () => {
     const router = useRouter();
+    const { toast } = useToast();
     const searchParams = useSearchParams();
     const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
@@ -21,73 +38,93 @@ const InsertBBSContent = () => {
         nttCn: '',
         bbsId
     });
+    const [attachedFiles, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.nttSj.trim()) { alert('제목을 입력해주세요.'); return; }
-        if (!formData.nttCn.trim()) { alert('내용을 입력해주세요.'); return; }
+        if (!formData.nttSj.trim()) { 
+            toast('제목을 입력해주세요.', 'error');
+            return; 
+        }
+        if (!formData.nttCn.trim()) { 
+            toast('내용을 입력해주세요.', 'error');
+            return; 
+        }
 
         setLoading(true);
         try {
+            // 실제 구현에서는 FormData를 사용하여 파일과 함께 전송
             const response = await axios.post('/bbs', formData);
             if (response.data.success) {
-                alert(response.data.message);
+                toast('게시글이 성공적으로 등록되었습니다.', 'success');
                 router.push(`/cop/bbs/selectBoardList?bbsId=${bbsId}`);
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || '등록에 실패했습니다.');
+            toast(error.response?.data?.message || '등록에 실패했습니다.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto w-full">
+        <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full pb-32 animate-in fade-in duration-700">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-2xl w-fit border border-slate-100">
-                <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit border border-primary/5 shadow-sm">
+                <Link href="/" className="hover:text-foreground flex items-center gap-1.5 transition-colors">
                     <Home className="w-4 h-4" /> Home
                 </Link>
-                <ChevronRight className="w-4 h-4" />
-                <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`} className="hover:text-foreground transition-colors font-bold">커뮤니티</Link>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 opacity-30" />
+                <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</Link>
+                <ChevronRight className="w-4 h-4 opacity-30" />
                 <span className="text-foreground font-black">글쓰기</span>
             </div>
 
-            <Card className="shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border-none overflow-hidden rounded-[3rem] bg-white">
-                <CardHeader className="border-b bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 pb-16 pt-16 px-12 text-white">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-md">
-                                <Edit3 className="w-4 h-4 text-primary-foreground animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/80">Premium Editor</span>
+            <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[3.5rem] bg-card ring-1 ring-primary/5">
+                <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
+                    {/* Background Accents */}
+                    <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+                    <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[100px]" />
+                    
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
+                        <div className="space-y-6 text-center md:text-left">
+                            <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-xl mx-auto md:mx-0">
+                                <Edit3 className="w-4 h-4 text-primary animate-bounce" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Create Article</span>
                             </div>
-                            <CardTitle className="text-5xl font-black tracking-tighter leading-none italic uppercase">
-                                Create New Post
+                            <CardTitle className="text-5xl md:text-6xl font-black tracking-tighter leading-tight italic uppercase">
+                                Share your <br />
+                                <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span>
                             </CardTitle>
                             <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
-                                당신의 생각과 정보를 동료들과 나누세요. <br />창의적이고 자유로운 소통을 환영합니다.
+                                새로운 아이디어와 소식을 공유하여 <br className="hidden md:block" />팀의 소통을 더 가치 있게 만드세요.
                             </p>
                         </div>
-                        <div className="hidden md:block">
-                            <div className="w-24 h-24 rounded-[2rem] bg-white/5 border-2 border-white/10 flex items-center justify-center rotate-12 group hover:rotate-0 transition-transform duration-500">
-                                <MessageSquare className="w-10 h-10 text-white/20 group-hover:text-primary-foreground transition-colors" />
+                        <div className="hidden lg:block relative">
+                            <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
+                                <MessageSquare className="w-12 h-12 text-white/40" />
+                            </div>
+                            <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
+                                <Send size={20} className="text-white ml-1" />
                             </div>
                         </div>
                     </div>
                 </CardHeader>
-                <form onSubmit={handleSubmit}>
-                    <CardContent className="pt-20 px-12 md:px-20 space-y-16">
+
+                <StandardForm onSubmit={handleSubmit}>
+                    <CardContent className="pt-20 px-12 md:px-20 space-y-20">
                         {/* Title Input */}
                         <div className="space-y-6 group">
-                            <Label htmlFor="nttSj" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 group-focus-within:text-primary transition-colors flex items-center gap-3">
-                                <Type className="w-4 h-4" /> Post Title
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="nttSj" className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3">
+                                    <Type className="w-4 h-4" /> 01. Post Title
+                                </Label>
+                                <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Required</span>
+                            </div>
                             <Input
                                 id="nttSj"
-                                placeholder="생각을 요약할 매력적인 제목을 입력하세요"
-                                className="h-20 text-3xl font-black border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[1.5rem] px-8 bg-slate-50/50 shadow-inner group-focus-within:shadow-xl group-focus-within:bg-white placeholder:text-slate-300"
+                                placeholder="매력적이고 명확한 제목을 입력하세요"
+                                className="h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30"
                                 value={formData.nttSj}
                                 onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
                                 required
@@ -96,50 +133,74 @@ const InsertBBSContent = () => {
 
                         {/* Content Area */}
                         <div className="space-y-6 group">
-                            <Label htmlFor="nttCn" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 group-focus-within:text-primary transition-colors flex items-center gap-3">
-                                <FileText className="w-4 h-4" /> Content Body
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="nttCn" className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3">
+                                    <FileText className="w-4 h-4" /> 02. Content Body
+                                </Label>
+                                <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Required</span>
+                            </div>
                             <div className="relative">
                                 <Textarea
                                     id="nttCn"
-                                    placeholder="자유롭게 내용을 작성하세요. 친절하고 배려 깊은 댓글 문화를 위해 상호 존중하며 대화해 주세요."
-                                    className="min-h-[450px] p-10 text-xl font-medium leading-loose border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[2.5rem] bg-slate-50/50 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-white resize-none scrollbar-thin scrollbar-thumb-slate-200"
+                                    placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
+                                    className="min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none"
                                     value={formData.nttCn}
                                     onChange={(e) => setFormData({ ...formData, nttCn: e.target.value })}
                                     required
                                 />
-                                {/* Bottom Indicator */}
-                                <div className="absolute bottom-6 right-10 flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest pointer-events-none">
-                                    <span className="w-2 h-2 rounded-full bg-slate-200" /> Auto-Saving Enabled
+                                <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-full border border-primary/5 backdrop-blur-sm">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Drafting
                                 </div>
                             </div>
                         </div>
 
-                        {/* Recommendation Card */}
-                        <div className="p-8 bg-slate-900 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute right-[-40px] top-[-40px] bg-primary/20 w-48 h-48 rounded-full blur-[80px] group-hover:bg-primary/30 transition-all duration-1000" />
-                            <div className="bg-slate-800 p-6 rounded-[2rem] border border-slate-700 shadow-xl group-hover:scale-110 transition-transform">
-                                <Info className="w-8 h-8 text-primary-foreground" />
+                        {/* File Attachment Area */}
+                        <div className="space-y-6 group">
+                            <Label className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+                                <Paperclip className="w-4 h-4" /> 03. Attachments
+                            </Label>
+                            <div className="p-8 rounded-[2.5rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
+                                <StandardFileUploader 
+                                    onFilesChange={setFiles}
+                                    maxFiles={5}
+                                    maxSizeMB={20}
+                                />
                             </div>
-                            <div className="space-y-2 text-center md:text-left relative z-10">
-                                <p className="font-black text-2xl text-white tracking-tight italic uppercase">Writing Guidelines</p>
-                                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[500px]">
-                                    타인에 대한 비방이나 부적절한 언어 사용은 관리자에 의해 제한될 수 있습니다.
-                                    모두가 즐겁게 소통할 수 있는 프리미엄 커뮤니티 문화를 함께 만들어 주세요.
+                        </div>
+
+                        {/* Visual Guide / Notice */}
+                        <div className="p-10 bg-slate-900 rounded-[3rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
+                            <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
+                            <div className="w-20 h-20 bg-slate-800 rounded-[2.25rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
+                                <CheckCircle2 className="w-8 h-8 text-primary" />
+                            </div>
+                            <div className="space-y-3 relative z-10 text-center md:text-left">
+                                <h4 className="text-2xl font-black text-white tracking-tight uppercase italic">Final Check</h4>
+                                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
+                                    게시글을 등록하기 전에 오타나 민감한 정보가 포함되어 있는지 다시 한번 확인해주세요. 
+                                    등록된 글은 모든 사원들이 열람할 수 있습니다.
                                 </p>
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-16 border-t border-slate-50 bg-slate-50/30 px-12 rounded-b-[3rem]">
-                        <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`}>
-                            <Button type="button" variant="ghost" className="h-20 px-16 font-black uppercase tracking-[0.3em] text-xs text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-[1.5rem] active:scale-95 border-2 border-transparent hover:border-rose-50">
-                                <ArrowLeft className="w-5 h-5 mr-4" /> Cancel & Go back
-                            </Button>
-                        </Link>
-                        <Button type="submit" className="h-20 px-24 gap-4 font-black uppercase tracking-[0.3em] text-xs shadow-[0_20px_40px_-5px_theme(colors.slate.900/30)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[16px] ring-slate-100 rounded-[1.5rem]" disabled={loading}>
+
+                    <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-20 border-t border-primary/5 bg-muted/5 px-12 md:px-20 rounded-b-[3.5rem]">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            onClick={() => router.back()}
+                            className="h-20 px-16 font-black uppercase tracking-[0.3em] text-xs text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
+                        >
+                            <ArrowLeft className="w-5 h-5 mr-4" /> Cancel & Return
+                        </Button>
+                        <Button 
+                            type="submit" 
+                            className="h-20 px-24 gap-4 font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl" 
+                            disabled={loading}
+                        >
                             {loading ? (
                                 <span className="flex items-center gap-3 animate-pulse">
-                                    <div className="w-3 h-3 bg-white rounded-full" /> Publishing Article...
+                                    <div className="w-3 h-3 bg-white rounded-full" /> Publishing Now...
                                 </span>
                             ) : (
                                 <>
@@ -148,7 +209,7 @@ const InsertBBSContent = () => {
                             )}
                         </Button>
                     </CardFooter>
-                </form>
+                </StandardForm>
             </Card>
         </div>
     );
@@ -156,7 +217,12 @@ const InsertBBSContent = () => {
 
 const InsertBoardArticlePage = () => {
     return (
-        <Suspense fallback={<div className="p-10 text-center font-bold">로딩 중...</div>}>
+        <Suspense fallback={
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="font-black text-muted-foreground animate-pulse">Loading Editor...</p>
+            </div>
+        }>
             <InsertBBSContent />
         </Suspense>
     );

@@ -1,7 +1,6 @@
 package com.company.project.api.interceptor;
 
 import com.company.project.security.service.CustomUserDetails;
-import egovframework.com.sym.log.wlg.service.EgovWebLogService;
 import egovframework.com.sym.log.wlg.service.WebLog;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

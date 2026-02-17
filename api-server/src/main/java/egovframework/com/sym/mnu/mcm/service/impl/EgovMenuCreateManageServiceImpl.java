@@ -38,7 +38,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2009.06.01
  * @version 1.0
  */
-@Service("meunCreateManageService")
+@Service("menuCreateManageService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl implements EgovMenuCreateManageService {

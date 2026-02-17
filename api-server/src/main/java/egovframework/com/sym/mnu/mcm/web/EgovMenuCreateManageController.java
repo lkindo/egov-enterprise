@@ -56,7 +56,7 @@ public class EgovMenuCreateManageController {
 	protected EgovPropertyService propertiesService;
 
 	/** EgovMenuManageService */
-	@Resource(name = "meunCreateManageService")
+	@Resource(name = "menuCreateManageService")
 	private EgovMenuCreateManageService menuCreateManageService;
 
 	/** EgovMessageSource */

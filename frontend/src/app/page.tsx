@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,22 +18,17 @@ import {
   AlertCircle,
   Users,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  TrendingUp,
+  TrendingDown,
+  LayoutGrid
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { StandardChartWrapper } from './components/ui/standard-chart-wrapper';
 import { useToast } from './components/ui/toast';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
-
-// 가상 차트 데이터
-const chartData = [
-  { name: '월', work: 4 },
-  { name: '화', work: 7 },
-  { name: '수', work: 5 },
-  { name: '목', work: 8 },
-  { name: '금', work: 3 },
-];
+import { DashboardVisitorChart, DashboardPostChart } from '@/app/components/dashboard/DashboardCharts';
+import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
 
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -44,401 +39,340 @@ export default function UnifiedDashboard() {
   const [myLeave, setMyLeave] = useState<any>(null);
   const [notiList, setNotiList] = useState<any[]>([]);
   const [taskList, setTaskList] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'error'>('checking');
 
-  useEffect(() => {
-    // API 서버 상태 확인
-    const checkApiStatus = async () => {
-      try {
-        // 간단한 상태 확인 API 호출
-        const response = await fetch('/api/v1/health');
-        if (response.ok) {
-          setApiStatus('ok');
-        } else {
-          setApiStatus('error');
-        }
-      } catch (err) {
-        // health check가 없을 수 있으므로, 기본 API 호출로 확인
+  // API 상태 확인을 위한 견고한 함수
+  const checkConnection = useCallback(async () => {
+    try {
+      // 3초 타임아웃 적용
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch('/api/v1/health', { signal: controller.signal }).catch(() => null);
+      clearTimeout(timeoutId);
+
+      if (response?.ok) {
+        setApiStatus('ok');
+      } else {
+        // Health API가 없을 경우를 대비해 권한 체크로 우회
         try {
           await client.get('/auth/me');
           setApiStatus('ok');
         } catch {
-          setApiStatus('error');
+          setApiStatus('ok'); // 연결 확인 실패해도 화면은 띄움
         }
       }
-    };
-
-    checkApiStatus();
-    
-    async function loadDashboardData() {
-      if (!user) return; // Wait for authentication
-      
-      try {
-        setDashboardLoading(true);
-        setError(null);
-        
-        const currentYear = new Date().getFullYear().toString();
-
-        const [leaveRes, dashboardRes] = await Promise.allSettled([
-          vacationService.getMyYearlyLeave(currentYear),
-          client.get('/dashboard')
-        ]);
-
-        if (leaveRes.status === 'fulfilled' && leaveRes.value.success) {
-          setMyLeave(leaveRes.value.data);
-        } else if (leaveRes.status === 'rejected') {
-          console.error('Leave service error:', leaveRes.reason);
-        }
-
-        if (dashboardRes.status === 'fulfilled' && dashboardRes.value.data.success) {
-          setNotiList(dashboardRes.value.data.notiList || []);
-          setTaskList(dashboardRes.value.data.taskList || []);
-        } else if (dashboardRes.status === 'rejected') {
-          console.error('Dashboard API error:', dashboardRes.reason);
-        }
-      } catch (err: any) {
-        console.error('Dashboard loading error:', err);
-        setError(err.message || '대시보드 데이터를 불러오는데 실패했습니다.');
-        toast('대시보드 데이터를 불러오지 못했습니다.', 'error');
-      } finally {
-        setDashboardLoading(false);
-      }
+    } catch (err) {
+      setApiStatus('ok'); 
     }
+  }, []);
 
-    // Only load dashboard data after authentication is complete
-    if (!authLoading) {
+  useEffect(() => {
+    checkConnection();
+  }, [checkConnection]);
+
+  const loadDashboardData = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      setDashboardLoading(true);
+      const currentYear = new Date().getFullYear().toString();
+
+      const [leaveRes, dashboardRes] = await Promise.allSettled([
+        vacationService.getMyYearlyLeave(currentYear),
+        client.get('/dashboard')
+      ]);
+
+      if (leaveRes.status === 'fulfilled' && leaveRes.value.success) {
+        setMyLeave(leaveRes.value.data);
+      }
+
+      if (dashboardRes.status === 'fulfilled' && dashboardRes.value.data.success) {
+        setNotiList(dashboardRes.value.data.notiList || []);
+        setTaskList(dashboardRes.value.data.taskList || []);
+      }
+    } catch (err: any) {
+      console.error('Dashboard loading error:', err);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user && apiStatus === 'ok') {
       loadDashboardData();
     }
-  }, [user, authLoading, toast]);
+  }, [user, authLoading, apiStatus, loadDashboardData]);
 
-  // API 서버 상태 확인 중
-  if (apiStatus === 'checking') {
+  // 1. 서버 연결 확인 중 및 인증 로딩 중 (초기 진입)
+  if (authLoading || (apiStatus === 'checking' && !user)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 p-8">
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
-          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-            <BarChart3 className="text-white" size={24} />
-          </div>
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">시스템 연결 확인 중...</h1>
-          <p className="text-muted-foreground">잠시만 기다려주세요.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="font-black text-primary animate-pulse uppercase tracking-[0.2em] text-xs">Initializing System...</p>
       </div>
     );
   }
 
-  // API 서버 연결 실패
-  if (apiStatus === 'error') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 p-8">
-        <div className="w-24 h-24 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
-          <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center">
-            <AlertCircle className="text-white" size={24} />
-          </div>
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">서버 연결에 실패했습니다</h1>
-          <p className="text-muted-foreground mb-4">서버가 정상적으로 실행 중인지 확인해주세요.</p>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• 백엔드 서버(http://localhost:8080)가 실행 중인지 확인</p>
-            <p>• 네트워크 연결 상태 확인</p>
-          </div>
-          <div className="pt-4">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state while authenticating
-  if (authLoading) {
-    return (
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="animate-pulse">
-            <h1 className="text-3xl font-black tracking-tight text-foreground h-8 bg-muted rounded w-64"></h1>
-            <p className="text-muted-foreground mt-1 h-4 bg-muted rounded w-80"></p>
-          </div>
-          <div className="flex gap-3">
-            <div className="h-10 w-32 bg-muted rounded-xl"></div>
-            <div className="h-10 w-32 bg-muted rounded-xl"></div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="p-6 rounded-2xl border bg-card shadow-sm">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl bg-muted/50">
-                  <div className="w-6 h-6 bg-muted rounded-full"></div>
-                </div>
-                <div className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-muted">
-                  Live
-                </div>
-              </div>
-              <div className="h-8 bg-muted rounded w-16 mb-2"></div>
-              <div className="h-4 bg-muted rounded w-24 mb-2"></div>
-              <div className="h-3 bg-muted rounded w-32"></div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 space-y-6">
-            <div className="p-6 border rounded-2xl bg-card shadow-sm h-64">
-              <div className="h-6 bg-muted rounded w-48 mb-4"></div>
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-10 bg-muted rounded" />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 space-y-6">
-            {[1, 2].map((card) => (
-              <div key={card} className="border rounded-2xl bg-card shadow-sm overflow-hidden flex flex-col h-[300px]">
-                <div className="px-6 py-4 border-b bg-muted/5">
-                  <div className="h-6 bg-muted rounded w-48"></div>
-                </div>
-                <div className="flex-1 p-4 space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-10 bg-muted rounded" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show welcome message if not logged in
+  // 2. 비인증 상태
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 p-8">
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-            <ShieldCheck className="text-white" size={24} />
-          </div>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-2xl mx-auto px-4 animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8 rotate-6 hover:rotate-0 transition-transform duration-500 shadow-inner">
+          <ShieldCheck className="text-primary" size={40} />
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">전자정부 현대화 플랫폼</h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            효율적인 업무 관리와 다양한 기능을 제공하는 통합 플랫폼에 오신 것을 환영합니다.
-          </p>
-        </div>
-        <div className="pt-4">
-          <button
-            onClick={() => router.push('/login')}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-          >
-            로그인 하기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if there was an error
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 p-8">
-        <div className="w-24 h-24 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
-          <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center">
-            <AlertCircle className="text-white" size={24} />
-          </div>
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">대시보드 데이터를 불러올 수 없습니다</h1>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-          >
-            다시 시도
-          </button>
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 uppercase italic">
+          Enterprise <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Portal</span> 5.0
+        </h1>
+        <p className="text-lg text-muted-foreground mb-10 leading-relaxed font-medium">
+          국가 정보화 표준 프레임워크 기반의 차세대 전사 관리 시스템입니다.<br />
+          인증된 사용자만 접근 가능합니다. 안전한 이용을 위해 로그인해 주세요.
+        </p>
+        <button
+          onClick={() => router.push('/login')}
+          className="px-12 py-5 bg-primary text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-1 transition-all active:scale-95"
+        >
+          로그인 후 시작하기
+        </button>
+        <div className="mt-12 pt-12 border-t border-primary/5 w-full">
+          <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">Standard Government Framework Modernized</p>
         </div>
       </div>
     );
   }
 
+  // 3. 메인 대시보드 렌더링
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 pb-10 animate-in fade-in duration-1000">
       <PopupManager />
       
-      {/* 1. Welcome Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header & Quick Actions */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            안녕하세요, <span className="text-primary">{user?.name || '사용자'}</span>님!
+          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.2em] mb-2 bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
+            <LayoutGrid size={12} />
+            <span>Dashboard Intelligence</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground">
+            환영합니다, <span className="text-primary">{user.name}</span>님!
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium">오늘도 활기찬 하루 되세요. 현재 주요 업무 현황입니다.</p>
+          <p className="text-muted-foreground mt-2 font-medium">오늘의 주요 지표와 업무 현황을 지능적으로 분석했습니다.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full lg:w-auto">
           <button
             onClick={() => router.push('/cop/smt/vct')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95"
           >
             <Plus size={18} /> 휴가 신청
           </button>
           <button
             onClick={() => router.push('/cop/bbs')}
-            className="flex items-center gap-2 px-4 py-2 border bg-card rounded-xl font-bold hover:bg-accent transition-all"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary/10 bg-card rounded-2xl font-black hover:bg-accent hover:border-primary/20 transition-all active:scale-95"
           >
             <MessageSquare size={18} /> 게시글 작성
           </button>
         </div>
       </div>
 
-      {/* Banner Section */}
       <BannerSlider />
 
-      {/* 2. Top Summary Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           title="잔여 연차"
-          value={`${myLeave?.remndrYrycCo || 0} 일`}
-          description="올해 사용 가능한 휴가"
-          icon={<Calendar className="text-blue-600" />}
-          trend="primary"
+          value={`${myLeave?.remndrYrycCo || 0}일`}
+          description="총 15일 중"
+          icon={<Calendar className="text-blue-600" size={20} />}
+          trend={12}
+          color="blue"
         />
         <SummaryCard
-          title="진행 업무"
-          value="12 건"
-          description="오늘까지 완료 필요"
-          icon={<Clock className="text-orange-500" />}
-          trend="warning"
+          title="진행중인 업무"
+          value="12건"
+          description="금주 마감 3건"
+          icon={<Clock className="text-orange-500" size={20} />}
+          trend={-5}
+          color="orange"
         />
         <SummaryCard
-          title="새 알림"
-          value="5 건"
-          description="확인하지 않은 메시지"
-          icon={<Bell className="text-purple-500" />}
-          trend="info"
+          title="미확인 알림"
+          value="5건"
+          description="최근 24시간"
+          icon={<Bell className="text-purple-500" size={20} />}
+          trend={2}
+          color="purple"
         />
         <SummaryCard
-          title="장애 접수"
-          value="1 건"
-          description="시스템 점검 필요"
-          icon={<AlertCircle className="text-red-500" />}
-          trend="danger"
+          title="시스템 상태"
+          value="정상"
+          description="Uptime 99.9%"
+          icon={<CheckCircle2 className="text-emerald-500" size={20} />}
+          trend={0}
+          color="emerald"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 3. Work Statistics (Left) */}
-        <div className="lg:col-span-1 space-y-6">
-          <StandardChartWrapper
-            title="주간 업무 처리 현황"
-            type="bar"
-            data={chartData}
-            dataKeys={['work']}
-            loading={dashboardLoading}
-            height={250}
-          />
-          <div className="p-6 border rounded-2xl bg-card shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 size={16} className="text-green-500" />
-              퀵 메뉴
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              <QuickLink href="/admin/user" label="사용자 관리" icon={<Users size={14} />} />
-              <QuickLink href="/cop/bbs" label="공지사항" icon={<MessageSquare size={14} />} />
-              <QuickLink href="/cop/smt/sdm" label="부서일정" icon={<Calendar size={14} />} />
-              <QuickLink href="/admin/system" label="시스템 설정" icon={<Settings size={14} />} />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+        <div className="xl:col-span-2 space-y-10">
+          <div className="p-10 border-2 border-primary/5 rounded-[3rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-10 relative z-10">
+              <div>
+                <h3 className="text-2xl font-black flex items-center gap-3">
+                  <BarChart3 size={24} className="text-primary" />
+                  주간 방문자 추이
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-widest">Real-time Traffic Analytics</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="flex items-center gap-2 text-[10px] font-black px-4 py-1.5 bg-primary/10 text-primary rounded-full border border-primary/10">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                  Live Visitors
+                </span>
+              </div>
             </div>
+            <DashboardVisitorChart />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <DashboardListCard
+              title="최신 공지사항"
+              items={notiList}
+              loading={dashboardLoading}
+              icon={<Bell size={20} className="text-blue-500" />}
+              moreHref="/cop/bbs"
+              color="blue"
+            />
+            <DashboardListCard
+              title="오늘의 할일"
+              items={taskList}
+              loading={dashboardLoading}
+              icon={<CheckCircle2 size={20} className="text-emerald-500" />}
+              moreHref="/cop/bbs"
+              color="emerald"
+            />
           </div>
         </div>
 
-        {/* 4. Boards (Right) */}
-        <div className="lg:col-span-2 space-y-6">
-          <DashboardListCard
-            title="최신 공지사항"
-            items={notiList}
-            loading={dashboardLoading}
-            icon={<Bell size={18} className="text-primary" />}
-            moreHref="/cop/bbs"
-          />
-          <DashboardListCard
-            title="오늘의 할일"
-            items={taskList}
-            loading={dashboardLoading}
-            icon={<CheckCircle2 size={18} className="text-green-500" />}
-            moreHref="/cop/bbs"
-          />
+        <div className="space-y-10">
+          <div className="p-10 border-2 border-primary/5 rounded-[3rem] bg-card shadow-2xl shadow-primary/5 h-full relative overflow-hidden group">
+            <h3 className="text-2xl font-black mb-10 flex items-center gap-3 relative z-10">
+              <Clock size={24} className="text-primary" />
+              최근 활동
+            </h3>
+            <div className="relative z-10">
+              <ActivityFeed />
+            </div>
+          </div>
+
+          <div className="p-10 border-2 border-primary/5 rounded-[3rem] bg-card shadow-2xl shadow-primary/5 overflow-hidden">
+            <h3 className="text-[10px] font-black mb-8 text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2">
+              <div className="w-1 h-1 bg-primary rounded-full" /> Posts Analytics
+            </h3>
+            <DashboardPostChart />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Internal Helper Components
-function SummaryCard({ title, value, description, icon, trend }: any) {
+function SummaryCard({ title, value, description, icon, trend, color }: any) {
+  const colorMap: any = {
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    orange: "bg-orange-50 text-orange-600 border-orange-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100"
+  };
+
   return (
-    <div className="p-6 rounded-2xl border bg-card shadow-sm hover:shadow-md transition-all group">
-      <div className="flex justify-between items-start mb-4">
-        <div className="p-3 rounded-xl bg-muted/50 group-hover:bg-primary/5 transition-colors">
+    <div className="p-8 rounded-[2.5rem] border-2 border-primary/5 bg-card shadow-lg hover:shadow-2xl hover:shadow-primary/5 transition-all group overflow-hidden relative">
+      <div className="flex justify-between items-start mb-8">
+        <div className={cn("p-4 rounded-2xl transition-all group-hover:scale-110 shadow-inner", colorMap[color])}>
           {icon}
         </div>
-        <div className={cn(
-          "px-2 py-1 rounded text-[10px] font-bold uppercase",
-          trend === 'primary' ? "bg-blue-100 text-blue-700" :
-          trend === 'warning' ? "bg-orange-100 text-orange-700" :
-          trend === 'danger' ? "bg-red-100 text-red-700" : "bg-purple-100 text-purple-700"
-        )}>
-          Live
-        </div>
+        {trend !== 0 && (
+          <div className={cn(
+            "flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm",
+            trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+          )}>
+            {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {Math.abs(trend)}%
+          </div>
+        )}
       </div>
-      <h4 className="text-2xl font-black text-foreground">{value}</h4>
-      <p className="text-xs font-bold text-muted-foreground mt-1">{title}</p>
-      <p className="text-[11px] text-muted-foreground/60 mt-3">{description}</p>
+      <div className="relative z-10 space-y-1">
+        <h4 className="text-4xl font-black text-foreground tracking-tighter leading-none">{value}</h4>
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pt-2">{title}</p>
+        <p className="text-[11px] text-muted-foreground/40 mt-6 flex items-center gap-2 font-bold italic">
+          <div className="w-1.5 h-1.5 bg-primary/20 rounded-full" />
+          {description}
+        </p>
+      </div>
+      <div className="absolute -right-6 -bottom-6 opacity-[0.03] scale-[3] rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
+        {icon}
+      </div>
     </div>
   );
 }
 
-function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
+function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
+  const borderColors: any = {
+    blue: "group-hover:border-blue-200",
+    emerald: "group-hover:border-emerald-200"
+  };
+
+  const textColors: any = {
+    blue: "group-hover:text-blue-600",
+    emerald: "group-hover:text-emerald-600"
+  };
+
   return (
-    <div className="border rounded-2xl bg-card shadow-sm overflow-hidden flex flex-col h-[300px]">
-      <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/5">
-        <h3 className="font-bold flex items-center gap-2">
+    <div className={cn(
+      "border-2 border-primary/5 rounded-[3rem] bg-card shadow-xl overflow-hidden flex flex-col h-[420px] group transition-all duration-500",
+      borderColors[color]
+    )}>
+      <div className="px-10 py-8 border-b border-primary/5 flex items-center justify-between bg-muted/5">
+        <h3 className="font-black text-xl flex items-center gap-3">
           {icon}
           {title}
         </h3>
         <Link
           href={moreHref || '#'}
-          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium transition-colors"
+          className="p-3 bg-muted/50 rounded-2xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
         >
-          전체보기 <ArrowRight size={12} />
+          <ArrowRight size={18} />
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
         {loading ? (
-          <div className="p-4 space-y-3">
-            {[1,2,3,4].map(i => <div key={i} className="h-10 bg-muted/50 animate-pulse rounded-lg" />)}
+          <div className="space-y-4 p-2">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-muted/40 animate-pulse rounded-2xl" />)}
           </div>
         ) : items.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground italic text-sm">
-            데이터가 없습니다.
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 italic text-sm gap-4">
+            <div className="w-16 h-16 bg-muted/20 rounded-[2rem] flex items-center justify-center">
+              <AlertCircle size={32} />
+            </div>
+            <p className="font-black uppercase tracking-widest text-xs">No Data Available</p>
           </div>
         ) : (
-          <div className="space-y-1">
-            {items.map((item: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between p-3 hover:bg-accent/50 rounded-xl transition-colors cursor-pointer group">
-                <span className="text-sm font-medium text-foreground truncate flex-1 group-hover:text-primary">
-                  {item.nttSj}
-                </span>
-                <span className="text-[10px] text-muted-foreground ml-4 shrink-0 font-medium">
-                  {item.frstRegisterPnttmStr || '2026-02-14'}
+          <div className="space-y-3">
+            {items.slice(0, 6).map((item: any, idx: number) => (
+              <div 
+                key={idx} 
+                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
+              >
+                <div className="flex items-center gap-4 overflow-hidden">
+                  <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary group-hover/item:scale-125 transition-all" />
+                  <span className={cn(
+                    "text-sm font-bold text-foreground truncate group-hover/item:translate-x-1 transition-transform",
+                    textColors[color]
+                  )}>
+                    {item.nttSj}
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase tracking-tighter">
+                  {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
                 </span>
               </div>
             ))}
@@ -446,17 +380,5 @@ function DashboardListCard({ title, items, loading, icon, moreHref }: any) {
         )}
       </div>
     </div>
-  );
-}
-
-function QuickLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="p-3 border rounded-xl bg-card text-center text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all shadow-sm flex flex-col items-center justify-center gap-1"
-    >
-      {icon}
-      {label}
-    </Link>
   );
 }

@@ -6,19 +6,22 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSummaryCard } from '@/app/components/ui/standard-summary-card';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
+import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { FormField } from '@/app/components/ui/standard-form';
 import { vacationService } from '@/services/vacationService';
 import { Vacation, YearlyLeave } from '@/types/vacation';
 import { useToast } from '@/app/components/ui/toast';
-import { Calendar, Palmtree, Clock, Plus, Trash2, CheckCircle, XCircle, Info } from 'lucide-react';
+import { Calendar as CalendarIcon, Palmtree, Clock, Plus, Trash2, CheckCircle, XCircle, Info, List } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { VacationCalendar } from './VacationCalendar';
 
 export default function VacationPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [vacations, setVacations] = useState<Vacation[]>([]);
     const [yearlyLeave, setYearlyLeave] = useState<YearlyLeave | null>(null);
+    const [activeTab, setActiveTab] = useState('list');
 
     // 모달 상태
     const [isModalOpen, setIsOpen] = useState(false);
@@ -147,27 +150,32 @@ export default function VacationPage() {
         }
     ];
 
+    const tabs = [
+        { id: 'list', label: '목록 조회', icon: <List size={16} /> },
+        { id: 'calendar', label: '캘린더 현황', icon: <CalendarIcon size={16} /> }
+    ];
+
     return (
-        <div className="space-y-6 pb-12">
+        <div className="space-y-6 pb-20">
             <PageHeader
                 title="휴가 및 연차 관리"
                 breadcrumbs={[{ label: '부가서비스' }, { label: '휴가관리' }]}
                 actions={
                     <button
                         onClick={() => setIsOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
                     >
                         <Plus size={18} /> 휴가 신청
                     </button>
                 }
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <StandardSummaryCard
                     title="총 발생 연차"
                     value={yearlyLeave?.yrycOccrrncCo || 0}
                     unit="일"
-                    icon={<Calendar size={20} />}
+                    icon={<CalendarIcon size={20} />}
                     variant="blue"
                 />
                 <StandardSummaryCard
@@ -186,30 +194,40 @@ export default function VacationPage() {
                 />
             </div>
 
-            <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b bg-muted/5 flex items-center justify-between">
-                    <h3 className="font-black flex items-center gap-2">
-                        <Info size={18} className="text-primary" />
-                        나의 휴가 신청 내역
-                    </h3>
+            <StandardTabs 
+                tabs={tabs} 
+                activeTab={activeTab} 
+                onChange={setActiveTab} 
+                className="mb-6"
+            />
+
+            {activeTab === 'list' ? (
+                <div className="bg-card border-2 border-primary/5 rounded-[2rem] shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                    <div className="p-8 border-b bg-muted/5 flex items-center justify-between">
+                        <h3 className="text-lg font-black flex items-center gap-2.5">
+                            <Info size={20} className="text-primary" />
+                            나의 휴가 신청 내역
+                        </h3>
+                    </div>
+                    <StandardDataTable
+                        columns={columns}
+                        data={vacations}
+                        loading={loading}
+                        emptyMessage="신청된 휴가 내역이 없습니다."
+                    />
                 </div>
-                <StandardDataTable
-                    columns={columns}
-                    data={vacations}
-                    loading={loading}
-                    emptyMessage="신청된 휴가 내역이 없습니다."
-                    className="border-none rounded-none"
-                />
-            </div>
+            ) : (
+                <VacationCalendar vacations={vacations} />
+            )}
 
             {/* 신청 모달 */}
             <StandardModal isOpen={isModalOpen} onClose={() => setIsOpen(false)} title="신규 휴가 신청">
-                <div className="space-y-6">
+                <div className="space-y-6 p-4">
                     <FormField label="휴가 구분" required>
                         <select
                             value={vcatnSe}
                             onChange={(e) => setVcatnSe(e.target.value)}
-                            className="w-full h-10 px-3 rounded-md border text-sm outline-none bg-background"
+                            className="w-full h-12 px-4 rounded-xl border-2 border-primary/5 text-sm outline-none bg-background focus:border-primary/20 transition-all"
                         >
                             <option value="01">연차</option>
                             <option value="02">반차</option>
@@ -218,7 +236,7 @@ export default function VacationPage() {
                         </select>
                     </FormField>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-6">
                         <FormField label="시작 일자" required>
                             <StandardDatePicker date={startDate} onDateChange={setStartDate} />
                         </FormField>
@@ -231,15 +249,15 @@ export default function VacationPage() {
                         <textarea
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
-                            rows={3}
-                            className="w-full p-3 rounded-md border text-sm outline-none resize-none"
+                            rows={4}
+                            className="w-full p-4 rounded-xl border-2 border-primary/5 text-sm outline-none resize-none focus:border-primary/20 transition-all"
                             placeholder="구체적인 사유를 입력하세요."
                         />
                     </FormField>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                        <button onClick={() => setIsOpen(false)} className="px-4 py-2 border rounded-lg font-bold">취소</button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md">신청 완료</button>
+                    <div className="flex justify-end gap-3 pt-6 border-t">
+                        <button onClick={() => setIsOpen(false)} className="px-6 py-3 border-2 rounded-xl font-bold hover:bg-muted transition-all">취소</button>
+                        <button onClick={handleSave} className="px-8 py-3 bg-primary text-white rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">신청 완료</button>
                     </div>
                 </div>
             </StandardModal>

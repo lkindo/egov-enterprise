@@ -67,6 +67,26 @@ public class MenuManageVO {
 	private String tmpUniqId;
 	/** tmp_Cmd */
 	private String tmpCmd;
+	/** chkURL */
+	private String chkURL;
+
+	/**
+	 * chkURL attribute를 리턴한다.
+	 * 
+	 * @return String
+	 */
+	public String getChkURL() {
+		return chkURL;
+	}
+
+	/**
+	 * chkURL attribute 값을 설정한다.
+	 * 
+	 * @param chkURL String
+	 */
+	public void setChkURL(String chkURL) {
+		this.chkURL = chkURL;
+	}
 
 	/**
 	 * menuNo attribute를 리턴한다.

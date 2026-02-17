@@ -42,7 +42,7 @@ public class EgovScrinStatsController {
 	private EgovScrinStatsService scrinStatsService;
 
 	/** EgovMenuManageService */
-	@Resource(name = "meunManageService")
+	@Resource(name = "menuManageService")
 	private EgovMenuManageService menuManageService;
 
 	/**
