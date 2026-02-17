@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { vacationService } from '@/services/vacationService';
 import client from '@/lib/api/client';
@@ -37,7 +36,6 @@ const chartData = [
 
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   const [dashboardLoading, setDashboardLoading] = useState(true);
@@ -238,12 +236,12 @@ export default function UnifiedDashboard() {
           </p>
         </div>
         <div className="pt-4">
-          <button
-            onClick={() => router.push('/login')}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+          <Link
+            href="/login"
+            className="inline-block px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
             로그인 하기
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -285,18 +283,18 @@ export default function UnifiedDashboard() {
           <p className="text-muted-foreground mt-1 font-medium">오늘도 활기찬 하루 되세요. 현재 주요 업무 현황입니다.</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => router.push('/cop/smt/vct')}
+          <Link
+            href="/cop/smt/vct"
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
             <Plus size={18} /> 휴가 신청
-          </button>
-          <button
-            onClick={() => router.push('/cop/bbs')}
+          </Link>
+          <Link
+            href="/cop/bbs"
             className="flex items-center gap-2 px-4 py-2 border bg-card rounded-xl font-bold hover:bg-accent transition-all"
           >
             <MessageSquare size={18} /> 게시글 작성
-          </button>
+          </Link>
         </div>
       </div>
 
