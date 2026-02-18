@@ -79,7 +79,7 @@ public class MenuServiceHierarchyPerformanceTest {
                 }
             }
         }
-        menuRepository.saveAll(menus);
+        menuRepository.saveAll(java.util.Objects.requireNonNull(menus));
         menuRepository.flush();
     }
 
@@ -117,7 +117,7 @@ public class MenuServiceHierarchyPerformanceTest {
 
         // We find the menu associated with rootId and check its name
         // The root for grandchild_19_9_9 should be Root19.
-        Menu m = menuRepository.findById(rootId).orElseThrow();
+        Menu m = menuRepository.findById(java.util.Objects.requireNonNull(rootId)).orElseThrow();
         assertThat(m.getMenuNm()).startsWith("Root19");
     }
 }

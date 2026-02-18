@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +27,7 @@ public class MyPageService implements EgovMyPageService {
 
     @Override
     public Page<MyPageContentDto> getContentList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return myPageContentRepository.findAll(pageable).map(MyPageContentDto::from);
         }
@@ -34,9 +36,9 @@ public class MyPageService implements EgovMyPageService {
 
     @Override
     public MyPageContentDto getContent(String cntntsId) {
-        MyPageContent content = myPageContentRepository.findById(cntntsId)
+        MyPageContent content = myPageContentRepository.findById(Objects.requireNonNull(cntntsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return MyPageContentDto.from(content);
+        return MyPageContentDto.from(Objects.requireNonNull(content));
     }
 
     @Override
@@ -54,14 +56,14 @@ public class MyPageService implements EgovMyPageService {
                 .frstRegisterId(userId)
                 .build();
 
-        myPageContentRepository.save(content);
+        myPageContentRepository.save(Objects.requireNonNull(content));
         return cntntsId;
     }
 
     @Override
     @Transactional
     public void updateContent(String cntntsId, String userId, MyPageContentDto dto) {
-        MyPageContent content = myPageContentRepository.findById(cntntsId)
+        MyPageContent content = myPageContentRepository.findById(Objects.requireNonNull(cntntsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         content.update(dto.getCntntsNm(), dto.getCntntsLinkUrl(), dto.getCntcUrl(),
@@ -71,9 +73,9 @@ public class MyPageService implements EgovMyPageService {
     @Override
     @Transactional
     public void deleteContent(String cntntsId) {
-        MyPageContent content = myPageContentRepository.findById(cntntsId)
+        MyPageContent content = myPageContentRepository.findById(Objects.requireNonNull(cntntsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        myPageContentRepository.delete(content);
+        myPageContentRepository.delete(Objects.requireNonNull(content));
     }
 
     @Override

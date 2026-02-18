@@ -61,12 +61,13 @@ class JwtTokenProviderTest {
                 .token("test-refresh-token")
                 .expiryDate(Instant.now().plusSeconds(60 * 60))
                 .build());
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(mockSavedToken);
+        when(refreshTokenRepository.save(java.util.Objects.requireNonNull(any(RefreshToken.class))))
+                .thenReturn(java.util.Objects.requireNonNull(mockSavedToken));
         // When
         String result = jwtTokenProvider.createRefreshToken(userId);
         // Then
         assertThat(result).isNotNull().isNotEmpty();
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(refreshTokenRepository).save(java.util.Objects.requireNonNull(any(RefreshToken.class)));
     }
 
     @Test

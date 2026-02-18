@@ -3,6 +3,7 @@ package com.company.project.service.reward;
 import com.company.project.domain.reward.Reward;
 import com.company.project.domain.reward.RewardRepository;
 import com.company.project.service.reward.dto.RewardDto;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class RewardService implements EgovRewardService {
 
     @Override
     public RewardDto getReward(String rwardId) {
-        return rewardRepository.findById(rwardId)
+        return rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .map(this::convertToDto)
                 .orElse(null);
     }
@@ -43,13 +44,13 @@ public class RewardService implements EgovRewardService {
                 .frstRegisterId("SYSTEM")
                 .lastUpdusrId("SYSTEM")
                 .build();
-        rewardRepository.save(reward);
+        rewardRepository.save(Objects.requireNonNull(reward));
     }
 
     @Override
     @Transactional
     public void updateReward(RewardDto dto) {
-        rewardRepository.findById(dto.getRwardId())
+        rewardRepository.findById(Objects.requireNonNull(dto.getRwardId()))
                 .ifPresent(r -> {
                     // Reward 엔티티에 update 메소드 추가 필요 시 반영
                 });
@@ -58,11 +59,12 @@ public class RewardService implements EgovRewardService {
     @Override
     @Transactional
     public void deleteReward(String rwardId) {
-        rewardRepository.deleteById(rwardId);
+        rewardRepository.deleteById(Objects.requireNonNull(rwardId));
     }
 
     @Override
     public Page<RewardDto> getRewardList(String searchKeyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return rewardRepository.findAll(pageable)
                 .map(this::convertToDto);
     }
@@ -70,7 +72,7 @@ public class RewardService implements EgovRewardService {
     @Override
     @Transactional
     public void confirmReward(RewardDto dto) {
-        rewardRepository.findById(dto.getRwardId())
+        rewardRepository.findById(Objects.requireNonNull(dto.getRwardId()))
                 .ifPresent(r -> {
                     // 승인 상태 및 반려 사유 업데이트 로직
                 });

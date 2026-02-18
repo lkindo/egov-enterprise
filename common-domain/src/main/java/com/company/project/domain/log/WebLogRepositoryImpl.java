@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
@@ -42,7 +43,8 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                         urlLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
 
-        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+        return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                countQuery::fetchOne);
     }
 
     private BooleanExpression urlLike(String searchWrd) {

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ public class EntrprsManageServiceImpl implements EgovEntrprsManageService {
 
     @Override
     public EnterpriseUserDto getEntrprs(String esntlId) {
-        return enterpriseUserRepository.findById(esntlId)
+        return enterpriseUserRepository.findById(Objects.requireNonNull(esntlId))
                 .map(EnterpriseUserDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -66,13 +67,13 @@ public class EntrprsManageServiceImpl implements EgovEntrprsManageService {
                 .applcntEmailAdres(dto.getApplcntEmailAdres())
                 .applcntIhidnum(dto.getApplcntIhidnum())
                 .build();
-        enterpriseUserRepository.save(entity);
+        enterpriseUserRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateEntrprs(EnterpriseUserDto dto) {
-        EnterpriseUser entity = enterpriseUserRepository.findById(dto.getEsntlId())
+        EnterpriseUser entity = enterpriseUserRepository.findById(Objects.requireNonNull(dto.getEsntlId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getEntrprsmberId(), dto.getEntrprsSeCode(), dto.getBizrno(), dto.getJurirno(),
                 dto.getCmpnyNm(), dto.getCxfc(), dto.getZip(), dto.getAdres(),
@@ -85,13 +86,13 @@ public class EntrprsManageServiceImpl implements EgovEntrprsManageService {
     @Override
     @Transactional
     public void deleteEntrprs(String esntlId) {
-        enterpriseUserRepository.deleteById(esntlId);
+        enterpriseUserRepository.deleteById(Objects.requireNonNull(esntlId));
     }
 
     @Override
     @Transactional
     public void updatePassword(String esntlId, String password) {
-        EnterpriseUser entity = enterpriseUserRepository.findById(esntlId)
+        EnterpriseUser entity = enterpriseUserRepository.findById(Objects.requireNonNull(esntlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updatePassword(passwordEncoder.encode(password));
     }

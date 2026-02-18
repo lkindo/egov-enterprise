@@ -19,6 +19,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,7 +57,7 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public DbMntrngDto getDbMntrng(String dataSourcNm) {
-        DbMntrng entity = dbMntrngRepository.findById(dataSourcNm)
+        DbMntrng entity = dbMntrngRepository.findById(Objects.requireNonNull(dataSourcNm))
                 .orElseThrow(() -> new RuntimeException("DB monitoring not found"));
         return DbMntrngDto.from(entity);
     }
@@ -77,12 +78,12 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        dbMntrngRepository.save(entity);
+        dbMntrngRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateDbMntrng(DbMntrngDto dto) {
-        DbMntrng entity = dbMntrngRepository.findById(dto.getDataSourcNm())
+        DbMntrng entity = dbMntrngRepository.findById(Objects.requireNonNull(dto.getDataSourcNm()))
                 .orElseThrow(() -> new RuntimeException("DB monitoring not found"));
 
         entity.setServerNm(dto.getServerNm());
@@ -96,12 +97,12 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteDbMntrng(String dataSourcNm) {
-        dbMntrngRepository.deleteById(dataSourcNm);
+        dbMntrngRepository.deleteById(Objects.requireNonNull(dataSourcNm));
     }
 
     @Transactional
     public void checkAndRecordDbStatus(String dataSourcNm, String userId) throws Exception {
-        DbMntrng entity = dbMntrngRepository.findById(dataSourcNm)
+        DbMntrng entity = dbMntrngRepository.findById(Objects.requireNonNull(dataSourcNm))
                 .orElseThrow(() -> new RuntimeException("DB monitoring not found"));
 
         String sttus = "02"; // Abnormal
@@ -142,20 +143,6 @@ public class DbMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
 
-        dbMntrngLogRepository.save(log);
-    }}
-
-    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+        dbMntrngLogRepository.save(Objects.requireNonNull(log));
+    }
+}

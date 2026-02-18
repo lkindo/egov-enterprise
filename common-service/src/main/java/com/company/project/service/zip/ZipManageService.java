@@ -32,7 +32,7 @@ public class ZipManageService {
     public List<ZipDto> selectZipList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = Objects.requireNonNull(PageRequest.of(pageIndex, pageUnit));
 
         Page<Zip> page;
         String keyword = searchVO.getSearchKeyword();

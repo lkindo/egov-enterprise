@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.user.QUser.user;
 import static com.company.project.domain.user.QUserAbsence.userAbsence;
@@ -65,6 +66,7 @@ public class UserAbsenceRepositoryImpl implements UserAbsenceRepositoryCustom {
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, count != null ? count : 0L);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                count != null ? count : 0L);
     }
 }

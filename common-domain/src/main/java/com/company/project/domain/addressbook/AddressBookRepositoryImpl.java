@@ -7,11 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.addressbook.QAddressBook.addressBook;
 import static com.company.project.domain.user.QUser.user;
@@ -24,7 +24,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
         @Override
         public Page<AddressBook> searchAddressBooks(String userId, String orgnztId, String searchCondition,
-                        String searchKeyword, @NonNull Pageable pageable) {
+                        String searchKeyword, Pageable pageable) {
                 BooleanExpression searchPredicate = null;
                 if (StringUtils.hasText(searchKeyword)) {
                         if ("0".equals(searchCondition)) {
@@ -56,12 +56,13 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                                 .where(addressBook.useAt.eq("Y"), searchPredicate)
                                 .fetchOne();
 
-                return new PageImpl<>(content, pageable, total != null ? total.longValue() : 0L);
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                                total != null ? total.longValue() : 0L);
         }
 
         @Override
         public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword,
-                        @NonNull Pageable pageable) {
+                        Pageable pageable) {
                 // JPA does not support UNION directly. We combine results from 3 user types.
                 // For simplicity in this CLI context, we implement a combined search.
 
@@ -92,6 +93,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 // or use a view.
                 // For this migration, we provide the architectural pattern.
 
-                return new PageImpl<>(combinedResults, pageable, combinedResults.size());
+                return new PageImpl<>(Objects.requireNonNull(combinedResults), Objects.requireNonNull(pageable),
+                                combinedResults.size());
         }
 }

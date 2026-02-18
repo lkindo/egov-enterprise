@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class EventService extends EgovAbstractServiceImpl {
@@ -32,7 +33,7 @@ public class EventService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public EventDto getEvent(String eventId) {
-        Event entity = eventRepository.findById(eventId)
+        Event entity = eventRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         return EventDto.from(entity);
     }
@@ -57,12 +58,12 @@ public class EventService extends EgovAbstractServiceImpl {
                 .rceptBeginDe(dto.getRceptBeginDe())
                 .rceptEndDe(dto.getRceptEndDe())
                 .build();
-        eventRepository.save(entity);
+        eventRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateEvent(EventDto dto) {
-        Event entity = eventRepository.findById(dto.getEventId())
+        Event entity = eventRepository.findById(Objects.requireNonNull(dto.getEventId()))
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
         entity.setEventSe(dto.getEventSe());
@@ -84,13 +85,14 @@ public class EventService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteEvent(String eventId) {
-        eventRepository.deleteById(eventId);
+        eventRepository.deleteById(Objects.requireNonNull(eventId));
     }
 
     // Attendance Methods
     @Transactional(readOnly = true)
     public Page<EventAttendeeDto> getEventAttendeeList(String eventId, Pageable pageable) {
-        return eventAttendeeRepository.findByEventId(eventId, pageable).map(EventAttendeeDto::from);
+        return eventAttendeeRepository.findByEventId(Objects.requireNonNull(eventId), pageable)
+                .map(EventAttendeeDto::from);
     }
 
     @Transactional
@@ -101,7 +103,7 @@ public class EventService extends EgovAbstractServiceImpl {
                 .reqstDe(dto.getReqstDe())
                 .confmAt("N") // Default to pending
                 .build();
-        eventAttendeeRepository.save(entity);
+        eventAttendeeRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional

@@ -4,7 +4,6 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +13,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.company.project.domain.user.QUser;
@@ -133,7 +133,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(results, pageable, total != null ? total.longValue() : 0L);
+        return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable),
+                total != null ? total.longValue() : 0L);
     }
 
     @Override
@@ -172,12 +173,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        JPAQuery<Long> countQuery = queryFactory
+        Long totalResult = queryFactory
                 .select(QBoard.board.count())
                 .from(QBoard.board)
-                .where(builder);
+                .where(builder)
+                .fetchOne();
 
-        return new PageImpl<>(content, pageable, countQuery.fetchOne());
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                totalResult != null ? totalResult : 0L);
     }
 
     @Override

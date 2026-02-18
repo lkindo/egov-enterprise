@@ -5,6 +5,7 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.ulm.UnityLink;
 import com.company.project.domain.ulm.UnityLinkRepository;
 import com.company.project.service.ulm.dto.UnityLinkDto;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class UnityLinkService implements EgovUnityLinkService {
 
     @Override
     public Page<UnityLinkDto> getUnityLinkList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return unityLinkRepository.findAll(pageable).map(UnityLinkDto::from);
         }
@@ -31,7 +33,7 @@ public class UnityLinkService implements EgovUnityLinkService {
 
     @Override
     public UnityLinkDto getUnityLink(String unityLinkId) {
-        return unityLinkRepository.findById(unityLinkId)
+        return unityLinkRepository.findById(Objects.requireNonNull(unityLinkId))
                 .map(UnityLinkDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -47,13 +49,13 @@ public class UnityLinkService implements EgovUnityLinkService {
                 .unityLinkUrl(dto.getUnityLinkUrl())
                 .unityLinkDc(dto.getUnityLinkDc())
                 .build();
-        unityLinkRepository.save(entity);
+        unityLinkRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateUnityLink(UnityLinkDto dto) {
-        UnityLink entity = unityLinkRepository.findById(dto.getUnityLinkId())
+        UnityLink entity = unityLinkRepository.findById(Objects.requireNonNull(dto.getUnityLinkId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getUnityLinkSeCode(), dto.getUnityLinkNm(), dto.getUnityLinkUrl(), dto.getUnityLinkDc());
     }
@@ -61,6 +63,6 @@ public class UnityLinkService implements EgovUnityLinkService {
     @Override
     @Transactional
     public void deleteUnityLink(String unityLinkId) {
-        unityLinkRepository.deleteById(unityLinkId);
+        unityLinkRepository.deleteById(Objects.requireNonNull(unityLinkId));
     }
 }

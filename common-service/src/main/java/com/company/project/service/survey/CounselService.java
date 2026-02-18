@@ -4,6 +4,7 @@ import com.company.project.domain.survey.Counsel;
 import com.company.project.domain.survey.CounselRepository;
 import com.company.project.service.survey.dto.CounselDto;
 import lombok.RequiredArgsConstructor;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,13 +32,13 @@ public class CounselService implements EgovCounselService {
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
-        counselRepository.save(counsel);
+        counselRepository.save(Objects.requireNonNull(counsel));
     }
 
     @Override
     @Transactional
     public void updateCounsel(CounselDto dto) {
-        counselRepository.findById(dto.getCounselId())
+        counselRepository.findById(Objects.requireNonNull(dto.getCounselId()))
                 .ifPresent(c -> {
                     // 필드 수동 업데이트 로직 생략 (Update 메서드 확장 가능)
                 });
@@ -46,13 +47,13 @@ public class CounselService implements EgovCounselService {
     @Override
     @Transactional
     public void deleteCounsel(String counselId) {
-        counselRepository.deleteById(counselId);
+        counselRepository.deleteById(Objects.requireNonNull(counselId));
     }
 
     @Override
     @Transactional
     public void answerCounsel(CounselDto dto) {
-        counselRepository.findById(dto.getCounselId())
+        counselRepository.findById(Objects.requireNonNull(dto.getCounselId()))
                 .ifPresent(c -> c.updateAnswer(
                         dto.getManagerContent(),
                         dto.getManagerDate(),
@@ -63,7 +64,7 @@ public class CounselService implements EgovCounselService {
 
     @Override
     public CounselDto getCounsel(String counselId) {
-        return counselRepository.findById(counselId)
+        return counselRepository.findById(Objects.requireNonNull(counselId))
                 .map(c -> CounselDto.builder()
                         .counselId(c.getCounselId())
                         .counselSubject(c.getCounselSubject())
@@ -77,6 +78,7 @@ public class CounselService implements EgovCounselService {
 
     @Override
     public Page<CounselDto> getCounselList(String searchKeyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return counselRepository.findAll(pageable)
                 .map(c -> CounselDto.builder()
                         .counselId(c.getCounselId())

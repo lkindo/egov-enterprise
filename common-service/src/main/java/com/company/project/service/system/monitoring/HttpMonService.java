@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -53,9 +54,9 @@ public class HttpMonService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public HttpMonDto getHttpMon(String sysId) {
-        HttpMon entity = httpMonRepository.findById(sysId)
+        HttpMon entity = httpMonRepository.findById(Objects.requireNonNull(sysId))
                 .orElseThrow(() -> new RuntimeException("HTTP monitor not found"));
-        return HttpMonDto.from(entity);
+        return HttpMonDto.from(Objects.requireNonNull(entity));
     }
 
     @Transactional
@@ -74,12 +75,12 @@ public class HttpMonService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        httpMonRepository.save(entity);
+        httpMonRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateHttpMon(HttpMonDto dto) {
-        HttpMon entity = httpMonRepository.findById(dto.getSysId())
+        HttpMon entity = httpMonRepository.findById(Objects.requireNonNull(dto.getSysId()))
                 .orElseThrow(() -> new RuntimeException("HTTP monitor not found"));
 
         entity.setWebKind(dto.getWebKind());
@@ -92,14 +93,14 @@ public class HttpMonService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteHttpMon(String sysId) {
-        HttpMon entity = httpMonRepository.findById(sysId)
+        HttpMon entity = httpMonRepository.findById(Objects.requireNonNull(sysId))
                 .orElseThrow(() -> new RuntimeException("HTTP monitor not found"));
         entity.setDeleteAt("Y");
     }
 
     @Transactional
     public void checkAndRecordHttpStatus(String sysId, String userId) throws Exception {
-        HttpMon entity = httpMonRepository.findById(sysId)
+        HttpMon entity = httpMonRepository.findById(Objects.requireNonNull(sysId))
                 .orElseThrow(() -> new RuntimeException("HTTP monitor not found"));
 
         String sttus = "02"; // Abnormal
@@ -145,6 +146,6 @@ public class HttpMonService extends EgovAbstractServiceImpl {
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
 
-        httpMonLogRepository.save(log);
+        httpMonLogRepository.save(Objects.requireNonNull(log));
     }
 }

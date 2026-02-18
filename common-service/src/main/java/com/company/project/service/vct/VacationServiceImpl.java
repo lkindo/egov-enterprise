@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,6 +41,7 @@ public class VacationServiceImpl implements VacationService {
 
     @Override
     public Page<VacationDto> getVacationList(String userId, String searchWrd, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (userId != null && !userId.isEmpty()) {
             return vacationRepository.findByApplcntId(userId, pageable).map(VacationDto::from);
         }
@@ -79,7 +82,7 @@ public class VacationServiceImpl implements VacationService {
                 .confmAt("R") // 신청(Requested)
                 .build();
         entity.setFrstRegisterId(userId);
-        vacationRepository.save(entity);
+        vacationRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
@@ -97,7 +100,7 @@ public class VacationServiceImpl implements VacationService {
     @Transactional
     public void deleteVacation(String applcntId, String vcatnSe, String bgnde) {
         VacationId id = new VacationId(applcntId, vcatnSe, bgnde);
-        vacationRepository.deleteById(id);
+        vacationRepository.deleteById(Objects.requireNonNull(id));
     }
 
     @Override
@@ -127,13 +130,14 @@ public class VacationServiceImpl implements VacationService {
 
         // 3. 알림 생성
         String statusText = "Y".equals(confmAt) ? "승인" : "반려";
-        notificationRepository.save(com.company.project.domain.notification.Notification.builder()
-                .ntfcNo("NOTI_" + UUID.randomUUID().toString().substring(0, 15))
-                .ntfcSj("휴가 신청 처리 알림")
-                .ntfcCn("본인이 신청한 휴가가 " + statusText + "되었습니다.")
-                .receiverId(applcntId)
-                .linkUrl("/cop/smt/vct")
-                .build());
+        notificationRepository
+                .save(java.util.Objects.requireNonNull(com.company.project.domain.notification.Notification.builder()
+                        .ntfcNo("NOTI_" + UUID.randomUUID().toString().substring(0, 15))
+                        .ntfcSj("휴가 신청 처리 알림")
+                        .ntfcCn("본인이 신청한 휴가가 " + statusText + "되었습니다.")
+                        .receiverId(applcntId)
+                        .linkUrl("/cop/smt/vct")
+                        .build()));
     }
 
     @Override
@@ -171,7 +175,7 @@ public class VacationServiceImpl implements VacationService {
                             .remndrYrycCo(dto.getYrycOccrrncCo() - dto.getUseYrycCo())
                             .build();
                     entity.setFrstRegisterId(userId);
-                    annualLeaveRepository.save(entity);
+                    annualLeaveRepository.save(Objects.requireNonNull(entity));
                 });
     }
 
@@ -197,12 +201,13 @@ public class VacationServiceImpl implements VacationService {
     // --- User Absence (Basic CRUD) ---
     @Override
     public Page<UserAbsenceDto> getUserAbsenceList(String searchWrd, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return userAbsenceRepository.findAll(pageable).map(UserAbsenceDto::from);
     }
 
     @Override
     public UserAbsenceDto getUserAbsence(String userId) {
-        return userAbsenceRepository.findById(userId)
+        return userAbsenceRepository.findById(Objects.requireNonNull(userId))
                 .map(UserAbsenceDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -210,19 +215,19 @@ public class VacationServiceImpl implements VacationService {
     @Override
     @Transactional
     public void saveUserAbsence(String userId, UserAbsenceDto dto) {
-        UserAbsence entity = userAbsenceRepository.findById(dto.getUserId())
+        UserAbsence entity = userAbsenceRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .orElseGet(() -> UserAbsence.builder()
                         .userId(dto.getUserId())
                         .frstRegisterId(userId)
                         .build());
 
         entity.update(dto.getUserAbsnceAt(), userId);
-        userAbsenceRepository.save(entity);
+        userAbsenceRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void deleteUserAbsence(String userId) {
-        userAbsenceRepository.deleteById(userId);
+        userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 }

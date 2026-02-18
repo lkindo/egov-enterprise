@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.namecard.QNameCard.nameCard;
 
@@ -18,37 +19,34 @@ import static com.company.project.domain.namecard.QNameCard.nameCard;
 @RequiredArgsConstructor
 public class NameCardRepositoryImpl implements NameCardRepositoryCustom {
 
-    private final JPAQueryFactory queryFactory;
+        private final JPAQueryFactory queryFactory;
 
-    @Override
-    public Page<NameCard> searchNameCards(String keyword, Pageable pageable) {
-        List<NameCard> content = queryFactory
-                .selectFrom(nameCard)
-                .where(
-                        keywordContains(keyword),
-                        nameCard.othbcAt.eq("Y")
-                )
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(nameCard.ncrdNm.asc())
-                .fetch();
+        @Override
+        public Page<NameCard> searchNameCards(String keyword, Pageable pageable) {
+                List<NameCard> content = queryFactory
+                                .selectFrom(nameCard)
+                                .where(
+                                                keywordContains(keyword),
+                                                nameCard.othbcAt.eq("Y"))
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .orderBy(nameCard.ncrdNm.asc())
+                                .fetch();
 
-        long total = queryFactory
-                .select(nameCard.count())
-                .from(nameCard)
-                .where(
-                        keywordContains(keyword),
-                        nameCard.othbcAt.eq("Y")
-                )
-                .fetchOne();
+                long total = queryFactory
+                                .select(nameCard.count())
+                                .from(nameCard)
+                                .where(
+                                                keywordContains(keyword),
+                                                nameCard.othbcAt.eq("Y"))
+                                .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
-    }
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
+        }
 
-    private BooleanExpression keywordContains(String keyword) {
-        return StringUtils.hasText(keyword) ? 
-                nameCard.ncrdNm.containsIgnoreCase(keyword)
-                .or(nameCard.cmpnyNm.containsIgnoreCase(keyword))
-                .or(nameCard.deptNm.containsIgnoreCase(keyword)) : null;
-    }
+        private BooleanExpression keywordContains(String keyword) {
+                return StringUtils.hasText(keyword) ? nameCard.ncrdNm.containsIgnoreCase(keyword)
+                                .or(nameCard.cmpnyNm.containsIgnoreCase(keyword))
+                                .or(nameCard.deptNm.containsIgnoreCase(keyword)) : null;
+        }
 }

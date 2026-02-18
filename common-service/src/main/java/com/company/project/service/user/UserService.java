@@ -45,10 +45,10 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         PasswordEncoder passwordEncoder, UserMapper userMapper) {
-                this.userRepository = userRepository;
-                this.userAuthorityRepository = userAuthorityRepository;
-                this.passwordEncoder = passwordEncoder;
-                this.userMapper = userMapper;
+                this.userRepository = Objects.requireNonNull(userRepository);
+                this.userAuthorityRepository = Objects.requireNonNull(userAuthorityRepository);
+                this.passwordEncoder = Objects.requireNonNull(passwordEncoder);
+                this.userMapper = Objects.requireNonNull(userMapper);
         }
 
         /**
@@ -101,8 +101,8 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .collect(Collectors.toList());
 
                 return new PageImpl<>(
-                                userDtos,
-                                userPage.getPageable(),
+                                Objects.requireNonNull(userDtos),
+                                Objects.requireNonNull(userPage.getPageable()),
                                 userPage.getTotalElements());
         }
 
@@ -121,7 +121,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .orElse(null);
 
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
-                                .uniqId(user.getEsntlId())
+                                .uniqId(Objects.requireNonNull(user.getEsntlId()))
                                 .authorCode(authorCode)
                                 .build() : null;
 
@@ -140,9 +140,9 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 String encodedPassword = passwordEncoder.encode(password);
 
                 User user = User.builder()
-                                .userId(userId)
-                                .password(encodedPassword)
-                                .userNm(userNm)
+                                .userId(Objects.requireNonNull(userId))
+                                .password(Objects.requireNonNull(encodedPassword))
+                                .userNm(Objects.requireNonNull(userNm))
                                 .esntlId(esntlId)
                                 .passwordHint(passwordHint)
                                 .passwordCnsr(passwordCnsr)
@@ -223,7 +223,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
-                UserValidator.validateUserSignupRequest(request);
+                UserValidator.validateUserSignupRequest(Objects.requireNonNull(request));
 
                 if (userRepository.existsById(Objects.requireNonNull(request.userId()))) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
@@ -234,7 +234,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
 
                 User user = User.builder()
                                 .userId(Objects.requireNonNull(request.userId()))
-                                .password(encodedPassword)
+                                .password(Objects.requireNonNull(encodedPassword))
                                 .userNm(Objects.requireNonNull(request.userNm()))
                                 .esntlId(esntlId)
                                 .passwordHint(request.passwordHint())

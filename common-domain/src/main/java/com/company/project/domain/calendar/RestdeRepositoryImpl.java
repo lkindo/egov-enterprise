@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.calendar.QRestde.restde;
 
@@ -33,7 +34,8 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total != null ? total.longValue() : 0L);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                total != null ? total.longValue() : 0L);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

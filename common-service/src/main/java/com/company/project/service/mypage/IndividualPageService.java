@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,20 +27,20 @@ public class IndividualPageService implements EgovIndividualPageService {
                 .frstRegisterId(dto.getUserId())
                 .lastUpdusrId(dto.getUserId())
                 .build();
-        individualPageRepository.save(page);
+        individualPageRepository.save(Objects.requireNonNull(page));
     }
 
     @Override
     @Transactional
     public void updateIndividualPage(IndividualPageDto dto) {
-        individualPageRepository.findById(dto.getPageId())
+        individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
                 .ifPresent(p -> p.update(dto.getPageNm(), dto.getPageDc(), dto.getUserId()));
     }
 
     @Override
     @Transactional
     public void deleteIndividualPage(String pageId) {
-        individualPageRepository.deleteById(pageId);
+        individualPageRepository.deleteById(Objects.requireNonNull(pageId));
     }
 
     @Override

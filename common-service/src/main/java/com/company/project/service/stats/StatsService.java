@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 통계 서비스 구현체
@@ -89,8 +90,8 @@ public class StatsService implements EgovStatsService {
             List<Object[]> rows = query.getResultList();
             for (Object[] row : rows) {
                 StatsDto dto = StatsDto.builder()
-                        .statsDate((String) row[0])
-                        .statsCo(((Number) row[1]).intValue())
+                        .statsDate((String) Objects.requireNonNull(row[0]))
+                        .statsCo(((Number) Objects.requireNonNull(row[1])).intValue())
                         .build();
                 result.add(dto);
             }

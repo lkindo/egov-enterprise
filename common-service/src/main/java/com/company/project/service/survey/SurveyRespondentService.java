@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +22,13 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     @Override
     public Page<SurveyRespondentDto> getSurveyRespondentList(String qestnrId, String keyword, Pageable pageable) {
         // Simplified search, normally we would filter by qestnrId too
-        return surveyRespondentRepository.findByRespondNmContaining(keyword == null ? "" : keyword, pageable).map(SurveyRespondentDto::from);
+        return surveyRespondentRepository.findByRespondNmContaining(keyword == null ? "" : keyword, pageable)
+                .map(SurveyRespondentDto::from);
     }
 
     @Override
     public SurveyRespondentDto getSurveyRespondent(String respondentId) {
-        return surveyRespondentRepository.findById(respondentId)
+        return surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .map(SurveyRespondentDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -48,14 +50,14 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 .endTelno(dto.getEndTelno())
                 .frstRegisterId(userId)
                 .build();
-        surveyRespondentRepository.save(entity);
+        surveyRespondentRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateSurveyRespondent(String respondentId, String userId, SurveyRespondentDto dto) {
-        SurveyRespondent entity = surveyRespondentRepository.findById(respondentId)
+        SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
                 dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
@@ -64,6 +66,6 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     @Override
     @Transactional
     public void deleteSurveyRespondent(String respondentId) {
-        surveyRespondentRepository.deleteById(respondentId);
+        surveyRespondentRepository.deleteById(Objects.requireNonNull(respondentId));
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 당직 정보 Repository Custom 구현체
@@ -34,7 +35,7 @@ public class BndtManageRepositoryImpl implements BndtManageRepositoryCustom {
                 .where(bndtDeContains(bndtDe))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression bndtDeContains(String bndtDe) {

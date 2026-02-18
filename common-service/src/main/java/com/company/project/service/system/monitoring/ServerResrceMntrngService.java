@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -23,25 +24,29 @@ public class ServerResrceMntrngService extends EgovAbstractServiceImpl {
     private final EgovIdGnrService egovServerResrceMntrngIdGnrService;
 
     @Transactional(readOnly = true)
-    public Page<ServerResrceLogDto> getServerResrceLogList(String strServerNm, LocalDateTime startDt, LocalDateTime endDt, Pageable pageable) {
-        Page<Object[]> page = serverResrceLogRepository.selectServerResrceMntrngList(strServerNm, startDt, endDt, pageable);
+    public Page<ServerResrceLogDto> getServerResrceLogList(String strServerNm, LocalDateTime startDt,
+            LocalDateTime endDt, Pageable pageable) {
+        Page<Object[]> page = serverResrceLogRepository.selectServerResrceMntrngList(strServerNm, startDt, endDt,
+                pageable);
         return page.map(this::mapToDto);
     }
 
     @Transactional
     public void recordCurrentResource(String serverId, String serverEqpmnId, String userId) throws Exception {
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        
-        // Simplified measurement for prototype. 
-        // In real production, use com.sun.management.OperatingSystemMXBean for more accurate CPU/Memory RT.
+
+        // Simplified measurement for prototype.
+        // In real production, use com.sun.management.OperatingSystemMXBean for more
+        // accurate CPU/Memory RT.
         double cpuLoad = osBean.getSystemLoadAverage(); // Note: might be -1 on some Windows systems
-        
+
         // Dummy values for demonstration if load avg is not available
-        if (cpuLoad < 0) cpuLoad = Math.random() * 100;
+        if (cpuLoad < 0)
+            cpuLoad = Math.random() * 100;
         double memLoad = Math.random() * 100;
 
         String logId = egovServerResrceMntrngIdGnrService.getNextStringId();
-        
+
         ServerResrceLog log = ServerResrceLog.builder()
                 .logId(logId)
                 .serverId(serverId)
@@ -56,8 +61,8 @@ public class ServerResrceMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(userId)
                 .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
-        
-        serverResrceLogRepository.save(log);
+
+        serverResrceLogRepository.save(Objects.requireNonNull(log));
     }
 
     private ServerResrceLogDto mapToDto(Object[] row) {

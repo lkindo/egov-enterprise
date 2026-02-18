@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.List;
 
 @Service
@@ -39,7 +40,7 @@ public class NoteService extends EgovAbstractServiceImpl {
                 .frstRegisterId(senderId)
                 .lastUpdusrId(senderId)
                 .build();
-        noteRepository.save(note);
+        noteRepository.save(Objects.requireNonNull(note));
 
         String trnsmitId = egovNoteTrnsmitIdGnrService.getNextStringId();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder()
@@ -50,7 +51,7 @@ public class NoteService extends EgovAbstractServiceImpl {
                 .frstRegisterId(senderId)
                 .lastUpdusrId(senderId)
                 .build();
-        noteTrnsmitRepository.save(trnsmit);
+        noteTrnsmitRepository.save(Objects.requireNonNull(trnsmit));
 
         for (String rcverId : receiverIds) {
             String recptnId = egovNoteRecptnIdGnrService.getNextStringId();
@@ -64,7 +65,7 @@ public class NoteService extends EgovAbstractServiceImpl {
                     .frstRegisterId(senderId)
                     .lastUpdusrId(senderId)
                     .build();
-            noteRecptnRepository.save(recptn);
+            noteRecptnRepository.save(Objects.requireNonNull(recptn));
         }
     }
 
@@ -94,7 +95,7 @@ public class NoteService extends EgovAbstractServiceImpl {
 
     @Transactional
     public NoteDto getNoteDetail(String noteId, String userId, String type) {
-        Note note = noteRepository.findById(noteId)
+        Note note = noteRepository.findById(Objects.requireNonNull(noteId))
                 .orElseThrow(() -> new RuntimeException("Note not found"));
 
         if ("RECEPTION".equals(type)) {
@@ -113,7 +114,7 @@ public class NoteService extends EgovAbstractServiceImpl {
                             .frstRegisterId(r.getFrstRegisterId())
                             .lastUpdusrId(userId)
                             .build();
-                    noteRecptnRepository.save(updated);
+                    noteRecptnRepository.save(Objects.requireNonNull(updated));
                 }
             });
         }
@@ -123,7 +124,7 @@ public class NoteService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteSentNote(String trnsmitId, String userId) {
-        noteTrnsmitRepository.findById(trnsmitId).ifPresent(t -> {
+        noteTrnsmitRepository.findById(Objects.requireNonNull(trnsmitId)).ifPresent(t -> {
             if (t.getTrnsmiterId().equals(userId)) {
                 // Logic: In legacy, it might set DELETE_AT = 'Y'
                 NoteTrnsmit updated = NoteTrnsmit.builder()
@@ -134,14 +135,14 @@ public class NoteService extends EgovAbstractServiceImpl {
                         .frstRegisterId(t.getFrstRegisterId())
                         .lastUpdusrId(userId)
                         .build();
-                noteTrnsmitRepository.save(updated);
+                noteTrnsmitRepository.save(Objects.requireNonNull(updated));
             }
         });
     }
 
     @Transactional
     public void deleteReceivedNote(String recptnId, String userId) {
-        noteRecptnRepository.findById(recptnId).ifPresent(r -> {
+        noteRecptnRepository.findById(Objects.requireNonNull(recptnId)).ifPresent(r -> {
             if (r.getRcverId().equals(userId)) {
                 noteRecptnRepository.delete(r);
             }

@@ -35,7 +35,8 @@ public class AuthorityRepositoryImpl implements AuthorityRepositoryCustom {
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                total != null ? total : 0L);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

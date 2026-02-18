@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,7 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     public Page<RewardDto> getRewardList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return rewardRepository.findAll(pageable).map(RewardDto::from);
         }
@@ -32,7 +34,7 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     public RewardDto getReward(String rwardId) {
-        return rewardRepository.findById(rwardId)
+        return rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .map(RewardDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -54,7 +56,7 @@ public class RewardServiceImpl implements RewardService {
                     .infrmlSanctnId(dto.getInfrmlSanctnId())
                     .frstRegisterId(userId)
                     .build();
-            rewardRepository.save(entity);
+            rewardRepository.save(Objects.requireNonNull(entity));
             return id;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate reward ID", e);
@@ -64,7 +66,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public void updateReward(String rwardId, String userId, RewardDto dto) {
-        RwardManage entity = rewardRepository.findById(rwardId)
+        RwardManage entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn(),
                 dto.getAtchFileId(), userId);
@@ -73,7 +75,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public void deleteReward(String rwardId) {
-        if (!rewardRepository.existsById(rwardId)) {
+        if (!rewardRepository.existsById(Objects.requireNonNull(rwardId))) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
         rewardRepository.deleteById(rwardId);
@@ -82,7 +84,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public void confirmReward(String rwardId, String userId, String confmAt, String returnResn) {
-        RwardManage entity = rewardRepository.findById(rwardId)
+        RwardManage entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.confirm(confmAt, LocalDateTime.now(), returnResn, userId);
     }

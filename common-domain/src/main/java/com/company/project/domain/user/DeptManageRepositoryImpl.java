@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.user.QDeptManage.deptManage;
 
@@ -36,7 +37,7 @@ public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
                 .where(keywordContains(keyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression keywordContains(String keyword) {

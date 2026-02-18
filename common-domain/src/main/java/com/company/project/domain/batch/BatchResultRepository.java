@@ -1,5 +1,6 @@
 package com.company.project.domain.batch;
 
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,8 +35,10 @@ public interface BatchResultRepository extends JpaRepository<BatchResult, String
 
      default Page<BatchResult> searchBatchResults(String sttus, String searchKeywordFrom, String searchKeywordTo,
                String searchCondition, String searchKeyword, Pageable pageable) {
+          Objects.requireNonNull(pageable);
           return selectBatchResultList(sttus, searchKeywordFrom, searchKeywordTo, searchCondition, searchKeyword,
                     pageable)
-                    .map(row -> findById((String) row[0]).orElse(null));
+                    .map(row -> findById(Objects.requireNonNull((String) row[0]))
+                              .orElseThrow(() -> new RuntimeException("BatchResult not found")));
      }
 }

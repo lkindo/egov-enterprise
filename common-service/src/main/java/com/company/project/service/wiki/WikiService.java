@@ -4,6 +4,7 @@ import com.company.project.domain.wiki.WikiBookmark;
 import com.company.project.domain.wiki.WikiBookmarkRepository;
 import com.company.project.service.wiki.dto.WikiBookmarkDto;
 import lombok.RequiredArgsConstructor;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,17 +27,18 @@ public class WikiService implements EgovWikiService {
                 .frstRegisterId(dto.getUserId())
                 .lastUpdusrId(dto.getUserId())
                 .build();
-        wikiBookmarkRepository.save(bookmark);
+        wikiBookmarkRepository.save(Objects.requireNonNull(bookmark));
     }
 
     @Override
     @Transactional
     public void deleteBookmark(String wikiBkmkId) {
-        wikiBookmarkRepository.deleteById(wikiBkmkId);
+        wikiBookmarkRepository.deleteById(Objects.requireNonNull(wikiBkmkId));
     }
 
     @Override
     public Page<WikiBookmarkDto> getBookmarkList(String userId, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         // userId 기반 필터링 로직 (Repository 확장 필요)
         return wikiBookmarkRepository.findAll(pageable)
                 .map(b -> WikiBookmarkDto.builder()

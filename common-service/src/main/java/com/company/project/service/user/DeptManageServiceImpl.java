@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
 
     @Override
     public DeptManageDto getDeptManage(String orgnztId) {
-        return deptManageRepository.findById(orgnztId)
+        return deptManageRepository.findById(Objects.requireNonNull(orgnztId))
                 .map(DeptManageDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -38,13 +39,13 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
                 .orgnztNm(dto.getOrgnztNm())
                 .orgnztDc(dto.getOrgnztDc())
                 .build();
-        deptManageRepository.save(entity);
+        deptManageRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateDeptManage(DeptManageDto dto) {
-        DeptManage entity = deptManageRepository.findById(dto.getOrgnztId())
+        DeptManage entity = deptManageRepository.findById(Objects.requireNonNull(dto.getOrgnztId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getOrgnztNm(), dto.getOrgnztDc());
     }
@@ -52,6 +53,6 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     @Override
     @Transactional
     public void deleteDeptManage(String orgnztId) {
-        deptManageRepository.deleteById(orgnztId);
+        deptManageRepository.deleteById(Objects.requireNonNull(orgnztId));
     }
 }

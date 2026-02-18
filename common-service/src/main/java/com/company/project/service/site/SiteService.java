@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 /**
  * 사이트정보 서비스 구현체
@@ -23,6 +24,7 @@ public class SiteService implements EgovSiteService {
 
     @Override
     public Page<SiteDto> getSiteList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return siteRepository.findAll(pageable).map(SiteDto::from);
         }
@@ -31,7 +33,7 @@ public class SiteService implements EgovSiteService {
 
     @Override
     public SiteDto getSite(String siteId) {
-        return siteRepository.findById(siteId)
+        return siteRepository.findById(Objects.requireNonNull(siteId))
                 .map(SiteDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -50,14 +52,14 @@ public class SiteService implements EgovSiteService {
                 .useAt(dto.getUseAt())
                 .frstRegisterId(userId)
                 .build();
-        siteRepository.save(site);
+        siteRepository.save(Objects.requireNonNull(site));
         return siteId;
     }
 
     @Override
     @Transactional
     public void updateSite(String siteId, String userId, SiteDto dto) {
-        Site site = siteRepository.findById(siteId)
+        Site site = siteRepository.findById(Objects.requireNonNull(siteId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         site.update(dto.getSiteUrl(), dto.getSiteNm(), dto.getSiteDc(), dto.getSiteThemaClCode(),
                 dto.getActvtyAt(), dto.getUseAt(), userId);
@@ -66,6 +68,6 @@ public class SiteService implements EgovSiteService {
     @Override
     @Transactional
     public void deleteSite(String siteId) {
-        siteRepository.deleteById(siteId);
+        siteRepository.deleteById(Objects.requireNonNull(siteId));
     }
 }

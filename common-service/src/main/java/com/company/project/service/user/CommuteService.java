@@ -4,6 +4,7 @@ import com.company.project.domain.user.Commute;
 import com.company.project.domain.user.CommuteRepository;
 import com.company.project.service.user.dto.CommuteDto;
 import lombok.RequiredArgsConstructor;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class CommuteService implements EgovCommuteService {
                 .frstRegisterId(dto.getUserId())
                 .lastUpdusrId(dto.getUserId())
                 .build();
-        commuteRepository.save(commute);
+        commuteRepository.save(Objects.requireNonNull(commute));
     }
 
     @Override
@@ -44,6 +45,7 @@ public class CommuteService implements EgovCommuteService {
 
     @Override
     public Page<CommuteDto> getCommuteList(String userId, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return commuteRepository.findAll(pageable)
                 .map(c -> CommuteDto.builder()
                         .commuteId(c.getCommuteId())

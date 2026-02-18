@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,8 +31,8 @@ public class UserAbsenceManageService {
     public UserAbsenceManageService(
             @org.springframework.beans.factory.annotation.Qualifier("userUserAbsenceRepository") UserAbsenceRepository userAbsenceRepository,
             UserRepository userRepository) {
-        this.userAbsenceRepository = userAbsenceRepository;
-        this.userRepository = userRepository;
+        this.userAbsenceRepository = Objects.requireNonNull(userAbsenceRepository);
+        this.userRepository = Objects.requireNonNull(userRepository);
     }
 
     /**
@@ -50,7 +52,8 @@ public class UserAbsenceManageService {
                 .collect(Collectors.toList());
 
         // 2. Bulk fetch absences using findAllById
-        java.util.Map<String, UserAbsence> absenceMap = userAbsenceRepository.findAllById(userIds).stream()
+        java.util.Map<String, UserAbsence> absenceMap = userAbsenceRepository
+                .findAllById(Objects.requireNonNull(userIds)).stream()
                 .collect(Collectors.toMap(UserAbsence::getUserId, java.util.function.Function.identity()));
 
         return users.stream().map(user -> {
@@ -81,7 +84,7 @@ public class UserAbsenceManageService {
      * 사용자 부재 상세 조회
      */
     public UserAbsenceDto selectUserAbsence(String userId) {
-        User user = userRepository.findById(userId).orElse(null);
+        User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
         if (user == null) {
             return null;
         }
@@ -106,12 +109,13 @@ public class UserAbsenceManageService {
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
+        Objects.requireNonNull(dto);
         UserAbsence entity = UserAbsence.builder()
                 .userId(dto.getUserId())
                 .userAbsnceAt(dto.getUserAbsnceAt())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        userAbsenceRepository.save(entity);
+        userAbsenceRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -119,7 +123,8 @@ public class UserAbsenceManageService {
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
-        UserAbsence entity = userAbsenceRepository.findById(dto.getUserId())
+        Objects.requireNonNull(dto);
+        UserAbsence entity = userAbsenceRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .orElseThrow(() -> new RuntimeException("UserAbsence not found: " + dto.getUserId()));
         entity.update(dto.getUserAbsnceAt(), dto.getLastUpdusrId());
     }
@@ -129,7 +134,7 @@ public class UserAbsenceManageService {
      */
     @Transactional
     public void deleteUserAbsence(String userId) {
-        userAbsenceRepository.deleteById(userId);
+        userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 
     /**
@@ -137,6 +142,6 @@ public class UserAbsenceManageService {
      */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {
-        userAbsenceRepository.deleteAllById(Arrays.asList(userIds));
+        userAbsenceRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(userIds))));
     }
 }

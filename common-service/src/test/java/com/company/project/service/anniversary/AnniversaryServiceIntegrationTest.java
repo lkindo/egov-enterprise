@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Note: DB 제약조건 문제로 인해 현재 비활성화됨
  */
 @DataJpaTest(properties = {
-    "spring.jpa.show-sql=true",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.show-sql=true",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 @Import(AnniversaryService.class)
 @Transactional
@@ -42,7 +42,7 @@ public class AnniversaryServiceIntegrationTest {
     @Transactional
     void setUp() {
         anniversaryRepository.deleteAll();
-        
+
         ann1 = Anniversary.builder()
                 .annId("ANN_001")
                 .usid("USER_001")
@@ -52,7 +52,7 @@ public class AnniversaryServiceIntegrationTest {
                 .cldrSe("1")
                 .reptitAt("1")
                 .build();
-        anniversaryRepository.save(ann1);
+        anniversaryRepository.save(java.util.Objects.requireNonNull(ann1));
 
         ann2 = Anniversary.builder()
                 .annId("ANN_002")
@@ -63,7 +63,7 @@ public class AnniversaryServiceIntegrationTest {
                 .cldrSe("1")
                 .reptitAt("1")
                 .build();
-        anniversaryRepository.save(ann2);
+        anniversaryRepository.save(java.util.Objects.requireNonNull(ann2));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class AnniversaryServiceIntegrationTest {
     void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
-        
+
         // Then
         assertThat(count).isEqualTo(0);
     }
@@ -81,7 +81,7 @@ public class AnniversaryServiceIntegrationTest {
     void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
-        
+
         // Then
         assertThat(count).isEqualTo(1);
     }
@@ -91,7 +91,7 @@ public class AnniversaryServiceIntegrationTest {
     void checkAnniversaryDuplicate_ConflictWithOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231225", "Wedding", "ANN_001");
-        
+
         // Then
         assertThat(count).isEqualTo(1);
     }
@@ -101,7 +101,7 @@ public class AnniversaryServiceIntegrationTest {
     void checkAnniversaryDuplicate_NoConflict_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20240101", "New Year", "ANN_001");
-        
+
         // Then
         assertThat(count).isEqualTo(0);
     }

@@ -62,10 +62,11 @@ class CommunityServiceTest {
                                 .build();
 
                 // Mock save
-                when(communityRepository.save(any(Community.class))).thenAnswer(invocation -> {
-                        Community c = invocation.getArgument(0);
-                        return c;
-                });
+                when(communityRepository.save(java.util.Objects.requireNonNull(any(Community.class))))
+                                .thenAnswer(invocation -> {
+                                        Community c = java.util.Objects.requireNonNull(invocation.getArgument(0));
+                                        return c;
+                                });
 
                 // When
                 CommunityDto created = communityService.createCommunity(userId, dto);
@@ -74,7 +75,7 @@ class CommunityServiceTest {
                 assertThat(created).isNotNull();
                 assertThat(created.getCmmntyNm()).isEqualTo("Test Community");
 
-                verify(communityRepository).save(any(Community.class));
+                verify(communityRepository).save(java.util.Objects.requireNonNull(any(Community.class)));
         }
 
         @Test
@@ -98,7 +99,8 @@ class CommunityServiceTest {
                                 .useAt("Y")
                                 .build();
 
-                lenient().when(communityRepository.findById(cmmntyId)).thenReturn(Optional.of(community));
+                lenient().when(communityRepository.findById(cmmntyId))
+                                .thenReturn(Optional.of(java.util.Objects.requireNonNull(community)));
 
                 // When
                 communityService.updateCommunity(userId, updateDto);

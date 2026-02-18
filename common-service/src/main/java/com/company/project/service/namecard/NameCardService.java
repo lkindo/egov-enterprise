@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 명함 서비스 구현체
  */
@@ -38,7 +40,7 @@ public class NameCardService implements EgovNameCardService {
 
     @Override
     public NameCardDto getNameCard(String ncrdId) {
-        NameCard nameCard = nameCardRepository.findById(ncrdId)
+        NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return NameCardDto.from(nameCard);
     }
@@ -67,7 +69,7 @@ public class NameCardService implements EgovNameCardService {
                 .extrlUserAt(dto.getExtrlUserAt())
                 .build();
 
-        nameCardRepository.save(nameCard);
+        nameCardRepository.save(Objects.requireNonNull(nameCard));
 
         // 등록 시 내 명함첩에도 자동 추가
         addMyNameCard(userId, ncrdId);
@@ -78,7 +80,7 @@ public class NameCardService implements EgovNameCardService {
     @Override
     @Transactional
     public void updateNameCard(String ncrdId, String userId, NameCardDto dto) {
-        NameCard nameCard = nameCardRepository.findById(ncrdId)
+        NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         nameCard.update(dto.getNcrdNm(), dto.getCmpnyNm(), dto.getDeptNm(), dto.getClsfNm(),
@@ -90,12 +92,12 @@ public class NameCardService implements EgovNameCardService {
     @Override
     @Transactional
     public void deleteNameCard(String ncrdId) {
-        NameCard nameCard = nameCardRepository.findById(ncrdId)
+        NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // 관계 데이터 먼저 삭제 (또는 논리 삭제 처리)
         // 여기서는 단순 물리 삭제로 구현
-        nameCardRepository.delete(nameCard);
+        nameCardRepository.delete(Objects.requireNonNull(nameCard));
     }
 
     @Override
@@ -103,7 +105,7 @@ public class NameCardService implements EgovNameCardService {
             @org.springframework.lang.NonNull Pageable pageable) {
         return nameCardUserRepository.findMyNameCardUsers(userId, pageable)
                 .map(nu -> {
-                    NameCard nc = nameCardRepository.findById(nu.getNcrdId()).orElse(null);
+                    NameCard nc = nameCardRepository.findById(Objects.requireNonNull(nu.getNcrdId())).orElse(null);
                     return NameCardUserDto.from(nu, nc);
                 });
     }
@@ -114,12 +116,12 @@ public class NameCardService implements EgovNameCardService {
         nameCardUserRepository.findByNcrdIdAndEmplyrId(ncrdId, userId)
                 .ifPresentOrElse(
                         nu -> nu.updateUseAt("Y"),
-                        () -> nameCardUserRepository.save(NameCardUser.builder()
+                        () -> nameCardUserRepository.save(Objects.requireNonNull(NameCardUser.builder()
                                 .ncrdId(ncrdId)
                                 .emplyrId(userId)
                                 .useAt("Y")
                                 .registSeCode("REGC01") // 기본 등록 코드
-                                .build()));
+                                .build())));
     }
 
     @Override

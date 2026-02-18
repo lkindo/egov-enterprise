@@ -62,7 +62,7 @@ public class ProgramService {
     public ProgramDto selectProgrm(ComDefaultVO searchVO) {
         if (searchVO.getSearchKeyword() == null)
             return new ProgramDto();
-        return programRepository.findById(searchVO.getSearchKeyword())
+        return programRepository.findById(Objects.requireNonNull(searchVO.getSearchKeyword()))
                 .map(this::toDto)
                 .orElse(new ProgramDto());
     }
@@ -118,7 +118,7 @@ public class ProgramService {
         if (checkedProgrmFileNmForDel == null)
             return;
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
-        programRepository.deleteAllByIdInBatch(delProgrmFileNm);
+        programRepository.deleteAllByIdInBatch(Objects.requireNonNull(delProgrmFileNm));
     }
 
     private ProgramDto toDto(Program entity) {

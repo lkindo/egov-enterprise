@@ -233,8 +233,6 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .findById(new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId)))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                if (board != null) {
-                        board.delete(authorId);
-                }
+                board.delete(authorId);
         }
 }

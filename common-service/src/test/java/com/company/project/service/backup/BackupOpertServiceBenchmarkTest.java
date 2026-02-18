@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = BenchmarkTestConfig.class, properties = "spring.jpa.show-sql=true")
@@ -87,13 +86,15 @@ public class BackupOpertServiceBenchmarkTest {
         // Mock CommonCodeService - COM047 and COM074 groups
         when(commonCodeService.getCodesByGroup("COM047")).thenReturn(Collections.emptyList());
         when(commonCodeService.getCodesByGroup("COM074")).thenReturn(Collections.emptyList());
-        when(commonCodeService.getCodesByGroup(org.mockito.ArgumentMatchers.anyString())).thenAnswer(invocation -> {
-            String group = invocation.getArgument(0);
-            if ("COM047".equals(group) || "COM074".equals(group)) {
-                return Collections.emptyList();
-            }
-            return Collections.emptyList();
-        });
+        when(commonCodeService
+                .getCodesByGroup(java.util.Objects.requireNonNull(org.mockito.ArgumentMatchers.anyString())))
+                .thenAnswer(invocation -> {
+                    String group = java.util.Objects.requireNonNull(invocation.getArgument(0));
+                    if ("COM047".equals(group) || "COM074".equals(group)) {
+                        return Collections.emptyList();
+                    }
+                    return Collections.emptyList();
+                });
 
         // When
         long startTime = System.currentTimeMillis();

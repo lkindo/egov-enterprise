@@ -51,9 +51,9 @@ class UserAbsenceManageServiceTest {
                     .password("pw")
                     .build());
         }
-        Page<User> userPage = new PageImpl<>(users);
+        Page<User> userPage = new PageImpl<>(java.util.Objects.requireNonNull(users));
 
-        given(userRepository.findAll(any(Pageable.class))).willReturn(userPage);
+        given(userRepository.findAll(java.util.Objects.requireNonNull(any(Pageable.class)))).willReturn(userPage);
 
         // Mock findAllById
         List<UserAbsence> absences = new ArrayList<>();
@@ -62,7 +62,8 @@ class UserAbsenceManageServiceTest {
                 .userId("user0")
                 .userAbsnceAt("Y")
                 .build());
-        given(userAbsenceRepository.findAllById(any())).willReturn(absences);
+        given(userAbsenceRepository.findAllById(java.util.Objects.requireNonNull(any())))
+                .willReturn(java.util.Objects.requireNonNull(absences));
 
         // when
         ComDefaultVO searchVO = new ComDefaultVO();
@@ -84,8 +85,8 @@ class UserAbsenceManageServiceTest {
         assertThat(result.get(1).getRegYn()).isEqualTo("N");
 
         // Verify findAllById called once
-        verify(userAbsenceRepository, times(1)).findAllById(any());
+        verify(userAbsenceRepository, times(1)).findAllById(java.util.Objects.requireNonNull(any()));
         // Verify findById called zero times
-        verify(userAbsenceRepository, times(0)).findById(any(String.class));
+        verify(userAbsenceRepository, times(0)).findById(java.util.Objects.requireNonNull(any(String.class)));
     }
 }

@@ -48,7 +48,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .authorNm(Objects.requireNonNull(dto.getAuthorNm()))
                 .authorDc(dto.getAuthorDc())
                 .build();
-        authorityRepository.save(authority);
+        authorityRepository.save(Objects.requireNonNull(authority));
     }
 
     @Override
@@ -92,7 +92,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 .roleTy(dto.getRoleTyp())
                 .roleSort(dto.getRoleSort())
                 .build();
-        roleInfoRepository.save(role);
+        roleInfoRepository.save(Objects.requireNonNull(role));
     }
 
     @Override
@@ -137,7 +137,7 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
                 })
                 .collect(Collectors.toList());
 
-        authorityRoleRepository.saveAll(relates);
+        authorityRoleRepository.saveAll(Objects.requireNonNull(relates));
     }
 
     @Override

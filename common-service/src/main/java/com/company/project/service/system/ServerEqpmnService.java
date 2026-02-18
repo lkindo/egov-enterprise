@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,13 +22,14 @@ public class ServerEqpmnService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<ServerEqpmnDto> getServerEqpmnList(String serverEqpmnNm, Pageable pageable) {
-        Page<ServerEqpmn> page = serverEqpmnRepository.findByServerEqpmnNmContaining(serverEqpmnNm == null ? "" : serverEqpmnNm, pageable);
+        Page<ServerEqpmn> page = serverEqpmnRepository
+                .findByServerEqpmnNmContaining(serverEqpmnNm == null ? "" : serverEqpmnNm, pageable);
         return page.map(ServerEqpmnDto::from);
     }
 
     @Transactional(readOnly = true)
     public ServerEqpmnDto getServerEqpmn(String serverEqpmnId) {
-        ServerEqpmn entity = serverEqpmnRepository.findById(serverEqpmnId)
+        ServerEqpmn entity = serverEqpmnRepository.findById(Objects.requireNonNull(serverEqpmnId))
                 .orElseThrow(() -> new RuntimeException("ServerEqpmn not found: " + serverEqpmnId));
         return ServerEqpmnDto.from(entity);
     }
@@ -51,12 +53,12 @@ public class ServerEqpmnService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
-        serverEqpmnRepository.save(entity);
+        serverEqpmnRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateServerEqpmn(ServerEqpmnDto dto) {
-        ServerEqpmn entity = serverEqpmnRepository.findById(dto.getServerEqpmnId())
+        ServerEqpmn entity = serverEqpmnRepository.findById(Objects.requireNonNull(dto.getServerEqpmnId()))
                 .orElseThrow(() -> new RuntimeException("ServerEqpmn not found"));
 
         entity.setServerEqpmnNm(dto.getServerEqpmnNm());
@@ -74,6 +76,6 @@ public class ServerEqpmnService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteServerEqpmn(String serverEqpmnId) {
-        serverEqpmnRepository.deleteById(serverEqpmnId);
+        serverEqpmnRepository.deleteById(Objects.requireNonNull(serverEqpmnId));
     }
 }

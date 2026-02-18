@@ -1,5 +1,6 @@
 package com.company.project.domain.batch;
 
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,8 +29,10 @@ public interface BatchSchdulRepository extends JpaRepository<BatchSchdul, String
                      Pageable pageable);
 
        default Page<BatchSchdul> searchBatchSchduls(String condition, String keyword, Pageable pageable) {
+              Objects.requireNonNull(pageable);
               return selectBatchSchdulList(condition, keyword, pageable)
-                            .map(row -> findById((String) row[0]).orElse(null));
+                            .map(row -> findById(Objects.requireNonNull((String) row[0]))
+                                          .orElseThrow(() -> new RuntimeException("BatchSchdul not found")));
        }
 
        @Query("select d from BatchSchdulDfk d where d.id.batchSchdulId in :ids")

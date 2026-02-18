@@ -24,6 +24,7 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     public Page<HolidayDto> getHolidayList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return holidayRepository.findAll(pageable).map(HolidayDto::from);
         }

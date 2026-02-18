@@ -43,7 +43,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public String store(MultipartFile file, String targetPath) {
         String originalFilename = StringUtils
-                .cleanPath(Objects.requireNonNullElse(file.getOriginalFilename(), ""));
+                .cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         String extension = StringUtils.getFilenameExtension(originalFilename);
         String savedFilename = UUID.randomUUID().toString() + (extension != null ? "." + extension : "");
 
