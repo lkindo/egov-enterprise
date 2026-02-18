@@ -23,12 +23,29 @@ import {
   TrendingDown,
   LayoutGrid
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
 import { useToast } from './components/ui/toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
-import { DashboardVisitorChart, DashboardPostChart } from '@/app/components/dashboard/DashboardCharts';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
+
+const DashboardVisitorChart = dynamic(
+  () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full rounded-xl" />,
+    ssr: false,
+  }
+);
+
+const DashboardPostChart = dynamic(
+  () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardPostChart),
+  {
+    loading: () => <Skeleton className="h-[200px] w-full rounded-xl" />,
+    ssr: false,
+  }
+);
 
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
