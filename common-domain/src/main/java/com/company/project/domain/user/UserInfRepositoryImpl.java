@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
@@ -47,7 +46,8 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .where(conditionEq(searchCondition, searchKeyword))
                                 .fetchOne();
 
-                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                                total != null ? total : 0L);
         }
 
         @Override
@@ -80,7 +80,8 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 communityUser.id.cmmntyId.eq(trgetId))
                                 .fetchOne();
 
-                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                                total != null ? total : 0L);
         }
 
         @Override
@@ -115,7 +116,8 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 communityUser.mngrAt.eq("Y"))
                                 .fetchOne();
 
-                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                                total != null ? total : 0L);
         }
 
         @Override

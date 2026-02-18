@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,7 +41,7 @@ public class ProcessMonService extends EgovAbstractServiceImpl {
         } else if (procsSttus != null && !procsSttus.equals("00")) {
             page = processMonRepository.findByProcsSttus(procsSttus, pageable);
         } else {
-            page = processMonRepository.findAll(pageable);
+            page = processMonRepository.findAll(Objects.requireNonNull(pageable));
         }
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM072"); // Status codes
@@ -56,7 +57,7 @@ public class ProcessMonService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void checkAndRecordProcess(String processNm, String userId) throws Exception {
-        ProcessMon entity = processMonRepository.findById(processNm)
+        ProcessMon entity = processMonRepository.findById(Objects.requireNonNull(processNm))
                 .orElseThrow(() -> new RuntimeException("Process monitor not found"));
 
         boolean isRunning = ProcessHandle.allProcesses()
@@ -80,7 +81,7 @@ public class ProcessMonService extends EgovAbstractServiceImpl {
                 .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
 
-        processMonLogRepository.save(log);
+        processMonLogRepository.save(Objects.requireNonNull(log));
     }
 
     @Transactional
@@ -95,11 +96,11 @@ public class ProcessMonService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        processMonRepository.save(entity);
+        processMonRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void deleteProcessMon(String processNm) {
-        processMonRepository.deleteById(processNm);
+        processMonRepository.deleteById(Objects.requireNonNull(processNm));
     }
 }

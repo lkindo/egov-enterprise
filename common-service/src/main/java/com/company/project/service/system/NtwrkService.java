@@ -2,6 +2,7 @@ package com.company.project.service.system;
 
 import com.company.project.domain.system.Ntwrk;
 import com.company.project.domain.system.NtwrkRepository;
+import java.util.Objects;
 import com.company.project.service.code.EgovCommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.system.dto.NtwrkDto;
@@ -27,6 +28,7 @@ public class NtwrkService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<NtwrkDto> getNtwrkList(String manageIem, String userNm, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         Page<Ntwrk> page = ntwrkRepository.searchNtwrks(manageIem, userNm, pageable);
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM067");
@@ -42,7 +44,7 @@ public class NtwrkService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public NtwrkDto getNtwrk(String ntwrkId) {
-        Ntwrk entity = ntwrkRepository.findById(ntwrkId)
+        Ntwrk entity = ntwrkRepository.findById(Objects.requireNonNull(ntwrkId))
                 .orElseThrow(() -> new RuntimeException("Ntwrk not found: " + ntwrkId));
         NtwrkDto dto = NtwrkDto.from(entity);
 
@@ -72,12 +74,12 @@ public class NtwrkService extends EgovAbstractServiceImpl {
         entity.setFrstRegisterPnttm(LocalDateTime.now());
         entity.setLastUpdusrId(dto.getLastUpdusrId());
         entity.setLastUpdusrPnttm(LocalDateTime.now());
-        ntwrkRepository.save(entity);
+        ntwrkRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateNtwrk(NtwrkDto dto) {
-        Ntwrk entity = ntwrkRepository.findById(dto.getNtwrkId())
+        Ntwrk entity = ntwrkRepository.findById(Objects.requireNonNull(dto.getNtwrkId()))
                 .orElseThrow(() -> new RuntimeException("Ntwrk not found"));
 
         entity.setNtwrkIp(dto.getNtwrkIp());
@@ -92,7 +94,7 @@ public class NtwrkService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteNtwrk(String ntwrkId) {
-        Ntwrk entity = ntwrkRepository.findById(ntwrkId)
+        Ntwrk entity = ntwrkRepository.findById(Objects.requireNonNull(ntwrkId))
                 .orElseThrow(() -> new RuntimeException("Ntwrk not found"));
         entity.setUseAt("N");
     }

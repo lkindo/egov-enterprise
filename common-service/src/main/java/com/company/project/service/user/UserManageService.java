@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,8 +39,10 @@ public class UserManageService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        Page<User> page = userRepository.findAll(pageable);
-        return page.getContent().stream().map(UserDtoMapper::toUserManageDto).collect(Collectors.toList());
+        Page<User> page = userRepository.findAll(Objects.requireNonNull(pageable));
+        return page.getContent().stream()
+                .map(node -> Objects.requireNonNull(UserDtoMapper.toUserManageDto(Objects.requireNonNull(node))))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -53,8 +56,8 @@ public class UserManageService {
      * 사용자 상세 조회
      */
     public UserManageDto selectUser(String userId) {
-        return userRepository.findById(userId)
-                .map(UserDtoMapper::toUserManageDto)
+        return userRepository.findById(Objects.requireNonNull(userId))
+                .map(node -> Objects.requireNonNull(UserDtoMapper.toUserManageDto(Objects.requireNonNull(node))))
                 .orElse(null);
     }
 
@@ -62,8 +65,8 @@ public class UserManageService {
      * 사용자 상세 조회 (G-ID/ESNTL_ID 기준)
      */
     public UserManageDto selectUserByEsntlId(String esntlId) {
-        return userRepository.findByEsntlId(esntlId)
-                .map(UserDtoMapper::toUserManageDto)
+        return userRepository.findByEsntlId(Objects.requireNonNull(esntlId))
+                .map(node -> Objects.requireNonNull(UserDtoMapper.toUserManageDto(Objects.requireNonNull(node))))
                 .orElse(null);
     }
 
@@ -77,10 +80,10 @@ public class UserManageService {
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         User entity = User.builder()
-                .userId(dto.getUserId())
+                .userId(Objects.requireNonNull(dto.getUserId()))
                 .esntlId(esntlId)
-                .userNm(dto.getUserNm())
-                .password(encodedPassword)
+                .userNm(Objects.requireNonNull(dto.getUserNm()))
+                .password(Objects.requireNonNull(encodedPassword))
                 .passwordHint(dto.getPasswordHint())
                 .passwordCnsr(dto.getPasswordCnsr())
                 .emplNo(dto.getEmplNo())
@@ -100,7 +103,7 @@ public class UserManageService {
                 .insttCode(dto.getInsttCode())
                 .role(Role.USER)
                 .build();
-        userRepository.save(entity);
+        userRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -108,7 +111,7 @@ public class UserManageService {
      */
     @Transactional
     public void updateUser(UserManageDto dto) {
-        User entity = userRepository.findById(dto.getUserId())
+        User entity = userRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .orElseThrow(() -> new RuntimeException("User not found: " + dto.getUserId()));
         entity.update(
                 dto.getUserNm(), dto.getPasswordHint(), dto.getPasswordCnsr(),
@@ -125,7 +128,7 @@ public class UserManageService {
      */
     @Transactional
     public void deleteUser(String userId) {
-        userRepository.deleteById(userId);
+        userRepository.deleteById(Objects.requireNonNull(userId));
     }
 
     /**
@@ -133,14 +136,14 @@ public class UserManageService {
      */
     @Transactional
     public void deleteUserList(List<String> userIds) {
-        userRepository.deleteAllByIdInBatch(userIds);
+        userRepository.deleteAllByIdInBatch(Objects.requireNonNull(userIds));
     }
 
     /**
      * 아이디 중복 확인
      */
     public int checkIdDplct(String userId) {
-        return userRepository.existsById(userId) ? 1 : 0;
+        return userRepository.existsById(Objects.requireNonNull(userId)) ? 1 : 0;
     }
 
     /**
@@ -148,7 +151,7 @@ public class UserManageService {
      */
     @Transactional
     public void updatePassword(String userId, String newPassword) {
-        User entity = userRepository.findById(userId)
+        User entity = userRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         String encodedPassword = passwordEncoder.encode(newPassword);
         entity.updatePassword(encodedPassword);

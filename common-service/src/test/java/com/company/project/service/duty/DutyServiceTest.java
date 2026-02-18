@@ -47,7 +47,8 @@ class DutyServiceTest {
                                 .build();
 
                 Pageable pageable = PageRequest.of(0, 10);
-                Page<BndtManage> dutyPage = new PageImpl<>(Collections.singletonList(duty), pageable, 1);
+                Page<BndtManage> dutyPage = new PageImpl<>(
+                                java.util.Objects.requireNonNull(Collections.singletonList(duty)), pageable, 1);
 
                 given(bndtManageRepository.findByBndtDeStartingWith(anyString(), any(Pageable.class)))
                                 .willReturn(dutyPage);

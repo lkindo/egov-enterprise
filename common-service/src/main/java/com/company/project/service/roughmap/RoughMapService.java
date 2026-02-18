@@ -5,6 +5,7 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.roughmap.RoughMap;
 import com.company.project.domain.roughmap.RoughMapRepository;
 import com.company.project.service.roughmap.dto.RoughMapDto;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class RoughMapService implements EgovRoughMapService {
 
     @Override
     public Page<RoughMapDto> getRoughMapList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return roughMapRepository.findAll(pageable).map(RoughMapDto::from);
         }
@@ -31,7 +33,7 @@ public class RoughMapService implements EgovRoughMapService {
 
     @Override
     public RoughMapDto getRoughMap(String roughMapId) {
-        return roughMapRepository.findById(roughMapId)
+        return roughMapRepository.findById(Objects.requireNonNull(roughMapId))
                 .map(RoughMapDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -51,13 +53,13 @@ public class RoughMapService implements EgovRoughMapService {
                 .infoWindow(dto.getInfoWindow())
                 .zoomLevel(dto.getZoomLevel())
                 .build();
-        roughMapRepository.save(entity);
+        roughMapRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateRoughMap(RoughMapDto dto) {
-        RoughMap entity = roughMapRepository.findById(dto.getRoughMapId())
+        RoughMap entity = roughMapRepository.findById(Objects.requireNonNull(dto.getRoughMapId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRoughMapSj(), dto.getRoughMapAddress(), dto.getLa(), dto.getLo(),
                 dto.getMarkerLa(), dto.getMarkerLo(), dto.getInfoWindow(), dto.getZoomLevel());
@@ -66,6 +68,6 @@ public class RoughMapService implements EgovRoughMapService {
     @Override
     @Transactional
     public void deleteRoughMap(String roughMapId) {
-        roughMapRepository.deleteById(roughMapId);
+        roughMapRepository.deleteById(Objects.requireNonNull(roughMapId));
     }
 }

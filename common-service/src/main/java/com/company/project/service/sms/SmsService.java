@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ public class SmsService implements EgovSmsService {
 
     @Override
     public SmsDto getSms(String smsId) {
-        return smsRepository.findById(smsId)
+        return smsRepository.findById(Objects.requireNonNull(smsId))
                 .map(SmsDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -54,7 +55,7 @@ public class SmsService implements EgovSmsService {
                 .trnsmitCn(dto.getTrnsmitCn())
                 .build();
 
-        smsRepository.save(sms);
+        smsRepository.save(Objects.requireNonNull(sms));
 
         if (dto.getRecipients() != null) {
             for (SmsRecptnDto recptnDto : dto.getRecipients()) {
@@ -63,7 +64,7 @@ public class SmsService implements EgovSmsService {
                         .recptnTelno(recptnDto.getRecptnTelno())
                         .resultCode("P") // Pending
                         .build();
-                smsRecptnRepository.save(recptn);
+                smsRecptnRepository.save(Objects.requireNonNull(recptn));
 
                 // 실제 SMS 발송 처리 (비동기 처리 고려 가능)
                 try {

@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,10 +22,12 @@ public class WikiBookmarkService implements EgovWikiBookmarkService {
 
     @Override
     public Page<WikiBookmarkDto> getWikiBookmarkList(String userId, String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return wikiBookmarkRepository.findByUserId(userId, pageable).map(WikiBookmarkDto::from);
         }
-        return wikiBookmarkRepository.findByUserIdAndWikiBkmkNmContaining(userId, keyword, pageable).map(WikiBookmarkDto::from);
+        return wikiBookmarkRepository.findByUserIdAndWikiBkmkNmContaining(userId, keyword, pageable)
+                .map(WikiBookmarkDto::from);
     }
 
     @Override
@@ -39,13 +43,13 @@ public class WikiBookmarkService implements EgovWikiBookmarkService {
                 .userId(userId)
                 .wikiBkmkNm(wikiBkmkNm)
                 .build();
-        wikiBookmarkRepository.save(entity);
+        wikiBookmarkRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void deleteWikiBookmark(String wikiBkmkId) {
-        wikiBookmarkRepository.deleteById(wikiBkmkId);
+        wikiBookmarkRepository.deleteById(Objects.requireNonNull(wikiBkmkId));
     }
 
     @Override

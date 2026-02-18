@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.List;
 
@@ -30,17 +31,17 @@ public class TmplatInfoService extends EgovAbstractServiceImpl {
     }
 
     public TmplatInfo selectTmplatInfoDetail(String tmplatId) {
-        return tmplatInfoRepository.findById(tmplatId)
+        return tmplatInfoRepository.findById(Objects.requireNonNull(tmplatId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
     public void insertTmplatInfo(TmplatInfo tmplatInfo) {
-        tmplatInfoRepository.save(tmplatInfo);
+        tmplatInfoRepository.save(Objects.requireNonNull(tmplatInfo));
     }
 
     @Transactional
     public void deleteTmplatInfo(String tmplatId) {
-        tmplatInfoRepository.deleteById(tmplatId);
+        tmplatInfoRepository.deleteById(Objects.requireNonNull(tmplatId));
     }
 }

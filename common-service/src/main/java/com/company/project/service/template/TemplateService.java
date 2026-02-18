@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public class TemplateService implements EgovTemplateService {
 
     @Override
     public Page<TemplateDto> getTemplateList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return templateRepository.findAll(pageable).map(TemplateDto::from);
         }
@@ -43,7 +45,7 @@ public class TemplateService implements EgovTemplateService {
 
     @Override
     public TemplateDto getTemplate(String tmplatId) {
-        Template template = templateRepository.findById(tmplatId)
+        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return TemplateDto.from(template);
     }
@@ -62,14 +64,14 @@ public class TemplateService implements EgovTemplateService {
                 .frstRegisterId(userId)
                 .build();
 
-        templateRepository.save(template);
+        templateRepository.save(Objects.requireNonNull(template));
         return tmplatId;
     }
 
     @Override
     @Transactional
     public void updateTemplate(String tmplatId, String userId, TemplateDto dto) {
-        Template template = templateRepository.findById(tmplatId)
+        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         template.update(dto.getTmplatNm(), dto.getTmplatCours(), dto.getTmplatSeCode(),
@@ -79,9 +81,9 @@ public class TemplateService implements EgovTemplateService {
     @Override
     @Transactional
     public void deleteTemplate(String tmplatId) {
-        Template template = templateRepository.findById(tmplatId)
+        Template template = templateRepository.findById(Objects.requireNonNull(tmplatId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        templateRepository.delete(template);
+        templateRepository.delete(Objects.requireNonNull(template));
     }
 
     @Override

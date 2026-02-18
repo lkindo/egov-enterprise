@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.util.UUID;
 
@@ -29,7 +30,7 @@ public class MberManageServiceImpl implements EgovMberManageService {
 
     @Override
     public GeneralUserDto getMber(String esntlId) {
-        return generalUserRepository.findById(esntlId)
+        return generalUserRepository.findById(Objects.requireNonNull(esntlId))
                 .map(GeneralUserDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -61,13 +62,13 @@ public class MberManageServiceImpl implements EgovMberManageService {
                 .mberEmailAdres(dto.getMberEmailAdres())
                 .middleTelno(dto.getMiddleTelno())
                 .build();
-        generalUserRepository.save(entity);
+        generalUserRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateMber(GeneralUserDto dto) {
-        GeneralUser entity = generalUserRepository.findById(dto.getEsntlId())
+        GeneralUser entity = generalUserRepository.findById(Objects.requireNonNull(dto.getEsntlId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getMberNm(), dto.getPasswordHint(), dto.getPasswordCnsr(),
                 dto.getIhidnum(), dto.getSexdstnCode(), dto.getZip(), dto.getAdres(),
@@ -79,13 +80,13 @@ public class MberManageServiceImpl implements EgovMberManageService {
     @Override
     @Transactional
     public void deleteMber(String esntlId) {
-        generalUserRepository.deleteById(esntlId);
+        generalUserRepository.deleteById(Objects.requireNonNull(esntlId));
     }
 
     @Override
     @Transactional
     public void updatePassword(String esntlId, String password) {
-        GeneralUser entity = generalUserRepository.findById(esntlId)
+        GeneralUser entity = generalUserRepository.findById(Objects.requireNonNull(esntlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updatePassword(passwordEncoder.encode(password));
     }

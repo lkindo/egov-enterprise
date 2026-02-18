@@ -53,7 +53,7 @@ class ScheduleServiceTest {
                 .detailAdres("Gangnam")
                 .build();
 
-        Page<User> userPage = new PageImpl<>(Collections.singletonList(user));
+        Page<User> userPage = new PageImpl<>(java.util.Objects.requireNonNull(Collections.singletonList(user)));
 
         when(userRepository.searchUsers(eq(null), eq("USER_NM"), eq("John"), any(Pageable.class)))
                 .thenReturn(userPage);

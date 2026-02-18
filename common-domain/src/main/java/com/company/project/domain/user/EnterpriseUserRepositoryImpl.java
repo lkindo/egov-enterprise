@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.user.QEnterpriseUser.enterpriseUser;
 
@@ -38,7 +39,7 @@ public class EnterpriseUserRepositoryImpl implements EnterpriseUserRepositoryCus
                         conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression statusEq(String sbscrbSttus) {

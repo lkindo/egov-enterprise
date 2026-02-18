@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -50,7 +51,8 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public NtwrkSvcMntrngDto getNtwrkSvcMntrng(String sysIp, Integer sysPort) {
-        NtwrkSvcMntrng entity = ntwrkSvcMntrngRepository.findById(new NtwrkSvcMntrngId(sysIp, sysPort))
+        NtwrkSvcMntrng entity = ntwrkSvcMntrngRepository
+                .findById(new NtwrkSvcMntrngId(Objects.requireNonNull(sysIp), Objects.requireNonNull(sysPort)))
                 .orElseThrow(() -> new RuntimeException("Network service monitor not found"));
         return NtwrkSvcMntrngDto.from(entity);
     }
@@ -69,13 +71,14 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        ntwrkSvcMntrngRepository.save(entity);
+        ntwrkSvcMntrngRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateNtwrkSvcMntrng(NtwrkSvcMntrngDto dto) {
         NtwrkSvcMntrng entity = ntwrkSvcMntrngRepository
-                .findById(new NtwrkSvcMntrngId(dto.getSysIp(), dto.getSysPort()))
+                .findById(new NtwrkSvcMntrngId(Objects.requireNonNull(dto.getSysIp()),
+                        Objects.requireNonNull(dto.getSysPort())))
                 .orElseThrow(() -> new RuntimeException("Network service monitor not found"));
 
         entity.setSysNm(dto.getSysNm());
@@ -87,7 +90,8 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteNtwrkSvcMntrng(String sysIp, Integer sysPort) {
-        ntwrkSvcMntrngRepository.deleteById(new NtwrkSvcMntrngId(sysIp, sysPort));
+        ntwrkSvcMntrngRepository
+                .deleteById(new NtwrkSvcMntrngId(Objects.requireNonNull(sysIp), Objects.requireNonNull(sysPort)));
     }
 
     @Transactional
@@ -126,6 +130,6 @@ public class NtwrkSvcMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
 
-        ntwrkSvcMntrngLogRepository.save(log);
+        ntwrkSvcMntrngLogRepository.save(Objects.requireNonNull(log));
     }
 }

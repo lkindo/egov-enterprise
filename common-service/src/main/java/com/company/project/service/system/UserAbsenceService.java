@@ -23,6 +23,7 @@ public class UserAbsenceService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<UserAbsenceDto> getUserAbsenceList(String userNm, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return userAbsenceRepository.findAll(pageable)
                 .map(UserAbsenceDto::from);
     }
@@ -36,7 +37,7 @@ public class UserAbsenceService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void saveUserAbsence(UserAbsenceDto dto) {
-        UserAbsence entity = userAbsenceRepository.findById(dto.getUserId())
+        UserAbsence entity = userAbsenceRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .orElse(UserAbsence.builder()
                         .userId(dto.getUserId())
                         .build());

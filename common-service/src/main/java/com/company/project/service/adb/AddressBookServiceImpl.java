@@ -34,7 +34,8 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Override
     public Page<AddressBookDto> getAddressBookList(String wrterId, String trgetOrgnztId, String searchCnd,
             String searchWrd, @NonNull Pageable pageable) {
-        return addressBookRepository.searchAddressBooks(wrterId, trgetOrgnztId, searchCnd, searchWrd, pageable)
+        return addressBookRepository
+                .searchAddressBooks(wrterId, trgetOrgnztId, searchCnd, searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
@@ -154,7 +155,7 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     @Override
     public Page<AddressBookUserDto> searchUsers(String searchWrd, @NonNull Pageable pageable) {
-        return addressBookRepository.searchAddressBookUsers(searchWrd, pageable)
+        return addressBookRepository.searchAddressBookUsers(searchWrd, Objects.requireNonNull(pageable))
                 .map(res -> AddressBookUserDto.builder()
                         .emplyrId(res.getEmplyrId())
                         .nm(res.getNm())

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,7 +49,7 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public FileSysMntrngDto getFileSysMntrng(String fileSysId) {
-        FileSysMntrng entity = fileSysMntrngRepository.findById(fileSysId)
+        FileSysMntrng entity = fileSysMntrngRepository.findById(Objects.requireNonNull(fileSysId))
                 .orElseThrow(() -> new RuntimeException("File system monitor not found"));
         return FileSysMntrngDto.from(entity);
     }
@@ -70,12 +71,12 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        fileSysMntrngRepository.save(entity);
+        fileSysMntrngRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateFileSysMntrng(FileSysMntrngDto dto) {
-        FileSysMntrng entity = fileSysMntrngRepository.findById(dto.getFileSysId())
+        FileSysMntrng entity = fileSysMntrngRepository.findById(Objects.requireNonNull(dto.getFileSysId()))
                 .orElseThrow(() -> new RuntimeException("File system monitor not found"));
 
         entity.setFileSysNm(dto.getFileSysNm());
@@ -90,12 +91,12 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteFileSysMntrng(String fileSysId) {
-        fileSysMntrngRepository.deleteById(fileSysId);
+        fileSysMntrngRepository.deleteById(Objects.requireNonNull(fileSysId));
     }
 
     @Transactional
     public void checkAndRecordFileSysStatus(String fileSysId, String userId) throws Exception {
-        FileSysMntrng entity = fileSysMntrngRepository.findById(fileSysId)
+        FileSysMntrng entity = fileSysMntrngRepository.findById(Objects.requireNonNull(fileSysId))
                 .orElseThrow(() -> new RuntimeException("File system monitor not found"));
 
         File file = new File(entity.getFileSysNm());
@@ -133,6 +134,6 @@ public class FileSysMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
 
-        fileSysMntrngLogRepository.save(log);
+        fileSysMntrngLogRepository.save(Objects.requireNonNull(log));
     }
 }

@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,13 +32,13 @@ public class WorkReportService implements EgovWorkReportService {
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
-        workReportRepository.save(report);
+        workReportRepository.save(Objects.requireNonNull(report));
     }
 
     @Override
     @Transactional
     public void updateWorkReport(WorkReportDto dto) {
-        workReportRepository.findById(dto.getReportId())
+        workReportRepository.findById(Objects.requireNonNull(dto.getReportId()))
                 .ifPresent(r -> r.update(
                         dto.getReportSubject(),
                         dto.getReportContent(),
@@ -49,13 +51,13 @@ public class WorkReportService implements EgovWorkReportService {
     @Override
     @Transactional
     public void deleteWorkReport(String reportId) {
-        workReportRepository.deleteById(reportId);
+        workReportRepository.deleteById(Objects.requireNonNull(reportId));
     }
 
     @Override
     public WorkReportDto getWorkReport(String reportId) {
-        return workReportRepository.findById(reportId)
-                .map(r -> WorkReportDto.builder()
+        return workReportRepository.findById(Objects.requireNonNull(reportId))
+                .map(r -> Objects.requireNonNull(WorkReportDto.builder()
                         .reportId(r.getReportId())
                         .reportSubject(r.getReportSubject())
                         .reportContent(r.getReportContent())
@@ -63,18 +65,19 @@ public class WorkReportService implements EgovWorkReportService {
                         .reportDate(r.getReportDate())
                         .writerId(r.getWriterId())
                         .reportStatus(r.getReportStatus())
-                        .build())
+                        .build()))
                 .orElse(null);
     }
 
     @Override
     public Page<WorkReportDto> getWorkReportList(String writerId, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return workReportRepository.findAll(pageable)
-                .map(r -> WorkReportDto.builder()
+                .map(r -> Objects.requireNonNull(WorkReportDto.builder()
                         .reportId(r.getReportId())
                         .reportSubject(r.getReportSubject())
                         .reportDate(r.getReportDate())
                         .reportStatus(r.getReportStatus())
-                        .build());
+                        .build()));
     }
 }

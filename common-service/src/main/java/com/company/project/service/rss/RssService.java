@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,9 +34,9 @@ public class RssService implements EgovRssService {
         @Override
         public RssDto getRss(String rssId) {
                 // Try finding in RssInfo (NRSS) first, then fallback to RssTag (NRSSTAG)
-                return rssRepository.findById(rssId)
+                return rssRepository.findById(Objects.requireNonNull(rssId))
                                 .map(RssDto::from)
-                                .orElseGet(() -> rssTagRepository.findById(rssId)
+                                .orElseGet(() -> rssTagRepository.findById(Objects.requireNonNull(rssId))
                                                 .map(RssDto::from)
                                                 .orElseThrow(() -> new BusinessException(
                                                                 ErrorCode.RESOURCE_NOT_FOUND)));
@@ -63,7 +64,7 @@ public class RssService implements EgovRssService {
                                 .bdtTag(dto.getBdtTag())
                                 .bdtEtcTag(dto.getBdtEtcTag())
                                 .build();
-                rssRepository.save(rss);
+                rssRepository.save(Objects.requireNonNull(rss));
 
                 // Also save to RssTag (NRSSTAG) for legacy compatibility
                 RssTag rssTag = RssTag.builder()
@@ -77,13 +78,13 @@ public class RssService implements EgovRssService {
                                 .linkTag(dto.getBdtLink())
                                 .descriptionTag(dto.getBdtDc())
                                 .build();
-                rssTagRepository.save(rssTag);
+                rssTagRepository.save(Objects.requireNonNull(rssTag));
         }
 
         @Override
         @Transactional
         public void updateRss(RssDto dto) {
-                Rss rss = rssRepository.findById(dto.getRssId())
+                Rss rss = rssRepository.findById(Objects.requireNonNull(dto.getRssId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
                 rss.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(), dto.getTrgetSvcListCo(),
                                 dto.getHderTitle(), dto.getHderLink(), dto.getHderDc(), dto.getHderTag(),
@@ -91,7 +92,7 @@ public class RssService implements EgovRssService {
                                 dto.getBdtTitle(), dto.getBdtLink(), dto.getBdtDc(), dto.getBdtTag(),
                                 dto.getBdtEtcTag());
 
-                rssTagRepository.findById(dto.getRssId())
+                rssTagRepository.findById(Objects.requireNonNull(dto.getRssId()))
                                 .ifPresent(tag -> tag.update(dto.getTrgetSvcNm(), dto.getTrgetSvcTable(),
                                                 dto.getTrgetSvcListCo(),
                                                 dto.getHderTag(), dto.getBdtTag(), dto.getBdtTitle(), dto.getBdtLink(),
@@ -101,7 +102,7 @@ public class RssService implements EgovRssService {
         @Override
         @Transactional
         public void deleteRss(String rssId) {
-                rssRepository.deleteById(rssId);
-                rssTagRepository.deleteById(rssId);
+                rssRepository.deleteById(Objects.requireNonNull(rssId));
+                rssTagRepository.deleteById(Objects.requireNonNull(rssId));
         }
 }

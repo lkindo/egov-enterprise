@@ -92,7 +92,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthors(@NonNull String[] authorCodes) {
-        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(authorCodes)));
+        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(authorCodes))));
     }
 
     private AuthorManageDto toDto(@NonNull Authority entity) {

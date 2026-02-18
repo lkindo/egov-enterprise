@@ -12,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,7 @@ public class NotificationService implements EgovNotificationService {
 
     @Override
     public NotificationDto getNotification(String ntfcNo) {
-        return notificationRepository.findById(ntfcNo)
+        return notificationRepository.findById(Objects.requireNonNull(ntfcNo))
                 .map(NotificationDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -48,12 +49,13 @@ public class NotificationService implements EgovNotificationService {
                 .linkUrl(dto.getUniqId()) // Assuming linkUrl mapping
                 .build();
         entity.setFrstRegisterId(userId);
-        notificationRepository.save(entity);
+        notificationRepository.save(Objects.requireNonNull(entity));
 
         // Send Real-time notification via WebSocket
-        messagingTemplate.convertAndSend("/topic/public", NotificationDto.from(entity));
+        messagingTemplate.convertAndSend("/topic/public", Objects.requireNonNull(NotificationDto.from(entity)));
         if (userId != null) {
-            messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", NotificationDto.from(entity));
+            messagingTemplate.convertAndSendToUser(userId, "/queue/notifications",
+                    Objects.requireNonNull(NotificationDto.from(entity)));
         }
 
         return id;
@@ -62,7 +64,7 @@ public class NotificationService implements EgovNotificationService {
     @Override
     @Transactional
     public void updateNotification(String ntfcNo, String userId, NotificationDto dto) {
-        Notification entity = notificationRepository.findById(ntfcNo)
+        Notification entity = notificationRepository.findById(Objects.requireNonNull(ntfcNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcTime(), dto.getBhNtfcIntrvl());
     }
@@ -70,7 +72,7 @@ public class NotificationService implements EgovNotificationService {
     @Override
     @Transactional
     public void deleteNotification(String ntfcNo) {
-        notificationRepository.deleteById(ntfcNo);
+        notificationRepository.deleteById(Objects.requireNonNull(ntfcNo));
     }
 
     @Override

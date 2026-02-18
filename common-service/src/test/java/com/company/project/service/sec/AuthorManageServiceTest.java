@@ -58,10 +58,11 @@ class AuthorManageServiceTest {
         when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(role));
 
         // When
-        authorManageService.updateRole(dto);
+        authorManageService.updateRole(java.util.Objects.requireNonNull(dto));
 
         // Then
-        // Since update method modifies the object state in place, we can verify the object state
+        // Since update method modifies the object state in place, we can verify the
+        // object state
         assertEquals("Updated Name", role.getRoleNm());
         assertEquals("Updated Pattern", role.getRolePttrn());
         assertEquals("Updated Desc", role.getRoleDc());

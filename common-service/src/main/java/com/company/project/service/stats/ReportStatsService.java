@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 보고서통계 및 자료이용현황통계 JPA 서비스
@@ -89,7 +90,7 @@ public class ReportStatsService {
                 .lastUpdusrId(reprtStats.getFrstRegisterId())
                 .lastUpdtPnttm(java.time.LocalDateTime.now())
                 .build();
-        reprtStatsRepository.save(newStats);
+        reprtStatsRepository.save(Objects.requireNonNull(newStats));
     }
 
     // ========== 자료이용현황 통계 ==========

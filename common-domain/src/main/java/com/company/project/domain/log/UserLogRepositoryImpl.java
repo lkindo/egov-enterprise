@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
@@ -53,7 +54,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         List<UserLog> content = query.getResultList();
         Long total = ((Number) countQuery.getSingleResult()).longValue();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     @Override

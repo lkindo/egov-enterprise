@@ -52,7 +52,7 @@ public class BatchSchdulServiceBenchmarkTest {
                 .batchOpertNm("Test Job")
                 .batchProgrm("Test Program")
                 .build();
-        batchOpertRepository.save(job);
+        batchOpertRepository.save(java.util.Objects.requireNonNull(job));
 
         List<BatchSchdul> schduls = new ArrayList<>();
 
@@ -74,7 +74,7 @@ public class BatchSchdulServiceBenchmarkTest {
             schduls.add(schdul);
         }
 
-        batchSchdulRepository.saveAll(schduls);
+        batchSchdulRepository.saveAll(java.util.Objects.requireNonNull(schduls));
         batchSchdulRepository.flush();
 
         Pageable pageable = PageRequest.of(0, count);

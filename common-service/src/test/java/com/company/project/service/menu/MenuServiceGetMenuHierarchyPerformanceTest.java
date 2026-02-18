@@ -35,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 @Import(MenuService.class)
 @TestPropertySource(properties = {
-    "spring.main.allow-bean-definition-overriding=true",
-    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.main.allow-bean-definition-overriding=true",
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
 })
 public class MenuServiceGetMenuHierarchyPerformanceTest {
 
@@ -98,12 +98,14 @@ public class MenuServiceGetMenuHierarchyPerformanceTest {
             // Create 10 Children for each Root
             for (int j = 0; j < 10; j++) {
                 long childId = idCounter++;
-                menus.add(createMenu(childId, "Child" + i + "_" + j, "program_" + ((i * 10 + j) % 500) + ".do", rootId));
+                menus.add(
+                        createMenu(childId, "Child" + i + "_" + j, "program_" + ((i * 10 + j) % 500) + ".do", rootId));
 
                 // Create 5 GrandChildren for each Child
                 for (int k = 0; k < 5; k++) {
                     long grandChildId = idCounter++;
-                    menus.add(createMenu(grandChildId, "GrandChild" + i + "_" + j + "_" + k, "program_" + ((i * 100 + j * 10 + k) % 500) + ".do", childId));
+                    menus.add(createMenu(grandChildId, "GrandChild" + i + "_" + j + "_" + k,
+                            "program_" + ((i * 100 + j * 10 + k) % 500) + ".do", childId));
                 }
             }
         }
@@ -146,7 +148,8 @@ public class MenuServiceGetMenuHierarchyPerformanceTest {
 
         // Verify structure (Correctness check)
         // Root0 (ID 1) should be present
-        MenuDto root0 = lastHierarchy.stream()
+        List<MenuDto> finalHierarchy = java.util.Objects.requireNonNull(lastHierarchy);
+        MenuDto root0 = finalHierarchy.stream()
                 .filter(m -> m.getMenuNm().equals("Root0"))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Root0 not found"));

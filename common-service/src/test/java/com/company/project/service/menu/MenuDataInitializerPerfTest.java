@@ -64,10 +64,12 @@ class MenuDataInitializerPerfTest {
     @Test
     void benchmarkRun() throws Exception {
         lenient().when(menuRepository.count()).thenReturn(0L);
-        lenient().when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(0);
+        lenient().when(jdbcTemplate.queryForObject(java.util.Objects.requireNonNull(anyString()),
+                eq(java.util.Objects.requireNonNull(Integer.class)))).thenReturn(0);
 
         // Mock execute to simulate DB work (fast)
-        lenient().doAnswer(invocation -> null).when(jdbcTemplate).execute(anyString());
+        lenient().doAnswer(invocation -> null).when(jdbcTemplate)
+                .execute(java.util.Objects.requireNonNull(anyString()));
 
         long start = System.nanoTime();
         initializer.run();
@@ -76,6 +78,6 @@ class MenuDataInitializerPerfTest {
         System.out.println("Execution Time: " + (end - start) / 1_000_000.0 + " ms");
 
         // Verify that all lines were executed
-        verify(jdbcTemplate, times(200000)).execute(anyString());
+        verify(jdbcTemplate, times(200000)).execute(java.util.Objects.requireNonNull(anyString()));
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,12 +29,13 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public Page<MeetingPlaceDto> getMeetingPlaceList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return meetingPlaceRepository.searchMeetingPlaces(keyword, pageable).map(MeetingPlaceDto::from);
     }
 
     @Override
     public MeetingPlaceDto getMeetingPlace(String mtgPlaceId) {
-        return meetingPlaceRepository.findById(mtgPlaceId)
+        return meetingPlaceRepository.findById(Objects.requireNonNull(mtgPlaceId))
                 .map(MeetingPlaceDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -52,7 +55,7 @@ public class MeetingServiceImpl implements MeetingService {
                     .lcDetail(dto.getLcDetail())
                     .atchFileId(dto.getAtchFileId())
                     .build();
-            meetingPlaceRepository.save(entity);
+            meetingPlaceRepository.save(Objects.requireNonNull(entity));
             return id;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate meeting place ID", e);
@@ -62,7 +65,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public void updateMeetingPlace(String mtgPlaceId, String userId, MeetingPlaceDto dto) {
-        MeetingPlace entity = meetingPlaceRepository.findById(mtgPlaceId)
+        MeetingPlace entity = meetingPlaceRepository.findById(Objects.requireNonNull(mtgPlaceId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getMtgPlaceNm(), dto.getOpnBeginTm(), dto.getOpnEndTm(),
                 dto.getAceptncPosblNmpr(), dto.getLcSe(), dto.getLcDetail(),
@@ -72,11 +75,12 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public void deleteMeetingPlace(String mtgPlaceId) {
-        meetingPlaceRepository.deleteById(mtgPlaceId);
+        meetingPlaceRepository.deleteById(Objects.requireNonNull(mtgPlaceId));
     }
 
     @Override
     public Page<MeetingReservationDto> getMeetingReservationList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         // Simple search for now, could be expanded with QueryDSL if needed
         if (keyword == null || keyword.isEmpty()) {
             return meetingReservationRepository.findAll(pageable).map(MeetingReservationDto::from);
@@ -86,7 +90,7 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public MeetingReservationDto getMeetingReservation(String resveId) {
-        return meetingReservationRepository.findById(resveId)
+        return meetingReservationRepository.findById(Objects.requireNonNull(resveId))
                 .map(MeetingReservationDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -95,7 +99,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Transactional
     public String reserveMeetingPlace(String userId, MeetingReservationDto dto) {
         // Check for conflicts before reserving
-        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(), 
+        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(),
                 dto.getResveBeginTm(), dto.getResveEndTm(), null) > 0) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE); // Or a more specific error
         }
@@ -113,7 +117,7 @@ public class MeetingServiceImpl implements MeetingService {
                     .atndncNmpr(dto.getAtndncNmpr())
                     .mtgCn(dto.getMtgCn())
                     .build();
-            meetingReservationRepository.save(entity);
+            meetingReservationRepository.save(Objects.requireNonNull(entity));
             return id;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate reservation ID", e);
@@ -123,11 +127,11 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public void updateMeetingReservation(String resveId, String userId, MeetingReservationDto dto) {
-        MeetingReservation entity = meetingReservationRepository.findById(resveId)
+        MeetingReservation entity = meetingReservationRepository.findById(Objects.requireNonNull(resveId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        
+
         // Check for conflicts excluding current reservation
-        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(), 
+        if (checkReservationConflict(dto.getMtgPlaceId(), dto.getResveDe(),
                 dto.getResveBeginTm(), dto.getResveEndTm(), resveId) > 0) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
         }
@@ -140,7 +144,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional
     public void cancelMeetingReservation(String resveId) {
-        meetingReservationRepository.deleteById(resveId);
+        meetingReservationRepository.deleteById(Objects.requireNonNull(resveId));
     }
 
     @Override

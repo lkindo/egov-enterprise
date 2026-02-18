@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 // import static com.company.project.domain.log.QSysHistory.sysHistory; // Removed static import
 
@@ -33,7 +34,7 @@ public class SysHistoryRepositoryImpl implements SysHistoryRepositoryCustom {
                 .where(searchCondition(searchCnd, searchWrd))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression searchCondition(String searchCnd, String searchWrd) {

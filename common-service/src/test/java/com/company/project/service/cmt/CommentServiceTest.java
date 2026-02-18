@@ -48,14 +48,15 @@ class CommentServiceTest {
         Comment savedComment = Comment.builder().id(1L).build();
 
         when(commentRepository.findMaxId()).thenReturn(0L);
-        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
+        when(commentRepository.save(java.util.Objects.requireNonNull(any(Comment.class))))
+                .thenReturn(java.util.Objects.requireNonNull(savedComment));
 
         // when
         Long id = commentService.createComment(userId, userNm, request);
 
         // then
         assertThat(id).isEqualTo(1L);
-        verify(commentRepository).save(any(Comment.class));
+        verify(commentRepository).save(java.util.Objects.requireNonNull(any(Comment.class)));
     }
 
     @Test
@@ -74,7 +75,7 @@ class CommentServiceTest {
                 .useAt("Y")
                 .build();
 
-        Page<Comment> page = new PageImpl<>(List.of(comment));
+        Page<Comment> page = new PageImpl<>(java.util.Objects.requireNonNull(List.of(comment)));
 
         when(commentRepository.findByBbsIdAndNttId(bbsId, nttId, pageable)).thenReturn(page);
 

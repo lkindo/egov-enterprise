@@ -6,6 +6,7 @@ import com.company.project.service.tir.dto.TwitterDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -16,7 +17,7 @@ public class TwitterService implements EgovTwitterService {
 
     @Override
     public TwitterDto getTwitterAccount(String userId) {
-        return twitterRepository.findById(userId)
+        return twitterRepository.findById(Objects.requireNonNull(userId))
                 .map(t -> TwitterDto.builder()
                         .userId(t.getUserId())
                         .cnsmrKey(t.getCnsmrKey())
@@ -35,13 +36,13 @@ public class TwitterService implements EgovTwitterService {
                 .frstRegisterId(dto.getUserId())
                 .lastUpdusrId(dto.getUserId())
                 .build();
-        twitterRepository.save(twitter);
+        twitterRepository.save(Objects.requireNonNull(twitter));
     }
 
     @Override
     @Transactional
     public void updateTwitterAccount(TwitterDto dto) {
-        twitterRepository.findById(dto.getUserId())
+        twitterRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .ifPresent(t -> {
                     // Twitter 엔티티에 update 메소드 추가 필요 시 반영
                 });
@@ -50,6 +51,6 @@ public class TwitterService implements EgovTwitterService {
     @Override
     @Transactional
     public void deleteTwitterAccount(String userId) {
-        twitterRepository.deleteById(userId);
+        twitterRepository.deleteById(Objects.requireNonNull(userId));
     }
 }

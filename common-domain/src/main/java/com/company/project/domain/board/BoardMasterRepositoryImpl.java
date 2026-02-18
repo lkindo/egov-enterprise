@@ -14,6 +14,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.company.project.domain.board.QBoardMaster.boardMaster;
@@ -92,11 +93,11 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;
 
-        return new PageImpl<>(results, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable), total);
     }
 
     @Override
-    public Optional<BoardMasterDetailResult> findBoardMasterDetail(String bbsId, String uniqId) {
+    public Optional<BoardMasterDetailResult> findBoardMasterDetail(@NonNull String bbsId, String uniqId) {
         QCommonCode commonCodeTy = new QCommonCode("commonCodeTy");
         QCommonCode commonCodeAttr = new QCommonCode("commonCodeAttr");
 

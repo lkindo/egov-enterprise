@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.util.Objects;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,8 @@ public class MenuDataInitializer implements CommandLineRunner {
     private final JdbcTemplate jdbcTemplate;
 
     // 하드코딩된 절대 경로 대신 프로젝트 내부의 템플릿 SQL 파일을 참조하도록 수정
-    private File scriptFile = new File("egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
+    private File scriptFile = new File(
+            "egovframe-template-common-components-5.0.0/script/dml/postgres/com_DML_postgres.sql");
 
     public void setScriptFile(File scriptFile) {
         this.scriptFile = scriptFile;
@@ -114,7 +116,7 @@ public class MenuDataInitializer implements CommandLineRunner {
         for (String stmt : stmts) {
             if (!stmt.trim().isEmpty()) {
                 try {
-                    jdbcTemplate.execute(stmt.trim());
+                    jdbcTemplate.execute(Objects.requireNonNull(stmt.trim()));
                     count.incrementAndGet();
                 } catch (Exception e) {
                     log.error("Error executing SQL statement: {}", stmt.trim(), e);

@@ -1,6 +1,5 @@
 package com.company.project.service.stats;
 
-import com.company.project.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -20,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RealTimeDashboardService {
 
     private final SimpMessageSendingOperations messagingTemplate;
-    private final UserRepository userRepository;
 
     // 실시간 접속자 수 (임시 - 실제로는 Redis 등을 활용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);

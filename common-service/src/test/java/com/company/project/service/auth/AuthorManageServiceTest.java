@@ -45,7 +45,7 @@ class AuthorManageServiceTest {
         }
         authorityRepository.saveAll(authorities);
 
-        String[] codesToDelete = {"AUTH_0", "AUTH_1", "AUTH_2"};
+        String[] codesToDelete = { "AUTH_0", "AUTH_1", "AUTH_2" };
 
         // when
         authorManageService.deleteAuthors(codesToDelete);
@@ -62,10 +62,10 @@ class AuthorManageServiceTest {
     void deleteAuthors_shouldHandleEmptyArray() {
         // given
         Authority auth = Authority.builder().authorCode("AUTH_X").authorNm("X").build();
-        authorityRepository.save(auth);
+        authorityRepository.save(java.util.Objects.requireNonNull(auth));
 
         // when
-        authorManageService.deleteAuthors(new String[]{});
+        authorManageService.deleteAuthors(new String[] {});
 
         // then
         assertThat(authorityRepository.existsById("AUTH_X")).isTrue();

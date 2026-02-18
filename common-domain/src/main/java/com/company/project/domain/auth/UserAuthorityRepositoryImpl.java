@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.auth.QUserAuthority.userAuthority;
 import static com.company.project.domain.user.QDeptManage.deptManage;
@@ -50,7 +51,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                 .where(deptManage.orgnztId.eq(deptCode))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

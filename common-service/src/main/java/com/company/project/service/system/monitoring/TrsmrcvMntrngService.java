@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,7 +48,7 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public TrsmrcvMntrngDto getTrsmrcvMntrng(String cntcId) {
-        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(cntcId)
+        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(Objects.requireNonNull(cntcId))
                 .orElseThrow(() -> new RuntimeException("Transmission monitoring not found"));
         return TrsmrcvMntrngDto.from(entity);
     }
@@ -66,12 +67,12 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        trsmrcvMntrngRepository.save(entity);
+        trsmrcvMntrngRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateTrsmrcvMntrng(TrsmrcvMntrngDto dto) {
-        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(dto.getCntcId())
+        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(Objects.requireNonNull(dto.getCntcId()))
                 .orElseThrow(() -> new RuntimeException("Transmission monitoring not found"));
 
         entity.setTestClassNm(dto.getTestClassNm());
@@ -83,12 +84,12 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteTrsmrcvMntrng(String cntcId) {
-        trsmrcvMntrngRepository.deleteById(cntcId);
+        trsmrcvMntrngRepository.deleteById(Objects.requireNonNull(cntcId));
     }
 
     @Transactional
     public void checkAndRecordTrsmrcvStatus(String cntcId, String userId) throws Exception {
-        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(cntcId)
+        TrsmrcvMntrng entity = trsmrcvMntrngRepository.findById(Objects.requireNonNull(cntcId))
                 .orElseThrow(() -> new RuntimeException("Transmission monitoring not found"));
 
         String sttus = "02"; // Abnormal
@@ -124,6 +125,6 @@ public class TrsmrcvMntrngService extends EgovAbstractServiceImpl {
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
 
-        trsmrcvMntrngLogRepository.save(log);
+        trsmrcvMntrngLogRepository.save(Objects.requireNonNull(log));
     }
 }

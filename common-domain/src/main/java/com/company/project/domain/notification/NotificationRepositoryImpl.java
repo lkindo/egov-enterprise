@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.notification.QNotification.notification;
 
@@ -36,12 +37,11 @@ public class NotificationRepositoryImpl implements NotificationRepositoryCustom 
                 .where(keywordContains(keyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     private BooleanExpression keywordContains(String keyword) {
-        return StringUtils.hasText(keyword) ? 
-                notification.ntfcSj.containsIgnoreCase(keyword)
+        return StringUtils.hasText(keyword) ? notification.ntfcSj.containsIgnoreCase(keyword)
                 .or(notification.ntfcCn.containsIgnoreCase(keyword)) : null;
     }
 }

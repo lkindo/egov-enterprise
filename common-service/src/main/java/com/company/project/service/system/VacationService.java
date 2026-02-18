@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service("systemVacationService")
 @RequiredArgsConstructor
@@ -19,12 +20,15 @@ public class VacationService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<VacationDto> getVacationList(String applcntId, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         return vacationRepository.findByApplcntId(applcntId == null ? "" : applcntId, pageable).map(VacationDto::from);
     }
 
     @Transactional(readOnly = true)
     public VacationDto getVacation(String applcntId, String vcatnSe, String bgnde) {
-        Vacation entity = vacationRepository.findById(new VacationId(applcntId, vcatnSe, bgnde))
+        VacationId id = new VacationId(Objects.requireNonNull(applcntId), Objects.requireNonNull(vcatnSe),
+                Objects.requireNonNull(bgnde));
+        Vacation entity = vacationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vacation record not found"));
         return VacationDto.from(entity);
     }
@@ -42,7 +46,7 @@ public class VacationService extends EgovAbstractServiceImpl {
                 .noonSe(dto.getNoonSe())
                 .confmAt("N")
                 .build();
-        vacationRepository.save(entity);
+        vacationRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
@@ -58,7 +62,9 @@ public class VacationService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteVacation(String applcntId, String vcatnSe, String bgnde) {
-        vacationRepository.deleteById(new VacationId(applcntId, vcatnSe, bgnde));
+        VacationId id = new VacationId(Objects.requireNonNull(applcntId), Objects.requireNonNull(vcatnSe),
+                Objects.requireNonNull(bgnde));
+        vacationRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
@@ -79,6 +85,6 @@ public class VacationService extends EgovAbstractServiceImpl {
         entity.setUseYrycCo(dto.getUseYrycCo());
         entity.setRemndrYrycCo(dto.getRemndrYrycCo());
 
-        annualLeaveRepository.save(entity);
+        annualLeaveRepository.save(Objects.requireNonNull(entity));
     }
 }

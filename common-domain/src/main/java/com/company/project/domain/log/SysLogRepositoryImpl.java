@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
@@ -48,7 +49,8 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
                         processSeCodeNmLike(searchWrd, commonCode),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
 
-        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+        return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                countQuery::fetchOne);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.company.project.domain.backup.QBackupOpert.backupOpert;
@@ -46,7 +47,7 @@ public class BackupOpertRepositoryImpl implements BackupOpertRepositoryCustom {
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
 
     @Override

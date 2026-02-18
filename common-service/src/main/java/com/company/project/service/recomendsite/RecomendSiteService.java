@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,7 +28,7 @@ public class RecomendSiteService implements EgovRecomendSiteService {
 
     @Override
     public RecomendSiteDto getRecomendSite(String recomendSiteId) {
-        return recomendSiteRepository.findById(recomendSiteId)
+        return recomendSiteRepository.findById(Objects.requireNonNull(recomendSiteId))
                 .map(RecomendSiteDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -45,14 +47,14 @@ public class RecomendSiteService implements EgovRecomendSiteService {
                 .confmDe(dto.getConfmDe())
                 .frstRegisterId(userId)
                 .build();
-        recomendSiteRepository.save(entity);
+        recomendSiteRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateRecomendSite(String recomendSiteId, String userId, RecomendSiteDto dto) {
-        RecomendSite entity = recomendSiteRepository.findById(recomendSiteId)
+        RecomendSite entity = recomendSiteRepository.findById(Objects.requireNonNull(recomendSiteId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRecomendSiteUrl(), dto.getRecomendSiteNm(), dto.getRecomendSiteDc(),
                 dto.getRecomendResnCn(), dto.getRecomendConfmAt(), dto.getConfmDe(), userId);
@@ -61,6 +63,6 @@ public class RecomendSiteService implements EgovRecomendSiteService {
     @Override
     @Transactional
     public void deleteRecomendSite(String recomendSiteId) {
-        recomendSiteRepository.deleteById(recomendSiteId);
+        recomendSiteRepository.deleteById(Objects.requireNonNull(recomendSiteId));
     }
 }

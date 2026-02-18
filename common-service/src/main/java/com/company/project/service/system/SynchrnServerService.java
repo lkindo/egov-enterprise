@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class SynchrnServerService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public SynchrnServerDto getSynchrnServer(String serverId) {
-        SynchrnServerSystem entity = synchrnServerRepository.findById(serverId)
+        SynchrnServerSystem entity = synchrnServerRepository.findById(Objects.requireNonNull(serverId))
                 .orElseThrow(() -> new RuntimeException("Sync server not found: " + serverId));
         return SynchrnServerDto.from(entity);
     }
@@ -52,12 +53,12 @@ public class SynchrnServerService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        synchrnServerRepository.save(entity);
+        synchrnServerRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateSynchrnServer(SynchrnServerDto dto) {
-        SynchrnServerSystem entity = synchrnServerRepository.findById(dto.getServerId())
+        SynchrnServerSystem entity = synchrnServerRepository.findById(Objects.requireNonNull(dto.getServerId()))
                 .orElseThrow(() -> new RuntimeException("Sync server not found"));
 
         entity.setServerNm(dto.getServerNm());
@@ -72,12 +73,12 @@ public class SynchrnServerService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteSynchrnServer(String serverId) {
-        synchrnServerRepository.deleteById(serverId);
+        synchrnServerRepository.deleteById(Objects.requireNonNull(serverId));
     }
 
     @Transactional(readOnly = true)
     public List<String> getFtpFileList(String serverId) throws Exception {
-        SynchrnServerSystem entity = synchrnServerRepository.findById(serverId)
+        SynchrnServerSystem entity = synchrnServerRepository.findById(Objects.requireNonNull(serverId))
                 .orElseThrow(() -> new RuntimeException("Sync server not found"));
 
         List<String> list = new ArrayList<>();

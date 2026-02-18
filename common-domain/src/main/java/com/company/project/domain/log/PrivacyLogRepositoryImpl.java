@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
@@ -40,7 +41,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                                                 inquiryDatetimeBetween(searchBgnDe, searchEndDe))
                                 .fetchOne();
 
-                return new PageImpl<>(content, pageable, total);
+                return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
         }
 
         private BooleanExpression inquiryInfoLike(String searchWrd) {

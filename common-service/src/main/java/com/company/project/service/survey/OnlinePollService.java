@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ public class OnlinePollService implements EgovOnlinePollService {
 
     @Override
     public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return pollManageRepository.findAll(pageable).map(OnlinePollManageDto::from);
         }
@@ -33,7 +36,7 @@ public class OnlinePollService implements EgovOnlinePollService {
 
     @Override
     public OnlinePollManageDto getPoll(String pollId) {
-        OnlinePollManage entity = pollManageRepository.findById(pollId)
+        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(pollId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
         dto.setItems(getPollItemList(pollId));
@@ -44,7 +47,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
         String id = "POLL_" + String.format("%013d", System.currentTimeMillis());
-        pollManageRepository.save(OnlinePollManage.builder()
+        pollManageRepository.save(Objects.requireNonNull(OnlinePollManage.builder()
                 .pollId(id)
                 .pollNm(dto.getPollNm())
                 .pollBeginDe(dto.getPollBeginDe())
@@ -52,13 +55,13 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollKindCode(dto.getPollKindCode())
                 .pollDsuseYn(dto.getPollDsuseYn())
                 .pollAutoDsuseYn(dto.getPollAutoDsuseYn())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
-        OnlinePollManage entity = pollManageRepository.findById(dto.getPollId())
+        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getPollNm(), dto.getPollBeginDe(), dto.getPollEndDe(),
                 dto.getPollKindCode(), dto.getPollDsuseYn(), dto.getPollAutoDsuseYn());
@@ -67,12 +70,12 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePoll(String pollId) {
-        pollManageRepository.deleteById(pollId);
+        pollManageRepository.deleteById(Objects.requireNonNull(pollId));
     }
 
     @Override
     public List<OnlinePollItemDto> getPollItemList(String pollId) {
-        return pollItemRepository.findByPollId(pollId).stream()
+        return pollItemRepository.findByPollId(Objects.requireNonNull(pollId)).stream()
                 .map(item -> {
                     OnlinePollItemDto dto = OnlinePollItemDto.from(item);
                     dto.setVoteCount(pollResultRepository.countByPollIemId(item.getPollIemId()));
@@ -85,17 +88,17 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Transactional
     public void insertPollItem(OnlinePollItemDto dto) {
         String id = "POLIEM_" + String.format("%013d", System.currentTimeMillis());
-        pollItemRepository.save(OnlinePollItem.builder()
+        pollItemRepository.save(Objects.requireNonNull(OnlinePollItem.builder()
                 .pollIemId(id)
                 .pollId(dto.getPollId())
                 .pollIemNm(dto.getPollIemNm())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updatePollItem(OnlinePollItemDto dto) {
-        OnlinePollItem entity = pollItemRepository.findById(dto.getPollIemId())
+        OnlinePollItem entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollIemId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getPollIemNm());
     }
@@ -103,17 +106,17 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePollItem(String pollIemId) {
-        pollItemRepository.deleteById(pollIemId);
+        pollItemRepository.deleteById(Objects.requireNonNull(pollIemId));
     }
 
     @Override
     @Transactional
     public void vote(String pollId, String pollIemId, String userId) {
         String id = "POLRES_" + String.format("%013d", System.currentTimeMillis());
-        pollResultRepository.save(OnlinePollResult.builder()
+        pollResultRepository.save(Objects.requireNonNull(OnlinePollResult.builder()
                 .pollResultId(id)
                 .pollId(pollId)
                 .pollIemId(pollIemId)
-                .build());
+                .build()));
     }
 }

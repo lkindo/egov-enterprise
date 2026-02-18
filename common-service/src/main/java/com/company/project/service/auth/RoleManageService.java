@@ -99,7 +99,8 @@ public class RoleManageService {
      */
     @Transactional
     public void deleteRoles(String[] roleCodes) {
-        roleInfoRepository.deleteAllByIdInBatch(Objects.requireNonNull(Arrays.asList(roleCodes)));
+        roleInfoRepository
+                .deleteAllByIdInBatch(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(roleCodes))));
     }
 
     private RoleManageDto toDto(RoleInfo entity) {

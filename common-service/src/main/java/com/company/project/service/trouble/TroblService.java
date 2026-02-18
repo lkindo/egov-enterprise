@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public TroblDto getTrobl(String troblId) {
-        Trobl entity = troblRepository.findById(troblId)
+        Trobl entity = troblRepository.findById(Objects.requireNonNull(troblId))
                 .orElseThrow(() -> new RuntimeException("Trobl not found: " + troblId));
 
         TroblDto dto = TroblDto.from(entity);
@@ -85,12 +86,12 @@ public class TroblService extends EgovAbstractServiceImpl {
         entity.setFrstRegisterPnttm(LocalDateTime.now());
         entity.setLastUpdusrId(dto.getLastUpdusrId());
         entity.setLastUpdusrPnttm(LocalDateTime.now());
-        troblRepository.save(entity);
+        troblRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateTrobl(TroblDto dto) {
-        Trobl entity = troblRepository.findById(dto.getTroblId())
+        Trobl entity = troblRepository.findById(Objects.requireNonNull(dto.getTroblId()))
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
 
         entity.setTroblNm(dto.getTroblNm());
@@ -104,7 +105,7 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void requestTrobl(String troblId, String userId) {
-        Trobl entity = troblRepository.findById(troblId)
+        Trobl entity = troblRepository.findById(Objects.requireNonNull(troblId))
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
         entity.setProcessSttus("R"); // Status: Requested
         entity.setTroblRequstTime(
@@ -115,7 +116,7 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void processTrobl(TroblDto dto) {
-        Trobl entity = troblRepository.findById(dto.getTroblId())
+        Trobl entity = troblRepository.findById(Objects.requireNonNull(dto.getTroblId()))
                 .orElseThrow(() -> new RuntimeException("Trobl not found"));
 
         entity.setTroblProcessResult(dto.getTroblProcessResult());
@@ -128,7 +129,7 @@ public class TroblService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteTrobl(String troblId) {
-        troblRepository.deleteById(troblId);
+        troblRepository.deleteById(Objects.requireNonNull(troblId));
     }
 
     private Page<TroblDto> mapToDtoPage(Page<Trobl> page) {

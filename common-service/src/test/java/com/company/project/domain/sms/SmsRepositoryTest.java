@@ -52,8 +52,8 @@ class SmsRepositoryTest {
                 .build();
 
         // When
-        smsRepository.save(sms);
-        smsRecptnRepository.save(recptn1);
+        smsRepository.save(java.util.Objects.requireNonNull(sms));
+        smsRecptnRepository.save(java.util.Objects.requireNonNull(recptn1));
         entityManager.flush();
         entityManager.clear();
 
@@ -84,8 +84,8 @@ class SmsRepositoryTest {
                 .resultMssage("Ready")
                 .build();
 
-        smsRepository.save(sms);
-        smsRecptnRepository.save(recptn1);
+        smsRepository.save(java.util.Objects.requireNonNull(sms));
+        smsRecptnRepository.save(java.util.Objects.requireNonNull(recptn1));
         entityManager.flush();
         entityManager.clear();
 

@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +25,7 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
 
     @Override
     public Page<RecentSrchwrdDto> getRecentSrchwrdManageList(String keyword, Pageable pageable) {
+        Objects.requireNonNull(pageable);
         if (keyword == null || keyword.isEmpty()) {
             return recentSrchwrdManageRepository.findAll(pageable).map(RecentSrchwrdDto::from);
         }
@@ -32,7 +35,7 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
 
     @Override
     public RecentSrchwrdDto getRecentSrchwrdManage(String manageId) {
-        return recentSrchwrdManageRepository.findById(manageId)
+        return recentSrchwrdManageRepository.findById(Objects.requireNonNull(manageId))
                 .map(RecentSrchwrdDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -47,13 +50,14 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
                 .srchwrdConectUrl(dto.getSrchwrdConectUrl())
                 .userSearchAt(dto.getUserSearchAt())
                 .build();
-        recentSrchwrdManageRepository.save(entity);
+        recentSrchwrdManageRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateRecentSrchwrdManage(RecentSrchwrdDto dto) {
-        RecentSrchwrdManage entity = recentSrchwrdManageRepository.findById(dto.getSrchwrdManageId())
+        RecentSrchwrdManage entity = recentSrchwrdManageRepository
+                .findById(Objects.requireNonNull(dto.getSrchwrdManageId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSrchwrdManageNm(), dto.getSrchwrdConectUrl(), dto.getUserSearchAt(), null);
     }
@@ -61,8 +65,8 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
     @Override
     @Transactional
     public void deleteRecentSrchwrdManage(String manageId) {
-        recentSrchwrdRepository.deleteBySrchwrdManageId(manageId);
-        recentSrchwrdManageRepository.deleteById(manageId);
+        recentSrchwrdRepository.deleteBySrchwrdManageId(Objects.requireNonNull(manageId));
+        recentSrchwrdManageRepository.deleteById(Objects.requireNonNull(manageId));
     }
 
     @Override
@@ -79,12 +83,12 @@ public class RecentSrchwrdService implements EgovRecentSrchwrdService {
                 .srchwrdManageId(manageId)
                 .srchwrdNm(srchwrdNm)
                 .build();
-        recentSrchwrdRepository.save(entity);
+        recentSrchwrdRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void deleteRecentSrchwrd(String srchwrdId) {
-        recentSrchwrdRepository.deleteById(srchwrdId);
+        recentSrchwrdRepository.deleteById(Objects.requireNonNull(srchwrdId));
     }
 }

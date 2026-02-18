@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service("systemRewardService")
 public class RewardService extends EgovAbstractServiceImpl {
@@ -28,7 +29,7 @@ public class RewardService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public RewardDto getReward(String rwardId) {
-        Reward entity = rewardRepository.findById(rwardId)
+        Reward entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new RuntimeException("Reward record not found"));
         return RewardDto.from(entity);
     }
@@ -45,12 +46,12 @@ public class RewardService extends EgovAbstractServiceImpl {
                 .atchFileId(dto.getAtchFileId())
                 .confmAt("N")
                 .build();
-        rewardRepository.save(entity);
+        rewardRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateReward(RewardDto dto) {
-        Reward entity = rewardRepository.findById(dto.getRwardId())
+        Reward entity = rewardRepository.findById(Objects.requireNonNull(dto.getRwardId()))
                 .orElseThrow(() -> new RuntimeException("Reward record not found"));
 
         entity.setRwardCd(dto.getRwardCd());
@@ -62,12 +63,12 @@ public class RewardService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteReward(String rwardId) {
-        rewardRepository.deleteById(rwardId);
+        rewardRepository.deleteById(Objects.requireNonNull(rwardId));
     }
 
     @Transactional
     public void approveReward(String rwardId, String sanctnerId) {
-        Reward entity = rewardRepository.findById(rwardId)
+        Reward entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new RuntimeException("Reward record not found"));
         entity.setConfmAt("Y");
         entity.setSanctnerId(sanctnerId);

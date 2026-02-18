@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service("systemEventCmpgnService")
 public class EventCmpgnService extends EgovAbstractServiceImpl {
@@ -27,7 +28,7 @@ public class EventCmpgnService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public EventCmpgnDto getEventCmpgn(String eventId) {
-        EventCmpgn entity = eventCmpgnRepository.findById(eventId)
+        EventCmpgn entity = eventCmpgnRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new RuntimeException("Event/Campaign not found"));
         return EventCmpgnDto.from(entity);
     }
@@ -47,12 +48,12 @@ public class EventCmpgnService extends EgovAbstractServiceImpl {
                 .prparetgCn(dto.getPrparetgCn())
                 .eventConfmAt("N")
                 .build();
-        eventCmpgnRepository.save(entity);
+        eventCmpgnRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateEventCmpgn(EventCmpgnDto dto) {
-        EventCmpgn entity = eventCmpgnRepository.findById(dto.getEventId())
+        EventCmpgn entity = eventCmpgnRepository.findById(Objects.requireNonNull(dto.getEventId()))
                 .orElseThrow(() -> new RuntimeException("Event/Campaign not found"));
 
         entity.setBsnsYear(dto.getBsnsYear());
@@ -68,6 +69,6 @@ public class EventCmpgnService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteEventCmpgn(String eventId) {
-        eventCmpgnRepository.deleteById(eventId);
+        eventCmpgnRepository.deleteById(Objects.requireNonNull(eventId));
     }
 }
