@@ -104,6 +104,55 @@ describe('DashboardPage', () => {
     // expect(client.get).toHaveBeenCalledWith('/uss/olp/opm/listOnlinePollManage.do', expect.anything());
   });
 
+  it('renders accessible elements', async () => {
+    // Mock API responses
+    (client.get as Mock).mockImplementation((url: string) => {
+      if (url === '/dashboard') {
+        return Promise.resolve({
+          data: {
+            success: true,
+            taskList: [
+              { nttId: 1, nttSj: 'Task 1', frstRegisterNm: 'User A', frstRegisterPnttmStr: '2023-01-01' }
+            ],
+            notiList: [
+              { nttId: 2, nttSj: 'Notice 1', frstRegisterNm: 'Admin', frstRegisterPnttmStr: '2023-01-01' }
+            ]
+          }
+        });
+      }
+      if (url.startsWith('/vacations/yearly-leaves/my')) {
+        return Promise.resolve({
+          data: {
+            success: true,
+            data: {
+              remndrYrycCo: 10
+            }
+          }
+        });
+      }
+      if (url === '/auth/me') {
+        return Promise.resolve({ data: { success: true } });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    render(<DashboardPage />);
+
+    // Verify dashboard data is rendered
+    await waitFor(() => {
+      expect(screen.getByText('Task 1')).toBeInTheDocument();
+    });
+
+    // Check for aria-labels
+    // Trend indicator: 12% is hardcoded in page.tsx for one of the cards
+    // The card with trend 12 is "잔여 연차" (Remaining Leaves) which uses myLeave data but trend is hardcoded 12.
+    expect(screen.getByLabelText(/전일 대비 12% 상승/)).toBeInTheDocument();
+
+    // Check for "More" links
+    expect(screen.getByLabelText('최신 공지사항 더보기')).toBeInTheDocument();
+    expect(screen.getByLabelText('오늘의 할일 더보기')).toBeInTheDocument();
+  });
+
   it('handles API errors gracefully', async () => {
     // Mock API failures
     (client.get as Mock).mockImplementation((url: string) => {
@@ -118,9 +167,9 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       // Should still render the static parts
-      expect(screen.getByText(/안녕하세요/)).toBeInTheDocument();
+      expect(screen.getByText(/환영합니다/)).toBeInTheDocument();
       // Should show empty states
-      expect(screen.getAllByText('데이터가 없습니다.')).toHaveLength(2);
+      expect(screen.getAllByText('No Data Available')).toHaveLength(2);
     });
   });
 });
