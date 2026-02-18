@@ -45,4 +45,6 @@ logging:
     org.springframework.security: debug
 
 jwt:
-  secret: ${JWT_SECRET:4s3cr3tK3yF0rJWT51gn1ngMu5tB3L0ngEn0ughT0M33tTh3R3qu1r3m3nt5!}
+  # CRITICAL: JWT_SECRET environment variable MUST be set.
+  # We use a default empty value here to allow custom validation in JwtTokenProvider to throw a readable error.
+  secret: ${JWT_SECRET:}

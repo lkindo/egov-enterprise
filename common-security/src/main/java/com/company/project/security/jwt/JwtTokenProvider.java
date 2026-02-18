@@ -48,6 +48,9 @@ public class JwtTokenProvider {
 
     @PostConstruct
     protected void init() {
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT Secret is not configured. Please set JWT_SECRET environment variable.");
+        }
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
