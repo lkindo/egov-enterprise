@@ -60,7 +60,116 @@ public class UserManageDto {
     private String lockAt;
     private String subDn;
 
-    // Getters as aliases for legacy JSP form:input path
+    // Manual getters to bypass potential Lombok issues
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getEsntlId() {
+        return esntlId;
+    }
+
+    public String getUserNm() {
+        return userNm;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getPasswordHint() {
+        return passwordHint;
+    }
+
+    public String getPasswordCnsr() {
+        return passwordCnsr;
+    }
+
+    public String getEmplNo() {
+        return emplNo;
+    }
+
+    public String getSexdstnCode() {
+        return sexdstnCode;
+    }
+
+    public String getBrthdy() {
+        return brthdy;
+    }
+
+    public String getAreaNo() {
+        return areaNo;
+    }
+
+    public String getHomemiddleTelno() {
+        return homemiddleTelno;
+    }
+
+    public String getHomeendTelno() {
+        return homeendTelno;
+    }
+
+    public String getMoblphonNo() {
+        return moblphonNo;
+    }
+
+    public String getEmailAdres() {
+        return emailAdres;
+    }
+
+    public String getZip() {
+        return zip;
+    }
+
+    public String getHomeadres() {
+        return homeadres;
+    }
+
+    public String getDetailAdres() {
+        return detailAdres;
+    }
+
+    public String getOfcpsNm() {
+        return ofcpsNm;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public String getOrgnztId() {
+        return orgnztId;
+    }
+
+    public String getInsttCode() {
+        return insttCode;
+    }
+
+    public String getEmplyrSttusCode() {
+        return emplyrSttusCode;
+    }
+
+    public String getSbscrbDe() {
+        return sbscrbDe;
+    }
+
+    public String getOffmTelno() {
+        return offmTelno;
+    }
+
+    public String getFxnum() {
+        return fxnum;
+    }
+
+    public String getLockAt() {
+        return lockAt;
+    }
+
+    public String getSubDn() {
+        return subDn;
+    }
+
+    // Compatibility getters for legacy JSP form:input path
     public String getEmplyrId() {
         return userId;
     }

@@ -30,6 +30,83 @@ public class BackupOpertDto {
     private String frstRegisterId;
     private String frstRegistPnttm;
 
+    // Manual getters
+    public String getBackupOpertId() {
+        return backupOpertId;
+    }
+
+    public String getBackupOpertNm() {
+        return backupOpertNm;
+    }
+
+    public String getBackupOrginlDrctry() {
+        return backupOrginlDrctry;
+    }
+
+    public String getBackupStreDrctry() {
+        return backupStreDrctry;
+    }
+
+    public String getCmprsSe() {
+        return cmprsSe;
+    }
+
+    public String getCmprsSeNm() {
+        return cmprsSeNm;
+    }
+
+    public String getExecutCycle() {
+        return executCycle;
+    }
+
+    public String getExecutCycleNm() {
+        return executCycleNm;
+    }
+
+    public String getExecutSchdulDe() {
+        return executSchdulDe;
+    }
+
+    public String getExecutSchdulHour() {
+        return executSchdulHour;
+    }
+
+    public String getExecutSchdulMnt() {
+        return executSchdulMnt;
+    }
+
+    public String getExecutSchdulSecnd() {
+        return executSchdulSecnd;
+    }
+
+    public String[] getExecutSchdulDfkSes() {
+        return executSchdulDfkSes;
+    }
+
+    public String getUseAt() {
+        return useAt;
+    }
+
+    public String getExecutSchdul() {
+        return executSchdul;
+    }
+
+    public String getLastUpdusrId() {
+        return lastUpdusrId;
+    }
+
+    public String getLastUpdtPnttm() {
+        return lastUpdtPnttm;
+    }
+
+    public String getFrstRegisterId() {
+        return frstRegisterId;
+    }
+
+    public String getFrstRegistPnttm() {
+        return frstRegistPnttm;
+    }
+
     public static BackupOpertDto from(BackupOpert entity) {
         return from(entity, true);
     }
@@ -66,32 +143,36 @@ public class BackupOpertDto {
         StringBuilder cronExpression = new StringBuilder();
 
         // Seconds
-        cronExpression.append(this.executSchdulSecnd);
+        cronExpression.append(this.executSchdulSecnd != null ? this.executSchdulSecnd : "0");
 
         // Minutes
-        cronExpression.append(" ").append(this.executSchdulMnt);
+        cronExpression.append(" ").append(this.executSchdulMnt != null ? this.executSchdulMnt : "0");
 
         // Hours
-        cronExpression.append(" ").append(this.executSchdulHour);
+        cronExpression.append(" ").append(this.executSchdulHour != null ? this.executSchdulHour : "0");
 
         // Day of Month
         if ("01".equals(this.executCycle)) {
             cronExpression.append(" *");
         } else if ("02".equals(this.executCycle)) {
             cronExpression.append(" ?");
-        } else {
+        } else if (this.executSchdulDe != null && this.executSchdulDe.length() >= 8) {
             cronExpression.append(" ").append(this.executSchdulDe.substring(6, 8));
+        } else {
+            cronExpression.append(" *");
         }
 
         // Month
         if ("01".equals(this.executCycle) || "02".equals(this.executCycle) || "03".equals(this.executCycle)) {
             cronExpression.append(" *");
-        } else {
+        } else if (this.executSchdulDe != null && this.executSchdulDe.length() >= 6) {
             cronExpression.append(" ").append(this.executSchdulDe.substring(4, 6));
+        } else {
+            cronExpression.append(" *");
         }
 
         // Day of Week
-        if ("02".equals(this.executCycle)) {
+        if ("02".equals(this.executCycle) && this.executSchdulDfkSes != null) {
             StringBuilder dayOfWeek = new StringBuilder();
             for (int i = 0; i < this.executSchdulDfkSes.length; i++) {
                 if (i != 0) {
@@ -105,27 +186,19 @@ public class BackupOpertDto {
         }
 
         // Year
-        if ("05".equals(this.executCycle)) {
+        if ("05".equals(this.executCycle) && this.executSchdulDe != null && this.executSchdulDe.length() >= 4) {
             cronExpression.append(" ").append(this.executSchdulDe.substring(0, 4));
         }
 
         return cronExpression.toString();
     }
 
-    // 누락된 메서드들 추가
+    // Manual setters for safety
     public void setFrstRegisterId(String frstRegisterId) {
         this.frstRegisterId = frstRegisterId;
     }
 
-    public String getFrstRegisterId() {
-        return this.frstRegisterId;
-    }
-
     public void setLastUpdusrId(String lastUpdusrId) {
         this.lastUpdusrId = lastUpdusrId;
-    }
-
-    public String getLastUpdusrId() {
-        return this.lastUpdusrId;
     }
 }

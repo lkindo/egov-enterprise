@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -26,7 +27,8 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<BoardMasterSearchResult> searchBoardMasters(BoardMasterSearchCondition condition, Pageable pageable) {
+    public Page<BoardMasterSearchResult> searchBoardMasters(BoardMasterSearchCondition condition,
+            @NonNull Pageable pageable) {
         QCommonCode commonCodeTy = new QCommonCode("commonCodeTy");
         QCommonCode commonCodeAttr = new QCommonCode("commonCodeAttr");
 

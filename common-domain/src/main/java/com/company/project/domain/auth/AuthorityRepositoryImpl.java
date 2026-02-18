@@ -6,9 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.auth.QAuthority.authority;
 
@@ -18,7 +20,7 @@ public class AuthorityRepositoryImpl implements AuthorityRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Authority> searchAuthorities(String searchCondition, String searchKeyword, Pageable pageable) {
+    public Page<Authority> searchAuthorities(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
         List<Authority> content = queryFactory
                 .selectFrom(authority)
                 .where(conditionEq(searchCondition, searchKeyword))
@@ -27,13 +29,13 @@ public class AuthorityRepositoryImpl implements AuthorityRepositoryCustom {
                 .orderBy(authority.authorCreatDe.desc())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(authority.count())
                 .from(authority)
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

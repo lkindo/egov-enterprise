@@ -4,6 +4,10 @@ import com.company.project.service.board.dto.BoardDto;
 import com.company.project.service.board.dto.BoardSaveRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * 게시판 관리 서비스 인터페이스
@@ -11,56 +15,26 @@ import org.springframework.data.domain.Pageable;
  */
 public interface EgovBoardService {
 
-    /**
-     * 게시물 페이징 목록 조회
-     */
-    Page<BoardDto> getBoardPosts(String bbsId, Pageable pageable);
+        Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable);
 
-    /**
-     * 게시물 검색 페이징 목록 조회
-     */
-    Page<BoardDto> getBoardPosts(String bbsId, String searchCnd, String searchWrd, Pageable pageable);
+        Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
+                        @NonNull Pageable pageable);
 
-    /**
-     * 게시물 등록
-     */
-    Long createPost(String userId, BoardSaveRequest request);
+        Long createPost(@NonNull String userId, BoardSaveRequest request);
 
-    /**
-     * 게시물 상세 조회
-     */
-    BoardDto getPostDetail(String bbsId, Long nttId);
+        Long createPostWithFiles(String userId, BoardSaveRequest request, List<MultipartFile> files) throws IOException;
 
-    /**
-     * 게시물 수정
-     */
-    void updatePost(String bbsId, Long nttId, BoardSaveRequest request);
+        Long replyPost(String userId, Long parentId, BoardSaveRequest request);
 
-    /**
-     * 게시물 삭제
-     */
-    void deletePost(String bbsId, Long nttId, String authorId);
+        Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request, List<MultipartFile> files)
+                        throws IOException;
 
-    /**
-     * 답변 등록
-     */
-    Long replyPost(String userId, Long parentId, BoardSaveRequest request);
+        BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId);
 
-    /**
-     * 게시물 등록 (파일 첨부 포함)
-     */
-    Long createPostWithFiles(String userId, BoardSaveRequest request,
-            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
+        void updatePost(@NonNull String bbsId, @NonNull Long nttId, BoardSaveRequest request);
 
-    /**
-     * 게시물 수정 (파일 첨부 포함)
-     */
-    void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request,
-            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
+        void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request, List<MultipartFile> files)
+                        throws IOException;
 
-    /**
-     * 답변 등록 (파일 첨부 포함)
-     */
-    Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request,
-            java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException;
+        void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId);
 }

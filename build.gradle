@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.7' apply false
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'io.freefair.lombok' version '8.10.2' apply false
     id 'jacoco'
 }
 
@@ -19,6 +20,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'io.freefair.lombok'
     apply plugin: 'jacoco'
     
     java {
@@ -35,13 +37,18 @@ subprojects {
         options.warnings = true
         options.compilerArgs << "-Xlint:deprecation"
         options.compilerArgs << "-Xlint:unchecked"
+        options.compilerArgs << "-Xlint:-processing"
+        
+        // Lombok 어노테이션 프로세서가 제대로 동작하도록 설정
+        options.annotationProcessorPath = configurations.annotationProcessor
     }
     
-    configurations {
-        compileOnly {
-            extendsFrom annotationProcessor
-        }
-    }
+    // annotationProcessor 와 compileOnly 분리 (Lombok 활성화를 위해)
+    // configurations {
+    //     compileOnly {
+    //         extendsFrom annotationProcessor
+    //     }
+    // }
 
     dependencyManagement {
         imports {
@@ -50,8 +57,11 @@ subprojects {
     }
 
     dependencies {
-        compileOnly 'org.projectlombok:lombok:1.18.34'
-        annotationProcessor 'org.projectlombok:lombok:1.18.34'
+        // Lombok - io.freefair.lombok 8.10 플러그인이 자동으로 처리함
+
+        // Fix for: javax.annotation.meta.When not found
+        implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }

@@ -5,8 +5,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 공통 코드 그룹 엔티티 (CCMMNCODE 테이블 매핑)
@@ -15,13 +18,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "CCMMNCODE")
-public class CommonCodeGroup {
+public class CommonCodeGroup implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "CODE_ID", length = 18)
+    @NonNull
     private String codeId;
 
     @Column(name = "CODE_ID_NM", length = 180)
+    @NonNull
     private String codeIdNm;
 
     @Column(name = "CODE_ID_DC", length = 600)
@@ -46,10 +52,11 @@ public class CommonCodeGroup {
     private String lastUpdusrId;
 
     @Builder
-    public CommonCodeGroup(String codeId, String codeIdNm, String codeIdDc, String clCode, String useAt,
+    public CommonCodeGroup(@NonNull String codeId, @NonNull String codeIdNm, String codeIdDc, String clCode,
+            String useAt,
             String frstRegisterId) {
-        this.codeId = codeId;
-        this.codeIdNm = codeIdNm;
+        this.codeId = Objects.requireNonNull(codeId);
+        this.codeIdNm = Objects.requireNonNull(codeIdNm);
         this.codeIdDc = codeIdDc;
         this.clCode = clCode;
         this.useAt = useAt == null ? "Y" : useAt;
@@ -59,8 +66,8 @@ public class CommonCodeGroup {
         this.lastModifiedDate = LocalDateTime.now();
     }
 
-    public void update(String codeIdNm, String codeIdDc, String useAt, String lastUpdusrId) {
-        this.codeIdNm = codeIdNm;
+    public void update(@NonNull String codeIdNm, String codeIdDc, String useAt, String lastUpdusrId) {
+        this.codeIdNm = Objects.requireNonNull(codeIdNm);
         this.codeIdDc = codeIdDc;
         this.useAt = useAt;
         this.lastUpdusrId = lastUpdusrId;

@@ -1,13 +1,17 @@
 package com.company.project.integration;
 
+import com.company.project.api.common.exception.GlobalExceptionHandler;
 import com.company.project.api.controller.bnr.BannerController;
+import com.company.project.config.MinimalTestConfig;
 import com.company.project.service.banner.EgovBannerService;
 import com.company.project.service.banner.dto.BannerDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -23,9 +27,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BannerController.class)
-@org.springframework.context.annotation.Import(com.company.project.api.common.exception.GlobalExceptionHandler.class)
-@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc(addFilters = false)
+@SpringBootTest(classes = MinimalTestConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class BannerIntegrationTest {
 

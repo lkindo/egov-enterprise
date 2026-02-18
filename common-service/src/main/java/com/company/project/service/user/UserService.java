@@ -12,6 +12,12 @@ import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
 import com.company.project.service.user.mapper.UserMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,11 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
 
 /**
  * JPA 기반 사용자 관리 서비스 구현체
@@ -78,9 +82,8 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
-        public org.springframework.data.domain.Page<UserDto> getPagedUserList(
-                        org.springframework.data.domain.Pageable pageable) {
-                org.springframework.data.domain.Page<User> userPage = userRepository.findAll(pageable);
+        public Page<UserDto> getPagedUserList(@NonNull Pageable pageable) {
+                Page<User> userPage = userRepository.findAll(pageable);
 
                 // 사용자 ID 목록 추출
                 List<String> userIds = userPage.getContent().stream()
@@ -100,7 +103,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .collect(Collectors.toList());
 
                 // 새로운 Page 객체 생성 (기존 페이지 정보 유지)
-                return new org.springframework.data.domain.PageImpl<>(
+                return new PageImpl<>(
                                 userDtos,
                                 userPage.getPageable(),
                                 userPage.getTotalElements());
@@ -111,14 +114,21 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Override
         @Cacheable(value = "users", key = "#id")
-        public UserDto getUserById(String id) {
+        public UserDto getUserById(@NonNull String id) {
                 User user = userRepository.findById(id)
                                 .orElseGet(() -> userRepository.findByEsntlId(id)
                                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
 
                 // 사용자 권한 정보 조회
-                UserAuthority authority = userAuthorityRepository.findById(user.getEsntlId())
+                String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
+                                .map(UserAuthority::getAuthorCode)
                                 .orElse(null);
+
+                // 기존 convertToDtoWithAuthority 메서드를 사용하기 위해 UserAuthority 객체로 변환
+                UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
+                                .uniqId(user.getEsntlId())
+                                .authorCode(authorCode)
+                                .build() : null;
 
                 return convertToDtoWithAuthority(user, authority);
         }

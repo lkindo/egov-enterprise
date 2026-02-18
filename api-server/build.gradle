@@ -73,9 +73,7 @@ dependencies {
     // implementation 'org.twitter4j:twitter4j-core:4.1.2'
     // implementation 'io.github.takke:twitter4j-v2:1.4.4'
 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    // Lombok - io.freefair.lombok 8.10 플러그인이 자동으로 처리함
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'

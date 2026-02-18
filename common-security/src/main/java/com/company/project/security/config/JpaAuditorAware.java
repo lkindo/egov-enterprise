@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import org.springframework.lang.NonNull;
 import java.util.Optional;
 
 /**
@@ -14,10 +15,11 @@ import java.util.Optional;
 public class JpaAuditorAware implements AuditorAware<String> {
 
     @Override
+    @NonNull
     public Optional<String> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated() 
+        if (authentication == null || !authentication.isAuthenticated()
                 || authentication.getPrincipal().equals("anonymousUser")) {
             return Optional.of("SYSTEM"); // 로그인 정보가 없는 경우 (배치 등)
         }

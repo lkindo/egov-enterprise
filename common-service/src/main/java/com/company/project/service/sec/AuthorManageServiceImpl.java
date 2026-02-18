@@ -7,11 +7,13 @@ import com.company.project.service.sec.dto.AuthorDto;
 import com.company.project.service.sec.dto.RoleDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service("authorManageService")
@@ -31,18 +33,19 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     @Override
-    public AuthorDto selectAuthor(String authorCode) {
-        return authorityRepository.findById(authorCode)
+    public AuthorDto selectAuthor(@NonNull String authorCode) {
+        return authorityRepository.findById(Objects.requireNonNull(authorCode))
                 .map(this::toAuthorDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void insertAuthor(AuthorDto dto) {
+    public void insertAuthor(@NonNull AuthorDto dto) {
+        Objects.requireNonNull(dto);
         Authority authority = Authority.builder()
-                .authorCode(dto.getAuthorCode())
-                .authorNm(dto.getAuthorNm())
+                .authorCode(Objects.requireNonNull(dto.getAuthorCode()))
+                .authorNm(Objects.requireNonNull(dto.getAuthorNm()))
                 .authorDc(dto.getAuthorDc())
                 .build();
         authorityRepository.save(authority);
@@ -50,16 +53,17 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
 
     @Override
     @Transactional
-    public void updateAuthor(AuthorDto dto) {
-        Authority authority = authorityRepository.findById(dto.getAuthorCode())
+    public void updateAuthor(@NonNull AuthorDto dto) {
+        Objects.requireNonNull(dto);
+        Authority authority = authorityRepository.findById(Objects.requireNonNull(dto.getAuthorCode()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        authority.update(dto.getAuthorNm(), dto.getAuthorDc());
+        authority.update(Objects.requireNonNull(dto.getAuthorNm()), dto.getAuthorDc());
     }
 
     @Override
     @Transactional
-    public void deleteAuthor(String authorCode) {
-        authorityRepository.deleteById(authorCode);
+    public void deleteAuthor(@NonNull String authorCode) {
+        authorityRepository.deleteById(Objects.requireNonNull(authorCode));
     }
 
     @Override
@@ -70,18 +74,19 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     @Override
-    public RoleDto selectRole(String roleCode) {
-        return roleInfoRepository.findById(roleCode)
+    public RoleDto selectRole(@NonNull String roleCode) {
+        return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
                 .map(this::toRoleDto)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
     @Transactional
-    public void insertRole(RoleDto dto) {
+    public void insertRole(@NonNull RoleDto dto) {
+        Objects.requireNonNull(dto);
         RoleInfo role = RoleInfo.builder()
-                .roleCode(dto.getRoleCode())
-                .roleNm(dto.getRoleNm())
+                .roleCode(Objects.requireNonNull(dto.getRoleCode()))
+                .roleNm(Objects.requireNonNull(dto.getRoleNm()))
                 .rolePttrn(dto.getRolePtn())
                 .roleDc(dto.getRoleDc())
                 .roleTy(dto.getRoleTyp())
@@ -92,23 +97,27 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
 
     @Override
     @Transactional
-    public void updateRole(RoleDto dto) {
-        RoleInfo role = roleInfoRepository.findById(dto.getRoleCode())
+    public void updateRole(@NonNull RoleDto dto) {
+        Objects.requireNonNull(dto);
+        RoleInfo role = roleInfoRepository.findById(Objects.requireNonNull(dto.getRoleCode()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        role.update(dto.getRoleNm(), dto.getRolePtn(), dto.getRoleDc(), dto.getRoleTyp(), dto.getRoleSort());
+        role.update(Objects.requireNonNull(dto.getRoleNm()), dto.getRolePtn(), dto.getRoleDc(), dto.getRoleTyp(),
+                dto.getRoleSort());
     }
 
     @Override
     @Transactional
-    public void deleteRole(String roleCode) {
-        roleInfoRepository.deleteById(roleCode);
+    public void deleteRole(@NonNull String roleCode) {
+        roleInfoRepository.deleteById(Objects.requireNonNull(roleCode));
     }
 
     @Override
     @Transactional
-    public void insertAuthorRoleRelate(String authorCode, List<String> roleCodes) {
-        // Check author existence
+    public void insertAuthorRoleRelate(@NonNull String authorCode, @NonNull List<String> roleCodes) {
+        Objects.requireNonNull(authorCode);
+        Objects.requireNonNull(roleCodes);
+
         if (!authorityRepository.existsById(authorCode)) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
@@ -117,9 +126,6 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
 
         List<AuthorityRole> relates = roleCodes.stream()
                 .map(roleCode -> {
-                    // Check role existence (optional, but good for integrity)
-                    // if (!roleInfoRepository.existsById(roleCode)) ...
-
                     AuthorityRole.AuthorityRoleId id = AuthorityRole.AuthorityRoleId.builder()
                             .authorCode(authorCode)
                             .roleCode(roleCode)
@@ -135,8 +141,9 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     @Override
-    public List<RoleDto> selectAuthorRoleList(String authorCode) {
-        List<AuthorityRole> authorityRoles = authorityRoleRepository.findByIdAuthorCode(authorCode);
+    public List<RoleDto> selectAuthorRoleList(@NonNull String authorCode) {
+        List<AuthorityRole> authorityRoles = authorityRoleRepository
+                .findByIdAuthorCode(Objects.requireNonNull(authorCode));
         List<String> roleCodes = authorityRoles.stream()
                 .map(ar -> ar.getId().getRoleCode())
                 .collect(Collectors.toList());
@@ -152,8 +159,8 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
 
     private AuthorDto toAuthorDto(Authority authority) {
         return AuthorDto.builder()
-                .authorCode(authority.getAuthorCode())
-                .authorNm(authority.getAuthorNm())
+                .authorCode(Objects.requireNonNull(authority.getAuthorCode()))
+                .authorNm(Objects.requireNonNull(authority.getAuthorNm()))
                 .authorDc(authority.getAuthorDc())
                 .authorCreatDe(authority.getAuthorCreatDe() != null
                         ? authority.getAuthorCreatDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
@@ -163,8 +170,8 @@ public class AuthorManageServiceImpl extends EgovAbstractServiceImpl implements 
 
     private RoleDto toRoleDto(RoleInfo role) {
         return RoleDto.builder()
-                .roleCode(role.getRoleCode())
-                .roleNm(role.getRoleNm())
+                .roleCode(Objects.requireNonNull(role.getRoleCode()))
+                .roleNm(Objects.requireNonNull(role.getRoleNm()))
                 .rolePtn(role.getRolePttrn())
                 .roleDc(role.getRoleDc())
                 .roleTyp(role.getRoleTy())

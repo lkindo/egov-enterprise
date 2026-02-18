@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.lang.NonNull;
 
 @Repository("userRepository")
 public interface UserRepository extends JpaRepository<User, String>, UserRepositoryCustom {
@@ -25,7 +26,8 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     List<User> findAllWithRole();
 
     @EntityGraph(attributePaths = { "role" })
-    Optional<User> findById(@Param("userId") String userId);
+    @NonNull
+    Optional<User> findById(@NonNull @Param("userId") String userId);
 
     List<User> findByUserNmContaining(String userNm);
 

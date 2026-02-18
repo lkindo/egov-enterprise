@@ -30,6 +30,35 @@ public class RoleManageDto {
     /** 생성일시 */
     private String creatDt;
 
+    // Manual getters to bypass potential Lombok issues
+    public String getRoleCode() {
+        return roleCode;
+    }
+
+    public String getRoleNm() {
+        return roleNm;
+    }
+
+    public String getRolePttrn() {
+        return rolePttrn;
+    }
+
+    public String getRoleDc() {
+        return roleDc;
+    }
+
+    public String getRoleTy() {
+        return roleTy;
+    }
+
+    public String getRoleSort() {
+        return roleSort;
+    }
+
+    public String getCreatDt() {
+        return creatDt;
+    }
+
     // Compatibility getters for legacy JSP
     public String getRoleTyp() {
         return roleTy;

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
         @Override
         public Page<AddressBook> searchAddressBooks(String userId, String orgnztId, String searchCondition,
-                        String searchKeyword, Pageable pageable) {
+                        String searchKeyword, @NonNull Pageable pageable) {
                 BooleanExpression searchPredicate = null;
                 if (StringUtils.hasText(searchKeyword)) {
                         if ("0".equals(searchCondition)) {
@@ -59,7 +60,8 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
         }
 
         @Override
-        public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword, Pageable pageable) {
+        public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword,
+                        @NonNull Pageable pageable) {
                 // JPA does not support UNION directly. We combine results from 3 user types.
                 // For simplicity in this CLI context, we implement a combined search.
 

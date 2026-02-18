@@ -20,7 +20,8 @@ import javax.sql.DataSource;
         "com.company.project.service.board",
         "com.company.project.service.file",
         "com.company.project.domain",
-        "com.company.project.core"
+        "com.company.project.core",
+        "com.company.project.api"
 }, exclude = {
         org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
         org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
@@ -123,5 +124,10 @@ public class MinimalTestConfig {
     @Bean(name = "logInUserAuditorAware")
     public org.springframework.data.domain.AuditorAware<String> auditorAware() {
         return () -> java.util.Optional.of("test-user");
+    }
+
+    @Bean
+    public com.company.project.api.common.exception.GlobalExceptionHandler globalExceptionHandler() {
+        return new com.company.project.api.common.exception.GlobalExceptionHandler();
     }
 }

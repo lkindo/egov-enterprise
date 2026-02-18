@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.lang.NonNull;
 
 /**
  * 권한 관리 DTO
@@ -21,11 +22,13 @@ public class AuthorManageDto extends ComDefaultVO {
     /** 권한 코드 */
     @NotBlank(message = "권한 코드는 필수 입력 항목입니다.")
     @Size(max = 30)
+    @NonNull
     private String authorCode;
 
     /** 권한 명 */
     @NotBlank(message = "권한 명은 필수 입력 항목입니다.")
     @Size(max = 60)
+    @NonNull
     private String authorNm;
 
     /** 권한 설명 */
