@@ -19,7 +19,7 @@ public class DeptManageServiceImpl implements EgovDeptManageService {
     private final DeptManageRepository deptManageRepository;
 
     @Override
-    public Page<DeptManageDto> getDeptManageList(String keyword, Pageable pageable) {
+    public Page<DeptManageDto> getDeptManageList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
         return deptManageRepository.searchDeptManages(keyword, pageable).map(DeptManageDto::from);
     }
 

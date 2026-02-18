@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -59,9 +60,9 @@ public class GroupManageService {
      * 그룹 상세 조회
      */
     public GroupManageDto selectGroup(String groupId) {
-        return groupManageRepository.findById(groupId)
+        return groupManageRepository.findById(Objects.requireNonNull(groupId))
                 .map(this::toDto)
-                .orElse(null);
+                .orElseThrow(() -> new RuntimeException("Group not found: " + groupId));
     }
 
     /**
@@ -80,7 +81,7 @@ public class GroupManageService {
                 .groupNm(dto.getGroupNm())
                 .groupDc(dto.getGroupDc())
                 .build();
-        groupManageRepository.save(entity);
+        groupManageRepository.save(Objects.requireNonNull(entity));
         return groupId;
     }
 
@@ -89,7 +90,7 @@ public class GroupManageService {
      */
     @Transactional
     public void updateGroup(GroupManageDto dto) {
-        GroupManage entity = groupManageRepository.findById(dto.getGroupId())
+        GroupManage entity = groupManageRepository.findById(Objects.requireNonNull(dto.getGroupId()))
                 .orElseThrow(() -> new RuntimeException("Group not found: " + dto.getGroupId()));
         entity.update(dto.getGroupNm(), dto.getGroupDc());
     }
@@ -99,7 +100,7 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroup(String groupId) {
-        groupManageRepository.deleteById(groupId);
+        groupManageRepository.deleteById(Objects.requireNonNull(groupId));
     }
 
     /**
@@ -107,7 +108,7 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroups(String[] groupIds) {
-        groupManageRepository.deleteAllById(Arrays.asList(groupIds));
+        groupManageRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(groupIds)));
     }
 
     private GroupManageDto toDto(GroupManage entity) {

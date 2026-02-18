@@ -34,7 +34,7 @@ public class UserAuthorityService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        Page<UserAuthority> page = userAuthorityRepository.findAll(pageable);
+        Page<UserAuthority> page = userAuthorityRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
@@ -49,7 +49,7 @@ public class UserAuthorityService {
      * 사용자 권한 상세 조회
      */
     public UserAuthorityDto selectUserAuthority(@NonNull String uniqId) {
-        return userAuthorityRepository.findById(uniqId)
+        return userAuthorityRepository.findById(Objects.requireNonNull(uniqId))
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -64,7 +64,7 @@ public class UserAuthorityService {
                 .authorCode(dto.getAuthorCode())
                 .mberTyCode(dto.getMberTyCode())
                 .build();
-        userAuthorityRepository.save(entity);
+        userAuthorityRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
@@ -79,13 +79,13 @@ public class UserAuthorityService {
      */
     @Transactional
     public void deleteUserAuthority(@NonNull String uniqId) {
-        userAuthorityRepository.deleteById(uniqId);
+        userAuthorityRepository.deleteById(Objects.requireNonNull(uniqId));
     }
 
     private UserAuthorityDto toDto(UserAuthority entity) {
         return UserAuthorityDto.builder()
                 .uniqId(Objects.requireNonNull(entity.getUniqId()))
-                .authorCode(Objects.requireNonNull(entity.getAuthorCode()))
+                .authorCode(entity.getAuthorCode())
                 .mberTyCode(entity.getMberTyCode())
                 .build();
     }

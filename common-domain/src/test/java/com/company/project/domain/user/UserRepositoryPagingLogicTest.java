@@ -144,9 +144,9 @@ class UserRepositoryPagingLogicTest {
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
-        userRepository.save(user3);
-        userRepository.save(user1);
-        userRepository.save(user2);
+        userRepository.save(java.util.Objects.requireNonNull(user3));
+        userRepository.save(java.util.Objects.requireNonNull(user1));
+        userRepository.save(java.util.Objects.requireNonNull(user2));
 
         // When
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "userNm"));
@@ -182,9 +182,9 @@ class UserRepositoryPagingLogicTest {
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
-        userRepository.save(user3);
-        userRepository.save(user1);
-        userRepository.save(user2);
+        userRepository.save(java.util.Objects.requireNonNull(user3));
+        userRepository.save(java.util.Objects.requireNonNull(user1));
+        userRepository.save(java.util.Objects.requireNonNull(user2));
 
         // When
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "userNm"));
@@ -220,9 +220,9 @@ class UserRepositoryPagingLogicTest {
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
-        userRepository.save(user1);
-        userRepository.save(user2);
-        userRepository.save(user3);
+        userRepository.save(java.util.Objects.requireNonNull(user1));
+        userRepository.save(java.util.Objects.requireNonNull(user2));
+        userRepository.save(java.util.Objects.requireNonNull(user3));
 
         // When
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdAt"));
@@ -285,7 +285,7 @@ class UserRepositoryPagingLogicTest {
                     .esntlId("USR" + String.format("%05d", i))
                     .password("encodedPassword")
                     .build();
-            userRepository.save(user);
+            userRepository.save(java.util.Objects.requireNonNull(user));
         }
     }
 }

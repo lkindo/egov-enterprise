@@ -73,7 +73,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public Long createPost(@NonNull String userId, BoardSaveRequest request) {
+        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -85,7 +85,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
                 Board board = Board.builder()
                                 .nttId(nttId)
-                                .bbsId(master.getBbsId())
+                                .bbsId(Objects.requireNonNull(master.getBbsId()))
                                 .nttSj(request.nttSj())
                                 .nttCn(request.nttCn())
                                 .ntceBgnde(request.ntceBgnde())
@@ -102,7 +102,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .frstRegisterId(userId)
                                 .build();
 
-                return Objects.requireNonNull(boardRepository.save(board)).getNttId();
+                return Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
+                                .getNttId();
         }
 
         @Override
@@ -129,7 +130,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 Board parent = boardRepository
-                                .findById(new BoardId(Objects.requireNonNull(parentId), master.getBbsId()))
+                                .findById(new BoardId(Objects.requireNonNull(parentId),
+                                                Objects.requireNonNull(master.getBbsId())))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 User author = userRepository.findByEsntlId(Objects.requireNonNull(userId))
@@ -140,7 +142,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
                 Board board = Board.builder()
                                 .nttId(nttId)
-                                .bbsId(master.getBbsId())
+                                .bbsId(Objects.requireNonNull(master.getBbsId()))
                                 .nttSj(request.nttSj())
                                 .nttCn(request.nttCn())
                                 .ntceBgnde(request.ntceBgnde())
@@ -157,7 +159,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .frstRegisterId(userId)
                                 .build();
 
-                return Objects.requireNonNull(boardRepository.save(board)).getNttId();
+                return Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
+                                .getNttId();
         }
 
         @Override
@@ -184,7 +187,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardDetailResult detail = boardRepository.findArticleDetail(id)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                boardRepository.findById(id).ifPresent(Board::increaseInqireCo);
+                boardRepository.findById(Objects.requireNonNull(id)).ifPresent(Board::increaseInqireCo);
 
                 return BoardDto.from(detail);
         }
@@ -203,7 +206,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request, List<MultipartFile> files)
+        public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request,
+                        List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
 

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,9 +30,10 @@ public class ScheduleService implements EgovScheduleService {
     private final UserRepository userRepository;
 
     @Override
-    public List<Map<String, Object>> selectEmpLyrPopup(ComDefaultVO searchVO) {
+    public List<Map<String, Object>> selectEmpLyrPopup(@org.springframework.lang.NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize());
-        Page<User> users = userRepository.searchUsers(null, searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+        Page<User> users = userRepository.searchUsers(null, searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
+                Objects.requireNonNull(pageable));
 
         return users.getContent().stream().map(user -> {
             Map<String, Object> map = new HashMap<>();
@@ -46,7 +48,7 @@ public class ScheduleService implements EgovScheduleService {
     }
 
     @Override
-    public Page<ScheduleDto> getScheduleList(String userId, Pageable pageable) {
+    public Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable) {
         // userId가 null이면 전체 조회? or 본인 것만?
         // eGov standard logic: usually lists public schedules or own schedules.
         // Assuming strict private + dept scope, but for step 1, let's filter by
@@ -54,9 +56,10 @@ public class ScheduleService implements EgovScheduleService {
         // For simplicity, implement findByFrstRegisterId (My Schedules).
 
         if (userId == null) {
-            return scheduleRepository.findAll(pageable).map(ScheduleDto::from);
+            return scheduleRepository.findAll(Objects.requireNonNull(pageable)).map(ScheduleDto::from);
         }
-        return scheduleRepository.findByFrstRegisterId(userId, pageable).map(ScheduleDto::from);
+        return scheduleRepository.findByFrstRegisterId(userId, Objects.requireNonNull(pageable))
+                .map(ScheduleDto::from);
     }
 
     @Override
@@ -84,8 +87,10 @@ public class ScheduleService implements EgovScheduleService {
     }
 
     @Override
-    public Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId, Pageable pageable) {
-        return scheduleRepository.findSchedules(schdulSe, ownerId, pageable).map(ScheduleDto::from);
+    public Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        return scheduleRepository.findSchedules(schdulSe, ownerId, Objects.requireNonNull(pageable))
+                .map(ScheduleDto::from);
     }
 
     @Override
@@ -98,7 +103,7 @@ public class ScheduleService implements EgovScheduleService {
 
     @Override
     public ScheduleDto getSchedule(String id) {
-        Schedule schedule = scheduleRepository.findById(id)
+        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return ScheduleDto.from(schedule);
     }
@@ -126,14 +131,14 @@ public class ScheduleService implements EgovScheduleService {
                 .frstRegisterId(userId)
                 .build();
 
-        scheduleRepository.save(schedule);
+        scheduleRepository.save(Objects.requireNonNull(schedule));
         return id;
     }
 
     @Override
     @Transactional
     public void updateSchedule(String id, String userId, ScheduleDto dto) {
-        Schedule schedule = scheduleRepository.findById(id)
+        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         // Permission Check?
@@ -159,8 +164,8 @@ public class ScheduleService implements EgovScheduleService {
     @Override
     @Transactional
     public void deleteSchedule(String id, String userId) {
-        Schedule schedule = scheduleRepository.findById(id)
+        Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        scheduleRepository.delete(schedule);
+        scheduleRepository.delete(Objects.requireNonNull(schedule));
     }
 }

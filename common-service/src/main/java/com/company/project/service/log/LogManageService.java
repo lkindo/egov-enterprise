@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +40,7 @@ public class LogManageService {
                 .rqesterIp(dto.getRqesterIp())
                 .occrrncDe(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
                 .build();
-        sysLogRepository.save(entity);
+        sysLogRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -50,7 +51,6 @@ public class LogManageService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        // Using custom search method from repository
         Page<SysLog> page = sysLogRepository.searchSysLogs(
                 searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
                 null, // Start date
@@ -74,7 +74,7 @@ public class LogManageService {
      * 시스템 로그 상세 조회
      */
     public SysLogDto selectSysLog(String requstId) {
-        return sysLogRepository.findById(requstId)
+        return sysLogRepository.findById(Objects.requireNonNull(requstId))
                 .map(this::toSysLogDto)
                 .orElse(null);
     }

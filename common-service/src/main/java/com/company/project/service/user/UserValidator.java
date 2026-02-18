@@ -1,6 +1,7 @@
 package com.company.project.service.user;
 
 import com.company.project.service.user.dto.UserSignupRequest;
+import org.springframework.lang.NonNull;
 
 /**
  * 사용자 관련 입력값 검증 유틸리티 클래스
@@ -10,11 +11,7 @@ public class UserValidator {
     /**
      * 사용자 회원가입 요청 검증
      */
-    public static void validateUserSignupRequest(UserSignupRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("User signup request cannot be null");
-        }
-
+    public static void validateUserSignupRequest(@NonNull UserSignupRequest request) {
         if (request.userId() == null || request.userId().trim().isEmpty()) {
             throw new IllegalArgumentException("User ID cannot be null or empty");
         }

@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service("egovRequestOfferServiceImpl")
 @RequiredArgsConstructor
 public class EgovRequestOfferServiceImpl implements EgovRequestOfferService {
@@ -21,12 +23,14 @@ public class EgovRequestOfferServiceImpl implements EgovRequestOfferService {
     @Override
     public Page<KnowledgeRequest> selectRequestOfferList(String searchCondition, String searchKeyword,
             Pageable pageable) throws Exception {
-        return repository.searchKnowledgeRequest(searchCondition, searchKeyword, pageable);
+        return repository.searchKnowledgeRequest(searchCondition, searchKeyword,
+                Objects.requireNonNull(pageable));
     }
 
     @Override
     public KnowledgeRequestDto selectRequestOfferDetail(String knoId) throws Exception {
-        KnowledgeRequest entity = repository.findById(knoId).orElseThrow(() -> new Exception("Not found"));
+        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(knoId))
+                .orElseThrow(() -> new Exception("Not found"));
         return convertToDto(entity);
     }
 
@@ -34,13 +38,13 @@ public class EgovRequestOfferServiceImpl implements EgovRequestOfferService {
     @Transactional
     public void insertRequestOffer(KnowledgeRequestDto requestDto) throws Exception {
         KnowledgeRequest entity = convertToEntity(requestDto);
-        repository.save(entity);
+        repository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateRequestOffer(KnowledgeRequestDto requestDto) throws Exception {
-        KnowledgeRequest entity = repository.findById(requestDto.getKnoId())
+        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(requestDto.getKnoId()))
                 .orElseThrow(() -> new Exception("Not found"));
         updateEntity(entity, requestDto);
     }
@@ -48,7 +52,7 @@ public class EgovRequestOfferServiceImpl implements EgovRequestOfferService {
     @Override
     @Transactional
     public void deleteRequestOffer(String knoId) throws Exception {
-        repository.deleteById(knoId);
+        repository.deleteById(Objects.requireNonNull(knoId));
     }
 
     @Override
@@ -58,9 +62,7 @@ public class EgovRequestOfferServiceImpl implements EgovRequestOfferService {
 
     @Override
     public int getReplyCount(String knoId) throws Exception {
-        // Correct implementation for counting replies via JpaRepository count or custom
-        // query
-        return (int) repository.countByAnsParents(knoId);
+        return (int) repository.countByAnsParents(Objects.requireNonNull(knoId));
     }
 
     private KnowledgeRequestDto convertToDto(KnowledgeRequest entity) {

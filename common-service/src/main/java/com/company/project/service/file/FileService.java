@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     public String uploadFiles(List<MultipartFile> files) throws IOException {
         String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
         FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
-        master = fileMasterRepository.save(master);
+        master = Objects.requireNonNull(fileMasterRepository.save(Objects.requireNonNull(master)));
 
         int fileSn = 1;
         for (MultipartFile file : files) {
@@ -68,7 +69,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                     .fileMg(file.getSize())
                     .build();
 
-            fileDetailRepository.save(detail);
+            fileDetailRepository.save(Objects.requireNonNull(detail));
         }
 
         return atchFileId;
@@ -81,9 +82,9 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     public List<FileDto> getFileList(String atchFileId) {
         if (atchFileId == null)
             return List.of();
-        FileMaster master = fileMasterRepository.findById(atchFileId)
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return fileDetailRepository.findByFileMaster(master).stream()
+        return fileDetailRepository.findByFileMaster(Objects.requireNonNull(master)).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -93,39 +94,45 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
      */
     @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
-        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+        FileDetail detail = fileDetailRepository
+                .findById(new FileDetailId(Objects.requireNonNull(atchFileId), Objects.requireNonNull(fileSn)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        return storageService.loadAsResource(detail.getStreFileNm(), detail.getFileStreCours());
+        return storageService.loadAsResource(Objects.requireNonNull(detail.getStreFileNm()),
+                Objects.requireNonNull(detail.getFileStreCours()));
     }
 
     @Override
     @Transactional
     public void deleteFiles(String atchFileId) throws IOException {
-        FileMaster master = fileMasterRepository.findById(atchFileId)
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        List<FileDetail> details = fileDetailRepository.findByFileMaster(master);
+        List<FileDetail> details = fileDetailRepository.findByFileMaster(Objects.requireNonNull(master));
         for (FileDetail detail : details) {
-            storageService.delete(detail.getStreFileNm(), detail.getFileStreCours());
+            storageService.delete(Objects.requireNonNull(detail.getStreFileNm()),
+                    Objects.requireNonNull(detail.getFileStreCours()));
         }
 
-        fileMasterRepository.delete(master);
+        fileMasterRepository.delete(Objects.requireNonNull(master));
     }
 
     @Override
     @Transactional
     public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
-        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+        FileDetail detail = fileDetailRepository
+                .findById(new FileDetailId(Objects.requireNonNull(atchFileId), Objects.requireNonNull(fileSn)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        storageService.delete(detail.getStreFileNm(), detail.getFileStreCours());
-        fileDetailRepository.delete(detail);
+        storageService.delete(Objects.requireNonNull(detail.getStreFileNm()),
+                Objects.requireNonNull(detail.getFileStreCours()));
+        fileDetailRepository.delete(Objects.requireNonNull(detail));
     }
 
     @Override
     public FileDto getFileDetail(String atchFileId, Integer fileSn) {
-        FileDetail detail = fileDetailRepository.findById(new FileDetailId(atchFileId, fileSn))
+        FileDetail detail = fileDetailRepository
+                .findById(new FileDetailId(Objects.requireNonNull(atchFileId), Objects.requireNonNull(fileSn)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return convertToDto(detail);
     }
@@ -133,10 +140,10 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     @Override
     @Transactional
     public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
-        FileMaster master = fileMasterRepository.findById(atchFileId)
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        Integer maxSn = fileDetailRepository.findByFileMaster(master).stream()
+        Integer maxSn = fileDetailRepository.findByFileMaster(Objects.requireNonNull(master)).stream()
                 .mapToInt(FileDetail::getFileSn)
                 .max()
                 .orElse(0);
@@ -159,7 +166,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                     .fileMg(file.getSize())
                     .build();
 
-            fileDetailRepository.save(detail);
+            fileDetailRepository.save(Objects.requireNonNull(detail));
         }
     }
 
@@ -167,10 +174,10 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     public org.springframework.data.domain.Page<FileDto> getAllFileList(
             org.springframework.data.domain.Pageable pageable, String searchKeyword) {
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
-            return fileDetailRepository.findByOrignlFileNmContaining(searchKeyword, pageable)
+            return fileDetailRepository.findByOrignlFileNmContaining(searchKeyword, Objects.requireNonNull(pageable))
                     .map(this::convertToDto);
         }
-        return fileDetailRepository.findAll(pageable)
+        return fileDetailRepository.findAll(Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 

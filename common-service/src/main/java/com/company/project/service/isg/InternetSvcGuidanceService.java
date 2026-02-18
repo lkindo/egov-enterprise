@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
 
     @Override
     public InternetSvcGuidanceDto getIntnetSvcGuidance(String intnetSvcId) {
-        return internetSvcGuidanceRepository.findById(intnetSvcId)
+        return internetSvcGuidanceRepository.findById(Objects.requireNonNull(intnetSvcId))
                 .map(this::convertToDto)
                 .orElse(null);
     }
@@ -36,13 +37,13 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
                 .frstRegisterId(dto.getUserId())
                 .lastUpdusrId(dto.getUserId())
                 .build();
-        internetSvcGuidanceRepository.save(isg);
+        internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
     }
 
     @Override
     @Transactional
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
-        internetSvcGuidanceRepository.findById(dto.getIntnetSvcId())
+        internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getIntnetSvcId()))
                 .ifPresent(isg -> {
                     // InternetSvcGuidance 엔티티에 update 메소드 추가 필요 시 반영
                 });
@@ -51,19 +52,19 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
     @Override
     @Transactional
     public void deleteIntnetSvcGuidance(String intnetSvcId) {
-        internetSvcGuidanceRepository.deleteById(intnetSvcId);
+        internetSvcGuidanceRepository.deleteById(Objects.requireNonNull(intnetSvcId));
     }
 
     @Override
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {
-        return internetSvcGuidanceRepository.findAll(pageable)
+        return internetSvcGuidanceRepository.findAll(Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
     public List<InternetSvcGuidanceDto> getIntnetSvcGuidanceResult() {
         // ReflectionAt == 'Y' 게시 대상 조회 (Repository 확장 필요)
-        return null; // 구현 생략
+        return java.util.Collections.emptyList();
     }
 
     private InternetSvcGuidanceDto convertToDto(InternetSvcGuidance isg) {

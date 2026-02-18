@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,10 +50,6 @@ public class ProgramService {
      */
     public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
-        // Since we don't have a count query by keyword exposed directly in repository
-        // (unless page handles it)
-        // searchByKeyword returns Page, checking total elements is efficient.
-        // We can create a lightweight count request if needed, but for now:
         if (keyword != null && !keyword.isEmpty()) {
             return (int) programRepository.searchByKeyword(keyword, PageRequest.of(0, 1)).getTotalElements();
         }
@@ -63,13 +60,15 @@ public class ProgramService {
      * 프로그램 상세 조회
      */
     public ProgramDto selectProgrm(ComDefaultVO searchVO) {
+        if (searchVO.getSearchKeyword() == null)
+            return new ProgramDto();
         return programRepository.findById(searchVO.getSearchKeyword())
                 .map(this::toDto)
                 .orElse(new ProgramDto());
     }
 
     public ProgramDto selectProgrmById(String progrmFileNm) {
-        return programRepository.findById(progrmFileNm)
+        return programRepository.findById(Objects.requireNonNull(progrmFileNm))
                 .map(this::toDto)
                 .orElse(new ProgramDto());
     }
@@ -78,7 +77,7 @@ public class ProgramService {
      * 프로그램 등록
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void insertProgrm(ProgramDto dto) {
         Program program = Program.builder()
                 .progrmFileNm(dto.getProgrmFileNm())
@@ -87,16 +86,16 @@ public class ProgramService {
                 .url(dto.getUrl())
                 .progrmDc(dto.getProgrmDc())
                 .build();
-        programRepository.save(program);
+        programRepository.save(Objects.requireNonNull(program));
     }
 
     /**
      * 프로그램 수정
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void updateProgrm(ProgramDto dto) {
-        programRepository.findById(dto.getProgrmFileNm()).ifPresent(program -> {
+        programRepository.findById(Objects.requireNonNull(dto.getProgrmFileNm())).ifPresent(program -> {
             program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
         });
     }
@@ -105,17 +104,19 @@ public class ProgramService {
      * 프로그램 삭제
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
-        programRepository.deleteById(dto.getProgrmFileNm());
+        programRepository.deleteById(Objects.requireNonNull(dto.getProgrmFileNm()));
     }
 
     /**
      * 프로그램 목록 멀티 삭제
      */
     @Transactional
-    @CacheEvict(value = {"menuHierarchy", "rootMenuIdByUrl", "allMenuDtos"}, allEntries = true)
+    @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {
+        if (checkedProgrmFileNmForDel == null)
+            return;
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
         programRepository.deleteAllByIdInBatch(delProgrmFileNm);
     }

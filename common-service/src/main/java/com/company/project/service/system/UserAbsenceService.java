@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 public class UserAbsenceService extends EgovAbstractServiceImpl {
 
@@ -27,7 +29,7 @@ public class UserAbsenceService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public UserAbsenceDto getUserAbsence(String userId) {
-        UserAbsence entity = userAbsenceRepository.findById(userId)
+        UserAbsence entity = userAbsenceRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new RuntimeException("User absence record not found"));
         return UserAbsenceDto.from(entity);
     }
@@ -41,11 +43,11 @@ public class UserAbsenceService extends EgovAbstractServiceImpl {
 
         entity.update(dto.getUserAbsnceAt(), "SYSTEM");
 
-        userAbsenceRepository.save(entity);
+        userAbsenceRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void deleteUserAbsence(String userId) {
-        userAbsenceRepository.deleteById(userId);
+        userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 }

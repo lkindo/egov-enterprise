@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @Transactional(readOnly = true)
 public class AnniversaryService implements EgovAnniversaryService {
@@ -24,19 +26,21 @@ public class AnniversaryService implements EgovAnniversaryService {
     @Override
     public Page<AnniversaryDto> getAnniversaryList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return anniversaryRepository.findAll(pageable).map(AnniversaryDto::from);
+            return anniversaryRepository.findAll(Objects.requireNonNull(pageable)).map(AnniversaryDto::from);
         }
-        return anniversaryRepository.findByAnnvrsryNmContaining(keyword, pageable).map(AnniversaryDto::from);
+        return anniversaryRepository.findByAnnvrsryNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(AnniversaryDto::from);
     }
 
     @Override
     public Page<AnniversaryDto> getMyAnniversaryList(String userId, Pageable pageable) {
-        return anniversaryRepository.findByUsid(userId, pageable).map(AnniversaryDto::from);
+        return anniversaryRepository.findByUsid(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
+                .map(AnniversaryDto::from);
     }
 
     @Override
     public AnniversaryDto getAnniversary(String annId) {
-        return anniversaryRepository.findById(annId)
+        return anniversaryRepository.findById(Objects.requireNonNull(annId))
                 .map(AnniversaryDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -57,13 +61,13 @@ public class AnniversaryService implements EgovAnniversaryService {
                 .memo(dto.getMemo())
                 .reptitAt(dto.getReptitAt())
                 .build();
-        anniversaryRepository.save(entity);
+        anniversaryRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateAnniversary(String annId, String userId, AnniversaryDto dto) {
-        Anniversary entity = anniversaryRepository.findById(annId)
+        Anniversary entity = anniversaryRepository.findById(Objects.requireNonNull(annId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getAnnvrsrySe(), dto.getAnnvrsryNm(), dto.getAnnvrsryDe(),
                 dto.getCldrSe(), dto.getAnnvrsrySetup(), dto.getAnnvrsryBeginDe(),
@@ -73,13 +77,11 @@ public class AnniversaryService implements EgovAnniversaryService {
     @Override
     @Transactional
     public void deleteAnniversary(String annId) {
-        anniversaryRepository.deleteById(annId);
+        anniversaryRepository.deleteById(Objects.requireNonNull(annId));
     }
 
     @Override
     public int checkAnniversaryDuplicate(String userId, String annvrsryDe, String annvrsryNm, String annId) {
-        // Implement logic: count anniversaries with same userId, date, and name, but
-        // different ID (if provided)
         if (annId == null || annId.isEmpty()) {
             return (int) anniversaryRepository.countByUsidAndAnnvrsryDeAndAnnvrsryNm(userId, annvrsryDe, annvrsryNm);
         } else {

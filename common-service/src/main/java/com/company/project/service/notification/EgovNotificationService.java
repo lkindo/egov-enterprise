@@ -11,7 +11,7 @@ import java.util.List;
  */
 public interface EgovNotificationService {
 
-    Page<NotificationDto> getNotificationList(String keyword, Pageable pageable);
+    Page<NotificationDto> getNotificationList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
     NotificationDto getNotification(String ntfcNo);
 

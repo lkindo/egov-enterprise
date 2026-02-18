@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service("egovBoardMasterService")
@@ -40,7 +41,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public BoardMasterDto getBoardMaster(@NonNull String bbsId) {
-        BoardMaster entity = boardMasterRepository.findById(bbsId)
+        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return BoardMasterDto.from(entity);
     }
@@ -52,7 +53,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
         condition.setSearchCnd(searchCnd);
         condition.setSearchWrd(searchWrd);
 
-        return boardMasterRepository.searchBoardMasters(condition, pageable)
+        return boardMasterRepository.searchBoardMasters(condition, Objects.requireNonNull(pageable))
                 .map(this::convertSearchResultToDto);
     }
 
@@ -93,18 +94,18 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .lastUpdusrId(dto.getFrstRegisterId())
                 .cmmntyId(dto.getCmmntyId())
                 .blogId(dto.getBlogId())
-                .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N")
-                .commentAt(dto.getCommentAt() != null ? dto.getCommentAt() : "N")
-                .stsfdgAt(dto.getStsfdgAt() != null ? dto.getStsfdgAt() : "N")
+                .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N") // Ensure default
+                .commentAt(dto.getCommentAt() != null ? dto.getCommentAt() : "N") // Ensure default
+                .stsfdgAt(dto.getStsfdgAt() != null ? dto.getStsfdgAt() : "N") // Ensure default
                 .build();
 
-        boardMasterRepository.save(entity);
+        boardMasterRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateBoardMaster(BoardMasterDto dto) {
-        BoardMaster entity = boardMasterRepository.findById(dto.getBbsId())
+        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(dto.getBbsId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(
@@ -124,7 +125,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional
     public void deleteBoardMaster(String bbsId, String userId) {
-        BoardMaster entity = boardMasterRepository.findById(bbsId)
+        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.delete(userId);
@@ -132,14 +133,14 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     public boolean canUseSatisfaction(String bbsId) {
-        return boardMasterRepository.findById(bbsId)
+        return boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .map(bm -> "Y".equals(bm.getStsfdgAt()))
                 .orElse(false);
     }
 
     @Override
     public boolean canUseComment(String bbsId) {
-        return boardMasterRepository.findById(bbsId)
+        return boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .map(bm -> "Y".equals(bm.getCommentAt()))
                 .orElse(false);
     }
@@ -148,13 +149,13 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Transactional(readOnly = true)
     public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
         // QueryDSL 기반 검색이 필요할 수 있으나 일단 findAll로 처리 (필요시 Custom Repository에 추가)
-        return blogRepository.findAll(pageable).map(BlogDto::from);
+        return blogRepository.findAll(Objects.requireNonNull(pageable)).map(BlogDto::from);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BlogDto getBlog(String blogId) {
-        return blogRepository.findById(blogId).map(BlogDto::from).orElse(null);
+        return blogRepository.findById(Objects.requireNonNull(blogId)).map(BlogDto::from).orElse(null);
     }
 
     @Override
@@ -177,7 +178,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .frstRegisterId(dto.getFrstRegisterId())
                 .blogAt(dto.getBlogAt())
                 .build();
-        blogRepository.save(entity);
+        blogRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
@@ -190,7 +191,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .useAt("Y")
                 .frstRegisterId(userId)
                 .build();
-        blogUserRepository.save(user);
+        blogUserRepository.save(Objects.requireNonNull(user));
     }
 
     @Override
@@ -214,7 +215,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public List<BoardMasterDto> getBoardMasterListByCommunity(String cmmntyId) {
-        return boardMasterRepository.findByCmmntyIdAndUseAt(cmmntyId, "Y")
+        return boardMasterRepository.findByCmmntyIdAndUseAt(Objects.requireNonNull(cmmntyId), "Y")
                 .stream()
                 .map(BoardMasterDto::from)
                 .collect(Collectors.toList());

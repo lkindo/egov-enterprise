@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ public class RoleManageService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        Page<RoleInfo> page = roleInfoRepository.findAll(pageable);
+        Page<RoleInfo> page = roleInfoRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
@@ -49,7 +50,7 @@ public class RoleManageService {
      * 롤 상세 조회
      */
     public RoleManageDto selectRole(String roleCode) {
-        return roleInfoRepository.findById(roleCode)
+        return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -72,7 +73,7 @@ public class RoleManageService {
                 .roleTy(dto.getRoleTy())
                 .roleSort(dto.getRoleSort())
                 .build();
-        roleInfoRepository.save(entity);
+        roleInfoRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -80,7 +81,7 @@ public class RoleManageService {
      */
     @Transactional
     public void updateRole(RoleManageDto dto) {
-        roleInfoRepository.findById(dto.getRoleCode()).ifPresent(entity -> {
+        roleInfoRepository.findById(Objects.requireNonNull(dto.getRoleCode())).ifPresent(entity -> {
             entity.update(dto.getRoleNm(), dto.getRolePttrn(), dto.getRoleDc(), dto.getRoleTy(), dto.getRoleSort());
         });
     }
@@ -90,7 +91,7 @@ public class RoleManageService {
      */
     @Transactional
     public void deleteRole(String roleCode) {
-        roleInfoRepository.deleteById(roleCode);
+        roleInfoRepository.deleteById(Objects.requireNonNull(roleCode));
     }
 
     /**
@@ -98,7 +99,7 @@ public class RoleManageService {
      */
     @Transactional
     public void deleteRoles(String[] roleCodes) {
-        roleInfoRepository.deleteAllByIdInBatch(Arrays.asList(roleCodes));
+        roleInfoRepository.deleteAllByIdInBatch(Objects.requireNonNull(Arrays.asList(roleCodes)));
     }
 
     private RoleManageDto toDto(RoleInfo entity) {

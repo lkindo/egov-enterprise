@@ -8,10 +8,12 @@ import com.company.project.service.batch.dto.BatchOpertDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -25,13 +27,16 @@ public class BatchOpertService implements EgovBatchOpertService {
     private final BatchOpertRepository batchOpertRepository;
 
     @Override
-    public Page<BatchOpertDto> getBatchOpertList(String searchCondition, String keyword, Pageable pageable) {
-        return batchOpertRepository.searchBatchOperts(searchCondition, keyword, pageable).map(BatchOpertDto::from);
+    public Page<BatchOpertDto> getBatchOpertList(String searchCondition, String keyword,
+            @NonNull Pageable pageable) {
+        return batchOpertRepository
+                .searchBatchOperts(searchCondition, keyword, Objects.requireNonNull(pageable))
+                .map(BatchOpertDto::from);
     }
 
     @Override
     public BatchOpertDto getBatchOpert(String batchOpertId) {
-        return batchOpertRepository.findById(batchOpertId)
+        return batchOpertRepository.findById(Objects.requireNonNull(batchOpertId))
                 .map(BatchOpertDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -48,14 +53,14 @@ public class BatchOpertService implements EgovBatchOpertService {
                 .useAt(dto.getUseAt())
                 .frstRegisterId(userId)
                 .build();
-        batchOpertRepository.save(batchOpert);
+        batchOpertRepository.save(Objects.requireNonNull(batchOpert));
         return id;
     }
 
     @Override
     @Transactional
     public void updateBatchOpert(String batchOpertId, String userId, BatchOpertDto dto) {
-        BatchOpert batchOpert = batchOpertRepository.findById(batchOpertId)
+        BatchOpert batchOpert = batchOpertRepository.findById(Objects.requireNonNull(batchOpertId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         batchOpert.update(dto.getBatchOpertNm(), dto.getBatchProgrm(), dto.getParamtr(),
                 dto.getUseAt(), userId);
@@ -64,7 +69,7 @@ public class BatchOpertService implements EgovBatchOpertService {
     @Override
     @Transactional
     public void deleteBatchOpert(String batchOpertId) {
-        batchOpertRepository.deleteById(batchOpertId);
+        batchOpertRepository.deleteById(Objects.requireNonNull(batchOpertId));
     }
 
     @Override

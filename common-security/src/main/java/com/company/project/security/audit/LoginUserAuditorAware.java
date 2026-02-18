@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import org.springframework.lang.NonNull;
 import java.util.Optional;
+import java.util.Objects;
 
 /**
  * JPA Auditing을 위한 현재 사용자 ID 제공 클래스
@@ -22,14 +23,14 @@ public class LoginUserAuditorAware implements AuditorAware<String> {
 
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication.getPrincipal().equals("anonymousUser")) {
-            return Optional.of("SYSTEM");
+            return Objects.requireNonNull(Optional.of("SYSTEM"));
         }
 
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails) {
-            return Optional.of(((CustomUserDetails) principal).getUser().getUserId());
+            return Objects.requireNonNull(Optional.of(((CustomUserDetails) principal).getUser().getUserId()));
         }
 
-        return Optional.of(authentication.getName());
+        return Objects.requireNonNull(Optional.of(authentication.getName()));
     }
 }

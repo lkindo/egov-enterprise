@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,10 +29,12 @@ public class DutyService implements EgovDutyService {
 
     @Override
     public DutyDto getDuty(String bndtId, String bndtDe) {
-        return bndtManageRepository.findById(new BndtManageId(bndtId, bndtDe))
+        return bndtManageRepository.findById(Objects.requireNonNull(new BndtManageId(bndtId, bndtDe)))
                 .map(entity -> {
                     DutyDto dto = DutyDto.from(entity);
-                    dto.setDiaries(bndtDiaryRepository.findByBndtIdAndBndtDe(bndtId, bndtDe)
+                    dto.setDiaries(bndtDiaryRepository
+                            .findByBndtIdAndBndtDe(Objects.requireNonNull(bndtId),
+                                    Objects.requireNonNull(bndtDe))
                             .stream().map(DutyDiaryDto::from).collect(Collectors.toList()));
                     return dto;
                 })
@@ -46,13 +49,14 @@ public class DutyService implements EgovDutyService {
                 .bndtDe(dto.getBndtDe())
                 .remark(dto.getRemark())
                 .build();
-        bndtManageRepository.save(entity);
+        bndtManageRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateDuty(DutyDto dto) {
-        BndtManage entity = bndtManageRepository.findById(new BndtManageId(dto.getBndtId(), dto.getBndtDe()))
+        BndtManage entity = bndtManageRepository
+                .findById(Objects.requireNonNull(new BndtManageId(dto.getBndtId(), dto.getBndtDe())))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRemark());
     }
@@ -60,8 +64,9 @@ public class DutyService implements EgovDutyService {
     @Override
     @Transactional
     public void deleteDuty(String bndtId, String bndtDe) {
-        bndtDiaryRepository.deleteByBndtIdAndBndtDe(bndtId, bndtDe);
-        bndtManageRepository.deleteById(new BndtManageId(bndtId, bndtDe));
+        bndtDiaryRepository.deleteByBndtIdAndBndtDe(Objects.requireNonNull(bndtId),
+                Objects.requireNonNull(bndtDe));
+        bndtManageRepository.deleteById(Objects.requireNonNull(new BndtManageId(bndtId, bndtDe)));
     }
 
     @Override
@@ -83,7 +88,8 @@ public class DutyService implements EgovDutyService {
 
     @Override
     public Page<DutyDto> getDutyList(String bndtDePrefix, Pageable pageable) {
-        Page<BndtManage> page = bndtManageRepository.findByBndtDeStartingWith(bndtDePrefix, pageable);
+        Page<BndtManage> page = bndtManageRepository.findByBndtDeStartingWith(bndtDePrefix,
+                Objects.requireNonNull(pageable));
 
         List<BndtDiary> allDiaries = bndtDiaryRepository.findByBndtDeStartingWith(bndtDePrefix);
         Map<String, List<BndtDiary>> diariesByDuty = allDiaries.stream()
@@ -100,7 +106,6 @@ public class DutyService implements EgovDutyService {
 
     @Override
     public List<DutyCheckDto> getDutyCheckList(String useAt) {
-        // Simple list retrieval for checks
         return bndtCeckManageRepository.findAll().stream()
                 .filter(c -> useAt == null || useAt.equals(c.getUseAt()))
                 .map(DutyCheckDto::from)
@@ -116,7 +121,8 @@ public class DutyService implements EgovDutyService {
         String bndtId = diaryList.get(0).getBndtId();
         String bndtDe = diaryList.get(0).getBndtDe();
 
-        bndtDiaryRepository.deleteByBndtIdAndBndtDe(bndtId, bndtDe);
+        bndtDiaryRepository.deleteByBndtIdAndBndtDe(Objects.requireNonNull(bndtId),
+                Objects.requireNonNull(bndtDe));
 
         for (DutyDiaryDto dto : diaryList) {
             BndtDiary entity = BndtDiary.builder()
@@ -126,7 +132,7 @@ public class DutyService implements EgovDutyService {
                     .bndtCeckCd(dto.getBndtCeckCd())
                     .chckSttus(dto.getChckSttus())
                     .build();
-            bndtDiaryRepository.save(entity);
+            bndtDiaryRepository.save(Objects.requireNonNull(entity));
         }
     }
 }

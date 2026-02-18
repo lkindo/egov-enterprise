@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 시스템 이력 서비스 구현체
  */
@@ -24,14 +26,15 @@ public class SystemHistoryService implements EgovSystemHistoryService {
     @Override
     public Page<SystemHistoryDto> getSystemHistoryList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return systemHistoryRepository.findAll(pageable).map(SystemHistoryDto::from);
+            return systemHistoryRepository.findAll(Objects.requireNonNull(pageable)).map(SystemHistoryDto::from);
         }
-        return systemHistoryRepository.searchByKeyword(keyword, pageable).map(SystemHistoryDto::from);
+        return systemHistoryRepository.searchByKeyword(keyword, Objects.requireNonNull(pageable))
+                .map(SystemHistoryDto::from);
     }
 
     @Override
     public SystemHistoryDto getSystemHistory(String histId) {
-        SystemHistory history = systemHistoryRepository.findById(histId)
+        SystemHistory history = systemHistoryRepository.findById(Objects.requireNonNull(histId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return SystemHistoryDto.from(history);
     }
@@ -51,14 +54,14 @@ public class SystemHistoryService implements EgovSystemHistoryService {
                 .frstRegisterId(userId)
                 .build();
 
-        systemHistoryRepository.save(history);
+        systemHistoryRepository.save(Objects.requireNonNull(history));
         return histId;
     }
 
     @Override
     @Transactional
     public void updateSystemHistory(String histId, String userId, SystemHistoryDto dto) {
-        SystemHistory history = systemHistoryRepository.findById(histId)
+        SystemHistory history = systemHistoryRepository.findById(Objects.requireNonNull(histId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         history.update(dto.getSysNm(), dto.getHistSeCode(), dto.getHistCn(),
@@ -68,8 +71,8 @@ public class SystemHistoryService implements EgovSystemHistoryService {
     @Override
     @Transactional
     public void deleteSystemHistory(String histId, String userId) {
-        SystemHistory history = systemHistoryRepository.findById(histId)
+        SystemHistory history = systemHistoryRepository.findById(Objects.requireNonNull(histId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        systemHistoryRepository.delete(history);
+        systemHistoryRepository.delete(Objects.requireNonNull(history));
     }
 }

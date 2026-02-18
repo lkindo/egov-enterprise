@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,17 +22,21 @@ public class InformalSanctnService implements EgovInformalSanctnService {
 
     @Override
     public Page<InformalSanctnDto> getInfrmlSanctnList(String applcntId, Pageable pageable) {
-        return informalSanctnRepository.findByApplcntId(applcntId, pageable).map(InformalSanctnDto::from);
+        return informalSanctnRepository
+                .findByApplcntId(Objects.requireNonNull(applcntId), Objects.requireNonNull(pageable))
+                .map(InformalSanctnDto::from);
     }
 
     @Override
     public Page<InformalSanctnDto> getReceivedInfrmlSanctnList(String sanctnerId, Pageable pageable) {
-        return informalSanctnRepository.findBySanctnerId(sanctnerId, pageable).map(InformalSanctnDto::from);
+        return informalSanctnRepository
+                .findBySanctnerId(Objects.requireNonNull(sanctnerId), Objects.requireNonNull(pageable))
+                .map(InformalSanctnDto::from);
     }
 
     @Override
     public InformalSanctnDto getInfrmlSanctn(String infrmlSanctnId) {
-        return informalSanctnRepository.findById(infrmlSanctnId)
+        return informalSanctnRepository.findById(Objects.requireNonNull(infrmlSanctnId))
                 .map(InformalSanctnDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -47,13 +53,13 @@ public class InformalSanctnService implements EgovInformalSanctnService {
                 .sanctnerId(dto.getSanctnerId())
                 .confmAt("N")
                 .build();
-        informalSanctnRepository.save(entity);
+        informalSanctnRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateInfrmlSanctn(InformalSanctnDto dto) {
-        InformalSanctn entity = informalSanctnRepository.findById(dto.getInfrmlSanctnId())
+        InformalSanctn entity = informalSanctnRepository.findById(Objects.requireNonNull(dto.getInfrmlSanctnId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getJobSeCode(), dto.getReqstDe(), dto.getSanctnerId());
     }
@@ -61,13 +67,13 @@ public class InformalSanctnService implements EgovInformalSanctnService {
     @Override
     @Transactional
     public void deleteInfrmlSanctn(String infrmlSanctnId) {
-        informalSanctnRepository.deleteById(infrmlSanctnId);
+        informalSanctnRepository.deleteById(Objects.requireNonNull(infrmlSanctnId));
     }
 
     @Override
     @Transactional
     public void confirmInfrmlSanctn(String infrmlSanctnId, String confmAt, String returnResn) {
-        InformalSanctn entity = informalSanctnRepository.findById(infrmlSanctnId)
+        InformalSanctn entity = informalSanctnRepository.findById(Objects.requireNonNull(infrmlSanctnId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.confirm(confmAt, returnResn);
     }

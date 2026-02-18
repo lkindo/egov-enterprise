@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,12 +28,15 @@ public class HelpService implements EgovHelpService {
     // Administration Word
     @Override
     public Page<AdministrationWordDto> getAdministrationWordList(String keyword, Pageable pageable) {
-        return administrationWordRepository.findByAdministWordNmContaining(keyword, pageable).map(AdministrationWordDto::from);
+        return administrationWordRepository
+                .findByAdministWordNmContaining(Objects.requireNonNullElse(keyword, ""),
+                        Objects.requireNonNull(pageable))
+                .map(AdministrationWordDto::from);
     }
 
     @Override
     public AdministrationWordDto getAdministrationWord(String wordId) {
-        return administrationWordRepository.findById(wordId)
+        return administrationWordRepository.findById(Objects.requireNonNull(wordId))
                 .map(AdministrationWordDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -52,34 +57,37 @@ public class HelpService implements EgovHelpService {
                 .administWordDc(dto.getAdministWordDc())
                 .frstRegisterId(userId)
                 .build();
-        administrationWordRepository.save(entity);
+        administrationWordRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateAdministrationWord(String wordId, String userId, AdministrationWordDto dto) {
-        AdministrationWord entity = administrationWordRepository.findById(wordId)
+        AdministrationWord entity = administrationWordRepository.findById(Objects.requireNonNull(wordId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getAdministWordNm(), dto.getAdministWordEngNm(), dto.getAdministWordAbrv(),
-                dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(), dto.getAdministWordDc(), userId);
+                dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(),
+                dto.getAdministWordDc(), userId);
     }
 
     @Override
     @Transactional
     public void deleteAdministrationWord(String wordId) {
-        administrationWordRepository.deleteById(wordId);
+        administrationWordRepository.deleteById(Objects.requireNonNull(wordId));
     }
 
     // HPCM (Help)
     @Override
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
-        return hpcmRepository.findByHpcmDfContaining(keyword, pageable).map(HpcmDto::from);
+        return hpcmRepository
+                .findByHpcmDfContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .map(HpcmDto::from);
     }
 
     @Override
     public HpcmDto getHpcm(String hpcmId) {
-        return hpcmRepository.findById(hpcmId)
+        return hpcmRepository.findById(Objects.requireNonNull(hpcmId))
                 .map(HpcmDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -95,14 +103,14 @@ public class HelpService implements EgovHelpService {
                 .hpcmDc(dto.getHpcmDc())
                 .frstRegisterId(userId)
                 .build();
-        hpcmRepository.save(entity);
+        hpcmRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateHpcm(String hpcmId, String userId, HpcmDto dto) {
-        Hpcm entity = hpcmRepository.findById(hpcmId)
+        Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hpcmId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getHpcmSeCode(), dto.getHpcmDf(), dto.getHpcmDc(), userId);
     }
@@ -110,18 +118,20 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public void deleteHpcm(String hpcmId) {
-        hpcmRepository.deleteById(hpcmId);
+        hpcmRepository.deleteById(Objects.requireNonNull(hpcmId));
     }
 
     // Online Manual
     @Override
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
-        return onlineManualRepository.findByOnlineMnlNmContaining(keyword, pageable).map(OnlineManualDto::from);
+        return onlineManualRepository
+                .findByOnlineMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .map(OnlineManualDto::from);
     }
 
     @Override
     public OnlineManualDto getOnlineManual(String mnlId) {
-        return onlineManualRepository.findById(mnlId)
+        return onlineManualRepository.findById(Objects.requireNonNull(mnlId))
                 .map(OnlineManualDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -138,33 +148,36 @@ public class HelpService implements EgovHelpService {
                 .onlineMnlDc(dto.getOnlineMnlDc())
                 .frstRegisterId(userId)
                 .build();
-        onlineManualRepository.save(entity);
+        onlineManualRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateOnlineManual(String mnlId, String userId, OnlineManualDto dto) {
-        OnlineManual entity = onlineManualRepository.findById(mnlId)
+        OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(mnlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc(), userId);
+        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc(),
+                userId);
     }
 
     @Override
     @Transactional
     public void deleteOnlineManual(String mnlId) {
-        onlineManualRepository.deleteById(mnlId);
+        onlineManualRepository.deleteById(Objects.requireNonNull(mnlId));
     }
 
     // Word Dictionary
     @Override
     public Page<WordDicaryDto> getWordDicaryList(String keyword, Pageable pageable) {
-        return wordDicaryRepository.findByWordNmContaining(keyword, pageable).map(WordDicaryDto::from);
+        return wordDicaryRepository
+                .findByWordNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .map(WordDicaryDto::from);
     }
 
     @Override
     public WordDicaryDto getWordDicary(String wordId) {
-        return wordDicaryRepository.findById(wordId)
+        return wordDicaryRepository.findById(Objects.requireNonNull(wordId))
                 .map(WordDicaryDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -181,14 +194,14 @@ public class HelpService implements EgovHelpService {
                 .synonm(dto.getSynonm())
                 .frstRegisterId(userId)
                 .build();
-        wordDicaryRepository.save(entity);
+        wordDicaryRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateWordDicary(String wordId, String userId, WordDicaryDto dto) {
-        WordDicary entity = wordDicaryRepository.findById(wordId)
+        WordDicary entity = wordDicaryRepository.findById(Objects.requireNonNull(wordId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm(), userId);
     }
@@ -196,6 +209,6 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public void deleteWordDicary(String wordId) {
-        wordDicaryRepository.deleteById(wordId);
+        wordDicaryRepository.deleteById(Objects.requireNonNull(wordId));
     }
 }

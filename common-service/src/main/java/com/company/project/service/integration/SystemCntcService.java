@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 시스템 연계 서비스 구현체
@@ -32,7 +33,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
      * 연계 상세 조회
      */
     public SystemCntc selectSystemCntcDetail(String cntcId) {
-        return systemCntcRepository.findById(cntcId)
+        return systemCntcRepository.findById(Objects.requireNonNull(cntcId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
@@ -41,7 +42,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
      */
     @Transactional
     public void insertSystemCntc(SystemCntc systemCntc) {
-        systemCntcRepository.save(systemCntc);
+        systemCntcRepository.save(Objects.requireNonNull(systemCntc));
     }
 
     /**
@@ -49,7 +50,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
      */
     @Transactional
     public void approveSystemCntc(String cntcId) {
-        SystemCntc systemCntc = selectSystemCntcDetail(cntcId);
+        SystemCntc systemCntc = selectSystemCntcDetail(Objects.requireNonNull(cntcId));
         systemCntc.approve();
     }
 }

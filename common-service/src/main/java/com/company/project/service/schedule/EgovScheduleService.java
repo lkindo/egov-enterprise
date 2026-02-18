@@ -8,16 +8,17 @@ import java.util.List;
 import java.util.Map;
 
 public interface EgovScheduleService {
-    List<Map<String, Object>> selectEmpLyrPopup(ComDefaultVO searchVO);
+    List<Map<String, Object>> selectEmpLyrPopup(@org.springframework.lang.NonNull ComDefaultVO searchVO);
 
-    Page<ScheduleDto> getScheduleList(String userId, Pageable pageable);
+    Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable);
 
     List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth); // YYYYMM
 
     List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate);
 
     // New methods for scoped access (Personal / Dept)
-    Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId, Pageable pageable);
+    Page<ScheduleDto> getScheduleList(String schdulSe, String ownerId,
+            @org.springframework.lang.NonNull Pageable pageable);
 
     List<ScheduleDto> getScheduleListByDateRange(String schdulSe, String ownerId, String startDate, String endDate);
 

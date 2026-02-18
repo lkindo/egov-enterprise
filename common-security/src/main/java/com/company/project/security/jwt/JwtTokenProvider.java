@@ -19,7 +19,6 @@ import com.company.project.domain.auth.RefreshTokenRepository;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
-import java.util.Optional;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,7 +66,7 @@ public class JwtTokenProvider {
 
     // Create Refresh Token and Save to DB
     @Transactional
-    public String createRefreshToken(String userId) {
+    public String createRefreshToken(@org.springframework.lang.NonNull String userId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
 
@@ -89,7 +88,7 @@ public class JwtTokenProvider {
                         .expiryDate(validity.toInstant())
                         .build());
 
-        refreshTokenRepository.save(refreshToken);
+        refreshTokenRepository.save(java.util.Objects.requireNonNull(refreshToken));
         return token;
     }
 
@@ -101,12 +100,12 @@ public class JwtTokenProvider {
 
     // Extract UserID
     public String getUserId(String token) {
-        return Jwts.parser()
+        return java.util.Objects.requireNonNull(Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .getSubject();
+                .getSubject(), "Subject in JWT token cannot be null");
     }
 
     // Resolve Token from Header
@@ -180,8 +179,9 @@ public class JwtTokenProvider {
         if (!validateToken(token))
             return false;
 
-        Optional<RefreshToken> storedToken = refreshTokenRepository.findByToken(token);
-        return storedToken.isPresent() && storedToken.get().getExpiryDate().isAfter(Instant.now());
+        return refreshTokenRepository.findByToken(token)
+                .map(storedToken -> storedToken.getExpiryDate().isAfter(Instant.now()))
+                .orElse(false);
     }
 
     // Test helper method to access the key

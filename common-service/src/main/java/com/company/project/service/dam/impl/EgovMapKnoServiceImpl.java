@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,12 +22,13 @@ public class EgovMapKnoServiceImpl implements EgovMapKnoService {
 
     @Override
     public Page<MapKnoSearchResult> selectMapKnoList(String searchCondition, String searchKeyword, Pageable pageable) {
-        return mapKnoRepository.searchMapKno(searchCondition, searchKeyword, pageable);
+        return mapKnoRepository.searchMapKno(searchCondition, searchKeyword,
+                Objects.requireNonNull(pageable));
     }
 
     @Override
     public MapKnoDto selectMapKnoDetail(String knoTypeCd) {
-        MapKno entity = mapKnoRepository.findById(knoTypeCd)
+        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(knoTypeCd))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + knoTypeCd));
         return MapKnoDto.builder()
                 .knoTypeCd(entity.getKnoTypeCd())
@@ -49,13 +52,13 @@ public class EgovMapKnoServiceImpl implements EgovMapKnoService {
                 .knoUrl(dto.getKnoUrl())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        mapKnoRepository.save(entity);
+        mapKnoRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateMapKno(MapKnoDto dto) {
-        MapKno entity = mapKnoRepository.findById(dto.getKnoTypeCd())
+        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(dto.getKnoTypeCd()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + dto.getKnoTypeCd()));
         entity.setKnoTypeNm(dto.getKnoTypeNm());
         entity.setOrgnztId(dto.getOrgnztId());
@@ -64,12 +67,12 @@ public class EgovMapKnoServiceImpl implements EgovMapKnoService {
         entity.setKnoUrl(dto.getKnoUrl());
         entity.setLastUpdusrId(dto.getFrstRegisterId()); // Using register ID as updusr for simplicity
         entity.setLastUpdusrPnttm(java.time.LocalDateTime.now());
-        mapKnoRepository.save(entity);
+        mapKnoRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void deleteMapKno(String knoTypeCd) {
-        mapKnoRepository.deleteById(knoTypeCd);
+        mapKnoRepository.deleteById(Objects.requireNonNull(knoTypeCd));
     }
 }

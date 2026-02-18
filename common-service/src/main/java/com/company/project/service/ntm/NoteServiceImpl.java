@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,26 +28,27 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
         if (searchWrd == null || searchWrd.isEmpty()) {
-            return noteRecptnRepository.findByRcverId(userId, pageable)
+            return noteRecptnRepository.findByRcverId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
                     .map(this::convertToDto);
         }
-        return noteRecptnRepository.searchReceivedNotes(userId, searchWrd, pageable)
+        return noteRecptnRepository.searchReceivedNotes(userId, searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
     public Page<NoteDto> getSentNotes(String userId, String searchWrd, Pageable pageable) {
         if (searchWrd == null || searchWrd.isEmpty()) {
-            return noteTrnsmitRepository.findByTrnsmiterId(userId, pageable)
+            return noteTrnsmitRepository
+                    .findByTrnsmiterId(Objects.requireNonNull(userId), Objects.requireNonNull(pageable))
                     .map(this::convertToDto);
         }
-        return noteTrnsmitRepository.searchSentNotes(userId, searchWrd, pageable)
+        return noteTrnsmitRepository.searchSentNotes(userId, searchWrd, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 
     @Override
     public NoteDto getNoteDetail(String noteId, String type, String relationId) {
-        Note note = noteRepository.findById(noteId)
+        Note note = noteRepository.findById(Objects.requireNonNull(noteId))
                 .orElseThrow(() -> new IllegalArgumentException("Note not found: " + noteId));
 
         NoteDto dto = NoteDto.builder()
@@ -57,7 +60,7 @@ public class NoteServiceImpl implements NoteService {
                 .build();
 
         if ("recv".equals(type)) {
-            NoteRecptn recptn = noteRecptnRepository.findById(relationId).orElse(null);
+            NoteRecptn recptn = noteRecptnRepository.findById(Objects.requireNonNull(relationId)).orElse(null);
             if (recptn != null) {
                 dto.setNoteRecptnId(recptn.getNoteRecptnId());
                 dto.setRcverId(recptn.getRcverId());
@@ -84,7 +87,7 @@ public class NoteServiceImpl implements NoteService {
                     .atchFileId(dto.getAtchFileId())
                     .frstRegisterId(userId)
                     .build();
-            noteRepository.save(note);
+            noteRepository.save(Objects.requireNonNull(note));
 
             String trnsmitId = egovNoteTrnsmitIdGnrService.getNextStringId();
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
@@ -94,7 +97,7 @@ public class NoteServiceImpl implements NoteService {
                     .deleteAt("N")
                     .frstRegisterId(userId)
                     .build();
-            noteTrnsmitRepository.save(trnsmit);
+            noteTrnsmitRepository.save(Objects.requireNonNull(trnsmit));
 
             if (dto.getRecipients() != null) {
                 for (NoteRecipientDto rDto : dto.getRecipients()) {
@@ -108,7 +111,7 @@ public class NoteServiceImpl implements NoteService {
                             .recptnSe(rDto.getRecptnSe())
                             .frstRegisterId(userId)
                             .build();
-                    noteRecptnRepository.save(recptn);
+                    noteRecptnRepository.save(Objects.requireNonNull(recptn));
                 }
             }
         } catch (Exception e) {
@@ -120,20 +123,21 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public void deleteNote(String relationId, String type) {
         if ("recv".equals(type)) {
-            noteRecptnRepository.deleteById(relationId);
+            noteRecptnRepository.deleteById(Objects.requireNonNull(relationId));
         } else {
-            noteTrnsmitRepository.findById(relationId).ifPresent(t -> {
+            noteTrnsmitRepository.findById(Objects.requireNonNull(relationId)).ifPresent(t -> {
                 // For sent notes, often we just mark as deleted
                 // t.delete(); // mark deleteAt = 'Y'
-                noteTrnsmitRepository.delete(t);
+                noteTrnsmitRepository.delete(Objects.requireNonNull(t));
             });
         }
     }
 
     private NoteDto convertToDto(NoteRecptn entity) {
+        Note note = Objects.requireNonNull(entity.getNote());
         return NoteDto.builder()
-                .noteId(entity.getNote().getNoteId())
-                .noteSj(entity.getNote().getNoteSj())
+                .noteId(note.getNoteId())
+                .noteSj(note.getNoteSj())
                 .noteRecptnId(entity.getNoteRecptnId())
                 .rcverId(entity.getRcverId())
                 .openYn(entity.getOpenYn())
@@ -142,9 +146,10 @@ public class NoteServiceImpl implements NoteService {
     }
 
     private NoteDto convertToDto(NoteTrnsmit entity) {
+        Note note = Objects.requireNonNull(entity.getNote());
         return NoteDto.builder()
-                .noteId(entity.getNote().getNoteId())
-                .noteSj(entity.getNote().getNoteSj())
+                .noteId(note.getNoteId())
+                .noteSj(note.getNoteSj())
                 .noteTrnsmitId(entity.getNoteTrnsmitId())
                 .trnsmiterId(entity.getTrnsmiterId())
                 .regDate(entity.getFrstRegistPnttm())

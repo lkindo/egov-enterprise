@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,14 +25,14 @@ public class NewsServiceImpl implements NewsService {
     @Override
     public Page<NewsDto> getNewsList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return newsRepository.findAll(pageable).map(NewsDto::from);
+            return newsRepository.findAll(Objects.requireNonNull(pageable)).map(NewsDto::from);
         }
-        return newsRepository.findByNewsSjContaining(keyword, pageable).map(NewsDto::from);
+        return newsRepository.findByNewsSjContaining(keyword, Objects.requireNonNull(pageable)).map(NewsDto::from);
     }
 
     @Override
     public NewsDto getNews(String newsId) {
-        return newsRepository.findById(newsId)
+        return newsRepository.findById(Objects.requireNonNull(newsId))
                 .map(NewsDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -49,7 +51,7 @@ public class NewsServiceImpl implements NewsService {
                     .atchFileId(dto.getAtchFileId())
                     .frstRegisterId(userId)
                     .build();
-            newsRepository.save(news);
+            newsRepository.save(Objects.requireNonNull(news));
             return newsId;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate news ID", e);
@@ -59,7 +61,7 @@ public class NewsServiceImpl implements NewsService {
     @Override
     @Transactional
     public void updateNews(String newsId, String userId, NewsDto dto) {
-        News news = newsRepository.findById(newsId)
+        News news = newsRepository.findById(Objects.requireNonNull(newsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         news.update(dto.getNewsSj(), dto.getNewsCn(), dto.getNewsOrigin(), dto.getNtceDe(),
                 dto.getAtchFileId(), userId);
@@ -68,9 +70,9 @@ public class NewsServiceImpl implements NewsService {
     @Override
     @Transactional
     public void deleteNews(String newsId) {
-        if (!newsRepository.existsById(newsId)) {
+        if (!newsRepository.existsById(Objects.requireNonNull(newsId))) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
-        newsRepository.deleteById(newsId);
+        newsRepository.deleteById(Objects.requireNonNull(newsId));
     }
 }

@@ -1,5 +1,7 @@
 package com.company.project.service.ctsnn;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.ctsnn.Ctsnn;
 import com.company.project.domain.ctsnn.CtsnnRepository;
 import com.company.project.service.ctsnn.dto.CtsnnDto;
@@ -8,6 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -17,10 +22,10 @@ public class CtsnnService implements EgovCtsnnService {
     private final CtsnnRepository ctsnnRepository;
 
     @Override
-    public CtsnnDto getCtsnn(String ctsnnId) {
-        return ctsnnRepository.findById(ctsnnId)
+    public CtsnnDto getCtsnn(@NonNull String ctsnnId) {
+        return ctsnnRepository.findById(Objects.requireNonNull(ctsnnId))
                 .map(this::convertToDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
@@ -41,33 +46,35 @@ public class CtsnnService implements EgovCtsnnService {
                 .frstRegisterId(dto.getUsid())
                 .lastUpdusrId(dto.getUsid())
                 .build();
-        ctsnnRepository.save(ctsnn);
+        ctsnnRepository.save(Objects.requireNonNull(ctsnn));
     }
 
     @Override
     @Transactional
     public void updateCtsnn(CtsnnDto dto) {
-        ctsnnRepository.findById(dto.getCtsnnId())
+        ctsnnRepository.findById(Objects.requireNonNull(dto.getCtsnnId()))
                 .ifPresent(c -> c.update(dto.getCtsnnCd(), dto.getCtsnnNm(), dto.getReqstDe(), dto.getTrgterNm(),
                         dto.getBrth(), dto.getOccrrDe(), dto.getRelate(), dto.getRemark(), dto.getUsid()));
     }
 
     @Override
     @Transactional
-    public void deleteCtsnn(String ctsnnId) {
-        ctsnnRepository.deleteById(ctsnnId);
+    public void deleteCtsnn(@NonNull String ctsnnId) {
+        ctsnnRepository.deleteById(Objects.requireNonNull(ctsnnId));
     }
 
     @Override
     @Transactional
-    public void approveCtsnn(String ctsnnId, String confmAt, String returnResn, String lastUpdusrId) {
-        ctsnnRepository.findById(ctsnnId)
+    public void approveCtsnn(@NonNull String ctsnnId, String confmAt, String returnResn,
+            String lastUpdusrId) {
+        ctsnnRepository.findById(Objects.requireNonNull(ctsnnId))
                 .ifPresent(c -> c.approve(confmAt, returnResn, lastUpdusrId));
     }
 
     @Override
-    public Page<CtsnnDto> getCtsnnList(String searchKeyword, String ctsnnCd, Pageable pageable) {
-        return ctsnnRepository.findAll(pageable)
+    public Page<CtsnnDto> getCtsnnList(String searchKeyword, String ctsnnCd,
+            @NonNull Pageable pageable) {
+        return ctsnnRepository.findAll(Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 

@@ -36,7 +36,7 @@ public class AuthorManageService {
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
 
-        Page<Authority> page = authorityRepository.findAll(pageable);
+        Page<Authority> page = authorityRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
@@ -51,7 +51,7 @@ public class AuthorManageService {
      * 권한 상세 조회
      */
     public AuthorManageDto selectAuthor(@NonNull String authorCode) {
-        return authorityRepository.findById(authorCode)
+        return authorityRepository.findById(Objects.requireNonNull(authorCode))
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -66,7 +66,7 @@ public class AuthorManageService {
                 .authorNm(dto.getAuthorNm())
                 .authorDc(dto.getAuthorDc())
                 .build();
-        authorityRepository.save(entity);
+        authorityRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -84,7 +84,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthor(@NonNull String authorCode) {
-        authorityRepository.deleteById(authorCode);
+        authorityRepository.deleteById(Objects.requireNonNull(authorCode));
     }
 
     /**
@@ -92,7 +92,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthors(@NonNull String[] authorCodes) {
-        authorityRepository.deleteAllById(Arrays.asList(authorCodes));
+        authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(authorCodes)));
     }
 
     private AuthorManageDto toDto(@NonNull Authority entity) {

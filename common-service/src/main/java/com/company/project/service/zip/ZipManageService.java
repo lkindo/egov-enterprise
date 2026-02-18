@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -36,9 +37,10 @@ public class ZipManageService {
         Page<Zip> page;
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
-            page = zipRepository.findAll(pageable); // Basic pagination, could enhance with Specification
+            page = zipRepository.findAll(Objects.requireNonNull(pageable)); // Basic pagination, could enhance with
+                                                                            // Specification
         } else {
-            page = zipRepository.findAll(pageable);
+            page = zipRepository.findAll(Objects.requireNonNull(pageable));
         }
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -54,7 +56,8 @@ public class ZipManageService {
      * 우편번호 상세 조회
      */
     public ZipDto selectZipDetail(ZipDto dto) {
-        return zipRepository.findById(new ZipId(dto.getZip(), dto.getSn()))
+        return zipRepository
+                .findById(new ZipId(Objects.requireNonNull(dto.getZip()), Objects.requireNonNull(dto.getSn())))
                 .map(this::toDto)
                 .orElse(null);
     }
@@ -65,7 +68,7 @@ public class ZipManageService {
     @Transactional
     public void insertZip(ZipDto dto) {
         // 자동 일련번호 생성
-        List<Zip> existing = zipRepository.findByZip(dto.getZip());
+        List<Zip> existing = zipRepository.findByZip(Objects.requireNonNull(dto.getZip()));
         int newSn = existing.isEmpty() ? 1 : existing.stream().mapToInt(Zip::getSn).max().orElse(0) + 1;
 
         Zip entity = Zip.builder()
@@ -78,7 +81,7 @@ public class ZipManageService {
                 .lnbrDongHo(dto.getLnbrDongHo())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        zipRepository.save(entity);
+        zipRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -86,7 +89,8 @@ public class ZipManageService {
      */
     @Transactional
     public void updateZip(ZipDto dto) {
-        Zip entity = zipRepository.findById(new ZipId(dto.getZip(), dto.getSn()))
+        Zip entity = zipRepository
+                .findById(new ZipId(Objects.requireNonNull(dto.getZip()), Objects.requireNonNull(dto.getSn())))
                 .orElseThrow(() -> new RuntimeException("Zip not found"));
         entity.update(dto.getCtprvnNm(), dto.getSignguNm(), dto.getEmdNm(),
                 dto.getLiBuldNm(), dto.getLnbrDongHo(), dto.getLastUpdusrId());
@@ -97,7 +101,7 @@ public class ZipManageService {
      */
     @Transactional
     public void deleteZip(ZipDto dto) {
-        zipRepository.deleteById(new ZipId(dto.getZip(), dto.getSn()));
+        zipRepository.deleteById(new ZipId(Objects.requireNonNull(dto.getZip()), Objects.requireNonNull(dto.getSn())));
     }
 
     /**

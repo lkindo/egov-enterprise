@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,14 +25,15 @@ public class BannerService implements EgovBannerService {
     @Override
     public Page<BannerDto> getBannerList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return bannerRepository.findAll(pageable).map(BannerDto::from);
+            return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(BannerDto::from);
         }
-        return bannerRepository.findByBannerNmContaining(keyword, pageable).map(BannerDto::from);
+        return bannerRepository.findByBannerNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(BannerDto::from);
     }
 
     @Override
     public BannerDto getBanner(String bannerId) {
-        return bannerRepository.findById(bannerId)
+        return bannerRepository.findById(Objects.requireNonNull(bannerId))
                 .map(BannerDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -50,13 +52,13 @@ public class BannerService implements EgovBannerService {
                 .reflctAt(dto.getReflctAt())
                 .bannerImageFile(dto.getBannerImageFile())
                 .build();
-        bannerRepository.save(entity);
+        bannerRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateBanner(BannerDto dto) {
-        Banner entity = bannerRepository.findById(dto.getBannerId())
+        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBannerId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getBannerNm(), dto.getLinkUrl(), dto.getBannerImage(),
                 dto.getBannerDc(), dto.getSortOrdr(), dto.getReflctAt(), dto.getBannerImageFile());
@@ -65,7 +67,7 @@ public class BannerService implements EgovBannerService {
     @Override
     @Transactional
     public void deleteBanner(String bannerId) {
-        bannerRepository.deleteById(bannerId);
+        bannerRepository.deleteById(Objects.requireNonNull(bannerId));
     }
 
     @Override

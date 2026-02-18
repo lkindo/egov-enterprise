@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,13 +31,13 @@ public class MemoTodoService implements EgovMemoTodoService {
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
-        memoTodoRepository.save(todo);
+        memoTodoRepository.save(Objects.requireNonNull(todo));
     }
 
     @Override
     @Transactional
     public void updateMemoTodo(MemoTodoDto dto) {
-        memoTodoRepository.findById(dto.getTodoId())
+        memoTodoRepository.findById(Objects.requireNonNull(dto.getTodoId()))
                 .ifPresent(t -> t.update(
                         dto.getTodoNm(),
                         dto.getTodoBeginTime(),
@@ -47,12 +49,12 @@ public class MemoTodoService implements EgovMemoTodoService {
     @Override
     @Transactional
     public void deleteMemoTodo(String todoId) {
-        memoTodoRepository.deleteById(todoId);
+        memoTodoRepository.deleteById(Objects.requireNonNull(todoId));
     }
 
     @Override
     public MemoTodoDto getMemoTodo(String todoId) {
-        return memoTodoRepository.findById(todoId)
+        return memoTodoRepository.findById(Objects.requireNonNull(todoId))
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
                         .todoNm(t.getTodoNm())
@@ -67,7 +69,7 @@ public class MemoTodoService implements EgovMemoTodoService {
     @Override
     public Page<MemoTodoDto> getMemoTodoList(String writerId, Pageable pageable) {
         // writerId 필터링 필요 (Repository 확장 시 반영)
-        return memoTodoRepository.findAll(pageable)
+        return memoTodoRepository.findAll(Objects.requireNonNull(pageable))
                 .map(t -> MemoTodoDto.builder()
                         .todoId(t.getTodoId())
                         .todoNm(t.getTodoNm())

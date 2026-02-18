@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,16 +26,8 @@ public class InfrmlSanctnService extends EgovAbstractServiceImpl {
     @Transactional(readOnly = true)
     public Page<InfrmlSanctnDto> getInfrmlSanctnList(String sanctnerId, Pageable pageable) {
         // If sanctnerId is provided, filter by it. Otherwise return all.
-        Page<InfrmlSanctn> result;
-        if (sanctnerId != null && !sanctnerId.isEmpty()) {
-            // result = infrmlSanctnRepository.findBySanctnerId(sanctnerId, pageable);
-            // For now, let's just use findAll and filter if needed, 
-            // but usually we want a specific repository method.
-            result = infrmlSanctnRepository.findAll(pageable);
-        } else {
-            result = infrmlSanctnRepository.findAll(pageable);
-        }
-        
+        Page<InfrmlSanctn> result = infrmlSanctnRepository.findAll(Objects.requireNonNull(pageable));
+
         return result.map(entity -> {
             InfrmlSanctnDto dto = InfrmlSanctnDto.from(entity);
             // Optional: Populate names if needed
@@ -44,11 +37,11 @@ public class InfrmlSanctnService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public InfrmlSanctnDto getInfrmlSanctn(String infrmlSanctnId) {
-        InfrmlSanctn entity = infrmlSanctnRepository.findById(infrmlSanctnId)
+        InfrmlSanctn entity = infrmlSanctnRepository.findById(Objects.requireNonNull(infrmlSanctnId))
                 .orElseThrow(() -> new RuntimeException("InfrmlSanctn not found: " + infrmlSanctnId));
-        
+
         InfrmlSanctnDto dto = InfrmlSanctnDto.from(entity);
-        
+
         List<CommonCodeDto> jobCodes = commonCodeService.getCodesByGroup("COM075");
         dto.setJobSeNm(jobCodes.stream()
                 .filter(c -> c.code().equals(dto.getJobSeCode()))
@@ -58,7 +51,7 @@ public class InfrmlSanctnService extends EgovAbstractServiceImpl {
         dto.setConfmAtNm(sttusCodes.stream()
                 .filter(c -> c.code().equals(dto.getConfmAt()))
                 .findFirst().map(CommonCodeDto::codeNm).orElse(""));
-                
+
         return dto;
     }
 
@@ -76,27 +69,27 @@ public class InfrmlSanctnService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        infrmlSanctnRepository.save(entity);
+        infrmlSanctnRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateInfrmlSanctn(InfrmlSanctnDto dto) {
-        InfrmlSanctn entity = infrmlSanctnRepository.findById(dto.getInfrmlSanctnId())
+        InfrmlSanctn entity = infrmlSanctnRepository.findById(Objects.requireNonNull(dto.getInfrmlSanctnId()))
                 .orElseThrow(() -> new RuntimeException("InfrmlSanctn not found"));
-        
+
         entity.update(dto.getSanctnerId(), dto.getLastUpdusrId());
     }
 
     @Transactional
     public void confirmInfrmlSanctn(String infrmlSanctnId, String confmAt, String returnResn, String userId) {
-        InfrmlSanctn entity = infrmlSanctnRepository.findById(infrmlSanctnId)
+        InfrmlSanctn entity = infrmlSanctnRepository.findById(Objects.requireNonNull(infrmlSanctnId))
                 .orElseThrow(() -> new RuntimeException("InfrmlSanctn not found"));
-        
+
         entity.confirm(confmAt, returnResn, userId);
     }
 
     @Transactional
     public void deleteInfrmlSanctn(String infrmlSanctnId) {
-        infrmlSanctnRepository.deleteById(infrmlSanctnId);
+        infrmlSanctnRepository.deleteById(Objects.requireNonNull(infrmlSanctnId));
     }
 }

@@ -26,12 +26,12 @@ public class NameCardService implements EgovNameCardService {
     private final NameCardUserRepository nameCardUserRepository;
 
     @Override
-    public Page<NameCardDto> getNameCardList(String keyword, Pageable pageable) {
+    public Page<NameCardDto> getNameCardList(String keyword, @org.springframework.lang.NonNull Pageable pageable) {
         return nameCardRepository.searchNameCards(keyword, pageable).map(NameCardDto::from);
     }
 
     @Override
-    public Page<NameCardDto> getMyNameCards(String userId, Pageable pageable) {
+    public Page<NameCardDto> getMyNameCards(String userId, @org.springframework.lang.NonNull Pageable pageable) {
         // 내가 직접 등록한 명함 목록
         return nameCardRepository.findByNcrdTrgterId(userId, pageable).map(NameCardDto::from);
     }
@@ -68,10 +68,10 @@ public class NameCardService implements EgovNameCardService {
                 .build();
 
         nameCardRepository.save(nameCard);
-        
+
         // 등록 시 내 명함첩에도 자동 추가
         addMyNameCard(userId, ncrdId);
-        
+
         return ncrdId;
     }
 
@@ -92,14 +92,15 @@ public class NameCardService implements EgovNameCardService {
     public void deleteNameCard(String ncrdId) {
         NameCard nameCard = nameCardRepository.findById(ncrdId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        
+
         // 관계 데이터 먼저 삭제 (또는 논리 삭제 처리)
         // 여기서는 단순 물리 삭제로 구현
         nameCardRepository.delete(nameCard);
     }
 
     @Override
-    public Page<NameCardUserDto> getMyNameCardFolder(String userId, Pageable pageable) {
+    public Page<NameCardUserDto> getMyNameCardFolder(String userId,
+            @org.springframework.lang.NonNull Pageable pageable) {
         return nameCardUserRepository.findMyNameCardUsers(userId, pageable)
                 .map(nu -> {
                     NameCard nc = nameCardRepository.findById(nu.getNcrdId()).orElse(null);
@@ -112,14 +113,13 @@ public class NameCardService implements EgovNameCardService {
     public void addMyNameCard(String userId, String ncrdId) {
         nameCardUserRepository.findByNcrdIdAndEmplyrId(ncrdId, userId)
                 .ifPresentOrElse(
-                    nu -> nu.updateUseAt("Y"),
-                    () -> nameCardUserRepository.save(NameCardUser.builder()
-                            .ncrdId(ncrdId)
-                            .emplyrId(userId)
-                            .useAt("Y")
-                            .registSeCode("REGC01") // 기본 등록 코드
-                            .build())
-                );
+                        nu -> nu.updateUseAt("Y"),
+                        () -> nameCardUserRepository.save(NameCardUser.builder()
+                                .ncrdId(ncrdId)
+                                .emplyrId(userId)
+                                .useAt("Y")
+                                .registSeCode("REGC01") // 기본 등록 코드
+                                .build()));
     }
 
     @Override

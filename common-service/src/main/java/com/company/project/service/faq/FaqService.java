@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,12 +22,12 @@ public class FaqService implements EgovFaqService {
 
     @Override
     public Page<FaqDto> getFaqList(String keyword, Pageable pageable) {
-        return faqRepository.searchFaqs(keyword, pageable).map(FaqDto::from);
+        return faqRepository.searchFaqs(keyword, Objects.requireNonNull(pageable)).map(FaqDto::from);
     }
 
     @Override
     public FaqDto getFaq(String faqId) {
-        return faqRepository.findById(faqId)
+        return faqRepository.findById(Objects.requireNonNull(faqId))
                 .map(FaqDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -42,14 +44,14 @@ public class FaqService implements EgovFaqService {
                 .atchFileId(dto.getAtchFileId())
                 .frstRegisterId(userId)
                 .build();
-        faqRepository.save(entity);
+        faqRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateFaq(String faqId, String userId, FaqDto dto) {
-        Faq entity = faqRepository.findById(faqId)
+        Faq entity = faqRepository.findById(Objects.requireNonNull(faqId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId(), userId);
     }
@@ -57,12 +59,12 @@ public class FaqService implements EgovFaqService {
     @Override
     @Transactional
     public void deleteFaq(String faqId, String userId) {
-        faqRepository.deleteById(faqId);
+        faqRepository.deleteById(Objects.requireNonNull(faqId));
     }
 
     @Override
     @Transactional
     public void increaseViewCount(String faqId) {
-        faqRepository.findById(faqId).ifPresent(Faq::increaseViewCount);
+        faqRepository.findById(Objects.requireNonNull(faqId)).ifPresent(Faq::increaseViewCount);
     }
 }
