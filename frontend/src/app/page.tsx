@@ -291,12 +291,16 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
           {icon}
         </div>
         {trend !== 0 && (
-          <div className={cn(
-            "flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm",
-            trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-          )}>
-            {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {Math.abs(trend)}%
+          <div
+            className={cn(
+              "flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm",
+              trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+            )}
+            role="img"
+            aria-label={`전일 대비 ${Math.abs(trend)}% ${trend > 0 ? '상승' : '하락'}`}
+          >
+            {trend > 0 ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
+            <span aria-hidden="true">{Math.abs(trend)}%</span>
           </div>
         )}
       </div>
@@ -339,8 +343,9 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
         <Link
           href={moreHref || '#'}
           className="p-3 bg-muted/50 rounded-2xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
+          aria-label={`${title} 더보기`}
         >
-          <ArrowRight size={18} />
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
