@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.crypto.EgovCryptoService;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,7 @@ public class CryptoUtil implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) {
         log.info("### CryptoUtil: setApplicationContext called");
         CryptoUtil.cryptoService = (EgovCryptoService) applicationContext.getBean("ariacryptoService");
     }

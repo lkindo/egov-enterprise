@@ -5,8 +5,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 공통 상세 코드 엔티티 (CCMMNDETAILCODE 테이블 매핑)
@@ -16,17 +19,21 @@ import java.time.LocalDateTime;
 @Entity
 @IdClass(CommonCodeId.class)
 @Table(name = "CCMMNDETAILCODE")
-public class CommonCode {
+public class CommonCode implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "CODE_ID", length = 18)
+    @NonNull
     private String codeGroupId; // eGovFrame 표준의 CODE_ID
 
     @Id
     @Column(name = "CODE", length = 45)
+    @NonNull
     private String code; // 상세 코드
 
     @Column(name = "CODE_NM", length = 180)
+    @NonNull
     private String codeNm; // 코드명
 
     @Column(name = "CODE_DC", length = 600)
@@ -48,11 +55,12 @@ public class CommonCode {
     private String lastUpdusrId;
 
     @Builder
-    public CommonCode(String codeGroupId, String code, String codeNm, String codeDc, String useAt,
+    public CommonCode(@NonNull String codeGroupId, @NonNull String code, @NonNull String codeNm, String codeDc,
+            String useAt,
             String frstRegisterId) {
-        this.codeGroupId = codeGroupId;
-        this.code = code;
-        this.codeNm = codeNm;
+        this.codeGroupId = Objects.requireNonNull(codeGroupId);
+        this.code = Objects.requireNonNull(code);
+        this.codeNm = Objects.requireNonNull(codeNm);
         this.codeDc = codeDc;
         this.useAt = useAt == null ? "Y" : useAt;
         this.frstRegisterId = frstRegisterId;
@@ -61,8 +69,8 @@ public class CommonCode {
         this.lastModifiedDate = LocalDateTime.now();
     }
 
-    public void update(String codeNm, String codeDc, String useAt, String lastUpdusrId) {
-        this.codeNm = codeNm;
+    public void update(@NonNull String codeNm, String codeDc, String useAt, String lastUpdusrId) {
+        this.codeNm = Objects.requireNonNull(codeNm);
         this.codeDc = codeDc;
         this.useAt = useAt;
         this.lastUpdusrId = lastUpdusrId;

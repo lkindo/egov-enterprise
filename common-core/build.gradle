@@ -15,4 +15,7 @@ dependencies {
     api 'com.ibm.icu:icu4j:75.1' // For EgovDateUtil (ChineseCalendar)
     api 'com.fasterxml.jackson.core:jackson-databind'
     api 'jakarta.validation:jakarta.validation-api' // Validation
+    
+    // Fix for: javax.annotation.meta.When not found
+    api 'com.google.code.findbugs:jsr305:3.0.2'
 }

@@ -7,11 +7,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 public interface UserAuthorityRepository extends JpaRepository<UserAuthority, String>, UserAuthorityRepositoryCustom {
 
-    @EntityGraph(attributePaths = {"authorCode"})
-    Optional<UserAuthority> findById(String uniqId);
+    @EntityGraph(attributePaths = { "authorCode" })
+    @NonNull
+    Optional<UserAuthority> findById(@NonNull String uniqId);
 
     @Query("SELECT ua FROM UserAuthority ua WHERE ua.uniqId IN :uniqIds")
     List<UserAuthority> findByUniqIdIn(@Param("uniqIds") List<String> uniqIds);

@@ -1,6 +1,5 @@
 package com.company.project.integration;
 
-import com.company.project.api.controller.UserController;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -8,7 +7,6 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -19,7 +17,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -28,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * API 엔드포인트와 서비스 계층 간의 통합 테스트
  */
-@SpringBootTest(classes = UserControllerServiceIntegrationTest.TestConfig.class)
+@SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @org.springframework.transaction.annotation.Transactional
 @ActiveProfiles("test")
@@ -50,7 +47,7 @@ class UserControllerServiceIntegrationTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @MockBean
+        @org.springframework.beans.factory.annotation.Autowired
         private UserService userService;
 
         @Test
@@ -61,7 +58,7 @@ class UserControllerServiceIntegrationTest {
                                 "apiTestUser",
                                 "API 통합 테스트 사용자",
                                 null);
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
+                doReturn(response).when(userService).signup(any(UserSignupRequest.class));
 
                 String requestBody = """
                                 {

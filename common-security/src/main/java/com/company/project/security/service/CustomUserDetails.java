@@ -17,12 +17,12 @@ public class CustomUserDetails implements UserDetails {
 
     public CustomUserDetails(User user) {
         this.user = user;
-        this.authorCode = user.getAuthorCode();
+        this.authorCode = null;
     }
 
     public CustomUserDetails(User user, String authorCode) {
         this.user = user;
-        this.authorCode = authorCode != null ? authorCode : user.getAuthorCode();
+        this.authorCode = authorCode;
     }
 
     @Override

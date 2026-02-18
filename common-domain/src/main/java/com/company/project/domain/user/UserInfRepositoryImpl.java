@@ -7,10 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.company.project.domain.user.QUser.user;
 import static com.company.project.domain.community.QCommunityUser.communityUser;
@@ -24,8 +26,6 @@ public class UserInfRepositoryImpl implements UserInfRepository {
         @Override
         public Page<UserInfSearchResult> selectUserList(String searchCondition, String searchKeyword,
                         Pageable pageable) {
-                // eGovFrame's UserInf usually maps to multiple user types.
-                // For now, we use NEMPLYRINFO (User entity) as the primary source.
                 List<UserInfSearchResult> content = queryFactory
                                 .select(Projections.fields(UserInfSearchResult.class,
                                                 user.esntlId.as("uniqId"),
@@ -41,13 +41,13 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .orderBy(user.userNm.asc())
                                 .fetch();
 
-                long total = queryFactory
+                Long total = queryFactory
                                 .select(user.count())
                                 .from(user)
                                 .where(conditionEq(searchCondition, searchKeyword))
                                 .fetchOne();
 
-                return new PageImpl<>(content, pageable, total);
+                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
         }
 
         @Override
@@ -73,14 +73,14 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .orderBy(user.userNm.asc())
                                 .fetch();
 
-                long total = queryFactory
+                Long total = queryFactory
                                 .select(user.count())
                                 .from(communityUser)
                                 .where(
                                                 communityUser.id.cmmntyId.eq(trgetId))
                                 .fetchOne();
 
-                return new PageImpl<>(content, pageable, total);
+                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
         }
 
         @Override
@@ -107,7 +107,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                 .orderBy(user.userNm.asc())
                                 .fetch();
 
-                long total = queryFactory
+                Long total = queryFactory
                                 .select(user.count())
                                 .from(communityUser)
                                 .where(
@@ -115,7 +115,7 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                                                 communityUser.mngrAt.eq("Y"))
                                 .fetchOne();
 
-                return new PageImpl<>(content, pageable, total);
+                return new PageImpl<>(Objects.requireNonNull(content), pageable, total != null ? total : 0L);
         }
 
         @Override

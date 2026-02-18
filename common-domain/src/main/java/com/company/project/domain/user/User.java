@@ -5,9 +5,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.Audited;
+import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 업무 사용자 정보 Entity
@@ -22,18 +24,23 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @Audited
 public class User extends BaseEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "EMPLYR_ID", length = 60)
+    @NonNull
     private String userId;
 
     @Column(name = "ESNTL_ID", nullable = false, length = 20)
+    @NonNull
     private String esntlId;
 
     @Column(name = "USER_NM", nullable = false, length = 180)
+    @NonNull
     private String userNm;
 
     @Column(name = "PASSWORD", nullable = false, length = 600)
+    @NonNull
     private String password;
 
     @Column(name = "PASSWORD_HINT", length = 300)
@@ -54,20 +61,23 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "BRTHDY", length = 60)
     private String brth;
 
-    @Column(name = "AREA_NO", length = 12)
-    private String areaNo;
-
-    @Column(name = "HOUSE_MIDDLE_TELNO", length = 12)
-    private String homemiddleTelno;
-
-    @Column(name = "HOUSE_END_TELNO", length = 12)
-    private String homeendTelno;
-
     @Column(name = "FXNUM", length = 60)
     private String fxnum;
 
     @Column(name = "HOUSE_ADRES", length = 300)
     private String homeadres;
+
+    @Column(name = "PASSWORD_UPDT_PNTTM")
+    private LocalDateTime passwordUpdateDate;
+
+    @Column(name = "AREA_NO", length = 12)
+    private String areaNo;
+
+    @Column(name = "HOMEMIDDLE_TELNO", length = 12)
+    private String homemiddleTelno;
+
+    @Column(name = "HOMEEND_TELNO", length = 12)
+    private String homeendTelno;
 
     @Column(name = "DETAIL_ADRES", length = 300)
     private String detailAdres;
@@ -93,43 +103,51 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "ORGNZT_ID", length = 60)
     private String orgnztId;
 
-    @Column(name = "PSTINST_CODE", length = 60)
+    @Column(name = "PSTINST_CODE", length = 24)
     private String insttCode;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "EMPLYR_STTUS_CODE", length = 45)
-    private Role role;
+    private String empStatus;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ROLE", length = 60)
+    private Role role = Role.USER;
+
+    @Column(name = "CHG_PWD_CNT")
+    private Integer changePasswordCount;
+
+    @Builder.Default
+    @Column(name = "LOCK_AT", length = 1)
+    private String lockAt = "N";
+
+    @Column(name = "LOCK_CNT")
+    private Integer lockCount;
+
+    @Column(name = "LOCK_LAST_PNTTM")
+    private LocalDateTime lockLastDate;
 
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
-    @Column(name = "CRTFC_DN_VALUE", length = 600)
+    @Column(name = "SUB_DN", length = 100)
     private String subDn;
 
-    @Column(name = "LOCK_AT", length = 1)
-    private String lockAt;
+    @PrePersist
+    public void prePersist() {
+        if (this.sbscrbDe == null) {
+            this.sbscrbDe = LocalDateTime.now();
+        }
+    }
 
-    @Column(name = "LOCK_CNT")
-    private Integer lockCnt;
-
-    @Column(name = "LOCK_LAST_PNTTM")
-    private LocalDateTime lockLastPnttm;
-
-    @Column(name = "CHG_PWD_LAST_PNTTM")
-    private LocalDateTime chgPwdLastPnttm;
-
-    @Version
-    private Long version;
-
-    @Transient
-    private String authorCode;
-
-    public void update(String userNm, String passwordHint, String passwordCnsr, String emplNo, String ihidnum,
-            String sexdstnCode, String brth, String areaNo, String homemiddleTelno, String homeendTelno,
-            String fxnum, String homeadres, String detailAdres, String zip, String offmTelno,
-            String moblphonNo, String emailAdres, String ofcpsNm, String groupId, String orgnztId,
-            String insttCode, Role role, String subDn) {
-        this.userNm = userNm;
+    public void update(String userNm, String passwordHint, String passwordCnsr,
+            String emplNo, String ihidnum, String sexdstnCode, String brth,
+            String areaNo, String homemiddleTelno, String homeendTelno,
+            String fxnum, String homeadres, String detailAdres, String zip,
+            String offmTelno, String moblphonNo, String emailAdres, String ofcpsNm,
+            String groupId, String orgnztId, String insttCode, Role role, String subDn) {
+        if (userNm != null)
+            this.userNm = userNm;
         this.passwordHint = passwordHint;
         this.passwordCnsr = passwordCnsr;
         this.emplNo = emplNo;
@@ -150,32 +168,43 @@ public class User extends BaseEntity implements Serializable {
         this.groupId = groupId;
         this.orgnztId = orgnztId;
         this.insttCode = insttCode;
-        this.role = role;
+        if (role != null)
+            this.role = role;
         this.subDn = subDn;
     }
 
     public void updatePassword(String password) {
-        this.password = password;
-        this.chgPwdLastPnttm = LocalDateTime.now();
+        this.password = Objects.requireNonNull(password);
+        this.passwordUpdateDate = LocalDateTime.now();
     }
 
+    // 비즈니스 메서드들
     public void unlock() {
         this.lockAt = "N";
-        this.lockCnt = 0;
-        this.lockLastPnttm = null;
+        this.lockCount = 0;
+        this.lockLastDate = null;
     }
 
-    public void lockAccount() {
-        this.lockAt = "Y";
-        this.lockLastPnttm = LocalDateTime.now();
+    public void setAuthorCode(String authorCode) {
+        // authorCode 를 role 로 매핑 (기존 로직 유지)
+        if (authorCode != null) {
+            this.role = Role.valueOf(authorCode);
+        }
+    }
+
+    public String getAuthorCode() {
+        return this.role != null ? this.role.name() : null;
+    }
+
+    public Integer getLockCnt() {
+        return this.lockCount;
     }
 
     public void incrementLockCount() {
-        if (this.lockCnt == null)
-            this.lockCnt = 0;
-        this.lockCnt++;
-        if (this.lockCnt >= 5) {
-            lockAccount();
+        if (this.lockCount == null) {
+            this.lockCount = 1;
+        } else {
+            this.lockCount++;
         }
     }
 }

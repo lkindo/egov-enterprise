@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
 
     @Override
     public Page<CommonCodeDetailProjection> searchCommonCodeDetails(String searchCondition, String searchKeyword,
-            Pageable pageable) {
+            @NonNull Pageable pageable) {
         List<CommonCodeDetailProjection> content = queryFactory
                 .select(Projections.constructor(CommonCodeDetailProjection.class,
                         commonCode.codeGroupId,

@@ -12,9 +12,11 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,8 +24,10 @@ import java.time.LocalDateTime;
 @Table(name = "NBBS")
 @EntityListeners(AuditingEntityListener.class)
 public class Board implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @EmbeddedId
+    @NonNull
     private BoardId id;
 
     @Column(name = "NTT_NO")
@@ -98,20 +102,22 @@ public class Board implements Serializable {
     private String blogId;
 
     // Helper methods for easy access
+    @NonNull
     public String getBbsId() {
-        return id != null ? id.getBbsId() : null;
+        return id.getBbsId();
     }
 
+    @NonNull
     public Long getNttId() {
-        return id != null ? id.getNttId() : null;
+        return id.getNttId();
     }
 
     @Builder
-    public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
+    public Board(@NonNull Long nttId, @NonNull String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
             Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
             String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
             String atchFileId, String frstRegisterId) {
-        this.id = new BoardId(nttId, bbsId);
+        this.id = new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId));
         this.nttNo = nttNo;
         this.nttSj = nttSj;
         this.nttCn = nttCn;
@@ -149,6 +155,9 @@ public class Board implements Serializable {
     }
 
     public void increaseInqireCo() {
+        if (this.inqireCo == null) {
+            this.inqireCo = 0;
+        }
         this.inqireCo++;
     }
 

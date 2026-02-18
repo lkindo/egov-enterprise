@@ -3,6 +3,9 @@ package com.company.project.service.user;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 
 import java.util.List;
 
@@ -20,12 +23,12 @@ public interface EgovUserService {
     /**
      * 사용자 목록 페이징 조회
      */
-    org.springframework.data.domain.Page<UserDto> getPagedUserList(org.springframework.data.domain.Pageable pageable);
+    Page<UserDto> getPagedUserList(@NonNull Pageable pageable);
 
     /**
      * 사용자 상세 조회
      */
-    UserDto getUserById(String userId);
+    UserDto getUserById(@NonNull String userId);
 
     /**
      * 사용자 등록

@@ -8,12 +8,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +50,7 @@ public class AuthorManageService {
     /**
      * 권한 상세 조회
      */
-    public AuthorManageDto selectAuthor(String authorCode) {
+    public AuthorManageDto selectAuthor(@NonNull String authorCode) {
         return authorityRepository.findById(authorCode)
                 .map(this::toDto)
                 .orElse(null);
@@ -58,9 +60,9 @@ public class AuthorManageService {
      * 권한 등록
      */
     @Transactional
-    public void insertAuthor(AuthorManageDto dto) {
+    public void insertAuthor(@NonNull AuthorManageDto dto) {
         Authority entity = Authority.builder()
-                .authorCode(dto.getAuthorCode())
+                .authorCode(Objects.requireNonNull(dto.getAuthorCode()))
                 .authorNm(dto.getAuthorNm())
                 .authorDc(dto.getAuthorDc())
                 .build();
@@ -71,8 +73,8 @@ public class AuthorManageService {
      * 권한 수정
      */
     @Transactional
-    public void updateAuthor(AuthorManageDto dto) {
-        Authority entity = authorityRepository.findById(dto.getAuthorCode())
+    public void updateAuthor(@NonNull AuthorManageDto dto) {
+        Authority entity = authorityRepository.findById(Objects.requireNonNull(dto.getAuthorCode()))
                 .orElseThrow(() -> new RuntimeException("Authority not found: " + dto.getAuthorCode()));
         entity.update(dto.getAuthorNm(), dto.getAuthorDc());
     }
@@ -81,7 +83,7 @@ public class AuthorManageService {
      * 권한 삭제
      */
     @Transactional
-    public void deleteAuthor(String authorCode) {
+    public void deleteAuthor(@NonNull String authorCode) {
         authorityRepository.deleteById(authorCode);
     }
 
@@ -89,11 +91,11 @@ public class AuthorManageService {
      * 권한 다중 삭제
      */
     @Transactional
-    public void deleteAuthors(String[] authorCodes) {
+    public void deleteAuthors(@NonNull String[] authorCodes) {
         authorityRepository.deleteAllById(Arrays.asList(authorCodes));
     }
 
-    private AuthorManageDto toDto(Authority entity) {
+    private AuthorManageDto toDto(@NonNull Authority entity) {
         return AuthorManageDto.builder()
                 .authorCode(entity.getAuthorCode())
                 .authorNm(entity.getAuthorNm())

@@ -1,22 +1,20 @@
 dependencies {
     api project(':common-domain')
     api project(':common-core')
-    api project(':common-security') // For Security Utils if needed
+    api project(':common-security')
     api 'org.springframework.boot:spring-boot-starter-validation'
     api 'org.springframework.boot:spring-boot-starter-mail'
     api 'commons-net:commons-net:3.11.1'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     
-    // Swagger Annotations (DTO에서 @Schema 사용)
+    // Swagger
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
     api 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Lombok - io.freefair.lombok 8.10 플러그인이 자동으로 처리함
 
     // MapStruct
     api 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
- 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 }

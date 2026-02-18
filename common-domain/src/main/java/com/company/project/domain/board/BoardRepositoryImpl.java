@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Optional<BoardDetailResult> findArticleDetail(BoardId id) {
+    public Optional<BoardDetailResult> findArticleDetail(@NonNull BoardId id) {
         BoardDetailResult result = queryFactory
                 .select(Projections.fields(BoardDetailResult.class,
                         QBoard.board.id.bbsId.as("bbsId"),
@@ -67,7 +68,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     }
 
     @Override
-    public Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, Pageable pageable) {
+    public Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, @NonNull Pageable pageable) {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (StringUtils.hasText(condition.getBbsId())) {
@@ -136,7 +137,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     }
 
     @Override
-    public Page<Board> search(BoardSearchCondition condition, Pageable pageable) {
+    public Page<Board> search(BoardSearchCondition condition, @NonNull Pageable pageable) {
         BooleanBuilder builder = new BooleanBuilder();
 
         // BBS_ID Check
@@ -180,7 +181,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
     }
 
     @Override
-    public Optional<Board> findByIdCustom(BoardId id) {
+    public Optional<Board> findByIdCustom(@NonNull BoardId id) {
         Board result = queryFactory
                 .selectFrom(QBoard.board)
                 .where(QBoard.board.id.nttId.eq(id.getNttId())

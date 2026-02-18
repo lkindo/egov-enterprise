@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.servlet.ServletException;
 import java.io.IOException;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +55,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         verify(tokenProvider).resolveToken(request);
@@ -71,7 +73,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.resolveToken(request)).thenReturn(null);
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         verify(tokenProvider).resolveToken(request);
@@ -92,7 +95,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.validateToken(token)).thenReturn(false); // Invalid token
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         verify(tokenProvider).resolveToken(request);
@@ -110,7 +114,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.resolveToken(request)).thenReturn(null); // Will return null due to missing Bearer prefix
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         verify(tokenProvider).resolveToken(request);
@@ -131,7 +136,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.validateToken(token)).thenThrow(new RuntimeException("Token validation error"));
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         verify(tokenProvider).resolveToken(request);
@@ -154,7 +160,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         // Verify that the filter chain continues (no exceptions thrown)
@@ -175,7 +182,8 @@ class JwtAuthenticationFilterTest {
         when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
+                Objects.requireNonNull(filterChain));
 
         // Then
         Authentication authInContext = SecurityContextHolder.getContext().getAuthentication();

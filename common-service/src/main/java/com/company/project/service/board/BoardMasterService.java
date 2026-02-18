@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +39,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     @Transactional(readOnly = true)
-    public BoardMasterDto getBoardMaster(String bbsId) {
+    public BoardMasterDto getBoardMaster(@NonNull String bbsId) {
         BoardMaster entity = boardMasterRepository.findById(bbsId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return BoardMasterDto.from(entity);
@@ -46,7 +47,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BoardMasterDto> getBoardMasterList(String searchCnd, String searchWrd, Pageable pageable) {
+    public Page<BoardMasterDto> getBoardMasterList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
         BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
         condition.setSearchCnd(searchCnd);
         condition.setSearchWrd(searchWrd);
@@ -145,7 +146,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, Pageable pageable) {
+    public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
         // QueryDSL 기반 검색이 필요할 수 있으나 일단 findAll로 처리 (필요시 Custom Repository에 추가)
         return blogRepository.findAll(pageable).map(BlogDto::from);
     }

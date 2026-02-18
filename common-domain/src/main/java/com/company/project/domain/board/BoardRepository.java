@@ -1,12 +1,23 @@
 package com.company.project.domain.board;
 
+import org.springframework.lang.NonNull;
+import java.util.Optional;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BoardRepository extends JpaRepository<Board, BoardId>, BoardRepositoryCustom {
+        @Override
+        @NonNull
+        Optional<Board> findById(@NonNull BoardId id);
+
+        @Override
+        @Transactional
+        void deleteById(@NonNull BoardId id);
+
         @Query("SELECT COALESCE(MAX(b.id.nttId), 0) FROM Board b")
         Long findMaxNttId();
 

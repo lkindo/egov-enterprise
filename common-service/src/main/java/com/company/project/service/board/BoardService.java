@@ -17,12 +17,14 @@ import com.company.project.service.file.EgovFileService;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * JPA 기반 게시판 서비스 구현체
@@ -49,14 +51,15 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(String bbsId, Pageable pageable) {
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
                 return getBoardPosts(bbsId, "", "", pageable);
         }
 
         @Override
         @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(String bbsId, String searchCnd, String searchWrd, Pageable pageable) {
-                boardMasterRepository.findById(bbsId)
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
+                        @NonNull Pageable pageable) {
+                boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 BoardSearchCondition condition = new BoardSearchCondition();
@@ -65,16 +68,16 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 condition.setSearchCnd(searchCnd);
                 condition.setSearchWrd(searchWrd);
 
-                return boardRepository.searchArticles(condition, pageable).map(BoardDto::from);
+                return boardRepository.searchArticles(condition, Objects.requireNonNull(pageable)).map(BoardDto::from);
         }
 
         @Override
         @Transactional
-        public Long createPost(String userId, BoardSaveRequest request) {
-                BoardMaster master = boardMasterRepository.findById(request.bbsId())
+        public Long createPost(@NonNull String userId, BoardSaveRequest request) {
+                BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findByEsntlId(userId)
+                User author = userRepository.findByEsntlId(Objects.requireNonNull(userId))
                                 .orElse(null);
 
                 Long nttId = boardRepository.findMaxNttId() + 1;
@@ -99,12 +102,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .frstRegisterId(userId)
                                 .build();
 
-                return boardRepository.save(board).getNttId();
+                return Objects.requireNonNull(boardRepository.save(board)).getNttId();
         }
 
         @Override
         @Transactional
-        public Long createPostWithFiles(String userId, BoardSaveRequest request, List<MultipartFile> files)
+        public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
+                        List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
                 if (files != null && !files.isEmpty()) {
@@ -120,14 +124,15 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public Long replyPost(String userId, Long parentId, BoardSaveRequest request) {
-                BoardMaster master = boardMasterRepository.findById(request.bbsId())
+        public Long replyPost(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request) {
+                BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                Board parent = boardRepository.findById(new BoardId(parentId, master.getBbsId()))
+                Board parent = boardRepository
+                                .findById(new BoardId(Objects.requireNonNull(parentId), master.getBbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findByEsntlId(userId)
+                User author = userRepository.findByEsntlId(Objects.requireNonNull(userId))
                                 .orElse(null);
 
                 Long nttId = boardRepository.findMaxNttId() + 1;
@@ -152,12 +157,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .frstRegisterId(userId)
                                 .build();
 
-                return boardRepository.save(board).getNttId();
+                return Objects.requireNonNull(boardRepository.save(board)).getNttId();
         }
 
         @Override
         @Transactional
-        public Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request,
+        public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentId,
+                        @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
                 String atchFileId = request.atchFileId();
                 if (files != null && !files.isEmpty()) {
@@ -173,8 +179,8 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public BoardDto getPostDetail(String bbsId, Long nttId) {
-                BoardId id = new BoardId(nttId, bbsId);
+        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId) {
+                BoardId id = new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId));
                 BoardDetailResult detail = boardRepository.findArticleDetail(id)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -185,8 +191,9 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public void updatePost(String bbsId, Long nttId, BoardSaveRequest request) {
-                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
+        public void updatePost(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request) {
+                Board board = boardRepository
+                                .findById(new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId)))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
@@ -212,13 +219,14 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId);
 
-                updatePost(bbsId, nttId, newRequest);
+                updatePost(Objects.requireNonNull(bbsId), Objects.requireNonNull(nttId), newRequest);
         }
 
         @Override
         @Transactional
-        public void deletePost(String bbsId, Long nttId, String authorId) {
-                Board board = boardRepository.findById(new BoardId(nttId, bbsId))
+        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {
+                Board board = boardRepository
+                                .findById(new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId)))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
                 if (board != null) {

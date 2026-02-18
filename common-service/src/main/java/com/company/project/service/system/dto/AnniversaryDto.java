@@ -24,6 +24,55 @@ public class AnniversaryDto {
     private String createdBy;
     private LocalDateTime createdDate;
 
+    // Manual getters to bypass Lombok issues
+    public String getAnnId() {
+        return annId;
+    }
+
+    public String getUsid() {
+        return usid;
+    }
+
+    public String getAnnvrsrySe() {
+        return annvrsrySe;
+    }
+
+    public String getAnnvrsryNm() {
+        return annvrsryNm;
+    }
+
+    public String getAnnvrsryDe() {
+        return annvrsryDe;
+    }
+
+    public String getCldrSe() {
+        return cldrSe;
+    }
+
+    public String getReptitSe() {
+        return reptitSe;
+    }
+
+    public String getAnnvrsrySetup() {
+        return annvrsrySetup;
+    }
+
+    public String getAnnvrsryBeginDe() {
+        return annvrsryBeginDe;
+    }
+
+    public String getMemo() {
+        return memo;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
     public static AnniversaryDto from(Anniversary entity) {
         return AnniversaryDto.builder()
                 .annId(entity.getAnnId())

@@ -2,30 +2,32 @@ package com.company.project.service.sec;
 
 import com.company.project.service.sec.dto.AuthorDto;
 import com.company.project.service.sec.dto.RoleDto;
+import org.springframework.lang.NonNull;
+
 import java.util.List;
 
 public interface AuthorManageService {
     List<AuthorDto> selectAuthorList();
 
-    AuthorDto selectAuthor(String authorCode);
+    AuthorDto selectAuthor(@NonNull String authorCode);
 
-    void insertAuthor(AuthorDto authorDto);
+    void insertAuthor(@NonNull AuthorDto dto);
 
-    void updateAuthor(AuthorDto authorDto);
+    void updateAuthor(@NonNull AuthorDto dto);
 
-    void deleteAuthor(String authorCode);
+    void deleteAuthor(@NonNull String authorCode);
 
     List<RoleDto> selectRoleList();
 
-    RoleDto selectRole(String roleCode);
+    RoleDto selectRole(@NonNull String roleCode);
 
-    void insertRole(RoleDto roleDto);
+    void insertRole(@NonNull RoleDto dto);
 
-    void updateRole(RoleDto roleDto);
+    void updateRole(@NonNull RoleDto dto);
 
-    void deleteRole(String roleCode);
+    void deleteRole(@NonNull String roleCode);
 
-    void insertAuthorRoleRelate(String authorCode, List<String> roleCodes);
+    void insertAuthorRoleRelate(@NonNull String authorCode, @NonNull List<String> roleCodes);
 
-    List<RoleDto> selectAuthorRoleList(String authorCode);
+    List<RoleDto> selectAuthorRoleList(@NonNull String authorCode);
 }

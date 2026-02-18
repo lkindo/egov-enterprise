@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -25,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseGet(() -> userRepository.findByEsntlId(username)
                         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username)));
 
-        String authorCode = userAuthorityRepository.findById(user.getEsntlId())
+        String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
                 .map(UserAuthority::getAuthorCode)
                 .orElse(null);
 

@@ -8,10 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +48,7 @@ public class UserAuthorityService {
     /**
      * 사용자 권한 상세 조회
      */
-    public UserAuthorityDto selectUserAuthority(String uniqId) {
+    public UserAuthorityDto selectUserAuthority(@NonNull String uniqId) {
         return userAuthorityRepository.findById(uniqId)
                 .map(this::toDto)
                 .orElse(null);
@@ -56,9 +58,9 @@ public class UserAuthorityService {
      * 사용자 권한 등록/수정
      */
     @Transactional
-    public void insertUserAuthority(UserAuthorityDto dto) {
+    public void insertUserAuthority(@NonNull UserAuthorityDto dto) {
         UserAuthority entity = UserAuthority.builder()
-                .uniqId(dto.getUniqId())
+                .uniqId(Objects.requireNonNull(dto.getUniqId()))
                 .authorCode(dto.getAuthorCode())
                 .mberTyCode(dto.getMberTyCode())
                 .build();
@@ -66,8 +68,8 @@ public class UserAuthorityService {
     }
 
     @Transactional
-    public void updateUserAuthority(UserAuthorityDto dto) {
-        UserAuthority entity = userAuthorityRepository.findById(dto.getUniqId())
+    public void updateUserAuthority(@NonNull UserAuthorityDto dto) {
+        UserAuthority entity = userAuthorityRepository.findById(Objects.requireNonNull(dto.getUniqId()))
                 .orElseThrow(() -> new RuntimeException("UserAuthority not found: " + dto.getUniqId()));
         entity.update(dto.getAuthorCode(), dto.getMberTyCode());
     }
@@ -76,14 +78,14 @@ public class UserAuthorityService {
      * 사용자 권한 삭제
      */
     @Transactional
-    public void deleteUserAuthority(String uniqId) {
+    public void deleteUserAuthority(@NonNull String uniqId) {
         userAuthorityRepository.deleteById(uniqId);
     }
 
     private UserAuthorityDto toDto(UserAuthority entity) {
         return UserAuthorityDto.builder()
-                .uniqId(entity.getUniqId())
-                .authorCode(entity.getAuthorCode())
+                .uniqId(Objects.requireNonNull(entity.getUniqId()))
+                .authorCode(Objects.requireNonNull(entity.getAuthorCode()))
                 .mberTyCode(entity.getMberTyCode())
                 .build();
     }

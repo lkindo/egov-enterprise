@@ -52,8 +52,58 @@ public class AnniversaryDto {
     @Schema(description = "등록일시")
     private LocalDateTime createdDate;
 
+    // Manual getters to bypass Lombok issues
+    public String getAnnId() {
+        return annId;
+    }
+
+    public String getUsid() {
+        return usid;
+    }
+
+    public String getAnnvrsrySe() {
+        return annvrsrySe;
+    }
+
+    public String getAnnvrsryNm() {
+        return annvrsryNm;
+    }
+
+    public String getAnnvrsryDe() {
+        return annvrsryDe;
+    }
+
+    public String getCldrSe() {
+        return cldrSe;
+    }
+
+    public String getAnnvrsrySetup() {
+        return annvrsrySetup;
+    }
+
+    public String getAnnvrsryBeginDe() {
+        return annvrsryBeginDe;
+    }
+
+    public String getMemo() {
+        return memo;
+    }
+
+    public String getReptitAt() {
+        return reptitAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
     public static AnniversaryDto from(Anniversary entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return AnniversaryDto.builder()
                 .annId(entity.getAnnId())
                 .usid(entity.getUsid())

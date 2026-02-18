@@ -23,6 +23,59 @@ public class BackupResultDto {
         private String frstRegisterId;
         private String frstRegistPnttm;
 
+        // Manual getters
+        public String getBackupResultId() {
+                return backupResultId;
+        }
+
+        public String getBackupOpertId() {
+                return backupOpertId;
+        }
+
+        public String getBackupOpertNm() {
+                return backupOpertNm;
+        }
+
+        public String getBackupFile() {
+                return backupFile;
+        }
+
+        public String getSttus() {
+                return sttus;
+        }
+
+        public String getSttusNm() {
+                return sttusNm;
+        }
+
+        public String getExecutBeginTime() {
+                return executBeginTime;
+        }
+
+        public String getExecutEndTime() {
+                return executEndTime;
+        }
+
+        public String getErrorInfo() {
+                return errorInfo;
+        }
+
+        public String getBackupOrginlDrctry() {
+                return backupOrginlDrctry;
+        }
+
+        public String getBackupStreDrctry() {
+                return backupStreDrctry;
+        }
+
+        public String getFrstRegisterId() {
+                return frstRegisterId;
+        }
+
+        public String getFrstRegistPnttm() {
+                return frstRegistPnttm;
+        }
+
         public static BackupResultDto from(BackupResult entity) {
                 return BackupResultDto.builder()
                                 .backupResultId(entity.getBackupResultId())

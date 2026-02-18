@@ -4,8 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 사용자 정보 DTO
@@ -15,8 +17,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDto {
+    @NonNull
     private String userId;
+    @NonNull
     private String userNm;
+    @NonNull
     private String esntlId;
     private String role;
     private String emplNo;
@@ -27,9 +32,9 @@ public class UserDto {
         if (user == null)
             return null;
         return UserDto.builder()
-                .userId(user.getUserId())
-                .userNm(user.getUserNm())
-                .esntlId(user.getEsntlId())
+                .userId(Objects.requireNonNull(user.getUserId()))
+                .userNm(Objects.requireNonNull(user.getUserNm()))
+                .esntlId(Objects.requireNonNull(user.getEsntlId()))
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .emplNo(user.getEmplNo())
                 .ofcpsNm(user.getOfcpsNm())

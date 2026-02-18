@@ -39,6 +39,87 @@ public class BoardMasterDto {
     private String authFlag;
     private String tmplatCours;
 
+    // Manual getters to bypass Lombok issues
+    public String getBbsId() {
+        return bbsId;
+    }
+
+    public String getBbsNm() {
+        return bbsNm;
+    }
+
+    public String getBbsIntrcn() {
+        return bbsIntrcn;
+    }
+
+    public String getBbsTyCode() {
+        return bbsTyCode;
+    }
+
+    public String getBbsAttrbCode() {
+        return bbsAttrbCode;
+    }
+
+    public String getReplyPosblAt() {
+        return replyPosblAt;
+    }
+
+    public String getFileAtchPosblAt() {
+        return fileAtchPosblAt;
+    }
+
+    public Integer getAtchPosblFileNumber() {
+        return atchPosblFileNumber;
+    }
+
+    public Long getAtchPosblFileSize() {
+        return atchPosblFileSize;
+    }
+
+    public String getTmplatId() {
+        return tmplatId;
+    }
+
+    public String getFrstRegisterId() {
+        return frstRegisterId;
+    }
+
+    public LocalDateTime getFrstRegisterPnttm() {
+        return frstRegisterPnttm;
+    }
+
+    public String getLastUpdusrId() {
+        return lastUpdusrId;
+    }
+
+    public LocalDateTime getLastUpdusrPnttm() {
+        return lastUpdusrPnttm;
+    }
+
+    public String getUseAt() {
+        return useAt;
+    }
+
+    public String getCmmntyId() {
+        return cmmntyId;
+    }
+
+    public String getBlogId() {
+        return blogId;
+    }
+
+    public String getBlogAt() {
+        return blogAt;
+    }
+
+    public String getCommentAt() {
+        return commentAt;
+    }
+
+    public String getStsfdgAt() {
+        return stsfdgAt;
+    }
+
     public static BoardMasterDto from(BoardMaster entity) {
         if (entity == null)
             return null;
