@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,8 +31,10 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BackupOpertDto> getBackupOpertList(String condition, String keyword, Pageable pageable) {
-        Page<BackupOpert> page = backupOpertRepository.searchBackupOperts(condition, keyword, pageable);
+    public Page<BackupOpertDto> getBackupOpertList(String condition, String keyword,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        Page<BackupOpert> page = backupOpertRepository.searchBackupOperts(condition, keyword,
+                Objects.requireNonNull(pageable));
 
         List<String> ids = page.getContent().stream()
                 .map(BackupOpert::getBackupOpertId)
@@ -39,7 +42,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
 
         Map<String, List<BackupSchdulDfk>> dfkMapByOpert;
         if (!ids.isEmpty()) {
-            List<BackupSchdulDfk> dfks = backupSchdulDfkRepository.findByIdBackupOpertIdIn(ids);
+            List<BackupSchdulDfk> dfks = backupSchdulDfkRepository.findByIdBackupOpertIdIn(Objects.requireNonNull(ids));
             dfkMapByOpert = dfks.stream().collect(Collectors.groupingBy(BackupSchdulDfk::getBackupOpertId));
         } else {
             dfkMapByOpert = Collections.emptyMap();
@@ -75,7 +78,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public BackupOpertDto getBackupOpert(String backupOpertId) {
-        BackupOpert entity = backupOpertRepository.findById(backupOpertId)
+        BackupOpert entity = backupOpertRepository.findById(Objects.requireNonNull(backupOpertId))
                 .orElseThrow(() -> new RuntimeException("BackupOpert not found: " + backupOpertId));
 
         BackupOpertDto dto = BackupOpertDto.from(entity);
@@ -129,13 +132,14 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
             }
         }
 
-        return backupOpertRepository.save(entity).getBackupOpertId();
+        return Objects.requireNonNull(backupOpertRepository.save(Objects.requireNonNull(entity)))
+                .getBackupOpertId();
     }
 
     @Override
     @Transactional
     public void updateBackupOpert(String backupOpertId, String userId, BackupOpertDto dto) {
-        BackupOpert entity = backupOpertRepository.findById(backupOpertId)
+        BackupOpert entity = backupOpertRepository.findById(Objects.requireNonNull(backupOpertId))
                 .orElseThrow(() -> new RuntimeException("BackupOpert not found: " + backupOpertId));
 
         entity.setBackupOpertNm(dto.getBackupOpertNm());
@@ -164,7 +168,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional
     public void deleteBackupOpert(String backupOpertId) {
-        BackupOpert entity = backupOpertRepository.findById(backupOpertId)
+        BackupOpert entity = backupOpertRepository.findById(Objects.requireNonNull(backupOpertId))
                 .orElseThrow(() -> new RuntimeException("BackupOpert not found: " + backupOpertId));
         entity.setUseAt("N");
     }

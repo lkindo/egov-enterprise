@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -64,7 +65,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .frstRegisterId(userId)
                     .build();
 
-            addressBookRepository.save(entity);
+            addressBookRepository.save(Objects.requireNonNull(entity));
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
@@ -81,7 +82,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .offmTelno(userDto.getOffmTelno())
                             .fxnum(userDto.getFxnum())
                             .build();
-                    addressBookUserRepository.save(userEntity);
+                    addressBookUserRepository.save(Objects.requireNonNull(userEntity));
                 }
             }
         } catch (Exception e) {
@@ -92,10 +93,14 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Override
     @Transactional
     public void updateAddressBook(String userId, AddressBookDto dto) {
-        AddressBook entity = addressBookRepository.findById(dto.getAdbkId())
+        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
                 .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + dto.getAdbkId()));
 
-        entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt(), userId);
+        entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt(), Objects.requireNonNull(userId));
+
+        if (dto.getAdbkMan() == null) {
+            return;
+        }
 
         // Handle users update (Simplified logic: delete missing, add new)
         List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkId(dto.getAdbkId());
@@ -106,7 +111,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(existing.getEmplyrId())) ||
                             (u.getNcrdId() != null && u.getNcrdId().equals(existing.getNcrdId())));
             if (!remains) {
-                addressBookUserRepository.delete(existing);
+                addressBookUserRepository.delete(Objects.requireNonNull(existing));
             }
         }
 
@@ -130,7 +135,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .offmTelno(userDto.getOffmTelno())
                             .fxnum(userDto.getFxnum())
                             .build();
-                    addressBookUserRepository.save(newUser);
+                    addressBookUserRepository.save(Objects.requireNonNull(newUser));
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to generate user ID", e);
                 }
@@ -141,7 +146,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Override
     @Transactional
     public void deleteAddressBook(String adbkId, String userId) {
-        AddressBook entity = addressBookRepository.findById(adbkId)
+        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(adbkId))
                 .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + adbkId));
 
         entity.update(entity.getAdbkNm(), entity.getOthbcScope(), "N", userId);

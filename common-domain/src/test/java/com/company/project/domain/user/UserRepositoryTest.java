@@ -25,27 +25,28 @@ public class UserRepositoryTest {
     void setUp() {
         userRepository.deleteAll();
 
-        userRepository.save(User.builder()
+        userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("user1")
                 .userNm("홍길동")
                 .role(Role.USER)
                 .password("pass1")
                 .esntlId("USR1")
-                .build());
+                .build()));
 
-        userRepository.save(User.builder()
+        userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("admin1")
                 .userNm("관리자")
                 .role(Role.ADMIN)
                 .password("pass2")
                 .esntlId("ADM1")
-                .build());
+                .build()));
     }
 
     @Test
     @DisplayName("아이디로 사용자 검색")
     void searchByUserId() {
-        Page<User> result = userRepository.searchUsers(null, "0", "user1", PageRequest.of(0, 10));
+        Page<User> result = userRepository.searchUsers(null, "0", "user1",
+                java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getUserId()).isEqualTo("user1");
@@ -54,7 +55,8 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("이름으로 사용자 검색")
     void searchByUserNm() {
-        Page<User> result = userRepository.searchUsers(null, "1", "관리자", PageRequest.of(0, 10));
+        Page<User> result = userRepository.searchUsers(null, "1", "관리자",
+                java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getUserNm()).isEqualTo("관리자");
@@ -63,7 +65,8 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("역할(Role) 필터링")
     void searchByRole() {
-        Page<User> result = userRepository.searchUsers("ADMIN", null, null, PageRequest.of(0, 10));
+        Page<User> result = userRepository.searchUsers("ADMIN", null, null,
+                java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getRole()).isEqualTo(Role.ADMIN);

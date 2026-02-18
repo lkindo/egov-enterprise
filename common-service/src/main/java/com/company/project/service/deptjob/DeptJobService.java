@@ -19,6 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 @Service("egovDeptJobService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,9 +42,9 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
         if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
             builder.and(deptJob.deptJobbxId.eq(deptJobbxId));
         } else if (deptId != null && !deptId.isEmpty()) {
-            java.util.List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
+            List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
                     .map(box -> box.getDeptJobbxId())
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
             if (!boxIds.isEmpty()) {
                 builder.and(deptJob.deptJobbxId.in(boxIds));
             } else {
@@ -58,12 +62,12 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
             }
         }
 
-        return deptJobRepository.findAll(builder, pageable).map(this::toDto);
+        return deptJobRepository.findAll(builder, Objects.requireNonNull(pageable)).map(this::toDto);
     }
 
     @Override
     public DeptJobDto getDeptJob(String id) {
-        DeptJob deptJob = deptJobRepository.findById(id)
+        DeptJob deptJob = deptJobRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return toDto(deptJob);
     }
@@ -81,14 +85,14 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
                 .atchFileId(dto.getAtchFileId())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        deptJobRepository.save(deptJob);
+        deptJobRepository.save(Objects.requireNonNull(deptJob));
         return deptJob.getDeptJobId();
     }
 
     @Override
     @Transactional
     public void updateDeptJob(String id, DeptJobDto dto) {
-        DeptJob deptJob = deptJobRepository.findById(id)
+        DeptJob deptJob = deptJobRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         deptJob.update(
                 dto.getDeptJobbxId(),
@@ -103,21 +107,21 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
     @Override
     @Transactional
     public void deleteDeptJob(String id) {
-        deptJobRepository.deleteById(id);
+        deptJobRepository.deleteById(Objects.requireNonNull(id));
     }
 
     private DeptJobDto toDto(DeptJob entity) {
         DeptJobDto dto = DeptJobDto.from(entity);
 
-        deptJobBoxRepository.findById(entity.getDeptJobbxId())
+        deptJobBoxRepository.findById(Objects.requireNonNull(entity.getDeptJobbxId()))
                 .ifPresent(box -> {
                     dto.setDeptJobbxNm(box.getDeptJobbxNm());
                     dto.setDeptId(box.getDeptId());
-                    organizationManageRepository.findById(box.getDeptId())
+                    organizationManageRepository.findById(Objects.requireNonNull(box.getDeptId()))
                             .ifPresent(org -> dto.setDeptNm(org.getOrgnztNm()));
                 });
 
-        userRepository.findByEsntlId(entity.getChargerId())
+        userRepository.findByEsntlId(Objects.requireNonNull(entity.getChargerId()))
                 .ifPresent(user -> dto.setChargerNm(user.getUserNm()));
 
         return dto;

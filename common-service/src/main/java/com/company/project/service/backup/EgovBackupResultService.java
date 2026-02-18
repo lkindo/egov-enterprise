@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface EgovBackupResultService {
     Page<BackupResultDto> getBackupResultList(String sttus, String searchFrom, String searchTo, String condition,
-            String keyword, Pageable pageable);
+            String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
     BackupResultDto getBackupResult(String backupResultId);
 

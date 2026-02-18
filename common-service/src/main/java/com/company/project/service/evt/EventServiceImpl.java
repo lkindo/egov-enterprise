@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,14 +26,15 @@ public class EventServiceImpl implements EventService {
     @Override
     public Page<EventDto> getEventList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return eventRepository.findAll(pageable).map(EventDto::from);
+            return eventRepository.findAll(Objects.requireNonNull(pageable)).map(EventDto::from);
         }
-        return eventRepository.findByEventNmContaining(keyword, pageable).map(EventDto::from);
+        return eventRepository.findByEventNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(EventDto::from);
     }
 
     @Override
     public EventDto getEvent(String eventId) {
-        return eventRepository.findById(eventId)
+        return eventRepository.findById(Objects.requireNonNull(eventId))
                 .map(EventDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -60,7 +63,7 @@ public class EventServiceImpl implements EventService {
                     .rceptEndDe(dto.getRceptEndDe())
                     .frstRegisterId(userId)
                     .build();
-            eventRepository.save(entity);
+            eventRepository.save(Objects.requireNonNull(entity));
             return id;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate event ID", e);
@@ -70,7 +73,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void updateEvent(String eventId, String userId, EventDto dto) {
-        Event entity = eventRepository.findById(eventId)
+        Event entity = eventRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getEventSe(), dto.getEventNm(), dto.getEventPurps(), dto.getEventBeginDe(),
                 dto.getEventEndDe(), dto.getEventAuspcInsttNm(), dto.getEventMngtInsttNm(),
@@ -82,15 +85,17 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void deleteEvent(String eventId) {
-        if (!eventRepository.existsById(eventId)) {
+        if (!eventRepository.existsById(Objects.requireNonNull(eventId))) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
-        eventRepository.deleteById(eventId);
+        eventRepository.deleteById(Objects.requireNonNull(eventId));
     }
 
     @Override
     public Page<EventAttendanceDto> getAttendanceList(String eventId, Pageable pageable) {
-        return eventAttendanceRepository.findByEventId(eventId, pageable).map(EventAttendanceDto::from);
+        return eventAttendanceRepository
+                .findByEventId(Objects.requireNonNull(eventId), Objects.requireNonNull(pageable))
+                .map(EventAttendanceDto::from);
     }
 
     @Override
@@ -104,14 +109,14 @@ public class EventServiceImpl implements EventService {
                 .infrmlSanctnId(dto.getInfrmlSanctnId())
                 .frstRegisterId(userId)
                 .build();
-        eventAttendanceRepository.save(entity);
+        eventAttendanceRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void approveAttendance(String eventId, String applcntId, String userId, String confmAt, String returnResn) {
         EventAttendance entity = eventAttendanceRepository
-                .findById(new EventAttendance.EventAttendanceId(applcntId, eventId))
+                .findById(Objects.requireNonNull(new EventAttendance.EventAttendanceId(applcntId, eventId)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.approve(userId, confmAt, returnResn, userId);
     }

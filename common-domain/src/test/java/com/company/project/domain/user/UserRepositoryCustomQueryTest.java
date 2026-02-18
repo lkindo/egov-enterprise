@@ -41,8 +41,8 @@ class UserRepositoryCustomQueryTest {
                                 .password("encodedPassword")
                                 .role(com.company.project.domain.user.Role.ADMIN)
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
 
                 // When
                 Pageable pageable = PageRequest.of(0, 10);
@@ -77,9 +77,9 @@ class UserRepositoryCustomQueryTest {
                                 .esntlId("USR00003")
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
                 List<User> result = userRepository.findByUserNmContaining("홍");
@@ -114,9 +114,9 @@ class UserRepositoryCustomQueryTest {
                                 .emailAdres("other@test.com")
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
                 List<User> result = userRepository.findByEmailAdresContaining("example.com");
@@ -152,9 +152,9 @@ class UserRepositoryCustomQueryTest {
                                 .orgnztId("ORG002")
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
                 List<User> result = userRepository.findByOrgnztId("ORG001");
@@ -190,9 +190,9 @@ class UserRepositoryCustomQueryTest {
                                 .role(com.company.project.domain.user.Role.ADMIN)
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
                 List<User> result = userRepository.findByRole(com.company.project.domain.user.Role.USER);
@@ -239,10 +239,10 @@ class UserRepositoryCustomQueryTest {
                                 .role(com.company.project.domain.user.Role.USER)
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
-                userRepository.save(user4);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
+                userRepository.save(java.util.Objects.requireNonNull(user4));
 
                 // When
                 List<User> result = userRepository.findByOrgnztIdAndRole("ORG001",
@@ -280,9 +280,9 @@ class UserRepositoryCustomQueryTest {
                                 .emailAdres("park@example.com")
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user1);
-                userRepository.save(user2);
-                userRepository.save(user3);
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
+                userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
                 List<User> result = userRepository.findByUserNmContainingOrEmailAdresContaining("길동", "kim@test.com");
@@ -314,9 +314,9 @@ class UserRepositoryCustomQueryTest {
                                 .esntlId("USR00002")
                                 .password("encodedPassword")
                                 .build();
-                userRepository.save(user3);
-                userRepository.save(user1);
-                userRepository.save(user2);
+                userRepository.save(java.util.Objects.requireNonNull(user3));
+                userRepository.save(java.util.Objects.requireNonNull(user1));
+                userRepository.save(java.util.Objects.requireNonNull(user2));
 
                 // When
                 Pageable pageable = PageRequest.of(0, 10);

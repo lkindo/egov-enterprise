@@ -5,15 +5,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EgovCtsnnService {
-    CtsnnDto getCtsnn(String ctsnnId);
+    CtsnnDto getCtsnn(@org.springframework.lang.NonNull String ctsnnId);
 
     void registerCtsnn(CtsnnDto dto);
 
     void updateCtsnn(CtsnnDto dto);
 
-    void deleteCtsnn(String ctsnnId);
+    void deleteCtsnn(@org.springframework.lang.NonNull String ctsnnId);
 
-    void approveCtsnn(String ctsnnId, String confmAt, String returnResn, String lastUpdusrId);
+    void approveCtsnn(@org.springframework.lang.NonNull String ctsnnId, String confmAt, String returnResn,
+            String lastUpdusrId);
 
-    Page<CtsnnDto> getCtsnnList(String searchKeyword, String ctsnnCd, Pageable pageable);
+    Page<CtsnnDto> getCtsnnList(String searchKeyword, String ctsnnCd,
+            @org.springframework.lang.NonNull Pageable pageable);
 }

@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service("egovKnoPersonalServiceImpl")
 @RequiredArgsConstructor
 public class EgovKnoPersonalServiceImpl implements EgovKnoPersonalService {
@@ -20,12 +22,14 @@ public class EgovKnoPersonalServiceImpl implements EgovKnoPersonalService {
     public Page<KnowledgeInf> selectKnoPersonalList(String searchCondition, String searchKeyword, String uniqId,
             Pageable pageable) throws Exception {
         // Simple search for personal knowledge
-        return repository.findAll((root, query, cb) -> cb.equal(root.get("frstRegisterId"), uniqId), pageable);
+        return repository.findAll((root, query, cb) -> cb.equal(root.get("frstRegisterId"), uniqId),
+                Objects.requireNonNull(pageable));
     }
 
     @Override
     public KnowledgeDto selectKnoPersonalDetail(String knoId) throws Exception {
-        KnowledgeInf entity = repository.findById(knoId).orElseThrow(() -> new Exception("Not found"));
+        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knoId))
+                .orElseThrow(() -> new Exception("Not found"));
         return convertToDto(entity);
     }
 
@@ -33,13 +37,13 @@ public class EgovKnoPersonalServiceImpl implements EgovKnoPersonalService {
     @Transactional
     public void insertKnoPersonal(KnowledgeDto knowledgeDto) throws Exception {
         KnowledgeInf entity = convertToEntity(knowledgeDto);
-        repository.save(entity);
+        repository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateKnoPersonal(KnowledgeDto knowledgeDto) throws Exception {
-        KnowledgeInf entity = repository.findById(knowledgeDto.getKnoId())
+        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knowledgeDto.getKnoId()))
                 .orElseThrow(() -> new Exception("Not found"));
         updateEntity(entity, knowledgeDto);
     }
@@ -47,7 +51,7 @@ public class EgovKnoPersonalServiceImpl implements EgovKnoPersonalService {
     @Override
     @Transactional
     public void deleteKnoPersonal(String knoId) throws Exception {
-        repository.deleteById(knoId);
+        repository.deleteById(Objects.requireNonNull(knoId));
     }
 
     private KnowledgeDto convertToDto(KnowledgeInf entity) {

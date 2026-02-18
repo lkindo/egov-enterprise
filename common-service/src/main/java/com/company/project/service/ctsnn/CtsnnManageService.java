@@ -11,6 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+import org.springframework.lang.NonNull;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -19,21 +22,22 @@ public class CtsnnManageService implements EgovCtsnnManageService {
     private final CtsnnManageRepository ctsnnManageRepository;
 
     @Override
-    public Page<CtsnnDto> getCtsnnList(String keyword, Pageable pageable) {
+    public Page<CtsnnDto> getCtsnnList(String keyword, @NonNull Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return ctsnnManageRepository.findAll(pageable).map(CtsnnDto::from);
+            return ctsnnManageRepository.findAll(Objects.requireNonNull(pageable)).map(CtsnnDto::from);
         }
-        return ctsnnManageRepository.findByCtsnnNmContaining(keyword, pageable).map(CtsnnDto::from);
+        return ctsnnManageRepository.findByCtsnnNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(CtsnnDto::from);
     }
 
     @Override
-    public Page<CtsnnDto> getMyCtsnnList(String userId, Pageable pageable) {
-        return ctsnnManageRepository.findByUsid(userId, pageable).map(CtsnnDto::from);
+    public Page<CtsnnDto> getMyCtsnnList(String userId, @NonNull Pageable pageable) {
+        return ctsnnManageRepository.findByUsid(userId, Objects.requireNonNull(pageable)).map(CtsnnDto::from);
     }
 
     @Override
-    public CtsnnDto getCtsnn(String ctsnnId) {
-        return ctsnnManageRepository.findById(ctsnnId)
+    public CtsnnDto getCtsnn(@NonNull String ctsnnId) {
+        return ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .map(CtsnnDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -56,31 +60,31 @@ public class CtsnnManageService implements EgovCtsnnManageService {
                 .confmAt("N") // 초기 상태: 미승인
                 .infrmlSanctnId(dto.getInfrmlSanctnId())
                 .build();
-        ctsnnManageRepository.save(entity);
+        ctsnnManageRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateCtsnn(String ctsnnId, String userId, CtsnnDto dto) {
-        CtsnnManage entity = ctsnnManageRepository.findById(ctsnnId)
+        CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        
+
         // 승인된 건은 수정 불가 처리 로직 등 추가 가능
-        
+
         entity.update(dto.getCtsnnCd(), dto.getCtsnnNm(), dto.getReqstDe(), dto.getTrgterNm(),
                 dto.getBrth(), dto.getOccrrDe(), dto.getRelate(), dto.getRemark());
     }
 
     @Override
     @Transactional
-    public void deleteCtsnn(String ctsnnId) {
-        ctsnnManageRepository.deleteById(ctsnnId);
+    public void deleteCtsnn(@NonNull String ctsnnId) {
+        ctsnnManageRepository.deleteById(Objects.requireNonNull(ctsnnId));
     }
 
     @Override
     @Transactional
-    public void confirmCtsnn(String ctsnnId, String confmAt, String returnResn) {
-        CtsnnManage entity = ctsnnManageRepository.findById(ctsnnId)
+    public void confirmCtsnn(@NonNull String ctsnnId, String confmAt, String returnResn) {
+        CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.confirm(confmAt, returnResn);
     }

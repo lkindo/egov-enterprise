@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,9 +38,10 @@ public class BatchSchdulService implements EgovBatchSchdulService {
     private final java.util.concurrent.ConcurrentHashMap<String, Map<String, String>> codeMapCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
-    public Page<BatchSchdulDto> getBatchSchdulList(String searchCondition, String searchKeyword, Pageable pageable) {
+    public Page<BatchSchdulDto> getBatchSchdulList(String searchCondition, String searchKeyword,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<BatchSchdul> entities = batchSchdulRepository
-                .searchBatchSchduls(searchCondition, searchKeyword, pageable);
+                .searchBatchSchduls(searchCondition, searchKeyword, Objects.requireNonNull(pageable));
 
         Map<String, String> cycleMap = getCodeMap("COM047");
         Map<String, String> dfkMap = getCodeMap("COM074");
@@ -50,7 +52,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
                 .collect(Collectors.toSet());
 
         Map<String, BatchOpert> jobMap = batchOpertRepository
-                .findAllById(batchOpertIds).stream()
+                .findAllById(Objects.requireNonNull(batchOpertIds)).stream()
                 .collect(Collectors.toMap(
                         BatchOpert::getBatchOpertId,
                         job -> job,
@@ -65,7 +67,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
             dfkMapBySchdulId = new HashMap<>();
         } else {
             dfkMapBySchdulId = batchSchdulRepository
-                    .findAllDfksByBatchSchdulIdIn(batchSchdulIds).stream()
+                    .findAllDfksByBatchSchdulIdIn(Objects.requireNonNull(batchSchdulIds)).stream()
                     .collect(Collectors.groupingBy(BatchSchdulDfk::getBatchSchdulId));
         }
 
@@ -74,7 +76,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
     @Override
     public BatchSchdulDto getBatchSchdul(String batchSchdulId) {
-        BatchSchdul entity = batchSchdulRepository.findById(batchSchdulId)
+        BatchSchdul entity = batchSchdulRepository.findById(Objects.requireNonNull(batchSchdulId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         Map<String, String> cycleMap = getCodeMap("COM047");
@@ -82,17 +84,18 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
         Map<String, BatchOpert> jobMap = new HashMap<>();
         if (entity.getBatchOpertId() != null) {
-            batchOpertRepository.findById(entity.getBatchOpertId())
-                    .ifPresent(job -> jobMap.put(job.getBatchOpertId(), job));
+            batchOpertRepository.findById(Objects.requireNonNull(entity.getBatchOpertId()))
+                    .ifPresent(job -> jobMap.put(Objects.requireNonNull(job.getBatchOpertId()), job));
         }
 
         return convertToDto(entity, cycleMap, dfkMap, jobMap, null);
     }
 
     private Map<String, String> getCodeMap(String codeGroupId) {
-        return codeMapCache.computeIfAbsent(codeGroupId, key -> commonCodeService.getCodesByGroup(key).stream()
-                .collect(Collectors.toMap(CommonCodeDto::code,
-                        CommonCodeDto::codeNm, (a, b) -> a)));
+        return codeMapCache.computeIfAbsent(Objects.requireNonNull(codeGroupId),
+                key -> commonCodeService.getCodesByGroup(Objects.requireNonNull(key)).stream()
+                        .collect(Collectors.toMap(CommonCodeDto::code,
+                                CommonCodeDto::codeNm, (a, b) -> a)));
     }
 
     private BatchSchdulDto convertToDto(BatchSchdul entity,
@@ -165,7 +168,8 @@ public class BatchSchdulService implements EgovBatchSchdulService {
 
         BatchSchdul batchSchdul = BatchSchdul.builder()
                 .batchSchdulId(batchSchdulId)
-                .batchOpert(batchOpertRepository.getReferenceById(dto.getBatchOpertId()))
+                .batchOpert(
+                        batchOpertRepository.getReferenceById(Objects.requireNonNull(dto.getBatchOpertId())))
                 .executCycle(dto.getExecutCycle())
                 .executSchdulDe(dto.getExecutSchdulDe())
                 .executSchdulHour(dto.getExecutSchdulHour())
@@ -184,17 +188,18 @@ public class BatchSchdulService implements EgovBatchSchdulService {
             }
         }
 
-        batchSchdulRepository.save(batchSchdul);
+        batchSchdulRepository.save(Objects.requireNonNull(batchSchdul));
         return batchSchdulId;
     }
 
     @Override
     @Transactional
     public void updateBatchSchdul(String batchSchdulId, String userId, BatchSchdulDto dto) {
-        BatchSchdul batchSchdul = batchSchdulRepository.findById(batchSchdulId)
+        BatchSchdul batchSchdul = batchSchdulRepository.findById(Objects.requireNonNull(batchSchdulId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        batchSchdul.setBatchOpert(batchOpertRepository.getReferenceById(dto.getBatchOpertId()));
+        batchSchdul.setBatchOpert(
+                batchOpertRepository.getReferenceById(Objects.requireNonNull(dto.getBatchOpertId())));
         batchSchdul.setExecutCycle(dto.getExecutCycle());
         batchSchdul.setExecutSchdulDe(dto.getExecutSchdulDe());
         batchSchdul.setExecutSchdulHour(dto.getExecutSchdulHour());
@@ -213,14 +218,14 @@ public class BatchSchdulService implements EgovBatchSchdulService {
             }
         }
 
-        batchSchdulRepository.save(batchSchdul);
+        batchSchdulRepository.save(Objects.requireNonNull(batchSchdul));
     }
 
     @Override
     @Transactional
     public void deleteBatchSchdul(String batchSchdulId) {
-        BatchSchdul batchSchdul = batchSchdulRepository.findById(batchSchdulId)
+        BatchSchdul batchSchdul = batchSchdulRepository.findById(Objects.requireNonNull(batchSchdulId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        batchSchdulRepository.delete(batchSchdul);
+        batchSchdulRepository.delete(Objects.requireNonNull(batchSchdul));
     }
 }

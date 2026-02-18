@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -22,7 +24,7 @@ public class EgovMapTeamServiceImpl implements EgovMapTeamService {
         // Simplified search logic using basic ID/Name search
         // For production, this would use a more robust QueryDSL implementation in the
         // repository
-        return mapTeamRepository.findAll(pageable).map(entity -> MapTeamDto.builder()
+        return mapTeamRepository.findAll(Objects.requireNonNull(pageable)).map(entity -> MapTeamDto.builder()
                 .orgnztId(entity.getOrgnztId())
                 .orgnztNm(entity.getOrgnztNm())
                 .clYmd(entity.getClYmd())
@@ -32,7 +34,7 @@ public class EgovMapTeamServiceImpl implements EgovMapTeamService {
 
     @Override
     public MapTeamDto selectMapTeamDetail(String orgnztId) {
-        MapTeam entity = mapTeamRepository.findById(orgnztId)
+        MapTeam entity = mapTeamRepository.findById(Objects.requireNonNull(orgnztId))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Organization ID: " + orgnztId));
         return MapTeamDto.builder()
                 .orgnztId(entity.getOrgnztId())
@@ -52,25 +54,25 @@ public class EgovMapTeamServiceImpl implements EgovMapTeamService {
                 .knoUrl(dto.getKnoUrl())
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .build();
-        mapTeamRepository.save(entity);
+        mapTeamRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateMapTeam(MapTeamDto dto) {
-        MapTeam entity = mapTeamRepository.findById(dto.getOrgnztId())
+        MapTeam entity = mapTeamRepository.findById(Objects.requireNonNull(dto.getOrgnztId()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Organization ID: " + dto.getOrgnztId()));
         entity.setOrgnztNm(dto.getOrgnztNm());
         entity.setClYmd(dto.getClYmd());
         entity.setKnoUrl(dto.getKnoUrl());
         entity.setLastUpdusrId(dto.getLastUpdusrId());
         entity.setLastUpdusrPnttm(java.time.LocalDateTime.now());
-        mapTeamRepository.save(entity);
+        mapTeamRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void deleteMapTeam(String orgnztId) {
-        mapTeamRepository.deleteById(orgnztId);
+        mapTeamRepository.deleteById(Objects.requireNonNull(orgnztId));
     }
 }

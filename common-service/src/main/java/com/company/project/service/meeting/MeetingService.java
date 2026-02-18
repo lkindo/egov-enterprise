@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -21,14 +23,15 @@ public class MeetingService implements EgovMeetingService {
     @Override
     public Page<MeetingManageDto> getMeetingList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return meetingManageRepository.findAll(pageable).map(MeetingManageDto::from);
+            return meetingManageRepository.findAll(Objects.requireNonNull(pageable)).map(MeetingManageDto::from);
         }
-        return meetingManageRepository.findByMtgNmContaining(keyword, pageable).map(MeetingManageDto::from);
+        return meetingManageRepository.findByMtgNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(MeetingManageDto::from);
     }
 
     @Override
     public MeetingManageDto getMeeting(String mtgId) {
-        return meetingManageRepository.findById(mtgId)
+        return meetingManageRepository.findById(Objects.requireNonNull(mtgId))
                 .map(MeetingManageDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -37,7 +40,7 @@ public class MeetingService implements EgovMeetingService {
     @Transactional
     public void insertMeeting(MeetingManageDto dto) {
         String id = "MTG_" + String.format("%013d", System.currentTimeMillis());
-        meetingManageRepository.save(MeetingManage.builder()
+        meetingManageRepository.save(Objects.requireNonNull(MeetingManage.builder()
                 .mtgId(id)
                 .mtgNm(dto.getMtgNm())
                 .mtgMtrCn(dto.getMtgMtrCn())
@@ -51,13 +54,13 @@ public class MeetingService implements EgovMeetingService {
                 .mtgResultCn(dto.getMtgResultCn())
                 .mngtDeptId(dto.getMngtDeptId())
                 .mnaerId(dto.getMnaerId())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updateMeeting(MeetingManageDto dto) {
-        MeetingManage entity = meetingManageRepository.findById(dto.getMtgId())
+        MeetingManage entity = meetingManageRepository.findById(Objects.requireNonNull(dto.getMtgId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getMtgNm(), dto.getMtgMtrCn(), dto.getMtgSn(), dto.getMtgCo(),
                 dto.getMtgDe(), dto.getMtgPlace(), dto.getMtgBeginTm(), dto.getMtgEndTime(),
@@ -68,6 +71,6 @@ public class MeetingService implements EgovMeetingService {
     @Override
     @Transactional
     public void deleteMeeting(String mtgId) {
-        meetingManageRepository.deleteById(mtgId);
+        meetingManageRepository.deleteById(Objects.requireNonNull(mtgId));
     }
 }

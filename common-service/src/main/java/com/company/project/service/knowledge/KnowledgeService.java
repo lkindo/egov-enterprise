@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 지식관리 서비스 구현체
  */
@@ -24,14 +26,14 @@ public class KnowledgeService implements EgovKnowledgeService {
     @Override
     public Page<KnowledgeDto> getKnowledgeList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return knowledgeRepository.findAll(pageable).map(KnowledgeDto::from);
+            return knowledgeRepository.findAll(Objects.requireNonNull(pageable)).map(KnowledgeDto::from);
         }
-        return knowledgeRepository.searchByKeyword(keyword, pageable).map(KnowledgeDto::from);
+        return knowledgeRepository.searchByKeyword(keyword, Objects.requireNonNull(pageable)).map(KnowledgeDto::from);
     }
 
     @Override
     public KnowledgeDto getKnowledge(String knoId) {
-        Knowledge knowledge = knowledgeRepository.findById(knoId)
+        Knowledge knowledge = knowledgeRepository.findById(Objects.requireNonNull(knoId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return KnowledgeDto.from(knowledge);
     }
@@ -53,14 +55,14 @@ public class KnowledgeService implements EgovKnowledgeService {
                 .frstRegisterId(userId)
                 .build();
 
-        knowledgeRepository.save(knowledge);
+        knowledgeRepository.save(Objects.requireNonNull(knowledge));
         return knoId;
     }
 
     @Override
     @Transactional
     public void updateKnowledge(String knoId, String userId, KnowledgeDto dto) {
-        Knowledge knowledge = knowledgeRepository.findById(knoId)
+        Knowledge knowledge = knowledgeRepository.findById(Objects.requireNonNull(knoId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         knowledge.update(dto.getKnoTypeCd(), dto.getKnoNm(), dto.getKnoCn(),
@@ -70,8 +72,8 @@ public class KnowledgeService implements EgovKnowledgeService {
     @Override
     @Transactional
     public void deleteKnowledge(String knoId) {
-        Knowledge knowledge = knowledgeRepository.findById(knoId)
+        Knowledge knowledge = knowledgeRepository.findById(Objects.requireNonNull(knoId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        knowledgeRepository.delete(knowledge);
+        knowledgeRepository.delete(Objects.requireNonNull(knowledge));
     }
 }

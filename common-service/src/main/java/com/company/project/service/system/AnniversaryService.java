@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service("systemAnniversaryService")
 public class AnniversaryService extends EgovAbstractServiceImpl {
 
@@ -27,7 +29,7 @@ public class AnniversaryService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public AnniversaryDto getAnniversary(String annId) {
-        Anniversary entity = anniversaryRepository.findById(annId)
+        Anniversary entity = anniversaryRepository.findById(Objects.requireNonNull(annId))
                 .orElseThrow(() -> new RuntimeException("Anniversary record not found"));
         return AnniversaryDto.from(entity);
     }
@@ -46,12 +48,12 @@ public class AnniversaryService extends EgovAbstractServiceImpl {
                 .annvrsryBeginDe(dto.getAnnvrsryBeginDe())
                 .memo(dto.getMemo())
                 .build();
-        anniversaryRepository.save(entity);
+        anniversaryRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateAnniversary(AnniversaryDto dto) {
-        Anniversary entity = anniversaryRepository.findById(dto.getAnnId())
+        Anniversary entity = anniversaryRepository.findById(Objects.requireNonNull(dto.getAnnId()))
                 .orElseThrow(() -> new RuntimeException("Anniversary record not found"));
 
         entity.setAnnvrsryNm(dto.getAnnvrsryNm());
@@ -65,6 +67,6 @@ public class AnniversaryService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteAnniversary(String annId) {
-        anniversaryRepository.deleteById(annId);
+        anniversaryRepository.deleteById(Objects.requireNonNull(annId));
     }
 }

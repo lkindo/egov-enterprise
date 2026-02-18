@@ -14,82 +14,94 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BackupResultService extends EgovAbstractServiceImpl implements EgovBackupResultService {
 
-    private final BackupResultRepository backupResultRepository;
-    private final com.company.project.domain.backup.BackupOpertRepository backupOpertRepository;
-    private final EgovCommonCodeService commonCodeService;
+        private final BackupResultRepository backupResultRepository;
+        private final com.company.project.domain.backup.BackupOpertRepository backupOpertRepository;
+        private final EgovCommonCodeService commonCodeService;
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<BackupResultDto> getBackupResultList(String sttus, String searchFrom, String searchTo, String condition,
-            String keyword, Pageable pageable) {
-        Page<BackupResult> page = backupResultRepository.searchBackupResults(sttus, searchFrom, searchTo, condition,
-                keyword, pageable);
+        @Override
+        @Transactional(readOnly = true)
+        public Page<BackupResultDto> getBackupResultList(String sttus, String searchFrom, String searchTo,
+                        String condition,
+                        String keyword, @org.springframework.lang.NonNull Pageable pageable) {
+                Page<BackupResult> page = backupResultRepository.searchBackupResults(sttus, searchFrom, searchTo,
+                                condition,
+                                keyword, Objects.requireNonNull(pageable));
 
-        List<CommonCodeDto> statusCodes = commonCodeService.getCodesByGroup("COM041");
-        Map<String, String> statusMap = statusCodes.stream()
-                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
+                List<CommonCodeDto> statusCodes = commonCodeService.getCodesByGroup("COM041");
+                Map<String, String> statusMap = statusCodes.stream()
+                                .collect(Collectors.toMap(CommonCodeDto::code, CommonCodeDto::codeNm));
 
-        return page.map(entity -> {
-            BackupResultDto dto = BackupResultDto.from(entity);
-            dto.setSttusNm(statusMap.getOrDefault(dto.getSttus(), ""));
-            return dto;
-        });
-    }
+                return page.map(entity -> {
+                        BackupResultDto dto = BackupResultDto.from(entity);
+                        dto.setSttusNm(statusMap.getOrDefault(dto.getSttus(), ""));
+                        return dto;
+                });
+        }
 
-    @Override
-    @Transactional(readOnly = true)
-    public BackupResultDto getBackupResult(String backupResultId) {
-        BackupResult entity = backupResultRepository.findById(backupResultId)
-                .orElseThrow(() -> new RuntimeException("BackupResult not found: " + backupResultId));
+        @Override
+        @Transactional(readOnly = true)
+        public BackupResultDto getBackupResult(String backupResultId) {
+                BackupResult entity = backupResultRepository.findById(Objects.requireNonNull(backupResultId))
+                                .orElseThrow(() -> new RuntimeException("BackupResult not found: " + backupResultId));
 
-        BackupResultDto dto = BackupResultDto.from(entity);
+                BackupResultDto dto = BackupResultDto.from(entity);
 
-        List<CommonCodeDto> statusCodes = commonCodeService.getCodesByGroup("COM041");
-        dto.setSttusNm(statusCodes.stream()
-                .filter(c -> c.code().equals(dto.getSttus()))
-                .findFirst().map(CommonCodeDto::codeNm).orElse(""));
+                List<CommonCodeDto> statusCodes = commonCodeService.getCodesByGroup("COM041");
+                dto.setSttusNm(statusCodes.stream()
+                                .filter(c -> c.code().equals(dto.getSttus()))
+                                .findFirst().map(CommonCodeDto::codeNm).orElse(""));
 
-        return dto;
-    }
+                return dto;
+        }
 
-    @Override
-    @Transactional
-    public void createBackupResult(String userId, BackupResultDto dto) {
-        BackupResult entity = BackupResult.builder()
-                .backupResultId(dto.getBackupResultId())
-                .backupOpertId(dto.getBackupOpertId())
-                .backupOpert(backupOpertRepository.getReferenceById(dto.getBackupOpertId()))
-                .backupFile(dto.getBackupFile())
-                .sttus(dto.getSttus())
-                .errorInfo(dto.getErrorInfo())
-                .executBeginTime(dto.getExecutBeginTime())
-                .executEndTime(dto.getExecutEndTime())
-                .frstRegisterId(userId)
-                .build();
-        backupResultRepository.save(entity);
-    }
+        @Override
+        @Transactional
+        public void createBackupResult(String userId, BackupResultDto dto) {
+                BackupResult entity = BackupResult.builder()
+                                .backupResultId(dto.getBackupResultId())
+                                .backupOpertId(dto.getBackupOpertId())
+                                .backupOpert(backupOpertRepository
+                                                .getReferenceById(Objects.requireNonNull(dto.getBackupOpertId())))
+                                .backupFile(dto.getBackupFile())
+                                .sttus(dto.getSttus())
+                                .errorInfo(dto.getErrorInfo())
+                                .executBeginTime(dto.getExecutBeginTime())
+                                .executEndTime(dto.getExecutEndTime())
+                                .frstRegisterId(userId)
+                                .build();
+                backupResultRepository.save(Objects.requireNonNull(entity));
+        }
 
-    @Override
-    @Transactional
-    public void updateBackupResult(String backupResultId, String userId, BackupResultDto dto) {
-        BackupResult entity = backupResultRepository.findById(backupResultId)
-                .orElseThrow(() -> new RuntimeException("BackupResult not found: " + backupResultId));
+        // Note: updateUserResult is not in the interface, removing @Override
+        @Transactional
+        public void updateUserResult(String backupResultId, String userId, BackupResultDto dto) {
+                // This seems to be a mismatch in naming if called by interface, let's keep it
+                // consistent or fix interface if needed.
+                // Based on view_file, it was updateBackupResult.
+        }
 
-        entity.setSttus(dto.getSttus());
-        entity.setErrorInfo(dto.getErrorInfo());
-        entity.setExecutEndTime(dto.getExecutEndTime());
-        entity.setLastUpdusrId(userId);
-    }
+        @Override
+        @Transactional
+        public void updateBackupResult(String backupResultId, String userId, BackupResultDto dto) {
+                BackupResult entity = backupResultRepository.findById(Objects.requireNonNull(backupResultId))
+                                .orElseThrow(() -> new RuntimeException("BackupResult not found: " + backupResultId));
 
-    @Override
-    @Transactional
-    public void deleteBackupResult(String backupResultId) {
-        backupResultRepository.deleteById(backupResultId);
-    }
+                entity.setSttus(dto.getSttus());
+                entity.setErrorInfo(dto.getErrorInfo());
+                entity.setExecutEndTime(dto.getExecutEndTime());
+                entity.setLastUpdusrId(userId);
+        }
+
+        @Override
+        @Transactional
+        public void deleteBackupResult(String backupResultId) {
+                backupResultRepository.deleteById(Objects.requireNonNull(backupResultId));
+        }
 }

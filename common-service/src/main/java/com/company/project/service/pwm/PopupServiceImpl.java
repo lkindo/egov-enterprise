@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,9 +29,10 @@ public class PopupServiceImpl implements PopupService {
     @Override
     public Page<PopupDto> getPopupList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return popupRepository.findAll(pageable).map(PopupDto::from);
+            return popupRepository.findAll(Objects.requireNonNull(pageable)).map(PopupDto::from);
         }
-        return popupRepository.findByPopupTitleNmContaining(keyword, pageable).map(PopupDto::from);
+        return popupRepository.findByPopupTitleNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(PopupDto::from);
     }
 
     @Override
@@ -43,7 +45,7 @@ public class PopupServiceImpl implements PopupService {
 
     @Override
     public PopupDto getPopup(String popupId) {
-        return popupRepository.findById(popupId)
+        return popupRepository.findById(Objects.requireNonNull(popupId))
                 .map(PopupDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -67,7 +69,7 @@ public class PopupServiceImpl implements PopupService {
                     .ntceAt(dto.getNtceAt())
                     .frstRegisterId(userId)
                     .build();
-            popupRepository.save(popup);
+            popupRepository.save(Objects.requireNonNull(popup));
             return popupId;
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate popup ID", e);
@@ -77,7 +79,7 @@ public class PopupServiceImpl implements PopupService {
     @Override
     @Transactional
     public void updatePopup(String popupId, String userId, PopupDto dto) {
-        Popup popup = popupRepository.findById(popupId)
+        Popup popup = popupRepository.findById(Objects.requireNonNull(popupId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         popup.update(dto.getPopupTitleNm(), dto.getFileUrl(), dto.getPopupWlc(), dto.getPopupHlc(),
@@ -88,10 +90,10 @@ public class PopupServiceImpl implements PopupService {
     @Override
     @Transactional
     public void deletePopup(String popupId) {
-        if (!popupRepository.existsById(popupId)) {
+        if (!popupRepository.existsById(Objects.requireNonNull(popupId))) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
-        popupRepository.deleteById(popupId);
+        popupRepository.deleteById(Objects.requireNonNull(popupId));
     }
 
     @Override

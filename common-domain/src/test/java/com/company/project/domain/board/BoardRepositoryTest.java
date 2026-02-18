@@ -37,7 +37,7 @@ class BoardRepositoryTest {
                 .build();
 
         // when
-        BoardMaster saved = boardMasterRepository.save(master);
+        BoardMaster saved = java.util.Objects.requireNonNull(boardMasterRepository.save(java.util.Objects.requireNonNull(master)));
 
         // then
         assertThat(saved.getBbsId()).isEqualTo("TEST_BBS_001");
@@ -48,18 +48,18 @@ class BoardRepositoryTest {
     @DisplayName("게시물 저장 및 조회 테스트")
     void saveBoard() {
         // given
-        BoardMaster master = boardMasterRepository.save(
-                BoardMaster.builder()
+        BoardMaster master = java.util.Objects.requireNonNull(boardMasterRepository.save(
+                java.util.Objects.requireNonNull(BoardMaster.builder()
                         .bbsId("TEST_BBS_002")
                         .bbsNm("테스트 게시판2")
                         .bbsTyCode("BBST01")
                         .bbsAttrbCode("BBSA01")
                         .frstRegisterId("SYSTEM")
-                        .build());
+                        .build())));
 
         Board board = Board.builder()
                 .nttId(1L)
-                .bbsId(master.getBbsId())
+                .bbsId(java.util.Objects.requireNonNull(master.getBbsId()))
                 .nttSj("테스트 제목")
                 .nttCn("테스트 내용")
                 .ntceBgnde("20230101")
@@ -71,7 +71,7 @@ class BoardRepositoryTest {
                 .build();
 
         // when
-        Board saved = boardRepository.save(board);
+        Board saved = java.util.Objects.requireNonNull(boardRepository.save(java.util.Objects.requireNonNull(board)));
 
         // then
         assertThat(saved.getNttSj()).isEqualTo("테스트 제목");

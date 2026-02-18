@@ -61,11 +61,11 @@ class BatchSchdulServiceTest {
         when(batchSchdulRepository.searchBatchSchduls(any(), any(), eq(pageable))).thenReturn(page);
 
         // Mock common codes
-        when(commonCodeService.getCodesByGroup(anyString())).thenReturn(Collections.emptyList());
+        when(commonCodeService.getCodesByGroup(any(String.class))).thenReturn(Collections.emptyList());
 
         // Mock job repository to return list of jobs for findAllById
         when(batchOpertRepository.findAllById(any())).thenAnswer(invocation -> {
-            Iterable<String> ids = invocation.getArgument(0);
+            Iterable<String> ids = java.util.Objects.requireNonNull(invocation.getArgument(0));
             List<BatchOpert> jobs = new java.util.ArrayList<>();
             ids.forEach(id -> jobs.add(BatchOpert.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
             return jobs;

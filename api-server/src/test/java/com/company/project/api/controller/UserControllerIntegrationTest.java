@@ -1,6 +1,5 @@
 package com.company.project.api.controller;
 
-import com.company.project.api.common.exception.GlobalExceptionHandler;
 import com.company.project.config.MinimalTestConfig;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;

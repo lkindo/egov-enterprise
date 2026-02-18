@@ -12,6 +12,8 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @Transactional(readOnly = true)
 public class TermsService implements EgovTermsService {
@@ -25,12 +27,12 @@ public class TermsService implements EgovTermsService {
 
     @Override
     public Page<TermsDto> getTermsList(@NonNull Pageable pageable) {
-        return termsRepository.findAll(pageable).map(TermsDto::from);
+        return termsRepository.findAll(Objects.requireNonNull(pageable)).map(TermsDto::from);
     }
 
     @Override
     public TermsDto getTerms(@NonNull String id) {
-        Terms terms = termsRepository.findById(id)
+        Terms terms = termsRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return TermsDto.from(terms);
     }
@@ -49,14 +51,14 @@ public class TermsService implements EgovTermsService {
                 .frstRegisterId(userId)
                 .build();
 
-        termsRepository.save(terms);
+        termsRepository.save(Objects.requireNonNull(terms));
         return id;
     }
 
     @Override
     @Transactional
     public void updateTerms(@NonNull String id, @NonNull String userId, @NonNull TermsDto dto) {
-        Terms terms = termsRepository.findById(id)
+        Terms terms = termsRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         terms.update(dto.getUseStplatNm(), dto.getUseStplatCn(), dto.getInfoProvdAgreCn(), userId);
@@ -65,8 +67,8 @@ public class TermsService implements EgovTermsService {
     @Override
     @Transactional
     public void deleteTerms(@NonNull String id, @NonNull String userId) {
-        Terms terms = termsRepository.findById(id)
+        Terms terms = termsRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        termsRepository.delete(terms);
+        termsRepository.delete(Objects.requireNonNull(terms));
     }
 }

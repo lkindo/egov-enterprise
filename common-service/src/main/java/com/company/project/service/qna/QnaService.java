@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -20,12 +22,12 @@ public class QnaService implements EgovQnaService {
 
     @Override
     public Page<QnaDto> getQnaList(String keyword, Pageable pageable) {
-        return qnaRepository.searchQnas(keyword, pageable).map(QnaDto::from);
+        return qnaRepository.searchQnas(keyword, Objects.requireNonNull(pageable)).map(QnaDto::from);
     }
 
     @Override
     public QnaDto getQna(String qaId) {
-        return qnaRepository.findById(qaId)
+        return qnaRepository.findById(Objects.requireNonNull(qaId))
                 .map(QnaDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -49,14 +51,14 @@ public class QnaService implements EgovQnaService {
                 .writngDe(java.time.LocalDate.now().toString().replace("-", ""))
                 .frstRegisterId(userId)
                 .build();
-        qnaRepository.save(entity);
+        qnaRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateQna(String qaId, String userId, QnaDto dto) {
-        Qna entity = qnaRepository.findById(qaId)
+        Qna entity = qnaRepository.findById(Objects.requireNonNull(qaId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updateQuestion(dto.getQestnSj(), dto.getQestnCn(), dto.getEmailAdres(),
                 dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
@@ -65,13 +67,13 @@ public class QnaService implements EgovQnaService {
     @Override
     @Transactional
     public void deleteQna(String qaId, String userId) {
-        qnaRepository.deleteById(qaId);
+        qnaRepository.deleteById(Objects.requireNonNull(qaId));
     }
 
     @Override
     @Transactional
     public void updateAnswer(String qaId, String userId, String answerCn) {
-        Qna entity = qnaRepository.findById(qaId)
+        Qna entity = qnaRepository.findById(Objects.requireNonNull(qaId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.answer(answerCn, userId);
     }
@@ -79,12 +81,12 @@ public class QnaService implements EgovQnaService {
     @Override
     @Transactional
     public void increaseViewCount(String qaId) {
-        qnaRepository.findById(qaId).ifPresent(Qna::increaseInqireCo);
+        qnaRepository.findById(Objects.requireNonNull(qaId)).ifPresent(Qna::increaseInqireCo);
     }
 
     @Override
     public boolean checkPassword(String qaId, String password) {
-        return qnaRepository.findById(qaId)
+        return qnaRepository.findById(Objects.requireNonNull(qaId))
                 .map(e -> e.getWritngPassword() != null && e.getWritngPassword().equals(password))
                 .orElse(false);
     }

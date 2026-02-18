@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,14 +27,15 @@ public class EventCmpgnService implements EgovEventCmpgnService {
     @Override
     public Page<EventInfoDto> getEventList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return eventInfoRepository.findAll(pageable).map(EventInfoDto::from);
+            return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(EventInfoDto::from);
         }
-        return eventInfoRepository.findByEventCnContaining(keyword, pageable).map(EventInfoDto::from);
+        return eventInfoRepository.findByEventCnContaining(keyword, Objects.requireNonNull(pageable))
+                .map(EventInfoDto::from);
     }
 
     @Override
     public EventInfoDto getEvent(String eventId) {
-        return eventInfoRepository.findById(eventId)
+        return eventInfoRepository.findById(Objects.requireNonNull(eventId))
                 .map(EventInfoDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -53,13 +56,13 @@ public class EventCmpgnService implements EgovEventCmpgnService {
                 .eventConfmAt(dto.getEventConfmAt())
                 .eventConfmDe(dto.getEventConfmDe())
                 .build();
-        eventInfoRepository.save(entity);
+        eventInfoRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateEvent(EventInfoDto dto) {
-        EventInfo entity = eventInfoRepository.findById(dto.getEventId())
+        EventInfo entity = eventInfoRepository.findById(Objects.requireNonNull(dto.getEventId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getEventSvcBeginDe(), dto.getEventSvcEndDe(), dto.getSvcUseNmprCo(),
                 dto.getChargerNm(), dto.getEventCn(), dto.getEventTyCode(), dto.getPrparetgCn(),
@@ -69,19 +72,19 @@ public class EventCmpgnService implements EgovEventCmpgnService {
     @Override
     @Transactional
     public void deleteEvent(String eventId) {
-        externalHrRepository.deleteByEventId(eventId);
-        eventInfoRepository.deleteById(eventId);
+        externalHrRepository.deleteByEventId(Objects.requireNonNull(eventId));
+        eventInfoRepository.deleteById(Objects.requireNonNull(eventId));
     }
 
     @Override
     public Page<ExternalHrDto> getExternalHrList(String eventId, String keyword, Pageable pageable) {
-        // Simplified search, could be enhanced
-        return externalHrRepository.findByExtrlHrNmContaining(keyword, pageable).map(ExternalHrDto::from);
+        return externalHrRepository.findByExtrlHrNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(ExternalHrDto::from);
     }
 
     @Override
     public ExternalHrDto getExternalHr(String extrlHrId) {
-        return externalHrRepository.findById(extrlHrId)
+        return externalHrRepository.findById(Objects.requireNonNull(extrlHrId))
                 .map(ExternalHrDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -103,13 +106,13 @@ public class EventCmpgnService implements EgovEventCmpgnService {
                 .brth(dto.getBrth())
                 .psitnInsttNm(dto.getPsitnInsttNm())
                 .build();
-        externalHrRepository.save(entity);
+        externalHrRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateExternalHr(ExternalHrDto dto) {
-        ExternalHr entity = externalHrRepository.findById(dto.getExtrlHrId())
+        ExternalHr entity = externalHrRepository.findById(Objects.requireNonNull(dto.getExtrlHrId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getExtrlHrNm(), dto.getSexdstnCode(), dto.getAreaNo(),
                 dto.getMiddleTelno(), dto.getEndTelno(), dto.getEmailAdres(),
@@ -119,6 +122,6 @@ public class EventCmpgnService implements EgovEventCmpgnService {
     @Override
     @Transactional
     public void deleteExternalHr(String extrlHrId) {
-        externalHrRepository.deleteById(extrlHrId);
+        externalHrRepository.deleteById(Objects.requireNonNull(extrlHrId));
     }
 }

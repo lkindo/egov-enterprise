@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 부서업무함 서비스 구현체
@@ -23,19 +24,19 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
 
     @Override
     public Page<DeptJobBoxDto> getDeptJobBoxList(String keyword, Pageable pageable) {
-        return deptJobBoxRepository.findByKeyword(keyword, pageable)
+        return deptJobBoxRepository.findByKeyword(keyword, Objects.requireNonNull(pageable))
                 .map(DeptJobBoxDto::fromEntity);
     }
 
     @Override
     public Page<DeptJobBoxDto> getDeptJobBoxListByDept(String deptId, Pageable pageable) {
-        return deptJobBoxRepository.findByDeptId(deptId, pageable)
+        return deptJobBoxRepository.findByDeptId(deptId, Objects.requireNonNull(pageable))
                 .map(DeptJobBoxDto::fromEntity);
     }
 
     @Override
     public DeptJobBoxDto getDeptJobBox(String deptJobbxId) {
-        return deptJobBoxRepository.findById(deptJobbxId)
+        return deptJobBoxRepository.findById(Objects.requireNonNull(deptJobbxId))
                 .map(DeptJobBoxDto::fromEntity)
                 .orElse(null);
     }
@@ -52,14 +53,14 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
                 .frstRegisterId(userId)
                 .frstRegistPnttm(LocalDateTime.now())
                 .build();
-        deptJobBoxRepository.save(entity);
+        deptJobBoxRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateDeptJobBox(String deptJobbxId, String userId, DeptJobBoxDto dto) {
-        DeptJobBox entity = deptJobBoxRepository.findById(deptJobbxId)
+        DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptJobbxId))
                 .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptJobbxId));
 
         DeptJobBox updated = DeptJobBox.builder()
@@ -72,12 +73,12 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
                 .lastUpdusrId(userId)
                 .lastUpdtPnttm(LocalDateTime.now())
                 .build();
-        deptJobBoxRepository.save(updated);
+        deptJobBoxRepository.save(Objects.requireNonNull(updated));
     }
 
     @Override
     @Transactional
     public void deleteDeptJobBox(String deptJobbxId) {
-        deptJobBoxRepository.deleteById(deptJobbxId);
+        deptJobBoxRepository.deleteById(Objects.requireNonNull(deptJobbxId));
     }
 }

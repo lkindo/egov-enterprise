@@ -6,10 +6,12 @@ import com.company.project.domain.board.Satisfaction;
 import com.company.project.domain.board.SatisfactionRepository;
 import com.company.project.service.board.dto.SatisfactionDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service("egovSatisfactionService")
@@ -35,26 +37,29 @@ public class SatisfactionService implements EgovSatisfactionService {
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
-        satisfactionRepository.save(satisfaction);
+        satisfactionRepository.save(Objects.requireNonNull(satisfaction));
     }
 
     @Override
     @Transactional
     public void updateSatisfaction(SatisfactionDto dto) {
-        satisfactionRepository.findById(dto.getSatisfactionId())
+        satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
                 .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
                         dto.getSatisfactionPassword()));
     }
 
     @Override
     @Transactional
-    public void deleteSatisfaction(Long satisfactionId) {
-        satisfactionRepository.deleteById(satisfactionId);
+    public void deleteSatisfaction(@NonNull Long satisfactionId) {
+        satisfactionRepository.deleteById(Objects.requireNonNull(satisfactionId));
     }
 
     @Override
     public List<SatisfactionDto> getSatisfactionList(Long articleId, String boardId) {
-        return satisfactionRepository.findByArticleIdAndBoardIdAndUseAt(articleId, boardId, "Y").stream()
+        return satisfactionRepository
+                .findByArticleIdAndBoardIdAndUseAt(Objects.requireNonNull(articleId), Objects.requireNonNull(boardId),
+                        "Y")
+                .stream()
                 .map(s -> SatisfactionDto.builder()
                         .satisfactionId(s.getId())
                         .articleId(s.getArticleId())
@@ -70,12 +75,13 @@ public class SatisfactionService implements EgovSatisfactionService {
 
     @Override
     public Double getAverageSatisfaction(Long articleId, String boardId) {
-        return satisfactionRepository.getAverageSatisfaction(articleId, boardId);
+        return satisfactionRepository.getAverageSatisfaction(Objects.requireNonNull(articleId),
+                Objects.requireNonNull(boardId));
     }
 
     @Override
-    public SatisfactionDto getSatisfaction(Long satisfactionId) {
-        Satisfaction satisfaction = satisfactionRepository.findById(satisfactionId)
+    public SatisfactionDto getSatisfaction(@NonNull Long satisfactionId) {
+        Satisfaction satisfaction = satisfactionRepository.findById(Objects.requireNonNull(satisfactionId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return SatisfactionDto.builder()
                 .satisfactionId(satisfaction.getId())
@@ -91,8 +97,8 @@ public class SatisfactionService implements EgovSatisfactionService {
     }
 
     @Override
-    public boolean checkPassword(Long satisfactionId, String password) {
-        Satisfaction satisfaction = satisfactionRepository.findById(satisfactionId)
+    public boolean checkPassword(@NonNull Long satisfactionId, String password) {
+        Satisfaction satisfaction = satisfactionRepository.findById(Objects.requireNonNull(satisfactionId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         if (satisfaction.getPassword() == null)
             return false;

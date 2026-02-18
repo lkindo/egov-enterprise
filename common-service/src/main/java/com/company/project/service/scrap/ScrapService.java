@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 스크랩 서비스 구현체
  */
@@ -23,12 +25,14 @@ public class ScrapService implements EgovScrapService {
 
     @Override
     public Page<ScrapDto> getMyScrapList(String userId, Pageable pageable) {
-        return scrapRepository.findByUniqIdAndUseAt(userId, "Y", pageable).map(ScrapDto::from);
+        return scrapRepository
+                .findByUniqIdAndUseAt(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
+                .map(ScrapDto::from);
     }
 
     @Override
     public ScrapDto getScrap(String scrapId) {
-        Scrap scrap = scrapRepository.findById(scrapId)
+        Scrap scrap = scrapRepository.findById(Objects.requireNonNull(scrapId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return ScrapDto.from(scrap);
     }
@@ -48,14 +52,14 @@ public class ScrapService implements EgovScrapService {
                 .frstRegisterId(userId)
                 .build();
 
-        scrapRepository.save(scrap);
+        scrapRepository.save(Objects.requireNonNull(scrap));
         return scrapId;
     }
 
     @Override
     @Transactional
     public void updateScrap(String scrapId, String userId, ScrapDto dto) {
-        Scrap scrap = scrapRepository.findById(scrapId)
+        Scrap scrap = scrapRepository.findById(Objects.requireNonNull(scrapId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         scrap.update(dto.getScrapNm(), dto.getUseAt(), userId);
@@ -64,8 +68,8 @@ public class ScrapService implements EgovScrapService {
     @Override
     @Transactional
     public void deleteScrap(String scrapId) {
-        Scrap scrap = scrapRepository.findById(scrapId)
+        Scrap scrap = scrapRepository.findById(Objects.requireNonNull(scrapId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        scrapRepository.delete(scrap);
+        scrapRepository.delete(Objects.requireNonNull(scrap));
     }
 }

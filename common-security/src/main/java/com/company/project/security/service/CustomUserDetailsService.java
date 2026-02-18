@@ -22,9 +22,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findById(username)
-                .orElseGet(() -> userRepository.findByEsntlId(username)
+    public UserDetails loadUserByUsername(String username)
+            throws UsernameNotFoundException {
+        User user = userRepository.findById(Objects.requireNonNull(username))
+                .orElseGet(() -> userRepository.findByEsntlId(Objects.requireNonNull(username))
                         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username)));
 
         String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))

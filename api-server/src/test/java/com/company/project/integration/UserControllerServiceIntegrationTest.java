@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -47,7 +46,7 @@ class UserControllerServiceIntegrationTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @org.springframework.beans.factory.annotation.Autowired
+        @MockBean
         private UserService userService;
 
         @Test

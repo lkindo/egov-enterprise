@@ -8,13 +8,13 @@ public interface EgovSatisfactionService {
 
     void updateSatisfaction(SatisfactionDto dto);
 
-    void deleteSatisfaction(Long satisfactionId);
+    void deleteSatisfaction(@org.springframework.lang.NonNull Long satisfactionId);
 
     List<SatisfactionDto> getSatisfactionList(Long articleId, String boardId);
 
-    SatisfactionDto getSatisfaction(Long satisfactionId);
+    SatisfactionDto getSatisfaction(@org.springframework.lang.NonNull Long satisfactionId);
 
-    boolean checkPassword(Long satisfactionId, String password);
+    boolean checkPassword(@org.springframework.lang.NonNull Long satisfactionId, String password);
 
     Double getAverageSatisfaction(Long articleId, String boardId);
 }

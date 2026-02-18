@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
  * 추천사이트정보 서비스 인터페이스
  */
 public interface EgovRecomendSiteService {
-    Page<RecomendSiteDto> getRecomendSiteList(String keyword, Pageable pageable);
+    Page<RecomendSiteDto> getRecomendSiteList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
     RecomendSiteDto getRecomendSite(String recomendSiteId);
 

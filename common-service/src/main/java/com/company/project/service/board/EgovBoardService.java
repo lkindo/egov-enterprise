@@ -20,20 +20,23 @@ public interface EgovBoardService {
         Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable);
 
-        Long createPost(@NonNull String userId, BoardSaveRequest request);
+        Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request);
 
-        Long createPostWithFiles(String userId, BoardSaveRequest request, List<MultipartFile> files) throws IOException;
+        Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request, List<MultipartFile> files)
+                        throws IOException;
 
-        Long replyPost(String userId, Long parentId, BoardSaveRequest request);
+        Long replyPost(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request);
 
-        Long replyPostWithFiles(String userId, Long parentId, BoardSaveRequest request, List<MultipartFile> files)
+        Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request,
+                        List<MultipartFile> files)
                         throws IOException;
 
         BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId);
 
-        void updatePost(@NonNull String bbsId, @NonNull Long nttId, BoardSaveRequest request);
+        void updatePost(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request);
 
-        void updatePostWithFiles(String bbsId, Long nttId, BoardSaveRequest request, List<MultipartFile> files)
+        void updatePostWithFiles(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request,
+                        List<MultipartFile> files)
                         throws IOException;
 
         void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId);

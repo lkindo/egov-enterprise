@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.company.project.domain.code.CommonCodeCategory;
@@ -27,6 +28,7 @@ import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 
 @Service("egovCommonCodeService")
 @RequiredArgsConstructor
@@ -39,8 +41,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "commonCodes", key = "#codeGroupId")
-    public List<CommonCodeDto> getCodesByGroup(String codeGroupId) {
-        return commonCodeRepository.findByCodeGroupIdAndUseAt(codeGroupId, "Y").stream()
+    public List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId) {
+        return commonCodeRepository.findByCodeGroupIdAndUseAt(Objects.requireNonNull(codeGroupId), "Y")
+                .stream()
                 .map(CommonCodeDto::from)
                 .collect(Collectors.toList());
     }
@@ -48,7 +51,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public CommonCodeDto createCode(CommonCodeSaveRequest request) {
+    public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
         egovLogger.info("Creating common code: {}/{}", request.codeGroupId(), request.code());
 
         if (commonCodeRepository
@@ -58,68 +61,71 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
         }
 
         CommonCode code = CommonCode.builder()
-                .codeGroupId(request.codeGroupId())
-                .code(request.code())
-                .codeNm(request.codeNm())
+                .codeGroupId(Objects.requireNonNull(request.codeGroupId()))
+                .code(Objects.requireNonNull(request.code()))
+                .codeNm(Objects.requireNonNull(request.codeNm()))
                 .codeDc(request.codeDc())
                 .useAt(request.useAt())
                 .build();
 
-        return CommonCodeDto.from(commonCodeRepository.save(code));
+        return CommonCodeDto.from(commonCodeRepository.save(Objects.requireNonNull(code)));
     }
     // --- 공통분류코드 (CmmnClCode) ---
 
-    public List<CmmnClCodeDto> selectCmmnClCodeList(ComDefaultVO searchVO) {
+    @Override
+    public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
         Page<CommonCodeCategory> page = commonCodeCategoryRepository.searchCommonCodeCategories(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public int selectCmmnClCodeListTotCnt(ComDefaultVO searchVO) {
-        // searchCommonCodeCategories returns Page, so we can use a small page search to
-        // get total elements
-        // or expose a count method. For efficiency, assume search returns total count
-        // in Page object.
-        // But since we need just count, we can do a lightweight search.
+    @Override
+    public int selectCmmnClCodeListTotCnt(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) commonCodeCategoryRepository.searchCommonCodeCategories(
                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
-    public CmmnClCodeDto selectCmmnClCodeDetail(CmmnClCodeDto dto) {
-        return commonCodeCategoryRepository.findById(dto.getClCode())
+    @Override
+    public CmmnClCodeDto selectCmmnClCodeDetail(@NonNull CmmnClCodeDto dto) {
+        return commonCodeCategoryRepository.findById(Objects.requireNonNull(dto.getClCode()))
                 .map(this::toDto)
                 .orElse(null);
     }
 
+    @Override
     @Transactional
-    public void insertCmmnClCode(CmmnClCodeDto dto) {
-        if (commonCodeCategoryRepository.existsById(dto.getClCode())) {
+    public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
+        if (commonCodeCategoryRepository.existsById(Objects.requireNonNull(dto.getClCode()))) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
         CommonCodeCategory entity = CommonCodeCategory.builder()
-                .clCode(dto.getClCode())
-                .clCodeNm(dto.getClCodeNm())
+                .clCode(Objects.requireNonNull(dto.getClCode()))
+                .clCodeNm(Objects.requireNonNull(dto.getClCodeNm()))
                 .clCodeDc(dto.getClCodeDc())
                 .useAt(dto.getUseAt())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        commonCodeCategoryRepository.save(entity);
+        commonCodeCategoryRepository.save(Objects.requireNonNull(entity));
     }
 
+    @Override
     @Transactional
-    public void updateCmmnClCode(CmmnClCodeDto dto) {
-        commonCodeCategoryRepository.findById(dto.getClCode()).ifPresent(entity -> {
-            entity.update(dto.getClCodeNm(), dto.getClCodeDc(), dto.getUseAt(), dto.getLastUpdusrId());
+    public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
+        commonCodeCategoryRepository.findById(Objects.requireNonNull(dto.getClCode())).ifPresent(entity -> {
+            entity.update(Objects.requireNonNull(dto.getClCodeNm()), dto.getClCodeDc(), dto.getUseAt(),
+                    dto.getLastUpdusrId());
         });
     }
 
+    @Override
     @Transactional
-    public void deleteCmmnClCode(CmmnClCodeDto dto) {
-        commonCodeCategoryRepository.findById(dto.getClCode()).ifPresent(CommonCodeCategory::delete);
+    public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
+        commonCodeCategoryRepository.findById(Objects.requireNonNull(dto.getClCode()))
+                .ifPresent(CommonCodeCategory::delete);
     }
 
     private CmmnClCodeDto toDto(CommonCodeCategory entity) {
@@ -135,54 +141,63 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     // --- 공통코드(그룹) (CmmnCode) ---
 
-    public List<CmmnCodeDto> selectCmmnCodeList(ComDefaultVO searchVO) {
+    @Override
+    public List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
         Page<com.company.project.domain.code.CommonCodeGroupProjection> page = commonCodeGroupRepository
                 .searchCommonCodeGroups(
-                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
+                        Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public int selectCmmnCodeListTotCnt(ComDefaultVO searchVO) {
+    @Override
+    public int selectCmmnCodeListTotCnt(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) commonCodeGroupRepository.searchCommonCodeGroups(
                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
-    public CmmnCodeDto selectCmmnCodeDetail(CmmnCodeDto dto) {
-        return commonCodeGroupRepository.findById(dto.getCodeId())
+    @Override
+    public CmmnCodeDto selectCmmnCodeDetail(@NonNull CmmnCodeDto dto) {
+        return commonCodeGroupRepository.findById(Objects.requireNonNull(dto.getCodeId()))
                 .map(this::toDto)
                 .orElse(null);
     }
 
+    @Override
     @Transactional
-    public void insertCmmnCode(CmmnCodeDto dto) {
-        if (commonCodeGroupRepository.existsById(dto.getCodeId())) {
+    public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
+        if (commonCodeGroupRepository.existsById(Objects.requireNonNull(dto.getCodeId()))) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
         CommonCodeGroup entity = CommonCodeGroup.builder()
-                .codeId(dto.getCodeId())
-                .codeIdNm(dto.getCodeIdNm())
+                .codeId(Objects.requireNonNull(dto.getCodeId()))
+                .codeIdNm(Objects.requireNonNull(dto.getCodeIdNm()))
                 .codeIdDc(dto.getCodeIdDc())
-                .clCode(dto.getClCode())
+                .clCode(Objects.requireNonNull(dto.getClCode()))
                 .useAt(dto.getUseAt())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        commonCodeGroupRepository.save(entity);
+        commonCodeGroupRepository.save(Objects.requireNonNull(entity));
     }
 
+    @Override
     @Transactional
-    public void updateCmmnCode(CmmnCodeDto dto) {
-        commonCodeGroupRepository.findById(dto.getCodeId()).ifPresent(entity -> {
-            entity.update(dto.getCodeIdNm(), dto.getCodeIdDc(), dto.getUseAt(), dto.getLastUpdusrId());
+    public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
+        commonCodeGroupRepository.findById(Objects.requireNonNull(dto.getCodeId())).ifPresent(entity -> {
+            entity.update(Objects.requireNonNull(dto.getCodeIdNm()), dto.getCodeIdDc(), dto.getUseAt(),
+                    dto.getLastUpdusrId());
         });
     }
 
+    @Override
     @Transactional
-    public void deleteCmmnCode(CmmnCodeDto dto) {
-        commonCodeGroupRepository.findById(dto.getCodeId()).ifPresent(CommonCodeGroup::delete);
+    public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
+        commonCodeGroupRepository.findById(Objects.requireNonNull(dto.getCodeId()))
+                .ifPresent(CommonCodeGroup::delete);
     }
 
     private CmmnCodeDto toDto(com.company.project.domain.code.CommonCodeGroupProjection projection) {
@@ -197,7 +212,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
     }
 
     private CmmnCodeDto toDto(CommonCodeGroup entity) {
-        String clCodeNm = commonCodeCategoryRepository.findById(entity.getClCode())
+        String clCodeNm = commonCodeCategoryRepository.findById(Objects.requireNonNull(entity.getClCode()))
                 .map(CommonCodeCategory::getClCodeNm).orElse("");
         return CmmnCodeDto.builder()
                 .codeId(entity.getCodeId())
@@ -213,57 +228,71 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     // --- 공통상세코드 (CmmnDetailCode) ---
 
-    public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(ComDefaultVO searchVO) {
+    @Override
+    public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
         Page<com.company.project.domain.code.CommonCodeDetailProjection> page = commonCodeRepository
                 .searchCommonCodeDetails(
-                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable);
+                        searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
+                        Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public int selectCmmnDetailCodeListTotCnt(ComDefaultVO searchVO) {
+    @Override
+    public int selectCmmnDetailCodeListTotCnt(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(0, 1);
         return (int) commonCodeRepository.searchCommonCodeDetails(
                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable).getTotalElements();
     }
 
-    public CmmnDetailCodeDto selectCmmnDetailCodeDetail(CmmnDetailCodeDto dto) {
+    @Override
+    public CmmnDetailCodeDto selectCmmnDetailCodeDetail(@NonNull CmmnDetailCodeDto dto) {
         return commonCodeRepository
-                .findById(new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode()))
+                .findById(Objects.requireNonNull(
+                        new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))
                 .map(this::toDto)
                 .orElse(null);
     }
 
+    @Override
     @Transactional
-    public void insertCmmnDetailCode(CmmnDetailCodeDto dto) {
+    public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
         if (commonCodeRepository
-                .existsById(new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode()))) {
+                .existsById(Objects.requireNonNull(
+                        new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
         CommonCode entity = CommonCode.builder()
-                .codeGroupId(dto.getCodeId())
-                .code(dto.getCode())
-                .codeNm(dto.getCodeNm())
+                .codeGroupId(Objects.requireNonNull(dto.getCodeId()))
+                .code(Objects.requireNonNull(dto.getCode()))
+                .codeNm(Objects.requireNonNull(dto.getCodeNm()))
                 .codeDc(dto.getCodeDc())
                 .useAt(dto.getUseAt())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        commonCodeRepository.save(entity);
+        commonCodeRepository.save(Objects.requireNonNull(entity));
     }
 
+    @Override
     @Transactional
-    public void updateCmmnDetailCode(CmmnDetailCodeDto dto) {
-        commonCodeRepository.findById(new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode()))
+    public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+        commonCodeRepository
+                .findById(Objects.requireNonNull(
+                        new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))
                 .ifPresent(entity -> {
-                    entity.update(dto.getCodeNm(), dto.getCodeDc(), dto.getUseAt(), dto.getLastUpdusrId());
+                    entity.update(Objects.requireNonNull(dto.getCodeNm()), dto.getCodeDc(), dto.getUseAt(),
+                            dto.getLastUpdusrId());
                 });
     }
 
+    @Override
     @Transactional
-    public void deleteCmmnDetailCode(CmmnDetailCodeDto dto) {
-        commonCodeRepository.findById(new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode()))
+    public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+        commonCodeRepository
+                .findById(Objects.requireNonNull(
+                        new com.company.project.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))
                 .ifPresent(CommonCode::delete);
     }
 

@@ -11,7 +11,8 @@ import java.util.List;
  */
 public interface EgovBatchOpertService {
 
-    Page<BatchOpertDto> getBatchOpertList(String searchCondition, String keyword, Pageable pageable);
+    Page<BatchOpertDto> getBatchOpertList(String searchCondition, String keyword,
+            @org.springframework.lang.NonNull Pageable pageable);
 
     BatchOpertDto getBatchOpert(String batchOpertId);
 

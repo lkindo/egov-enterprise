@@ -21,11 +21,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,7 +41,7 @@ import java.util.stream.Collectors;
 public class MenuService {
 
     private final MenuRepository menuRepository;
-    private final ProgramRepository programRepository; // Restored
+    private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
 
     @Autowired
@@ -49,26 +54,20 @@ public class MenuService {
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a,
-                        b) -> a));
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
         Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
         List<MenuDto> rootMenus = new ArrayList<>();
 
         for (Menu menu : menus) {
-            String url = "#"; // Default to # for safe expansion
+            String url = "#";
             String progrm = menu.getProgrmFileNm();
 
             if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
                 if (programMap.containsKey(progrm)) {
                     String progrmUrl = programMap.get(progrm).getUrl();
-                    // If URL is just / it's likely a directory-like entry in SQL
                     url = "/".equals(progrmUrl) ? "#" : progrmUrl;
                 } else {
-                    // Not in program map but looks like a program name -> default to / for legacy
-                    // compatibility,
-                    // but # is safer for categories. Here we use / to match existing logic but
-                    // fallback to # if needed.
                     url = "/";
                 }
             }
@@ -113,11 +112,11 @@ public class MenuService {
     @Cacheable(value = "menuParentMap")
     public Map<Long, Long> getMenuParentMapCached() {
         List<Menu> allMenus = self.getAllMenusCached();
-        Map<Long, Long> parentMap = new java.util.HashMap<>();
+        Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
             parentMap.put(m.getId(), m.getUpperMenuNo());
         }
-        return java.util.Collections.unmodifiableMap(parentMap);
+        return Collections.unmodifiableMap(parentMap);
     }
 
     @Cacheable(value = "allMenuDtos")
@@ -161,7 +160,7 @@ public class MenuService {
         return result;
     }
 
-    public List<MenuCreateDto> selectMenuCreatManagList(ComDefaultVO searchVO) {
+    public List<MenuCreateDto> selectMenuCreatManagList(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
                 Sort.by("authorCode").ascending());
         String searchKeyword = searchVO.getSearchKeyword();
@@ -169,7 +168,8 @@ public class MenuService {
             searchKeyword = "";
         }
 
-        return menuAuthorityRepository.selectMenuCreatManagList(searchKeyword, pageable).stream()
+        return menuAuthorityRepository
+                .selectMenuCreatManagList(searchKeyword, Objects.requireNonNull(pageable)).stream()
                 .map(proj -> MenuCreateDto.builder()
                         .authorCode(proj.getAuthorCode())
                         .authorNm(proj.getAuthorNm())
@@ -180,7 +180,7 @@ public class MenuService {
                 .collect(Collectors.toList());
     }
 
-    public int selectMenuCreatManagTotCnt(ComDefaultVO searchVO) {
+    public int selectMenuCreatManagTotCnt(@NonNull ComDefaultVO searchVO) {
         String searchKeyword = searchVO.getSearchKeyword();
         if (searchKeyword == null) {
             searchKeyword = "";
@@ -189,25 +189,21 @@ public class MenuService {
                 .getTotalElements();
     }
 
-    public List<MenuDto> selectMenuCreatList(MenuCreateDto vo) {
-        // Get all available menus
+    public List<MenuDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
         List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-        // Get authorized menus for specific authorCode
-        List<MenuAuthority> authorized = menuAuthorityRepository.findByIdAuthorCode(vo.getAuthorCode());
+        List<MenuAuthority> authorized = menuAuthorityRepository
+                .findByIdAuthorCode(Objects.requireNonNull(vo.getAuthorCode()));
         Map<Long, Boolean> authMap = authorized.stream()
-                .collect(Collectors.toMap(ma -> ma.getId().getMenuNo(), ma -> true));
+                .collect(Collectors.toMap(ma -> Objects.requireNonNull(ma.getId()).getMenuNo(), ma -> true));
 
-        // Create tree structure but flat list for UI which likely uses JS tree or table
-        // The legacy UI expects a list of menus with 'chkYeoBu' (checked or not)
         return allMenus.stream().map(menu -> {
             MenuDto dto = MenuDto.builder()
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .upperMenuId(menu.getUpperMenuNo())
                     .build();
-            // Flag if authorized
             if (authMap.containsKey(menu.getId())) {
-                // dto.setChkYeoBu(true); // Need to add field to DTO or handle in UI
+                // dto.setChkYeoBu(true);
             }
             return dto;
         }).collect(Collectors.toList());
@@ -216,8 +212,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
-        // Delete existing mapping
-        menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
+        menuAuthorityRepository.deleteByIdAuthorCode(Objects.requireNonNull(authorCode));
 
         if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
             String[] menuNos = checkedMenuNos.split(",");
@@ -231,12 +226,12 @@ public class MenuService {
                                 .authorCode(authorCode)
                                 .menuNo(mNo)
                                 .build())
-                        .mapngCreatId(authorCode) // Usually map id, but using authorCode for simplicity
+                        .mapngCreatId(authorCode)
                         .build();
                 authorities.add(ma);
             }
             if (!authorities.isEmpty()) {
-                menuAuthorityRepository.saveAll(authorities);
+                menuAuthorityRepository.saveAll(Objects.requireNonNull(authorities));
             }
         }
     }
@@ -250,15 +245,15 @@ public class MenuService {
                 .orElse(new ArrayList<>());
     }
 
-    private java.util.Optional<MenuDto> findInHierarchy(List<MenuDto> nodes, Long id) {
+    private Optional<MenuDto> findInHierarchy(List<MenuDto> nodes, Long id) {
         for (MenuDto node : nodes) {
             if (node.getId().equals(id))
-                return java.util.Optional.of(node);
-            java.util.Optional<MenuDto> found = findInHierarchy(node.getChildren(), id);
+                return Optional.of(node);
+            Optional<MenuDto> found = findInHierarchy(node.getChildren(), id);
             if (found.isPresent())
                 return found;
         }
-        return java.util.Optional.empty();
+        return Optional.empty();
     }
 
     public String getProgrmFileNmByUrl(String url) {
@@ -266,7 +261,6 @@ public class MenuService {
             return null;
 
         final String resolvedUrl;
-        // 0. Manual Alias Mapping for improved sidebar reliability
         if (url.contains("/sec/rgm/EgovAuthorGroupListView.do")) {
             resolvedUrl = "/sec/ram/EgovAuthorRoleList.do";
         } else if (url.contains("/uss/umt/EgovMberSelectUpdtView.do")) {
@@ -295,14 +289,12 @@ public class MenuService {
             resolvedUrl = url;
         }
 
-        // 1. Exact match first
-        return programRepository.findByUrl(resolvedUrl)
+        return programRepository.findByUrl(Objects.requireNonNull(resolvedUrl))
                 .map(Program::getProgrmFileNm)
                 .orElseGet(() -> {
-                    // 2. Try match without parameters if original has them
                     if (resolvedUrl.contains("?")) {
                         String baseUrl = resolvedUrl.substring(0, resolvedUrl.indexOf("?"));
-                        return programRepository.findByUrl(baseUrl)
+                        return programRepository.findByUrl(Objects.requireNonNull(baseUrl))
                                 .map(Program::getProgrmFileNm)
                                 .orElse(null);
                     }
@@ -322,7 +314,8 @@ public class MenuService {
         if (progrmFileNm == null)
             return null;
 
-        Menu currentMenu = menuRepository.findByProgrmFileNm(progrmFileNm).orElse(null);
+        Menu currentMenu = menuRepository.findByProgrmFileNm(Objects.requireNonNull(progrmFileNm))
+                .orElse(null);
         if (currentMenu == null) {
             return null;
         }
@@ -345,18 +338,18 @@ public class MenuService {
 
     /* Menu Management Methods */
 
-    public List<MenuDto> selectMenuManageList(ComDefaultVO searchVO) {
+    public List<MenuDto> selectMenuManageList(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
                 Sort.by("id").ascending());
         String searchKeyword = searchVO.getSearchKeyword();
         if (searchKeyword == null)
             searchKeyword = "";
 
-        Page<Menu> page = menuRepository.searchByKeyword(searchKeyword, pageable);
+        Page<Menu> page = menuRepository.searchByKeyword(searchKeyword, Objects.requireNonNull(pageable));
         return page.stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public int selectMenuManageListTotCnt(ComDefaultVO searchVO) {
+    public int selectMenuManageListTotCnt(@NonNull ComDefaultVO searchVO) {
         String searchKeyword = searchVO.getSearchKeyword();
         if (searchKeyword == null)
             searchKeyword = "";
@@ -364,20 +357,20 @@ public class MenuService {
     }
 
     public MenuDto selectMenuManage(Long menuNo) {
-        return menuRepository.findById(menuNo).map(this::toDto).orElse(null);
+        return menuRepository.findById(Objects.requireNonNull(menuNo)).map(this::toDto).orElse(null);
     }
 
-    public int selectMenuNoByPk(MenuDto vo) {
-        return menuRepository.existsById(vo.getMenuNo()) ? 1 : 0;
+    public int selectMenuNoByPk(@NonNull MenuDto vo) {
+        return menuRepository.existsById(Objects.requireNonNull(vo.getMenuNo())) ? 1 : 0;
     }
 
-    public int selectUpperMenuNoByPk(MenuDto vo) {
-        return menuRepository.countByUpperMenuNo(vo.getMenuNo());
+    public int selectUpperMenuNoByPk(@NonNull MenuDto vo) {
+        return menuRepository.countByUpperMenuNo(Objects.requireNonNull(vo.getMenuNo()));
     }
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
-    public void insertMenuManage(MenuDto vo) {
+    public void insertMenuManage(@NonNull MenuDto vo) {
         Menu menu = Menu.builder()
                 .id(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
@@ -388,13 +381,13 @@ public class MenuService {
                 .relateImagePath(vo.getRelateImagePath())
                 .relateImageNm(vo.getRelateImageNm())
                 .build();
-        menuRepository.save(menu);
+        menuRepository.save(Objects.requireNonNull(menu));
     }
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
-    public void updateMenuManage(MenuDto vo) {
-        Menu menu = menuRepository.findById(vo.getMenuNo())
+    public void updateMenuManage(@NonNull MenuDto vo) {
+        Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
         menu.update(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(), vo.getMenuDc(),
                 vo.getRelateImagePath(), vo.getRelateImageNm());
@@ -402,8 +395,8 @@ public class MenuService {
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
-    public void deleteMenuManage(MenuDto vo) {
-        menuRepository.deleteById(vo.getMenuNo());
+    public void deleteMenuManage(@NonNull MenuDto vo) {
+        menuRepository.deleteById(Objects.requireNonNull(vo.getMenuNo()));
     }
 
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
@@ -418,12 +411,11 @@ public class MenuService {
             ids.add(Long.parseLong(menuNo));
         }
         if (!ids.isEmpty()) {
-            menuRepository.deleteAllById(ids);
+            menuRepository.deleteAllById(Objects.requireNonNull(ids));
         }
     }
 
     private MenuDto toDto(Menu menu) {
-        // Simple mapping
         return MenuDto.builder()
                 .menuNo(menu.getId())
                 .id(menu.getId())

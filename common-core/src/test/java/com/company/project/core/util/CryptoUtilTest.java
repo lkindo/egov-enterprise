@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +32,7 @@ class CryptoUtilTest {
     void setUp() {
         when(applicationContext.getBean("ariacryptoService")).thenReturn(cryptoService);
         CryptoUtil util = new CryptoUtil();
-        util.setApplicationContext(applicationContext);
+        util.setApplicationContext(Objects.requireNonNull(applicationContext));
         util.setAlgorithmKey("ARIA");
     }
 

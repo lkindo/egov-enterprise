@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +49,7 @@ public class LoginLogManageService {
      * 로그인 로그 상세 조회
      */
     public LoginLogDto selectLoginLog(String logId) {
-        return loginLogRepository.findById(logId)
+        return loginLogRepository.findById(Objects.requireNonNull(logId))
                 .map(this::toDto)
                 .orElse(null);
     }

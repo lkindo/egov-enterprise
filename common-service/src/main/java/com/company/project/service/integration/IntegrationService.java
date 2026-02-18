@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 연계 기관 서비스 구현체
  */
@@ -24,14 +26,15 @@ public class IntegrationService implements EgovIntegrationService {
     @Override
     public Page<IntegrationInstitutionDto> getInstitutionList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return institutionRepository.findAll(pageable).map(IntegrationInstitutionDto::from);
+            return institutionRepository.findAll(Objects.requireNonNull(pageable)).map(IntegrationInstitutionDto::from);
         }
-        return institutionRepository.findByInsttNmContaining(keyword, pageable).map(IntegrationInstitutionDto::from);
+        return institutionRepository.findByInsttNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(IntegrationInstitutionDto::from);
     }
 
     @Override
     public IntegrationInstitutionDto getInstitution(String insttId) {
-        IntegrationInstitution institution = institutionRepository.findById(insttId)
+        IntegrationInstitution institution = institutionRepository.findById(Objects.requireNonNull(insttId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return IntegrationInstitutionDto.from(institution);
     }
@@ -47,14 +50,14 @@ public class IntegrationService implements EgovIntegrationService {
                 .frstRegisterId(userId)
                 .build();
 
-        institutionRepository.save(institution);
+        institutionRepository.save(Objects.requireNonNull(institution));
         return insttId;
     }
 
     @Override
     @Transactional
     public void updateInstitution(String insttId, String userId, IntegrationInstitutionDto dto) {
-        IntegrationInstitution institution = institutionRepository.findById(insttId)
+        IntegrationInstitution institution = institutionRepository.findById(Objects.requireNonNull(insttId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         institution.update(dto.getInsttNm(), userId);
     }
@@ -62,8 +65,8 @@ public class IntegrationService implements EgovIntegrationService {
     @Override
     @Transactional
     public void deleteInstitution(String insttId) {
-        IntegrationInstitution institution = institutionRepository.findById(insttId)
+        IntegrationInstitution institution = institutionRepository.findById(Objects.requireNonNull(insttId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        institutionRepository.delete(institution);
+        institutionRepository.delete(Objects.requireNonNull(institution));
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 인증 서비스 구현체
  * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
@@ -30,16 +32,20 @@ public class AuthService extends EgovAbstractServiceImpl implements EgovAuthServ
     @Override
     @Transactional
     public TokenResponse login(LoginRequest request) {
+        Objects.requireNonNull(request);
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.userId(), request.password()));
+
+        Objects.requireNonNull(authentication);
 
         String role = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .findFirst()
                 .orElse("ROLE_USER");
 
-        String accessToken = jwtTokenProvider.createAccessToken(authentication.getName(), role);
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication.getName());
+        String accessToken = jwtTokenProvider.createAccessToken(Objects.requireNonNull(authentication.getName()), role);
+        String refreshToken = jwtTokenProvider
+                .createRefreshToken(Objects.requireNonNull(authentication.getName()));
 
         return new TokenResponse(accessToken, refreshToken);
     }

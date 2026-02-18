@@ -13,7 +13,7 @@ public interface EgovCodeService {
     /**
      * 특정 그룹 코드에 속한 상세 코드 목록 조회
      */
-    List<CodeDto> getDetailCodeList(String codeGroupId);
+    List<CodeDto> getDetailCodeList(@org.springframework.lang.NonNull String codeGroupId);
 
     /**
      * 전체 활성 코드 목록 조회

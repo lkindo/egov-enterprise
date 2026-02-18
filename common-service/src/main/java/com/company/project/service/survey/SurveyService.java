@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,14 +31,15 @@ public class SurveyService implements EgovSurveyService {
     @Override
     public Page<QestnrTmplatDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return tmplatRepository.findAll(pageable).map(QestnrTmplatDto::from);
+            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(QestnrTmplatDto::from);
         }
-        return tmplatRepository.findByQestnrTmplatTyContaining(keyword, pageable).map(QestnrTmplatDto::from);
+        return tmplatRepository.findByQestnrTmplatTyContaining(keyword, Objects.requireNonNull(pageable))
+                .map(QestnrTmplatDto::from);
     }
 
     @Override
     public QestnrTmplatDto getTmplat(String tmplatId) {
-        return tmplatRepository.findById(tmplatId)
+        return tmplatRepository.findById(Objects.requireNonNull(tmplatId))
                 .map(QestnrTmplatDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -46,18 +48,18 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void insertTmplat(QestnrTmplatDto dto) {
         String id = "QUSTMP_" + String.format("%013d", System.currentTimeMillis());
-        tmplatRepository.save(QestnrTmplat.builder()
+        tmplatRepository.save(Objects.requireNonNull(QestnrTmplat.builder()
                 .qestnrTmplatId(id)
                 .qestnrTmplatTy(dto.getQestnrTmplatTy())
                 .qestnrTmplatImagepathnm(dto.getQestnrTmplatImagepathnm())
                 .qestnrTmplatCn(dto.getQestnrTmplatCn())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updateTmplat(QestnrTmplatDto dto) {
-        QestnrTmplat entity = tmplatRepository.findById(dto.getQestnrTmplatId())
+        QestnrTmplat entity = tmplatRepository.findById(Objects.requireNonNull(dto.getQestnrTmplatId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQestnrTmplatTy(), dto.getQestnrTmplatImagepathnm(), dto.getQestnrTmplatCn());
     }
@@ -65,21 +67,22 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteTmplat(String tmplatId) {
-        tmplatRepository.deleteById(tmplatId);
+        tmplatRepository.deleteById(Objects.requireNonNull(tmplatId));
     }
 
     // 설문 정보
     @Override
     public Page<QestnrInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
-            return infoRepository.findAll(pageable).map(QestnrInfoDto::from);
+            return infoRepository.findAll(Objects.requireNonNull(pageable)).map(QestnrInfoDto::from);
         }
-        return infoRepository.findByQestnrSjContaining(keyword, pageable).map(QestnrInfoDto::from);
+        return infoRepository.findByQestnrSjContaining(keyword, Objects.requireNonNull(pageable))
+                .map(QestnrInfoDto::from);
     }
 
     @Override
     public QestnrInfoDto getSurvey(String qestnrId) {
-        return infoRepository.findById(qestnrId)
+        return infoRepository.findById(Objects.requireNonNull(qestnrId))
                 .map(QestnrInfoDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -88,7 +91,7 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void insertSurvey(QestnrInfoDto dto) {
         String id = "QESTNR_" + String.format("%013d", System.currentTimeMillis());
-        infoRepository.save(QestnrInfo.builder()
+        infoRepository.save(Objects.requireNonNull(QestnrInfo.builder()
                 .qestnrId(id)
                 .qestnrSj(dto.getQestnrSj())
                 .qestnrPurps(dto.getQestnrPurps())
@@ -97,13 +100,13 @@ public class SurveyService implements EgovSurveyService {
                 .qestnrEndDe(dto.getQestnrEndDe())
                 .qestnrTrget(dto.getQestnrTrget())
                 .qestnrTmplatId(dto.getQestnrTmplatId())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updateSurvey(QestnrInfoDto dto) {
-        QestnrInfo entity = infoRepository.findById(dto.getQestnrId())
+        QestnrInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getQestnrId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQestnrSj(), dto.getQestnrPurps(), dto.getQestnrWritngGuidanceCn(),
                 dto.getQestnrBeginDe(), dto.getQestnrEndDe(), dto.getQestnrTrget(), dto.getQestnrTmplatId());
@@ -112,13 +115,13 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteSurvey(String qestnrId) {
-        infoRepository.deleteById(qestnrId);
+        infoRepository.deleteById(Objects.requireNonNull(qestnrId));
     }
 
     // 설문 문항
     @Override
     public List<QustnrQesitmDto> getQuestionList(String qestnrId) {
-        return qesitmRepository.findByQestnrIdOrderByQestnSnAsc(qestnrId).stream()
+        return qesitmRepository.findByQestnrIdOrderByQestnSnAsc(Objects.requireNonNull(qestnrId)).stream()
                 .map(q -> {
                     QustnrQesitmDto dto = QustnrQesitmDto.from(q);
                     dto.setItems(getItemList(q.getQestnrQesitmId()));
@@ -129,7 +132,7 @@ public class SurveyService implements EgovSurveyService {
 
     @Override
     public QustnrQesitmDto getQuestion(String qesitmId) {
-        return qesitmRepository.findById(qesitmId)
+        return qesitmRepository.findById(Objects.requireNonNull(qesitmId))
                 .map(QustnrQesitmDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -138,7 +141,7 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void insertQuestion(QustnrQesitmDto dto) {
         String id = "QESITM_" + String.format("%013d", System.currentTimeMillis());
-        qesitmRepository.save(QustnrQesitm.builder()
+        qesitmRepository.save(Objects.requireNonNull(QustnrQesitm.builder()
                 .qestnrQesitmId(id)
                 .qestnrId(dto.getQestnrId())
                 .qestnSn(dto.getQestnSn())
@@ -146,13 +149,13 @@ public class SurveyService implements EgovSurveyService {
                 .qestnCn(dto.getQestnCn())
                 .mxmmChoiseCo(dto.getMxmmChoiseCo())
                 .qestnrTmplatId(dto.getQestnrTmplatId())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updateQuestion(QustnrQesitmDto dto) {
-        QustnrQesitm entity = qesitmRepository.findById(dto.getQestnrQesitmId())
+        QustnrQesitm entity = qesitmRepository.findById(Objects.requireNonNull(dto.getQestnrQesitmId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQestnSn(), dto.getQestnTyCode(), dto.getQestnCn(), dto.getMxmmChoiseCo());
     }
@@ -160,13 +163,13 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteQuestion(String qesitmId) {
-        qesitmRepository.deleteById(qesitmId);
+        qesitmRepository.deleteById(Objects.requireNonNull(qesitmId));
     }
 
     // 설문 항목
     @Override
     public List<QustnrIemDto> getItemList(String qesitmId) {
-        return iemRepository.findByQestnrQesitmIdOrderByIemSnAsc(qesitmId).stream()
+        return iemRepository.findByQestnrQesitmIdOrderByIemSnAsc(Objects.requireNonNull(qesitmId)).stream()
                 .map(QustnrIemDto::from)
                 .collect(Collectors.toList());
     }
@@ -175,7 +178,7 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void insertItem(QustnrIemDto dto) {
         String id = "IEM_" + String.format("%013d", System.currentTimeMillis());
-        iemRepository.save(QustnrIem.builder()
+        iemRepository.save(Objects.requireNonNull(QustnrIem.builder()
                 .qustnrIemId(id)
                 .qestnrQesitmId(dto.getQestnrQesitmId())
                 .qestnrId(dto.getQestnrId())
@@ -183,13 +186,13 @@ public class SurveyService implements EgovSurveyService {
                 .iemCn(dto.getIemCn())
                 .etcAnswerAt(dto.getEtcAnswerAt())
                 .qestnrTmplatId(dto.getQestnrTmplatId())
-                .build());
+                .build()));
     }
 
     @Override
     @Transactional
     public void updateItem(QustnrIemDto dto) {
-        QustnrIem entity = iemRepository.findById(dto.getQustnrIemId())
+        QustnrIem entity = iemRepository.findById(Objects.requireNonNull(dto.getQustnrIemId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getIemSn(), dto.getIemCn(), dto.getEtcAnswerAt());
     }
@@ -197,6 +200,6 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void deleteItem(String iemId) {
-        iemRepository.deleteById(iemId);
+        iemRepository.deleteById(Objects.requireNonNull(iemId));
     }
 }

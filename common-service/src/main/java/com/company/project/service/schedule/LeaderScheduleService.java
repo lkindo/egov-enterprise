@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -21,12 +23,14 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
 
     @Override
     public Page<LeaderScheduleDto> getLeaderScheduleList(String keyword, Pageable pageable) {
-        return leaderScheduleRepository.findByScheduleNmContaining(keyword == null ? "" : keyword, pageable).map(LeaderScheduleDto::from);
+        return leaderScheduleRepository
+                .findByScheduleNmContaining(keyword == null ? "" : keyword, Objects.requireNonNull(pageable))
+                .map(LeaderScheduleDto::from);
     }
 
     @Override
     public LeaderScheduleDto getLeaderSchedule(String scheduleId) {
-        return leaderScheduleRepository.findById(scheduleId)
+        return leaderScheduleRepository.findById(Objects.requireNonNull(scheduleId))
                 .map(LeaderScheduleDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -49,14 +53,14 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
                 .chargerId(dto.getChargerId())
                 .build();
         entity.setCreatedBy(userId);
-        leaderScheduleRepository.save(entity);
+        leaderScheduleRepository.save(Objects.requireNonNull(entity));
         return id;
     }
 
     @Override
     @Transactional
     public void updateLeaderSchedule(String scheduleId, String userId, LeaderScheduleDto dto) {
-        LeaderSchedule schedule = leaderScheduleRepository.findById(scheduleId)
+        LeaderSchedule schedule = leaderScheduleRepository.findById(Objects.requireNonNull(scheduleId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         schedule.update(
                 dto.getScheduleSe(),
@@ -69,14 +73,13 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
                 dto.getBeginDate(),
                 dto.getEndDate(),
                 dto.getChargerId(),
-                userId
-        );
+                userId);
     }
 
     @Override
     @Transactional
     public void deleteLeaderSchedule(String scheduleId) {
-        leaderScheduleRepository.deleteById(scheduleId);
+        leaderScheduleRepository.deleteById(Objects.requireNonNull(scheduleId));
     }
 
     @Override

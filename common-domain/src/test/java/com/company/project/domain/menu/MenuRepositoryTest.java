@@ -46,41 +46,41 @@ public class MenuRepositoryTest {
         @BeforeEach
         void setUp() {
                 // 1. 프로그램 등록
-                programRepository.save(Program.builder()
+                programRepository.save(java.util.Objects.requireNonNull(Program.builder()
                                 .progrmFileNm("mainProg")
                                 .progrmKoreanNm("Main Program")
                                 .url("/main/test.do")
-                                .build());
+                                .build()));
 
                 // 2. 권한 등록
-                authorityRepository.save(Authority.builder()
+                authorityRepository.save(java.util.Objects.requireNonNull(Authority.builder()
                                 .authorCode("AUTH_USER")
                                 .authorNm("일반사용자")
                                 .authorDc("일반사용자 권한")
-                                .build());
+                                .build()));
 
                 // 3. 사용자 권한 매핑 (uniqId -> authorCode)
-                userAuthorityRepository.save(UserAuthority.builder()
+                userAuthorityRepository.save(java.util.Objects.requireNonNull(UserAuthority.builder()
                                 .uniqId("USR01")
                                 .authorCode("AUTH_USER")
-                                .build());
+                                .build()));
 
                 // 4. 메뉴 등록
-                menuRepository.save(Menu.builder()
+                menuRepository.save(java.util.Objects.requireNonNull(Menu.builder()
                                 .id(100L)
                                 .menuNm("Root Menu")
                                 .upperMenuNo(0L)
                                 .menuOrdr(1)
                                 .progrmFileNm("mainProg")
-                                .build());
+                                .build()));
 
                 // 5. 메뉴 권한 설정
-                menuAuthorityRepository.save(MenuAuthority.builder()
+                menuAuthorityRepository.save(java.util.Objects.requireNonNull(MenuAuthority.builder()
                                 .id(MenuAuthority.MenuAuthorityId.builder()
                                                 .menuNo(100L)
                                                 .authorCode("AUTH_USER")
                                                 .build())
-                                .build());
+                                .build()));
         }
 
         @Test

@@ -24,7 +24,8 @@ public class NotificationService implements EgovNotificationService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
+    public Page<NotificationDto> getNotificationList(String keyword,
+            @org.springframework.lang.NonNull Pageable pageable) {
         return notificationRepository.searchNotifications(keyword, pageable).map(NotificationDto::from);
     }
 

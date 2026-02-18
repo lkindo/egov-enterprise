@@ -8,7 +8,8 @@ import java.util.List;
 
 public interface CommunityService {
 
-    Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd, Pageable pageable);
+    Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable);
 
     CommunityDto getCommunity(String cmmntyId);
 

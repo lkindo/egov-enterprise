@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +28,8 @@ public class ServerService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public Page<ServerDto> getServerList(String serverNm, Pageable pageable) {
-        Page<Server> page = serverRepository.findByServerNmContaining(serverNm == null ? "" : serverNm, pageable);
+        Page<Server> page = serverRepository.findByServerNmContaining(serverNm == null ? "" : serverNm,
+                Objects.requireNonNull(pageable));
 
         List<CommonCodeDto> codes = commonCodeService.getCodesByGroup("COM064");
         Map<String, String> codeMap = codes.stream()
@@ -42,7 +44,7 @@ public class ServerService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public ServerDto getServer(String serverId) {
-        Server entity = serverRepository.findById(serverId)
+        Server entity = serverRepository.findById(Objects.requireNonNull(serverId))
                 .orElseThrow(() -> new RuntimeException("Server not found: " + serverId));
         ServerDto dto = ServerDto.from(entity);
 
@@ -65,12 +67,12 @@ public class ServerService extends EgovAbstractServiceImpl {
                 .lastUpdusrId(dto.getLastUpdusrId())
                 .lastUpdusrPnttm(LocalDateTime.now())
                 .build();
-        serverRepository.save(entity);
+        serverRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateServer(ServerDto dto) {
-        Server entity = serverRepository.findById(dto.getServerId())
+        Server entity = serverRepository.findById(Objects.requireNonNull(dto.getServerId()))
                 .orElseThrow(() -> new RuntimeException("Server not found"));
 
         entity.setServerNm(dto.getServerNm());
@@ -81,6 +83,6 @@ public class ServerService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteServer(String serverId) {
-        serverRepository.deleteById(serverId);
+        serverRepository.deleteById(Objects.requireNonNull(serverId));
     }
 }

@@ -59,21 +59,20 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         public List<UserDto> getUserList() {
                 List<User> users = userRepository.findAll();
 
-                // 사용자 ID 목록 추출
                 List<String> userIds = users.stream()
                                 .map(User::getEsntlId)
                                 .collect(Collectors.toList());
 
-                // 권한 정보 한 번에 조회
-                List<UserAuthority> authorities = userAuthorityRepository.findByUniqIdIn(userIds);
+                List<UserAuthority> authorities = userAuthorityRepository
+                                .findByUniqIdIn(Objects.requireNonNull(userIds));
 
-                // 권한 정보를 맵으로 변환 (uniqId -> UserAuthority)
                 Map<String, UserAuthority> authorityMap = authorities.stream()
-                                .collect(Collectors.toMap(UserAuthority::getUniqId, authority -> authority));
+                                .collect(Collectors.toMap(
+                                                authority -> Objects.requireNonNull(authority.getUniqId()),
+                                                authority -> authority));
 
-                // 사용자 정보와 권한 정보를 결합하여 DTO 생성 (MapStruct 활용)
                 return users.stream()
-                                .map(user -> convertToDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
+                                .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
         }
 
@@ -83,26 +82,24 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
         public Page<UserDto> getPagedUserList(@NonNull Pageable pageable) {
-                Page<User> userPage = userRepository.findAll(pageable);
+                Page<User> userPage = userRepository.findAll(Objects.requireNonNull(pageable));
 
-                // 사용자 ID 목록 추출
                 List<String> userIds = userPage.getContent().stream()
                                 .map(User::getEsntlId)
                                 .collect(Collectors.toList());
 
-                // 권한 정보 한 번에 조회
-                List<UserAuthority> authorities = userAuthorityRepository.findByUniqIdIn(userIds);
+                List<UserAuthority> authorities = userAuthorityRepository
+                                .findByUniqIdIn(Objects.requireNonNull(userIds));
 
-                // 권한 정보를 맵으로 변환 (uniqId -> UserAuthority)
                 Map<String, UserAuthority> authorityMap = authorities.stream()
-                                .collect(Collectors.toMap(UserAuthority::getUniqId, authority -> authority));
+                                .collect(Collectors.toMap(
+                                                authority -> Objects.requireNonNull(authority.getUniqId()),
+                                                authority -> authority));
 
-                // 사용자 정보와 권한 정보를 결합하여 DTO 생성 (MapStruct 활용)
                 List<UserDto> userDtos = userPage.getContent().stream()
-                                .map(user -> convertToDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
+                                .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
 
-                // 새로운 Page 객체 생성 (기존 페이지 정보 유지)
                 return new PageImpl<>(
                                 userDtos,
                                 userPage.getPageable(),
@@ -115,22 +112,20 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
-                User user = userRepository.findById(id)
-                                .orElseGet(() -> userRepository.findByEsntlId(id)
+                User user = userRepository.findById(Objects.requireNonNull(id))
+                                .orElseGet(() -> userRepository.findByEsntlId(Objects.requireNonNull(id))
                                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
 
-                // 사용자 권한 정보 조회
                 String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
                                 .map(UserAuthority::getAuthorCode)
                                 .orElse(null);
 
-                // 기존 convertToDtoWithAuthority 메서드를 사용하기 위해 UserAuthority 객체로 변환
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
                                 .uniqId(user.getEsntlId())
                                 .authorCode(authorCode)
                                 .build() : null;
 
-                return convertToDtoWithAuthority(user, authority);
+                return userMapper.toDtoWithAuthority(user, authority);
         }
 
         /**
@@ -138,7 +133,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
-        public String registerUser(String userId, String password, String userNm,
+        public String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
                         String passwordHint, String passwordCnsr, Role role) {
                 String esntlId = Constants.User.USER_PREFIX
                                 + UUID.randomUUID().toString().substring(0, Constants.User.UUID_LENGTH);
@@ -154,7 +149,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .role(role != null ? role : Role.USER)
                                 .build();
 
-                userRepository.save(user);
+                userRepository.save(Objects.requireNonNull(user));
                 return userId;
         }
 
@@ -163,8 +158,8 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
-        public void updateUser(String userId, UserDto userDto) {
-                User user = userRepository.findById(userId)
+        public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
+                User user = userRepository.findById(Objects.requireNonNull(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 user.update(
@@ -197,8 +192,8 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          * 비밀번호 변경
          */
         @Transactional
-        public void changePassword(String userId, String oldPassword, String newPassword) {
-                User user = userRepository.findById(userId)
+        public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
+                User user = userRepository.findById(Objects.requireNonNull(userId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -214,28 +209,11 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
-        public void deleteUser(String userId) {
-                if (!userRepository.existsById(userId)) {
+        public void deleteUser(@NonNull String userId) {
+                if (!userRepository.existsById(Objects.requireNonNull(userId))) {
                         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
                 }
-                userRepository.deleteById(userId);
-        }
-
-        private UserDto convertToDtoWithAuthority(User user, UserAuthority authority) {
-                UserDto userDto = userMapper.toDto(user);
-                if (userDto != null && authority != null && authority.getAuthorCode() != null) {
-                        // 권한 코드가 있는 경우, 해당 권한 코드로 역할을 덮어씀 (MapStruct 이후 커스텀 오버라이드)
-                        return UserDto.builder()
-                                        .userId(userDto.getUserId())
-                                        .userNm(userDto.getUserNm())
-                                        .esntlId(userDto.getEsntlId())
-                                        .role(authority.getAuthorCode())
-                                        .emplNo(userDto.getEmplNo())
-                                        .ofcpsNm(userDto.getOfcpsNm())
-                                        .createdDate(userDto.getCreatedDate())
-                                        .build();
-                }
-                return userDto;
+                userRepository.deleteById(Objects.requireNonNull(userId));
         }
 
         /**
@@ -247,7 +225,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         public UserResponse signup(UserSignupRequest request) {
                 UserValidator.validateUserSignupRequest(request);
 
-                if (userRepository.existsById(request.userId())) {
+                if (userRepository.existsById(Objects.requireNonNull(request.userId()))) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
@@ -255,16 +233,16 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 String encodedPassword = passwordEncoder.encode(request.password());
 
                 User user = User.builder()
-                                .userId(request.userId())
+                                .userId(Objects.requireNonNull(request.userId()))
                                 .password(encodedPassword)
-                                .userNm(request.userNm())
+                                .userNm(Objects.requireNonNull(request.userNm()))
                                 .esntlId(esntlId)
                                 .passwordHint(request.passwordHint())
                                 .passwordCnsr(request.passwordCnsr())
                                 .role(request.role() != null ? request.role() : Role.USER)
                                 .build();
 
-                userRepository.save(user);
+                userRepository.save(Objects.requireNonNull(user));
                 return userMapper.toResponse(user);
         }
 
@@ -272,7 +250,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          * 비밀번호 검증
          */
         @Override
-        public boolean verifyPassword(String rawPassword, String encodedPassword) {
+        public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {
                 return passwordEncoder.matches(rawPassword, encodedPassword);
         }
 }

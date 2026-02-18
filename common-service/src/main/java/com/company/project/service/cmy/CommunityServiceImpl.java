@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +28,8 @@ public class CommunityServiceImpl implements CommunityService {
     private final EgovIdGnrService egovCmmntyIdGnrService;
 
     @Override
-    public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd, Pageable pageable) {
+    public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable) {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -47,17 +49,19 @@ public class CommunityServiceImpl implements CommunityService {
                 .orderBy(qCommunity.frstRegisterPnttm.desc())
                 .fetch();
 
-        long total = queryFactory
+        long totalCount = queryFactory
                 .selectFrom(qCommunity)
                 .where(builder)
                 .fetch().size();
 
-        return new PageImpl<>(content.stream().map(CommunityDto::from).collect(Collectors.toList()), pageable, total);
+        return new PageImpl<>(
+                Objects.requireNonNull(content.stream().map(CommunityDto::from).collect(Collectors.toList())),
+                Objects.requireNonNull(pageable), totalCount);
     }
 
     @Override
     public CommunityDto getCommunity(String cmmntyId) {
-        return communityRepository.findById(cmmntyId)
+        return communityRepository.findById(Objects.requireNonNull(cmmntyId))
                 .map(CommunityDto::from)
                 .orElse(null);
     }
@@ -76,7 +80,8 @@ public class CommunityServiceImpl implements CommunityService {
                     .useAt("Y")
                     .frstRegisterId(userId)
                     .build();
-            return CommunityDto.from(communityRepository.save(community));
+            return CommunityDto.from(Objects
+                    .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate community ID", e);
         }
@@ -85,7 +90,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void updateCommunity(String userId, CommunityDto dto) {
-        Community community = communityRepository.findById(dto.getCmmntyId())
+        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmmntyId()))
                 .orElseThrow(() -> new IllegalArgumentException("Community not found: " + dto.getCmmntyId()));
 
         community.update(
@@ -99,7 +104,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void deleteCommunity(String cmmntyId, String userId) {
-        Community community = communityRepository.findById(cmmntyId)
+        Community community = communityRepository.findById(Objects.requireNonNull(cmmntyId))
                 .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmmntyId));
         community.delete(userId);
     }

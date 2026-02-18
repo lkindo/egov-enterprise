@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -41,7 +42,8 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public String store(MultipartFile file, String targetPath) {
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String originalFilename = StringUtils
+                .cleanPath(Objects.requireNonNullElse(file.getOriginalFilename(), ""));
         String extension = StringUtils.getFilenameExtension(originalFilename);
         String savedFilename = UUID.randomUUID().toString() + (extension != null ? "." + extension : "");
 
@@ -50,7 +52,7 @@ public class LocalFileStorageService implements FileStorageService {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
 
-            Path destinationDir = this.rootLocation.resolve(targetPath);
+            Path destinationDir = this.rootLocation.resolve(Objects.requireNonNull(targetPath));
             Files.createDirectories(destinationDir);
 
             try (InputStream inputStream = file.getInputStream()) {
@@ -66,8 +68,9 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Resource loadAsResource(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(targetPath).resolve(filename);
-            Resource resource = new UrlResource(file.toUri());
+            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
+                    .resolve(Objects.requireNonNull(filename));
+            Resource resource = new UrlResource(Objects.requireNonNull(file.toUri()));
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
@@ -81,7 +84,8 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(targetPath).resolve(filename);
+            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
+                    .resolve(Objects.requireNonNull(filename));
             Files.deleteIfExists(file);
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
@@ -91,7 +95,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Stream<Path> loadAll(String targetPath) {
         try {
-            Path path = rootLocation.resolve(targetPath);
+            Path path = rootLocation.resolve(Objects.requireNonNull(targetPath));
             return Files.walk(path, 1)
                     .filter(p -> !p.equals(path))
                     .map(path::relativize);

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -66,7 +67,7 @@ public class LoginPolicyManageService {
      * 로그인 정책 상세 조회
      */
     public LoginPolicyDto selectLoginPolicy(String emplyrId) {
-        User user = userRepository.findById(emplyrId).orElse(null);
+        User user = userRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
         if (user == null) {
             return null;
         }
@@ -75,7 +76,7 @@ public class LoginPolicyManageService {
         dto.setEmplyrId(user.getUserId());
         dto.setEmplyrNm(user.getUserNm());
 
-        LoginPolicy policy = loginPolicyRepository.findById(emplyrId).orElse(null);
+        LoginPolicy policy = loginPolicyRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
         if (policy != null) {
             dto.setIpInfo(policy.getIpInfo());
             dto.setDplctPermAt(policy.getDplctPermAt());
@@ -99,7 +100,7 @@ public class LoginPolicyManageService {
                 .lmttAt(dto.getLmttAt())
                 .frstRegisterId(dto.getFrstRegisterId())
                 .build();
-        loginPolicyRepository.save(entity);
+        loginPolicyRepository.save(Objects.requireNonNull(entity));
     }
 
     /**
@@ -107,7 +108,7 @@ public class LoginPolicyManageService {
      */
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
-        LoginPolicy entity = loginPolicyRepository.findById(dto.getEmplyrId())
+        LoginPolicy entity = loginPolicyRepository.findById(Objects.requireNonNull(dto.getEmplyrId()))
                 .orElseThrow(() -> new RuntimeException("LoginPolicy not found: " + dto.getEmplyrId()));
         entity.update(dto.getIpInfo(), dto.getDplctPermAt(), dto.getLmttAt(), dto.getLastUpdusrId());
     }
@@ -117,6 +118,6 @@ public class LoginPolicyManageService {
      */
     @Transactional
     public void deleteLoginPolicy(String emplyrId) {
-        loginPolicyRepository.deleteById(emplyrId);
+        loginPolicyRepository.deleteById(Objects.requireNonNull(emplyrId));
     }
 }

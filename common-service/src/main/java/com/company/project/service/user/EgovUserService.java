@@ -33,7 +33,7 @@ public interface EgovUserService {
     /**
      * 사용자 등록
      */
-    String registerUser(String userId, String password, String userNm,
+    String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
             String passwordHint, String passwordCnsr,
             com.company.project.domain.user.Role role);
 
@@ -45,15 +45,15 @@ public interface EgovUserService {
     /**
      * 비밀번호 검증
      */
-    boolean verifyPassword(String rawPassword, String encodedPassword);
+    boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword);
 
     /**
      * 사용자 정보 수정
      */
-    void updateUser(String userId, UserDto userDto);
+    void updateUser(@NonNull String userId, @NonNull UserDto userDto);
 
     /**
      * 사용자 삭제
      */
-    void deleteUser(String userId);
+    void deleteUser(@NonNull String userId);
 }

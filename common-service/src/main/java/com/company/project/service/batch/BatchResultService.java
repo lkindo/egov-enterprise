@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * 배치결과 서비스 구현체
  */
@@ -27,12 +29,15 @@ public class BatchResultService implements EgovBatchResultService {
     @Override
     public Page<BatchResultDto> getBatchResultList(String sttus, String searchKeywordFrom, String searchKeywordTo,
             String searchCondition, String searchKeyword, Pageable pageable) {
-        return batchResultRepository.searchBatchResults(sttus, searchKeywordFrom, searchKeywordTo, searchCondition, searchKeyword, pageable)
+        return batchResultRepository
+                .searchBatchResults(sttus, searchKeywordFrom, searchKeywordTo, searchCondition, searchKeyword,
+                        Objects.requireNonNull(pageable))
                 .map(entity -> {
                     String batchOpertNm = "";
                     String batchProgrm = "";
                     if (entity.getBatchOpertId() != null) {
-                        BatchOpert opert = batchOpertRepository.findById(entity.getBatchOpertId()).orElse(null);
+                        BatchOpert opert = batchOpertRepository
+                                .findById(Objects.requireNonNull(entity.getBatchOpertId())).orElse(null);
                         if (opert != null) {
                             batchOpertNm = opert.getBatchOpertNm();
                             batchProgrm = opert.getBatchProgrm();
@@ -44,13 +49,14 @@ public class BatchResultService implements EgovBatchResultService {
 
     @Override
     public BatchResultDto getBatchResult(String batchResultId) {
-        BatchResult entity = batchResultRepository.findById(batchResultId)
+        BatchResult entity = batchResultRepository.findById(Objects.requireNonNull(batchResultId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         String batchOpertNm = "";
         String batchProgrm = "";
         if (entity.getBatchOpertId() != null) {
-            BatchOpert opert = batchOpertRepository.findById(entity.getBatchOpertId()).orElse(null);
+            BatchOpert opert = batchOpertRepository.findById(Objects.requireNonNull(entity.getBatchOpertId()))
+                    .orElse(null);
             if (opert != null) {
                 batchOpertNm = opert.getBatchOpertNm();
                 batchProgrm = opert.getBatchProgrm();
@@ -63,6 +69,6 @@ public class BatchResultService implements EgovBatchResultService {
     @Override
     @Transactional
     public void deleteBatchResult(String batchResultId) {
-        batchResultRepository.deleteById(batchResultId);
+        batchResultRepository.deleteById(Objects.requireNonNull(batchResultId));
     }
 }

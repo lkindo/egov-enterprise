@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service("systemCtsnnManageService")
 public class CtsnnManageService extends EgovAbstractServiceImpl {
@@ -28,7 +29,7 @@ public class CtsnnManageService extends EgovAbstractServiceImpl {
 
     @Transactional(readOnly = true)
     public CtsnnManageDto getCtsnn(String ctsnnId) {
-        CtsnnManage entity = ctsnnManageRepository.findById(ctsnnId)
+        CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .orElseThrow(() -> new RuntimeException("Ctsnn record not found"));
         return CtsnnManageDto.from(entity);
     }
@@ -48,12 +49,12 @@ public class CtsnnManageService extends EgovAbstractServiceImpl {
                 .remark(dto.getRemark())
                 .confmAt("N")
                 .build();
-        ctsnnManageRepository.save(entity);
+        ctsnnManageRepository.save(Objects.requireNonNull(entity));
     }
 
     @Transactional
     public void updateCtsnn(CtsnnManageDto dto) {
-        CtsnnManage entity = ctsnnManageRepository.findById(dto.getCtsnnId())
+        CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(dto.getCtsnnId()))
                 .orElseThrow(() -> new RuntimeException("Ctsnn record not found"));
 
         entity.setCtsnnCd(dto.getCtsnnCd());
@@ -67,12 +68,12 @@ public class CtsnnManageService extends EgovAbstractServiceImpl {
 
     @Transactional
     public void deleteCtsnn(String ctsnnId) {
-        ctsnnManageRepository.deleteById(ctsnnId);
+        ctsnnManageRepository.deleteById(Objects.requireNonNull(ctsnnId));
     }
 
     @Transactional
     public void approveCtsnn(String ctsnnId, String sanctnerId) {
-        CtsnnManage entity = ctsnnManageRepository.findById(ctsnnId)
+        CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .orElseThrow(() -> new RuntimeException("Ctsnn record not found"));
         entity.setConfmAt("Y");
         entity.setSanctnerId(sanctnerId);

@@ -7,7 +7,9 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.lang.NonNull;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -29,8 +31,9 @@ public class CodeService extends EgovAbstractServiceImpl implements EgovCodeServ
      * 특정 그룹 코드(CODE_ID)에 속한 상세 코드 목록 조회
      */
     @Override
-    public List<CodeDto> getDetailCodeList(String codeGroupId) {
-        return commonCodeRepository.findByCodeGroupIdAndUseAt(codeGroupId, "Y").stream()
+    public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
+        return commonCodeRepository.findByCodeGroupIdAndUseAt(Objects.requireNonNull(codeGroupId), "Y")
+                .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

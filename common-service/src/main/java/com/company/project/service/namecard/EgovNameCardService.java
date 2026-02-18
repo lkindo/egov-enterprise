@@ -10,9 +10,9 @@ import org.springframework.data.domain.Pageable;
  */
 public interface EgovNameCardService {
 
-    Page<NameCardDto> getNameCardList(String keyword, Pageable pageable);
+    Page<NameCardDto> getNameCardList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
 
-    Page<NameCardDto> getMyNameCards(String userId, Pageable pageable);
+    Page<NameCardDto> getMyNameCards(String userId, @org.springframework.lang.NonNull Pageable pageable);
 
     NameCardDto getNameCard(String ncrdId);
 
@@ -23,7 +23,7 @@ public interface EgovNameCardService {
     void deleteNameCard(String ncrdId);
 
     // 내 명함첩 관리
-    Page<NameCardUserDto> getMyNameCardFolder(String userId, Pageable pageable);
+    Page<NameCardUserDto> getMyNameCardFolder(String userId, @org.springframework.lang.NonNull Pageable pageable);
 
     void addMyNameCard(String userId, String ncrdId);
 

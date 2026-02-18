@@ -19,7 +19,8 @@ public class RecomendSiteService implements EgovRecomendSiteService {
     private final RecomendSiteRepository recomendSiteRepository;
 
     @Override
-    public Page<RecomendSiteDto> getRecomendSiteList(String keyword, Pageable pageable) {
+    public Page<RecomendSiteDto> getRecomendSiteList(String keyword,
+            @org.springframework.lang.NonNull Pageable pageable) {
         return recomendSiteRepository.searchRecomendSites(keyword, pageable).map(RecomendSiteDto::from);
     }
 

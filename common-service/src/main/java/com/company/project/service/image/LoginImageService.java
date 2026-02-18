@@ -1,5 +1,7 @@
 package com.company.project.service.image;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.image.LoginImage;
 import com.company.project.domain.image.LoginImageRepository;
 import com.company.project.service.image.dto.ImageDto;
@@ -8,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -18,9 +22,9 @@ public class LoginImageService implements EgovLoginImageService {
 
     @Override
     public ImageDto getLoginImage(String imageId) {
-        return loginImageRepository.findById(imageId)
+        return loginImageRepository.findById(Objects.requireNonNull(imageId))
                 .map(this::convertToDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Override
@@ -33,29 +37,33 @@ public class LoginImageService implements EgovLoginImageService {
                 .imageFile(dto.getImageFile())
                 .imageDc(dto.getImageDc())
                 .reflctAt(dto.getReflctAt())
-                .frstRegisterId("SYSTEM")
-                .lastUpdusrId("SYSTEM")
                 .build();
-        loginImageRepository.save(loginImage);
+        loginImageRepository.save(Objects.requireNonNull(loginImage));
     }
 
     @Override
     @Transactional
     public void updateLoginImage(ImageDto dto) {
-        loginImageRepository.findById(dto.getImageId())
-                .ifPresent(li -> li.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(),
-                        dto.getReflctAt(), "SYSTEM"));
+        LoginImage loginImage = loginImageRepository.findById(Objects.requireNonNull(dto.getImageId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        loginImage.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(), dto.getReflctAt(),
+                "SYSTEM");
     }
 
     @Override
     @Transactional
     public void deleteLoginImage(String imageId) {
-        loginImageRepository.deleteById(imageId);
+        loginImageRepository.deleteById(Objects.requireNonNull(imageId));
     }
 
     @Override
     public Page<ImageDto> getLoginImageList(String searchKeyword, Pageable pageable) {
-        return loginImageRepository.findAll(pageable)
+        if (searchKeyword == null || searchKeyword.isEmpty()) {
+            return loginImageRepository.findAll(Objects.requireNonNull(pageable))
+                    .map(this::convertToDto);
+        }
+        return loginImageRepository.findByImageNmContaining(searchKeyword, Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 

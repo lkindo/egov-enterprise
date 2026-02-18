@@ -7,8 +7,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 /**
- * Real implementation of EmailSender that sends actual emails using JavaMailSender.
+ * Real implementation of EmailSender that sends actual emails using
+ * JavaMailSender.
  * Active only when 'spring.mail.host' property is configured.
  */
 @Component
@@ -23,10 +26,10 @@ public class RealEmailSender implements EmailSender {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        helper.setSubject(subject);
-        helper.setText(content, true);
-        helper.setFrom(from);
-        helper.setTo(to);
+        helper.setSubject(Objects.requireNonNull(subject));
+        helper.setText(Objects.requireNonNull(content), true);
+        helper.setFrom(Objects.requireNonNull(from));
+        helper.setTo(Objects.requireNonNull(to));
 
         javaMailSender.send(message);
     }

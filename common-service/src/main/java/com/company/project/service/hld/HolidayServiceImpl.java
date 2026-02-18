@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,7 +40,7 @@ public class HolidayServiceImpl implements HolidayService {
 
     @Override
     public HolidayDto getHoliday(Integer restdeNo) {
-        return holidayRepository.findById(restdeNo)
+        return holidayRepository.findById(Objects.requireNonNull(restdeNo))
                 .map(HolidayDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -56,14 +57,14 @@ public class HolidayServiceImpl implements HolidayService {
                 .frstRegisterId(userId)
                 .build();
 
-        Holiday saved = holidayRepository.save(holiday);
+        Holiday saved = Objects.requireNonNull(holidayRepository.save(Objects.requireNonNull(holiday)));
         return saved.getRestdeNo();
     }
 
     @Override
     @Transactional
     public void updateHoliday(Integer restdeNo, String userId, HolidayDto dto) {
-        Holiday holiday = holidayRepository.findById(restdeNo)
+        Holiday holiday = holidayRepository.findById(Objects.requireNonNull(restdeNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         holiday.update(dto.getRestdeDe(), dto.getRestdeNm(), dto.getRestdeDc(),
@@ -73,9 +74,9 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     @Transactional
     public void deleteHoliday(Integer restdeNo) {
-        if (!holidayRepository.existsById(restdeNo)) {
+        if (!holidayRepository.existsById(Objects.requireNonNull(restdeNo))) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
-        holidayRepository.deleteById(restdeNo);
+        holidayRepository.deleteById(Objects.requireNonNull(restdeNo));
     }
 }
