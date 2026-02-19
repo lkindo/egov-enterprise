@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 명함 Repository
+ * 紐낇븿 Repository
  */
 public interface NameCardRepository extends JpaRepository<NameCard, String>, NameCardRepositoryCustom {
 

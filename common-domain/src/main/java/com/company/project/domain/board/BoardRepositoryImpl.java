@@ -19,7 +19,7 @@ import java.util.Optional;
 
 import com.company.project.domain.comment.QComment;
 import com.company.project.domain.comment.CommentPredicate;
-import com.company.project.domain.user.QUser;
+import com.company.project.domain.user.entity.QUser;
 
 @RequiredArgsConstructor
 public class BoardRepositoryImpl implements BoardRepositoryCustom {

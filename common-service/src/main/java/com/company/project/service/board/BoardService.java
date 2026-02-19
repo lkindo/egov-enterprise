@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * JPA 기반 게시???�비??구현�? * - ?�자?��??�레?�워??5.0 ?�환???�증 ?�건 충족
- * - EgovAbstractServiceImpl ?�속 �?EgovBoardService ?�터?�이??구현
+ * JPA 湲곕컲 寃뚯떆???쒕퉬??援ы쁽泥? * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
+ * - EgovAbstractServiceImpl ?곸냽 諛?EgovBoardService ?명꽣?섏씠??援ы쁽
  */
 @Service("egovBoardService")
 public class BoardService extends EgovAbstractServiceImpl implements EgovBoardService {
@@ -87,7 +87,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
                                 .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "?�명")
+                                .ntcrNm(author != null ? author.getUserNm() : "?듬챸")
                                 .atchFileId(request.atchFileId())
                                 .nttNo(1L)
                                 .sortOrdr(sortOrdr)
@@ -139,7 +139,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
                                 .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "?�명")
+                                .ntcrNm(author != null ? author.getUserNm() : "?듬챸")
                                 .atchFileId(request.atchFileId())
                                 .parnts(parentId)
                                 .nttNo(nttNo)
