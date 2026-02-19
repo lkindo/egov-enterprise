@@ -1,13 +1,13 @@
 package com.company.project.common.validator;
 
-import com.company.project.domain.user.User;
+import com.company.project.domain.user.entity.User;
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
 /**
- * 사용자 관련 검증 유틸리티 클래스
+ * ?�용??관??검�??�틸리티 ?�래??
  */
 public class UserValidator {
 
@@ -15,10 +15,10 @@ public class UserValidator {
     private static final Pattern PASSWORD_PATTERN = Pattern
             .compile("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$");
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{4,20}$");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-힣\\s]{2,50}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-??\s]{2,50}$");
 
     /**
-     * 사용자 등록 요청 검증
+     * ?�용???�록 ?�청 검�?
      */
     public static void validateUserSignupRequest(UserSignupRequest request) {
         if (request == null) {
@@ -52,7 +52,7 @@ public class UserValidator {
     }
 
     /**
-     * 이메일 주소 검증
+     * ?�메??주소 검�?
      */
     public static void validateEmail(String email) {
         if (!StringUtils.hasText(email) || !EMAIL_PATTERN.matcher(email).matches()) {
@@ -61,7 +61,7 @@ public class UserValidator {
     }
 
     /**
-     * 사용자 엔티티 검증
+     * ?�용???�티??검�?
      */
     public static void validateUser(User user) {
         if (user == null) {

@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.company.project.domain.memoreport.MemoReport;
 import com.company.project.domain.memoreport.MemoReportRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 
 import egovframework.com.cop.smt.mrm.service.EgovMemoReprtService;
 import egovframework.com.cop.smt.mrm.service.MemoReprt;
@@ -23,7 +23,7 @@ import egovframework.com.cop.smt.mrm.service.ReportrVO;
 import jakarta.annotation.Resource;
 
 /**
- * 메모보고에 대한 ServiceImpl 클래스를 정의한다. (Modernized)
+ * 메모보고???�??ServiceImpl ?�래?��? ?�의?�다. (Modernized)
  */
 @Service("EgovMemoReprtService")
 public class EgovMemoReprtServiceImpl extends EgovAbstractServiceImpl implements EgovMemoReprtService {

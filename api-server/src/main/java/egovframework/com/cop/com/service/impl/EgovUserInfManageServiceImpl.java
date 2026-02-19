@@ -9,27 +9,27 @@ import org.springframework.stereotype.Service;
 
 import egovframework.com.cop.com.service.EgovUserInfManageService;
 import egovframework.com.cop.com.service.UserInfVO;
-import com.company.project.domain.user.UserInfRepository;
-import com.company.project.domain.user.UserInfSearchResult;
+import com.company.project.domain.user.repository.UserInfRepository;
+import com.company.project.domain.user.vo.UserInfSearchResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import jakarta.annotation.Resource;
 
 /**
- * 협업에서 사용할 사용자 조회 서비스 기능 구현 클래스
+ * ?�업?�서 ?�용???�용??조회 ?�비??기능 구현 ?�래??
  * 
- * @author 공통서비스개발팀 이삼섭
+ * @author 공통?�비?�개발�? ?�삼??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 개정?�력(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?�정??     ?�정??          ?�정?�용
  *  -------    --------    ---------------------------
- *   2009.4.6  이삼섭          최초 생성
+ *   2009.4.6  ?�삼??         최초 ?�성
  *
  *      </pre>
  */
@@ -40,7 +40,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	private UserInfRepository userInfRepository;
 
 	/**
-	 * 동호회 운영자 목록을 조회한다. (사용 안함)
+	 * ?�호???�영??목록??조회?�다. (?�용 ?�함)
 	 */
 	@Override
 	public Map<String, Object> selectClubOprtrList(UserInfVO userVO) throws Exception {
@@ -48,7 +48,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동호회 사용자 목록을 조회한다. (사용 안함)
+	 * ?�호???�용??목록??조회?�다. (?�용 ?�함)
 	 */
 	@Override
 	public Map<String, Object> selectClubUserList(UserInfVO userVO) throws Exception {
@@ -56,7 +56,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 커뮤니티 관리자 목록을 조회한다.
+	 * 커�??�티 관리자 목록??조회?�다.
 	 */
 	@Override
 	public Map<String, Object> selectCmmntyMngrList(UserInfVO userVO) throws Exception {
@@ -73,7 +73,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 커뮤니티 사용자 목록을 조회한다.
+	 * 커�??�티 ?�용??목록??조회?�다.
 	 */
 	@Override
 	public Map<String, Object> selectCmmntyUserList(UserInfVO userVO) throws Exception {
@@ -90,7 +90,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 사용자 정보에 대한 목록을 조회한다.
+	 * ?�용???�보???�??목록??조회?�다.
 	 */
 	@Override
 	public Map<String, Object> selectUserList(UserInfVO userVO) throws Exception {
@@ -106,7 +106,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동호회에 대한 모든 사용자 목록을 조회한다. (사용 안함)
+	 * ?�호?�에 ?�??모든 ?�용??목록??조회?�다. (?�용 ?�함)
 	 */
 	@Override
 	public List<UserInfVO> selectAllClubUser(UserInfVO userVO) throws Exception {
@@ -114,7 +114,7 @@ public class EgovUserInfManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 커뮤니티에 대한 모든 사용자 목록을 조회한다.
+	 * 커�??�티???�??모든 ?�용??목록??조회?�다.
 	 */
 	@Override
 	public List<UserInfVO> selectAllCmmntyUser(UserInfVO userVO) throws Exception {

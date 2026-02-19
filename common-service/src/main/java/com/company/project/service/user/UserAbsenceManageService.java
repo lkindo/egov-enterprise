@@ -1,9 +1,9 @@
 package com.company.project.service.user;
 
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserAbsence;
-import com.company.project.domain.user.UserAbsenceRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.entity.UserAbsence;
+import com.company.project.domain.user.repository.UserAbsenceRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserAbsenceDto;
 import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 사용자 부재 관리 서비스
+ * ?�용??부??관�??�비??
  */
 @Service("userAbsenceManageService")
 @Transactional(readOnly = true)
@@ -36,7 +36,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 목록 조회
+     * ?�용??부??목록 조회
      */
     public List<UserAbsenceDto> selectUserAbsenceList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -74,14 +74,14 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 목록 총 건수
+     * ?�용??부??목록 �?건수
      */
     public int selectUserAbsenceListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 사용자 부재 상세 조회
+     * ?�용??부???�세 조회
      */
     public UserAbsenceDto selectUserAbsence(String userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
@@ -105,7 +105,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 등록
+     * ?�용??부???�록
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
@@ -119,7 +119,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 수정
+     * ?�용??부???�정
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
@@ -130,7 +130,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 삭제
+     * ?�용??부????��
      */
     @Transactional
     public void deleteUserAbsence(String userId) {
@@ -138,7 +138,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * 사용자 부재 다중 삭제
+     * ?�용??부???�중 ??��
      */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {

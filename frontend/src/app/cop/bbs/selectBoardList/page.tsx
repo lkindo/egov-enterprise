@@ -16,8 +16,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LayoutGrid, Plus, Search, Home, ChevronRight, MessageSquare, User, Calendar, Eye, BarChart3 } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import { LayoutGrid, Plus, Search, Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, BarChart3, Filter, ArrowUpDown, X } from "lucide-react";
 import { BoardStats } from './BoardStats';
+import { cn } from "@/lib/utils";
 
 interface Board {
     nttId: string;
@@ -25,6 +37,7 @@ interface Board {
     frstRegisterNm: string;
     frstRegisterPnttm: string;
     inqireCo: number;
+    commentCo?: number;
 }
 
 const BBSListContent = () => {
@@ -36,12 +49,25 @@ const BBSListContent = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [pageIndex, setPageIndex] = useState(1);
     const [searchWrd, setSearchWrd] = useState('');
+    const [searchCnd, setSearchCnd] = useState('0'); // 0: Title, 1: Content, 2: Writer
+    const [orderBy, setOrderBy] = useState('date'); // date, views, comments
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
     const [loading, setLoading] = useState(false);
 
     const fetchList = async () => {
         setLoading(true);
         try {
-            const params = { bbsId, pageIndex, pageUnit: 10, searchWrd, searchCnd: '0' };
+            const params = {
+                bbsId,
+                pageIndex,
+                pageUnit: 10,
+                searchWrd,
+                searchCnd,
+                orderBy,
+                startDate: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined,
+                endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
+            };
             const response = await axios.get('/bbs', { params });
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
@@ -90,7 +116,7 @@ const BBSListContent = () => {
                 <CardHeader className="flex flex-row items-center justify-between bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
                     <div className="space-y-2 relative z-10">
                         <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
-                            <MessageSquare className="w-8 h-8 text-primary" /> 
+                            <MessageSquare className="w-8 h-8 text-primary" />
                             {bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판'}
                         </CardTitle>
                         <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
@@ -109,21 +135,110 @@ const BBSListContent = () => {
                 </CardHeader>
                 <CardContent className="pt-10 px-10">
                     {/* Search Area */}
-                    <div className="flex flex-col md:flex-row items-center gap-6 mb-12 bg-slate-50/50 p-8 rounded-[2rem] border-2 border-slate-50 shadow-inner">
-                        <form onSubmit={handleSearch} className="flex-1 flex gap-3 w-full">
-                            <div className="relative flex-1 group">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
-                                <Input
-                                    type="text"
-                                    className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-2xl focus-visible:ring-primary/20 transition-all font-bold"
-                                    placeholder="어떤 정보를 찾으시나요?"
-                                    value={searchWrd}
-                                    onChange={(e) => setSearchWrd(e.target.value)}
-                                />
+                    <div className="flex flex-col gap-6 mb-12 bg-slate-50/50 p-8 rounded-[3rem] border-2 border-slate-50 shadow-inner">
+                        <form onSubmit={handleSearch} className="flex flex-col gap-6">
+                            {/* Top Row: Search Keyword */}
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <Select value={searchCnd} onValueChange={setSearchCnd}>
+                                    <SelectTrigger className="w-full md:w-[150px] h-16 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
+                                        <SelectValue placeholder="검색 조건" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="0">제목</SelectItem>
+                                        <SelectItem value="1">내용</SelectItem>
+                                        <SelectItem value="2">작성자</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative flex-1 group">
+                                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
+                                    <Input
+                                        type="text"
+                                        className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-2xl focus-visible:ring-primary/20 transition-all font-bold"
+                                        placeholder="어떤 정보를 찾으시나요?"
+                                        value={searchWrd}
+                                        onChange={(e) => setSearchWrd(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                            <Button type="submit" className="h-16 px-12 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
-                                검색
-                            </Button>
+
+                            {/* Bottom Row: Advanced Filters */}
+                            <div className="flex flex-col md:flex-row items-center gap-4">
+                                <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto pb-2 md:pb-0">
+                                    {/* Date Range Picker */}
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-14 px-6 justify-start text-left font-bold rounded-2xl border-2 border-white bg-white shadow-sm w-full md:w-[280px]",
+                                                    !startDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-3 h-5 w-5 text-primary opacity-50" />
+                                                {startDate ? (
+                                                    endDate ? (
+                                                        <>
+                                                            {format(startDate, "yyyy.MM.dd")} - {format(endDate, "yyyy.MM.dd")}
+                                                        </>
+                                                    ) : (
+                                                        format(startDate, "yyyy.MM.dd")
+                                                    )
+                                                ) : (
+                                                    <span>기간 선택</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                                            <div className="p-4 bg-white border-b flex items-center justify-between">
+                                                <span className="font-black text-slate-800">기간 설정</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
+                                                    className="h-8 px-2 text-xs font-bold text-slate-400 hover:text-red-500"
+                                                >
+                                                    <X size={14} className="mr-1" /> 초기화
+                                                </Button>
+                                            </div>
+                                            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={startDate}
+                                                    onSelect={setStartDate}
+                                                    initialFocus
+                                                    locale={ko}
+                                                    className="p-4"
+                                                />
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={endDate}
+                                                    onSelect={setEndDate}
+                                                    initialFocus
+                                                    locale={ko}
+                                                    className="p-4"
+                                                />
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+
+                                    {/* Sorting */}
+                                    <Select value={orderBy} onValueChange={setOrderBy}>
+                                        <SelectTrigger className="w-full md:w-[150px] h-14 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
+                                            <ArrowUpDown className="mr-2 h-4 w-4 text-primary opacity-50" />
+                                            <SelectValue placeholder="정렬 방식" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="date">최신순</SelectItem>
+                                            <SelectItem value="views">조회수순</SelectItem>
+                                            <SelectItem value="comments">댓글순</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <Button type="submit" className="h-16 px-12 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all w-full md:w-auto">
+                                    <Search className="mr-2 w-5 h-5" /> 검색하기
+                                </Button>
+                            </div>
                         </form>
                     </div>
 
@@ -132,11 +247,11 @@ const BBSListContent = () => {
                         <Table>
                             <TableHeader className="bg-slate-50/80">
                                 <TableRow className="hover:bg-transparent border-b-2">
-                                    <TableHead className="w-[100px] text-center font-black text-slate-400 uppercase tracking-widest text-[11px] py-8">No</TableHead>
+                                    <TableHead className="w-[80px] text-center font-black text-slate-400 uppercase tracking-widest text-[11px] py-8">No</TableHead>
                                     <TableHead className="font-black text-slate-900 uppercase tracking-widest text-[11px] py-8 px-6">Content Subject</TableHead>
-                                    <TableHead className="w-[180px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Author</TableHead>
-                                    <TableHead className="w-[150px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Reg Date</TableHead>
-                                    <TableHead className="w-[120px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Stats</TableHead>
+                                    <TableHead className="w-[150px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Author</TableHead>
+                                    <TableHead className="w-[140px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Reg Date</TableHead>
+                                    <TableHead className="w-[180px] font-black text-slate-400 uppercase tracking-widest text-[11px] py-8 text-center">Engagement</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -185,9 +300,15 @@ const BBSListContent = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center py-8">
-                                                <div className="font-black text-primary/60 bg-primary/5 w-fit mx-auto px-5 py-2 rounded-xl flex items-center gap-2 border border-primary/10">
-                                                    <Eye size={14} className="opacity-40" />
-                                                    {item.inqireCo}
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="font-black text-primary/60 bg-primary/5 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-primary/10 w-24 justify-center">
+                                                        <Eye size={14} className="opacity-40" />
+                                                        {item.inqireCo}
+                                                    </div>
+                                                    <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
+                                                        <MessageSquare size={14} className="opacity-30" />
+                                                        {item.commentCo || 0}
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -232,16 +353,6 @@ const BBSListContent = () => {
 const BoardListPage = () => {
     return (
         <Suspense fallback={<div className="p-20 text-center font-black animate-pulse text-slate-400">Loading Dashboard...</div>}>
-            <BBSListContent />
-        </Suspense>
-    );
-};
-
-export default BoardListPage;
-
-const BoardListPage = () => {
-    return (
-        <Suspense fallback={<div className="p-10 text-center font-bold">로딩 중...</div>}>
             <BBSListContent />
         </Suspense>
     );

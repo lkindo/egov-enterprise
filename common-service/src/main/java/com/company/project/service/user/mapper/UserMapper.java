@@ -1,6 +1,6 @@
 package com.company.project.service.user.mapper;
 
-import com.company.project.domain.user.User;
+import com.company.project.domain.user.entity.User;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;

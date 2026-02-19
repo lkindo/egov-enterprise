@@ -5,12 +5,21 @@ export interface CommentVO {
     wrterId: string;
     wrterNm: string;
     commentCn: string;
-    frstRegisterPnttm: string;
+    createdDate: string; // Updated from frstRegisterPnttm to match backend
+    modifiedDate?: string;
     useAt: string;
-    commentNo?: string; // Legacy comp compatibility
+}
+
+export interface CommentSaveRequest {
+    nttId: number;
+    bbsId: string;
+    commentCn: string;
+    password?: string;
 }
 
 export interface CommentSearchParams {
-    pageIndex?: number;
-    searchKeyword?: string;
+    nttId: number;
+    bbsId: string;
+    page?: number;
+    size?: number;
 }

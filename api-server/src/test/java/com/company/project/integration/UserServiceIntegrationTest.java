@@ -2,9 +2,9 @@ package com.company.project.integration;
 
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -48,33 +48,33 @@ class UserServiceIntegrationTest {
         signupRequest = new UserSignupRequest(
                 "integrationTestUser",
                 "password123!",
-                "통합 테스트 사용자",
+                "?�합 ?�스???�용??,
                 Role.USER,
                 "hint",
                 "answer");
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 등록 시 사용자 정보와 권한 정보가 함께 저장됨")
+    @DisplayName("?�용???�비??- ?�용???�록 ???�용???�보?� 권한 ?�보가 ?�께 ?�?�됨")
     void signup_createsUserAndAuthority() {
         // When
         userService.signup(signupRequest);
 
         // Then
-        // 사용자 정보가 저장되었는지 확인
+        // ?�용???�보가 ?�?�되?�는지 ?�인
         Optional<User> savedUser = userRepository.findById("integrationTestUser");
         assertThat(savedUser).isPresent();
-        assertThat(savedUser.get().getUserNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(savedUser.get().getUserNm()).isEqualTo("?�합 ?�스???�용??);
         assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
 
-        // 권한 정보가 저장되었는지 확인
+        // 권한 ?�보가 ?�?�되?�는지 ?�인
         Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
         assertThat(savedAuthority).isPresent();
         assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 목록 조회 시 권한 정보도 함께 조회됨")
+    @DisplayName("?�용???�비??- ?�용??목록 조회 ??권한 ?�보???�께 조회??)
     void getUserList_retrievesUsersWithAuthority() {
         // Given
         userService.signup(signupRequest);
@@ -86,12 +86,12 @@ class UserServiceIntegrationTest {
         assertThat(userList).isNotEmpty();
         UserDto user = userList.get(0);
         assertThat(user.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(user.getUserNm()).isEqualTo("통합 테스트 사용자");
-        // 권한 정보가 포함되어 있는지 확인 (권한 코드가 UserAuthority에서 가져온 것인지 확인)
+        assertThat(user.getUserNm()).isEqualTo("?�합 ?�스???�용??);
+        // 권한 ?�보가 ?�함?�어 ?�는지 ?�인 (권한 코드가 UserAuthority?�서 가?�온 것인지 ?�인)
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 등록 후 바로 조회 가능")
+    @DisplayName("?�용???�비??- ?�용???�록 ??바로 조회 가??)
     void signup_thenGetUserById_success() {
         // Given
         UserResponse signupResponse = userService.signup(signupRequest);
@@ -102,24 +102,24 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(retrievedUser).isNotNull();
         assertThat(retrievedUser.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(retrievedUser.getUserNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("?�합 ?�스???�용??);
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 여러 사용자 등록 후 목록 조회")
+    @DisplayName("?�용???�비??- ?�러 ?�용???�록 ??목록 조회")
     void multipleUsers_signup_thenGetList_success() {
         // Given
         UserSignupRequest request1 = new UserSignupRequest(
                 "user1",
                 "password123!",
-                "사용자1",
+                "?�용??",
                 Role.USER,
                 "hint",
                 "answer");
         UserSignupRequest request2 = new UserSignupRequest(
                 "user2",
                 "password123!",
-                "사용자2",
+                "?�용??",
                 Role.ADMIN,
                 "hint",
                 "answer");
@@ -132,11 +132,11 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(userList).hasSize(2);
         assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("user1", "user2");
-        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("사용자1", "사용자2");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("?�용??", "?�용??");
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 등록 시 데이터베이스에 실제 저장됨")
+    @DisplayName("?�용???�비??- ?�용???�록 ???�이?�베?�스???�제 ?�?�됨")
     void signup_persistsToDatabase() {
         // Given
         long initialUserCount = userRepository.count();
@@ -152,16 +152,16 @@ class UserServiceIntegrationTest {
         assertThat(currentUserCount).isEqualTo(initialUserCount + 1);
         assertThat(currentAuthorityCount).isEqualTo(initialAuthorityCount + 1);
 
-        // 저장된 사용자 확인
+        // ?�?�된 ?�용???�인
         Optional<User> savedUser = userRepository.findById("integrationTestUser");
         assertThat(savedUser).isPresent();
         assertThat(savedUser.get().getUserId()).isEqualTo("integrationTestUser");
-        assertThat(savedUser.get().getUserNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(savedUser.get().getUserNm()).isEqualTo("?�합 ?�스???�용??);
         assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 ID로 상세 조회 성공")
+    @DisplayName("?�용???�비??- ?�용??ID�??�세 조회 ?�공")
     void getUserById_success_withValidId() {
         // Given
         userService.signup(signupRequest);
@@ -172,11 +172,11 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(result.getUserNm()).isEqualTo("통합 테스트 사용자");
+        assertThat(result.getUserNm()).isEqualTo("?�합 ?�스???�용??);
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 존재하지 않는 사용자 ID로 조회 시 예외 발생")
+    @DisplayName("?�용???�비??- 존재?��? ?�는 ?�용??ID�?조회 ???�외 발생")
     void getUserById_fail_withNonExistentId() {
         // When & Then
         assertThatThrownBy(() -> userService.getUserById("nonexistent"))
@@ -185,7 +185,7 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 등록 시 중복 ID로 인한 예외 발생")
+    @DisplayName("?�용???�비??- ?�용???�록 ??중복 ID�??�한 ?�외 발생")
     void signup_fail_withDuplicateId() {
         // Given
         userService.signup(signupRequest);
@@ -198,34 +198,34 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 사용자 정보 수정 성공")
+    @DisplayName("?�용???�비??- ?�용???�보 ?�정 ?�공")
     void updateUser_success() {
         // Given
         userService.signup(signupRequest);
-        UserDto updatedUserDto = new UserDto("integrationTestUser", "수정된 사용자", "USR_TEST", "ADMIN", null, null, null);
+        UserDto updatedUserDto = new UserDto("integrationTestUser", "?�정???�용??, "USR_TEST", "ADMIN", null, null, null);
 
         // When
         userService.updateUser("integrationTestUser", updatedUserDto);
 
         // Then
         UserDto result = userService.getUserById("integrationTestUser");
-        assertThat(result.getUserNm()).isEqualTo("수정된 사용자");
+        assertThat(result.getUserNm()).isEqualTo("?�정???�용??);
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 비밀번호 변경 성공")
+    @DisplayName("?�용???�비??- 비�?번호 변�??�공")
     void changePassword_success() {
         // Given
         userService.signup(signupRequest);
 
         // When & Then
-        // 비밀번호 변경이 성공적으로 수행되는지 확인
+        // 비�?번호 변경이 ?�공?�으�??�행?�는지 ?�인
         assertThatNoException()
                 .isThrownBy(() -> userService.changePassword("integrationTestUser", "password123!", "newPassword123!"));
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 잘못된 이전 비밀번호로 변경 시 예외 발생")
+    @DisplayName("?�용???�비??- ?�못???�전 비�?번호�?변�????�외 발생")
     void changePassword_fail_withWrongOldPassword() {
         // Given
         userService.signup(signupRequest);
@@ -238,14 +238,14 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자 서비스 - 페이징된 사용자 목록 조회 성공")
+    @DisplayName("?�용???�비??- ?�이징된 ?�용??목록 조회 ?�공")
     void getPagedUserList_success() {
         // Given
         for (int i = 0; i < 15; i++) {
             UserSignupRequest request = new UserSignupRequest(
                     "pagedUser" + i,
                     "password123!",
-                    "페이징 테스트 사용자" + i,
+                    "?�이�??�스???�용?? + i,
                     Role.USER,
                     "hint",
                     "answer");

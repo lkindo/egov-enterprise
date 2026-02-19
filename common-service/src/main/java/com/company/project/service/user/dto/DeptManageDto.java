@@ -1,6 +1,6 @@
 package com.company.project.service.user.dto;
 
-import com.company.project.domain.user.DeptManage;
+import com.company.project.domain.user.entity.DeptManage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,22 +13,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "부서(조직) 정보 DTO")
+@Schema(description = "부??조직) ?�보 DTO")
 public class DeptManageDto {
 
     @Schema(description = "조직 ID")
     private String orgnztId;
 
-    @Schema(description = "조직 명")
+    @Schema(description = "조직 �?)
     private String orgnztNm;
 
-    @Schema(description = "조직 설명")
+    @Schema(description = "조직 ?�명")
     private String orgnztDc;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "?�록??ID")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "?�록?�시")
     private LocalDateTime createdDate;
 
     public static DeptManageDto from(DeptManage entity) {

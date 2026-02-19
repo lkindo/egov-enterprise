@@ -3,34 +3,28 @@ package com.company.project.domain.comment;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NCOMMENT")
 @EntityListeners(AuditingEntityListener.class)
+@SQLRestriction("use_at = 'Y'")
 public class Comment implements Serializable {
 
     @Id
-    @Column(name = "ANSWER_NO", length = 20)
-    private Long id; // commentNo mapped to ANSWER_NO in legacy DB commonly, wait, checking legacy
-                     // Comment.java field name mapping.
-    // Legacy Comment.java: commentNo. Let's verify DB schema/legacy code comments
-    // if possible.
-    // Typically COMTNCOMMENT has ANSWER_NO as PK.
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answerNoSeq")
+    @SequenceGenerator(name = "answerNoSeq", sequenceName = "ANSWER_NO_SEQ", allocationSize = 1)
+    @Column(name = "ANSWER_NO")
+    private Long id;
 
     @Column(name = "NTT_ID")
     private Long nttId;
@@ -53,13 +47,15 @@ public class Comment implements Serializable {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
+    @CreatedBy
+    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
     private String frstRegisterId;
 
     @CreatedDate
     @Column(name = "FRST_REGIST_PNTTM", updatable = false)
     private LocalDateTime createdDate;
 
+    @LastModifiedBy
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
@@ -68,26 +64,22 @@ public class Comment implements Serializable {
     private LocalDateTime modifiedDate;
 
     @Builder
-    public Comment(Long id, Long nttId, String bbsId, String wrterId, String wrterNm,
-            String password, String commentCn, String useAt, String frstRegisterId) {
-        this.id = id;
+    public Comment(Long nttId, String bbsId, String wrterId, String wrterNm,
+            String password, String commentCn, String useAt) {
         this.nttId = nttId;
         this.bbsId = bbsId;
         this.wrterId = wrterId;
         this.wrterNm = wrterNm;
         this.password = password;
         this.commentCn = commentCn;
-        this.useAt = useAt == null ? "Y" : useAt;
-        this.frstRegisterId = frstRegisterId;
+        this.useAt = useAt;
     }
 
-    public void update(String commentCn, String lastUpdusrId) {
+    public void update(String commentCn) {
         this.commentCn = commentCn;
-        this.lastUpdusrId = lastUpdusrId;
     }
 
-    public void delete(String lastUpdusrId) {
+    public void delete() {
         this.useAt = "N";
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

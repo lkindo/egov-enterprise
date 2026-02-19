@@ -1,7 +1,7 @@
 package com.company.project.service.system;
 
-import com.company.project.domain.user.UserAbsence;
-import com.company.project.domain.user.UserAbsenceRepository;
+import com.company.project.domain.user.entity.UserAbsence;
+import com.company.project.domain.user.repository.UserAbsenceRepository;
 import com.company.project.service.system.dto.UserAbsenceDto;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;

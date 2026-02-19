@@ -37,7 +37,8 @@ class BoardRepositoryTest {
                 .build();
 
         // when
-        BoardMaster saved = java.util.Objects.requireNonNull(boardMasterRepository.save(java.util.Objects.requireNonNull(master)));
+        BoardMaster saved = java.util.Objects
+                .requireNonNull(boardMasterRepository.save(java.util.Objects.requireNonNull(master)));
 
         // then
         assertThat(saved.getBbsId()).isEqualTo("TEST_BBS_001");
@@ -58,7 +59,6 @@ class BoardRepositoryTest {
                         .build())));
 
         Board board = Board.builder()
-                .nttId(1L)
                 .bbsId(java.util.Objects.requireNonNull(master.getBbsId()))
                 .nttSj("테스트 제목")
                 .nttCn("테스트 내용")
@@ -67,7 +67,6 @@ class BoardRepositoryTest {
                 .ntcrId("TESTER")
                 .ntcrNm("Tester")
                 .password("password")
-                .frstRegisterId("TESTER")
                 .build();
 
         // when

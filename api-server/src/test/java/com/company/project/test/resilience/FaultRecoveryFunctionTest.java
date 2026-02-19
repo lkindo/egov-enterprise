@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 
-import com.company.project.domain.user.Role;
+import com.company.project.domain.user.entity.Role;
 import com.company.project.service.user.dto.UserResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,24 +37,24 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         private UserService userService;
 
         @Test
-        @DisplayName("서비스 장애 후 정상 복구 테스트 - 일시적인 DB 장애 시뮬레이션")
+        @DisplayName("?�비???�애 ???�상 복구 ?�스??- ?�시?�인 DB ?�애 ?��??�이??)
         void temporaryDbFailure_recovery_success() throws Exception {
-                // Given - 첫 요청은 DB 장애 시뮬레이션
+                // Given - �??�청?� DB ?�애 ?��??�이??
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Database temporarily unavailable"))
                                 .thenReturn(Arrays.asList(
-                                                new UserDto("user1", "복구 후 사용자1", "USR001", null, null, null, null),
-                                                new UserDto("user2", "복구 후 사용자2", "USR002", null, null, null, null))); // 다음
-                                                                                                                       // 요청은
-                                                                                                                       // 정상
-                                                                                                                       // 동작
+                                                new UserDto("user1", "복구 ???�용??", "USR001", null, null, null, null),
+                                                new UserDto("user2", "복구 ???�용??", "USR002", null, null, null, null))); // ?�음
+                                                                                                                       // ?�청?�
+                                                                                                                       // ?�상
+                                                                                                                       // ?�작
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -64,22 +64,22 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("예외 발생 후 정상 서비스 복구 테스트")
+        @DisplayName("?�외 발생 ???�상 ?�비??복구 ?�스??)
         void exceptionThenRecovery_normalServiceRecovery() throws Exception {
-                // Given - 첫 요청은 예외 발생
+                // Given - �??�청?� ?�외 발생
                 when(userService.getUserById("errorUser"))
                                 .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND))
-                                .thenReturn(new UserDto("recoveredUser", "복구된 사용자", "USR001", null, null, null, null)); // 다음
-                                                                                                                        // 요청은
-                                                                                                                        // 정상
-                                                                                                                        // 동작
+                                .thenReturn(new UserDto("recoveredUser", "복구???�용??, "USR001", null, null, null, null)); // ?�음
+                                                                                                                        // ?�청?�
+                                                                                                                        // ?�상
+                                                                                                                        // ?�작
 
-                // When & Then - 첫 번째 요청 (예외 발생)
+                // When & Then - �?번째 ?�청 (?�외 발생)
                 mockMvc.perform(get("/api/v1/users/errorUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isNotFound());
 
-                // When & Then - 두 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users/recoveredUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -88,38 +88,38 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("API 호출 실패 후 재시도 메커니즘 테스트")
+        @DisplayName("API ?�출 ?�패 ???�시??메커?�즘 ?�스??)
         void retryMechanism_afterApiFailure() throws Exception {
-                // Given - 일정 횟수의 실패 이후 성공하는 시나리오
+                // Given - ?�정 ?�수???�패 ?�후 ?�공?�는 ?�나리오
                 when(userService.signup(any(UserSignupRequest.class)))
                                 .thenThrow(new RuntimeException("Service temporarily unavailable"))
                                 .thenThrow(new RuntimeException("Service still unavailable"))
-                                .thenReturn(new UserResponse("successfulUser", "재시도 사용자", Role.USER)); // 세 번째 시도에 성공
+                                .thenReturn(new UserResponse("successfulUser", "?�시???�용??, Role.USER)); // ??번째 ?�도???�공
 
                 String requestBody = """
                                 {
                                     "userId": "retryUser",
                                     "password": "password123!",
-                                    "userNm": "재시도 사용자",
+                                    "userNm": "?�시???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
                                 }
                                 """;
 
-                // When & Then - 첫 번째 요청 (실패)
+                // When & Then - �?번째 ?�청 (?�패)
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (실패)
+                // When & Then - ??번째 ?�청 (?�패)
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 세 번째 요청 (성공 - 복구됨)
+                // When & Then - ??번째 ?�청 (?�공 - 복구??
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
@@ -129,34 +129,34 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("서킷 브레이커 동작 및 복구 테스트")
+        @DisplayName("?�킷 브레?�커 ?�작 �?복구 ?�스??)
         void circuitBreaker_operationAndRecovery() throws Exception {
-                // Given - 연속된 실패 후 일정 시간 경과 후 정상 동작
+                // Given - ?�속???�패 ???�정 ?�간 경과 ???�상 ?�작
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Service unavailable")) // 1st call - failure
                                 .thenThrow(new RuntimeException("Service still unavailable")) // 2nd call - failure
                                 .thenThrow(new RuntimeException("Circuit breaker open")) // 3rd call - circuit breaker
                                                                                          // open
                                 .thenReturn(Arrays.asList( // 4th call - recovery after timeout simulation
-                                                new UserDto("circuitBreakerUser", "서킷 브레이커 사용자", "USR001", null, null,
+                                                new UserDto("circuitBreakerUser", "?�킷 브레?�커 ?�용??, "USR001", null, null,
                                                                 null, null)));
 
-                // When & Then - 첫 번째 요청 (실패)
+                // When & Then - �?번째 ?�청 (?�패)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (실패)
+                // When & Then - ??번째 ?�청 (?�패)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 세 번째 요청 (서킷 브레이커 OPEN 상태 시뮬레이션)
+                // When & Then - ??번째 ?�청 (?�킷 브레?�커 OPEN ?�태 ?��??�이??
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isServiceUnavailable()); // Circuit breaker open
 
-                // When & Then - 네 번째 요청 (복구된 상태)
+                // When & Then - ??번째 ?�청 (복구???�태)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -165,27 +165,27 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("타임아웃 발생 후 정상 복구 테스트")
+        @DisplayName("?�?�아??발생 ???�상 복구 ?�스??)
         void timeoutRecovery_afterTimeoutOccurs() throws Exception {
-                // Given - 첫 요청은 타임아웃 시뮬레이션
+                // Given - �??�청?� ?�?�아???��??�이??
                 when(userService.getUserList())
                                 .thenAnswer(invocation -> {
-                                        Thread.sleep(6000); // 6초 지연 (타임아웃)
-                                        return Arrays.asList(new UserDto("timeoutUser", "타임아웃 사용자", "USR001", null,
+                                        Thread.sleep(6000); // 6�?지??(?�?�아??
+                                        return Arrays.asList(new UserDto("timeoutUser", "?�?�아???�용??, "USR001", null,
                                                         null, null, null));
                                 })
-                                .thenReturn(Arrays.asList( // 다음 요청은 정상 처리
-                                                new UserDto("recoveredUser", "복구된 사용자", "USR002", null, null, null,
+                                .thenReturn(Arrays.asList( // ?�음 ?�청?� ?�상 처리
+                                                new UserDto("recoveredUser", "복구???�용??, "USR002", null, null, null,
                                                                 null)));
 
-                // When & Then - 첫 번째 요청 (타임아웃)
+                // When & Then - �?번째 ?�청 (?�?�아??
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .requestAttr("org.springframework.web.util.WebUtils.ERROR_REQUEST_URI_ATTRIBUTE",
                                                 "/api/v1/users"))
                                 .andExpect(status().isRequestTimeout());
 
-                // When & Then - 두 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -195,20 +195,20 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("데이터베이스 연결 풀 고갈 후 복구 테스트")
+        @DisplayName("?�이?�베?�스 ?�결 ?� 고갈 ??복구 ?�스??)
         void dbConnectionPoolExhaustion_recovery() throws Exception {
-                // Given - DB 연결 풀 고갈 시뮬레이션
+                // Given - DB ?�결 ?� 고갈 ?��??�이??
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Connection pool exhausted"))
-                                .thenReturn(Arrays.asList( // 복구 후 정상 동작
-                                                new UserDto("poolUser", "풀 사용자", "USR001", null, null, null, null)));
+                                .thenReturn(Arrays.asList( // 복구 ???�상 ?�작
+                                                new UserDto("poolUser", "?� ?�용??, "USR001", null, null, null, null)));
 
-                // When & Then - 첫 번째 요청 (DB 연결 풀 고갈)
+                // When & Then - �?번째 ?�청 (DB ?�결 ?� 고갈)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (복구 후 정상 동작)
+                // When & Then - ??번째 ?�청 (복구 ???�상 ?�작)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -217,16 +217,16 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("메모리 부족 상태에서 GC 후 정상 동작 복구 테스트")
+        @DisplayName("메모�?부�??�태?�서 GC ???�상 ?�작 복구 ?�스??)
         void outOfMemoryRecovery_afterGC() throws Exception {
-                // Given - 메모리 부족 상태 시뮬레이션
+                // Given - 메모�?부�??�태 ?��??�이??
                 when(userService.getUserList())
                                 .thenThrow(new OutOfMemoryError("Memory exhausted"))
-                                .thenReturn(Arrays.asList( // GC 후 정상 동작
-                                                new UserDto("memoryUser", "메모리 사용자", "USR001", null, null, null,
+                                .thenReturn(Arrays.asList( // GC ???�상 ?�작
+                                                new UserDto("memoryUser", "메모�??�용??, "USR001", null, null, null,
                                                                 null)));
 
-                // When & Then - 첫 번째 요청 (메모리 부족)
+                // When & Then - �?번째 ?�청 (메모�?부�?
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
@@ -234,7 +234,7 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
                 // Force garbage collection to simulate recovery
                 System.gc();
 
-                // When & Then - 두 번째 요청 (복구 후 정상 동작)
+                // When & Then - ??번째 ?�청 (복구 ???�상 ?�작)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -243,20 +243,20 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("예외 발생 후 서비스 상태 정상화 테스트")
+        @DisplayName("?�외 발생 ???�비???�태 ?�상???�스??)
         void serviceStatusNormalization_afterException() throws Exception {
-                // Given - 서비스가 일시적으로 비정상 상태
+                // Given - ?�비?��? ?�시?�으�?비정???�태
                 when(userService.getUserById("faultyUser"))
                                 .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR))
-                                .thenReturn(new UserDto("normalizedUser", "정상화된 사용자", "USR001", null, null, null,
-                                                null)); // 정상 상태로 복구
+                                .thenReturn(new UserDto("normalizedUser", "?�상?�된 ?�용??, "USR001", null, null, null,
+                                                null)); // ?�상 ?�태�?복구
 
-                // When & Then - 첫 번째 요청 (예외 발생)
+                // When & Then - �?번째 ?�청 (?�외 발생)
                 mockMvc.perform(get("/api/v1/users/faultyUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상화된 상태)
+                // When & Then - ??번째 ?�청 (?�상?�된 ?�태)
                 mockMvc.perform(get("/api/v1/users/normalizedUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -265,21 +265,21 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 시 폴백 메커니즘 테스트")
+        @DisplayName("?�애 발생 ???�백 메커?�즘 ?�스??)
         void fallbackMechanism_whenFailureOccurs() throws Exception {
-                // Given - 서비스 장애 시 폴백 제공
+                // Given - ?�비???�애 ???�백 ?�공
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Service unavailable"))
-                                .thenReturn(Arrays.asList( // 폴백 후 정상 동작
-                                                new UserDto("fallbackUser", "폴백 사용자", "USR001", null, null, null,
+                                .thenReturn(Arrays.asList( // ?�백 ???�상 ?�작
+                                                new UserDto("fallbackUser", "?�백 ?�용??, "USR001", null, null, null,
                                                                 null)));
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 동작)
+                // When & Then - ??번째 ?�청 (?�상 ?�작)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -289,23 +289,23 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 복구 후 성능 저하 없이 정상 동작 테스트")
+        @DisplayName("?�애 복구 ???�능 ?�???�이 ?�상 ?�작 ?�스??)
         void recovery_withoutPerformanceDegradation() throws Exception {
-                // Given - 장애 발생 후 정상 복구
+                // Given - ?�애 발생 ???�상 복구
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Temporary failure"))
-                                .thenReturn(Arrays.asList( // 복구 후 정상 동작
-                                                new UserDto("performanceUser1", "성능 테스트 사용자1", "USR001", null, null,
+                                .thenReturn(Arrays.asList( // 복구 ???�상 ?�작
+                                                new UserDto("performanceUser1", "?�능 ?�스???�용??", "USR001", null, null,
                                                                 null, null),
-                                                new UserDto("performanceUser2", "성능 테스트 사용자2", "USR002", null, null,
+                                                new UserDto("performanceUser2", "?�능 ?�스???�용??", "USR002", null, null,
                                                                 null, null)));
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 long startTime = System.currentTimeMillis();
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
@@ -320,33 +320,33 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("다중 장애 발생 후 복구 테스트")
+        @DisplayName("?�중 ?�애 발생 ??복구 ?�스??)
         void multipleFailures_recovery() throws Exception {
-                // Given - 여러 장애 발생 후 복구
+                // Given - ?�러 ?�애 발생 ??복구
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("First failure"))
                                 .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR))
                                 .thenThrow(new RuntimeException("Third failure"))
-                                .thenReturn(Arrays.asList( // 복구 후 정상 동작
-                                                new UserDto("multiFailureUser", "다중 장애 사용자", "USR001", null, null, null,
+                                .thenReturn(Arrays.asList( // 복구 ???�상 ?�작
+                                                new UserDto("multiFailureUser", "?�중 ?�애 ?�용??, "USR001", null, null, null,
                                                                 null)));
 
-                // When & Then - 첫 번째 요청 (장애 1)
+                // When & Then - �?번째 ?�청 (?�애 1)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (장애 2)
+                // When & Then - ??번째 ?�청 (?�애 2)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 세 번째 요청 (장애 3)
+                // When & Then - ??번째 ?�청 (?�애 3)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 네 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -356,49 +356,49 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 캐시 무효화 및 재생성 테스트")
+        @DisplayName("?�애 발생 ??캐시 무효??�??�생???�스??)
         void cacheInvalidationAndRegeneration_afterFailure() throws Exception {
-                // Given - 캐시가 있는 시나리오 (mock으로 캐시 동작 시뮬레이션)
+                // Given - 캐시가 ?�는 ?�나리오 (mock?�로 캐시 ?�작 ?��??�이??
                 when(userService.getUserById("cachedUser"))
-                                .thenReturn(new UserDto("cachedUser", "캐시 사용자", "USR001", null, null, null, null)) // 캐시에
-                                                                                                                   // 저장
-                                .thenThrow(new RuntimeException("Cache invalidated due to error")) // 캐시 무효화
-                                .thenReturn(new UserDto("cachedUser", "갱신된 캐시 사용자", "USR001", null, null, null, null)); // 캐시
-                                                                                                                        // 재생성
+                                .thenReturn(new UserDto("cachedUser", "캐시 ?�용??, "USR001", null, null, null, null)) // 캐시??
+                                                                                                                   // ?�??
+                                .thenThrow(new RuntimeException("Cache invalidated due to error")) // 캐시 무효??
+                                .thenReturn(new UserDto("cachedUser", "갱신??캐시 ?�용??, "USR001", null, null, null, null)); // 캐시
+                                                                                                                        // ?�생??
 
-                // When & Then - 첫 번째 요청 (정상, 캐시 저장)
+                // When & Then - �?번째 ?�청 (?�상, 캐시 ?�??
                 mockMvc.perform(get("/api/v1/users/cachedUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.data.userNm").value("캐시 사용자"));
+                                .andExpect(jsonPath("$.data.userNm").value("캐시 ?�용??));
 
-                // When & Then - 두 번째 요청 (장애 발생, 캐시 무효화)
+                // When & Then - ??번째 ?�청 (?�애 발생, 캐시 무효??
                 mockMvc.perform(get("/api/v1/users/cachedUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 세 번째 요청 (정상, 캐시 재생성)
+                // When & Then - ??번째 ?�청 (?�상, 캐시 ?�생??
                 mockMvc.perform(get("/api/v1/users/cachedUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.data.userNm").value("갱신된 캐시 사용자"));
+                                .andExpect(jsonPath("$.data.userNm").value("갱신??캐시 ?�용??));
         }
 
         @Test
-        @DisplayName("장애 발생 후 세션 유지 테스트")
+        @DisplayName("?�애 발생 ???�션 ?��? ?�스??)
         void sessionPreservation_afterFailure() throws Exception {
                 // Given
                 when(userService.getUserById("sessionUser"))
                                 .thenThrow(new RuntimeException("Temporary failure"))
-                                .thenReturn(new UserDto("sessionUser", "세션 사용자", "USR001", null, null, null, null));
+                                .thenReturn(new UserDto("sessionUser", "?�션 ?�용??, "USR001", null, null, null, null));
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users/sessionUser")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .sessionAttr("userSession", "sessionValue"))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 복구, 세션 유지)
+                // When & Then - ??번째 ?�청 (?�상 복구, ?�션 ?��?)
                 mockMvc.perform(get("/api/v1/users/sessionUser")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .sessionAttr("userSession", "sessionValue"))
@@ -408,34 +408,34 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 트랜잭션 정리 테스트")
+        @DisplayName("?�애 발생 ???�랜??�� ?�리 ?�스??)
         void transactionCleanup_afterFailure() throws Exception {
                 // TODO: Verify cleanup logic if needed in Phase 1
 
                 when(userService.signup(any(UserSignupRequest.class)))
                                 .thenThrow(new RuntimeException("Transaction failed"))
-                                .thenReturn(new UserResponse("successfulTransactionUser", "트랜잭션 사용자", Role.USER)); // 다음
-                                                                                                                   // 요청은
-                                                                                                                   // 성공
+                                .thenReturn(new UserResponse("successfulTransactionUser", "?�랜??�� ?�용??, Role.USER)); // ?�음
+                                                                                                                   // ?�청?�
+                                                                                                                   // ?�공
 
                 String requestBody = """
                                 {
                                     "userId": "transactionUser",
                                     "password": "password123!",
-                                    "userNm": "트랜잭션 사용자",
+                                    "userNm": "?�랜??�� ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
                                 }
                                 """;
 
-                // When & Then - 첫 번째 요청 (트랜잭션 실패)
+                // When & Then - �?번째 ?�청 (?�랜??�� ?�패)
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 처리, 트랜잭션 정리 완료)
+                // When & Then - ??번째 ?�청 (?�상 처리, ?�랜??�� ?�리 ?�료)
                 mockMvc.perform(post("/api/v1/users/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
@@ -445,21 +445,21 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 리소스 정리 테스트")
+        @DisplayName("?�애 발생 ??리소???�리 ?�스??)
         void resourceCleanup_afterFailure() throws Exception {
                 // Given
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Resource exhaustion"))
-                                .thenReturn(Arrays.asList( // 리소스 정리 후 정상 동작
-                                                new UserDto("resourceUser", "리소스 사용자", "USR001", null, null, null,
+                                .thenReturn(Arrays.asList( // 리소???�리 ???�상 ?�작
+                                                new UserDto("resourceUser", "리소???�용??, "USR001", null, null, null,
                                                                 null)));
 
-                // When & Then - 첫 번째 요청 (리소스 문제)
+                // When & Then - �?번째 ?�청 (리소??문제)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (리소스 정리 후 정상 동작)
+                // When & Then - ??번째 ?�청 (리소???�리 ???�상 ?�작)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -468,18 +468,18 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 메모리 누수 방지 테스트")
+        @DisplayName("?�애 발생 ??메모�??�수 방�? ?�스??)
         void memoryLeakPrevention_afterFailure() throws Exception {
                 // Given
                 long initialMemory = Runtime.getRuntime().freeMemory();
 
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Memory leak test"))
-                                .thenReturn(Arrays.asList( // 정상 동작
-                                                new UserDto("memoryLeakUser", "메모리 누수 테스트 사용자", "USR001", null, null,
+                                .thenReturn(Arrays.asList( // ?�상 ?�작
+                                                new UserDto("memoryLeakUser", "메모�??�수 ?�스???�용??, "USR001", null, null,
                                                                 null, null)));
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
@@ -490,7 +490,7 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
                 // TODO: Verify memory usage stability in Phase 1
                 // long memoryAfterFailure = Runtime.getRuntime().freeMemory();
 
-                // When & Then - 두 번째 요청 (정상 동작)
+                // When & Then - ??번째 ?�청 (?�상 ?�작)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -507,26 +507,26 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 정상적인 요청 처리 테스트")
+        @DisplayName("?�애 발생 ???�상?�인 ?�청 처리 ?�스??)
         void normalRequestProcessing_afterFailure() throws Exception {
-                // Given - 여러 요청 처리 후 장애 발생
+                // Given - ?�러 ?�청 처리 ???�애 발생
                 when(userService.getUserById("normalUser"))
-                                .thenReturn(new UserDto("normalUser", "정상 사용자", "USR001", null, null, null, null))
+                                .thenReturn(new UserDto("normalUser", "?�상 ?�용??, "USR001", null, null, null, null))
                                 .thenThrow(new RuntimeException("Temporary failure"))
-                                .thenReturn(new UserDto("recoveredUser", "복구된 사용자", "USR002", null, null, null, null));
+                                .thenReturn(new UserDto("recoveredUser", "복구???�용??, "USR002", null, null, null, null));
 
-                // When & Then - 첫 번째 요청 (정상)
+                // When & Then - �?번째 ?�청 (?�상)
                 mockMvc.perform(get("/api/v1/users/normalUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.data.userId").value("normalUser"));
 
-                // When & Then - 두 번째 요청 (장애 발생)
+                // When & Then - ??번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users/normalUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 세 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users/recoveredUser")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
@@ -534,20 +534,20 @@ public class FaultRecoveryFunctionTest { // Changed to public for better visibil
         }
 
         @Test
-        @DisplayName("장애 발생 후 비동기 작업 정상 처리 테스트")
+        @DisplayName("?�애 발생 ??비동�??�업 ?�상 처리 ?�스??)
         void asyncTaskProcessing_afterFailure() throws Exception {
                 // Given
                 when(userService.getUserList())
                                 .thenThrow(new RuntimeException("Async failure"))
-                                .thenReturn(Arrays.asList( // 복구 후 정상 동작
-                                                new UserDto("asyncUser", "비동기 사용자", "USR001", null, null, null, null)));
+                                .thenReturn(Arrays.asList( // 복구 ???�상 ?�작
+                                                new UserDto("asyncUser", "비동�??�용??, "USR001", null, null, null, null)));
 
-                // When & Then - 첫 번째 요청 (장애 발생)
+                // When & Then - �?번째 ?�청 (?�애 발생)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isInternalServerError());
 
-                // When & Then - 두 번째 요청 (정상 복구)
+                // When & Then - ??번째 ?�청 (?�상 복구)
                 mockMvc.perform(get("/api/v1/users")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())

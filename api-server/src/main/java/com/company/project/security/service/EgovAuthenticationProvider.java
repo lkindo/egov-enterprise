@@ -1,8 +1,8 @@
 package com.company.project.security.service;
 
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.uat.uia.service.EgovLoginService;
 import org.springframework.context.annotation.Lazy;
@@ -36,7 +36,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
 
-        // 1. 사용자 존재 여부 및 잠금 상태 먼저 확인
+        // 1. ?�용??존재 ?��? �??�금 ?�태 먼�? ?�인
         User userEntity = userRepository.findById(userId)
                 .orElseGet(() -> userRepository.findByEsntlId(userId)
                         .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
@@ -51,7 +51,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             LoginVO resultVO = loginService.actionLogin(loginVO);
 
             if (resultVO != null && resultVO.getId() != null && !resultVO.getId().isEmpty()) {
-                // 로그인 성공 시 잠금 횟수 초기화
+                // 로그???�공 ???�금 ?�수 초기??
                 userEntity.unlock();
                 userRepository.save(userEntity);
 
@@ -66,7 +66,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
 
                 return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
             } else {
-                // 로그인 실패 시 잠금 횟수 증가
+                // 로그???�패 ???�금 ?�수 증�?
                 userEntity.incrementLockCount();
                 userRepository.save(userEntity);
                 throw new BadCredentialsException("Invalid User ID or Password");
@@ -74,7 +74,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         } catch (BadCredentialsException e) {
             throw e;
         } catch (Exception e) {
-            // 기타 예외 발생 시에도 계정 보호를 위해 실패 처리 고려 가능 (현재는 로깅 후 재투척)
+            // 기�? ?�외 발생 ?�에??계정 보호�??�해 ?�패 처리 고려 가??(?�재??로깅 ???�투�?
             throw new BadCredentialsException("Authentication failed: " + e.getMessage(), e);
         }
     }

@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.company.project.domain.addressbook.QAddressBook.addressBook;
-import static com.company.project.domain.user.QUser.user;
-import static com.company.project.domain.user.QEnterpriseUser.enterpriseUser;
+import static com.company.project.domain.user.entity.QUser.user;
+import static com.company.project.domain.user.entity.QEnterpriseUser.enterpriseUser;
 
 @RequiredArgsConstructor
 public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
@@ -39,9 +39,9 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 List<AddressBook> content = queryFactory
                                 .selectFrom(addressBook)
                                 .where(addressBook.useAt.eq("Y")
-                                                .and(addressBook.othbcScope.eq("회사")
+                                                .and(addressBook.othbcScope.eq("?�사")
                                                                 .or(addressBook.wrterId.eq(userId))
-                                                                .or(addressBook.othbcScope.eq("부서")
+                                                                .or(addressBook.othbcScope.eq("부??)
                                                                                 .and(addressBook.trgetOrgnztId
                                                                                                 .eq(orgnztId)))),
                                                 searchPredicate)

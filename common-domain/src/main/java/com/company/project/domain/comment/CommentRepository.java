@@ -8,11 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.nttId = :nttId AND c.useAt = 'Y'")
+    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.nttId = :nttId")
     Page<Comment> findByBbsIdAndNttId(@Param("bbsId") String bbsId, @Param("nttId") Long nttId, Pageable pageable);
-
-    @Query("SELECT MAX(c.id) FROM Comment c")
-    Long findMaxId();
 
     Page<Comment> findByCommentCnContaining(String commentCn, Pageable pageable);
 }

@@ -39,19 +39,13 @@ public class CommentServiceImpl implements CommentService {
         @Override
         @Transactional
         public Long createComment(String userId, String userNm, CommentSaveRequest request) {
-                Long nextId = commentRepository.findMaxId();
-                nextId = (nextId == null) ? 1L : nextId + 1;
-
                 Comment comment = Comment.builder()
-                                .id(nextId)
                                 .nttId(request.getNttId())
                                 .bbsId(request.getBbsId())
                                 .wrterId(userId)
                                 .wrterNm(userNm)
                                 .password(request.getPassword())
                                 .commentCn(request.getCommentCn())
-                                .useAt("Y")
-                                .frstRegisterId(userId)
                                 .build();
 
                 return Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))
@@ -64,7 +58,7 @@ public class CommentServiceImpl implements CommentService {
                 Comment comment = commentRepository.findById(Objects.requireNonNull(id))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                comment.update(request.getCommentCn(), userId);
+                comment.update(request.getCommentCn());
         }
 
         @Override
@@ -73,7 +67,7 @@ public class CommentServiceImpl implements CommentService {
                 Comment comment = commentRepository.findById(Objects.requireNonNull(id))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                comment.delete(userId);
+                comment.delete();
         }
 
         private CommentDto convertToDto(Comment entity) {

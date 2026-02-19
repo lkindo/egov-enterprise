@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.company.project.domain.login.QLoginPolicy.loginPolicy;
-import static com.company.project.domain.user.QUser.user;
+import static com.company.project.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class LoginPolicyRepositoryImpl implements LoginPolicyRepositoryCustom {

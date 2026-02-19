@@ -22,8 +22,8 @@ import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 
 import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.sym.mnu.mcm.service.EgovMenuCreateManageService;
@@ -32,9 +32,9 @@ import egovframework.com.sym.mnu.mcm.service.MenuSiteMapVO;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 메뉴목록, 사이트맵 생성을 처리하는 비즈니스 구현 클래스를 정의한다.
+ * 메뉴목록, ?�이?�맵 ?�성??처리?�는 비즈?�스 구현 ?�래?��? ?�의?�다.
  * 
- * @author 개발환경 개발팀 이용
+ * @author 개발?�경 개발?� ?�용
  * @since 2009.06.01
  * @version 1.0
  */
@@ -49,7 +49,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	private final MenuRepository menuRepository;
 
 	/**
-	 * ID 존재여부를 조회
+	 * ID 존재?��?�?조회
 	 */
 	@Override
 	public int selectUsrByPk(ComDefaultVO vo) throws Exception {
@@ -57,7 +57,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성 내역을 조회
+	 * 메뉴?�성 ?�역??조회
 	 */
 	@Override
 	public List<EgovMap> selectMenuCreatList(MenuCreatVO vo) throws Exception {
@@ -73,12 +73,12 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 화면에 조회된 메뉴정보로 메뉴생성내역 데이터베이스에서 입력
+	 * ?�면??조회??메뉴?�보�?메뉴?�성?�역 ?�이?�베?�스?�서 ?�력
 	 */
 	@Override
 	@Transactional
 	public void insertMenuCreatList(String checkedAuthorForInsert, String checkedMenuNoForInsert) throws Exception {
-		// 이전에 존재하는 권한코드에 대한 메뉴설정내역 삭제
+		// ?�전??존재?�는 권한코드???�??메뉴?�정?�역 ??��
 		menuAuthorityRepository.deleteByIdAuthorCode(checkedAuthorForInsert);
 
 		String[] insertMenuNo = checkedMenuNoForInsert.split(",");
@@ -94,7 +94,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성관리 목록을 조회
+	 * 메뉴?�성관�?목록??조회
 	 */
 	@Override
 	public List<EgovMap> selectMenuCreatManagList(ComDefaultVO vo) throws Exception {
@@ -114,7 +114,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * ID에 대한 권한코드를 조회
+	 * ID???�??권한코드�?조회
 	 */
 	@Override
 	public MenuCreatVO selectAuthorByUsr(ComDefaultVO vo) throws Exception {
@@ -133,7 +133,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성관리 총건수를 조회한다.
+	 * 메뉴?�성관�?총건?��? 조회?�다.
 	 */
 	@Override
 	public int selectMenuCreatManagTotCnt(ComDefaultVO vo) throws Exception {
@@ -143,7 +143,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성 사이트맵 내용 조회
+	 * 메뉴?�성 ?�이?�맵 ?�용 조회
 	 */
 	@Override
 	public List<EgovMap> selectMenuCreatSiteMapList(MenuSiteMapVO vo) throws Exception {
@@ -159,7 +159,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 사용자 권한별 사이트맵 내용 조회
+	 * ?�용??권한�??�이?�맵 ?�용 조회
 	 */
 	@Override
 	public List<?> selectSiteMapByUser(MenuSiteMapVO vo) throws Exception {

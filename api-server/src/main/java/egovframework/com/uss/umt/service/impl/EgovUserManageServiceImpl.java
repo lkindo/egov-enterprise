@@ -19,28 +19,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
-import com.company.project.domain.user.GeneralUserRepository;
-import com.company.project.domain.user.EnterpriseUserRepository;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.domain.user.repository.GeneralUserRepository;
+import com.company.project.domain.user.repository.EnterpriseUserRepository;
 
 /**
- * 사용자관리에 관한 비지니스 클래스를 정의한다.
+ * ?�용?��?리에 관??비�??�스 ?�래?��? ?�의?�다.
  * 
- * @author 공통서비스 개발팀 조재영
+ * @author 공통?�비??개발?� 조재??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 개정?�력(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?�정??     ?�정??          ?�정?�용
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
- *   2014.12.08	 이기하			암호화방식 변경(EgovFileScrty.encryptPassword)
- *   2017.07.21  장동한 			로그인인증제한 작업
+ *   2009.04.10  조재??         최초 ?�성
+ *   2014.12.08	 ?�기??		?�호?�방??변�?EgovFileScrty.encryptPassword)
+ *   2017.07.21  ?�동??			로그?�인증제???�업
  *
  *      </pre>
  */
@@ -98,11 +98,11 @@ public class EgovUserManageServiceImpl extends EgovAbstractServiceImpl implement
 			if (esntlId.length() == 0)
 				continue;
 
-			if ("USR03".equals(type)) { // 업무사용자
+			if ("USR03".equals(type)) { // ?�무?�용??
 				userIds.add(esntlId);
-			} else if ("USR01".equals(type)) { // 일반회원
+			} else if ("USR01".equals(type)) { // ?�반?�원
 				generalUserIds.add(esntlId);
-			} else if ("USR02".equals(type)) { // 기업회원
+			} else if ("USR02".equals(type)) { // 기업?�원
 				enterpriseUserIds.add(esntlId);
 			}
 		}

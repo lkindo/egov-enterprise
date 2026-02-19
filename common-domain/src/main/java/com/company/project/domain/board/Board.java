@@ -1,18 +1,13 @@
 package com.company.project.domain.board;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -23,12 +18,18 @@ import java.util.Objects;
 @Entity
 @Table(name = "NBBS")
 @EntityListeners(AuditingEntityListener.class)
+@SQLRestriction("use_at = 'Y'")
 public class Board implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @EmbeddedId
-    @NonNull
-    private BoardId id;
+    @jakarta.persistence.Id
+    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.SEQUENCE, generator = "nttIdSeq")
+    @jakarta.persistence.SequenceGenerator(name = "nttIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
+    @Column(name = "NTT_ID")
+    private Long nttId;
+
+    @Column(name = "BBS_ID", nullable = false)
+    private String bbsId;
 
     @Column(name = "NTT_NO")
     private Long nttNo;
@@ -78,19 +79,21 @@ public class Board implements Serializable {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
+    @CreatedBy
+    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
     private String frstRegisterId;
 
+    @LastModifiedBy
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     private String lastUpdusrId;
 
     @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false, nullable = true)
-    private LocalDateTime createdDate = LocalDateTime.now();
+    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
+    private LocalDateTime createdDate;
 
     @LastModifiedDate
-    @Column(name = "LAST_UPDT_PNTTM", nullable = true)
-    private LocalDateTime modifiedDate = LocalDateTime.now();
+    @Column(name = "LAST_UPDT_PNTTM")
+    private LocalDateTime modifiedDate;
 
     @Column(name = "SECRET_AT", length = 1)
     private String secretAt;
@@ -101,23 +104,12 @@ public class Board implements Serializable {
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
-    // Helper methods for easy access
-    @NonNull
-    public String getBbsId() {
-        return id.getBbsId();
-    }
-
-    @NonNull
-    public Long getNttId() {
-        return id.getNttId();
-    }
-
     @Builder
-    public Board(@NonNull Long nttId, @NonNull String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
+    public Board(String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
             Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
             String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
-            String atchFileId, String frstRegisterId) {
-        this.id = new BoardId(Objects.requireNonNull(nttId), Objects.requireNonNull(bbsId));
+            String atchFileId) {
+        this.bbsId = Objects.requireNonNull(bbsId);
         this.nttNo = nttNo;
         this.nttSj = nttSj;
         this.nttCn = nttCn;
@@ -133,11 +125,10 @@ public class Board implements Serializable {
         this.ntcrNm = ntcrNm;
         this.password = password;
         this.atchFileId = atchFileId;
-        this.frstRegisterId = frstRegisterId;
     }
 
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
-            String ntceEndde, String atchFileId, String lastUpdusrId) {
+            String ntceEndde, String atchFileId) {
         this.nttSj = nttSj;
         this.nttCn = nttCn;
         this.ntcrId = ntcrId;
@@ -146,12 +137,10 @@ public class Board implements Serializable {
         this.ntceBgnde = ntceBgnde;
         this.ntceEndde = ntceEndde;
         this.atchFileId = atchFileId;
-        this.lastUpdusrId = lastUpdusrId;
     }
 
-    public void delete(String authorId) {
+    public void delete() {
         this.useAt = "N";
-        this.lastUpdusrId = authorId;
     }
 
     public void increaseInqireCo() {

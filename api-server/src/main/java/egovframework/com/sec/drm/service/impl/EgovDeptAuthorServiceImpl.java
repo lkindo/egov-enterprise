@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.company.project.domain.auth.DeptAuthorProjection;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.DeptManage;
-import com.company.project.domain.user.DeptManageRepository;
+import com.company.project.domain.user.entity.DeptManage;
+import com.company.project.domain.user.repository.DeptManageRepository;
 
 import egovframework.com.sec.drm.service.DeptAuthor;
 import egovframework.com.sec.drm.service.DeptAuthorVO;
@@ -22,7 +22,7 @@ import egovframework.com.sec.drm.service.EgovDeptAuthorService;
 import jakarta.annotation.Resource;
 
 /**
- * 부서권한에 관한 ServiceImpl 클래스를 정의한다. (Modernized)
+ * 부?�권?�에 관??ServiceImpl ?�래?��? ?�의?�다. (Modernized)
  */
 @Service("egovDeptAuthorService")
 public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implements EgovDeptAuthorService {
@@ -34,7 +34,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     private DeptManageRepository deptManageRepository;
 
     /**
-     * 부서별 할당된 권한목록 조회
+     * 부?�별 ?�당??권한목록 조회
      */
     @Override
     @Transactional(readOnly = true)
@@ -47,7 +47,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 부서에 해당하는 사용자에게 시스템 메뉴/접근권한을 일괄 할당
+     * 부?�에 ?�당?�는 ?�용?�에�??�스??메뉴/?�근권한???�괄 ?�당
      */
     @Override
     @Transactional
@@ -60,7 +60,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 부서별 시스템 메뉴 접근권한을 수정
+     * 부?�별 ?�스??메뉴 ?�근권한???�정
      */
     @Override
     @Transactional
@@ -71,7 +71,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 불필요한 부서권한 삭제
+     * 불필?�한 부?�권????��
      */
     @Override
     @Transactional
@@ -80,7 +80,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 부서권한 목록조회 카운트
+     * 부?�권??목록조회 카운??
      */
     @Override
     @Transactional(readOnly = true)
@@ -91,7 +91,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 부서목록 조회
+     * 부?�목�?조회
      */
     @Override
     @Transactional(readOnly = true)
@@ -103,7 +103,7 @@ public class EgovDeptAuthorServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 부서 목록조회 카운트
+     * 부??목록조회 카운??
      */
     @Override
     @Transactional(readOnly = true)

@@ -2,8 +2,8 @@ package com.company.project.service.user;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.user.DeptManage;
-import com.company.project.domain.user.DeptManageRepository;
+import com.company.project.domain.user.entity.DeptManage;
+import com.company.project.domain.user.repository.DeptManageRepository;
 import com.company.project.service.user.dto.DeptManageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

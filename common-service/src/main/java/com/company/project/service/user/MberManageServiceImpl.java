@@ -2,8 +2,8 @@ package com.company.project.service.user;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.user.GeneralUser;
-import com.company.project.domain.user.GeneralUserRepository;
+import com.company.project.domain.user.entity.GeneralUser;
+import com.company.project.domain.user.repository.GeneralUserRepository;
 import com.company.project.service.user.dto.GeneralUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

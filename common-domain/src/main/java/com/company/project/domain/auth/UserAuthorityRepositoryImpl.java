@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.company.project.domain.auth.QUserAuthority.userAuthority;
-import static com.company.project.domain.user.QDeptManage.deptManage;
-import static com.company.project.domain.user.QUser.user;
+import static com.company.project.domain.user.entity.QDeptManage.deptManage;
+import static com.company.project.domain.user.entity.QUser.user;
 
 @RequiredArgsConstructor
 public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCustom {

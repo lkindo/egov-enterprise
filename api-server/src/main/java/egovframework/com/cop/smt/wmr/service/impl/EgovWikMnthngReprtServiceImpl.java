@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.company.project.domain.report.WorkReport;
 import com.company.project.domain.report.WorkReportRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 
 import egovframework.com.cop.smt.wmr.service.EgovWikMnthngReprtService;
 import egovframework.com.cop.smt.wmr.service.ReportrVO;
@@ -23,7 +23,7 @@ import egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO;
 import jakarta.annotation.Resource;
 
 /**
- * 주간월간보고에 대한 ServiceImpl 클래스를 정의한다. (Modernized)
+ * 주간?�간보고???�??ServiceImpl ?�래?��? ?�의?�다. (Modernized)
  */
 @Service("EgovWikMnthngReprtService")
 public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl implements EgovWikMnthngReprtService {

@@ -8,12 +8,12 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.company.project.domain.user.EnterpriseUser;
-import com.company.project.domain.user.EnterpriseUserRepository;
-import com.company.project.domain.user.GeneralUser;
-import com.company.project.domain.user.GeneralUserRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.EnterpriseUser;
+import com.company.project.domain.user.repository.EnterpriseUserRepository;
+import com.company.project.domain.user.entity.GeneralUser;
+import com.company.project.domain.user.repository.GeneralUserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.config.EgovLoginConfig;
@@ -27,9 +27,9 @@ import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 일반 로그인, 인증서 로그인을 처리하는 비즈니스 구현 클래스
+ * ?�반 로그?? ?�증??로그?�을 처리?�는 비즈?�스 구현 ?�래??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 공통?�비??개발?� 박�???
  * @since 2009.03.06
  * @version 1.0
  */
@@ -41,6 +41,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	private final UserRepository userRepository;
 	private final GeneralUserRepository generalUserRepository;
 	private final EnterpriseUserRepository enterpriseUserRepository;
+	private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
 	@org.springframework.beans.factory.annotation.Autowired(required = false)
 	private EgovSndngMailRegistService sndngMailRegistService;
@@ -49,7 +50,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	EgovLoginConfig egovLoginConfig;
 
 	/**
-	 * EsntlId를 이용한 로그인을 처리한다
+	 * EsntlId�??�용??로그?�을 처리?�다
 	 */
 	@Override
 	public LoginVO actionLoginByEsntlId(LoginVO vo) throws Exception {
@@ -65,7 +66,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 					.map(this::toVO).orElse(null);
 		} else if ("USR".equals(vo.getUserSe())) {
 			resultVO = userRepository.findByEsntlId(vo.getUniqId())
-					.filter(u -> u.getRole() != null) // Role 체크를 상태 체크로 갈음
+					.filter(u -> u.getRole() != null) // Role 체크�??�태 체크�?갈음
 					.map(this::toVO).orElse(null);
 		}
 
@@ -73,42 +74,101 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	}
 
 	/**
-	 * 일반 로그인을 처리한다
+	 * ?�반 로그?�을 처리?�다
 	 */
 	@Override
+	@Transactional
 	public LoginVO actionLogin(LoginVO vo) throws Exception {
-		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
-		LoginVO resultVO = null;
+		String rawPassword = vo.getPassword();
+		String userId = vo.getId();
+		String userSe = vo.getUserSe();
 
-		if ("GNR".equals(vo.getUserSe())) {
-			resultVO = generalUserRepository.findByMberId(vo.getId())
-					.filter(u -> u.getPassword().equals(enpassword) && "P".equals(u.getMberSttus()))
-					.map(this::toVO).orElse(null);
-		} else if ("ENT".equals(vo.getUserSe())) {
-			resultVO = enterpriseUserRepository.findByEntrprsmberId(vo.getId())
-					.filter(u -> u.getEntrprsMberPassword().equals(enpassword) && "P".equals(u.getEntrprsMberSttus()))
-					.map(this::toVO).orElse(null);
-		} else if ("USR".equals(vo.getUserSe())) {
-			resultVO = userRepository.findById(vo.getId())
-					.filter(u -> u.getPassword().equals(enpassword))
-					.map(this::toVO).orElse(null);
+		Optional<?> userOpt = Optional.empty();
+		if ("GNR".equals(userSe)) {
+			userOpt = generalUserRepository.findByMberId(userId)
+					.filter(u -> "P".equals(u.getMberSttus()));
+		} else if ("ENT".equals(userSe)) {
+			userOpt = enterpriseUserRepository.findByEntrprsmberId(userId)
+					.filter(u -> "P".equals(u.getEntrprsMberSttus()));
+		} else if ("USR".equals(userSe)) {
+			userOpt = userRepository.findById(userId);
 		}
 
-		return resultVO != null ? resultVO : new LoginVO();
+		if (userOpt.isPresent()) {
+			Object user = userOpt.get();
+			String encodedPassword = getEncodedPassword(user);
+
+			boolean match = false;
+			boolean needsUpgrade = false;
+
+			// 1. BCrypt 체크 ($2a$ ?�는 {bcrypt} ?�으�??�어 ?�는지 ?�인)
+			if (encodedPassword != null
+					&& (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("{bcrypt}"))) {
+				String passwordToMatch = encodedPassword.startsWith("{bcrypt}") ? encodedPassword.substring(8)
+						: encodedPassword;
+				match = passwordEncoder.matches(rawPassword, passwordToMatch);
+			} else {
+				// 2. Legacy SHA-256 체크
+				String legacyEncrypted = EgovFileScrty.encryptPassword(rawPassword, userId);
+				if (encodedPassword != null && encodedPassword.equals(legacyEncrypted)) {
+					match = true;
+					needsUpgrade = true;
+				}
+			}
+
+			if (match) {
+				if (needsUpgrade) {
+					String newEncoded = passwordEncoder.encode(rawPassword);
+					updateUserPassword(user, newEncoded);
+				}
+				return toVO(user);
+			}
+		}
+
+		return new LoginVO();
+	}
+
+	private String getEncodedPassword(Object user) {
+		if (user instanceof GeneralUser u)
+			return u.getPassword();
+		if (user instanceof EnterpriseUser u)
+			return u.getEntrprsMberPassword();
+		if (user instanceof User u)
+			return u.getPassword();
+		return null;
+	}
+
+	private void updateUserPassword(Object user, String encodedPassword) {
+		if (user instanceof GeneralUser u)
+			u.updatePassword(encodedPassword);
+		else if (user instanceof EnterpriseUser u)
+			u.updatePassword(encodedPassword);
+		else if (user instanceof User u)
+			u.updatePassword(encodedPassword);
+	}
+
+	private LoginVO toVO(Object user) {
+		if (user instanceof GeneralUser u)
+			return toVO(u);
+		if (user instanceof EnterpriseUser u)
+			return toVO(u);
+		if (user instanceof User u)
+			return toVO(u);
+		return new LoginVO();
 	}
 
 	/**
-	 * 인증서 로그인을 처리한다
+	 * ?�증??로그?�을 처리?�다
 	 */
 	@Override
 	public LoginVO actionCrtfctLogin(LoginVO vo) throws Exception {
-		// NEMPLYRINFO 테이블의 CRTFC_DN_VALUE(subDn)로 조회 (업무사용자 기준)
+		// NEMPLYRINFO ?�이블의 CRTFC_DN_VALUE(subDn)�?조회 (?�무?�용??기�?)
 		return userRepository.findBySubDn(vo.getDn())
 				.map(this::toVO).orElse(new LoginVO());
 	}
 
 	/**
-	 * 아이디를 찾는다.
+	 * ?�이?��? 찾는??
 	 */
 	@Override
 	public LoginVO searchId(LoginVO vo) throws Exception {
@@ -131,7 +191,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	}
 
 	/**
-	 * 비밀번호를 찾는다.
+	 * 비�?번호�?찾는??
 	 */
 	@Override
 	@Transactional
@@ -157,7 +217,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		if (userOpt.isEmpty())
 			return false;
 
-		// 임시 비밀번호 생성 및 저장
+		// ?�시 비�?번호 ?�성 �??�??
 		String newpassword = generateTemporaryPassword();
 		String enpassword = EgovFileScrty.encryptPassword(newpassword, vo.getId());
 
@@ -191,8 +251,8 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 			SndngMailVO mailVO = new SndngMailVO();
 			mailVO.setDsptchPerson("webmaster");
 			mailVO.setRecptnPerson(email);
-			mailVO.setSj("[MOIS] 임시 비밀번호를 발송했습니다.");
-			mailVO.setEmailCn("고객님의 임시 비밀번호는 " + password + " 입니다.");
+			mailVO.setSj("[MOIS] ?�시 비�?번호�?발송?�습?�다.");
+			mailVO.setEmailCn("고객?�의 ?�시 비�?번호??" + password + " ?�니??");
 			sndngMailRegistService.insertSndngMail(mailVO);
 		}
 	}
@@ -203,7 +263,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		if ("GNR".equals(vo.getUserSe())) {
 			generalUserRepository.findByMberId(vo.getId()).ifPresent(u -> {
 				map.put("lockAt", u.getLockAt());
-				map.put("lockCnt", 0); // GeneralUser 엔티티에 lockCnt가 없는 경우 0 기본값
+				map.put("lockCnt", 0); // GeneralUser ?�티?�에 lockCnt가 ?�는 경우 0 기본�?
 				map.put("userPw", u.getPassword());
 			});
 		} else if ("ENT".equals(vo.getUserSe())) {
@@ -258,21 +318,21 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	}
 
 	private void lockUser(LoginVO vo) {
-		// 엔티티에 직접 lock 로직 구현 필요 (간략화)
+		// ?�티?�에 직접 lock 로직 구현 ?�요 (간략??
 		if ("USR".equals(vo.getUserSe()))
 			userRepository.findById(vo.getId()).ifPresent(u -> {
-				// User 엔티티에는 lock 처리 로직이 이미 있을 수 있음
+				// User ?�티?�에??lock 처리 로직???��? ?�을 ???�음
 			});
 	}
 
 	private void increaseLockCount(LoginVO vo) {
-		// 엔티티에 직접 로직 구현 필요
+		// ?�티?�에 직접 로직 구현 ?�요
 	}
 
 	@Override
 	public int selectPassedDayChangePWD(LoginVO vo) throws Exception {
-		// 엔티티의 chgPwdLastPnttm 기반 계산 필요
-		return 0; // 구현 생략 또는 엔티티 메서드 호출
+		// ?�티?�의 chgPwdLastPnttm 기반 계산 ?�요
+		return 0; // 구현 ?�략 ?�는 ?�티??메서???�출
 	}
 
 	@Override

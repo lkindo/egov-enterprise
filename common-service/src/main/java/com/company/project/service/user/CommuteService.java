@@ -1,7 +1,7 @@
 package com.company.project.service.user;
 
-import com.company.project.domain.user.Commute;
-import com.company.project.domain.user.CommuteRepository;
+import com.company.project.domain.user.entity.Commute;
+import com.company.project.domain.user.repository.CommuteRepository;
 import com.company.project.service.user.dto.CommuteDto;
 import lombok.RequiredArgsConstructor;
 import java.util.Objects;
