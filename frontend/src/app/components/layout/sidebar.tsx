@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -15,9 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   UserCircle,
-  Bell,
   Database,
-  Search,
   BookOpen,
   ClipboardList,
   X
@@ -33,6 +31,7 @@ interface MenuItem {
   chkURL?: string;
   progrmFileNm?: string;
   children?: MenuItem[];
+  mappedUrl?: string;
 }
 
 const ICON_MAP: Record<string, any> = {
@@ -106,16 +105,16 @@ const mapLegacyUrl = (url: string) => {
   return url;
 };
 
-function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
+const NavItem = memo(({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   
   const hasChildren = item.children && item.children.length > 0;
   const Icon = ICON_MAP[item.menuNm] || (depth === 0 ? ICON_MAP['기본'] : null);
   
-  // Normalize and map href
-  const href = useMemo(() => mapLegacyUrl(item.chkURL || '#'), [item.chkURL]);
-  const isActive = pathname === href || (hasChildren && item.children?.some(child => mapLegacyUrl(child.chkURL || '#') === pathname));
+  // Use pre-calculated mappedUrl to avoid redundant parsing
+  const href = item.mappedUrl || '#';
+  const isActive = pathname === href || (hasChildren && item.children?.some(child => child.mappedUrl === pathname));
 
   useEffect(() => {
     if (isActive && hasChildren) {
@@ -165,7 +164,8 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
       )}
     </div>
   );
-}
+});
+NavItem.displayName = 'NavItem';
 
 export function Sidebar() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
@@ -182,9 +182,24 @@ export function Sidebar() {
             (headData.list || []).map(async (menu: any) => {
               try {
                 const leftData = await menuService.getLeftMenus(menu.menuNo);
-                return { ...menu, children: leftData && leftData.success ? leftData.list : [] };
+
+                // Pre-calculate mapped URLs for performance
+                const children = (leftData && leftData.success ? leftData.list : []).map((child: any) => ({
+                  ...child,
+                  mappedUrl: mapLegacyUrl(child.chkURL || '#')
+                }));
+
+                return {
+                  ...menu,
+                  mappedUrl: mapLegacyUrl(menu.chkURL || '#'),
+                  children
+                };
               } catch {
-                return { ...menu, children: [] };
+                return {
+                  ...menu,
+                  mappedUrl: mapLegacyUrl(menu.chkURL || '#'),
+                  children: []
+                };
               }
             })
           );
