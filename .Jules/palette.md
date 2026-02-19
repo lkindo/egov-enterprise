@@ -7,3 +7,7 @@
 ## 2025-05-19 - [Accessibility] Trend Indicators & Icon-Only Links
 **Learning:** Visual-only trend indicators (color + icon) completely exclude screen reader users from understanding key metrics. Using `role="img"` with a descriptive `aria-label` on the wrapper element allows us to provide rich context (e.g., "Increased by 12%") while keeping the UI clean.
 **Action:** For complex visual status indicators, wrap them in `role="img"` with a full text description in `aria-label` and hide the internal decorative icons from assistive technology. Always ensure icon-only links have descriptive `aria-label`s.
+
+## 2026-02-08 - [Accessibility] Core Navigation & Skip Links
+**Learning:** Modern SPAs often neglect the most fundamental accessibility feature: the "Skip to Content" link. Without it, keyboard users must tab through every header element on every page load. Also, icon-only buttons in headers (like hamburger menus and theme toggles) are frequent accessibility failures due to missing labels.
+**Action:** Ensure every layout template includes a skip link as the first focusable element. Systematically audit all icon-only buttons in global navigation components (Header/Sidebar) for missing `aria-label` attributes.

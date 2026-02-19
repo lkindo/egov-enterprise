@@ -147,6 +147,7 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className="w-full text-left"
+          aria-expanded={isOpen}
         >
           {content}
         </button>
@@ -227,6 +228,7 @@ export function Sidebar() {
             <button 
               onClick={() => setSidebarOpen(false)}
               className="p-2 hover:bg-accent rounded-full transition-colors"
+              aria-label="사이드바 닫기"
             >
               <X size={20} className="text-muted-foreground" />
             </button>

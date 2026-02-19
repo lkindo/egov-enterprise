@@ -35,7 +35,13 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden text-muted-foreground mr-1"
+          onClick={toggleSidebar}
+          aria-label={isSidebarOpen ? "모바일 메뉴 닫기" : "모바일 메뉴 열기"}
+        >
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
@@ -56,6 +62,7 @@ export function Header() {
           <Link 
             href="/help" 
             title="메뉴구성 설명"
+            aria-label="도움말"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
             <Info size={20} />
@@ -67,6 +74,7 @@ export function Header() {
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="text-muted-foreground"
             title="테마 변경"
+            aria-label={theme === 'dark' ? "라이트 모드로 전환" : "다크 모드로 전환"}
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </Button>
@@ -76,6 +84,7 @@ export function Header() {
             size="icon" 
             onClick={() => setIsNotifOpen(true)}
             className="relative text-muted-foreground"
+            aria-label="알림 열기"
           >
             <Bell size={20} />
             {unreadCount > 0 && (
