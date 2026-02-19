@@ -41,6 +41,20 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     @Override
+    public void init() {
+        try {
+            Files.createDirectories(rootLocation);
+        } catch (IOException e) {
+            log.error("Could not initialize storage location", e);
+        }
+    }
+
+    @Override
+    public String store(MultipartFile file) {
+        return store(file, "");
+    }
+
+    @Override
     public String store(MultipartFile file, String targetPath) {
         String originalFilename = StringUtils
                 .cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
@@ -93,6 +107,16 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     @Override
+    public void delete(String filename) {
+        try {
+            Path file = rootLocation.resolve(Objects.requireNonNull(filename));
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            log.error("Failed to delete file: {}", filename, e);
+        }
+    }
+
+    @Override
     public Stream<Path> loadAll(String targetPath) {
         try {
             Path path = rootLocation.resolve(Objects.requireNonNull(targetPath));
@@ -101,6 +125,38 @@ public class LocalFileStorageService implements FileStorageService {
                     .map(path::relativize);
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public Stream<Path> loadAll() {
+        return loadAll("");
+    }
+
+    @Override
+    public Path load(String filename) {
+        return rootLocation.resolve(Objects.requireNonNull(filename));
+    }
+
+    @Override
+    public Resource loadAsResource(String filename) {
+        return loadAsResource(filename, "");
+    }
+
+    @Override
+    public void deleteAll() {
+        try {
+            Files.walk(rootLocation)
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            log.error("Failed to delete file: {}", path, e);
+                        }
+                    });
+        } catch (IOException e) {
+            log.error("Failed to delete all files", e);
         }
     }
 }

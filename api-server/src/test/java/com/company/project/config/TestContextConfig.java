@@ -4,10 +4,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 
 @TestConfiguration
+@Profile("test")
 public class TestContextConfig {
 
     @Bean
@@ -21,6 +23,12 @@ public class TestContextConfig {
     @Primary
     public DataSource dataSource(org.springframework.boot.autoconfigure.jdbc.DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
+    }
+
+    @Bean(name = "egov.dataSource")
+    @Primary
+    public DataSource egovDataSource(DataSource dataSource) {
+        return dataSource;
     }
 
     @Bean(name = "entityManagerFactory")

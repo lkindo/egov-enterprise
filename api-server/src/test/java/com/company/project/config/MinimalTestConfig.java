@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
@@ -52,6 +53,7 @@ import javax.sql.DataSource;
         "egovframework.com"
 })
 @org.springframework.data.jpa.repository.config.EnableJpaAuditing(auditorAwareRef = "logInUserAuditorAware")
+@Profile("test")
 public class MinimalTestConfig {
 
     @Bean
