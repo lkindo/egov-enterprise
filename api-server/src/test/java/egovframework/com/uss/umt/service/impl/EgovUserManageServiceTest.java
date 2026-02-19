@@ -1,8 +1,8 @@
 package egovframework.com.uss.umt.service.impl;
 
-import com.company.project.domain.user.EnterpriseUserRepository;
-import com.company.project.domain.user.GeneralUserRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.repository.EnterpriseUserRepository;
+import com.company.project.domain.user.repository.GeneralUserRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

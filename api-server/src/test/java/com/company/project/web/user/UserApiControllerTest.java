@@ -2,7 +2,7 @@ package com.company.project.web.user;
 
 import com.company.project.api.controller.UserController;
 import com.company.project.api.common.exception.GlobalExceptionHandler;
-import com.company.project.domain.user.Role;
+import com.company.project.domain.user.entity.Role;
 import com.company.project.security.jwt.JwtTokenProvider;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import com.company.project.service.menu.MenuService;
@@ -85,7 +85,7 @@ class UserApiControllerTest {
         private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
 
         @Test
-        @DisplayName("사용자 목록 조회 - 관리자")
+        @DisplayName("?�용??목록 조회 - 관리자")
         void getUserList_admin() throws Exception {
                 // Given
                 when(jwtTokenProvider.validateToken(any())).thenReturn(true);
@@ -100,16 +100,16 @@ class UserApiControllerTest {
         }
 
         @Test
-        @DisplayName("회원가입 - 성공")
+        @DisplayName("?�원가??- ?�공")
         void signup_success() throws Exception {
                 // Given
-                UserResponse mockResponse = new UserResponse("newUser", "새 사용자", Role.USER);
+                UserResponse mockResponse = new UserResponse("newUser", "???�용??, Role.USER);
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
                 Map<String, Object> request = Map.of(
                                 "userId", "newUser",
                                 "password", "password123",
-                                "userNm", "새 사용자",
+                                "userNm", "???�용??,
                                 "passwordHint", "hint",
                                 "passwordCnsr", "answer");
 
@@ -122,7 +122,7 @@ class UserApiControllerTest {
         }
 
         @Test
-        @DisplayName("회원가입 - 중복 사용자 ID (409)")
+        @DisplayName("?�원가??- 중복 ?�용??ID (409)")
         void signup_duplicateUserId() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -132,7 +132,7 @@ class UserApiControllerTest {
                 Map<String, Object> request = Map.of(
                                 "userId", "admin",
                                 "password", "password123",
-                                "userNm", "중복 사용자");
+                                "userNm", "중복 ?�용??);
 
                 // When & Then
                 mockMvc.perform(post("/api/v1/users/signup")

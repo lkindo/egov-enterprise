@@ -1,8 +1,8 @@
 package com.company.project.service.schedule;
 
 import com.company.project.domain.schedule.ScheduleRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import egovframework.com.cmm.ComDefaultVO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

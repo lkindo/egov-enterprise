@@ -5,9 +5,9 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
@@ -30,9 +30,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * JPA 기반 사용자 관리 서비스 구현체
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
- * - EgovAbstractServiceImpl 상속 및 EgovUserService 인터페이스 구현
+ * JPA 기반 ?�용??관�??�비??구현�?
+ * - ?�자?��??�레?�워??5.0 ?�환???�증 ?�건 충족
+ * - EgovAbstractServiceImpl ?�속 �?EgovUserService ?�터?�이??구현
  */
 @Service("egovUserService")
 @Transactional(readOnly = true)
@@ -52,7 +52,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 목록 조회
+         * ?�용??목록 조회
          */
         @Override
         @Cacheable(value = "users", key = "'userList'")
@@ -77,7 +77,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 목록 페이징 조회 구현
+         * ?�용??목록 ?�이�?조회 구현
          */
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
@@ -107,7 +107,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 상세 조회
+         * ?�용???�세 조회
          */
         @Override
         @Cacheable(value = "users", key = "#id")
@@ -129,7 +129,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 등록 (비밀번호 암호화 적용)
+         * ?�용???�록 (비�?번호 ?�호???�용)
          */
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
@@ -154,7 +154,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 정보 수정
+         * ?�용???�보 ?�정
          */
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
@@ -189,7 +189,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 비밀번호 변경
+         * 비�?번호 변�?
          */
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
@@ -204,7 +204,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 삭제
+         * ?�용????��
          */
         @Override
         @Transactional
@@ -217,7 +217,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 회원가입 (기존 API 호환성, 비밀번호 암호화 적용)
+         * ?�용???�원가??(기존 API ?�환?? 비�?번호 ?�호???�용)
          */
         @Override
         @Transactional
@@ -247,7 +247,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 비밀번호 검증
+         * 비�?번호 검�?
          */
         @Override
         public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {

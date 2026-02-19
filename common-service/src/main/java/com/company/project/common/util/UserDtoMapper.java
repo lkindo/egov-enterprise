@@ -1,17 +1,17 @@
 package com.company.project.common.util;
 
-import com.company.project.domain.user.User;
+import com.company.project.domain.user.entity.User;
 import java.util.Objects;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserManageDto;
 
 /**
- * 사용자 관련 DTO 매핑 유틸리티 클래스
+ * ?�용??관??DTO 매핑 ?�틸리티 ?�래??
  */
 public class UserDtoMapper {
 
     /**
-     * User 엔티티를 UserDto로 변환
+     * User ?�티?��? UserDto�?변??
      */
     public static UserDto toUserDto(User user) {
         if (user == null) {
@@ -28,7 +28,7 @@ public class UserDtoMapper {
     }
 
     /**
-     * User 엔티티를 UserManageDto로 변환
+     * User ?�티?��? UserManageDto�?변??
      */
     public static UserManageDto toUserManageDto(User user) {
         if (user == null) {
@@ -60,7 +60,7 @@ public class UserDtoMapper {
     }
 
     /**
-     * UserManageDto를 User 엔티티로 변환 (필요시 패스워드 인코딩 등 추가 로직 포함)
+     * UserManageDto�?User ?�티?�로 변??(?�요???�스?�드 ?�코????추�? 로직 ?�함)
      */
     public static User toUserEntity(UserManageDto dto) {
         if (dto == null) {

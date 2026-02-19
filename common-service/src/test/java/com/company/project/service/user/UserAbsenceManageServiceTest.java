@@ -1,9 +1,9 @@
 package com.company.project.service.user;
 
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserAbsence;
-import com.company.project.domain.user.UserAbsenceRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.entity.UserAbsence;
+import com.company.project.domain.user.repository.UserAbsenceRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserAbsenceDto;
 import egovframework.com.cmm.ComDefaultVO;
 import org.junit.jupiter.api.DisplayName;

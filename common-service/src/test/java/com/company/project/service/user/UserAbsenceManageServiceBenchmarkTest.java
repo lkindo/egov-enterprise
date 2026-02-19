@@ -1,8 +1,8 @@
 package com.company.project.service.user;
 
 import com.company.project.BenchmarkTestConfig;
-import com.company.project.domain.user.UserAbsence;
-import com.company.project.domain.user.UserAbsenceRepository;
+import com.company.project.domain.user.entity.UserAbsence;
+import com.company.project.domain.user.repository.UserAbsenceRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;

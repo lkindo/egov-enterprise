@@ -1,7 +1,7 @@
 package com.company.project.service.note;
 
 import com.company.project.domain.note.*;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.note.dto.NoteDto;
 import com.company.project.service.note.dto.NoteRecptnDto;
 import com.company.project.service.note.dto.NoteTrnsmitDto;

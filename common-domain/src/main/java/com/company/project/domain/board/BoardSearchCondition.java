@@ -11,6 +11,9 @@ public class BoardSearchCondition {
     private String searchWrd;
     private String useAt;
     private String frstRegisterId;
+    private java.time.LocalDateTime startDate;
+    private java.time.LocalDateTime endDate;
+    private String orderBy; // "date", "views", "comments"
 
     // Default constructor for cases where full initialization isn't needed
     // immediately

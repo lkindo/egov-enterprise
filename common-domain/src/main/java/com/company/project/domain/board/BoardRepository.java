@@ -9,21 +9,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 @Repository
-public interface BoardRepository extends JpaRepository<Board, BoardId>, BoardRepositoryCustom {
+public interface BoardRepository extends JpaRepository<Board, Long>, BoardRepositoryCustom {
         @Override
         @NonNull
-        Optional<Board> findById(@NonNull BoardId id);
+        Optional<Board> findById(@NonNull Long id);
 
         @Override
         @Transactional
-        void deleteById(@NonNull BoardId id);
+        void deleteById(@NonNull Long id);
 
-        @Query("SELECT COALESCE(MAX(b.id.nttId), 0) FROM Board b")
-        Long findMaxNttId();
-
-        @Query("SELECT COALESCE(MAX(b.sortOrdr), 0) FROM Board b WHERE b.id.bbsId = :bbsId")
+        @Query("SELECT COALESCE(MAX(b.sortOrdr), 0) FROM Board b WHERE b.bbsId = :bbsId")
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
 
-        @Query("SELECT COALESCE(MAX(b.nttNo), 0) FROM Board b WHERE b.id.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
+        @Query("SELECT COALESCE(MAX(b.nttNo), 0) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
         Long findMaxNttNo(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 }

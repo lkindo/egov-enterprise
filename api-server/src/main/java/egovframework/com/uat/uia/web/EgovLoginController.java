@@ -43,39 +43,39 @@ import com.gpki.servlet.GPKIHttpServletResponse;
 import com.gpki.servlet.GPKIHttpServletResponse;
 */
 
-import com.company.project.domain.user.User;
+import com.company.project.domain.user.entity.User;
 import com.company.project.security.service.CustomUserDetails;
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * 일반 로그인, 인증서 로그인을 처리하는 컨트롤러 클래스
+ * ?�반 로그?? ?�증??로그?�을 처리?�는 컨트롤러 ?�래??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 공통?�비??개발?� 박�???
  * @since 2009.03.06
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 개정?�력(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?�정??     ?�정??          ?�정?�용
  *  -------    --------    ---------------------------
- *   2009.03.06  박지욱          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.09.07  서준식          스프링 시큐리티 로그인 및 SSO 인증 로직을 필터로 분리
- *   2011.09.25  서준식          사용자 관리 컴포넌트 미포함에 대한 점검 로직 추가
- *   2011.09.27  서준식          인증서 로그인시 스프링 시큐리티 사용에 대한 체크 로직 추가
- *   2011.10.27  서준식          아이디 찾기 기능에서 사용자 리름 공백 제거 기능 추가
- *   2017.07.21  장동한          로그인인증제한 작업
- *   2018.10.26  신용호          로그인 화면에 message 파라미터 전달 수정
- *   2019.10.01  정진오          로그인 인증세션 추가
- *   2020.06.25  신용호          로그인 메시지 처리 수정
- *   2021.01.15  신용호          로그아웃시 권한 초기화 추가 : session 모드 actionLogout()
- *   2021.05.30  정진오          디지털원패스 처리하기 위해 로그인 화면에 인증방식 전달
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2023.06.09  김신해          NSR 보안조치 (GPKI 인증서 등록 OOB 방지)
- *   2024.10.29  이백행          불필요 형변환 제거 (request.getParameter("loginMessage"); loginService.selectLoginIncorrect(loginVO);)
- *   2025.07.31  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.06  박�???         최초 ?�성
+ *   2011.08.26  ?�진??         IncludedInfo annotation 추�?
+ *   2011.09.07  ?��???         ?�프�??�큐리티 로그??�?SSO ?�증 로직???�터�?분리
+ *   2011.09.25  ?��???         ?�용??관�?컴포?�트 미포?�에 ?�???��? 로직 추�?
+ *   2011.09.27  ?��???         ?�증??로그?�시 ?�프�??�큐리티 ?�용???�??체크 로직 추�?
+ *   2011.10.27  ?��???         ?�이??찾기 기능?�서 ?�용??리름 공백 ?�거 기능 추�?
+ *   2017.07.21  ?�동??         로그?�인증제???�업
+ *   2018.10.26  ?�용??         로그???�면??message ?�라미터 ?�달 ?�정
+ *   2019.10.01  ?�진??         로그???�증?�션 추�?
+ *   2020.06.25  ?�용??         로그??메시지 처리 ?�정
+ *   2021.01.15  ?�용??         로그?�웃??권한 초기??추�? : session 모드 actionLogout()
+ *   2021.05.30  ?�진??         ?��??�원?�스 처리?�기 ?�해 로그???�면???�증방식 ?�달
+ *   2022.11.11  김?��?          ?�큐?�코??처리
+ *   2023.06.09  김?�해          NSR 보안조치 (GPKI ?�증???�록 OOB 방�?)
+ *   2024.10.29  ?�백??         불필???��????�거 (request.getParameter("loginMessage"); loginService.selectLoginIncorrect(loginVO);)
+ *   2025.07.31  ?�백??         2025??컨트리뷰??PMD�??�프?�웨??보안?�점 진단?�고 ?�거?�기-LocalVariableNamingConventions(final???�닌 변?�는 밑줄???�함?????�음)
  *
  *      </pre>
  */
@@ -123,13 +123,13 @@ public class EgovLoginController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovLoginController.class);
 
 	/**
-	 * 로그인 화면으로 들어간다
+	 * 로그???�면?�로 ?�어간다
 	 * 
-	 * @param vo - 로그인후 이동할 URL이 담긴 LoginVO
-	 * @return 로그인 페이지
+	 * @param vo - 로그?�후 ?�동??URL???�긴 LoginVO
+	 * @return 로그???�이지
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "로그인", listUrl = "/uat/uia/egovLoginUsr.do", order = 10, gid = 10)
+	@IncludedInfo(name = "로그??, listUrl = "/uat/uia/egovLoginUsr.do", order = 10, gid = 10)
 	@RequestMapping(value = { "/uat/uia/egovLoginUsr.do", "/uat/uia/EgovLoginUsr.do" })
 	public String loginUsrView(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) throws Exception {
@@ -137,7 +137,7 @@ public class EgovLoginController {
 			model.addAttribute("useMemberManage", "true");
 		}
 
-		// 권한체크시 에러 페이지 이동
+		// 권한체크???�러 ?�이지 ?�동
 		String authError = request.getParameter("auth_error") == null ? ""
 				: (String) request.getParameter("auth_error");
 		if (authError != null && authError.equals("1")) {
@@ -158,7 +158,7 @@ public class EgovLoginController {
 		 * }catch(Exception e){ return "cmm/error/egovError"; }
 		 */
 
-		// 2021.05.30, 정진오, 디지털원패스 처리하기 위해 로그인 화면에 인증방식 전달
+		// 2021.05.30, ?�진?? ?��??�원?�스 처리?�기 ?�해 로그???�면???�증방식 ?�달
 		String authType = EgovProperties.getProperty("Globals.Auth").trim();
 		model.addAttribute("authType", authType);
 
@@ -172,11 +172,11 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 일반(세션) 로그인을 처리한다
+	 * ?�반(?�션) 로그?�을 처리?�다
 	 * 
-	 * @param vo      - 아이디, 비밀번호가 담긴 LoginVO
-	 * @param request - 세션처리를 위한 HttpServletRequest
-	 * @return result - 로그인결과(세션정보)
+	 * @param vo      - ?�이?? 비�?번호가 ?�긴 LoginVO
+	 * @param request - ?�션처리�??�한 HttpServletRequest
+	 * @return result - 로그?�결�??�션?�보)
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/actionPing.do")
@@ -260,14 +260,14 @@ public class EgovLoginController {
 
 	@RequestMapping(value = "/uat/uia/actionSecurityProcess.do", method = RequestMethod.POST)
 	public void actionSecurityProcess(LoginVO resultVO, HttpServletRequest request, HttpServletResponse response) {
-		// 1. 인증 토큰 구성
+		// 1. ?�증 ?�큰 구성
 		UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken
 				.unauthenticated(resultVO.getUserSe().concat(resultVO.getId()), resultVO.getUniqId());
 
-		// 2. 인증 수행
+		// 2. ?�증 ?�행
 		Authentication authResult = authenticationManager.authenticate(token);
 
-		// 3. SecurityContext 저장
+		// 3. SecurityContext ?�??
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authResult);
 		SecurityContextHolder.setContext(context);
@@ -275,23 +275,23 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 인증서 로그인을 처리한다
+	 * ?�증??로그?�을 처리?�다
 	 * 
-	 * @param vo - 주민번호가 담긴 LoginVO
-	 * @return result - 로그인결과(세션정보)
+	 * @param vo - 주�?번호가 ?�긴 LoginVO
+	 * @return result - 로그?�결�??�션?�보)
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/actionCrtfctLogin.do", method = RequestMethod.POST)
 	public String actionCrtfctLogin(@ModelAttribute("loginVO") LoginVO loginVO, HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) throws Exception {
 
-		// 접속IP
+		// ?�속IP
 		String userIp = EgovClntInfo.getClntIP(request);
 		loginVO.setIp(userIp);
 		LOGGER.debug("User IP : {}", EgovWebUtil.removeCRLF(EgovStringUtil.isNullToString(userIp)));
 
 		/*
-		 * // 1. GPKI 인증 GPKIHttpServletResponse gpkiresponse = null;
+		 * // 1. GPKI ?�증 GPKIHttpServletResponse gpkiresponse = null;
 		 * GPKIHttpServletRequest gpkirequest = null; String dn = ""; try{ gpkiresponse
 		 * = new GPKIHttpServletResponse(response); gpkirequest = new
 		 * GPKIHttpServletRequest(request); gpkiresponse.setRequest(gpkirequest);
@@ -312,20 +312,20 @@ public class EgovLoginController {
 		 * gpkirequest.getSignType(); } queryString = gpkirequest.getQueryString();
 		 * }catch(Exception e){ return "cmm/egovError"; }
 		 * 
-		 * // 2. 업무사용자 테이블에서 dn값으로 사용자의 ID, PW를 조회하여 이를 일반로그인 형태로 인증하도록 함 if (dn != null
+		 * // 2. ?�무?�용???�이블에??dn값으�??�용?�의 ID, PW�?조회?�여 ?��? ?�반로그???�태�??�증?�도�???if (dn != null
 		 * && !dn.equals("")) {
 		 * 
 		 * loginVO.setDn(dn); LoginVO resultVO =
 		 * loginService.actionCrtfctLogin(loginVO); if (resultVO != null &&
 		 * resultVO.getId() != null && !resultVO.getId().equals("")) {
 		 * 
-		 * //스프링 시큐리티패키지를 사용하는지 체크하는 로직
+		 * //?�프�??�큐리티?�키지�??�용?�는지 체크?�는 로직
 		 * if(EgovComponentChecker.hasComponent("egovAuthorManageService")){ // 3-1.
-		 * spring security 연동 return "redirect:/j_spring_security_check?j_username=" +
+		 * spring security ?�동 return "redirect:/j_spring_security_check?j_username=" +
 		 * resultVO.getUserSe() + resultVO.getId() + "&j_password=" +
 		 * resultVO.getUniqId();
 		 * 
-		 * }else{ // 3-2. 로그인 정보를 세션에 저장 request.getSession().setAttribute("loginVO",
+		 * }else{ // 3-2. 로그???�보�??�션???�??request.getSession().setAttribute("loginVO",
 		 * resultVO); return "redirect:/uat/uia/actionMain.do"; }
 		 * 
 		 * 
@@ -339,10 +339,10 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 로그인 후 메인화면으로 들어간다
+	 * 로그????메인?�면?�로 ?�어간다
 	 * 
 	 * @param
-	 * @return 로그인 페이지
+	 * @return 로그???�이지
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/actionMain.do")
@@ -363,7 +363,7 @@ public class EgovLoginController {
 			user.setIp(EgovClntInfo.getClntIP(request));
 		}
 
-		// 221116 김혜준 2022 시큐어코딩 조치
+		// 221116 김?��? 2022 ?�큐?�코??조치
 		LOGGER.debug("User Id : {}", EgovStringUtil.isNullToString(user.getId()));
 
 		/*
@@ -378,7 +378,7 @@ public class EgovLoginController {
 		 * model.addAttribute("list_headmenu", list_headmenu);
 		 */
 
-		// 3. 메인 페이지 이동
+		// 3. 메인 ?�이지 ?�동
 		String mainPage = Globals.MAIN_PAGE;
 
 		LOGGER.debug("Globals.MAIN_PAGE > " + Globals.MAIN_PAGE);
@@ -393,18 +393,18 @@ public class EgovLoginController {
 		/*
 		 * if (main_page != null && !main_page.equals("")) {
 		 * 
-		 * // 3-1. 설정된 메인화면이 있는 경우 return main_page;
+		 * // 3-1. ?�정??메인?�면???�는 경우 return main_page;
 		 * 
 		 * } else {
 		 * 
-		 * // 3-2. 설정된 메인화면이 없는 경우 if (user.getUserSe().equals("USR")) { return
+		 * // 3-2. ?�정??메인?�면???�는 경우 if (user.getUserSe().equals("USR")) { return
 		 * "egovframework/com/EgovMainView"; } else { return
 		 * "egovframework/com/EgovMainViewG"; } }
 		 */
 	}
 
 	/**
-	 * 로그아웃한다.
+	 * 로그?�웃?�다.
 	 * 
 	 * @return String
 	 * @exception Exception
@@ -415,12 +415,12 @@ public class EgovLoginController {
 		/*
 		 * String userIp = EgovClntInfo.getClntIP(request);
 		 * 
-		 * // 1. Security 연동
+		 * // 1. Security ?�동
 		 * return "redirect:/j_spring_security_logout";
 		 */
 
 		request.getSession().setAttribute("loginVO", null);
-		// 세션모드인경우 Authority 초기화
+		// ?�션모드?�경??Authority 초기??
 		// List<String> authList =
 		// (List<String>)egovUserDetailsService.getAuthorities();
 		request.getSession().setAttribute("accessUser", null);
@@ -434,16 +434,16 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 아이디/비밀번호 찾기 화면으로 들어간다
+	 * ?�이??비�?번호 찾기 ?�면?�로 ?�어간다
 	 * 
 	 * @param
-	 * @return 아이디/비밀번호 찾기 페이지
+	 * @return ?�이??비�?번호 찾기 ?�이지
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/egovIdPasswordSearch.do")
 	public String idPasswordSearchView(ModelMap model) throws Exception {
 
-		// 1. 비밀번호 힌트 공통코드 조회
+		// 1. 비�?번호 ?�트 공통코드 조회
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM022");
 		List<CmmnDetailCode> code = cmmUseService.selectCmmCodeDetail(vo);
@@ -453,9 +453,9 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 인증서안내 화면으로 들어간다
+	 * ?�증?�안???�면?�로 ?�어간다
 	 * 
-	 * @return 인증서안내 페이지
+	 * @return ?�증?�안???�이지
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/egovGpkiIssu.do")
@@ -464,10 +464,10 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 아이디를 찾는다.
+	 * ?�이?��? 찾는??
 	 * 
-	 * @param vo - 이름, 이메일주소, 사용자구분이 담긴 LoginVO
-	 * @return result - 아이디
+	 * @param vo - ?�름, ?�메?�주?? ?�용?�구분이 ?�긴 LoginVO
+	 * @return result - ?�이??
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/searchId.do", method = RequestMethod.POST)
@@ -478,13 +478,13 @@ public class EgovLoginController {
 			return "egovframework/com/cmm/egovError";
 		}
 
-		// 1. 아이디 찾기
+		// 1. ?�이??찾기
 		loginVO.setName(loginVO.getName().replaceAll(" ", ""));
 		LoginVO resultVO = loginService.searchId(loginVO);
 
 		if (resultVO != null && resultVO.getId() != null && !resultVO.getId().equals("")) {
 
-			model.addAttribute("resultInfo", "아이디는 " + resultVO.getId() + " 입니다.");
+			model.addAttribute("resultInfo", "?�이?�는 " + resultVO.getId() + " ?�니??");
 			return "egovframework/com/uat/uia/EgovIdPasswordResult";
 		} else {
 			model.addAttribute("resultInfo", egovMessageSource.getMessage("fail.common.idsearch"));
@@ -493,16 +493,16 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 비밀번호를 찾는다.
+	 * 비�?번호�?찾는??
 	 * 
-	 * @param vo - 아이디, 이름, 이메일주소, 비밀번호 힌트, 비밀번호 정답, 사용자구분이 담긴 LoginVO
-	 * @return result - 임시비밀번호전송결과
+	 * @param vo - ?�이?? ?�름, ?�메?�주?? 비�?번호 ?�트, 비�?번호 ?�답, ?�용?�구분이 ?�긴 LoginVO
+	 * @return result - ?�시비�?번호?�송결과
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/searchPassword.do", method = RequestMethod.POST)
 	public String searchPassword(@ModelAttribute("loginVO") LoginVO loginVO, ModelMap model) throws Exception {
 
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 보안?�점 조치 (2018-10-29, ?�창??
 		if (loginVO == null || loginVO.getId() == null || loginVO.getId().equals("") && loginVO.getName() == null
 				|| "".equals(loginVO.getName()) && loginVO.getEmail() == null
 				|| loginVO.getEmail().equals("") && loginVO.getPasswordHint() == null
@@ -512,12 +512,12 @@ public class EgovLoginController {
 			return "egovframework/com/cmm/egovError";
 		}
 
-		// 1. 비밀번호 찾기
+		// 1. 비�?번호 찾기
 		boolean result = loginService.searchPassword(loginVO);
 
 		// 2. 결과 리턴
 		if (result) {
-			model.addAttribute("resultInfo", "임시 비밀번호를 발송하였습니다.");
+			model.addAttribute("resultInfo", "?�시 비�?번호�?발송?��??�니??");
 			return "egovframework/com/uat/uia/EgovIdPasswordResult";
 		} else {
 			model.addAttribute("resultInfo", egovMessageSource.getMessage("fail.common.pwsearch"));
@@ -526,8 +526,8 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 개발 시스템 구축 시 발급된 GPKI 서버용인증서에 대한 암호화데이터를 구한다.
-	 * 최초 한번만 실행하여, 암호화데이터를 EgovGpkiVariables.js의 ServerCert에 넣는다.
+	 * 개발 ?�스??구축 ??발급??GPKI ?�버?�인증서???�???�호?�데?�터�?구한??
+	 * 최초 ?�번�??�행?�여, ?�호?�데?�터�?EgovGpkiVariables.js??ServerCert???�는??
 	 * 
 	 * @return String
 	 * @exception Exception
@@ -540,34 +540,34 @@ public class EgovLoginController {
 		 * null; try { x509Cert = Disk.readCert(
 		 * "/product/jeus/egovProps/gpkisecureweb/certs/SVR1311000011_env.cer"); cert =
 		 * x509Cert.getCert(); Base64 base64 = new Base64(); base64cert =
-		 * base64.encode(cert); log.info("+++ Base64로 변환된 인증서는 : " + base64cert);
+		 * base64.encode(cert); log.info("+++ Base64�?변?�된 ?�증?�는 : " + base64cert);
 		 * 
 		 * } catch (GpkiApiException e) { e.printStackTrace(); }
 		 */
 	}
 
 	/**
-	 * 인증서 DN추출 팝업을 호출한다.
+	 * ?�증??DN추출 ?�업???�출?�다.
 	 * 
-	 * @return 인증서 등록 페이지
+	 * @return ?�증???�록 ?�이지
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/EgovGpkiRegist.do")
 	public String gpkiRegistView(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
-		/** GPKI 인증 부분 */
-		// OS에 따라 (local NT(로컬) / server Unix(서버)) 구분
+		/** GPKI ?�증 부�?*/
+		// OS???�라 (local NT(로컬) / server Unix(?�버)) 구분
 		String os = System.getProperty("os.arch");
 		LOGGER.debug("OS : {}", os);
 
 		// String virusReturn = null;
 
 		/*
-		 * // 브라우저 이름을 받기위한 처리 String webKind = EgovClntInfo.getClntWebKind(request);
+		 * // 브라?��? ?�름??받기?�한 처리 String webKind = EgovClntInfo.getClntWebKind(request);
 		 * String[] ss = webKind.split(" "); String browser = ss[1];
-		 * model.addAttribute("browser",browser); // -- 여기까지 if
-		 * (os.equalsIgnoreCase("x86")) { //Local Host TEST 진행중 } else { if
+		 * model.addAttribute("browser",browser); // -- ?�기까�? if
+		 * (os.equalsIgnoreCase("x86")) { //Local Host TEST 진행�?} else { if
 		 * (browser.equalsIgnoreCase("Explorer")) { GPKIHttpServletResponse gpkiresponse
 		 * = null; GPKIHttpServletRequest gpkirequest = null;
 		 * 
@@ -585,17 +585,17 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 인증서 DN값을 추출한다
+	 * ?�증??DN값을 추출?�다
 	 * 
-	 * @return result - dn값
+	 * @return result - dn�?
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/uat/uia/actionGpkiRegist.do", method = RequestMethod.POST)
 	public String actionGpkiRegist(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
-		/** GPKI 인증 부분 */
-		// OS에 따라 (local NT(로컬) / server Unix(서버)) 구분
+		/** GPKI ?�증 부�?*/
+		// OS???�라 (local NT(로컬) / server Unix(?�버)) 구분
 		String os = System.getProperty("os.arch");
 		LOGGER.debug("OS : {}", os);
 
@@ -603,11 +603,11 @@ public class EgovLoginController {
 		@SuppressWarnings("unused")
 		String dn = "";
 
-		// 브라우저 이름을 받기위한 처리
+		// 브라?��? ?�름??받기?�한 처리
 		String browser = EgovClntInfo.getClntWebKind(request);
 		model.addAttribute("browser", browser);
 		/*
-		 * // -- 여기까지 if (os.equalsIgnoreCase("x86")) { // Local Host TEST 진행중 } else {
+		 * // -- ?�기까�? if (os.equalsIgnoreCase("x86")) { // Local Host TEST 진행�?} else {
 		 * if (browser.equalsIgnoreCase("Explorer")) { GPKIHttpServletResponse
 		 * gpkiresponse = null; GPKIHttpServletRequest gpkirequest = null; try {
 		 * gpkiresponse = new GPKIHttpServletResponse(response); gpkirequest = new
@@ -629,8 +629,8 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 세션타임아웃 시간을 연장한다.
-	 * Cookie에 egovLatestServerTime, egovExpireSessionTime 기록하도록 한다.
+	 * ?�션?�?�아???�간???�장?�다.
+	 * Cookie??egovLatestServerTime, egovExpireSessionTime 기록?�도�??�다.
 	 * 
 	 * @return result - String
 	 * @exception Exception
@@ -646,8 +646,8 @@ public class EgovLoginController {
 	}
 
 	/**
-	 * 비밀번호 유효기간 팝업을 출력한다.
-	 * Cookie에 egovLatestServerTime, egovExpireSessionTime 기록하도록 한다.
+	 * 비�?번호 ?�효기간 ?�업??출력?�다.
+	 * Cookie??egovLatestServerTime, egovExpireSessionTime 기록?�도�??�다.
 	 * 
 	 * @return result - String
 	 * @exception Exception
@@ -655,7 +655,7 @@ public class EgovLoginController {
 	@RequestMapping(value = "/uat/uia/noticeExpirePwd.do")
 	public String noticeExpirePwd(@RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
 
-		// 설정된 비밀번호 유효기간을 가져온다. ex) 180이면 비밀번호 변경후 만료일이 앞으로 180일
+		// ?�정??비�?번호 ?�효기간??가?�온?? ex) 180?�면 비�?번호 변경후 만료?�이 ?�으�?180??
 		String propertyExpirePwdDay = EgovProperties.getProperty("Globals.ExpirePwdDay");
 		int expirePwdDay = 0;
 		try {
@@ -666,7 +666,7 @@ public class EgovLoginController {
 
 		model.addAttribute("expirePwdDay", expirePwdDay);
 
-		// 비밀번호 설정일로부터 몇일이 지났는지 확인한다. ex) 3이면 비빌번호 설정후 3일 경과
+		// 비�?번호 ?�정?�로부??몇일??지?�는지 ?�인?�다. ex) 3?�면 비빌번호 ?�정??3??경과
 		LoginVO loginVO = (LoginVO) egovUserDetailsService.getAuthenticatedUser();
 		model.addAttribute("loginVO", loginVO);
 		int passedDayChangePWD = 0;
@@ -674,13 +674,13 @@ public class EgovLoginController {
 			LOGGER.debug("===>>> loginVO.getId() = " + loginVO.getId());
 			LOGGER.debug("===>>> loginVO.getUniqId() = " + loginVO.getUniqId());
 			LOGGER.debug("===>>> loginVO.getUserSe() = " + loginVO.getUserSe());
-			// 비밀번호 변경후 경과한 일수
+			// 비�?번호 변경후 경과???�수
 			passedDayChangePWD = loginService.selectPassedDayChangePWD(loginVO);
 			LOGGER.debug("===>>> passedDayChangePWD = " + passedDayChangePWD);
 			model.addAttribute("passedDay", passedDayChangePWD);
 		}
 
-		// 만료일자로부터 경과한 일수 => ex)1이면 만료일에서 1일 경과
+		// 만료?�자로�???경과???�수 => ex)1?�면 만료?�에??1??경과
 		model.addAttribute("elapsedTimeExpiration", passedDayChangePWD - expirePwdDay);
 
 		return "egovframework/com/uat/uia/EgovExpirePwd";

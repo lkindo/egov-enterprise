@@ -21,7 +21,7 @@ import org.springframework.data.domain.Pageable;
 import com.company.project.domain.note.NoteRecptnDomainRepository;
 import com.company.project.domain.note.NoteTrnsmitDomainRepository;
 import com.company.project.domain.note.NoteDomainRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.domain.note.NoteRecptn;
 import com.company.project.domain.note.Note;
 import com.company.project.domain.note.NoteTrnsmit;

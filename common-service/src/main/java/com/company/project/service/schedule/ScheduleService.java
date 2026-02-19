@@ -4,8 +4,8 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.schedule.Schedule;
 import com.company.project.domain.schedule.ScheduleRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.schedule.dto.ScheduleDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +49,7 @@ public class ScheduleService implements EgovScheduleService {
 
     @Override
     public Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        // userId가 null이면 전체 조회? or 본인 것만?
+        // userId가 null?�면 ?�체 조회? or 본인 것만?
         // eGov standard logic: usually lists public schedules or own schedules.
         // Assuming strict private + dept scope, but for step 1, let's filter by
         // register/charger.

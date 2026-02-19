@@ -8,7 +8,7 @@ import com.company.project.domain.deptjob.DeptJobRepository;
 import com.company.project.domain.deptjob.DeptJobBoxRepository;
 // import com.company.project.domain.deptjob.QDeptJob;
 import com.company.project.domain.organization.OrganizationManageRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.deptjob.dto.DeptJobDto;
 import com.company.project.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
@@ -53,11 +53,11 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            if ("0".equals(searchCondition)) { // 부서업무명
+            if ("0".equals(searchCondition)) { // 부?�업무명
                 builder.and(deptJob.deptJobNm.contains(keyword));
-            } else if ("1".equals(searchCondition)) { // 부서업무내용
+            } else if ("1".equals(searchCondition)) { // 부?�업무내??
                 builder.and(deptJob.deptJobCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // 담당자명
+            } else if ("2".equals(searchCondition)) { // ?�당?�명
                 builder.and(deptJob.chargerId.contains(keyword));
             }
         }

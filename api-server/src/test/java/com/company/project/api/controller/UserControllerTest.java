@@ -4,7 +4,7 @@ import com.company.project.api.common.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
-import com.company.project.domain.user.Role;
+import com.company.project.domain.user.entity.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

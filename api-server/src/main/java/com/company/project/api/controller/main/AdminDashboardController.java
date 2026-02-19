@@ -3,7 +3,7 @@ package com.company.project.api.controller.main;
 import com.company.project.core.response.ApiResponse;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.domain.trouble.TroblRepository;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Admin Dashboard", description = "관리자 대시보드 API")
+@Tag(name = "Admin Dashboard", description = "관리자 ?�?�보??API")
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
@@ -26,32 +26,32 @@ public class AdminDashboardController {
     private final BoardRepository boardRepository;
     private final TroblRepository troblRepository;
 
-    @Operation(summary = "시스템 현황 요약 조회")
+    @Operation(summary = "?�스???�황 ?�약 조회")
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSystemSummary() {
         Map<String, Object> summary = new HashMap<>();
 
-        // 1. 총 사용자 수
+        // 1. �??�용????
         long totalUsers = userRepository.count();
         summary.put("totalUsers", totalUsers);
 
-        // 2. 오늘의 신규 가입자 (가상 로직: createdDate 기준)
-        // 실제로는 LocalDateTime.now()의 시작/끝으로 범위 검색 필요하나, 여기선 전체 카운트로 대체 (데모용)
+        // 2. ?�늘???�규 가?�자 (가??로직: createdDate 기�?)
+        // ?�제로는 LocalDateTime.now()???�작/?�으�?범위 검???�요?�나, ?�기???�체 카운?�로 ?��?(?�모??
         summary.put("newUsersToday", 0);
 
-        // 3. 미처리 장애 접수 (상태: R-접수)
-        // searchTroblReqsts 메서드 활용 (이름/종류 null, 상태 "R")
+        // 3. 미처�??�애 ?�수 (?�태: R-?�수)
+        // searchTroblReqsts 메서???�용 (?�름/종류 null, ?�태 "R")
         long pendingTroubles = troblRepository
                 .searchTroblReqsts(null, null, java.util.Collections.singletonList("R"), PageRequest.of(0, 1))
                 .getTotalElements();
         summary.put("pendingTroubles", pendingTroubles);
 
-        // 4. 총 게시글 수
+        // 4. �?게시글 ??
         long totalPosts = boardRepository.count();
         summary.put("totalPosts", totalPosts);
 
-        // 5. 시스템 가동 시간 (가상 데이터)
-        summary.put("systemUptime", "12일 4시간 30분");
+        // 5. ?�스??가???�간 (가???�이??
+        summary.put("systemUptime", "12??4?�간 30�?);
 
         return ResponseEntity.ok(ApiResponse.success(summary));
     }

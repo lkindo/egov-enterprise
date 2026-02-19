@@ -128,7 +128,8 @@ public class SecurityConfig {
                         .includeSubDomains(true)
                         .preload(true))
                 .cacheControl(Customizer.withDefaults())
-                .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
+                .referrerPolicy(referrer -> referrer.policy(
+                        org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
 
         // Add security headers for additional protection
         http.headers(headers -> headers

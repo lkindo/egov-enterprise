@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardAction } from
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, User, Calendar, Eye, ArrowLeft, Trash2, Home, ChevronRight, FileText, Share2, Printer } from "lucide-react";
+import CommentSection from "@/components/features/comment/CommentSection";
 
 interface BoardDetail {
     nttId: string;
@@ -167,6 +168,14 @@ const BBSDetailContent = () => {
                     </Link>
                 </CardFooter>
             </Card>
+
+            {/* Comment Section */}
+            {detail && (
+                <CommentSection
+                    nttId={parseInt(nttId)}
+                    bbsId={bbsId || ''}
+                />
+            )}
         </div>
     );
 };

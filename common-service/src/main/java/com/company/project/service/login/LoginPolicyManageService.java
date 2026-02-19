@@ -2,8 +2,8 @@ package com.company.project.service.login;
 
 import com.company.project.domain.login.LoginPolicy;
 import com.company.project.domain.login.LoginPolicyRepository;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.login.dto.LoginPolicyDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 로그인 정책 관리 서비스
+ * 로그???�책 관�??�비??
  */
 @Service("loginPolicyManageService")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     /**
-     * 로그인 정책 목록 조회
+     * 로그???�책 목록 조회
      */
     public List<LoginPolicyDto> selectLoginPolicyList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -57,14 +57,14 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그인 정책 목록 총 건수
+     * 로그???�책 목록 �?건수
      */
     public int selectLoginPolicyListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 로그인 정책 상세 조회
+     * 로그???�책 ?�세 조회
      */
     public LoginPolicyDto selectLoginPolicy(String emplyrId) {
         User user = userRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
@@ -89,7 +89,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그인 정책 등록
+     * 로그???�책 ?�록
      */
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
@@ -104,7 +104,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그인 정책 수정
+     * 로그???�책 ?�정
      */
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
@@ -114,7 +114,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그인 정책 삭제
+     * 로그???�책 ??��
      */
     @Transactional
     public void deleteLoginPolicy(String emplyrId) {

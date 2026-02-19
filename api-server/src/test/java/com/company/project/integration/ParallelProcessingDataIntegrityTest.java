@@ -1,8 +1,8 @@
 package com.company.project.integration;
 
 import com.company.project.config.MinimalTestConfig;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +61,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 사용자 등록 시 데이터 무결성 유지 테스트")
+    @DisplayName("병렬 ?�용???�록 ???�이??무결???��? ?�스??)
     void parallelUserRegistration_dataIntegrity_preserved() throws Exception {
         // Given
         int numberOfUsers = 10;
@@ -77,7 +77,7 @@ class ParallelProcessingDataIntegrityTest {
                             {
                                 "userId": "%s",
                                 "password": "password123!",
-                                "userNm": "병렬 사용자%s",
+                                "userNm": "병렬 ?�용??s",
                                 "passwordHint": "hint",
                                 "passwordCnsr": "answer",
                                 "role": "USER"
@@ -118,13 +118,13 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 사용자 조회 시 데이터 일관성 유지 테스트")
+    @DisplayName("병렬 ?�용??조회 ???�이???��????��? ?�스??)
     void parallelUserRetrieval_dataConsistency_maintained() throws Exception {
         // Given
         // Setup mock to return consistent data for all concurrent requests
         User mockUser = User.builder()
                 .userId("consistentUser")
-                .userNm("일관된 사용자")
+                .userNm("?��????�용??)
                 .esntlId("USR00001")
                 .build();
 
@@ -146,7 +146,7 @@ class ParallelProcessingDataIntegrityTest {
 
                     // Parse and return the user data
                     // In a real scenario, we would parse the JSON response
-                    return new UserDto("consistentUser", "일관된 사용자", "USR00001", null, null, null, null);
+                    return new UserDto("consistentUser", "?��????�용??, "USR00001", null, null, null, null);
                 } finally {
                     latch.countDown();
                 }
@@ -168,17 +168,17 @@ class ParallelProcessingDataIntegrityTest {
         // Verify that all results are consistent
         assertThat(results).hasSize(numberOfRequests);
         assertThat(results).allMatch(user -> "consistentUser".equals(user.getUserId()));
-        assertThat(results).allMatch(user -> "일관된 사용자".equals(user.getUserNm()));
+        assertThat(results).allMatch(user -> "?��????�용??.equals(user.getUserNm()));
     }
 
     @Test
-    @DisplayName("병렬 데이터 업데이트 시 경쟁 조건 발생하지 않음")
+    @DisplayName("병렬 ?�이???�데?�트 ??경쟁 조건 발생?��? ?�음")
     void parallelDataUpdate_raceCondition_prevented() throws Exception {
         // Given
         String userId = "raceConditionTestUser";
         User initialUser = User.builder()
                 .userId(userId)
-                .userNm("초기 사용자")
+                .userNm("초기 ?�용??)
                 .esntlId("USR00001")
                 .build();
 
@@ -199,7 +199,7 @@ class ParallelProcessingDataIntegrityTest {
                     String updateRequestBody = """
                             {
                                 "userId": "%s",
-                                "userNm": "업데이트된 사용자-%d"
+                                "userNm": "?�데?�트???�용??%d"
                             }
                             """.formatted(userId, index);
 
@@ -230,7 +230,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 사용자 생성 시 ID 중복 방지 테스트")
+    @DisplayName("병렬 ?�용???�성 ??ID 중복 방�? ?�스??)
     void parallelUserCreation_duplicateId_prevention() throws Exception {
         // Given
         String duplicateUserId = "duplicateUser";
@@ -253,7 +253,7 @@ class ParallelProcessingDataIntegrityTest {
                             {
                                 "userId": "%s",
                                 "password": "password123!",
-                                "userNm": "테스트 사용자%d",
+                                "userNm": "?�스???�용??d",
                                 "passwordHint": "hint",
                                 "passwordCnsr": "answer",
                                 "role": "USER"
@@ -297,14 +297,14 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 데이터베이스 읽기 작업 시 무결성 유지")
+    @DisplayName("병렬 ?�이?�베?�스 ?�기 ?�업 ??무결???��?")
     void parallelDatabaseRead_dataIntegrity_maintained() throws Exception {
         // Given
         // Prepare multiple users in the repository
         List<User> users = IntStream.range(0, 5)
                 .mapToObj(i -> User.builder()
                         .userId("readerUser" + i)
-                        .userNm("읽기 사용자" + i)
+                        .userNm("?�기 ?�용?? + i)
                         .esntlId("USR0000" + i)
                         .build())
                 .collect(Collectors.toList());
@@ -356,13 +356,13 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 트랜잭션 처리 시 격리 수준 유지")
+    @DisplayName("병렬 ?�랜??�� 처리 ??격리 ?��? ?��?")
     void parallelTransaction_isolationLevel_maintained() throws Exception {
         // Given
         String userId = "transactionUser";
         User initialUser = User.builder()
                 .userId(userId)
-                .userNm("초기 사용자")
+                .userNm("초기 ?�용??)
                 .esntlId("USR00001")
                 .build();
 
@@ -380,7 +380,7 @@ class ParallelProcessingDataIntegrityTest {
                     String updateRequestBody = """
                             {
                                 "userId": "%s",
-                                "userNm": "트랜잭션 사용자%d"
+                                "userNm": "?�랜??�� ?�용??d"
                             }
                             """.formatted(userId, index);
 
@@ -417,7 +417,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 사용자 삭제 시 데이터 무결성 유지")
+    @DisplayName("병렬 ?�용????�� ???�이??무결???��?")
     void parallelUserDeletion_dataIntegrity_maintained() throws Exception {
         // Given
         List<String> userIds = IntStream.range(0, 10)
@@ -428,7 +428,7 @@ class ParallelProcessingDataIntegrityTest {
         userIds.forEach(id -> {
             User user = User.builder()
                     .userId(id)
-                    .userNm("삭제 사용자" + id)
+                    .userNm("??�� ?�용?? + id)
                     .esntlId("USR0000" + id)
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(user));
@@ -476,7 +476,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 데이터 삽입 시 시퀀스 무결성 유지")
+    @DisplayName("병렬 ?�이???�입 ???�퀀??무결???��?")
     void parallelDataInsertion_sequenceIntegrity_maintained() throws Exception {
         // Given
         int numberOfInsertions = 15;
@@ -492,7 +492,7 @@ class ParallelProcessingDataIntegrityTest {
                             {
                                 "userId": "%s",
                                 "password": "password123!",
-                                "userNm": "시퀀스 사용자%d",
+                                "userNm": "?�퀀???�용??d",
                                 "passwordHint": "hint",
                                 "passwordCnsr": "answer",
                                 "role": "USER"
@@ -532,13 +532,13 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 사용자 정보 수정 시 동시성 제어 테스트")
+    @DisplayName("병렬 ?�용???�보 ?�정 ???�시???�어 ?�스??)
     void parallelUserInfoUpdate_concurrencyControl_test() throws Exception {
         // Given
         String userId = "concurrentUpdateUser";
         User originalUser = User.builder()
                 .userId(userId)
-                .userNm("원본 사용자")
+                .userNm("?�본 ?�용??)
                 .esntlId("USR00001")
                 .build();
 
@@ -557,7 +557,7 @@ class ParallelProcessingDataIntegrityTest {
                     String updateRequestBody = """
                             {
                                 "userId": "%s",
-                                "userNm": "동시성 테스트 사용자%d"
+                                "userNm": "?�시???�스???�용??d"
                             }
                             """.formatted(userId, index);
 
@@ -597,13 +597,13 @@ class ParallelProcessingDataIntegrityTest {
     /*
      * @Test
      * 
-     * @DisplayName("병렬 인증 요청 시 세션 무결성 유지")
+     * @DisplayName("병렬 ?�증 ?�청 ???�션 무결???��?")
      * void parallelAuthentication_sessionIntegrity_maintained() throws Exception {
      * }
      */
 
     @Test
-    @DisplayName("병렬 데이터베이스 쓰기 작업 시 ACID 속성 유지")
+    @DisplayName("병렬 ?�이?�베?�스 ?�기 ?�업 ??ACID ?�성 ?��?")
     void parallelDatabaseWrite_acidProperties_maintained() throws Exception {
         // Given
         int numberOfWrites = 10;
@@ -620,7 +620,7 @@ class ParallelProcessingDataIntegrityTest {
                             {
                                 "userId": "%s",
                                 "password": "password123!",
-                                "userNm": "ACID 테스트 사용자%d",
+                                "userNm": "ACID ?�스???�용??d",
                                 "passwordHint": "hint",
                                 "passwordCnsr": "answer",
                                 "role": "USER"
@@ -668,7 +668,7 @@ class ParallelProcessingDataIntegrityTest {
     /*
      * @Test
      * 
-     * @DisplayName("병렬 사용자 역할 변경 시 데이터 일관성 유지")
+     * @DisplayName("병렬 ?�용????�� 변�????�이???��????��?")
      * void parallelUserRoleChange_dataConsistency_maintained() throws Exception {
      * }
      */
@@ -676,7 +676,7 @@ class ParallelProcessingDataIntegrityTest {
     /*
      * @Test
      * 
-     * @DisplayName("병렬 파일 업로드 시 리소스 경쟁 없음")
+     * @DisplayName("병렬 ?�일 ?�로????리소??경쟁 ?�음")
      * void parallelFileUpload_resourceCompetition_absent() throws Exception {
      * }
      */

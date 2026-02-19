@@ -10,8 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.company.project.domain.user.DeptManage;
-import com.company.project.domain.user.DeptManageRepository;
+import com.company.project.domain.user.entity.DeptManage;
+import com.company.project.domain.user.repository.DeptManageRepository;
 
 import egovframework.com.uss.umt.service.DeptManageVO;
 import egovframework.com.uss.umt.service.EgovDeptManageService;
@@ -25,7 +25,7 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 
 	@Override
 	public List<DeptManageVO> selectDeptManageList(DeptManageVO deptManageVO) throws Exception {
-		// 단순 전체 조회 (페이징 없음) - Restored original behavior
+		// ?�순 ?�체 조회 (?�이�??�음) - Restored original behavior
 		List<DeptManage> entities = deptManageRepository.findAll(Sort.by(Sort.Direction.ASC, "orgnztId"));
 		return entities.stream().map(this::toVO).collect(Collectors.toList());
 	}

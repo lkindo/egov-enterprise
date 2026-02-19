@@ -2,9 +2,9 @@ package com.company.project.service.user;
 
 import com.company.project.constants.Constants;
 import com.company.project.common.util.UserDtoMapper;
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
-import com.company.project.domain.user.UserRepository;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserManageDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 사용자 관리 서비스
+ * ?�용??관�??�비??
  */
 @Service("projectUserManageService")
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class UserManageService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * 사용자 목록 조회
+     * ?�용??목록 조회
      */
     public List<UserManageDto> selectUserList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -46,14 +46,14 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 목록 총 건수
+     * ?�용??목록 �?건수
      */
     public int selectUserListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 사용자 상세 조회
+     * ?�용???�세 조회
      */
     public UserManageDto selectUser(String userId) {
         return userRepository.findById(Objects.requireNonNull(userId))
@@ -62,7 +62,7 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 상세 조회 (G-ID/ESNTL_ID 기준)
+     * ?�용???�세 조회 (G-ID/ESNTL_ID 기�?)
      */
     public UserManageDto selectUserByEsntlId(String esntlId) {
         return userRepository.findByEsntlId(Objects.requireNonNull(esntlId))
@@ -71,7 +71,7 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 등록
+     * ?�용???�록
      */
     @Transactional
     public void insertUser(UserManageDto dto) {
@@ -107,7 +107,7 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 수정
+     * ?�용???�정
      */
     @Transactional
     public void updateUser(UserManageDto dto) {
@@ -124,7 +124,7 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 삭제
+     * ?�용????��
      */
     @Transactional
     public void deleteUser(String userId) {
@@ -132,7 +132,7 @@ public class UserManageService {
     }
 
     /**
-     * 사용자 삭제 (List)
+     * ?�용????�� (List)
      */
     @Transactional
     public void deleteUserList(List<String> userIds) {
@@ -140,14 +140,14 @@ public class UserManageService {
     }
 
     /**
-     * 아이디 중복 확인
+     * ?�이??중복 ?�인
      */
     public int checkIdDplct(String userId) {
         return userRepository.existsById(Objects.requireNonNull(userId)) ? 1 : 0;
     }
 
     /**
-     * 비밀번호 변경
+     * 비�?번호 변�?
      */
     @Transactional
     public void updatePassword(String userId, String newPassword) {

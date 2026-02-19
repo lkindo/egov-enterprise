@@ -1,16 +1,16 @@
 package com.company.project.service.user;
 
-import com.company.project.domain.user.Role;
-import com.company.project.domain.user.User;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
 import com.company.project.service.user.dto.UserDto;
 
 /**
- * User 도메인과 DTO 간의 매핑을 담당하는 유틸리티 클래스
+ * User ?�메?�과 DTO 간의 매핑???�당?�는 ?�틸리티 ?�래??
  */
 public class UserDtoMapper {
 
     /**
-     * User 엔티티를 UserDto로 변환
+     * User ?�티?��? UserDto�?변??
      */
     public static UserDto toUserDto(User user) {
         if (user == null) {
@@ -27,7 +27,7 @@ public class UserDtoMapper {
     }
 
     /**
-     * UserDto를 User 엔티티로 변환
+     * UserDto�?User ?�티?�로 변??
      */
     public static User toUserEntity(UserDto userDto) {
         if (userDto == null) {

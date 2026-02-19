@@ -1,6 +1,6 @@
 package com.company.project.service.user.dto;
 
-import com.company.project.domain.user.EnterpriseUser;
+import com.company.project.domain.user.entity.EnterpriseUser;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,85 +13,85 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "기업 회원 정보 DTO")
+@Schema(description = "기업 ?�원 ?�보 DTO")
 public class EnterpriseUserDto {
 
     @Schema(description = "고유 ID")
     private String esntlId;
 
-    @Schema(description = "기업 회원 ID")
+    @Schema(description = "기업 ?�원 ID")
     private String entrprsmberId;
 
     @Schema(description = "기업 구분 코드")
     private String entrprsSeCode;
 
-    @Schema(description = "사업자등록번호")
+    @Schema(description = "?�업?�등록번??)
     private String bizrno;
 
-    @Schema(description = "법인등록번호")
+    @Schema(description = "법인?�록번호")
     private String jurirno;
 
-    @Schema(description = "회사 명")
+    @Schema(description = "?�사 �?)
     private String cmpnyNm;
 
-    @Schema(description = "대표자 명")
+    @Schema(description = "?�?�자 �?)
     private String cxfc;
 
-    @Schema(description = "우편번호")
+    @Schema(description = "?�편번호")
     private String zip;
 
     @Schema(description = "주소")
     private String adres;
 
-    @Schema(description = "상세 주소")
+    @Schema(description = "?�세 주소")
     private String detailAdres;
 
-    @Schema(description = "지역 번호")
+    @Schema(description = "지??번호")
     private String areaNo;
 
-    @Schema(description = "중간 전화번호")
+    @Schema(description = "중간 ?�화번호")
     private String entrprsMiddleTelno;
 
-    @Schema(description = "끝 전화번호")
+    @Schema(description = "???�화번호")
     private String entrprsEndTelno;
 
-    @Schema(description = "팩스 번호")
+    @Schema(description = "?�스 번호")
     private String fxnum;
 
-    @Schema(description = "업종 코드")
+    @Schema(description = "?�종 코드")
     private String indutyCode;
 
-    @Schema(description = "신청인 명")
+    @Schema(description = "?�청??�?)
     private String applcntNm;
 
-    @Schema(description = "신청인 이메일")
+    @Schema(description = "?�청???�메??)
     private String applcntEmailAdres;
 
-    @Schema(description = "신청인 주민번호")
+    @Schema(description = "?�청??주�?번호")
     private String applcntIhidnum;
 
-    @Schema(description = "기업 회원 상태")
+    @Schema(description = "기업 ?�원 ?�태")
     private String entrprsMberSttus;
 
-    @Schema(description = "비밀번호")
+    @Schema(description = "비�?번호")
     private String entrprsMberPassword;
 
-    @Schema(description = "비밀번호 힌트")
+    @Schema(description = "비�?번호 ?�트")
     private String entrprsMberPasswordHint;
 
-    @Schema(description = "비밀번호 정답")
+    @Schema(description = "비�?번호 ?�답")
     private String entrprsMberPasswordCnsr;
 
     @Schema(description = "그룹 ID")
     private String groupId;
 
-    @Schema(description = "가입 일자")
+    @Schema(description = "가???�자")
     private LocalDateTime sbscrbDe;
 
-    @Schema(description = "잠금 여부")
+    @Schema(description = "?�금 ?��?")
     private String lockAt;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "?�록?�시")
     private LocalDateTime createdDate;
 
     public static EnterpriseUserDto from(EnterpriseUser entity) {

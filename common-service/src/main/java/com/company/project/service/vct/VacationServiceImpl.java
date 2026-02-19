@@ -3,8 +3,8 @@ package com.company.project.service.vct;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.system.*;
-import com.company.project.domain.user.UserAbsence;
-import com.company.project.domain.user.UserAbsenceRepository;
+import com.company.project.domain.user.entity.UserAbsence;
+import com.company.project.domain.user.repository.UserAbsenceRepository;
 import com.company.project.service.vct.dto.UserAbsenceDto;
 import com.company.project.service.vct.dto.VacationDto;
 import com.company.project.service.vct.dto.YearlyLeaveDto;
@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 휴가/연차 자동 계산 엔진이 통합된 서비스 구현체
+ * ?��?/?�차 ?�동 계산 ?�진???�합???�비??구현�?
  */
 @Service
 @RequiredArgsConstructor
@@ -59,7 +59,7 @@ public class VacationServiceImpl implements VacationService {
     @Override
     @Transactional
     public void requestVacation(String userId, VacationDto dto) {
-        // 1. 잔여 연차 검증 (연차/반차인 경우)
+        // 1. ?�여 ?�차 검�?(?�차/반차??경우)
         if ("01".equals(dto.getVcatnSe()) || "02".equals(dto.getVcatnSe())) {
             double requestDays = calculateVacationDays(dto);
             AnnualLeave leaveMaster = annualLeaveRepository.findById(new AnnualLeaveId(dto.getOccrrncYear(), userId))
@@ -70,7 +70,7 @@ public class VacationServiceImpl implements VacationService {
             }
         }
 
-        // 2. 신청 정보 저장
+        // 2. ?�청 ?�보 ?�??
         Vacation entity = Vacation.builder()
                 .applcntId(userId)
                 .vcatnSe(dto.getVcatnSe())
@@ -79,7 +79,7 @@ public class VacationServiceImpl implements VacationService {
                 .vcatnResn(dto.getVcatnResn())
                 .reqstDe(LocalDate.now().format(DATE_FORMATTER))
                 .noonSe(dto.getNoonSe())
-                .confmAt("R") // 신청(Requested)
+                .confmAt("R") // ?�청(Requested)
                 .build();
         entity.setFrstRegisterId(userId);
         vacationRepository.save(Objects.requireNonNull(entity));
@@ -111,7 +111,7 @@ public class VacationServiceImpl implements VacationService {
         Vacation entity = vacationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 1. 승인 처리인 경우 연차 차감 로직 실행
+        // 1. ?�인 처리??경우 ?�차 차감 로직 ?�행
         if ("Y".equals(confmAt) && ("01".equals(vcatnSe) || "02".equals(vcatnSe))) {
             double useDays = calculateVacationDays(VacationDto.from(entity));
             AnnualLeave leaveMaster = annualLeaveRepository
@@ -121,20 +121,20 @@ public class VacationServiceImpl implements VacationService {
             leaveMaster.deductLeave(useDays);
         }
 
-        // 2. 상태 업데이트
+        // 2. ?�태 ?�데?�트
         entity.setConfmAt(confmAt);
         entity.setSanctnDt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         entity.setReturnResn(returnResn);
         entity.setSanctnerId(userId);
         entity.setLastUpdusrId(userId);
 
-        // 3. 알림 생성
-        String statusText = "Y".equals(confmAt) ? "승인" : "반려";
+        // 3. ?�림 ?�성
+        String statusText = "Y".equals(confmAt) ? "?�인" : "반려";
         notificationRepository
                 .save(java.util.Objects.requireNonNull(com.company.project.domain.notification.Notification.builder()
                         .ntfcNo("NOTI_" + UUID.randomUUID().toString().substring(0, 15))
-                        .ntfcSj("휴가 신청 처리 알림")
-                        .ntfcCn("본인이 신청한 휴가가 " + statusText + "되었습니다.")
+                        .ntfcSj("?��? ?�청 처리 ?�림")
+                        .ntfcCn("본인???�청???��?가 " + statusText + "?�었?�니??")
                         .receiverId(applcntId)
                         .linkUrl("/cop/smt/vct")
                         .build()));
@@ -180,15 +180,15 @@ public class VacationServiceImpl implements VacationService {
     }
 
     /**
-     * 휴가 신청 정보로부터 실제 사용 일수를 계산하는 내부 로직
+     * ?��? ?�청 ?�보로�????�제 ?�용 ?�수�?계산?�는 ?��? 로직
      */
     private double calculateVacationDays(VacationDto dto) {
-        // 반차인 경우 0.5일 고정
+        // 반차??경우 0.5??고정
         if (dto.getNoonSe() != null && !dto.getNoonSe().isEmpty()) {
             return 0.5;
         }
 
-        // 일반 휴가인 경우 날짜 차이 계산
+        // ?�반 ?��???경우 ?�짜 차이 계산
         try {
             LocalDate start = LocalDate.parse(dto.getBgnde(), DATE_FORMATTER);
             LocalDate end = LocalDate.parse(dto.getEndde(), DATE_FORMATTER);
