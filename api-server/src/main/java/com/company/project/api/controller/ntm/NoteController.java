@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Note", description = "Note Management APIs (Note, Reception, Transmission)")
 
-@RestController
+@RestController("ntmNoteController")
 
 @RequestMapping("/api/v1/notes")
 

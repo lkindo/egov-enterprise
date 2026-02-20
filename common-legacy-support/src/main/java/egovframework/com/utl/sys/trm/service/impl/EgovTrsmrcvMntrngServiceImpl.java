@@ -39,7 +39,7 @@ import lombok.RequiredArgsConstructor;
  *  2010.06.21   ?    ????
  *      </pre>
  **/
-@Service("EgovTrsmrcvMntrngService")
+@Service("egovTrsmrcvMntrngService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovTrsmrcvMntrngService {

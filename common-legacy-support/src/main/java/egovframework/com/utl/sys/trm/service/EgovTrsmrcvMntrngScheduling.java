@@ -33,7 +33,7 @@ import jakarta.annotation.Resource;
 @Service("egovTrsmrcvMntrngScheduling")
 public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 
-	@Resource(name = "EgovTrsmrcvMntrngService")
+	@Resource(name = "egovTrsmrcvMntrngService")
 	private EgovTrsmrcvMntrngService trsmrcvMntrngService;
 
 	@Resource(name = "mntrngMailSender")

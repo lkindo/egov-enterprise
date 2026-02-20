@@ -26,7 +26,7 @@ import java.util.List;
 
  */
 
-@RestController
+@RestController("bbsUserStatsController")
 
 @RequestMapping("/api/v1/stats")
 
@@ -53,6 +53,7 @@ public class BbsUserStatsController {
      */
 
     @GetMapping("/bbs")
+
 
     public ResponseEntity<List<StatsVO>> getBbsStats(
 
