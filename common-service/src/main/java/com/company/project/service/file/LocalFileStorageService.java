@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * 로컬 디스크 기반 파일 저장소 구현체
+ * 濡쒖뺄 ?붿뒪??湲곕컲 ?뚯씪 ??μ냼 援ы쁽泥?
  */
 @Slf4j
 @Service

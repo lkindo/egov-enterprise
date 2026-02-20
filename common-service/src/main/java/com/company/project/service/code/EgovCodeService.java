@@ -5,18 +5,18 @@ import com.company.project.service.code.dto.CodeDto;
 import java.util.List;
 
 /**
- * 공통 코드 관리 서비스 인터페이스
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족을 위한 인터페이스 분리
+ * 怨듯넻 肄붾뱶 愿由??쒕퉬???명꽣?섏씠??
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”???꾪븳 ?명꽣?섏씠??遺꾨━
  */
 public interface EgovCodeService {
 
     /**
-     * 특정 그룹 코드에 속한 상세 코드 목록 조회
+     * ?뱀젙 洹몃９ 肄붾뱶???랁븳 ?곸꽭 肄붾뱶 紐⑸줉 議고쉶
      */
     List<CodeDto> getDetailCodeList(@org.springframework.lang.NonNull String codeGroupId);
 
     /**
-     * 전체 활성 코드 목록 조회
+     * ?꾩껜 ?쒖꽦 肄붾뱶 紐⑸줉 議고쉶
      */
     List<CodeDto> getAllActiveCodes();
 }

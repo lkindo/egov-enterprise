@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 통계 서비스 구현체
- * Native Query를 사용하여 기존 통계 요약 테이블에서 데이터 조회
+ * ?듦퀎 ?쒕퉬??援ы쁽泥?
+ * Native Query瑜??ъ슜?섏뿬 湲곗〈 ?듦퀎 ?붿빟 ?뚯씠釉붿뿉???곗씠??議고쉶
  */
 @Service
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getConnectionStats(String fromDate, String toDate, String statsKind) {
-        // 접속 로그 테이블에서 일별/월별/년별 집계 (SCONECTSUMMARY -> sweblogsummary)
+        // ?묒냽 濡쒓렇 ?뚯씠釉붿뿉???쇰퀎/?붾퀎/?꾨퀎 吏묎퀎 (SCONECTSUMMARY -> sweblogsummary)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -38,7 +38,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getBoardStats(String fromDate, String toDate, String statsKind) {
-        // 게시판 요약 테이블에서 조회 (SBBSSUMMARY)
+        // 寃뚯떆???붿빟 ?뚯씠釉붿뿉??議고쉶 (SBBSSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(CREAT_CO) as stats_co
                 FROM SBBSSUMMARY
@@ -52,7 +52,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getUserStats(String fromDate, String toDate, String statsKind) {
-        // 사용자 요약 테이블에서 조회 (SUSERSUMMARY)
+        // ?ъ슜???붿빟 ?뚯씠釉붿뿉??議고쉶 (SUSERSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(user_co) as stats_co
                 FROM SUSERSUMMARY
@@ -66,7 +66,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind) {
-        // 화면 요약 테이블에서 요청 통계 집계 (SSCRINSUMMARY -> sweblogsummary 대체)
+        // ?붾㈃ ?붿빟 ?뚯씠釉붿뿉???붿껌 ?듦퀎 吏묎퀎 (SSCRINSUMMARY -> sweblogsummary ?泥?
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -96,8 +96,8 @@ public class StatsService implements EgovStatsService {
                 result.add(dto);
             }
         } catch (Exception e) {
-            // 테이블이 없거나 쿼리 오류 시 빈 목록 반환
-            // 에러를 무시하지 않고, 빈 결과 반환
+            // ?뚯씠釉붿씠 ?녾굅??荑쇰━ ?ㅻ쪟 ??鍮?紐⑸줉 諛섑솚
+            // ?먮윭瑜?臾댁떆?섏? ?딄퀬, 鍮?寃곌낵 諛섑솚
         }
 
         return result;

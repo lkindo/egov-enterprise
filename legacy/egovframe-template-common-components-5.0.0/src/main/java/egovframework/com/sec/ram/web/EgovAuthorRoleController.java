@@ -17,19 +17,19 @@ import egovframework.com.sec.ram.service.EgovAuthorRoleManageService;
 import jakarta.annotation.Resource;
 
 /**
- * 권한별 롤관리에 관한 controller 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳蹂?濡ㅺ?由ъ뿉 愿??controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2011.09.07  서준식          롤 등록시 이미 등록된 경우 데이터 중복 에러 발생 문제 수정
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.09.07  ?쒖???         濡??깅줉???대? ?깅줉??寃쎌슦 ?곗씠??以묐났 ?먮윭 諛쒖깮 臾몄젣 ?섏젙
  * </pre>
  */
 @Controller
@@ -46,7 +46,7 @@ public class EgovAuthorRoleController {
     protected EgovPropertyService propertiesService;
 
     /**
-	 * 권한 롤 관계 화면 이동
+	 * 沅뚰븳 濡?愿怨??붾㈃ ?대룞
 	 * @return "egovframework/com/sec/ram/EgovDeptAuthorList"
 	 * @exception Exception
 	 */
@@ -57,7 +57,7 @@ public class EgovAuthorRoleController {
     }
 
 	/**
-	 * 권한별 할당된 롤 목록 조회
+	 * 沅뚰븳蹂??좊떦??濡?紐⑸줉 議고쉶
 	 *
 	 * @param authorRoleManageVO AuthorRoleManageVO
 	 * @return String
@@ -91,7 +91,7 @@ public class EgovAuthorRoleController {
 	}
 
 	/**
-	 * 권한정보에 롤을 할당하여 데이터베이스에 등록
+	 * 沅뚰븳?뺣낫??濡ㅼ쓣 ?좊떦?섏뿬 ?곗씠?곕쿋?댁뒪???깅줉
 	 * @param authorCode String
 	 * @param roleCodes String
 	 * @param regYns String

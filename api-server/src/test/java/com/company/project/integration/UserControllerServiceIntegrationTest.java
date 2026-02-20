@@ -289,6 +289,6 @@ class UserControllerServiceIntegrationTest {
                 // Verify that the service received the correct data
                 verify(userService, times(1)).signup(argThat(req -> req.userId().equals("accuracyTestUser") &&
                                 req.userNm().equals("정확도 테스트 사용자") &&
-                                req.role() == com.company.project.domain.user.Role.ADMIN));
+                                req.role() == com.company.project.domain.user.entity.Role.ADMIN));
         }
 }

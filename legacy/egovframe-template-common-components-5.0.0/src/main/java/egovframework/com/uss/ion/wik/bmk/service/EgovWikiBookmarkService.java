@@ -3,55 +3,55 @@ package egovframework.com.uss.ion.wik.bmk.service;
 import java.util.List;
 
 /**
- * 위키북마크를 처리하는 Service Class 구현
- * @author 공통콤포넌트 장동한
+ * ?꾪궎遺곷쭏?щ? 泥섎━?섎뒗 Service Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.10.20
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.20  장동한          최초 생성
+ *   2010.10.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovWikiBookmarkService {
 
     /**
-	 * 위키북마크 목록을 조회한다.
-	 * @param wikiBookmark -조회할 정보가 담긴 객체
+	 * ?꾪궎遺곷쭏??紐⑸줉??議고쉶?쒕떎.
+	 * @param wikiBookmark -議고쉶???뺣낫媛 ?닿릿 媛앹껜
 	 * @return List
 	 * @throws Exception
 	 */
 	public List<?> selectWikiBookmarkList(WikiBookmark wikiBookmark) throws Exception;
 
     /**
-     * 위키북마크를(을) 목록 전체 건수를(을) 조회한다.
-     * @param wikiBookmark  -조회할 정보가 담긴 객체
-     * @return int -조회한건수가담긴Integer
+     * ?꾪궎遺곷쭏?щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param wikiBookmark  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔?섍??닿릿Integer
      * @throws Exception
      */
     public int selectWikiBookmarkListCnt(WikiBookmark wikiBookmark) throws Exception;
 
     /**
-     * 위키북마크를(을) 중복을 조회한다.
-     * @param wikiBookmark  -조회할 정보가 담긴 객체
-     * @return int -조회한건수가담긴Integer
+     * ?꾪궎遺곷쭏?щ?(?? 以묐났??議고쉶?쒕떎.
+     * @param wikiBookmark  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔?섍??닿릿Integer
      * @throws Exception
      */
     public int selectWikiBookmarkDuplicationCnt(WikiBookmark wikiBookmark) throws Exception;
 
     /**
-	 * 위키북마크를(을) 등록한다.
-	 * @param wikiBookmark -위키북마크 정보 담김 객체
+	 * ?꾪궎遺곷쭏?щ?(?? ?깅줉?쒕떎.
+	 * @param wikiBookmark -?꾪궎遺곷쭏???뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	void  insertWikiBookmark(WikiBookmark wikiBookmark) throws Exception;
 
      /**
-	 * 위키북마크를(을) 삭제한다.
-	 * @param wikiBookmark -위키북마크 정보 담김 객체
+	 * ?꾪궎遺곷쭏?щ?(?? ??젣?쒕떎.
+	 * @param wikiBookmark -?꾪궎遺곷쭏???뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	void  deleteWikiBookmark(WikiBookmark wikiBookmark) throws Exception;

@@ -3,13 +3,13 @@ package egovframework.com.uss.mpe.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요 - 마이페이지에 대한 model 클래스를 정의한다.
+ * 媛쒖슂 - 留덉씠?섏씠吏?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용 - 마이페이지의 컨텐츠아이디, 컨텐츠 명, 컨텐츠 URL, 컨텐츠 사용 여부 항목을 관리한다.
+ * ?곸꽭?댁슜 - 留덉씠?섏씠吏??而⑦뀗痢좎븘?대뵒, 而⑦뀗痢?紐? 而⑦뀗痢?URL, 而⑦뀗痢??ъ슜 ?щ? ??ぉ??愿由ы븳??
  * 
- * @author 이창원
+ * @author ?댁갹??
  * @version 1.0
- * @created 05-8-2009 오후 2:20:27
+ * @created 05-8-2009 ?ㅽ썑 2:20:27
  */
 public class IndvdlPgeVO extends ComDefaultVO {
 	/**
@@ -18,27 +18,27 @@ public class IndvdlPgeVO extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 컨텐츠 아이디
+	 * 而⑦뀗痢??꾩씠??
 	 */
 	private String cntntsId;
 	/**
-	 * 컨텐츠 명
+	 * 而⑦뀗痢?紐?
 	 */
 	private String cntntsNm;
 	/**
-	 * 컨텐츠 미리보기 URL
+	 * 而⑦뀗痢?誘몃━蹂닿린 URL
 	 */
 	private String cntntsLinkUrl;
 	/**
-	 * 컨텐츠 URL
+	 * 而⑦뀗痢?URL
 	 */
 	private String cntcUrl;
 	/**
-	 * 컨텐츠 설명
+	 * 而⑦뀗痢??ㅻ챸
 	 */
 	private String cntntsDc;
 	/**
-	 * 컨텐츠 사용 여부
+	 * 而⑦뀗痢??ъ슜 ?щ?
 	 */
 	private String cntntsUseAt;
 

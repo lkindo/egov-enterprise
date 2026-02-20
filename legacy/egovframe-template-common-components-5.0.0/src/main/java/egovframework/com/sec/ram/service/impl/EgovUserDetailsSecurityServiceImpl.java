@@ -8,18 +8,18 @@ import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
 /**
- *권한관리 인증에 대한 ServiceImpl 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ *沅뚰븳愿由??몄쬆?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -28,14 +28,14 @@ public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl 
 
 
 	/**
-	 * 인증된 사용자객체를 VO형식으로 가져온다.
-	 * @return Object - 사용자 ValueObject
+	 * ?몄쬆???ъ슜?먭컼泥대? VO?뺤떇?쇰줈 媛?몄삩??
+	 * @return Object - ?ъ슜??ValueObject
 	 */
 	@Override
 	public Object getAuthenticatedUser() {
 
-		// 이 메소드의 경우 인증이 되지 않더라고 null을 리턴하지 않기 때문에
-		// 명시적으로 인증되지 않은 경우 null을 리턴하도록 수정함
+		// ??硫붿냼?쒖쓽 寃쎌슦 ?몄쬆???섏? ?딅뜑?쇨퀬 null??由ы꽩?섏? ?딄린 ?뚮Ц??
+		// 紐낆떆?곸쑝濡??몄쬆?섏? ?딆? 寃쎌슦 null??由ы꽩?섎룄濡??섏젙??
 
 		if (EgovUserDetailsHelper.isAuthenticated()) {
 			return EgovUserDetailsHelper.getAuthenticatedUser();
@@ -46,9 +46,9 @@ public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl 
 
 
 	/**
-	 * 인증된 사용자의 권한 정보를 가져온다.
-	 * 예) [ROLE_ADMIN, ROLE_USER, ROLE_A, ROLE_B, ROLE_RESTRICTED, IS_AUTHENTICATED_FULLY, IS_AUTHENTICATED_REMEMBERED, IS_AUTHENTICATED_ANONYMOUSLY]
-	 * @return List - 사용자 권한정보 목록
+	 * ?몄쬆???ъ슜?먯쓽 沅뚰븳 ?뺣낫瑜?媛?몄삩??
+	 * ?? [ROLE_ADMIN, ROLE_USER, ROLE_A, ROLE_B, ROLE_RESTRICTED, IS_AUTHENTICATED_FULLY, IS_AUTHENTICATED_REMEMBERED, IS_AUTHENTICATED_ANONYMOUSLY]
+	 * @return List - ?ъ슜??沅뚰븳?뺣낫 紐⑸줉
 	 */
 	@Override
 	public List<String> getAuthorities() {
@@ -56,8 +56,8 @@ public class EgovUserDetailsSecurityServiceImpl extends EgovAbstractServiceImpl 
 	}
 
 	/**
-	 * 인증된 사용자 여부를 체크한다.
-	 * @return Boolean - 인증된 사용자 여부(TRUE / FALSE)
+	 * ?몄쬆???ъ슜???щ?瑜?泥댄겕?쒕떎.
+	 * @return Boolean - ?몄쬆???ъ슜???щ?(TRUE / FALSE)
 	 */
 
 	@Override

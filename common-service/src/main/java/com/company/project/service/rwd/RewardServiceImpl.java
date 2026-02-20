@@ -51,7 +51,7 @@ public class RewardServiceImpl implements RewardService {
                     .rwardDe(dto.getRwardDe())
                     .rwardNm(dto.getRwardNm())
                     .pblenCn(dto.getPblenCn())
-                    .confmAt("R") // 대기
+                    .confmAt("R") // ?湲?
                     .atchFileId(dto.getAtchFileId())
                     .infrmlSanctnId(dto.getInfrmlSanctnId())
                     .frstRegisterId(userId)

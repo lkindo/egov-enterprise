@@ -5,25 +5,25 @@ import java.util.List;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 발송메일 내역을 조회하는 비즈니스 인터페이스 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪 ?댁뿭??議고쉶?섎뒗 鍮꾩쫰?덉뒪 ?명꽣?섏씠???대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
 public interface EgovSndngMailDtlsService {
 
 	/**
-	 * 발송메일 목록을 조회한다.
+	 * 諛쒖넚硫붿씪 紐⑸줉??議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -31,7 +31,7 @@ public interface EgovSndngMailDtlsService {
 	List<SndngMailVO> selectSndngMailList(ComDefaultVO vo) throws Exception;
 
 	/**
-	 * 발송메일 총건수를 조회한다.
+	 * 諛쒖넚硫붿씪 珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception
@@ -39,7 +39,7 @@ public interface EgovSndngMailDtlsService {
 	int selectSndngMailListTotCnt(ComDefaultVO vo) throws Exception;
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * @param vo SndngMailVO
 	 * @exception
 	 */

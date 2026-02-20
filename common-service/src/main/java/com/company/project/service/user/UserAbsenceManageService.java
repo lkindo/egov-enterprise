@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ?�용??부??관�??�비??
+ * ?ъ슜??遺??愿由??쒕퉬??
  */
 @Service("userAbsenceManageService")
 @Transactional(readOnly = true)
@@ -36,7 +36,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부??목록 조회
+     * ?ъ슜??遺??紐⑸줉 議고쉶
      */
     public List<UserAbsenceDto> selectUserAbsenceList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -74,14 +74,14 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부??목록 �?건수
+     * ?ъ슜??遺??紐⑸줉 珥?嫄댁닔
      */
     public int selectUserAbsenceListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * ?�용??부???�세 조회
+     * ?ъ슜??遺???곸꽭 議고쉶
      */
     public UserAbsenceDto selectUserAbsence(String userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
@@ -105,7 +105,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부???�록
+     * ?ъ슜??遺???깅줉
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
@@ -119,7 +119,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부???�정
+     * ?ъ슜??遺???섏젙
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
@@ -130,7 +130,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부????��
+     * ?ъ슜??遺????젣
      */
     @Transactional
     public void deleteUserAbsence(String userId) {
@@ -138,7 +138,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?�용??부???�중 ??��
+     * ?ъ슜??遺???ㅼ쨷 ??젣
      */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {

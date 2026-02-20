@@ -17,17 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Quartz Scheduler를 실행하는 스케줄러 클래스를 정의한다.
+ * Quartz Scheduler瑜??ㅽ뻾?섎뒗 ?ㅼ?以꾨윭 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.08.30   김진만     최초 생성
- *  2024.10.29	LeeBaekHaeng	불필요 @SuppressWarnings("unchecked") 및 형변환 제거
+ *  2010.08.30   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2024.10.29	LeeBaekHaeng	遺덊븘??@SuppressWarnings("unchecked") 諛??뺣????쒓굅
  * </pre>
  */
 
@@ -38,28 +38,28 @@ public class BatchScheduler {
 	/** ID Generation */
 	private EgovIdGnrService idgenService;
 
-	/** Quartz 스케줄러 */
+	/** Quartz ?ㅼ?以꾨윭 */
 	private Scheduler sched;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BatchScheduler.class);
 
-	// 실행 대상을 읽기위한 페이지 크기
+	// ?ㅽ뻾 ??곸쓣 ?쎄린?꾪븳 ?섏씠吏 ?ш린
 	private static final int RECORD_COUNT_PER_PAGE = 10000;
 
 	/**
-	 * 배치스케줄러에 batchSchdul 파라미터를 이용하여 Job , Trigger를 Add 한다.
+	 * 諛곗튂?ㅼ?以꾨윭??batchSchdul ?뚮씪誘명꽣瑜??댁슜?섏뿬 Job , Trigger瑜?Add ?쒕떎.
 	 *
-	 * @param batchSchdul  배치스케줄러에 등록할 스케줄정보
+	 * @param batchSchdul  諛곗튂?ㅼ?以꾨윭???깅줉???ㅼ?以꾩젙蹂?
 	 * @exception Exception Exception
 	 */
 	public void insertBatchSchdul(BatchSchdul batchSchdul) throws Exception {
-		// Job 만들기
+		// Job 留뚮뱾湲?
 		JobDetail jobDetail = newJob(BatchShellScriptJob.class).withIdentity(batchSchdul.getBatchSchdulId()).build();
 
-		// Trigger 만들기
+		// Trigger 留뚮뱾湲?
 		CronTrigger trigger = newTrigger().withIdentity(batchSchdul.getBatchSchdulId()).withSchedule(cronSchedule(batchSchdul.toCronExpression())).forJob(jobDetail.getKey().getName()).build();
 
-		LOGGER.debug("배치스케줄을 등록합니다. 배치스케줄ID : {}", batchSchdul.getBatchSchdulId());
+		LOGGER.debug("諛곗튂?ㅼ?以꾩쓣 ?깅줉?⑸땲?? 諛곗튂?ㅼ?以껱D : {}", batchSchdul.getBatchSchdulId());
 		LOGGER.debug("{} - cronexpression : {}", batchSchdul.getBatchSchdulId(), trigger.getCronExpression());
 		BatchJobListener listener = new BatchJobListener();
 
@@ -68,37 +68,37 @@ public class BatchScheduler {
 
 		sched.getListenerManager().addJobListener(listener);
 
-		// 데이터 전달
+		// ?곗씠???꾨떖
 		jobDetail.getJobDataMap().put("batchOpertId", batchSchdul.getBatchOpertId());
 		jobDetail.getJobDataMap().put("batchSchdulId", batchSchdul.getBatchSchdulId());
 		jobDetail.getJobDataMap().put("batchProgrm", batchSchdul.getBatchProgrm());
 		jobDetail.getJobDataMap().put("paramtr", batchSchdul.getParamtr());
 
 		try {
-			// 스케줄러에 추가하기
+			// ?ㅼ?以꾨윭??異붽??섍린
 			sched.scheduleJob(jobDetail, trigger);
 		} catch (SchedulerException e) {
-			// SchedulerException 이 발생하면 로그를 출력하고 다음 배치작업으로 넘어간다.
-			// 트리거의 실행시각이 현재 시각보다 이전이면 SchedulerException이 발생한다.
-			LOGGER.error("스케줄러에 배치작업추가할때 에러가 발생했습니다. 배치스케줄ID : {}, 배치작업ID : {}", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
-			LOGGER.error("에러내용 : {}", e.getMessage());
+			// SchedulerException ??諛쒖깮?섎㈃ 濡쒓렇瑜?異쒕젰?섍퀬 ?ㅼ쓬 諛곗튂?묒뾽?쇰줈 ?섏뼱媛꾨떎.
+			// ?몃━嫄곗쓽 ?ㅽ뻾?쒓컖???꾩옱 ?쒓컖蹂대떎 ?댁쟾?대㈃ SchedulerException??諛쒖깮?쒕떎.
+			LOGGER.error("?ㅼ?以꾨윭??諛곗튂?묒뾽異붽??좊븣 ?먮윭媛 諛쒖깮?덉뒿?덈떎. 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
+			LOGGER.error("?먮윭?댁슜 : {}", e.getMessage());
 			//LOGGER.debug(e.getMessage(), e);
 		}
 	}
 
 	/**
-	 * 배치스케줄러에 batchSchdul 파라미터를 이용하여 Job , Trigger를 갱신 한다.
+	 * 諛곗튂?ㅼ?以꾨윭??batchSchdul ?뚮씪誘명꽣瑜??댁슜?섏뿬 Job , Trigger瑜?媛깆떊 ?쒕떎.
 	 *
-	 * @param batchSchdul  배치스케줄러에 갱신할 스케줄정보
+	 * @param batchSchdul  諛곗튂?ㅼ?以꾨윭??媛깆떊???ㅼ?以꾩젙蹂?
 	 * @exception Exception Exception
 	 */
 	public void updateBatchSchdul(BatchSchdul batchSchdul) throws Exception {
-		// Job 만들기
+		// Job 留뚮뱾湲?
 		JobDetail jobDetail = newJob(BatchShellScriptJob.class).withIdentity(batchSchdul.getBatchSchdulId()).build();
-		// Trigger 만들기
+		// Trigger 留뚮뱾湲?
 		CronTrigger trigger = newTrigger().withIdentity(batchSchdul.getBatchSchdulId()).withSchedule(cronSchedule(batchSchdul.toCronExpression())).forJob(jobDetail.getKey().getName()).build();
 
-		LOGGER.debug("배치스케줄을 갱신합니다. 배치스케줄ID : {}", batchSchdul.getBatchSchdulId());
+		LOGGER.debug("諛곗튂?ㅼ?以꾩쓣 媛깆떊?⑸땲?? 諛곗튂?ㅼ?以껱D : {}", batchSchdul.getBatchSchdulId());
 		LOGGER.debug("{} - cronexpression : {}", batchSchdul.getBatchSchdulId(), trigger.getCronExpression());
 
 		BatchJobListener listener = new BatchJobListener();
@@ -108,65 +108,65 @@ public class BatchScheduler {
 
 		sched.getListenerManager().addJobListener(listener);
 
-		// 데이터 전달
+		// ?곗씠???꾨떖
 		jobDetail.getJobDataMap().put("batchOpertId", batchSchdul.getBatchOpertId());
 		jobDetail.getJobDataMap().put("batchSchdulId", batchSchdul.getBatchSchdulId());
 		jobDetail.getJobDataMap().put("batchProgrm", batchSchdul.getBatchProgrm());
 		jobDetail.getJobDataMap().put("paramtr", batchSchdul.getParamtr());
 
 		try {
-			// 스케줄러에서 기존Job, Trigger 삭제하기
+			// ?ㅼ?以꾨윭?먯꽌 湲곗〈Job, Trigger ??젣?섍린
 			sched.deleteJob(JobKey.jobKey(batchSchdul.getBatchSchdulId()));
-			// 스케줄러에 추가하기
+			// ?ㅼ?以꾨윭??異붽??섍린
 			sched.scheduleJob(jobDetail, trigger);
 		} catch (SchedulerException e) {
-			// SchedulerException 이 발생하면 로그를 출력하고 다음 배치작업으로 넘어간다.
-			// 트리거의 실행시각이 현재 시각보다 이전이면 SchedulerException이 발생한다.
-			LOGGER.error("스케줄러에 배치작업갱신할때 에러가 발생했습니다. 배치스케줄ID : {}, 배치작업ID : {}", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
-			LOGGER.error("에러내용 : {}", e.getMessage());
+			// SchedulerException ??諛쒖깮?섎㈃ 濡쒓렇瑜?異쒕젰?섍퀬 ?ㅼ쓬 諛곗튂?묒뾽?쇰줈 ?섏뼱媛꾨떎.
+			// ?몃━嫄곗쓽 ?ㅽ뻾?쒓컖???꾩옱 ?쒓컖蹂대떎 ?댁쟾?대㈃ SchedulerException??諛쒖깮?쒕떎.
+			LOGGER.error("?ㅼ?以꾨윭??諛곗튂?묒뾽媛깆떊?좊븣 ?먮윭媛 諛쒖깮?덉뒿?덈떎. 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
+			LOGGER.error("?먮윭?댁슜 : {}", e.getMessage());
 			//LOGGER.debug(e.getMessage(), e);
 		}
 	}
 
 	/**
-	 * 배치스케줄러에 batchSchdul 파라미터를 이용하여 Job , Trigger를 삭제한다.
+	 * 諛곗튂?ㅼ?以꾨윭??batchSchdul ?뚮씪誘명꽣瑜??댁슜?섏뿬 Job , Trigger瑜???젣?쒕떎.
 	 *
-	 * @param batchSchdul  배치스케줄러에 삭제할 스케줄정보
+	 * @param batchSchdul  諛곗튂?ㅼ?以꾨윭????젣???ㅼ?以꾩젙蹂?
 	 * @exception Exception Exception
 	 */
 	public void deleteBatchSchdul(BatchSchdul batchSchdul) throws Exception {
 
 		try {
-			// 스케줄러에서 기존Job, Trigger 삭제하기
-			LOGGER.debug("배치스케줄을 삭제합니다. 배치스케줄ID : {}", batchSchdul.getBatchSchdulId());
+			// ?ㅼ?以꾨윭?먯꽌 湲곗〈Job, Trigger ??젣?섍린
+			LOGGER.debug("諛곗튂?ㅼ?以꾩쓣 ??젣?⑸땲?? 諛곗튂?ㅼ?以껱D : {}", batchSchdul.getBatchSchdulId());
 			sched.deleteJob(JobKey.jobKey(batchSchdul.getBatchSchdulId()));
 		} catch (SchedulerException e) {
-			// SchedulerException 이 발생하면 로그를 출력하고 다음 배치작업으로 넘어간다.
-			// 트리거의 실행시각이 현재 시각보다 이전이면 SchedulerException이 발생한다.
-			LOGGER.error("스케줄러에 배치작업을 삭제할때 에러가 발생했습니다. 배치스케줄ID : {}, 배치작업ID : ", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
-			LOGGER.error("에러내용 : {}", e.getMessage());
+			// SchedulerException ??諛쒖깮?섎㈃ 濡쒓렇瑜?異쒕젰?섍퀬 ?ㅼ쓬 諛곗튂?묒뾽?쇰줈 ?섏뼱媛꾨떎.
+			// ?몃━嫄곗쓽 ?ㅽ뻾?쒓컖???꾩옱 ?쒓컖蹂대떎 ?댁쟾?대㈃ SchedulerException??諛쒖깮?쒕떎.
+			LOGGER.error("?ㅼ?以꾨윭??諛곗튂?묒뾽????젣?좊븣 ?먮윭媛 諛쒖깮?덉뒿?덈떎. 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : ", batchSchdul.getBatchSchdulId(), batchSchdul.getBatchOpertId());
+			LOGGER.error("?먮윭?댁슜 : {}", e.getMessage());
 			//LOGGER.debug(e.getMessage(), e);
 		}
 	}
 
 	/**
-	 * 클래스 초기화메소드.
-	 * 배치스케줄테이블을 읽어서 Quartz 스케줄러를 초기화한다.
+	 * ?대옒??珥덇린?붾찓?뚮뱶.
+	 * 諛곗튂?ㅼ?以꾪뀒?대툝???쎌뼱??Quartz ?ㅼ?以꾨윭瑜?珥덇린?뷀븳??
 	 *
 	 */
 	public void init() throws Exception {
-		// 모니터링 대상 정보 읽어들이기~~~
+		// 紐⑤땲?곕쭅 ????뺣낫 ?쎌뼱?ㅼ씠湲?~~
 		List<BatchSchdul> targetList = null;
 		BatchSchdul searchVO = new BatchSchdul();
-		// 모니터링 대상 검색 조건 초기화
+		// 紐⑤땲?곕쭅 ???寃??議곌굔 珥덇린??
 		searchVO.setPageIndex(1);
 		searchVO.setFirstIndex(0);
 		searchVO.setRecordCountPerPage(RECORD_COUNT_PER_PAGE);
 		targetList = egovBatchSchdulService.selectBatchSchdulList(searchVO);
-		LOGGER.debug("조회조건 {}", searchVO);
-		LOGGER.debug("Result 건수 : {}", targetList.size());
+		LOGGER.debug("議고쉶議곌굔 {}", searchVO);
+		LOGGER.debug("Result 嫄댁닔 : {}", targetList.size());
 
-		// 스케줄러 생성하기
+		// ?ㅼ?以꾨윭 ?앹꽦?섍린
 		SchedulerFactory schedFact = new org.quartz.impl.StdSchedulerFactory();
 		sched = schedFact.getScheduler();
 
@@ -179,7 +179,7 @@ public class BatchScheduler {
 		//sched.addGlobalJobListener(listener);
 		sched.getListenerManager().addJobListener(listener);
 
-		// 스케줄러에 Job, Trigger 등록하기
+		// ?ㅼ?以꾨윭??Job, Trigger ?깅줉?섍린
 		BatchSchdul target = null;
 		for (BatchSchdul element : targetList) {
 			target = element;
@@ -192,8 +192,8 @@ public class BatchScheduler {
 	}
 
 	/**
-	 * 클래스 destroy메소드.
-	 * Quartz 스케줄러를 shutdown한다.
+	 * ?대옒??destroy硫붿냼??
+	 * Quartz ?ㅼ?以꾨윭瑜?shutdown?쒕떎.
 	 *
 	 */
 	public void destroy() throws Exception {
@@ -201,7 +201,7 @@ public class BatchScheduler {
 	}
 
 	/**
-	 * 배치스케줄 서비스 리턴
+	 * 諛곗튂?ㅼ?以??쒕퉬??由ы꽩
 	 * @return the egovBatchSchdulService
 	 */
 	public EgovBatchSchdulService getEgovBatchSchdulService() {
@@ -209,7 +209,7 @@ public class BatchScheduler {
 	}
 
 	/**
-	 * 배치스케줄 서비스 저장.
+	 * 諛곗튂?ㅼ?以??쒕퉬?????
 	 * @param egovBatchSchdulService the egovBatchSchdulService to set
 	 */
 	public void setEgovBatchSchdulService(EgovBatchSchdulService egovBatchSchdulService) {
@@ -217,7 +217,7 @@ public class BatchScheduler {
 	}
 
 	/**
-	 * 배치결과ID 생성서비스 리턴
+	 * 諛곗튂寃곌낵ID ?앹꽦?쒕퉬??由ы꽩
 	 * @return the idgenService
 	 */
 	public EgovIdGnrService getIdgenService() {
@@ -225,7 +225,7 @@ public class BatchScheduler {
 	}
 
 	/**
-	 * 배치결과ID 생성서비스 저장.
+	 * 諛곗튂寃곌낵ID ?앹꽦?쒕퉬?????
 	 * @param idgenService the idgenService to set
 	 */
 	public void setIdgenService(EgovIdGnrService idgenService) {

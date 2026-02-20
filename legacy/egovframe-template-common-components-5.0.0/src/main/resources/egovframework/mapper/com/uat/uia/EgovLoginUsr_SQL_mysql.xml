@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-  수정일                   수정자            수정내용
+  ?섏젙??                  ?섏젙??           ?섏젙?댁슜
   =========     =======    =================================================
-  2011.08.26   	서준식            SSO 로그인을 위한 쿼리 추가
-  2011.09.27    서준식            컬럼 변경 SUB_DN 을  CRTFC_DN_VALUE 로 변경
-  2011.09.28    서준식            컬럼 변경 entrprsmber_id 을  ENTRPRS_MBER_ID 로 변경
-  2020.07.06    신용호            비밀번호 만료여부 조회
-  2021.05.30    정진오            디지털원패스 로그인을 위한 쿼리 추가
+  2011.08.26   	?쒖???           SSO 濡쒓렇?몄쓣 ?꾪븳 荑쇰━ 異붽?
+  2011.09.27    ?쒖???           而щ읆 蹂寃?SUB_DN ?? CRTFC_DN_VALUE 濡?蹂寃?
+  2011.09.28    ?쒖???           而щ읆 蹂寃?entrprsmber_id ?? ENTRPRS_MBER_ID 濡?蹂寃?
+  2020.07.06    ?좎슜??           鍮꾨?踰덊샇 留뚮즺?щ? 議고쉶
+  2021.05.30    ?뺤쭊??           ?붿??몄썝?⑥뒪 濡쒓렇?몄쓣 ?꾪븳 荑쇰━ 異붽?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="LoginUsr">
 
-	<!-- 로그인 처리를 위한 resultMap -->
+	<!-- 濡쒓렇??泥섎━瑜??꾪븳 resultMap -->
 	<resultMap id="login" type="egovframework.com.cmm.LoginVO">
 		<result property="id" column="id"/>
 		<result property="name" column="name"/>
@@ -23,19 +23,19 @@
 		<result property="uniqId" column="uniqId"/>		
 	</resultMap>
 	
-	<!-- 아이디 찾기를 위한 resultMap -->
+	<!-- ?꾩씠??李얘린瑜??꾪븳 resultMap -->
 	<resultMap id="id" type="egovframework.com.cmm.LoginVO">
 		<result property="id" column="id"/>
 	</resultMap>
 	
-	<!-- 비밀번호 처리를 위한 resultMap -->
+	<!-- 鍮꾨?踰덊샇 泥섎━瑜??꾪븳 resultMap -->
 	<resultMap id="password" type="egovframework.com.cmm.LoginVO">
 		<result property="password" column="password"/>
 	</resultMap>
 	
-	<!-- SSO용 ESNTL_ID를 이용한 로그인(2011.8.26) -->
+	<!-- SSO??ESNTL_ID瑜??댁슜??濡쒓렇??2011.8.26) -->
 	<select id="ssoLoginByEsntlId" resultMap="login">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 			
 			SELECT mber_id AS id
@@ -51,7 +51,7 @@
 			   AND mber_sttus = 'P'
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 			
 			SELECT ENTRPRS_MBER_ID AS id
@@ -67,7 +67,7 @@
 			   AND entrprs_mber_sttus = 'P'
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 			
 			SELECT emplyr_id AS id
@@ -86,9 +86,9 @@
 	</select>
 	
 	
-	<!-- 일반 로그인 -->
+	<!-- ?쇰컲 濡쒓렇??-->
 	<select id="actionLogin" resultMap="login">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 			
 			SELECT mber_id AS id
@@ -105,7 +105,7 @@
 			   AND mber_sttus = 'P'
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 			
 			SELECT ENTRPRS_MBER_ID AS id
@@ -122,7 +122,7 @@
 			   AND entrprs_mber_sttus = 'P'
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 			
 			SELECT emplyr_id AS id
@@ -156,7 +156,7 @@
 		</if>
 	</select>
 	
-	<!-- 인증서 로그인 -->
+	<!-- ?몄쬆??濡쒓렇??-->
 	<select id="actionCrtfctLogin" resultMap="login">
 		
 		SELECT emplyr_id AS id
@@ -172,9 +172,9 @@
 		
 	</select>
 	
-	<!-- 아이디 찾기 -->
+	<!-- ?꾩씠??李얘린 -->
 	<select id="searchId" resultMap="id">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 			
 			SELECT mber_id AS id
@@ -184,7 +184,7 @@
 			   AND mber_sttus = 'P'
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 			
 			SELECT ENTRPRS_MBER_ID AS id
@@ -194,7 +194,7 @@
 			   AND entrprs_mber_sttus = 'P'
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 			
 			SELECT emplyr_id AS id
@@ -206,9 +206,9 @@
 		</if>
 	</select>
 	
-	<!-- 비밀번호 찾기 -->
+	<!-- 鍮꾨?踰덊샇 李얘린 -->
 	<select id="searchPassword" resultMap="password">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 			
 			SELECT password AS password
@@ -221,7 +221,7 @@
 			   AND mber_sttus = 'P'
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 
 			SELECT entrprs_mber_password AS password
@@ -234,7 +234,7 @@
 			   AND entrprs_mber_sttus = 'P'
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 
 			SELECT password AS password
@@ -249,9 +249,9 @@
 		</if>
 	</select>
 	
-	<!-- 변경된 비밀번호를 저장 -->
+	<!-- 蹂寃쎈맂 鍮꾨?踰덊샇瑜????-->
 	<update id="updatePassword">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 
 			UPDATE COMTNGNRLMBER
@@ -260,7 +260,7 @@
 			 WHERE mber_id = #{id}
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 
 			UPDATE COMTNENTRPRSMBER
@@ -269,7 +269,7 @@
 			 WHERE ENTRPRS_MBER_ID = #{id}
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 
 			UPDATE COMTNEMPLYRINFO
@@ -280,9 +280,9 @@
 		</if>
 	</update>
 	
-	<!-- 로그인인증제한 조회 -->
+	<!-- 濡쒓렇?몄씤利앹젣??議고쉶 -->
 	<select id="selectLoginIncorrect" resultType="egovMap">
-	<!-- 일반회원 -->
+	<!-- ?쇰컲?뚯썝 -->
 	<if test="userSe != null and userSe == 'GNR'">
 	<![CDATA[
 	SELECT  MBER_ID AS USER_ID
@@ -295,7 +295,7 @@
 	 WHERE  MBER_ID = #{id} 
 	]]>
 	</if>
-	<!-- 기업회원 -->
+	<!-- 湲곗뾽?뚯썝 -->
 	<if test="userSe != null and userSe == 'ENT'">
 	<![CDATA[
 	SELECT  ENTRPRS_MBER_ID AS USER_ID
@@ -308,7 +308,7 @@
 	 WHERE  ENTRPRS_MBER_ID = #{id} 
 	]]>
 	</if>
-	<!-- 업무사용자 -->
+	<!-- ?낅Т?ъ슜??-->
 	<if test="userSe != null and userSe == 'USR'">
 	<![CDATA[
 	SELECT  EMPLYR_ID AS USER_ID
@@ -323,9 +323,9 @@
 	</if>
 	</select>
 
-	<!-- 로그인인증제한 변경 > 일반회원 -->
+	<!-- 濡쒓렇?몄씤利앹젣??蹂寃?> ?쇰컲?뚯썝 -->
 	<update id="updateLoginIncorrectGNR">
-		<!-- LOCK 해제 -->
+		<!-- LOCK ?댁젣 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'E')">
 			<![CDATA[
 			UPDATE  COMTNGNRLMBER
@@ -335,7 +335,7 @@
 			   WHERE MBER_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 설정 -->
+		<!-- LOCK ?ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'L')">
 			<![CDATA[
 			UPDATE  COMTNGNRLMBER
@@ -345,7 +345,7 @@
 		      WHERE MBER_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 카운트 설정 -->
+		<!-- LOCK 移댁슫???ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'C')">
 			<![CDATA[
 			UPDATE  COMTNGNRLMBER
@@ -356,9 +356,9 @@
 		</if>
 	</update>
 	
-	<!-- 로그인인증제한 변경 > 기업사용자 -->
+	<!-- 濡쒓렇?몄씤利앹젣??蹂寃?> 湲곗뾽?ъ슜??-->
 	<update id="updateLoginIncorrectENT">
-		<!-- LOCK 해제 -->
+		<!-- LOCK ?댁젣 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'E')">
 			<![CDATA[
 			UPDATE  COMTNENTRPRSMBER
@@ -368,7 +368,7 @@
 			   WHERE ENTRPRS_MBER_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 설정 -->
+		<!-- LOCK ?ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'L')">
 			<![CDATA[
 			UPDATE  COMTNENTRPRSMBER
@@ -378,7 +378,7 @@
 			   WHERE ENTRPRS_MBER_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 카운트 설정 -->
+		<!-- LOCK 移댁슫???ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'C')">
 			<![CDATA[
 			UPDATE  COMTNENTRPRSMBER
@@ -389,9 +389,9 @@
 		</if>
 	</update>
 
-	<!-- 로그인인증제한 변경 > 업무사용자 -->
+	<!-- 濡쒓렇?몄씤利앹젣??蹂寃?> ?낅Т?ъ슜??-->
 	<update id="updateLoginIncorrectUSR">
-		<!-- LOCK 해제 -->
+		<!-- LOCK ?댁젣 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'E')">
 			<![CDATA[
 			UPDATE  COMTNEMPLYRINFO
@@ -401,7 +401,7 @@
 			   WHERE EMPLYR_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 설정 -->
+		<!-- LOCK ?ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'L')">
 			<![CDATA[
 			UPDATE  COMTNEMPLYRINFO
@@ -411,7 +411,7 @@
 			   WHERE EMPLYR_ID = #{id}
 			]]>
 		</if>
-		<!-- LOCK 카운트 설정 -->
+		<!-- LOCK 移댁슫???ㅼ젙 -->
 		<if test="@egovframework.com.cmm.util.EgovMybatisUtil@isEquals(updateAt,'C')">
 			<![CDATA[
 			UPDATE  COMTNEMPLYRINFO
@@ -422,9 +422,9 @@
 		</if>
 	</update>
 	
-	<!-- 비밀번호 만료 기간 체크 -->
+	<!-- 鍮꾨?踰덊샇 留뚮즺 湲곌컙 泥댄겕 -->
 	<select id="selectPassedDayChangePWD" resultType="int">
-		<!-- 일반회원 -->
+		<!-- ?쇰컲?뚯썝 -->
 		<if test="userSe != null and userSe == 'GNR'">
 			
 			SELECT IFNULL(TIMESTAMPDIFF(day,CHG_PWD_LAST_PNTTM,sysdate()),0)
@@ -432,7 +432,7 @@
 			 WHERE mber_id = #{id}
 			
 		</if>
-		<!-- 기업회원 -->
+		<!-- 湲곗뾽?뚯썝 -->
 		<if test="userSe != null and userSe == 'ENT'">
 			
 			SELECT IFNULL(TIMESTAMPDIFF(day,CHG_PWD_LAST_PNTTM,sysdate()),0)
@@ -440,7 +440,7 @@
 			 WHERE ENTRPRS_MBER_ID = #{id}
 			
 		</if>
-		<!-- 업무사용자 -->
+		<!-- ?낅Т?ъ슜??-->
 		<if test="userSe != null and userSe == 'USR'">
 			
 			SELECT IFNULL(TIMESTAMPDIFF(day,CHG_PWD_LAST_PNTTM,sysdate()),0)
@@ -450,7 +450,7 @@
 		</if>
 	</select>
 
-	<!-- 2021.05.30, 정진오, 디지털원패스 로그인을 위한 쿼리 추가 -->
+	<!-- 2021.05.30, ?뺤쭊?? ?붿??몄썝?⑥뒪 濡쒓렇?몄쓣 ?꾪븳 荑쇰━ 異붽? -->
 	<select id="onepassLogin" resultMap="login">
 		SELECT mber_id AS id
 		     , mber_nm AS name

@@ -5,7 +5,7 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 /**
- * 전사 표준 응답 포맷 (Java 21 Record)
+ * ?袁⑷텢 ??? ?臾먮뼗 ????(Java 21 Record)
  */
 @Builder
 public record ApiResponse<T>(

@@ -7,8 +7,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 행사참석자 JPA Entity
- * 레거시 테이블: COMTNEVENTATDRN
+ * ??깃텢筌〓챷苑??JPA Entity
+ * ??뉕탢?????뵠?? COMTNEVENTATDRN
  */
 @Entity
 @Table(name = "NEVENTATDRN")

@@ -26,22 +26,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 배치작업관리에 대한 controller 클래스를 정의한다.
+ * 諛곗튂?묒뾽愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 배치작업관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * 배치작업관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 김진만
+ * 諛곗튂?묒뾽愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * 諛곗튂?묒뾽愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 
@@ -52,11 +52,11 @@ public class EgovBatchOpertController {
 	@Resource(name = "egovBatchOpertService")
 	private EgovBatchOpertService egovBatchOpertService;
 
-	/* Property 서비스 */
+	/* Property ?쒕퉬??*/
 	@Resource(name = "propertiesService")
 	private EgovPropertyService propertyService;
 
-	/* 메세지 서비스 */
+	/* 硫붿꽭吏 ?쒕퉬??*/
 	@Resource(name = "egovMessageSource")
 	private EgovMessageSource egovMessageSource;
 
@@ -72,10 +72,10 @@ public class EgovBatchOpertController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchOpertController.class);
 
 	/**
-	 * 배치작업을 삭제한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽????젣?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 삭제대상 배치작업model
+	 * @param batchOpert ??젣???諛곗튂?묒뾽model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -93,24 +93,24 @@ public class EgovBatchOpertController {
 	}
 
 	/**
-	 * 배치작업을 등록한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽???깅줉?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 등록대상 배치작업model
+	 * @param batchOpert ?깅줉???諛곗튂?묒뾽model
 	 * @param bindingResult	BindingResult
 	 * @param model			ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/addBatchOpert.do")
 	public String insertBatchOpert(@Valid @ModelAttribute BatchOpert batchOpert, BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		batchOpertValidator.validate(batchOpert, bindingResult);
@@ -118,40 +118,40 @@ public class EgovBatchOpertController {
 			return "egovframework/com/sym/bat/EgovBatchOpertRegist";
 		} else {
 			batchOpert.setBatchOpertId(idgenService.getNextStringId());
-			//아이디 설정
+			//?꾩씠???ㅼ젙
 			batchOpert.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			batchOpert.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
 			egovBatchOpertService.insertBatchOpert(batchOpert);
-			//Exception 없이 진행시 등록성공메시지
+			//Exception ?놁씠 吏꾪뻾???깅줉?깃났硫붿떆吏
 			model.addAttribute("resultMsg", "success.common.insert");
 		}
 		return "forward:/sym/bat/getBatchOpertList.do";
 	}
 
 	/**
-	 * 배치작업정보을 상세조회한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽?뺣낫???곸꽭議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 조회대상 배치작업model
+	 * @param batchOpert 議고쉶???諛곗튂?묒뾽model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/getBatchOpert.do")
 	public String selectBatchOpert(@ModelAttribute("searchVO") BatchOpert batchOpert, ModelMap model) throws Exception {
-		LOGGER.debug(" 조회조건 : {}", batchOpert);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", batchOpert);
 		BatchOpert result = egovBatchOpertService.selectBatchOpert(batchOpert);
 		model.addAttribute("resultInfo", result);
-		LOGGER.debug(" 결과값 : {}", result);
+		LOGGER.debug(" 寃곌낵媛?: {}", result);
 
 		return "egovframework/com/sym/bat/EgovBatchOpertDetail";
 	}
 
 	/**
-	 * 등록화면을 위한 배치작업정보을 조회한다.
-	 * @return 리턴URL
+	 * ?깅줉?붾㈃???꾪븳 諛곗튂?묒뾽?뺣낫??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 조회대상 배치작업model
+	 * @param batchOpert 議고쉶???諛곗튂?묒뾽model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -163,33 +163,33 @@ public class EgovBatchOpertController {
 	}
 
 	/**
-	 * 수정화면을 위한 배치작업정보을 조회한다.
-	 * @return 리턴URL
+	 * ?섏젙?붾㈃???꾪븳 諛곗튂?묒뾽?뺣낫??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 조회대상 배치작업model
+	 * @param batchOpert 議고쉶???諛곗튂?묒뾽model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/getBatchOpertForUpdate.do")
 	public String selectBatchOpertForUpdate(@ModelAttribute("searchVO") BatchOpert batchOpert, ModelMap model) throws Exception {
-		LOGGER.debug(" 조회조건 : {}", batchOpert);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", batchOpert);
 		BatchOpert result = egovBatchOpertService.selectBatchOpert(batchOpert);
 		model.addAttribute("batchOpert", result);
-		LOGGER.debug(" 결과값 : {}", result);
+		LOGGER.debug(" 寃곌낵媛?: {}", result);
 
 		return "egovframework/com/sym/bat/EgovBatchOpertUpdt";
 	}
 
 	/**
-	 * 배치작업 목록을 조회한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽 紐⑸줉??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
-	 * @param popupAt	팝업여부
+	 * @param popupAt	?앹뾽?щ?
 	 * @exception Exception Exception
 	 */
-	@IncludedInfo(name = "배치작업관리", listUrl = "/sym/bat/getBatchOpertList.do", order = 1120, gid = 60)
+	@IncludedInfo(name = "諛곗튂?묒뾽愿由?, listUrl = "/sym/bat/getBatchOpertList.do", order = 1120, gid = 60)
 	@RequestMapping("/sym/bat/getBatchOpertList.do")
 	public String selectBatchOpertList(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model, @RequestParam(value = "popupAt", required = false) String popupAt)
 			throws Exception {
@@ -214,33 +214,33 @@ public class EgovBatchOpertController {
 		model.addAttribute("resultCnt", totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 		if ("Y".equals(popupAt)) {
-			// Popup 화면이면
+			// Popup ?붾㈃?대㈃
 			return "egovframework/com/sym/bat/EgovBatchOpertListPopup";
 		} else {
-			// 메인화면 호출이면
+			// 硫붿씤?붾㈃ ?몄텧?대㈃
 			return "egovframework/com/sym/bat/EgovBatchOpertList";
 		}
 
 	}
 
 	/**
-	 * 배치작업을 수정한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽???섏젙?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchOpert 수정대상 배치작업model
+	 * @param batchOpert ?섏젙???諛곗튂?묒뾽model
 	 * @param bindingResult		BindingResult
 	 * @param model				ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/updateBatchOpert.do")
 	public String updateBatchOpert(@Valid @ModelAttribute BatchOpert batchOpert, BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		batchOpertValidator.validate(batchOpert, bindingResult);
@@ -249,7 +249,7 @@ public class EgovBatchOpertController {
 			return "egovframework/com/sym/bat/EgovBatchOpertUpdt";
 		}
 
-		// 정보 업데이트
+		// ?뺣낫 ?낅뜲?댄듃
 		batchOpert.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		egovBatchOpertService.updateBatchOpert(batchOpert);
 
@@ -258,10 +258,10 @@ public class EgovBatchOpertController {
 	}
 
 	/**
-	 * 배치작업 조회팝업을 실행한다.
-	 * @return 리턴URL
+	 * 諛곗튂?묒뾽 議고쉶?앹뾽???ㅽ뻾?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */

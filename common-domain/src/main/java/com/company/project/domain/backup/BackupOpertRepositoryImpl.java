@@ -26,9 +26,9 @@ public class BackupOpertRepositoryImpl implements BackupOpertRepositoryCustom {
         builder.and(backupOpert.useAt.eq("Y"));
 
         if (StringUtils.hasText(searchKeyword)) {
-            if ("0".equals(searchCondition)) { // 백업작업명
+            if ("0".equals(searchCondition)) { // 獄쏄퉮毓?臾믩씜筌?
                 builder.and(backupOpert.backupOpertNm.contains(searchKeyword));
-            } else if ("1".equals(searchCondition)) { // 백업원본디렉토리
+            } else if ("1".equals(searchCondition)) { // 獄쏄퉮毓?癒?궚?遺얠젂?醫듼봺
                 builder.and(backupOpert.backupOrginlDrctry.contains(searchKeyword));
             }
         }

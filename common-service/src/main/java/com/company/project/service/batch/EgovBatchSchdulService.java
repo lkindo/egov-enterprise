@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 배치스케줄 서비스 인터페이스
+ * 諛곗튂?ㅼ?以??쒕퉬???명꽣?섏씠??
  */
 public interface EgovBatchSchdulService {
 

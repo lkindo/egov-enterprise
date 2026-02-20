@@ -15,18 +15,18 @@ import jakarta.annotation.Resource;
 
 /**
  *
- * 시스템연계에 대한 서비스 구현클래스를 정의한다.
- * @author 공통서비스 개발팀 이중호
+ * ?쒖뒪?쒖뿰怨꾩뿉 ????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -38,7 +38,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
     private SystemCntcDAO systemCntcDAO;
 
     /**
-	 * 시스템연계를 삭제한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ??젣?쒕떎.
 	 */
 	 @Override
 	public void deleteSystemCntc(SystemCntc systemCntc) throws Exception {
@@ -46,7 +46,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	 }
 
 	/**
-	 * 시스템연계를 등록한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ?깅줉?쒕떎.
 	 */
     @Override
 	public void insertSystemCntc(SystemCntc systemCntc) throws Exception {
@@ -54,7 +54,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템연계 상세항목을 조회한다.
+	 * ?쒖뒪?쒖뿰怨??곸꽭??ぉ??議고쉶?쒕떎.
 	 */
 	@Override
 	public SystemCntc selectSystemCntcDetail(SystemCntc systemCntc) throws Exception {
@@ -63,7 +63,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템연계 승인/승인취소한다.
+	 * ?쒖뒪?쒖뿰怨??뱀씤/?뱀씤痍⑥냼?쒕떎.
 	 */
 	@Override
 	public void confirmSystemCntc(SystemCntc systemCntc) throws Exception {
@@ -71,7 +71,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템연계 목록을 조회한다.
+	 * ?쒖뒪?쒖뿰怨?紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectSystemCntcList(SystemCntcVO searchVO) throws Exception {
@@ -79,7 +79,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템연계 총 개수를 조회한다.
+	 * ?쒖뒪?쒖뿰怨?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectSystemCntcListTotCnt(SystemCntcVO searchVO) throws Exception {
@@ -87,7 +87,7 @@ public class EgovSystemCntcServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템연계를 수정한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ?섏젙?쒕떎.
 	 */
 	@Override
 	public void updateSystemCntc(SystemCntc systemCntc) throws Exception {

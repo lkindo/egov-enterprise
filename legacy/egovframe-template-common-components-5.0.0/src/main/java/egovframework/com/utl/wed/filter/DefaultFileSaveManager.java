@@ -33,20 +33,20 @@ import egovframework.com.cmm.service.EgovProperties;
 
 /**
  * Created by guava on 1/20/14.
- *  이미지 저장 처리 클래스
+ *  ?대?吏 ???泥섎━ ?대옒??
  * @author guavatak
  * @since 2014.12.04
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일              수정자             수정내용
+ *  ?섏젙??             ?섏젙??            ?섏젙?댁슜
  *  ----------  --------    ---------------------------
- *  2014.12.04	표준프레임워크	최초 적용 (패키지 변경 및 소스 정리)
- *  2018.12.28	신용호             saveFile() 파라미터 수정
- *  2023.12.20  신용호         CK-Editor 업로드 오류 수정
+ *  2014.12.04	?쒖??꾨젅?꾩썙??理쒖큹 ?곸슜 (?⑦궎吏 蹂寃?諛??뚯뒪 ?뺣━)
+ *  2018.12.28	?좎슜??            saveFile() ?뚮씪誘명꽣 ?섏젙
+ *  2023.12.20  ?좎슜??        CK-Editor ?낅줈???ㅻ쪟 ?섏젙
  * </pre>
  */
 public class DefaultFileSaveManager implements FileSaveManager {
@@ -67,7 +67,7 @@ public class DefaultFileSaveManager implements FileSaveManager {
 		try {
 			FileUtils.writeByteArrayToFile(fileToSave, fileItem.get());
 		} catch (IOException e) {
-			//KISA 보안약점 조치 (2018-10-29, 윤창원)
+			//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			LOGGER.debug("File IO exception" + e.getMessage());
 		}
 

@@ -6,18 +6,18 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
  *
- * 기관코드에 관한 서비스 인터페이스 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 湲곌?肄붾뱶??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -25,47 +25,47 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 public interface EgovInsttCodeRecptnService {
 
 	/**
-	 * 기관코드수신을 처리한다.
+	 * 湲곌?肄붾뱶?섏떊??泥섎━?쒕떎.
 	 * @param insttCode
 	 * @throws Exception
 	 */
 	void insertInsttCodeRecptn() throws Exception;
 
 	/**
-	 * 기관코드 상세내역을 조회한다.
+	 * 湲곌?肄붾뱶 ?곸꽭?댁뿭??議고쉶?쒕떎.
 	 * @param insttCode
-	 * @return InsttCode(기관코드)
+	 * @return InsttCode(湲곌?肄붾뱶)
 	 * @throws Exception
 	 */
 	InsttCodeRecptn selectInsttCodeDetail(InsttCodeRecptn insttCodeRecptn) throws Exception;
 
 	/**
-	 * 기관코드수신 목록을 조회한다.
+	 * 湲곌?肄붾뱶?섏떊 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(기관코드 목록)
+	 * @return List(湲곌?肄붾뱶 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectInsttCodeRecptnList(InsttCodeRecptnVO searchVO) throws Exception;
 
     /**
-	 * 기관코드수신 총 개수를 조회한다.
+	 * 湲곌?肄붾뱶?섏떊 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(기관코드 총 개수)
+     * @return int(湲곌?肄붾뱶 珥?媛쒖닔)
      */
     int selectInsttCodeRecptnListTotCnt(InsttCodeRecptnVO searchVO) throws Exception;
 
 	/**
-	 * 기관코드 목록을 조회한다.
+	 * 湲곌?肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(기관코드 목록)
+	 * @return List(湲곌?肄붾뱶 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectInsttCodeList(InsttCodeRecptnVO searchVO) throws Exception;
 
     /**
-	 * 기관코드 총 개수를 조회한다.
+	 * 湲곌?肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(기관코드 총 개수)
+     * @return int(湲곌?肄붾뱶 珥?媛쒖닔)
      */
     int selectInsttCodeListTotCnt(InsttCodeRecptnVO searchVO) throws Exception;
 }

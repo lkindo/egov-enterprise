@@ -39,7 +39,7 @@ public class EgovCommuMasterServiceImpl extends EgovAbstractServiceImpl implemen
 
 	@Override
 	public String insertCommuMaster(Community community) throws FdlException {
-		//게시판 ID 채번
+		//寃뚯떆??ID 梨꾨쾲
 		String cmmntyId = idgenService.getNextStringId();
 		community.setCmmntyId(cmmntyId);
 

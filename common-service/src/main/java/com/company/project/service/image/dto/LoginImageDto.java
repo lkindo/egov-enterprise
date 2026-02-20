@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 로그인 이미지 DTO
+ * 濡쒓렇???대?吏 DTO
  */
 @Data
 @Builder

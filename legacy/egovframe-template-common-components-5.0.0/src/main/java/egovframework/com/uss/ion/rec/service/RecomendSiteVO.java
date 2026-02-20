@@ -3,18 +3,18 @@ package egovframework.com.uss.ion.rec.service;
 
 /**
  * 
- * 추천사이트정보를 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * 異붿쿇?ъ씠?몄젙蹂대? 泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -22,41 +22,41 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	
     private static final long serialVersionUID = 1L;
     
-    /** 추천사이트 ID */
+    /** 異붿쿇?ъ씠??ID */
     private String recomendSiteId;
     
-    /** 추천사이트 URL */
+    /** 異붿쿇?ъ씠??URL */
     private String recomendSiteUrl;
     
-    /** 추천사이트명 */
+    /** 異붿쿇?ъ씠?몃챸 */
     private String recomendSiteNm;
     
-    /** 추천사이트설명 */
+    /** 異붿쿇?ъ씠?몄꽕紐?*/
     private String recomendSiteDc;
     
-    /** 추천사유내용 */
+    /** 異붿쿇?ъ쑀?댁슜 */
     private String recomendResnCn;
 
-    /** 추천승인여부 */
+    /** 異붿쿇?뱀씤?щ? */
     private String recomendConfmAt;
     
-    /** 승인일자 */
+    /** ?뱀씤?쇱옄 */
     private String confmDe;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록자ID */
+    /** 理쒖큹?깅줉?륤D */
     private String frstRegisterId;
 
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm;
 
-    /** 최종수정자ID */
+    /** 理쒖쥌?섏젙?륤D */
     private String lastUpdusrId;
 
 	/**
-	 * recomendSiteId attribute 를 리턴한다.
+	 * recomendSiteId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendSiteId() {
@@ -64,7 +64,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteId attribute 값을 설정한다.
+	 * recomendSiteId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendSiteId String
 	 */
 	public void setRecomendSiteId(String recomendSiteId) {
@@ -72,7 +72,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteUrl attribute 를 리턴한다.
+	 * recomendSiteUrl attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendSiteUrl() {
@@ -80,7 +80,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteUrl attribute 값을 설정한다.
+	 * recomendSiteUrl attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendSiteUrl String
 	 */
 	public void setRecomendSiteUrl(String recomendSiteUrl) {
@@ -88,7 +88,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteNm attribute 를 리턴한다.
+	 * recomendSiteNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendSiteNm() {
@@ -96,7 +96,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteNm attribute 값을 설정한다.
+	 * recomendSiteNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendSiteNm String
 	 */
 	public void setRecomendSiteNm(String recomendSiteNm) {
@@ -104,7 +104,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteDc attribute 를 리턴한다.
+	 * recomendSiteDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendSiteDc() {
@@ -112,7 +112,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendSiteDc attribute 값을 설정한다.
+	 * recomendSiteDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendSiteDc String
 	 */
 	public void setRecomendSiteDc(String recomendSiteDc) {
@@ -120,7 +120,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendResnCn attribute 를 리턴한다.
+	 * recomendResnCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendResnCn() {
@@ -128,7 +128,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendResnCn attribute 값을 설정한다.
+	 * recomendResnCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendResnCn String
 	 */
 	public void setRecomendResnCn(String recomendResnCn) {
@@ -136,7 +136,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendConfmAt attribute 를 리턴한다.
+	 * recomendConfmAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getRecomendConfmAt() {
@@ -144,7 +144,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * recomendConfmAt attribute 값을 설정한다.
+	 * recomendConfmAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recomendConfmAt String
 	 */
 	public void setRecomendConfmAt(String recomendConfmAt) {
@@ -152,7 +152,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * confmDe attribute 를 리턴한다.
+	 * confmDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getConfmDe() {
@@ -160,7 +160,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * confmDe attribute 값을 설정한다.
+	 * confmDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return confmDe String
 	 */
 	public void setConfmDe(String confmDe) {
@@ -168,7 +168,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -176,7 +176,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -184,7 +184,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -192,7 +192,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -200,7 +200,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -208,7 +208,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -216,7 +216,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -224,7 +224,7 @@ public class RecomendSiteVO extends RecomendSiteDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

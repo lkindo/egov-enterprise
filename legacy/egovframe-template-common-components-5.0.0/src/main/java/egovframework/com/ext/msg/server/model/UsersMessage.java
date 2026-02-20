@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.model;
 
@@ -23,17 +23,17 @@ import java.util.Set;
 
 /**
 * @Class Name : UsersMessage.java
-* @Description : 사용자 리스트를 담는 VO
+* @Description : ?ъ슜??由ъ뒪?몃? ?대뒗 VO
 * @Modification Information
 *
-*    수정일       수정자         수정내용
+*    ?섏젙??      ?섏젙??        ?섏젙?댁슜
 *    -------        -------     -------------------
-*    2014. 11. 27.    이영지
+*    2014. 11. 27.    ?댁쁺吏
 *
 */
 public class UsersMessage implements Message{
 	/**
-	 * 연결되어있는 사용자들
+	 * ?곌껐?섏뼱?덈뒗 ?ъ슜?먮뱾
 	 */
 	private Set<String> users = null;
 

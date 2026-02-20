@@ -12,33 +12,33 @@ import egovframework.com.utl.sys.trm.service.TrsmrcvMntrngLog;
 import jakarta.annotation.Resource;
 
 /**
- * 송수신모니터링관리에 대한 ServiceImpl 클래스를 정의한다.
+ * ?≪닔?좊え?덊꽣留곴?由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @Service("egovTrsmrcvMntrngService")
 public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovTrsmrcvMntrngService {
 
 	/**
-	 * 송수신모니터링DAO
+	 * ?≪닔?좊え?덊꽣留갆AO
 	 */
 	@Resource(name = "trsmrcvMntrngDao")
 	private TrsmrcvMntrngDao dao;
 
 	/**
-	 * 송수신모니터링을 삭제한다.
-	 * @param trsmrcvMntrng    삭제대상 송수신모니터링model
+	 * ?≪닔?좊え?덊꽣留곸쓣 ??젣?쒕떎.
+	 * @param trsmrcvMntrng    ??젣????≪닔?좊え?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -47,35 +47,35 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링을 등록한다.
-	 * @param trsmrcvMntrng    등록대상 송수신모니터링model
+	 * ?≪닔?좊え?덊꽣留곸쓣 ?깅줉?쒕떎.
+	 * @param trsmrcvMntrng    ?깅줉????≪닔?좊え?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	@Override
 	public void insertTrsmrcvMntrng(TrsmrcvMntrng trsmrcvMntrng) throws Exception {
-		// 상태값을 초기치로 설정한다.
+		// ?곹깭媛믪쓣 珥덇린移섎줈 ?ㅼ젙?쒕떎.
 		trsmrcvMntrng.setMntrngSttus("01");
 		dao.insertTrsmrcvMntrng(trsmrcvMntrng);
 
 	}
 
 	/**
-	 * 송수신모니터링로그를 등록한다.
-	 * @param trsmrcvMntrng    등록대상 송수신모니터링로그model
+	 * ?≪닔?좊え?덊꽣留곷줈洹몃? ?깅줉?쒕떎.
+	 * @param trsmrcvMntrng    ?깅줉????≪닔?좊え?덊꽣留곷줈洹퇹odel
 	 * @exception Exception Exception
 	 */
 	@Override
 	public void insertTrsmrcvMntrngLog(TrsmrcvMntrngLog trsmrcvMntrngLog) throws Exception {
-		// 상태값을 초기치로 설정한다.
+		// ?곹깭媛믪쓣 珥덇린移섎줈 ?ㅼ젙?쒕떎.
 		dao.insertTrsmrcvMntrngLog(trsmrcvMntrngLog);
 
 	}
 
 	/**
-	 * 송수신모니터링을 상세조회 한다.
-	 * @return 송수신모니터링정보
+	 * ?≪닔?좊え?덊꽣留곸쓣 ?곸꽭議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곸젙蹂?
 	 *
-	 * @param trsmrcvMntrng 조회대상 송수신모니터링model
+	 * @param trsmrcvMntrng 議고쉶????≪닔?좊え?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -84,10 +84,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링로그를 상세조회 한다.
-	 * @return 송수신모니터링로그정보
+	 * ?≪닔?좊え?덊꽣留곷줈洹몃? ?곸꽭議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷줈洹몄젙蹂?
 	 *
-	 * @param trsmrcvMntrngLog 조회대상 송수신모니터링로그model
+	 * @param trsmrcvMntrngLog 議고쉶????≪닔?좊え?덊꽣留곷줈洹퇹odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -96,10 +96,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링의 목록을 조회 한다.
-	 * @return 송수신모니터링목록
+	 * ?≪닔?좊え?덊꽣留곸쓽 紐⑸줉??議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷ぉ濡?
 	 *
-	 * @param searchVO 	조회정보가 담긴 VO
+	 * @param searchVO 	議고쉶?뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -109,10 +109,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?≪닔?좊え?덊꽣留?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -122,10 +122,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링로그의 목록을 조회 한다.
-	 * @return 송수신모니터링로그목록
+	 * ?≪닔?좊え?덊꽣留곷줈洹몄쓽 紐⑸줉??議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷줈洹몃ぉ濡?
 	 *
-	 * @param searchVO 	조회정보가 담긴 VO
+	 * @param searchVO 	議고쉶?뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -135,10 +135,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링로그 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?≪닔?좊え?덊꽣留곷줈洹?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -148,9 +148,9 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 송수신모니터링정보를 수정한다.
+	 * ?≪닔?좊え?덊꽣留곸젙蹂대? ?섏젙?쒕떎.
 	 *
-	 * @param trsmrcvMntrng    수정대상 송수신모니터링model
+	 * @param trsmrcvMntrng    ?섏젙????≪닔?좊え?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -159,10 +159,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 연계정보 목록을 조회한다.
-	 * @return 연계정보목록
+	 * ?곌퀎?뺣낫 紐⑸줉??議고쉶?쒕떎.
+	 * @return ?곌퀎?뺣낫紐⑸줉
 	 *
-	 * @param searchVO    조회조건VO
+	 * @param searchVO    議고쉶議곌굔VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -172,10 +172,10 @@ public class EgovTrsmrcvMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 연계정보 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?곌퀎?뺣낫 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override

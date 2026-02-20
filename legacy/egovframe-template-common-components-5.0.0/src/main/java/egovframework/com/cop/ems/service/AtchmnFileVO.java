@@ -1,40 +1,40 @@
 package egovframework.com.cop.ems.service;
 
 /**
- * 발송메일에 첨부되는 파일 VO 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪??泥⑤??섎뒗 ?뚯씪 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
 public class AtchmnFileVO {
 
-	/** 첨부파일ID */
+	/** 泥⑤??뚯씪ID */
 	private String atchFileId;
-	/** 파일연번 */
+	/** ?뚯씪?곕쾲 */
 	private String fileSn;
-	/** 원파일명 */
+	/** ?먰뙆?쇰챸 */
 	private String orignlFileNm;
-	/** 저장파일명 */
+	/** ??ν뙆?쇰챸 */
 	private String streFileNm;
-	/** 파일저장경로 */
+	/** ?뚯씪??κ꼍濡?*/
 	private String fileStreCours;
-	/** 파일확장자 */
+	/** ?뚯씪?뺤옣??*/
 	private String fileExtsn;
-	/** 파일크기 */
+	/** ?뚯씪?ш린 */
 	private int fileMg;
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAtchFileId() {
@@ -42,7 +42,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -50,7 +50,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileSn attribute 를 리턴한다.
+	 * fileSn attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFileSn() {
@@ -58,7 +58,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileSn attribute 값을 설정한다.
+	 * fileSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fileSn String
 	 */
 	public void setFileSn(String fileSn) {
@@ -66,7 +66,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * orignlFileNm attribute 를 리턴한다.
+	 * orignlFileNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOrignlFileNm() {
@@ -74,7 +74,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * orignlFileNm attribute 값을 설정한다.
+	 * orignlFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param orignlFileNm String
 	 */
 	public void setOrignlFileNm(String orignlFileNm) {
@@ -82,7 +82,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * streFileNm attribute 를 리턴한다.
+	 * streFileNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getStreFileNm() {
@@ -90,7 +90,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * streFileNm attribute 값을 설정한다.
+	 * streFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param streFileNm String
 	 */
 	public void setStreFileNm(String streFileNm) {
@@ -98,7 +98,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileStreCours attribute 를 리턴한다.
+	 * fileStreCours attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFileStreCours() {
@@ -106,7 +106,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileStreCours attribute 값을 설정한다.
+	 * fileStreCours attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fileStreCours String
 	 */
 	public void setFileStreCours(String fileStreCours) {
@@ -114,7 +114,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileExtsn attribute 를 리턴한다.
+	 * fileExtsn attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFileExtsn() {
@@ -122,7 +122,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileExtsn attribute 값을 설정한다.
+	 * fileExtsn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fileExtsn String
 	 */
 	public void setFileExtsn(String fileExtsn) {
@@ -130,7 +130,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileMg attribute 를 리턴한다.
+	 * fileMg attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getFileMg() {
@@ -138,7 +138,7 @@ public class AtchmnFileVO {
 	}
 
 	/**
-	 * fileMg attribute 값을 설정한다.
+	 * fileMg attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fileMg int
 	 */
 	public void setFileMg(int fileMg) {

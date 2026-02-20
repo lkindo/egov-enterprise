@@ -12,18 +12,18 @@ import egovframework.com.sym.ccm.ccc.service.CmmnClCodeVO;
 
 /**
 *
-* 공통분류코드에 대한 데이터 접근 클래스를 정의한다
-* @author 공통서비스 개발팀 이중호
+* 怨듯넻遺꾨쪟肄붾뱶??????곗씠???묎렐 ?대옒?ㅻ? ?뺤쓽?쒕떎
+* @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
 * @since 2009.04.01
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2009.04.01  이중호          최초 생성
+*   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
 *
 * </pre>
 */
@@ -33,18 +33,18 @@ public class CmmnClCodeManageDAO extends EgovComAbstractDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CmmnClCodeManageDAO.class);
 	
 	   /**
-		 * 공통분류코드 총 개수를 조회한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	     * @param searchVO
-	     * @return int(공통분류코드 총 개수)
+	     * @return int(怨듯넻遺꾨쪟肄붾뱶 珥?媛쒖닔)
 	     */
 	    public int selectCmmnClCodeListTotCnt(CmmnClCodeVO searchVO) throws Exception {
 	        return (Integer)selectOne("CmmnClCodeManage.selectCmmnClCodeListTotCnt", searchVO);
 	    }
 	    
 	    /**
-		 * 공통분류코드 목록을 조회한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	     * @param searchVO
-	     * @return List(공통분류코드 목록)
+	     * @return List(怨듯넻遺꾨쪟肄붾뱶 紐⑸줉)
 	     * @throws Exception
 	     */
 	    public List<CmmnClCodeVO> selectCmmnClCodeList(CmmnClCodeVO searchVO) throws Exception {
@@ -52,26 +52,26 @@ public class CmmnClCodeManageDAO extends EgovComAbstractDAO {
 	    }
 	    
 	    /**
-		 * 공통분류코드 상세항목을 조회한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶 ?곸꽭??ぉ??議고쉶?쒕떎.
 		 * @param cmmnClCode
-		 * @return CmmnClCode(공통분류코드)
+		 * @return CmmnClCode(怨듯넻遺꾨쪟肄붾뱶)
 		 */
 		public CmmnClCode selectCmmnClCodeDetail(CmmnClCode cmmnClCode) throws Exception {
 			return (CmmnClCode)selectOne("CmmnClCodeManage.selectCmmnClCodeDetail", cmmnClCode);
 		}
 		
 		/**
-		 * 공통분류코드를 등록한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶瑜??깅줉?쒕떎.
 		 * @param cmmnClCodeVO
 		 * @throws Exception
 		 */
 		public void insertCmmnClCode(CmmnClCodeVO cmmnClCodeVO) throws Exception{
-			LOGGER.info("TEST5 : 등록 DAO");
+			LOGGER.info("TEST5 : ?깅줉 DAO");
 			insert("CmmnClCodeManage.insertCmmnClCode", cmmnClCodeVO);
 		}
 
 		/**
-		 * 공통분류코드를 삭제한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶瑜???젣?쒕떎.
 		 * @param cmmnClCodeVO
 		 * @throws Exception
 		 */
@@ -81,7 +81,7 @@ public class CmmnClCodeManageDAO extends EgovComAbstractDAO {
 		}
 		
 		/**
-		 * 공통분류코드를 수정한다.
+		 * 怨듯넻遺꾨쪟肄붾뱶瑜??섏젙?쒕떎.
 		 * @param cmmnClCodeVO
 		 * @throws Exception
 		 */

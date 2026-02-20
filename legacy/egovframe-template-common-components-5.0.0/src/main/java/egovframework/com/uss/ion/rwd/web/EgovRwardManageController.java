@@ -32,28 +32,28 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 포상관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ긽愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 포상관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 포상관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?ъ긽愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?ъ긽愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2011.08.16  정진오          VcatnManageVO Dependency 제거, 사용하지 않는 객체 선언
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.15  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.08.16  ?뺤쭊??         VcatnManageVO Dependency ?쒓굅, ?ъ슜?섏? ?딅뒗 媛앹껜 ?좎뼵
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -69,7 +69,7 @@ public class EgovRwardManageController {
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -77,14 +77,14 @@ public class EgovRwardManageController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 포상관리 목록화면 이동
+	 * ?ъ긽愿由?紐⑸줉?붾㈃ ?대룞
 	 * 
 	 * @return String
 	 * @exception Exception
 	 */
 	@RequestMapping("/uss/ion/rwd/EgovRwardManageListView.do")
 	public String selectRwardManageListView(/* @ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, */ // 2011.8.16
-																												// 수정분
+																												// ?섏젙遺?
 			ModelMap model) throws Exception {
 		List<?> rwardCdCodeList = null;
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
@@ -96,12 +96,12 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 포상관리정보를 관리하기 위해 등록된 포상관리 목록을 조회한다.
+	 * ?ъ긽愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???ъ긽愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return String - 리턴 Url
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "포상관리", order = 920, gid = 50)
+	@IncludedInfo(name = "?ъ긽愿由?, order = 920, gid = 50)
 	@RequestMapping(value = "/uss/ion/rwd/selectRwardManageList.do")
 	public String selectRwardManageList(@ModelAttribute("rwardManageVO") RwardManageVO rwardManageVO, ModelMap model)
 			throws Exception {
@@ -136,19 +136,19 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 등록된 포상관리의 상세정보를 조회한다.
+	 * ?깅줉???ъ긽愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return String - 리턴 Url
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/EgovRwardManageDetail.do")
 	public String selectRwardManage(@ModelAttribute("rwardManage") RwardManage rwardManage,
 			@ModelAttribute("rwardManageVO") RwardManageVO rwardManageVO, @RequestParam Map<?, ?> commandMap,
 			ModelMap model) throws Exception {
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		rwardManageVO.setRwardDe(EgovStringUtil.removeMinusChar(rwardManageVO.getRwardDe()));
 
-		// 등록 상세정보
+		// ?깅줉 ?곸꽭?뺣낫
 		RwardManageVO rwardManageVOTemp = egovRwardManageService.selectRwardManage(rwardManageVO);
 
 		model.addAttribute("rwardManageVO", rwardManageVOTemp);
@@ -180,9 +180,9 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 포상관리 등록 화면으로 이동한다.
+	 * ?ъ긽愿由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
-	 * @return String - 리턴 Url
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/EgovRwardRegist.do")
 	public String insertViewRwardManage(@ModelAttribute("rwardManage") RwardManage rwardManage,
@@ -196,10 +196,10 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 포상관리정보를 신규로 등록한다.
+	 * ?ъ긽愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param rwardManage - 포상관리 model
-	 * @return String - 리턴 Url
+	 * @param rwardManage - ?ъ긽愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/insertRwardManage.do")
 	public String insertRwardManage(final MultipartHttpServletRequest multiRequest,
@@ -211,7 +211,7 @@ public class EgovRwardManageController {
 			model.addAttribute("rwardManageVO", rwardManageVO);
 			return "egovframework/com/uss/ion/rwd/EgovRwardRegist";
 		} else {
-			// 첨부파일 관련 첨부파일ID 생성
+			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
@@ -220,13 +220,13 @@ public class EgovRwardManageController {
 
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "RWD_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+				atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 			}
-			// 리턴받은 첨부파일ID를 셋팅한다..
-			rwardManage.setAtchFileId(atchFileId); // 첨부파일 ID
+			// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+			rwardManage.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-			rwardManage.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); // 최초등록자ID
+			rwardManage.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); // 理쒖큹?깅줉?륤D
 			egovRwardManageService.insertRwardManage(rwardManage);
 			status.setComplete();
 			model.addAttribute("message", egovMessageSource.getMessage("success.common.insert"));
@@ -237,10 +237,10 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 기 등록된 포상관리정보를 수정한다.
+	 * 湲??깅줉???ъ긽愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param rwardManage - 포상관리 model
-	 * @return String - 리턴 Url
+	 * @param rwardManage - ?ъ긽愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/rwd/updtRwardManage.do")
@@ -254,7 +254,7 @@ public class EgovRwardManageController {
 			model.addAttribute("rwardManage", rwardManage);
 			return "egovframework/com/uss/ion/rwd/EgovRwardUpdt";
 		} else {
-			// 첨부파일 관련 ID 생성 start....
+			// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 			String atchFileId = rwardManage.getAtchFileId();
 
 			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -268,8 +268,8 @@ public class EgovRwardManageController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "RWD_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					rwardManage.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					rwardManage.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					// System.out.println("updtRwardManage 4");
@@ -280,7 +280,7 @@ public class EgovRwardManageController {
 					fileMngService.updateFileInfs(fvoList);
 				}
 			}
-			// 첨부파일 관련 ID 생성 end...
+			// 泥⑤??뚯씪 愿??ID ?앹꽦 end...
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
 			egovRwardManageService.updtRwardManage(rwardManage);
@@ -289,42 +289,42 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 기 등록된 포상관리정보를 삭제한다.
+	 * 湲??깅줉???ъ긽愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param rwardManage - 포상관리 model
-	 * @return String - 리턴 Url
+	 * @param rwardManage - ?ъ긽愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/deleteRwardManage.do")
 	public String deleteRwardManage(@ModelAttribute("rwardManage") RwardManage rwardManage, SessionStatus status,
 			ModelMap model) throws Exception {
 		rwardManage.setRwardDe(EgovStringUtil.removeMinusChar(rwardManage.getRwardDe()));
 
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = rwardManage.getAtchFileId();
 
-		// 포상 삭제 처리
+		// ?ъ긽 ??젣 泥섎━
 		egovRwardManageService.deleteRwardManage(rwardManage);
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		status.setComplete();
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.delete"));
 		return "forward:/uss/ion/rwd/selectRwardManageList.do";
 	}
 
-	/*** 승인관련 ***/
+	/*** ?뱀씤愿??***/
 	/**
-	 * 포상관리정보 승인 처리를 위해 신청된 포상관리 목록을 조회한다.
+	 * ?ъ긽愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???ъ긽愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return String - 리턴 Url
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "포상승인관리", order = 921, gid = 50)
+	@IncludedInfo(name = "?ъ긽?뱀씤愿由?, order = 921, gid = 50)
 	@RequestMapping(value = "/uss/ion/rwd/EgovRwardConfmList.do")
 	public String selectRwardManageConfmList(@ModelAttribute("rwardManageVO") RwardManageVO rwardManageVO,
 			ModelMap model) throws Exception {
@@ -343,7 +343,7 @@ public class EgovRwardManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		rwardManageVO.setSanctnerId(user.getUniqId()); // 사용자가 승인권자인지 조건값 setting selectRwardManageList
+		rwardManageVO.setSanctnerId(user.getUniqId()); // ?ъ슜?먭? ?뱀씤沅뚯옄?몄? 議곌굔媛?setting selectRwardManageList
 
 		rwardManageVO.setRwardManageList(egovRwardManageService.selectRwardManageConfmList(rwardManageVO));
 
@@ -365,17 +365,17 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 포상승인관리 상세정보를 조회한다.
+	 * ?ъ긽?뱀씤愿由??곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return String - 리턴 Url
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/EgovRwardConfm.do")
 	public String selectRwardConfm(@ModelAttribute("rwardManageVO") RwardManageVO rwardManageVO,
 			@ModelAttribute("rwardManage") RwardManage rwardManage, ModelMap model) throws Exception {
 		rwardManageVO.setRwardDe(EgovStringUtil.removeMinusChar(rwardManageVO.getRwardDe()));
 
-		// 등록 상세정보
+		// ?깅줉 ?곸꽭?뺣낫
 		RwardManageVO rwardManageVOTemp = egovRwardManageService.selectRwardManage(rwardManageVO);
 
 		RwardManage rwardManageTemp = new RwardManage();
@@ -397,17 +397,17 @@ public class EgovRwardManageController {
 	}
 
 	/**
-	 * 신청된 포상을 승인처리한다.
+	 * ?좎껌???ъ긽???뱀씤泥섎━?쒕떎.
 	 * 
-	 * @param rwardManage - 포상관리 model
-	 * @return String - 리턴 Url
+	 * @param rwardManage - ?ъ긽愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/rwd/updtRwardConfm.do")
 	public String updtRwardManageConfm(@ModelAttribute("rwardManage") RwardManage rwardManage,
 			BindingResult bindingResult, SessionStatus status, ModelMap model) throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {

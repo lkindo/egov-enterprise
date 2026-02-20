@@ -33,21 +33,21 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 쪽지 관리(보내기)를 처리하는 Controller Class 구현
+ * 履쎌? 愿由?蹂대궡湲?瑜?泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.04  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -66,48 +66,48 @@ public class EgovNoteManageController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	/** 공통코드 서비스 */
+	/** 怨듯넻肄붾뱶 ?쒕퉬??*/
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	/** 파일첨부 관리 서비스 */
+	/** ?뚯씪泥⑤? 愿由??쒕퉬??*/
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
-	/** 파일첨부 Util */
+	/** ?뚯씪泥⑤? Util */
 	@Resource(name = "EgovFileMngUtil")
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 쪽지 관리(보내기) 목록을 조회한다.
+	 * 履쎌? 愿由?蹂대궡湲? 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param noteManage -쪽지관리 Model
+	 * @param noteManage -履쎌?愿由?Model
 	 * @param commandMap -Request Variable
-	 * @param model      -Spring 제공하는 ModelMap
-	 * @return String -리턴 URL
+	 * @param model      -Spring ?쒓났?섎뒗 ModelMap
+	 * @return String -由ы꽩 URL
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "쪽지관리", order = 840, gid = 50)
+	@IncludedInfo(name = "履쎌?愿由?, order = 840, gid = 50)
 	@RequestMapping(value = "/uss/ion/ntm/registEgovNoteManage.do")
 	public String EgovNoteRecptnRegistForm(NoteManageVO noteManage, @RequestParam Map<?, ?> commandMap, ModelMap model)
 			throws Exception {
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 수신구분
+		// ?섏떊援щ텇
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM050");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("recptnSe", listComCode);
 
-		// 답변처리
+		// ?듬?泥섎━
 		if (sCmd.equals("reply")) {
 			model.addAttribute("cmd", sCmd);
 
@@ -126,14 +126,14 @@ public class EgovNoteManageController {
 	}
 
 	/**
-	 * 쪽지 관리(보내기) 목록을 조회한다.(POST형식)
+	 * 履쎌? 愿由?蹂대궡湲? 紐⑸줉??議고쉶?쒕떎.(POST?뺤떇)
 	 * 
 	 * @param multiRequest  -Multipart Request
 	 * @param commandMap    -Request Variable
-	 * @param noteManage    -쪽지관리 Model
-	 * @param bindingResult -Validator 하기위한 객체
-	 * @param model         -Spring 제공하는 ModelMap
-	 * @return String -리턴 URL
+	 * @param noteManage    -履쎌?愿由?Model
+	 * @param bindingResult -Validator ?섍린?꾪븳 媛앹껜
+	 * @param model         -Spring ?쒓났?섎뒗 ModelMap
+	 * @return String -由ы꽩 URL
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/uss/ion/ntm/registEgovNoteManageActor.do")
@@ -143,13 +143,13 @@ public class EgovNoteManageController {
 
 		String sLocationUrl = "egovframework/com/uss/ion/ntm/EgovNoteManage";
 
-		// 변수 설정
+		// 蹂???ㅼ젙
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("reply")) {
 			sLocationUrl = "redirect:/uss/ion/ntr/listNoteRecptn.do";
 		}
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -160,14 +160,14 @@ public class EgovNoteManageController {
 			model.addAttribute("noteManage", noteManage);
 			return sLocationUrl;
 		}
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		noteManage.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		noteManage.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -175,20 +175,20 @@ public class EgovNoteManageController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 		noteManage.setAtchFileId(atchFileId);
 
-		// 쪽지등록
+		// 履쎌??깅줉
 		egovNoteManageService.insertNoteManage(noteManage, commandMap);
-		// NoteManage 빈 객체 생성
+		// NoteManage 鍮?媛앹껜 ?앹꽦
 		model.addAttribute("noteManage", new NoteManageVO());
 
-		// 등록메세지 설정
+		// ?깅줉硫붿꽭吏 ?ㅼ젙
 		String reusltScript = "";
 
 		reusltScript += "<script type='text/javaScript' language='javascript'>";
-		reusltScript += "alert(' 작성된 쪽지를 전송하였습니다!  ');";
+		reusltScript += "alert(' ?묒꽦??履쎌?瑜??꾩넚?섏??듬땲??  ');";
 		reusltScript += "</script>";
 
 		model.addAttribute("reusltScript", reusltScript);
@@ -197,12 +197,12 @@ public class EgovNoteManageController {
 	}
 
 	/**
-	 * 쪽지 관리(보내기) 사용자 목록을 조회한다.
+	 * 履쎌? 愿由?蹂대궡湲? ?ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param searchVO   -검색정보가 담긴 Model
+	 * @param searchVO   -寃?됱젙蹂닿? ?닿릿 Model
 	 * @param commandMap -Request Variable
-	 * @param model      -Spring 제공하는 ModelMap
-	 * @return String -리턴 URL
+	 * @param model      -Spring ?쒓났?섎뒗 ModelMap
+	 * @return String -由ы꽩 URL
 	 * @throws Exception
 	 */
 

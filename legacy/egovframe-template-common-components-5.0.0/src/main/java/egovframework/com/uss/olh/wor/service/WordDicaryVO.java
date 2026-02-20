@@ -4,18 +4,18 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  *
- * 용어사전정보 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?⑹뼱?ъ쟾?뺣낫 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,38 +23,38 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 
-	/** 용어ID */
+	/** ?⑹뼱ID */
 	private String wordId;
 
-	/** 용어명 */
+	/** ?⑹뼱紐?*/
 	private String wordNm;
 
-	/** 영문명 */
+	/** ?곷Ц紐?*/
 	private String engNm;
 
-	/** 용어설명 */
+	/** ?⑹뼱?ㅻ챸 */
 	private String wordDc;
 
-	/** 동의어 */
+	/** ?숈쓽??*/
 	private String synonm;
 
-	/** 등록자명 */
+	/** ?깅줉?먮챸 */
 	private String emplyrNm;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId;
 
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId;
 
 	/**
-	 * wordId attribute 를 리턴한다.
+	 * wordId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWordId() {
@@ -62,7 +62,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * wordId attribute 값을 설정한다.
+	 * wordId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return wordId String
 	 */
 	public void setWordId(String wordId) {
@@ -70,7 +70,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * wordNm attribute 를 리턴한다.
+	 * wordNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWordNm() {
@@ -78,7 +78,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * wordNm attribute 값을 설정한다.
+	 * wordNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return wordNm String
 	 */
 	public void setWordNm(String wordNm) {
@@ -86,7 +86,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * engNm attribute 를 리턴한다.
+	 * engNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEngNm() {
@@ -94,7 +94,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * engNm attribute 값을 설정한다.
+	 * engNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return engNm String
 	 */
 	public void setEngNm(String engNm) {
@@ -102,7 +102,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * wordDc attribute 를 리턴한다.
+	 * wordDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWordDc() {
@@ -110,7 +110,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * wordDc attribute 값을 설정한다.
+	 * wordDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return wordDc String
 	 */
 	public void setWordDc(String wordDc) {
@@ -118,7 +118,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * synonm attribute 를 리턴한다.
+	 * synonm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSynonm() {
@@ -126,7 +126,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * synonm attribute 값을 설정한다.
+	 * synonm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return synonm String
 	 */
 	public void setSynonm(String synonm) {
@@ -134,7 +134,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 를 리턴한다.
+	 * emplyrNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmplyrNm() {
@@ -142,7 +142,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 값을 설정한다.
+	 * emplyrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emplyrNm String
 	 */
 	public void setEmplyrNm(String emplyrNm) {
@@ -150,7 +150,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -158,7 +158,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -166,7 +166,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -174,7 +174,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -182,7 +182,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -190,7 +190,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -198,7 +198,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -206,7 +206,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -214,7 +214,7 @@ public class WordDicaryVO extends WordDicaryDefaultVO {
 	}
 
 	/**
-	 * toString 메소드를 대치한다.
+	 * toString 硫붿냼?쒕? ?移섑븳??
 	 */
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);

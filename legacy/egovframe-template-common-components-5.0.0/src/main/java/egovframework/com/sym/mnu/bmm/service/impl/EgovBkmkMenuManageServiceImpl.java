@@ -14,20 +14,20 @@ import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 import jakarta.annotation.Resource;
 
 /**
- * 바로가기메뉴를 관리하는 서비스 구현 클래스
+ * 諛붾줈媛湲곕찓?대? 愿由ы븯???쒕퉬??援ы쁽 ?대옒??
  * 
- * @author 공통 컴포넌트 개발팀 윤성록
+ * @author 怨듯넻 而댄룷?뚰듃 媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.09.25  윤성록          최초 생성
- *   2025.07.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
+ *   2009.09.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
+ *   2025.07.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
@@ -38,7 +38,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	private BkmkMenuManageDAO bkmkMenuManageDAO;
 
 	/**
-	 * 바로가기메뉴관리 정보를 삭제한다.
+	 * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param BkmkMenuManage
 	 * @return
@@ -50,7 +50,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 바로가기메뉴관리 정보를 등록한다.
+	 * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param BkmkMenuManage
 	 * @return
@@ -62,7 +62,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 바로가기메뉴관리 정보의 전체목록을 조회한다.
+	 * 諛붾줈媛湲곕찓?닿?由??뺣낫???꾩껜紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param BkmkMenuManage
 	 * @return Map<String, Object>
@@ -84,7 +84,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 바로가기메뉴관리 정보를 조회한다.
+	 * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param BkmkMenuManageVO
 	 * @return BkmkMenuManageVO
@@ -97,7 +97,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 등록할 메뉴정보 목록을 조회한다.
+	 * ?깅줉??硫붾돱?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param BkmkMenuManageVO
 	 * @return Map<String, Object>
@@ -120,7 +120,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 미리보기를 할 바로가기메뉴관리의 목록을 조회한다.
+	 * 誘몃━蹂닿린瑜???諛붾줈媛湲곕찓?닿?由ъ쓽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param BkmkMenuManageVO
 	 * @return List<MenuManageVO>
@@ -132,7 +132,7 @@ public class EgovBkmkMenuManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 선택된 메뉴의 URL 을 조회한다.
+	 * ?좏깮??硫붾돱??URL ??議고쉶?쒕떎.
 	 * 
 	 * @param bkmkMenuManage
 	 * @return

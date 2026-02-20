@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * 온라인매뉴얼 정보 Entity
- * 레거시 테이블: NONLINEMANUAL
+ * ??ㅼ뵬?紐꺿꼻??곷섰 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NONLINEMANUAL
  */
 @Entity
 @Table(name = "NONLINEMANUAL")

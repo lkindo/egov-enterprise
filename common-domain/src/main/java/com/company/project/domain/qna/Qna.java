@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * Q&A 정보 Entity
- * 레거시 테이블: NQAINFO
+ * Q&A ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NQAINFO
  */
 @Entity
 @Table(name = "NQAINFO")
@@ -106,7 +106,7 @@ public class Qna extends BaseEntity {
     public void answer(String answerCn, String userId) {
         this.answerCn = answerCn;
         this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
-        this.qnaProcessSttusCode = "A"; // 답변 완료
+        this.qnaProcessSttusCode = "A"; // ??? ?袁⑥┷
         if (userId != null) {
             this.lastModifiedBy = userId;
         }

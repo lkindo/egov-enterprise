@@ -28,17 +28,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 받은쪽지함관리를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * 諛쏆?履쎌??④?由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -64,17 +64,17 @@ public class EgovNoteRecptnController {
     @Resource(name = "egovNoteTrnsmitService")
     private EgovNoteTrnsmitService egovNoteTrnsmitService;
     /**
-     * 받은쪽지함관리 목록을 조회한다.
-     * @param request -HttpServletRequest 객체
-     * @param response -HttpServletResponse 객체
-     * @param searchVO -검색정보가 담긴 Model
+     * 諛쏆?履쎌??④?由?紐⑸줉??議고쉶?쒕떎.
+     * @param request -HttpServletRequest 媛앹껜
+     * @param response -HttpServletResponse 媛앹껜
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 Model
      * @param commandMap -Request  Variable
-     * @param noteRecptn -받은쪽지함관리 Model
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param noteRecptn -諛쏆?履쎌??④?由?Model
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
-    @IncludedInfo(name="받은쪽지함관리", order = 850 ,gid = 50)
+    @IncludedInfo(name="諛쏆?履쎌??④?由?, order = 850 ,gid = 50)
     @RequestMapping(value = "/uss/ion/ntr/listNoteRecptn.do")
     public String EgovNoteRecptnList(
 			 HttpServletRequest request,
@@ -85,20 +85,20 @@ public class EgovNoteRecptnController {
             EgovSecurityMap securitymap,
             ModelMap model) throws Exception {
 
-    	//변수 설정
+    	//蹂???ㅼ젙
     	String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
 
-        //로그인 객체 선언
+        //濡쒓렇??媛앹껜 ?좎뼵
         LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-        //삭제 모드로 실행시
+        //??젣 紐⑤뱶濡??ㅽ뻾??
         if(sCmd.equals("del")){
         	LOGGER.debug("##### EgovNoteRecptnController EgovNoteRecptnList()  start");
         	LOGGER.debug("noteId > {}", commandMap.get("noteIdAll"));
@@ -131,7 +131,7 @@ public class EgovNoteRecptnController {
 
 	            egovNoteRecptnService.deleteNoteRecptn(noteRecptn);
 	        }
-	        //삭제후 페이지 인덱스 설정
+	        //??젣???섏씠吏 ?몃뜳???ㅼ젙
 	        searchVO.setPageIndex(1);
         }
 
@@ -148,7 +148,7 @@ public class EgovNoteRecptnController {
         searchVO.setFirstIndex(paginationInfo.getFirstRecordIndex());
         searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
         searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-        //수신자설정
+        //?섏떊?먯꽕??
         searchVO.setRcverId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
         List<EgovMap> reusltList = egovNoteRecptnService.selectNoteRecptnList(searchVO);
@@ -166,12 +166,12 @@ public class EgovNoteRecptnController {
     }
 
     /**
-     * 받은쪽지함관리 목록을 상세조회 조회한다.
-     * @param searchVO -검색정보가 담긴 Model
+     * 諛쏆?履쎌??④?由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 Model
      * @param commandMap -Request  Variable
-     * @param noteRecptn -받은쪽지함관리 Model
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param noteRecptn -諛쏆?履쎌??④?由?Model
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @SuppressWarnings("unused")
@@ -193,7 +193,7 @@ public class EgovNoteRecptnController {
 
         	return "redirect:/uss/ion/ntr/listNoteRecptn.do";
         }else{
-            //로그인 객체 선언/아이디설정
+            //濡쒓렇??媛앹껜 ?좎뼵/?꾩씠?붿꽕??
             LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
             searchVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
             searchVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));

@@ -6,104 +6,104 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 개요
- * - 동기화대상 서버에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?숆린?붾????쒕쾭?????Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 동기화대상 서버에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 동기화대상 서버의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?숆린?붾????쒕쾭??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?숆린?붾????쒕쾭??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:34
+ * @created 28-6-2010 ?ㅼ쟾 10:44:34
  */
 public interface EgovSynchrnServerService {
 
 	/**
-	 * 동기화대상 서버를 관리하기 위해 등록된 서버목록을 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return List - 동기화대상 서버 목록
+	 * ?숆린?붾????쒕쾭瑜?愿由ы븯湲??꾪빐 ?깅줉???쒕쾭紐⑸줉??議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return List - ?숆린?붾????쒕쾭 紐⑸줉
 	 */
 	public List<SynchrnServerVO> selectSynchrnServerList(SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 동기화대상 서버 목록 총 개수를 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return int - 동기화대상 서버 카운트 수
+	 * ?숆린?붾????쒕쾭 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return int - ?숆린?붾????쒕쾭 移댁슫????
 	 */
 	public int selectSynchrnServerListTotCnt(SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 등록된 동기화대상 서버의 상세정보를 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return SynchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return SynchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	public SynchrnServerVO selectSynchrnServer(SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 등록된 동기화대상 서버의 파일 목록을 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪 紐⑸줉??議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 * @return List<String> - String Type List
 	 */
 	public List<String> selectSynchrnServerFiles(SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 등록된 동기화대상 서버의 파일을 삭제한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪????젣?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	public void deleteSynchrnServerFile(SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 등록된 동기화대상 서버의 파일을 다운로드 한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @param fileNm - 다운로드 대상 파일
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪???ㅼ슫濡쒕뱶 ?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @param fileNm - ?ㅼ슫濡쒕뱶 ????뚯씪
 	 */
 	public void downloadFtpFile(SynchrnServerVO synchrnServerVO, String fileNm) throws Exception;
 
 	/**
-	 * 동기화대상 서버정보를 신규로 등록한다.
-	 * @param synchrnServer - 동기화대상 서버 model
-	 * @return SynchrnServerVO - 동기화대상 서버 Vo
+	 * ?숆린?붾????쒕쾭?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
+	 * @return SynchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	public SynchrnServerVO insertSynchrnServer(SynchrnServer synchrnServer, SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 기 등록된 동기화대상 서버정보를 수정한다.
-	 * @param synchrnServer - 동기화대상 서버 model
+	 * 湲??깅줉???숆린?붾????쒕쾭?뺣낫瑜??섏젙?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
 	 */
 	public void updateSynchrnServer(SynchrnServer synchrnServer) throws Exception;
 
 	/**
-	 * 기 등록된 동기화대상 서버정보를 삭제한다.
-	 * @param synchrnServer - 동기화대상 서버 model
+	 * 湲??깅줉???숆린?붾????쒕쾭?뺣낫瑜???젣?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
 	 */
 	public void deleteSynchrnServer(SynchrnServer synchrnServer) throws Exception;
 
 	/**
-	 * 업로드 파일을 동기화대상 서버들을 대상으로 동기화 처리를 한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return boolean - 성공여부
+	 * ?낅줈???뚯씪???숆린?붾????쒕쾭?ㅼ쓣 ??곸쑝濡??숆린??泥섎━瑜??쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return boolean - ?깃났?щ?
 	 */
 	public boolean processSynchrn(SynchrnServerVO synchrnServerVO, File[] uploadFile) throws Exception;
 
 	/**
-	 * 업로드 파일의 목록을 조회한다.
-	 * @param filePath - 업로드 경로
-	 * @return List - 업로드 파일 리스트
+	 * ?낅줈???뚯씪??紐⑸줉??議고쉶?쒕떎.
+	 * @param filePath - ?낅줈??寃쎈줈
+	 * @return List - ?낅줈???뚯씪 由ъ뒪??
 	 */
 	public List<String> getFileName() throws Exception;
 
 	/**
-	 * 동기화 대상 파일을 업로드 한다.
-	 * @param file - 업로드 대상 파일
-	 * @param newName - 업로드 대상 파일명
-	 * @param stordFilePath - 업로드 경로
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?숆린??????뚯씪???낅줈???쒕떎.
+	 * @param file - ?낅줈??????뚯씪
+	 * @param newName - ?낅줈??????뚯씪紐?
+	 * @param stordFilePath - ?낅줈??寃쎈줈
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	public void writeFile(MultipartFile multipartFile, String newName, SynchrnServerVO synchrnServerVO) throws Exception;
 
 	/**
-	 * 업로드 파일을 삭제한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?낅줈???뚯씪????젣?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	public void deleteFile(String deleteFiles, SynchrnServerVO synchrnServerVO) throws Exception;
 }

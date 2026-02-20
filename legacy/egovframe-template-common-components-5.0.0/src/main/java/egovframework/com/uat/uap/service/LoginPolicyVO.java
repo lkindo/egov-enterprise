@@ -7,26 +7,26 @@ import lombok.Setter;
 
 /**
  * <pre>
- * 개요
- * - 로그인정책에 대한 VO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇?몄젙梨낆뿉 ???VO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 로그인정책정보의 목록 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - 濡쒓렇?몄젙梨낆젙蹂댁쓽 紐⑸줉 ??ぉ??愿由ы븳??
  * </pre>
  * 
- * @author 공통컴포넌트 개발팀 이문준
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?대Ц以
  * @since 2009.08.03
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.08.03  이문준          최초 생성
- *   2025.07.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-MethodReturnsInternalArray(Private 배열에 Public 데이터 할당)
- *   2025.07.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-ArrayIsStoredDirectly(Public 메소드부터 반환된 Private 배열)
+ *   2009.08.03  ?대Ц以          理쒖큹 ?앹꽦
+ *   2025.07.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-MethodReturnsInternalArray(Private 諛곗뿴??Public ?곗씠???좊떦)
+ *   2025.07.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ArrayIsStoredDirectly(Public 硫붿냼?쒕???諛섑솚??Private 諛곗뿴)
  *
  *      </pre>
  */
@@ -38,12 +38,12 @@ public class LoginPolicyVO extends LoginPolicy {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 로그인 정책 목록
+	 * 濡쒓렇???뺤콉 紐⑸줉
 	 */
 	private List<LoginPolicyVO> loginPolicyList;
 
 	/**
-	 * 삭제 여부
+	 * ??젣 ?щ?
 	 */
 	@Getter
 	@Setter

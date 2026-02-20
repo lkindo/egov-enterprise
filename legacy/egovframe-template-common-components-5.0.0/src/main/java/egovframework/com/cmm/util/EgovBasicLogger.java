@@ -12,12 +12,12 @@ import java.util.logging.Logger;
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.09.18  표준프레임워크센터 최초 생성
- *   2025.05.27  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙)
+ *   2014.09.18  ?쒖??꾨젅?꾩썙?ъ꽱??理쒖큹 ?앹꽦
+ *   2025.05.27  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -31,7 +31,7 @@ public class EgovBasicLogger {
 	private static final Logger INFO_LOGGER = Logger.getLogger("info");
 
 	/**
-	 * 기록이나 처리가 불필요한 경우 사용.
+	 * 湲곕줉?대굹 泥섎━媛 遺덊븘?뷀븳 寃쎌슦 ?ъ슜.
 	 * 
 	 * @param message
 	 * @param exception
@@ -45,7 +45,7 @@ public class EgovBasicLogger {
 	}
 
 	/**
-	 * 기록이나 처리가 불필요한 경우 사용.
+	 * 湲곕줉?대굹 泥섎━媛 遺덊븘?뷀븳 寃쎌슦 ?ъ슜.
 	 * 
 	 * @param message
 	 * @param exception
@@ -55,7 +55,7 @@ public class EgovBasicLogger {
 	}
 
 	/**
-	 * 디버그 정보를 기록하는 경우 사용.
+	 * ?붾쾭洹??뺣낫瑜?湲곕줉?섎뒗 寃쎌슦 ?ъ슜.
 	 * 
 	 * @param message
 	 * @param exception
@@ -69,7 +69,7 @@ public class EgovBasicLogger {
 	}
 
 	/**
-	 * 디버그 정보를 기록하는 경우 사용.
+	 * ?붾쾭洹??뺣낫瑜?湲곕줉?섎뒗 寃쎌슦 ?ъ슜.
 	 * 
 	 * @param message
 	 * @param exception
@@ -79,7 +79,7 @@ public class EgovBasicLogger {
 	}
 
 	/**
-	 * 일반적이 정보를 기록하는 경우 사용.
+	 * ?쇰컲?곸씠 ?뺣낫瑜?湲곕줉?섎뒗 寃쎌슦 ?ъ슜.
 	 * 
 	 * @param message
 	 * @param exception

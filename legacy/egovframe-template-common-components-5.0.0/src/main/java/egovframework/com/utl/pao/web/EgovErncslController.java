@@ -20,20 +20,20 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  *
- * 전자관인에 관한 Util 테스트를 위한 화면 Controller
- * @author 공통서비스 개발팀 이중호
+ * ?꾩옄愿?몄뿉 愿??Util ?뚯뒪?몃? ?꾪븳 ?붾㈃ Controller
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.04.01   이중호            최초 생성
- *  2017-02-14   이정은            시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *  2019.12.06   신용호            KISA 보안약점 조치 (부적절한 예외처리) , EgovPropertyService 삭제
+ *  2009.04.01   ?댁쨷??           理쒖큹 ?앹꽦
+ *  2017-02-14   ?댁젙?            ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *  2019.12.06   ?좎슜??           KISA 蹂댁븞?쎌젏 議곗튂 (遺?곸젅???덉쇅泥섎━) , EgovPropertyService ??젣
  *
  * </pre>
  */
@@ -48,7 +48,7 @@ public class EgovErncslController extends HttpServlet {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovErncslController.class);
 
 	/**
-	 * 서블릿 초기화
+	 * ?쒕툝由?珥덇린??
 	 */
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -56,7 +56,7 @@ public class EgovErncslController extends HttpServlet {
 	}
 
 	/**
-	 * 관인이미지를 조회하여 출력
+	 * 愿?몄씠誘몄?瑜?議고쉶?섏뿬 異쒕젰
 	 * @param
 	 * @param
 	 * @return
@@ -82,7 +82,7 @@ public class EgovErncslController extends HttpServlet {
 			throw new RuntimeException("Service call error", e);
 		} catch (Exception e) {
 //			LOGGER.error(e.getMessage());
-			// 2017-02-14  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017-02-14  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("["+ e.getClass() +"] : ", e.getMessage());
 			throw new RuntimeException("Service call error", e);
 		}

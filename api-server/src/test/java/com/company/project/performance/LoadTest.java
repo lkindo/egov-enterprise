@@ -221,7 +221,7 @@ class LoadTest {
                         "perfUser" + i,
                         "Password123!",
                         "성능 테스트 사용자" + i,
-                        com.company.project.domain.user.Role.USER,
+                        com.company.project.domain.user.entity.Role.USER,
                         "hint",
                         "answer");
                 userService.signup(request);
@@ -358,7 +358,7 @@ class LoadTest {
                         "mixedUser" + i,
                         "Password123!",
                         "혼합 테스트 사용자" + i,
-                        com.company.project.domain.user.Role.USER,
+                        com.company.project.domain.user.entity.Role.USER,
                         "hint",
                         "answer");
                 userService.signup(request);

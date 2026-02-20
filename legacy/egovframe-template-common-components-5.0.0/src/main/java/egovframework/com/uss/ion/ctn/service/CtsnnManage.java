@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.ctn.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 경조관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 寃쎌“愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 경조관리의 사용자ID,경조코드,신청일자,대상자명,생년월일,발생일자,관계,비고,결재자ID,승인여부,결재일시,반려사유,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - 寃쎌“愿由ъ쓽 ?ъ슜?륤D,寃쎌“肄붾뱶,?좎껌?쇱옄,??곸옄紐??앸뀈?붿씪,諛쒖깮?쇱옄,愿怨?鍮꾧퀬,寃곗옱?륤D,?뱀씤?щ?,寃곗옱?쇱떆,諛섎젮?ъ쑀,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class CtsnnManage extends ComDefaultVO {
@@ -21,97 +21,97 @@ public class CtsnnManage extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	*  경조ID	      
+	*  寃쎌“ID	      
 	*/ 
 	private String ctsnnId;
 
 	/**
-	*  사용자ID	      
+	*  ?ъ슜?륤D	      
 	*/ 
 	private String usid;
 
 	/**
-	*  경조코드	      
+	*  寃쎌“肄붾뱶	      
 	*/ 
 	private String ctsnnCd;
 
 	/**
-	*  신청일자	      
+	*  ?좎껌?쇱옄	      
 	*/ 
 	private String reqstDe;
 
 	/**
-	*  경조명	      
+	*  寃쎌“紐?      
 	*/ 
    private String ctsnnNm;
 
 	/**
-	*  대상자명	      
+	*  ??곸옄紐?      
 	*/ 
 	private String trgterNm;
 
 	/**
-	*  생년월일	      
+	*  ?앸뀈?붿씪	      
 	*/ 
 	private String brth;
 
 	/**
-	*  발생일자	      
+	*  諛쒖깮?쇱옄	      
 	*/ 
 	private String occrrDe;
 
 	/**
-	*  관계	          
+	*  愿怨?          
 	*/ 
 	private String relate;
 
 	/**
-	*  비고	          
+	*  鍮꾧퀬	          
 	*/ 
 	private String remark;
 
 	/**
-	*  결재자ID	      
+	*  寃곗옱?륤D	      
 	*/ 
 	private String sanctnerId;
 
 	/**
-	*  승인여부	      
+	*  ?뱀씤?щ?	      
 	*/ 
 	private String confmAt;
 
 	/**
-	*  결재일시	      
+	*  寃곗옱?쇱떆	      
 	*/ 
 	private String sanctnDt;
 
 	/**
-	*  반려사유	      
+	*  諛섎젮?ъ쑀	      
 	*/ 
 	private String returnResn;
 
 	/**
-	*  약식결재ID	      
+	*  ?쎌떇寃곗옱ID	      
 	*/ 
    private String infrmlSanctnId;
 
 	/**
-	*  최초등록자ID	
+	*  理쒖큹?깅줉?륤D	
 	*/ 
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점	
+	*  理쒖큹?깅줉?쒖젏	
 	*/ 
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID	
+	*  理쒖쥌?섏젙?륤D	
 	*/ 
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점	
+	*  理쒖쥌?섏젙?쒖젏	
 	*/ 
 	private String lastUpdusrPnttm;
 

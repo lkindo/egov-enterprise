@@ -1,17 +1,17 @@
 /**
  *  Class Name : EgovFileTool.java
- *  Description : 시스템 디렉토리 정보를 확인하여 제공하는  Business class
+ *  Description : ?쒖뒪???붾젆?좊━ ?뺣낫瑜??뺤씤?섏뿬 ?쒓났?섎뒗  Business class
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.01.13    조재영          최초 생성
- *   2017.03.03    조성원 	     시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2017.03.03    조성원          시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
- *   2018.03.19    신용호          createDirectories() 추가 : 여러 레벨의 디렉토리를 한번에 생성
+ *   2009.01.13    議곗옱??         理쒖큹 ?앹꽦
+ *   2017.03.03    議곗꽦??	     ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2017.03.03    議곗꽦??         ?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
+ *   2018.03.19    ?좎슜??         createDirectories() 異붽? : ?щ윭 ?덈꺼???붾젆?좊━瑜??쒕쾲???앹꽦
  *
  *
- *  @author 공통 서비스 개발팀 조재영,박지욱
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? 議곗옱??諛뺤???
  *  @since 2009. 01. 13
  *  @version 1.0
  *  @see
@@ -38,20 +38,20 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * EgovFileToolBean 클래스를 정의한다.
+ * EgovFileToolBean ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @see
  *
  *      <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일                수정자           수정내용
+ *  ?섏젙??               ?섏젙??          ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2020.12.07   신용호       KISA 보안약점 조치
- *  2022.11.11   김혜준       시큐어코딩 처리
- *  2024.10.29   win777	    디렉토리 생성 성공 시 생성된 절대경로를 리턴하도록 변경
- *  2025.02.06   신용호       deleteFile() KISA 시큐어코딩 처리
+ *  2020.12.07   ?좎슜??      KISA 蹂댁븞?쎌젏 議곗튂
+ *  2022.11.11   源?쒖?       ?쒗걧?댁퐫??泥섎━
+ *  2024.10.29   win777	    ?붾젆?좊━ ?앹꽦 ?깃났 ???앹꽦???덈?寃쎈줈瑜?由ы꽩?섎룄濡?蹂寃?
+ *  2025.02.06   ?좎슜??      deleteFile() KISA ?쒗걧?댁퐫??泥섎━
  *
  *      </pre>
  */
@@ -60,48 +60,48 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EgovFileToolBean {
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
-	// 최대 문자길이
+	// 理쒕? 臾몄옄湲몄씠
 	static final int MAX_STR_LEN = 1024;
 
 	private static final String FILE_STORE_PATH = EgovProperties.getProperty("Globals.fileStorePath");
 
 	/**
-	 * 파일을 특정 구분자(',', '|', 'TAB')로 파싱하는 기능
+	 * ?뚯씪???뱀젙 援щ텇??',', '|', 'TAB')濡??뚯떛?섎뒗 湲곕뒫
 	 *
-	 * @param parFile  파일
-	 * @param parChar  구분자(',', '|', 'TAB')
-	 * @param parField 필드수
-	 * @return Vector parResult 파싱결과 구조체
+	 * @param parFile  ?뚯씪
+	 * @param parChar  援щ텇??',', '|', 'TAB')
+	 * @param parField ?꾨뱶??
+	 * @return Vector parResult ?뚯떛寃곌낵 援ъ“泥?
 	 * @exception Exception
 	 */
 	public Vector<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField)
 			throws Exception {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
 
-		// AOP 적용시 주석 처리 한다.
+		// AOP ?곸슜??二쇱꽍 泥섎━ ?쒕떎.
 		if (!EgovFileBasePathSecurityValidator.validate(basePath)) {
 			throw new SecurityException("Unacceptable base path : " + basePath);
 		}
 
-		// 파싱결과 구조체
+		// ?뚯떛寃곌낵 援ъ“泥?
 		Vector<List<String>> parResult = new Vector<>();
 
-		// 파일 오픈
+		// ?뚯씪 ?ㅽ뵂
 		String parFile1 = parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
 		File file = new File(EgovWebUtil.filePathBlackList(basePath + parFile1));
 		BufferedReader br = null;
 		try {
-			// 파일이며, 존재하면 파싱 시작
+			// ?뚯씪?대ŉ, 議댁옱?섎㈃ ?뚯떛 ?쒖옉
 			if (file.exists() && file.isFile()) {
 
-				// 1. 파일 텍스트 내용을 읽어서 StringBuffer에 쌓는다.
+				// 1. ?뚯씪 ?띿뒪???댁슜???쎌뼱??StringBuffer???볥뒗??
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 				StringBuffer strBuff = new StringBuffer();
 				String line = "";
@@ -111,10 +111,10 @@ public class EgovFileToolBean {
 					}
 				}
 
-				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
+				// 2. ?볦? ?댁슜???뱀젙 援щ텇?먮줈 ?뚯떛?섏뿬 String 諛곗뿴濡??삳뒗??
 				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
 
-				// 3. 필드 수 만큼 돌아가며 Vector<ArrayList> 형태로 만든다.
+				// 3. ?꾨뱶 ??留뚰겮 ?뚯븘媛硫?Vector<ArrayList> ?뺥깭濡?留뚮뱺??
 				int filedCnt = 1;
 				List<String> arr = new ArrayList<>();
 				for (int i = 0; i < strArr.length; i++) {

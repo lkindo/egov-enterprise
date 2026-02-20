@@ -6,107 +6,107 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 
 /**
- * 명함정보 관리를 위한 모델 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 紐낇븿?뺣낫 愿由щ? ?꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.3.28  이삼섭          최초 생성
+ *   2009.3.28  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class NameCard implements Serializable {
 
-    /** 주소 */
+    /** 二쇱냼 */
     private String adres = "";
     
-    /** 지역번호 */
+    /** 吏??쾲??*/
     private String areaNo = "";
     
-    /** 직급명 */
+    /** 吏곴툒紐?*/
     private String clsfNm = "";
     
-    /** 회사명 */
+    /** ?뚯궗紐?*/
     private String cmpnyNm = "";
     
-    /** 부서명 */
+    /** 遺?쒕챸 */
     private String deptNm = "";
     
-    /** 이메일주소 */
+    /** ?대찓?쇱＜??*/
     private String emailAdres = "";
     
-    /** 끝휴대폰번호 */
+    /** ?앺쑕??곕쾲??*/
     private String endMbtlNum = "";
     
-    /** 끝전화번호 */
+    /** ?앹쟾?붾쾲??*/
     private String endTelNo = "";
     
-    /** 외부사용자여부 */
+    /** ?몃??ъ슜?먯뿬遺 */
     private String extrlUserAt = "";
     
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 식별번호 */
+    /** ?앸퀎踰덊샇 */
     private String idntfcNo = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
     
-    /** 휴대폰번호 */
+    /** ?대??곕쾲??*/
     private String mbtlNum = "";
     
-    /** 중간휴대폰번호 */
+    /** 以묎컙?대??곕쾲??*/
     private String middleMbtlNum = "";
     
-    /** 중간전화번호 */
+    /** 以묎컙?꾪솕踰덊샇 */
     private String middleTelNo = "";
     
-    /** 국가번호 */
+    /** 援??踰덊샇 */
     private String nationNo = "";
     
-    /** 명함아이디 */
+    /** 紐낇븿?꾩씠??*/
     private String ncrdId = "";
     
-    /** 명함대상자 아이디 */
+    /** 紐낇븿??곸옄 ?꾩씠??*/
     private String ncrdTrgterId = "";
     
-    /** 이름 */
+    /** ?대쫫 */
     private String ncrdNm = "";
     
-    /** 직위명 */
+    /** 吏곸쐞紐?*/
     private String ofcpsNm = "";
     
-    /** 공개여부 */
+    /** 怨듦컻?щ? */
     private String othbcAt = "";
     
-    /** 비고 */
+    /** 鍮꾧퀬 */
     private String remark = "";
     
-    /** 전화번호 */
+    /** ?꾪솕踰덊샇 */
     private String telNo = "";
 
-    /** 상세주소 */
+    /** ?곸꽭二쇱냼 */
     private String detailAdres = "";
     
-    /** 우편번호 */
+    /** ?고렪踰덊샇 */
     private String zipCode = "";
 
     /**
-     * adres attribute를 리턴한다.
+     * adres attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the adres
      */
@@ -115,7 +115,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * adres attribute 값을 설정한다.
+     * adres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param adres
      *            the adres to set
@@ -125,7 +125,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * areaNo attribute를 리턴한다.
+     * areaNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the areaNo
      */
@@ -134,7 +134,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * areaNo attribute 값을 설정한다.
+     * areaNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param areaNo
      *            the areaNo to set
@@ -144,7 +144,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * clsfNm attribute를 리턴한다.
+     * clsfNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the clsfNm
      */
@@ -153,7 +153,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * clsfNm attribute 값을 설정한다.
+     * clsfNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param clsfNm
      *            the clsfNm to set
@@ -163,7 +163,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * cmpnyNm attribute를 리턴한다.
+     * cmpnyNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the cmpnyNm
      */
@@ -172,7 +172,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * cmpnyNm attribute 값을 설정한다.
+     * cmpnyNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param cmpnyNm
      *            the cmpnyNm to set
@@ -182,7 +182,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * deptNm attribute를 리턴한다.
+     * deptNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the deptNm
      */
@@ -191,7 +191,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * deptNm attribute 값을 설정한다.
+     * deptNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param deptNm
      *            the deptNm to set
@@ -201,7 +201,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * emailAdres attribute를 리턴한다.
+     * emailAdres attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the emailAdres
      */
@@ -210,7 +210,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * emailAdres attribute 값을 설정한다.
+     * emailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param emailAdres
      *            the emailAdres to set
@@ -220,7 +220,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * endMbtlNum attribute를 리턴한다.
+     * endMbtlNum attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the endMbtlNum
      */
@@ -229,7 +229,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * endMbtlNum attribute 값을 설정한다.
+     * endMbtlNum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param endMbtlNum
      *            the endMbtlNum to set
@@ -239,7 +239,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * endTelNo attribute를 리턴한다.
+     * endTelNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the endTelNo
      */
@@ -248,7 +248,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * endTelNo attribute 값을 설정한다.
+     * endTelNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param endTelNo
      *            the endTelNo to set
@@ -258,7 +258,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * extrlUserAt attribute를 리턴한다.
+     * extrlUserAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the extrlUserAt
      */
@@ -267,7 +267,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * extrlUserAt attribute 값을 설정한다.
+     * extrlUserAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param extrlUserAt
      *            the extrlUserAt to set
@@ -277,7 +277,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -286,7 +286,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -296,7 +296,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -305,7 +305,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -315,7 +315,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * idntfcNo attribute를 리턴한다.
+     * idntfcNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the idntfcNo
      */
@@ -324,7 +324,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * idntfcNo attribute 값을 설정한다.
+     * idntfcNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param idntfcNo
      *            the idntfcNo to set
@@ -334,7 +334,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrId
      */
@@ -343,7 +343,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrId
      *            the lastUpdusrId to set
@@ -353,7 +353,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrPnttm
      */
@@ -362,7 +362,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrPnttm
      *            the lastUpdusrPnttm to set
@@ -372,7 +372,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * mbtlNum attribute를 리턴한다.
+     * mbtlNum attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the mbtlNum
      */
@@ -381,7 +381,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * mbtlNum attribute 값을 설정한다.
+     * mbtlNum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param mbtlNum
      *            the mbtlNum to set
@@ -391,7 +391,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * middleMbtlNum attribute를 리턴한다.
+     * middleMbtlNum attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the middleMbtlNum
      */
@@ -400,7 +400,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * middleMbtlNum attribute 값을 설정한다.
+     * middleMbtlNum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param middleMbtlNum
      *            the middleMbtlNum to set
@@ -410,7 +410,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * middleTelNo attribute를 리턴한다.
+     * middleTelNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the middleTelNo
      */
@@ -419,7 +419,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * middleTelNo attribute 값을 설정한다.
+     * middleTelNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param middleTelNo
      *            the middleTelNo to set
@@ -429,7 +429,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * nationNo attribute를 리턴한다.
+     * nationNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the nationNo
      */
@@ -438,7 +438,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * nationNo attribute 값을 설정한다.
+     * nationNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param nationNo
      *            the nationNo to set
@@ -448,7 +448,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdId attribute를 리턴한다.
+     * ncrdId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdId
      */
@@ -457,7 +457,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdId attribute 값을 설정한다.
+     * ncrdId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdId
      *            the ncrdId to set
@@ -467,7 +467,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdTrgterId attribute를 리턴한다.
+     * ncrdTrgterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdTrgterId
      */
@@ -476,7 +476,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdTrgterId attribute 값을 설정한다.
+     * ncrdTrgterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdTrgterId
      *            the ncrdTrgterId to set
@@ -486,7 +486,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdNm attribute를 리턴한다.
+     * ncrdNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdNm
      */
@@ -495,7 +495,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ncrdNm attribute 값을 설정한다.
+     * ncrdNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdNm
      *            the ncrdNm to set
@@ -505,7 +505,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ofcpsNm attribute를 리턴한다.
+     * ofcpsNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ofcpsNm
      */
@@ -514,7 +514,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * ofcpsNm attribute 값을 설정한다.
+     * ofcpsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ofcpsNm
      *            the ofcpsNm to set
@@ -524,7 +524,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * othbcAt attribute를 리턴한다.
+     * othbcAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the othbcAt
      */
@@ -533,7 +533,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * othbcAt attribute 값을 설정한다.
+     * othbcAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param othbcAt
      *            the othbcAt to set
@@ -543,7 +543,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * remark attribute를 리턴한다.
+     * remark attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the remark
      */
@@ -552,7 +552,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * remark attribute 값을 설정한다.
+     * remark attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param remark
      *            the remark to set
@@ -562,7 +562,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * telNo attribute를 리턴한다.
+     * telNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the telNo
      */
@@ -571,7 +571,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * telNo attribute 값을 설정한다.
+     * telNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param telNo
      *            the telNo to set
@@ -581,7 +581,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * detailAdres attribute를 리턴한다.
+     * detailAdres attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the detailAdres
      */
@@ -590,7 +590,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * detailAdres attribute 값을 설정한다.
+     * detailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param detailAdres
      *            the detailAdres to set
@@ -600,7 +600,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * zipCode attribute를 리턴한다.
+     * zipCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the zipCode
      */
@@ -609,7 +609,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * zipCode attribute 값을 설정한다.
+     * zipCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param zipCode
      *            the zipCode to set
@@ -619,7 +619,7 @@ public class NameCard implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

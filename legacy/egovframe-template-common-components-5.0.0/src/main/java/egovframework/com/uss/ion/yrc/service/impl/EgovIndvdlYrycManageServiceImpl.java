@@ -10,13 +10,13 @@ import egovframework.com.uss.ion.yrc.service.IndvdlYrycManage;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 연차관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?곗감愿由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 연차관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 연차관리의 조회기능은 목록조회로 구분된다.
- * @author 이기하
+ * ?곸꽭?댁슜
+ * - ?곗감愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?곗감愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶濡?援щ텇?쒕떎.
+ * @author ?닿린??
  * @version 1.0
  * @created 2014.11.14
  */
@@ -28,8 +28,8 @@ public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl imp
     private IndvdlYrycDAO indvdlYrycDAO;
 
 	/**
-	 * 개인별 연차를 조회 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * 媛쒖씤蹂??곗감瑜?議고쉶 泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	@Override
 	public List<IndvdlYrycManage> selectIndvdlYrycManageList(IndvdlYrycManage indvdlYrycManage) throws Exception {
@@ -38,8 +38,8 @@ public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 개인별 연차 리스트 개수를 조회 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * 媛쒖씤蹂??곗감 由ъ뒪??媛쒖닔瑜?議고쉶 泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	@Override
 	public int selectIndvdlYrycManageListTotCnt(IndvdlYrycManage indvdlYrycManage) throws Exception {
@@ -47,8 +47,8 @@ public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 개인별 연차를 입력 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * 媛쒖씤蹂??곗감瑜??낅젰 泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	@Override
 	public void insertIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
@@ -56,8 +56,8 @@ public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 개인별 연차를 수정 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * 媛쒖씤蹂??곗감瑜??섏젙 泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	@Override
 	public void updtIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
@@ -65,8 +65,8 @@ public class EgovIndvdlYrycManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 개인별 연차를 삭제 처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * 媛쒖씤蹂??곗감瑜???젣 泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	@Override
 	public void deleteIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {

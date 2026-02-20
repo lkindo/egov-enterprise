@@ -5,53 +5,53 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 템플릿 정보를 관리하기 위한 모델 클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?쒗뵆由??뺣낫瑜?愿由ы븯湲??꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.3.17  이삼섭          최초 생성
+ *   2009.3.17  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class TemplateInf implements Serializable {
 
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
     
-    /** 템플릿 경로 */
+    /** ?쒗뵆由?寃쎈줈 */
     private String tmplatCours = "";
     
-    /** 템플릿 아이디 */
+    /** ?쒗뵆由??꾩씠??*/
     private String tmplatId = "";
     
-    /** 템플릿 명 */
+    /** ?쒗뵆由?紐?*/
     private String tmplatNm = "";
     
-    /** 탬플릿 구분코드 */
+    /** ?ы뵆由?援щ텇肄붾뱶 */
     private String tmplatSeCode = "";
     
-    /** 사용여부 */
+    /** ?ъ슜?щ? */
     private String useAt = "";
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -60,7 +60,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -70,7 +70,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -79,7 +79,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -89,7 +89,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrId
      */
@@ -98,7 +98,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrId
      *            the lastUpdusrId to set
@@ -108,7 +108,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrPnttm
      */
@@ -117,7 +117,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrPnttm
      *            the lastUpdusrPnttm to set
@@ -127,7 +127,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatCours attribute를 리턴한다.
+     * tmplatCours attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatCours
      */
@@ -136,7 +136,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatCours attribute 값을 설정한다.
+     * tmplatCours attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatCours
      *            the tmplatCours to set
@@ -146,7 +146,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatId attribute를 리턴한다.
+     * tmplatId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatId
      */
@@ -155,7 +155,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatId attribute 값을 설정한다.
+     * tmplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatId
      *            the tmplatId to set
@@ -165,7 +165,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatNm attribute를 리턴한다.
+     * tmplatNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatNm
      */
@@ -174,7 +174,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatNm attribute 값을 설정한다.
+     * tmplatNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatNm
      *            the tmplatNm to set
@@ -184,7 +184,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatSeCode attribute를 리턴한다.
+     * tmplatSeCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatSeCode
      */
@@ -193,7 +193,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * tmplatSeCode attribute 값을 설정한다.
+     * tmplatSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatSeCode
      *            the tmplatSeCode to set
@@ -203,7 +203,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the useAt
      */
@@ -212,7 +212,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param useAt
      *            the useAt to set
@@ -222,7 +222,7 @@ public class TemplateInf implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

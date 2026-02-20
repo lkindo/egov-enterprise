@@ -3,91 +3,91 @@ package egovframework.com.utl.sys.pxy.service;
 import java.util.List;
 
 /**
- * 개요 - 프록시서비스정보에 대한 Service Interface를 정의한다.
+ * 媛쒖슂 - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫?????Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용 - 프록시서비스정보에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - 프록시서비스정보의 조회기능은 목록조회, 상세조회로
- * 구분된다.
+ * ?곸꽭?댁슜 - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?
+ * 援щ텇?쒕떎.
  *
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:27
+ * @created 28-6-2010 ?ㅼ쟾 10:44:27
  */
 public interface EgovProxySvcService {
 	/**
-     * 프록시서비스를 관리하기 위해 등록된 프록시정보 목록을 조회한다.
+     * ?꾨줉?쒖꽌鍮꾩뒪瑜?愿由ы븯湲??꾪빐 ?깅줉???꾨줉?쒖젙蹂?紐⑸줉??議고쉶?쒕떎.
      *
-     * @param proxySvcVO - 프록시서비스 Vo
-     * @return List - 프록시서비스 목록
+     * @param proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
+     * @return List - ?꾨줉?쒖꽌鍮꾩뒪 紐⑸줉
      *
      */
     public List<ProxySvcVO> selectProxySvcList(ProxySvcVO proxySvcVO) throws Exception;
 
     /**
-     * 프록시서비스 목록 총 개수를 조회한다.
+     * ?꾨줉?쒖꽌鍮꾩뒪 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
      *
-     * @param proxySvcVO - 프록시서비스 Vo
-     * @return int - 프록시서비스 카운트 수
+     * @param proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
+     * @return int - ?꾨줉?쒖꽌鍮꾩뒪 移댁슫????
      */
     public int selectProxySvcListTotCnt(ProxySvcVO proxySvcVO) throws Exception;
 
     /**
-     * 등록된 프록시서비스의 상세정보를 조회한다.
+     * ?깅줉???꾨줉?쒖꽌鍮꾩뒪???곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param proxySvcVO - 프록시서비스 Vo
-     * @return proxySvcVO - 프록시서비스 Vo
+     * @param proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
+     * @return proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
      */
     public ProxySvcVO selectProxySvc(ProxySvcVO proxySvcVO) throws Exception;
 
     /**
-     * 프록시서비스를 신규로 등록한다.
+     * ?꾨줉?쒖꽌鍮꾩뒪瑜??좉퇋濡??깅줉?쒕떎.
      *
-     * @param ProxySvcVO - 프록시서비스 VO
-     * @param proxySvc   - 프록시서비스 model
-     * @return proxySvcVO - 프록시서비스 Vo
+     * @param ProxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 VO
+     * @param proxySvc   - ?꾨줉?쒖꽌鍮꾩뒪 model
+     * @return proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
      */
     public ProxySvcVO insertProxySvc(ProxySvcVO proxySvcVO, ProxySvc proxySvc) throws Exception;
 
     /**
-     * 기 등록된 프록시서비스를 수정한다.
+     * 湲??깅줉???꾨줉?쒖꽌鍮꾩뒪瑜??섏젙?쒕떎.
      *
-     * @param proxySvc - 프록시서비스 model
+     * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
      */
     public void updateProxySvc(ProxySvcVO proxySvcVO, ProxySvc proxySvc) throws Exception;
 
     /**
-     * 기 등록된 프록시서비스를 삭제한다.
+     * 湲??깅줉???꾨줉?쒖꽌鍮꾩뒪瑜???젣?쒕떎.
      *
-     * @param proxySvc - 프록시서비스 model
+     * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
      */
     public void deleteProxySvc(ProxySvc proxySvc) throws Exception;
 
     /**
-     * 프록시서비스를 모니터링하기 위해 등록된 프록시로그 목록을 조회한다.
+     * ?꾨줉?쒖꽌鍮꾩뒪瑜?紐⑤땲?곕쭅?섍린 ?꾪빐 ?깅줉???꾨줉?쒕줈洹?紐⑸줉??議고쉶?쒕떎.
      *
-     * @param proxyLogVO - 프록시로그 Vo
-     * @return List - 프록시로그 목록
+     * @param proxyLogVO - ?꾨줉?쒕줈洹?Vo
+     * @return List - ?꾨줉?쒕줈洹?紐⑸줉
      */
     public List<ProxyLogVO> selectProxyLogList(ProxyLogVO proxyLogVO) throws Exception;
 
     /**
-     * 프록시로그 목록 총 개수를 조회한다.
+     * ?꾨줉?쒕줈洹?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
      *
-     * @param proxyLogVO - 프록시로그 Vo
-     * @return int - 프록시서비스 카운트 수
+     * @param proxyLogVO - ?꾨줉?쒕줈洹?Vo
+     * @return int - ?꾨줉?쒖꽌鍮꾩뒪 移댁슫????
      */
     public int selectProxyLogListTotCnt(ProxyLogVO proxyLogVO) throws Exception;
 
     /**
-     * 프록시로그를 생성한다.
+     * ?꾨줉?쒕줈洹몃? ?앹꽦?쒕떎.
      *
-     * @param proxyLog - 프록시로그 model
+     * @param proxyLog - ?꾨줉?쒕줈洹?model
      */
     public void insertProxyLog(ProxyLog proxyLog) throws Exception;
 
     /**
-     * 프록시서버를 실행한다.
+     * ?꾨줉?쒖꽌踰꾨? ?ㅽ뻾?쒕떎.
      *
-     * @param proxySvc - 프록시서비스 model
+     * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
      */
     public void runProxyServer(ProxySvcVO proxySvcVO, ProxySvc proxySvc) throws Exception;
 

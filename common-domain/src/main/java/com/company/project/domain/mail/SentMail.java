@@ -7,8 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 발송메일 JPA Entity
- * 레거시 테이블: COMTNSNDNGMAIL
+ * 獄쏆뮇?싷쭖遺우뵬 JPA Entity
+ * ??뉕탢?????뵠?? COMTNSNDNGMAIL
  */
 @Entity
 @Table(name = "HEMAILDSPTCHMANAGE")

@@ -20,24 +20,24 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 파일 조회, 삭제, 다운로드 처리를 위한 컨트롤러 클래스
+ * ?뚯씪 議고쉶, ??젣, ?ㅼ슫濡쒕뱶 泥섎━瑜??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스개발팀 이삼섭
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.25  이삼섭          최초 생성
- *   2016.10.13  장동한          deleteFileInf 메소드 return 방식 수정
- *   2022.12.02  윤창원          File ID 암호화 처리
- *   2022.12.22  신용호          JSTL 커스텀 태그 추가 및 기능 보완
- *   2024.10.29  이백행          정적 필드 EgovFileMngController.cryptoService는 정적 방식으로 액세스
- *   2025.05.31  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2009.03.25  ?댁궪??         理쒖큹 ?앹꽦
+ *   2016.10.13  ?λ룞??         deleteFileInf 硫붿냼??return 諛⑹떇 ?섏젙
+ *   2022.12.02  ?ㅼ갹??         File ID ?뷀샇??泥섎━
+ *   2022.12.22  ?좎슜??         JSTL 而ㅼ뒪? ?쒓렇 異붽? 諛?湲곕뒫 蹂댁셿
+ *   2024.10.29  ?대갚??         ?뺤쟻 ?꾨뱶 EgovFileMngController.cryptoService???뺤쟻 諛⑹떇?쇰줈 ?≪꽭??
+ *   2025.05.31  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -46,7 +46,7 @@ public class EgovFileMngController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovFileMngController.class);
 
-	/** 암호화서비스 */
+	/** ?뷀샇?붿꽌鍮꾩뒪 */
 	private static EgovEnvCryptoService cryptoService;
 
 	@Resource(name = "EgovFileMngService")
@@ -58,7 +58,7 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 첨부파일에 대한 목록을 조회한다.
+	 * 泥⑤??뚯씪?????紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param fileVO
 	 * @param atchFileId
@@ -81,7 +81,7 @@ public class EgovFileMngController {
 		fileVO.setAtchFileId(decodedAtchFileId);
 		List<FileVO> result = fileService.selectFileInfs(fileVO);
 
-		// FileId를 유추하지 못하도록 세션ID와 함께 암호화하여 표시한다. (2022.12.06 추가) - 파일아이디가 유추 불가능하도록 조치
+		// FileId瑜??좎텛?섏? 紐삵븯?꾨줉 ?몄뀡ID? ?④퍡 ?뷀샇?뷀븯???쒖떆?쒕떎. (2022.12.06 異붽?) - ?뚯씪?꾩씠?붽? ?좎텛 遺덇??ν븯?꾨줉 議곗튂
 		for (FileVO file : result) {
 			String sessionId = request.getSession().getId();
 			String toEncrypt = sessionId + "|" + file.atchFileId;
@@ -97,7 +97,7 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 첨부파일 변경을 위한 수정페이지로 이동한다.
+	 * 泥⑤??뚯씪 蹂寃쎌쓣 ?꾪븳 ?섏젙?섏씠吏濡??대룞?쒕떎.
 	 *
 	 * @param fileVO
 	 * @param atchFileId
@@ -123,7 +123,7 @@ public class EgovFileMngController {
 
 		List<FileVO> result = fileService.selectFileInfs(fileVO);
 
-		// FileId를 유추하지 못하도록 세션ID와 함께 암호화하여 표시한다. (2022.12.06 추가) - 파일아이디가 유추 불가능하도록 조치
+		// FileId瑜??좎텛?섏? 紐삵븯?꾨줉 ?몄뀡ID? ?④퍡 ?뷀샇?뷀븯???쒖떆?쒕떎. (2022.12.06 異붽?) - ?뚯씪?꾩씠?붽? ?좎텛 遺덇??ν븯?꾨줉 議곗튂
 		for (FileVO file : result) {
 			String sessionId = request.getSession().getId();
 			String toEncrypt = sessionId + "|" + file.atchFileId;
@@ -139,7 +139,7 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 첨부파일에 대한 삭제를 처리한다.
+	 * 泥⑤??뚯씪???????젣瑜?泥섎━?쒕떎.
 	 *
 	 * @param fileVO
 	 * @param returnUrl
@@ -162,7 +162,7 @@ public class EgovFileMngController {
 		return "blank";
 
 		// --------------------------------------------
-		// contextRoot가 있는 경우 제외 시켜야 함
+		// contextRoot媛 ?덈뒗 寃쎌슦 ?쒖쇅 ?쒖폒????
 		// --------------------------------------------
 		//// return "forward:/cmm/fms/selectFileInfs.do";
 		// return "forward:" + returnUrl;
@@ -180,10 +180,10 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 원본 문자열을 암호화 하는 메서드.
+	 * ?먮낯 臾몄옄?댁쓣 ?뷀샇???섎뒗 硫붿꽌??
 	 * 
-	 * @param source 원본 문자열
-	 * @return 암호화 문자열
+	 * @param source ?먮낯 臾몄옄??
+	 * @return ?뷀샇??臾몄옄??
 	 */
 	public static String encrypt(String atchFileId) {
 		String returnVal = "";
@@ -194,10 +194,10 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 원본 문자열을 암호화 하는 메서드.
+	 * ?먮낯 臾몄옄?댁쓣 ?뷀샇???섎뒗 硫붿꽌??
 	 * 
-	 * @param source 원본 문자열
-	 * @return 암호화 문자열
+	 * @param source ?먮낯 臾몄옄??
+	 * @return ?뷀샇??臾몄옄??
 	 */
 	public static String encryptSession(String atchFileId, String sessionId) {
 		String returnVal = "";
@@ -209,10 +209,10 @@ public class EgovFileMngController {
 	}
 
 	/**
-	 * 암호화 문자열을 복호화 하는 메서드.
+	 * ?뷀샇??臾몄옄?댁쓣 蹂듯샇???섎뒗 硫붿꽌??
 	 * 
-	 * @param source 암호화 문자열
-	 * @return 원본 문자열
+	 * @param source ?뷀샇??臾몄옄??
+	 * @return ?먮낯 臾몄옄??
 	 */
 	public static String decrypt(String base64AtchFileId) {
 		String returnVal = "FILE_ID_DECRIPT_EXCEPTION_02";

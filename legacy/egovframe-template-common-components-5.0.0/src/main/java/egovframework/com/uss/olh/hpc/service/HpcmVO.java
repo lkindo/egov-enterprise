@@ -6,35 +6,35 @@ public class HpcmVO extends HpcmDefaultVO{
 	
 	 private static final long serialVersionUID = 1L;
 	    
-	    /** 도움말 ID */
+	    /** ?꾩?留?ID */
 	    private String hpcmId;
 	    
-	    /** 도움말구분코드 */
+	    /** ?꾩?留먭뎄遺꾩퐫??*/
 	    private String hpcmSeCode;
 
-	    /** 도움말구분코드명 */
+	    /** ?꾩?留먭뎄遺꾩퐫?쒕챸 */
 	    private String hpcmSeCodeNm;
 	    
-	    /** 도움말정의 */
+	    /** ?꾩?留먯젙??*/
 	    private String hpcmDf;
 	    
-	    /** 도움말 설명 */
+	    /** ?꾩?留??ㅻ챸 */
 	    private String hpcmDc;
 	    
-	    /** 최초등록시점 */
+	    /** 理쒖큹?깅줉?쒖젏 */
 	    private String frstRegisterPnttm;
 
-	    /** 최초등록자ID */
+	    /** 理쒖큹?깅줉?륤D */
 	    private String frstRegisterId;
 
-	    /** 최종수정시점 */
+	    /** 理쒖쥌?섏젙?쒖젏 */
 	    private String lastUpdusrPnttm;
 
-	    /** 최종수정자ID */
+	    /** 理쒖쥌?섏젙?륤D */
 	    private String lastUpdusrId;
 
 		/**
-		 * hpcmId attribute 를 리턴한다.
+		 * hpcmId attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getHpcmId() {
@@ -42,7 +42,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmId attribute 값을 설정한다.
+		 * hpcmId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return hpcmId String
 		 */
 		public void setHpcmId(String hpcmId) {
@@ -50,7 +50,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmSeCode attribute 를 리턴한다.
+		 * hpcmSeCode attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getHpcmSeCode() {
@@ -58,7 +58,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmSeCode attribute 값을 설정한다.
+		 * hpcmSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return hpcmSeCode String
 		 */
 		public void setHpcmSeCode(String hpcmSeCode) {
@@ -66,7 +66,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmSeCodeNm attribute 를 리턴한다.
+		 * hpcmSeCodeNm attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getHpcmSeCodeNm() {
@@ -74,7 +74,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmSeCodeNm attribute 값을 설정한다.
+		 * hpcmSeCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return hpcmSeCodeNm String
 		 */
 		public void setHpcmSeCodeNm(String hpcmSeCodeNm) {
@@ -82,7 +82,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmDf attribute 를 리턴한다.
+		 * hpcmDf attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getHpcmDf() {
@@ -90,7 +90,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmDf attribute 값을 설정한다.
+		 * hpcmDf attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return hpcmDf String
 		 */
 		public void setHpcmDf(String hpcmDf) {
@@ -98,7 +98,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmDc attribute 를 리턴한다.
+		 * hpcmDc attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getHpcmDc() {
@@ -106,7 +106,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * hpcmDc attribute 값을 설정한다.
+		 * hpcmDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return hpcmDc String
 		 */
 		public void setHpcmDc(String hpcmDc) {
@@ -114,7 +114,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * frstRegisterPnttm attribute 를 리턴한다.
+		 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getFrstRegisterPnttm() {
@@ -122,7 +122,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * frstRegisterPnttm attribute 값을 설정한다.
+		 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return frstRegisterPnttm String
 		 */
 		public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -130,7 +130,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * frstRegisterId attribute 를 리턴한다.
+		 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getFrstRegisterId() {
@@ -138,7 +138,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * frstRegisterId attribute 값을 설정한다.
+		 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return frstRegisterId String
 		 */
 		public void setFrstRegisterId(String frstRegisterId) {
@@ -146,7 +146,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * lastUpdusrPnttm attribute 를 리턴한다.
+		 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getLastUpdusrPnttm() {
@@ -154,7 +154,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * lastUpdusrPnttm attribute 값을 설정한다.
+		 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return lastUpdusrPnttm String
 		 */
 		public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -162,7 +162,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * lastUpdusrId attribute 를 리턴한다.
+		 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 		 * @return the String
 		 */
 		public String getLastUpdusrId() {
@@ -170,7 +170,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 
 		/**
-		 * lastUpdusrId attribute 값을 설정한다.
+		 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 		 * @return lastUpdusrId String
 		 */
 		public void setLastUpdusrId(String lastUpdusrId) {
@@ -178,7 +178,7 @@ public class HpcmVO extends HpcmDefaultVO{
 		}
 		
 		/**
-		 * toString 메소드를 대치한다.
+		 * toString 硫붿냼?쒕? ?移섑븳??
 		 */
 		public String toString(){
 			return ToStringBuilder.reflectionToString(this);

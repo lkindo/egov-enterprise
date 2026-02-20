@@ -9,11 +9,11 @@
 		<property name="maxListCount" value="1" />
 		<property name="target">
 			<map>
-		                <entry key="mberNm" value="회원명"/>
-		                <entry key="moblphonNo" value="휴대폰번호"/>
-		                <entry key="emailAdres" value="이메일"/>
-		                <entry key="email" value="이메일"/>
-		                <entry key="orgnztNm" value="조직명"/>
+		                <entry key="mberNm" value="?뚯썝紐?/>
+		                <entry key="moblphonNo" value="?대??곕쾲??/>
+		                <entry key="emailAdres" value="?대찓??/>
+		                <entry key="email" value="?대찓??/>
+		                <entry key="orgnztNm" value="議곗쭅紐?/>
 			</map>
 		</property>
 	</bean>
@@ -29,7 +29,7 @@
 				 &amp;&amp; ! execution(public * egovframework.com.sym.log.lgm.service.impl.EgovSysLogServiceImpl.*(..))"
 				 method="insertLog" />
 		</aop:aspect>
-		<!--  warning : 자체 서비스(EgovPrivacyLogServiceImpl) 및 내부 호출 서비스, 로그 처리 부분  제외 필요 -->
+		<!--  warning : ?먯껜 ?쒕퉬??EgovPrivacyLogServiceImpl) 諛??대? ?몄텧 ?쒕퉬?? 濡쒓렇 泥섎━ 遺遺? ?쒖쇅 ?꾩슂 -->
 	</aop:config>
 
 </beans>

@@ -5,30 +5,30 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * EgovMybatisUtil 클래스
+ * EgovMybatisUtil ?대옒??
  *
- * @author 장동한
+ * @author ?λ룞??
  * @since 2016.06.07
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2016.06.07  장동한          최초 생성
- *   2017.03.03  조성원          시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-209]
- *   2017.07.21  장동한          isEquals에서 String Character 비교 가능하도록
- *   2023.05.01  이백행          컬렉션은 원시 유형입니다. 일반 유형 컬렉션 <e>에 대한 참조는 매개 변수화되어야합니다
- *   2025.05.28  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙), UselessParentheses(쓸모없는 괄호)
+ *   2016.06.07  ?λ룞??         理쒖큹 ?앹꽦
+ *   2017.03.03  議곗꽦??         ?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-209]
+ *   2017.07.21  ?λ룞??         isEquals?먯꽌 String Character 鍮꾧탳 媛?ν븯?꾨줉
+ *   2023.05.01  ?대갚??         而щ젆?섏? ?먯떆 ?좏삎?낅땲?? ?쇰컲 ?좏삎 而щ젆??<e>?????李몄“??留ㅺ컻 蹂?섑솕?섏뼱?쇳빀?덈떎
+ *   2025.05.28  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃), UselessParentheses(?몃え?녿뒗 愿꾪샇)
  *
  *      </pre>
  */
 public class EgovMybatisUtil {
 
 	/**
-	 * Empty 여부를 확인한다.
+	 * Empty ?щ?瑜??뺤씤?쒕떎.
 	 * 
 	 * @param o Object
 	 * @return boolean
@@ -63,7 +63,7 @@ public class EgovMybatisUtil {
 	}
 
 	/**
-	 * Not Empty 여부를 확인한다.
+	 * Not Empty ?щ?瑜??뺤씤?쒕떎.
 	 * 
 	 * @param o Object
 	 * @return boolean
@@ -74,7 +74,7 @@ public class EgovMybatisUtil {
 	}
 
 	/**
-	 * Equal 여부를 확인한다.
+	 * Equal ?щ?瑜??뺤씤?쒕떎.
 	 * 
 	 * @param obj Object, obj Object
 	 * @return boolean
@@ -112,7 +112,7 @@ public class EgovMybatisUtil {
 	}
 
 	/**
-	 * String의 Equal 여부를 확인한다.
+	 * String??Equal ?щ?瑜??뺤씤?쒕떎.
 	 * 
 	 * @param obj Object, obj Object
 	 * @return boolean

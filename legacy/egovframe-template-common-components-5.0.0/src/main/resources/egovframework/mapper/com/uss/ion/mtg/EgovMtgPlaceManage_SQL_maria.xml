@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.12   	안민정     	 	테이블 표준화에 따른 수정사항 반영
-  2018.08.20  최두영           비품관리 CRUD 삭제
-  2018.08.28  최두영           비품관리 mapper 삭제 재반영
+  2011.8.12   	?덈???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  2018.08.20  理쒕몢??          鍮꾪뭹愿由?CRUD ??젣
+  2018.08.28  理쒕몢??          鍮꾪뭹愿由?mapper ??젣 ?щ컲??
 
 							QUANTITY			->	QY
 							MTG_PLACE_ID		->	MTGRUM_ID
@@ -42,7 +42,7 @@
        <result property="lastUpdusrPnttm" column="LAST_UPDT_PNTTM"/> 
    </resultMap>
    
-<!-- 회의실관리 -->
+<!-- ?뚯쓽?ㅺ?由?-->
     <select id="selectMtgPlaceManageList" parameterType="egovframework.com.uss.ion.mtg.service.MtgPlaceManageVO" resultType="egovframework.com.uss.ion.mtg.service.MtgPlaceManageVO">
         
 			   SELECT @RNUM:=@RNUM+1      AS rowCount ,
@@ -156,7 +156,7 @@
         
     </delete>  
     
-<!-- 회의실예약 -->
+<!-- ?뚯쓽?ㅼ삁??-->
 
     <select id="selectMtgPlaceIDList" parameterType="egovframework.com.uss.ion.mtg.service.MtgPlaceManageVO" resultType="egovframework.com.uss.ion.mtg.service.MtgPlaceManageVO">
         

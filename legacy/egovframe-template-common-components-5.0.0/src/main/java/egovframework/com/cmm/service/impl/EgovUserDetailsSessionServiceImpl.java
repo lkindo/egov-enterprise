@@ -9,17 +9,17 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
 
 /**
  *
- * @author 공통서비스 개발팀 서준식
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?쒖???
  * @since 2011. 6. 25.
  * @version 1.0
  * @see
  *
  * <pre>
- * 개정이력(Modification Information)
+ * 媛쒖젙?대젰(Modification Information)
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2011. 8. 12.    서준식        최초생성
+ *  2011. 8. 12.    ?쒖???       理쒖큹?앹꽦
  *
  *  </pre>
  */
@@ -27,8 +27,8 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
 public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl implements EgovUserDetailsService {
 
 	/**
-	 * 인증된 사용자객체를 VO형식으로 가져온다.
-	 * @return Object - 사용자 ValueObject
+	 * ?몄쬆???ъ슜?먭컼泥대? VO?뺤떇?쇰줈 媛?몄삩??
+	 * @return Object - ?ъ슜??ValueObject
 	 */
 	@Override
 	public Object getAuthenticatedUser() {
@@ -40,13 +40,13 @@ public class EgovUserDetailsSessionServiceImpl extends EgovAbstractServiceImpl i
 
 	@Override
 	public List<String> getAuthorities() {
-		// 권한 설정을 리턴한다.
+		// 沅뚰븳 ?ㅼ젙??由ы꽩?쒕떎.
 		return EgovUserDetailsHelper.getAuthorities();
 	}
 
 	@Override
 	public Boolean isAuthenticated() {
-		// 인증된 유저인지 확인한다.
+		// ?몄쬆???좎??몄? ?뺤씤?쒕떎.
 		return EgovUserDetailsHelper.isAuthenticated();
 	}
 

@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
- * 메모보고 리포지토리
+ * 筌롫뗀?덅퉪?욱??귐뗫７筌왖?醫듼봺
  */
 @Repository
 public interface MemoReportRepository extends JpaRepository<MemoReport, String> {

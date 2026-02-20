@@ -12,12 +12,12 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovPrivacyConfig.java
- * @Description : 개인정보 조회 이력 관리를 위한 JavaConfig
+ * @Description : 媛쒖씤?뺣낫 議고쉶 ?대젰 愿由щ? ?꾪븳 JavaConfig
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
+ *    2014.09.11	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5

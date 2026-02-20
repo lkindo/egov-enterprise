@@ -13,28 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "통합 링크 정보 DTO")
+@Schema(description = "Description")
 public class UnityLinkDto {
 
-    @Schema(description = "링크 ID")
+    @Schema(description = "Description")
     private String unityLinkId;
 
-    @Schema(description = "링크 구분 코드")
+    @Schema(description = "Description")
     private String unityLinkSeCode;
 
-    @Schema(description = "링크 명")
+    @Schema(description = "Description")
     private String unityLinkNm;
 
-    @Schema(description = "링크 URL")
+    @Schema(description = "Description")
     private String unityLinkUrl;
 
-    @Schema(description = "링크 설명")
+    @Schema(description = "Description")
     private String unityLinkDc;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static UnityLinkDto from(UnityLink entity) {

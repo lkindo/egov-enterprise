@@ -16,17 +16,17 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  *
- * @author 공통서비스 개발팀 서준식
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?쒖???
  * @since 2011. 8. 29.
  * @version 1.0
  * @see
  *
  * <pre>
- * 개정이력(Modification Information)
+ * 媛쒖젙?대젰(Modification Information)
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2011. 8. 29.    서준식        최초생성
+ *  2011. 8. 29.    ?쒖???       理쒖큹?앹꽦
  *
  *  </pre>
  */

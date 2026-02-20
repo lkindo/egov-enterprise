@@ -1,22 +1,22 @@
 /**
- * 개요
- * - 인터넷서비스안내에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
  *
- * 상세내용
- * - 인터넷서비스안내에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 인터넷서비스안내의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:02
+ * @created 03-8-2009 ?ㅽ썑 2:08:02
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2010.08.03	lee.m.j		최초 생성
- *  2011.08.26	정진오		IncludedInfo annotation 추가
- *  2023.06.09	김수용		NSR 보안조치 (특수문자 복원 기능 제거)
+ *  2010.08.03	lee.m.j		理쒖큹 ?앹꽦
+ *  2011.08.26	?뺤쭊??	IncludedInfo annotation 異붽?
+ *  2023.06.09	源?섏슜		NSR 蹂댁븞議곗튂 (?뱀닔臾몄옄 蹂듭썝 湲곕뒫 ?쒓굅)
  *
  *  </pre>
  */
@@ -59,7 +59,7 @@ public class EgovIntnetSvcGuidanceController {
     private EgovIdGnrService egovIntnetSvcGuidanceIdGnrService;
 
     /**
-	 * 인터넷서비스안내 목록화면 이동
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -70,11 +70,11 @@ public class EgovIntnetSvcGuidanceController {
     }
 
 	/**
-	 * 인터넷서비스안내정보를 관리하기 위해 등록된 인터넷서비스안내 목록을 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return String - 리턴 Url
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???명꽣?룹꽌鍮꾩뒪?덈궡 紐⑸줉??議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="인터넷서비스안내및관리", order = 800 ,gid = 50)
+    @IncludedInfo(name="?명꽣?룹꽌鍮꾩뒪?덈궡諛뤾?由?, order = 800 ,gid = 50)
 	@RequestMapping("/uss/ion/isg/selectIntnetSvcGuidanceList.do")
 	public String selectIntnetSvcGuidanceList(@ModelAttribute("intnetSvcGuidanceVO") IntnetSvcGuidanceVO intnetSvcGuidanceVO,
                                                ModelMap model ) throws Exception {
@@ -103,9 +103,9 @@ public class EgovIntnetSvcGuidanceController {
 	}
 
 	/**
-	 * 등록된 인터넷서비스안내의 상세정보를 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return String - 리턴 Url
+	 * ?깅줉???명꽣?룹꽌鍮꾩뒪?덈궡???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/getIntnetSvcGuidance.do")
 	public String selectIntnetSvcGuidance(@RequestParam("intnetSvcId") String intnetSvcId,
@@ -120,8 +120,8 @@ public class EgovIntnetSvcGuidanceController {
 	}
 
 	/**
-	 * 인터넷서비스안내정보를 신규 등록을 위해 등록화면으로 이동한다.
-	 * @return String - 리턴 Url
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜??좉퇋 ?깅줉???꾪빐 ?깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/addViewIntnetSvcGuidance.do")
     public String insertIntnetSvcGuidanceView(@ModelAttribute("intnetSvcGuidanceVO") IntnetSvcGuidanceVO intnetSvcGuidanceVO) throws Exception {
@@ -130,9 +130,9 @@ public class EgovIntnetSvcGuidanceController {
     }
 
 	/**
-	 * 인터넷서비스안내정보를 신규로 등록한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
-	 * @return String - 리턴 Url
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/addIntnetSvcGuidance.do")
 	public String insertIntnetSvcGuidance(@Valid @ModelAttribute("intnetSvcGuidance") IntnetSvcGuidance intnetSvcGuidance,
@@ -159,9 +159,9 @@ public class EgovIntnetSvcGuidanceController {
 	}
 
 	/**
-	 * 기 등록된 인터넷서비스안내정보를 수정한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉???명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜??섏젙?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/updtIntnetSvcGuidance.do")
 	public String updateIntnetSvcGuidance(@Valid @ModelAttribute("intnetSvcGuidance") IntnetSvcGuidance intnetSvcGuidance,
@@ -182,9 +182,9 @@ public class EgovIntnetSvcGuidanceController {
 	}
 
 	/**
-	 * 기 등록된 인터넷서비스안내정보를 삭제한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉???명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜???젣?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/removeIntnetSvcGuidance.do")
 	public String deleteIntnetSvcGuidance(@ModelAttribute("intnetSvcGuidance") IntnetSvcGuidance intnetSvcGuidance,
@@ -198,9 +198,9 @@ public class EgovIntnetSvcGuidanceController {
 
 
 	/**
-	 * 인터넷서비스안내정보 적용결과를 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return String - 리턴 Url
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫 ?곸슜寃곌낵瑜?議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uss/ion/isg/selectIntnetSvcGuidanceResultList.do")
 	public String selectIntnetSvcGuidanceResult(@ModelAttribute("intnetSvcGuidanceVO") IntnetSvcGuidanceVO intnetSvcGuidanceVO,

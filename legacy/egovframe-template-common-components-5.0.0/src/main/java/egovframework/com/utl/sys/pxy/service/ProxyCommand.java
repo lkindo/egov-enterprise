@@ -11,18 +11,18 @@ import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.cmm.util.EgovResourceCloseHelper;
 
 /**
- * 프록시서비스 처리 클래스
+ * ?꾨줉?쒖꽌鍮꾩뒪 泥섎━ ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.07.15
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일                수정자             수정내용
+ *  ?섏젙??               ?섏젙??            ?섏젙?댁슜
  *  ----------   --------    ---------------------------
- *  2019.12.05   신용호              KISA 보안약점 조치 (경로조작및 자원 삽입)
+ *  2019.12.05   ?좎슜??             KISA 蹂댁븞?쎌젏 議곗튂 (寃쎈줈議곗옉諛??먯썝 ?쎌엯)
  * </pre>
  */
 
@@ -46,7 +46,7 @@ public class ProxyCommand {
 	public void runCommand(String msg) {
 		try {
 			proxyIp = EgovWebUtil.filePathBlackList(proxyIp);
-			clientSocket = SSLSocketFactory.getDefault().createSocket(proxyIp, proxyPort); //2022.01. Unencrypted Socket 처리
+			clientSocket = SSLSocketFactory.getDefault().createSocket(proxyIp, proxyPort); //2022.01. Unencrypted Socket 泥섎━
 
 			disReader = new DataInputStream(clientSocket.getInputStream());
 			dosWriter = new DataOutputStream(clientSocket.getOutputStream());

@@ -14,12 +14,12 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovPrivacyLogServiceImpl.java
- * @Description : 개인정보 조회 이력 관리를 위한 구현 클래스
+ * @Description : 媛쒖씤?뺣낫 議고쉶 ?대젰 愿由щ? ?꾪븳 援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
+ *    2014.09.11	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5
@@ -36,7 +36,7 @@ public class EgovPrivacyLogServiceImpl extends EgovAbstractServiceImpl implement
 
 
 	/**
-	 * 개인정보조회 로그정보를 생성한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 *
 	 * @param privacyLog
 	 */
@@ -49,7 +49,7 @@ public class EgovPrivacyLogServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 개인정보조회 로그정보 상제정보를 조회한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫 ?곸젣?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param privacyLog
 	 * @return privacyLog
@@ -69,7 +69,7 @@ public class EgovPrivacyLogServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 개인정보조회 로그정보 목록을 조회한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param privacyLog
 	 */

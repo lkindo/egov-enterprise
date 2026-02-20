@@ -5,71 +5,71 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 블로그게시판 관리를 위한 모델 클래스
- * @author 공통서비스개발팀 양희훈
+ * 釉붾줈洹멸쾶?쒗뙋 愿由щ? ?꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?묓씗??
  * @since 2017.09.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일            수정자           수정내용
+ *   ?섏젙??           ?섏젙??          ?섏젙?댁슜
  *  -----------   --------   ---------------------------
- *   2017.09.12  양희훈          최초 생성
+ *   2017.09.12  ?묓씗??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class Blog implements Serializable {
 
-    /** 블로그 아이디 */
+    /** 釉붾줈洹??꾩씠??*/
     private String blogId = "";
     
-    /** 게시판 아이디 */
+    /** 寃뚯떆???꾩씠??*/
     private String bbsId = "";
     
-    /** 블로그 소개 */
+    /** 釉붾줈洹??뚭컻 */
     private String blogIntrcn = "";
     
-    /** 블로그 명 */
+    /** 釉붾줈洹?紐?*/
     private String blogNm = "";
     
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
     
-    /** 등록구분코드 */
+    /** ?깅줉援щ텇肄붾뱶 */
     private String registSeCode = "";
     
-    /** 템플릿 아이디 */
+    /** ?쒗뵆由??꾩씠??*/
     private String tmplatId = "";
     
-    /** 템플릿 아이디 */
+    /** ?쒗뵆由??꾩씠??*/
     private String useAt = "";
 
-    /** 사용자 아이디 */
+    /** ?ъ슜???꾩씠??*/
     private String emplyrId = "";
 
-    /** 사용자명 */
+    /** ?ъ슜?먮챸 */
     private String userNm = "";
 
-    /** 템플릿 명 */
+    /** ?쒗뵆由?紐?*/
     private String tmplatNm = "";
     
-    /**  블로그 게시판 여부 */
+    /**  釉붾줈洹?寃뚯떆???щ? */
 	private String blogAt = "";
 
     /**
-     * blogId attribute를 리턴한다.
+     * blogId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the blogId
      */
@@ -78,7 +78,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * blogId attribute 값을 설정한다.
+     * blogId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param blogId
      *            the blogId to set
@@ -96,7 +96,7 @@ public class Blog implements Serializable {
 	}
 
 	/**
-     * blogIntrcn attribute를 리턴한다.
+     * blogIntrcn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the blogIntrcn
      */
@@ -105,7 +105,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * blogIntrcn attribute 값을 설정한다.
+     * blogIntrcn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param blogIntrcn
      *            the blogIntrcn to set
@@ -115,7 +115,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * blogNm attribute를 리턴한다.
+     * blogNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the blogNm
      */
@@ -124,7 +124,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * blogNm attribute 값을 설정한다.
+     * blogNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param blogNm
      *            the blogNm to set
@@ -134,7 +134,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -143,7 +143,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -153,7 +153,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -162,7 +162,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -172,7 +172,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrId
      */
@@ -181,7 +181,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrId
      *            the lastUpdusrId to set
@@ -191,7 +191,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrPnttm
      */
@@ -200,7 +200,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrPnttm
      *            the lastUpdusrPnttm to set
@@ -210,7 +210,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * registSeCode attribute를 리턴한다.
+     * registSeCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the registSeCode
      */
@@ -219,7 +219,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * registSeCode attribute 값을 설정한다.
+     * registSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param registSeCode
      *            the registSeCode to set
@@ -229,7 +229,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * tmplatId attribute를 리턴한다.
+     * tmplatId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatId
      */
@@ -238,7 +238,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * tmplatId attribute 값을 설정한다.
+     * tmplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatId
      *            the tmplatId to set
@@ -248,7 +248,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the useAt
      */
@@ -257,7 +257,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param useAt
      *            the useAt to set
@@ -267,7 +267,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * emplyrId attribute를 리턴한다.
+     * emplyrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the emplyrId
      */
@@ -276,7 +276,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * emplyrId attribute 값을 설정한다.
+     * emplyrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param emplyrId
      *            the emplyrId to set
@@ -286,7 +286,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * userNm attribute를 리턴한다.
+     * userNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userNm
      */
@@ -295,7 +295,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * userNm attribute 값을 설정한다.
+     * userNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userNm
      *            the userNm to set
@@ -305,7 +305,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * tmplatNm attribute를 리턴한다.
+     * tmplatNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatNm
      */
@@ -314,7 +314,7 @@ public class Blog implements Serializable {
     }
 
     /**
-     * tmplatNm attribute 값을 설정한다.
+     * tmplatNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatNm
      *            the tmplatNm to set
@@ -332,7 +332,7 @@ public class Blog implements Serializable {
 	}
 
 	/**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

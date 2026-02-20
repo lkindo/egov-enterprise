@@ -1,163 +1,163 @@
 package egovframework.com.sts.bst.service;
 
 /**
- * 게시물집계정보에 대한 모델 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 寃뚯떆臾쇱쭛怨꾩젙蹂댁뿉 ???紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.04.15
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.04.15  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.bst)
+ *  2009.04.15  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.bst)
  *
  *  </pre>
  */
 public class BbsSummary {
 
-	/** 평균조회수 */
+	/** ?됯퇏議고쉶??*/
 	private int avrgInqireCo;
-	/** 생성글수 */
+	/** ?앹꽦湲??*/
 	private int creatCo;
-	/** 최소조회게시글ID */
+	/** 理쒖냼議고쉶寃뚯떆湲ID */
 	private String mummInqireBbsId;
-	/** 최고조회게시글ID */
+	/** 理쒓퀬議고쉶寃뚯떆湲ID */
 	private String mxmmInqireBbsId;
-	/** 발생일자 */
+	/** 諛쒖깮?쇱옄 */
 	private String occrrncDe;
-	/** 세부통계구분 */
+	/** ?몃??듦퀎援щ텇 */
 	private String statsDetailSe;
-	/** 통계구분 */
+	/** ?듦퀎援щ텇 */
 	private String statsSe;
-	/** 최대게시자ID */
+	/** 理쒕?寃뚯떆?륤D */
 	private String topNtcepersonId;
-	/** 총조회수 */
+	/** 珥앹“?뚯닔 */
 	private int totInqireCo;
 	/**
-	 * avrgInqireCo attribute 를 리턴한다.
+	 * avrgInqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getAvrgInqireCo() {
 		return avrgInqireCo;
 	}
 	/**
-	 * avrgInqireCo attribute 값을 설정한다.
+	 * avrgInqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param avrgInqireCo int
 	 */
 	public void setAvrgInqireCo(int avrgInqireCo) {
 		this.avrgInqireCo = avrgInqireCo;
 	}
 	/**
-	 * creatCo attribute 를 리턴한다.
+	 * creatCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getCreatCo() {
 		return creatCo;
 	}
 	/**
-	 * creatCo attribute 값을 설정한다.
+	 * creatCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param creatCo int
 	 */
 	public void setCreatCo(int creatCo) {
 		this.creatCo = creatCo;
 	}
 	/**
-	 * mummInqireBbsId attribute 를 리턴한다.
+	 * mummInqireBbsId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMummInqireBbsId() {
 		return mummInqireBbsId;
 	}
 	/**
-	 * mummInqireBbsId attribute 값을 설정한다.
+	 * mummInqireBbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mummInqireBbsId String
 	 */
 	public void setMummInqireBbsId(String mummInqireBbsId) {
 		this.mummInqireBbsId = mummInqireBbsId;
 	}
 	/**
-	 * mxmmInqireBbsId attribute 를 리턴한다.
+	 * mxmmInqireBbsId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMxmmInqireBbsId() {
 		return mxmmInqireBbsId;
 	}
 	/**
-	 * mxmmInqireBbsId attribute 값을 설정한다.
+	 * mxmmInqireBbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mxmmInqireBbsId String
 	 */
 	public void setMxmmInqireBbsId(String mxmmInqireBbsId) {
 		this.mxmmInqireBbsId = mxmmInqireBbsId;
 	}
 	/**
-	 * occrrncDe attribute 를 리턴한다.
+	 * occrrncDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOccrrncDe() {
 		return occrrncDe;
 	}
 	/**
-	 * occrrncDe attribute 값을 설정한다.
+	 * occrrncDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param occrrncDe String
 	 */
 	public void setOccrrncDe(String occrrncDe) {
 		this.occrrncDe = occrrncDe;
 	}
 	/**
-	 * statsDetailSe attribute 를 리턴한다.
+	 * statsDetailSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getStatsDetailSe() {
 		return statsDetailSe;
 	}
 	/**
-	 * statsDetailSe attribute 값을 설정한다.
+	 * statsDetailSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param statsDetailSe String
 	 */
 	public void setStatsDetailSe(String statsDetailSe) {
 		this.statsDetailSe = statsDetailSe;
 	}
 	/**
-	 * statsSe attribute 를 리턴한다.
+	 * statsSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getStatsSe() {
 		return statsSe;
 	}
 	/**
-	 * statsSe attribute 값을 설정한다.
+	 * statsSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param statsSe String
 	 */
 	public void setStatsSe(String statsSe) {
 		this.statsSe = statsSe;
 	}
 	/**
-	 * topNtcepersonId attribute 를 리턴한다.
+	 * topNtcepersonId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getTopNtcepersonId() {
 		return topNtcepersonId;
 	}
 	/**
-	 * topNtcepersonId attribute 값을 설정한다.
+	 * topNtcepersonId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param topNtcepersonId String
 	 */
 	public void setTopNtcepersonId(String topNtcepersonId) {
 		this.topNtcepersonId = topNtcepersonId;
 	}
 	/**
-	 * totInqireCo attribute 를 리턴한다.
+	 * totInqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getTotInqireCo() {
 		return totInqireCo;
 	}
 	/**
-	 * totInqireCo attribute 값을 설정한다.
+	 * totInqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param totInqireCo int
 	 */
 	public void setTotInqireCo(int totInqireCo) {

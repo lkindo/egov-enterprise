@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 시스템 연계 서비스 구현체
+ * ?쒖뒪???곌퀎 ?쒕퉬??援ы쁽泥?
  */
 @Service("egovSystemCntcService")
 @RequiredArgsConstructor
@@ -23,14 +23,14 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     private final SystemCntcRepository systemCntcRepository;
 
     /**
-     * 연계 목록 조회
+     * ?곌퀎 紐⑸줉 議고쉶
      */
     public List<SystemCntc> selectSystemCntcList() {
         return systemCntcRepository.findAll();
     }
 
     /**
-     * 연계 상세 조회
+     * ?곌퀎 ?곸꽭 議고쉶
      */
     public SystemCntc selectSystemCntcDetail(String cntcId) {
         return systemCntcRepository.findById(Objects.requireNonNull(cntcId))
@@ -38,7 +38,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * 연계 등록
+     * ?곌퀎 ?깅줉
      */
     @Transactional
     public void insertSystemCntc(SystemCntc systemCntc) {
@@ -46,7 +46,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * 연계 승인
+     * ?곌퀎 ?뱀씤
      */
     @Transactional
     public void approveSystemCntc(String cntcId) {

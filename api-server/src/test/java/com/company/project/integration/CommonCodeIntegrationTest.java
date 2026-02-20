@@ -88,9 +88,19 @@ public class CommonCodeIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void cmmnDetailCodeIntegrationTest() {
         // 0. 분류 및 그룹코드 선행 등록
-        CmmnClCodeDto clDto = CmmnClCodeDto.builder().clCode("D01").useAt("Y").build();
+        CmmnClCodeDto clDto = CmmnClCodeDto.builder()
+                .clCode("D01")
+                .clCodeNm("상세분류")
+                .useAt("Y")
+                .build();
         commonCodeService.insertCmmnClCode(clDto);
-        CmmnCodeDto grpDto = CmmnCodeDto.builder().codeId("DET001").clCode("D01").useAt("Y").build();
+        
+        CmmnCodeDto grpDto = CmmnCodeDto.builder()
+                .codeId("DET001")
+                .codeIdNm("상세그룹")
+                .clCode("D01")
+                .useAt("Y")
+                .build();
         commonCodeService.insertCmmnCode(grpDto);
 
         // 1. 상세코드 등록

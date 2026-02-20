@@ -8,21 +8,21 @@ import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import jakarta.annotation.Resource;
 
 /**
- * 시스템 로그 생성을 위한 ASPECT 클래스
+ * ?쒖뒪??濡쒓렇 ?앹꽦???꾪븳 ASPECT ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이삼섭          최초 생성
- *   2011.07.01  이기하          패키지 분리(sym.log -> sym.log.lgm)
- *   2025.07.11  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
+ *   2009.03.11  ?댁궪??         理쒖큹 ?앹꽦
+ *   2011.07.01  ?닿린??         ?⑦궎吏 遺꾨━(sym.log -> sym.log.lgm)
+ *   2025.07.11  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
  *
  *      </pre>
  */
@@ -32,7 +32,7 @@ public class EgovSysLogAspect {
 	private EgovSysLogService sysLogService;
 
 	/**
-	 * 시스템 로그정보를 생성한다. sevice Class의 insert로 시작되는 Method
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎. sevice Class??insert濡??쒖옉?섎뒗 Method
 	 *
 	 * @param ProceedingJoinPoint
 	 * @return Object
@@ -76,7 +76,7 @@ public class EgovSysLogAspect {
 	}
 
 	/**
-	 * 시스템 로그정보를 생성한다. sevice Class의 update로 시작되는 Method
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎. sevice Class??update濡??쒖옉?섎뒗 Method
 	 *
 	 * @param ProceedingJoinPoint
 	 * @return Object
@@ -120,7 +120,7 @@ public class EgovSysLogAspect {
 	}
 
 	/**
-	 * 시스템 로그정보를 생성한다. sevice Class의 delete로 시작되는 Method
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎. sevice Class??delete濡??쒖옉?섎뒗 Method
 	 *
 	 * @param ProceedingJoinPoint
 	 * @return Object
@@ -164,7 +164,7 @@ public class EgovSysLogAspect {
 	}
 
 	/**
-	 * 시스템 로그정보를 생성한다. sevice Class의 select로 시작되는 Method
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎. sevice Class??select濡??쒖옉?섎뒗 Method
 	 *
 	 * @param ProceedingJoinPoint
 	 * @return Object

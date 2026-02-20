@@ -22,20 +22,20 @@ import egovframework.com.utl.fcc.service.EgovDateUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 업무사용자관련 요청을  비지니스 클래스로 전달하고 처리된 결과를  해당
- * 웹 화면으로 전달하는  Controller를 정의한다
- * @author 표준프레임워크 개발팀
+ * ?낅Т?ъ슜?먭????붿껌?? 鍮꾩??덉뒪 ?대옒?ㅻ줈 ?꾨떖?섍퀬 泥섎━??寃곌낵瑜? ?대떦
+ * ???붾㈃?쇰줈 ?꾨떖?섎뒗  Controller瑜??뺤쓽?쒕떎
+ * @author ?쒖??꾨젅?꾩썙??媛쒕컻?
  * @since 2014.08.29
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일          수정자       수정내용
+ *  ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  ----------    --------    ---------------------------
- *  2014.08.29     개발팀       최초 생성
- *  2019.01.10     이정은       출근 중복 확인, 퇴근 전 출근여부 확인 추가
+ *  2014.08.29     媛쒕컻?       理쒖큹 ?앹꽦
+ *  2019.01.10     ?댁젙?       異쒓렐 以묐났 ?뺤씤, ?닿렐 ??異쒓렐?щ? ?뺤씤 異붽?
  *
  * </pre>
  */
@@ -59,10 +59,10 @@ public class EgovCmtManageController {
     EgovMessageSource egovMessageSource;
 
     /**
-     * 출근 정보를 등록한다.
-     * @param cmtManageVO 사용자등록정보
-     * @param bindingResult 입력값검증용 bindingResult
-     * @param model 화면모델
+     * 異쒓렐 ?뺣낫瑜??깅줉?쒕떎.
+     * @param cmtManageVO ?ъ슜?먮벑濡앹젙蹂?
+     * @param bindingResult ?낅젰媛믨?利앹슜 bindingResult
+     * @param model ?붾㈃紐⑤뜽
      * @return forward:/uss/cmt/EgovCmtMange.do
      * @throws Exception
      */
@@ -79,10 +79,10 @@ public class EgovCmtManageController {
         }
         cmtManageVO.setWrktDt(EgovDateUtil.getToday());
 
-        //출근 중복 확인
+        //異쒓렐 以묐났 ?뺤씤
         String wrktmId = cmtManageService.selectWrktmId(cmtManageVO);
         if (wrktmId != null) {
-            model.addAttribute("message", egovMessageSource.getMessage("ussCmt.cmtManageList.validate.wrkStartAlert")); //이미 출근 상태입니다.
+            model.addAttribute("message", egovMessageSource.getMessage("ussCmt.cmtManageList.validate.wrkStartAlert")); //?대? 異쒓렐 ?곹깭?낅땲??
             return "forward:/uss/cmt/EgovCmtManageList.do";
         } else {
             cmtManageService.insertWrkStartCmtInfo(cmtManageVO);
@@ -91,10 +91,10 @@ public class EgovCmtManageController {
     }
 
     /**
-     * 퇴근 정보를 등록한다.
-     * @param cmtManageVO 사용자등록정보
-     * @param bindingResult 입력값검증용 bindingResult
-     * @param model 화면모델
+     * ?닿렐 ?뺣낫瑜??깅줉?쒕떎.
+     * @param cmtManageVO ?ъ슜?먮벑濡앹젙蹂?
+     * @param bindingResult ?낅젰媛믨?利앹슜 bindingResult
+     * @param model ?붾㈃紐⑤뜽
      * @return forward:/uss/cmt/EgovCmtMange.do
      * @throws Exception
      */
@@ -111,26 +111,26 @@ public class EgovCmtManageController {
         }
         cmtManageVO.setWrktDt(EgovDateUtil.getToday());
 
-        // 출근여부 체크
+        // 異쒓렐?щ? 泥댄겕
         String wrktmId = cmtManageService.selectWrktmId(cmtManageVO);
         if (wrktmId != null) {
             cmtManageService.insertWrkEndCmtInfo(cmtManageVO);
             return "forward:/uss/cmt/EgovCmtManageList.do";
         }
         model.addAttribute("message",
-                egovMessageSource.getMessage("ussCmt.cmtManageList.validate.wrkStartBeforeEndAlert"));// 먼저 출근등록을 해주세요.
+                egovMessageSource.getMessage("ussCmt.cmtManageList.validate.wrkStartBeforeEndAlert"));// 癒쇱? 異쒓렐?깅줉???댁＜?몄슂.
         return "forward:/uss/cmt/EgovCmtManageList.do";
 
     }
 
     /**
-     * 출퇴근목록을 조회한다. (paging)
-     * @param userSearchVO 검색조건정보
-     * @param model 화면모델
+     * 異쒗눜洹쇰ぉ濡앹쓣 議고쉶?쒕떎. (paging)
+     * @param userSearchVO 寃?됱“嫄댁젙蹂?
+     * @param model ?붾㈃紐⑤뜽
      * @return cmm/uss/umt/EgovCmtManageList
      * @throws Exception
      */
-    @IncludedInfo(name = "출퇴근관리", order = 950, gid = 50)
+    @IncludedInfo(name = "異쒗눜洹쇨?由?, order = 950, gid = 50)
     @RequestMapping(value = "/uss/cmt/EgovCmtManageList.do")
     public String selectUserCmtList(@ModelAttribute("cmtSearchVO") CmtDefaultVO cmtSearchVO, ModelMap model) throws Exception {
 

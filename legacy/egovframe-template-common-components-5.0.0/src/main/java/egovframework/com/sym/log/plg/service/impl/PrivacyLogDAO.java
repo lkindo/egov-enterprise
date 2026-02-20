@@ -11,7 +11,7 @@ import egovframework.com.sym.log.plg.service.PrivacyLog;
 public class PrivacyLogDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 개인정보조회 로그정보를 생성한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 *
 	 * @param
 	 * @return
@@ -22,7 +22,7 @@ public class PrivacyLogDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보조회 로그정보 목록을 조회한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param privacyLog
 	 * @return
@@ -33,7 +33,7 @@ public class PrivacyLogDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 개인정보조회 로그정보 목록의 숫자를 조회한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫 紐⑸줉???レ옄瑜?議고쉶?쒕떎.
 	 * @param privacyLog
 	 * @return
 	 * @throws Exception
@@ -43,7 +43,7 @@ public class PrivacyLogDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보조회 로그정보 상세정보를 조회한다.
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇?뺣낫 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param privacyLog
 	 * @return privacyLog

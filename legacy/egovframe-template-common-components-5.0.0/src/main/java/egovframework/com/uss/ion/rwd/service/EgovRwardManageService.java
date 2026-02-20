@@ -3,75 +3,75 @@ package egovframework.com.uss.ion.rwd.service;
 import java.util.List;
 
 /**
- * 개요
- * - 포상관리에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?ъ긽愿由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 포상관리에 대한 등록, 수정, 삭제, 조회, 승인처리 기능을 제공한다.
- * - 포상관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?ъ긽愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, ?뱀씤泥섎━ 湲곕뒫???쒓났?쒕떎.
+ * - ?ъ긽愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 public interface EgovRwardManageService {
 
 	/**
-	 * 포상관리 정보를 관리하기 위해 등록된 로그인화면이미지 목록을 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return List - 포상관리 목록
+	 * ?ъ긽愿由??뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉??濡쒓렇?명솕硫댁씠誘몄? 紐⑸줉??議고쉶?쒕떎.
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return List - ?ъ긽愿由?紐⑸줉
 	 */
 	public List<RwardManageVO> selectRwardManageList(RwardManageVO rwardManageVO) throws Exception;
 
 	/**
-	 * 포상관리 목록 총 개수를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return int - 포상관리 카운트 수
+	 * ?ъ긽愿由?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return int - ?ъ긽愿由?移댁슫????
 	 */
 	public int selectRwardManageListTotCnt(RwardManageVO rwardManageVO) throws Exception ;
 	
 	/**
-	 * 등록된 포상관리의 상세정보를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return RwardManageVO - 포상관리 VO
+	 * ?깅줉???ъ긽愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return RwardManageVO - ?ъ긽愿由?VO
 	 */
 	public RwardManageVO selectRwardManage(RwardManageVO rwardManageVO) throws Exception;
 
 	/**
-	 * 포상관리 정보를 신규로 등록한다.
-	 * @param rwardManage - 포상관리 model
+	 * ?ъ긽愿由??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param rwardManage - ?ъ긽愿由?model
 	 */
 	public void insertRwardManage(RwardManage rwardManage) throws Exception;
 
 	/**
-	 * 기 등록된 포상관리 정보를 수정한다.
-	 * @param rwardManage - 포상관리 model
+	 * 湲??깅줉???ъ긽愿由??뺣낫瑜??섏젙?쒕떎.
+	 * @param rwardManage - ?ъ긽愿由?model
 	 */
 	public void updtRwardManage(RwardManage rwardManage) throws Exception;
 
 	/**
-	 * 기 등록된 포상관리 정보를 삭제한다.
-	 * @param rwardManage - 포상관리 model
+	 * 湲??깅줉???ъ긽愿由??뺣낫瑜???젣?쒕떎.
+	 * @param rwardManage - ?ъ긽愿由?model
 	 */
 	public void deleteRwardManage(RwardManage rwardManage) throws Exception;
 
-    /*** 승인처리관련 ***/
+    /*** ?뱀씤泥섎━愿??***/
 	/**
-	 * 포상관리정보 승인 처리를 위해 신청된 포상관리 목록을 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return List - 포상관리 목록
+	 * ?ъ긽愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???ъ긽愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return List - ?ъ긽愿由?紐⑸줉
 	 */
 	public List<RwardManageVO> selectRwardManageConfmList(RwardManageVO rwardManageVO) throws Exception;
 
 	/**
-	 * 포상관리정보 승인 처리를 위해 신청된 포상관리 목록 총 개수를 조회한다.
-	 * @param rwardManageVO - 포상관리 VO
-	 * @return int - 포상관리 카운트 수
+	 * ?ъ긽愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???ъ긽愿由?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param rwardManageVO - ?ъ긽愿由?VO
+	 * @return int - ?ъ긽愿由?移댁슫????
 	 */
 	public int selectRwardManageConfmListTotCnt(RwardManageVO rwardManageVO) throws Exception ;
 	
 	/**
-	 * 포상정보를 승인/반려처리 한다.
-	 * @param rwardManage - 포상관리 model
+	 * ?ъ긽?뺣낫瑜??뱀씤/諛섎젮泥섎━ ?쒕떎.
+	 * @param rwardManage - ?ъ긽愿由?model
 	 */
 	public void updtRwardManageConfm(RwardManage rwardManage) throws Exception;
 	

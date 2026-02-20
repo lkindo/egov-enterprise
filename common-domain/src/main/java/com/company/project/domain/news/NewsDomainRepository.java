@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * 뉴스정보 Repository
+ * ??곷뮞?類ｋ궖 Repository
  */
 @Repository("newsDomainRepository")
 public interface NewsDomainRepository extends JpaRepository<News, String> {

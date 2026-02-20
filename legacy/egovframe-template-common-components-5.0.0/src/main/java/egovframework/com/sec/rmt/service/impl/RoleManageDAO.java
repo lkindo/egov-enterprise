@@ -9,18 +9,18 @@ import egovframework.com.sec.rmt.service.RoleManage;
 import egovframework.com.sec.rmt.service.RoleManageVO;
 
 /**
- * 롤관리에 대한 DAO 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 濡ㅺ?由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.sec.rmt.service.RoleManageVO;
 public class RoleManageDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 등록된 롤 정보 조회
+	 * ?깅줉??濡??뺣낫 議고쉶
 	 * @param roleManageVO RoleManageVO
 	 * @return RoleManageVO
 	 * @exception Exception
@@ -39,7 +39,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 등록된 롤 정보 목록 조회
+	 * ?깅줉??濡??뺣낫 紐⑸줉 議고쉶
 	 * @param roleManageVO RoleManageVO
 	 * @return List<RoleManageVO>
 	 * @exception Exception
@@ -49,7 +49,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 시스템 메뉴에 따른 접근권한, 데이터 입력, 수정, 삭제의 권한 롤을 등록
+	 * ?쒖뒪??硫붾돱???곕Ⅸ ?묎렐沅뚰븳, ?곗씠???낅젰, ?섏젙, ??젣??沅뚰븳 濡ㅼ쓣 ?깅줉
 	 * @param roleManage RoleManage
 	 * @exception Exception
 	 */
@@ -57,7 +57,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
 		insert("roleManageDAO.insertRole", roleManage);
 	}
 	/**
-	 * 시스템 메뉴에 따른 접근권한, 데이터 입력, 수정, 삭제의 권한 롤을 수정
+	 * ?쒖뒪??硫붾돱???곕Ⅸ ?묎렐沅뚰븳, ?곗씠???낅젰, ?섏젙, ??젣??沅뚰븳 濡ㅼ쓣 ?섏젙
 	 * @param roleManage RoleManage
 	 * @exception Exception
 	 */
@@ -65,7 +65,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
 		update("roleManageDAO.updateRole", roleManage);
 	}
 	/**
-	 * 불필요한 롤정보를 화면에 조회하여 데이터베이스에서 삭제
+	 * 遺덊븘?뷀븳 濡ㅼ젙蹂대? ?붾㈃??議고쉶?섏뿬 ?곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * @param roleManage RoleManage
 	 * @exception Exception
 	 */
@@ -74,7 +74,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
 	}
 	
     /**
-	 * 롤목록 총 개수를 조회한다.
+	 * 濡ㅻぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param roleManageVO RoleManageVO
 	 * @return int
 	 * @exception Exception
@@ -84,7 +84,7 @@ public class RoleManageDAO extends EgovComAbstractDAO {
     }	
     
 	/**
-	 * 등록된 모든 롤 정보 목록 조회
+	 * ?깅줉??紐⑤뱺 濡??뺣낫 紐⑸줉 議고쉶
 	 * @param roleManageVO RoleManageVO
 	 * @return List<RoleManageVO>
 	 * @exception Exception

@@ -9,18 +9,18 @@ import egovframework.com.sec.ram.service.AuthorManage;
 import egovframework.com.sec.ram.service.AuthorManageVO;
 
 /**
- * 권한관리에 대한 DAO 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳愿由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.sec.ram.service.AuthorManageVO;
 public class AuthorManageDAO extends EgovComAbstractDAO {
 
     /**
-	 * 권한목록을 조회한다.
+	 * 沅뚰븳紐⑸줉??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return List<AuthorManageVO>
 	 * @exception Exception
@@ -39,7 +39,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
 	
 	/**
-	 * 권한을 등록한다.
+	 * 沅뚰븳???깅줉?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -48,7 +48,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 권한을 수정한다.
+	 * 沅뚰븳???섏젙?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -57,7 +57,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 권한을 삭제한다.
+	 * 沅뚰븳????젣?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -66,7 +66,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 권한을 조회한다.
+	 * 沅뚰븳??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return AuthorManageVO
 	 * @exception Exception
@@ -76,7 +76,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 권한목록 총 개수를 조회한다.
+	 * 沅뚰븳紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return int
 	 * @exception Exception
@@ -86,7 +86,7 @@ public class AuthorManageDAO extends EgovComAbstractDAO {
     }
     
     /**
-	 * 모든 권한목록을 조회한다.
+	 * 紐⑤뱺 沅뚰븳紐⑸줉??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return List<AuthorManageVO>
 	 * @exception Exception

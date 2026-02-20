@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  A.CNTC_ID           CNTC_ID
                  ,  A.CNTC_NM           CNTC_NM
@@ -72,7 +72,7 @@
                     A.CNTC_NM LIKE '%' || #{searchKeyword} || '%'
             
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     )

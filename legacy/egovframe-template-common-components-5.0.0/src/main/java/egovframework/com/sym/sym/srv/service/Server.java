@@ -3,52 +3,52 @@ package egovframework.com.sym.sym.srv.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 서버정보에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?뺣낫?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 서버정보의 서버ID, 서버명, 서버종류 등의 항목을 관리한다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?뺣낫???쒕쾭ID, ?쒕쾭紐? ?쒕쾭醫낅쪟 ?깆쓽 ??ぉ??愿由ы븳??
+ * @author ?대Ц以
  * @version 1.0
- * @created 28-6-2010 오전 10:44:54
+ * @created 28-6-2010 ?ㅼ쟾 10:44:54
  */
 public class Server extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버 ID
+	 * ?쒕쾭 ID
 	 */
 	private String serverId;
 	/**
-	 * 서버 명
+	 * ?쒕쾭 紐?
 	 */
 	private String serverNm;
 	/**
-	 * 서버 종류
+	 * ?쒕쾭 醫낅쪟
 	 */
 	private String serverKnd;
 	/**
-	 * 서버 종류명
+	 * ?쒕쾭 醫낅쪟紐?
 	 */
 	private String serverKndNm;
     /**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */    
     private String regstYmd;    
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */   
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */        
     private String frstRegisterId;	
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 경조사 Repository
+ * 野껋럩???Repository
  */
 @org.springframework.stereotype.Repository("ctsnnCtsnnManageRepository")
 public interface CtsnnManageRepository extends JpaRepository<CtsnnManage, String> {

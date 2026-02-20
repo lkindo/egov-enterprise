@@ -4,12 +4,12 @@ import java.io.Serializable;
 
 /**
  * @Class Name : PrivacyLog.java
- * @Description : 개인정보 조회 이력 관리를 위한 VO 클래스
+ * @Description : 媛쒖씤?뺣낫 議고쉶 ?대젰 愿由щ? ?꾪븳 VO ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
+ *    2014.09.11	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5
@@ -21,58 +21,58 @@ public class PrivacyLog implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	/** 요청 ID (REQUST_ID) */
+	/** ?붿껌 ID (REQUST_ID) */
 	private String requestId = "";
 	
-	/** 조회일시 (INQIRE_DT) */
+	/** 議고쉶?쇱떆 (INQIRE_DT) */
 	private String inquiryDatetime = "";
 
-	/** 서비스 명 (SRVC_NM) */
+	/** ?쒕퉬??紐?(SRVC_NM) */
 	private String serviceName = "";
 	
-	/** 조회 정보 명 (INQIRE_INFO) */
+	/** 議고쉶 ?뺣낫 紐?(INQIRE_INFO) */
 	private String inquiryInfo = "";
 
-	/** 요청자아이디 (RQESTER_ID) */
+	/** ?붿껌?먯븘?대뵒 (RQESTER_ID) */
 	private String requesterId = "";	
 
-	/** 요청자 이름 (RQESTER_NM) */
+	/** ?붿껌???대쫫 (RQESTER_NM) */
 	private String requesterName = "";
 
-	/** 요청아이피 (RQESTER_IP) */
+	/** ?붿껌?꾩씠??(RQESTER_IP) */
 	private String requesterIp = "";
 	
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
 	private String searchCondition = "";	
 
-	/** 검색시작일 */
+	/** 寃?됱떆?묒씪 */
 	private String searchBeginDate = "";
 
-	/** 검색종료일 */
+	/** 寃?됱쥌猷뚯씪 */
 	private String searchEndDate = "";
 	
-	/** 검색시작일 (화면용) */
+	/** 寃?됱떆?묒씪 (?붾㈃?? */
 	private String searchBeginDateView = "";	// ex: 2014.09.14
 	
-	/** 검색종료일 (화면용) */
+	/** 寃?됱쥌猷뚯씪 (?붾㈃?? */
 	private String searchEndDateView = "";	// ex: 2014.09.14	
 
-	/** 검색단어 */
+	/** 寃?됰떒??*/
 	private String searchWord = "";
 
-	/** 정렬순서 (DESC, ASC) */
+	/** ?뺣젹?쒖꽌 (DESC, ASC) */
 	private String sortOrder = "";
 	
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
     
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
     
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */

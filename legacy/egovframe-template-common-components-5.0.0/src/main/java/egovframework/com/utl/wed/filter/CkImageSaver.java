@@ -41,24 +41,24 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Created by guava on 1/20/14.
- *  이미지 저장 처리 클래스
+ *  ?대?吏 ???泥섎━ ?대옒??
  * @author guavatak
  * @since 2014.12.04
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일		수정자			수정내용
+ *  ?섏젙??	?섏젙??		?섏젙?댁슜
  *  ----------	-----------		---------------------------
- *  2014.12.04	표준프레임워크		최초 적용 (패키지 변경 및 소스 정리)
- *  2016.04.21	장동한			공통컴포넌트 V3.6 수정
- *  2018.12.11	신용호			KISA 보안취약점 등 수정
- *  2018.12.28	신용호			업로드 이미지 URL 생성 부분 수정
- *  2020.08.28	신용호			보안약점 조치 (Private 배열에 Public 데이터 할당[CWE-496])
- *  2023.06.09	이택진			NSR 보안조치 (크로스사이트 스크립트 방지를 위한 데이터 변환 코드 수정)
- *  2023.06.27	김혜준			크로스사이트 스크립트 방지 코드 미사용 변수 개선
+ *  2014.12.04	?쒖??꾨젅?꾩썙??	理쒖큹 ?곸슜 (?⑦궎吏 蹂寃?諛??뚯뒪 ?뺣━)
+ *  2016.04.21	?λ룞??		怨듯넻而댄룷?뚰듃 V3.6 ?섏젙
+ *  2018.12.11	?좎슜??		KISA 蹂댁븞痍⑥빟?????섏젙
+ *  2018.12.28	?좎슜??		?낅줈???대?吏 URL ?앹꽦 遺遺??섏젙
+ *  2020.08.28	?좎슜??		蹂댁븞?쎌젏 議곗튂 (Private 諛곗뿴??Public ?곗씠???좊떦[CWE-496])
+ *  2023.06.09	?댄깮吏?		NSR 蹂댁븞議곗튂 (?щ줈?ㅼ궗?댄듃 ?ㅽ겕由쏀듃 諛⑹?瑜??꾪븳 ?곗씠??蹂??肄붾뱶 ?섏젙)
+ *  2023.06.27	源?쒖?			?щ줈?ㅼ궗?댄듃 ?ㅽ겕由쏀듃 諛⑹? 肄붾뱶 誘몄궗??蹂??媛쒖꽑
  *
  * </pre>
  */
@@ -159,7 +159,7 @@ public class CkImageSaver {
 			// Compressed version of the document.domain automatic fix script.
 			// The original script can be found at [fckeditor_dir]/_dev/domain_fix_template.js
 			// sb.append("(function(){var d=document.domain;while (true){try{var A=window.parent.document.domain;break;}catch(e) {};d=d.replace(/.*?(?:\\.|$)/,'');if (d.length==0) break;try{document.domain=d;}catch (e){break;}}})();\n");
-			// KISA 보안약점 조치 (2018-12-11, 신용호)
+			// KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
 			String funcNo = request.getParameter(FUNC_NO);
 			boolean isInteger = true;
 			try {
@@ -169,7 +169,7 @@ public class CkImageSaver {
 				log.error(e);
 			}
 			if(!isInteger) {
-				funcNo = "1";		// 가장 많이 사용되는 값
+				funcNo = "1";		// 媛??留롮씠 ?ъ슜?섎뒗 媛?
 			}
 			sb.append("window.parent.CKEDITOR.tools.callFunction(").append(funcNo).append(", '");
 			sb.append(relUrl);
@@ -213,7 +213,7 @@ public class CkImageSaver {
 	}
 
     /**
-     * 암호화
+     * ?뷀샇??
      *
      * @param encrypt
 	 * @param request

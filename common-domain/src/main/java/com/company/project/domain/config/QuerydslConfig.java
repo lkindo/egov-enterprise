@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * QueryDSL 설정 클래스
+ * QueryDSL ??쇱젟 ?????
  */
 @Configuration
 public class QuerydslConfig {

@@ -8,15 +8,15 @@ import egovframework.com.cmm.EgovWebUtil;
 
 /**
  * @Class Name : HttpMntrngChecker.java
- * @Description : HTTP서비스모니터링을 위한 Check 클래스
+ * @Description : HTTP?쒕퉬?ㅻえ?덊꽣留곸쓣 ?꾪븳 Check ?대옒??
  * @Modification Information
  *
- *    수정일                수정자         수정내용
+ *    ?섏젙??               ?섏젙??        ?섏젙?댁슜
  *    ----------   -------   -------------------
- *    2010.09.06   박종선          최초생성
- *    2019.12.05   신용호          KISA 보안약점 조치 (경로조작및 자원 삽입,부적절한 예외처리)
+ *    2010.09.06   諛뺤쥌??         理쒖큹?앹꽦
+ *    2019.12.05   ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (寃쎈줈議곗옉諛??먯썝 ?쎌엯,遺?곸젅???덉쇅泥섎━)
  *
- * @author  박종선
+ * @author  諛뺤쥌??
  * @since 2010.05.01
  * @version
  * @see
@@ -28,21 +28,21 @@ public class HttpMntrngChecker {
 	//@Resource(name = "HttpMonService")
 	//private EgovHttpMonService httpMonService;
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
-	// 최대 문자길이
+	// 理쒕? 臾몄옄湲몄씠
 	static final int MAX_STR_LEN = 1024;
 
-	// 화이트 리스트
+	// ?붿씠??由ъ뒪??
 	static private String[] whiteListURL = { "wwww.egovwebserver.go.kr"
 												,"wwww.egovwasserver.go.kr"
 												,"192.168.100.133" };
 
 	/**
-	 * 시스템에 존재하는 서버의 실행상태 정보를 조회하는 기능
-	 * @param String sitUrl 사용포트
-	 * @return String status 실행상태
+	 * ?쒖뒪?쒖뿉 議댁옱?섎뒗 ?쒕쾭???ㅽ뻾?곹깭 ?뺣낫瑜?議고쉶?섎뒗 湲곕뒫
+	 * @param String sitUrl ?ъ슜?ы듃
+	 * @return String status ?ㅽ뻾?곹깭
 	 * @exception Exception
 	*/
 	public static String getPrductStatus(String siteUrl) throws IOException {

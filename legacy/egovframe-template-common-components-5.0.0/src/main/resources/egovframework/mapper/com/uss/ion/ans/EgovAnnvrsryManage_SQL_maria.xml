@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                    수정자                          수정내용
+	?섏젙??                   ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.10   	정진오     	 	테이블 표준화에 따른 수정사항 반영
-  							ANN_ID 를 			ANNVRSRY_ID 로 변경
-							USID 를 				USER_ID 로 변경
-							ANNVRSRY_DE 를 		ANNVRSRY 로 변경
-							ANNVRSRY_SETUP 를	ANNVRSRY_NTCN_SETUP 로 변경
-							ANNVRSRY_BGNDE 를	ANNVRSRY_NTCN_BGNDE 로 변경
-							REPTIT_SE 를			REPTIT_AT 로 변경	
-							selectAnnvrsryManage SQL의 USER_ID 를 ans.USER_ID로 변경
+  2011.8.10   	?뺤쭊??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							ANN_ID 瑜?			ANNVRSRY_ID 濡?蹂寃?
+							USID 瑜?				USER_ID 濡?蹂寃?
+							ANNVRSRY_DE 瑜?		ANNVRSRY 濡?蹂寃?
+							ANNVRSRY_SETUP 瑜?ANNVRSRY_NTCN_SETUP 濡?蹂寃?
+							ANNVRSRY_BGNDE 瑜?ANNVRSRY_NTCN_BGNDE 濡?蹂寃?
+							REPTIT_SE 瑜?		REPTIT_AT 濡?蹂寃?
+							selectAnnvrsryManage SQL??USER_ID 瑜?ans.USER_ID濡?蹂寃?
  --><!--Converted at: Wed May 11 15:51:01 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -199,7 +199,7 @@
         
     </select>
     
-<!-- 엑셀일괄 등록 처리  -->
+<!-- ?묒??쇨큵 ?깅줉 泥섎━  -->
     <select id="selectAnnvrsryManageBnde" resultType="egovframework.com.uss.ion.ans.service.AnnvrsryManageVO">
         
 				select A.ESNTL_ID as usid ,

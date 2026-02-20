@@ -36,28 +36,28 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 개인지식정보에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛쒖씤吏?앹젙蹂댁뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 개인지식정보에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 개인지식정보의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 媛쒖씤吏?앹젙蹂댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 媛쒖씤吏?앹젙蹂댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.08.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.12  박종선          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2024.10.29  권태성          목록으로 돌아올 때 검색 조건이 유지되도록 수정(#1)
- *   2025.06.17  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.08.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2024.10.29  沅뚰깭??         紐⑸줉?쇰줈 ?뚯븘????寃??議곌굔???좎??섎룄濡??섏젙(#1)
+ *   2025.06.17  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -75,7 +75,7 @@ public class EgovKnoPersonalController {
 	@Resource(name = "MapMaterialService")
 	public EgovMapMaterialService mapMaterialService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -91,26 +91,26 @@ public class EgovKnoPersonalController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 등록된 개인지식 정보를 조회 한다.
+	 * ?깅줉??媛쒖씤吏???뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoPersonalVO - 개인지식 VO
-	 * @return String - 리턴 Url
+	 * @param KnoPersonalVO - 媛쒖씤吏??VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoPersonalVO
 	 */
-	@IncludedInfo(name = "개인지식관리", listUrl = "/dam/per/EgovComDamPersonalList.do", order = 1250, gid = 80)
+	@IncludedInfo(name = "媛쒖씤吏?앷?由?, listUrl = "/dam/per/EgovComDamPersonalList.do", order = 1250, gid = 80)
 	@RequestMapping(value = "/dam/per/EgovComDamPersonalList.do")
 	public String selectKnoPersonalList(@ModelAttribute("searchVO") KnoPersonalVO searchVO, ModelMap model)
 			throws Exception {
 		LOGGER.debug("searchVO={}", searchVO);
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		/** EgovPropertyService.mapMaterial */
@@ -140,10 +140,10 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 개인지식정보 상세 정보를 조회 한다.
+	 * 媛쒖씤吏?앹젙蹂??곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoPersonalVO - 개인지식정보 VO
-	 * @return String - 리턴 Url
+	 * @param KnoPersonalVO - 媛쒖씤吏?앹젙蹂?VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoPersonalVO
 	 */
@@ -156,10 +156,10 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 개인지식 정보를 등록폼.
+	 * 媛쒖씤吏???뺣낫瑜??깅줉??
 	 * 
-	 * @param KnoNm - 개인지식정보 model
-	 * @return String - 리턴 Url
+	 * @param KnoNm - 媛쒖씤吏?앹젙蹂?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoNm
 	 */
@@ -170,7 +170,7 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 개인지식 정보를 등록폼. 초기값
+	 * 媛쒖씤吏???뺣낫瑜??깅줉?? 珥덇린媛?
 	 * 
 	 * @param model
 	 * @throws Exception
@@ -192,24 +192,24 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 개인지식 정보를 신규로 등록한다.
+	 * 媛쒖씤吏???뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param KnoNm - 개인지식정보 model
-	 * @return String - 리턴 Url
+	 * @param KnoNm - 媛쒖씤吏?앹젙蹂?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoNm
 	 */
 	@PostMapping(value = "/dam/per/EgovComDamPersonalRegist.do")
 	public String insertKnoPersonal(final MultipartHttpServletRequest multiRequest, @Valid @ModelAttribute("knoPersonal") KnoPersonalVO knoPersonal,
 			BindingResult bindingResult, ModelMap model) throws Exception {
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/dam/per/EgovComDamPersonalRegist";
@@ -219,7 +219,7 @@ public class EgovKnoPersonalController {
 			return sLocationUrl;
 		}
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -228,13 +228,13 @@ public class EgovKnoPersonalController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		knoPersonal.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		knoPersonal.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		knoPersonal.setFrstRegisterId(loginVO.getUniqId());
 		knoPersonal.setLastUpdusrId(loginVO.getUniqId());
 
@@ -243,10 +243,10 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 기 등록 된 개인지식 정보를 수정폼.
+	 * 湲??깅줉 ??媛쒖씤吏???뺣낫瑜??섏젙??
 	 * 
-	 * @param KnoNm - 개인지식정보 model
-	 * @return String - 리턴 Ur
+	 * @param KnoNm - 媛쒖씤吏?앹젙蹂?model
+	 * @return String - 由ы꽩 Ur
 	 *
 	 * @param KnoNm
 	 */
@@ -258,7 +258,7 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 기 등록 된 개인지식 정보를 수정폼. 초기값
+	 * 湲??깅줉 ??媛쒖씤吏???뺣낫瑜??섏젙?? 珥덇린媛?
 	 * 
 	 * @param knoPersonal
 	 * @param model
@@ -270,10 +270,10 @@ public class EgovKnoPersonalController {
 	}
 
 	/**
-	 * 기 등록 된 개인지식 정보를 수정 한다.
+	 * 湲??깅줉 ??媛쒖씤吏???뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param KnoNm - 개인지식정보 model
-	 * @return String - 리턴 Ur
+	 * @param KnoNm - 媛쒖씤吏?앹젙蹂?model
+	 * @return String - 由ы꽩 Ur
 	 *
 	 * @param KnoNm
 	 */
@@ -282,14 +282,14 @@ public class EgovKnoPersonalController {
 			@RequestParam Map<String, String> commandMap, @Valid @ModelAttribute("knoPersonal") KnoPersonal knoPersonal,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/dam/per/EgovComDamPersonalModify";
@@ -300,7 +300,7 @@ public class EgovKnoPersonalController {
 		}
 
 		/*
-		 * ***************************************************************** // 아이디 설정
+		 * ***************************************************************** // ?꾩씠???ㅼ젙
 		 */
 		if (loginVO != null) {
 			knoPersonal.setFrstRegisterId(loginVO.getUniqId());
@@ -308,8 +308,8 @@ public class EgovKnoPersonalController {
 		}
 
 		/*
-		 * ***************************************************************** // 첨부파일 관련
-		 * ID 생성 start....
+		 * ***************************************************************** // 泥⑤??뚯씪 愿??
+		 * ID ?앹꽦 start....
 		 */
 		String atchFileId = knoPersonal.getAtchFileId();
 
@@ -322,8 +322,8 @@ public class EgovKnoPersonalController {
 				List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
 				atchFileId = fileMngService.insertFileInfs(fvoList);
 
-				// 첨부파일 ID 셋팅
-				knoPersonal.setAtchFileId(atchFileId); // 첨부파일 ID
+				// 泥⑤??뚯씪 ID ?뗮똿
+				knoPersonal.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			} else {
 				FileVO fvo = new FileVO();
@@ -334,17 +334,17 @@ public class EgovKnoPersonalController {
 			}
 		}
 
-		// 저장
+		// ???
 		knoPersonalService.updateKnoPersonal(knoPersonal);
 		sLocationUrl = "forward:/dam/per/EgovComDamPersonalList.do";
 		return sLocationUrl;
 	}
 
 	/**
-	 * 기 등록된 개인지식 정보를 삭제한다.
+	 * 湲??깅줉??媛쒖씤吏???뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param KnoNm - 개인지식정보 model
-	 * @return String - 리턴 Url
+	 * @param KnoNm - 媛쒖씤吏?앹젙蹂?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoNm
 	 */

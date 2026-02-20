@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.09.08   	서준식     	 	MANAGT_DE 컬럼 타입 변경으로 TO_CHAR()함수 제거 
-							조회수 출력 안되는 문제로 RDCNT  INQIRE_CO (ALIAS 이름 변경)
+  2011.09.08   	?쒖???    	 	MANAGT_DE 而щ읆 ???蹂寃쎌쑝濡?TO_CHAR()?⑥닔 ?쒓굅 
+							議고쉶??異쒕젰 ?덈릺??臾몄젣濡?RDCNT  INQIRE_CO (ALIAS ?대쫫 蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -208,7 +208,7 @@
 			WHERE	CNSLT_ID=#{cnsltId}
 	</select>
 
-	<!-- 2024.10.29  권태성  목록 검색 조건이 작동하지 않는 오류 수정 -->
+	<!-- 2024.10.29  沅뚰깭?? 紐⑸줉 寃??議곌굔???묐룞?섏? ?딅뒗 ?ㅻ쪟 ?섏젙 -->
 	<select id="selectCnsltAnswerList" parameterType="egovframework.com.uss.olp.cns.service.CnsltManageDefaultVO" resultType="egovMap">
 
 			SELECT 	C.CNSLT_ID, C.CNSLT_SJ, C.CNSLT_CN, C.OTHBC_AT, C.WRITNG_PASSWORD,
@@ -235,7 +235,7 @@
 			LIMIT  #{recordCountPerPage} OFFSET #{firstIndex}
 </select>
 
-	<!-- 2024.10.29  권태성  목록 검색 조건이 작동하지 않는 오류 수정 -->
+	<!-- 2024.10.29  沅뚰깭?? 紐⑸줉 寃??議곌굔???묐룞?섏? ?딅뒗 ?ㅻ쪟 ?섏젙 -->
 	<select id="selectCnsltAnswerListTotCnt" parameterType="egovframework.com.uss.olp.cns.service.CnsltManageDefaultVO" resultType="int">
 		
 			SELECT 	COUNT(*) totcnt

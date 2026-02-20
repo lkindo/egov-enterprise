@@ -4,18 +4,18 @@ import java.util.List;
 
 /**
 *
-* 공통코드에 관한 서비스 인터페이스 클래스를 정의한다
-* @author 공통서비스 개발팀 이중호
+* 怨듯넻肄붾뱶??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+* @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
 * @since 2009.04.01
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2009.04.01  이중호          최초 생성
+*   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
 *
 * </pre>
 */
@@ -23,47 +23,47 @@ import java.util.List;
 public interface EgovCcmCmmnCodeManageService {
 
 	/**
-	 * 공통분류코드 총 개수를 조회한다.
+	 * 怨듯넻遺꾨쪟肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
-	 * @return int(공통분류코드 총 개수)
+	 * @return int(怨듯넻遺꾨쪟肄붾뱶 珥?媛쒖닔)
 	 * @throws Exception 
 	 */
 	int selectCmmnCodeListTotCnt(CmmnCodeVO searchVO) throws Exception;
 	
 	/**
-	 * 공통코드 목록을 조회한다.
+	 * 怨듯넻肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
-	 * @return List(공통분류코드 목록)
+	 * @return List(怨듯넻遺꾨쪟肄붾뱶 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<CmmnCodeVO> selectCmmnCodeList(CmmnCodeVO searchVO) throws Exception;
 
 	/**
-	 * 공통코드 상세항목을 조회한다.
+	 * 怨듯넻肄붾뱶 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cmmnCode
-	 * @return CmmnCode(공통코드)
+	 * @return CmmnCode(怨듯넻肄붾뱶)
 	 * @throws Exception
 	 */
 	CmmnCodeVO selectCmmnCodeDetail(CmmnCodeVO cmmnCodeVO) throws Exception;
 
 	/**
-	 * 공통코드를 수정한다.
+	 * 怨듯넻肄붾뱶瑜??섏젙?쒕떎.
 	 * @param cmmnCodeVO
 	 * @throws Exception
 	 */
 	void updateCmmnCode(CmmnCodeVO cmmnCodeVO) throws Exception;
 
 	/**
-	 * 공통코드를 등록한다.
+	 * 怨듯넻肄붾뱶瑜??깅줉?쒕떎.
 	 * @param cmmnCode
 	 * @throws Exception
 	 */
 	void insertCmmnCode(CmmnCode cmmnCode) throws Exception;
 
 	/**
-	 * 공통코드를 삭제한다.
+	 * 怨듯넻肄붾뱶瑜???젣?쒕떎.
 	 * @param cmmnCode
 	 * @throws Exception
 	 */

@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 배치스케줄 서비스 구현체
+ * 諛곗튂?ㅼ?以??쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor
@@ -138,10 +138,10 @@ public class BatchSchdulService implements EgovBatchSchdulService {
         String cycle = entity.getExecutCycle();
         String de = entity.getExecutSchdulDe();
 
-        if ("03".equals(cycle)) { // 매월
+        if ("03".equals(cycle)) { // 留ㅼ썡
             if (de != null && de.length() >= 8)
-                sb.append(de.substring(6, 8)).append("일 ");
-        } else if ("04".equals(cycle)) { // 매년
+                sb.append(de.substring(6, 8)).append("??");
+        } else if ("04".equals(cycle)) { // 留ㅻ뀈
             if (de != null && de.length() >= 8)
                 sb.append(de.substring(4, 6)).append("-").append(de.substring(6, 8)).append(" ");
         } else if (!"01".equals(cycle) && !"02".equals(cycle)) { // Once or other
@@ -150,7 +150,7 @@ public class BatchSchdulService implements EgovBatchSchdulService {
                         .append(de.substring(6, 8)).append(" ");
         }
 
-        if ("02".equals(cycle)) { // 매주
+        if ("02".equals(cycle)) { // 留ㅼ＜
             if (!dfkNames.isEmpty()) {
                 sb.append(String.join(",", dfkNames)).append(" ");
             }

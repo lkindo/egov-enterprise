@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ?�용??관�??�비??
+ * ?ъ슜??愿由??쒕퉬??
  */
 @Service("projectUserManageService")
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class UserManageService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * ?�용??목록 조회
+     * ?ъ슜??紐⑸줉 議고쉶
      */
     public List<UserManageDto> selectUserList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -46,14 +46,14 @@ public class UserManageService {
     }
 
     /**
-     * ?�용??목록 �?건수
+     * ?ъ슜??紐⑸줉 珥?嫄댁닔
      */
     public int selectUserListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * ?�용???�세 조회
+     * ?ъ슜???곸꽭 議고쉶
      */
     public UserManageDto selectUser(String userId) {
         return userRepository.findById(Objects.requireNonNull(userId))
@@ -62,7 +62,7 @@ public class UserManageService {
     }
 
     /**
-     * ?�용???�세 조회 (G-ID/ESNTL_ID 기�?)
+     * ?ъ슜???곸꽭 議고쉶 (G-ID/ESNTL_ID 湲곗?)
      */
     public UserManageDto selectUserByEsntlId(String esntlId) {
         return userRepository.findByEsntlId(Objects.requireNonNull(esntlId))
@@ -71,7 +71,7 @@ public class UserManageService {
     }
 
     /**
-     * ?�용???�록
+     * ?ъ슜???깅줉
      */
     @Transactional
     public void insertUser(UserManageDto dto) {
@@ -107,7 +107,7 @@ public class UserManageService {
     }
 
     /**
-     * ?�용???�정
+     * ?ъ슜???섏젙
      */
     @Transactional
     public void updateUser(UserManageDto dto) {
@@ -124,7 +124,7 @@ public class UserManageService {
     }
 
     /**
-     * ?�용????��
+     * ?ъ슜????젣
      */
     @Transactional
     public void deleteUser(String userId) {
@@ -132,7 +132,7 @@ public class UserManageService {
     }
 
     /**
-     * ?�용????�� (List)
+     * ?ъ슜????젣 (List)
      */
     @Transactional
     public void deleteUserList(List<String> userIds) {
@@ -140,14 +140,14 @@ public class UserManageService {
     }
 
     /**
-     * ?�이??중복 ?�인
+     * ?꾩씠??以묐났 ?뺤씤
      */
     public int checkIdDplct(String userId) {
         return userRepository.existsById(Objects.requireNonNull(userId)) ? 1 : 0;
     }
 
     /**
-     * 비�?번호 변�?
+     * 鍮꾨?踰덊샇 蹂寃?
      */
     @Transactional
     public void updatePassword(String userId, String newPassword) {

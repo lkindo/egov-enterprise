@@ -25,7 +25,7 @@ class UserValidatorInputValidationTest {
                                 null, // userId is null
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -43,7 +43,7 @@ class UserValidatorInputValidationTest {
                                 "", // userId is empty
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -61,7 +61,7 @@ class UserValidatorInputValidationTest {
                                 "invalid_user_id!", // Contains special characters
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -79,7 +79,7 @@ class UserValidatorInputValidationTest {
                                 "abc", // Less than 4 characters
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -97,7 +97,7 @@ class UserValidatorInputValidationTest {
                                 "verylonguseridthatexceedstwentycharacters", // More than 20 characters
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -115,7 +115,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 null, // password is null
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -133,7 +133,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "1234567", // Less than 8 characters
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -151,7 +151,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123", // No special characters
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -169,7 +169,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password!", // No numbers
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -187,7 +187,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 null, // user name is null
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -205,7 +205,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "", // user name is empty
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -223,7 +223,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "User@Name123", // Contains @ and numbers which are not allowed
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -242,7 +242,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 longHint,
                                 "answer");
 
@@ -261,7 +261,7 @@ class UserValidatorInputValidationTest {
                                 "validUserId",
                                 "password123!",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 longCnsr);
 

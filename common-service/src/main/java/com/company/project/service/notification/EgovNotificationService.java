@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 /**
- * 정보알림 서비스 인터페이스
+ * ?뺣낫?뚮┝ ?쒕퉬???명꽣?섏씠??
  */
 public interface EgovNotificationService {
 

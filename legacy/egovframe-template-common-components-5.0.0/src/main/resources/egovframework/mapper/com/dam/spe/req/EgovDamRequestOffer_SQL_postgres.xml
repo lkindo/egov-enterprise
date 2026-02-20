@@ -3,7 +3,7 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="RequestOffer">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="RequestOfferVOs" type="egovframework.com.dam.spe.req.service.RequestOfferVO">
 		<result property="knoId" column="KNWLDG_ID"/>
 		<result property="orgnztId" column="ORGNZT_ID"/>
@@ -24,12 +24,12 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 지식정보제공/지식정보요청::목록조회_게시물 총개수  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRequestOfferSpeCnt" parameterType="java.util.Map" resultType="int">
 		SELECT COUNT(EXPERT_ID) CNT FROM COMTNDAMPRO WHERE EXPERT_ID = #{speId}
 	</select>
 
-	<!-- 지식정보제공/지식정보요청::목록조회 게시물정보 -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRequestOffer" resultType="egovMap">
 	 
 		SELECT
@@ -72,7 +72,7 @@
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	
 	</select>
-	<!-- 지식정보제공/지식정보요청::목록조회_게시물 총개수  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRequestOfferCnt" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -90,14 +90,14 @@
 	 </if>
 	</select>
 
-    <!-- 지식정보제공/지식정보요청::삭제  -->
+    <!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:??젣  -->
 	<delete id="deleteRequestOffer">
 		
 			DELETE FROM COMTNDAMCALRES
 			WHERE KNWLDG_ID=#{knoId}
 		
 	</delete>
-	<!-- 지식정보제공/지식정보요청::하위 답변 수  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?섏쐞 ?듬? ?? -->
 	<select id="selectRequestOfferDelCnt" resultType="int">
 	SELECT COUNT(KNWLDG_ID) CNT
 	FROM COMTNDAMCALRES
@@ -105,7 +105,7 @@
 	AND PARNTS_KNWLDG_ID = #{ansParents}
 	</select>
 
-	<!-- 지식정보제공/지식정보요청::수정  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?섏젙  -->
 	<update id="updateRequestOffer">
 	 
 		UPDATE COMTNDAMCALRES
@@ -127,7 +127,7 @@
 	 
 	</update>
 
-	<!-- 지식정보제공/지식정보요청::상세보기 -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?곸꽭蹂닿린 -->
 	<select id="selectRequestOfferDetail" resultMap="RequestOfferVOs">
 	SELECT
 		A.KNWLDG_ID,
@@ -151,7 +151,7 @@
 		AND A.KNWLDG_ID=#{knoId}
 	</select>
 
-	<!-- #{knoId} 지식정보제공/지식정보요청::입력  -->
+	<!-- #{knoId} 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?낅젰  -->
 	<insert id="insertRequestOfferSave">
 	<selectKey keyProperty="ansNumber" resultType="int" order="BEFORE">
 	 SELECT COALESCE(MAX(ANSWER_GROUP_NO)+1, 1) FROM COMTNDAMCALRES
@@ -194,7 +194,7 @@
 
 	</insert>
 
-	<!-- 지식정보제공/지식정보요청::하위레벨 정보 조회  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?섏쐞?덈꺼 ?뺣낫 議고쉶  -->
 	<select id="selectRequestOfferReplyaAnsParents" resultType="egovMap">
 	SELECT
 		KNWLDG_ID			"knoId",
@@ -208,7 +208,7 @@
 	LIMIT 1
 	</select>
 
-	<!-- 지식정보제공/지식정보요청::레벨 탐색  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?덈꺼 ?먯깋  -->
 	<select id="selectRequestOfferReplyaAnsParentsSearch" resultType="egovMap">
 	SELECT
 		KNWLDG_ID			"knoId",
@@ -220,7 +220,7 @@
 	ORDER BY ANSWER_ORDR DESC
 	LIMIT 1
 	</select>
-	<!-- 지식정보제공/지식정보요청::Seq 검색  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:Seq 寃?? -->
 	<select id="selectRequestOfferReplySeq" resultType="int">
 	SELECT COALESCE((MAX(ANSWER_ORDR)+1), 1) SEQ
 	FROM COMTNDAMCALRES
@@ -228,7 +228,7 @@
 	AND ANSWER_GROUP_NO = #{ansNumber}
 	AND PARNTS_KNWLDG_ID = #{ansParents}
 	</select>
-	<!-- 지식정보제공/지식정보요청::답변등록  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?듬??깅줉  -->
 	<insert id="insertRequestOfferReply">
 	INSERT INTO COMTNDAMCALRES (
 		KNWLDG_ID,
@@ -266,7 +266,7 @@
 		#{lastUpdusrId}
 	)
 	</insert>
-	<!-- 지식정보제공/지식정보요청::답변SEQ 업데이트  -->
+	<!-- 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?:?듬?SEQ ?낅뜲?댄듃  -->
 	<update id="updateRequestOfferReply">
 	UPDATE COMTNDAMCALRES
 	SET

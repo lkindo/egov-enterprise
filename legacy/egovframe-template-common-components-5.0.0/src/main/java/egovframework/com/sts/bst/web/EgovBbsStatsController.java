@@ -19,23 +19,23 @@ import egovframework.com.sts.com.StatsVO;
 import jakarta.annotation.Resource;
 
 /**
- * 게시물 통계 검색 컨트롤러 클래스
+ * 寃뚯떆臾??듦퀎 寃??而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.19
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.19  박지욱          최초 생성
- *   2011.06.30  이기하          패키지 분리(sts -> sts.bst)
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2018.05.02  신용호          게시판유형별 코드분류 변경 (COM004 => COM101), 게시판속성별(COM009) 코드분류 사용하지 않음
- *   2025.07.01  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *   2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.bst)
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2018.05.02  ?좎슜??         寃뚯떆?먯쑀?뺣퀎 肄붾뱶遺꾨쪟 蹂寃?(COM004 => COM101), 寃뚯떆?먯냽?깅퀎(COM009) 肄붾뱶遺꾨쪟 ?ъ슜?섏? ?딆쓬
+ *   2025.07.01  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -51,17 +51,17 @@ public class EgovBbsStatsController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 게시물 통계를 조회한다
+	 * 寃뚯떆臾??듦퀎瑜?議고쉶?쒕떎
 	 * 
 	 * @param statsVO StatsVO
 	 * @return String
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "게시물통계", listUrl = "/sts/bst/selectBbsStats.do", order = 120, gid = 30)
+	@IncludedInfo(name = "寃뚯떆臾쇳넻怨?, listUrl = "/sts/bst/selectBbsStats.do", order = 120, gid = 30)
 	@RequestMapping(value = "/sts/bst/selectBbsStats.do")
 	public String selectBbsStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
-		// 세부통계구분 공통코드 목록 조회(게시판유형,속성에 대한 세부통계구분코드)
+		// ?몃??듦퀎援щ텇 怨듯넻肄붾뱶 紐⑸줉 議고쉶(寃뚯떆?먯쑀???띿꽦??????몃??듦퀎援щ텇肄붾뱶)
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
 		vo.setCodeId("COM101");
@@ -74,17 +74,17 @@ public class EgovBbsStatsController {
 
 		if (statsVO.getFromDate() != null && !"".equals(statsVO.getFromDate())) {
 
-			// 탭구분 : 생성글수(tab1), 총조회수(tab2), 평균조회수(tab3), 최고/최소조회수(tab4), 최고게시자(tab5)
+			// ??뎄遺?: ?앹꽦湲??tab1), 珥앹“?뚯닔(tab2), ?됯퇏議고쉶??tab3), 理쒓퀬/理쒖냼議고쉶??tab4), 理쒓퀬寃뚯떆??tab5)
 			List<StatsVO> bbsStatsList = null;
 			List<StatsVO> bbsMaxStatsList = null;
 			List<StatsVO> bbsMinStatsList = null;
 			List<StatsVO> bbsMaxNtcrList = null;
 
-			// 1. 생성글수(tab1)
+			// 1. ?앹꽦湲??tab1)
 			if ("tab1".equals(statsVO.getTabKind())) {
-				// 생성글수 조회
+				// ?앹꽦湲??議고쉶
 				bbsStatsList = bbsStatsService.selectBbsCretCntStats(statsVO);
-				// 그래프 길이 설정
+				// 洹몃옒??湲몄씠 ?ㅼ젙
 				float iMaxUnit = 50.0f;
 				for (StatsVO element : bbsStatsList) {
 					StatsVO sVO = element;
@@ -104,15 +104,15 @@ public class EgovBbsStatsController {
 					}
 				}
 				statsVO.setMaxUnit(iMaxUnit);
-				// 결과 리턴
+				// 寃곌낵 由ы꽩
 				model.addAttribute("bbsStatsList", bbsStatsList);
 				model.addAttribute("statsInfo", statsVO);
 
-				// 2. 총조회수(tab2)
+				// 2. 珥앹“?뚯닔(tab2)
 			} else if ("tab2".equals(statsVO.getTabKind())) {
-				// 총조회수 조회
+				// 珥앹“?뚯닔 議고쉶
 				bbsStatsList = bbsStatsService.selectBbsTotCntStats(statsVO);
-				// 그래프 길이 설정
+				// 洹몃옒??湲몄씠 ?ㅼ젙
 				float iMaxUnit = 50.0f;
 				for (StatsVO element : bbsStatsList) {
 					StatsVO sVO = element;
@@ -132,15 +132,15 @@ public class EgovBbsStatsController {
 					}
 				}
 				statsVO.setMaxUnit(iMaxUnit);
-				// 결과 리턴
+				// 寃곌낵 由ы꽩
 				model.addAttribute("bbsStatsList", bbsStatsList);
 				model.addAttribute("statsInfo", statsVO);
 
-				// 3. 평균조회수(tab3)
+				// 3. ?됯퇏議고쉶??tab3)
 			} else if ("tab3".equals(statsVO.getTabKind())) {
-				// 평균조회수 조회
+				// ?됯퇏議고쉶??議고쉶
 				bbsStatsList = bbsStatsService.selectBbsAvgCntStats(statsVO);
-				// 그래프 길이 설정
+				// 洹몃옒??湲몄씠 ?ㅼ젙
 				float iMaxUnit = 50.0f;
 				for (StatsVO element : bbsStatsList) {
 					StatsVO sVO = element;
@@ -161,26 +161,26 @@ public class EgovBbsStatsController {
 					}
 				}
 				statsVO.setMaxUnit(iMaxUnit);
-				// 결과 리턴
+				// 寃곌낵 由ы꽩
 				model.addAttribute("bbsStatsList", bbsStatsList);
 				model.addAttribute("statsInfo", statsVO);
 
-				// 4. 최고/최소조회수(tab4)
+				// 4. 理쒓퀬/理쒖냼議고쉶??tab4)
 			} else if ("tab4".equals(statsVO.getTabKind())) {
-				// 최고게시글 정보 조회
+				// 理쒓퀬寃뚯떆湲 ?뺣낫 議고쉶
 				bbsMaxStatsList = bbsStatsService.selectBbsMaxCntStats(statsVO);
-				// 최소게시글 정보 조회
+				// 理쒖냼寃뚯떆湲 ?뺣낫 議고쉶
 				bbsMinStatsList = bbsStatsService.selectBbsMinCntStats(statsVO);
-				// 결과 리턴
+				// 寃곌낵 由ы꽩
 				model.addAttribute("bbsMaxStatsList", bbsMaxStatsList);
 				model.addAttribute("bbsMinStatsList", bbsMinStatsList);
 				model.addAttribute("statsInfo", statsVO);
 
-				// 5. 최고게시자(tab5)
+				// 5. 理쒓퀬寃뚯떆??tab5)
 			} else if ("tab5".equals(statsVO.getTabKind())) {
 
 				bbsMaxNtcrList = bbsStatsService.selectBbsMaxUserStats(statsVO);
-				// 결과 리턴
+				// 寃곌낵 由ы꽩
 				model.addAttribute("bbsMaxNtcrList", bbsMaxNtcrList);
 				model.addAttribute("statsInfo", statsVO);
 			}

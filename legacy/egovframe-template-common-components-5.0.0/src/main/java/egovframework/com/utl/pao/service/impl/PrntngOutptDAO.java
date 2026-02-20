@@ -7,18 +7,18 @@ import egovframework.com.utl.pao.service.PrntngOutptVO;
 
 /**
  *
- * 전자관인에서 사용해야 하는 서비스를 정의하기위한 데이터 접근 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?꾩옄愿?몄뿉???ъ슜?댁빞 ?섎뒗 ?쒕퉬?ㅻ? ?뺤쓽?섍린?꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.02.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.01  이중호          최초 생성
+ *   2009.02.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -26,7 +26,7 @@ import egovframework.com.utl.pao.service.PrntngOutptVO;
 public class PrntngOutptDAO extends EgovComAbstractDAO {
 
     /**
-	 * 주어진 조건에 따른 공통코드를 불러온다.
+	 * 二쇱뼱吏?議곌굔???곕Ⅸ 怨듯넻肄붾뱶瑜?遺덈윭?⑤떎.
 	 * @param vo
 	 * @return
 	 * @throws Exception

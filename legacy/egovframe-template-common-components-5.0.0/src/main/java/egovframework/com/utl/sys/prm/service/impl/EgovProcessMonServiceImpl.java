@@ -16,15 +16,15 @@ import egovframework.com.utl.sys.prm.service.ProcessMonVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - PROCESS모니터링에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - PROCESS紐⑤땲?곕쭅?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - PROCESS모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - PROCESS모니터링의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - PROCESS紐⑤땲?곕쭅??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - PROCESS紐⑤땲?곕쭅??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:46
+ * @created 08-9-2010 ?ㅽ썑 3:54:46
  */
 
 @Service("EgovProcessMonService")
@@ -40,10 +40,10 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	private EgovIdGnrService idgenServiceProcessMonLog;
 
 	/**
-     * 등록된 PROCESS모니터링 목록을 조회한다.
+     * ?깅줉??PROCESS紐⑤땲?곕쭅 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param processMonVO - PROCESS모니터링 Vo
-     * @return List - PROCESS모니터링 목록
+     * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+     * @return List - PROCESS紐⑤땲?곕쭅 紐⑸줉
      *
      * @param processMonVO
      */
@@ -53,9 +53,9 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
     }
 
 	/**
-	 * PROCESS모니터링 목록 총 개수를 조회한다.
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return int - PROCESS모니터링 토탈 카운트 수
+	 * PROCESS紐⑤땲?곕쭅 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+	 * @return int - PROCESS紐⑤땲?곕쭅 ?좏깉 移댁슫????
 	 *
 	 * @param processMonVO
 	 */
@@ -65,9 +65,9 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 등록된 PROCESS모니터링의 상세정보를 조회한다.
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return processMonVO - PROCESS모니터링 Vo
+	 * ?깅줉??PROCESS紐⑤땲?곕쭅???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+	 * @return processMonVO - PROCESS紐⑤땲?곕쭅 Vo
 	 *
 	 * @param processMonVO
 	 */
@@ -77,8 +77,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * PROCESS모니터링 정보를 신규로 등록한다.
-	 * @param processNm - PROCESS모니터링 model
+	 * PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
@@ -89,8 +89,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 PROCESS모니터링 정보를 수정한다.
-	 * @param processNm - PROCESS모니터링 model
+	 * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
@@ -100,8 +100,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 PROCESS모니터링 정보를 삭제한다.
-	 * @param processNm - PROCESS모니터링 model
+	 * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜???젣?쒕떎.
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
@@ -111,9 +111,9 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로세스 모니터링로그 목록을 조회한다.
-	 * @param ProcessMonVO - 프로세스모니터링로그 VO
-	 * @return  List<ProcessMonVO> - 프로세스모니터링로그 List
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 紐⑸줉??議고쉶?쒕떎.
+	 * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  List<ProcessMonVO> - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 List
 	 *
 	 * @param processMonLogVO
 	 */
@@ -131,9 +131,9 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로세스 모니터링로그의 상세정보를 조회한다.
-	 * @param ProcessMonVO - 프로세스모니터링로그 model
-	 * @return  ProcessMonVO - 프로세스모니터링로그 model
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
+	 * @return  ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
 	 *
 	 * @param processMonLogVO
 	 */
@@ -143,8 +143,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로세스 모니터링로그를 등록한다.
-	 * @param processMonLog - 프로세스 모니터링로그 model
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇瑜??깅줉?쒕떎.
+	 * @param processMonLog - ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 model
 	 *
 	 * @param processMonLog
 	 */
@@ -154,8 +154,8 @@ public class EgovProcessMonServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로세스 모니터링 결과를 수정한다.
-	 * @param processMonLog - 프로세스 모니터링대상 model
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
+	 * @param processMonLog - ?꾨줈?몄뒪 紐⑤땲?곕쭅???model
 	 *
 	 * @param processMonLog
 	 */

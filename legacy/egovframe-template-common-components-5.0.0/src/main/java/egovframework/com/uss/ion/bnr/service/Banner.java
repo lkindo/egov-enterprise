@@ -1,12 +1,12 @@
 /**
- * 개요
- * - 배너에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 諛곕꼫?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 배너의 일련번호, 배너명, 링크URL, 배너설명, 반영여부 항목을 관리한다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 諛곕꼫???쇰젴踰덊샇, 諛곕꼫紐? 留곹겕URL, 諛곕꼫?ㅻ챸, 諛섏쁺?щ? ??ぉ??愿由ы븳??
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:07:10
+ * @created 03-8-2009 ?ㅽ썑 2:07:10
  */
 
 package egovframework.com.uss.ion.bnr.service;
@@ -20,47 +20,47 @@ public class Banner extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 배너 ID
+	 * 諛곕꼫 ID
 	 */
 	private String bannerId;
 	/**
-	 * 배너 명
+	 * 諛곕꼫 紐?
 	 */
 	private String bannerNm;
 	/**
-	 * 링크 URL
+	 * 留곹겕 URL
 	 */
 	private String linkUrl;
 	/**
-	 * 배너 이미지
+	 * 諛곕꼫 ?대?吏
 	 */
 	private String bannerImage;
 	/**
-	 * 배너 이미지 파일
+	 * 諛곕꼫 ?대?吏 ?뚯씪
 	 */
 	private String bannerImageFile;	
 	/**
-	 * 배너 설명
+	 * 諛곕꼫 ?ㅻ챸
 	 */
 	private String bannerDc;
 	/**
-	 * 정렬 순서
+	 * ?뺣젹 ?쒖꽌
 	 */
 	private String sortOrdr;
 	/**
-	 * 반영여부
+	 * 諛섏쁺?щ?
 	 */
 	private String reflctAt;
 	/**
-	 * 사용자 ID
+	 * ?ъ슜??ID
 	 */
 	private String userId;
 	/**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */
 	private String regDate;
 	/**
-	 * 파일첨부여부
+	 * ?뚯씪泥⑤??щ?
 	 */
 	private boolean isAtchFile;
 	

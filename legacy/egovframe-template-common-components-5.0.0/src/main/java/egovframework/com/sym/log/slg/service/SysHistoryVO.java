@@ -5,14 +5,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @Class Name : SysHistoryVO.java
- * @Description : 시스템 처리 이력관리를 위한 데이터 객체
+ * @Description : ?쒖뒪??泥섎━ ?대젰愿由щ? ?꾪븳 ?곗씠??媛앹껜
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 9.     이삼섭
+ *    2009. 3. 9.     ?댁궪??
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 9.
  * @version
  * @see
@@ -23,55 +23,55 @@ public class SysHistoryVO extends SysHistory {
 	private static final long serialVersionUID = 3236791243469450106L;
 
 	/**
-	 * 최초 등록자 명
+	 * 理쒖큹 ?깅줉??紐?
 	 */
 	private String frstRegisterNm = "";
 
 	/**
-	 * 최종 수정자 명
+	 * 理쒖쥌 ?섏젙??紐?
 	 */
 	private String lastUpdusrNm = "";
 
 	/**
-	 * 등록 구분코드 명
+	 * ?깅줉 援щ텇肄붾뱶 紐?
 	 */
 	private String histSeCodeNm = "";
 
 	/**
-	 * 첨부파일ID
+	 * 泥⑤??뚯씪ID
 	 */
 	private String atchFileId = "";
 	/**
-	 * 검색시작일
+	 * 寃?됱떆?묒씪
 	 */
 	private String searchBgnDe = "";
 	/**
-	 * 검색조건
+	 * 寃?됱“嫄?
 	 */
 	private String searchCnd = "";
 	/**
-	 * 검색종료일
+	 * 寃?됱쥌猷뚯씪
 	 */
 	private String searchEndDe = "";
 	/**
-	 * 검색단어
+	 * 寃?됰떒??
 	 */
 	private String searchWrd = "";
 	/**
-	 * 정렬순서(DESC,ASC)
+	 * ?뺣젹?쒖꽌(DESC,ASC)
 	 */
 	private String sortOrdr = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */

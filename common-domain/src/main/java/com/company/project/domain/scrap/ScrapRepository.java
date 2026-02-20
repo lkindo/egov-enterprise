@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 스크랩 Repository
+ * ??쎄쾿??Repository
  */
 public interface ScrapRepository extends JpaRepository<Scrap, String> {
 

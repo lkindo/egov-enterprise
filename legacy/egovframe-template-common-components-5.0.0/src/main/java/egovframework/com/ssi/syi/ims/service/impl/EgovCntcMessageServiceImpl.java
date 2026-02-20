@@ -15,18 +15,18 @@ import jakarta.annotation.Resource;
 
 /**
  *
- * 연계메시지에 대한 서비스 구현클래스를 정의한다.
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎硫붿떆吏??????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -38,7 +38,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	private CntcMessageDAO cntcMessageDAO;
 
 	/**
-	 * 연계메시지를 삭제한다.
+	 * ?곌퀎硫붿떆吏瑜???젣?쒕떎.
 	 */
 	@Override
 	public void deleteCntcMessage(CntcMessage cntcMessage) throws Exception {
@@ -46,7 +46,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 항목을 삭제한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ????젣?쒕떎.
 	 */
 	@Override
 	public void deleteCntcMessageItem(CntcMessageItem cntcMessageItem) throws Exception {
@@ -54,7 +54,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지를 등록한다.
+	 * ?곌퀎硫붿떆吏瑜??깅줉?쒕떎.
 	 */
 	@Override
 	public void insertCntcMessage(CntcMessage cntcMessage) throws Exception {
@@ -62,7 +62,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 항목을 등록한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ???깅줉?쒕떎.
 	 */
 	@Override
 	public void insertCntcMessageItem(CntcMessageItem cntcMessageItem) throws Exception {
@@ -70,7 +70,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 상세항목을 조회한다.
+	 * ?곌퀎硫붿떆吏 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 */
 	@Override
 	public CntcMessage selectCntcMessageDetail(CntcMessage cntcMessage) throws Exception {
@@ -79,7 +79,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지항목 상세항목을 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ ?곸꽭??ぉ??議고쉶?쒕떎.
 	 */
 	@Override
 	public CntcMessageItem selectCntcMessageItemDetail(CntcMessageItem cntcMessageItem) throws Exception {
@@ -88,7 +88,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 목록을 조회한다.
+	 * ?곌퀎硫붿떆吏 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectCntcMessageList(CntcMessageVO searchVO) throws Exception {
@@ -96,7 +96,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 총 개수를 조회한다.
+	 * ?곌퀎硫붿떆吏 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectCntcMessageListTotCnt(CntcMessageVO searchVO) throws Exception {
@@ -104,7 +104,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지항목 목록을 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectCntcMessageItemList(CntcMessageItemVO searchVO) throws Exception {
@@ -112,7 +112,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지항목 총 개수를 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectCntcMessageItemListTotCnt(CntcMessageItemVO searchVO) throws Exception {
@@ -120,7 +120,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지를 수정한다.
+	 * ?곌퀎硫붿떆吏瑜??섏젙?쒕떎.
 	 */
 	@Override
 	public void updateCntcMessage(CntcMessage cntcMessage) throws Exception {
@@ -128,7 +128,7 @@ public class EgovCntcMessageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 연계메시지 항목을 수정한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ???섏젙?쒕떎.
 	 */
 	@Override
 	public void updateCntcMessageItem(CntcMessageItem cntcMessageItem) throws Exception {

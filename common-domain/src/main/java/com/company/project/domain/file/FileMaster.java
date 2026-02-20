@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 파일 마스터 엔티티 (NFILE 테이블 매핑)
+ * ???뵬 筌띾뜆????酉???(NFILE ???뵠??筌띲끋釉?
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

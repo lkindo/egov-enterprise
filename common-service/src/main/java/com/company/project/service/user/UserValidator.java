@@ -4,12 +4,12 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.springframework.lang.NonNull;
 
 /**
- * 사용자 관련 입력값 검증 유틸리티 클래스
+ * ?ъ슜??愿???낅젰媛?寃利??좏떥由ы떚 ?대옒??
  */
 public class UserValidator {
 
     /**
-     * 사용자 회원가입 요청 검증
+     * ?ъ슜???뚯썝媛???붿껌 寃利?
      */
     public static void validateUserSignupRequest(@NonNull UserSignupRequest request) {
         if (request.userId() == null || request.userId().trim().isEmpty()) {

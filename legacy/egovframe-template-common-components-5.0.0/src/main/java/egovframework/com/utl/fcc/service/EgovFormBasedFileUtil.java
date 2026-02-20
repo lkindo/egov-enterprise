@@ -20,25 +20,25 @@ import egovframework.com.cmm.EgovWebUtil;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Form-based File Upload 유틸리티
+ * Form-based File Upload ?좏떥由ы떚
  * 
- * @author 공통컴포넌트 개발팀 한성곤
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?쒖꽦怨?
  * @since 2009.08.26
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.08.26  한성곤          최초 생성
- *   2017.03.03  조성원          시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2019.12.09  신용호          KISA 보안약점 조치 (위험한 형식 파일 업로드) : uploadFiles 삭제  => EgovFileUploadUtil.uploadFilesExt(확장자 기록) 대체
- *   2023.06.27  김혜준          NSR 보안조치 (CKEditor 이미지 보기 기능의 스크립트 실행 취약점)
- *   2025.09.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.09.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AssignmentInOperand(피연산자내에 할당문이 사용됨. 해당 코드를 복잡하고 가독성이 떨어지게 만듬)
- *   2025.09.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2009.08.26  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2017.03.03  議곗꽦??         ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2019.12.09  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (?꾪뿕???뺤떇 ?뚯씪 ?낅줈?? : uploadFiles ??젣  => EgovFileUploadUtil.uploadFilesExt(?뺤옣??湲곕줉) ?泥?
+ *   2023.06.27  源?쒖?          NSR 蹂댁븞議곗튂 (CKEditor ?대?吏 蹂닿린 湲곕뒫???ㅽ겕由쏀듃 ?ㅽ뻾 痍⑥빟??
+ *   2025.09.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.09.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AssignmentInOperand(?쇱뿰?곗옄?댁뿉 ?좊떦臾몄씠 ?ъ슜?? ?대떦 肄붾뱶瑜?蹂듭옟?섍퀬 媛?낆꽦???⑥뼱吏寃?留뚮벉)
+ *   2025.09.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -51,7 +51,7 @@ public class EgovFormBasedFileUtil {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovFormBasedFileUtil.class);
 
 	/**
-	 * 오늘 날짜 문자열 취득. ex) 20090101
+	 * ?ㅻ뒛 ?좎쭨 臾몄옄??痍⑤뱷. ex) 20090101
 	 * 
 	 * @return
 	 */
@@ -62,7 +62,7 @@ public class EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 물리적 파일명 생성.
+	 * 臾쇰━???뚯씪紐??앹꽦.
 	 * 
 	 * @return
 	 */
@@ -71,7 +71,7 @@ public class EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 파일명 변환.
+	 * ?뚯씪紐?蹂??
 	 * 
 	 * @param filename String
 	 * @return
@@ -83,22 +83,22 @@ public class EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * Stream으로부터 파일을 저장함.
+	 * Stream?쇰줈遺???뚯씪????ν븿.
 	 * 
 	 * @param is   InputStream
 	 * @param file File
 	 * @throws IOException
 	 */
 	public static long saveFile(InputStream is, File file) throws IOException {
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (file.getParentFile() == null) {
 			LOGGER.debug("file.getParentFile() is null");
 			throw new RuntimeException("file.getParentFile() is null");
 		}
 
-		// 디렉토리 생성
+		// ?붾젆?좊━ ?앹꽦
 		if (!file.getParentFile().exists()) {
-			// 2017.03.03 조성원 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.03.03 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if (file.getParentFile().mkdirs()) {
 				LOGGER.debug("[file.mkdirs] file : Directory Creation Success");
 			} else {
@@ -110,7 +110,7 @@ public class EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 파일을 Upload 처리한다. (삭제) EgovFileUploadUtil.uploadFilesExt(확장자 확인) 대체
+	 * ?뚯씪??Upload 泥섎━?쒕떎. (??젣) EgovFileUploadUtil.uploadFilesExt(?뺤옣???뺤씤) ?泥?
 	 *
 	 * @param request
 	 * @param where
@@ -168,7 +168,7 @@ public class EgovFormBasedFileUtil {
 	 */
 
 	/**
-	 * 파일을 Download 처리한다.
+	 * ?뚯씪??Download 泥섎━?쒕떎.
 	 *
 	 * @param response
 	 * @param where
@@ -202,9 +202,9 @@ public class EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 이미지에 대한 미리보기 기능을 제공한다.
+	 * ?대?吏?????誘몃━蹂닿린 湲곕뒫???쒓났?쒕떎.
 	 *
-	 * mimeType의 경우는 JSP 상에서 다음과 같이 얻을 수 있다.
+	 * mimeType??寃쎌슦??JSP ?곸뿉???ㅼ쓬怨?媛숈씠 ?살쓣 ???덈떎.
 	 * getServletConfig().getServletContext().getMimeType(name);
 	 *
 	 * @param response
@@ -242,7 +242,7 @@ public class EgovFormBasedFileUtil {
 				for (String ext : contentTypeWL.keySet()) {
 					String matchMimeType = contentTypeWL.get(ext);
 					if (matchMimeType.equals(mimeType)) {
-						response.setContentType(matchMimeType); // 지정된 값이므로 안전
+						response.setContentType(matchMimeType); // 吏?뺣맂 媛믪씠誘濡??덉쟾
 						contentTypeFlag = true;
 						break;
 					}

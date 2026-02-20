@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.10.06	정진오 		보안 취약점 점검사항 반영 $->#변경
+  2011.10.06	?뺤쭊??		蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 --><!--Converted at: Wed May 11 15:51:34 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -50,7 +50,7 @@
 		<result property="frstRegisterPnttm" column="FRST_REGIST_PNTTM"/>
 		<result property="frstRegisterId" column="FRST_REGISTER_ID"/>
 	</resultMap>
-	<!-- 회의관리::부서검색  -->
+	<!-- ?뚯쓽愿由?:遺?쒓??? -->
 	<select id="EgovMeetingManageLisAuthorGroupPopup" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT
@@ -71,7 +71,7 @@
 	 	
 	 </if>
 	</select>
-      <!-- 회의관리::아이디 검색  -->
+      <!-- ?뚯쓽愿由?:?꾩씠??寃?? -->
 	<select id="EgovMeetingManageLisEmpLyrPopup" parameterType="comDefaultVO" resultType="egovMap">
 	 
 	 SELECT * FROM
@@ -113,7 +113,7 @@
 
 	</select>
 
-     <!-- 회의관리::삭제  -->
+     <!-- ?뚯쓽愿由?:??젣  -->
 	<delete id="deleteMeetingManage">
 		
 			DELETE FROM COMTNMTGINFO
@@ -121,7 +121,7 @@
 		
 	</delete>
 
-	<!-- 회의관리::수정  -->
+	<!-- ?뚯쓽愿由?:?섏젙  -->
 	<update id="updateMeetingManage">
  
 		UPDATE COMTNMTGINFO
@@ -148,7 +148,7 @@
 		WHERE MTG_ID=#{mtgId}
  
 	</update>
-	<!-- 회의관리::상세보기 -->
+	<!-- ?뚯쓽愿由?:?곸꽭蹂닿린 -->
 	<select id="selectMeetingManageDetail" parameterType="egovframework.com.uss.olp.mgt.service.MeetingManageVO" resultType="egovMap" resultMap="meetingManageMap">
 		SELECT
 			A.MTG_ID,
@@ -182,7 +182,7 @@
 		WHERE 1=1
 		AND A.MTG_ID = #{mtgId}
 	</select>
-	<!-- 회의관리::목록조회_게시물정보 -->
+	<!-- ?뚯쓽愿由?:紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectMeetingManage" parameterType="comDefaultVO" resultType="egovMap" resultMap="MeetingManageListMap">
 	
 	SELECT *
@@ -226,7 +226,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- 회의관리::목록조회_게시물 총개수  -->
+	<!-- ?뚯쓽愿由?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectMeetingManageCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -243,7 +243,7 @@
 	 	
 	 </if>
 	</select>
-	<!-- 회의관리::입력  -->
+	<!-- ?뚯쓽愿由?:?낅젰  -->
 	<insert id="insertMeetingManage">
 	 
 

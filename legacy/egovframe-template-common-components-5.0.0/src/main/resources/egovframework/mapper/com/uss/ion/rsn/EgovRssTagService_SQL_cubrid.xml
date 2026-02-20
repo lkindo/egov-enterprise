@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2018.12.05   	신용호     	 	  보안 취약점 점검사항 반영 $->#변경
+  2018.12.05   	?좎슜??    	 	  蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 --><!--Converted at: Wed May 11 15:51:19 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="RssTagService">
 
-	<!-- RSS서비스::해당RSS서비스 조회 --> 
+	<!-- RSS?쒕퉬??:?대떦RSS?쒕퉬??議고쉶 --> 
 	<select id="selectRssTagServiceTable" parameterType="java.util.Map" resultType="java.util.HashMap">
 		SELECT
 		<choose>
@@ -38,7 +38,7 @@
 				DATE_FORMAT(LAST_UPDT_PNTTM,'%Y-%m-%d'),
 				LAST_UPDUSR_ID
 			</when>
-			<otherwise><!-- 사용할 목록 WhiteList로 추가 필요함. -->
+			<otherwise><!-- ?ъ슜??紐⑸줉 WhiteList濡?異붽? ?꾩슂?? -->
 		    	*
 			</otherwise>
 		</choose>
@@ -51,7 +51,7 @@
 			<when test="TRGET_SVC_TABLE.equalsIgnoreCase('comtczip')">
 				comtczip
 			</when>
-			<otherwise><!-- 사용할 목록 WhiteList로 추가 필요함. -->
+			<otherwise><!-- ?ъ슜??紐⑸줉 WhiteList濡?異붽? ?꾩슂?? -->
 		    	whitelist_table_required
 			</otherwise>
 		</choose>
@@ -62,7 +62,7 @@
 		]]>
 	</select> 
 
-	<!-- RSS서비스::목록조회 게시물정보 -->
+	<!-- RSS?쒕퉬??:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRssTagService" resultType="egovMap">
 		
 	SELECT *
@@ -110,7 +110,7 @@
 	WHERE ROWNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- RSS서비스::목록조회_게시물 총개수  -->
+	<!-- RSS?쒕퉬??:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRssTagServiceCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -129,7 +129,7 @@
 	</select>
 	
 	
-	<!-- RSS서비스::상세보기 -->
+	<!-- RSS?쒕퉬??:?곸꽭蹂닿린 -->
 	<select id="selectRssTagServiceDetail" resultType="java.util.HashMap">
 		SELECT 
 			RSS_ID,

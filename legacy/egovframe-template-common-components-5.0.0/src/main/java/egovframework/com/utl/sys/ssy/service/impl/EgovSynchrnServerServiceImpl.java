@@ -31,21 +31,21 @@ import egovframework.com.utl.sys.ssy.service.SynchrnServerVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 동기화대상 서버에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?숆린?붾????쒕쾭?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 동기화대상 서버에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 동기화대상 서버의 조회기능은 목록조회, 상세조회로 구분된다.
- * - 2015.03.31	 업로드 파일의 목록을 조회시 업로드 디렉토리가 없을 경우 생성하도록 수정
+ * ?곸꽭?댁슜
+ * - ?숆린?붾????쒕쾭??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?숆린?붾????쒕쾭??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * - 2015.03.31	 ?낅줈???뚯씪??紐⑸줉??議고쉶???낅줈???붾젆?좊━媛 ?놁쓣 寃쎌슦 ?앹꽦?섎룄濡??섏젙
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:34
+ * @created 28-6-2010 ?ㅼ쟾 10:44:34
  *
- *      수정일         수정자                   수정내용
+ *      ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2017-02-08    이정은        시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2018-11-12    이정은        processFtp() FILE_TYPE 설정 수정
+ *   2017-02-08    ?댁젙?        ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2018-11-12    ?댁젙?        processFtp() FILE_TYPE ?ㅼ젙 ?섏젙
  *
  */
 @Service("egovSynchrnServerService")
@@ -59,9 +59,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	private SynchrnServerDAO synchrnServerDAO;
 
 	/**
-	 * 동기화대상 서버를 관리하기 위해 등록된 동기화대상 서버목록을 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return List - 동기화대상 서버 목록
+	 * ?숆린?붾????쒕쾭瑜?愿由ы븯湲??꾪빐 ?깅줉???숆린?붾????쒕쾭紐⑸줉??議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return List - ?숆린?붾????쒕쾭 紐⑸줉
 	 */
 	@Override
 	public List<SynchrnServerVO> selectSynchrnServerList(SynchrnServerVO synchrnServerVO) throws Exception {
@@ -69,9 +69,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화대상 서버목록 총 개수를 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return int - 동기화대상 서버 카운트 수
+	 * ?숆린?붾????쒕쾭紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return int - ?숆린?붾????쒕쾭 移댁슫????
 	 */
 	@Override
 	public int selectSynchrnServerListTotCnt(SynchrnServerVO synchrnServerVO) throws Exception {
@@ -79,9 +79,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 동기화대상 서버의 상세정보를 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return synchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	@Override
 	public SynchrnServerVO selectSynchrnServer(SynchrnServerVO synchrnServerVO) throws Exception {
@@ -89,8 +89,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 동기화대상 서버의 파일 목록을 조회한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪 紐⑸줉??議고쉶?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 * @return List<String> - String Type List
 	 */
 	@Override
@@ -137,8 +137,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 동기화대상 서버의 파일을 삭제한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪????젣?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	@Override
 	public void deleteSynchrnServerFile(SynchrnServerVO synchrnServerVO) throws Exception {
@@ -162,7 +162,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 			fTPFile = ftpClient.listFiles(synchrnServerVO.getSynchrnLc());
 
 			for (FTPFile element : fTPFile) {
-				//KISA 보안약점 조치 (2018-10-29, 윤창원)
+				//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 				if (EgovStringUtil.isNullToString(synchrnServerVO.getDeleteFileNm()).equals(element.getName())) {
 					ftpClient.deleteFile(element.getName());
 				}
@@ -179,9 +179,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 동기화대상 서버의 파일을 다운로드 한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @param fileNm - 다운로드 대상 파일
+	 * ?깅줉???숆린?붾????쒕쾭???뚯씪???ㅼ슫濡쒕뱶 ?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @param fileNm - ?ㅼ슫濡쒕뱶 ????뚯씪
 	 */
 	@Override
 	public void downloadFtpFile(SynchrnServerVO synchrnServerVO, String fileNm) throws Exception {
@@ -215,9 +215,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화대상 서버정보를 신규로 등록한다.
-	 * @param synchrnServer - 동기화대상 서버 model
-	 * @param synchrnServerVO    - 동기화대상 서버 VO
+	 * ?숆린?붾????쒕쾭?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
+	 * @param synchrnServerVO    - ?숆린?붾????쒕쾭 VO
 	 */
 	@Override
 	public SynchrnServerVO insertSynchrnServer(SynchrnServer synchrnServer, SynchrnServerVO synchrnServerVO) throws Exception {
@@ -227,8 +227,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기 등록된 동기화대상 서버정보를 수정한다.
-	 * @param synchrnServer - 동기화대상 서버 model
+	 * 湲??깅줉???숆린?붾????쒕쾭?뺣낫瑜??섏젙?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
 	 */
 	@Override
 	public void updateSynchrnServer(SynchrnServer synchrnServer) throws Exception {
@@ -236,8 +236,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기 등록된 동기화대상 서버정보를 삭제한다.
-	 * @param synchrnServer - 동기화대상 서버 model
+	 * 湲??깅줉???숆린?붾????쒕쾭?뺣낫瑜???젣?쒕떎.
+	 * @param synchrnServer - ?숆린?붾????쒕쾭 model
 	 */
 	@Override
 	public void deleteSynchrnServer(SynchrnServer synchrnServer) throws Exception {
@@ -245,9 +245,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 업로드 파일을 동기화대상 서버들을 대상으로 동기화 처리를 한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return boolean - 성공여부
+	 * ?낅줈???뚯씪???숆린?붾????쒕쾭?ㅼ쓣 ??곸쑝濡??숆린??泥섎━瑜??쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return boolean - ?깃났?щ?
 	 */
 	@Override
 	public boolean processSynchrn(SynchrnServerVO synchrnServerVO, File[] uploadFile) throws Exception {
@@ -274,13 +274,13 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * FTP 서버에 있는 화일 목록을 조회한다.
+	 * FTP ?쒕쾭???덈뒗 ?붿씪 紐⑸줉??議고쉶?쒕떎.
 	 * @param serverIp - String
 	 * @param port - int
 	 * @param user - String
 	 * @param password - String
 	 * @param synchrnPath - String
-	 * @return List - 화일 목록
+	 * @return List - ?붿씪 紐⑸줉
 	 */
 	public List<String> getFtpFileList(String serverIp, int port, String user, String password, String synchrnPath) throws Exception {
 
@@ -306,9 +306,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화 서버들을 대상으로 FTP Upload 처리를 한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
-	 * @return boolean - 성공여부
+	 * ?숆린???쒕쾭?ㅼ쓣 ??곸쑝濡?FTP Upload 泥섎━瑜??쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
+	 * @return boolean - ?깃났?щ?
 	 */
 	public boolean processFtp(String serverIp, int port, String user, String password, String synchrnPath, String filePath, File[] uploadFile) throws Exception {
 
@@ -318,7 +318,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 			FTPClient ftpClient = new FTPClient();
 			ftpClient.setControlEncoding("euc-kr");
 
-			if (!EgovWebUtil.isIPAddress(serverIp)) { // 2011.10.25 보안점검 후속조치
+			if (!EgovWebUtil.isIPAddress(serverIp)) { // 2011.10.25 蹂댁븞?먭? ?꾩냽議곗튂
 				throw new RuntimeException("IP is needed. (" + serverIp + ")");
 			}
 
@@ -341,8 +341,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 					if (element.isFile()) {
 						if (!isExist(fTPFile, element)) {
 							fis = new FileInputStream(element);
-							//ftpClient.setFileType(FTP.ASCII_FILE_TYPE); // TEXT FILE 전송
-							ftpClient.setFileType(FTP.BINARY_FILE_TYPE); // 바이너리 파일 전송
+							//ftpClient.setFileType(FTP.ASCII_FILE_TYPE); // TEXT FILE ?꾩넚
+							ftpClient.setFileType(FTP.BINARY_FILE_TYPE); // 諛붿씠?덈━ ?뚯씪 ?꾩넚
 							ftpClient.storeFile(synchrnPath + element.getName(), fis);
 						}
 						if (fis != null) {
@@ -351,7 +351,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 					}
 				}
 
-				// 업로드 파일 목록에 없는  FTP 서버에 있는 파일을 삭제한다.
+				// ?낅줈???뚯씪 紐⑸줉???녿뒗  FTP ?쒕쾭???덈뒗 ?뚯씪????젣?쒕떎.
 				fTPFile = ftpClient.listFiles(synchrnPath);
 				deleteFtpFile(ftpClient, fTPFile, uploadFile);
 
@@ -364,7 +364,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 			}
 			ftpClient.logout();
 
-		} catch (IOException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		} catch (IOException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			EgovBasicLogger.debug("processFtp error (IOException)", e);
 			upload = false;
 		} catch (Exception e) {
@@ -376,10 +376,10 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화 서버에 upload 할 파일이 존재하는지 확인한다.
-	 * @param fTPFiles - 동기화대상 서버의 파일 목록
-	 * @param targetFile - 동기화대상 파일
-	 * @return boolean - 존재여부
+	 * ?숆린???쒕쾭??upload ???뚯씪??議댁옱?섎뒗吏 ?뺤씤?쒕떎.
+	 * @param fTPFiles - ?숆린?붾????쒕쾭???뚯씪 紐⑸줉
+	 * @param targetFile - ?숆린?붾????뚯씪
+	 * @return boolean - 議댁옱?щ?
 	 */
 	public boolean isExist(FTPFile[] fTPFiles, File targetFile) throws Exception {
 
@@ -397,10 +397,10 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화 서버의 파일 목록 중 upload 파일 목록에 없는 파일은 삭제한다.
-	 * @param fTPFiles - 동기화대상 서버의 파일 목록
-	 * @param uploadFile - 업로드 파일 목록
-	 * @return boolean - 존재여부
+	 * ?숆린???쒕쾭???뚯씪 紐⑸줉 以?upload ?뚯씪 紐⑸줉???녿뒗 ?뚯씪? ??젣?쒕떎.
+	 * @param fTPFiles - ?숆린?붾????쒕쾭???뚯씪 紐⑸줉
+	 * @param uploadFile - ?낅줈???뚯씪 紐⑸줉
+	 * @return boolean - 議댁옱?щ?
 	 */
 	public void deleteFtpFile(FTPClient ftpClient, FTPFile[] fTPFiles, File[] uploadFile) throws Exception {
 
@@ -425,9 +425,9 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 업로드 파일의 목록을 조회한다.
-	 * @param filePath - 업로드 경로
-	 * @return List - 업로드 파일 리스트
+	 * ?낅줈???뚯씪??紐⑸줉??議고쉶?쒕떎.
+	 * @param filePath - ?낅줈??寃쎈줈
+	 * @return List - ?낅줈???뚯씪 由ъ뒪??
 	 */
 	@Override
 	public List<String> getFileName() throws Exception {
@@ -435,7 +435,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 		File uploadFile = new File(EgovWebUtil.filePathBlackList(SYNCH_SERVER_PATH));
 
 		if(!uploadFile.exists()){
-			//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if(uploadFile.mkdirs()){
 				LOGGER.debug("[file.mkdirs] uploadFile : Directory Creation Success");
 			}else{
@@ -446,7 +446,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 		File[] fileList = uploadFile.listFiles();
 		List<String> fileArray = new ArrayList<>();
 
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (fileList != null) {
 			for (File element : fileList) {
 				if (element.isFile()) {
@@ -459,10 +459,10 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 동기화 대상 파일을 업로드 한다.
-	 * @param file - 업로드 대상 파일
-	 * @param newName - 업로드 대상 파일명
-	 * @param stordFilePath - 업로드 경로
+	 * ?숆린??????뚯씪???낅줈???쒕떎.
+	 * @param file - ?낅줈??????뚯씪
+	 * @param newName - ?낅줈??????뚯씪紐?
+	 * @param stordFilePath - ?낅줈??寃쎈줈
 	 */
 	@Override
 	public void writeFile(MultipartFile multipartFile, String newName, SynchrnServerVO synchrnServerVO) throws Exception {
@@ -478,7 +478,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 			File cFile = new File(EgovWebUtil.filePathBlackList(SYNCH_SERVER_PATH));
 
 			if (!cFile.isDirectory()) {
-				//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+				//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 				if(cFile.mkdir()){
 					LOGGER.debug("[file.mkdirs] cFile : Directory Creation Success");
 				}else{
@@ -507,8 +507,8 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 업로드 파일을 삭제한다.
-	 * @param synchrnServerVO - 동기화대상 서버 Vo
+	 * ?낅줈???뚯씪????젣?쒕떎.
+	 * @param synchrnServerVO - ?숆린?붾????쒕쾭 Vo
 	 */
 	@Override
 	public void deleteFile(String deleteFiles, SynchrnServerVO synchrnServerVO) throws Exception {
@@ -520,7 +520,7 @@ public class EgovSynchrnServerServiceImpl extends EgovAbstractServiceImpl implem
 
 		for (String strDeleteFile : strDeleteFiles) {
 			File uploadFile = new File(EgovWebUtil.filePathBlackList(SYNCH_SERVER_PATH + FilenameUtils.getName(strDeleteFile)));
-			//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if(uploadFile.delete()){
 				LOGGER.debug("[file.delete] uploadFile : File Deletion Success");
 			}else{

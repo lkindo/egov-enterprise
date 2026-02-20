@@ -7,22 +7,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * 시스템 이력 Repository
+ * ??뽯뮞??????Repository
  */
 public interface SystemHistoryRepository extends JpaRepository<SystemHistory, String> {
 
     /**
-     * 시스템명으로 검색
+     * ??뽯뮞??뺤구??곗쨮 野꺜??
      */
     Page<SystemHistory> findBySysNmContaining(String sysNm, Pageable pageable);
 
     /**
-     * 이력구분코드로 검색
+     * ???경뤃??뉓굜遺얜굡嚥?野꺜??
      */
     Page<SystemHistory> findByHistSeCode(String histSeCode, Pageable pageable);
 
     /**
-     * 날짜 범위 검색
+     * ?醫롮? 甕곕뗄??野꺜??
      */
     @Query("SELECT s FROM SystemHistory s WHERE s.frstRegisterPnttm BETWEEN :startDate AND :endDate")
     Page<SystemHistory> findByDateRange(@Param("startDate") java.time.LocalDateTime startDate,
@@ -30,7 +30,7 @@ public interface SystemHistoryRepository extends JpaRepository<SystemHistory, St
             Pageable pageable);
 
     /**
-     * 키워드 검색 (시스템명 또는 이력내용)
+     * ??쇱뜖??野꺜??(??뽯뮞??뺤구 ?癒?뮉 ?????곸뒠)
      */
     @Query("SELECT s FROM SystemHistory s WHERE s.sysNm LIKE %:keyword% OR s.histCn LIKE %:keyword%")
     Page<SystemHistory> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);

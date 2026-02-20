@@ -4,11 +4,11 @@
 	xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd">
 
 <!--
-    수정일          수성자                          수정내용
+    ?섏젙??         ?섏꽦??                         ?섏젙?댁슜
    ==========      ========      =================================================
-   2011.9.19        이기하         filter 정리
-   2013.5.31        이기하         미사용 filter 정리(.mdo, .action)
-   2016.6.34        장동한         WebApplicationInitializer 방식으로 변경
+   2011.9.19        ?닿린??        filter ?뺣━
+   2013.5.31        ?닿린??        誘몄궗??filter ?뺣━(.mdo, .action)
+   2016.6.34        ?λ룞??        WebApplicationInitializer 諛⑹떇?쇰줈 蹂寃?
 -->
 
     <welcome-file-list>

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 행사관리 Repository
+ * ??깃텢?온??Repository
  */
 @org.springframework.stereotype.Repository("evtEventRepository")
 public interface EventRepository extends JpaRepository<Event, String> {

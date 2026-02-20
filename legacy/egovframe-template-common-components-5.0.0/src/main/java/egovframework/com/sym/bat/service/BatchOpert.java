@@ -5,63 +5,63 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 배치작업관리에 대한 model 클래스
+ * 諛곗튂?묒뾽愿由ъ뿉 ???model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class BatchOpert extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -8854151716958649397L;
 	/**
-	 * 배치작업ID
+	 * 諛곗튂?묒뾽ID
 	 */
 	private String batchOpertId;
 	/**
-	 * 배치작업명
+	 * 諛곗튂?묒뾽紐?
 	 */
 	private String batchOpertNm;
 	/**
-	 * 배치프로그램
+	 * 諛곗튂?꾨줈洹몃옩
 	 */
 	private String batchProgrm;
 	/**
-	 * 최종수정자 아이디
+	 * 理쒖쥌?섏젙???꾩씠??
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정일
+	 * 理쒖쥌?섏젙??
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 파라미터
+	 * ?뚮씪誘명꽣
 	 */
 	private String paramtr;
 	/**
-	 * 사용여부
+	 * ?ъ슜?щ?
 	 */
 	private String useAt;
 	/**
-	 * 최초등록자 아이디
+	 * 理쒖큹?깅줉???꾩씠??
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 
 	/**
-	 * 배치작업ID를 리턴한다.
+	 * 諛곗튂?묒뾽ID瑜?由ы꽩?쒕떎.
 	 * @return the batchOpertId
 	 */
 	public String getBatchOpertId() {
@@ -69,15 +69,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 배치작업ID를 설정한다.
-	 * @param batchOpertId 	설정할 배치작업ID
+	 * 諛곗튂?묒뾽ID瑜??ㅼ젙?쒕떎.
+	 * @param batchOpertId 	?ㅼ젙??諛곗튂?묒뾽ID
 	 */
 	public void setBatchOpertId(String batchOpertId) {
 		this.batchOpertId = batchOpertId;
 	}
 
 	/**
-	 * 배치작업명을 리턴한다.
+	 * 諛곗튂?묒뾽紐낆쓣 由ы꽩?쒕떎.
 	 * @return the batchOpertNm
 	 */
 	public String getBatchOpertNm() {
@@ -85,15 +85,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 배치작업명을 설정한다.
-	 * @param batchOpertNm 설정할 배치작업명
+	 * 諛곗튂?묒뾽紐낆쓣 ?ㅼ젙?쒕떎.
+	 * @param batchOpertNm ?ㅼ젙??諛곗튂?묒뾽紐?
 	 */
 	public void setBatchOpertNm(String batchOpertNm) {
 		this.batchOpertNm = batchOpertNm;
 	}
 
 	/**
-	 * 배치프로그램을 리턴한다.
+	 * 諛곗튂?꾨줈洹몃옩??由ы꽩?쒕떎.
 	 * @return the batchProgrm
 	 */
 	public String getBatchProgrm() {
@@ -101,15 +101,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 배치프로그램을 설정한다.
-	 * @param batchProgrm 설정할 배치프로그램
+	 * 諛곗튂?꾨줈洹몃옩???ㅼ젙?쒕떎.
+	 * @param batchProgrm ?ㅼ젙??諛곗튂?꾨줈洹몃옩
 	 */
 	public void setBatchProgrm(String batchProgrm) {
 		this.batchProgrm = batchProgrm;
 	}
 
 	/**
-	 * 최종수정자ID를 리턴한다.
+	 * 理쒖쥌?섏젙?륤D瑜?由ы꽩?쒕떎.
 	 * @return the lastUpdusrId
 	 */
 	public String getLastUpdusrId() {
@@ -117,15 +117,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 최종수정자ID를 설정한다.
-	 * @param lastUpdusrId 설정할 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D瑜??ㅼ젙?쒕떎.
+	 * @param lastUpdusrId ?ㅼ젙??理쒖쥌?섏젙?륤D
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
 	/**
-	 * 최종수정시점을 리턴한다.
+	 * 理쒖쥌?섏젙?쒖젏??由ы꽩?쒕떎.
 	 * @return the lastUpdusrPnttm
 	 */
 	public String getLastUpdusrPnttm() {
@@ -133,15 +133,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 최종수정시점을 설정한다.
-	 * @param lastUpdusrPnttm 설정할 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏???ㅼ젙?쒕떎.
+	 * @param lastUpdusrPnttm ?ㅼ젙??理쒖쥌?섏젙?쒖젏
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
 		this.lastUpdusrPnttm = lastUpdusrPnttm;
 	}
 
 	/**
-	 * 파라미터를 리턴한다.
+	 * ?뚮씪誘명꽣瑜?由ы꽩?쒕떎.
 	 * @return the paramtr
 	 */
 	public String getParamtr() {
@@ -149,15 +149,15 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 파라미터를 설정한다.
-	 * @param paramtr 설정할 파라미터
+	 * ?뚮씪誘명꽣瑜??ㅼ젙?쒕떎.
+	 * @param paramtr ?ㅼ젙???뚮씪誘명꽣
 	 */
 	public void setParamtr(String paramtr) {
 		this.paramtr = paramtr;
 	}
 
 	/**
-	 * 사용여부를 리턴한다.
+	 * ?ъ슜?щ?瑜?由ы꽩?쒕떎.
 	 * @return the useAt
 	 */
 	public String getUseAt() {
@@ -165,8 +165,8 @@ public class BatchOpert extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 사용여부를 설정한다.
-	 * @param useAt 설정할 사용여부
+	 * ?ъ슜?щ?瑜??ㅼ젙?쒕떎.
+	 * @param useAt ?ㅼ젙???ъ슜?щ?
 	 */
 	public void setUseAt(String useAt) {
 		this.useAt = useAt;

@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service;
 
 /**
  *
- * Ldap과 인터페이스 되는 객체의 추상클래스
+ * Ldap怨??명꽣?섏씠???섎뒗 媛앹껜??異붿긽?대옒??
  * 
- * @author 전우성
+ * @author ?꾩슦??
  * @since 2014.10.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.10.12  전우성          최초 생성
- *   2025.06.20  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-AbstractClassWithoutAbstractMethod(추상 메서드가 없는 추상 클래스)
+ *   2014.10.12  ?꾩슦??         理쒖큹 ?앹꽦
+ *   2025.06.20  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AbstractClassWithoutAbstractMethod(異붿긽 硫붿꽌?쒓? ?녿뒗 異붿긽 ?대옒??
  *
  *      </pre>
  */

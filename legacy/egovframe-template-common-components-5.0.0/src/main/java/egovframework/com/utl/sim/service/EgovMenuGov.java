@@ -3,7 +3,7 @@
  *  Description : 
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
 
  *
@@ -22,38 +22,38 @@ import java.util.List;
 import java.util.Vector;
 
 /**
- * 메뉴관리 Business Interface class
+ * 硫붾돱愿由?Business Interface class
  * 
- * @author 공통컴포넌트 개발팀 홍길동
- * @author 공통 서비스 개발팀 이용
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?띻만??
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁슜
  * @since 2009.02.02
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.02  이용           최초 생성
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.09.10  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.09.10  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
+ *   2009.02.02  ?댁슜           理쒖큹 ?앹꽦
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.09.10  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.09.10  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
  *
  *      </pre>
  */
 public class EgovMenuGov {
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
 	/**
 	 * <pre>
-	 * Comment : DAT 파일을 파싱하여 메뉴관리화면에 리턴.
+	 * Comment : DAT ?뚯씪???뚯떛?섏뿬 硫붾돱愿由ы솕硫댁뿉 由ы꽩.
 	 * </pre>
 	 * 
-	 * @param parFile  DAT파일명
-	 * @param parChar  구분자
-	 * @param parField 필드수
+	 * @param parFile  DAT?뚯씪紐?
+	 * @param parChar  援щ텇??
+	 * @param parField ?꾨뱶??
 	 * @return Vector list
 	 * @version 1.0 (2009.02.04.)
 	 * @see
@@ -64,7 +64,7 @@ public class EgovMenuGov {
 
 		File file = new File(parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR));
 
-		// 파일이며, 존재하면 파싱 시작
+		// ?뚯씪?대ŉ, 議댁옱?섎㈃ ?뚯떛 ?쒖옉
 		if (file.exists() && file.isFile()) {
 			list = EgovFileTool.parsFileByChar(basePath, parFile, parChar, parField);
 		} else {
@@ -76,7 +76,7 @@ public class EgovMenuGov {
 
 	/**
 	 * <pre>
-	 * Comment : 메뉴관리 화면의 데이타를 DAT 파일로 생성.
+	 * Comment : 硫붾돱愿由??붾㈃???곗씠?瑜?DAT ?뚯씪濡??앹꽦.
 	 * </pre>
 	 * 
 	 * @param menuIDArray    ID Array

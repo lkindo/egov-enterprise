@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이기하(슈퍼개발자K3)
+ * @author ?닿린???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.oauth.web;
 
@@ -35,21 +35,21 @@ import egovframework.com.ext.oauth.service.OAuthUniversalUser;
 import egovframework.com.ext.oauth.service.OAuthVO;
 
 /**
- * 소셜 계정으로 일반회원 가입을 처리하는 컨트롤러 클래스
- * @author 이기하
+ * ?뚯뀥 怨꾩젙?쇰줈 ?쇰컲?뚯썝 媛?낆쓣 泥섎━?섎뒗 而⑦듃濡ㅻ윭 ?대옒??
+ * @author ?닿린??
  * @since 2014.10.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일     	수정자          수정내용
+ *   ?섏젙??    	?섏젙??         ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *  2014.10.08		이기하		최초 생성
- *  2018.10.02		신용호		Facebook 관련 ProviderSignInUtils 초기화 수정
- *  2022.11.11      김혜준		시큐어코딩 처리
- *  2023.07.26		송인서		필요하지 않은 필드 값 교체 및 구조 단순화
+ *  2014.10.08		?닿린??	理쒖큹 ?앹꽦
+ *  2018.10.02		?좎슜??	Facebook 愿??ProviderSignInUtils 珥덇린???섏젙
+ *  2022.11.11      源?쒖?		?쒗걧?댁퐫??泥섎━
+ *  2023.07.26		?≪씤??	?꾩슂?섏? ?딆? ?꾨뱶 媛?援먯껜 諛?援ъ“ ?⑥닚??
  *  </pre>
  */
 
@@ -101,24 +101,24 @@ public class EgovSignupController {
 			oauthVO = kakaoAuthVO;
 		}
 
-		// 1. code를 이용해서 Access Token 받기
-		// 2. Access Token을 이용해서 사용자 제공정보 가져오기
+		// 1. code瑜??댁슜?댁꽌 Access Token 諛쏄린
+		// 2. Access Token???댁슜?댁꽌 ?ъ슜???쒓났?뺣낫 媛?몄삤湲?
 		OAuthLogin oauthLogin = new OAuthLogin(oauthVO);
 
-		OAuthUniversalUser oauthUser = oauthLogin.getUserProfile(code); // 1,2번 동시
+		OAuthUniversalUser oauthUser = oauthLogin.getUserProfile(code); // 1,2踰??숈떆
 		LOGGER.debug("Profile ===>>" + oauthUser);
 
 		// ========================================================================
-		// 다음 부분은 업무의 목적에 맞게 커스텀 코드를 작성한다.
-		// 3. 해당 유저가 DB에 존재하는지 체크 (google, naver, kakao에서 전달받은 ID가 존재하는지 체크)
-//		String resultDBInfo = ""; // DB 체크 결과
+		// ?ㅼ쓬 遺遺꾩? ?낅Т??紐⑹쟻??留욊쾶 而ㅼ뒪? 肄붾뱶瑜??묒꽦?쒕떎.
+		// 3. ?대떦 ?좎?媛 DB??議댁옱?섎뒗吏 泥댄겕 (google, naver, kakao?먯꽌 ?꾨떖諛쏆? ID媛 議댁옱?섎뒗吏 泥댄겕)
+//		String resultDBInfo = ""; // DB 泥댄겕 寃곌낵
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (oauthUser == null) {
-			// 미존재시 가입페이지로!!
+			// 誘몄〈?ъ떆 媛?낇럹?댁?濡?!
 			model.addAttribute("message", "This user does not exist. Please sign up.");
 		} else {
-			// 존재시 로그인 처리
+			// 議댁옱??濡쒓렇??泥섎━
 			model.addAttribute("message", "OAuth Sign-in succeeded.");
 		}
 

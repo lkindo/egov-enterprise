@@ -20,25 +20,25 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 마이페이지에 대한 Controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 留덉씠?섏씠吏?????Controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 마이페이지 콘텐츠의 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 마이페이지 콘텐츠의 조회기능은 목록조회, 상세조회로 구분된다.
- * - 등록된 콘텐츠를 마이페이지에 추가, 삭제, 조회 기능을 제공한다.
- * @author 이창원
+ * ?곸꽭?댁슜
+ * - 留덉씠?섏씠吏 肄섑뀗痢좎쓽 ?깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 留덉씠?섏씠吏 肄섑뀗痢좎쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * - ?깅줉??肄섑뀗痢좊? 留덉씠?섏씠吏??異붽?, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * @author ?댁갹??
  * @version 1.0
- * @created 05-8-2009 오후 2:19:27
+ * @created 05-8-2009 ?ㅽ썑 2:19:27
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  ----------  ----------    ---------------------------
- *  2009.08.04  이창원          최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *  2016.8.31	김연호			표준프레임워크 3.6 개선
+ *  2009.08.04  ?댁갹??         理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
+ *  2016.8.31	源?고샇			?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
  *
  * Copyright (C) 2009 by MOPAS  All right reserved.
  * </pre>
@@ -58,13 +58,13 @@ public class EgovIndvdlPgeController {
     private EgovIndvdlPgeService egovIndvdlPgeService;
 
     /**
-	 * 컨텐츠 목록을 조회한다.
-	 * @param indvdlPgeVO - 마이페이지 콘텐츠 Vo
+	 * 而⑦뀗痢?紐⑸줉??議고쉶?쒕떎.
+	 * @param indvdlPgeVO - 留덉씠?섏씠吏 肄섑뀗痢?Vo
 	 * @return
 	 *
 	 * @param indvdlPgeVO
 	 */
-	@IncludedInfo(name="마이페이지관리", order = 480 ,gid = 50)
+	@IncludedInfo(name="留덉씠?섏씠吏愿由?, order = 480 ,gid = 50)
 	@RequestMapping(value="/uss/mpe/selectIndvdlPgeList.do")
 	public String selectIndvdlPgeList(@ModelAttribute("searchVO") IndvdlPgeVO searchVO, ModelMap model) throws Exception {
 
@@ -93,7 +93,7 @@ public class EgovIndvdlPgeController {
 	}
 
 	/**
-     * 컨텐츠 목록에 대한 상세정보를 조회한다.
+     * 而⑦뀗痢?紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      * @param indvdlPgeVO
      * @param searchVO
      * @param model
@@ -111,7 +111,7 @@ public class EgovIndvdlPgeController {
      }
 
      /**
-      * 컨텐츠 등록전 단계
+      * 而⑦뀗痢??깅줉???④퀎
       * @param searchVO
       * @param model
       * @return	"/uss/mpe/EgovIndvdlPgeRegist"
@@ -127,7 +127,7 @@ public class EgovIndvdlPgeController {
      }
 
      /**
-      * 컨텐츠를 등록한다.
+      * 而⑦뀗痢좊? ?깅줉?쒕떎.
       * @param searchVO
       * @param indvdlPgeVO
       * @param bindingResult
@@ -150,7 +150,7 @@ public class EgovIndvdlPgeController {
       }
 
       /**
-       * 컨텐츠정보 수정 전 처리
+       * 而⑦뀗痢좎젙蹂??섏젙 ??泥섎━
        * @param cntntsId
        * @param searchVO
        * @param model
@@ -164,7 +164,7 @@ public class EgovIndvdlPgeController {
 
     	  IndvdlPgeVO indvdlPgeVO = new IndvdlPgeVO();
 
-          // Primary Key 값 세팅
+          // Primary Key 媛??명똿
           indvdlPgeVO.setCntntsId(cntntsId);
 
           model.addAttribute("indvdlPgeVO", egovIndvdlPgeService.selectIndvdlPgeDetail(indvdlPgeVO));
@@ -173,7 +173,7 @@ public class EgovIndvdlPgeController {
       }
 
       /**
-       * 컨텐츠정보를 수정한다.
+       * 而⑦뀗痢좎젙蹂대? ?섏젙?쒕떎.
        * @param searchVO
        * @param indvdlPgeVO
        * @param bindingResult

@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 부서업무함 DTO
+ * 遺?쒖뾽臾댄븿 DTO
  */
 @Getter
 @Setter

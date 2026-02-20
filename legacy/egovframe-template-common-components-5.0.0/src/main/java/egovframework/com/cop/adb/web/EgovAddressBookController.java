@@ -24,21 +24,21 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 주소록정보를 관리하기 위한 컨트롤러 클래스
- * @author 공통컴포넌트팀 윤성록
+ * 二쇱냼濡앹젙蹂대? 愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25   윤성록      최초 생성
- *   2011.8.26	 정진오		 IncludedInfo annotation 추가
- *   2016.12.13  최두영      클래스명 변경
- *   2022.11.11  김혜준      시큐어코딩 처리
+ *   2009.9.25   ?ㅼ꽦濡?     理쒖큹 ?앹꽦
+ *   2011.8.26	 ?뺤쭊??	 IncludedInfo annotation 異붽?
+ *   2016.12.13  理쒕몢??     ?대옒?ㅻ챸 蹂寃?
+ *   2022.11.11  源?쒖?      ?쒗걧?댁퐫??泥섎━
  * </pre>
  */
 
@@ -52,7 +52,7 @@ public class EgovAddressBookController {
     protected EgovPropertyService propertyService;
 
      /**
-     * 주소록 정보에 대한 목록을 조회한다.
+     * 二쇱냼濡??뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param adbkVO
      * @param status
@@ -60,7 +60,7 @@ public class EgovAddressBookController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="주소록관리", order = 380, gid = 40)
+    @IncludedInfo(name="二쇱냼濡앷?由?, order = 380, gid = 40)
     @RequestMapping("/cop/adb/selectAdbkList.do")
     public String selectAdressBookList(@ModelAttribute("searchVO") AddressBookVO adbkVO, ModelMap model) throws Exception {
 
@@ -102,7 +102,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록 정보에 대한 목록을 조회한다.(마이페이지 적용)
+     * 二쇱냼濡??뺣낫?????紐⑸줉??議고쉶?쒕떎.(留덉씠?섏씠吏 ?곸슜)
      *
      * @param adbkVO
      * @param status
@@ -149,7 +149,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록등록 화면으로 이동한다.
+     * 二쇱냼濡앸벑濡??붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param adbkVO
      * @param status
@@ -166,7 +166,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록을 삭제한다.
+     * 二쇱냼濡앹쓣 ??젣?쒕떎.
      *
      * @param adbkVO
      * @param status
@@ -191,7 +191,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록의 구성원을 추가한다.
+     * 二쇱냼濡앹쓽 援ъ꽦?먯쓣 異붽??쒕떎.
      *
      * @param userVO
      * @param adbkVO
@@ -227,7 +227,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록의 구성원을 삭제한다.
+     * 二쇱냼濡앹쓽 援ъ꽦?먯쓣 ??젣?쒕떎.
      *
      * @param userVO
      * @param adbkVO
@@ -282,7 +282,7 @@ public class EgovAddressBookController {
 
 
     /**
-     * 주소록 구성원 찾기 팝업화면으로 이동한다.
+     * 二쇱냼濡?援ъ꽦??李얘린 ?앹뾽?붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param commandMap
      * @param model
@@ -305,7 +305,7 @@ public class EgovAddressBookController {
 
 
     /**
-     * 주소록 등록가능한 구성원을 조회한다.
+     * 二쇱냼濡??깅줉媛?ν븳 援ъ꽦?먯쓣 議고쉶?쒕떎.
      *
      * @param adbkUserVO
      * @param commandMap
@@ -338,12 +338,12 @@ public class EgovAddressBookController {
         int totCnt = 0;
         if(adbkUserVO.getSearchCnd().equals("0")){
             map = adbkService.selectManList(adbkUserVO);
-            //2017.03.03 	조성원 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+            //2017.03.03 	議곗꽦??	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
             totCnt = Integer.parseInt(EgovStringUtil.nullConvertInt(map.get("resultCnt")));
             paginationInfo.setTotalRecordCount(totCnt);
         }else{
             map = adbkService.selectCardList(adbkUserVO);
-            //2017.03.03 	조성원 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+            //2017.03.03 	議곗꽦??	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
             totCnt = Integer.parseInt(EgovStringUtil.nullConvertInt(map.get("resultCnt")));
             paginationInfo.setTotalRecordCount(totCnt);
         }
@@ -357,7 +357,7 @@ public class EgovAddressBookController {
 
 
     /**
-     * 주소록상세조회수정 화면으로 이동한다.
+     * 二쇱냼濡앹긽?몄“?뚯닔???붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param adbkUserVO
      * @param commandMap
@@ -415,7 +415,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록 정보를 등록한다.
+     * 二쇱냼濡??뺣낫瑜??깅줉?쒕떎.
      *
      * @param adbkVO
      * @param adbkUserVO
@@ -443,7 +443,7 @@ public class EgovAddressBookController {
         adbkVO.setWrterId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
         adbkVO.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
         adbkVO.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
-        // 2022.11.11 시큐어코딩 처리
+        // 2022.11.11 ?쒗걧?댁퐫??泥섎━
         adbkVO.setTrgetOrgnztId(user == null ? "" : EgovStringUtil.isNullToString(user.getOrgnztId()));
 
         String[] tempId = EgovStringUtil.isNullToString(adbkUserVO.getUserId()).split(",");
@@ -461,7 +461,7 @@ public class EgovAddressBookController {
     }
 
     /**
-     * 주소록 정보를 수정한다.
+     * 二쇱냼濡??뺣낫瑜??섏젙?쒕떎.
      *
      * @param adbkVO
      * @param adbkUserVO

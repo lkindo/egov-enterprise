@@ -3,18 +3,18 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="ScrinStatsDAO">
 	
-	<!-- 화면통계 조회 -->
+	<!-- ?붾㈃?듦퀎 議고쉶 -->
 	<select id="selectScrinStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT NVL(SUM(a.RDCNT),0) AS statsCo
-			 <!-- 기간검색(년) -->
+			 <!-- 湲곌컙寃???? -->
 			 <if test='pdKind == "Y"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) AS statsDate
 		     </if>
-		     <!-- 기간검색(월) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "M"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) AS statsDate
 		     </if>
-		     <!-- 기간검색(일) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "D"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) || '-' || SUBSTR(OCCRRNC_DE, 5, 2) || '-' || SUBSTR(OCCRRNC_DE, 7, 2) AS statsDate
 		     </if>
@@ -23,7 +23,7 @@
 			  	  FROM COMTNPROGRMLIST 
 			 	 WHERE PROGRM_FILE_NM = #{detailStatsKind}) b
 		 WHERE 1 = 1
-		   <!-- 시작일자~종료일자 기간제한 -->
+		   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
 		   AND a.OCCRRNC_DE BETWEEN #{fromDate} AND #{toDate} 
 		   AND INSTR(a.URL, b.URL) > 0
 		 <if test='pdKind == "Y"'>

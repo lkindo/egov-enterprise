@@ -4,32 +4,32 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 개요
- * - 서버자원모니터링에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 서버자원모니터링의 목록 항목, 조회조건, 삭제대상 등을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅??紐⑸줉 ??ぉ, 議고쉶議곌굔, ??젣????깆쓣 愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 06-9-2010 오전 11:24:00
+ * @created 06-9-2010 ?ㅼ쟾 11:24:00
  */
 public class ServerResrceMntrngVO extends ServerResrceMntrng {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버자원모니터링 서버명 조회조건
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅 ?쒕쾭紐?議고쉶議곌굔
 	 */
 	private String strServerNm;
 	/**
-	 * 시작일자 검색조건
+	 * ?쒖옉?쇱옄 寃?됱“嫄?
 	 */
 	private String strStartDt;
 	/**
-	 * 종료일자 검색조건
+	 * 醫낅즺?쇱옄 寃?됱“嫄?
 	 */
 	private String strEndDt;
 	/**
-	 * 서버자원모니터링 목록
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅 紐⑸줉
 	 */
 	private List<ServerResrceMntrngVO> serverResrceMntrngList;
 	/**

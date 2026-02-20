@@ -8,17 +8,17 @@ import jakarta.servlet.http.HttpSession;
 
 /**
  * @Class Name : EgovHttpRequestHelper.java
- * @Description : HTTP Request 정보 취득 Helper 클래스
+ * @Description : HTTP Request ?뺣낫 痍⑤뱷 Helper ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
+ *    2014.09.11	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5
  * @see <pre>
- * web.xml 상에 다음과 같은 Listener 등록 필요
+ * web.xml ?곸뿉 ?ㅼ쓬怨?媛숈? Listener ?깅줉 ?꾩슂
  * &lt;listener&gt;
  *	  &lt;listener-class&gt;org.springframework.web.context.request.RequestContextListener&lt;/listener-class&gt;
  * &lt;/listener&gt;

@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 마이페이지 컨텐츠 JPA Entity
- * 레거시 테이블: COMTNINDVDLPGE
+ * 筌띾뜆???륁뵠筌왖 ?뚢뫂?쀯㎘?JPA Entity
+ * ??뉕탢?????뵠?? COMTNINDVDLPGE
  */
 @Entity
 @Table(name = "NINDVDLPGE")

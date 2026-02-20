@@ -10,19 +10,19 @@ import org.springframework.util.ObjectUtils;
 
 
 /**
- * EgovComUtil 클래스
+ * EgovComUtil ?대옒??
  *
- * @author 서준식
+ * @author ?쒖???
  * @since 2011.09.15
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    -------------    ----------------------
- *   2011.09.15  서준식        최초 생성
+ *   2011.09.15  ?쒖???       理쒖큹 ?앹꽦
  * </pre>
  */
 
@@ -42,7 +42,7 @@ public class EgovComponentChecker extends EgovAbstractServiceImpl implements App
 
 
 	/**
-	 * Spring MVC에서 설정한 빈이 아닌 서비스 빈(컴포넌트)만을 검색할 수 있음
+	 * Spring MVC?먯꽌 ?ㅼ젙??鍮덉씠 ?꾨땶 ?쒕퉬??鍮?而댄룷?뚰듃)留뚯쓣 寃?됲븷 ???덉쓬
 	 *
 	*/
 	public static boolean hasComponent(String componentName){
@@ -50,14 +50,14 @@ public class EgovComponentChecker extends EgovAbstractServiceImpl implements App
 		try{
 			Object component = context.getBean(componentName);
 
-			// 221116	김혜준	2022 시큐어코딩 조치
+			// 221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 			if(ObjectUtils.isEmpty(component)){
 				return false;
 			}else{
 				return true;
 			}
 
-		}catch(NoSuchBeanDefinitionException ex){// 해당 컴포넌트를 찾을 수없을 경우 false반환
+		}catch(NoSuchBeanDefinitionException ex){// ?대떦 而댄룷?뚰듃瑜?李얠쓣 ?섏뾾??寃쎌슦 false諛섑솚
 			return false;
 		}
 	}

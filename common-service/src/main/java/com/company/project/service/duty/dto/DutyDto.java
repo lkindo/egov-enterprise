@@ -14,25 +14,25 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "당직 정보 DTO")
+@Schema(description = "Description")
 public class DutyDto {
 
-    @Schema(description = "당직자 ID")
+    @Schema(description = "Description")
     private String bndtId;
 
-    @Schema(description = "당직자 명")
+    @Schema(description = "Description")
     private String bndtNm;
 
-    @Schema(description = "당직 일자")
+    @Schema(description = "Description")
     private String bndtDe;
 
-    @Schema(description = "비고")
+    @Schema(description = "Description")
     private String remark;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public String getFrstRegisterId() {
@@ -43,7 +43,7 @@ public class DutyDto {
         return createdDate;
     }
 
-    @Schema(description = "당직 일지 목록")
+    @Schema(description = "Description")
     private List<DutyDiaryDto> diaries;
 
     public static DutyDto from(BndtManage entity) {

@@ -10,30 +10,30 @@ import egovframework.com.cmm.service.EgovProperties;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * EgovFileBasePathSecurityValidator Class 구현
+ * EgovFileBasePathSecurityValidator Class 援ы쁽
  * 
- * @author 표준프레임워크 신용호
+ * @author ?쒖??꾨젅?꾩썙???좎슜??
  * @since 2025.04.01
  * @version 4.3
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2025.04.01  신용호          최초 생성
- *   2025.05.22  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-InefficientEmptyStringCheck(비효율적인 빈 문자열 검사), SimplifyBooleanExpressions(부울 표현식 단순화)
+ *   2025.04.01  ?좎슜??         理쒖큹 ?앹꽦
+ *   2025.05.22  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-InefficientEmptyStringCheck(鍮꾪슚?⑥쟻??鍮?臾몄옄??寃??, SimplifyBooleanExpressions(遺???쒗쁽???⑥닚??
  *
  *      </pre>
  * 
  *      <pre>
- *  - String basePath 파라미터에 대해 보안강화 체크를 한다.
- *  - 보안성을 위해 basePath는 ROOT Path를 지정할수 없다.
- *  - basePath에 대해 다음 경로가 추가되어 화이트리스트 방식으로 점검한다. (필요시 화이트리스트를 추가한다)
- *    basePath가 다음 제한된 경로의 하위에 위치하는지 점검한다.
- *    1) Globals.fileStorePath # 파일 업로드 경로
- *    2) Globals.SynchrnServerPath # 파일 동기화 컴포넌트에서 사용할 파일 업로드 경로
+ *  - String basePath ?뚮씪誘명꽣?????蹂댁븞媛뺥솕 泥댄겕瑜??쒕떎.
+ *  - 蹂댁븞?깆쓣 ?꾪빐 basePath??ROOT Path瑜?吏?뺥븷???녿떎.
+ *  - basePath??????ㅼ쓬 寃쎈줈媛 異붽??섏뼱 ?붿씠?몃━?ㅽ듃 諛⑹떇?쇰줈 ?먭??쒕떎. (?꾩슂???붿씠?몃━?ㅽ듃瑜?異붽??쒕떎)
+ *    basePath媛 ?ㅼ쓬 ?쒗븳??寃쎈줈???섏쐞???꾩튂?섎뒗吏 ?먭??쒕떎.
+ *    1) Globals.fileStorePath # ?뚯씪 ?낅줈??寃쎈줈
+ *    2) Globals.SynchrnServerPath # ?뚯씪 ?숆린??而댄룷?뚰듃?먯꽌 ?ъ슜???뚯씪 ?낅줈??寃쎈줈
  *      </pre>
  */
 
@@ -45,13 +45,13 @@ public class EgovFileBasePathSecurityValidator {
 		boolean validateResult = false;
 
 		ArrayList<String> whiteList = new ArrayList<String>();
-		// 파일 업로드 경로
+		// ?뚯씪 ?낅줈??寃쎈줈
 		whiteList.add(EgovProperties.getProperty("Globals.fileStorePath"));
-		// 파일 동기화 컴포넌트에서 사용할 파일 업로드 경로
+		// ?뚯씪 ?숆린??而댄룷?뚰듃?먯꽌 ?ъ슜???뚯씪 ?낅줈??寃쎈줈
 		whiteList.add(EgovProperties.getProperty("Globals.SynchrnServerPath"));
-		// 테스트용 Base Path - Windows OS
+		// ?뚯뒪?몄슜 Base Path - Windows OS
 		// whiteList.add("D:/TEMP/");
-		// 테스트용 Base Path - Linux, Mac OS
+		// ?뚯뒪?몄슜 Base Path - Linux, Mac OS
 		// whiteList.add("/Users/EgovStoredFiles");
 
 		if (ObjectUtils.isEmpty(basePath)) {
@@ -59,19 +59,19 @@ public class EgovFileBasePathSecurityValidator {
 			return false;
 		}
 
-		String normalizedBasePath = basePath.trim().replace("\\", "/"); // 윈도우 경로도 동일하게 처리
+		String normalizedBasePath = basePath.trim().replace("\\", "/"); // ?덈룄??寃쎈줈???숈씪?섍쾶 泥섎━
 
-		// 루트 경로 제한 (리눅스 / 또는 윈도우 드라이브 루트 경로들)
+		// 猷⑦듃 寃쎈줈 ?쒗븳 (由щ늼??/ ?먮뒗 ?덈룄???쒕씪?대툕 猷⑦듃 寃쎈줈??
 		if (normalizedBasePath.matches("(?i)^[a-z]:/$") || normalizedBasePath.equals("/")) {
 			log.error("ERROR : Root base paths are not allowed. basePath = {}", basePath);
 			return false;
 		}
 
 		try {
-			// 입력 경로 정규화 (Canonical Path로 변환)
+			// ?낅젰 寃쎈줈 ?뺢퇋??(Canonical Path濡?蹂??
 			File base = new File(normalizedBasePath).getCanonicalFile();
 
-			// 허용된 디렉토리 내인지 검증
+			// ?덉슜???붾젆?좊━ ?댁씤吏 寃利?
 			for (String whiteBasePath : whiteList) {
 				File file = new File(whiteBasePath).getCanonicalFile();
 				if (file.getPath().startsWith(base.getPath())) {

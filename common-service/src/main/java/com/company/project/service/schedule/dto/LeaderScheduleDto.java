@@ -13,52 +13,52 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "간부일정 정보 DTO")
+@Schema(description = "Description")
 public class LeaderScheduleDto {
 
-    @Schema(description = "일정 ID")
+    @Schema(description = "Description")
     private String scheduleId;
 
-    @Schema(description = "일정 구분")
+    @Schema(description = "Description")
     private String scheduleSe;
 
-    @Schema(description = "일정 명")
+    @Schema(description = "Description")
     private String scheduleNm;
 
-    @Schema(description = "일정 내용")
+    @Schema(description = "Description")
     private String scheduleCn;
 
-    @Schema(description = "일정 장소")
+    @Schema(description = "Description")
     private String schedulePlace;
 
-    @Schema(description = "간부 ID")
+    @Schema(description = "Description")
     private String leaderId;
 
-    @Schema(description = "간부 명")
+    @Schema(description = "Description")
     private String leaderName;
 
-    @Schema(description = "반복 구분 코드")
+    @Schema(description = "Description")
     private String reptitSeCode;
 
-    @Schema(description = "중요도 코드")
+    @Schema(description = "Description")
     private String scheduleIpcrCode;
 
-    @Schema(description = "시작 일자")
+    @Schema(description = "Description")
     private String beginDate;
 
-    @Schema(description = "종료 일자")
+    @Schema(description = "Description")
     private String endDate;
 
-    @Schema(description = "담당자 ID")
+    @Schema(description = "Description")
     private String chargerId;
 
-    @Schema(description = "담당자 명")
+    @Schema(description = "Description")
     private String chargerName;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     // Aliases for legacy compatibility

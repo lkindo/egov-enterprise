@@ -8,22 +8,22 @@ import egovframework.com.uss.ion.ism.service.InfrmlSanctn;
 import egovframework.com.uss.ion.ism.service.SanctnerVO;
 
 /**
- * 개요
- * - 약식결재관리에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쎌떇寃곗옱愿由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 약식결재관리에 대한 등록, 수정, 삭제기능을 제공한다.
- * - 결재자에 대한 목록조회기능을 제공한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쎌떇寃곗옱愿由ъ뿉 ????깅줉, ?섏젙, ??젣湲곕뒫???쒓났?쒕떎.
+ * - 寃곗옱?먯뿉 ???紐⑸줉議고쉶湲곕뒫???쒓났?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:26
+ * @created 28-6-2010 ?ㅼ쟾 11:29:26
  */
 @Repository("InfrmlSanctnDAO")
 public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 
 	
 	/**
-	 * 주어진 조건에 맞는 결재자를 불러온다.
+	 * 二쇱뼱吏?議곌굔??留욌뒗 寃곗옱?먮? 遺덈윭?⑤떎.
 	 * @param SanctnerVO
 	 * @return List
 	 * 
@@ -34,7 +34,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 결재자 목록에 대한 전체 건수를 조회한다.
+	 * 寃곗옱??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
 	 * @param SanctnerVO
 	 * @return int
 	 * 
@@ -45,7 +45,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 맞는 약식결재정보를 불러온다.
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?쎌떇寃곗옱?뺣낫瑜?遺덈윭?⑤떎.
 	 * @param InfrmlSanctn
 	 * @return InfrmlSanctn
 	 * 
@@ -57,7 +57,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	
 
 	/**
-	 * 약식결재관리 정보를 수정한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??섏젙?쒕떎.
 	 * @param InfrmlSanctn
 	 * 
 	 * @param infrmlSanctn
@@ -67,7 +67,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 약식결재관리 정보를 승인 또는 반려한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??뱀씤 ?먮뒗 諛섎젮?쒕떎.
 	 * @param InfrmlSanctn
 	 * 
 	 * @param infrmlSanctn
@@ -77,7 +77,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 약식결재관리 정보를 등록한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??깅줉?쒕떎.
 	 * @param InfrmlSanctn
 	 * 
 	 * @param infrmlSanctn
@@ -87,7 +87,7 @@ public class InfrmlSanctnDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 약식결재관리 정보를 삭제한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜???젣?쒕떎.
 	 * @param InfrmlSanctn
 	 * 
 	 * @param infrmlSanctn

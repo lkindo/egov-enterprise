@@ -38,30 +38,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 우편번호에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한 Controller를
- * 정의한다
+ * ?고렪踰덊샇??愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳 Controller瑜?
+ * ?뺤쓽?쒕떎
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  홍길동          최초 생성
- *   2009.04.01  이중호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.10.07  이기하          보안취약점 수정(파일 업로드시 엑셀파일만 가능하도록 추가)
- *   2011.11.21  이기하          도로명주소 추가(rdnmadZip)
- *   2021.02.16  신용호          WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2024.10.29  권태성          등록 & 수정의 화면과 데이터를 처리하는 method 분리, validation 적용, 이전페이지 파라미터 model 추가
- *   2025.07.09  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.07.09  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
- *   2025.07.09  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
+ *   2009.03.20  ?띻만??         理쒖큹 ?앹꽦
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.10.07  ?닿린??         蹂댁븞痍⑥빟???섏젙(?뚯씪 ?낅줈?쒖떆 ?묒??뚯씪留?媛?ν븯?꾨줉 異붽?)
+ *   2011.11.21  ?닿린??         ?꾨줈紐낆＜??異붽?(rdnmadZip)
+ *   2021.02.16  ?좎슜??         WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2024.10.29  沅뚰깭??         ?깅줉 & ?섏젙???붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━, validation ?곸슜, ?댁쟾?섏씠吏 ?뚮씪誘명꽣 model 異붽?
+ *   2025.07.09  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.07.09  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
+ *   2025.07.09  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
  *
  *      </pre>
  */
@@ -81,7 +81,7 @@ public class EgovCcmZipManageController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 우편번호 찾기 팝업 메인창을 호출한다.
+	 * ?고렪踰덊샇 李얘린 ?앹뾽 硫붿씤李쎌쓣 ?몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/ccm/zip/EgovCcmZipSearchPopup"
@@ -93,7 +93,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호 찾기 목록을 조회한다.
+	 * ?고렪踰덊샇 李얘린 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -143,7 +143,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호를 삭제한다.
+	 * ?고렪踰덊샇瑜???젣?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -164,7 +164,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호 등록 화면
+	 * ?고렪踰덊샇 ?깅줉 ?붾㈃
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -175,12 +175,12 @@ public class EgovCcmZipManageController {
 	public String insertZip(@ModelAttribute("loginVO") LoginVO loginVO, @ModelAttribute("zip") Zip zip, ZipVO searchVO,
 			ModelMap model) {
 		model.addAttribute("searchList", searchVO.getSearchList());
-		model.addAttribute("isRoadAddr", "2".equals(searchVO.getSearchList())); // true : 도로명주소등록, false : 일반주소등록
+		model.addAttribute("isRoadAddr", "2".equals(searchVO.getSearchList())); // true : ?꾨줈紐낆＜?뚮벑濡? false : ?쇰컲二쇱냼?깅줉
 		return "egovframework/com/sym/ccm/zip/EgovCcmZipRegist";
 	}
 
 	/**
-	 * 우편번호를 등록 한다.
+	 * ?고렪踰덊샇瑜??깅줉 ?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -203,7 +203,7 @@ public class EgovCcmZipManageController {
 			return "egovframework/com/sym/ccm/zip/EgovCcmZipRegist";
 		}
 		/*
-		 * 2024-08-31 권태성 - 기존 코드에서 도로명주소 일 때 validate를 주석 처리해두어 주석을 유지함 else {
+		 * 2024-08-31 沅뚰깭??- 湲곗〈 肄붾뱶?먯꽌 ?꾨줈紐낆＜??????validate瑜?二쇱꽍 泥섎━?대몢??二쇱꽍???좎???else {
 		 * beanValidator.validate(zip, bindingResult); if (bindingResult.hasErrors()){
 		 * return "egovframework/com/sym/ccm/zip/EgovCcmZipRegist"; } }
 		 */
@@ -219,7 +219,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 엑셀파일을 업로드하여 우편번호를 등록한다.
+	 * ?묒??뚯씪???낅줈?쒗븯???고렪踰덊샇瑜??깅줉?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param request
@@ -244,7 +244,7 @@ public class EgovCcmZipManageController {
 				MultipartHttpServletRequest.class);
 
 		// 2022.01 Possible null pointer dereference due to return value of called
-		// method 조치
+		// method 議곗튂
 		if (multiRequest != null) {
 
 			final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -259,7 +259,7 @@ public class EgovCcmZipManageController {
 				}
 				String fileExtensionName = FilenameUtils.getExtension(originalFilename).toUpperCase();
 				boolean isExist = Arrays.stream(fileExtension).anyMatch(fileExtensionName::equals);
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				if (isExist) {
 					try (InputStream fis = file.getInputStream();) {
 						if (searchVO.getSearchList().equals("1")) {
@@ -270,7 +270,7 @@ public class EgovCcmZipManageController {
 					}
 
 				} else {
-					LOGGER.info("xls, xlsx 파일 타입만 등록이 가능합니다.");
+					LOGGER.info("xls, xlsx ?뚯씪 ??낅쭔 ?깅줉??媛?ν빀?덈떎.");
 					return "egovframework/com/sym/ccm/zip/EgovCcmExcelZipRegist";
 				}
 			}
@@ -280,7 +280,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호 상세항목을 조회한다.
+	 * ?고렪踰덊샇 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -306,7 +306,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호 목록을 조회한다.
+	 * ?고렪踰덊샇 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -314,7 +314,7 @@ public class EgovCcmZipManageController {
 	 * @return "egovframework/com/sym/ccm/zip/EgovCcmZipList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "우편번호관리", listUrl = "/sym/ccm/zip/EgovCcmZipList.do", order = 1000, gid = 50)
+	@IncludedInfo(name = "?고렪踰덊샇愿由?, listUrl = "/sym/ccm/zip/EgovCcmZipList.do", order = 1000, gid = 50)
 	@RequestMapping(value = "/sym/ccm/zip/EgovCcmZipList.do")
 	public String selectZipList(@ModelAttribute("loginVO") LoginVO loginVO, @ModelAttribute("searchVO") ZipVO searchVO,
 			ModelMap model) throws Exception {
@@ -352,7 +352,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호 수정화면
+	 * ?고렪踰덊샇 ?섏젙?붾㈃
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -377,7 +377,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 우편번호를 수정한다.
+	 * ?고렪踰덊샇瑜??섏젙?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param zip
@@ -399,7 +399,7 @@ public class EgovCcmZipManageController {
 			return "egovframework/com/sym/ccm/zip/EgovCcmZipModify";
 		}
 		/*
-		 * 2024-08-31 권태성 - 기존 코드에서 도로명주소 일 때 validate를 주석 처리해두어 주석을 유지함 else {
+		 * 2024-08-31 沅뚰깭??- 湲곗〈 肄붾뱶?먯꽌 ?꾨줈紐낆＜??????validate瑜?二쇱꽍 泥섎━?대몢??二쇱꽍???좎???else {
 		 * beanValidator.validate(zip, bindingResult); if (bindingResult.hasErrors()){
 		 * return "egovframework/com/sym/ccm/zip/EgovCcmZipModify"; } }
 		 */
@@ -414,7 +414,7 @@ public class EgovCcmZipManageController {
 	}
 
 	/**
-	 * 주소정보연계 팝업을 위한 입력 페이지를 호출한다.
+	 * 二쇱냼?뺣낫?곌퀎 ?앹뾽???꾪븳 ?낅젰 ?섏씠吏瑜??몄텧?쒕떎.
 	 *
 	 * @return
 	 */

@@ -18,20 +18,20 @@ import egovframework.com.cop.sms.service.SmsRecptn;
 import egovframework.com.cop.sms.service.SmsVO;
 
 /**
- * 문자메시지를 위한 서비스 구현 클래스 (프레임워크 비종속 버전)
+ * 臾몄옄硫붿떆吏瑜??꾪븳 ?쒕퉬??援ы쁽 ?대옒??(?꾨젅?꾩썙??鍮꾩쥌??踰꾩쟾)
  *
- * @author 공통컴포넌트개발팀 한성곤
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.11.24
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.11.24  한성곤          최초 생성
- *   2025.06.05  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드), LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2009.11.24  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2025.06.05  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶), LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -44,13 +44,13 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 
 	public EgovSmsBasicServiceImpl() {
 		// --------------------------------
-		// 속성 정보 얻기
-		// M-Gov에서 배포하는 SMEConfig.conf 파일을 절대경로로 지정하면 된다.
+		// ?띿꽦 ?뺣낫 ?산린
+		// M-Gov?먯꽌 諛고룷?섎뒗 SMEConfig.conf ?뚯씪???덈?寃쎈줈濡?吏?뺥븯硫??쒕떎.
 		// --------------------------------
-		// //globals.properties를 활용한 방식 (공통모듈 사용)
+		// //globals.properties瑜??쒖슜??諛⑹떇 (怨듯넻紐⑤뱢 ?ъ슜)
 		// smeConfigPath = EgovProperties.getProperty("Globals.SMEConfigPath");
 
-		// //globals.properties를 직접 활용한 방식
+		// //globals.properties瑜?吏곸젒 ?쒖슜??諛⑹떇
 		// String globalsPropertiesFile = System.getProperty("user.home")
 		// + System.getProperty("file.separator") + "egovProps"
 		// + System.getProperty("file.separator") + "globals.properties";
@@ -107,7 +107,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 
 		StringBuffer buffer = new StringBuffer();
 
-		if (number.length() == 9) { // 02-500-1234 형식
+		if (number.length() == 9) { // 02-500-1234 ?뺤떇
 			buffer.append(number.substring(0, 2));
 			buffer.append("-");
 			buffer.append(number.substring(2, 2 + 3));
@@ -115,14 +115,14 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 			buffer.append(number.substring(2 + 3, 2 + 3 + 4));
 
 		} else if (number.length() == 10) {
-			if (number.startsWith("02")) { // 02-5000-1234 형식
+			if (number.startsWith("02")) { // 02-5000-1234 ?뺤떇
 				buffer.append(number.substring(0, 2));
 				buffer.append("-");
 				buffer.append(number.substring(2, 2 + 4));
 				buffer.append("-");
 				buffer.append(number.substring(2 + 4, 2 + 4 + 4));
 
-			} else { // 031-500-1234 형식
+			} else { // 031-500-1234 ?뺤떇
 				buffer.append(number.substring(0, 3));
 				buffer.append("-");
 				buffer.append(number.substring(3, 3 + 3));
@@ -130,14 +130,14 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				buffer.append(number.substring(3 + 3, 3 + 3 + 4));
 			}
 
-		} else if (number.length() == 11) { // 031-5000-1234 형식
+		} else if (number.length() == 11) { // 031-5000-1234 ?뺤떇
 			buffer.append(number.substring(0, 3));
 			buffer.append("-");
 			buffer.append(number.substring(3, 3 + 4));
 			buffer.append("-");
 			buffer.append(number.substring(3 + 4, 3 + 4 + 4));
 
-		} else if (number.length() == 12) { // 0505-5000-1234 형식
+		} else if (number.length() == 12) { // 0505-5000-1234 ?뺤떇
 			buffer.append(number.substring(0, 4));
 			buffer.append("-");
 			buffer.append(number.substring(4, 4 + 4));
@@ -152,14 +152,14 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 	}
 
 	/**
-	 * 문자메시지 목록을 조회 한다.
+	 * 臾몄옄硫붿떆吏 紐⑸줉??議고쉶 ?쒕떎.
 	 */
 	@Override
 	public Map<String, Object> selectSmsInfs(SmsVO searchVO) throws Exception {
 		List<SmsVO> result = smsDao.selectSmsInfs(searchVO);
 		int cnt = smsDao.selectSmsInfsCnt(searchVO);
 
-		// 전화번호 포맷 처리
+		// ?꾪솕踰덊샇 ?щ㎎ 泥섎━
 		for (int i = 0; i < result.size(); i++) {
 			String phone = result.get(i).getTrnsmitTelno();
 			result.get(i).setTrnsmitTelno(formatPhoneNumber(phone));
@@ -174,7 +174,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 	}
 
 	/**
-	 * 문자메시지를 전송(등록)한다.
+	 * 臾몄옄硫붿떆吏瑜??꾩넚(?깅줉)?쒕떎.
 	 */
 	@Override
 	public void insertSmsInf(Sms sms) throws Exception {
@@ -183,12 +183,12 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 		sms.setTrnsmitTelno(getPhoneNumber(sms.getTrnsmitTelno()));
 
 		// ---------------------------------------
-		// 마스터 정보 등록
+		// 留덉뒪???뺣낫 ?깅줉
 		// ---------------------------------------
 		String smsId = smsDao.insertSmsInf(sms);
 
 		// ---------------------------------------
-		// 전송 요청 및 상세(수신자)정보 등록
+		// ?꾩넚 ?붿껌 諛??곸꽭(?섏떊???뺣낫 ?깅줉
 		// ---------------------------------------
 		SmsRecptn smsRecptn = null;
 		if (sms != null && sms.getRecptnTelno() != null) {
@@ -201,7 +201,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				smsRecptn.setSmsId(smsId);
 				smsRecptn.setRecptnTelno(getPhoneNumber(sms.getRecptnTelno()[i]));
 
-				// 동일 전화번호면 SKIP
+				// ?숈씪 ?꾪솕踰덊샇硫?SKIP
 				if (check.containsKey(smsRecptn.getRecptnTelno())) {
 					continue;
 				} else {
@@ -209,7 +209,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				}
 
 				// ---------------------------------------
-				// 실 전송 요청 저장
+				// ???꾩넚 ?붿껌 ???
 				// ---------------------------------------
 				SmsConnection smsConn = new SmsConnection();
 
@@ -221,7 +221,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 
 				smsConn.setMessageId(smsId + "-" + smsRecptn.getRecptnTelno());
 
-				// SMS 전송 요청
+				// SMS ?꾩넚 ?붿껌
 				EgovSmsInfoSender sender = null;
 				SmsConnection result = null;
 				try {
@@ -236,11 +236,11 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				}
 				//// -------------------------------------
 
-				// Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-				// 이동통신사의 오류는 별도의 Receiver에서 수신 처리함
-				// 수신 처리시 MessageId의 구성 형식(SMS_ID + "-" + 수신전화번호)를 통해 DB에 결과를 반영
+				// Sender???꾩넚 寃곌낵??SMS G/W 泥섎━ ?곸쓽 寃곌낵留?由ы꽩??
+				// ?대룞?듭떊?ъ쓽 ?ㅻ쪟??蹂꾨룄??Receiver?먯꽌 ?섏떊 泥섎━??
+				// ?섏떊 泥섎━??MessageId??援ъ꽦 ?뺤떇(SMS_ID + "-" + ?섏떊?꾪솕踰덊샇)瑜??듯빐 DB??寃곌낵瑜?諛섏쁺
 
-				if (result != null) { // 2011.10.21 보안점검 후속조치
+				if (result != null) { // 2011.10.21 蹂댁븞?먭? ?꾩냽議곗튂
 					smsRecptn.setResultCode(Integer.toString(result.getResult()));
 					smsRecptn.setResultMssage(result.getResultMessage());
 				}
@@ -251,13 +251,13 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 	}
 
 	/**
-	 * 문자메시지에 대한 상세정보를 조회한다.
+	 * 臾몄옄硫붿떆吏??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public SmsVO selectSmsInf(SmsVO searchVO) throws Exception {
 		SmsVO vo = smsDao.selectSmsInf(searchVO);
 
-		// 전화번호 포맷 처리
+		// ?꾪솕踰덊샇 ?щ㎎ 泥섎━
 		vo.setTrnsmitTelno(formatPhoneNumber(vo.getTrnsmitTelno()));
 
 		SmsRecptn recptn = new SmsRecptn();
@@ -266,7 +266,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 
 		List<SmsRecptn> list = smsDao.selectSmsRecptnInfs(recptn);
 
-		// 전화번호 포맷 처리
+		// ?꾪솕踰덊샇 ?щ㎎ 泥섎━
 		for (int i = 0; i < list.size(); i++) {
 			String phone = list.get(i).getRecptnTelno();
 			list.get(i).setRecptnTelno(formatPhoneNumber(phone));
@@ -278,7 +278,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 	}
 
 	/**
-	 * 문자메시지 실 전송을 요청한다.
+	 * 臾몄옄硫붿떆吏 ???꾩넚???붿껌?쒕떎.
 	 */
 	@Override
 	public SmsConnection sendRequsest(SmsConnection smsConn) throws Exception {
@@ -287,7 +287,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 		String callBack = smsConn.getCallBack();
 		String callBackUrl = smsConn.getCallBackUrl();
 		String text = smsConn.getText();
-		String messageId = smsConn.getMessageId(); // messageId 지정 필요
+		String messageId = smsConn.getMessageId(); // messageId 吏???꾩슂
 
 		/*
 		 * System.out.println("------------------------");
@@ -305,7 +305,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 		LOGGER.info("text = {}", text);
 		LOGGER.info("messageId = {}", messageId);
 
-		// SMS 전송 요청
+		// SMS ?꾩넚 ?붿껌
 		EgovSmsInfoSender sender = null;
 		SmsConnection result = null;
 		try {
@@ -319,10 +319,10 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 			}
 		}
 
-		// Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-		// 이동통신사의 오류는 별도의 Receiver에서 수신 처리함 (로그 기록)
+		// Sender???꾩넚 寃곌낵??SMS G/W 泥섎━ ?곸쓽 寃곌낵留?由ы꽩??
+		// ?대룞?듭떊?ъ쓽 ?ㅻ쪟??蹂꾨룄??Receiver?먯꽌 ?섏떊 泥섎━??(濡쒓렇 湲곕줉)
 
-		if (result != null) { // 2011.10.21 보안점검 후속조치
+		if (result != null) { // 2011.10.21 蹂댁븞?먭? ?꾩냽議곗튂
 			smsConn.setResult(result.getResult());
 			smsConn.setResultMessage(result.getResultMessage());
 		}
@@ -331,7 +331,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 	}
 
 	/**
-	 * 여러 건의 문자메시지 실 전송을 요청한다.
+	 * ?щ윭 嫄댁쓽 臾몄옄硫붿떆吏 ???꾩넚???붿껌?쒕떎.
 	 *
 	 * @param smsConn
 	 * @return
@@ -346,7 +346,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 
 			sender.open();
 
-			// SMS 전송 요청
+			// SMS ?꾩넚 ?붿껌
 			SmsConnection result = null;
 			for (int i = 0; i < smsConn.length; i++) {
 				String callTo = smsConn[i].getCallTo();
@@ -354,7 +354,7 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				String callBack = smsConn[i].getCallBack();
 				String callBackUrl = smsConn[i].getCallBackUrl();
 				String text = smsConn[i].getText();
-				String messageId = smsConn[i].getMessageId(); // messageId 지정 필요
+				String messageId = smsConn[i].getMessageId(); // messageId 吏???꾩슂
 
 				/*
 				 * System.out.println("------------------------"); System.out.println("callTo["
@@ -375,8 +375,8 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 				// smsConn[i] = sendRequsest(smsConn[i]);
 				result = sender.send(smsConn[i]);
 
-				// Sender의 전송 결과는 SMS G/W 처리 상의 결과만 리턴함
-				// 이동통신사의 오류는 별도의 Receiver에서 수신 처리함 (로그 기록)
+				// Sender???꾩넚 寃곌낵??SMS G/W 泥섎━ ?곸쓽 寃곌낵留?由ы꽩??
+				// ?대룞?듭떊?ъ쓽 ?ㅻ쪟??蹂꾨룄??Receiver?먯꽌 ?섏떊 泥섎━??(濡쒓렇 湲곕줉)
 
 				smsConn[i].setResult(result.getResult());
 				smsConn[i].setResultMessage(result.getResultMessage());

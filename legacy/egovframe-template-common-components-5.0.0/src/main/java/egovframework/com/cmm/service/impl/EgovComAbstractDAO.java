@@ -9,28 +9,28 @@ import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import jakarta.annotation.Resource;
 
 /**
- * EgovComAbstractDAO.java 클래스
+ * EgovComAbstractDAO.java ?대옒??
  *
- * @author 서준식
+ * @author ?쒖???
  * @since 2011. 9. 23.
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2011.09.23  서준식          최초 생성
- *   2016.05.11  장동한          myBatis 방식 적용
- *   2025.05.27  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙)
+ *   2011.09.23  ?쒖???         理쒖큹 ?앹꽦
+ *   2016.05.11  ?λ룞??         myBatis 諛⑹떇 ?곸슜
+ *   2025.05.27  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃)
  *
  *      </pre>
  * 
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    -------------    ----------------------
  * 
  *      </pre>

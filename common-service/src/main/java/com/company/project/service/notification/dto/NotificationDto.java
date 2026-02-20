@@ -13,40 +13,40 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "정보알림 정보 DTO")
+@Schema(description = "Description")
 public class NotificationDto {
 
-    @Schema(description = "알림 번호")
+    @Schema(description = "Description")
     private String ntfcNo;
 
-    @Schema(description = "알림 제목")
+    @Schema(description = "Description")
     private String ntfcSj;
 
-    @Schema(description = "알림 내용")
+    @Schema(description = "Description")
     private String ntfcCn;
 
-    @Schema(description = "알림 일자")
+    @Schema(description = "Description")
     private String ntfcDate;
 
-    @Schema(description = "알림 시간")
+    @Schema(description = "Description")
     private String ntfcTime;
 
-    @Schema(description = "사전 알림 간격")
+    @Schema(description = "Description")
     private String bhNtfcIntrvl;
 
-    @Schema(description = "고유 ID")
+    @Schema(description = "Description")
     private String uniqId;
 
-    @Schema(description = "최초등록자 ID")
+    @Schema(description = "Description")
     private String frstRegisterId;
 
-    @Schema(description = "최초등록시점")
+    @Schema(description = "Description")
     private LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "최종수정자 ID")
+    @Schema(description = "Description")
     private String lastUpdusrId;
 
-    @Schema(description = "최종수정시점")
+    @Schema(description = "Description")
     private LocalDateTime lastUpdusrPnttm;
 
     public static NotificationDto from(Notification entity) {
@@ -64,7 +64,7 @@ public class NotificationDto {
                 .build();
     }
     
-    // 누락된 메서드들 추가
+    // ?꾨씫??硫붿꽌?쒕뱾 異붽?
     public String getNtfcTime() {
         return this.ntfcTime;
     }

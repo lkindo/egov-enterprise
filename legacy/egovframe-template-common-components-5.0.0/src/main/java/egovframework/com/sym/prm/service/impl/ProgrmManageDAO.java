@@ -9,18 +9,18 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.sym.prm.service.ProgrmManageDtlVO;
 import egovframework.com.sym.prm.service.ProgrmManageVO;
 /**
- * 프로그램 목록관리및 프로그램변경관리에 대한 DAO 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * ?꾨줈洹몃옩 紐⑸줉愿由щ컦 ?꾨줈洹몃옩蹂寃쎄?由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.sym.prm.service.ProgrmManageVO;
 public class ProgrmManageDAO extends EgovComAbstractDAO {
 
 	/**
-     * 프로그램 목록을 조회
+     * ?꾨줈洹몃옩 紐⑸줉??議고쉶
      * 
      * @param vo ComDefaultVO
      * @return List
@@ -40,7 +40,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 프로그램목록 총건수를 조회한다.
+	 * ?꾨줈洹몃옩紐⑸줉 珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -50,7 +50,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 프로그램 기본정보를 조회
+	 * ?꾨줈洹몃옩 湲곕낯?뺣낫瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return ProgrmManageVO
 	 * @exception Exception
@@ -60,7 +60,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램 기본정보 및 URL을 등록
+	 * ?꾨줈洹몃옩 湲곕낯?뺣낫 諛?URL???깅줉
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -69,7 +69,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램 기본정보 및 URL을 수정
+	 * ?꾨줈洹몃옩 湲곕낯?뺣낫 諛?URL???섏젙
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -78,7 +78,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램 기본정보 및 URL을 삭제
+	 * ?꾨줈洹몃옩 湲곕낯?뺣낫 諛?URL????젣
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -87,7 +87,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램 파일 존재여부를 조회
+	 * ?꾨줈洹몃옩 ?뚯씪 議댁옱?щ?瑜?議고쉶
 	 * @param vo ProgrmManageVO
 	 * @return int
 	 * @exception Exception
@@ -98,7 +98,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 프로그램변경요청 목록을 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?紐⑸줉??議고쉶
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -109,7 +109,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 프로그램변경요청 총건수를 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return  int
 	 * @exception Exception
@@ -119,7 +119,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 프로그램변경요청 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥??뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception
@@ -129,7 +129,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경요청을 등록
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ?깅줉
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -138,7 +138,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경요청을 수정
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ?섏젙
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -147,7 +147,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경요청을 삭제
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ??젣
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -156,7 +156,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경요청 요청번호MAX 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥??붿껌踰덊샇MAX ?뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception
@@ -166,7 +166,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경요청 목록을 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?紐⑸줉??議고쉶
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -176,7 +176,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 프로그램변경요청 총건수를 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -186,7 +186,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 프로그램변경요청 처리 수정
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?泥섎━ ?섏젙
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -196,7 +196,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 프로그램목록 전체삭제 초기화
+	 * ?꾨줈洹몃옩紐⑸줉 ?꾩껜??젣 珥덇린??
 	 * @return boolean
 	 * @exception Exception
 	 */
@@ -207,7 +207,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 프로그램변경내역 전체삭제 초기화
+	 * ?꾨줈洹몃옩蹂寃쎈궡???꾩껜??젣 珥덇린??
 	 * @return boolean
 	 * @exception Exception
 	 */
@@ -218,7 +218,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 프로그램목록 데이타 존재여부 조회한다.
+	 * ?꾨줈洹몃옩紐⑸줉 ?곗씠? 議댁옱?щ? 議고쉶?쒕떎.
 	 * @return int
 	 * @exception Exception
 	 */
@@ -228,7 +228,7 @@ public class ProgrmManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 프로그램변경요청자 Email 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?옄 Email ?뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception

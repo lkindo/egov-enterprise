@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 /**
- * 전사 표준 에러 코드
+ * ?袁⑷텢 ??? ?癒?쑎 ?꾨뗀諭?
  */
 @Getter
 @RequiredArgsConstructor

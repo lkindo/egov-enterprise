@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 기념일 Repository
+ * 疫꿸퀡???Repository
  */
 @org.springframework.stereotype.Repository("ansAnniversaryRepository")
 public interface AnniversaryRepository extends JpaRepository<Anniversary, String> {

@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 설문 정보 Entity
- * 레거시 테이블: NQESTNRINFO
+ * ??뿅??類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NQESTNRINFO
  */
 @Entity
 @Table(name = "NQESTNRINFO")

@@ -13,34 +13,34 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "추천사이트 정보 DTO")
+@Schema(description = "Description")
 public class RecomendSiteDto {
 
-    @Schema(description = "추천사이트 ID")
+    @Schema(description = "Description")
     private String recomendSiteId;
 
-    @Schema(description = "추천사이트 URL")
+    @Schema(description = "Description")
     private String recomendSiteUrl;
 
-    @Schema(description = "추천사이트 명")
+    @Schema(description = "Description")
     private String recomendSiteNm;
 
-    @Schema(description = "추천사이트 설명")
+    @Schema(description = "Description")
     private String recomendSiteDc;
 
-    @Schema(description = "추천 사유")
+    @Schema(description = "Description")
     private String recomendResnCn;
 
-    @Schema(description = "승인 여부")
+    @Schema(description = "Description")
     private String recomendConfmAt;
 
-    @Schema(description = "승인 일자")
+    @Schema(description = "Description")
     private String confmDe;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static RecomendSiteDto from(RecomendSite entity) {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server;
 
@@ -43,21 +43,21 @@ import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 
 /**
- * 두 명의 사용자가 대화할 때 접속 처리및 메시지처리 기능을 하는 WebSocket 서버클래스
+ * ??紐낆쓽 ?ъ슜?먭? ??뷀븷 ???묒냽 泥섎━諛?硫붿떆吏泥섎━ 湲곕뒫???섎뒗 WebSocket ?쒕쾭?대옒??
  * 
- * @author 이영지
+ * @author ?댁쁺吏
  * @since 2014.11.27
  * @version 3.9.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.11.27  이영지          최초 생성
- *   2023.06.09  김장하          NSR 보안조치 (사용자목록 크로스사이트 스크립트 방지)
- *   2025.06.21  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드), CloseResource(리소스 닫기)
+ *   2014.11.27  ?댁쁺吏          理쒖큹 ?앹꽦
+ *   2023.06.09  源?ν븯          NSR 蹂댁븞議곗튂 (?ъ슜?먮ぉ濡??щ줈?ㅼ궗?댄듃 ?ㅽ겕由쏀듃 諛⑹?)
+ *   2025.06.21  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶), CloseResource(由ъ냼???リ린)
  *
  *      </pre>
  */
@@ -68,9 +68,9 @@ public class ChatServerEndPoint {
 	private final Set<Session> chatroomUsers = Collections.synchronizedSet(new HashSet<Session>());
 
 	/**
-	 * Handshaking 함수
+	 * Handshaking ?⑥닔
 	 * 
-	 * @param userSession 사용자 session
+	 * @param userSession ?ъ슜??session
 	 */
 	@OnOpen
 	public void handleOpen(Session userSession, @PathParam("room") final String room)
@@ -80,10 +80,10 @@ public class ChatServerEndPoint {
 	}
 
 	/**
-	 * 메시지 전달 함수
+	 * 硫붿떆吏 ?꾨떖 ?⑥닔
 	 * 
-	 * @param incomingMessage 들어오는 메시지
-	 * @param userSession     사용자 session
+	 * @param incomingMessage ?ㅼ뼱?ㅻ뒗 硫붿떆吏
+	 * @param userSession     ?ъ슜??session
 	 * @param room            room Id
 	 * @throws IOException
 	 * @throws EncodeException
@@ -120,7 +120,7 @@ public class ChatServerEndPoint {
 		}
 	}
 
-	// 누군가가 접속 끊을때
+	// ?꾧뎔媛媛 ?묒냽 ?딆쓣??
 	@OnClose
 	public void handleClose(Session userSession, @PathParam("room") final String room)
 			throws IOException, EncodeException {
@@ -132,7 +132,7 @@ public class ChatServerEndPoint {
 	}
 
 	/**
-	 * 사용자가 접속 끊기 전 호출되는 함수
+	 * ?ъ슜?먭? ?묒냽 ?딄린 ???몄텧?섎뒗 ?⑥닔
 	 * 
 	 * @param session
 	 * @param throwable
@@ -146,7 +146,7 @@ public class ChatServerEndPoint {
 	}
 
 	/**
-	 * 사용자 정보를 가져오는 함수
+	 * ?ъ슜???뺣낫瑜?媛?몄삤???⑥닔
 	 * 
 	 * @return
 	 */

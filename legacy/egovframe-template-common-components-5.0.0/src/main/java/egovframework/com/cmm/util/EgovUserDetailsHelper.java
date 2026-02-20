@@ -5,7 +5,7 @@ import java.util.List;
 import egovframework.com.cmm.service.EgovUserDetailsService;
 
 /**
- * EgovUserDetails Helper 클래스
+ * EgovUserDetails Helper ?대옒??
  *
  * @since 2009.06.01
  * @version 1.0
@@ -13,12 +13,12 @@ import egovframework.com.cmm.service.EgovUserDetailsService;
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    -------------    ----------------------
- *   2009.03.10  sjyoon         최초 생성
- *   2011.07.01	 서준식          interface 생성후 상세 로직의 분리
+ *   2009.03.10  sjyoon         理쒖큹 ?앹꽦
+ *   2011.07.01	 ?쒖???         interface ?앹꽦???곸꽭 濡쒖쭅??遺꾨━
  * </pre>
  */
 
@@ -35,25 +35,25 @@ public class EgovUserDetailsHelper {
 	}
 
 	/**
-	 * 인증된 사용자객체를 VO형식으로 가져온다.
-	 * @return Object - 사용자 ValueObject
+	 * ?몄쬆???ъ슜?먭컼泥대? VO?뺤떇?쇰줈 媛?몄삩??
+	 * @return Object - ?ъ슜??ValueObject
 	 */
 	public static Object getAuthenticatedUser() {
 		return egovUserDetailsService.getAuthenticatedUser();
 	}
 
 	/**
-	 * 인증된 사용자의 권한 정보를 가져온다.
+	 * ?몄쬆???ъ슜?먯쓽 沅뚰븳 ?뺣낫瑜?媛?몄삩??
 	 *
-	 * @return List - 사용자 권한정보 목록
+	 * @return List - ?ъ슜??沅뚰븳?뺣낫 紐⑸줉
 	 */
 	public static List<String> getAuthorities() {
 		return egovUserDetailsService.getAuthorities();
 	}
 
 	/**
-	 * 인증된 사용자 여부를 체크한다.
-	 * @return Boolean - 인증된 사용자 여부(TRUE / FALSE)
+	 * ?몄쬆???ъ슜???щ?瑜?泥댄겕?쒕떎.
+	 * @return Boolean - ?몄쬆???ъ슜???щ?(TRUE / FALSE)
 	 */
 	public static Boolean isAuthenticated() {
 		return egovUserDetailsService.isAuthenticated();

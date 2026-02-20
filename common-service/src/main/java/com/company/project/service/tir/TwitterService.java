@@ -44,7 +44,7 @@ public class TwitterService implements EgovTwitterService {
     public void updateTwitterAccount(TwitterDto dto) {
         twitterRepository.findById(Objects.requireNonNull(dto.getUserId()))
                 .ifPresent(t -> {
-                    // Twitter 엔티티에 update 메소드 추가 필요 시 반영
+                    // Twitter ?뷀떚?곗뿉 update 硫붿냼??異붽? ?꾩슂 ??諛섏쁺
                 });
     }
 

@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 당직관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 당직관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뱀쭅愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class BndtManageVO extends BndtManage implements Serializable {
@@ -21,47 +21,47 @@ public class BndtManageVO extends BndtManage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;	
 	/**
-	 * 배너 목록
+	 * 諛곕꼫 紐⑸줉
 	 */	
 	List<BndtManageVO> bndtManageList;
 
 	/**
-	 * 당직 bndtTemp1
+	 * ?뱀쭅 bndtTemp1
 	 */	
 	private String bndtTemp1;
 	
 	/**
-	 * 당직 bndtTemp2
+	 * ?뱀쭅 bndtTemp2
 	 */	
 	private String bndtTemp2;
 	
 	/**
-	 * 당직 tempBndtNm
+	 * ?뱀쭅 tempBndtNm
 	 */	
 	private String tempBndtNm;
 	
 	/**
-	 * 당직 tempBndtId
+	 * ?뱀쭅 tempBndtId
 	 */	
 	private String tempBndtId;	
 
 	/**
-	 * 당직 tempBndtWeek
+	 * ?뱀쭅 tempBndtWeek
 	 */	
 	private String tempBndtWeek;
 	
 	/**
-	 * 당직 tempOrgnztNm
+	 * ?뱀쭅 tempOrgnztNm
 	 */	
 	private String tempOrgnztNm;	
 	
 	/**
-	 * 당직 tempCount
+	 * ?뱀쭅 tempCount
 	 */	
 	private int tempCount;	
 
 	/**
-	 * 당직 dateWeek
+	 * ?뱀쭅 dateWeek
 	 */	
 	private int dateWeek;	
 	

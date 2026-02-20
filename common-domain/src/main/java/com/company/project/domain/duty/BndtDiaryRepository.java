@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * 당직 일지 Repository
+ * ?諭彛???? Repository
  */
 public interface BndtDiaryRepository extends JpaRepository<BndtDiary, BndtDiaryId> {
     List<BndtDiary> findByBndtIdAndBndtDe(String bndtId, String bndtDe);

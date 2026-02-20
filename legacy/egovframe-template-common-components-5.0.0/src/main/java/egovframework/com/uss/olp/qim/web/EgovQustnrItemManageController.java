@@ -27,20 +27,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 설문항목관리를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ??ぉ愿由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한         최초 생성
- *   2011.08.26  정진오         IncludedInfo annotation 추가
- *   2024.10.29  권태성         등록 & 수정의 화면과 데이터를 처리하는 method 분리, validation 적용
+ *   2009.03.20  ?λ룞??        理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??        IncludedInfo annotation 異붽?
+ *   2024.10.29  沅뚰깭??        ?깅줉 & ?섏젙???붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━, validation ?곸슜
  * </pre>
  */
 @Controller
@@ -60,7 +60,7 @@ public class EgovQustnrItemManageController {
     protected EgovPropertyService propertiesService;
 
 	/**
-	 * 설문항목 팝업 목록을 조회한다.
+	 * ?ㅻЦ??ぉ ?앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrItemManageVO
@@ -109,7 +109,7 @@ public class EgovQustnrItemManageController {
 	}
 
 	/**
-	 * 설문항목 목록을 조회한다.
+	 * ?ㅻЦ??ぉ 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrItemManageVO
@@ -117,7 +117,7 @@ public class EgovQustnrItemManageController {
 	 * @return "egovframework/com/uss/olp/qim/EgovQustnrItemManageList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name="항목관리", order = 640 ,gid = 50)
+	@IncludedInfo(name="??ぉ愿由?, order = 640 ,gid = 50)
 	@RequestMapping(value="/uss/olp/qim/EgovQustnrItemManageList.do")
 	public String egovQustnrItemManageList(
 			@ModelAttribute("searchVO") ComDefaultVO searchVO,
@@ -128,7 +128,7 @@ public class EgovQustnrItemManageController {
 
 		String sSearchMode = commandMap.get("searchMode") == null ? "" : (String)commandMap.get("searchMode");
 
-		//설문문항에 넘어온 건에 대해 조회
+		//?ㅻЦ臾명빆???섏뼱??嫄댁뿉 ???議고쉶
 		if(sSearchMode.equals("Y")){
 			searchVO.setSearchCondition("QUSTNR_QESITM_ID");//qestnrQesitmId
 			searchVO.setSearchKeyword(qustnrItemManageVO.getQestnrQesitmId());
@@ -162,7 +162,7 @@ public class EgovQustnrItemManageController {
 	}
 
 	/**
-	 * 설문항목 목록을 상세조회 조회한다.
+	 * ?ㅻЦ??ぉ 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param qustnrItemManageVO
 	 * @param commandMap
@@ -194,7 +194,7 @@ public class EgovQustnrItemManageController {
 	}
 
 	/**
-	 * 설문항목 수정화면
+	 * ?ㅻЦ??ぉ ?섏젙?붾㈃
 	 * @param searchVO
 	 * @param qustnrItemManageVO
 	 * @param model
@@ -205,7 +205,7 @@ public class EgovQustnrItemManageController {
 	public String qustnrItemManageModifyView(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@ModelAttribute("qustnrItemManageVO") QustnrItemManageVO qustnrItemManageVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -215,7 +215,7 @@ public class EgovQustnrItemManageController {
 		List<?> sampleList = egovQustnrItemManageService.selectQustnrItemManageDetail(qustnrItemManageVO);
 		model.addAttribute("resultList", sampleList);
 
-		// 설문항목(을)를 정보 불러오기
+		// ?ㅻЦ??ぉ(??瑜??뺣낫 遺덈윭?ㅺ린
 		List<?> listQustnrTmplat = egovQustnrItemManageService.selectQustnrTmplatManageList(qustnrItemManageVO);
 		model.addAttribute("listQustnrTmplat", listQustnrTmplat);
 
@@ -224,7 +224,7 @@ public class EgovQustnrItemManageController {
 
 
 	/**
-	 * 설문항목을 수정한다.
+	 * ?ㅻЦ??ぉ???섏젙?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrItemManageVO
@@ -238,29 +238,29 @@ public class EgovQustnrItemManageController {
 			@Valid @ModelAttribute("qustnrItemManageVO") QustnrItemManageVO qustnrItemManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (bindingResult.hasErrors()) {
-			// 설문항목(을)를 정보 불러오기
+			// ?ㅻЦ??ぉ(??瑜??뺣낫 遺덈윭?ㅺ린
 			List<EgovMap> listQustnrTmplat = egovQustnrItemManageService
 					.selectQustnrTmplatManageList(qustnrItemManageVO);
 			model.addAttribute("listQustnrTmplat", listQustnrTmplat);
-			// 게시물 불러오기
+			// 寃뚯떆臾?遺덈윭?ㅺ린
 			List<EgovMap> sampleList = egovQustnrItemManageService.selectQustnrItemManageDetail(qustnrItemManageVO);
 			model.addAttribute("resultList", sampleList);
 
 			return "egovframework/com/uss/olp/qim/EgovQustnrItemManageModify";
 		}
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		qustnrItemManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		qustnrItemManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -270,7 +270,7 @@ public class EgovQustnrItemManageController {
 	}
 
 	/**
-	 * 설문항목 등록 화면
+	 * ?ㅻЦ??ぉ ?깅줉 ?붾㈃
 	 * @param searchVO
 	 * @param qustnrItemManageVO
 	 * @param model
@@ -281,14 +281,14 @@ public class EgovQustnrItemManageController {
 	public String qustnrItemManageRegistView(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@ModelAttribute("qustnrItemManageVO") QustnrItemManageVO qustnrItemManageVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 설문항목(을)를 정보 불러오기
+		// ?ㅻЦ??ぉ(??瑜??뺣낫 遺덈윭?ㅺ린
 		List<?> listQustnrTmplat = egovQustnrItemManageService.selectQustnrTmplatManageList(qustnrItemManageVO);
 		model.addAttribute("listQustnrTmplat", listQustnrTmplat);
 
@@ -296,7 +296,7 @@ public class EgovQustnrItemManageController {
 	}
 
 	/**
-	 * 설문항목를 등록한다.
+	 * ?ㅻЦ??ぉ瑜??깅줉?쒕떎.
 	 * @param searchVO
 	 * @param qustnrItemManageVO
 	 * @param bindingResult
@@ -310,26 +310,26 @@ public class EgovQustnrItemManageController {
 			@Valid @ModelAttribute("qustnrItemManageVO") QustnrItemManageVO qustnrItemManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 서버 validate 체크
+		// ?쒕쾭 validate 泥댄겕
 		if (bindingResult.hasErrors()) {
-			// 설문항목(을)를 정보 불러오기
+			// ?ㅻЦ??ぉ(??瑜??뺣낫 遺덈윭?ㅺ린
 			List<EgovMap> listQustnrTmplat = egovQustnrItemManageService
 					.selectQustnrTmplatManageList(qustnrItemManageVO);
 			model.addAttribute("listQustnrTmplat", listQustnrTmplat);
 			return "egovframework/com/uss/olp/qim/EgovQustnrItemManageRegist";
 		}
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		qustnrItemManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		qustnrItemManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 

@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 스크랩 서비스 구현체
+ * ?ㅽ겕???쒕퉬??援ы쁽泥?
  */
 @Service("egovScrapService")
 @RequiredArgsConstructor

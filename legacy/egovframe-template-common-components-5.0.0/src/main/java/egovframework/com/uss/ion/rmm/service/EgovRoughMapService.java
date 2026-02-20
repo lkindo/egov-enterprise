@@ -5,24 +5,24 @@ import java.util.List;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
- * 개요
- * - 위치정보연계에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?꾩튂?뺣낫?곌퀎?????Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 건물의 위치정보에 대한 등록, 수정, 삭제, 상세조회 기능을 제공한다.
- * - 건물의 위치정보의 조회기능은 목록, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 嫄대Ъ???꾩튂?뺣낫??????깅줉, ?섏젙, ??젣, ?곸꽭議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 嫄대Ъ???꾩튂?뺣낫??議고쉶湲곕뒫? 紐⑸줉, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 옥찬우
+ * @author ?μ갔??
  * @since 2014.08.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -----------		------		---------
- *   2014.08.27		옥찬우		최초 생성
+ *   2014.08.27		?μ갔??	理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -30,44 +30,44 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 public interface EgovRoughMapService {
 
     /**
-     * 건물의 위치정보 목록을 조회하는 Service interface 메서드
+     * 嫄대Ъ???꾩튂?뺣낫 紐⑸줉??議고쉶?섎뒗 Service interface 硫붿꽌??
      * @param roughMapVO
-     * @return Map<String, Object> 주변건물 위치정보 리스트
+     * @return Map<String, Object> 二쇰?嫄대Ъ ?꾩튂?뺣낫 由ъ뒪??
      * @throws Exception
     */
     List<EgovMap> selectRoughMapList(RoughMapDefaultVO searchVO) throws Exception;
 
     /**
-     * 글 총 개수를 조회한다
+     * 湲 珥?媛쒖닔瑜?議고쉶?쒕떎
      * @param searchVO
-     * @return 총 개수
+     * @return 珥?媛쒖닔
      */
     int selectRoughMapListTotCnt(RoughMapDefaultVO searchVO);
 
     /**
-     * 건물의 위치정보를 상세조회하는 Service interface 메서드
+     * 嫄대Ъ???꾩튂?뺣낫瑜??곸꽭議고쉶?섎뒗 Service interface 硫붿꽌??
      * @param roughMapVO
-     * @return RoughMap 주변건물 위치정보
+     * @return RoughMap 二쇰?嫄대Ъ ?꾩튂?뺣낫
      * @throws Exception
     */
     RoughMapVO selectRoughMapDetail(RoughMapVO roughMapVO) throws Exception;
 
     /**
-     * 건물의 위치정보를 등록하는 Service interface 메서드
+     * 嫄대Ъ???꾩튂?뺣낫瑜??깅줉?섎뒗 Service interface 硫붿꽌??
      * @param roughMap
      * @throws Exception
     */
     void insertRoughMap(RoughMapVO roughMap) throws Exception;
 
     /**
-     * 건물의 위치정보를 수정하는 Service interface 메서드
+     * 嫄대Ъ???꾩튂?뺣낫瑜??섏젙?섎뒗 Service interface 硫붿꽌??
      * @param roughMap
      * @throws Exception
     */
     void updateRoughMap(RoughMapVO roughMap) throws Exception;
 
     /**
-     * 건물의 위치정보를 삭제하는 Service interface 메서드
+     * 嫄대Ъ???꾩튂?뺣낫瑜???젣?섎뒗 Service interface 硫붿꽌??
      * @param roughMap
      * @throws Exception
     */

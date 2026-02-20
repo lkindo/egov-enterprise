@@ -29,27 +29,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 휴가관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?닿?愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 휴가관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 휴가관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?닿?愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?닿?愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2010.06.15  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -66,7 +66,7 @@ public class EgovVcatnManageController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 휴가관리 목록화면 이동
+	 * ?닿?愿由?紐⑸줉?붾㈃ ?대룞
 	 * 
 	 * @return String
 	 * @exception Exception
@@ -78,12 +78,12 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 휴가관리정보를 관리하기 위해 등록된 휴가관리 목록을 조회한다.
+	 * ?닿?愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???닿?愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "휴가관리", order = 900, gid = 50)
+	@IncludedInfo(name = "?닿?愿由?, order = 900, gid = 50)
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnManageList.do")
 	public String selectVcatnManageList(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO, ModelMap model)
 			throws Exception {
@@ -105,7 +105,7 @@ public class EgovVcatnManageController {
 
 		if (resultVO == null) {
 			model.addAttribute("messageTemp",
-                egovMessageSource.getMessage("comUssIonVct.vcatnManageList.validate.move")); // 휴가 사용을 위한 개인연차 등록을 위해 개인연차관리 콤포넌트로 이동
+                egovMessageSource.getMessage("comUssIonVct.vcatnManageList.validate.move")); // ?닿? ?ъ슜???꾪븳 媛쒖씤?곗감 ?깅줉???꾪빐 媛쒖씤?곗감愿由?肄ㅽ룷?뚰듃濡??대룞
 			return "egovframework/com/uss/ion/yrc/EgovIndvdlYrycManageList";
 		} else {
 
@@ -143,21 +143,21 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 등록된 휴가관리의 상세정보를 조회한다.
+	 * ?깅줉???닿?愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnManageDetail.do")
 	public String selectVcatnManage(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
 			@ModelAttribute("vcatnManage") VcatnManage vcatnManage, @RequestParam Map<?, ?> commandMap, ModelMap model)
 			throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		vcatnManageVO.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgnde()));
 		vcatnManageVO.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEndde()));
 
-		// 등록 상세정보
+		// ?깅줉 ?곸꽭?뺣낫
 		VcatnManageVO vcatnManageVOTemp = egovVcatnManageService.selectVcatnManage(vcatnManageVO);
 
 		model.addAttribute("vcatnManageVO", vcatnManageVOTemp);
@@ -178,9 +178,9 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 휴가관리 등록 화면으로 이동한다.
+	 * ?닿?愿由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @return String - 리턴 Url
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnRegist.do")
 	public String insertViewVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
@@ -204,10 +204,10 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 휴가관리정보를 신규로 등록한다.
+	 * ?닿?愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
+	 * @param vcatnManage - ?닿?愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/insertVcatnManage.do")
 	public String insertVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
@@ -219,13 +219,13 @@ public class EgovVcatnManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 승인권자 소속명, 성명 유지
+		// ?뱀씤沅뚯옄 ?뚯냽紐? ?깅챸 ?좎?
 		model.addAttribute("infSanctnDtNm",
 				commandMap.get("sanctnDtNm") == null ? "" : (String) commandMap.get("sanctnDtNm"));
 		model.addAttribute("infOrgnztNm",
 				commandMap.get("orgnztNm") == null ? "" : (String) commandMap.get("orgnztNm"));
 
-		String sEnddeView = commandMap.get("enddeView") == null ? "" : (String) commandMap.get("enddeView"); // 종료일자 구분
+		String sEnddeView = commandMap.get("enddeView") == null ? "" : (String) commandMap.get("enddeView"); // 醫낅즺?쇱옄 援щ텇
 		if (!sEnddeView.equals("")) {
 			vcatnManage.setEndde(sEnddeView);
 		}
@@ -251,10 +251,10 @@ public class EgovVcatnManageController {
 
 			vcatnManageVO.setApplcntId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			vcatnManageVO.setSearchKeyword(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
-			// 시작일자 포함여부
+			// ?쒖옉?쇱옄 ?ы븿?щ?
 			iTemp = egovVcatnManageService.selectVcatnManageDplctAt(vcatnManageVO);
 			vcatnManageVO.setSearchKeyword(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
-			// 종료일자 포함여부
+			// 醫낅즺?쇱옄 ?ы븿?щ?
 			iTemp += egovVcatnManageService.selectVcatnManageDplctAt(vcatnManageVO);
 
 			if (iTemp == 0) {
@@ -318,10 +318,10 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 기 등록된 휴가관리정보를 수정한다.
+	 * 湲??깅줉???닿?愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 *
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
+	 * @param vcatnManage - ?닿?愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/updtVcatnManage.do")
 	public String updtVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage,
@@ -330,7 +330,7 @@ public class EgovVcatnManageController {
 		String sTemp = null;
 		String sTempMessage = null;
 
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -340,10 +340,10 @@ public class EgovVcatnManageController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (user != null) {
-			// 221116 김혜준 2022 시큐어코딩 조치
+			// 221116 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 			vcatnManage.setFrstRegisterId(EgovStringUtil.isNullToString(user.getUniqId()));
 			sTemp = egovVcatnManageService.updtVcatnManage(vcatnManage, vcatnManageVO);
-			// 221116 김혜준 2022 시큐어코딩 조치
+			// 221116 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 			status.setComplete();
 			// sTemp = egovVcatnManageService.insertVcatnManage(vcatnManage, vcatnManageVO);
 
@@ -387,10 +387,10 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 기 등록된 휴가관리정보를 삭제한다.
+	 * 湲??깅줉???닿?愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
+	 * @param vcatnManage - ?닿?愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/deleteVcatnManage.do")
 	public String deleteVcatnManage(@ModelAttribute("vcatnManage") VcatnManage vcatnManage, SessionStatus status,
@@ -403,14 +403,14 @@ public class EgovVcatnManageController {
 		return "forward:/uss/ion/vct/EgovVcatnManageList.do";
 	}
 
-	/*** 승인관련 ***/
+	/*** ?뱀씤愿??***/
 	/**
-	 * 휴가관리정보 승인 처리를 위해 신청된 휴가관리 목록을 조회한다.
+	 * ?닿?愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???닿?愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "휴가승인관리", order = 901, gid = 50)
+	@IncludedInfo(name = "?닿??뱀씤愿由?, order = 901, gid = 50)
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnConfmList.do")
 	public String selectVcatnManageConfmList(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
 			ModelMap model) throws Exception {
@@ -436,7 +436,7 @@ public class EgovVcatnManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		vcatnManageVO.setSanctnerId(user.getUniqId()); // 사용자가 승인권자인지 조건값 setting
+		vcatnManageVO.setSanctnerId(user.getUniqId()); // ?ъ슜?먭? ?뱀씤沅뚯옄?몄? 議곌굔媛?setting
 
 		vcatnManageVO.setSearchKeyword(vcatnManageVO.getSearchYear() + vcatnManageVO.getSearchMonth());
 		vcatnManageVO.setVcatnManageList(egovVcatnManageService.selectVcatnManageConfmList(vcatnManageVO));
@@ -454,10 +454,10 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 휴가승인관리 상세정보를 조회한다.
+	 * ?닿??뱀씤愿由??곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return String - 리턴 Url
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/EgovVcatnConfm.do")
 	public String selectVcatnConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
@@ -465,7 +465,7 @@ public class EgovVcatnManageController {
 		vcatnManageVO.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgnde()));
 		vcatnManageVO.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEndde()));
 
-		// 등록 상세정보
+		// ?깅줉 ?곸꽭?뺣낫
 		VcatnManageVO vcatnManageVOTemp = egovVcatnManageService.selectVcatnManage(vcatnManageVO);
 
 		model.addAttribute("vcatnManageVO", vcatnManageVOTemp);
@@ -476,10 +476,10 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 신청된 휴가를 승인처리한다.
+	 * ?좎껌???닿?瑜??뱀씤泥섎━?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String - 리턴 Url
+	 * @param vcatnManage - ?닿?愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/vct/updtVcatnConfm.do")
 	public String updtVcatnManageConfm(@ModelAttribute("vcatnManageVO") VcatnManageVO vcatnManageVO,
@@ -490,7 +490,7 @@ public class EgovVcatnManageController {
 		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -510,9 +510,9 @@ public class EgovVcatnManageController {
 	}
 
 	/**
-	 * 휴가정보 반려처리 화면을 호출한다.
+	 * ?닿??뺣낫 諛섎젮泥섎━ ?붾㈃???몄텧?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
+	 * @param vcatnManage - ?닿?愿由?model
 	 * @return String
 	 *
 	 * @param vcatnManage

@@ -30,9 +30,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * JPA 기반 ?�용??관�??�비??구현�?
- * - ?�자?��??�레?�워??5.0 ?�환???�증 ?�건 충족
- * - EgovAbstractServiceImpl ?�속 �?EgovUserService ?�터?�이??구현
+ * JPA 湲곕컲 ?ъ슜??愿由??쒕퉬??援ы쁽泥?
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
+ * - EgovAbstractServiceImpl ?곸냽 諛?EgovUserService ?명꽣?섏씠??援ы쁽
  */
 @Service("egovUserService")
 @Transactional(readOnly = true)
@@ -52,7 +52,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용??목록 조회
+         * ?ъ슜??紐⑸줉 議고쉶
          */
         @Override
         @Cacheable(value = "users", key = "'userList'")
@@ -77,7 +77,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용??목록 ?�이�?조회 구현
+         * ?ъ슜??紐⑸줉 ?섏씠吏?議고쉶 援ы쁽
          */
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
@@ -107,7 +107,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용???�세 조회
+         * ?ъ슜???곸꽭 議고쉶
          */
         @Override
         @Cacheable(value = "users", key = "#id")
@@ -129,7 +129,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용???�록 (비�?번호 ?�호???�용)
+         * ?ъ슜???깅줉 (鍮꾨?踰덊샇 ?뷀샇???곸슜)
          */
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
@@ -154,7 +154,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용???�보 ?�정
+         * ?ъ슜???뺣낫 ?섏젙
          */
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
@@ -189,7 +189,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 비�?번호 변�?
+         * 鍮꾨?踰덊샇 蹂寃?
          */
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
@@ -204,7 +204,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용????��
+         * ?ъ슜????젣
          */
         @Override
         @Transactional
@@ -217,7 +217,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * ?�용???�원가??(기존 API ?�환?? 비�?번호 ?�호???�용)
+         * ?ъ슜???뚯썝媛??(湲곗〈 API ?명솚?? 鍮꾨?踰덊샇 ?뷀샇???곸슜)
          */
         @Override
         @Transactional
@@ -247,7 +247,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 비�?번호 검�?
+         * 鍮꾨?踰덊샇 寃利?
          */
         @Override
         public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {

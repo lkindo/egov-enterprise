@@ -24,20 +24,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 명함정보를 관리하기 위한 컨트롤러 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 紐낇븿?뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.3.30  이삼섭          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
- *   2022.11.11 김혜준          시큐어코딩 처리
+ *   2009.3.30  ?댁궪??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
+ *   2022.11.11 源?쒖?          ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -54,7 +54,7 @@ public class EgovNcrdManageController {
     //Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 명함 정보에 대한 목록을 조회한다.
+     * 紐낇븿 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param ncrdVO
      * @param sessionVO
@@ -63,12 +63,12 @@ public class EgovNcrdManageController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="명함관리",order = 370 ,gid = 40)
+    @IncludedInfo(name="紐낇븿愿由?,order = 370 ,gid = 40)
     @RequestMapping("/cop/ncm/selectNcrdInfs.do")
     public String selectNcrdItems(@ModelAttribute("searchVO") NameCardVO ncrdVO, SessionStatus status, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		 // KISA 보안취약점 조치 (2018-12-10, 신용호)
+		 // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -102,7 +102,7 @@ public class EgovNcrdManageController {
     }
 
     /**
-     * 명함 정보를 삭제한다.
+     * 紐낇븿 ?뺣낫瑜???젣?쒕떎.
      *
      * @param nameCard
      * @param sessionVO
@@ -117,21 +117,21 @@ public class EgovNcrdManageController {
 
 	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-	 // KISA 보안취약점 조치 (2018-12-10, 신용호)
+	 // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
     if(!isAuthenticated) {
         return "redirect:/uat/uia/egovLoginUsr.do";
     }
 
 	ncrdVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-	// 2022.11.11 시큐어코딩 처리
+	// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 	ncrdService.deleteNcrdItem(ncrdVO);
 
 	return "forward:/cop/ncm/selectNcrdInfs.do";
     }
 
     /**
-     * 명함 정보 등록을 위한 등록페이지로 이동한다.
+     * 紐낇븿 ?뺣낫 ?깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
      *
      * @param nameCard
      * @param sessionVO
@@ -146,7 +146,7 @@ public class EgovNcrdManageController {
     }
 
     /**
-     * 명함 정보를 등록한다.
+     * 紐낇븿 ?뺣낫瑜??깅줉?쒕떎.
      *
      * @param nameCard
      * @param sessionVO
@@ -161,7 +161,7 @@ public class EgovNcrdManageController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		 // KISA 보안취약점 조치 (2018-12-10, 신용호)
+		 // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -173,14 +173,14 @@ public class EgovNcrdManageController {
 		nameCard.setAdres(nameCard.getZipCode() + " " + nameCard.getAdres());
 		nameCard.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		ncrdService.insertNcrdItem(nameCard);
 
 		return "forward:/cop/ncm/selectMyNcrdUseInf.do";
     }
 
     /**
-     * 명함 정보에 대한 상세정보를 조회한다
+     * 紐낇븿 ?뺣낫??????곸꽭?뺣낫瑜?議고쉶?쒕떎
      *
      * @param nameCard
      * @param sessionVO
@@ -194,7 +194,7 @@ public class EgovNcrdManageController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -209,7 +209,7 @@ public class EgovNcrdManageController {
     }
 
     /**
-     * 명함 정보를 수정한다.
+     * 紐낇븿 ?뺣낫瑜??섏젙?쒕떎.
      *
      * @param nameCard
      * @param sessionVO
@@ -223,7 +223,7 @@ public class EgovNcrdManageController {
 	    @Valid @ModelAttribute("nameCard") NameCard nameCard, BindingResult bindingResult, SessionStatus status, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -244,14 +244,14 @@ public class EgovNcrdManageController {
 
 		nameCard.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		ncrdService.updateNcrdItem(nameCard);
 
 		return "forward:/cop/ncm/selectMyNcrdUseInf.do";
     }
 
     /**
-     * 명함사용자 정보를 등록한다.
+     * 紐낇븿?ъ슜???뺣낫瑜??깅줉?쒕떎.
      *
      * @param ncrdUser
      * @param sessionVO
@@ -265,7 +265,7 @@ public class EgovNcrdManageController {
 	    SessionStatus status, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		 // KISA 보안취약점 조치 (2018-12-10, 신용호)
+		 // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -273,14 +273,14 @@ public class EgovNcrdManageController {
 		ncrdUser.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		ncrdUser.setUseAt("Y");
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		ncrdService.insertNcrdUseInf(ncrdUser);
 
 		return "forward:/cop/ncm/selectMyNcrdUseInf.do";
     }
 
     /**
-     * 명함 정보에 대한 목록을 조회한다.
+     * 紐낇븿 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param ncrdUser
      * @param sessionVO
@@ -289,12 +289,12 @@ public class EgovNcrdManageController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="내명함목록",order = 371 ,gid = 40)
+    @IncludedInfo(name="?대챸?⑤ぉ濡?,order = 371 ,gid = 40)
     @RequestMapping("/cop/ncm/selectMyNcrdUseInf.do")
     public String selectNcrdUseInf(@ModelAttribute("searchVO") NameCardUser ncrdUser, SessionStatus status, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		 // KISA 보안취약점 조치 (2018-12-10, 신용호)
+		 // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
@@ -328,7 +328,7 @@ public class EgovNcrdManageController {
     }
 
     /**
-     * 명함사용자 정보를 수정한다.
+     * 紐낇븿?ъ슜???뺣낫瑜??섏젙?쒕떎.
      *
      * @param ncrdUser
      * @param sessionVO
@@ -354,7 +354,7 @@ public class EgovNcrdManageController {
     }
 
     /**
-     * 명함 정보에 대한 상세정보를 조회한다.
+     * 紐낇븿 ?뺣낫??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param ncrdVO
      * @param sessionVO
@@ -366,7 +366,7 @@ public class EgovNcrdManageController {
     public String selectNcrdItemforPop(@ModelAttribute("searchVO") NameCardVO ncrdVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 	    if(!isAuthenticated) {
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }

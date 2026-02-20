@@ -3,18 +3,18 @@ package egovframework.com.uss.umt.service;
 import java.io.Serializable;
 
 /**
- * 가입약관VO클래스로서가입약관확인시 비지니스로직 처리용 항목을 구성한다.
- * @author 공통서비스 개발팀 조재영
+ * 媛?낆빟愿VO?대옒?ㅻ줈?쒓??낆빟愿?뺤씤??鍮꾩??덉뒪濡쒖쭅 泥섎━????ぉ??援ъ꽦?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
+ *   2009.04.10  議곗옱??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -22,17 +22,17 @@ public class StplatVO implements Serializable {
 
 	private static final long serialVersionUID = 3744005602026645L;
 
-	/** 약관아이디*/
+	/** ?쎄??꾩씠??/
     private String useStplatId;
 
-    /** 사용약관안내*/
+    /** ?ъ슜?쎄??덈궡*/
     private String useStplatCn;
 
-    /** 정보동의안내*/
+    /** ?뺣낫?숈쓽?덈궡*/
     private String infoProvdAgeCn;
 
     /**
-	 * useStplatId attribute 값을  리턴한다.
+	 * useStplatId attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUseStplatId() {
@@ -40,7 +40,7 @@ public class StplatVO implements Serializable {
 	}
 
 	/**
-	 * useStplatId attribute 값을 설정한다.
+	 * useStplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param useStplatId String
 	 */
 	public void setUseStplatId(String useStplatId) {
@@ -48,7 +48,7 @@ public class StplatVO implements Serializable {
 	}
 
 	/**
-	 * useStplatCn attribute 값을  리턴한다.
+	 * useStplatCn attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUseStplatCn() {
@@ -56,7 +56,7 @@ public class StplatVO implements Serializable {
 	}
 
 	/**
-	 * useStplatCn attribute 값을 설정한다.
+	 * useStplatCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param useStplatCn String
 	 */
 	public void setUseStplatCn(String useStplatCn) {
@@ -64,7 +64,7 @@ public class StplatVO implements Serializable {
 	}
 
 	/**
-	 * infoProvdAgeCn attribute 값을  리턴한다.
+	 * infoProvdAgeCn attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInfoProvdAgeCn() {
@@ -72,7 +72,7 @@ public class StplatVO implements Serializable {
 	}
 
 	/**
-	 * infoProvdAgeCn attribute 값을 설정한다.
+	 * infoProvdAgeCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param infoProvdAgeCn String
 	 */
 	public void setInfoProvdAgeCn(String infoProvdAgeCn) {

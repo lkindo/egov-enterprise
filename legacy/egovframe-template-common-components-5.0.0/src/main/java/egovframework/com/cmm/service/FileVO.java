@@ -4,14 +4,14 @@ import egovframework.com.cmm.ComDefaultVO;
 
 /**
  * @Class Name : FileVO.java
- * @Description : 파일정보 처리를 위한 VO 클래스
+ * @Description : ?뚯씪?뺣낫 泥섎━瑜??꾪븳 VO ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 25.     이삼섭
+ *    2009. 3. 25.     ?댁궪??
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 25.
  * @version
  * @see
@@ -21,44 +21,44 @@ import egovframework.com.cmm.ComDefaultVO;
 public class FileVO extends ComDefaultVO {
 
     /**
-     * 첨부파일 아이디
+     * 泥⑤??뚯씪 ?꾩씠??
      */
     public String atchFileId = "";
     /**
-     * 생성일자
+     * ?앹꽦?쇱옄
      */
     public String creatDt = "";
     /**
-     * 파일내용
+     * ?뚯씪?댁슜
      */
     public String fileCn = "";
     /**
-     * 파일확장자
+     * ?뚯씪?뺤옣??
      */
     public String fileExtsn = "";
     /**
-     * 파일크기
+     * ?뚯씪?ш린
      */
     public String fileMg = "";
     /**
-     * 파일연번
+     * ?뚯씪?곕쾲
      */
     public String fileSn = "";
     /**
-     * 파일저장경로
+     * ?뚯씪??κ꼍濡?
      */
     public String fileStreCours = "";
     /**
-     * 원파일명
+     * ?먰뙆?쇰챸
      */
     public String orignlFileNm = "";
     /**
-     * 저장파일명
+     * ??ν뙆?쇰챸
      */
     public String streFileNm = "";
 
     /**
-     * atchFileId attribute를 리턴한다.
+     * atchFileId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the atchFileId
      */
@@ -67,7 +67,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * atchFileId attribute 값을 설정한다.
+     * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param atchFileId
      *            the atchFileId to set
@@ -77,7 +77,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * creatDt attribute를 리턴한다.
+     * creatDt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the creatDt
      */
@@ -86,7 +86,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * creatDt attribute 값을 설정한다.
+     * creatDt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param creatDt
      *            the creatDt to set
@@ -96,7 +96,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileCn attribute를 리턴한다.
+     * fileCn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileCn
      */
@@ -105,7 +105,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileCn attribute 값을 설정한다.
+     * fileCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileCn
      *            the fileCn to set
@@ -115,7 +115,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileExtsn attribute를 리턴한다.
+     * fileExtsn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileExtsn
      */
@@ -124,7 +124,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileExtsn attribute 값을 설정한다.
+     * fileExtsn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileExtsn
      *            the fileExtsn to set
@@ -134,7 +134,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileMg attribute를 리턴한다.
+     * fileMg attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileMg
      */
@@ -143,7 +143,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileMg attribute 값을 설정한다.
+     * fileMg attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileMg
      *            the fileMg to set
@@ -153,7 +153,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileSn attribute를 리턴한다.
+     * fileSn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileSn
      */
@@ -162,7 +162,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileSn attribute 값을 설정한다.
+     * fileSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileSn
      *            the fileSn to set
@@ -172,7 +172,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileStreCours attribute를 리턴한다.
+     * fileStreCours attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileStreCours
      */
@@ -181,7 +181,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * fileStreCours attribute 값을 설정한다.
+     * fileStreCours attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileStreCours
      *            the fileStreCours to set
@@ -191,7 +191,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * orignlFileNm attribute를 리턴한다.
+     * orignlFileNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the orignlFileNm
      */
@@ -200,7 +200,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * orignlFileNm attribute 값을 설정한다.
+     * orignlFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param orignlFileNm
      *            the orignlFileNm to set
@@ -210,7 +210,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * streFileNm attribute를 리턴한다.
+     * streFileNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the streFileNm
      */
@@ -219,7 +219,7 @@ public class FileVO extends ComDefaultVO {
     }
 
     /**
-     * streFileNm attribute 값을 설정한다.
+     * streFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param streFileNm
      *            the streFileNm to set

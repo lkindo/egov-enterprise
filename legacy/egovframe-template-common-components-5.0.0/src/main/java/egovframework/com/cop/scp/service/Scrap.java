@@ -5,58 +5,58 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 스크랩 서비스 데이터 처리 모델
- * @author 공통컴포넌트개발팀 한성곤
+ * ?ㅽ겕???쒕퉬???곗씠??泥섎━ 紐⑤뜽
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.07.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.10  한성곤          최초 생성
+ *   2009.07.10  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class Scrap implements Serializable {
-    /** 스크랩 ID */
+    /** ?ㅽ겕??ID */
     private String scrapId = "";
     
-    /** 게시판 ID */
+    /** 寃뚯떆??ID */
     private String bbsId = "";
     
-    /** 게시물 번호 */
+    /** 寃뚯떆臾?踰덊샇 */
     private long nttId = 0L;
     
-    /** 스크랩명 */
+    /** ?ㅽ겕?⑸챸 */
     private String scrapNm = "";
     
-    /** 사용 여부 */
+    /** ?ъ슜 ?щ? */
     private String useAt = "";
     
-    /** 유일 아이디 */
+    /** ?좎씪 ?꾩씠??*/
     private String uniqId = "";
 
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
 
     /**
-     * scrapId attribute를 리턴한다.
+     * scrapId attribute瑜?由ы꽩?쒕떎.
      * @return the scrapId
      */
     public String getScrapId() {
@@ -64,7 +64,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * scrapId attribute 값을 설정한다.
+     * scrapId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param scrapId the scrapId to set
      */
     public void setScrapId(String scrapId) {
@@ -72,7 +72,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * bbsId attribute를 리턴한다.
+     * bbsId attribute瑜?由ы꽩?쒕떎.
      * @return the bbsId
      */
     public String getBbsId() {
@@ -80,7 +80,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * bbsId attribute 값을 설정한다.
+     * bbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param bbsId the bbsId to set
      */
     public void setBbsId(String bbsId) {
@@ -88,7 +88,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * nttId attribute를 리턴한다.
+     * nttId attribute瑜?由ы꽩?쒕떎.
      * @return the nttId
      */
     public long getNttId() {
@@ -96,7 +96,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * nttId attribute 값을 설정한다.
+     * nttId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param nttId the nttId to set
      */
     public void setNttId(long nttId) {
@@ -104,7 +104,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * scrapNm attribute를 리턴한다.
+     * scrapNm attribute瑜?由ы꽩?쒕떎.
      * @return the scrapNm
      */
     public String getScrapNm() {
@@ -112,7 +112,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * scrapNm attribute 값을 설정한다.
+     * scrapNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param scrapNm the scrapNm to set
      */
     public void setScrapNm(String scrapNm) {
@@ -120,7 +120,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * @return the useAt
      */
     public String getUseAt() {
@@ -128,7 +128,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param useAt the useAt to set
      */
     public void setUseAt(String useAt) {
@@ -136,7 +136,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
@@ -144,7 +144,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterId the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
@@ -152,7 +152,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -160,7 +160,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -168,7 +168,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
@@ -176,7 +176,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -184,7 +184,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
@@ -192,7 +192,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param lastUpdusrId the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
@@ -200,7 +200,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
@@ -208,7 +208,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -216,7 +216,7 @@ public class Scrap implements Serializable {
     }
     
     /**
-     * uniqId attribute를 리턴한다.
+     * uniqId attribute瑜?由ы꽩?쒕떎.
      * @return the uniqId
      */
     public String getUniqId() {
@@ -224,7 +224,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * uniqId attribute 값을 설정한다.
+     * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param uniqId the uniqId to set
      */
     public void setUniqId(String uniqId) {
@@ -232,7 +232,7 @@ public class Scrap implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

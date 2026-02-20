@@ -8,48 +8,48 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 파일 관리 서비스 인터페이스
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족을 위한 인터페이스 분리
+ * ?뚯씪 愿由??쒕퉬???명꽣?섏씠??
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”???꾪븳 ?명꽣?섏씠??遺꾨━
  */
 public interface EgovFileService {
 
     /**
-     * 파일 업로드 (멀티파일 지원)
+     * ?뚯씪 ?낅줈??(硫?고뙆??吏??
      */
     String uploadFiles(List<MultipartFile> files) throws IOException;
 
     /**
-     * 첨부파일 목록 조회
+     * 泥⑤??뚯씪 紐⑸줉 議고쉶
      */
     List<FileDto> getFileList(String atchFileId);
 
     /**
-     * 파일 다운로드를 위한 Resource 조회
+     * ?뚯씪 ?ㅼ슫濡쒕뱶瑜??꾪븳 Resource 議고쉶
      */
     Resource getFileResource(String atchFileId, Integer fileSn) throws IOException;
 
     /**
-     * 파일 삭제 (전체)
+     * ?뚯씪 ??젣 (?꾩껜)
      */
     void deleteFiles(String atchFileId) throws IOException;
 
     /**
-     * 파일 삭제 (단별)
+     * ?뚯씪 ??젣 (?⑤퀎)
      */
     void deleteFile(String atchFileId, Integer fileSn) throws IOException;
 
     /**
-     * 파일 상세 조회 (단건)
+     * ?뚯씪 ?곸꽭 議고쉶 (?④굔)
      */
     FileDto getFileDetail(String atchFileId, Integer fileSn);
 
     /**
-     * 파일 수정 (추가 업로드)
+     * ?뚯씪 ?섏젙 (異붽? ?낅줈??
      */
     void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException;
 
     /**
-     * 모든 파일 목록 조회 (Admin 용)
+     * 紐⑤뱺 ?뚯씪 紐⑸줉 議고쉶 (Admin ??
      */
     org.springframework.data.domain.Page<FileDto> getAllFileList(org.springframework.data.domain.Pageable pageable,
             String searchKeyword);

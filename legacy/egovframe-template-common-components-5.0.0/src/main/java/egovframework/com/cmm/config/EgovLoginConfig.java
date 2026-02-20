@@ -1,31 +1,31 @@
 package egovframework.com.cmm.config;
 
 /**
- * EgovLoginConfig 클래스
+ * EgovLoginConfig ?대옒??
  * <Notice>
- * 	    사용자 인증수행제한에 대한 설정을 관리하는 클래스 
+ * 	    ?ъ슜???몄쬆?섑뻾?쒗븳??????ㅼ젙??愿由ы븯???대옒??
  * <Disclaimer>
  *		N/A
  *
- * @author 장동한
+ * @author ?λ룞??
  * @since 2017.07.17
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  -------      -------------  ----------------------
- *   2016.07.17  장동한           최초 생성
+ *   2016.07.17  ?λ룞??          理쒖큹 ?앹꽦
  * </pre>
  */
 
 
 public class EgovLoginConfig {
-	//로그인 인증 제한 여부
+	//濡쒓렇???몄쬆 ?쒗븳 ?щ?
 	boolean lock = false;
-	//로그인 인증 제한 횟수
+	//濡쒓렇???몄쬆 ?쒗븳 ?잛닔
 	int lockCount = 0;
 
 	public boolean isLock() {

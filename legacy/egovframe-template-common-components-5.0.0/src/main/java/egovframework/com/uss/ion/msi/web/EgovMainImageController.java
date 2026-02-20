@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 메인화면이미지에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붿씤?붾㈃?대?吏?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 메인화면이미지에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 메인화면이미지의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 硫붿씤?붾㈃?대?吏??????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 硫붿씤?붾㈃?대?吏??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:08:57
+ * @created 03-8-2009 ?ㅽ썑 2:08:57
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2010.8.3	이문준          최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.8.3	?대Ц以          理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -70,7 +70,7 @@ public class EgovMainImageController {
     private EgovMainImageService egovMainImageService;
 
     /**
-	 * 메인화면이미지 목록화면 이동
+	 * 硫붿씤?붾㈃?대?吏 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -81,11 +81,11 @@ public class EgovMainImageController {
     }
 
 	/**
-	 * 메인화면이미지정보를 관리하기 위해 등록된 메인화면이미지 목록을 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return String - 리턴 Url
+	 * 硫붿씤?붾㈃?대?吏?뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉??硫붿씤?붾㈃?대?吏 紐⑸줉??議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="메인이미지관리", order = 770 ,gid = 50)
+    @IncludedInfo(name="硫붿씤?대?吏愿由?, order = 770 ,gid = 50)
     @RequestMapping("/uss/ion/msi/selectMainImageList.do")
 	public String selectMainImageList(@ModelAttribute("mainImageVO") MainImageVO mainImageVO,
                                        ModelMap model) throws Exception {
@@ -114,9 +114,9 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 등록된 메인화면이미지의 상세정보를 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return String - 리턴 Url
+	 * ?깅줉??硫붿씤?붾㈃?대?吏???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/msi/getMainImage.do")
 	public String selectMainImage(@RequestParam("imageId") String imageId,
@@ -131,8 +131,8 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 메인인화면이미지 등록 화면으로 이동한다.
-	 * @return String - 리턴 Url
+	 * 硫붿씤?명솕硫댁씠誘몄? ?깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/msi/addViewMainImage.do")
 	public String insertViewMainImage(@ModelAttribute("mainImageVO") MainImageVO mainImageVO) throws Exception {
@@ -140,9 +140,9 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 메인화면이미지정보를 신규로 등록한다.
-	 * @param mainImage - 메인이미지 model
-	 * @return String - 리턴 Url
+	 * 硫붿씤?붾㈃?대?吏?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
+	 * @return String - 由ы꽩 Url
 	 */
     @SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/msi/addMainImage.do")
@@ -198,9 +198,9 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보를 수정한다.
-	 * @param mainImage - 메인이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫瑜??섏젙?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
+	 * @return String - 由ы꽩 Url
 	 */
     @SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/msi/updtMainImage.do")
@@ -257,9 +257,9 @@ public class EgovMainImageController {
     }
 
 	/**
-	 * 기 등록된 메인화면이미지정보를 삭제한다.
-	 * @param mainImage - 메인이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫瑜???젣?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/msi/removeMainImage.do")
 	public String deleteMainImage(@RequestParam("imageId") String imageId,
@@ -273,9 +273,9 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보를 삭제한다.
-	 * @param mainImage - 메인이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫瑜???젣?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/msi/removeMainImageList.do")
 	public String deleteMainImageList(@RequestParam("imageIds") String imageIds,
@@ -294,20 +294,20 @@ public class EgovMainImageController {
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보의 이미지파일을 삭제한다.
-	 * @param mainImage - 메인이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫???대?吏?뚯씪????젣?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
+	 * @return String - 由ы꽩 Url
 	 */
 	public String deleteMainImageFile(MainImage mainImage) throws Exception {
 		return "";
 	}
 
 	/**
-	 * 메인화면이미지가 특정화면에 반영된 결과를 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return String - 리턴 Url
+	 * 硫붿씤?붾㈃?대?吏媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name="메인이미지 반영결과보기", order = 771 ,gid = 50)
+	@IncludedInfo(name="硫붿씤?대?吏 諛섏쁺寃곌낵蹂닿린", order = 771 ,gid = 50)
 	@RequestMapping(value="/uss/ion/msi/getMainImageResult.do")
 	public String selectMainImageResult(@ModelAttribute("mainImageVO") MainImageVO mainImageVO,
 		                                 ModelMap model) throws Exception {

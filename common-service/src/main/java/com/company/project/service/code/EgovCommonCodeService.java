@@ -11,22 +11,22 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 /**
- * 공통 코드 관리 서비스 인터페이스 (관리자용)
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족을 위한 인터페이스 분리
+ * 怨듯넻 肄붾뱶 愿由??쒕퉬???명꽣?섏씠??(愿由ъ옄??
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”???꾪븳 ?명꽣?섏씠??遺꾨━
  */
 public interface EgovCommonCodeService {
 
     /**
-     * 그룹별 코드 목록 조회
+     * 洹몃９蹂?肄붾뱶 紐⑸줉 議고쉶
      */
     List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId);
 
     /**
-     * 코드 생성
+     * 肄붾뱶 ?앹꽦
      */
     CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request);
 
-    // --- 공통분류코드 (CmmnClCode) ---
+    // --- 怨듯넻遺꾨쪟肄붾뱶 (CmmnClCode) ---
     List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnClCodeListTotCnt(@NonNull ComDefaultVO searchVO);
@@ -39,7 +39,7 @@ public interface EgovCommonCodeService {
 
     void deleteCmmnClCode(@NonNull CmmnClCodeDto dto);
 
-    // --- 공통코드(그룹) (CmmnCode) ---
+    // --- 怨듯넻肄붾뱶(洹몃９) (CmmnCode) ---
     List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnCodeListTotCnt(@NonNull ComDefaultVO searchVO);
@@ -52,7 +52,7 @@ public interface EgovCommonCodeService {
 
     void deleteCmmnCode(@NonNull CmmnCodeDto dto);
 
-    // --- 공통상세코드 (CmmnDetailCode) ---
+    // --- 怨듯넻?곸꽭肄붾뱶 (CmmnDetailCode) ---
     List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnDetailCodeListTotCnt(@NonNull ComDefaultVO searchVO);

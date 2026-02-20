@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.web;
 
@@ -28,24 +28,24 @@ import jakarta.servlet.http.HttpSession;
 
 /**
  * @Class Name : EgovWebSocketMessengerController.java
- * @Description : 웹소켓 메신저 메인화면을 나타내기 위한 컨트롤러
+ * @Description : ?뱀냼耳?硫붿떊? 硫붿씤?붾㈃???섑??닿린 ?꾪븳 而⑦듃濡ㅻ윭
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014. 11. 27.    이영지
+ *    2014. 11. 27.    ?댁쁺吏
  *
  */
 @Controller
 public class EgovWebSocketMessengerController {
 
 	/**
-	 * 웹소켓 메신저 접속화면으로 이동한다.
-	 * @param session 사용자세션
-	 * @param model 모델
+	 * ?뱀냼耳?硫붿떊? ?묒냽?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @param session ?ъ슜?먯꽭??
+	 * @param model 紐⑤뜽
 	 * @return view name
 	 */
-	@IncludedInfo(name="웹소켓 메신저", order = 3200, gid = 100)
+	@IncludedInfo(name="?뱀냼耳?硫붿떊?", order = 3200, gid = 100)
 	@RequestMapping(value="/cop/msg/websocketMessengerView.do")
 	public String websocketMessengerView(HttpSession session, ModelMap model) {
 		model.addAttribute("loginVO", session.getAttribute("loginVO"));
@@ -53,9 +53,9 @@ public class EgovWebSocketMessengerController {
 	}
 
 	/**
-	 * 웹 소켓 메신저 메인화면(대화상대 리스트화면)으로 이동한다.
-	 * @param session 사용자세션
-	 * @param model 모델
+	 * ???뚯폆 硫붿떊? 硫붿씤?붾㈃(??붿긽? 由ъ뒪?명솕硫??쇰줈 ?대룞?쒕떎.
+	 * @param session ?ъ슜?먯꽭??
+	 * @param model 紐⑤뜽
 	 * @return view name
 	 */
 	@RequestMapping(value="/cop/msg/websocketMessengerMain.do")
@@ -65,11 +65,11 @@ public class EgovWebSocketMessengerController {
 	}
 
 	/**
-	 * 대화창을 새로 띄운다.
-	 * @param roomId 대화창 아이디
-	 * @param username 대화상대 이름
-	 * @param session 사용자세션
-	 * @param model 모델
+	 * ??붿갹???덈줈 ?꾩슫??
+	 * @param roomId ??붿갹 ?꾩씠??
+	 * @param username ??붿긽? ?대쫫
+	 * @param session ?ъ슜?먯꽭??
+	 * @param model 紐⑤뜽
 	 * @return view name
 	 */
 	@RequestMapping(value="/cop/msg/websocketMessengePopup.do")

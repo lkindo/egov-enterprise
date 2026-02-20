@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  CNTC_ID
                  ,  CNTC_NM
@@ -30,7 +30,7 @@
         <if test="searchCondition == 1">AND
              CNTC_NM LIKE '%' || #{searchKeyword} || '%'        
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     ) Z

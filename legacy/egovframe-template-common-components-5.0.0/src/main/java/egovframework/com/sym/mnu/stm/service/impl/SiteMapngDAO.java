@@ -6,18 +6,18 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.sym.mnu.stm.service.SiteMapngVO;
 /**
- * 사이트맵 조회에 대한 DAO 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * ?ъ씠?몃㏊ 議고쉶?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -25,7 +25,7 @@ import egovframework.com.sym.mnu.stm.service.SiteMapngVO;
 public class SiteMapngDAO extends EgovComAbstractDAO{
 
 	/**
-	 * 사이트맵 조회
+	 * ?ъ씠?몃㏊ 議고쉶
 	 * @param vo ComDefaultVO 
 	 * @return SiteMapngVO
 	 * @exception Exception 
@@ -35,7 +35,7 @@ public class SiteMapngDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * MapCreatId 조회
+	 * MapCreatId 議고쉶
 	 * @param vo ComDefaultVO
 	 * @return String
 	 * @exception Exception 

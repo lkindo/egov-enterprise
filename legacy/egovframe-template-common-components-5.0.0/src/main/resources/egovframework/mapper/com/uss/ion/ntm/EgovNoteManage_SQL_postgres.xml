@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.12   	안민정     	 	테이블 표준화에 따른 수정사항 반영
+  2011.8.12   	?덈???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
 							DELETE_YN	->	DELETE_AT
-  2017.06.05    최두영          ibatis - > mybatis
+  2017.06.05    理쒕몢??         ibatis - > mybatis
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="NoteManage">
 	
-	<!-- 쪽지관리::쪽지관리 조회(답변처리시) -->
+	<!-- 履쎌?愿由?:履쎌?愿由?議고쉶(?듬?泥섎━?? -->
 	<select id="selectNoteManage" resultType="egovMap">
 	 
 	 SELECT
@@ -32,7 +32,7 @@
 	
 	</select>
 	
-	<!-- 쪽지관리::쪽지관리  등록  -->
+	<!-- 履쎌?愿由?:履쎌?愿由? ?깅줉  -->
 	<insert id="insertNoteManage">	     
 	  
 		INSERT INTO COMTNNOTE ( 
@@ -57,7 +57,7 @@
 	 
 	</insert>
 
-	<!-- 쪽지관리::보낸쪽지  등록  -->
+	<!-- 履쎌?愿由?:蹂대궦履쎌?  ?깅줉  -->
 	<insert id="insertNoteTrnsmit">	     
 	 
 		INSERT INTO COMTNNOTETRNSMIT ( 
@@ -81,7 +81,7 @@
 		)
 	
 	</insert>
-	<!-- 쪽지관리::받은쪽지  등록  -->
+	<!-- 履쎌?愿由?:諛쏆?履쎌?  ?깅줉  -->
 	<insert id="insertNoteRecptn">	     
 	
 	INSERT INTO COMTNNOTERECPTN(
@@ -110,7 +110,7 @@
 	
 	</insert>
 	
-	<!-- 쪽지관리::아이디 검색  -->
+	<!-- 履쎌?愿由?:?꾩씠??寃?? -->
 	<select id="EovNoteEmpListPopup" parameterType="comDefaultVO" resultType="egovMap">
 	
 	SELECT 

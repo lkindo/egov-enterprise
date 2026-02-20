@@ -1,37 +1,37 @@
 package egovframework.com.sym.prm.service;
 
 /**
- * 프로그램목록 관리 생성을 위한 모델 클래스를 정의한다.
- * @author 공통서비스 개발팀 이 용
+ * ?꾨줈洹몃옩紐⑸줉 愿由??앹꽦???꾪븳 紐⑤뜽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ????
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용          최초 생성
+ *   2009.03.20  ?댁슜          理쒖큹 ?앹꽦
  *
  * </pre>
  */
 
 public class ProgrmManage {
 	/**
-	 * 프로그램설명
+	 * ?꾨줈洹몃옩?ㅻ챸
 	 */
 	private String progrmDc;
 	/**
-	 * 프로그램파일명
+	 * ?꾨줈洹몃옩?뚯씪紐?
 	 */
 	private String progrmFileNm;
 	/**
-	 * 프로그램한글명
+	 * ?꾨줈洹몃옩?쒓?紐?
 	 */
 	private String progrmKoreanNm;
 	/**
-	 * 프로그램저장경로
+	 * ?꾨줈洹몃옩??κ꼍濡?
 	 */
 	private String progrmStrePath;
 	/**

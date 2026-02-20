@@ -3,25 +3,25 @@ package  egovframework.com.sym.mnu.stm.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /** 
- * 메뉴사이트맵에 관한 서비스 인터페이스 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * 硫붾돱?ъ씠?몃㏊??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovSiteMapngService {
 
 	/**
-	 * 사이트맵 조회
+	 * ?ъ씠?몃㏊ 議고쉶
 	 * @param vo ComDefaultVO   
 	 * @return SiteMapngVO
 	 * @exception Exception

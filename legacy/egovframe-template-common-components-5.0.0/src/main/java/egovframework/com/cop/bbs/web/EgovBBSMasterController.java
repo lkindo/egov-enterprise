@@ -32,25 +32,25 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 게시판 속성관리를 위한 컨트롤러  클래스
- * @author 공통서비스개발팀 이삼섭
+ * 寃뚯떆???띿꽦愿由щ? ?꾪븳 而⑦듃濡ㅻ윭  ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------       --------    ---------------------------
- *   2009.3.12   이삼섭      최초 생성
- *   2009.06.26	 한성곤		 2단계 기능 추가 (댓글관리, 만족도조사)
- *	 2011.07.21  안민정      커뮤니티 관련 메소드 분리 (->EgovBBSAttributeManageController)
- *	 2011.8.26	 정진오		 IncludedInfo annotation 추가
- *   2011.09.15  서준식      2단계 기능 추가 (댓글관리, 만족도조사) 적용방법 변경
- *   2016.06.13  김연호      표준프레임워크 v3.6 개선
- *   2022.11.11  김혜준      시큐어코딩 처리
- *   2024.10.29	inganyoyo	Controller는 Transaction 처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+ *   2009.3.12   ?댁궪??     理쒖큹 ?앹꽦
+ *   2009.06.26	 ?쒖꽦怨?	 2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“??
+ *	 2011.07.21  ?덈???     而ㅻ??덊떚 愿??硫붿냼??遺꾨━ (->EgovBBSAttributeManageController)
+ *	 2011.8.26	 ?뺤쭊??	 IncludedInfo annotation 異붽?
+ *   2011.09.15  ?쒖???     2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“?? ?곸슜諛⑸쾿 蹂寃?
+ *   2016.06.13  源?고샇      ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
+ *   2022.11.11  源?쒖?      ?쒗걧?댁퐫??泥섎━
+ *   2024.10.29	inganyoyo	Controller??Transaction 泥섎━瑜??섏? ?딆븘 Controller?먯꽌 ?ㅻ쪟 諛쒖깮 ???곗씠???뺥빀???ㅻ쪟 臾몄젣 諛쒖깮
  * </pre>
  */
 
@@ -79,7 +79,7 @@ public class EgovBBSMasterController {
     //Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 신규 게시판 마스터 등록을 위한 등록페이지로 이동한다.
+     * ?좉퇋 寃뚯떆??留덉뒪???깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
      *
      * @param boardMasterVO
      * @param model
@@ -89,7 +89,7 @@ public class EgovBBSMasterController {
     @RequestMapping("/cop/bbs/insertBBSMasterView.do")
     public String insertBBSMasterView(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
 		BoardMasterVO boardMaster = new BoardMasterVO();
-		//공통코드(게시판유형)
+		//怨듯넻肄붾뱶(寃뚯떆?먯쑀??
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM101");
 		List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
@@ -98,7 +98,7 @@ public class EgovBBSMasterController {
 
 
 		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+		// 2011.09.15 : 2?④퀎 湲곕뒫 異붽? 諛섏쁺 諛⑸쾿 蹂寃?
 		//---------------------------------
 
 
@@ -113,7 +113,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 신규 게시판 마스터 정보를 등록한다.
+     * ?좉퇋 寃뚯떆??留덉뒪???뺣낫瑜??깅줉?쒕떎.
      *
      * @param boardMasterVO
      * @param boardMaster
@@ -131,7 +131,7 @@ public class EgovBBSMasterController {
 		if (bindingResult.hasErrors()) {
 		    ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
-		    //게시판유형코드
+		    //寃뚯떆?먯쑀?뺤퐫??
 		    vo.setCodeId("COM101");
 		    List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
 		    model.addAttribute("bbsTyCode", codeResult);
@@ -157,14 +157,14 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 게시판 마스터 목록을 조회한다.
+     * 寃뚯떆??留덉뒪??紐⑸줉??議고쉶?쒕떎.
      *
      * @param boardMasterVO
      * @param model
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="게시판관리",order = 180 ,gid = 40)
+    @IncludedInfo(name="寃뚯떆?먭?由?,order = 180 ,gid = 40)
     @RequestMapping("/cop/bbs/selectBBSMasterInfs.do")
     public String selectBBSMasterInfs(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
 		boardMasterVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -193,19 +193,19 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 블로그에 대한 목록을 조회한다.
+     * 釉붾줈洹몄뿉 ???紐⑸줉??議고쉶?쒕떎.
      *
      * @param blogVO
      * @param model
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="블로그관리", order = 170 ,gid = 40)
+    @IncludedInfo(name="釉붾줈洹멸?由?, order = 170 ,gid = 40)
     @RequestMapping("/cop/bbs/selectBlogList.do")
     public String selectBlogMasterList(@ModelAttribute("searchVO") BoardMasterVO boardMasterVO, ModelMap model) throws Exception {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-    	 //KISA 보안취약점 조치 (2018-12-10, 신용호)
+    	 //KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -239,7 +239,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 블로그 등록을 위한 등록페이지로 이동한다.
+     * 釉붾줈洹??깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
      *
      * @param blogVO
      * @param model
@@ -253,7 +253,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 블로그 생성 유무를 판단한다.
+     * 釉붾줈洹??앹꽦 ?좊Т瑜??먮떒?쒕떎.
      *
      * @param blogVO
      * @param model
@@ -263,7 +263,7 @@ public class EgovBBSMasterController {
     @RequestMapping("/cop/bbs/selectChkBloguser.do")
     public ModelAndView chkBlogUser(@ModelAttribute("searchVO") BlogVO blogVO, ModelMap model) throws Exception {
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -282,7 +282,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 블로그 정보를 등록한다.
+     * 釉붾줈洹??뺣낫瑜??깅줉?쒕떎.
      *
      * @param blogVO
      * @param blog
@@ -298,7 +298,7 @@ public class EgovBBSMasterController {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-        if(!isAuthenticated) { //KISA 보안약점 조치 (2018-12-10, 신용호)
+        if(!isAuthenticated) { //KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-10, ?좎슜??
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
@@ -315,15 +315,15 @@ public class EgovBBSMasterController {
 		    return "egovframework/com/cop/bbs/EgovBlogRegist";
 		}
 
-    // 블로그 정보와 개설자 정보 등록한다
-    // Controller는 Transaction처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+    // 釉붾줈洹??뺣낫? 媛쒖꽕???뺣낫 ?깅줉?쒕떎
+    // Controller??Transaction泥섎━瑜??섏? ?딆븘 Controller?먯꽌 ?ㅻ쪟 諛쒖깮 ???곗씠???뺥빀???ㅻ쪟 臾몄젣 諛쒖깮
     egovBBSMasterService.insertBlogMasterAndBoardBlogUserRqst(blog, user);
 
 		return "forward:/cop/bbs/selectBlogList.do";
     }
 
     /**
-     * 게시판 마스터 상세내용을 조회한다.
+     * 寃뚯떆??留덉뒪???곸꽭?댁슜??議고쉶?쒕떎.
      *
      * @param boardMasterVO
      * @param model
@@ -336,7 +336,7 @@ public class EgovBBSMasterController {
 		model.addAttribute("result", vo);
 
 		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+		// 2011.09.15 : 2?④퀎 湲곕뒫 異붽? 諛섏쁺 諛⑸쾿 蹂寃?
 		//---------------------------------
 
 		if(EgovComponentChecker.hasComponent("EgovArticleCommentService")){
@@ -350,7 +350,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 게시판 마스터정보를 수정하기 위한 전 처리
+     * 寃뚯떆??留덉뒪?곗젙蹂대? ?섏젙?섍린 ?꾪븳 ??泥섎━
      * @param bbsId
      * @param searchVO
      * @param model
@@ -365,19 +365,19 @@ public class EgovBBSMasterController {
         BoardMasterVO boardMasterVO = new BoardMasterVO();
 
 
-        //게시판유형코드
+        //寃뚯떆?먯쑀?뺤퐫??
         ComDefaultCodeVO vo = new ComDefaultCodeVO();
         vo.setCodeId("COM101");
         List<CmmnDetailCode> codeResult = cmmUseService.selectCmmCodeDetail(vo);
         model.addAttribute("bbsTyCode", codeResult);
 
-        // Primary Key 값 세팅
+        // Primary Key 媛??명똿
         boardMasterVO.setBbsId(bbsId);
 
         model.addAttribute("boardMasterVO", egovBBSMasterService.selectBBSMasterInf(boardMasterVO));
 
 		//---------------------------------
-		// 2011.09.15 : 2단계 기능 추가 반영 방법 변경
+		// 2011.09.15 : 2?④퀎 湲곕뒫 異붽? 諛섏쁺 諛⑸쾿 蹂寃?
 		//---------------------------------
 
 		if(EgovComponentChecker.hasComponent("EgovArticleCommentService")){
@@ -392,7 +392,7 @@ public class EgovBBSMasterController {
 
 
     /**
-     * 게시판 마스터 정보를 수정한다.
+     * 寃뚯떆??留덉뒪???뺣낫瑜??섏젙?쒕떎.
      *
      * @param boardMasterVO
      * @param boardMaster
@@ -429,7 +429,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 게시판 마스터 정보를 삭제한다.
+     * 寃뚯떆??留덉뒪???뺣낫瑜???젣?쒕떎.
      *
      * @param boardMasterVO
      * @param boardMaster
@@ -453,7 +453,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 포트릿을 위한 블로그 목록 정보를 조회한다.
+     * ?ы듃由우쓣 ?꾪븳 釉붾줈洹?紐⑸줉 ?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param blogVO
      * @param model
@@ -470,7 +470,7 @@ public class EgovBBSMasterController {
     }
 
     /**
-     * 포트릿을 위한 게시판 목록 정보를 조회한다.
+     * ?ы듃由우쓣 ?꾪븳 寃뚯떆??紐⑸줉 ?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param blogVO
      * @param model

@@ -6,62 +6,62 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
  *
- * 행정코드에 관한 서비스 인터페이스 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * ?됱젙肄붾뱶??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovCcmAdministCodeManageService {
 
 	/**
-	 * 행정코드를 삭제한다.
+	 * ?됱젙肄붾뱶瑜???젣?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
 	void deleteAdministCode(AdministCode administCode) throws Exception;
 
 	/**
-	 * 행정코드를 등록한다.
+	 * ?됱젙肄붾뱶瑜??깅줉?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
 	void insertAdministCode(AdministCode administCode) throws Exception;
 
 	/**
-	 * 행정코드 상세항목을 조회한다.
+	 * ?됱젙肄붾뱶 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param administCode
-	 * @return AdministCode(행정코드)
+	 * @return AdministCode(?됱젙肄붾뱶)
 	 * @throws Exception
 	 */
 	AdministCode selectAdministCodeDetail(AdministCode administCode) throws Exception;
 
 	/**
-	 * 행정코드 목록을 조회한다.
+	 * ?됱젙肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(행정코드 목록)
+	 * @return List(?됱젙肄붾뱶 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministCodeList(AdministCodeVO searchVO) throws Exception;
 
     /**
-	 * 행정코드 총 개수를 조회한다.
+	 * ?됱젙肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(행정코드 총 개수)
+     * @return int(?됱젙肄붾뱶 珥?媛쒖닔)
      */
     int selectAdministCodeListTotCnt(AdministCodeVO searchVO) throws Exception;
 
 	/**
-	 * 행정코드를 수정한다.
+	 * ?됱젙肄붾뱶瑜??섏젙?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */

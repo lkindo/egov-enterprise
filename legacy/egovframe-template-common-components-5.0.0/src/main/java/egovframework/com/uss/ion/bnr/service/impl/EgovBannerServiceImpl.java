@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 배너에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - 諛곕꼫?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 배너에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 배너의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 諛곕꼫??????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 諛곕꼫??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:07:12
+ * @created 03-8-2009 ?ㅽ썑 2:07:12
  */
 
 package egovframework.com.uss.ion.bnr.service.impl;
@@ -36,9 +36,9 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
     private BannerDAO bannerDAO;
 
 	/**
-	 * 배너를 관리하기 위해 등록된 배너목록을 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return List - 배너 목록
+	 * 諛곕꼫瑜?愿由ы븯湲??꾪빐 ?깅줉??諛곕꼫紐⑸줉??議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return List - 諛곕꼫 紐⑸줉
 	 */
 	@Override
 	public List<BannerVO> selectBannerList(BannerVO bannerVO) throws Exception{
@@ -46,9 +46,9 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 배너목록 총 개수를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return int - 배너 카운트 수
+	 * 諛곕꼫紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return int - 諛곕꼫 移댁슫????
 	 */
 	@Override
 	public int selectBannerListTotCnt(BannerVO bannerVO) throws Exception {
@@ -56,9 +56,9 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 등록된 배너의 상세정보를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return BannerVO - 배너 VO
+	 * ?깅줉??諛곕꼫???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return BannerVO - 諛곕꼫 VO
 	 */
 	@Override
 	public BannerVO selectBanner(BannerVO bannerVO) throws Exception{
@@ -66,8 +66,8 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 배너정보를 신규로 등록한다.
-	 * @param banner - 배너 model
+	 * 諛곕꼫?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	@Override
 	public BannerVO insertBanner(Banner banner, BannerVO bannerVO) throws Exception{
@@ -77,8 +77,8 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 기 등록된 배너정보를 수정한다.
-	 * @param banner - 배너 model
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜??섏젙?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	@Override
 	public void updateBanner(Banner banner) throws Exception{
@@ -86,8 +86,8 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 기 등록된 배너정보를 삭제한다.
-	 * @param banner - 배너 model
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜???젣?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	@Override
 	public void deleteBanner(Banner banner) throws Exception {
@@ -96,14 +96,14 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 기 등록된 배너정보의 이미지파일을 삭제한다.
-	 * @param banner - 배너 model
+	 * 湲??깅줉??諛곕꼫?뺣낫???대?吏?뚯씪????젣?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	@Override
 	public void deleteBannerFile(Banner banner) throws Exception{
 		FileVO fileVO = bannerDAO.selectBannerFile(banner);
 		File file = new File(fileVO.getFileStreCours()+fileVO.getStreFileNm());
-		//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+		//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 		if(file.delete()){
 			LOGGER.debug("[file.delete] file : File Deletion Success");
 		}else{
@@ -112,9 +112,9 @@ public class EgovBannerServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 배너가 특정화면에 반영된 결과를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return BannerVO - 배너 VO
+	 * 諛곕꼫媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return BannerVO - 諛곕꼫 VO
 	 */
 	@Override
 	public List<BannerVO> selectBannerResult(BannerVO bannerVO) throws Exception{

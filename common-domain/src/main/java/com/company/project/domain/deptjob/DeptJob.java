@@ -9,9 +9,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 부서업무 엔티티
+ * ?봔??뽯씜???酉???
  * 
- * @see COMTNDEPTJOB 테이블 매핑
+ * @see COMTNDEPTJOB ???뵠??筌띲끋釉?
  */
 @Entity
 @Table(name = "COMTNDEPTJOB")
@@ -39,7 +39,7 @@ public class DeptJob {
     private String chargerId;
 
     @Column(name = "PRIORT", length = 1)
-    private String priort; // 1: 높음, 2: 보통, 3: 낮음
+    private String priort; // 1: ?誘れ벉, 2: 癰귣똾?? 3: ????
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;

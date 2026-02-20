@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 /**
- * 휴일 Repository
+ * ??곸뵬 Repository
  */
 public interface HolidayRepository extends JpaRepository<Holiday, Integer> {
 

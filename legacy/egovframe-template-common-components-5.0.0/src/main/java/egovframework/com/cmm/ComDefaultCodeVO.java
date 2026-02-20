@@ -5,46 +5,46 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- *  클래스
- * @author 공통서비스개발팀 이삼섭
+ *  ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------       --------    ---------------------------
- *   2009.3.11   이삼섭          최초 생성
+ *   2009.3.11   ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class ComDefaultCodeVO implements Serializable {
-    /** 코드 ID */
+    /** 肄붾뱶 ID */
     private String codeId = "";
     
-    /** 상세코드 */
+    /** ?곸꽭肄붾뱶 */
     private String code = "";
     
-    /** 코드명 */
+    /** 肄붾뱶紐?*/
     private String codeNm = "";
     
-    /** 코드설명 */
+    /** 肄붾뱶?ㅻ챸 */
     private String codeDc = "";
     
-    /** 특정테이블명 */
-    private String tableNm = "";	//특정테이블에서 코드정보를추출시 사용
+    /** ?뱀젙?뚯씠釉붾챸 */
+    private String tableNm = "";	//?뱀젙?뚯씠釉붿뿉??肄붾뱶?뺣낫瑜쇱텛異쒖떆 ?ъ슜
     
-    /** 상세 조건 여부 */
+    /** ?곸꽭 議곌굔 ?щ? */
     private String haveDetailCondition = "N";
     
-    /** 상세 조건 */
+    /** ?곸꽭 議곌굔 */
     private String detailCondition = "";
     
     /**
-     * codeId attribute를 리턴한다.
+     * codeId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the codeId
      */
@@ -53,7 +53,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * codeId attribute 값을 설정한다.
+     * codeId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param codeId
      *            the codeId to set
@@ -63,7 +63,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * code attribute를 리턴한다.
+     * code attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the code
      */
@@ -72,7 +72,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * code attribute 값을 설정한다.
+     * code attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param code
      *            the code to set
@@ -82,7 +82,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * codeNm attribute를 리턴한다.
+     * codeNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the codeNm
      */
@@ -91,7 +91,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * codeNm attribute 값을 설정한다.
+     * codeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param codeNm
      *            the codeNm to set
@@ -101,7 +101,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * codeDc attribute를 리턴한다.
+     * codeDc attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the codeDc
      */
@@ -110,7 +110,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * codeDc attribute 값을 설정한다.
+     * codeDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param codeDc
      *            the codeDc to set
@@ -120,7 +120,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * tableNm attribute를 리턴한다.
+     * tableNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tableNm
      */
@@ -129,7 +129,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * tableNm attribute 값을 설정한다.
+     * tableNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tableNm
      *            the tableNm to set
@@ -139,7 +139,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * haveDetailCondition attribute를 리턴한다.
+     * haveDetailCondition attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the haveDetailCondition
      */
@@ -148,7 +148,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * haveDetailCondition attribute 값을 설정한다.
+     * haveDetailCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param haveDetailCondition
      *            the haveDetailCondition to set
@@ -158,7 +158,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * detailCondition attribute를 리턴한다.
+     * detailCondition attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the detailCondition
      */
@@ -167,7 +167,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * detailCondition attribute 값을 설정한다.
+     * detailCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param detailCondition
      *            the detailCondition to set
@@ -177,7 +177,7 @@ public class ComDefaultCodeVO implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
     	return ToStringBuilder.reflectionToString(this);

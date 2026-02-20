@@ -24,26 +24,26 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
  *
  * HTMLTagFilterRequestWrapper
  * 
- * @author 공통컴포넌트 팀 신용호
+ * @author 怨듯넻而댄룷?뚰듃 ? ?좎슜??
  * @since 2018.03.21
  * @version 3.9.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2018.03.21  신용호          getParameterMap()구현 추가
- *   2019.01.31  신용호          whiteList 태그 추가
- *   2025.05.24  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-SimplifyBooleanExpressions(부울 표현식 단순화), AvoidReassigningParameters(매개변수 재할당 방지)
+ *   2018.03.21  ?좎슜??         getParameterMap()援ы쁽 異붽?
+ *   2019.01.31  ?좎슜??         whiteList ?쒓렇 異붽?
+ *   2025.05.24  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SimplifyBooleanExpressions(遺???쒗쁽???⑥닚??, AvoidReassigningParameters(留ㅺ컻蹂???ы븷??諛⑹?)
  *
  *      </pre>
  */
 
 public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 
-	// Tag 화이트 리스트 ( 허용할 태그 등록 )
+	// Tag ?붿씠??由ъ뒪??( ?덉슜???쒓렇 ?깅줉 )
 	static private String[] whiteListTag = { "<p>", "</p>", "<br />" };
 
 	public HTMLTagFilterRequestWrapper(HttpServletRequest request) {
@@ -86,9 +86,9 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 	}
 
 	/**
-	 * Map으로 바인딩된 경우를 처리한다.
+	 * Map?쇰줈 諛붿씤?⑸맂 寃쎌슦瑜?泥섎━?쒕떎.
 	 *
-	 * @return Map - String Type Key / String배열타입 값
+	 * @return Map - String Type Key / String諛곗뿴???媛?
 	 */
 	@Override
 	public Map<String, String[]> getParameterMap() {
@@ -107,7 +107,7 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 				}
 			}
 
-            //System.out.println( String.format("키 : %s, 값 : %s", key, valueMap.get(key)) );
+            //System.out.println( String.format("??: %s, 媛?: %s", key, valueMap.get(key)) );
 		}
 
 		return valueMap;
@@ -176,7 +176,7 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 			}
 			// System.out.println("extractData="+extractData);
 			if (whiteListData.equals(extractData)) {
-				return true; // whiteList 대상으로 판정
+				return true; // whiteList ??곸쑝濡??먯젙
 			}
 		}
 
@@ -199,7 +199,7 @@ public class HTMLTagFilterRequestWrapper extends HttpServletRequestWrapper {
 			}
 			// System.out.println("extractData="+extractData);
 			if (whiteListData.equals(extractData)) {
-				return true; // whiteList 대상으로 판정
+				return true; // whiteList ??곸쑝濡??먯젙
 			}
 		}
 

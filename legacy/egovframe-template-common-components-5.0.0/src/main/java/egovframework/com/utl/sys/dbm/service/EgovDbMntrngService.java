@@ -3,114 +3,114 @@ import java.util.List;
 
 
 /**
- * DB서비스모니터링관리에 대한 Service Interface를 정의한다.
+ * DB?쒕퉬?ㅻえ?덊꽣留곴?由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public interface EgovDbMntrngService {
 
 	/**
-	 * DB서비스모니터링을  삭제한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣  ??젣?쒕떎.
 	 *
-	 * @param dbMntrng    삭제대상 DB서비스모니터링model
+	 * @param dbMntrng    ??젣???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	public void deleteDbMntrng(DbMntrng dbMntrng)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링을 등록한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ?깅줉?쒕떎.
 	 *
-	 * @param dbMntrng    등록대상 DB서비스모니터링model
+	 * @param dbMntrng    ?깅줉???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	public void insertDbMntrng(DbMntrng dbMntrng)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링로그를 등록한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몃? ?깅줉?쒕떎.
 	 *
-	 * @param dbMntrngLog    등록대상 DB서비스모니터링로그model
+	 * @param dbMntrngLog    ?깅줉???DB?쒕퉬?ㅻえ?덊꽣留곷줈洹퇹odel
 	 * @exception Exception Exception
 	 */
 	public void insertDbMntrngLog(DbMntrngLog dbMntrngLog)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링을  상세조회 한다.
-	 * @return DB서비스모니터링정보
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣  ?곸꽭議고쉶 ?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂?
 	 *
-	 * @param dbMntrng    조회대상 DB서비스모니터링model
+	 * @param dbMntrng    議고쉶???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	public DbMntrng selectDbMntrng(DbMntrng dbMntrng)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링로그를  상세조회 한다.
-	 * @return DB서비스모니터링로그정보
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몃?  ?곸꽭議고쉶 ?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몄젙蹂?
 	 *
-	 * @param dbMntrng    조회대상 DB서비스모니터링로그model
+	 * @param dbMntrng    議고쉶???DB?쒕퉬?ㅻえ?덊꽣留곷줈洹퇹odel
 	 * @exception Exception Exception
 	 */
 	public DbMntrngLog selectDbMntrngLog(DbMntrngLog dbMntrngLog)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링 목록을 조회한다.
-	 * @return DB서비스모니터링목록
+	 * DB?쒕퉬?ㅻえ?덊꽣留?紐⑸줉??議고쉶?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷ぉ濡?
 	 *
-	 * @param searchVO    조회조건VO
+	 * @param searchVO    議고쉶議곌굔VO
 	 * @exception Exception Exception
 	 */
 	public List<DbMntrng> selectDbMntrngList(DbMntrng searchVO)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * DB?쒕퉬?ㅻえ?덊꽣留?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectDbMntrngListCnt(DbMntrng searchVO)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링로그 목록을 조회한다.
-	 * @return DB서비스모니터링로그목록
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉??議고쉶?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몃ぉ濡?
 	 *
-	 * @param searchVO    조회조건VO
+	 * @param searchVO    議고쉶議곌굔VO
 	 * @exception Exception Exception
 	 */
 	public List<DbMntrngLog> selectDbMntrngLogList(DbMntrngLog searchVO)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링로그 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectDbMntrngLogListCnt(DbMntrngLog searchVO)
 	  throws Exception;
 
 	/**
-	 * DB서비스모니터링을 수정한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ?섏젙?쒕떎.
 	 *
-	 * @param dbMntrng    수정대상 DB서비스모니터링model
+	 * @param dbMntrng    ?섏젙???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @exception Exception Exception
 	 */
 	public void updateDbMntrng(DbMntrng dbMntrng)

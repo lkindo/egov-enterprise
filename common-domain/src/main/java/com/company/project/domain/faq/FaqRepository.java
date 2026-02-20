@@ -12,12 +12,12 @@ import org.springframework.data.repository.query.Param;
 public interface FaqRepository extends JpaRepository<Faq, String> {
 
     /**
-     * 질문 제목 검색
+     * 筌욌뜄揆 ??뺛걠 野꺜??
      */
     Page<Faq> findByQestnSjContaining(String qestnSj, Pageable pageable);
 
     /**
-     * 키워드 검색 (질문제목 또는 질문내용)
+     * ??쇱뜖??野꺜??(筌욌뜄揆??뺛걠 ?癒?뮉 筌욌뜄揆??곸뒠)
      */
     @Query("SELECT f FROM Faq f WHERE f.qestnSj LIKE %:keyword% OR f.qestnCn LIKE %:keyword%")
     Page<Faq> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);

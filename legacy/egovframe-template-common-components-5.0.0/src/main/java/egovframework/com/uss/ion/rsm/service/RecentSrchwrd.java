@@ -5,16 +5,16 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 최근검색어 VO Class 구현
- * @author 공통서비스 장동한
+ * 理쒓렐寃?됱뼱 VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -22,47 +22,47 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = 4031295690314547576L;
 
-	/** 최근검색어관리ID */
+	/** 理쒓렐寃?됱뼱愿由촇D */
     private String srchwrdManageId;
 
-    /** 최근검색어관리명 */
+    /** 理쒓렐寃?됱뼱愿由щ챸 */
     private String srchwrdManageNm;
 
-    /** 최근검색어관리URL */
+    /** 理쒓렐寃?됱뼱愿由촗RL */
     private String srchwrdManageUrl;
 
-    /** 최근검색어사용자검색여부 */
+    /** 理쒓렐寃?됱뼱?ъ슜?먭??됱뿬遺 */
     private String srchwrdManageUseYn;
 
-    /** 최근검색어ID */
+    /** 理쒓렐寃?됱뼱ID */
     private String srchwrdId;
 
-    /** 최근검색어명 */
+    /** 理쒓렐寃?됱뼱紐?*/
     private String srchwrdNm;
 
-    /** 최근건색어건수 */
+    /** 理쒓렐嫄댁깋?닿굔??*/
     private String srchwrdCnt;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
-    /** 컨트롤 명령어 */
+    /** 而⑦듃濡?紐낅졊??*/
     private String cmd;
 
-    /** Ajax검색어 */
+    /** Ajax寃?됱뼱 */
     private String q;
 
     /**
-     * srchwrdManageId 리턴
+     * srchwrdManageId 由ы꽩
      *
      * @return the srchwrdManageId
      */
@@ -71,7 +71,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageId 설정
+     * srchwrdManageId ?ㅼ젙
      *
      * @param srchwrdManageId the srchwrdManageId to set
      */
@@ -80,7 +80,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageNm 리턴
+     * srchwrdManageNm 由ы꽩
      *
      * @return the srchwrdManageNm
      */
@@ -89,7 +89,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageNm 설정
+     * srchwrdManageNm ?ㅼ젙
      *
      * @param srchwrdManageNm the srchwrdManageNm to set
      */
@@ -98,7 +98,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageUrl 리턴
+     * srchwrdManageUrl 由ы꽩
      *
      * @return the srchwrdManageUrl
      */
@@ -107,7 +107,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageUrl 설정
+     * srchwrdManageUrl ?ㅼ젙
      *
      * @param srchwrdManageUrl the srchwrdManageUrl to set
      */
@@ -116,7 +116,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageUseYn 리턴
+     * srchwrdManageUseYn 由ы꽩
      *
      * @return the srchwrdManageUseYn
      */
@@ -125,7 +125,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdManageUseYn 설정
+     * srchwrdManageUseYn ?ㅼ젙
      *
      * @param srchwrdManageUseYn the srchwrdManageUseYn to set
      */
@@ -134,7 +134,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdId 리턴
+     * srchwrdId 由ы꽩
      *
      * @return the srchwrdId
      */
@@ -143,7 +143,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdId 설정
+     * srchwrdId ?ㅼ젙
      *
      * @param srchwrdId the srchwrdId to set
      */
@@ -152,7 +152,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdNm 리턴
+     * srchwrdNm 由ы꽩
      *
      * @return the srchwrdNm
      */
@@ -161,7 +161,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdNm 설정
+     * srchwrdNm ?ㅼ젙
      *
      * @param srchwrdNm the srchwrdNm to set
      */
@@ -170,7 +170,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdCnt 리턴
+     * srchwrdCnt 由ы꽩
      *
      * @return the srchwrdCnt
      */
@@ -179,7 +179,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * srchwrdCnt 설정
+     * srchwrdCnt ?ㅼ젙
      *
      * @param srchwrdCnt the srchwrdCnt to set
      */
@@ -188,7 +188,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 리턴
+     * frstRegisterPnttm 由ы꽩
      *
      * @return the frstRegisterPnttm
      */
@@ -197,7 +197,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 설정
+     * frstRegisterPnttm ?ㅼ젙
      *
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
@@ -206,7 +206,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 리턴
+     * frstRegisterId 由ы꽩
      *
      * @return the frstRegisterId
      */
@@ -215,7 +215,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 설정
+     * frstRegisterId ?ㅼ젙
      *
      * @param frstRegisterId the frstRegisterId to set
      */
@@ -224,7 +224,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 리턴
+     * lastUpdusrPnttm 由ы꽩
      *
      * @return the lastUpdusrPnttm
      */
@@ -233,7 +233,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 설정
+     * lastUpdusrPnttm ?ㅼ젙
      *
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
@@ -242,7 +242,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 리턴
+     * lastUpdusrId 由ы꽩
      *
      * @return the lastUpdusrId
      */
@@ -251,7 +251,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 설정
+     * lastUpdusrId ?ㅼ젙
      *
      * @param lastUpdusrId the lastUpdusrId to set
      */
@@ -260,7 +260,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 리턴
+     * cmd 由ы꽩
      *
      * @return the cmd
      */
@@ -269,7 +269,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 설정
+     * cmd ?ㅼ젙
      *
      * @param cmd the cmd to set
      */
@@ -278,7 +278,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * q 리턴
+     * q 由ы꽩
      *
      * @return the q
      */
@@ -287,7 +287,7 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * q 설정
+     * q ?ㅼ젙
      *
      * @param q the q to set
      */

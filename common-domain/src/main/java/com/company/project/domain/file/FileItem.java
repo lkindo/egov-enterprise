@@ -21,20 +21,20 @@ public class FileItem extends BaseTimeEntity {
     @JoinColumn(name = "file_group_id", nullable = false)
     private FileGroup fileGroup;
 
-    private Integer fileSn; // 파일 순번
+    private Integer fileSn; // ???뵬 ??뺤쓰
 
     @Column(nullable = false)
-    private String fileStreCours; // 파일 저장 경로
+    private String fileStreCours; // ???뵬 ????野껋럥以?
 
     @Column(nullable = false)
-    private String streFileNm; // 저장된 파일명
+    private String streFileNm; // ???貫留????뵬筌?
 
     @Column(nullable = false)
-    private String orignlFileNm; // 원본 파일명
+    private String orignlFileNm; // ?癒?궚 ???뵬筌?
 
-    private String fileExtsn; // 파일 확장자
+    private String fileExtsn; // ???뵬 ?類ㅼ삢??
 
-    private Long fileSize; // 파일 크기
+    private Long fileSize; // ???뵬 ??由?
 
     @Builder
     public FileItem(FileGroup fileGroup, Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,

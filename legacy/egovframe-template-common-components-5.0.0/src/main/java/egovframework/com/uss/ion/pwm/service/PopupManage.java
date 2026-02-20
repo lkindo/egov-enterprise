@@ -5,97 +5,97 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 팝업창에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?앹뾽李쎌뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 팝업창의 팝업창아이디, 팝업창 타이틀명, 실파일 URL, 파업창이 화면에 보여지는 위치정보, 팝업창의 사이즈, 게시시작일, 게시종료일,
- * 그만보기 설정 여부, 게시여부 항목을 관리한다.
- * @author 이창원
+ * ?곸꽭?댁슜
+ * - ?앹뾽李쎌쓽 ?앹뾽李쎌븘?대뵒, ?앹뾽李???댄?紐? ?ㅽ뙆??URL, ?뚯뾽李쎌씠 ?붾㈃??蹂댁뿬吏???꾩튂?뺣낫, ?앹뾽李쎌쓽 ?ъ씠利? 寃뚯떆?쒖옉?? 寃뚯떆醫낅즺??
+ * 洹몃쭔蹂닿린 ?ㅼ젙 ?щ?, 寃뚯떆?щ? ??ぉ??愿由ы븳??
+ * @author ?댁갹??
  * @version 1.0
- * @created 05-8-2009 오후 2:21:03
+ * @created 05-8-2009 ?ㅽ썑 2:21:03
  */
 public class PopupManage extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -9172690166674188881L;
 	/**
-	 * 팝업창아이디
+	 * ?앹뾽李쎌븘?대뵒
 	 */
 	private String popupId;
 	/**
-	 * 팝업창 타이틀명
+	 * ?앹뾽李???댄?紐?
 	 */
 	private String popupTitleNm;
 	/**
-	 * 실파일 URL
+	 * ?ㅽ뙆??URL
 	 */
 	private String fileUrl;
 	/**
-	 * 팝업창이 화면에 보여지는 가로 위치정보
+	 * ?앹뾽李쎌씠 ?붾㈃??蹂댁뿬吏??媛濡??꾩튂?뺣낫
 	 */
 	private String popupWlc;
 
         /**
-         * 팝업창이 화면에 보여지는 세로 위치정보
+         * ?앹뾽李쎌씠 ?붾㈃??蹂댁뿬吏???몃줈 ?꾩튂?뺣낫
          */
         private String popupHlc;
 
 	/**
-	 * 팝업창의 높이
+	 * ?앹뾽李쎌쓽 ?믪씠
 	 */
 	private String popupHSize;
 
         /**
-         * 팝업창의 넚이
+         * ?앹뾽李쎌쓽 ?싳씠
          */
         private String popupWSize;
 
 	/**
-	 * 게시시작일
+	 * 寃뚯떆?쒖옉??
 	 */
 	private String ntceBgnde;
 	/**
-	 * 게시종료일
+	 * 寃뚯떆醫낅즺??
 	 */
 	private String ntceEndde;
 
-	/** 게시시작일(시간) */
+	/** 寃뚯떆?쒖옉???쒓컙) */
         private String ntceBgndeHH;
 
-        /** 게시시작일(분) */
+        /** 寃뚯떆?쒖옉??遺? */
         private String ntceBgndeMM;
 
-        /** 게시종료일(시간) */
+        /** 寃뚯떆醫낅즺???쒓컙) */
         private String ntceEnddeHH;
 
-        /** 게시종료일(분) */
+        /** 寃뚯떆醫낅즺??遺? */
         private String ntceEnddeMM;
 
 	/**
-	 * 그만보기 설정 여부
+	 * 洹몃쭔蹂닿린 ?ㅼ젙 ?щ?
 	 */
 	private String stopVewAt;
 	/**
-	 * 게시여부
+	 * 寃뚯떆?щ?
 	 */
 	private String ntceAt;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록아이디 */
+	/** 理쒖큹?깅줉?꾩씠??*/
 	private String frstRegisterId;
 
-	/** 최종수정일 */
+	/** 理쒖쥌?섏젙??*/
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자 아이디 */
+	/** 理쒖쥌?섏젙???꾩씠??*/
 	private String lastUpdusrId;
 
 	public PopupManage(){}
 
     /**
-     * popupId 리턴
+     * popupId 由ы꽩
      *
      * @return the popupId
      */
@@ -104,7 +104,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupId 설정
+     * popupId ?ㅼ젙
      *
      * @param popupId the popupId to set
      */
@@ -113,7 +113,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupTitleNm 리턴
+     * popupTitleNm 由ы꽩
      *
      * @return the popupTitleNm
      */
@@ -122,7 +122,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupTitleNm 설정
+     * popupTitleNm ?ㅼ젙
      *
      * @param popupTitleNm the popupTitleNm to set
      */
@@ -131,7 +131,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * fileUrl 리턴
+     * fileUrl 由ы꽩
      *
      * @return the fileUrl
      */
@@ -140,7 +140,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * fileUrl 설정
+     * fileUrl ?ㅼ젙
      *
      * @param fileUrl the fileUrl to set
      */
@@ -149,7 +149,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupWlc 리턴
+     * popupWlc 由ы꽩
      *
      * @return the popupWlc
      */
@@ -158,7 +158,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupWlc 설정
+     * popupWlc ?ㅼ젙
      *
      * @param popupWlc the popupWlc to set
      */
@@ -167,7 +167,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupHlc 리턴
+     * popupHlc 由ы꽩
      *
      * @return the popupHlc
      */
@@ -176,7 +176,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupHlc 설정
+     * popupHlc ?ㅼ젙
      *
      * @param popupHlc the popupHlc to set
      */
@@ -185,7 +185,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupHSize 리턴
+     * popupHSize 由ы꽩
      *
      * @return the popupHSize
      */
@@ -194,7 +194,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupHSize 설정
+     * popupHSize ?ㅼ젙
      *
      * @param popupHSize the popupHSize to set
      */
@@ -203,7 +203,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupWSize 리턴
+     * popupWSize 由ы꽩
      *
      * @return the popupWSize
      */
@@ -212,7 +212,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * popupWSize 설정
+     * popupWSize ?ㅼ젙
      *
      * @param popupWSize the popupWSize to set
      */
@@ -221,7 +221,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgnde 리턴
+     * ntceBgnde 由ы꽩
      *
      * @return the ntceBgnde
      */
@@ -230,7 +230,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgnde 설정
+     * ntceBgnde ?ㅼ젙
      *
      * @param ntceBgnde the ntceBgnde to set
      */
@@ -239,7 +239,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEndde 리턴
+     * ntceEndde 由ы꽩
      *
      * @return the ntceEndde
      */
@@ -248,7 +248,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEndde 설정
+     * ntceEndde ?ㅼ젙
      *
      * @param ntceEndde the ntceEndde to set
      */
@@ -257,7 +257,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgndeHH 리턴
+     * ntceBgndeHH 由ы꽩
      *
      * @return the ntceBgndeHH
      */
@@ -266,7 +266,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgndeHH 설정
+     * ntceBgndeHH ?ㅼ젙
      *
      * @param ntceBgndeHH the ntceBgndeHH to set
      */
@@ -275,7 +275,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgndeMM 리턴
+     * ntceBgndeMM 由ы꽩
      *
      * @return the ntceBgndeMM
      */
@@ -284,7 +284,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceBgndeMM 설정
+     * ntceBgndeMM ?ㅼ젙
      *
      * @param ntceBgndeMM the ntceBgndeMM to set
      */
@@ -293,7 +293,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEnddeHH 리턴
+     * ntceEnddeHH 由ы꽩
      *
      * @return the ntceEnddeHH
      */
@@ -302,7 +302,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEnddeHH 설정
+     * ntceEnddeHH ?ㅼ젙
      *
      * @param ntceEnddeHH the ntceEnddeHH to set
      */
@@ -311,7 +311,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEnddeMM 리턴
+     * ntceEnddeMM 由ы꽩
      *
      * @return the ntceEnddeMM
      */
@@ -320,7 +320,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceEnddeMM 설정
+     * ntceEnddeMM ?ㅼ젙
      *
      * @param ntceEnddeMM the ntceEnddeMM to set
      */
@@ -329,7 +329,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * stopVewAt 리턴
+     * stopVewAt 由ы꽩
      *
      * @return the stopVewAt
      */
@@ -338,7 +338,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * stopVewAt 설정
+     * stopVewAt ?ㅼ젙
      *
      * @param stopVewAt the stopVewAt to set
      */
@@ -347,7 +347,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceAt 리턴
+     * ntceAt 由ы꽩
      *
      * @return the ntceAt
      */
@@ -356,7 +356,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * ntceAt 설정
+     * ntceAt ?ㅼ젙
      *
      * @param ntceAt the ntceAt to set
      */
@@ -365,7 +365,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 리턴
+     * frstRegisterPnttm 由ы꽩
      *
      * @return the frstRegisterPnttm
      */
@@ -374,7 +374,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 설정
+     * frstRegisterPnttm ?ㅼ젙
      *
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
@@ -383,7 +383,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 리턴
+     * frstRegisterId 由ы꽩
      *
      * @return the frstRegisterId
      */
@@ -392,7 +392,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 설정
+     * frstRegisterId ?ㅼ젙
      *
      * @param frstRegisterId the frstRegisterId to set
      */
@@ -401,7 +401,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 리턴
+     * lastUpdusrPnttm 由ы꽩
      *
      * @return the lastUpdusrPnttm
      */
@@ -410,7 +410,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 설정
+     * lastUpdusrPnttm ?ㅼ젙
      *
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
@@ -419,7 +419,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 리턴
+     * lastUpdusrId 由ы꽩
      *
      * @return the lastUpdusrId
      */
@@ -428,7 +428,7 @@ public class PopupManage extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 설정
+     * lastUpdusrId ?ㅼ젙
      *
      * @param lastUpdusrId the lastUpdusrId to set
      */

@@ -13,24 +13,24 @@ import egovframework.com.uss.ion.rmm.service.RoughMapVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 위치정보연계에 대한 Service Interface를 구현한다.
+ * 媛쒖슂
+ * - ?꾩튂?뺣낫?곌퀎?????Service Interface瑜?援ы쁽?쒕떎.
  *
- * 상세내용
- * - 건물의 위치정보에 대한 등록, 수정, 삭제, 상세조회 기능을 제공한다.
- * - 건물의 위치정보의 조회기능은 목록, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 嫄대Ъ???꾩튂?뺣낫??????깅줉, ?섏젙, ??젣, ?곸꽭議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 嫄대Ъ???꾩튂?뺣낫??議고쉶湲곕뒫? 紐⑸줉, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 옥찬우
+ * @author ?μ갔??
  * @since 2014.08.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -----------		------		---------
- *   2014.08.27		옥찬우		최초 생성
+ *   2014.08.27		?μ갔??	理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -47,9 +47,9 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
     private EgovIdGnrService idgenService;
 
     /**
-     * 건물의 위치정보 목록을 조회한다.
+     * 嫄대Ъ???꾩튂?뺣낫 紐⑸줉??議고쉶?쒕떎.
      * @param roughMapVO
-     * @return Map<String, Object> 건물 위치정보 조회결과 리스트, 조회건수
+     * @return Map<String, Object> 嫄대Ъ ?꾩튂?뺣낫 議고쉶寃곌낵 由ъ뒪?? 議고쉶嫄댁닔
      * @throws Exception
     */
     @Override
@@ -63,10 +63,10 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
     /**
-     * 건물의 위치정보를 조회한다.
+     * 嫄대Ъ???꾩튂?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param roughMapVO
-     * @return Geolocation 건물의 위치정보
+     * @return Geolocation 嫄대Ъ???꾩튂?뺣낫
      * @throws Exception
     */
     @Override
@@ -75,7 +75,7 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     /**
-     * 건물의 위치정보를 DB에 등록한다.
+     * 嫄대Ъ???꾩튂?뺣낫瑜?DB???깅줉?쒕떎.
      * @param roughMap
      * @throws Exception
     */
@@ -88,7 +88,7 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     /**
-     * 건물의 위치정보를 수정한다.
+     * 嫄대Ъ???꾩튂?뺣낫瑜??섏젙?쒕떎.
      * @param roughMap
      * @throws Exception
     */
@@ -98,7 +98,7 @@ public class EgovRoughMapServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     /**
-     * 건물의 위치정보를 삭제한다.
+     * 嫄대Ъ???꾩튂?뺣낫瑜???젣?쒕떎.
      * @param roughMap
      * @throws Exception
     */

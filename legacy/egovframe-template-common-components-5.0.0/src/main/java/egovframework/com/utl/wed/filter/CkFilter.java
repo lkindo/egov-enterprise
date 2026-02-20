@@ -43,13 +43,13 @@ import lombok.extern.slf4j.Slf4j;
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일        수정자       수정내용
+ *  ?섏젙??       ?섏젙??      ?섏젙?댁슜
  *  ----------  --------    ---------------------------
- *  2014.12.04	표준프레임워크	최초 적용 (패키지 변경 및 소스 정리)
- *  2018.12.28	신용호		  CkImageSaver 수정
- *  2025.09.06	송하영		  2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(변수명에 밑줄 사용)
+ *  2014.12.04	?쒖??꾨젅?꾩썙??理쒖큹 ?곸슜 (?⑦궎吏 蹂寃?諛??뚯뒪 ?뺣━)
+ *  2018.12.28	?좎슜??	  CkImageSaver ?섏젙
+ *  2025.09.06	?≫븯??	  2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  * </pre>
  */
 @Slf4j
@@ -83,7 +83,7 @@ public class CkFilter implements Filter {
 			imageBaseDir,
 			imageDomain,
 			StringUtils.isNotBlank(allowFileType) ? StringUtils.split(allowFileType, ",") : new String[] {""},
-			saveManagerClass);//2022.01. Method call passes null for non-null parameter 처리
+			saveManagerClass);//2022.01. Method call passes null for non-null parameter 泥섎━
 
 	}
 
@@ -94,7 +94,7 @@ public class CkFilter implements Filter {
 		HttpServletResponse response = (HttpServletResponse)res;
 
 		if (request.getContentType() == null || request.getContentType().indexOf("multipart") == -1) {
-			// contentType 이 multipart 가 아니라면 스킵한다.
+			// contentType ??multipart 媛 ?꾨땲?쇰㈃ ?ㅽ궢?쒕떎.
 			chain.doFilter(request, response);
 		} else {
 			ckImageSaver.saveAndReturnUrlToClient(request, response);

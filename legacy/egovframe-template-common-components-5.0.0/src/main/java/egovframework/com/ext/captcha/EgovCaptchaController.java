@@ -24,20 +24,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Captcha 처리를 위한 컨트롤러
+ * Captcha 泥섎━瑜??꾪븳 而⑦듃濡ㅻ윭
  * 
- * @author 권태성
+ * @author 沅뚰깭??
  * @since 2024.10.29
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2024.10.29  권태성          최초 생성
- *   2025.06.19  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(쓸모없는 괄호)
+ *   2024.10.29  沅뚰깭??         理쒖큹 ?앹꽦
+ *   2025.06.19  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(?몃え?녿뒗 愿꾪샇)
  *
  *      </pre>
  */
@@ -47,7 +47,7 @@ public class EgovCaptchaController {
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	/**
-	 * Captcha 사용자 입력 페이지
+	 * Captcha ?ъ슜???낅젰 ?섏씠吏
 	 * 
 	 * @param session
 	 * @param model
@@ -60,7 +60,7 @@ public class EgovCaptchaController {
 	}
 
 	/**
-	 * Captcha 입력값 검증 결과 페이지
+	 * Captcha ?낅젰媛?寃利?寃곌낵 ?섏씠吏
 	 * 
 	 * @param session
 	 * @param model
@@ -74,23 +74,23 @@ public class EgovCaptchaController {
 		String expectedCaptcha = (String) session.getAttribute("captcha" + pgNm);
 		boolean result = expectedCaptcha != null && expectedCaptcha.equalsIgnoreCase(captcha);
 		if (result) {
-			model.addAttribute("message", "Captcha 값이 올바르게 입력되었습니다.");
+			model.addAttribute("message", "Captcha 媛믪씠 ?щ컮瑜닿쾶 ?낅젰?섏뿀?듬땲??");
 		} else {
-			model.addAttribute("message", "Captcha 값이 올바르지 않습니다.");
+			model.addAttribute("message", "Captcha 媛믪씠 ?щ컮瑜댁? ?딆뒿?덈떎.");
 		}
 		model.addAttribute("result", result);
 		return "egovframework/com/ext/captcha/EgovCaptchaResult";
 	}
 
 	/**
-	 * Captcha 이미지 생성
+	 * Captcha ?대?吏 ?앹꽦
 	 * 
 	 * @param request
 	 * @param response
-	 * @param width    이미지 가로 크기
-	 * @param height   이미지 세로 크기
-	 * @param length   Captcha 문자 길이
-	 * @param pgNm     Captcha를 사용하는 프로그램 구분값
+	 * @param width    ?대?吏 媛濡??ш린
+	 * @param height   ?대?吏 ?몃줈 ?ш린
+	 * @param length   Captcha 臾몄옄 湲몄씠
+	 * @param pgNm     Captcha瑜??ъ슜?섎뒗 ?꾨줈洹몃옩 援щ텇媛?
 	 */
 	@GetMapping("/ext/captcha/generate.do")
 	public void generate(HttpServletRequest request, HttpServletResponse response,
@@ -122,10 +122,10 @@ public class EgovCaptchaController {
 	}
 
 	/**
-	 * 임의의 문자열을 인자로 받은 길이 만큼 생성
+	 * ?꾩쓽??臾몄옄?댁쓣 ?몄옄濡?諛쏆? 湲몄씠 留뚰겮 ?앹꽦
 	 * 
-	 * @param length 생성하려는 문자열 길이
-	 * @return length 인자의 길이만큼 생성된 임의의 문자열
+	 * @param length ?앹꽦?섎젮??臾몄옄??湲몄씠
+	 * @return length ?몄옄??湲몄씠留뚰겮 ?앹꽦???꾩쓽??臾몄옄??
 	 */
 	private String generateRandomText(int length) {
 		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

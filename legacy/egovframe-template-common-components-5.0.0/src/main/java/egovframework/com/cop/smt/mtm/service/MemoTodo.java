@@ -3,57 +3,57 @@ package egovframework.com.cop.smt.mtm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 메모할일에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붾え?좎씪?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 할일ID, 할일제목, 할일시작시간, 할일종료시간, 작성자ID, 할일내용 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?좎씪ID, ?좎씪?쒕ぉ, ?좎씪?쒖옉?쒓컙, ?좎씪醫낅즺?쒓컙, ?묒꽦?륤D, ?좎씪?댁슜 ??ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:12:47
+ * @created 19-7-2010 ?ㅼ쟾 10:12:47
  *   <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class MemoTodo implements Serializable {
 
-	/** 할일ID */
+	/** ?좎씪ID */
 	private String todoId;
-	/** 할일제목 */
+	/** ?좎씪?쒕ぉ */
 	private String todoNm;
-	/** 할일시작시간 */
+	/** ?좎씪?쒖옉?쒓컙 */
 	private String todoBeginTime;
-	/** 할일종료시간 */
+	/** ?좎씪醫낅즺?쒓컙 */
 	private String todoEndTime;
-	/** 할일일자 */
+	/** ?좎씪?쇱옄 */
 	private String todoDe;
-	/** 할일시작시 */
+	/** ?좎씪?쒖옉??*/
 	private String todoBeginHour;
-	/** 할일시작분 */
+	/** ?좎씪?쒖옉遺?*/
 	private String todoBeginMin;
-	/** 할일종료시 */
+	/** ?좎씪醫낅즺??*/
 	private String todoEndHour;
-	/** 할일종료분 */
+	/** ?좎씪醫낅즺遺?*/
 	private String todoEndMin;
-	/** 작성자ID */
+	/** ?묒꽦?륤D */
 	private String wrterId;
-	/** 작성자명 */
+	/** ?묒꽦?먮챸 */
 	private String wrterNm;
-	/** 할일내용 */
+	/** ?좎씪?댁슜 */
 	private String todoCn;
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId = "";
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId = "";
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm = "";
 
 	public String getTodoId() {

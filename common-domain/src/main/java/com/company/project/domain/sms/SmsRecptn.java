@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * SMS 수신 정보 JPA Entity
- * 레거시 테이블: COMTNSMSRECPTN
+ * SMS ??뤿뻿 ?類ｋ궖 JPA Entity
+ * ??뉕탢?????뵠?? COMTNSMSRECPTN
  */
 @Entity
 @Table(name = "NSMSRECPTN")

@@ -15,20 +15,20 @@ import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
 
 /**
- * 일반회원관리에 관한비지니스클래스를 정의한다.
- * @author 공통서비스 개발팀 조재영
+ * ?쇰컲?뚯썝愿由ъ뿉 愿?쒕퉬吏?덉뒪?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
- *   2014.12.08	 이기하			암호화방식 변경(EgovFileScrty.encryptPassword)
- *   2017.07.21  장동한 			로그인인증제한 작업
+ *   2009.04.10  議곗옱??         理쒖큹 ?앹꽦
+ *   2014.12.08	 ?닿린??		?뷀샇?붾갑??蹂寃?EgovFileScrty.encryptPassword)
+ *   2017.07.21  ?λ룞??			濡쒓렇?몄씤利앹젣???묒뾽
  *
  * </pre>
  */
@@ -52,18 +52,18 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	private EgovIdGnrService idgenService;
 
 	/**
-	 * 사용자의 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	 * @param mberManageVO 일반회원 등록정보
-	 * @return result 등록결과
+	 * ?ъ슜?먯쓽 湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
+	 * @param mberManageVO ?쇰컲?뚯썝 ?깅줉?뺣낫
+	 * @return result ?깅줉寃곌낵
 	 * @throws Exception
 	 */
 	@Override
 	public String insertMber(MberManageVO mberManageVO) throws Exception  {
-		//고유아이디 셋팅
+		//怨좎쑀?꾩씠???뗮똿
 		String uniqId = idgenService.getNextStringId();
 		mberManageVO.setUniqId(uniqId);
-		//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(mberManageVO.getPassword(), EgovStringUtil.isNullToString(mberManageVO.getMberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//?⑥뒪?뚮뱶 ?뷀샇??
+		String pass = EgovFileScrty.encryptPassword(mberManageVO.getPassword(), EgovStringUtil.isNullToString(mberManageVO.getMberId()));//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		mberManageVO.setPassword(pass);
 
 		String result = mberManageDAO.insertMber(mberManageVO);
@@ -71,9 +71,9 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 사용자 중 검색조건에 맞는 일반회원의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param uniqId 상세조회대상 일반회원아이디
-	 * @return mberManageVO 일반회원상세정보
+	 * 湲??깅줉???ъ슜??以?寃?됱“嫄댁뿉 留욌뒗 ?쇰컲?뚯썝???뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param uniqId ?곸꽭議고쉶????쇰컲?뚯썝?꾩씠??
+	 * @return mberManageVO ?쇰컲?뚯썝?곸꽭?뺣낫
 	 * @throws Exception
 	 */
 	@Override
@@ -83,9 +83,9 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 회원 중 검색조건에 맞는 회원들의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param userSearchVO 검색조건
-	 * @return List<MberManageVO> 일반회원목록정보
+	 * 湲??깅줉???뚯썝 以?寃?됱“嫄댁뿉 留욌뒗 ?뚯썝?ㅼ쓽 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @return List<MberManageVO> ?쇰컲?뚯썝紐⑸줉?뺣낫
 	 */
 	@Override
 	public List<MberManageVO> selectMberList(UserDefaultVO userSearchVO) {
@@ -93,9 +93,9 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
     /**
-     * 일반회원 총 개수를 조회한다.
-     * @param userSearchVO 검색조건
-     * @return 일반회원총개수(int)
+     * ?쇰컲?뚯썝 珥?媛쒖닔瑜?議고쉶?쒕떎.
+     * @param userSearchVO 寃?됱“嫄?
+     * @return ?쇰컲?뚯썝珥앷컻??int)
      */
     @Override
 	public int selectMberListTotCnt(UserDefaultVO userSearchVO) {
@@ -103,21 +103,21 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
     }
 
 	/**
-	 * 화면에 조회된 일반회원의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
-	 * @param mberManageVO 일반회원수정정보
+	 * ?붾㈃??議고쉶???쇰컲?뚯썝??湲곕낯?뺣낫瑜??섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫
 	 * @throws Exception
 	 */
 	@Override
 	public void updateMber(MberManageVO mberManageVO) throws Exception {
-		//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(mberManageVO.getPassword(), EgovStringUtil.isNullToString(mberManageVO.getMberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//?⑥뒪?뚮뱶 ?뷀샇??
+		String pass = EgovFileScrty.encryptPassword(mberManageVO.getPassword(), EgovStringUtil.isNullToString(mberManageVO.getMberId()));//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		mberManageVO.setPassword(pass);
 		mberManageDAO.updateMber(mberManageVO);
 	}
 
 	/**
-	 * 화면에 조회된 사용자의 정보를 데이터베이스에서 삭제
-	 * @param checkedIdForDel 삭제대상 일반회원아이디
+	 * ?붾㈃??議고쉶???ъ슜?먯쓽 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ??젣
+	 * @param checkedIdForDel ??젣????쇰컲?뚯썝?꾩씠??
 	 * @throws Exception
 	 */
 	@Override
@@ -126,22 +126,22 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 		for (String element : delId) {
 			String [] id = element.split(":");
 			if (id[0].equals("USR03")){
-		        //업무사용자(직원)삭제
+		        //?낅Т?ъ슜??吏곸썝)??젣
 				userManageDAO.deleteUser(id[1]);
 			}else if(id[0].equals("USR01")){
-				//일반회원삭제
+				//?쇰컲?뚯썝??젣
 				mberManageDAO.deleteMber(id[1]);
 			}else if(id[0].equals("USR02")){
-				//기업회원삭제
+				//湲곗뾽?뚯썝??젣
 				entrprsManageDAO.deleteEntrprsmber(id[1]);
 			}
 		}
 	}
 
 	/**
-	 * 일반회원 약관확인
-	 * @param stplatId 일반회원약관아이디
-	 * @return 일반회원약관정보(List)
+	 * ?쇰컲?뚯썝 ?쎄??뺤씤
+	 * @param stplatId ?쇰컲?뚯썝?쎄??꾩씠??
+	 * @return ?쇰컲?뚯썝?쎄??뺣낫(List)
 	 * @throws Exception
 	 */
 	@Override
@@ -150,8 +150,8 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 일반회원암호수정
-	 * @param mberManageVO 일반회원수정정보(비밀번호)
+	 * ?쇰컲?뚯썝?뷀샇?섏젙
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫(鍮꾨?踰덊샇)
 	 * @throws Exception
 	 */
 	@Override
@@ -160,9 +160,9 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 일반회원이 비밀번호를 기억하지 못할 때 비밀번호를 찾을 수 있도록 함
-	 * @param passVO 일반회원암호 조회조건정보
-	 * @return mberManageVO 일반회원암호정보
+	 * ?쇰컲?뚯썝??鍮꾨?踰덊샇瑜?湲곗뼲?섏? 紐삵븷 ??鍮꾨?踰덊샇瑜?李얠쓣 ???덈룄濡???
+	 * @param passVO ?쇰컲?뚯썝?뷀샇 議고쉶議곌굔?뺣낫
+	 * @return mberManageVO ?쇰컲?뚯썝?뷀샇?뺣낫
 	 * @throws Exception
 	 */
 	@Override
@@ -173,8 +173,8 @@ public class EgovMberManageServiceImpl extends EgovAbstractServiceImpl implement
 
 
 	/**
-	 * 로그인인증제한 해제
-	 * @param mberManageVO 일반회원정보
+	 * 濡쒓렇?몄씤利앹젣???댁젣
+	 * @param mberManageVO ?쇰컲?뚯썝?뺣낫
 	 * @return void
 	 * @throws Exception
 	 */

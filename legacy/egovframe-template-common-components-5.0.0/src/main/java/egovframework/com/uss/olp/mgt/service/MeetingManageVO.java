@@ -2,18 +2,18 @@ package egovframework.com.uss.olp.mgt.service;
 
 import java.io.Serializable;
 /**
- * 회의관리 Vo Class 구현
- * @author 공통서비스 장동한
+ * ?뚯쓽愿由?Vo Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -21,579 +21,579 @@ public class MeetingManageVO implements Serializable {
 
 	private static final long serialVersionUID = -4820974750521985908L;
 
-	/** 회의ID */
+	/** ?뚯쓽ID */
 	private String mtgId = "";
 
-	/** 회의명 */
+	/** ?뚯쓽紐?*/
 	private String mtgNm = "";
 
-	/** 회의안건내용 */
+	/** ?뚯쓽?덇굔?댁슜 */
 	private String mtgMtrCn = "";
 
-	/** 회의순번 */
+	/** ?뚯쓽?쒕쾲 */
 	private String mtgSn = "";
 
-	/** 회의수 */
+	/** ?뚯쓽??*/
 	private String mtgCo = "";
 
-	/** 회의일자 */
+	/** ?뚯쓽?쇱옄 */
 	private String mtgDe = "";
 
-	/** 회의장소 */
+	/** ?뚯쓽?μ냼 */
 	private String mtgPlace = "";
 
-	/** 회의시작시간 */
+	/** ?뚯쓽?쒖옉?쒓컙 */
 	private String mtgBeginTime = "";
 
-	/** 회의종료시간 */
+	/** ?뚯쓽醫낅즺?쒓컙 */
 	private String mtgEndTime = "";
 
-	/** 비공개회의여부 */
+	/** 鍮꾧났媛쒗쉶?섏뿬遺 */
 	private String clsdrMtgAt = "";
 
-	/** 열람개시일자 */
+	/** ?대엺媛쒖떆?쇱옄 */
 	private String readngBeginDe = "";
 
-	/** 열람여부 */
+	/** ?대엺?щ? */
 	private String readngAt = "";
 
-	/** 회의결과내용 */
+	/** ?뚯쓽寃곌낵?댁슜 */
 	private String mtgResultCn = "";
 
-	/** 회의결과유무 */
+	/** ?뚯쓽寃곌낵?좊Т */
 	private String mtgResultEnnc = "";
 
-	/** 기타사항 */
+	/** 湲고??ы빆 */
 	private String etcMatter = "";
 
-	/** 주관부서ID */
+	/** 二쇨?遺?쏧D */
 	private String mngtDeptId = "";
 
-	/** 주관부서명 */
+	/** 二쇨?遺?쒕챸 */
 	private String mngtDeptNm = "";
 
-	/** 주관자ID */
+	/** 二쇨??륤D */
 	private String mnaerId = "";
 
-	/** 주관자명 */
+	/** 二쇨??먮챸 */
 	private String mnaerNm = "";
 
-	/** 주관자명 */
+	/** 二쇨??먮챸 */
 	private String mnaerDeptId = "";
 
-	/** 주관자부서명 */
+	/** 二쇨??먮??쒕챸 */
 	private String mnaerDeptNm = "";
 
-	/** 주관자직위직급코드 */
+	/** 二쇨??먯쭅?꾩쭅湲됱퐫??*/
 	private String mnaerOfcpsClsfCode = "";
 
-	/** 회의여부 */
+	/** ?뚯쓽?щ? */
 	private String mtnAt = "";
 
-	/** 불참석자수 */
+	/** 遺덉갭?앹옄??*/
 	private String nonatdrnCo = "";
 
-	/** 참석자수 */
+	/** 李몄꽍?먯닔 */
 	private String atdrnCo = "";
 
-	/** 회의시작 시간 */
+	/** ?뚯쓽?쒖옉 ?쒓컙 */
 	private String mtgBeginHH = "";
 
-	/** 회의시작 분 */
+	/** ?뚯쓽?쒖옉 遺?*/
 	private String mtgBeginMM = "";
 
-	/** 회의종료 시간 */
+	/** ?뚯쓽醫낅즺 ?쒓컙 */
 	private String mtgEndHH = "";
 
-	/** 회의종료 분 */
+	/** ?뚯쓽醫낅즺 遺?*/
 	private String mtgEndMM = "";
 
-	/** 최초등록시점  */
+	/** 理쒖큹?깅줉?쒖젏  */
 	private String frstRegisterPnttm = "";
 
-	/** 최초등록아이디 */
+	/** 理쒖큹?깅줉?꾩씠??*/
 	private String frstRegisterId = "";
 
-	/** 최종수정일 */
+	/** 理쒖쥌?섏젙??*/
 	private String lastUpdusrPnttm = "";
 
-	/** 최종수정자 아이디 */
+	/** 理쒖쥌?섏젙???꾩씠??*/
 	private String lastUpdusrId = "";
 
-	/** 화면 명령 처리 */
+	/** ?붾㈃ 紐낅졊 泥섎━ */
 	private String cmd = "";
 
 	/**
-	 * mtgId attribute 를 리턴한다.
+	 * mtgId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgId() {
 		return mtgId;
 	}
 	/**
-	 * mtgId attribute 값을 설정한다.
+	 * mtgId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgId String
 	 */
 	public void setMtgId(String mtgId) {
 		this.mtgId = mtgId;
 	}
 	/**
-	 * mtgNm attribute 를 리턴한다.
+	 * mtgNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgNm() {
 		return mtgNm;
 	}
 	/**
-	 * mtgNm attribute 값을 설정한다.
+	 * mtgNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgNm String
 	 */
 	public void setMtgNm(String mtgNm) {
 		this.mtgNm = mtgNm;
 	}
 	/**
-	 * mtgMtrCn attribute 를 리턴한다.
+	 * mtgMtrCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgMtrCn() {
 		return mtgMtrCn;
 	}
 	/**
-	 * mtgMtrCn attribute 값을 설정한다.
+	 * mtgMtrCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgMtrCn String
 	 */
 	public void setMtgMtrCn(String mtgMtrCn) {
 		this.mtgMtrCn = mtgMtrCn;
 	}
 	/**
-	 * mtgSn attribute 를 리턴한다.
+	 * mtgSn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgSn() {
 		return mtgSn;
 	}
 	/**
-	 * mtgSn attribute 값을 설정한다.
+	 * mtgSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgSn String
 	 */
 	public void setMtgSn(String mtgSn) {
 		this.mtgSn = mtgSn;
 	}
 	/**
-	 * mtgCo attribute 를 리턴한다.
+	 * mtgCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgCo() {
 		return mtgCo;
 	}
 	/**
-	 * mtgCo attribute 값을 설정한다.
+	 * mtgCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgCo String
 	 */
 	public void setMtgCo(String mtgCo) {
 		this.mtgCo = mtgCo;
 	}
 	/**
-	 * mtgDe attribute 를 리턴한다.
+	 * mtgDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgDe() {
 		return mtgDe;
 	}
 	/**
-	 * mtgDe attribute 값을 설정한다.
+	 * mtgDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgDe String
 	 */
 	public void setMtgDe(String mtgDe) {
 		this.mtgDe = mtgDe;
 	}
 	/**
-	 * mtgPlace attribute 를 리턴한다.
+	 * mtgPlace attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgPlace() {
 		return mtgPlace;
 	}
 	/**
-	 * mtgPlace attribute 값을 설정한다.
+	 * mtgPlace attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgPlace String
 	 */
 	public void setMtgPlace(String mtgPlace) {
 		this.mtgPlace = mtgPlace;
 	}
 	/**
-	 * mtgBeginTime attribute 를 리턴한다.
+	 * mtgBeginTime attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgBeginTime() {
 		return mtgBeginTime;
 	}
 	/**
-	 * mtgBeginTime attribute 값을 설정한다.
+	 * mtgBeginTime attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgBeginTime String
 	 */
 	public void setMtgBeginTime(String mtgBeginTime) {
 		this.mtgBeginTime = mtgBeginTime;
 	}
 	/**
-	 * mtgEndTime attribute 를 리턴한다.
+	 * mtgEndTime attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgEndTime() {
 		return mtgEndTime;
 	}
 	/**
-	 * mtgEndTime attribute 값을 설정한다.
+	 * mtgEndTime attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgEndTime String
 	 */
 	public void setMtgEndTime(String mtgEndTime) {
 		this.mtgEndTime = mtgEndTime;
 	}
 	/**
-	 * clsdrMtgAt attribute 를 리턴한다.
+	 * clsdrMtgAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getClsdrMtgAt() {
 		return clsdrMtgAt;
 	}
 	/**
-	 * clsdrMtgAt attribute 값을 설정한다.
+	 * clsdrMtgAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return clsdrMtgAt String
 	 */
 	public void setClsdrMtgAt(String clsdrMtgAt) {
 		this.clsdrMtgAt = clsdrMtgAt;
 	}
 	/**
-	 * readngBeginDe attribute 를 리턴한다.
+	 * readngBeginDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getReadngBeginDe() {
 		return readngBeginDe;
 	}
 	/**
-	 * readngBeginDe attribute 값을 설정한다.
+	 * readngBeginDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return readngBeginDe String
 	 */
 	public void setReadngBeginDe(String readngBeginDe) {
 		this.readngBeginDe = readngBeginDe;
 	}
 	/**
-	 * readngAt attribute 를 리턴한다.
+	 * readngAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getReadngAt() {
 		return readngAt;
 	}
 	/**
-	 * readngAt attribute 값을 설정한다.
+	 * readngAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return readngAt String
 	 */
 	public void setReadngAt(String readngAt) {
 		this.readngAt = readngAt;
 	}
 	/**
-	 * mtgResultCn attribute 를 리턴한다.
+	 * mtgResultCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgResultCn() {
 		return mtgResultCn;
 	}
 	/**
-	 * mtgResultCn attribute 값을 설정한다.
+	 * mtgResultCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgResultCn String
 	 */
 	public void setMtgResultCn(String mtgResultCn) {
 		this.mtgResultCn = mtgResultCn;
 	}
 	/**
-	 * mtgResultEnnc attribute 를 리턴한다.
+	 * mtgResultEnnc attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgResultEnnc() {
 		return mtgResultEnnc;
 	}
 	/**
-	 * mtgResultEnnc attribute 값을 설정한다.
+	 * mtgResultEnnc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgResultEnnc String
 	 */
 	public void setMtgResultEnnc(String mtgResultEnnc) {
 		this.mtgResultEnnc = mtgResultEnnc;
 	}
 	/**
-	 * etcMatter attribute 를 리턴한다.
+	 * etcMatter attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEtcMatter() {
 		return etcMatter;
 	}
 	/**
-	 * etcMatter attribute 값을 설정한다.
+	 * etcMatter attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return etcMatter String
 	 */
 	public void setEtcMatter(String etcMatter) {
 		this.etcMatter = etcMatter;
 	}
 	/**
-	 * mngtDeptId attribute 를 리턴한다.
+	 * mngtDeptId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMngtDeptId() {
 		return mngtDeptId;
 	}
 	/**
-	 * mngtDeptId attribute 값을 설정한다.
+	 * mngtDeptId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mngtDeptId String
 	 */
 	public void setMngtDeptId(String mngtDeptId) {
 		this.mngtDeptId = mngtDeptId;
 	}
 	/**
-	 * mngtDeptNm attribute 를 리턴한다.
+	 * mngtDeptNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMngtDeptNm() {
 		return mngtDeptNm;
 	}
 	/**
-	 * mngtDeptNm attribute 값을 설정한다.
+	 * mngtDeptNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mngtDeptNm String
 	 */
 	public void setMngtDeptNm(String mngtDeptNm) {
 		this.mngtDeptNm = mngtDeptNm;
 	}
 	/**
-	 * mnaerId attribute 를 리턴한다.
+	 * mnaerId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMnaerId() {
 		return mnaerId;
 	}
 	/**
-	 * mnaerId attribute 값을 설정한다.
+	 * mnaerId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mnaerId String
 	 */
 	public void setMnaerId(String mnaerId) {
 		this.mnaerId = mnaerId;
 	}
 	/**
-	 * mnaerNm attribute 를 리턴한다.
+	 * mnaerNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMnaerNm() {
 		return mnaerNm;
 	}
 	/**
-	 * mnaerNm attribute 값을 설정한다.
+	 * mnaerNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mnaerNm String
 	 */
 	public void setMnaerNm(String mnaerNm) {
 		this.mnaerNm = mnaerNm;
 	}
 	/**
-	 * mnaerDeptId attribute 를 리턴한다.
+	 * mnaerDeptId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMnaerDeptId() {
 		return mnaerDeptId;
 	}
 	/**
-	 * mnaerDeptId attribute 값을 설정한다.
+	 * mnaerDeptId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mnaerDeptId String
 	 */
 	public void setMnaerDeptId(String mnaerDeptId) {
 		this.mnaerDeptId = mnaerDeptId;
 	}
 	/**
-	 * mnaerDeptNm attribute 를 리턴한다.
+	 * mnaerDeptNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMnaerDeptNm() {
 		return mnaerDeptNm;
 	}
 	/**
-	 * mnaerDeptNm attribute 값을 설정한다.
+	 * mnaerDeptNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mnaerDeptNm String
 	 */
 	public void setMnaerDeptNm(String mnaerDeptNm) {
 		this.mnaerDeptNm = mnaerDeptNm;
 	}
 	/**
-	 * mnaerOfcpsClsfCode attribute 를 리턴한다.
+	 * mnaerOfcpsClsfCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMnaerOfcpsClsfCode() {
 		return mnaerOfcpsClsfCode;
 	}
 	/**
-	 * mnaerOfcpsClsfCode attribute 값을 설정한다.
+	 * mnaerOfcpsClsfCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mnaerOfcpsClsfCode String
 	 */
 	public void setMnaerOfcpsClsfCode(String mnaerOfcpsClsfCode) {
 		this.mnaerOfcpsClsfCode = mnaerOfcpsClsfCode;
 	}
 	/**
-	 * mtnAt attribute 를 리턴한다.
+	 * mtnAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtnAt() {
 		return mtnAt;
 	}
 	/**
-	 * mtnAt attribute 값을 설정한다.
+	 * mtnAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtnAt String
 	 */
 	public void setMtnAt(String mtnAt) {
 		this.mtnAt = mtnAt;
 	}
 	/**
-	 * nonatdrnCo attribute 를 리턴한다.
+	 * nonatdrnCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNonatdrnCo() {
 		return nonatdrnCo;
 	}
 	/**
-	 * nonatdrnCo attribute 값을 설정한다.
+	 * nonatdrnCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return nonatdrnCo String
 	 */
 	public void setNonatdrnCo(String nonatdrnCo) {
 		this.nonatdrnCo = nonatdrnCo;
 	}
 	/**
-	 * atdrnCo attribute 를 리턴한다.
+	 * atdrnCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAtdrnCo() {
 		return atdrnCo;
 	}
 	/**
-	 * atdrnCo attribute 값을 설정한다.
+	 * atdrnCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return atdrnCo String
 	 */
 	public void setAtdrnCo(String atdrnCo) {
 		this.atdrnCo = atdrnCo;
 	}
 	/**
-	 * mtgBeginHH attribute 를 리턴한다.
+	 * mtgBeginHH attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgBeginHH() {
 		return mtgBeginHH;
 	}
 	/**
-	 * mtgBeginHH attribute 값을 설정한다.
+	 * mtgBeginHH attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgBeginHH String
 	 */
 	public void setMtgBeginHH(String mtgBeginHH) {
 		this.mtgBeginHH = mtgBeginHH;
 	}
 	/**
-	 * mtgBeginMM attribute 를 리턴한다.
+	 * mtgBeginMM attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgBeginMM() {
 		return mtgBeginMM;
 	}
 	/**
-	 * mtgBeginMM attribute 값을 설정한다.
+	 * mtgBeginMM attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgBeginMM String
 	 */
 	public void setMtgBeginMM(String mtgBeginMM) {
 		this.mtgBeginMM = mtgBeginMM;
 	}
 	/**
-	 * mtgEndHH attribute 를 리턴한다.
+	 * mtgEndHH attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgEndHH() {
 		return mtgEndHH;
 	}
 	/**
-	 * mtgEndHH attribute 값을 설정한다.
+	 * mtgEndHH attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgEndHH String
 	 */
 	public void setMtgEndHH(String mtgEndHH) {
 		this.mtgEndHH = mtgEndHH;
 	}
 	/**
-	 * mtgEndMM attribute 를 리턴한다.
+	 * mtgEndMM attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMtgEndMM() {
 		return mtgEndMM;
 	}
 	/**
-	 * mtgEndMM attribute 값을 설정한다.
+	 * mtgEndMM attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return mtgEndMM String
 	 */
 	public void setMtgEndMM(String mtgEndMM) {
 		this.mtgEndMM = mtgEndMM;
 	}
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
 		return frstRegisterPnttm;
 	}
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
 		this.frstRegisterPnttm = frstRegisterPnttm;
 	}
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
 		return frstRegisterId;
 	}
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
 		this.frstRegisterId = frstRegisterId;
 	}
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
 		return lastUpdusrPnttm;
 	}
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
 		this.lastUpdusrPnttm = lastUpdusrPnttm;
 	}
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
 		return lastUpdusrId;
 	}
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 	/**
-	 * cmd attribute 를 리턴한다.
+	 * cmd attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCmd() {
 		return cmd;
 	}
 	/**
-	 * cmd attribute 값을 설정한다.
+	 * cmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cmd String
 	 */
 	public void setCmd(String cmd) {

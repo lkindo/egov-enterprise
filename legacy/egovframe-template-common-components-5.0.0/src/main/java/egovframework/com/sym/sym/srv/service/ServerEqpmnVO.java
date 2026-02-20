@@ -8,27 +8,27 @@ import lombok.Setter;
 
 /**
  * <pre>
- * 개요
- * - 서버장비에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?λ퉬?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 서버장비의 목록 항목 및 조회조건을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?λ퉬??紐⑸줉 ??ぉ 諛?議고쉶議곌굔??愿由ы븳??
  * </pre>
  * 
- * @author 이문준
+ * @author ?대Ц以
  * 
  * @since 2010.06.28
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.28  이문준          최초 생성
- *   2020-08-28  신용호          보안약점 조치 (Private 배열에 Public 데이터 할당[CWE-496])
- *   2025.07.24  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-MethodReturnsInternalArray(Private 배열에 Public 데이터 할당)
+ *   2010.06.28  ?대Ц以          理쒖큹 ?앹꽦
+ *   2020-08-28  ?좎슜??         蹂댁븞?쎌젏 議곗튂 (Private 諛곗뿴??Public ?곗씠???좊떦[CWE-496])
+ *   2025.07.24  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-MethodReturnsInternalArray(Private 諛곗뿴??Public ?곗씠???좊떦)
  *
  *      </pre>
  */
@@ -37,19 +37,19 @@ public class ServerEqpmnVO extends ServerEqpmn {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 서버 장비 목록
+	 * ?쒕쾭 ?λ퉬 紐⑸줉
 	 */
 	private List<?> serverEqpmnList;
 
 	/**
-	 * 삭제대상 목록
+	 * ??젣???紐⑸줉
 	 */
 	@Getter
 	@Setter
 	private String delYn[];
 
 	/**
-	 * 서버장비명 조회조건
+	 * ?쒕쾭?λ퉬紐?議고쉶議곌굔
 	 */
 	private String strServerEqpmnNm;
 

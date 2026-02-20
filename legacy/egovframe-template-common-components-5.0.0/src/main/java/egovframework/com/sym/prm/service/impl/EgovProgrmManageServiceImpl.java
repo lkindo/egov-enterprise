@@ -13,18 +13,18 @@ import egovframework.com.sym.prm.service.ProgrmManageVO;
 import jakarta.annotation.Resource;
 
 /**
- * 프로그램목록관리 및 프로그램변경관리에 관한 비즈니스 구현 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * ?꾨줈洹몃옩紐⑸줉愿由?諛??꾨줈洹몃옩蹂寃쎄?由ъ뿉 愿??鍮꾩쫰?덉뒪 援ы쁽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -36,7 +36,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 
 
 	/**
-	 * 프로그램 상세정보를 조회
+	 * ?꾨줈洹몃옩 ?곸꽭?뺣낫瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return ProgrmManageVO
 	 * @exception Exception
@@ -47,7 +47,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 	
 	/**
-     * 프로그램 목록을 조회
+     * ?꾨줈洹몃옩 紐⑸줉??議고쉶
      * 
      * @param vo ComDefaultVO
      * @return List
@@ -59,7 +59,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
     
 	/**
-	 * 프로그램목록 총건수를 조회한다.
+	 * ?꾨줈洹몃옩紐⑸줉 珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo  ComDefaultVO
 	 * @return Integer
 	 * @exception Exception
@@ -69,7 +69,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
         return progrmManageDAO.selectProgrmListTotCnt(vo);
 	}
 	/**
-	 * 프로그램 정보를 등록
+	 * ?꾨줈洹몃옩 ?뺣낫瑜??깅줉
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -78,12 +78,12 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
     	try {
 			progrmManageDAO.insertProgrm(vo);
 		} catch (DuplicateKeyException e) {
-			throw new DuplicateKeyException("이미 등록된 프로그램파일명입니다.", e);
+			throw new DuplicateKeyException("?대? ?깅줉???꾨줈洹몃옩?뚯씪紐낆엯?덈떎.", e);
 		}
 	}
 
 	/**
-	 * 프로그램 정보를 수정
+	 * ?꾨줈洹몃옩 ?뺣낫瑜??섏젙
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -93,7 +93,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램 정보를 삭제
+	 * ?꾨줈洹몃옩 ?뺣낫瑜???젣
 	 * @param vo ProgrmManageVO
 	 * @exception Exception
 	 */
@@ -103,7 +103,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램 파일 존재여부를 조회
+	 * ?꾨줈洹몃옩 ?뚯씪 議댁옱?щ?瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -114,7 +114,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥??뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception
@@ -125,7 +125,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청 목록을 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?紐⑸줉??議고쉶
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -136,7 +136,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청목록 총건수를 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?ぉ濡?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -147,7 +147,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청을 등록
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ?깅줉
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -157,7 +157,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청을 수정
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ?섏젙
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -167,7 +167,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청을 삭제
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쓣 ??젣
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -177,7 +177,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청 요청번호MAX 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥??붿껌踰덊샇MAX ?뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception
@@ -188,7 +188,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청처리 목록을 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由?紐⑸줉??議고쉶
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -199,7 +199,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청처리목록 총건수를 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由щぉ濡?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -210,7 +210,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청처리를 수정
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由щ? ?섏젙
 	 * @param vo ProgrmManageDtlVO
 	 * @exception Exception
 	 */
@@ -220,7 +220,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 화면에 조회된 메뉴 목록 정보를 데이터베이스에서 삭제
+	 * ?붾㈃??議고쉶??硫붾돱 紐⑸줉 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * @param checkedProgrmFileNmForDel String
 	 * @exception Exception
 	 */
@@ -236,7 +236,7 @@ public class EgovProgrmManageServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 프로그램변경요청자 Email 정보를 조회
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?옄 Email ?뺣낫瑜?議고쉶
 	 * @param vo ProgrmManageDtlVO
 	 * @return ProgrmManageDtlVO
 	 * @exception Exception

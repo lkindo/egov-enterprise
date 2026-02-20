@@ -7,16 +7,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 온라인메뉴얼 VO Class 구현
- * @author 공통서비스 장동한
+ * ?⑤씪?몃찓?댁뼹 VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -24,44 +24,44 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -7024282928339275971L;
 
-	/** 온라인메뉴얼 아이디 */
+	/** ?⑤씪?몃찓?댁뼹 ?꾩씠??*/
     private String onlineMnlId;
 
-    /** 온라인메뉴얼 명 */
+    /** ?⑤씪?몃찓?댁뼹 紐?*/
     private String onlineMnlNm;
 
-    /** 온라인메뉴얼 구분코드 */
+    /** ?⑤씪?몃찓?댁뼹 援щ텇肄붾뱶 */
     private String onlineMnlSeCode;
 
-    /** 온라인메뉴얼 구분코드 */
+    /** ?⑤씪?몃찓?댁뼹 援щ텇肄붾뱶 */
     private String onlineMnlSeCodeNm;
     
-    /** 온라인메뉴얼 정의 */
+    /** ?⑤씪?몃찓?댁뼹 ?뺤쓽 */
     private String onlineMnlDf;
 
-    /** 온라인메뉴얼 설명 */
+    /** ?⑤씪?몃찓?댁뼹 ?ㅻ챸 */
     private String onlineMnlDc;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
     
-    /** 최초등록자 */
+    /** 理쒖큹?깅줉??*/
     private String frstRegisterNm;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
-    /** 컨트롤 명령어 */
+    /** 而⑦듃濡?紐낅졊??*/
     private String cmd;
 
     /**
-     * onlineMnlId 리턴
+     * onlineMnlId 由ы꽩
      *
      * @return the onlineMnlId
      */
@@ -70,7 +70,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlId 설정
+     * onlineMnlId ?ㅼ젙
      *
      * @param onlineMnlId the onlineMnlId to set
      */
@@ -79,7 +79,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlNm 리턴
+     * onlineMnlNm 由ы꽩
      *
      * @return the onlineMnlNm
      */
@@ -88,7 +88,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlNm 설정
+     * onlineMnlNm ?ㅼ젙
      *
      * @param onlineMnlNm the onlineMnlNm to set
      */
@@ -97,7 +97,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlSeCode 리턴
+     * onlineMnlSeCode 由ы꽩
      *
      * @return the onlineMnlSeCode
      */
@@ -106,7 +106,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlSeCode 설정
+     * onlineMnlSeCode ?ㅼ젙
      *
      * @param onlineMnlSeCode the onlineMnlSeCode to set
      */
@@ -115,7 +115,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlSeCodeNm 리턴
+     * onlineMnlSeCodeNm 由ы꽩
      *
      * @return the onlineMnlSeCode
      */
@@ -124,7 +124,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlSeCodeNm 설정
+     * onlineMnlSeCodeNm ?ㅼ젙
      *
      * @param onlineMnlSeCodeNm the onlineMnlSeCodeNm to set
      */
@@ -133,7 +133,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
     
     /**
-     * onlineMnlDf 리턴
+     * onlineMnlDf 由ы꽩
      *
      * @return the onlineMnlDf
      */
@@ -142,7 +142,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlDf 설정
+     * onlineMnlDf ?ㅼ젙
      *
      * @param onlineMnlDf the onlineMnlDf to set
      */
@@ -151,7 +151,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlDc 리턴
+     * onlineMnlDc 由ы꽩
      *
      * @return the onlineMnlDc
      */
@@ -160,7 +160,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * onlineMnlDc 설정
+     * onlineMnlDc ?ㅼ젙
      *
      * @param onlineMnlDc the onlineMnlDc to set
      */
@@ -169,7 +169,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 리턴
+     * frstRegisterPnttm 由ы꽩
      *
      * @return the frstRegisterPnttm
      */
@@ -178,7 +178,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 설정
+     * frstRegisterPnttm ?ㅼ젙
      *
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
@@ -187,7 +187,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 리턴
+     * frstRegisterId 由ы꽩
      *
      * @return the frstRegisterId
      */
@@ -196,7 +196,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 설정
+     * frstRegisterId ?ㅼ젙
      *
      * @param frstRegisterId the frstRegisterId to set
      */
@@ -205,7 +205,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
     
     /**
-     * frstRegisterNm 리턴
+     * frstRegisterNm 由ы꽩
      *
      * @return the frstRegisterNm
      */
@@ -214,7 +214,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
     
     /**
-     * frstRegisterNm 설정
+     * frstRegisterNm ?ㅼ젙
      *
      * @param frstRegisterNm the frstRegisterNm to set
      */
@@ -223,7 +223,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 리턴
+     * lastUpdusrPnttm 由ы꽩
      *
      * @return the lastUpdusrPnttm
      */
@@ -232,7 +232,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 설정
+     * lastUpdusrPnttm ?ㅼ젙
      *
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
@@ -241,7 +241,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 리턴
+     * lastUpdusrId 由ы꽩
      *
      * @return the lastUpdusrId
      */
@@ -250,7 +250,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 설정
+     * lastUpdusrId ?ㅼ젙
      *
      * @param lastUpdusrId the lastUpdusrId to set
      */
@@ -259,7 +259,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 리턴
+     * cmd 由ы꽩
      *
      * @return the cmd
      */
@@ -268,7 +268,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 설정
+     * cmd ?ㅼ젙
      *
      * @param cmd the cmd to set
      */
@@ -277,7 +277,7 @@ public class OnlineManualVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-   	 * toString 메소드를 대치한다.
+   	 * toString 硫붿냼?쒕? ?移섑븳??
    	 */
    	public String toString(){
    		return ToStringBuilder.reflectionToString(this);

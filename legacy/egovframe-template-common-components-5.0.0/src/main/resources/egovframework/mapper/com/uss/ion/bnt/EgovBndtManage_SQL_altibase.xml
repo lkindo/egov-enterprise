@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.12   	안민정     	 	테이블 표준화에 따른 수정사항 반영					
+  2011.8.12   	?덈???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺					
 							BNDT_CECK_CD_NM	->	BNDT_CECK_CODE_NM
 							BNDT_CECK_CD	->	BNDT_CECK_CODE
 --><!--Converted at: Wed May 11 15:51:03 KST 2016-->
@@ -101,7 +101,7 @@
         
     </select>
     
-<!-- 당직체크관리 -->
+<!-- ?뱀쭅泥댄겕愿由?-->
 
    <select id="selectBndtCeckManageList" parameterType="egovframework.com.uss.ion.bnt.service.BndtCeckManageVO" resultType="egovframework.com.uss.ion.bnt.service.BndtCeckManageVO">
         
@@ -226,7 +226,7 @@
         
     </select>
 
-<!-- 당직일지 -->
+<!-- ?뱀쭅?쇱? -->
     <select id="selectBndtDiary" parameterType="egovframework.com.uss.ion.bnt.service.BndtDiaryVO" resultType="egovframework.com.uss.ion.bnt.service.BndtDiaryVO">
         
 
@@ -290,8 +290,8 @@
         
     </delete> 
 
-	<!-- 엑셀일괄 등록 처리  -->
-	<!-- 2024.10.29	권태성	당직엑셀등록 오류 수정  -->
+	<!-- ?묒??쇨큵 ?깅줉 泥섎━  -->
+	<!-- 2024.10.29	沅뚰깭???뱀쭅?묒??깅줉 ?ㅻ쪟 ?섏젙  -->
     <select id="selectBndtManageBnde" resultType="egovframework.com.uss.ion.bnt.service.BndtManageVO" flushCache="true">
         <![CDATA[
 				select * from (

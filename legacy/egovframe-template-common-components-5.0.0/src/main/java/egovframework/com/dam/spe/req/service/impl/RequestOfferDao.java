@@ -12,16 +12,16 @@ import org.springframework.stereotype.Repository;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.dam.spe.req.service.RequestOfferVO;
 /**
- * 지식정보제공/지식정보요청를 처리하는 Dao Class 구현
- * @author 공통콤포넌트 장동한
+ * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? 泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.08.30
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  장동한          최초 생성
+ *   2010.08.30  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -31,8 +31,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RequestOfferDao.class);
 
     /**
-     * 삭제시 하위 답변 건수를 조회한다.
-     * @param RequestOfferVO  조회할 정보가 담긴 객체
+     * ??젣???섏쐞 ?듬? 嫄댁닔瑜?議고쉶?쒕떎.
+     * @param RequestOfferVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return int
      * @throws Exception
      */
@@ -42,8 +42,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 
 
     /**
-     * 등록된 지식전문가 건수를 조회한다.
-     * @param RequestOfferVO  조회할 정보가 담긴 객체
+     * ?깅줉??吏?앹쟾臾멸? 嫄댁닔瑜?議고쉶?쒕떎.
+     * @param RequestOfferVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return int
      * @throws Exception
      */
@@ -52,8 +52,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 목록을 한다.
-     * @param requestOfferVO  조회할 정보가 담긴 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? 紐⑸줉???쒕떎.
+     * @param requestOfferVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return List
      * @throws Exception
      */
@@ -63,8 +63,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 목록 전체 건수를(을) 조회한다.
-     * @param requestOfferVO  조회할 정보가 담긴 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param requestOfferVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return int
      * @throws Exception
      */
@@ -73,8 +73,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 상세조회 한다.
-     * @param requestOfferVO  지식정보제공/지식정보요청 정보가 담김 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫媛 ?닿? 媛앹껜
      * @return RequestOfferVO
      * @throws Exception
      */
@@ -83,8 +83,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 등록한다.
-     * @param qindvdlInfoPolicy  지식정보제공/지식정보요청 정보가 담김 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?깅줉?쒕떎.
+     * @param qindvdlInfoPolicy  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     @SuppressWarnings("unused")
@@ -96,14 +96,14 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 
     		Map<?, ?> mapAnsParents = (Map<?, ?>)selectOne("RequestOffer.selectRequestOfferReplyaAnsParents", requestOfferVO);
 
-    		//단말노드가 아닐때 탐색
+    		//?⑤쭚?몃뱶媛 ?꾨땺???먯깋
     		if(mapAnsParents != null){
 	    		Map<?, ?> mapAnsParentsSearch = null;
 	    		String sAnsParents = (String)mapAnsParents.get("knoId");
 
 	    		LOGGER.info("sAnsParents>" + sAnsParents);
 
-	    		//단말노드 검사
+	    		//?⑤쭚?몃뱶 寃??
 	    		while(true){
 	    			HashMap<String, String> hmParam = new HashMap<>();
 	    			hmParam.put("ansParents", sAnsParents);
@@ -112,7 +112,7 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 
 	    			if(mapAnsParents == null){
 	    				break;
-	    			//1레벨 일때 처리
+	    			//1?덈꺼 ?쇰븣 泥섎━
 	    			//}else if(mapAnsParents == null){
 	    			}else{
 	    				sAnsParents = (String)mapAnsParents.get("knoId");
@@ -121,7 +121,7 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 	    		}
     		}
 
-    		//단말노드가 없으면
+    		//?⑤쭚?몃뱶媛 ?놁쑝硫?
     		if( nSeq != 1){
     			requestOfferVO.setAnsSeq(nSeq);
     		}
@@ -135,8 +135,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 수정한다.
-     * @param requestOfferVO  지식정보제공/지식정보요청 정보가 담김 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?섏젙?쒕떎.
+     * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void updateRequestOffer(RequestOfferVO requestOfferVO) throws Exception {
@@ -144,8 +144,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 지식정보제공/지식정보요청를(을) 삭제한다.
-     * @param requestOfferVO  지식정보제공/지식정보요청 정보가 담김 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ??젣?쒕떎.
+     * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteRequestOffer(RequestOfferVO requestOfferVO) throws Exception {

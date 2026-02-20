@@ -4,25 +4,25 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 통계 결과 DTO
+ * ?듦퀎 寃곌낵 DTO
  */
 @Getter
 @Builder
 public class StatsDto {
-    // 검색 조건
+    // 寃??議곌굔
     private String fromDate;
     private String toDate;
     private String statsKind;
     private String detailStatsKind;
     private String pdKind;
 
-    // 결과 데이터
+    // 寃곌낵 ?곗씠??
     private String statsDate;
     private int statsCo;
     private int maxStatsCo;
     private int minStatsCo;
 
-    // CRUD 통계
+    // CRUD ?듦퀎
     private int creatCo;
     private int inqireCo;
     private int updtCo;
@@ -30,7 +30,7 @@ public class StatsDto {
     private int outptCo;
     private int errorCo;
 
-    // 게시판 통계
+    // 寃뚯떆???듦퀎
     private int totInqireCo;
     private float avrgInqireCo;
     private String mxmmInqireBbsId;
@@ -38,6 +38,6 @@ public class StatsDto {
     private String topNtcepersonId;
     private int topNtcepersonCo;
 
-    // 그래프
+    // 洹몃옒??
     private float maxUnit;
 }

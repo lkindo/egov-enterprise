@@ -7,11 +7,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -------			--------	---------------------------
- *   2024.10.29		inganyoyo	Transaction 처리 오류 수정(Article)
+ *   2024.10.29		inganyoyo	Transaction 泥섎━ ?ㅻ쪟 ?섏젙(Article)
  * </pre>
  */
 
@@ -35,7 +35,7 @@ public interface EgovArticleService {
 	Map<String, Object> selectGuestArticleList(BoardVO vo);
 	
 	/*
-	 * 블로그 관련
+	 * 釉붾줈洹?愿??
 	 */
 	BoardVO selectArticleCnOne(BoardVO boardVO);
 	

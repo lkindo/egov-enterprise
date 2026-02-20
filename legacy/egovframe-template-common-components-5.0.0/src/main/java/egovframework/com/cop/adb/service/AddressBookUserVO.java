@@ -2,91 +2,91 @@ package egovframework.com.cop.adb.service;
 
 
 /**
- * 주소록구성원 관리를 위한 VO 모델 클래스
- * @author 공통컴포넌트개발팀 윤성록
+ * 二쇱냼濡앷뎄?깆썝 愿由щ? ?꾪븳 VO 紐⑤뜽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25  윤성록          최초 생성
- *   2016.12.13 최두영          클래스명 변경
+ *   2009.9.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
+ *   2016.12.13 理쒕몢??         ?대옒?ㅻ챸 蹂寃?
  * </pre>
  */
 @SuppressWarnings("serial")
 public class AddressBookUserVO extends AddressBookUser{
     
     
-    /** 사용자 아이디 */
+    /** ?ъ슜???꾩씠??*/
     private String userId = "";
     
-    /** 사용자 명 */
+    /** ?ъ슜??紐?*/
     private String userNm = "";     
 
-    /** 사용자 이메일 */
+    /** ?ъ슜???대찓??*/
     private String userEmail = "";
     
-    /** 사용자 접전화 처음 */
+    /** ?ъ슜???묒쟾??泥섏쓬 */
     private String areaNo = "";
     
-    /** 사용자 집전화 가운데 */
+    /** ?ъ슜??吏묒쟾??媛?대뜲 */
     private String homemiddleTelno = "";
     
-    /** 사용자 집전화 마지막 */
+    /** ?ъ슜??吏묒쟾??留덉?留?*/
     private String homeendTelno = "";
        
-    /** 검색시작일 */
+    /** 寃?됱떆?묒씪 */
     private String searchBgnDe = "";
 
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
 
-    /** 검색종료일 */
+    /** 寃?됱쥌猷뚯씪 */
     private String searchEndDe = "";
 
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
 
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private long sortOrdr = 0L;
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
     
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int rowNo = 0;
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 최종 수정자명 */
+    /** 理쒖쥌 ?섏젙?먮챸 */
     private String lastUpdusrNm = "";
     
        
     /**
-     * userId attribute를 리턴한다.
+     * userId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userId
      */
@@ -95,7 +95,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userId attribute 값을 설정한다.
+     * userId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userId
      *            the userId to set
@@ -105,7 +105,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userNm attribute를 리턴한다.
+     * userNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userNm
      */
@@ -114,7 +114,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userNm attribute 값을 설정한다.
+     * userNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userNm
      *            the userNm to set
@@ -124,7 +124,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute를 리턴한다.
+     * userEmail attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userEmail
      */
@@ -133,7 +133,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute 값을 설정한다.
+     * userEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userEmail
      *            the userEmail to set
@@ -143,7 +143,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute를 리턴한다.
+     * userEmail attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userEmail
      */
@@ -152,7 +152,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute 값을 설정한다.
+     * userEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userEmail
      *            the userEmail to set
@@ -162,7 +162,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute를 리턴한다.
+     * userEmail attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userEmail
      */
@@ -171,7 +171,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute 값을 설정한다.
+     * userEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userEmail
      *            the userEmail to set
@@ -181,7 +181,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * userEmail attribute를 리턴한다.
+     * userEmail attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userEmail
      */
@@ -194,7 +194,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchBgnDe attribute를 리턴한다.
+     * searchBgnDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchBgnDe
      */
@@ -203,7 +203,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchBgnDe attribute 값을 설정한다.
+     * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchBgnDe
      *            the searchBgnDe to set
@@ -213,7 +213,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchCnd
      */
@@ -222,7 +222,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchCnd
      *            the searchCnd to set
@@ -232,7 +232,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchEndDe attribute를 리턴한다.
+     * searchEndDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchEndDe
      */
@@ -241,7 +241,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchEndDe attribute 값을 설정한다.
+     * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchEndDe
      *            the searchEndDe to set
@@ -251,7 +251,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchWrd
      */
@@ -260,7 +260,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchWrd
      *            the searchWrd to set
@@ -270,7 +270,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the sortOrdr
      */
@@ -279,7 +279,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param sortOrdr
      *            the sortOrdr to set
@@ -289,7 +289,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchUseYn attribute를 리턴한다.
+     * searchUseYn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchUseYn
      */
@@ -298,7 +298,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * searchUseYn attribute 값을 설정한다.
+     * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchUseYn
      *            the searchUseYn to set
@@ -308,7 +308,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageIndex
      */
@@ -317,7 +317,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageIndex
      *            the pageIndex to set
@@ -327,7 +327,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageUnit
      */
@@ -336,7 +336,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageUnit
      *            the pageUnit to set
@@ -346,7 +346,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageSize
      */
@@ -355,7 +355,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageSize
      *            the pageSize to set
@@ -365,7 +365,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the firstIndex
      */
@@ -374,7 +374,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param firstIndex
      *            the firstIndex to set
@@ -384,7 +384,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
     
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastIndex
      */
@@ -393,7 +393,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastIndex
      *            the lastIndex to set
@@ -403,7 +403,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the recordCountPerPage
      */
@@ -412,7 +412,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param recordCountPerPage
      *            the recordCountPerPage to set
@@ -422,7 +422,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * getRowNo attribute를 리턴한다.
+     * getRowNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the getRowNo
      */
@@ -431,7 +431,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * getRowNo attribute 값을 설정한다.
+     * getRowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param getRowNo
      *            the getRowNo to set
@@ -441,7 +441,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterNm
      */
@@ -450,7 +450,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterNm
      *            the frstRegisterNm to set
@@ -460,7 +460,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * lastUpdusrNm attribute를 리턴한다.
+     * lastUpdusrNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrNm
      */
@@ -469,7 +469,7 @@ public class AddressBookUserVO extends AddressBookUser{
     }
 
     /**
-     * lastUpdusrNm attribute 값을 설정한다.
+     * lastUpdusrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrNm
      *            the lastUpdusrNm to set

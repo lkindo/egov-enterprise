@@ -5,32 +5,32 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 시스템 이력 서비스 인터페이스
+ * ?쒖뒪???대젰 ?쒕퉬???명꽣?섏씠??
  */
 public interface EgovSystemHistoryService {
 
     /**
-     * 시스템 이력 목록 조회
+     * ?쒖뒪???대젰 紐⑸줉 議고쉶
      */
     Page<SystemHistoryDto> getSystemHistoryList(String keyword, Pageable pageable);
 
     /**
-     * 시스템 이력 상세 조회
+     * ?쒖뒪???대젰 ?곸꽭 議고쉶
      */
     SystemHistoryDto getSystemHistory(String histId);
 
     /**
-     * 시스템 이력 등록
+     * ?쒖뒪???대젰 ?깅줉
      */
     String createSystemHistory(String userId, SystemHistoryDto dto);
 
     /**
-     * 시스템 이력 수정
+     * ?쒖뒪???대젰 ?섏젙
      */
     void updateSystemHistory(String histId, String userId, SystemHistoryDto dto);
 
     /**
-     * 시스템 이력 삭제
+     * ?쒖뒪???대젰 ??젣
      */
     void deleteSystemHistory(String histId, String userId);
 }

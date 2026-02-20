@@ -17,23 +17,23 @@ import egovframework.com.sym.log.lgm.service.SysLog;
 import jakarta.annotation.Resource;
 
 /**
- * 시스템 로그정보를 관리하기 위한 컨트롤러 클래스
+ * ?쒖뒪??濡쒓렇?뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.03.11
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이삼섭          최초 생성
- *   2011.07.01  이기하          패키지 분리(sym.log -> sym.log.lgm)
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2017.09.14  이정은          표준프레임워크 v3.7 개선
- *   2025.07.12  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.11  ?댁궪??         理쒖큹 ?앹꽦
+ *   2011.07.01  ?닿린??         ?⑦궎吏 遺꾨━(sym.log -> sym.log.lgm)
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2017.09.14  ?댁젙?          ?쒖??꾨젅?꾩썙??v3.7 媛쒖꽑
+ *   2025.07.12  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -48,13 +48,13 @@ public class EgovSysLogController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 시스템 로그 목록 조회
+	 * ?쒖뒪??濡쒓렇 紐⑸줉 議고쉶
 	 *
 	 * @param sysLog
 	 * @return sym/log/lgm/EgovSysLogList
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "로그관리", listUrl = "/sym/log/lgm/SelectSysLogList.do", order = 1030, gid = 60)
+	@IncludedInfo(name = "濡쒓렇愿由?, listUrl = "/sym/log/lgm/SelectSysLogList.do", order = 1030, gid = 60)
 	@RequestMapping(value = "/sym/log/lgm/SelectSysLogList.do")
 	public String selectSysLogInf(@ModelAttribute("searchVO") SysLog sysLog, ModelMap model) throws Exception {
 
@@ -87,7 +87,7 @@ public class EgovSysLogController {
 	}
 
 	/**
-	 * 시스템 로그 상세 조회
+	 * ?쒖뒪??濡쒓렇 ?곸꽭 議고쉶
 	 *
 	 * @param sysLog
 	 * @param model

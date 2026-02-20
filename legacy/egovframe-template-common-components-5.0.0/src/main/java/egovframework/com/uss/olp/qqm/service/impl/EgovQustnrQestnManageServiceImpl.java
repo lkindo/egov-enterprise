@@ -14,18 +14,18 @@ import egovframework.com.uss.olp.qqm.service.QustnrQestnManageVO;
 import jakarta.annotation.Resource;
 
 /**
- * 설문문항을 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ臾명빆??泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -42,8 +42,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 
 
     /**
-	 * 설문조사 응답자답변내용결과/기타답변내용결과 통계를 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
+	 * ?ㅻЦ議곗궗 ?묐떟?먮떟蹂?댁슜寃곌낵/湲고??듬??댁슜寃곌낵 ?듦퀎瑜?議고쉶?쒕떎.
+	 * @param Map - ?ㅻЦ吏 ?뺣낫媛 ?닿? Parameter
 	 * @return Map
 	 * @throws Exception
 	 */
@@ -53,8 +53,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문조사 통계를 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
+	 * ?ㅻЦ議곗궗 ?듦퀎瑜?議고쉶?쒕떎.
+	 * @param Map - ?ㅻЦ吏 ?뺣낫媛 ?닿? Parameter
 	 * @return Map
 	 * @throws Exception
 	 */
@@ -63,8 +63,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 		return dao.selectQustnrManageStatistics(map);
 	}
     /**
-	 * 설문지정보 설문제목을 조회한다.
-	 * @param Map - 설문지 정보가 담김 Parameter
+	 * ?ㅻЦ吏?뺣낫 ?ㅻЦ?쒕ぉ??議고쉶?쒕떎.
+	 * @param Map - ?ㅻЦ吏 ?뺣낫媛 ?닿? Parameter
 	 * @return Map
 	 * @throws Exception
 	 */
@@ -74,8 +74,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ臾명빆 紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -85,8 +85,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항를(을) 상세조회 한다.
-	 * @param QustnrQestnManage - 회정정보가 담김 VO
+	 * ?ㅻЦ臾명빆瑜??? ?곸꽭議고쉶 ?쒕떎.
+	 * @param QustnrQestnManage - ?뚯젙?뺣낫媛 ?닿? VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -96,8 +96,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ臾명빆瑜??? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -107,8 +107,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항를(을) 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ臾명빆瑜??? ?깅줉?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	@Override
@@ -121,8 +121,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항를(을) 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ臾명빆瑜??? ?섏젙?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	@Override
@@ -131,8 +131,8 @@ public class EgovQustnrQestnManageServiceImpl extends EgovAbstractServiceImpl im
 	}
 
     /**
-	 * 설문문항를(을) 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ臾명빆瑜??? ??젣?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	@Override

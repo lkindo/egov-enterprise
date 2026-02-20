@@ -13,46 +13,46 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "회의실 예약 정보 DTO")
+@Schema(description = "Description")
 public class MeetingReservationDto {
 
-    @Schema(description = "예약 ID")
+    @Schema(description = "Description")
     private String resveId;
 
-    @Schema(description = "회의실 ID")
+    @Schema(description = "Description")
     private String mtgPlaceId;
 
-    @Schema(description = "회의실 명")
+    @Schema(description = "Description")
     private String mtgPlaceNm;
 
-    @Schema(description = "회의 제목")
+    @Schema(description = "Description")
     private String mtgSj;
 
-    @Schema(description = "예약자 ID")
+    @Schema(description = "Description")
     private String resveManId;
 
-    @Schema(description = "예약자 명")
+    @Schema(description = "Description")
     private String resveManNm;
 
-    @Schema(description = "예약 일자")
+    @Schema(description = "Description")
     private String resveDe;
 
-    @Schema(description = "예약 시작 시간")
+    @Schema(description = "Description")
     private String resveBeginTm;
 
-    @Schema(description = "예약 종료 시간")
+    @Schema(description = "Description")
     private String resveEndTm;
 
-    @Schema(description = "참석 인원")
+    @Schema(description = "Description")
     private Integer atndncNmpr;
 
-    @Schema(description = "회의 내용")
+    @Schema(description = "Description")
     private String mtgCn;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static MeetingReservationDto from(MeetingReservation entity) {

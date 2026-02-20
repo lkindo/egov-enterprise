@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 보고서통계 및 자료이용현황통계 JPA 서비스
+ * 蹂닿퀬?쒗넻怨?諛??먮즺?댁슜?꾪솴?듦퀎 JPA ?쒕퉬??
  */
 @Service
 @RequiredArgsConstructor
@@ -27,10 +27,10 @@ public class ReportStatsService {
     @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
     private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
 
-    // ========== 보고서 통계 ==========
+    // ========== 蹂닿퀬???듦퀎 ==========
 
     /**
-     * 보고서 통계 목록 조회
+     * 蹂닿퀬???듦퀎 紐⑸줉 議고쉶
      */
     public Page<ReprtStats> getReprtStatsList(String reprtTy, String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
@@ -39,7 +39,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 보고서 통계 전체 건수
+     * 蹂닿퀬???듦퀎 ?꾩껜 嫄댁닔
      */
     public long getReprtStatsCount(String reprtTy, String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -48,7 +48,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 등록일별 보고서 통계
+     * ?깅줉?쇰퀎 蹂닿퀬???듦퀎
      */
     public List<Object[]> getReprtStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -57,7 +57,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 보고서 유형별 통계
+     * 蹂닿퀬???좏삎蹂??듦퀎
      */
     public List<Object[]> getReprtStatsByType(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -66,7 +66,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 보고서 상태별 통계
+     * 蹂닿퀬???곹깭蹂??듦퀎
      */
     public List<Object[]> getReprtStatsByStatus(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -75,7 +75,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 보고서 통계 등록
+     * 蹂닿퀬???듦퀎 ?깅줉
      */
     @Transactional
     public void insertReprtStats(ReprtStats reprtStats) throws Exception {
@@ -93,10 +93,10 @@ public class ReportStatsService {
         reprtStatsRepository.save(Objects.requireNonNull(newStats));
     }
 
-    // ========== 자료이용현황 통계 ==========
+    // ========== ?먮즺?댁슜?꾪솴 ?듦퀎 ==========
 
     /**
-     * 자료이용현황 통계 목록 조회
+     * ?먮즺?댁슜?꾪솴 ?듦퀎 紐⑸줉 議고쉶
      */
     public Page<DtaUseStats> getDtaUseStatsList(String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
@@ -105,7 +105,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 자료이용현황 통계 전체 건수
+     * ?먮즺?댁슜?꾪솴 ?듦퀎 ?꾩껜 嫄댁닔
      */
     public long getDtaUseStatsCount(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -114,7 +114,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 등록일별 자료이용현황 통계
+     * ?깅줉?쇰퀎 ?먮즺?댁슜?꾪솴 ?듦퀎
      */
     public List<Object[]> getDtaUseStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
@@ -123,7 +123,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 게시판별 자료이용현황 통계
+     * 寃뚯떆?먮퀎 ?먮즺?댁슜?꾪솴 ?듦퀎
      */
     public List<Object[]> getDtaUseStatsByBbs(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";

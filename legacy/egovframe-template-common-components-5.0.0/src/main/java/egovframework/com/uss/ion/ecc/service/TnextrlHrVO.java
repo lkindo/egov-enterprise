@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 외부인사관리 VO Class 구현
- * @author 공통서비스 장동한
+ * ?몃??몄궗愿由?VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -24,117 +24,117 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	private static final long serialVersionUID = 1739374172177710041L;
 
 	/**
-	 * 성별코드
+	 * ?깅퀎肄붾뱶
 	 */
 	private String sexdstnCode = "";
 	
 	/**
-	 * 성별코드명
+	 * ?깅퀎肄붾뱶紐?
 	 */
 	private String sexdstnCodeNm = "";
 
 	/**
-	 * 외부인사명
+	 * ?몃??몄궗紐?
 	 */
 	private String extrlHrNm = "";
 
 	/**
-	 * 이메일주소
+	 * ?대찓?쇱＜??
 	 */
 	private String emailAdres = "";
 
 	/**
-	 * 직업유형코드
+	 * 吏곸뾽?좏삎肄붾뱶
 	 */
 	private String occpTyCode = "";
 	
 	/**
-	 * 직업유형코드명
+	 * 吏곸뾽?좏삎肄붾뱶紐?
 	 */
 	private String occpTyCodeNm = "";
 
 	/**
-	 * 소속기관명
+	 * ?뚯냽湲곌?紐?
 	 */
 	private String psitnInsttNm = "";
 
 	/**
-	 * 외부인사ID
+	 * ?몃??몄궗ID
 	 */
 	private String extrlHrId = "";
 
 	/**
-	 * 행사/이벤트/캠페인 아이디
+	 * ?됱궗/?대깽??罹좏럹???꾩씠??
 	 */
 	private String eventId = "";
 	
 	/**
-	 * 행사/이벤트/캠페인내용
+	 * ?됱궗/?대깽??罹좏럹?몃궡??
 	 */
 	private String eventCn = "";
 
 	/**
-	 * 생년월일
+	 * ?앸뀈?붿씪
 	 */
 	private String brth = "";
 
 	/**
-	 * 지역번호
+	 * 吏??쾲??
 	 */
 	private String areaNo = "";
 
 	/**
-	 * 중간전화번호
+	 * 以묎컙?꾪솕踰덊샇
 	 */
 	private String middleTelno = "";
 
 	/**
-	 * 끝전화번호
+	 * ?앹쟾?붾쾲??
 	 */
 	private String endTelno = "";
 
 	/**
-	 * 생년월일(년)
+	 * ?앸뀈?붿씪(??
 	 */
 	private String brthYYYY = "";
 
 	/**
-	 * 생년월일(월)
+	 * ?앸뀈?붿씪(??
 	 */
 	private String brthMM = "";
 
 	/**
-	 * 생년월일(일)
+	 * ?앸뀈?붿씪(??
 	 */
 	private String brthDD = "";
 
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 
 	/**
-	 * 최초등록ID
+	 * 理쒖큹?깅줉ID
 	 */
 	private String frstRegisterId = "";
 	
 	/**
-	 * 최초등록ID
+	 * 理쒖큹?깅줉ID
 	 */
 	private String frstRegisterNm = "";
 
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 
 	/**
-	 * 최종수정ID
+	 * 理쒖쥌?섏젙ID
 	 */
 	private String lastUpdusrId = "";
 
 	/**
-	 * sexdstnCode attribute 를 리턴한다.
+	 * sexdstnCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSexdstnCode() {
@@ -142,7 +142,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * sexdstnCode attribute 값을 설정한다.
+	 * sexdstnCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return sexdstnCode String
 	 */
 	public void setSexdstnCode(String sexdstnCode) {
@@ -150,7 +150,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * sexdstnCodeNm attribute 를 리턴한다.
+	 * sexdstnCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSexdstnCodeNm() {
@@ -158,7 +158,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * sexdstnCodeNm attribute 값을 설정한다.
+	 * sexdstnCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return sexdstnCodeNm String
 	 */
 	public void setSexdstnCodeNm(String sexdstnCodeNm) {
@@ -166,7 +166,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * extrlHrNm attribute 를 리턴한다.
+	 * extrlHrNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getExtrlHrNm() {
@@ -174,7 +174,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * extrlHrNm attribute 값을 설정한다.
+	 * extrlHrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return extrlHrNm String
 	 */
 	public void setExtrlHrNm(String extrlHrNm) {
@@ -182,7 +182,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * emailAdres attribute 를 리턴한다.
+	 * emailAdres attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmailAdres() {
@@ -190,7 +190,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * emailAdres attribute 값을 설정한다.
+	 * emailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emailAdres String
 	 */
 	public void setEmailAdres(String emailAdres) {
@@ -198,7 +198,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * occpTyCode attribute 를 리턴한다.
+	 * occpTyCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOccpTyCode() {
@@ -206,7 +206,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * occpTyCode attribute 값을 설정한다.
+	 * occpTyCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return occpTyCode String
 	 */
 	public void setOccpTyCode(String occpTyCode) {
@@ -214,7 +214,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * occpTyCodeNm attribute 를 리턴한다.
+	 * occpTyCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOccpTyCodeNm() {
@@ -222,7 +222,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * occpTyCodeNm attribute 값을 설정한다.
+	 * occpTyCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return occpTyCodeNm String
 	 */
 	public void setOccpTyCodeNm(String occpTyCodeNm) {
@@ -230,7 +230,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * psitnInsttNm attribute 를 리턴한다.
+	 * psitnInsttNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getPsitnInsttNm() {
@@ -238,7 +238,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * psitnInsttNm attribute 값을 설정한다.
+	 * psitnInsttNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return psitnInsttNm String
 	 */
 	public void setPsitnInsttNm(String psitnInsttNm) {
@@ -246,7 +246,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * extrlHrId attribute 를 리턴한다.
+	 * extrlHrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getExtrlHrId() {
@@ -254,7 +254,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * extrlHrId attribute 값을 설정한다.
+	 * extrlHrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return extrlHrId String
 	 */
 	public void setExtrlHrId(String extrlHrId) {
@@ -262,7 +262,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * eventId attribute 를 리턴한다.
+	 * eventId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventId() {
@@ -270,7 +270,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * eventId attribute 값을 설정한다.
+	 * eventId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventId String
 	 */
 	public void setEventId(String eventId) {
@@ -278,7 +278,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * eventCn attribute 를 리턴한다.
+	 * eventCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventCn() {
@@ -286,7 +286,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * eventCn attribute 값을 설정한다.
+	 * eventCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventCn String
 	 */
 	public void setEventCn(String eventCn) {
@@ -294,7 +294,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brth attribute 를 리턴한다.
+	 * brth attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBrth() {
@@ -302,7 +302,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brth attribute 값을 설정한다.
+	 * brth attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return brth String
 	 */
 	public void setBrth(String brth) {
@@ -310,7 +310,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * areaNo attribute 를 리턴한다.
+	 * areaNo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAreaNo() {
@@ -318,7 +318,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * areaNo attribute 값을 설정한다.
+	 * areaNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return areaNo String
 	 */
 	public void setAreaNo(String areaNo) {
@@ -326,7 +326,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * middleTelno attribute 를 리턴한다.
+	 * middleTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMiddleTelno() {
@@ -334,7 +334,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * middleTelno attribute 값을 설정한다.
+	 * middleTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return middleTelno String
 	 */
 	public void setMiddleTelno(String middleTelno) {
@@ -342,7 +342,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * endTelno attribute 를 리턴한다.
+	 * endTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEndTelno() {
@@ -350,7 +350,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * endTelno attribute 값을 설정한다.
+	 * endTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return endTelno String
 	 */
 	public void setEndTelno(String endTelno) {
@@ -358,7 +358,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthYYYY attribute 를 리턴한다.
+	 * brthYYYY attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBrthYYYY() {
@@ -366,7 +366,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthYYYY attribute 값을 설정한다.
+	 * brthYYYY attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return brthYYYY String
 	 */
 	public void setBrthYYYY(String brthYYYY) {
@@ -374,7 +374,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthMM attribute 를 리턴한다.
+	 * brthMM attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBrthMM() {
@@ -382,7 +382,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthMM attribute 값을 설정한다.
+	 * brthMM attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return brthMM String
 	 */
 	public void setBrthMM(String brthMM) {
@@ -390,7 +390,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthDD attribute 를 리턴한다.
+	 * brthDD attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBrthDD() {
@@ -398,7 +398,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * brthDD attribute 값을 설정한다.
+	 * brthDD attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return brthDD String
 	 */
 	public void setBrthDD(String brthDD) {
@@ -406,7 +406,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -414,7 +414,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -422,7 +422,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -430,7 +430,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -438,7 +438,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * frstRegisterNm attribute 를 리턴한다.
+	 * frstRegisterNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterNm() {
@@ -446,7 +446,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 	
 	/**
-	 * frstRegisterNm attribute 값을 설정한다.
+	 * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterNm String
 	 */
 	public void setFrstRegisterNm(String frstRegisterNm) {
@@ -454,7 +454,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -462,7 +462,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -470,7 +470,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -478,7 +478,7 @@ public class TnextrlHrVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

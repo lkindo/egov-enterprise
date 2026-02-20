@@ -13,31 +13,31 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "메인 이미지 정보 DTO")
+@Schema(description = "Description")
 public class MainImageDto {
 
-    @Schema(description = "이미지 ID")
+    @Schema(description = "Description")
     private String imageId;
 
-    @Schema(description = "이미지 명")
+    @Schema(description = "Description")
     private String imageNm;
 
-    @Schema(description = "이미지")
+    @Schema(description = "Description")
     private String image;
 
-    @Schema(description = "이미지 파일 ID")
+    @Schema(description = "Description")
     private String imageFile;
 
-    @Schema(description = "이미지 설명")
+    @Schema(description = "Description")
     private String imageDc;
 
-    @Schema(description = "반영 여부")
+    @Schema(description = "Description")
     private String reflctAt;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static MainImageDto from(MainImage entity) {

@@ -29,24 +29,24 @@ import jakarta.validation.Valid;
 
 /**
  *
- * 공휴일에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한 Controller를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 怨듯쑕?쇱뿉 愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳 Controller瑜??뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.10.18  서준식          보안점검 조치 사항으로 sql injection에 대비한 파라미터 체크(달력 출력을 위한 숫자만 가능하도록)
- *   2024.08.31  권태성          휴일 등록 & 수정의 화면과 데이터를 처리하는 method 분리, validation 적용
- *   2025.07.04  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
- *   2025.07.04  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.07.04  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.10.18  ?쒖???         蹂댁븞?먭? 議곗튂 ?ы빆?쇰줈 sql injection???鍮꾪븳 ?뚮씪誘명꽣 泥댄겕(?щ젰 異쒕젰???꾪븳 ?レ옄留?媛?ν븯?꾨줉)
+ *   2024.08.31  沅뚰깭??         ?댁씪 ?깅줉 & ?섏젙???붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━, validation ?곸슜
+ *   2025.07.04  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
+ *   2025.07.04  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.07.04  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -67,7 +67,7 @@ public class EgovCalRestdeManageController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 달력 메인창을 호출한다.
+	 * ?щ젰 硫붿씤李쎌쓣 ?몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/cal/EgovNormalCalPopup"
@@ -79,7 +79,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 달력을 호출한다.
+	 * ?щ젰???몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/cal/EgovNormalCalPopup"
@@ -142,7 +142,7 @@ public class EgovCalRestdeManageController {
 		String tmpDay = "";
 
 		/**
-		 * 계산... START
+		 * 怨꾩궛... START
 		 */
 		for (int i = 0; i < 42; i++) {
 			ListOrderedMap map = new ListOrderedMap();
@@ -170,7 +170,7 @@ public class EgovCalRestdeManageController {
 
 		}
 		/**
-		 * 계산... END
+		 * 怨꾩궛... END
 		 */
 
 		model.addAttribute("resultList", resultCalInfoList);
@@ -179,7 +179,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 팝업 메인창을 호출한다.
+	 * ?쇰컲?щ젰 ?앹뾽 硫붿씤李쎌쓣 ?몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/cal/EgovNormalCalPopup"
@@ -191,7 +191,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 팝업 정보를 조회한다.
+	 * ?쇰컲?щ젰 ?앹뾽 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param restde
 	 * @param model
@@ -250,7 +250,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 팝업 메인창을 호출한다.
+	 * ?됱젙?щ젰 ?앹뾽 硫붿씤李쎌쓣 ?몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/cal/EgovAdministCalPopup"
@@ -262,7 +262,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 팝업 정보를 조회한다.
+	 * ?됱젙?щ젰 ?앹뾽 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param restde
 	 * @param model
@@ -322,7 +322,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 일간
+	 * ?쇰컲?щ젰 ?쇨컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -395,7 +395,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 주간
+	 * ?쇰컲?щ젰 二쇨컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -479,7 +479,7 @@ public class EgovCalRestdeManageController {
 
 		iDayWeek = weekCal.get(Calendar.DAY_OF_WEEK);
 
-		// 일요일
+		// ?쇱슂??
 		weekCal.add(Calendar.DATE, (-1) * (iDayWeek - 1));
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -488,7 +488,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde1List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 월요일
+		// ?붿슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -497,7 +497,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo2List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde2List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 화요일
+		// ?붿슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -506,7 +506,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo3List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde3List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 수요일
+		// ?섏슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -515,7 +515,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo4List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde4List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 목요일
+		// 紐⑹슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -524,7 +524,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo5List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde5List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 금요일
+		// 湲덉슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -533,7 +533,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo6List = restdeManageService.selectNormalDayCal(vo);
 		List<EgovMap> resultNormalWeekRestde6List = restdeManageService.selectNormalDayRestde(vo);
 
-		// 토요일
+		// ?좎슂??
 		weekCal.add(Calendar.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(Calendar.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(Calendar.MONTH) + 1));
@@ -564,7 +564,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 월간
+	 * ?쇰컲?щ젰 ?붽컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -627,7 +627,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 일반달력 연간
+	 * ?쇰컲?щ젰 ?곌컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -673,9 +673,9 @@ public class EgovCalRestdeManageController {
 		}
 		restde.setYear(Integer.toString(iYear));
 
-		/* 월별확인 */
+		/* ?붾퀎?뺤씤 */
 
-		/* 1월 */
+		/* 1??*/
 		iMonth = 1;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -684,7 +684,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde1List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 2월 */
+		/* 2??*/
 		iMonth = 2;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -693,7 +693,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo2List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde2List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 3월 */
+		/* 3??*/
 		iMonth = 3;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -702,7 +702,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo3List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde3List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 4월 */
+		/* 4??*/
 		iMonth = 4;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -711,7 +711,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo4List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde4List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 5월 */
+		/* 5??*/
 		iMonth = 5;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -720,7 +720,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo5List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde5List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 6월 */
+		/* 6??*/
 		iMonth = 6;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -729,7 +729,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo6List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde6List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 7월 */
+		/* 7??*/
 		iMonth = 7;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -738,7 +738,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo7List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde7List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 8월 */
+		/* 8??*/
 		iMonth = 8;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -747,7 +747,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo8List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde8List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 9월 */
+		/* 9??*/
 		iMonth = 9;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -756,7 +756,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo9List = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde9List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 10월 */
+		/* 10??*/
 		iMonth = 10;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -765,7 +765,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List0 = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde10List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 11월 */
+		/* 11??*/
 		iMonth = 11;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -774,7 +774,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List1 = restdeManageService.selectNormalRestdePopup(restde);
 		List<EgovMap> resultNormalMonthRestde11List = restdeManageService.selectNormalMonthRestde(restde);
 
-		/* 12월 */
+		/* 12??*/
 		iMonth = 12;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -812,7 +812,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 일간
+	 * ?됱젙?щ젰 ?쇨컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -887,7 +887,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 주간
+	 * ?됱젙?щ젰 二쇨컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -973,7 +973,7 @@ public class EgovCalRestdeManageController {
 
 		iDayWeek = weekCal.get(weekCal.DAY_OF_WEEK);
 
-		// 일요일
+		// ?쇱슂??
 		weekCal.add(weekCal.DATE, (-1) * (iDayWeek - 1));
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -982,7 +982,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde1List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 월요일
+		// ?붿슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -991,7 +991,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo2List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde2List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 화요일
+		// ?붿슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -1000,7 +1000,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo3List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde3List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 수요일
+		// ?섏슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -1009,7 +1009,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo4List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde4List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 목요일
+		// 紐⑹슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -1018,7 +1018,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo5List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde5List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 금요일
+		// 湲덉슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -1027,7 +1027,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo6List = restdeManageService.selectAdministDayCal(vo);
 		List<EgovMap> resultAdministWeekRestde6List = restdeManageService.selectAdministDayRestde(vo);
 
-		// 토요일
+		// ?좎슂??
 		weekCal.add(weekCal.DATE, 1);
 		vo.setYear(Integer.toString(weekCal.get(weekCal.YEAR)));
 		vo.setMonth(Integer.toString(weekCal.get(weekCal.MONTH) + 1));
@@ -1057,7 +1057,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 월간
+	 * ?됱젙?щ젰 ?붽컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -1120,7 +1120,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 행정달력 연간
+	 * ?됱젙?щ젰 ?곌컙
 	 * 
 	 * @param restde
 	 * @param model
@@ -1166,9 +1166,9 @@ public class EgovCalRestdeManageController {
 		}
 		restde.setYear(Integer.toString(iYear));
 
-		/* 월별확인 */
+		/* ?붾퀎?뺤씤 */
 
-		/* 1월 */
+		/* 1??*/
 		iMonth = 1;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1177,7 +1177,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde1List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 2월 */
+		/* 2??*/
 		iMonth = 2;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1186,7 +1186,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo2List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde2List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 3월 */
+		/* 3??*/
 		iMonth = 3;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1195,7 +1195,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo3List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde3List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 4월 */
+		/* 4??*/
 		iMonth = 4;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1204,7 +1204,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo4List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde4List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 5월 */
+		/* 5??*/
 		iMonth = 5;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1213,7 +1213,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo5List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde5List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 6월 */
+		/* 6??*/
 		iMonth = 6;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1222,7 +1222,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo6List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde6List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 7월 */
+		/* 7??*/
 		iMonth = 7;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1231,7 +1231,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo7List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde7List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 8월 */
+		/* 8??*/
 		iMonth = 8;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1240,7 +1240,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo8List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde8List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 9월 */
+		/* 9??*/
 		iMonth = 9;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1249,7 +1249,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo9List = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde9List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 10월 */
+		/* 10??*/
 		iMonth = 10;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1258,7 +1258,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List0 = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde10List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 11월 */
+		/* 11??*/
 		iMonth = 11;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1267,7 +1267,7 @@ public class EgovCalRestdeManageController {
 		List<EgovMap> resultCalInfo1List1 = restdeManageService.selectAdministRestdePopup(restde);
 		List<?> resultAdministMonthRestde11List = restdeManageService.selectAdministMonthRestde(restde);
 
-		/* 12월 */
+		/* 12??*/
 		iMonth = 12;
 		restde.setMonth(Integer.toString(iMonth));
 		cal.set(iYear, iMonth - 1, 1);
@@ -1305,7 +1305,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일을 삭제한다.
+	 * ?댁씪????젣?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param restde
@@ -1321,7 +1321,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일 등록 화면
+	 * ?댁씪 ?깅줉 ?붾㈃
 	 *
 	 * @param loginVO
 	 * @param model
@@ -1339,7 +1339,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일을 등록한다.
+	 * ?댁씪???깅줉?쒕떎.
 	 *
 	 * @param loginVO
 	 * @param restde
@@ -1369,7 +1369,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일 세부내역을 조회한다.
+	 * ?댁씪 ?몃??댁뿭??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param restde
@@ -1387,7 +1387,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일 리스트를 조회한다.
+	 * ?댁씪 由ъ뒪?몃? 議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -1395,7 +1395,7 @@ public class EgovCalRestdeManageController {
 	 * @return "egovframework/com/sym/cal/EgovRestdeList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "공휴일관리(달력)", listUrl = "/sym/cal/EgovRestdeList.do", order = 1300, gid = 90)
+	@IncludedInfo(name = "怨듯쑕?쇨?由??щ젰)", listUrl = "/sym/cal/EgovRestdeList.do", order = 1300, gid = 90)
 	@RequestMapping(value = "/sym/cal/EgovRestdeList.do")
 	public String selectRestdeList(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("searchVO") RestdeVO searchVO, ModelMap model) throws Exception {
@@ -1424,7 +1424,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일 수정 화면
+	 * ?댁씪 ?섏젙 ?붾㈃
 	 * 
 	 * @param loginVO
 	 * @param restde
@@ -1447,7 +1447,7 @@ public class EgovCalRestdeManageController {
 	}
 
 	/**
-	 * 휴일을 수정한다.
+	 * ?댁씪???섏젙?쒕떎.
 	 *
 	 * @param loginVO
 	 * @param restde

@@ -1,25 +1,25 @@
 package egovframework.com.utl.sys.pxy.service;
 
 /**
- * 개요
- * - 프록시서비스정보에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 프록시서비스정보의 목록 항목, 조회조건 등을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:51
+ * @created 28-6-2010 ?ㅼ쟾 10:44:51
  */
 public class ProxySvcVO extends ProxySvc {
 
 	private static final long serialVersionUID = 1L;
     /**
-     * 프록시 명 조회조건
+     * ?꾨줉??紐?議고쉶議곌굔
      */
     private String strProxyNm;
 
     /**
-     * 이전 서비스 상태
+     * ?댁쟾 ?쒕퉬???곹깭
      */
     private String strPreSvcSttus;
 

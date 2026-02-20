@@ -14,37 +14,37 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "설문 문항 정보 DTO")
+@Schema(description = "Description")
 public class QustnrQesitmDto {
 
-    @Schema(description = "문항 ID")
+    @Schema(description = "Description")
     private String qestnrQesitmId;
 
-    @Schema(description = "설문 ID")
+    @Schema(description = "Description")
     private String qestnrId;
 
-    @Schema(description = "질문 순번")
+    @Schema(description = "Description")
     private Long qestnSn;
 
-    @Schema(description = "질문 유형 코드")
+    @Schema(description = "Description")
     private String qestnTyCode;
 
-    @Schema(description = "질문 내용")
+    @Schema(description = "Description")
     private String qestnCn;
 
-    @Schema(description = "최대 선택 수")
+    @Schema(description = "Description")
     private Integer mxmmChoiseCo;
 
-    @Schema(description = "템플릿 ID")
+    @Schema(description = "Description")
     private String qestnrTmplatId;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
-    @Schema(description = "설문 항목 목록")
+    @Schema(description = "Description")
     private List<QustnrIemDto> items;
 
     public static QustnrQesitmDto from(QustnrQesitm entity) {

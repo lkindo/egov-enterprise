@@ -6,42 +6,42 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
-	<!-- 세션(Session) 방식 인증시에만 AuthenticInterceptor 동작  -->
+	<!-- ?몄뀡(Session) 諛⑹떇 ?몄쬆?쒖뿉留?AuthenticInterceptor ?숈옉  -->
 	<beans profile="session">  
 		<mvc:interceptors>
-			<!-- 세션방식 접근제어 인터셉터 등록 -->
+			<!-- ?몄뀡諛⑹떇 ?묎렐?쒖뼱 ?명꽣?됲꽣 ?깅줉 -->
 			<bean class="org.egovframe.rte.fdl.access.interceptor.EgovAccessInterceptor">
 				<constructor-arg ref="egovAccessConfig" />
 			</bean>
-			<!-- IP 정보 기록 인터셉터를 등록한다. -->
+			<!-- IP ?뺣낫 湲곕줉 ?명꽣?됲꽣瑜??깅줉?쒕떎. -->
 			<bean class="egovframework.com.cmm.interceptor.IpObtainInterceptor" />
 		</mvc:interceptors>
 	</beans>
 
-	<!-- 세션(Session) 방식 인증시에만 AuthenticInterceptor 동작  -->
-	<!-- 동작모드(프로파일명) : dummy, session, security ex)<beans profile="session"/> -->
+	<!-- ?몄뀡(Session) 諛⑹떇 ?몄쬆?쒖뿉留?AuthenticInterceptor ?숈옉  -->
+	<!-- ?숈옉紐⑤뱶(?꾨줈?뚯씪紐? : dummy, session, security ex)<beans profile="session"/> -->
 	<beans profile="dummy">
 		<mvc:interceptors>
 			<!--
-			* 로그인 체크가 필요한 URL과 로그인 여부를 체크해줄 인터셉터 등록에 대한 간단한 기능 예시이다.
-			* 실무에 사용시 시큐리티 간소화 서비스 또는 세션모드 접근제어를 사용한다.
+			* 濡쒓렇??泥댄겕媛 ?꾩슂??URL怨?濡쒓렇???щ?瑜?泥댄겕?댁쨪 ?명꽣?됲꽣 ?깅줉?????媛꾨떒??湲곕뒫 ?덉떆?대떎.
+			* ?ㅻТ???ъ슜???쒗걧由ы떚 媛꾩냼???쒕퉬???먮뒗 ?몄뀡紐⑤뱶 ?묎렐?쒖뼱瑜??ъ슜?쒕떎.
 			-->
 			<mvc:interceptor>
 				<mvc:mapping path="/**/*.do" />
 				<mvc:exclude-mapping path="/uat/uia/**" />
 				<mvc:exclude-mapping path="/index.do" />
-				<mvc:exclude-mapping path="/cmm/fms/getImage.do" /> <!-- 로그인화면이미지 -->
-				<mvc:exclude-mapping path="/uss/ion/bnr/getBannerImage.do" /> <!-- 포털예제배너 -->
+				<mvc:exclude-mapping path="/cmm/fms/getImage.do" /> <!-- 濡쒓렇?명솕硫댁씠誘몄? -->
+				<mvc:exclude-mapping path="/uss/ion/bnr/getBannerImage.do" /> <!-- ?ы꽭?덉젣諛곕꼫 -->
 				<mvc:exclude-mapping path="/EgovLeft.do" />
 				<mvc:exclude-mapping path="/EgovContent.do" />
 				<mvc:exclude-mapping path="/EgovTop.do" />
 				<mvc:exclude-mapping path="/EgovBottom.do" />
 				<mvc:exclude-mapping path="/EgovModal.do" />
 				<bean class="egovframework.com.cmm.interceptor.AuthenticInterceptor">
-				<!-- 관리자 권한 Ant style Pattern List -->			
+				<!-- 愿由ъ옄 沅뚰븳 Ant style Pattern List -->			
 					<property name="adminAuthPatternList">
 						<list>
-						<!-- 보안 > 권한관리 -->
+						<!-- 蹂댁븞 > 沅뚰븳愿由?-->
 							<value>/sec/ram/*.do</value>
 						</list>
 					</property>

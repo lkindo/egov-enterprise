@@ -15,18 +15,18 @@ import egovframework.com.ssi.syi.iis.service.CntcSystemVO;
 
 /**
  *
- * 연계기관에 대한 데이터 접근 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎湲곌???????곗씠???묎렐 ?대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -36,7 +36,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 연계기관을 삭제한다.
+	 * ?곌퀎湲곌?????젣?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -45,7 +45,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계시스템을 삭제한다.
+	 * ?곌퀎?쒖뒪?쒖쓣 ??젣?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -54,7 +54,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계서비스를 삭제한다.
+	 * ?곌퀎?쒕퉬?ㅻ? ??젣?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -63,7 +63,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계기관을 등록한다.
+	 * ?곌퀎湲곌????깅줉?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -72,7 +72,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계시스템을 등록한다.
+	 * ?곌퀎?쒖뒪?쒖쓣 ?깅줉?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -81,7 +81,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계서비스를 등록한다.
+	 * ?곌퀎?쒕퉬?ㅻ? ?깅줉?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -90,36 +90,36 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계기관 상세항목을 조회한다.
+	 * ?곌퀎湲곌? ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cntcInstt
-	 * @return CntcInstt(연계기관)
+	 * @return CntcInstt(?곌퀎湲곌?)
 	 */
 	public CntcInstt selectCntcInsttDetail(CntcInstt cntcInstt) throws Exception {
 		return (CntcInstt) selectOne("CntcInsttDAO.selectCntcInsttDetail", cntcInstt);
 	}
 
 	/**
-	 * 연계시스템 상세항목을 조회한다.
+	 * ?곌퀎?쒖뒪???곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cntcInstt
-	 * @return CntcInstt(연계기관)
+	 * @return CntcInstt(?곌퀎湲곌?)
 	 */
 	public CntcSystem selectCntcSystemDetail(CntcSystem cntcSystem) throws Exception {
 		return (CntcSystem) selectOne("CntcInsttDAO.selectCntcSystemDetail", cntcSystem);
 	}
 
 	/**
-	 * 연계서비스 상세항목을 조회한다.
+	 * ?곌퀎?쒕퉬???곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cntcInstt
-	 * @return CntcInstt(연계기관)
+	 * @return CntcInstt(?곌퀎湲곌?)
 	 */
 	public CntcService selectCntcServiceDetail(CntcService cntcService) throws Exception {
 		return (CntcService) selectOne("CntcInsttDAO.selectCntcServiceDetail", cntcService);
 	}
 
     /**
-	 * 연계기관 목록을 조회한다.
+	 * ?곌퀎湲곌? 紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(연계기관 목록)
+     * @return List(?곌퀎湲곌? 紐⑸줉)
      * @throws Exception
      */
     public List<EgovMap> selectCntcInsttList(CntcInsttVO searchVO) throws Exception {
@@ -127,18 +127,18 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 연계기관 총 개수를 조회한다.
+	 * ?곌퀎湲곌? 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(연계기관 총 개수)
+     * @return int(?곌퀎湲곌? 珥?媛쒖닔)
      */
     public int selectCntcInsttListTotCnt(CntcInsttVO searchVO) throws Exception {
         return (Integer)selectOne("CntcInsttDAO.selectCntcInsttListTotCnt", searchVO);
     }
 
     /**
-	 * 연계시스템 목록을 조회한다.
+	 * ?곌퀎?쒖뒪??紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(연계시스템 목록)
+     * @return List(?곌퀎?쒖뒪??紐⑸줉)
      * @throws Exception
      */
     public List<EgovMap> selectCntcSystemList(CntcSystemVO searchVO) throws Exception {
@@ -146,18 +146,18 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 연계시스템 총 개수를 조회한다.
+	 * ?곌퀎?쒖뒪??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(연계시스템 총 개수)
+     * @return int(?곌퀎?쒖뒪??珥?媛쒖닔)
      */
     public int selectCntcSystemListTotCnt(CntcSystemVO searchVO) throws Exception {
         return (Integer)selectOne("CntcInsttDAO.selectCntcSystemListTotCnt", searchVO);
     }
 
     /**
-	 * 연계서비스 목록을 조회한다.
+	 * ?곌퀎?쒕퉬??紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(연계서비스 목록)
+     * @return List(?곌퀎?쒕퉬??紐⑸줉)
      * @throws Exception
      */
     public List<EgovMap> selectCntcServiceList(CntcServiceVO searchVO) throws Exception {
@@ -165,16 +165,16 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 연계서비스 총 개수를 조회한다.
+	 * ?곌퀎?쒕퉬??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(연계서비스 총 개수)
+     * @return int(?곌퀎?쒕퉬??珥?媛쒖닔)
      */
     public int selectCntcServiceListTotCnt(CntcServiceVO searchVO) throws Exception {
         return (Integer)selectOne("CntcInsttDAO.selectCntcServiceListTotCnt", searchVO);
     }
 
     /**
-	 * 연계기관을 수정한다.
+	 * ?곌퀎湲곌????섏젙?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -183,7 +183,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계시스템을 수정한다.
+	 * ?곌퀎?쒖뒪?쒖쓣 ?섏젙?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */
@@ -192,7 +192,7 @@ public class CntcInsttDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계시스템을 수정한다.
+	 * ?곌퀎?쒖뒪?쒖쓣 ?섏젙?쒕떎.
 	 * @param cntcInstt
 	 * @throws Exception
 	 */

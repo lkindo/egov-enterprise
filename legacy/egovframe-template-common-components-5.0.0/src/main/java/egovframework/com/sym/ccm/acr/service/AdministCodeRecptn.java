@@ -3,18 +3,18 @@ package egovframework.com.sym.ccm.acr.service;
 import java.io.Serializable;
 
 /**
- * 법정동코드수신로그 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * 踰뺤젙?숈퐫?쒖닔?좊줈洹?紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -24,107 +24,107 @@ public class AdministCodeRecptn implements Serializable {
 	private static final long serialVersionUID = -8112169445756353554L;
 
 	/**
-     * 발생일자
+     * 諛쒖깮?쇱옄
      */
     private String  occrrDe = "";
 
     /**
-     * 행정구역구분
+     * ?됱젙援ъ뿭援щ텇
      */
     private String  administZoneSe = "";
 
     /**
-     * 행정구역코드
+     * ?됱젙援ъ뿭肄붾뱶
      */
     private String  administZoneCode = "";
 
     /**
-     * 작업일련번호
+     * ?묒뾽?쇰젴踰덊샇
      */
     int	opertSn = 0;
 
     /**
-     * 변경구분코드
+     * 蹂寃쎄뎄遺꾩퐫??
      */
     private String  changeSeCode = "";
 
     /**
-     * 처리구분
+     * 泥섎━援щ텇
      */
     private String  processSe = "";
 
     /**
-     * 행정구역명
+     * ?됱젙援ъ뿭紐?
      */
     private String  administZoneNm = "";
 
     /**
-     * 최하위행정구역명
+     * 理쒗븯?꾪뻾?뺢뎄??챸
      */
     private String  lowestAdministZoneNm = "";
 
     /**
-     * 시도코드
+     * ?쒕룄肄붾뱶
      */
     private String  ctprvnCode = "";
 
     /**
-     * 시군구코드
+     * ?쒓뎔援ъ퐫??
      */
     private String  signguCode = "";
 
     /**
-     * 읍면동코드
+     * ?띾㈃?숈퐫??
      */
     private String  emdCode = "";
 
     /**
-     * 리코드
+     * 由ъ퐫??
      */
     private String  liCode = "";
 
     /**
-     * 생성일자
+     * ?앹꽦?쇱옄
      */
     private String  creatDe = "";
 
     /**
-     * 폐지일자
+     * ?먯??쇱옄
      */
     private String  ablDe = "";
 
     /**
-     * 폐지유무
+     * ?먯??좊Т
      */
     private String  ablEnnc = "";
 
 	/*
-	 * 상위행정구역코드
+	 * ?곸쐞?됱젙援ъ뿭肄붾뱶
 	 */
     private String upperAdministZoneCode = "";
 
 	/*
-	 * 상위행정구역명
+	 * ?곸쐞?됱젙援ъ뿭紐?
 	 */
     private String upperAdministZoneNm = "";
 
     /*
-	 * 사용여부
+	 * ?ъ슜?щ?
 	 */
     private String useAt = "";
 
     /**
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "" ;
 
     /**
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId = "" ;
 
 	/**
-	 * occrrDe attribute 를 리턴한다.
+	 * occrrDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOccrrDe() {
@@ -132,7 +132,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * occrrDe attribute 값을 설정한다.
+	 * occrrDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param occrrDe String
 	 */
 	public void setOccrrDe(String occrrDe) {
@@ -140,7 +140,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneSe attribute 를 리턴한다.
+	 * administZoneSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAdministZoneSe() {
@@ -148,7 +148,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneSe attribute 값을 설정한다.
+	 * administZoneSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param administZoneSe String
 	 */
 	public void setAdministZoneSe(String administZoneSe) {
@@ -156,7 +156,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneCode attribute 를 리턴한다.
+	 * administZoneCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAdministZoneCode() {
@@ -164,7 +164,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneCode attribute 값을 설정한다.
+	 * administZoneCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param administZoneCode String
 	 */
 	public void setAdministZoneCode(String administZoneCode) {
@@ -172,7 +172,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * opertSn attribute 를 리턴한다.
+	 * opertSn attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getOpertSn() {
@@ -180,7 +180,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * opertSn attribute 값을 설정한다.
+	 * opertSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param opertSn int
 	 */
 	public void setOpertSn(int opertSn) {
@@ -188,7 +188,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeSeCode attribute 를 리턴한다.
+	 * changeSeCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getChangeSeCode() {
@@ -196,7 +196,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeSeCode attribute 값을 설정한다.
+	 * changeSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param changeSeCode String
 	 */
 	public void setChangeSeCode(String changeSeCode) {
@@ -204,7 +204,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * processSe attribute 를 리턴한다.
+	 * processSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProcessSe() {
@@ -212,7 +212,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * processSe attribute 값을 설정한다.
+	 * processSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param processSe String
 	 */
 	public void setProcessSe(String processSe) {
@@ -220,7 +220,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneNm attribute 를 리턴한다.
+	 * administZoneNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAdministZoneNm() {
@@ -228,7 +228,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * administZoneNm attribute 값을 설정한다.
+	 * administZoneNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param administZoneNm String
 	 */
 	public void setAdministZoneNm(String administZoneNm) {
@@ -236,7 +236,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lowestAdministZoneNm attribute 를 리턴한다.
+	 * lowestAdministZoneNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLowestAdministZoneNm() {
@@ -244,7 +244,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lowestAdministZoneNm attribute 값을 설정한다.
+	 * lowestAdministZoneNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lowestAdministZoneNm String
 	 */
 	public void setLowestAdministZoneNm(String lowestAdministZoneNm) {
@@ -252,7 +252,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ctprvnCode attribute 를 리턴한다.
+	 * ctprvnCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCtprvnCode() {
@@ -260,7 +260,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ctprvnCode attribute 값을 설정한다.
+	 * ctprvnCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ctprvnCode String
 	 */
 	public void setCtprvnCode(String ctprvnCode) {
@@ -268,7 +268,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * signguCode attribute 를 리턴한다.
+	 * signguCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSignguCode() {
@@ -276,7 +276,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * signguCode attribute 값을 설정한다.
+	 * signguCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param signguCode String
 	 */
 	public void setSignguCode(String signguCode) {
@@ -284,7 +284,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * emdCode attribute 를 리턴한다.
+	 * emdCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getEmdCode() {
@@ -292,7 +292,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * emdCode attribute 값을 설정한다.
+	 * emdCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param emdCode String
 	 */
 	public void setEmdCode(String emdCode) {
@@ -300,7 +300,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * liCode attribute 를 리턴한다.
+	 * liCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLiCode() {
@@ -308,7 +308,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * liCode attribute 값을 설정한다.
+	 * liCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param liCode String
 	 */
 	public void setLiCode(String liCode) {
@@ -316,7 +316,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * creatDe attribute 를 리턴한다.
+	 * creatDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCreatDe() {
@@ -324,7 +324,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * creatDe attribute 값을 설정한다.
+	 * creatDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param creatDe String
 	 */
 	public void setCreatDe(String creatDe) {
@@ -332,7 +332,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablDe attribute 를 리턴한다.
+	 * ablDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAblDe() {
@@ -340,7 +340,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablDe attribute 값을 설정한다.
+	 * ablDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ablDe String
 	 */
 	public void setAblDe(String ablDe) {
@@ -348,7 +348,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablEnnc attribute 를 리턴한다.
+	 * ablEnnc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAblEnnc() {
@@ -356,7 +356,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablEnnc attribute 값을 설정한다.
+	 * ablEnnc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ablEnnc String
 	 */
 	public void setAblEnnc(String ablEnnc) {
@@ -364,7 +364,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperAdministZoneCode attribute 를 리턴한다.
+	 * upperAdministZoneCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUpperAdministZoneCode() {
@@ -372,7 +372,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperAdministZoneCode attribute 값을 설정한다.
+	 * upperAdministZoneCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param upperAdministZoneCode String
 	 */
 	public void setUpperAdministZoneCode(String upperAdministZoneCode) {
@@ -380,7 +380,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperAdministZoneNm attribute 를 리턴한다.
+	 * upperAdministZoneNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUpperAdministZoneNm() {
@@ -388,7 +388,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperAdministZoneNm attribute 값을 설정한다.
+	 * upperAdministZoneNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param upperAdministZoneNm String
 	 */
 	public void setUpperAdministZoneNm(String upperAdministZoneNm) {
@@ -396,7 +396,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * useAt attribute 를 리턴한다.
+	 * useAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUseAt() {
@@ -404,7 +404,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * useAt attribute 값을 설정한다.
+	 * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param useAt String
 	 */
 	public void setUseAt(String useAt) {
@@ -412,7 +412,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -420,7 +420,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -428,7 +428,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -436,7 +436,7 @@ public class AdministCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

@@ -12,8 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 명함 사용 정보 JPA Entity
- * 레거시 테이블: NNCRDUSER
+ * 筌뤿굟釉??????類ｋ궖 JPA Entity
+ * ??뉕탢?????뵠?? NNCRDUSER
  */
 @Entity
 @Table(name = "NNCRDUSER")
@@ -48,7 +48,7 @@ public class NameCardUser extends BaseEntity {
         this.useAt = useAt;
     }
 
-    // 누락된 메서드들 추가
+    // ?袁⑥뵭??筌롫뗄苑??뺣굶 ?곕떽?
     public String getCreatDt() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
     }

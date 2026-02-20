@@ -9,18 +9,18 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
 /**
- * 일지관리를 처리하는 Dao Class 구현
- * @author 공통서비스 장동한
+ * ?쇱?愿由щ? 泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -28,8 +28,8 @@ import egovframework.com.cop.smt.dsm.service.DiaryManageVO;
 public class DiaryManageDao extends EgovComAbstractDAO {
 	
     /**
-	 * 일지관리 목록을 조회한다. 
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?쇱?愿由?紐⑸줉??議고쉶?쒕떎. 
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -38,8 +38,8 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	}
 	
     /**
-	 * 일지관리를(을) 상세조회 한다.
-	 * @param diaryManageVO - 일지관리 정보 담김 VO
+	 * ?쇱?愿由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param diaryManageVO - ?쇱?愿由??뺣낫 ?닿? VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -48,8 +48,8 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 일지관리를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?쇱?愿由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -58,8 +58,8 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	}
 	
     /**
-	 * 일지관리를(을) 등록한다.
-	 * @param qdiaryManageVO - 일지관리 정보 담김 VO
+	 * ?쇱?愿由щ?(?? ?깅줉?쒕떎.
+	 * @param qdiaryManageVO - ?쇱?愿由??뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	public void insertDiaryManage(DiaryManageVO diaryManageVO) throws Exception{
@@ -67,8 +67,8 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 일지관리를(을) 수정한다.
-	 * @param diaryManageVO - 일지관리 정보 담김 VO
+	 * ?쇱?愿由щ?(?? ?섏젙?쒕떎.
+	 * @param diaryManageVO - ?쇱?愿由??뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	public void updateDiaryManage(DiaryManageVO diaryManageVO) throws Exception{
@@ -76,8 +76,8 @@ public class DiaryManageDao extends EgovComAbstractDAO {
 	}
 	
     /**
-	 * 일지관리를(을) 삭제한다.
-	 * @param diaryManageVO - 일지관리 정보 담김 VO
+	 * ?쇱?愿由щ?(?? ??젣?쒕떎.
+	 * @param diaryManageVO - ?쇱?愿由??뺣낫 ?닿? VO
 	 * @return 
 	 * @throws Exception
 	 */

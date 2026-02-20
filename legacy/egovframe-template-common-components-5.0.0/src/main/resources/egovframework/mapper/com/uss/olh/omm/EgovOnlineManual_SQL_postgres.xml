@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.08   	서준식     	 	게시물 목록 조회시 등록자가 COMTNEMPLYRINFO 테이블과 Join 되어 업무 사용자만 표시되는 문제
-  							가 발생하여  COMVNUSERMASTER 뷰와 Join 변경으로 해결
-  2011.10.05    서준식               보안 취약점 점검사항 반영 $->#변경	
+  2011.9.08   	?쒖???    	 	寃뚯떆臾?紐⑸줉 議고쉶???깅줉?먭? COMTNEMPLYRINFO ?뚯씠釉붽낵 Join ?섏뼱 ?낅Т ?ъ슜?먮쭔 ?쒖떆?섎뒗 臾몄젣
+  							媛 諛쒖깮?섏뿬  COMVNUSERMASTER 酉곗? Join 蹂寃쎌쑝濡??닿껐
+  2011.10.05    ?쒖???              蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="OnlineManual">
 
-	<!-- 온라인메뉴얼::ResultMap 선언 -->
+	<!-- ?⑤씪?몃찓?댁뼹::ResultMap ?좎뼵 -->
 	<resultMap id="OnlineManualVO" type="egovframework.com.uss.olh.omm.service.OnlineManualVO">
 		<result property="onlineMnlId" column="ONLINE_MNL_ID"/>
 		<result property="onlineMnlNm" column="ONLINE_MNL_Nm"/>
@@ -24,7 +24,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 온라인메뉴얼::목록조회 게시물정보 -->
+	<!-- ?⑤씪?몃찓?댁뼹::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectOnlineManualList" parameterType="egovframework.com.uss.olh.omm.service.OnlineManualVO" resultMap="OnlineManualVO">
 	 
 		SELECT
@@ -64,7 +64,7 @@
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	
 	</select>
-	<!-- 온라인메뉴얼::목록조회_게시물 총개수  -->
+	<!-- ?⑤씪?몃찓?댁뼹::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectOnlineManualListCnt" parameterType="egovframework.com.uss.olh.omm.service.OnlineManualVO" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -87,7 +87,7 @@
 	 </if>
 	</select>
 
-    <!-- 온라인메뉴얼::삭제  -->
+    <!-- ?⑤씪?몃찓?댁뼹::??젣  -->
 	<delete id="deleteOnlineManual">
 		
 			DELETE FROM COMTNONLINEMANUAL
@@ -95,7 +95,7 @@
 		
 	</delete>
 
-	<!-- 온라인메뉴얼::수정  -->
+	<!-- ?⑤씪?몃찓?댁뼹::?섏젙  -->
 	<update id="updateOnlineManual">
  
 	UPDATE COMTNONLINEMANUAL
@@ -111,7 +111,7 @@
  
 	</update>
 
-	<!-- 온라인메뉴얼::상세보기 -->
+	<!-- ?⑤씪?몃찓?댁뼹::?곸꽭蹂닿린 -->
 	<select id="selectOnlineManualDetail" resultMap="OnlineManualVO">
 		SELECT
 			A.ONLINE_MNL_ID,
@@ -133,7 +133,7 @@
 		AND A.ONLINE_MNL_ID=#{onlineMnlId}
 	</select>
 
-	<!-- 온라인메뉴얼::입력  -->
+	<!-- ?⑤씪?몃찓?댁뼹::?낅젰  -->
 	<insert id="insertOnlineManual">
 	 
 

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.7   	정진오     	 	resultMap id="commentDetail"   : FRST_REGISTER_ID -> FRST_REGISTER_NM 
+  2011.9.7   	?뺤쭊??    	 	resultMap id="commentDetail"   : FRST_REGISTER_ID -> FRST_REGISTER_NM 
   							"selectComment"  : FRST_REGISTER_NM
-  							두 요소간 불일치로 인한 에러 발생 수정	
-  2011.10.18       서준식               insertComment	 : select key 태그 삭제										
+  							???붿냼媛?遺덉씪移섎줈 ?명븳 ?먮윭 諛쒖깮 ?섏젙	
+  2011.10.18       ?쒖???              insertComment	 : select key ?쒓렇 ??젣										
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">

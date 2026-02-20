@@ -12,24 +12,24 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "공통분류코드 정보")
+@Schema(description = "Common Classification Code Info")
 public class CmmnClCodeDto {
 
-    @Schema(description = "분류코드", example = "COM")
+    @Schema(description = "Classification Code")
     private String clCode;
 
-    @Schema(description = "분류코드명", example = "공통")
+    @Schema(description = "Classification Code Name")
     private String clCodeNm;
 
-    @Schema(description = "분류코드설명", example = "공통 코드입니다.")
+    @Schema(description = "Classification Code Description")
     private String clCodeDc;
 
-    @Schema(description = "사용여부", example = "Y")
+    @Schema(description = "Use Y/N")
     private String useAt;
 
-    @Schema(description = "최초등록자ID")
+    @Schema(description = "First Register ID")
     private String frstRegisterId;
 
-    @Schema(description = "최종수정자ID")
+    @Schema(description = "Last Updater ID")
     private String lastUpdusrId;
 }

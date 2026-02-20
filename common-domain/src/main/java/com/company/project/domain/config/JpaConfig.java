@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * JPA Auditing 활성화 설정
+ * JPA Auditing ??뽮쉐????쇱젟
  */
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "loginUserAuditorAware")

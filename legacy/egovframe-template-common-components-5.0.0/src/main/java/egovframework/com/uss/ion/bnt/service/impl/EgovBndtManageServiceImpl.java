@@ -38,30 +38,30 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 당직관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅愿由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 당직관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 당직관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?뱀쭅愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?뱀쭅愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  표준프레임워크     최초 생성
- *   2018.08.29  신용호          xlsx 처리 할수 있도록 selectBndtManageBndeX추가
- *   2020.11.02  신용호          KISA 보안약점 조치 - 널(null) 값 체크
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.08.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.08.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.15  ?쒖??꾨젅?꾩썙??    理쒖큹 ?앹꽦
+ *   2018.08.29  ?좎슜??         xlsx 泥섎━ ?좎닔 ?덈룄濡?selectBndtManageBndeX異붽?
+ *   2020.11.02  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 - ??null) 媛?泥댄겕
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.08.04  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.08.04  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -75,10 +75,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	private BndtManageDAO bndtManageDAO;
 
 	/**
-	 * 당직관리정보를 관리하기 위해 등록된 당직관리 목록을 조회한다.
+	 * ?뱀쭅愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???뱀쭅愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return List - 당직관리 목록
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return List - ?뱀쭅愿由?紐⑸줉
 	 */
 	@Override
 	public List<BndtManageVO> selectBndtManageList(BndtManageVO bndtManageVO) throws Exception {
@@ -86,10 +86,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직관리목록 총 개수를 조회한다.
+	 * ?뱀쭅愿由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return int - 당직관리 카운트 수
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return int - ?뱀쭅愿由?移댁슫????
 	 */
 	@Override
 	public int selectBndtManageListTotCnt(BndtManageVO bndtManageVO) throws Exception {
@@ -97,10 +97,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 등록된 당직관리의 상세정보를 조회한다.
+	 * ?깅줉???뱀쭅愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return BndtManageVO - 당직관리 VO
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return BndtManageVO - ?뱀쭅愿由?VO
 	 */
 	@Override
 	public BndtManageVO selectBndtManage(BndtManageVO bndtManageVO) throws Exception {
@@ -113,9 +113,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직관리정보를 신규로 등록한다.
+	 * ?뱀쭅愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param bndtManage - 당직관리 model
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	@Override
 	public void insertBndtManage(BndtManage bndtManage) throws Exception {
@@ -124,9 +124,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직관리정보를 수정한다.
+	 * 湲??깅줉???뱀쭅愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param bndtManage - 당직관리 model
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	@Override
 	public void updtBndtManage(BndtManage bndtManage) throws Exception {
@@ -135,9 +135,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직관리정보를 삭제한다.
+	 * 湲??깅줉???뱀쭅愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param bndtManage - 당직관리 model
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	@Override
 	public void deleteBndtManage(BndtManage bndtManage) throws Exception {
@@ -146,9 +146,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직일지 개수를 조회한다.
+	 * ?뱀쭅?쇱? 媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtManage - 당직관리
+	 * @param bndtManage - ?뱀쭅愿由?
 	 * @return int
 	 * @exception Exception
 	 */
@@ -158,13 +158,13 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 		return bndtManageDAO.selectBndtDiaryTotCnt(bndtManage);
 	}
 
-	/***** 당직 체크관리 *****/
+	/***** ?뱀쭅 泥댄겕愿由?*****/
 
 	/**
-	 * 당직체크관리정보를 관리하기 위해 등록된 당직체크관리 목록을 조회한다.
+	 * ?뱀쭅泥댄겕愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???뱀쭅泥댄겕愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return List - 당직체크관리 목록
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return List - ?뱀쭅泥댄겕愿由?紐⑸줉
 	 */
 	@Override
 	public List<BndtCeckManageVO> selectBndtCeckManageList(BndtCeckManageVO bndtCeckManageVO) throws Exception {
@@ -172,10 +172,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직체크관리목록 총 개수를 조회한다.
+	 * ?뱀쭅泥댄겕愿由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return int - 당직체크관리 카운트 수
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return int - ?뱀쭅泥댄겕愿由?移댁슫????
 	 */
 	@Override
 	public int selectBndtCeckManageListTotCnt(BndtCeckManageVO bndtCeckManageVO) throws Exception {
@@ -183,10 +183,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 등록된 당직체크관리의 상세정보를 조회한다.
+	 * ?깅줉???뱀쭅泥댄겕愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return BndtCeckManageVO - 당직체크관리 VO
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return BndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
 	 */
 	@Override
 	public BndtCeckManageVO selectBndtCeckManage(BndtCeckManageVO bndtCeckManageVO) throws Exception {
@@ -194,9 +194,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직체크관리정보를 신규로 등록한다.
+	 * ?뱀쭅泥댄겕愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	@Override
 	public void insertBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
@@ -204,9 +204,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직체크관리정보를 수정한다.
+	 * 湲??깅줉???뱀쭅泥댄겕愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	@Override
 	public void updtBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
@@ -214,9 +214,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직체크관리정보를 삭제한다.
+	 * 湲??깅줉???뱀쭅泥댄겕愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	@Override
 	public void deleteBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception {
@@ -224,9 +224,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직체크 중복여부 조회한다.
+	 * ?뱀쭅泥댄겕 以묐났?щ? 議고쉶?쒕떎.
 	 * 
-	 * @param bndtCeckManageVO - 당직체크관리 VO
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -235,13 +235,13 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 		return bndtManageDAO.selectBndtCeckManageDplctAt(bndtCeckManage);
 	}
 
-	/***** 당직 일지 *****/
+	/***** ?뱀쭅 ?쇱? *****/
 
 	/**
-	 * 등록된 당직일지관리의 상세정보를 조회한다.
+	 * ?깅줉???뱀쭅?쇱?愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtDiaryVO - 당직일지관리 VO
-	 * @return BndtDiaryVO - 당직일지관리 VO
+	 * @param bndtDiaryVO - ?뱀쭅?쇱?愿由?VO
+	 * @return BndtDiaryVO - ?뱀쭅?쇱?愿由?VO
 	 */
 	@Override
 	public List<BndtDiaryVO> selectBndtDiary(BndtDiaryVO bndtDiaryVO) throws Exception {
@@ -249,9 +249,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직일지관리정보를 신규로 등록한다.
+	 * ?뱀쭅?쇱?愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param bndtDiary    - 당직일지관리 model
+	 * @param bndtDiary    - ?뱀쭅?쇱?愿由?model
 	 * @param diaryForUpdt - String
 	 */
 	@Override
@@ -275,9 +275,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직일지관리정보를 수정한다.
+	 * 湲??깅줉???뱀쭅?쇱?愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param bndtDiary    - 당직일지관리 model
+	 * @param bndtDiary    - ?뱀쭅?쇱?愿由?model
 	 * @param diaryForUpdt - String
 	 */
 	@Override
@@ -301,19 +301,19 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 당직일지관리정보를 삭제한다.
+	 * 湲??깅줉???뱀쭅?쇱?愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param bndtDiary - 당직일지관리 model
+	 * @param bndtDiary - ?뱀쭅?쇱?愿由?model
 	 */
 	@Override
 	public void deleteBndtDiary(BndtDiary bndtDiary) throws Exception {
 		bndtManageDAO.deleteBndtDiary(bndtDiary);
 	}
 
-	/* ### 엑셀 일괄처리 프로세스 ### */
+	/* ### ?묒? ?쇨큵泥섎━ ?꾨줈?몄뒪 ### */
 
 	/**
-	 * 당직자 excel생성
+	 * ?뱀쭅??excel?앹꽦
 	 * 
 	 * @param inputStream InputStream
 	 * @return String
@@ -330,36 +330,36 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 
 		String sBndtDe = null;
 		HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream);
-		// 엑셀 파일 시트 개수 확인 sheet = 1
+		// ?묒? ?뚯씪 ?쒗듃 媛쒖닔 ?뺤씤 sheet = 1
 		if (hssfWB.getNumberOfSheets() == 1) {
-			HSSFSheet bndtSheet = hssfWB.getSheetAt(0); // 당직자 시트 가져오기
-//            HSSFRow   bndtRow    = bndtSheet.getRow(1); //당직자 row 가져오기
-//            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //당직자 cell Cnt
-			int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
+			HSSFSheet bndtSheet = hssfWB.getSheetAt(0); // ?뱀쭅???쒗듃 媛?몄삤湲?
+//            HSSFRow   bndtRow    = bndtSheet.getRow(1); //?뱀쭅??row 媛?몄삤湲?
+//            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //?뱀쭅??cell Cnt
+			int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // ??媛쒖닔 媛?몄삤湲?
 
 			BndtManageVO checkBndtManageVO = new BndtManageVO();
-			for (int j = 1; j < rowsCnt; j++) { // row 루프
+			for (int j = 1; j < rowsCnt; j++) { // row 猷⑦봽
 				BndtManageVO bndtManageVO = new BndtManageVO();
-				HSSFRow row = bndtSheet.getRow(j); // row 가져오기
+				HSSFRow row = bndtSheet.getRow(j); // row 媛?몄삤湲?
 				if (row != null) {
-//                    int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
+//                    int cells = row.getPhysicalNumberOfCells(); //cell 媛쒖닔 媛?몄삤湲?
 					HSSFCell cell = null;
-					cell = row.getCell(0); // 당직일자
+					cell = row.getCell(0); // ?뱀쭅?쇱옄
 					if (cell != null) {
 						sBndtDe = cell.getStringCellValue();
 					}
-					cell = row.getCell(1); // 당직자ID
+					cell = row.getCell(1); // ?뱀쭅?륤D
 					if (cell != null) {
 						sTempId = cell.getStringCellValue();
 					}
-					cell = row.getCell(2); // 당직자명
+					cell = row.getCell(2); // ?뱀쭅?먮챸
 					if (cell != null) {
 						sTempNm = cell.getStringCellValue();
 					}
-					checkBndtManageVO.setTempBndtNm(sTempNm); // 당직자ID
-					checkBndtManageVO.setTempBndtId(sTempId); // 당직자명
+					checkBndtManageVO.setTempBndtNm(sTempNm); // ?뱀쭅?륤D
+					checkBndtManageVO.setTempBndtId(sTempId); // ?뱀쭅?먮챸
 
-					// 최두영 로직변경
+					// 理쒕몢??濡쒖쭅蹂寃?
 					bndtManageVO = bndtManageDAO.selectBndtManageBnde(checkBndtManageVO);
 					if (bndtManageVO == null) {
 						bndtManageVO = new BndtManageVO();
@@ -378,10 +378,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 		return list;
 	}
 
-	/* ### 엑셀 일괄처리 프로세스 ### */
+	/* ### ?묒? ?쇨큵泥섎━ ?꾨줈?몄뒪 ### */
 
 	/**
-	 * 당직자 excel생성 (Xlsx 처리)
+	 * ?뱀쭅??excel?앹꽦 (Xlsx 泥섎━)
 	 * 
 	 * @param inputStream InputStream
 	 * @return String
@@ -398,36 +398,36 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 
 		String sBndtDe = null;
 		try (Workbook workbook = new XSSFWorkbook(inputStream);) {
-			// 엑셀 파일 시트 개수 확인 sheet = 1
+			// ?묒? ?뚯씪 ?쒗듃 媛쒖닔 ?뺤씤 sheet = 1
 			if (workbook != null && workbook.getNumberOfSheets() == 1) {
-				Sheet bndtSheet = workbook.getSheetAt(0); // 당직자 시트 가져오기
-//	            XSSFRow   bndtRow    = bndtSheet.getRow(1); //당직자 row 가져오기
-//	            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //당직자 cell Cnt
-				int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
+				Sheet bndtSheet = workbook.getSheetAt(0); // ?뱀쭅???쒗듃 媛?몄삤湲?
+//	            XSSFRow   bndtRow    = bndtSheet.getRow(1); //?뱀쭅??row 媛?몄삤湲?
+//	            bndtSheetRowCnt      = bndtRow.getPhysicalNumberOfCells(); //?뱀쭅??cell Cnt
+				int rowsCnt = bndtSheet.getPhysicalNumberOfRows(); // ??媛쒖닔 媛?몄삤湲?
 
 				BndtManageVO checkBndtManageVO = new BndtManageVO();
-				for (int j = 1; j < rowsCnt; j++) { // row 루프
+				for (int j = 1; j < rowsCnt; j++) { // row 猷⑦봽
 					BndtManageVO bndtManageVO = new BndtManageVO();
-					Row row = bndtSheet.getRow(j); // row 가져오기
+					Row row = bndtSheet.getRow(j); // row 媛?몄삤湲?
 					if (row != null) {
-//	                    int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
+//	                    int cells = row.getPhysicalNumberOfCells(); //cell 媛쒖닔 媛?몄삤湲?
 						Cell cell = null;
-						cell = row.getCell(0); // 당직일자
+						cell = row.getCell(0); // ?뱀쭅?쇱옄
 						if (cell != null) {
 							sBndtDe = cell.getStringCellValue();
 						}
-						cell = row.getCell(1); // 당직자ID
+						cell = row.getCell(1); // ?뱀쭅?륤D
 						if (cell != null) {
 							sTempId = cell.getStringCellValue();
 						}
-						cell = row.getCell(2); // 당직자명
+						cell = row.getCell(2); // ?뱀쭅?먮챸
 						if (cell != null) {
 							sTempNm = cell.getStringCellValue();
 						}
-						checkBndtManageVO.setTempBndtNm(sTempNm); // 당직자ID
-						checkBndtManageVO.setTempBndtId(sTempId); // 당직자명
+						checkBndtManageVO.setTempBndtNm(sTempNm); // ?뱀쭅?륤D
+						checkBndtManageVO.setTempBndtId(sTempId); // ?뱀쭅?먮챸
 
-						// 최두영 로직변경
+						// 理쒕몢??濡쒖쭅蹂寃?
 						bndtManageVO = bndtManageDAO.selectBndtManageBnde(checkBndtManageVO);
 						if (bndtManageVO == null) {
 							bndtManageVO = new BndtManageVO();
@@ -442,7 +442,7 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 					}
 				}
 			}
-		} catch (IOException e) { // KISA 보안약점 조치 (2018-10-29, 윤창원)
+		} catch (IOException e) { // KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			throw new UncheckedIOException(e);
 		}
 
@@ -450,16 +450,16 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직정보를 일괄등록처리한다.
+	 * ?뱀쭅?뺣낫瑜??쇨큵?깅줉泥섎━?쒕떎.
 	 * 
-	 * @param bndtManageVO - 당직관리 VO
-	 * @param String       - 당직자정보
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @param String       - ?뱀쭅?먯젙蹂?
 	 */
 	@Override
 	public void insertBndtManageBnde(BndtManageVO bndtManageVO, String checkedBndtManageForInsert) throws Exception {
 		BndtManage bndtManage;
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(checkedBndtManageForInsert)) {
 			String[] bndtManageValues = checkedBndtManageForInsert.split("[$]");
 			for (String sTemp : bndtManageValues) {
@@ -467,7 +467,7 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 				String[] sTempBndtManage = sTemp.split(",");
 				bndtManage.setBndtDe(sTempBndtManage[0]);
 				bndtManage.setBndtId(sTempBndtManage[1]);
-				bndtManage.setRemark("당직일괄등록");
+				bndtManage.setRemark("?뱀쭅?쇨큵?깅줉");
 				bndtManage.setFrstRegisterId(bndtManageVO.getFrstRegisterId());
 
 				bndtManageDAO.insertBndtManage(bndtManage);
@@ -476,9 +476,9 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 당직관리 건수를 조회한다.
+	 * ?뱀쭅愿由?嫄댁닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param bndtManage - 당직관리
+	 * @param bndtManage - ?뱀쭅愿由?
 	 * @return int
 	 * @exception Exception
 	 */
@@ -488,10 +488,10 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 해당일자와 현재일자의 일수 계산 (요일을 구함)
+	 * ?대떦?쇱옄? ?꾩옱?쇱옄???쇱닔 怨꾩궛 (?붿씪??援ы븿)
 	 * 
 	 * @param annvrsryManageVO
-	 * @return long (1~7로 요일을 리턴)
+	 * @return long (1~7濡??붿씪??由ы꽩)
 	 */
 	@SuppressWarnings("static-access")
 	private int getDateWeekInt(String sDate) throws Exception {
@@ -499,7 +499,7 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 		String sDayOfWeek = null;
 		int iWeek = 0;
 		sDayOfWeek = EgovStringUtil.removeMinusChar(sDate);
-		// KISA 보안약점 조치 - 널(null) 값 체크
+		// KISA 蹂댁븞?쎌젏 議곗튂 - ??null) 媛?泥댄겕
 		if (sDayOfWeek == null) {
 			return 0;
 		}
@@ -510,7 +510,7 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 해당일자와 현재일자의 일수 계산
+	 * ?대떦?쇱옄? ?꾩옱?쇱옄???쇱닔 怨꾩궛
 	 * 
 	 * @param annvrsryManageVO
 	 * @return long
@@ -520,7 +520,7 @@ public class EgovBndtManageServiceImpl extends EgovAbstractServiceImpl implement
 		String sDayOfWeek = null;
 		String sDayOfWeekReturnValue = null;
 		sDayOfWeek = EgovStringUtil.removeMinusChar(sDate);
-		String[] dayOfWeek = { "일", "월", "화", "수", "목", "금", "토" };
+		String[] dayOfWeek = { "??, "??, "??, "??, "紐?, "湲?, "?? };
 		Calendar targetDate = new GregorianCalendar();
 
 		if (sDayOfWeek != null && sDayOfWeek.length() >= 8) {

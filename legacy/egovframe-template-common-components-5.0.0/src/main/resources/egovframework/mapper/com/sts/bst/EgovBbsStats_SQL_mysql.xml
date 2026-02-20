@@ -3,24 +3,24 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="BbsStatsDAO">
 
-	<!-- 게시물 생성글수 조회 -->
+	<!-- 寃뚯떆臾??앹꽦湲??議고쉶 -->
 	<select id="selectBbsCretCntStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT SUM(CREAT_CO) AS statsCo
-		     <!-- 기간검색(년) -->
+		     <!-- 湲곌컙寃???? -->
 			 <if test='pdKind == "Y"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) AS statsDate
 		     </if>
-		     <!-- 기간검색(월) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "M"'>
 		     , CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)) AS statsDate
 		     </if>
-		     <!-- 기간검색(일) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "D"'>
 		     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)), '-'), SUBSTR(OCCRRNC_DE, 7, 2)) AS statsDate
 		     </if>
 		  FROM COMTSBBSSUMMARY
 	 	 WHERE 1 = 1
-		   <!-- 시작일자~종료일자 기간제한 -->
+		   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
 		   AND OCCRRNC_DE BETWEEN #{fromDate} AND #{toDate}
 		   AND STATS_SE = #{statsKind}
 		   <if test='detailStatsKind != null and detailStatsKind != ""'>
@@ -30,24 +30,24 @@
 		 
 	</select>
 	
-	<!-- 게시물 총조회수 조회 -->
+	<!-- 寃뚯떆臾?珥앹“?뚯닔 議고쉶 -->
 	<select id="selectBbsTotCntStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT SUM(TOT_RDCNT) AS statsCo
-		     <!-- 기간검색(년) -->
+		     <!-- 湲곌컙寃???? -->
 			 <if test='pdKind == "Y"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) AS statsDate
 		     </if>
-		     <!-- 기간검색(월) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "M"'>
 		     , CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)) AS statsDate
 		     </if>
-		     <!-- 기간검색(일) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "D"'>
 		     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)), '-'), SUBSTR(OCCRRNC_DE, 7, 2)) AS statsDate
 		     </if>
 		  FROM COMTSBBSSUMMARY
 	 	 WHERE 1 = 1
-		   <!-- 시작일자~종료일자 기간제한 -->
+		   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
 		   AND OCCRRNC_DE BETWEEN #{fromDate} AND #{toDate}
 		   AND STATS_SE = #{statsKind}
 		   <if test='detailStatsKind != null and detailStatsKind != ""'>
@@ -58,24 +58,24 @@
 		 
 	</select>
 	
-	<!-- 게시물 평균조회수 조회 -->
+	<!-- 寃뚯떆臾??됯퇏議고쉶??議고쉶 -->
 	<select id="selectBbsAvgCntStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT IFNULL(SUM(TOT_RDCNT) / SUM(CREAT_CO), 0) AS avrgInqireCo
-		     <!-- 기간검색(년) -->
+		     <!-- 湲곌컙寃???? -->
 			 <if test='pdKind == "Y"'>
 		     , SUBSTR(OCCRRNC_DE, 1, 4) AS statsDate
 		     </if>
-		     <!-- 기간검색(월) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "M"'>
 		     , CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)) AS statsDate
 		     </if>
-		     <!-- 기간검색(일) -->
+		     <!-- 湲곌컙寃???? -->
 		     <if test='pdKind == "D"'>
 		     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)), '-'), SUBSTR(OCCRRNC_DE, 7, 2)) AS statsDate
 		     </if>
 		  FROM COMTSBBSSUMMARY
 	 	 WHERE 1 = 1
-		   <!-- 시작일자~종료일자 기간제한 -->
+		   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
 		   AND OCCRRNC_DE BETWEEN #{fromDate} AND #{toDate}
 		   AND STATS_SE = #{statsKind}
 		   <if test='detailStatsKind != null and detailStatsKind != ""'>
@@ -85,7 +85,7 @@
 		 ORDER BY statsDate
 	</select>
 	
-	<!-- 최고조회수 게시물정보 조회 -->
+	<!-- 理쒓퀬議고쉶??寃뚯떆臾쇱젙蹂?議고쉶 -->
 	<select id="selectBbsMaxCntStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT a.OCCRRNC_DE AS statsDate
 		     , a.TOP_INQIRE_BBSCTT_ID AS mxmmInqireBbsId
@@ -106,7 +106,7 @@
 		 ORDER BY statsDate
 	</select>
 	
-	<!-- 최소조회수 게시물정보 조회 -->
+	<!-- 理쒖냼議고쉶??寃뚯떆臾쇱젙蹂?議고쉶 -->
 	<select id="selectBbsMinCntStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT a.OCCRRNC_DE AS statsDate
 		     , a.MUMM_INQIRE_BBSCTT_ID AS mummInqireBbsId
@@ -127,7 +127,7 @@
 		 ORDER BY statsDate
 	</select>
 	
-	<!-- 게시물 최고게시자 조회 -->
+	<!-- 寃뚯떆臾?理쒓퀬寃뚯떆??議고쉶 -->
 	<select id="selectBbsMaxUserStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		SELECT a.OCCRRNC_DE AS statsDate
 		     , a.TOP_NTCR_ID AS topNtcepersonId
@@ -153,7 +153,7 @@
 		 ORDER BY statsDate
 	</select>
 	
-	<!-- 게시물 집계 여부 조회 -->
+	<!-- 寃뚯떆臾?吏묎퀎 ?щ? 議고쉶 -->
 	<select id="selectBbsSummary" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		
 			SELECT a.STATS_SE AS statsKind
@@ -164,7 +164,7 @@
 		
 	</select>
 	
-	<!-- 게시물 생성글수 조회 -->
+	<!-- 寃뚯떆臾??앹꽦湲??議고쉶 -->
 	<select id="selectBbsCreatCo" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -187,7 +187,7 @@
 		</if>
 	</select>
 	
-	<!-- 게시물 총조회수 조회 -->
+	<!-- 寃뚯떆臾?珥앹“?뚯닔 議고쉶 -->
 	<select id="selectBbsTotInqireCo" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -210,7 +210,7 @@
 		</if>					    
 	</select>
 	
-	<!-- 게시물 평균조회수 조회 -->
+	<!-- 寃뚯떆臾??됯퇏議고쉶??議고쉶 -->
 	<select id="selectBbsAvrgInqireCo" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -233,7 +233,7 @@
 		</if>		    
 	</select>
 	
-	<!-- 게시물 최고조회게시물ID 조회 -->
+	<!-- 寃뚯떆臾?理쒓퀬議고쉶寃뚯떆臾퍲D 議고쉶 -->
 	<select id="selectBbsMxmmInqireBbsId" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -271,7 +271,7 @@
 		</if>
 	</select>	
 	
-	<!-- 게시물 최소조회게시물ID 조회 -->
+	<!-- 寃뚯떆臾?理쒖냼議고쉶寃뚯떆臾퍲D 議고쉶 -->
 	<select id="selectBbsMummInqireBbsId" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -309,7 +309,7 @@
 		</if>
 	</select>	
 	
-	<!-- 게시물 최고게시자ID 조회 -->
+	<!-- 寃뚯떆臾?理쒓퀬寃뚯떆?륤D 議고쉶 -->
 	<select id="selectBbsTopNtcepersonId" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
 		<if test="statsKind == 'COM101'">
 		
@@ -366,7 +366,7 @@
 	</select>
 	
 	
-	<!-- 게시물 통계 집계 -->
+	<!-- 寃뚯떆臾??듦퀎 吏묎퀎 -->
 	<insert id="summaryBbsStats">
 		
 			INSERT INTO COMTSBBSSUMMARY (

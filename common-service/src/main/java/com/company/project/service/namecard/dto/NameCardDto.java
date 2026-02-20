@@ -13,61 +13,61 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "명함 정보 DTO")
+@Schema(description = "Description")
 public class NameCardDto {
 
-    @Schema(description = "명함 ID")
+    @Schema(description = "Description")
     private String ncrdId;
 
-    @Schema(description = "이름")
+    @Schema(description = "Description")
     private String ncrdNm;
 
-    @Schema(description = "회사명")
+    @Schema(description = "Description")
     private String cmpnyNm;
 
-    @Schema(description = "부서명")
+    @Schema(description = "Description")
     private String deptNm;
 
-    @Schema(description = "직급명")
+    @Schema(description = "Description")
     private String clsfNm;
 
-    @Schema(description = "직위명")
+    @Schema(description = "Description")
     private String ofcpsNm;
 
-    @Schema(description = "이메일 주소")
+    @Schema(description = "Description")
     private String emailAdres;
 
-    @Schema(description = "전화번호")
+    @Schema(description = "Description")
     private String telNo;
 
-    @Schema(description = "휴대폰번호")
+    @Schema(description = "Description")
     private String mbtlNum;
 
-    @Schema(description = "주소")
+    @Schema(description = "Description")
     private String adres;
 
-    @Schema(description = "상세주소")
+    @Schema(description = "Description")
     private String detailAdres;
 
-    @Schema(description = "우편번호")
+    @Schema(description = "Description")
     private String zipCode;
 
-    @Schema(description = "비고")
+    @Schema(description = "Description")
     private String remark;
 
-    @Schema(description = "공개여부")
+    @Schema(description = "Description")
     private String othbcAt;
 
-    @Schema(description = "명함대상자 ID")
+    @Schema(description = "Description")
     private String ncrdTrgterId;
 
-    @Schema(description = "외부사용자여부")
+    @Schema(description = "Description")
     private String extrlUserAt;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String frstRegisterId;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public String getFrstRegisterId() {

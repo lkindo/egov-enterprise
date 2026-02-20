@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 약도 정보 Repository
+ * ??덈즲 ?類ｋ궖 Repository
  */
 @org.springframework.stereotype.Repository("roughmapRoughMapRepository")
 public interface RoughMapRepository extends JpaRepository<RoughMap, String> {

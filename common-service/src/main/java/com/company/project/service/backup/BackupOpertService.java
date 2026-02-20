@@ -178,7 +178,7 @@ public class BackupOpertService extends EgovAbstractServiceImpl implements EgovB
         String de = dto.getExecutSchdulDe();
 
         if ("03".equals(dto.getExecutCycle()) && de != null && de.length() >= 8) { // Monthly
-            sb.append(de.substring(6, 8)).append("일 ");
+            sb.append(de.substring(6, 8)).append("??");
         } else if ("04".equals(dto.getExecutCycle()) && de != null && de.length() >= 8) { // Yearly
             sb.append(de.substring(4, 6)).append("-").append(de.substring(6, 8)).append(" ");
         } else if ("06".equals(dto.getExecutCycle()) && de != null && de.length() >= 8) { // Once

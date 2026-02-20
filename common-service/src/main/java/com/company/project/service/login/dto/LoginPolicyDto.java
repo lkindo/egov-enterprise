@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 로그인 정책 DTO
+ * 濡쒓렇???뺤콉 DTO
  */
 @Getter
 @Setter
@@ -15,21 +15,21 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginPolicyDto {
-    /** 사용자 ID */
+    /** ?ъ슜??ID */
     private String emplyrId;
-    /** 사용자 명 */
+    /** ?ъ슜??紐?*/
     private String emplyrNm;
-    /** IP 정보 */
+    /** IP ?뺣낫 */
     private String ipInfo;
-    /** 중복 로그인 허용 여부 */
+    /** 以묐났 濡쒓렇???덉슜 ?щ? */
     private String dplctPermAt;
-    /** 제한 여부 */
+    /** ?쒗븳 ?щ? */
     private String lmttAt;
-    /** 등록 여부 */
+    /** ?깅줉 ?щ? */
     private String regYn;
-    /** 등록자 ID */
+    /** ?깅줉??ID */
     private String frstRegisterId;
-    /** 수정자 ID */
+    /** ?섏젙??ID */
     private String lastUpdusrId;
 
     // Compatibility getters for legacy JSP

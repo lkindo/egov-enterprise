@@ -30,24 +30,24 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 간부일정에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??쇱젙?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 간부일정에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 간부일정의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 媛꾨??쇱젙??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 媛꾨??쇱젙??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:05
+ * @created 28-6-2010 ?ㅼ쟾 10:59:05
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일             수정자            수정내용
+ *   ?섏젙??            ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2010.06.28   장철호            최초 생성
- *  2011.08.26   정진오            IncludedInfo annotation 추가
- *  2020.11.02   신용호            KISA 보안약점 조치 - 널(null) 값 체크
- *  2024.10.29	LeeBaekHaeng	불필요 형변환 정리
+ *  2010.06.28   ?μ쿋??           理쒖큹 ?앹꽦
+ *  2011.08.26   ?뺤쭊??           IncludedInfo annotation 異붽?
+ *  2020.11.02   ?좎슜??           KISA 蹂댁븞?쎌젏 議곗튂 - ??null) 媛?泥댄겕
+ *  2024.10.29	LeeBaekHaeng	遺덊븘???뺣????뺣━
  *
  * </pre>
  */
@@ -67,7 +67,7 @@ public class EgovLeaderSchdulController {
     EgovMessageSource egovMessageSource;
 
     /**
-	 * 사용자 정보에 대한 팝업 목록을 조회한다.
+	 * ?ъ슜???뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * @param EmplyrVO
 	 * @return  String
 	 *
@@ -79,7 +79,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 사용자 정보에 대한 목록을 조회한다.
+	 * ?ъ슜???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param EmplyrVO
 	 * @return  String
 	 *
@@ -115,13 +115,13 @@ public class EgovLeaderSchdulController {
 	}
 
     /**
-	 * 간부일정 정보에 대한 목록을 조회한다.
+	 * 媛꾨??쇱젙 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	* @param LeaderSchdulVO
 	 * @return  String
 	 *
 	 * @param leaderSchdulVO
 	 */
-	@IncludedInfo(name="간부일정관리", order = 390 ,gid = 40)
+	@IncludedInfo(name="媛꾨??쇱젙愿由?, order = 390 ,gid = 40)
 	@RequestMapping(value="/cop/smt/lsm/usr/selectLeaderSchdulList.do")
 	public String selectLeaderSchdulList(@ModelAttribute("leaderSchdulVO") LeaderSchdulVO leaderSchdulVO, ModelMap model) throws Exception{
 
@@ -131,7 +131,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 월별 간부일정 정보에 대한 목록을 조회한다.
+	 * ?붾퀎 媛꾨??쇱젙 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param LeaderSchdulVO
 	 * @return  String
 	 *
@@ -139,7 +139,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping(value="/cop/smt/lsm/usr/selectLeaderSchdulMonthList.do")
 	public String selectLeaderSchdulMonthList(@ModelAttribute("searchVO") LeaderSchdulVO leaderSchdulVO, ModelMap model) throws Exception{
-		//일정구분 검색 유지
+		//?쇱젙援щ텇 寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
 		//}
@@ -155,7 +155,7 @@ public class EgovLeaderSchdulController {
 		int iYear = cal.get(java.util.Calendar.YEAR);
 		int iMonth = cal.get(java.util.Calendar.MONTH);
 
-		//검색 설정
+		//寃???ㅼ젙
 		String sSearchMonth = "";
 		if(sYear == null || sMonth == null || sYear.equals("") || sMonth.equals("")){
 			sSearchMonth += Integer.toString(iYear);
@@ -171,8 +171,8 @@ public class EgovLeaderSchdulController {
 		leaderSchdulVO.setSearchMonth(sSearchMonth);
 
 		/*
-		 * 공통코드
-		 * 간부일정구분
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??쇱젙援щ텇
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 	   	voComCode = new ComDefaultCodeVO();
@@ -187,7 +187,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 주별 간부일정 정보에 대한 목록을 조회한다.
+	 * 二쇰퀎 媛꾨??쇱젙 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param LeaderSchdulVO
 	 * @return  String
 	 *
@@ -195,7 +195,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping(value="/cop/smt/lsm/usr/selectLeaderSchdulWeekList.do")
 	public String selectLeaderSchdulWeekList(@ModelAttribute("searchVO") LeaderSchdulVO leaderSchdulVO, ModelMap model) throws Exception{
-		//일정구분 검색 유지
+		//?쇱젙援щ텇 寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
 		//}
@@ -204,8 +204,8 @@ public class EgovLeaderSchdulController {
         model.addAttribute("searchCondition", leaderSchdulVO.getSearchCondition() == null ? "" : (String)leaderSchdulVO.getSearchCondition());
 
 		/*
-		 * 공통코드
-		 * 간부일정구분
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??쇱젙援щ텇
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 	   	voComCode = new ComDefaultCodeVO();
@@ -214,7 +214,7 @@ public class EgovLeaderSchdulController {
     	model.addAttribute("schdulSe", listComCode);
 
 		/* *****************************************************************
-    	// 캘런더 설정 로직
+    	// 罹섎윴???ㅼ젙 濡쒖쭅
 		****************************************************************** */
         Calendar calNow = Calendar.getInstance();
         Calendar calBefore = Calendar.getInstance();
@@ -237,7 +237,7 @@ public class EgovLeaderSchdulController {
 		  iNowWeek = Integer.parseInt(strWeek);
 		}
 
-		//연도/월 셋팅
+		//?곕룄/???뗮똿
 		calNow.set(iNowYear, iNowMonth, 1);
 		calBefore.set(iNowYear, iNowMonth, 1);
 		calNext.set(iNowYear, iNowMonth, 1);
@@ -268,7 +268,7 @@ public class EgovLeaderSchdulController {
 
 		int iBetweenCount = startWeek;
 
-		// 주별로 자른다. BETWEEN 구하기
+		// 二쇰퀎濡??먮Ⅸ?? BETWEEN 援ы븯湲?
 		for(int i=1; i <= endDay; i++)
 		{
 			sUseDate = Integer.toString(iNowYear);
@@ -286,7 +286,7 @@ public class EgovLeaderSchdulController {
 				}
 			}
 
-			//미지막 7일 자동계산
+			//誘몄?留?7???먮룞怨꾩궛
 			if(i == endDay){
 
 				for(int j=listWeekDate.size(); j < 7;j++){
@@ -323,7 +323,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 일별 간부일정 정보에 대한 목록을 조회한다.
+	 * ?쇰퀎 媛꾨??쇱젙 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param LeaderSchdulVO
 	 * @return  String
 	 *
@@ -331,7 +331,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping(value="/cop/smt/lsm/usr/selectLeaderSchdulDailyList.do")
 	public String selectLeaderSchdulDailyList(@ModelAttribute("searchVO") LeaderSchdulVO leaderSchdulVO, ModelMap model) throws Exception{
-		//검색 유지
+		//寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
 		//}
@@ -340,8 +340,8 @@ public class EgovLeaderSchdulController {
         model.addAttribute("searchCondition", leaderSchdulVO.getSearchCondition() == null ? "" : (String)leaderSchdulVO.getSearchCondition());
 
 		/*
-		 * 공통코드
-		 * 간부일정구분
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??쇱젙援щ텇
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 	   	voComCode = new ComDefaultCodeVO();
@@ -350,7 +350,7 @@ public class EgovLeaderSchdulController {
     	model.addAttribute("schdulSe", listComCode);
 
 		/* *****************************************************************
-    	// 캘런더 설정 로직
+    	// 罹섎윴???ㅼ젙 濡쒖쭅
 		****************************************************************** */
         Calendar calNow = Calendar.getInstance();
 
@@ -388,7 +388,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부일정 정보를 조회한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param LeaderSchdulVO
 	 * @return  String
 	 *
@@ -397,8 +397,8 @@ public class EgovLeaderSchdulController {
 	@RequestMapping(value="/cop/smt/lsm/usr/selectLeaderSchdul.do")
 	public String selectLeaderSchdul(@ModelAttribute("leaderSchdulVO") LeaderSchdulVO leaderSchdulVO,  ModelMap model) throws Exception{
 		/*
-		 * 공통코드
-		 * 간부일정구분
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??쇱젙援щ텇
 		 */
     	ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM057");
@@ -406,8 +406,8 @@ public class EgovLeaderSchdulController {
     	model.addAttribute("schdulSe", listComCode);
 
     	/*
-    	 * 공통코드
-    	 * 반복구분 조회
+    	 * 怨듯넻肄붾뱶
+    	 * 諛섎났援щ텇 議고쉶
     	 */
     	voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM058");
@@ -426,7 +426,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부일정 정보를 수정할수 있는 수정폼으로 이동한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜??섏젙?좎닔 ?덈뒗 ?섏젙?쇱쑝濡??대룞?쒕떎.
 	 * @param LeaderSchdulVO
 	 * @return  String
 	 *
@@ -437,7 +437,7 @@ public class EgovLeaderSchdulController {
 
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSchdulModify";
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -445,29 +445,29 @@ public class EgovLeaderSchdulController {
     	}
 
 		/*
-		 * 공통코드
-		 * 간부일정구분
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??쇱젙援щ텇
 		 */
     	ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM057");
     	List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
     	model.addAttribute("schdulSe", listComCode);
     	/*
-    	 * 공통코드
-    	 * 반복구분
+    	 * 怨듯넻肄붾뱶
+    	 * 諛섎났援щ텇
     	 */
     	voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM058");
     	listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
     	model.addAttribute("reptitSeCode", listComCode);
 
-    	//일정시작일자(시)
+    	//?쇱젙?쒖옉?쇱옄(??
 		model.addAttribute("schdulBgndeHH", getTimeHH());
-    	//일정시작일자(분)
+    	//?쇱젙?쒖옉?쇱옄(遺?
 		model.addAttribute("schdulBgndeMM", getTimeMM());
-    	//일정종료일자(시)
+    	//?쇱젙醫낅즺?쇱옄(??
 		model.addAttribute("schdulEnddeHH", getTimeHH());
-    	//일정정료일자(분)
+    	//?쇱젙?뺣즺?쇱옄(遺?
 		model.addAttribute("schdulEnddeMM", getTimeMM());
 
     	LeaderSchdulVO resultVO = leaderSchdulService.selectLeaderSchdul(leaderSchdulVO);
@@ -494,7 +494,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-     * 간부일정 등록을 위한 등록 페이지로 이동한다.
+     * 媛꾨??쇱젙 ?깅줉???꾪븳 ?깅줉 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param LeaderSchdulVO
      * @param model
@@ -509,42 +509,42 @@ public class EgovLeaderSchdulController {
 	throws Exception {
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSchdulRegist";
 
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-    	// 1. 로그인 객체 선언
+    	// 1. 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
     	model.addAttribute("schdulChargerId", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
     	model.addAttribute("schdulChargerName", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()));
 
     	/*
-     	 * 공통코드
-     	 * 간부일정구분
+     	 * 怨듯넻肄붾뱶
+     	 * 媛꾨??쇱젙援щ텇
      	 */
     	ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM057");
     	List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
     	model.addAttribute("schdulSe", listComCode);
     	/*
-    	 * 공통코드
-    	 * 반복구분
+    	 * 怨듯넻肄붾뱶
+    	 * 諛섎났援щ텇
     	 */
     	voComCode = new ComDefaultCodeVO();
     	voComCode.setCodeId("COM058");
     	listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
     	model.addAttribute("reptitSeCode", listComCode);
 
-    	//일정시작일자(시)
+    	//?쇱젙?쒖옉?쇱옄(??
 		model.addAttribute("schdulBgndeHH", getTimeHH());
-    	//일정시작일자(분)
+    	//?쇱젙?쒖옉?쇱옄(遺?
 		model.addAttribute("schdulBgndeMM", getTimeMM());
-    	//일정종료일자(시)
+    	//?쇱젙醫낅즺?쇱옄(??
 		model.addAttribute("schdulEnddeHH", getTimeHH());
-    	//일정정료일자(분)
+    	//?쇱젙?뺣즺?쇱옄(遺?
 		model.addAttribute("schdulEnddeMM", getTimeMM());
 
     	model.addAttribute("searchMode", leaderSchdulVO.getSearchMode());
@@ -559,7 +559,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부일정 정보를 등록한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜??깅줉?쒕떎.
 	 * @param LeaderSchdul
 	 * @return  String
 	 *
@@ -568,25 +568,25 @@ public class EgovLeaderSchdulController {
 	@RequestMapping(value="/cop/smt/lsm/mng/insertLeaderSchdul.do")
 	public String insertLeaderSchdul(@Valid @ModelAttribute("leaderSchdulVO") LeaderSchdulVO leaderSchdulVO,
 		    BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSchdulRegist";
 
-		//서버  validate 체크
+		//?쒕쾭  validate 泥댄겕
 		if(bindingResult.hasErrors()){
 
 			return sLocationUrl;
 		}
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		leaderSchdulVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		leaderSchdulVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -597,7 +597,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부일정 정보를 수정한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜??섏젙?쒕떎.
 	 * @param LeaderSchdul
 	 * @return  String
 	 *
@@ -606,25 +606,25 @@ public class EgovLeaderSchdulController {
 	@RequestMapping(value="/cop/smt/lsm/mng/updateLeaderSchdul.do")
 	public String updateLeaderSchdul(@Valid @ModelAttribute("leaderSchdulVO") LeaderSchdulVO leaderSchdulVO,
 			BindingResult bindingResult, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSchdulModify";
 
-		//서버  validate 체크
+		//?쒕쾭  validate 泥댄겕
 		if(bindingResult.hasErrors()){
 
 			return sLocationUrl;
 		}
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		leaderSchdulVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
 		leaderSchdulService.updateLeaderSchdul(leaderSchdulVO);
@@ -634,7 +634,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부일정 정보를 삭제한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜???젣?쒕떎.
 	 * @param LeaderSchdul
 	 * @return  String
 	 *
@@ -642,7 +642,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping(value="/cop/smt/lsm/mng/deleteLeaderSchdul.do")
 	public String deleteLeaderSchdul(@ModelAttribute("leaderSchdulVO") LeaderSchdulVO leaderSchdulVO, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -653,7 +653,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보에 대한 목록을 조회한다. (사용자 화면)
+	 * 媛꾨??곹깭 ?뺣낫?????紐⑸줉??議고쉶?쒕떎. (?ъ슜???붾㈃)
 	 * @param LeaderSttusVO
 	 * @return  String
 	 *
@@ -666,7 +666,7 @@ public class EgovLeaderSchdulController {
 
 		boolean po = false;
 		List<String> authenticated = EgovUserDetailsHelper.getAuthorities();
-		// KISA 보안약점 조치 - 널(null) 값 체크
+		// KISA 蹂댁븞?쎌젏 議곗튂 - ??null) 媛?泥댄겕
 		if ( authenticated != null ) {
 			for (String element : authenticated) {
 				if("ROLE_LEADERSCHDUL".equals(String.valueOf(element).trim())){
@@ -703,7 +703,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보에 대한 목록을 조회한다. (관리자 화면)
+	 * 媛꾨??곹깭 ?뺣낫?????紐⑸줉??議고쉶?쒕떎. (愿由ъ옄 ?붾㈃)
 	 * @param LeaderSttusVO
 	 * @return  String
 	 *
@@ -738,7 +738,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보의 등록화면으로 이동한다.
+	 * 媛꾨??곹깭 ?뺣낫???깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * @param LeaderSttus
 	 * @return  String
 	 *
@@ -750,7 +750,7 @@ public class EgovLeaderSchdulController {
 			ModelMap model) throws Exception{
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSttusRegist";
 
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -758,8 +758,8 @@ public class EgovLeaderSchdulController {
     	}
 
     	/*
-		 * 공통코드
-		 * 간부상태
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??곹깭
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 	   	voComCode = new ComDefaultCodeVO();
@@ -771,7 +771,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보의 수정화면으로 이동한다.
+	 * 媛꾨??곹깭 ?뺣낫???섏젙?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * @param LeaderSttus
 	 * @return  String
 	 *
@@ -779,7 +779,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping("/cop/smt/lsm/mng/modifyLeaderSttus.do")
 	public String modifyLeaderSttus(@ModelAttribute("leaderSttusVO") LeaderSttusVO leaderSttusVO, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -792,8 +792,8 @@ public class EgovLeaderSchdulController {
 		resultVO.setPageIndex(leaderSttusVO.getPageIndex());
 
 		/*
-		 * 공통코드
-		 * 간부상태
+		 * 怨듯넻肄붾뱶
+		 * 媛꾨??곹깭
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 	   	voComCode = new ComDefaultCodeVO();
@@ -807,7 +807,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보를 수정한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜??섏젙?쒕떎.
 	 * @param LeaderSttusVO
 	 * @return  String
 	 *
@@ -833,7 +833,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보를 등록한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜??깅줉?쒕떎.
 	 * @param LeaderSttusVO
 	 * @return  String
 	 *
@@ -841,28 +841,28 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping("/cop/smt/lsm/mng/insertLeaderSttus.do")
 	public String insertLeaderSttus(@Valid @ModelAttribute("leaderSttusVO") LeaderSttusVO leaderSttusVO, BindingResult bindingResult, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/lsm/EgovLeaderSttusRegist";
 
-		//서버  validate 체크
+		//?쒕쾭  validate 泥댄겕
 		if(bindingResult.hasErrors()){
 			return sLocationUrl;
 		}
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		leaderSttusVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		leaderSttusVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-		//간부상태 중복체크
+		//媛꾨??곹깭 以묐났泥댄겕
 		if(leaderSchdulService.selectLeaderSttusCheck(leaderSttusVO) > 0){
 			model.addAttribute("leaderIdDuplicated", "true");
 			sLocationUrl = "forward:/cop/smt/lsm/mng/addLeaderSttus.do";
@@ -874,7 +874,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 간부상태 정보를 삭제한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜???젣?쒕떎.
 	 * @param LeaderSttus
 	 * @return  String
 	 *
@@ -882,7 +882,7 @@ public class EgovLeaderSchdulController {
 	 */
 	@RequestMapping("/cop/smt/lsm/mng/deleteLeaderSttus.do")
 	public String deleteLeaderSttus(@ModelAttribute("leaderSttusVO") LeaderSttus leaderSttus, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -893,7 +893,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 시간의 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 * @return  List
 	 * @throws
 	 */
@@ -920,7 +920,7 @@ public class EgovLeaderSchdulController {
 	}
 
 	/**
-	 * 분의 LIST를 반환한다.
+	 * 遺꾩쓽 LIST瑜?諛섑솚?쒕떎.
 	 * @return  List
 	 * @throws
 	 */
@@ -946,7 +946,7 @@ public class EgovLeaderSchdulController {
     	return listMM;
 	}
 	/**
-	 * 0을 붙여 반환
+	 * 0??遺숈뿬 諛섑솚
 	 * @return  String
 	 * @throws
 	 */

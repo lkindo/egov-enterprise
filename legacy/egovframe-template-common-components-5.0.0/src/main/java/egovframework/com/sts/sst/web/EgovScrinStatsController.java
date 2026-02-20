@@ -15,22 +15,22 @@ import egovframework.com.sym.mnu.mpm.service.EgovMenuManageService;
 import jakarta.annotation.Resource;
 
 /**
- * 화면 통계 검색 컨트롤러 클래스
+ * ?붾㈃ ?듦퀎 寃??而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.19
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.19  박지욱          최초 생성
- *   2011.06.30  이기하          패키지 분리(sts -> sts.sst)
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.07.03  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *   2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.sst)
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.07.03  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -46,24 +46,24 @@ public class EgovScrinStatsController {
 	private EgovMenuManageService menuManageService;
 
 	/**
-	 * 화면 통계를 조회한다
+	 * ?붾㈃ ?듦퀎瑜?議고쉶?쒕떎
 	 * 
 	 * @param statsVO StatsVO
 	 * @return String
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "화면통계", listUrl = "/sts/sst/selectScrinStats.do", order = 150, gid = 30)
+	@IncludedInfo(name = "?붾㈃?듦퀎", listUrl = "/sts/sst/selectScrinStats.do", order = 150, gid = 30)
 	@RequestMapping(value = "/sts/sst/selectScrinStats.do")
 	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO, ModelMap model) throws Exception {
 
-		// 트리메뉴 조회
+		// ?몃━硫붾돱 議고쉶
 		List<EgovMap> resultMenuList = menuManageService.selectMenuList();
 		model.addAttribute("list_menulist", resultMenuList);
 
 		if (statsVO.getFromDate() != null && !"".equals(statsVO.getFromDate())) {
 
 			List<StatsVO> scrinStats = scrinStatsService.selectScrinStats(statsVO);
-			// 그래프에 표시될 이미지 길이를 결정한다.
+			// 洹몃옒?꾩뿉 ?쒖떆???대?吏 湲몄씠瑜?寃곗젙?쒕떎.
 			float iMaxUnit = 50.0f;
 			for (StatsVO scrinStat : scrinStats) {
 				StatsVO sVo = scrinStat;

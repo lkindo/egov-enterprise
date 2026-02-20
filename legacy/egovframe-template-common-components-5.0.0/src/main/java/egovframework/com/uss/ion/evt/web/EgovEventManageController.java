@@ -29,27 +29,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 행사관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?됱궗愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 행사관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 행사관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?됱궗愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?됱궗愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.06  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.15  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.06  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -66,7 +66,7 @@ public class EgovEventManageController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 행사관리 목록화면 이동
+	 * ?됱궗愿由?紐⑸줉?붾㈃ ?대룞
 	 * 
 	 * @return String
 	 * @exception Exception
@@ -78,23 +78,23 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사관리정보를 관리하기 위해 등록된 행사관리 목록을 조회한다.
+	 * ?됱궗愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???됱궗愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "행사신청관리", order = 940, gid = 50)
+	@IncludedInfo(name = "?됱궗?좎껌愿由?, order = 940, gid = 50)
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstManageList.do")
 	public String selectEventManageList(@ModelAttribute("eventManageVO") EventManageVO eventManageVO, ModelMap model)
 			throws Exception {
 
-		// 행사년월
+		// ?됱궗?꾩썡
 		java.util.Calendar cal = java.util.Calendar.getInstance();
 		String[] yearList = new String[5];
 		for (int x = 0; x < 5; x++) {
 			yearList[x] = Integer.toString(cal.get(java.util.Calendar.YEAR) - x);
 		}
-		// 행사구분
+		// ?됱궗援щ텇
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM053");
 		List<CmmnDetailCode> eventSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
@@ -124,17 +124,17 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 등록된 행사관리의 상세정보를 조회한다.
+	 * ?깅줉???됱궗愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstDetail.do")
 	public String selectEventManage(@ModelAttribute("eventManage") EventManageVO eventManage,
 			@ModelAttribute("eventManageVO") EventManageVO eventManageVO, @RequestParam Map<?, ?> commandMap,
 			ModelMap model) throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		EventManageVO eventManageVO1 = egovEventManageService.selectEventManage(eventManageVO);
 		eventManageVO1.setEventBeginDe(EgovDateUtil.formatDate(eventManageVO1.getEventBeginDe(), "-"));
 		eventManageVO1.setEventEndDe(EgovDateUtil.formatDate(eventManageVO1.getEventEndDe(), "-"));
@@ -172,9 +172,9 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사관리 등록 화면으로 이동한다.
+	 * ?됱궗愿由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
-	 * @return String - 리턴 Url
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstRegist.do")
 	public String insertViewEventManage(@ModelAttribute("eventManage") EventManageVO eventManage,
@@ -189,10 +189,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사관리정보를 신규로 등록한다.
+	 * ?됱궗愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param eventManage - 행사관리 model
-	 * @return String - 리턴 Url
+	 * @param eventManage - ?됱궗愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/insertEventManage.do")
 	public String insertEventManage(@ModelAttribute("eventManage") EventManage eventManage,
@@ -214,10 +214,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 기 등록된 행사관리정보를 수정한다.
+	 * 湲??깅줉???됱궗愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param eventManage - 행사관리 model
-	 * @return String - 리턴 Url
+	 * @param eventManage - ?됱궗愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstSave.do")
 	public String updtEventManage(@ModelAttribute("eventManage") EventManage eventManage,
@@ -238,10 +238,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 기 등록된 행사관리정보를 삭제한다.
+	 * 湲??깅줉???됱궗愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param eventManage - 행사관리 model
-	 * @return String - 리턴 Url
+	 * @param eventManage - ?됱궗愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstDelete.do")
 	public String deleteEventManage(@ModelAttribute("eventManage") EventManage eventManage, SessionStatus status,
@@ -253,19 +253,19 @@ public class EgovEventManageController {
 		return "forward:/uss/ion/evt/EgovEventReqstManageList.do";
 	}
 
-	/** 행사접수관리 **/
+	/** ?됱궗?묒닔愿由?**/
 	/**
-	 * 행사접수관리정보를 관리하기 위해 등록된 행사접수관리 목록을 조회한다.
+	 * ?됱궗?묒닔愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???됱궗?묒닔愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "행사접수관리", order = 941, gid = 50)
+	@IncludedInfo(name = "?됱궗?묒닔愿由?, order = 941, gid = 50)
 	@RequestMapping(value = "/uss/ion/evt/EgovEventRcrptManageList.do")
 	public String selectEventAtdrnList(@ModelAttribute("eventManageVO") EventManageVO eventManageVO, ModelMap model)
 			throws Exception {
 
-		// 행사년월
+		// ?됱궗?꾩썡
 		java.util.Calendar cal = java.util.Calendar.getInstance();
 		String[] yearList = new String[5];
 		for (int x = 0; x < 5; x++) {
@@ -273,7 +273,7 @@ public class EgovEventManageController {
 		}
 		model.addAttribute("yearList", yearList);
 
-		// 행사구분
+		// ?됱궗援щ텇
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM053");
 		List<CmmnDetailCode> eventSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
@@ -295,7 +295,7 @@ public class EgovEventManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		eventManageVO.setApplcntId(user.getUniqId());// 사용자UniqID
+		eventManageVO.setApplcntId(user.getUniqId());// ?ъ슜?륶niqID
 		eventManageVO.setEventManageList(egovEventManageService.selectEventAtdrnList(eventManageVO));
 		model.addAttribute("eventManageList", eventManageVO.getEventManageList());
 
@@ -307,10 +307,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 등록된 행사접수관리의 상세정보를 조회한다.
+	 * ?깅줉???됱궗?묒닔愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventRcrptDetail.do")
 	public String selectEventAtdrn(@ModelAttribute("eventAtdrn") EventAtdrn eventAtdrn,
@@ -332,9 +332,9 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사접수관리 등록 화면으로 이동한다.
+	 * ?됱궗?묒닔愿由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
-	 * @return String - 리턴 Url
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/EgovEventRceptRegist.do")
 	public String insertViewEventAtdrn(@ModelAttribute("eventAtdrn") EventAtdrn eventAtdrn,
@@ -360,10 +360,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사접수관리정보를 신규로 등록한다.
+	 * ?됱궗?묒닔愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param eventAtdrn - 행사참석자 model
-	 * @return String - 리턴 Url
+	 * @param eventAtdrn - ?됱궗李몄꽍??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/insertEventAtdrn.do")
 	public String insertEventAtdrn(@ModelAttribute("eventAtdrn") EventAtdrn eventAtdrn,
@@ -382,13 +382,13 @@ public class EgovEventManageController {
 				int iMonth = cal.get(java.util.Calendar.MONTH);
 				int iDate = cal.get(java.util.Calendar.DATE);
 
-				// 검색 설정
+				// 寃???ㅼ젙
 				String sSearchDate = "";
 				sSearchDate += Integer.toString(iYear);
 				sSearchDate += Integer.toString(iMonth + 1).length() == 1 ? "0" + Integer.toString(iMonth + 1)
 						: Integer.toString(iMonth + 1);
 				sSearchDate += Integer.toString(iDate);
-				eventAtdrn.setReqstDe(sSearchDate);// 신청일자
+				eventAtdrn.setReqstDe(sSearchDate);// ?좎껌?쇱옄
 
 				LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 				eventAtdrn.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
@@ -412,7 +412,7 @@ public class EgovEventManageController {
 
 				model.addAttribute("eventAtdrn", eventAtdrn);
 				model.addAttribute("eventManageVO", eventManageVO1);
-				model.addAttribute("errMessage", "정원초과");
+				model.addAttribute("errMessage", "?뺤썝珥덇낵");
 
 				return "egovframework/com/uss/ion/evt/EgovEventRceptRegist";
 			}
@@ -420,10 +420,10 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 기 등록된 행사접수관리정보를 취소한다.
+	 * 湲??깅줉???됱궗?묒닔愿由ъ젙蹂대? 痍⑥냼?쒕떎.
 	 * 
-	 * @param eventManage - 행사관리 model
-	 * @return String - 리턴 Url
+	 * @param eventManage - ?됱궗愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/deleteEventAtdrn.do")
 	public String deleteEventAtdrn(@ModelAttribute("eventAtdrn") EventAtdrn eventAtdrn, SessionStatus status,
@@ -436,22 +436,22 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사접수승인/반려 처리를 위해 등록된 행사접수 목록을 조회한다.
+	 * ?됱궗?묒닔?뱀씤/諛섎젮 泥섎━瑜??꾪빐 ?깅줉???됱궗?묒닔 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "행사접수승인관리", order = 942, gid = 50)
+	@IncludedInfo(name = "?됱궗?묒닔?뱀씤愿由?, order = 942, gid = 50)
 	@RequestMapping(value = "/uss/ion/evt/selectEventRceptConfmList.do")
 	public String selectEventRceptConfmList(@ModelAttribute("eventManageVO") EventManageVO eventManageVO,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
-		// 행사년월
+		// ?됱궗?꾩썡
 		java.util.Calendar cal = java.util.Calendar.getInstance();
 		String[] yearList = new String[5];
 		for (int x = 0; x < 5; x++) {
 			yearList[x] = Integer.toString(cal.get(java.util.Calendar.YEAR) - x);
 		}
-		// 행사구분
+		// ?됱궗援щ텇
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM053");
 		List<CmmnDetailCode> eventSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
@@ -472,7 +472,7 @@ public class EgovEventManageController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		eventManageVO.setSanctnerId(user.getUniqId());// 승인권자UniqID
+		eventManageVO.setSanctnerId(user.getUniqId());// ?뱀씤沅뚯옄UniqID
 
 		eventManageVO.setSearchKeyword(eventManageVO.getSearchYear() + eventManageVO.getSearchMonth());
 
@@ -490,16 +490,16 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 기 등록된 행사접수관리정보를 승인/반려처리한다.
+	 * 湲??깅줉???됱궗?묒닔愿由ъ젙蹂대? ?뱀씤/諛섎젮泥섎━?쒕떎.
 	 * 
-	 * @param eventAtdrn - 행사참석자 model
-	 * @return String - 리턴 Url
+	 * @param eventAtdrn - ?됱궗李몄꽍??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/evt/updtEventAtdrn.do")
 	public String updtEventAtdrn(@RequestParam("checkedEventRceptForConfm") String checkedEventRceptForConfm,
 			@ModelAttribute("eventAtdrn") EventAtdrn eventAtdrn, @RequestParam Map<?, ?> commandMap,
 			SessionStatus status, ModelMap model) throws Exception {
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		eventAtdrn.setConfmAt(sCmd);
 		eventAtdrn.setSanctnerId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
@@ -509,12 +509,12 @@ public class EgovEventManageController {
 	}
 
 	/**
-	 * 행사접수자 정보 목록을 조회한다.
+	 * ?됱궗?묒닔???뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param eventManageVO - 행사관리 VO
-	 * @return String - 리턴 Url
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	// @IncludedInfo(name="행사참가요청자목록", order = 942)
+	// @IncludedInfo(name="?됱궗李멸??붿껌?먮ぉ濡?, order = 942)
 	@RequestMapping(value = "/uss/ion/evt/EgovEventReqstAtdrnList.do")
 	public String selectEventReqstAtdrnList(@ModelAttribute("eventManageVO") EventManageVO eventManageVO,
 			ModelMap model) throws Exception {

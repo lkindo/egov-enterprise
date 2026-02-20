@@ -13,73 +13,73 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "?�반 ?�원 ?�보 DTO")
+@Schema(description = "Description")
 public class GeneralUserDto {
 
-    @Schema(description = "고유 ID")
+    @Schema(description = "Description")
     private String esntlId;
 
-    @Schema(description = "?�원 ID")
+    @Schema(description = "Description")
     private String mberId;
 
-    @Schema(description = "?�원 �?)
+    @Schema(description = "Description")
     private String mberNm;
 
-    @Schema(description = "비�?번호")
+    @Schema(description = "Description")
     private String password;
 
-    @Schema(description = "비�?번호 ?�트")
+    @Schema(description = "Description")
     private String passwordHint;
 
-    @Schema(description = "비�?번호 ?�답")
+    @Schema(description = "Description")
     private String passwordCnsr;
 
-    @Schema(description = "주�??�록번호")
+    @Schema(description = "Description")
     private String ihidnum;
 
-    @Schema(description = "?�별 코드")
+    @Schema(description = "Description")
     private String sexdstnCode;
 
-    @Schema(description = "?�편번호")
+    @Schema(description = "Description")
     private String zip;
 
-    @Schema(description = "주소")
+    @Schema(description = "Description")
     private String adres;
 
-    @Schema(description = "?�세 주소")
+    @Schema(description = "Description")
     private String detailAdres;
 
-    @Schema(description = "지??번호")
+    @Schema(description = "Description")
     private String areaNo;
 
-    @Schema(description = "중간 ?�화번호")
+    @Schema(description = "Description")
     private String middleTelno;
 
-    @Schema(description = "???�화번호")
+    @Schema(description = "Description")
     private String endTelno;
 
-    @Schema(description = "?��???번호")
+    @Schema(description = "Description")
     private String moblphonNo;
 
-    @Schema(description = "?�메??주소")
+    @Schema(description = "Description")
     private String mberEmailAdres;
 
-    @Schema(description = "?�원 ?�태")
+    @Schema(description = "Description")
     private String mberSttus;
 
-    @Schema(description = "그룹 ID")
+    @Schema(description = "Description")
     private String groupId;
 
-    @Schema(description = "?�스 번호")
+    @Schema(description = "Description")
     private String mberFxnum;
 
-    @Schema(description = "가???�자")
+    @Schema(description = "Description")
     private LocalDateTime sbscrbDe;
 
-    @Schema(description = "?�금 ?��?")
+    @Schema(description = "Description")
     private String lockAt;
 
-    @Schema(description = "?�록?�시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static GeneralUserDto from(GeneralUser entity) {

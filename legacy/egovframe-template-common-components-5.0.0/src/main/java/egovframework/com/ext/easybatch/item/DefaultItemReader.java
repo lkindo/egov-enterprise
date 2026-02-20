@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 서경석(슈퍼개발자K3)
+ * @author ?쒓꼍???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.easybatch.item;
 
@@ -47,19 +47,19 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 /**
- * @author 서경석
+ * @author ?쒓꼍??
  * @since 2014.11.05
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  -------       --------          ---------------------------
- *   2014.11.05    서경석           최초 생성
- *   2014.11.28    표준프레임워크	공통컴포넌트 추가 적용 (패키지 변경)
- *   2022.11.11    김혜준           시큐어코딩 처리
+ *   2014.11.05    ?쒓꼍??          理쒖큹 ?앹꽦
+ *   2014.11.28    ?쒖??꾨젅?꾩썙??怨듯넻而댄룷?뚰듃 異붽? ?곸슜 (?⑦궎吏 蹂寃?
+ *   2022.11.11    源?쒖?           ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -86,30 +86,30 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 	private static final String FIXED_LENGTH_FILE_TYPE = "fixedLengthFile";
 	private static final String JDBC_DB_TYPE = "jdbcDb";
 
-	// XML 설정 내용을 출력하기 위한 설정
+	// XML ?ㅼ젙 ?댁슜??異쒕젰?섍린 ?꾪븳 ?ㅼ젙
 	boolean printXmlConf = false;
 
-	// 실제 동작하는 Reader
+	// ?ㅼ젣 ?숈옉?섎뒗 Reader
 	ItemReader<T> reader;
 
-	// 공통 설정
+	// 怨듯넻 ?ㅼ젙
 	String stepName;
 	JobParameters jobParameters;
 	String readerResourceType;
 
-	// File 입력인 경우 사용되는 설정
-	Resource resource; // 공통
+	// File ?낅젰??寃쎌슦 ?ъ슜?섎뒗 ?ㅼ젙
+	Resource resource; // 怨듯넻
 	String resourceName;
-	String[] fieldNames; // 공통
+	String[] fieldNames; // 怨듯넻
 	String names;
 	@SuppressWarnings("rawtypes")
-	Class voType; // 공통
-	String delimiter; // delimited 방식인 경우
-	Range[] ranges; // fixedLength 방식인 경우
-	String columns; // (fixedLength 방식인 경우)
+	Class voType; // 怨듯넻
+	String delimiter; // delimited 諛⑹떇??寃쎌슦
+	Range[] ranges; // fixedLength 諛⑹떇??寃쎌슦
+	String columns; // (fixedLength 諛⑹떇??寃쎌슦)
 
-	// DB 입력인 경우 사용되는 설정
-	// DB 입력인 경우 사용되는 설정
+	// DB ?낅젰??寃쎌슦 ?ъ슜?섎뒗 ?ㅼ젙
+	// DB ?낅젰??寃쎌슦 ?ъ슜?섎뒗 ?ㅼ젙
 	private DataSource dataSource;
 	private String sql;
 	@SuppressWarnings("unused")
@@ -129,7 +129,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 			printXmlConf = true;
 		}
 
-		// Input Resource Type에 따라 필요한 설정 값 세팅
+		// Input Resource Type???곕씪 ?꾩슂???ㅼ젙 媛??명똿
 		makeReaderConfigValue();
 	}
 
@@ -142,7 +142,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 
 	@Override
 	public void open(ExecutionContext executionContext) throws ItemStreamException {
-		// ItemReader 생성
+		// ItemReader ?앹꽦
 		makeItemReader();
 
 		if (this.reader instanceof ItemStream) {
@@ -162,7 +162,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 		return reader.read();
 	}
 
-	// Input Resource Type 별로 설정 값 세팅
+	// Input Resource Type 蹂꾨줈 ?ㅼ젙 媛??명똿
 	private void makeReaderConfigValue() {
 
 		if (jobParameters.getString(stepName + READER_RESOURCE_TYPE_KEY) != null) {
@@ -172,7 +172,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 			if (DELIMITED_FILE_TYPE.equalsIgnoreCase(this.readerResourceType)
 				|| FIXED_LENGTH_FILE_TYPE.equalsIgnoreCase(this.readerResourceType)) {
 
-				// 입력 리소스가 File인 경우 공통 처리 부분
+				// ?낅젰 由ъ냼?ㅺ? File??寃쎌슦 怨듯넻 泥섎━ 遺遺?
 				this.resourceName = jobParameters.getString(stepName + READER_RESOURCE_NAME_KEY);
 				this.names = jobParameters.getString(stepName + READER_FIELD_NAMES_KEY);
 				String type = jobParameters.getString(stepName + READER_VO_TYPE_KEY);
@@ -181,7 +181,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 					this.delimiter = jobParameters.getString(stepName + READER_DELIMITER_KEY);
 					if (resourceName == null || this.delimiter == null || names == null || type == null) {
 						throw new RuntimeException(
-							stepName + "스텝의 Reader 설정에서 resourceName, delimiter, names, type 은 필수입니다. 다음 처럼 설정하세요.\n"
+							stepName + "?ㅽ뀦??Reader ?ㅼ젙?먯꽌 resourceName, delimiter, names, type ? ?꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 								+ stepName + READER_RESOURCE_NAME_KEY + "=./inputs/csvData.csv "
 								+ stepName + READER_DELIMITER_KEY + "=, "
 								+ stepName + READER_FIELD_NAMES_KEY + "=name,age "
@@ -191,7 +191,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 					this.columns = jobParameters.getString(stepName + READER_COLUMNS_KEY);
 					if (resourceName == null || columns == null || names == null || type == null) {
 						throw new RuntimeException(
-							stepName + "스텝의 Reader 설정에서 resourceName, columns, names, type 은 필수입니다. 다음 처럼 설정하세요.\n"
+							stepName + "?ㅽ뀦??Reader ?ㅼ젙?먯꽌 resourceName, columns, names, type ? ?꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 								+ stepName + READER_RESOURCE_NAME_KEY + "=./inputs/csvData.csv "
 								+ stepName + READER_COLUMNS_KEY + "=1-9,10-11 "
 								+ stepName + READER_FIELD_NAMES_KEY + "=name,age "
@@ -207,7 +207,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 				}
 
 				this.resource = new FileSystemResource(resourceName);
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				if (StringUtils.isNotEmpty(names)) {
 					this.fieldNames = names.split(",");
 				}
@@ -223,7 +223,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 				String type = jobParameters.getString(stepName + READER_VO_TYPE_KEY);
 
 				if (this.sql == null || type == null) {
-					throw new RuntimeException(stepName + "스텝의 Writer 설정에서 sql, type 는 필수입니다. 다음 처럼 설정하세요.\n"
+					throw new RuntimeException(stepName + "?ㅽ뀦??Writer ?ㅼ젙?먯꽌 sql, type ???꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 						+ stepName + ".writer.sql=select ID, NAME, CREDIT from CUSTOMER " + stepName
 						+ ".writer.params=credit,name " + stepName + READER_VO_TYPE_KEY + "=aa.bb.TestVo");
 				}
@@ -240,8 +240,8 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 			}
 		} else {
 			throw new RuntimeException(
-				stepName + READER_RESOURCE_TYPE_KEY + "=delimitedFile'처럼, 입력 리소스 타입을 Job 파라미터로 입력하세요.\n"
-					+ "리소스 타입 종류) delimitedFile, fixedLengthFile, jdbcDb");
+				stepName + READER_RESOURCE_TYPE_KEY + "=delimitedFile'泥섎읆, ?낅젰 由ъ냼????낆쓣 Job ?뚮씪誘명꽣濡??낅젰?섏꽭??\n"
+					+ "由ъ냼?????醫낅쪟) delimitedFile, fixedLengthFile, jdbcDb");
 		}
 	}
 
@@ -301,7 +301,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 				((FlatFileItemReader<T>)this.reader).afterPropertiesSet();
 			} catch (Exception e) {
 				throw new RuntimeException(
-					this.readerResourceType + " 타입의 File을 read 하기 위한 FlatFileItemReader 생성에 실패 하였습니다.");
+					this.readerResourceType + " ??낆쓽 File??read ?섍린 ?꾪븳 FlatFileItemReader ?앹꽦???ㅽ뙣 ?섏??듬땲??");
 			}
 		} else if (JDBC_DB_TYPE.equalsIgnoreCase(this.readerResourceType)) {
 
@@ -314,11 +314,11 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 				((JdbcCursorItemReader)this.reader).setRowMapper(rowMapper);
 				((JdbcCursorItemReader)this.reader).setSql(this.sql);
 				((JdbcCursorItemReader)this.reader).afterPropertiesSet();
-			} catch (IllegalArgumentException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
-				throw new RuntimeException("Data source 또는 SQL properties가 설정되지 않았습니다.");
+			} catch (IllegalArgumentException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
+				throw new RuntimeException("Data source ?먮뒗 SQL properties媛 ?ㅼ젙?섏? ?딆븯?듬땲??");
 			} catch (Exception e) {
 				throw new RuntimeException(
-					this.readerResourceType + " 타입의 DB을 read 하기 위한 JdbcCursorItemReader 생성에 실패 하였습니다.");
+					this.readerResourceType + " ??낆쓽 DB??read ?섍린 ?꾪븳 JdbcCursorItemReader ?앹꽦???ㅽ뙣 ?섏??듬땲??");
 			}
 		}
 
@@ -328,7 +328,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 	private void printXmlConfig() {
 		if (printXmlConf) {
 			if (DELIMITED_FILE_TYPE.equalsIgnoreCase(this.readerResourceType)) {
-				LOGGER.info("======= " + stepName + " READER 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " READER ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".reader\" class=\"org.springframework.batch.item.file.FlatFileItemReader\" scope=\"step\">\n"
 					+ "  <property name=\"resource\" value=\"" + this.resourceName + "\" />\n"
@@ -350,7 +350,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 					+ "</bean>\n"
 					+ "================================================");
 			} else if (FIXED_LENGTH_FILE_TYPE.equalsIgnoreCase(this.readerResourceType)) {
-				LOGGER.info("======= " + stepName + " READER 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " READER ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".reader\" class=\"org.springframework.batch.item.file.FlatFileItemReader\" scope=\"step\">\n"
 					+ "  <property name=\"resource\" value=\"" + this.resourceName + "\" />\n"
@@ -372,7 +372,7 @@ public class DefaultItemReader<T> implements ItemStreamReader<T> {
 					+ "</bean>\n"
 					+ "================================================");
 			} else if (JDBC_DB_TYPE.equalsIgnoreCase(this.readerResourceType)) {
-				LOGGER.info("======= " + stepName + " READER 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " READER ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".reader\" class=\"org.springframework.batch.item.database.JdbcCursorItemReader\" scope=\"step\">\n"
 					+ "  <property name=\"dataSource\" ref=\"dataSource\" />\n"

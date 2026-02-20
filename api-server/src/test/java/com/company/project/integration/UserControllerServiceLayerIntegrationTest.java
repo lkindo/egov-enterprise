@@ -266,7 +266,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 "correctParamUser",
                                 "password123!",
                                 "정확한 파라미터 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 

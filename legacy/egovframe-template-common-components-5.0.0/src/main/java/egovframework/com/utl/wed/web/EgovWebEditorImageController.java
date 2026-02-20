@@ -25,43 +25,43 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 웹에디터 이미지 upload 처리 Controller
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뱀뿉?뷀꽣 ?대?吏 upload 泥섎━ Controller
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.08.26
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일                수정자          수정내용
+ *   ?섏젙??               ?섏젙??         ?섏젙?댁슜
  *  -----------   --------  ---------------------------
- *   2009.08.26   한성곤          최초 생성
- *   2017.08.31   장동한          path, physical 파라미터 노출 암호화 처리
- *   2017.12.12   장동한          출력 모듈 경로 변경 취약점 조치
- *   2018.03.07   신용호          URLEncode 처리
- *   2018.08.17   신용호          URL 암호화 보안 추가 조치
- *   2020.08.05   신용호          imageUploadCk Parameter 수정
- *   2022.07.12   이석곤          주석 파라미터 type명과 변수명 수정
+ *   2009.08.26   ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2017.08.31   ?λ룞??         path, physical ?뚮씪誘명꽣 ?몄텧 ?뷀샇??泥섎━
+ *   2017.12.12   ?λ룞??         異쒕젰 紐⑤뱢 寃쎈줈 蹂寃?痍⑥빟??議곗튂
+ *   2018.03.07   ?좎슜??         URLEncode 泥섎━
+ *   2018.08.17   ?좎슜??         URL ?뷀샇??蹂댁븞 異붽? 議곗튂
+ *   2020.08.05   ?좎슜??         imageUploadCk Parameter ?섏젙
+ *   2022.07.12   ?댁꽍怨?         二쇱꽍 ?뚮씪誘명꽣 type紐낃낵 蹂?섎챸 ?섏젙
  *
  * </pre>
  */
 @Controller
 public class EgovWebEditorImageController {
 
-	/** 로그설정 */
+	/** 濡쒓렇?ㅼ젙 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovWebEditorImageController.class);
 
-	/** 첨부파일 위치 지정  => globals.properties */
+	/** 泥⑤??뚯씪 ?꾩튂 吏?? => globals.properties */
 	private final String uploadDir = EgovProperties.getProperty("Globals.fileStorePath");
 
-	/** 허용할 확장자를 .확장자 형태로 연달아 기술한다. ex) .gif.jpg.jpeg.png => globals.properties */
+	/** ?덉슜???뺤옣?먮? .?뺤옣???뺥깭濡??곕떖??湲곗닠?쒕떎. ex) .gif.jpg.jpeg.png => globals.properties */
 	private final String extWhiteList = EgovProperties.getProperty("Globals.fileDownload.Extensions");
 
-	/** 첨부 최대 파일 크기 지정 */
-	private final long maxFileSize = 1024L * 1024L * 100L;   //업로드 최대 사이즈 설정 (100M)
+	/** 泥⑤? 理쒕? ?뚯씪 ?ш린 吏??*/
+	private final long maxFileSize = 1024L * 1024L * 100L;   //?낅줈??理쒕? ?ъ씠利??ㅼ젙 (100M)
 
-	/** 암호화서비스 */
+	/** ?뷀샇?붿꽌鍮꾩뒪 */
 	@Resource(name = "egovEnvCryptoService")
 	EgovEnvCryptoService cryptoService;
 
@@ -73,7 +73,7 @@ public class EgovWebEditorImageController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 이미지 Upload 화면으로 이동한다.
+	 * ?대?吏 Upload ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
 	 * @param model
 	 * @return
@@ -87,7 +87,7 @@ public class EgovWebEditorImageController {
 
 
 	/**
-	 * 이미지 Upload를 처리한다.
+	 * ?대?吏 Upload瑜?泥섎━?쒕떎.
 	 *
 	 * @param request
 	 * @param model
@@ -102,7 +102,7 @@ public class EgovWebEditorImageController {
 	}
 
 	/**
-	 * 이미지 Upload(CK에디터)를 처리한다.
+	 * ?대?吏 Upload(CK?먮뵒??瑜?泥섎━?쒕떎.
 	 *
 	 * @param ckEditorFuncNum
 	 * @param mRequest
@@ -113,7 +113,7 @@ public class EgovWebEditorImageController {
 	 */
 	@RequestMapping(value="/utl/wed/insertImageCk.do", method=RequestMethod.POST)
 	public String imageUploadCk(@RequestParam(value="CKEditorFuncNum", required=false) String ckEditorFuncNum, MultipartHttpServletRequest mRequest, HttpServletResponse response, Model model) throws Exception {
-		// Spring multipartResolver 미사용 시 (commons-fileupload 활용)
+		// Spring multipartResolver 誘몄궗????(commons-fileupload ?쒖슜)
 		//List<EgovFormBasedFileVo> list = EgovFormBasedFileUtil.uploadFiles(request, uploadDir, maxFileSize);
 		model.addAttribute("ckEditorFuncNum", ckEditorFuncNum);
 		uploadImageFiles(mRequest, model);
@@ -130,7 +130,7 @@ public class EgovWebEditorImageController {
 		try {
 			List<EgovFormBasedFileVo> list = EgovFileUploadUtil.uploadFilesExt(mRequest, uploadDir, maxFileSize, extWhiteList);
 			if (list.size() > 0) {
-				EgovFormBasedFileVo vo = list.get(0);	// 첫번째 이미지
+				EgovFormBasedFileVo vo = list.get(0);	// 泥ル쾲吏??대?吏
 
 				String url = mRequest.getContextPath()
 						+ "/utl/web/imageSrc.do?"
@@ -152,7 +152,7 @@ public class EgovWebEditorImageController {
 	}
 
 	/**
-	 * 이미지 view를 제공한다.
+	 * ?대?吏 view瑜??쒓났?쒕떎.
 	 *
 	 * @param request
 	 * @param response
@@ -160,8 +160,8 @@ public class EgovWebEditorImageController {
 	 */
 	@RequestMapping(value="/utl/web/imageSrc.do",method=RequestMethod.GET)
 	public void download(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		//2017.12.12 - 출력 모듈 경로 변경 취약점 조치
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//2017.12.12 - 異쒕젰 紐⑤뱢 寃쎈줈 蹂寃?痍⑥빟??議곗튂
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		String subPath = this.decrypt(EgovStringUtil.isNullToString(request.getParameter("path")));
 		String physical = this.decrypt(EgovStringUtil.isNullToString(request.getParameter("physical")));
 		String mimeType = this.decrypt(EgovStringUtil.isNullToString(request.getParameter("contentType")));
@@ -186,7 +186,7 @@ public class EgovWebEditorImageController {
 	}
 
 	/**
-	 * 암호화
+	 * ?뷀샇??
 	 *
 	 * @param encrypt
 	 * @return
@@ -203,7 +203,7 @@ public class EgovWebEditorImageController {
 	}
 
 	/**
-	 * 복호화
+	 * 蹂듯샇??
 	 *
 	 * @param decrypt
 	 * @return

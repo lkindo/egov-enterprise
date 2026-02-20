@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 경조사 관리 엔티티
+ * 野껋럩????온???酉???
  */
 @Entity
 @Table(name = "NCTSNNMANAGE")

@@ -67,7 +67,7 @@
 			</if>		
 	</select>
 	
-	<!-- 약식결재::상세보기 -->
+	<!-- ?쎌떇寃곗옱::?곸꽭蹂닿린 -->
 	<select id="selectInfrmlSanctn" parameterType="egovframework.com.uss.ion.ism.service.InfrmlSanctn" resultMap="InfrmlSanctnDetail">
 		SELECT 
 			A.INFRML_SANCTN_ID,

@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  OCCRRNC_DE
                  ,  INSTT_CODE
@@ -53,7 +53,7 @@
         
         </if>
         <![CDATA[
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
                     ) ALL_LIST
                     )

@@ -5,74 +5,74 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * RSS태그관리 Model and VO Class 구현
- * @author 공통서비스 장동한
+ * RSS?쒓렇愿由?Model and VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  * 
  * </pre>
  */
 @SuppressWarnings("serial")
 public class RssManage extends ComDefaultVO implements Serializable{
     	
-	/** RSS태그관리 아이디 */
+	/** RSS?쒓렇愿由??꾩씠??*/
 	private String rssId;
 	
-	/** 대상서비스명 */
+	/** ??곸꽌鍮꾩뒪紐?*/
 	private String trgetSvcNm;
 	
-	/** 대상테이블명 */
+	/** ??곹뀒?대툝紐?*/
 	private String trgetSvcTable;
 	
-	/** 대상서비스목록개수 */
+	/** ??곸꽌鍮꾩뒪紐⑸줉媛쒖닔 */
 	private int trgetSvcListCo;
 	
-	/** 헤더 TITLE */
+	/** ?ㅻ뜑 TITLE */
 	private String hderTitle;
 	
-	/** 헤더	LINK */
+	/** ?ㅻ뜑	LINK */
 	private String hderLink;
 	
-	/** 헤더 DESCRIPTION */
+	/** ?ㅻ뜑 DESCRIPTION */
 	private String hderDescription;
 	
-	/** 헤더 TAG */
+	/** ?ㅻ뜑 TAG */
 	private String hderTag;
 	
-	/** 헤더 ETC */
+	/** ?ㅻ뜑 ETC */
 	private String hderEtc;
 	
-	/** 본문 TITLE */
+	/** 蹂몃Ц TITLE */
 	private String bdtTitle;
 	
-	/** 본문 LINK */
+	/** 蹂몃Ц LINK */
 	private String bdtLink;
 	
-	/** 본문 DESCRIPTION */
+	/** 蹂몃Ц DESCRIPTION */
 	private String bdtDescription;
 	
-	/** 본문 TAG */
+	/** 蹂몃Ц TAG */
 	private String bdtTag;
 	
-	/** 본문 ETC */
+	/** 蹂몃Ц ETC */
 	private String bdtEtc;
 	
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
 	/**

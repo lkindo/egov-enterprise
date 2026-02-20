@@ -10,19 +10,19 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.olp.qri.service.QustnrRespondInfoVO;
 /**
- * 설문조사 Dao Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ議곗궗 Dao Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *   2017.07.24  김예영          표준프레임워크 v3.7 개선(select->selectOne수정)
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2017.07.24  源?덉쁺          ?쒖??꾨젅?꾩썙??v3.7 媛쒖꽑(select->selectOne?섏젙)
  *
  * </pre>
  */
@@ -31,8 +31,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 
 
     /**
-	 * 설문템플릿을 조회한다.
-	 * @param map - 조회할 정보가 담긴 map
+	 * ?ㅻЦ?쒗뵆由우쓣 議고쉶?쒕떎.
+	 * @param map - 議고쉶???뺣낫媛 ?닿릿 map
 	 * @return List
 	 * @throws Exception
 	 */
@@ -41,9 +41,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 객관식 통계를 조회 조회한다.
+	 * 媛앷????듦퀎瑜?議고쉶 議고쉶?쒕떎.
 	 *
-	 * @param map - 조회할 정보가 담긴 map
+	 * @param map - 議고쉶???뺣낫媛 ?닿릿 map
 	 * @return List
 	 * @throws Exception
 	 */
@@ -52,9 +52,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
 	/**
-     * 주관식 통계를 조회 조회한다.
+     * 二쇨????듦퀎瑜?議고쉶 議고쉶?쒕떎.
      *
-     * @param map - 조회할 정보가 담긴 map
+     * @param map - 議고쉶???뺣낫媛 ?닿릿 map
      * @return List
      * @throws Exception
      */
@@ -63,8 +63,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-	 * 회원정보를 조회한다.
-	 * @param map - 조회할 정보가 담긴 map
+	 * ?뚯썝?뺣낫瑜?議고쉶?쒕떎.
+	 * @param map - 議고쉶???뺣낫媛 ?닿릿 map
 	 * @return List
 	 * @throws Exception
 	 */
@@ -73,9 +73,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-     * 설문정보를 조회한다.
+     * ?ㅻЦ?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param map - 조회할 정보가 담긴 map
+     * @param map - 議고쉶???뺣낫媛 ?닿릿 map
      * @return List
      * @throws Exception
      */
@@ -84,9 +84,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 문항정보를 조회한다.
+     * 臾명빆?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param map - 조회할 정보가 담긴 map
+     * @param map - 議고쉶???뺣낫媛 ?닿릿 map
      * @return List
      * @throws Exception
      */
@@ -95,9 +95,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 항목정보를 조회한다.
+     * ??ぉ?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param map - 조회할 정보가 담긴 map
+     * @param map - 議고쉶???뺣낫媛 ?닿릿 map
      * @return List
      * @throws Exception
      */
@@ -106,9 +106,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 설문조사(설문등록)를(을) 목록을 조회한다.
+     * ?ㅻЦ議곗궗(?ㅻЦ?깅줉)瑜??? 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param searchVO - 조회할 정보가 담긴 VO
+     * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
      * @return List
      * @throws Exception
      */
@@ -117,8 +117,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-	 * 설문조사(설문등록)를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ議곗궗(?ㅻЦ?깅줉)瑜??? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -127,9 +127,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-     * 응답자결과(설문조사) 목록을 조회한다.
+     * ?묐떟?먭껐怨??ㅻЦ議곗궗) 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param searchVO - 조회할 정보가 담긴 VO
+     * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
      * @throws Exception
      */
     public List<EgovMap> selectQustnrRespondInfoList(ComDefaultVO searchVO) throws Exception {
@@ -137,9 +137,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 응답자결과(설문조사)를(을) 상세조회 한다.
+     * ?묐떟?먭껐怨??ㅻЦ議곗궗)瑜??? ?곸꽭議고쉶 ?쒕떎.
      *
-     * @param qustnrRespondInfoVO - 응답자결과(설문조사) 정보 담김 VO
+     * @param qustnrRespondInfoVO - ?묐떟?먭껐怨??ㅻЦ議곗궗) ?뺣낫 ?닿? VO
      * @throws Exception
      */
     public List<EgovMap> selectQustnrRespondInfoDetail(QustnrRespondInfoVO qustnrRespondInfoVO) throws Exception {
@@ -147,8 +147,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
     }
 
     /**
-	 * 응답자결과(설문조사)를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?묐떟?먭껐怨??ㅻЦ議곗궗)瑜??? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
  	 * @return int
 	 * @throws Exception
 	 */
@@ -157,8 +157,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 응답자결과(설문조사)를(을) 등록한다.
-	 * @param qqustnrRespondInfoVO - 응답자결과(설문조사) 정보 담김 VO
+	 * ?묐떟?먭껐怨??ㅻЦ議곗궗)瑜??? ?깅줉?쒕떎.
+	 * @param qqustnrRespondInfoVO - ?묐떟?먭껐怨??ㅻЦ議곗궗) ?뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	public void insertQustnrRespondInfo(QustnrRespondInfoVO qustnrRespondInfoVO) throws Exception{
@@ -166,8 +166,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 응답자결과(설문조사)를(을) 수정한다.
-	 * @param qustnrRespondInfoVO - 응답자결과(설문조사) 정보 담김 VO
+	 * ?묐떟?먭껐怨??ㅻЦ議곗궗)瑜??? ?섏젙?쒕떎.
+	 * @param qustnrRespondInfoVO - ?묐떟?먭껐怨??ㅻЦ議곗궗) ?뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	public void updateQustnrRespondInfo(QustnrRespondInfoVO qustnrRespondInfoVO) throws Exception{
@@ -175,8 +175,8 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 응답자결과(설문조사)를(을) 삭제한다.
-	 * @param qustnrRespondInfoVO - 응답자결과(설문조사) 정보 담김 VO
+	 * ?묐떟?먭껐怨??ㅻЦ議곗궗)瑜??? ??젣?쒕떎.
+	 * @param qustnrRespondInfoVO - ?묐떟?먭껐怨??ㅻЦ議곗궗) ?뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	public void deleteQustnrRespondInfo(QustnrRespondInfoVO qustnrRespondInfoVO) throws Exception{
@@ -184,9 +184,9 @@ public class QustnrRespondInfoDao extends EgovComAbstractDAO {
 	}
 
     /**
-     * 설문템플릿 화이트리스트를 조회한다.
+     * ?ㅻЦ?쒗뵆由??붿씠?몃━?ㅽ듃瑜?議고쉶?쒕떎.
      *
-     * @param map - 조회할 정보가 담긴 map
+     * @param map - 議고쉶???뺣낫媛 ?닿릿 map
      * @return List
      * @throws Exception
      */

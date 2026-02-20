@@ -15,19 +15,19 @@ import egovframework.com.cop.ems.service.SndngMailVO;
 import jakarta.annotation.Resource;
 
 /**
- * 메일 솔루션과 연동해서 이용해서 메일을 보내는 서비스 구현 클래스
+ * 硫붿씪 ?붾（?섍낵 ?곕룞?댁꽌 ?댁슜?댁꽌 硫붿씪??蹂대궡???쒕퉬??援ы쁽 ?대옒??
  * @since 2011.09.09
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2011.09.09  서준식       최초 작성
- *  2011.12.06  이기하       메일 첨부파일이 기능 추가
- *  2013.05.23  이기하       메일 첨부파일이 없을 때 로직 추가
+ *  2011.09.09  ?쒖???      理쒖큹 ?묒꽦
+ *  2011.12.06  ?닿린??      硫붿씪 泥⑤??뚯씪??湲곕뒫 異붽?
+ *  2013.05.23  ?닿린??      硫붿씪 泥⑤??뚯씪???놁쓣 ??濡쒖쭅 異붽?
  *
  *  </pre>
  */
@@ -44,7 +44,7 @@ public class EgovSndngMailServiceImpl extends EgovAbstractServiceImpl implements
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovSndngMailServiceImpl.class);
 
 	/**
-	 * 메일을 발송한다
+	 * 硫붿씪??諛쒖넚?쒕떎
 	 * @param vo SndngMailVO
 	 * @return boolean
 	 * @exception Exception
@@ -53,47 +53,47 @@ public class EgovSndngMailServiceImpl extends EgovAbstractServiceImpl implements
 	@SuppressWarnings("unused")
 	public boolean sndngMail(SndngMailVO sndngMailVO) throws Exception {
 
-		String recptnPerson = (sndngMailVO.getRecptnPerson() == null) ? "" : sndngMailVO.getRecptnPerson(); // 수신자
-		String subject = (sndngMailVO.getSj() == null) ? "" : sndngMailVO.getSj(); // 메일제목
-		String emailCn = (sndngMailVO.getEmailCn() == null) ? "" : sndngMailVO.getEmailCn(); // 메일내용
-		String atchmnFileNm = (sndngMailVO.getOrignlFileNm() == null) ? "" : sndngMailVO.getOrignlFileNm(); // 첨부파일이름
-		String atchmnFilePath = (sndngMailVO.getFileStreCours() == null) ? "" : sndngMailVO.getFileStreCours(); // 첨부파일경로
+		String recptnPerson = (sndngMailVO.getRecptnPerson() == null) ? "" : sndngMailVO.getRecptnPerson(); // ?섏떊??
+		String subject = (sndngMailVO.getSj() == null) ? "" : sndngMailVO.getSj(); // 硫붿씪?쒕ぉ
+		String emailCn = (sndngMailVO.getEmailCn() == null) ? "" : sndngMailVO.getEmailCn(); // 硫붿씪?댁슜
+		String atchmnFileNm = (sndngMailVO.getOrignlFileNm() == null) ? "" : sndngMailVO.getOrignlFileNm(); // 泥⑤??뚯씪?대쫫
+		String atchmnFilePath = (sndngMailVO.getFileStreCours() == null) ? "" : sndngMailVO.getFileStreCours(); // 泥⑤??뚯씪寃쎈줈
 
 		try {
 			EmailAttachment attachment = new EmailAttachment();
-			// 첨부파일이 있을 때
+			// 泥⑤??뚯씪???덉쓣 ??
 			if (atchmnFileNm != "" && atchmnFileNm != null && atchmnFilePath != "" && atchmnFilePath != null) {
-				// 첨부할 attachment 정보를 생성합니다
+				// 泥⑤???attachment ?뺣낫瑜??앹꽦?⑸땲??
 				attachment.setPath(atchmnFilePath);
 				attachment.setDisposition(EmailAttachment.ATTACHMENT);
-				attachment.setDescription("첨부파일입니다");
-				//attachment.setName(new String(atchmnFileNm.getBytes("UTF-8"),"latin1")); // 구버전의 경우 필요
+				attachment.setDescription("泥⑤??뚯씪?낅땲??);
+				//attachment.setName(new String(atchmnFileNm.getBytes("UTF-8"),"latin1")); // 援щ쾭?꾩쓽 寃쎌슦 ?꾩슂
 				attachment.setName(atchmnFileNm);
 
-				// 2015.05.08 주석수정 - 첨부파일 정보를 포함한 메일을 전송합니다
+				// 2015.05.08 二쇱꽍?섏젙 - 泥⑤??뚯씪 ?뺣낫瑜??ы븿??硫붿씪???꾩넚?⑸땲??
 				egovMultiPartEmail.send(recptnPerson, subject, emailCn, attachment);
 			}
 			else
 			{
-				// 메일을 전송합니다
+				// 硫붿씪???꾩넚?⑸땲??
 				egovMultiPartEmail.send(recptnPerson, subject, emailCn);
 			}
 
 			Throwable t = new Throwable();
 
 		} catch (MailParseException ex) {
-			sndngMailVO.setSndngResultCode("F"); // 발송결과 실패
-			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 발송상태를 DB에 업데이트 한다.
+			sndngMailVO.setSndngResultCode("F"); // 諛쒖넚寃곌낵 ?ㅽ뙣
+			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 諛쒖넚?곹깭瑜?DB???낅뜲?댄듃 ?쒕떎.
 			LOGGER.error("Sending Mail Exception : {} [failure when parsing the message]", ex.getCause());
 			return false;
 		} catch (MailAuthenticationException ex) {
-			sndngMailVO.setSndngResultCode("F"); // 발송결과 실패
-			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 발송상태를 DB에 업데이트 한다.
+			sndngMailVO.setSndngResultCode("F"); // 諛쒖넚寃곌낵 ?ㅽ뙣
+			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 諛쒖넚?곹깭瑜?DB???낅뜲?댄듃 ?쒕떎.
 			LOGGER.error("Sending Mail Exception : {} [authentication failure]", ex.getCause());
 			return false;
 		} catch (MailSendException ex) {
-			sndngMailVO.setSndngResultCode("F"); // 발송결과 실패
-			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 발송상태를 DB에 업데이트 한다.
+			sndngMailVO.setSndngResultCode("F"); // 諛쒖넚寃곌낵 ?ㅽ뙣
+			sndngMailRegistDAO.updateSndngMail(sndngMailVO); // 諛쒖넚?곹깭瑜?DB???낅뜲?댄듃 ?쒕떎.
 			LOGGER.error("Sending Mail Exception : {} [failure when sending the message]", ex.getCause());
 			return false;
 		}

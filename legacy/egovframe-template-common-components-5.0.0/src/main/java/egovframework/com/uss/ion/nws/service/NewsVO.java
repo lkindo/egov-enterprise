@@ -2,18 +2,18 @@ package egovframework.com.uss.ion.nws.service;
 
 /**
  *  
- * 뉴스정보를 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?댁뒪?뺣낫瑜?泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -21,38 +21,38 @@ public class NewsVO extends NewsDefaultVO {
 	
     private static final long serialVersionUID = 1L;
     
-    /** 뉴스 ID */
+    /** ?댁뒪 ID */
     private String newsId;
     
-    /** 뉴스제목 */
+    /** ?댁뒪?쒕ぉ */
     private String newsSj;
     
-    /** 뉴스내용 */
+    /** ?댁뒪?댁슜 */
     private String newsCn;
     
-    /** 뉴스출처 */
+    /** ?댁뒪異쒖쿂 */
     private String newsOrigin;
     
-    /** 게시일자 */
+    /** 寃뚯떆?쇱옄 */
     private String ntceDe;
 
-    /** 첨부파일ID */ 
+    /** 泥⑤??뚯씪ID */ 
     private String atchFileId;
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록자ID */
+    /** 理쒖큹?깅줉?륤D */
     private String frstRegisterId;
 
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm;
 
-    /** 최종수정자ID */
+    /** 理쒖쥌?섏젙?륤D */
     private String lastUpdusrId;
 
 	/**
-	 * newsId attribute 를 리턴한다.
+	 * newsId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNewsId() {
@@ -60,7 +60,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsId attribute 값을 설정한다.
+	 * newsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return newsId String
 	 */
 	public void setNewsId(String newsId) {
@@ -68,7 +68,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsSj attribute 를 리턴한다.
+	 * newsSj attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNewsSj() {
@@ -76,7 +76,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsSj attribute 값을 설정한다.
+	 * newsSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return newsSj String
 	 */
 	public void setNewsSj(String newsSj) {
@@ -84,7 +84,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsCn attribute 를 리턴한다.
+	 * newsCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNewsCn() {
@@ -92,7 +92,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsCn attribute 값을 설정한다.
+	 * newsCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return newsCn String
 	 */
 	public void setNewsCn(String newsCn) {
@@ -100,7 +100,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsOrigin attribute 를 리턴한다.
+	 * newsOrigin attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNewsOrigin() {
@@ -108,7 +108,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * newsOrigin attribute 값을 설정한다.
+	 * newsOrigin attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return newsOrigin String
 	 */
 	public void setNewsOrigin(String newsOrigin) {
@@ -116,7 +116,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * ntceDe attribute 를 리턴한다.
+	 * ntceDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getNtceDe() {
@@ -124,7 +124,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * ntceDe attribute 값을 설정한다.
+	 * ntceDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return ntceDe String
 	 */
 	public void setNtceDe(String ntceDe) {
@@ -132,7 +132,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAtchFileId() {
@@ -140,7 +140,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -148,7 +148,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -156,7 +156,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -164,7 +164,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -172,7 +172,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -180,7 +180,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -188,7 +188,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -196,7 +196,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -204,7 +204,7 @@ public class NewsVO extends NewsDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

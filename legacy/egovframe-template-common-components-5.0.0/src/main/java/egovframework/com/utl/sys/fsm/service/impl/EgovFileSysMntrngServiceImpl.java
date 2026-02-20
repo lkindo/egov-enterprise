@@ -20,15 +20,15 @@ import egovframework.com.utl.sys.fsm.service.FileSysMntrngVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * 파일시스템 모니터링대상에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 파일시스템 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 파일시스템 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:26
+ * @created 28-6-2010 ?ㅼ쟾 11:33:26
  */
 @Service("EgovFileSysMntrngService")
 public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implements EgovFileSysMntrngService {
@@ -42,9 +42,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	@Resource(name="egovFileSysMntrngLogIdGnrService")
 	private EgovIdGnrService idgenServiceFileSysMntrngLog;
 	/**
-	 * 파일시스템 모니터링대상 목록을 조회한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링대상 VO
-	 * @return  Map<String, Object> - 파일시스템 모니터링 List
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅???紐⑸줉??議고쉶?쒕떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???VO
+	 * @return  Map<String, Object> - ?뚯씪?쒖뒪??紐⑤땲?곕쭅 List
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -62,9 +62,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링대상을 조회한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링대상 VO
-	 * @return  FileSysMntrngVO - 파일시스템 모니터링대상 VO
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓣 議고쉶?쒕떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???VO
+	 * @return  FileSysMntrngVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???VO
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -74,8 +74,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링대상을 수정한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓣 ?섏젙?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -85,8 +85,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링대상을 등록한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓣 ?깅줉?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -97,8 +97,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링대상을 삭제한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓣 ??젣?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -108,8 +108,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템의 크기를 조회한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
+	 * ?뚯씪?쒖뒪?쒖쓽 ?ш린瑜?議고쉶?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???model
 	 * @return  int
 	 *
 	 * @param fileSysMntrng
@@ -130,8 +130,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링 결과를 수정한다.
-	 * @param FileSysMntrng - 파일시스템 모니터링대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -154,9 +154,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링로그 목록을 조회한다.
-	 * @param FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
-	 * @return  Map<String, Object> - 파일시스템 모니터링로그 List
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 紐⑸줉??議고쉶?쒕떎.
+	 * @param FileSysMntrngLogVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  Map<String, Object> - ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 List
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
@@ -174,9 +174,9 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링로그를 조회한다.
-	 * @param FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
-	 * @return  FileSysMntrngLogVO - 파일시스템 모니터링로그 VO
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇瑜?議고쉶?쒕떎.
+	 * @param FileSysMntrngLogVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  FileSysMntrngLogVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 VO
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
@@ -186,8 +186,8 @@ public class EgovFileSysMntrngServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 파일시스템 모니터링로그를 등록한다.
-	 * @param FileSysMntrngLog - 파일시스템 모니터링로그 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇瑜??깅줉?쒕떎.
+	 * @param FileSysMntrngLog - ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 model
 	 *
 	 * @param fileSysMntrngLog
 	 */

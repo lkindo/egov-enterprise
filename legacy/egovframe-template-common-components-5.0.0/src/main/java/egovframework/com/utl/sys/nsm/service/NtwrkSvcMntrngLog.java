@@ -3,211 +3,211 @@ package egovframework.com.utl.sys.nsm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링 로그에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 시스템IP, 시스템포트, 로그ID, 시스템명, 서비스상태, 로그정보, 생성일시 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쒖뒪?쏧P, ?쒖뒪?쒗룷?? 濡쒓렇ID, ?쒖뒪?쒕챸, ?쒕퉬?ㅼ긽?? 濡쒓렇?뺣낫, ?앹꽦?쇱떆 ??ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 @SuppressWarnings("serial")
 public class NtwrkSvcMntrngLog implements Serializable {
 
 	/**
-	 * 시스템IP
+	 * ?쒖뒪?쏧P
 	 */
 	private String sysIp;
 	/**
-	 * 시스템포트
+	 * ?쒖뒪?쒗룷??
 	 */
 	private String sysPort;
 	/**
-	 * 로그ID
+	 * 濡쒓렇ID
 	 */
 	private String logId;
 	/**
-	 * 시스템명
+	 * ?쒖뒪?쒕챸
 	 */
 	private String sysNm;
 	/**
-	 * 모니터링상태
+	 * 紐⑤땲?곕쭅?곹깭
 	 */
 	private String mntrngSttus;
 	/**
-	 * 로그정보
+	 * 濡쒓렇?뺣낫
 	 */
 	private String logInfo;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String creatDt;
 	/**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
 	private String frstRegisterId = "";
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId = "";
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 	/**
-	 * 현재 시스템 IP를 반환합니다.
+	 * ?꾩옱 ?쒖뒪??IP瑜?諛섑솚?⑸땲??
 	 */
 	public String getSysIp() {
 		return sysIp;
 	}
 
 	/**
-	 * 시스템 IP를 설정합니다.
+	 * ?쒖뒪??IP瑜??ㅼ젙?⑸땲??
 	 */
 	public void setSysIp(String sysIp) {
 		this.sysIp = sysIp;
 	}
 
 	/**
-	 * 현재 시스템 포트를 반환합니다.
+	 * ?꾩옱 ?쒖뒪???ы듃瑜?諛섑솚?⑸땲??
 	 */
 	public String getSysPort() {
 		return sysPort;
 	}
 
 	/**
-	 * 시스템 포트를 설정합니다.
+	 * ?쒖뒪???ы듃瑜??ㅼ젙?⑸땲??
 	 */
 	public void setSysPort(String sysPort) {
 		this.sysPort = sysPort;
 	}
 
 	/**
-	 * 로그 ID를 반환합니다.
+	 * 濡쒓렇 ID瑜?諛섑솚?⑸땲??
 	 */
 	public String getLogId() {
 		return logId;
 	}
 
 	/**
-	 * 로그 ID를 설정합니다.
+	 * 濡쒓렇 ID瑜??ㅼ젙?⑸땲??
 	 */
 	public void setLogId(String logId) {
 		this.logId = logId;
 	}
 
 	/**
-	 * 시스템 이름을 반환합니다.
+	 * ?쒖뒪???대쫫??諛섑솚?⑸땲??
 	 */
 	public String getSysNm() {
 		return sysNm;
 	}
 
 	/**
-	 * 시스템 이름을 설정합니다.
+	 * ?쒖뒪???대쫫???ㅼ젙?⑸땲??
 	 */
 	public void setSysNm(String sysNm) {
 		this.sysNm = sysNm;
 	}
 
 	/**
-	 * 모니터링 상태를 반환합니다.
+	 * 紐⑤땲?곕쭅 ?곹깭瑜?諛섑솚?⑸땲??
 	 */
 	public String getMntrngSttus() {
 		return mntrngSttus;
 	}
 
 	/**
-	 * 모니터링 상태를 설정합니다.
+	 * 紐⑤땲?곕쭅 ?곹깭瑜??ㅼ젙?⑸땲??
 	 */
 	public void setMntrngSttus(String mntrngSttus) {
 		this.mntrngSttus = mntrngSttus;
 	}
 
 	/**
-	 * 로그 정보를 반환합니다.
+	 * 濡쒓렇 ?뺣낫瑜?諛섑솚?⑸땲??
 	 */
 	public String getLogInfo() {
 		return logInfo;
 	}
 
 	/**
-	 * 로그 정보를 설정합니다.
+	 * 濡쒓렇 ?뺣낫瑜??ㅼ젙?⑸땲??
 	 */
 	public void setLogInfo(String logInfo) {
 		this.logInfo = logInfo;
 	}
 
 	/**
-	 * 생성 날짜를 반환합니다.
+	 * ?앹꽦 ?좎쭨瑜?諛섑솚?⑸땲??
 	 */
 	public String getCreatDt() {
 		return creatDt;
 	}
 
 	/**
-	 * 생성 날짜를 설정합니다.
+	 * ?앹꽦 ?좎쭨瑜??ㅼ젙?⑸땲??
 	 */
 	public void setCreatDt(String creatDt) {
 		this.creatDt = creatDt;
 	}
 
 	/**
-	 * 최초 등록자 ID를 반환합니다.
+	 * 理쒖큹 ?깅줉??ID瑜?諛섑솚?⑸땲??
 	 */
 	public String getFrstRegisterId() {
 		return frstRegisterId;
 	}
 
 	/**
-	 * 최초 등록자 ID를 설정합니다.
+	 * 理쒖큹 ?깅줉??ID瑜??ㅼ젙?⑸땲??
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
 		this.frstRegisterId = frstRegisterId;
 	}
 
 	/**
-	 * 최초 등록 시간을 반환합니다.
+	 * 理쒖큹 ?깅줉 ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getFrstRegisterPnttm() {
 		return frstRegisterPnttm;
 	}
 
 	/**
-	 * 최초 등록 시간을 설정합니다.
+	 * 理쒖큹 ?깅줉 ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
 		this.frstRegisterPnttm = frstRegisterPnttm;
 	}
 
 	/**
-	 * 마지막 수정자 ID를 반환합니다.
+	 * 留덉?留??섏젙??ID瑜?諛섑솚?⑸땲??
 	 */
 	public String getLastUpdusrId() {
 		return lastUpdusrId;
 	}
 
 	/**
-	 * 마지막 수정자 ID를 설정합니다.
+	 * 留덉?留??섏젙??ID瑜??ㅼ젙?⑸땲??
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 
 	/**
-	 * 마지막 수정 시간을 반환합니다.
+	 * 留덉?留??섏젙 ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getLastUpdusrPnttm() {
 		return lastUpdusrPnttm;
 	}
 
 	/**
-	 * 마지막 수정 시간을 설정합니다.
+	 * 留덉?留??섏젙 ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
 		this.lastUpdusrPnttm = lastUpdusrPnttm;

@@ -1,17 +1,17 @@
 /**
  *  Class Name : EgovFileTool.java
- *  Description : 시스템 디렉토리 정보를 확인하여 제공하는  Business class
+ *  Description : ?쒖뒪???붾젆?좊━ ?뺣낫瑜??뺤씤?섏뿬 ?쒓났?섎뒗  Business class
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.01.13    조재영          최초 생성
- *   2017.03.03    조성원 	     시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2017.03.03    조성원          시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
- *   2018.03.19    신용호          createDirectories() 추가 : 여러 레벨의 디렉토리를 한번에 생성
+ *   2009.01.13    議곗옱??         理쒖큹 ?앹꽦
+ *   2017.03.03    議곗꽦??	     ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2017.03.03    議곗꽦??         ?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
+ *   2018.03.19    ?좎슜??         createDirectories() 異붽? : ?щ윭 ?덈꺼???붾젆?좊━瑜??쒕쾲???앹꽦
  *
  *
- *  @author 공통 서비스 개발팀 조재영,박지욱
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? 議곗옱??諛뺤???
  *  @since 2009. 01. 13
  *  @version 1.0
  *  @see
@@ -39,29 +39,29 @@ import egovframework.com.cmm.util.EgovResourceCloseHelper;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
- * EgovFileTool 클래스를 정의한다.
+ * EgovFileTool ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일                수정자           수정내용
+ *  ?섏젙??               ?섏젙??          ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2020.12.07   신용호       KISA 보안약점 조치
- *  2022.11.11   김혜준       시큐어코딩 처리
- *  2024.10.29   win777	    디렉토리 생성 성공 시 생성된 절대경로를 리턴하도록 변경
- *  2025.02.06   신용호       deleteFile() KISA 시큐어코딩 처리
+ *  2020.12.07   ?좎슜??      KISA 蹂댁븞?쎌젏 議곗튂
+ *  2022.11.11   源?쒖?       ?쒗걧?댁퐫??泥섎━
+ *  2024.10.29   win777	    ?붾젆?좊━ ?앹꽦 ?깃났 ???앹꽦???덈?寃쎈줈瑜?由ы꽩?섎룄濡?蹂寃?
+ *  2025.02.06   ?좎슜??      deleteFile() KISA ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
 
 public class EgovFileTool {
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
-	// 최대 문자길이
+	// 理쒕? 臾몄옄湲몄씠
 	static final int MAX_STR_LEN = 1024;
 
 	// LOGGER
@@ -72,11 +72,11 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리(파일)를 삭제한다. (파일,디렉토리 구분없이 존재하는 경우 무조건 삭제한다)
+	 * Comment : ?붾젆?좊━(?뚯씪)瑜???젣?쒕떎. (?뚯씪,?붾젆?좊━ 援щ텇?놁씠 議댁옱?섎뒗 寃쎌슦 臾댁“嫄???젣?쒕떎)
 	 * </pre>
 	 *
-	 * @param filePath 삭제하고자 하는 파일의 절대경로 + 파일명
-	 * @return 성공하면 삭제된 절대경로, 아니면블랭크
+	 * @param filePath ??젣?섍퀬???섎뒗 ?뚯씪???덈?寃쎈줈 + ?뚯씪紐?
+	 * @return ?깃났?섎㈃ ??젣???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String deletePath(String filePath) {
 		return deletePath(FILE_STORE_PATH, filePath);
@@ -84,16 +84,16 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리(파일)를 삭제한다. (파일,디렉토리 구분없이 존재하는 경우 무조건 삭제한다)
+	 * Comment : ?붾젆?좊━(?뚯씪)瑜???젣?쒕떎. (?뚯씪,?붾젆?좊━ 援щ텇?놁씠 議댁옱?섎뒗 寃쎌슦 臾댁“嫄???젣?쒕떎)
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param filePath 삭제하고자 하는 파일의 절대경로 + 파일명
-	 * @return 성공하면 삭제된 절대경로, 아니면블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param filePath ??젣?섍퀬???섎뒗 ?뚯씪???덈?寃쎈줈 + ?뚯씪紐?
+	 * @return ?깃났?섎㈃ ??젣???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String deletePath(String basePath, String filePath) {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
@@ -113,12 +113,12 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리를 생성한다. (여러 레벨의 경로를 동시에 생성)
+	 * Comment : ?붾젆?좊━瑜??앹꽦?쒕떎. (?щ윭 ?덈꺼??寃쎈줈瑜??숈떆???앹꽦)
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param dirPath 생성하고자 하는 절대경로
-	 * @return 성공하면 생성된 절대경로, 아니면 블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param dirPath ?앹꽦?섍퀬???섎뒗 ?덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ?앹꽦???덈?寃쎈줈, ?꾨땲硫?釉붾옲??
 	 */
 	public static String createDirectories(String dirPath) {
 		return createDirectories(FILE_STORE_PATH, dirPath);
@@ -126,17 +126,17 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리를 생성한다. (여러 레벨의 경로를 동시에 생성)
+	 * Comment : ?붾젆?좊━瑜??앹꽦?쒕떎. (?щ윭 ?덈꺼??寃쎈줈瑜??숈떆???앹꽦)
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param dirPath 생성하고자 하는 절대경로
-	 * @return 성공하면 생성된 절대경로, 아니면 블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param dirPath ?앹꽦?섍퀬???섎뒗 ?덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ?앹꽦???덈?寃쎈줈, ?꾨땲硫?釉붾옲??
 	 */
 	public static String createDirectories(String basePath, String dirPath) {
 		String result = "";
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
@@ -155,20 +155,20 @@ public class EgovFileTool {
 	}
 
 	/**
-	 * 디렉토리 내부 하위목록들 중에서 파일을 찾는 기능(모든 목록 조회)
+	 * ?붾젆?좊━ ?대? ?섏쐞紐⑸줉??以묒뿉???뚯씪??李얜뒗 湲곕뒫(紐⑤뱺 紐⑸줉 議고쉶)
 	 *
-	 * @param fileArray fileArray 파일목록
-	 * @return ArrayList list 파일목록(절대경로)
+	 * @param fileArray fileArray ?뚯씪紐⑸줉
+	 * @return ArrayList list ?뚯씪紐⑸줉(?덈?寃쎈줈)
 	 */
 	public static List<String> getSubFilesByAll(File[] fileArray) throws Exception {
 		ArrayList<String> list = new ArrayList<>();
 
 		for (File element : fileArray) {
-			// 디렉토리 안에 디렉토리면 그 안의 파일목록에서 찾도록 재귀호출한다.
+			// ?붾젆?좊━ ?덉뿉 ?붾젆?좊━硫?洹??덉쓽 ?뚯씪紐⑸줉?먯꽌 李얜룄濡??ш??몄텧?쒕떎.
 			if (element.isDirectory()) {
 				File[] tmpArray = element.listFiles();
 				list.addAll(getSubFilesByAll(tmpArray));
-				// 파일이면 담는다.
+				// ?뚯씪?대㈃ ?대뒗??
 			} else {
 				list.add(element.getAbsolutePath());
 			}
@@ -179,11 +179,11 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리를 생성한다.
+	 * Comment : ?붾젆?좊━瑜??앹꽦?쒕떎.
 	 * </pre>
 	 *
-	 * @param dirPath 생성하고자 하는 절대경로
-	 * @return 성공하면 새성된 절대경로, 아니면 블랭크
+	 * @param dirPath ?앹꽦?섍퀬???섎뒗 ?덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ?덉꽦???덈?寃쎈줈, ?꾨땲硫?釉붾옲??
 	 */
 	public static String createNewDirectory(String dirPath) {
 
@@ -192,30 +192,30 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리를 생성한다.
+	 * Comment : ?붾젆?좊━瑜??앹꽦?쒕떎.
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param dirPath 생성하고자 하는 절대경로
-	 * @return 성공하면 새성된 절대경로, 아니면 블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param dirPath ?앹꽦?섍퀬???섎뒗 ?덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ?덉꽦???덈?寃쎈줈, ?꾨땲硫?釉붾옲??
 	 */
 	public static String createNewDirectory(String basePath, String dirPath) {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
 
-		// 인자값 유효하지 않은 경우 블랭크 리턴
+		// ?몄옄媛??좏슚?섏? ?딆? 寃쎌슦 釉붾옲??由ы꽩
 		if (dirPath == null || dirPath.equals("")) {
 			return "";
 		}
 
 		File file = new File(EgovWebUtil.filePathBlackList(basePath + dirPath));
 		String result = "";
-		// 없으면 생성
+		// ?놁쑝硫??앹꽦
 		if (file.exists()) {
-			// 혹시 존재해도 파일이면 생성 - 생성되지 않는다.(아래는 실질적으로는 진행되지 않음)
+			// ?뱀떆 議댁옱?대룄 ?뚯씪?대㈃ ?앹꽦 - ?앹꽦?섏? ?딅뒗??(?꾨옒???ㅼ쭏?곸쑝濡쒕뒗 吏꾪뻾?섏? ?딆쓬)
 			if (file.isFile()) {
 				//new File(file.getParent()).mkdirs();
 				if (file.mkdirs()) {
@@ -225,7 +225,7 @@ public class EgovFileTool {
 				result = file.getAbsolutePath();
 			}
 		} else {
-			// 존해하지 않으면 생성
+			// 議댄빐?섏? ?딆쑝硫??앹꽦
 			if (file.mkdirs()) {
 				result = file.getAbsolutePath();
 			}
@@ -236,11 +236,11 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 파일을 생성한다.
+	 * Comment : ?뚯씪???앹꽦?쒕떎.
 	 * </pre>
 	 *
-	 * @param filePath fileName 파일의 절대경로 + 파일명
-	 * @return 성공하면 생성된 파일의 절대경로, 아니면블랭크
+	 * @param filePath fileName ?뚯씪???덈?寃쎈줈 + ?뚯씪紐?
+	 * @return ?깃났?섎㈃ ?앹꽦???뚯씪???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String createNewFile(String filePath) {
 		return createNewFile(FILE_STORE_PATH, filePath);
@@ -248,21 +248,21 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 파일을 생성한다.
+	 * Comment : ?뚯씪???앹꽦?쒕떎.
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param filePath fileName 파일의 절대경로 + 파일명
-	 * @return 성공하면 생성된 파일의 절대경로, 아니면블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param filePath fileName ?뚯씪???덈?寃쎈줈 + ?뚯씪紐?
+	 * @return ?깃났?섎㈃ ?앹꽦???뚯씪???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String createNewFile(String basePath, String filePath) {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
 
-		// 인자값 유효하지 않은 경우 블랭크 리턴
+		// ?몄옄媛??좏슚?섏? ?딆? 寃쎌슦 釉붾옲??由ы꽩
 		if (filePath == null || filePath.equals("")) {
 			return "";
 		}
@@ -273,8 +273,8 @@ public class EgovFileTool {
 			if (file.exists()) {
 				result = filePath;
 			} else {
-				// 존재하지 않으면 생성함
-				// 2017.02.08 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+				// 議댁옱?섏? ?딆쑝硫??앹꽦??
+				// 2017.02.08 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 				if (new File(file.getParent()).mkdirs()) {
 					LOGGER.debug("[file.mkdirs] file : File Creation Success");
 				} else {
@@ -294,11 +294,11 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 파일을 삭제한다.
+	 * Comment : ?뚯씪????젣?쒕떎.
 	 * </pre>
 	 *
-	 * @param fileDeletePath 삭제하고자 하는파일의 절대경로
-	 * @return 성공하면 삭제된 파일의 절대경로, 아니면블랭크
+	 * @param fileDeletePath ??젣?섍퀬???섎뒗?뚯씪???덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ??젣???뚯씪???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String deleteFile(String fileDeletePath) {
 		return deleteFile(FILE_STORE_PATH, fileDeletePath);
@@ -306,21 +306,21 @@ public class EgovFileTool {
 
 	/**
 	 * <pre>
-	 * Comment : 파일을 삭제한다.
+	 * Comment : ?뚯씪????젣?쒕떎.
 	 * </pre>
 	 *
-	 * @param basePath 기본 경로
-	 * @param fileDeletePath 삭제하고자 하는파일의 절대경로
-	 * @return 성공하면 삭제된 파일의 절대경로, 아니면블랭크
+	 * @param basePath 湲곕낯 寃쎈줈
+	 * @param fileDeletePath ??젣?섍퀬???섎뒗?뚯씪???덈?寃쎈줈
+	 * @return ?깃났?섎㈃ ??젣???뚯씪???덈?寃쎈줈, ?꾨땲硫대툝??겕
 	 */
 	public static String deleteFile(String basePath, String fileDeletePath) {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
 
-		// 인자값 유효하지 않은 경우 블랭크 리턴
+		// ?몄옄媛??좏슚?섏? ?딆? 寃쎌슦 釉붾옲??由ы꽩
 		if (fileDeletePath == null || fileDeletePath.equals("")) {
 			return "";
 		}
@@ -336,17 +336,17 @@ public class EgovFileTool {
 	}
 
 	/**
-	 * 파일을 특정 구분자(',', '|', 'TAB')로 파싱하는 기능
+	 * ?뚯씪???뱀젙 援щ텇??',', '|', 'TAB')濡??뚯떛?섎뒗 湲곕뒫
 	 *
-	 * @param parFile 파일
-	 * @param parChar 구분자(',', '|', 'TAB')
-	 * @param parField 필드수
-	 * @return Vector parResult 파싱결과 구조체
+	 * @param parFile ?뚯씪
+	 * @param parChar 援щ텇??',', '|', 'TAB')
+	 * @param parField ?꾨뱶??
+	 * @return Vector parResult ?뚯떛寃곌낵 援ъ“泥?
 	 * @exception Exception
 	 */
 	public static Vector<List<String>> parsFileByChar(String basePath, String parFile, String parChar, int parField) throws Exception {
 
-		// 인자 값이 없는 경우 "Globals.fileStorePath" 기본 경로를 지정한다.
+		// ?몄옄 媛믪씠 ?녿뒗 寃쎌슦 "Globals.fileStorePath" 湲곕낯 寃쎈줈瑜?吏?뺥븳??
 		if (basePath == null || basePath.equals("")) {
 			basePath = FILE_STORE_PATH;
 		}
@@ -355,18 +355,18 @@ public class EgovFileTool {
 			throw new SecurityException("Unacceptable base path : " + basePath);
 		}
 
-		// 파싱결과 구조체
+		// ?뚯떛寃곌낵 援ъ“泥?
 		Vector<List<String>> parResult = new Vector<>();
 
-		// 파일 오픈
+		// ?뚯씪 ?ㅽ뵂
 		String parFile1 = parFile.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
 		File file = new File(EgovWebUtil.filePathBlackList(basePath + parFile1));
 		BufferedReader br = null;
 		try {
-			// 파일이며, 존재하면 파싱 시작
+			// ?뚯씪?대ŉ, 議댁옱?섎㈃ ?뚯떛 ?쒖옉
 			if (file.exists() && file.isFile()) {
 
-				// 1. 파일 텍스트 내용을 읽어서 StringBuffer에 쌓는다.
+				// 1. ?뚯씪 ?띿뒪???댁슜???쎌뼱??StringBuffer???볥뒗??
 				br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 				StringBuffer strBuff = new StringBuffer();
 				String line = "";
@@ -376,10 +376,10 @@ public class EgovFileTool {
 					}
 				}
 
-				// 2. 쌓은 내용을 특정 구분자로 파싱하여 String 배열로 얻는다.
+				// 2. ?볦? ?댁슜???뱀젙 援щ텇?먮줈 ?뚯떛?섏뿬 String 諛곗뿴濡??삳뒗??
 				String[] strArr = EgovStringUtil.split(strBuff.toString(), parChar);
 
-				// 3. 필드 수 만큼 돌아가며 Vector<ArrayList> 형태로 만든다.
+				// 3. ?꾨뱶 ??留뚰겮 ?뚯븘媛硫?Vector<ArrayList> ?뺥깭濡?留뚮뱺??
 				int filedCnt = 1;
 				List<String> arr = new ArrayList<>();
 				for (int i = 0; i < strArr.length; i++) {

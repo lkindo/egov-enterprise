@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 마이페이지 서비스 구현체
+ * 留덉씠?섏씠吏 ?쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor

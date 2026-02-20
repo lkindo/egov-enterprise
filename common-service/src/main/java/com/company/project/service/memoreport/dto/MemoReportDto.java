@@ -13,46 +13,46 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "메모보고 정보 DTO")
+@Schema(description = "Description")
 public class MemoReportDto {
 
-    @Schema(description = "보고 ID")
+    @Schema(description = "Description")
     private String reprtId;
 
-    @Schema(description = "보고 제목")
+    @Schema(description = "Description")
     private String reprtSj;
 
-    @Schema(description = "보고 일자")
+    @Schema(description = "Description")
     private String reportDe;
 
-    @Schema(description = "작성자 ID")
+    @Schema(description = "Description")
     private String wrterId;
 
-    @Schema(description = "작성자 명")
+    @Schema(description = "Description")
     private String wrterNm;
 
-    @Schema(description = "보고대상자 ID")
+    @Schema(description = "Description")
     private String reportrId;
 
-    @Schema(description = "보고대상자 명")
+    @Schema(description = "Description")
     private String reportrNm;
 
-    @Schema(description = "보고 내용")
+    @Schema(description = "Description")
     private String reportCn;
 
-    @Schema(description = "첨부파일 ID")
+    @Schema(description = "Description")
     private String atchFileId;
 
-    @Schema(description = "지시 사항")
+    @Schema(description = "Description")
     private String drctMatter;
 
-    @Schema(description = "지시 사항 등록 일시")
+    @Schema(description = "Description")
     private String drctMatterRegistDt;
 
-    @Schema(description = "보고대상자 확인 일시")
+    @Schema(description = "Description")
     private String reportrInqireDt;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public String getFrstRegisterId() {

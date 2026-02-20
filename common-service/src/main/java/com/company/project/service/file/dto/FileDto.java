@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 파일 정보 DTO
+ * ?뚯씪 ?뺣낫 DTO
  */
 @Getter
 @Builder

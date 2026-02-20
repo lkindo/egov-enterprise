@@ -8,28 +8,28 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EgovHelpService {
-    // 행정용어
+    // ?됱젙?⑹뼱
     Page<AdministrationWordDto> getAdministrationWordList(String keyword, Pageable pageable);
     AdministrationWordDto getAdministrationWord(String wordId);
     String createAdministrationWord(String userId, AdministrationWordDto dto);
     void updateAdministrationWord(String wordId, String userId, AdministrationWordDto dto);
     void deleteAdministrationWord(String wordId);
 
-    // 도움말
+    // ?꾩?留?
     Page<HpcmDto> getHpcmList(String keyword, Pageable pageable);
     HpcmDto getHpcm(String hpcmId);
     String createHpcm(String userId, HpcmDto dto);
     void updateHpcm(String hpcmId, String userId, HpcmDto dto);
     void deleteHpcm(String hpcmId);
 
-    // 온라인매뉴얼
+    // ?⑤씪?몃ℓ?댁뼹
     Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable);
     OnlineManualDto getOnlineManual(String mnlId);
     String createOnlineManual(String userId, OnlineManualDto dto);
     void updateOnlineManual(String mnlId, String userId, OnlineManualDto dto);
     void deleteOnlineManual(String mnlId);
 
-    // 용어사전
+    // ?⑹뼱?ъ쟾
     Page<WordDicaryDto> getWordDicaryList(String keyword, Pageable pageable);
     WordDicaryDto getWordDicary(String wordId);
     String createWordDicary(String userId, WordDicaryDto dto);

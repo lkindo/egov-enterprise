@@ -13,15 +13,15 @@ import egovframework.com.uss.ion.ism.service.SanctnerVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * 약식결재관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * ?쎌떇寃곗옱愿由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 약식결재관리에 대한 등록, 수정, 삭제기능을 제공한다.
- * - 결재자에 대한 목록조회기능을 제공한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쎌떇寃곗옱愿由ъ뿉 ????깅줉, ?섏젙, ??젣湲곕뒫???쒓났?쒕떎.
+ * - 寃곗옱?먯뿉 ???紐⑸줉議고쉶湲곕뒫???쒓났?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:26
+ * @created 28-6-2010 ?ㅼ쟾 11:29:26
  */
 
 @Service("EgovInfrmlSanctnService")
@@ -33,7 +33,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	@Resource(name="egovInfrmlSanctnIdGnrService")
 	private EgovIdGnrService idgenServiceInfrmlSanctn;
 	/**
-	 * 결재자 목록을 조회한다.
+	 * 寃곗옱??紐⑸줉??議고쉶?쒕떎.
 	 * @param SanctnerVO
 	 * @return  Map<String, Object>
 	 *
@@ -53,7 +53,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재 정보를 조회한다.
+	 * ?쎌떇寃곗옱 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param InfrmlSanctnVO
 	 * @return  InfrmlSanctnVO
 	 *
@@ -71,7 +71,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재관리 정보를 수정한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??섏젙?쒕떎.
 	 * @param InfrmlSanctn
 	 *
 	 * @param infrmlSanctn
@@ -83,7 +83,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재관리 정보를 승인한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??뱀씤?쒕떎.
 	 * @param InfrmlSanctn
 	 *
 	 * @param infrmlSanctn
@@ -97,7 +97,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재관리 정보를 반려한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜?諛섎젮?쒕떎.
 	 * @param InfrmlSanctn
 	 *
 	 * @param infrmlSanctn
@@ -111,7 +111,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재관리 정보를 등록한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜??깅줉?쒕떎.
 	 * @param InfrmlSanctn
 	 *
 	 * @param infrmlSanctn
@@ -126,7 +126,7 @@ public class EgovInfrmlSanctnServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 약식결재관리 정보를 삭제한다.
+	 * ?쎌떇寃곗옱愿由??뺣낫瑜???젣?쒕떎.
 	 * @param InfrmlSanctn
 	 *
 	 * @param infrmlSanctn

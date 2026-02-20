@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 행정용어 Repository
+ * ??깆젟??밸선 Repository
  */
 public interface AdministrationWordRepository extends JpaRepository<AdministrationWord, String> {
     Page<AdministrationWord> findByAdministWordNmContaining(String administWordNm, Pageable pageable);

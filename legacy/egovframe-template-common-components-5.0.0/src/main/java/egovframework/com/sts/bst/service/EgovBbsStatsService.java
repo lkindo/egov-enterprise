@@ -5,26 +5,26 @@ import java.util.List;
 import egovframework.com.sts.com.StatsVO;
 
 /**
- * 게시물 통계 검색 비즈니스 인터페이스 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 寃뚯떆臾??듦퀎 寃??鍮꾩쫰?덉뒪 ?명꽣?섏씠???대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.bst)
+ *  2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.bst)
  *
  *  </pre>
  */
 public interface EgovBbsStatsService {
 
 	/**
-	 * 게시물 생성글수 통계를 조회한다
+	 * 寃뚯떆臾??앹꽦湲???듦퀎瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -32,7 +32,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsCretCntStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 게시물 총조회수 통계를 조회한다
+	 * 寃뚯떆臾?珥앹“?뚯닔 ?듦퀎瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -40,7 +40,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsTotCntStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 게시물 평균조회수 통계를 조회한다
+	 * 寃뚯떆臾??됯퇏議고쉶???듦퀎瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -48,7 +48,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsAvgCntStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 최고조회 게시물 통계정보를 조회한다
+	 * 理쒓퀬議고쉶 寃뚯떆臾??듦퀎?뺣낫瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -56,7 +56,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsMaxCntStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 최소조회 게시물 통계정보를 조회한다
+	 * 理쒖냼議고쉶 寃뚯떆臾??듦퀎?뺣낫瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -64,7 +64,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsMinCntStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 게시물 최고게시자 통계를 조회한다
+	 * 寃뚯떆臾?理쒓퀬寃뚯떆???듦퀎瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception
@@ -72,7 +72,7 @@ public interface EgovBbsStatsService {
 	List<StatsVO> selectBbsMaxUserStats(StatsVO vo) throws Exception;
 
 	/**
-	 * 게시물 통계를 위한 집계를 하루단위로 작업하는 배치 프로그램
+	 * 寃뚯떆臾??듦퀎瑜??꾪븳 吏묎퀎瑜??섎（?⑥쐞濡??묒뾽?섎뒗 諛곗튂 ?꾨줈洹몃옩
 	 * @exception Exception
 	 */
 	public void summaryBbsStats() throws Exception;

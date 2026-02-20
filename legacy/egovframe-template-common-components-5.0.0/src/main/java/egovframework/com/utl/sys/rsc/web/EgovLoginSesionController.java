@@ -11,21 +11,21 @@ import jakarta.annotation.Resource;
 
 
 /**
- * 개요
- * - 로그인 세션정보체크 컴포넌트에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇???몄뀡?뺣낫泥댄겕 而댄룷?뚰듃?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 로그인 세션정보체크에 대한 기능을 제공한다.
+ * ?곸꽭?댁슜
+ * - 濡쒓렇???몄뀡?뺣낫泥댄겕?????湲곕뒫???쒓났?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:26
+ * @created 28-6-2010 ?ㅼ쟾 10:44:26
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.28   lee.m.j    최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.28   lee.m.j    理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 
@@ -39,17 +39,17 @@ public class EgovLoginSesionController {
     EgovMessageSource egovMessageSource;
 
 	/**
-	 * 로그인 세션정보체크 화면 이동
+	 * 濡쒓렇???몄뀡?뺣낫泥댄겕 ?붾㈃ ?대룞
 	 * @return String
 	 */
-	@IncludedInfo(name="로그인세션정보체크", order = 2160 ,gid = 90)
+	@IncludedInfo(name="濡쒓렇?몄꽭?섏젙蹂댁껜??, order = 2160 ,gid = 90)
 	@RequestMapping(value="/utl/sys/rsc/loginSessionView.do")
 	public String checkLoginSessionView() throws Exception {
 		return "egovframework/com/utl/sys/rsc/EgovLoginSesionCheck";
 	}
 
 	/**
-	 * 로그인 후 이동할 처리화면을 세션에 등록한다.
+	 * 濡쒓렇?????대룞??泥섎━?붾㈃???몄뀡???깅줉?쒕떎.
 	 * @param url - String
 	 * @return String
 	 */
@@ -60,7 +60,7 @@ public class EgovLoginSesionController {
 	}
 
 	/**
-	 * 로그인 세션정보체크
+	 * 濡쒓렇???몄뀡?뺣낫泥댄겕
 	 * @return String
 	 */
 	@RequestMapping(value="/utl/sys/rsc/checkLloginSession.do")

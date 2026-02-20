@@ -7,8 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 주소록 구성원 JPA Entity
- * 레거시 테이블: COMTNADBK
+ * 雅뚯눘?쇗에??닌딄쉐??JPA Entity
+ * ??뉕탢?????뵠?? COMTNADBK
  */
 @Entity
 @Table(name = "COMTNADBK")

@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 /**
  *
- * 관인이미지 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * 愿?몄씠誘몄? 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.02.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.01  이중호          최초 생성
+ *   2009.02.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -24,27 +24,27 @@ public class PrntngOutptVO implements Serializable {
 	private static final long serialVersionUID = 941289557959718464L;
 
 	/*
-	 * 이미지정보
+	 * ?대?吏?뺣낫
 	 */
     private byte[] imgInfo;
 
     /*
-     * 이미지타입
+     * ?대?吏???
      */
 	private String imgType;
 
 	/*
-	 * 기관코드
+	 * 湲곌?肄붾뱶
 	 */
     private String orgCode;
 
     /*
-     * 관인구분
+     * 愿?멸뎄遺?
      */
     private String erncslSe;
 
 	/**
-	 * imgInfo attribute 를 리턴한다.
+	 * imgInfo attribute 瑜?由ы꽩?쒕떎.
 	 * @return byte[]
 	 */
 	public byte[] getImgInfo() {
@@ -61,7 +61,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * imgInfo attribute 값을 설정한다.
+	 * imgInfo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param imgInfo byte[]
 	 */
 	public void setImgInfo(byte[] imgInfo) {
@@ -73,7 +73,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * imgType attribute 를 리턴한다.
+	 * imgType attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getImgType() {
@@ -81,7 +81,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * imgType attribute 값을 설정한다.
+	 * imgType attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param imgType String
 	 */
 	public void setImgType(String imgType) {
@@ -89,7 +89,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * orgCode attribute 를 리턴한다.
+	 * orgCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOrgCode() {
@@ -97,7 +97,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * orgCode attribute 값을 설정한다.
+	 * orgCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param orgCode String
 	 */
 	public void setOrgCode(String orgCode) {
@@ -105,7 +105,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * erncslSe attribute 를 리턴한다.
+	 * erncslSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getErncslSe() {
@@ -113,7 +113,7 @@ public class PrntngOutptVO implements Serializable {
 	}
 
 	/**
-	 * erncslSe attribute 값을 설정한다.
+	 * erncslSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param erncslSe String
 	 */
 	public void setErncslSe(String erncslSe) {

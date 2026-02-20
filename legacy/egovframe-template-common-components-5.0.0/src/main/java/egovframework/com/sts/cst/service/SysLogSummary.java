@@ -1,181 +1,181 @@
 package egovframework.com.sts.cst.service;
 
 /**
- * 시스템로그집계정보에 대한 모델 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?쒖뒪?쒕줈洹몄쭛怨꾩젙蹂댁뿉 ???紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.04.15
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.04.15  박지욱          최초 생성
- *  2011.07.01  이기하          패키지 분리(sts -> sts.cst)
+ *  2009.04.15  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.07.01  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.cst)
  *
  *  </pre>
  */
 public class SysLogSummary {
 
 	/**
-	 * 생성횟수
+	 * ?앹꽦?잛닔
 	 */
 	private int creatCo;
 	/**
-	 * 삭제횟수
+	 * ??젣?잛닔
 	 */
 	private int deleteCo;
 	/**
-	 * 에러횟수
+	 * ?먮윭?잛닔
 	 */
 	private int errorCo;
 	/**
-	 * 조회횟수
+	 * 議고쉶?잛닔
 	 */
 	private int rdCnt;
 	/**
-	 * 메소드명
+	 * 硫붿냼?쒕챸
 	 */
 	private String methodNm;
 	/**
-	 * 발생일자
+	 * 諛쒖깮?쇱옄
 	 */
 	private String occrrncDe;
 	/**
-	 * 출력횟수
+	 * 異쒕젰?잛닔
 	 */
 	private int outptCo;
 	/**
-	 * 서비스명
+	 * ?쒕퉬?ㅻ챸
 	 */
 	private String srvcNm;
 	/**
-	 * 수정횟수
+	 * ?섏젙?잛닔
 	 */
 	private int updtCo;
 	/**
-	 * creatCo attribute 를 리턴한다.
+	 * creatCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getCreatCo() {
 		return creatCo;
 	}
 	/**
-	 * creatCo attribute 값을 설정한다.
+	 * creatCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param creatCo int
 	 */
 	public void setCreatCo(int creatCo) {
 		this.creatCo = creatCo;
 	}
 	/**
-	 * deleteCo attribute 를 리턴한다.
+	 * deleteCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getDeleteCo() {
 		return deleteCo;
 	}
 	/**
-	 * deleteCo attribute 값을 설정한다.
+	 * deleteCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param deleteCo int
 	 */
 	public void setDeleteCo(int deleteCo) {
 		this.deleteCo = deleteCo;
 	}
 	/**
-	 * errorCo attribute 를 리턴한다.
+	 * errorCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getErrorCo() {
 		return errorCo;
 	}
 	/**
-	 * errorCo attribute 값을 설정한다.
+	 * errorCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param errorCo int
 	 */
 	public void setErrorCo(int errorCo) {
 		this.errorCo = errorCo;
 	}
 	/**
-	 * rdCnt attribute 를 리턴한다.
+	 * rdCnt attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getRdCnt() {
 		return rdCnt;
 	}
 	/**
-	 * rdCnt attribute 값을 설정한다.
+	 * rdCnt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param rdCnt int
 	 */
 	public void setRdCnt(int rdCnt) {
 		this.rdCnt = rdCnt;
 	}
 	/**
-	 * methodNm attribute 를 리턴한다.
+	 * methodNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMethodNm() {
 		return methodNm;
 	}
 	/**
-	 * methodNm attribute 값을 설정한다.
+	 * methodNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param methodNm String
 	 */
 	public void setMethodNm(String methodNm) {
 		this.methodNm = methodNm;
 	}
 	/**
-	 * occrrncDe attribute 를 리턴한다.
+	 * occrrncDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOccrrncDe() {
 		return occrrncDe;
 	}
 	/**
-	 * occrrncDe attribute 값을 설정한다.
+	 * occrrncDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param occrrncDe String
 	 */
 	public void setOccrrncDe(String occrrncDe) {
 		this.occrrncDe = occrrncDe;
 	}
 	/**
-	 * outptCo attribute 를 리턴한다.
+	 * outptCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getOutptCo() {
 		return outptCo;
 	}
 	/**
-	 * outptCo attribute 값을 설정한다.
+	 * outptCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param outptCo int
 	 */
 	public void setOutptCo(int outptCo) {
 		this.outptCo = outptCo;
 	}
 	/**
-	 * srvcNm attribute 를 리턴한다.
+	 * srvcNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSrvcNm() {
 		return srvcNm;
 	}
 	/**
-	 * srvcNm attribute 값을 설정한다.
+	 * srvcNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param srvcNm String
 	 */
 	public void setSrvcNm(String srvcNm) {
 		this.srvcNm = srvcNm;
 	}
 	/**
-	 * updtCo attribute 를 리턴한다.
+	 * updtCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getUpdtCo() {
 		return updtCo;
 	}
 	/**
-	 * updtCo attribute 값을 설정한다.
+	 * updtCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param updtCo int
 	 */
 	public void setUpdtCo(int updtCo) {

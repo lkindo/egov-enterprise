@@ -440,12 +440,12 @@ public class FileSystemUtils {
 	 * @return the process
 	 * @throws IOException if an error occurs
 	 *
-	 * 2022.11.11 김혜준 시큐어코딩 처리
+	 * 2022.11.11 源?쒖? ?쒗걧?댁퐫??泥섎━
 	 */
 	private Process openProcess(String[] cmdAttribs) throws IOException {
 		//return Runtime.getRuntime().exec(cmdAttribs);
-		// Runtime.exec 사용 시 Command Injection 위험이 있으므로 사용하지 말 것...
-		// 현재는 빈 프로세스를 리턴하게 구성함...
+		// Runtime.exec ?ъ슜 ??Command Injection ?꾪뿕???덉쑝誘濡??ъ슜?섏? 留?寃?..
+		// ?꾩옱??鍮??꾨줈?몄뒪瑜?由ы꽩?섍쾶 援ъ꽦??..
 		ProcessBuilder processBuilder = new ProcessBuilder();
 		Process process = processBuilder.start();
 		return process;
@@ -457,7 +457,7 @@ public class FileSystemUtils {
 	 * @param cmdAttribs  the command line parameters
 	 * @throws IOException if an error occurs
 	 *
-	 * 2022.11.11 김혜준 시큐어코딩 처리
+	 * 2022.11.11 源?쒖? ?쒗걧?댁퐫??泥섎━
 	 */
 	public Process processOperate(String clsssName, String cmdAttribs) throws IOException {
 		String[] sourceClassName = {"BatchShellScriptJob", "EgovAdministCodeRecptnService", "EgovInsttCodeRecptnService", "EgovNetworkState", "ProcessMonChecker"};

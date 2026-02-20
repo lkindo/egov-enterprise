@@ -20,7 +20,7 @@
 		 
 	</select> 
 
-	<!-- 총건수 조회 -->
+	<!-- 珥앷굔??議고쉶 -->
 	<select id="selectMenuManageListTotCnt_S" parameterType="comDefaultVO" resultType="int">
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"
@@ -89,7 +89,7 @@
 		                                
 	</delete> 
 	
-	<!-- 메뉴번호 존재여부 조회 -->
+	<!-- 硫붾돱踰덊샇 議댁옱?щ? 議고쉶 -->
 	<select id="selectMenuNoByPk" parameterType="egovframework.com.sym.mnu.mpm.service.MenuManageVO" resultType="int">
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"
@@ -98,7 +98,7 @@
 		
 	</select>
 	
-	<!-- 상위 메뉴번호 존재여부 조회 -->
+	<!-- ?곸쐞 硫붾돱踰덊샇 議댁옱?щ? 議고쉶 -->
 	<select id="selectUpperMenuNoByPk" parameterType="egovframework.com.sym.mnu.mpm.service.MenuManageVO" resultType="int">
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"
@@ -130,7 +130,7 @@
 		                                
 	</delete> 
 
-	<!-- 메뉴정보 총건수 조회 -->
+	<!-- 硫붾돱?뺣낫 珥앷굔??議고쉶 -->
 	<select id="selectMenuListTotCnt" parameterType="egovframework.com.sym.mnu.mpm.service.MenuManageVO" resultType="int">
 		
 		SELECT COUNT(MENU_NO) AS "totcnt"

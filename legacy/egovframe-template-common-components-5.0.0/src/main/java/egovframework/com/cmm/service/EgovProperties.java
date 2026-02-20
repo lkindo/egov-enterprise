@@ -21,28 +21,28 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 
 /**
- * EgovProperties 클래스
+ * EgovProperties ?대옒??
  *
  * <p>
- *  Description : properties값들을 파일로부터 읽어와   Globals클래스의 정적변수로 로드시켜주는 클래스로
- *   문자열 정보 기준으로 사용할 전역변수를 시스템 재시작으로 반영할 수 있도록 한다.
+ *  Description : properties媛믩뱾???뚯씪濡쒕????쎌뼱?   Globals?대옒?ㅼ쓽 ?뺤쟻蹂?섎줈 濡쒕뱶?쒖폒二쇰뒗 ?대옒?ㅻ줈
+ *   臾몄옄???뺣낫 湲곗??쇰줈 ?ъ슜???꾩뿭蹂?섎? ?쒖뒪???ъ떆?묒쑝濡?諛섏쁺?????덈룄濡??쒕떎.
  * </p>
  *
  *  @since 2009. 01. 19
  *  @version 1.0
- *  @author 공통 서비스 개발팀 박지욱
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤???
  *  @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일              수정자          수정내용
+ *   ?섏젙??             ?섏젙??         ?섏젙?댁슜
  *   ----------  --------  ---------------------------
- *   2009.01.19  박지욱          최초 생성
- *   2011.07.20    서준식     Globals파일의 상대경로를 읽은 메서드 추가
- *   2014.10.13    이기하     Globals.properties 값이 null일 경우 오류처리
- *   2019.04.26    신용호     RELATIVE_PATH_PREFIX Path 적용 방식 개선
- *   2022.01.21    윤주호     Try-catch-resource 조치 및 Method Refactoring
+ *   2009.01.19  諛뺤???         理쒖큹 ?앹꽦
+ *   2011.07.20    ?쒖???    Globals?뚯씪???곷?寃쎈줈瑜??쎌? 硫붿꽌??異붽?
+ *   2014.10.13    ?닿린??    Globals.properties 媛믪씠 null??寃쎌슦 ?ㅻ쪟泥섎━
+ *   2019.04.26    ?좎슜??    RELATIVE_PATH_PREFIX Path ?곸슜 諛⑹떇 媛쒖꽑
+ *   2022.01.21    ?ㅼ＜??    Try-catch-resource 議곗튂 諛?Method Refactoring
  *</pre>
  */
 
@@ -50,10 +50,10 @@ public class EgovProperties {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovProperties.class);
 
-	//파일구분자
+	//?뚯씪援щ텇??
 	final static String FILE_SEPARATOR = System.getProperty("file.separator");
 
-	//프로퍼티 파일의 물리적 위치
+	//?꾨줈?쇳떚 ?뚯씪??臾쇰━???꾩튂
 	//public static final String GLOBALS_PROPERTIES_FILE = System.getProperty("user.home") + FILE_SEPARATOR + "egovProps" +FILE_SEPARATOR + "globals.properties";
 
 	public static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getResource("") == null ? ""
@@ -65,12 +65,12 @@ public class EgovProperties {
 		+ "globals.properties";
 
 	/**
-	 * 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 값을 반환한다(Globals.java 전용)
+	 * ?몄옄濡?二쇱뼱吏?臾몄옄?댁쓣 Key媛믪쑝濡??섎뒗 ?꾨줈?쇳떚 媛믪쓣 諛섑솚?쒕떎(Globals.java ?꾩슜)
 	 * @param keyName String
 	 * @return String
 	 */
 	public static String getProperty(String keyName) {
-		// 221116	김혜준	2022 시큐어코딩 조치
+		// 221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 		LOGGER.debug("===>>> getProperty" + EgovStringUtil.isNullToString(EgovProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath()));
 		LOGGER.debug("getProperty : {} = {}", GLOBALS_PROPERTIES_FILE, keyName);
 
@@ -78,7 +78,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * 인자로 주어진 문자열을 Key값으로 하는 상대경로 프로퍼티 값을 절대경로로 반환한다(Globals.java 전용)
+	 * ?몄옄濡?二쇱뼱吏?臾몄옄?댁쓣 Key媛믪쑝濡??섎뒗 ?곷?寃쎈줈 ?꾨줈?쇳떚 媛믪쓣 ?덈?寃쎈줈濡?諛섑솚?쒕떎(Globals.java ?꾩슜)
 	 * @param keyName String
 	 * @return String
 	 */
@@ -89,7 +89,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * 주어진 파일에서 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 값을 반환한다
+	 * 二쇱뼱吏??뚯씪?먯꽌 ?몄옄濡?二쇱뼱吏?臾몄옄?댁쓣 Key媛믪쑝濡??섎뒗 ?꾨줈?쇳떚 媛믪쓣 諛섑솚?쒕떎
 	 * @param fileName String
 	 * @param key String
 	 * @return String
@@ -99,7 +99,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * 주어진 파일에서 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 상대 경로값을 절대 경로값으로 반환한다
+	 * 二쇱뼱吏??뚯씪?먯꽌 ?몄옄濡?二쇱뼱吏?臾몄옄?댁쓣 Key媛믪쑝濡??섎뒗 ?꾨줈?쇳떚 ?곷? 寃쎈줈媛믪쓣 ?덈? 寃쎈줈媛믪쑝濡?諛섑솚?쒕떎
 	 * @param fileName String
 	 * @param key String
 	 * @return String
@@ -109,19 +109,19 @@ public class EgovProperties {
 	}
 
 	/**
-	 * 주어진 프로파일의 내용을 파싱하여 (key-value) 형태의 구조체 배열을 반환한다.
+	 * 二쇱뼱吏??꾨줈?뚯씪???댁슜???뚯떛?섏뿬 (key-value) ?뺥깭??援ъ“泥?諛곗뿴??諛섑솚?쒕떎.
 	 * @param property String
 	 * @return ArrayList
 	 */
 	public static ArrayList<Map<String, String>> loadPropertyFile(String propertyPath) {
 
-		// key - value 형태로 된 배열 결과
+		// key - value ?뺥깭濡???諛곗뿴 寃곌낵
 		ArrayList<Map<String, String>> keyList = new ArrayList<>();
 
 		String src = (RELATIVE_PATH_PREFIX + propertyPath).replace("\\", FILE_SEPARATOR).replace("/", FILE_SEPARATOR);
 
-		// Windows OS : 맨 앞에 있는 \ 제거
-		// Linux, Mac : 해당 없음
+		// Windows OS : 留??욎뿉 ?덈뒗 \ ?쒓굅
+		// Linux, Mac : ?대떦 ?놁쓬
         String normalizedPath = src.replaceFirst("^[\\\\]+", "");
 
 		Path path = Paths.get(EgovWebUtil.filePathBlackList(normalizedPath));
@@ -144,7 +144,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * 기본 Property 에서 Property Key로 Property value 받아온다.
+	 * 湲곕낯 Property ?먯꽌 Property Key濡?Property value 諛쏆븘?⑤떎.
 	 * @param keyName
 	 * @return
 	 */
@@ -153,7 +153,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * Property 파일을 지정하여 Property Key로 Property value 받아온다.
+	 * Property ?뚯씪??吏?뺥븯??Property Key濡?Property value 諛쏆븘?⑤떎.
 	 * @param fileName
 	 * @param keyName
 	 * @return
@@ -170,7 +170,7 @@ public class EgovProperties {
 	}
 
 	/**
-	 * Property 파일패스로 Properties 객체를 리턴한다.
+	 * Property ?뚯씪?⑥뒪濡?Properties 媛앹껜瑜?由ы꽩?쒕떎.
 	 * @param fileName
 	 * @return
 	 */

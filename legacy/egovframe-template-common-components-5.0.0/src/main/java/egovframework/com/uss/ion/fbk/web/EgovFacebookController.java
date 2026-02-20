@@ -28,37 +28,37 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import egovframework.com.cmm.annotation.IncludedInfo;
 
 /**
- * Facebook을 처리하는 Controller Class 구현
- * @author 표준프레임워크센터
+ * Facebook??泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author ?쒖??꾨젅?꾩썙?ъ꽱??
  * @since 2014.11.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일     	수정자          		      수정내용
+ *   ?섏젙??    	?섏젙??         		      ?섏젙?댁슜
  *  -----------    --------------------    ---------------------------
- *  2014.11.10		표준프레임워크센터		      최초 생성
- *  2018.10.02		신용호		      profile 호출 수정
+ *  2014.11.10		?쒖??꾨젅?꾩썙?ъ꽱??	      理쒖큹 ?앹꽦
+ *  2018.10.02		?좎슜??	      profile ?몄텧 ?섏젙
  *  </pre>
  */
 @Controller
 public class EgovFacebookController {
 	
 	/**
-	 * facebook 로그인 버튼을 보여준 후, 로그인이 완료되면 연동을 위한 목록을 보여준다.
-	 * @return String - 리턴 Url
+	 * facebook 濡쒓렇??踰꾪듉??蹂댁뿬以 ?? 濡쒓렇?몄씠 ?꾨즺?섎㈃ ?곕룞???꾪븳 紐⑸줉??蹂댁뿬以??
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name="Facebook 연동",order = 831 ,gid = 50)
+	@IncludedInfo(name="Facebook ?곕룞",order = 831 ,gid = 50)
 	@RequestMapping(value = "/uss/ion/fbk/EgovFacebookSignin.do", method = RequestMethod.GET)
 	public String home() {
 		return "egovframework/com/uss/ion/fbk/EgovFacebookSignin";
 	}
 
 	/**
-	 * facebook 담벼락 목록을 보여준다.
-	 * @return String - 리턴 Url
+	 * facebook ?대꼈??紐⑸줉??蹂댁뿬以??
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/fbk/feed.do", method=RequestMethod.POST)
 	public String showFeed() {
@@ -66,8 +66,8 @@ public class EgovFacebookController {
 	}
 
 	/**
-	 * facebook 앨범 목록을 보여준다.
-	 * @return String - 리턴 Url
+	 * facebook ?⑤쾾 紐⑸줉??蹂댁뿬以??
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/fbk/albums.do", method=RequestMethod.GET)
 	public String showAlbums(Model model) {
@@ -75,8 +75,8 @@ public class EgovFacebookController {
 	}
 
 	/**
-	 * facebook 앨범 내용을 보여준다.
-	 * @return String - 리턴 Url
+	 * facebook ?⑤쾾 ?댁슜??蹂댁뿬以??
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/fbk/album/{albumId}", method=RequestMethod.GET)
 	public String showAlbum(@PathVariable("albumId") String albumId, Model model) {
@@ -85,8 +85,8 @@ public class EgovFacebookController {
 	}
 
 	/**
-	 * facebook profile을 보여준다.
-	 * @return String - 리턴 Url
+	 * facebook profile??蹂댁뿬以??
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/fbk/profile.do", method=RequestMethod.GET)
 	public String profile(Model model) {

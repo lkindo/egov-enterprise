@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 배치작업 서비스 구현체
+ * 諛곗튂?묒뾽 ?쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor

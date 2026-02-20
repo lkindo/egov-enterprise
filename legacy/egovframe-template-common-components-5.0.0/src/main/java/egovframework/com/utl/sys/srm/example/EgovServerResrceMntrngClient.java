@@ -15,9 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /*
- *       수정일         수정자                   수정내용
+ *       ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- * 2017.02.07 	이정은 	시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-211]
+ * 2017.02.07 	?댁젙? 	?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-211]
  */
 
 
@@ -56,11 +56,11 @@ public class EgovServerResrceMntrngClient {
             		LOGGER.info(attrInfo.getName() + " = " + mbs.getAttribute(name, attrInfo.getName()));
             	}
             }
-    	} catch (IOException ex) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
+    	} catch (IOException ex) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
     		LOGGER.error("["+ex.getClass()+"] server connection : " + ex.getMessage());
     		throw new EgovBizException("[server resource monitoring] : create connection fail");
 
-        //2017.02.07 	이정은 	시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-211]
+        //2017.02.07 	?댁젙? 	?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-211]
     	} finally {
 
     		if (connector != null) {
@@ -76,7 +76,7 @@ public class EgovServerResrceMntrngClient {
         }
 	}
 
-	//KISA 보안약점 조치 (2018-10-29, 윤창원)
+	//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 /*	public static void main(String[] args) throws Exception {
 		EgovServerResrceMntrngClient client = new EgovServerResrceMntrngClient();
 

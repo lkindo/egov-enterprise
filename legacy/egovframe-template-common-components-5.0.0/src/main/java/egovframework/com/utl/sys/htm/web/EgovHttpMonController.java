@@ -31,22 +31,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요 - HTTP서비스모니터링에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂 - HTTP?쒕퉬?ㅻえ?덊꽣留곸뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용 - HTTP서비스모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - HTTP서비스모니터링의 조회기능은 목록조회,
- * 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - HTTP?쒕퉬?ㅻえ?덊꽣留곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - HTTP?쒕퉬?ㅻえ?덊꽣留곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶,
+ * ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 박종선
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 17-6-2010 오후 5:12:43
+ * @created 17-6-2010 ?ㅽ썑 5:12:43
  *
  *          <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   박종선     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.17   諛뺤쥌??    理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *          </pre>
  */
 @Controller
@@ -66,14 +66,14 @@ public class EgovHttpMonController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 등록된 HTTP서비스모니터링 정보를 조회 한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param httpMonVO- HTTP서비스모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param httpMonVO- HTTP?쒕퉬?ㅻえ?덊꽣留?VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param httpMonVO
 	 */
-	@IncludedInfo(name = "HTTP서비스모니터링", order = 2100, gid = 90)
+	@IncludedInfo(name = "HTTP?쒕퉬?ㅻえ?덊꽣留?, order = 2100, gid = 90)
 	@RequestMapping(value = "/utl/sys/htm/EgovComUtlHttpMonList.do")
 	public String selectHttpMonList(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("searchVO") HttpMonVO searchVO, ModelMap model) throws Exception {
@@ -102,10 +102,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * HTTP서비스모니터링상세 정보를 조회 한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留곸긽???뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param httpMonVO
 	 */
@@ -115,8 +115,8 @@ public class EgovHttpMonController {
 		HttpMon vo = egovHttpMonService.selectHttpMonDetail(httpMon);
 		model.addAttribute("result", vo);
 
-		// LOGGER.info("SiteUrl============================컨트롤러 파라미터
-		// 확인========================>" + vo.getSiteUrl());
+		// LOGGER.info("SiteUrl============================而⑦듃濡ㅻ윭 ?뚮씪誘명꽣
+		// ?뺤씤========================>" + vo.getSiteUrl());
 		// model.addAttribute("siteUrl",
 		// HttpMntrngChecker.getPrductStatus(vo.getSiteUrl()));
 
@@ -124,10 +124,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * Http서비스모니터링 정보를 신규로 등록한다.
+	 * Http?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param siteUrl - Http서비스모니터링 model
-	 * @return String - 리턴 Url
+	 * @param siteUrl - Http?쒕퉬?ㅻえ?덊꽣留?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param siteUrl
 	 */
@@ -136,21 +136,21 @@ public class EgovHttpMonController {
 		@Valid @ModelAttribute("httpMon") HttpMon httpMon,
 		BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (httpMon.getWebKind() == null || httpMon.getWebKind().equals("") || bindingResult.hasErrors()) {
 			return "egovframework/com/utl/sys/htm/EgovComUtlHttpMonRegist";
 		}
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		httpMon.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		httpMon.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		egovHttpMonService.insertHttpMon(httpMon);
@@ -158,10 +158,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * 기 등록 된 Http서비스모니터링 정보를 수정 한다.
+	 * 湲??깅줉 ??Http?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??섏젙 ?쒕떎.
 	 *
-	 * @param siteUrl - Http서비스모니터링 model
-	 * @return String - 리턴 Url
+	 * @param siteUrl - Http?쒕퉬?ㅻえ?덊꽣留?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param siteUrl
 	 */
@@ -194,10 +194,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * 기 등록된 HTTP서비스모니터링 정보를 삭제한다.
+	 * 湲??깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜???젣?쒕떎.
 	 *
-	 * @param siteUrl - HTTP서비스모니터링 model
-	 * @return String - 리턴 Url
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param siteUrl
 	 */
@@ -209,7 +209,7 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * HTTP 서비스 상태를 조회한다.
+	 * HTTP ?쒕퉬???곹깭瑜?議고쉶?쒕떎.
 	 *
 	 * @param httpMon
 	 * @return String
@@ -228,10 +228,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * 등록된 HTTP서비스모니터링로그 정보를 조회 한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹??뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param httpMonVO- HTTP서비스모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param httpMonVO- HTTP?쒕퉬?ㅻえ?덊꽣留?VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param httpMonVO
 	 */
@@ -252,7 +252,7 @@ public class EgovHttpMonController {
 		httpMonLogVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		httpMonLogVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		// 조회기간설정
+		// 議고쉶湲곌컙?ㅼ젙
 		if (httpMonLogVO.getSearchBgnDe() != null && httpMonLogVO.getSearchEndDe() != null) {
 			if (!httpMonLogVO.getSearchBgnDe().equals("") && !httpMonLogVO.getSearchEndDe().equals("")) {
 				httpMonLogVO.setSearchBgnDt(httpMonLogVO.getSearchBgnDe() + " " + httpMonLogVO.getSearchBgnHour());
@@ -264,9 +264,9 @@ public class EgovHttpMonController {
 		int totCnt = Integer.parseInt((String) map.get("resultCnt"));
 		paginationInfo.setTotalRecordCount(totCnt);
 
-		// 조회시작시
+		// 議고쉶?쒖옉??
 		model.addAttribute("searchBgnHour", getTimeHH());
-		// 조회종료시
+		// 議고쉶醫낅즺??
 		model.addAttribute("searchEndHour", getTimeHH());
 
 		model.addAttribute("resultList", map.get("resultList"));
@@ -278,10 +278,10 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * HTTP서비스모니터링로그상세 정보를 조회 한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹몄긽???뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param httpMonVO
 	 */
@@ -295,7 +295,7 @@ public class EgovHttpMonController {
 	}
 
 	/**
-	 * 시간의 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 *
 	 * @return List
 	 * @throws

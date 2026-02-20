@@ -20,15 +20,15 @@ import egovframework.com.cop.bbs.service.EgovArticleService;
 import jakarta.annotation.Resource;
 
 /**
- * 게시물 관리를 위한 ServiceImpl 클래스
+ * 寃뚯떆臾?愿由щ? ?꾪븳 ServiceImpl ?대옒??
  * 
  * <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2024.10.29  inganyoyo     Transaction 처리 오류 수정(Article)
- *   2025.06.03  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(매개변수 재할당 방지), LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2024.10.29  inganyoyo     Transaction 泥섎━ ?ㅻ쪟 ?섏젙(Article)
+ *   2025.06.03  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(留ㅺ컻蹂???ы븷??諛⑹?), LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  * </pre>
  */
@@ -108,15 +108,15 @@ public class EgovArticleServiceImpl extends EgovAbstractServiceImpl implements E
 		board.setAtchFileId(atchFileId);
 
 		if ("Y".equals(board.getReplyAt())) {
-			// 답글인 경우 1. Parnts를 세팅, 2.Parnts의 sortOrdr을 현재글의 sortOrdr로 가져오도록, 3.nttNo는 현재
-			// 게시판의 순서대로
-			// replyLc는 부모글의 ReplyLc + 1
+			// ?듦???寃쎌슦 1. Parnts瑜??명똿, 2.Parnts??sortOrdr???꾩옱湲??sortOrdr濡?媛?몄삤?꾨줉, 3.nttNo???꾩옱
+			// 寃뚯떆?먯쓽 ?쒖꽌?濡?
+			// replyLc??遺紐④???ReplyLc + 1
 
-			board.setNttId(nttIdgenService.getNextIntegerId()); // 답글에 대한 nttId 생성
+			board.setNttId(nttIdgenService.getNextIntegerId()); // ?듦??????nttId ?앹꽦
 			egovArticleDao.replyArticle(board);
 
 		} else {
-			// 답글이 아닌경우 Parnts = 0, replyLc는 = 0, sortOrdr = nttNo(Query에서 처리)
+			// ?듦????꾨땶寃쎌슦 Parnts = 0, replyLc??= 0, sortOrdr = nttNo(Query?먯꽌 泥섎━)
 			board.setParnts("0");
 			board.setReplyLc("0");
 			board.setReplyAt("N");
@@ -155,7 +155,7 @@ public class EgovArticleServiceImpl extends EgovAbstractServiceImpl implements E
 
 		fvo.setAtchFileId(board.getAtchFileId());
 
-		board.setNttSj("이 글은 작성자에 의해서 삭제되었습니다.");
+		board.setNttSj("??湲? ?묒꽦?먯뿉 ?섑빐????젣?섏뿀?듬땲??");
 
 		egovArticleDao.deleteArticle(board);
 

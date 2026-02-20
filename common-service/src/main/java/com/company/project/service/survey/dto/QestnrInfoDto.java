@@ -13,37 +13,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "설문 정보 DTO")
+@Schema(description = "Description")
 public class QestnrInfoDto {
 
-    @Schema(description = "설문 ID")
+    @Schema(description = "Description")
     private String qestnrId;
 
-    @Schema(description = "설문 제목")
+    @Schema(description = "Description")
     private String qestnrSj;
 
-    @Schema(description = "설문 목적")
+    @Schema(description = "Description")
     private String qestnrPurps;
 
-    @Schema(description = "설문 작성 안내 내용")
+    @Schema(description = "Description")
     private String qestnrWritngGuidanceCn;
 
-    @Schema(description = "설문 시작일")
+    @Schema(description = "Description")
     private String qestnrBeginDe;
 
-    @Schema(description = "설문 종료일")
+    @Schema(description = "Description")
     private String qestnrEndDe;
 
-    @Schema(description = "설문 대상")
+    @Schema(description = "Description")
     private String qestnrTrget;
 
-    @Schema(description = "설문 템플릿 ID")
+    @Schema(description = "Description")
     private String qestnrTmplatId;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static QestnrInfoDto from(QestnrInfo entity) {

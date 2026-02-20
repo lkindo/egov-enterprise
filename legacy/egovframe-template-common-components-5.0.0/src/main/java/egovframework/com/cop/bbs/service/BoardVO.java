@@ -5,120 +5,120 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 게시물 관리를 위한 VO 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 寃뚯떆臾?愿由щ? ?꾪븳 VO ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------      --------    ---------------------------
- *   2009.3.19  이삼섭          최초 생성
- *   2009.06.29  한성곤		2단계 기능 추가 (댓글관리, 만족도조사)
+ *   2009.3.19  ?댁궪??         理쒖큹 ?앹꽦
+ *   2009.06.29  ?쒖꽦怨?	2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“??
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class BoardVO extends Board implements Serializable {
 
-    /** 검색시작일 */
+    /** 寃?됱떆?묒씪 */
     private String searchBgnDe = "";
     
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색종료일 */
+    /** 寃?됱쥌猷뚯씪 */
     private String searchEndDe = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private long sortOrdr = 0L;
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int rowNo = 0;
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 최종 수정자명 */
+    /** 理쒖쥌 ?섏젙?먮챸 */
     private String lastUpdusrNm = "";
 
-    /** 유효여부 */
+    /** ?좏슚?щ? */
     private String isExpired = "N";
 
-    /** 상위 정렬 순서 */
+    /** ?곸쐞 ?뺣젹 ?쒖꽌 */
     private String parntsSortOrdr = "";
 
-    /** 상위 답변 위치 */
+    /** ?곸쐞 ?듬? ?꾩튂 */
     private String parntsReplyLc = "";
 
-    /** 게시판 유형코드 */
+    /** 寃뚯떆???좏삎肄붾뱶 */
     private String bbsTyCode = "";
     
-    /** 게시판 속성코드 */
+    /** 寃뚯떆???띿꽦肄붾뱶 */
     private String bbsAttrbCode = "";
 
-    /** 게시판 명 */
+    /** 寃뚯떆??紐?*/
     private String bbsNm = "";
 
-    /** 파일첨부가능여부 */
+    /** ?뚯씪泥⑤?媛?μ뿬遺 */
     private String fileAtchPosblAt = "";
     
-    /** 첨부가능파일숫자 */
+    /** 泥⑤?媛?ν뙆?쇱닽??*/
     private int posblAtchFileNumber = 0;
     
-    /** 답장가능여부 */
+    /** ?듭옣媛?μ뿬遺 */
     private String replyPosblAt = "";
     
-    /** 조회 수 증가 여부 */
+    /** 議고쉶 ??利앷? ?щ? */
     private boolean plusCount = false;
     
-    /** 익명등록 여부 */
+    /** ?듬챸?깅줉 ?щ? */
     private String anonymousAt = "";
     
-    /** 하위 페이지 인덱스 (댓글 및 만족도 조사 여부 확인용) */
+    /** ?섏쐞 ?섏씠吏 ?몃뜳??(?볤? 諛?留뚯”??議곗궗 ?щ? ?뺤씤?? */
     private String subPageIndex = "";
 
-    /** 게시글 댓글개수 */
+    /** 寃뚯떆湲 ?볤?媛쒖닔 */
     private String commentCo = "";
     
-    /** 볼드체 여부 */
+    /** 蹂쇰뱶泥??щ? */
     private String sjBoldAt;
     
-	/** 공지 여부 */
+	/** 怨듭? ?щ? */
     private String noticeAt;
     
-    /** 비밀글 여부 */
+    /** 鍮꾨?湲 ?щ? */
     private String secretAt;
     
     /**
-     * searchBgnDe attribute를 리턴한다.
+     * searchBgnDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchBgnDe
      */
@@ -127,7 +127,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchBgnDe attribute 값을 설정한다.
+     * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchBgnDe
      *            the searchBgnDe to set
@@ -137,7 +137,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchCnd
      */
@@ -146,7 +146,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchCnd
      *            the searchCnd to set
@@ -156,7 +156,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchEndDe attribute를 리턴한다.
+     * searchEndDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchEndDe
      */
@@ -165,7 +165,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchEndDe attribute 값을 설정한다.
+     * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchEndDe
      *            the searchEndDe to set
@@ -175,7 +175,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchWrd
      */
@@ -184,7 +184,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchWrd
      *            the searchWrd to set
@@ -194,7 +194,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the sortOrdr
      */
@@ -203,7 +203,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param sortOrdr
      *            the sortOrdr to set
@@ -213,7 +213,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchUseYn attribute를 리턴한다.
+     * searchUseYn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchUseYn
      */
@@ -222,7 +222,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * searchUseYn attribute 값을 설정한다.
+     * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchUseYn
      *            the searchUseYn to set
@@ -232,7 +232,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageIndex
      */
@@ -241,7 +241,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageIndex
      *            the pageIndex to set
@@ -251,7 +251,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageUnit
      */
@@ -260,7 +260,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageUnit
      *            the pageUnit to set
@@ -270,7 +270,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageSize
      */
@@ -279,7 +279,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageSize
      *            the pageSize to set
@@ -289,7 +289,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the firstIndex
      */
@@ -298,7 +298,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param firstIndex
      *            the firstIndex to set
@@ -308,7 +308,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastIndex
      */
@@ -317,7 +317,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastIndex
      *            the lastIndex to set
@@ -327,7 +327,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the recordCountPerPage
      */
@@ -336,7 +336,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param recordCountPerPage
      *            the recordCountPerPage to set
@@ -346,7 +346,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * rowNo attribute를 리턴한다.
+     * rowNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the rowNo
      */
@@ -355,7 +355,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * rowNo attribute 값을 설정한다.
+     * rowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param rowNo
      *            the rowNo to set
@@ -365,7 +365,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterNm
      */
@@ -374,7 +374,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterNm
      *            the frstRegisterNm to set
@@ -384,7 +384,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * lastUpdusrNm attribute를 리턴한다.
+     * lastUpdusrNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrNm
      */
@@ -393,7 +393,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * lastUpdusrNm attribute 값을 설정한다.
+     * lastUpdusrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrNm
      *            the lastUpdusrNm to set
@@ -403,7 +403,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * isExpired attribute를 리턴한다.
+     * isExpired attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the isExpired
      */
@@ -412,7 +412,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * isExpired attribute 값을 설정한다.
+     * isExpired attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param isExpired
      *            the isExpired to set
@@ -422,7 +422,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * parntsSortOrdr attribute를 리턴한다.
+     * parntsSortOrdr attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the parntsSortOrdr
      */
@@ -431,7 +431,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * parntsSortOrdr attribute 값을 설정한다.
+     * parntsSortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param parntsSortOrdr
      *            the parntsSortOrdr to set
@@ -441,7 +441,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * parntsReplyLc attribute를 리턴한다.
+     * parntsReplyLc attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the parntsReplyLc
      */
@@ -450,7 +450,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * parntsReplyLc attribute 값을 설정한다.
+     * parntsReplyLc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param parntsReplyLc
      *            the parntsReplyLc to set
@@ -460,7 +460,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsTyCode attribute를 리턴한다.
+     * bbsTyCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsTyCode
      */
@@ -469,7 +469,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsTyCode attribute 값을 설정한다.
+     * bbsTyCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsTyCode
      *            the bbsTyCode to set
@@ -479,7 +479,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsAttrbCode attribute를 리턴한다.
+     * bbsAttrbCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsAttrbCode
      */
@@ -488,7 +488,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsAttrbCode attribute 값을 설정한다.
+     * bbsAttrbCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsAttrbCode
      *            the bbsAttrbCode to set
@@ -498,7 +498,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsNm attribute를 리턴한다.
+     * bbsNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsNm
      */
@@ -507,7 +507,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * bbsNm attribute 값을 설정한다.
+     * bbsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsNm
      *            the bbsNm to set
@@ -517,7 +517,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * fileAtchPosblAt attribute를 리턴한다.
+     * fileAtchPosblAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileAtchPosblAt
      */
@@ -526,7 +526,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * fileAtchPosblAt attribute 값을 설정한다.
+     * fileAtchPosblAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileAtchPosblAt
      *            the fileAtchPosblAt to set
@@ -536,7 +536,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * posblAtchFileNumber attribute를 리턴한다.
+     * posblAtchFileNumber attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the posblAtchFileNumber
      */
@@ -545,7 +545,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * posblAtchFileNumber attribute 값을 설정한다.
+     * posblAtchFileNumber attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param posblAtchFileNumber
      *            the posblAtchFileNumber to set
@@ -555,7 +555,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * replyPosblAt attribute를 리턴한다.
+     * replyPosblAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the replyPosblAt
      */
@@ -564,7 +564,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * replyPosblAt attribute 값을 설정한다.
+     * replyPosblAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param replyPosblAt
      *            the replyPosblAt to set
@@ -574,7 +574,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * plusCount attribute를 리턴한다.
+     * plusCount attribute瑜?由ы꽩?쒕떎.
      * @return the plusCount
      */
     public boolean isPlusCount() {
@@ -582,7 +582,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * plusCount attribute 값을 설정한다.
+     * plusCount attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param plusCount the plusCount to set
      */
     public void setPlusCount(boolean plusCount) {
@@ -590,7 +590,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * subPageIndex attribute를 리턴한다.
+     * subPageIndex attribute瑜?由ы꽩?쒕떎.
      * @return the subPageIndex
      */
     public String getSubPageIndex() {
@@ -598,7 +598,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * subPageIndex attribute 값을 설정한다.
+     * subPageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subPageIndex the subPageIndex to set
      */
     public void setSubPageIndex(String subPageIndex) {
@@ -606,7 +606,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * anonymousAt attribute를 리턴한다.
+     * anonymousAt attribute瑜?由ы꽩?쒕떎.
      * @return the anonymousAt
      */
     public String getAnonymousAt() {
@@ -614,7 +614,7 @@ public class BoardVO extends Board implements Serializable {
     }
 
     /**
-     * anonymousAt attribute 값을 설정한다.
+     * anonymousAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param anonymousAt the anonymousAt to set
      */
     public void setAnonymousAt(String anonymousAt) {
@@ -622,14 +622,14 @@ public class BoardVO extends Board implements Serializable {
     }
     
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);
     }
     
     /**
-     * commentCo attribute를 리턴한다.
+     * commentCo attribute瑜?由ы꽩?쒕떎.
      * @return the commentCo
      */
     public String getCommentCo() {
@@ -638,7 +638,7 @@ public class BoardVO extends Board implements Serializable {
 
     
     /**
-     * commentCo attribute 값을 설정한다.
+     * commentCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param commentCo the commentCo to set
      */
     

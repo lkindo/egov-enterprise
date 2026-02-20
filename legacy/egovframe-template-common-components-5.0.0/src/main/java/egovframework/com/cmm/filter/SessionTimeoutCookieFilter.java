@@ -31,18 +31,18 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * SessionTimeoutCookieFilter
  * 
- * @author 공통컴포넌트 팀 신용호
+ * @author 怨듯넻而댄룷?뚰듃 ? ?좎슜??
  * @since 2020.06.17
  * @version 3.10.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2020.06.17  신용호          최초 생성
- *   2025.05.24  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-UncommentedEmptyMethodBody(주석 처리되지 않은 빈 메서드 본문)
+ *   2020.06.17  ?좎슜??         理쒖큹 ?앹꽦
+ *   2025.05.24  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UncommentedEmptyMethodBody(二쇱꽍 泥섎━?섏? ?딆? 鍮?硫붿꽌??蹂몃Ц)
  *
  *      </pre>
  */

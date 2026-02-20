@@ -9,18 +9,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 사용자IP 체크 인터셉터
- * @author 유지보수팀 이기하
+ * ?ъ슜?륤P 泥댄겕 ?명꽣?됲꽣
+ * @author ?좎?蹂댁닔? ?닿린??
  * @since 2013.03.28
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일     수정자          수정내용
+ *   ?섏젙??    ?섏젙??         ?섏젙?댁슜
  *  ----------  --------    ---------------------------
- *  2013.03.28	이기하          최초 생성
+ *  2013.03.28	?닿린??         理쒖큹 ?앹꽦
  *  </pre>
  */
 

@@ -12,15 +12,15 @@ import egovframework.com.uss.ion.pwm.service.PopupManageVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 팝업창에 대한 ServiceImpl을 정의한다.
+ * 媛쒖슂
+ * - ?앹뾽李쎌뿉 ???ServiceImpl???뺤쓽?쒕떎.
  *
- * 상세내용
- * - 팝업창에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 팝업창의 조회기능은 목록조회, 상세조회로, 사용자화면 보기로 구분된다.
- * @author 이창원
+ * ?곸꽭?댁슜
+ * - ?앹뾽李쎌뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?앹뾽李쎌쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡? ?ъ슜?먰솕硫?蹂닿린濡?援щ텇?쒕떎.
+ * @author ?댁갹??
  * @version 1.0
- * @created 05-8-2009 오후 2:19:58
+ * @created 05-8-2009 ?ㅽ썑 2:19:58
  */
 
 @Service("egovPopupManageService")
@@ -36,9 +36,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 팝업창정보를 삭제한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
+	 * 湲??깅줉???앹뾽李쎌젙蹂대? ??젣?쒕떎.
+	 * @param popupManage - ?앹뾽李?model
+	 * @return boolean - 諛섏쁺?깃났 ?щ?
 	 *
 	 * @param popupManage
 	 */
@@ -48,9 +48,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창정보를 신규로 등록한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
+	 * ?앹뾽李쎌젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param popupManage - ?앹뾽李?model
+	 * @return boolean - 諛섏쁺?깃났 ?щ?
 	 *
 	 * @param popupManage
 	 */
@@ -62,9 +62,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 팝업창정보를 수정한다.
-	 * @param popupManage - 팝업창 model
-	 * @return boolean - 반영성공 여부
+	 * 湲??깅줉???앹뾽李쎌젙蹂대? ?섏젙?쒕떎.
+	 * @param popupManage - ?앹뾽李?model
+	 * @return boolean - 諛섏쁺?깃났 ?щ?
 	 *
 	 * @param popupManage
 	 */
@@ -74,9 +74,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창을 사용자 화면에서 볼수 있는 정보들을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return popupManageVO - 팝업창 Vo
+	 * ?앹뾽李쎌쓣 ?ъ슜???붾㈃?먯꽌 蹂쇱닔 ?덈뒗 ?뺣낫?ㅼ쓣 議고쉶?쒕떎.
+	 * @param popupManageVO - ?앹뾽李?Vo
+	 * @return popupManageVO - ?앹뾽李?Vo
 	 *
 	 * @param popupManageVO
 	 */
@@ -86,9 +86,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창의 취약점을 관리하기 위해 등록된 팝업창 화이트리스트를 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
+	 * ?앹뾽李쎌쓽 痍⑥빟?먯쓣 愿由ы븯湲??꾪빐 ?깅줉???앹뾽李??붿씠?몃━?ㅽ듃瑜?議고쉶?쒕떎.
+	 * @param popupManageVO - ?앹뾽李?Vo
+	 * @return List - ?앹뾽李?紐⑸줉
 	 *
 	 * @param popupManageVO
 	 */
@@ -98,9 +98,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창를 관리하기 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
+	 * ?앹뾽李쎈? 愿由ы븯湲??꾪빐 ?깅줉???앹뾽李쎈ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param popupManageVO - ?앹뾽李?Vo
+	 * @return List - ?앹뾽李?紐⑸줉
 	 *
 	 * @param popupManageVO
 	 */
@@ -110,9 +110,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창를 관리하기 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
+	 * ?앹뾽李쎈? 愿由ы븯湲??꾪빐 ?깅줉???앹뾽李쎈ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param popupManageVO - ?앹뾽李?Vo
+	 * @return List - ?앹뾽李?紐⑸줉
 	 *
 	 * @param popupManageVO
 	 */
@@ -122,9 +122,9 @@ public class EgovPopupManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 팝업창를 사용하기위해 위해 등록된 팝업창목록을 조회한다.
-	 * @param popupManageVO - 팝업창 Vo
-	 * @return List - 팝업창 목록
+	 * ?앹뾽李쎈? ?ъ슜?섍린?꾪빐 ?꾪빐 ?깅줉???앹뾽李쎈ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param popupManageVO - ?앹뾽李?Vo
+	 * @return List - ?앹뾽李?紐⑸줉
 	 *
 	 * @param popupManageVO
 	 */

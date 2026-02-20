@@ -13,20 +13,20 @@ import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
 
 /**
- * OAuth 로그인
+ * OAuth 濡쒓렇??
  * 
- * @author 표프센
+ * @author ?쒗봽??
  * @since 2020.03.11
  * @version 3.9.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2020.03.11  표프센          최초 생성
- *   2025.06.25  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드), FieldNamingConventions(필드 명명 규칙), CloseResource(리소스 닫기), UnusedPrivateMethod(사용되지 않는 개인 메서드)
+ *   2020.03.11  ?쒗봽??         理쒖큹 ?앹꽦
+ *   2025.06.25  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶), FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃), CloseResource(由ъ냼???リ린), UnusedPrivateMethod(?ъ슜?섏? ?딅뒗 媛쒖씤 硫붿꽌??
  *
  *      </pre>
  */
@@ -34,7 +34,7 @@ public class OAuthLogin {
 	private final OAuth20Service oauthService;
 	private final OAuthVO oauthVO;
 
-	private static final ObjectMapper MAPPER = new ObjectMapper(); // 매 요청마다 객체를 생성하지 않기 위함
+	private static final ObjectMapper MAPPER = new ObjectMapper(); // 留??붿껌留덈떎 媛앹껜瑜??앹꽦?섏? ?딄린 ?꾪븿
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OAuthLogin.class);
 
@@ -45,11 +45,11 @@ public class OAuthLogin {
 		this.oauthVO = oauthVO;
 	}
 
-	// 230825 카카오톡 scope 변경으로 인한 scope 처리 추가
+	// 230825 移댁뭅?ㅽ넚 scope 蹂寃쎌쑝濡??명븳 scope 泥섎━ 異붽?
 	public String getOAuthURL() {
-		if (oauthVO.getOrigin().equals("naver")) { // naver의 경우 state가 필수 조건에 포함
+		if (oauthVO.getOrigin().equals("naver")) { // naver??寃쎌슦 state媛 ?꾩닔 議곌굔???ы븿
 			return this.oauthService.getAuthorizationUrl() + "&state=test&scope=" + oauthVO.getScope();
-		} else { // 필수, 추가 동의 항목 포함
+		} else { // ?꾩닔, 異붽? ?숈쓽 ??ぉ ?ы븿
 			return this.oauthService.getAuthorizationUrl() + "&scope=" + oauthVO.getScope();
 		}
 	}

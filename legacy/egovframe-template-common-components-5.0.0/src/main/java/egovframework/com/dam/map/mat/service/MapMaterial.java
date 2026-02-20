@@ -1,59 +1,59 @@
 package egovframework.com.dam.map.mat.service;
 
 /**
- * 개요
- * - 지식맵(지식유형)에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앸㏊(吏?앹쑀???????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 지식유형, 조직분류, 분류일자, 지식URL, 전문가ID 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 吏?앹쑀?? 議곗쭅遺꾨쪟, 遺꾨쪟?쇱옄, 吏?쓀RL, ?꾨Ц媛ID ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:52
+ * @created 12-8-2010 ?ㅽ썑 3:44:52
  */
 public class MapMaterial {
 
 	/**
-	 * 지식유형코드
+	 * 吏?앹쑀?뺤퐫??
 	 */
 	private String knoTypeCd = "";
 	/**
-	 * 조직ID
+	 * 議곗쭅ID
 	 */
 	private String orgnztId = "";
 	/**
-	 * 조직명
+	 * 議곗쭅紐?
 	 */
 	private String orgnztNm = "";	
 	/**
-	 * 전문가ID
+	 * ?꾨Ц媛ID
 	 */
 	private String speId = "";
 	/**
-	 * 지식유형명
+	 * 吏?앹쑀?뺣챸
 	 */
 	private String knoTypeNm = "";
 	/**
-	 * 분류일자
+	 * 遺꾨쪟?쇱옄
 	 */
 	private String clYmd = "";
 	/**
-	 * 지식URL
+	 * 吏?쓀RL
 	 */
 	private String knoUrl = "";
 	/** 
-	 * 최초등록아이디
+	 * 理쒖큹?깅줉?꾩씠??
 	 */
 	private String frstRegisterId = "";		
 	/** 
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId = "";
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 	

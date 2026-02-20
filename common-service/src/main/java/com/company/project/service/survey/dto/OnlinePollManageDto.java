@@ -14,37 +14,37 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "온라인 투표 정보 DTO")
+@Schema(description = "Description")
 public class OnlinePollManageDto {
 
-    @Schema(description = "투표 ID")
+    @Schema(description = "Description")
     private String pollId;
 
-    @Schema(description = "투표 명")
+    @Schema(description = "Description")
     private String pollNm;
 
-    @Schema(description = "시작 일자")
+    @Schema(description = "Description")
     private String pollBeginDe;
 
-    @Schema(description = "종료 일자")
+    @Schema(description = "Description")
     private String pollEndDe;
 
-    @Schema(description = "투표 종류 코드")
+    @Schema(description = "Description")
     private String pollKindCode;
 
-    @Schema(description = "폐기 여부")
+    @Schema(description = "Description")
     private String pollDsuseYn;
 
-    @Schema(description = "자동 폐기 여부")
+    @Schema(description = "Description")
     private String pollAutoDsuseYn;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
-    @Schema(description = "투표 항목 목록")
+    @Schema(description = "Description")
     private List<OnlinePollItemDto> items;
 
     public static OnlinePollManageDto from(OnlinePollManage entity) {

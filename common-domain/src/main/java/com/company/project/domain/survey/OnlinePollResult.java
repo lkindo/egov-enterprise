@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 온라인 투표 결과 정보 Entity
- * 레거시 테이블: NONLINEPOLLRESULT
+ * ??ㅼ뵬????紐?野껉퀗???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NONLINEPOLLRESULT
  */
 @Entity
 @Table(name = "NONLINEPOLLRESULT")

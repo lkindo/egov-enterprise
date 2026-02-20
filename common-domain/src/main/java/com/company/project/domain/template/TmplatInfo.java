@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 템플릿 정보 엔티티
+ * ??쀫탣???類ｋ궖 ?酉???
  */
 @Entity
 @Table(name = "COMTNTMPLATINFO")

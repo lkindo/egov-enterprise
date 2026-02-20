@@ -10,28 +10,28 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface EgovSurveyService {
-    // 템플릿
+    // ?쒗뵆由?
     Page<QestnrTmplatDto> getTmplatList(String keyword, Pageable pageable);
     QestnrTmplatDto getTmplat(String tmplatId);
     void insertTmplat(QestnrTmplatDto dto);
     void updateTmplat(QestnrTmplatDto dto);
     void deleteTmplat(String tmplatId);
 
-    // 설문 정보
+    // ?ㅻЦ ?뺣낫
     Page<QestnrInfoDto> getSurveyList(String keyword, Pageable pageable);
     QestnrInfoDto getSurvey(String qestnrId);
     void insertSurvey(QestnrInfoDto dto);
     void updateSurvey(QestnrInfoDto dto);
     void deleteSurvey(String qestnrId);
 
-    // 설문 문항
+    // ?ㅻЦ 臾명빆
     List<QustnrQesitmDto> getQuestionList(String qestnrId);
     QustnrQesitmDto getQuestion(String qesitmId);
     void insertQuestion(QustnrQesitmDto dto);
     void updateQuestion(QustnrQesitmDto dto);
     void deleteQuestion(String qesitmId);
 
-    // 설문 항목
+    // ?ㅻЦ ??ぉ
     List<QustnrIemDto> getItemList(String qesitmId);
     void insertItem(QustnrIemDto dto);
     void updateItem(QustnrIemDto dto);

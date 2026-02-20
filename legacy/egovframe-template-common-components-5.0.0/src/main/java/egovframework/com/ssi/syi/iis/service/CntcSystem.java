@@ -3,18 +3,18 @@ package egovframework.com.ssi.syi.iis.service;
 import java.io.Serializable;
 
 /**
- * 연계시스템 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎?쒖뒪??紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -24,37 +24,37 @@ public class CntcSystem implements Serializable {
 	private static final long serialVersionUID = 4087217199729479930L;
 
 	/*
-	 * 기관ID
+	 * 湲곌?ID
 	 */
 	private String insttId        = "";
 
 	/*
-	 * 시스템ID
+	 * ?쒖뒪?쏧D
 	 */
 	private String sysId          = "";
 
 	/*
-	 * 시스템명
+	 * ?쒖뒪?쒕챸
 	 */
 	private String sysNm          = "";
 
 	/*
-	 * 시스템IP
+	 * ?쒖뒪?쏧P
 	 */
 	private String sysIp          = "";
 
 	/*
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
 	private String frstRegisterId = "";
 
 	/*
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId   = "";
 
 	/**
-	 * insttId attribute 를 리턴한다.
+	 * insttId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttId() {
@@ -62,7 +62,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * insttId attribute 값을 설정한다.
+	 * insttId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttId String
 	 */
 	public void setInsttId(String insttId) {
@@ -70,7 +70,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysId attribute 를 리턴한다.
+	 * sysId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSysId() {
@@ -78,7 +78,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysId attribute 값을 설정한다.
+	 * sysId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sysId String
 	 */
 	public void setSysId(String sysId) {
@@ -86,7 +86,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysNm attribute 를 리턴한다.
+	 * sysNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSysNm() {
@@ -94,7 +94,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysNm attribute 값을 설정한다.
+	 * sysNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sysNm String
 	 */
 	public void setSysNm(String sysNm) {
@@ -102,7 +102,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysIp attribute 를 리턴한다.
+	 * sysIp attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSysIp() {
@@ -110,7 +110,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * sysIp attribute 값을 설정한다.
+	 * sysIp attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sysIp String
 	 */
 	public void setSysIp(String sysIp) {
@@ -118,7 +118,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -126,7 +126,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -134,7 +134,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -142,7 +142,7 @@ public class CntcSystem implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

@@ -3,39 +3,39 @@ package egovframework.com.cop.sms.service;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 문자메시지 서비스를 위한 VO 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏 ?쒕퉬?ㅻ? ?꾪븳 VO ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.18  한성곤          최초 생성
+ *   2009.06.18  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class SmsVO extends Sms {
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private String sortOrdr = "";
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -51,7 +51,7 @@ public class SmsVO extends Sms {
     private int rowNo = 0;
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      * @return the searchCnd
      */
     public String getSearchCnd() {
@@ -59,7 +59,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param searchCnd the searchCnd to set
      */
     public void setSearchCnd(String searchCnd) {
@@ -67,7 +67,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      * @return the searchWrd
      */
     public String getSearchWrd() {
@@ -75,7 +75,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param searchWrd the searchWrd to set
      */
     public void setSearchWrd(String searchWrd) {
@@ -83,7 +83,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * @return the sortOrdr
      */
     public String getSortOrdr() {
@@ -91,7 +91,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param sortOrdr the sortOrdr to set
      */
     public void setSortOrdr(String sortOrdr) {
@@ -99,7 +99,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      * @return the pageIndex
      */
     public int getPageIndex() {
@@ -107,7 +107,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param pageIndex the pageIndex to set
      */
     public void setPageIndex(int pageIndex) {
@@ -115,7 +115,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      * @return the pageUnit
      */
     public int getPageUnit() {
@@ -123,7 +123,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param pageUnit the pageUnit to set
      */
     public void setPageUnit(int pageUnit) {
@@ -131,7 +131,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      * @return the pageSize
      */
     public int getPageSize() {
@@ -139,7 +139,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param pageSize the pageSize to set
      */
     public void setPageSize(int pageSize) {
@@ -147,7 +147,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      * @return the firstIndex
      */
     public int getFirstIndex() {
@@ -155,7 +155,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param firstIndex the firstIndex to set
      */
     public void setFirstIndex(int firstIndex) {
@@ -163,7 +163,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      * @return the lastIndex
      */
     public int getLastIndex() {
@@ -171,7 +171,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param lastIndex the lastIndex to set
      */
     public void setLastIndex(int lastIndex) {
@@ -179,7 +179,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * @return the recordCountPerPage
      */
     public int getRecordCountPerPage() {
@@ -187,7 +187,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recordCountPerPage the recordCountPerPage to set
      */
     public void setRecordCountPerPage(int recordCountPerPage) {
@@ -195,7 +195,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * rowNo attribute를 리턴한다.
+     * rowNo attribute瑜?由ы꽩?쒕떎.
      * @return the rowNo
      */
     public int getRowNo() {
@@ -203,7 +203,7 @@ public class SmsVO extends Sms {
     }
 
     /**
-     * rowNo attribute 값을 설정한다.
+     * rowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param rowNo the rowNo to set
      */
     public void setRowNo(int rowNo) {
@@ -211,7 +211,7 @@ public class SmsVO extends Sms {
     }
     
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

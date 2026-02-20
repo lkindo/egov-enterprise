@@ -33,7 +33,7 @@ public class AnnualLeave extends BaseEntity {
     private Double remndrYrycCo;
 
     /**
-     * 사용 연차 차감 및 잔여 일수 갱신
+     * ?????怨쀪컧 筌△몿而?獄??遺용연 ??깅땾 揶쏄퉮??
      */
     public void deductLeave(Double days) {
         if (this.useYrycCo == null)
@@ -43,7 +43,7 @@ public class AnnualLeave extends BaseEntity {
     }
 
     /**
-     * 잔여 일수 동기화
+     * ?遺용연 ??깅땾 ??녿┛??
      */
     public void syncRemaining() {
         if (this.occrncYrycCo == null)

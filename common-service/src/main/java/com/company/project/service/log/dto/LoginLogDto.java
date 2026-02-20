@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 로그인 로그 DTO
+ * 濡쒓렇??濡쒓렇 DTO
  */
 @Getter
 @Setter
@@ -15,18 +15,18 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginLogDto {
-    /** 로그 ID */
+    /** 濡쒓렇 ID */
     private String logId;
-    /** 접속 ID */
+    /** ?묒냽 ID */
     private String loginId;
-    /** 접속 IP */
+    /** ?묒냽 IP */
     private String loginIp;
-    /** 접속 방법 */
+    /** ?묒냽 諛⑸쾿 */
     private String loginMthd;
-    /** 에러 발생 여부 */
+    /** ?먮윭 諛쒖깮 ?щ? */
     private String errOccrrAt;
-    /** 에러 코드 */
+    /** ?먮윭 肄붾뱶 */
     private String errorCode;
-    /** 생성일시 */
+    /** ?앹꽦?쇱떆 */
     private String creatDt;
 }

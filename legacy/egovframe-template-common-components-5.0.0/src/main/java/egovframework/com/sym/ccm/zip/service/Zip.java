@@ -5,20 +5,20 @@ import java.io.Serializable;
 import jakarta.validation.constraints.NotEmpty;
 
 /**
- * 우편번호 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?고렪踰덊샇 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호			최초 생성
- *   2011.11.21  이기하			도로명주소 추가(rdmn, bdnbrMnnm, bdnbrSlno, buldNm, detailBuldNm)
- *   2024.10.29	 권태성			필수값 BindingResult 검증을 위한 @NotEmpty 추가
+ *   2009.04.01  ?댁쨷??		理쒖큹 ?앹꽦
+ *   2011.11.21  ?닿린??		?꾨줈紐낆＜??異붽?(rdmn, bdnbrMnnm, bdnbrSlno, buldNm, detailBuldNm)
+ *   2024.10.29	 沅뚰깭??		?꾩닔媛?BindingResult 寃利앹쓣 ?꾪븳 @NotEmpty 異붽?
  *
  * </pre>
  */
@@ -27,86 +27,86 @@ public class Zip implements Serializable {
 	private static final long serialVersionUID = -8767083970521429218L;
 
 	/*
-	 * 우편번호
+	 * ?고렪踰덊샇
 	 */
-	@NotEmpty(message = "우편번호{common.required.msg}")
+	@NotEmpty(message = "?고렪踰덊샇{common.required.msg}")
     private String zip            = "";
 
     /*
-     * 일련번호
+     * ?쇰젴踰덊샇
      */
     private int    sn             = 0;
 
     /*
-     * 시도명
+     * ?쒕룄紐?
      */
-    @NotEmpty(message = "시도명{common.required.msg}")
+    @NotEmpty(message = "?쒕룄紐?common.required.msg}")
 	private String ctprvnNm       = "";
 
 	/*
-	 * 시군구명
+	 * ?쒓뎔援щ챸
 	 */
-	@NotEmpty(message = "시군구명{common.required.msg}")
+	@NotEmpty(message = "?쒓뎔援щ챸{common.required.msg}")
     private String signguNm       = "";
 
     /*
-     * 읍면동명
+     * ?띾㈃?숇챸
      */
-    @NotEmpty(message = "읍면동명{common.required.msg}")
+    @NotEmpty(message = "?띾㈃?숇챸{common.required.msg}")
     private String emdNm          = "";
 
     /*
-     * 리건물명
+     * 由ш굔臾쇰챸
      */
     private String liBuldNm      = "";
 
     /*
-     * 도로명코드
+     * ?꾨줈紐낆퐫??
      */
     private String rdmnCode       = "";
 
 	/*
-     * 도로명
+     * ?꾨줈紐?
      */
     private String rdmn       = "";
 
     /*
-     * 건물번호본번
+     * 嫄대Ъ踰덊샇蹂몃쾲
      */
     private String bdnbrMnnm          = "";
 
     /*
-     * 건물번호부번
+     * 嫄대Ъ踰덊샇遺踰?
      */
     private String bdnbrSlno      = "";
 
     /*
-     * 건물명
+     * 嫄대Ъ紐?
      */
     private String buldNm      = "";
 
     /*
-     * 상세건물명
+     * ?곸꽭嫄대Ъ紐?
      */
     private String detailBuldNm      = "";
 
     /*
-     * 번지동호
+     * 踰덉??숉샇
      */
     private String lnbrDongHo     = "";
 
 	/*
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "";
 
     /*
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId   = "";
 
 	/**
-	 * zip attribute 를 리턴한다.
+	 * zip attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getZip() {
@@ -114,7 +114,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * zip attribute 값을 설정한다.
+	 * zip attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param zip String
 	 */
 	public void setZip(String zip) {
@@ -122,7 +122,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * sn attribute 를 리턴한다.
+	 * sn attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getSn() {
@@ -130,7 +130,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * sn attribute 값을 설정한다.
+	 * sn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sn int
 	 */
 	public void setSn(int sn) {
@@ -138,7 +138,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * ctprvnNm attribute 를 리턴한다.
+	 * ctprvnNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCtprvnNm() {
@@ -146,7 +146,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * ctprvnNm attribute 값을 설정한다.
+	 * ctprvnNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ctprvnNm String
 	 */
 	public void setCtprvnNm(String ctprvnNm) {
@@ -154,7 +154,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * signguNm attribute 를 리턴한다.
+	 * signguNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSignguNm() {
@@ -162,7 +162,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * signguNm attribute 값을 설정한다.
+	 * signguNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param signguNm String
 	 */
 	public void setSignguNm(String signguNm) {
@@ -170,7 +170,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * emdNm attribute 를 리턴한다.
+	 * emdNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getEmdNm() {
@@ -178,7 +178,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * emdNm attribute 값을 설정한다.
+	 * emdNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param emdNm String
 	 */
 	public void setEmdNm(String emdNm) {
@@ -186,7 +186,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * liBuldNm attribute 를 리턴한다.
+	 * liBuldNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLiBuldNm() {
@@ -194,7 +194,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * liBuldNm attribute 값을 설정한다.
+	 * liBuldNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param liBuldNm String
 	 */
 	public void setLiBuldNm(String liBuldNm) {
@@ -202,7 +202,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * lnbrDongHo attribute 를 리턴한다.
+	 * lnbrDongHo attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLnbrDongHo() {
@@ -210,7 +210,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * lnbrDongHo attribute 값을 설정한다.
+	 * lnbrDongHo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lnbrDongHo String
 	 */
 	public void setLnbrDongHo(String lnbrDongHo) {
@@ -218,7 +218,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -226,7 +226,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -234,7 +234,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -242,7 +242,7 @@ public class Zip implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

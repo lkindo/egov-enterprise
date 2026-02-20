@@ -89,7 +89,7 @@
 			</if>
 	</select>
 	
-	<!-- 사용자::조회 -->
+	<!-- ?ъ슜??:議고쉶 -->
 	<select id="selectWrterClsfNm" parameterType="java.lang.String" resultType="java.lang.String">
 	 
 		SELECT 
@@ -99,7 +99,7 @@
 	 
 	</select>
 	
-	<!-- 메모보고::목록조회 -->
+	<!-- 硫붾え蹂닿퀬::紐⑸줉議고쉶 -->
 	<select id="selectMemoReprtList" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprtVO" resultMap="MemoReprtList">
 	 
 		SELECT 
@@ -107,8 +107,8 @@
 			A.REPRT_SJ,
 			A.REPORT_DE,
 			IFNULL(B.USER_NM, C.MBER_NM) WRTER_NM,
-			(CASE WHEN A.DRCT_MATTER_REGIST_DT = '' THEN '미등록' ELSE '등록' END) DRCT_MATTER_REGIST_DT,
-			(CASE WHEN A.REPORTR_INQIRE_DT = '' THEN '미확인' ELSE '확인' END) REPORTR_INQIRE_DT
+			(CASE WHEN A.DRCT_MATTER_REGIST_DT = '' THEN '誘몃벑濡? ELSE '?깅줉' END) DRCT_MATTER_REGIST_DT,
+			(CASE WHEN A.REPORTR_INQIRE_DT = '' THEN '誘명솗?? ELSE '?뺤씤' END) REPORTR_INQIRE_DT
 		FROM COMTNMEMOREPRT A
 		LEFT OUTER JOIN COMTNEMPLYRINFO B
 			ON A.WRTER_ID = B.ESNTL_ID
@@ -159,7 +159,7 @@
 
 	</select>
 	
-	<!-- 메모보고::목록조회 Count -->
+	<!-- 硫붾え蹂닿퀬::紐⑸줉議고쉶 Count -->
 	<select id="selectMemoReprtListCnt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprtVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -208,7 +208,7 @@
 
 	</select>
 	
-	<!-- 메모보고::상세보기 -->
+	<!-- 硫붾え蹂닿퀬::?곸꽭蹂닿린 -->
 	<select id="selectMemoReprt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprtVO" resultMap="MemoReprtDetail">
 		SELECT 
 			A.REPRT_ID,
@@ -242,7 +242,7 @@
 			AND A.REPRT_ID = #{reprtId}
 	</select>
 	
-	<!-- 메모보고::수정  -->
+	<!-- 硫붾え蹂닿퀬::?섏젙  -->
 	<update id="updateMemoReprt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprt"> 
 		UPDATE COMTNMEMOREPRT 
 		SET  
@@ -258,7 +258,7 @@
 			AND REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 메모보고::확인  -->
+	<!-- 硫붾え蹂닿퀬::?뺤씤  -->
 	<update id="readMemoReprt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprt"> 
 		UPDATE COMTNMEMOREPRT 
 		SET  
@@ -266,7 +266,7 @@
 		WHERE REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 메모보고::지시/의견사항 등록  -->
+	<!-- 硫붾え蹂닿퀬::吏???섍껄?ы빆 ?깅줉  -->
 	<update id="updateMemoReprtDrctMatter" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprt"> 
 		UPDATE COMTNMEMOREPRT 
 		SET  
@@ -275,7 +275,7 @@
 		WHERE REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 메모보고::삭제  -->
+	<!-- 硫붾え蹂닿퀬::??젣  -->
 	<delete id="deleteMemoReprt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprtVO"> 
 		
 			DELETE FROM COMTNMEMOREPRT 
@@ -284,7 +284,7 @@
 		
 	</delete>
 	
-	<!-- 메모보고::입력  -->
+	<!-- 硫붾え蹂닿퀬::?낅젰  -->
 	<insert id="insertMemoReprt" parameterType="egovframework.com.cop.smt.mrm.service.MemoReprt">
 	 
 	 

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 지식관리 서비스 인터페이스
+ * 吏?앷?由??쒕퉬???명꽣?섏씠??
  */
 public interface EgovKnowledgeService {
 

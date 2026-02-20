@@ -6,7 +6,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 /**
- * 로그인 이미지 관리 엔티티
+ * 嚥≪뮄??????筌왖 ?온???酉???
  */
 @Entity
 @Table(name = "NLOGINSCRINIMAGE")

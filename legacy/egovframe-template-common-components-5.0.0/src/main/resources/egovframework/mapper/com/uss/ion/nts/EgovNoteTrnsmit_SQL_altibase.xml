@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.12   	안민정     	 	테이블 표준화에 따른 수정사항 반영
+  2011.8.12   	?덈???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
 							DELETE_YN	->	DELETE_AT
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="NoteTrnsmit">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="NoteTrnsmitVO" type="egovframework.com.uss.ion.nts.service.NoteTrnsmit">
 		<result property="noteId" column="NOTE_ID"/>
 		<result property="noteTrnsmitId" column="NOTE_TRNSMIT_ID"/>
@@ -18,9 +18,9 @@
 		<result property="atchFileId" column="ATCH_FILE_ID"/>			
 	</resultMap>
 	
-	<!-- 보낸편지함관리::수신자목록 -->
+	<!-- 蹂대궦?몄??④?由?:?섏떊?먮ぉ濡?-->
 	
-	<!-- 보낸편지함관리::상세 게시물정보 -->
+	<!-- 蹂대궦?몄??④?由?:?곸꽭 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectNoteTrnsmitDetail" resultType="egovMap">
 	<![CDATA[
 	SELECT 
@@ -79,7 +79,7 @@
 	]]>
 	</select>
 	
-	<!-- 보낸편지함관리::목록조회 게시물정보 -->
+	<!-- 蹂대궦?몄??④?由?:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectNoteTrnsmit" parameterType="comDefaultVO" resultType="egovMap">
 	<![CDATA[
 	SELECT *
@@ -165,7 +165,7 @@
 	WHERE ROWNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 		
 	</select>
-	<!-- 보낸편지함관리::목록조회_게시물 총개수  -->
+	<!-- 蹂대궦?몄??④?由?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectNoteTrnsmitCnt" parameterType="comDefaultVO" resultType="int">
 	SELECT 
 		COUNT(*) totcnt
@@ -195,7 +195,7 @@
 	 </if>
 	</select>
 	
-    <!-- 보낸편지함관리::받은편지함 삭제  -->
+    <!-- 蹂대궦?몄??④?由?:諛쏆??몄?????젣  -->
 	<delete id="deleteNoteTrnsmit">
 		
 			UPDATE COMTNNOTETRNSMIT SET DELETE_AT='Y',
@@ -208,7 +208,7 @@
 		
 	</delete>
 	
-    <!-- 보낸편지함관리::보낸편지함 삭제  -->
+    <!-- 蹂대궦?몄??④?由?:蹂대궦?몄?????젣  -->
 	<delete id="deleteNoteRecptn">
 		
 		DELETE RNS FROM COMTNNOTERECPTN RNS
@@ -222,14 +222,14 @@
 		
 	</delete>
 	
-	<!-- 보낸편지함관리::쪽지정보/보낸쪽지 삭제  -->
+	<!-- 蹂대궦?몄??④?由?:履쎌??뺣낫/蹂대궦履쎌? ??젣  -->
 	<delete id="deleteNoteManage">
 		
 		DELETE FROM COMTNNOTE WHERE NOTE_ID=#{noteId}
 		
 	</delete>
 	
-	<!-- 보낸편지함관리::받은편지함 개수  -->
+	<!-- 蹂대궦?몄??④?由?:諛쏆??몄???媛쒖닔  -->
 	<select id="selectTrnsmitRelationCnt" resultType="int">
 	
 	SELECT 
@@ -241,7 +241,7 @@
 	
 	</select>
 	
-	<!-- 보낸편지함관리::쪽지정보/보낸쪽지 삭제  -->
+	<!-- 蹂대궦?몄??④?由?:履쎌??뺣낫/蹂대궦履쎌? ??젣  -->
 	<delete id="deleteNoteTrnsmitRelation">
 		
 			DELETE FROM COMTNNOTETRNSMIT
@@ -253,7 +253,7 @@
 		
 	</delete>
 	
-	<!-- 보낸편지함관리::수신자목록조회 -->
+	<!-- 蹂대궦?몄??④?由?:?섏떊?먮ぉ濡앹“??-->
 	<select id="selectNoteTrnsmitCnfirm" resultType="egovMap">
 	 
 	SELECT 

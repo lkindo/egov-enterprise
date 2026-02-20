@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 행사/이벤트/캠페인 VO Class 구현
- * @author 공통서비스 장동한
+ * ?됱궗/?대깽??罹좏럹??VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -24,106 +24,106 @@ public class EventCmpgnVO extends ComDefaultVO implements Serializable {
 	private static final long serialVersionUID = -5817021412630105195L;
 
 	/**
-	 * 행사/이벤트/캠페인ID
+	 * ?됱궗/?대깽??罹좏럹?퇙D
 	 */
 	private String eventId = "";
 
 	/**
-	 * 사업연도
+	 * ?ъ뾽?곕룄
 	 */
 	private String bsnsYear = "";
 
 	/**
-	 * 사업코드
+	 * ?ъ뾽肄붾뱶
 	 */
 	private String bsnsCode = "";
 
 	/**
-	 * 행사시작일자
+	 * ?됱궗?쒖옉?쇱옄
 	 */
 	private String eventSvcBeginDe = "";
 
 	/**
-	 * 서비스이용 인원수
+	 * ?쒕퉬?ㅼ씠???몄썝??
 	 */
 	private int svcUseNmprCo = 0;
 
 	/**
-	 * 담당자명
+	 * ?대떦?먮챸
 	 */
 	private String chargerNm = "";
 
 	/**
-	 * 행사내용
+	 * ?됱궗?댁슜
 	 */
 	private String eventCn = "";
 
 	/**
-	 * 행사종료일자
+	 * ?됱궗醫낅즺?쇱옄
 	 */
 	private String eventSvcEndDe = "";
 
 	/**
-	 * 행사유형코드
+	 * ?됱궗?좏삎肄붾뱶
 	 */
 	private String eventTyCode = "";
 	
 	/**
-	 * 행사유형코드명
+	 * ?됱궗?좏삎肄붾뱶紐?
 	 */
 	private String eventTyCodeNm = "";
 
 	/**
-	 * 준비물내용
+	 * 以鍮꾨Ъ?댁슜
 	 */
 	private String prparetgCn = "";
 
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최초등록ID
+	 * 理쒖큹?깅줉ID
 	 */
 	private String frstRegisterId = "";
 	/**
-	 * 최초등록자
+	 * 理쒖큹?깅줉??
 	 */
 	private String frstRegisterNm = "";
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 	/**
-	 * 최종수정ID
+	 * 理쒖쥌?섏젙ID
 	 */
 	private String lastUpdusrId = "";
 	/**
-	 * 화면처리 명령어
+	 * ?붾㈃泥섎━ 紐낅졊??
 	 */
 	private String cmd = "";
 
 
 	/**
-	 * 행사/이벤트 승인여부
+	 * ?됱궗/?대깽???뱀씤?щ?
 	 */
 	private String eventConfmAt = "";
 
 	/**
-	 * 행사/이벤트 승인일
+	 * ?됱궗/?대깽???뱀씤??
 	 */
 	private String eventConfmDe = "";
 
 
 	/**
-	 * eventConfmDe attribute 를 리턴한다.
+	 * eventConfmDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventConfmDe() {
 		return eventConfmDe;
 	}
 	/**
-	 * eventConfmDe attribute 값을 설정한다.
+	 * eventConfmDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventId String
 	 */
 	public void setEventConfmDe(String eventConfmDe) {
@@ -131,14 +131,14 @@ public class EventCmpgnVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * eventConfmAt attribute 를 리턴한다.
+	 * eventConfmAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventConfmAt() {
 		return eventConfmAt;
 	}
 	/**
-	 * eventConfmAt attribute 값을 설정한다.
+	 * eventConfmAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventId String
 	 */
 	public void setEventConfmAt(String eventConfmAt) {
@@ -147,238 +147,238 @@ public class EventCmpgnVO extends ComDefaultVO implements Serializable {
 
 
 	/**
-	 * eventId attribute 를 리턴한다.
+	 * eventId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventId() {
 		return eventId;
 	}
 	/**
-	 * eventId attribute 값을 설정한다.
+	 * eventId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventId String
 	 */
 	public void setEventId(String eventId) {
 		this.eventId = eventId;
 	}
 	/**
-	 * bsnsYear attribute 를 리턴한다.
+	 * bsnsYear attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBsnsYear() {
 		return bsnsYear;
 	}
 	/**
-	 * bsnsYear attribute 값을 설정한다.
+	 * bsnsYear attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return bsnsYear String
 	 */
 	public void setBsnsYear(String bsnsYear) {
 		this.bsnsYear = bsnsYear;
 	}
 	/**
-	 * bsnsCode attribute 를 리턴한다.
+	 * bsnsCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getBsnsCode() {
 		return bsnsCode;
 	}
 	/**
-	 * bsnsCode attribute 값을 설정한다.
+	 * bsnsCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return bsnsCode String
 	 */
 	public void setBsnsCode(String bsnsCode) {
 		this.bsnsCode = bsnsCode;
 	}
 	/**
-	 * eventSvcBeginDe attribute 를 리턴한다.
+	 * eventSvcBeginDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventSvcBeginDe() {
 		return eventSvcBeginDe;
 	}
 	/**
-	 * eventSvcBeginDe attribute 값을 설정한다.
+	 * eventSvcBeginDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventSvcBeginDe String
 	 */
 	public void setEventSvcBeginDe(String eventSvcBeginDe) {
 		this.eventSvcBeginDe = eventSvcBeginDe;
 	}
 	/**
-	 * svcUseNmprCo attribute 를 리턴한다.
+	 * svcUseNmprCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getSvcUseNmprCo() {
 		return svcUseNmprCo;
 	}
 	/**
-	 * svcUseNmprCo attribute 값을 설정한다.
+	 * svcUseNmprCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return svcUseNmprCo int
 	 */
 	public void setSvcUseNmprCo(int svcUseNmprCo) {
 		this.svcUseNmprCo = svcUseNmprCo;
 	}
 	/**
-	 * chargerNm attribute 를 리턴한다.
+	 * chargerNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getChargerNm() {
 		return chargerNm;
 	}
 	/**
-	 * chargerNm attribute 값을 설정한다.
+	 * chargerNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return chargerNm String
 	 */
 	public void setChargerNm(String chargerNm) {
 		this.chargerNm = chargerNm;
 	}
 	/**
-	 * eventCn attribute 를 리턴한다.
+	 * eventCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventCn() {
 		return eventCn;
 	}
 	/**
-	 * eventCn attribute 값을 설정한다.
+	 * eventCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventCn String
 	 */
 	public void setEventCn(String eventCn) {
 		this.eventCn = eventCn;
 	}
 	/**
-	 * eventSvcEndDe attribute 를 리턴한다.
+	 * eventSvcEndDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventSvcEndDe() {
 		return eventSvcEndDe;
 	}
 	/**
-	 * eventSvcEndDe attribute 값을 설정한다.
+	 * eventSvcEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventSvcEndDe String
 	 */
 	public void setEventSvcEndDe(String eventSvcEndDe) {
 		this.eventSvcEndDe = eventSvcEndDe;
 	}
 	/**
-	 * eventTyCode attribute 를 리턴한다.
+	 * eventTyCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventTyCode() {
 		return eventTyCode;
 	}
 	/**
-	 * eventTyCode attribute 값을 설정한다.
+	 * eventTyCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventTyCode String
 	 */
 	public void setEventTyCode(String eventTyCode) {
 		this.eventTyCode = eventTyCode;
 	}
 	/**
-	 * eventTyCodeNm attribute 를 리턴한다.
+	 * eventTyCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEventTyCodeNm() {
 		return eventTyCodeNm;
 	}
 	/**
-	 * eventTyCodeNm attribute 값을 설정한다.
+	 * eventTyCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return eventTyCodeNm String
 	 */
 	public void setEventTyCodeNm(String eventTyCodeNm) {
 		this.eventTyCodeNm = eventTyCodeNm;
 	}
 	/**
-	 * prparetgCn attribute 를 리턴한다.
+	 * prparetgCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getPrparetgCn() {
 		return prparetgCn;
 	}
 	/**
-	 * prparetgCn attribute 값을 설정한다.
+	 * prparetgCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return prparetgCn String
 	 */
 	public void setPrparetgCn(String prparetgCn) {
 		this.prparetgCn = prparetgCn;
 	}
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
 		return frstRegisterPnttm;
 	}
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
 		this.frstRegisterPnttm = frstRegisterPnttm;
 	}
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
 		return frstRegisterId;
 	}
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
 		this.frstRegisterId = frstRegisterId;
 	}
 	/**
-	 * frstRegisterNm attribute 를 리턴한다.
+	 * frstRegisterNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterNm() {
 		return frstRegisterNm;
 	}
 	/**
-	 * frstRegisterNm attribute 값을 설정한다.
+	 * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterNm String
 	 */
 	public void setFrstRegisterNm(String frstRegisterNm) {
 		this.frstRegisterNm = frstRegisterNm;
 	}
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
 		return lastUpdusrPnttm;
 	}
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
 		this.lastUpdusrPnttm = lastUpdusrPnttm;
 	}
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
 		return lastUpdusrId;
 	}
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
 		this.lastUpdusrId = lastUpdusrId;
 	}
 	/**
-	 * cmd attribute 를 리턴한다.
+	 * cmd attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCmd() {
 		return cmd;
 	}
 	/**
-	 * cmd attribute 값을 설정한다.
+	 * cmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cmd String
 	 */
 	public void setCmd(String cmd) {

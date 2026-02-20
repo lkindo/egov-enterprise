@@ -2,21 +2,21 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<!-- 파일시스템모니터링   -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留?  -->
 	<bean id="fileSysMntrng" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject" ref="egovFileSysMntrngScheduling" />
 		<property name="targetMethod" value="monitorFileSys" />
 		<property name="concurrent" value="false" />
 	</bean>
 
-	<!-- 파일시스템모니터링  트리거-->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留? ?몃━嫄?->
 	<bean id="fileSysMntrngTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
 		<property name="jobDetail" ref="fileSysMntrng" />
 		<property name="startDelay" value="60000" />
 		<property name="repeatInterval" value="600000" />
 	</bean>
 	
-	<!-- 모니터링 스케줄러 -->
+	<!-- 紐⑤땲?곕쭅 ?ㅼ?以꾨윭 -->
 	<!-- <bean id="mntrngScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>

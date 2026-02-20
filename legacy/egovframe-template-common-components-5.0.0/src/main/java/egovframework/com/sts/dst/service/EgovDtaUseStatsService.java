@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 자료이용현황 통계에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎?????Service Interface瑜??뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 자료이용현황 통계에 대한 등록, 조회 기능을 제공한다.
- * - 자료이용현황 통계의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 08-9-2009 오후 1:40:19
+ * @created 08-9-2009 ?ㅽ썑 1:40:19
  */
 
 package egovframework.com.sts.dst.service;
@@ -21,51 +21,51 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface EgovDtaUseStatsService {
 
     /**
-	 * 자료이용현황 통계정보의 대상목록을 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return List - 자료이용현황 목록
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return List - ?먮즺?댁슜?꾪솴 紐⑸줉
 	 */
 	public List<DtaUseStatsVO> selectDtaUseStatsList(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 
 	/**
-	 * 자료이용현황 통계정보의 대상목록 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡?移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	public int selectDtaUseStatsListTotCnt(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 	
 	/**
-	 * 자료이용현황 통계정보의 전체 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫???꾩껜 移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	public int selectDtaUseStatsListBarTotCnt(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 	
     /**
-	 * 자료이용현황 통계의 상세정보를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 */
 	public List<DtaUseStatsVO> selectDtaUseStats(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 
 	/**
-	 * 자료이용현황 통계정보의 상세정보목록 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫???곸꽭?뺣낫紐⑸줉 移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	public int selectDtaUseStatsTotCnt(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 	
 	/**
-	 * 자료이용현황 정보를 생성한다.
-	 * @param jp - AOP의 pointcut을 위한 JoinPoint
-	 * @param dtaUseStats - 자료이용현황 model
+	 * ?먮즺?댁슜?꾪솴 ?뺣낫瑜??앹꽦?쒕떎.
+	 * @param jp - AOP??pointcut???꾪븳 JoinPoint
+	 * @param dtaUseStats - ?먮즺?댁슜?꾪솴 model
 	 */
 	public void insertDtaUseStats(JoinPoint jp, @RequestParam Map<String, Object> commandMap) throws Exception;	
 	
 	/**
-	 * 등록일자별 통계정보를 그래프로 표현한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return List - 등록일자별 자료이용현황 목록
+	 * ?깅줉?쇱옄蹂??듦퀎?뺣낫瑜?洹몃옒?꾨줈 ?쒗쁽?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return List - ?깅줉?쇱옄蹂??먮즺?댁슜?꾪솴 紐⑸줉
 	 */
 	public List<DtaUseStatsVO> selectDtaUseStatsBarList(DtaUseStatsVO dtaUseStatsVO) throws Exception;
 }

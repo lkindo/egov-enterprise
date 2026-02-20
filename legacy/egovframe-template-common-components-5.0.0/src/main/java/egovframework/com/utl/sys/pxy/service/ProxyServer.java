@@ -21,18 +21,18 @@ import egovframework.com.cmm.util.EgovResourceCloseHelper;
 import egovframework.com.utl.sys.pxy.service.impl.ProxySvcDAO;
 
 /**
- * 프록시서비스 처리 클래스
+ * ?꾨줉?쒖꽌鍮꾩뒪 泥섎━ ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.07.15
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일                수정자             수정내용
+ *  ?섏젙??               ?섏젙??            ?섏젙?댁슜
  *  ----------   --------    ---------------------------
- *  2019.12.05   신용호              KISA 보안약점 조치 (경로조작및 자원 삽입, 부적절한 예외처리)
+ *  2019.12.05   ?좎슜??             KISA 蹂댁븞?쎌젏 議곗튂 (寃쎈줈議곗옉諛??먯썝 ?쎌엯, 遺?곸젅???덉쇅泥섎━)
  * </pre>
  */
 public class ProxyServer extends Thread {
@@ -113,7 +113,7 @@ public class ProxyServer extends Thread {
 					OutputStream streamToClient = client.getOutputStream();
 
 					String svcIp = EgovWebUtil.filePathBlackList(getSvcIp());
-					server = SSLSocketFactory.getDefault().createSocket(svcIp, remotePort);//2022.01. Unencrypted Socket 처리
+					server = SSLSocketFactory.getDefault().createSocket(svcIp, remotePort);//2022.01. Unencrypted Socket 泥섎━
 
 					InputStream streamFromServer = server.getInputStream();
 					OutputStream streamToServer = server.getOutputStream();
@@ -159,7 +159,7 @@ public class ProxyServer extends Thread {
 
 			proxyLog.setLogId(egovProxyLogIdGnrService.getNextStringId());
 
-			//KISA 보안약점 조치 (2018-10-29, 윤창원)
+			//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			if (client.getInetAddress() != null) {
 				if (!EgovWebUtil.isIPAddress((client.getInetAddress().getHostAddress()))) {
 					throw new RuntimeException("IP is needed. (" + client.getInetAddress().getHostAddress() + ")");

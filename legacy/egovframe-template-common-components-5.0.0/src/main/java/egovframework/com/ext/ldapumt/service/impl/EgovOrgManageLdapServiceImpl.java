@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service.impl;
 
@@ -32,20 +32,20 @@ import jakarta.annotation.Resource;
 
 /**
 *
-* 조직도 기능 관련 서비스 객체
-* @author 전우성
+* 議곗쭅??湲곕뒫 愿???쒕퉬??媛앹껜
+* @author ?꾩슦??
 * @since 2014.10.12
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*  수정일               수정자             수정내용
+*  ?섏젙??              ?섏젙??            ?섏젙?댁슜
 *  ----------   --------   ---------------------------
-*  2014.10.12   전우성            최초 생성
-*  2020.08.28   정진오            표준프레임워크 v3.10 개선
-*  2023.08.10   신용호            LDAP 오류 수정
+*  2014.10.12   ?꾩슦??           理쒖큹 ?앹꽦
+*  2020.08.28   ?뺤쭊??           ?쒖??꾨젅?꾩썙??v3.10 媛쒖꽑
+*  2023.08.10   ?좎슜??           LDAP ?ㅻ쪟 ?섏젙
 *
 * </pre>
 */
@@ -59,7 +59,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	private UserManageLdapDAO userManageLdapDAO;
 
 	/**
-	 * 등록된 부서의 정보를 조회한다.
+	 * ?깅줉??遺?쒖쓽 ?뺣낫瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public Map<Object, Object> selectDeptManage(String dn) {
@@ -71,7 +71,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 사용자의 정보를 조회한다.
+	 * ?깅줉???ъ슜?먯쓽 ?뺣낫瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public Map<Object, Object> selectUserManage(String dn) {
@@ -83,7 +83,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 등록된 부서의 목록을 조회한다.
+	 * ?깅줉??遺?쒖쓽 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public Map<Object, Object> selectDeptManageSubList(String dn) throws Exception {
@@ -112,7 +112,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * ouCode로 하위부서의 목록을 조회한다.
+	 * ouCode濡??섏쐞遺?쒖쓽 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<Object> selectDeptManageSubListByOuCode(String ouCode) throws Exception {
@@ -120,7 +120,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * VO의 조건에 부합하는 부서를 조회한다.
+	 * VO??議곌굔??遺?⑺븯??遺?쒕? 議고쉶?쒕떎.
 	 */
 	@Override
 	public UcorgVO selectDeptManage(UcorgVO vo) throws Exception {
@@ -129,7 +129,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 
 
 	/**
-	 * 기등록된 부서정보를 수정한다.
+	 * 湲곕벑濡앸맂 遺?쒖젙蹂대? ?섏젙?쒕떎.
 	 */
 	@Override
 	public void updateDeptManage(UcorgVO vo) throws Exception {
@@ -137,14 +137,14 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 부서를 추가한다.
+	 * 遺?쒕? 異붽??쒕떎.
 	 */
 	@Override
 	public Map<Object, Object> insertDeptManage(String parentDn, String ou) throws Exception {
 		UcorgVO vo = new UcorgVO();
-		if ("j1_1".equals(parentDn)) { // Root에서 생성
+		if ("j1_1".equals(parentDn)) { // Root?먯꽌 ?앹꽦
 			vo.setDn("ou=" + ou);
-		} else { // Root에서 생성
+		} else { // Root?먯꽌 ?앹꽦
 			vo.setDn("ou=" + ou + ", " + parentDn);
 		}
 		vo.setOu(ou);
@@ -159,7 +159,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 사용자를 추가한다.
+	 * ?ъ슜?먮? 異붽??쒕떎.
 	 */
 	@Override
 	public Map<Object, Object> insertUserManage(String parentDn, String cn) throws Exception {
@@ -177,7 +177,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 사용자 정보를 삭제한다.
+	 * ?ъ슜???뺣낫瑜???젣?쒕떎.
 	 */
 	@Override
 	public void deleteDeptManage(String dn) {
@@ -185,7 +185,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 부서의 이름을 변경한다.
+	 * 遺?쒖쓽 ?대쫫??蹂寃쏀븳??
 	 */
 	@Override
 	public void renameDeptManage(String dn, String name) {
@@ -202,7 +202,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 사용자의 이름을 변경한다.
+	 * ?ъ슜?먯쓽 ?대쫫??蹂寃쏀븳??
 	 */
 	@Override
 	public void renameUserManage(String dn, String name) {
@@ -219,7 +219,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 조직을 이동한다.
+	 * 議곗쭅???대룞?쒕떎.
 	 */
 	@Override
 	public void moveOrgManage(String dn, String parentDn) {
@@ -229,7 +229,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 부서정보를 수정한다.
+	 * 遺?쒖젙蹂대? ?섏젙?쒕떎.
 	 */
 	@Override
 	public void modifyDeptManage(UcorgVO ucorgVO) throws Exception {
@@ -237,7 +237,7 @@ public class EgovOrgManageLdapServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 사용자의 정보를 수정한다.
+	 * ?ъ슜?먯쓽 ?뺣낫瑜??섏젙?쒕떎.
 	 */
 	@Override
 	public void modifyUserManage(UserVO userVO) {

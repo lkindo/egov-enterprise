@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 경조관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 寃쎌“愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 경조관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - 寃쎌“愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class CtsnnManageVO extends CtsnnManage implements Serializable {
@@ -21,7 +21,7 @@ public class CtsnnManageVO extends CtsnnManage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;	
 	/**
-	 * 배너 목록
+	 * 諛곕꼫 紐⑸줉
 	 */	
 	List<CtsnnManageVO> ctsnnManageList;
 
@@ -39,52 +39,52 @@ public class CtsnnManageVO extends CtsnnManage implements Serializable {
 	}
 
 	/**
-	*  신청자명	      
+	*  ?좎껌?먮챸	      
 	*/ 
 	private String usNm;
 	
 	/**
-	*  승인자명     
+	*  ?뱀씤?먮챸     
 	*/ 
 	private String sanctnerNm;
 	
 	/**
-	*  경조코드명   
+	*  寃쎌“肄붾뱶紐?  
 	*/ 
 	private String ctsnnCdNm;
 
 	/**
-	*  사용자 소속명	      
+	*  ?ъ슜???뚯냽紐?      
 	*/ 
 	private String orgnztNm;
 	
 	/**
-	*  승인자 소속명	      
+	*  ?뱀씤???뚯냽紐?      
 	*/ 
 	private String sanctnerOrgnztNm;
 
 	/**
-	*  검색시작일자      
+	*  寃?됱떆?묒씪??     
 	*/ 
 	private String searchFromDate;
 	
 	/**
-	*  검색종료일자
+	*  寃?됱쥌猷뚯씪??
 	*/ 
 	private String searchToDate;
 	
 	/**
-	*  검색 성명
+	*  寃???깅챸
 	*/ 
 	private String searchNm;
 	
 	/**
-	*  검색 진행구분
+	*  寃??吏꾪뻾援щ텇
 	*/ 
 	private String searchConfmAt;
 
 	/**
-	*  가족관계명
+	*  媛議깃?怨꾨챸
 	*/ 
 	private String relateNm;
 

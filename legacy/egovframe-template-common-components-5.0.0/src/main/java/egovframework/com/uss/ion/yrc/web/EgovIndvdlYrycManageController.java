@@ -20,20 +20,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 개인연차관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛쒖씤?곗감愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 개인연차관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * @author 표준프레임워크센터
+ * ?곸꽭?댁슜
+ * - 媛쒖씤?곗감愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * @author ?쒖??꾨젅?꾩썙?ъ꽱??
  * @version 1.0
  * @created 2014.11.14
  * <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *     수정일      	수정자          수정내용
+ *     ?섏젙??     	?섏젙??         ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2014.11.14		이기하          최초 생성
+ *   2014.11.14		?닿린??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -44,12 +44,12 @@ public class EgovIndvdlYrycManageController {
     private EgovIndvdlYrycManageService egovIndvdlYrycManageService;
 
     /**
-     * 개인연차관리정보를 관리하기 위해 등록된 개인연차관리 목록을 조회한다.
+     * 媛쒖씤?곗감愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉??媛쒖씤?곗감愿由?紐⑸줉??議고쉶?쒕떎.
      *
-     * @param IndvdlYrycManage - 개인연차관리 VO
-     * @return String - 리턴 Url
+     * @param IndvdlYrycManage - 媛쒖씤?곗감愿由?VO
+     * @return String - 由ы꽩 Url
      */
-    @IncludedInfo(name = "개인연차관리", order = 902, gid = 50)
+    @IncludedInfo(name = "媛쒖씤?곗감愿由?, order = 902, gid = 50)
     @RequestMapping(value = "/uss/ion/yrc/EgovIndvdlYrycManageList.do")
     public String selectIndvdlYrycManageList(IndvdlYrycManage indvdlYrycManage, ModelMap model) throws Exception {
 
@@ -67,10 +67,10 @@ public class EgovIndvdlYrycManageController {
     }
 
     /**
-     * 개인별연차관리 등록 화면으로 이동한다.
+     * 媛쒖씤蹂꾩뿰李④?由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
      *
-     * @param indvdlYrycManage - 연차관리 model
-     * @return String - 리턴 Url
+     * @param indvdlYrycManage - ?곗감愿由?model
+     * @return String - 由ы꽩 Url
      */
     @RequestMapping(value = "/uss/ion/yrc/EgovIndvdlYrycRegist.do", method = RequestMethod.GET)
     public String insertViewIndvdlYrycManage(@ModelAttribute IndvdlYrycManage indvdlYrycManage, ModelMap model) throws Exception {
@@ -91,10 +91,10 @@ public class EgovIndvdlYrycManageController {
     }
 
     /**
-     * 개인별연차관리 등록한다.
+     * 媛쒖씤蹂꾩뿰李④?由??깅줉?쒕떎.
      *
-     * @param indvdlYrycManage - 연차관리 model
-     * @return String - 리턴 Url
+     * @param indvdlYrycManage - ?곗감愿由?model
+     * @return String - 由ы꽩 Url
      */
     @RequestMapping(value = "/uss/ion/yrc/EgovIndvdlYrycRegist.do", method = RequestMethod.POST)
     public String insertIndvdlYrycManage(
@@ -126,9 +126,9 @@ public class EgovIndvdlYrycManageController {
     }
 
 	/**
-	 * 개인별연차관리 삭제한다.
-	 * @param indvdlYrycManage - 연차관리 model
-	 * @return String - 리턴 Url
+	 * 媛쒖씤蹂꾩뿰李④?由???젣?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/yrc/deleteIndvdlYryc.do", method=RequestMethod.POST)
 	public String deleteIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {

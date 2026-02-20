@@ -3,19 +3,19 @@ package egovframework.com.sec.ram.service;
 import java.util.List;
 
 /**
- * 권한별 롤 관리에 관한 서비스 인터페이스 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳蹂?濡?愿由ъ뿉 愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *  수정일                수정자             수정내용
+ *  ?섏젙??               ?섏젙??            ?섏젙?댁슜
  *  ----------   ---------   ---------------------------
- *  2009.03.20   이문준              최초 생성
- *  2021.02-09   신용호              updateAuthorRole 삭제
+ *  2009.03.20   ?대Ц以              理쒖큹 ?앹꽦
+ *  2021.02-09   ?좎슜??             updateAuthorRole ??젣
  *
  * </pre>
  */
@@ -23,7 +23,7 @@ import java.util.List;
 public interface EgovAuthorRoleManageService {
 
 	/**
-	 * 권한 롤 관계정보 목록 조회
+	 * 沅뚰븳 濡?愿怨꾩젙蹂?紐⑸줉 議고쉶
 	 * @param authorRoleManageVO AuthorRoleManageVO
 	 * @return List<AuthorRoleManageVO>
 	 * @exception Exception
@@ -31,21 +31,21 @@ public interface EgovAuthorRoleManageService {
 	public List<AuthorRoleManageVO> selectAuthorRoleList(AuthorRoleManageVO authorRoleManageVO) throws Exception;
 	
 	/**
-	 * 권한 롤 관계정보를 화면에서 입력하여 입력항목의 정합성을 체크하고 데이터베이스에 저장
+	 * 沅뚰븳 濡?愿怨꾩젙蹂대? ?붾㈃?먯꽌 ?낅젰?섏뿬 ?낅젰??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
 	 * @param authorRoleManage AuthorRoleManage
 	 * @exception Exception
 	 */
 	public void insertAuthorRole(AuthorRoleManage authorRoleManage) throws Exception;
 	
 	/**
-	 * 권한 롤 관계정보를 화면에 조회하여 데이터베이스에서 삭제
+	 * 沅뚰븳 濡?愿怨꾩젙蹂대? ?붾㈃??議고쉶?섏뿬 ?곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * @param authorRoleManage AuthorRoleManage
 	 * @exception Exception
 	 */
 	public void deleteAuthorRole(AuthorRoleManage authorRoleManage) throws Exception;
 
     /**
-	 * 목록조회 카운트를 반환한다
+	 * 紐⑸줉議고쉶 移댁슫?몃? 諛섑솚?쒕떎
 	 * @param authorRoleManageVO AuthorRoleManageVO
 	 * @return int
 	 * @exception Exception

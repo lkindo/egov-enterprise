@@ -26,27 +26,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * -장애관리정보에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * -?μ븷愿由ъ젙蹂댁뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 장애관리정보에 대한 등록, 수정, 삭제, 조회 등의 기능을 제공한다.
- * - 장애관리정보의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?μ븷愿由ъ젙蹂댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 ?깆쓽 湲곕뒫???쒓났?쒕떎.
+ * - ?μ븷愿由ъ젙蹂댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이문준
+ * @author ?대Ц以
  * @since 2010.06.28
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.28  이문준          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.07.26  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(변수명에 밑줄 사용)
+ *   2010.06.28  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.07.26  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
@@ -63,7 +63,7 @@ public class EgovTroblProcessController {
 	private EgovCmmUseService egovCmmUseService;
 
 	/**
-	 * 장애처리관리 목록화면으로 이동
+	 * ?μ븷泥섎━愿由?紐⑸줉?붾㈃?쇰줈 ?대룞
 	 * 
 	 * @return String
 	 */
@@ -73,12 +73,12 @@ public class EgovTroblProcessController {
 	}
 
 	/**
-	 * 장애처리정보를 관리하기 위해 대상 장애처리목록을 조회한다.
+	 * ?μ븷泥섎━?뺣낫瑜?愿由ы븯湲??꾪빐 ????μ븷泥섎━紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param troblManageVO - 장애처리 Vo
-	 * @return String - 리턴 Url
+	 * @param troblManageVO - ?μ븷泥섎━ Vo
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "장애처리결과관리", order = 1190, gid = 60)
+	@IncludedInfo(name = "?μ븷泥섎━寃곌낵愿由?, order = 1190, gid = 60)
 	@RequestMapping(value = "/sym/tbm/tbp/selectTroblProcessList.do")
 	public String selectTroblProcessList(@ModelAttribute("troblProcessVO") TroblProcessVO troblProcessVO,
 			ModelMap model) throws Exception {
@@ -115,10 +115,10 @@ public class EgovTroblProcessController {
 	}
 
 	/**
-	 * 등록된 장애처리의 상세정보를 조회한다.
+	 * ?깅줉???μ븷泥섎━???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param troblManageVO - 장애관리 Vo
-	 * @return String - 리턴 Url
+	 * @param troblManageVO - ?μ븷愿由?Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/sym/tbm/tbp/getTroblProcess.do")
 	public String selectTroblProcess(@RequestParam("troblId") String troblId,
@@ -132,10 +132,10 @@ public class EgovTroblProcessController {
 	}
 
 	/**
-	 * 장애처리정보를 신규로 등록한다.
+	 * ?μ븷泥섎━?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param troblManage - 장애관리 model
-	 * @return String - 리턴 Url
+	 * @param troblManage - ?μ븷愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/sym/tbm/tbp/addTroblProcess.do")
 	public String insertTroblProcess(@ModelAttribute("troblProcess") TroblProcess troblProcess,
@@ -158,10 +158,10 @@ public class EgovTroblProcessController {
 	}
 
 	/**
-	 * 기 등록된 장애처리정보를 삭제한다.
+	 * 湲??깅줉???μ븷泥섎━?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param troblManage - 장애관리 model
-	 * @return String - 리턴 Url
+	 * @param troblManage - ?μ븷愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/sym/tbm/tbp/removeTroblProcess.do")
 	public String deleteTroblProcess(@RequestParam("troblId") String troblId,
@@ -175,7 +175,7 @@ public class EgovTroblProcessController {
 	}
 
 	/**
-	 * 공통코드 호출
+	 * 怨듯넻肄붾뱶 ?몄텧
 	 * 
 	 * @param comDefaultCodeVO ComDefaultCodeVO
 	 * @param codeId           String

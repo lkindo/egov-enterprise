@@ -3,100 +3,100 @@ package egovframework.com.utl.sys.nsm.service;
 import java.util.Map;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링대상에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 네트워크서비스 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 public interface EgovNtwrkSvcMntrngService {
 
 	/**
-	 * 네트워크서비스 모니터링대상 목록을 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  Map<String, Object> - 네트워크서비스 모니터링 List
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???紐⑸줉??議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
+	 * @return  Map<String, Object> - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 List
 	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
+	 * @param ntwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
 	 */
 	public Map<String, Object> selectNtwrkSvcMntrngList(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링대상을 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓣 議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
+	 * @return  NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
 	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
+	 * @param ntwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
 	 */
 	public NtwrkSvcMntrngVO selectNtwrkSvcMntrng(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링대상을 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓣 ?섏젙?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * @param ntwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 */
 	public void updateNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링대상을 등록한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓣 ?깅줉?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * @param ntwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 */
 	public void insertNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링대상을 등록하기 위한 중복 조회를 수행한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓣 ?깅줉?섍린 ?꾪븳 以묐났 議고쉶瑜??섑뻾?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
 	 * @return  int
 	 *
-	 * @param ntwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
+	 * @param ntwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
 	 */
 	public int selectNtwrkSvcMntrngCheck(NtwrkSvcMntrngVO ntwrkSvcMntrngVO) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링대상을 삭제한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓣 ??젣?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * @param ntwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 */
 	public void deleteNtwrkSvcMntrng(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링 결과를 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 *
-	 * @param ntwrkSvcMntrng - 네트워크서비스 모니터링대상 model
+	 * @param ntwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
 	 */
 	public void updateNtwrkSvcMntrngSttus(NtwrkSvcMntrng ntwrkSvcMntrng) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링 로그 목록을 조회한다.
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 紐⑸줉??議고쉶?쒕떎.
 	 * @param NtwrkSvcMntrngLogVO
-	 * @return  Map<String, Object> - 네트워크서비스 모니터링 로그 List
+	 * @return  Map<String, Object> - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 List
 	 *
 	 * @param ntwrkSvcMntrngLogVO
 	 */
 	public Map<String, Object> selectNtwrkSvcMntrngLogList(NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링 로그를 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇瑜?議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
 	 *
-	 * @param ntwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
+	 * @param ntwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
 	 */
 	public NtwrkSvcMntrngLogVO selectNtwrkSvcMntrngLog(NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO) throws Exception;
 
 	/**
-	 * 네트워크서비스 모니터링 로그를 등록한다.
-	 * @param NtwrkSvcMntrngLog - 네트워크서비스 모니터링로그 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇瑜??깅줉?쒕떎.
+	 * @param NtwrkSvcMntrngLog - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 model
 	 *
-	 * @param ntwrkSvcMntrngLog - 네트워크서비스 모니터링로그 model
+	 * @param ntwrkSvcMntrngLog - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 model
 	 */
 	public void insertNtwrkSvcMntrngLog(NtwrkSvcMntrngLog ntwrkSvcMntrngLog) throws Exception;
 }

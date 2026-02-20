@@ -13,25 +13,25 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "도움말 정보 DTO")
+@Schema(description = "Description")
 public class HpcmDto {
 
-    @Schema(description = "도움말 ID")
+    @Schema(description = "Description")
     private String hpcmId;
 
-    @Schema(description = "도움말 구분 코드")
+    @Schema(description = "Description")
     private String hpcmSeCode;
 
-    @Schema(description = "도움말 정의")
+    @Schema(description = "Description")
     private String hpcmDf;
 
-    @Schema(description = "도움말 설명")
+    @Schema(description = "Description")
     private String hpcmDc;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static HpcmDto from(Hpcm entity) {

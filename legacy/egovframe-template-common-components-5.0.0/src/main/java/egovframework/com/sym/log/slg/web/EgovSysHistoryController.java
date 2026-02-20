@@ -30,22 +30,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 시스템 이력관리를 위한 웹 컨트롤러 클래스
+ * ?쒖뒪???대젰愿由щ? ?꾪븳 ??而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.03.09
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.09  이삼섭          최초 작성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2018.09.28  정진오          updateSysHistory validation처리시 예외 수정
- *   2025.07.14  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.09  ?댁궪??         理쒖큹 ?묒꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2018.09.28  ?뺤쭊??         updateSysHistory validation泥섎━???덉쇅 ?섏젙
+ *   2025.07.14  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -68,7 +68,7 @@ public class EgovSysHistoryController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 시스템이력 등록
+	 * ?쒖뒪?쒖씠???깅줉
 	 *
 	 * @param history
 	 * @param status
@@ -109,7 +109,7 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 등록 화면
+	 * ?쒖뒪?쒖씠???깅줉 ?붾㈃
 	 *
 	 * @return
 	 * @throws Exception
@@ -125,7 +125,7 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 수정
+	 * ?쒖뒪?쒖씠???섏젙
 	 *
 	 * @param history
 	 * @param status
@@ -176,7 +176,7 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 수정 화면
+	 * ?쒖뒪?쒖씠???섏젙 ?붾㈃
 	 *
 	 * @param historyVO
 	 * @param model
@@ -197,7 +197,7 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 삭제
+	 * ?쒖뒪?쒖씠????젣
 	 *
 	 * @param history
 	 * @param status
@@ -219,14 +219,14 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 목록 조회
+	 * ?쒖뒪?쒖씠??紐⑸줉 議고쉶
 	 *
 	 * @param history
 	 * @param model
 	 * @return
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "시스템이력관리", listUrl = "/sym/log/slg/SelectSysHistoryList.do", order = 1060, gid = 60)
+	@IncludedInfo(name = "?쒖뒪?쒖씠?κ?由?, listUrl = "/sym/log/slg/SelectSysHistoryList.do", order = 1060, gid = 60)
 	@RequestMapping(value = "/sym/log/slg/SelectSysHistoryList.do")
 	public String selectSysHistoryList(@ModelAttribute("searchVO") SysHistoryVO historyVO, ModelMap model)
 			throws Exception {
@@ -253,7 +253,7 @@ public class EgovSysHistoryController {
 	}
 
 	/**
-	 * 시스템이력 상세 조회
+	 * ?쒖뒪?쒖씠???곸꽭 議고쉶
 	 *
 	 * @param historyVO
 	 * @param model

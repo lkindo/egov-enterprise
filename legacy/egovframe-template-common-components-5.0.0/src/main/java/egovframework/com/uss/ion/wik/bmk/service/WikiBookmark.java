@@ -5,41 +5,41 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 위키북마크 Model and VO Class 구현
- * @author 공통콤포넌트 장동한
+ * ?꾪궎遺곷쭏??Model and VO Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.10.20
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.20  장동한          최초 생성
+ *   2010.10.20  ?λ룞??         理쒖큹 ?앹꽦
  * 
  * </pre>
  */
 @SuppressWarnings("serial")
 public class WikiBookmark extends ComDefaultVO implements Serializable{
     	
-	/** 위키 북마크 아이디 */
+	/** ?꾪궎 遺곷쭏???꾩씠??*/
 	private String wikiBkmkId;	
 	
-	/** 사용자ID */
+	/** ?ъ슜?륤D */
 	private String usid;
 	
-	/** 북마크명 */
+	/** 遺곷쭏?щ챸 */
 	private String wikiBkmkNm;
 	
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
 	/**

@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 /**
- * 명함 사용 정보 Repository
+ * 筌뤿굟釉??????類ｋ궖 Repository
  */
 public interface NameCardUserRepository extends JpaRepository<NameCardUser, NameCardUserId> {
 

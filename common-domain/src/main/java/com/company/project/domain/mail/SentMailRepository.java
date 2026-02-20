@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 諛쒖넚硫붿씪 Repository
+ * ?꾩룇裕??룹춺?븐슦逾?Repository
  */
 public interface SentMailRepository extends JpaRepository<SentMail, String>, SentMailRepositoryCustom {
 

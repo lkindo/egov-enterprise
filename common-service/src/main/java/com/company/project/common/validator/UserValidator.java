@@ -7,7 +7,7 @@ import org.springframework.util.StringUtils;
 import java.util.regex.Pattern;
 
 /**
- * ?�용??관??검�??�틸리티 ?�래??
+ * ?ъ슜??愿??寃利??좏떥由ы떚 ?대옒??
  */
 public class UserValidator {
 
@@ -15,10 +15,10 @@ public class UserValidator {
     private static final Pattern PASSWORD_PATTERN = Pattern
             .compile("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$");
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{4,20}$");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-??\s]{2,50}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z媛-??\s]{2,50}$");
 
     /**
-     * ?�용???�록 ?�청 검�?
+     * ?ъ슜???깅줉 ?붿껌 寃利?
      */
     public static void validateUserSignupRequest(UserSignupRequest request) {
         if (request == null) {
@@ -52,7 +52,7 @@ public class UserValidator {
     }
 
     /**
-     * ?�메??주소 검�?
+     * ?대찓??二쇱냼 寃利?
      */
     public static void validateEmail(String email) {
         if (!StringUtils.hasText(email) || !EMAIL_PATTERN.matcher(email).matches()) {
@@ -61,7 +61,7 @@ public class UserValidator {
     }
 
     /**
-     * ?�용???�티??검�?
+     * ?ъ슜???뷀떚??寃利?
      */
     public static void validateUser(User user) {
         if (user == null) {

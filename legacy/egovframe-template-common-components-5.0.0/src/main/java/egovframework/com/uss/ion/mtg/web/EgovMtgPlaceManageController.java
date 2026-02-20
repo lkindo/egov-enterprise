@@ -36,27 +36,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 회의실관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅺ?由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 회의실관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 회의실관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅺ?由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?뚯쓽?ㅺ?由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.15  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -72,7 +72,7 @@ public class EgovMtgPlaceManageController {
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -80,7 +80,7 @@ public class EgovMtgPlaceManageController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 회의실관리 목록화면 이동
+	 * ?뚯쓽?ㅺ?由?紐⑸줉?붾㈃ ?대룞
 	 * 
 	 * @return String
 	 * @exception Exception
@@ -92,12 +92,12 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실관리정보를 관리하기 위해 등록된 회의실관리 목록을 조회한다.
+	 * ?뚯쓽?ㅺ?由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???뚯쓽?ㅺ?由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "회의실관리", order = 870, gid = 50)
+	@IncludedInfo(name = "?뚯쓽?ㅺ?由?, order = 870, gid = 50)
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceManageList.do")
 	public String selectMtgPlaceManageList(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			@ModelAttribute("mtgPlaceManage") MtgPlaceManage mtgPlaceManage, BindingResult bindingResult,
@@ -127,17 +127,17 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 등록된 회의실관리의 상세정보를 조회한다.
+	 * ?깅줉???뚯쓽?ㅺ?由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceManage.do")
 	public String selectMtgPlaceManage(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			@ModelAttribute("mtgPlaceManage") MtgPlaceManage mtgPlaceManage, @RequestParam Map<?, ?> commandMap,
 			ModelMap model) throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM070");
 		List<CmmnDetailCode> lcSeCodeList = cmmUseService.selectCmmCodeDetail(vo);
@@ -154,9 +154,9 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실관리 등록 화면으로 이동한다.
+	 * ?뚯쓽?ㅺ?由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
-	 * @return String - 리턴 Url
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/insertViewMtgPlace.do")
 	public String insertViewMtgPlaceManage(@ModelAttribute("mtgPlaceManage") MtgPlaceManage mtgPlaceManage,
@@ -172,10 +172,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실관리정보를 신규로 등록한다.
+	 * ?뚯쓽?ㅺ?由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param mtgPlaceManage - 회의실관리 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManage - ?뚯쓽?ㅺ?由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/insertMtgPlace.do")
@@ -188,7 +188,7 @@ public class EgovMtgPlaceManageController {
 			model.addAttribute("mtgPlaceManageVO", mtgPlaceManageVO);
 			return "egovframework/com/uss/ion/mtg/EgovMtgPlaceRegist";
 		} else {
-			// 첨부파일 관련 첨부파일ID 생성
+			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
@@ -196,10 +196,10 @@ public class EgovMtgPlaceManageController {
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "MTG_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+				atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 			}
-			// 리턴받은 첨부파일ID를 셋팅한다..
-			mtgPlaceManage.setAtchFileId(atchFileId); // 첨부파일 ID
+			// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+			mtgPlaceManage.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
@@ -212,10 +212,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 기 등록된 회의실관리정보를 수정한다.
+	 * 湲??깅줉???뚯쓽?ㅺ?由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param mtgPlaceManage - 회의실관리 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManage - ?뚯쓽?ㅺ?由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/updtMtgPlace.do")
@@ -230,7 +230,7 @@ public class EgovMtgPlaceManageController {
 			return "egovframework/com/uss/ion/mtg/EgovMtgPlaceUpdt";
 		} else {
 
-			// 첨부파일 관련 ID 생성 start....
+			// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 			String atchFileId = mtgPlaceManage.getAtchFileId();
 
 			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -242,8 +242,8 @@ public class EgovMtgPlaceManageController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "MTG_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					mtgPlaceManage.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					mtgPlaceManage.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					FileVO fvo = new FileVO();
@@ -253,7 +253,7 @@ public class EgovMtgPlaceManageController {
 					fileMngService.updateFileInfs(fvoList);
 				}
 			}
-			// 첨부파일 관련 ID 생성 end...
+			// 泥⑤??뚯씪 愿??ID ?앹꽦 end...
 
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
@@ -266,25 +266,25 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 기 등록된 회의실관리정보를 삭제한다.
+	 * 湲??깅줉???뚯쓽?ㅺ?由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param mtgPlaceManage - 회의실관리 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManage - ?뚯쓽?ㅺ?由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/deleteMtgPlaceManage.do")
 	public String deleteMtgPlaceManage(@ModelAttribute("mtgPlaceManage") MtgPlaceManage mtgPlaceManage,
 			SessionStatus status, ModelMap model) throws Exception {
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = mtgPlaceManage.getAtchFileId();
 
 		egovMtgPlaceManageService.deleteMtgPlaceManage(mtgPlaceManage);
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		status.setComplete();
 		model.addAttribute("message", egovMessageSource.getMessage("success.common.delete"));
@@ -292,10 +292,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 등록된 회의실관리의 이미지 상세정보를 조회한다.
+	 * ?깅줉???뚯쓽?ㅺ?由ъ쓽 ?대?吏 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceImage.do")
 	public String selectMtgPlaceImage(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
@@ -316,21 +316,21 @@ public class EgovMtgPlaceManageController {
 		return "egovframework/com/uss/ion/mtg/EgovMtgPlaceImageDetail";
 	}
 
-	/**** 회의실 예약 ****/
+	/**** ?뚯쓽???덉빟 ****/
 
 	/**
-	 * 회의실예약 정보를 관리하기 위해 등록된 회의실예약 목록을 조회한다.
+	 * ?뚯쓽?ㅼ삁???뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???뚯쓽?ㅼ삁??紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "회의실예약관리", order = 871, gid = 50)
+	@IncludedInfo(name = "?뚯쓽?ㅼ삁?쎄?由?, order = 871, gid = 50)
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceResveManageList.do")
 	public String selectMtgPlaceResveManageList(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			ModelMap model) throws Exception {
 		/*
-		 * ***************************************************************** // 캘런더 설정
-		 * 로직
+		 * ***************************************************************** // 罹섎윴???ㅼ젙
+		 * 濡쒖쭅
 		 */
 		Calendar calNow = Calendar.getInstance();
 		/*
@@ -368,10 +368,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실예약 신청 화면을 조회한다.
+	 * ?뚯쓽?ㅼ삁???좎껌 ?붾㈃??議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceResveManage.do")
@@ -379,7 +379,7 @@ public class EgovMtgPlaceManageController {
 			@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve, BindingResult bindingResult,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 		String sTempResveDe = mtgPlaceManageVO.getResveDe();
 		String sTempResveBeginTm = mtgPlaceManageVO.getResveBeginTm();
 		String sTempResveEndTm = mtgPlaceManageVO.getResveEndTm();
@@ -390,7 +390,7 @@ public class EgovMtgPlaceManageController {
 		resultVO.setResveEndTm(sTempResveEndTm);
 		resultVO.setResveDe(EgovDateUtil.formatDate(resultVO.getResveDe(), "-"));
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		resultVO.setMtgPlaceTemp4(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()));
 		resultVO.setMtgPlaceTemp5(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getOrgnztNm()));
@@ -401,16 +401,16 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 등록된 회의실예약 상세정보를 조회한다.
+	 * ?깅줉???뚯쓽?ㅼ삁???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/selectMtgPlaceResveManageDetail.do")
 	public String selectMtgPlaceResveManageDetail(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
 			@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve, BindingResult bindingResult,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
-		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // 상세정보 구분
+		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
 
 		MtgPlaceManageVO resultVO = egovMtgPlaceManageService.selectMtgPlaceResveDetail(mtgPlaceManageVO);
 		resultVO.setResveDe(EgovDateUtil.formatDate(resultVO.getResveDe(), "-"));
@@ -443,10 +443,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실예약 정보를 신규로 등록한다.
+	 * ?뚯쓽?ㅼ삁???뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param mtgPlaceResve - 회의실예약 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceResve - ?뚯쓽?ㅼ삁??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/insertMtgPlaceResve.do")
 	public String insertMtgPlaceResveManage(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
@@ -472,10 +472,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 기 등록된 회의실예약 정보를 수정한다.
+	 * 湲??깅줉???뚯쓽?ㅼ삁???뺣낫瑜??섏젙?쒕떎.
 	 * 
-	 * @param mtgPlaceResve - 회의실예약 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceResve - ?뚯쓽?ㅼ삁??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/mtg/updtMtgPlaceResve.do")
@@ -498,10 +498,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 기 등록된 회의실예약 정보를 삭제한다.
+	 * 湲??깅줉???뚯쓽?ㅼ삁???뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param mtgPlaceResve - 회의실예약 model
-	 * @return String - 리턴 Url
+	 * @param mtgPlaceResve - ?뚯쓽?ㅼ삁??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/deleteMtgPlaceResve.do")
 	public String deleteMtgPlaceResveManage(@ModelAttribute("mtgPlaceResve") MtgPlaceResve mtgPlaceResve,
@@ -514,10 +514,10 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 회의실 중복여부 체크.
+	 * ?뚯쓽??以묐났?щ? 泥댄겕.
 	 * 
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return int - 중복건수
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return int - 以묐났嫄댁닔
 	 */
 	@RequestMapping(value = "/uss/ion/mtg/mtgPlaceResveDplactCeck.do")
 	public String mtgPlaceResveDplactCeck(@ModelAttribute("mtgPlaceManageVO") MtgPlaceManageVO mtgPlaceManageVO,
@@ -536,7 +536,7 @@ public class EgovMtgPlaceManageController {
 	}
 
 	/**
-	 * 0을 붙여 반환
+	 * 0??遺숈뿬 諛섑솚
 	 * 
 	 * @return String
 	 * @throws

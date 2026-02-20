@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 서경석(슈퍼개발자K3)
+ * @author ?쒓꼍???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.easybatch.item;
 
@@ -44,18 +44,18 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.WritableResource;
 
 /**
- * @author 서경석
+ * @author ?쒓꼍??
  * @since 2014.11.05
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  -------       --------          ---------------------------
- *   2014.11.05    서경석           최초 생성
- *   2014.11.28    표준프레임워크	공통컴포넌트 추가 적용 (패키지 변경)
+ *   2014.11.05    ?쒓꼍??          理쒖큹 ?앹꽦
+ *   2014.11.28    ?쒖??꾨젅?꾩썙??怨듯넻而댄룷?뚰듃 異붽? ?곸슜 (?⑦궎吏 蹂寃?
  *
  * </pre>
  */
@@ -81,27 +81,27 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 	private static final String FIXED_LENGTH_FILE_TYPE = "fixedLengthFile";
 	private static final String JDBC_DB_TYPE = "jdbcDb";
 
-	// XML 설정 내용을 출력하기 위한 설정
+	// XML ?ㅼ젙 ?댁슜??異쒕젰?섍린 ?꾪븳 ?ㅼ젙
 	boolean printXmlConf = false;
 
-	// 실제 동작하는 Reader
+	// ?ㅼ젣 ?숈옉?섎뒗 Reader
 	private ItemWriter<T> writer;
 
-	// 공통 설정
+	// 怨듯넻 ?ㅼ젙
 	private String stepName;
 	private JobParameters jobParameters;
 	private String writerResourceType;
 
-	// File 입력인 경우 사용되는 설정
-	private Resource resource; // 공통
-	private String resourceName; // 공통
-	private String[] fieldNames; // 공통
-	private String names; // 공통
-	private String delimiter; // delimited 방식인 경우
-	private int[] fieldRanges; // fixedLength 방식인 경우
+	// File ?낅젰??寃쎌슦 ?ъ슜?섎뒗 ?ㅼ젙
+	private Resource resource; // 怨듯넻
+	private String resourceName; // 怨듯넻
+	private String[] fieldNames; // 怨듯넻
+	private String names; // 怨듯넻
+	private String delimiter; // delimited 諛⑹떇??寃쎌슦
+	private int[] fieldRanges; // fixedLength 諛⑹떇??寃쎌슦
 	private String ranges;
 
-	// DB 입력인 경우 사용되는 설정
+	// DB ?낅젰??寃쎌슦 ?ъ슜?섎뒗 ?ㅼ젙
 	private DataSource dataSource;
 	private String sql;
 	private String[] params;
@@ -121,14 +121,14 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 			printXmlConf = true;
 		}
 
-		// Input Resource Type에 따라 필요한 설정 값 세팅
+		// Input Resource Type???곕씪 ?꾩슂???ㅼ젙 媛??명똿
 		makeWriterConfigValue();
 	}
 
 	@Override
 	public void open(ExecutionContext executionContext)
 		throws ItemStreamException {
-		// ItemReader 생성
+		// ItemReader ?앹꽦
 		makeItemWriter();
 
 		if (this.writer instanceof ItemStream) {
@@ -163,7 +163,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 			if (DELIMITED_FILE_TYPE.equalsIgnoreCase(this.writerResourceType)
 				|| FIXED_LENGTH_FILE_TYPE.equalsIgnoreCase(this.writerResourceType)) {
 
-				// 입력 리소스가 File인 경우 공통 처리 부분
+				// ?낅젰 由ъ냼?ㅺ? File??寃쎌슦 怨듯넻 泥섎━ 遺遺?
 				this.resourceName = jobParameters.getString(stepName + WRITER_RESOURCE_NAME_KEY);
 				this.names = jobParameters.getString(stepName + WRITER_FIELD_NAMES_KEY);
 
@@ -171,7 +171,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 					this.delimiter = jobParameters.getString(stepName + WRITER_DELIMITER_KEY);
 					if (this.resourceName == null || this.delimiter == null || this.names == null) {
 						throw new RuntimeException(
-							stepName + "스텝의 Writer 설정에서 resourceName, delimiter, names는 필수입니다. 다음 처럼 설정하세요.\n"
+							stepName + "?ㅽ뀦??Writer ?ㅼ젙?먯꽌 resourceName, delimiter, names???꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 								+ stepName + ".writer.resourceName=file:./inputs/csvData.csv " + stepName
 								+ ".writer.delimiter=, " + stepName + ".writer.fieldNames=name,age ");
 					}
@@ -179,7 +179,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 					this.ranges = jobParameters.getString(stepName + WRITER_FIELD_RANGES_KEY);
 					if (this.resourceName == null || ranges == null || this.names == null) {
 						throw new RuntimeException(
-							stepName + "스텝의 Reader 설정에서 resourceName, fieldRanges, names는 필수입니다. 다음 처럼 설정하세요.\n"
+							stepName + "?ㅽ뀦??Reader ?ㅼ젙?먯꽌 resourceName, fieldRanges, names???꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 								+ stepName + ".writer.resourceName=file:./target/test-outputs/txtOutput.txt " + stepName
 								+ ".writer.fieldRanges=9,2 " + stepName + ".writer.fieldNames=name,age ");
 					}
@@ -199,7 +199,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 				tempParams = jobParameters.getString(stepName + WRITER_PARAMS_KEY);
 
 				if (this.sql == null || tempParams == null) {
-					throw new RuntimeException(stepName + "스텝의 Writer 설정에서 sql, params는 필수입니다. 다음 처럼 설정하세요.\n"
+					throw new RuntimeException(stepName + "?ㅽ뀦??Writer ?ㅼ젙?먯꽌 sql, params???꾩닔?낅땲?? ?ㅼ쓬 泥섎읆 ?ㅼ젙?섏꽭??\n"
 						+ stepName + ".writer.sql=UPDATE CUSTOMER set credit =? where name =? " + stepName
 						+ ".writer.params=credit,name ");
 				}
@@ -208,8 +208,8 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 			}
 
 		} else {
-			throw new RuntimeException(stepName + ".writerResourceType=delimitedFile'처럼, 출력 리소스 타입을 Job 파라미터로 입력하세요.\n"
-				+ "리소스 타입 종류) delimitedFile, fixedLengthFile, jdbcDb");
+			throw new RuntimeException(stepName + ".writerResourceType=delimitedFile'泥섎읆, 異쒕젰 由ъ냼????낆쓣 Job ?뚮씪誘명꽣濡??낅젰?섏꽭??\n"
+				+ "由ъ냼?????醫낅쪟) delimitedFile, fixedLengthFile, jdbcDb");
 		}
 	}
 
@@ -256,7 +256,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 				((FlatFileItemWriter<T>)this.writer).afterPropertiesSet();
 			} catch (Exception e) {
 				throw new RuntimeException(
-					this.writerResourceType + " 타입의 File을 write 하기 위한 FlatFileItemWriter 생성에 실패 하였습니다.");
+					this.writerResourceType + " ??낆쓽 File??write ?섍린 ?꾪븳 FlatFileItemWriter ?앹꽦???ㅽ뙣 ?섏??듬땲??");
 			}
 		} else if (JDBC_DB_TYPE.equalsIgnoreCase(this.writerResourceType)) {
 
@@ -277,7 +277,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 	private void printXmlConfig() {
 		if (printXmlConf) {
 			if (DELIMITED_FILE_TYPE.equalsIgnoreCase(this.writerResourceType)) {
-				LOGGER.info("======= " + stepName + " WRITER 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " WRITER ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".writer\" class=\"org.springframework.batch.item.file.FlatFileItemWriter\" scope=\"step\">\n"
 					+ "  <property name=\"resource\" value=\"" + this.resourceName + "\" />\n"
@@ -294,7 +294,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 					+ "</bean>\n"
 					+ "================================================");
 			} else if (FIXED_LENGTH_FILE_TYPE.equalsIgnoreCase(this.writerResourceType)) {
-				LOGGER.info("======= " + stepName + " Writer 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " Writer ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".writer\" class=\"org.springframework.batch.item.file.FlatFileItemWriter\" scope=\"step\">\n"
 					+ "  <property name=\"resource\" value=\"" + this.resourceName + "\" />\n"
@@ -311,7 +311,7 @@ public class DefaultItemWriter<T> implements ItemStreamWriter<T> {
 					+ "</bean>\n"
 					+ "================================================");
 			} else if (JDBC_DB_TYPE.equalsIgnoreCase(this.writerResourceType)) {
-				LOGGER.info("======= " + stepName + " Writer 설정(XML 버전) =========\n"
+				LOGGER.info("======= " + stepName + " Writer ?ㅼ젙(XML 踰꾩쟾) =========\n"
 					+ "<bean id=\"" + stepName
 					+ ".writer\" class=\"org.egovframe.rte.bat.core.item.database.EgovJdbcBatchItemWriter\">\n"
 					+ "  <property name=\"assertUpdates\" value=\"true\" />\n"

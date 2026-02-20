@@ -7,19 +7,19 @@ import jakarta.annotation.Resource;
 
 
 /**
- * 게시물 통계 집계를 위한 스케줄링 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪븳 ?ㅼ?以꾨쭅 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.04.16
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.04.16  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.bst)
+ *  2009.04.16  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.bst)
  *
  *  </pre>
  */
@@ -32,7 +32,7 @@ public class EgovBbsStatsScheduling extends EgovAbstractServiceImpl {
     private EgovBbsStatsService bbsStatsService;
 
 	/**
-	 * 게시물 통계를 위한 집계를 하루단위로 작업하는 배치 프로그램
+	 * 寃뚯떆臾??듦퀎瑜??꾪븳 吏묎퀎瑜??섎（?⑥쐞濡??묒뾽?섎뒗 諛곗튂 ?꾨줈洹몃옩
 	 * @exception Exception
 	 */
 	public void summaryBbsStats() throws Exception {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.model.encoder;
 
@@ -30,20 +30,20 @@ import jakarta.websocket.Encoder;
 import jakarta.websocket.EndpointConfig;
 
 /**
- * 서버에서 클라이언트로 전달되는 메시지를 encoding하는 클래스
+ * ?쒕쾭?먯꽌 ?대씪?댁뼵?몃줈 ?꾨떖?섎뒗 硫붿떆吏瑜?encoding?섎뒗 ?대옒??
  * 
- * @author 이영지
+ * @author ?댁쁺吏
  * @since 2014.11.27
  * @version 3.9.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.11.27  이영지          최초 생성
- *   2025.06.24  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-UncommentedEmptyMethodBody(주석 처리되지 않은 빈 메서드 본문)
+ *   2014.11.27  ?댁쁺吏          理쒖큹 ?앹꽦
+ *   2025.06.24  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UncommentedEmptyMethodBody(二쇱꽍 泥섎━?섏? ?딆? 鍮?硫붿꽌??蹂몃Ц)
  *
  *      </pre>
  */
@@ -60,7 +60,7 @@ public class MessageEncoder implements Encoder.Text<Message> {
 	}
 
 	/**
-	 * 서버에서 클라이언트로 전달되는 메시지를 encoding하는 함수
+	 * ?쒕쾭?먯꽌 ?대씪?댁뼵?몃줈 ?꾨떖?섎뒗 硫붿떆吏瑜?encoding?섎뒗 ?⑥닔
 	 */
 	@Override
 	public String encode(Message message) throws EncodeException {

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 연계 기관 서비스 인터페이스
+ * ?곌퀎 湲곌? ?쒕퉬???명꽣?섏씠??
  */
 public interface EgovIntegrationService {
 

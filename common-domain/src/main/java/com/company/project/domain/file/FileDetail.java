@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 파일 상세 엔티티 (NFILEDETAIL 테이블 매핑)
+ * ???뵬 ?怨멸쉭 ?酉???(NFILEDETAIL ???뵠??筌띲끋釉?
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,22 +28,22 @@ public class FileDetail {
     private Integer fileSn;
 
     @Column(name = "FILE_STRE_COURS", length = 6000)
-    private String fileStreCours; // 저장 경로
+    private String fileStreCours; // ????野껋럥以?
 
     @Column(name = "STRE_FILE_NM", length = 765)
-    private String streFileNm; // 저장 파일명
+    private String streFileNm; // ???????뵬筌?
 
     @Column(name = "ORIGNL_FILE_NM", length = 765)
-    private String orignlFileNm; // 원본 파일명
+    private String orignlFileNm; // ?癒?궚 ???뵬筌?
 
     @Column(name = "FILE_EXTSN", length = 60)
-    private String fileExtsn; // 확장자
+    private String fileExtsn; // ?類ㅼ삢??
 
     @Column(name = "FILE_SIZE")
-    private Long fileMg; // 파일 크기
+    private Long fileMg; // ???뵬 ??由?
 
     @Column(name = "FILE_CN")
-    private String fileCn; // 파일 설명
+    private String fileCn; // ???뵬 ??살구
 
     @Builder
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,

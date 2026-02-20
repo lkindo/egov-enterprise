@@ -22,7 +22,7 @@
 		<property name="driverClassName" value="${Globals.mysql.DriverClassName}"/>
 		<property name="url" value="${Globals.mysql.Url}" />
 		<property name="username" value="${Globals.mysql.UserName}"/>
-		<!-- 암호화(Crypto) 관련 서비스 https://www.egovframe.go.kr/wiki/doku.php?id=egovframework:rte2:fdl:crypto_simplify_v3_8 참조 -->
+		<!-- ?뷀샇??Crypto) 愿???쒕퉬??https://www.egovframe.go.kr/wiki/doku.php?id=egovframework:rte2:fdl:crypto_simplify_v3_8 李몄“ -->
 		<property name="password" value="#{egovPasswordResolver.resolvePassword('Globals.mysql.Password')}"/>
 	</bean>
 	</beans>
@@ -73,9 +73,9 @@
     </bean>
     </beans>
     <!--
-    	CUBRID 가이드 참조
+    	CUBRID 媛?대뱶 李몄“
     	https://www.cubrid.com/tutorial/3794188
-    	* DBCP를 통해 최초 connection 시 해당 connection이 유효한지 체크하는 isValid를 호출
+    	* DBCP瑜??듯빐 理쒖큹 connection ???대떦 connection???좏슚?쒖? 泥댄겕?섎뒗 isValid瑜??몄텧
      -->
 
 	<!-- MariaDB -->
@@ -108,13 +108,13 @@
 	</bean>
 	</beans>
 
-    <!-- DB Pool이 생성이 되더라고 특정 시간 호출되지 않으면 DBMS 설정에 따라 연결을 끊어질 때
-		이 경우 DBCP를 사용하셨다면.. 다음과 같은 설정을 추가하시면 연결을 유지시켜 줍니다. -->
+    <!-- DB Pool???앹꽦???섎뜑?쇨퀬 ?뱀젙 ?쒓컙 ?몄텧?섏? ?딆쑝硫?DBMS ?ㅼ젙???곕씪 ?곌껐???딆뼱吏???
+		??寃쎌슦 DBCP瑜??ъ슜?섏뀲?ㅻ㈃.. ?ㅼ쓬怨?媛숈? ?ㅼ젙??異붽??섏떆硫??곌껐???좎??쒖폒 以띾땲?? -->
 	<!--
 	<property name="validationQuery" value="select 1 from dual" />
 	<property name="testWhileIdle" value="true" />
-	<property name="timeBetweenEvictionRunsMillis" value="60000" /> -->  <!-- 1분 -->
+	<property name="timeBetweenEvictionRunsMillis" value="60000" /> -->  <!-- 1遺?-->
 
-	<!-- DBCP가 아닌 WAS의 DataSource를 사용하시는 경우도 WAS별로 동일한 설정을 하실 수 있습니다.
-		(WAS별 구체적인 설정은 WAS document 확인) -->
+	<!-- DBCP媛 ?꾨땶 WAS??DataSource瑜??ъ슜?섏떆??寃쎌슦??WAS蹂꾨줈 ?숈씪???ㅼ젙???섏떎 ???덉뒿?덈떎.
+		(WAS蹂?援ъ껜?곸씤 ?ㅼ젙? WAS document ?뺤씤) -->
 </beans>

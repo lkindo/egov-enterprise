@@ -8,28 +8,28 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.sym.bat.service.BatchOpert;
 
 /**
- * 배치작업관리에 대한 DAO 클래스를 정의한다.
+ * 諛곗튂?묒뾽愿由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @Repository("batchOpertDao")
 public class BatchOpertDao extends EgovComAbstractDAO {
 
 	/**
-	 * 배치작업을 삭제한다.
+	 * 諛곗튂?묒뾽????젣?쒕떎.
 	 *
-	 * @param batchOpert    삭제할 배치작업 VO
+	 * @param batchOpert    ??젣??諛곗튂?묒뾽 VO
 	 * @exception Exception Exception
 	 */
 	public void deleteBatchOpert(BatchOpert batchOpert) throws Exception {
@@ -37,9 +37,9 @@ public class BatchOpertDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배치작업을 등록한다.
+	 * 諛곗튂?묒뾽???깅줉?쒕떎.
 	 *
-	 * @param batchOpert 저장할 배치작업 VO
+	 * @param batchOpert ??ν븷 諛곗튂?묒뾽 VO
 	 * @exception Exception Exception
 	 */
 	public void insertBatchOpert(BatchOpert batchOpert) throws Exception {
@@ -47,10 +47,10 @@ public class BatchOpertDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배치작업정보를 상세조회 한다.
-	 * @return 배치작업정보
+	 * 諛곗튂?묒뾽?뺣낫瑜??곸꽭議고쉶 ?쒕떎.
+	 * @return 諛곗튂?묒뾽?뺣낫
 	 *
-	 * @param batchOpert    조회할 KEY가 있는 배치작업 VO
+	 * @param batchOpert    議고쉶??KEY媛 ?덈뒗 諛곗튂?묒뾽 VO
 	 * @exception Exception Exception
 	 */
 	public BatchOpert selectBatchOpert(BatchOpert batchOpert) throws Exception {
@@ -58,10 +58,10 @@ public class BatchOpertDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배치작업정보목록을  조회한다.
-	 * @return 배치작업목록
+	 * 諛곗튂?묒뾽?뺣낫紐⑸줉?? 議고쉶?쒕떎.
+	 * @return 諛곗튂?묒뾽紐⑸줉
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<BatchOpert> selectBatchOpertList(BatchOpert searchVO) throws Exception {
@@ -69,10 +69,10 @@ public class BatchOpertDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배치작업 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * 諛곗튂?묒뾽 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectBatchOpertListCnt(BatchOpert searchVO) throws Exception {
@@ -80,9 +80,9 @@ public class BatchOpertDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배치작업정보를 수정한다.
+	 * 諛곗튂?묒뾽?뺣낫瑜??섏젙?쒕떎.
 	 *
-	 * @param batchOpert    수정대상 배치작업 VO
+	 * @param batchOpert    ?섏젙???諛곗튂?묒뾽 VO
 	 * @exception Exception Exception
 	 */
 	public void updateBatchOpert(BatchOpert batchOpert) throws Exception {

@@ -1,0 +1,71 @@
+package egovframework.com.sym.ccm.acr.service;
+
+import java.util.List;
+
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+
+/**
+ *
+ * ????? ?????????????????? ???
+ * @author ???????? ????
+ * @since 2009.04.01
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << ?????Modification Information) >>
+ *
+ *   ????     ????          ????
+ *  -------    --------    ---------------------------
+ *   2009.04.01  ????         ????
+ *
+ * Copyright (C) 2009 by MOPAS  All rights reserved.
+ * </pre>
+ **/
+public interface EgovAdministCodeRecptnService {
+
+	/**
+	 * ?????? ???.
+	 * @param administCode
+	 * @throws Exception
+	 **/
+	void insertAdministCodeRecptn() throws Exception;
+
+	/**
+	 * ?????????????.
+	 * @param administCode
+	 * @return AdministCode(?????
+	 * @throws Exception
+	 **/
+	AdministCodeRecptn selectAdministCodeDetail(AdministCodeRecptn administCodeRecptn) throws Exception;
+
+	/**
+	 * ????????????.
+	 * @param searchVO
+	 * @return List(??????
+	 * @throws Exception
+	 **/
+	List<EgovMap> selectAdministCodeRecptnList(AdministCodeRecptnVO searchVO) throws Exception;
+
+    /**
+	 * ??????????????.
+     * @param searchVO
+     * @return int(?????????
+     **/
+    int selectAdministCodeRecptnListTotCnt(AdministCodeRecptnVO searchVO) throws Exception;
+
+	/**
+	 * ??????????.
+	 * @param searchVO
+	 * @return List(??????
+	 * @throws Exception
+	 **/
+	List<EgovMap> selectAdministCodeList(AdministCodeRecptnVO searchVO) throws Exception;
+
+    /**
+	 * ????????????.
+     * @param searchVO
+     * @return int(?????????
+     **/
+    int selectAdministCodeListTotCnt(AdministCodeRecptnVO searchVO) throws Exception;
+}

@@ -13,43 +13,43 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "기념일 정보 DTO")
+@Schema(description = "Description")
 public class AnniversaryDto {
 
-    @Schema(description = "기념일 ID")
+    @Schema(description = "Description")
     private String annId;
 
-    @Schema(description = "사용자 ID")
+    @Schema(description = "Description")
     private String usid;
 
-    @Schema(description = "기념일 구분")
+    @Schema(description = "Description")
     private String annvrsrySe;
 
-    @Schema(description = "기념일 명")
+    @Schema(description = "Description")
     private String annvrsryNm;
 
-    @Schema(description = "기념일")
+    @Schema(description = "Description")
     private String annvrsryDe;
 
-    @Schema(description = "양/음력 구분")
+    @Schema(description = "Description")
     private String cldrSe;
 
-    @Schema(description = "알림 설정 여부")
+    @Schema(description = "Description")
     private String annvrsrySetup;
 
-    @Schema(description = "알림 시작 일자")
+    @Schema(description = "Description")
     private String annvrsryBeginDe;
 
-    @Schema(description = "메모")
+    @Schema(description = "Description")
     private String memo;
 
-    @Schema(description = "반복 여부")
+    @Schema(description = "Description")
     private String reptitAt;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     // Manual getters to bypass Lombok issues

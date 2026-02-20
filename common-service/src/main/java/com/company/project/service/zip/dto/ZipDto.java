@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 우편번호 DTO
+ * ?고렪踰덊샇 DTO
  */
 @Getter
 @Setter
@@ -15,22 +15,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ZipDto {
-    /** 우편번호 */
+    /** ?고렪踰덊샇 */
     private String zip;
-    /** 일련번호 */
+    /** ?쇰젴踰덊샇 */
     private Integer sn;
-    /** 시도명 */
+    /** ?쒕룄紐?*/
     private String ctprvnNm;
-    /** 시군구명 */
+    /** ?쒓뎔援щ챸 */
     private String signguNm;
-    /** 읍면동명 */
+    /** ?띾㈃?숇챸 */
     private String emdNm;
-    /** 리건물명 */
+    /** 由ш굔臾쇰챸 */
     private String liBuldNm;
-    /** 번지동호 */
+    /** 踰덉??숉샇 */
     private String lnbrDongHo;
-    /** 최초등록자ID */
+    /** 理쒖큹?깅줉?륤D */
     private String frstRegisterId;
-    /** 최종수정자ID */
+    /** 理쒖쥌?섏젙?륤D */
     private String lastUpdusrId;
 }

@@ -3,48 +3,48 @@ package egovframework.com.sym.sym.srv.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 서버장비관계에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?λ퉬愿怨꾩뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 서버장비관계의 서버장비ID, 서버 ID 등의 항목을 관리한다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?λ퉬愿怨꾩쓽 ?쒕쾭?λ퉬ID, ?쒕쾭 ID ?깆쓽 ??ぉ??愿由ы븳??
+ * @author ?대Ц以
  * @version 1.0
- * @created 28-6-2010 오전 10:44:55
+ * @created 28-6-2010 ?ㅼ쟾 10:44:55
  */
 public class ServerEqpmnRelate extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버ID
+	 * ?쒕쾭ID
 	 */
 	private String serverId;
 	/**
-	 * 서버장비ID
+	 * ?쒕쾭?λ퉬ID
 	 */
 	private String serverEqpmnId;
 	/**
-	 * 서버장비명
+	 * ?쒕쾭?λ퉬紐?
 	 */
 	private String serverEqpmnNm;
 	/**
-	 * 서버장비IP
+	 * ?쒕쾭?λ퉬IP
 	 */
 	private String serverEqpmnIp;
 	/**
-	 * 서버장비관리자
+	 * ?쒕쾭?λ퉬愿由ъ옄
 	 */
 	private String serverEqpmnMngrNm;
 	/**
-	 * 등록여부
+	 * ?깅줉?щ?
 	 */
 	private String regYn;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**

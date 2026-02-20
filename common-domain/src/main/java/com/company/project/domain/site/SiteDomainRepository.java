@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 사이트정보 Repository
+ * ????紐꾩젟癰?Repository
  */
 public interface SiteDomainRepository extends JpaRepository<Site, String> {
     Page<Site> findBySiteNmContaining(String siteNm, Pageable pageable);

@@ -37,7 +37,7 @@ public class EgovCommuMasterDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 포트릿을 위한 커뮤니티 정보 목록 정보를 조회한다.
+	 * ?ы듃由우쓣 ?꾪븳 而ㅻ??덊떚 ?뺣낫 紐⑸줉 ?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param cmmntyVO
 	 * @return

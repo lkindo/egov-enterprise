@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.bnt.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 당직관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 당직관리의 당직ID,당직일자,당직체크구분, 당직체크코드, 당직점검상태,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뱀쭅愿由ъ쓽 ?뱀쭅ID,?뱀쭅?쇱옄,?뱀쭅泥댄겕援щ텇, ?뱀쭅泥댄겕肄붾뱶, ?뱀쭅?먭??곹깭,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class BndtDiary extends ComDefaultVO {
@@ -18,47 +18,47 @@ public class BndtDiary extends ComDefaultVO {
 	private static final long serialVersionUID = -7344878163008635232L;
 
 	/**
-	*  당직ID
+	*  ?뱀쭅ID
 	*/
 	private String bndtId;
 
 	/**
-	*  당직일자
+	*  ?뱀쭅?쇱옄
 	*/
 	private String bndtDe;
 
 	/**
-	*  당직체크구분
+	*  ?뱀쭅泥댄겕援щ텇
 	*/
 	private String bndtCeckSe;
 
 	/**
-	*  당직체크코드
+	*  ?뱀쭅泥댄겕肄붾뱶
 	*/
 	private String bndtCeckCd;
 
 	/**
-	*  당직점검상태
+	*  ?뱀쭅?먭??곹깭
 	*/
 	private String chckSttus;
 
 	/**
-	*  최초등록자ID
+	*  理쒖큹?깅줉?륤D
 	*/
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점
+	*  理쒖큹?깅줉?쒖젏
 	*/
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID
+	*  理쒖쥌?섏젙?륤D
 	*/
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점
+	*  理쒖쥌?섏젙?쒖젏
 	*/
 	private String lastUpdusrPnttm;
 

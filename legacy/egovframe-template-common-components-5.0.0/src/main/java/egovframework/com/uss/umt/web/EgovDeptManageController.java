@@ -19,20 +19,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 부서관련 처리를  비지니스 클래스로 전달하고 처리된결과를  해당   웹 화면으로 전달하는  Controller를 정의한다
- * @author 공통서비스 개발팀 조재영
+ * 遺?쒓???泥섎━瑜? 鍮꾩??덉뒪 ?대옒?ㅻ줈 ?꾨떖?섍퀬 泥섎━?쒓껐怨쇰?  ?대떦   ???붾㈃?쇰줈 ?꾨떖?섎뒗  Controller瑜??뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.00.00
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.01  lee.m.j     최초 생성
- *   2015.06.16  조정국      서비스 화면 접근시 조회결과를 표시하도록 수정
- *   2021.05.30  정진오      로그인인증제한
+ *   2009.02.01  lee.m.j     理쒖큹 ?앹꽦
+ *   2015.06.16  議곗젙援?     ?쒕퉬???붾㈃ ?묎렐??議고쉶寃곌낵瑜??쒖떆?섎룄濡??섏젙
+ *   2021.05.30  ?뺤쭊??     濡쒓렇?몄씤利앹젣??
  * </pre>
  */
 @Controller
@@ -49,15 +49,15 @@ public class EgovDeptManageController {
 	private EgovIdGnrService egovDeptManageIdGnrService;
 
 	/**
-	 * 부서 목록화면 이동
+	 * 遺??紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "부서관리", order = 461, gid = 50)
+	@IncludedInfo(name = "遺?쒓?由?, order = 461, gid = 50)
 	@RequestMapping("/uss/umt/dpt/selectDeptManageListView.do")
 	public String selectDeptManageListView() throws Exception {
 
-		// 2021.05.30, 정진오, 로그인인증제한
+		// 2021.05.30, ?뺤쭊?? 濡쒓렇?몄씤利앹젣??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -67,9 +67,9 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 부서를 관리하기 위해 등록된 부서목록을 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return String - 리턴 URL
+	 * 遺?쒕? 愿由ы븯湲??꾪빐 ?깅줉??遺?쒕ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return String - 由ы꽩 URL
 	 * @throws Exception
 	 */
 
@@ -96,9 +96,9 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
-	 * @param bannerVO - 부서 Vo
-	 * @return String - 리턴 Url
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 遺??Vo
+	 * @return String - 由ы꽩 Url
 	 */
 
 	@RequestMapping(value = "/uss/umt/dpt/getDeptManage.do")
@@ -112,9 +112,9 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 부서등록 화면으로 이동한다.
-	 * @param banner - 부서 model
-	 * @return String - 리턴 Url
+	 * 遺?쒕벑濡??붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @param banner - 遺??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/umt/dpt/addViewDeptManage.do")
 	public String insertViewDeptManage(@ModelAttribute("deptManageVO") DeptManageVO deptManageVO, ModelMap model) throws Exception {
@@ -124,9 +124,9 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 부서정보를 신규로 등록한다.
-	 * @param banner - 부서 model
-	 * @return String - 리턴 Url
+	 * 遺?쒖젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param banner - 遺??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/umt/dpt/addDeptManage.do")
 	public String insertDeptManage(
@@ -145,9 +145,9 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 기 등록된 부서정보를 수정한다.
-	 * @param banner - 부서 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??遺?쒖젙蹂대? ?섏젙?쒕떎.
+	 * @param banner - 遺??model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/uss/umt/dpt/updtDeptManage.do")
 	public String updateDeptManage(
@@ -164,7 +164,7 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 기 등록된 부서정보를 삭제한다.
+	 * 湲??깅줉??遺?쒖젙蹂대? ??젣?쒕떎.
 	 * @param banner Banner
 	 * @return String
 	 * @exception Exception
@@ -178,7 +178,7 @@ public class EgovDeptManageController {
 	}
 
 	/**
-	 * 기 등록된 부서정보목록을 일괄 삭제한다.
+	 * 湲??깅줉??遺?쒖젙蹂대ぉ濡앹쓣 ?쇨큵 ??젣?쒕떎.
 	 * @param banners String
 	 * @param banner Banner
 	 * @return String

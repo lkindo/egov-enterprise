@@ -3,20 +3,20 @@
 	xmlns:p="http://www.springframework.org/schema/p"  
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"> 
      
-    <!-- 일반용   
+    <!-- ?쇰컲??  
     <bean id="mntrngMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" 
-        p:host="STMP서버주소"  
-        p:username="아이디" 
-        p:password="비밀번호" /> 
+        p:host="STMP?쒕쾭二쇱냼"  
+        p:username="?꾩씠?? 
+        p:password="鍮꾨?踰덊샇" /> 
     --> 
     
-    <!-- 메일 연동 인터페이스에서 첨부파일 미사용 -->
+    <!-- 硫붿씪 ?곕룞 ?명꽣?섏씠?ㅼ뿉??泥⑤??뚯씪 誘몄궗??-->
     <bean id="EMSMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" 
-        p:host="STMP서버주소" 
+        p:host="STMP?쒕쾭二쇱냼" 
         p:port="465"  
         p:protocol="smtps" 
-        p:username="아이디" 
-        p:password="비밀번호"> 
+        p:username="?꾩씠?? 
+        p:password="鍮꾨?踰덊샇"> 
         <property name="javaMailProperties"> 
             <props> 
                 <prop key="mail.smtps.auth">true</prop> 
@@ -26,22 +26,22 @@
         </property> 
     </bean>
      
-    <!-- 메일 연동 인터페이스에서 첨부파일 사용 -->
+    <!-- 硫붿씪 ?곕룞 ?명꽣?섏씠?ㅼ뿉??泥⑤??뚯씪 ?ъ슜 -->
 	<bean id="egovMultiPartEmail" class="egovframework.com.cop.ems.service.EgovMultiPartEmail"
-		p:host="이메일SMTP주소"
+		p:host="?대찓?퍾MTP二쇱냼"
 		p:port="587"
-		p:id="아이디"
-		p:password="비밀번호"
+		p:id="?꾩씠??
+		p:password="鍮꾨?踰덊샇"
 		p:senderName="System"
-		p:emailAddress="이메일주소" />
+		p:emailAddress="?대찓?쇱＜?? />
 	  
-    <!-- 모니터링 서비스에서 사용 gmail, hanmail 용 -->
+    <!-- 紐⑤땲?곕쭅 ?쒕퉬?ㅼ뿉???ъ슜 gmail, hanmail ??-->
     <bean id="mntrngMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" 
-        p:host="이메일SMTP주소"
+        p:host="?대찓?퍾MTP二쇱냼"
         p:port="587"
         p:protocol="smtp"
-        p:username="아이디" 
-        p:password="비밀번호">
+        p:username="?꾩씠?? 
+        p:password="鍮꾨?踰덊샇">
         <property name="javaMailProperties"> 
             <props>
                 <prop key="mail.smtps.auth">true</prop> 
@@ -51,10 +51,10 @@
         </property> 
     </bean>
     
-    <!-- 스케줄러에서 메일발송시 설정 -->
+    <!-- ?ㅼ?以꾨윭?먯꽌 硫붿씪諛쒖넚???ㅼ젙 -->
     <bean id="mntrngMessage" class="org.springframework.mail.SimpleMailMessage" 
         p:from="SYSTEM &lt; orgpig@naver.com &gt;"   
-        p:subject="{모니터링종류} 상태통보." 
-        p:text="* {모니터링종류}  상태통보.&#13;{에러내용}"/> 
+        p:subject="{紐⑤땲?곕쭅醫낅쪟} ?곹깭?듬낫." 
+        p:text="* {紐⑤땲?곕쭅醫낅쪟}  ?곹깭?듬낫.&#13;{?먮윭?댁슜}"/> 
 
 </beans> 

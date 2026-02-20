@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service.impl;
 
@@ -38,19 +38,19 @@ import jakarta.annotation.Resource;
 
 /**
 *
-* 조직도 기능 관련 DAO객체.
-* @author 전우성
+* 議곗쭅??湲곕뒫 愿??DAO媛앹껜.
+* @author ?꾩슦??
 * @since 2014.10.12
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*  수정일               수정자            수정내용
+*  ?섏젙??              ?섏젙??           ?섏젙?댁슜
 *  ----------   --------   ---------------------------
-*  2014.10.12   전우성            최초 생성
-*  2020.08.28   정진오            표준프레임워크 v3.10 개선
+*  2014.10.12   ?꾩슦??           理쒖큹 ?앹꽦
+*  2020.08.28   ?뺤쭊??           ?쒖??꾨젅?꾩썙??v3.10 媛쒖꽑
 *
 * </pre>
 */
@@ -59,9 +59,9 @@ public class OrgManageLdapDAO extends EgovComAbstractDAO {
 	public LdapTemplate ldapTemplate;
 
 	/**
-	 * 조직정보를 변경하는 메소드
+	 * 議곗쭅?뺣낫瑜?蹂寃쏀븯??硫붿냼??
 	 * @param vo
-	 * vo의 dn의 객체를 인자로 넘어온 객체로 업데이트.
+	 * vo??dn??媛앹껜瑜??몄옄濡??섏뼱??媛앹껜濡??낅뜲?댄듃.
 	 */
 	protected void updateOrg(LdapObject vo) {
 		String dn = vo.getDn();
@@ -83,10 +83,10 @@ public class OrgManageLdapDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DN에 해당하는 객체를 return한다.
-	 * @param dn 조회할 객체의 Distinguished Names
-	 * @param lookupClass lookup될 vo class
-	 * @return lookup된 vo객체
+	 * DN???대떦?섎뒗 媛앹껜瑜?return?쒕떎.
+	 * @param dn 議고쉶??媛앹껜??Distinguished Names
+	 * @param lookupClass lookup??vo class
+	 * @return lookup??vo媛앹껜
 	 */
 	@SuppressWarnings("unchecked")
 	protected LdapObject selectOrgManageByDn(String dn, @SuppressWarnings("rawtypes") Class lookupClass) {
@@ -98,8 +98,8 @@ public class OrgManageLdapDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 조직정보를 ldap에 저장한다.
-	 * @param vo 저장할 vo
+	 * 議곗쭅?뺣낫瑜?ldap????ν븳??
+	 * @param vo ??ν븷 vo
 	 * @param attr
 	 */
 	protected void insertOrgManage(LdapObject vo, BasicAttribute attr) {
@@ -117,7 +117,7 @@ public class OrgManageLdapDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * vo의 field별로 특정 명령을 수행
+	 * vo??field蹂꾨줈 ?뱀젙 紐낅졊???섑뻾
 	 * @param vo
 	 * @param e
 	 */

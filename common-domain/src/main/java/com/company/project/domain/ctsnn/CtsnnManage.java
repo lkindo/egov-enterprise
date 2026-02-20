@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 경조사 관리 정보 Entity
- * 레거시 테이블: NCTSNNMANAGE
+ * 野껋럩????온???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NCTSNNMANAGE
  */
 @Entity(name = "DomainCtsnnManage")
 @Table(name = "NCTSNNMANAGE")

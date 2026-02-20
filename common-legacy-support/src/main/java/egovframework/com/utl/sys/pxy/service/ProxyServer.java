@@ -1,0 +1,262 @@
+package egovframework.com.utl.sys.pxy.service;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.time.LocalDateTime;
+
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.company.project.domain.monitoring.ProxyLogRepository;
+
+import egovframework.com.cmm.EgovWebUtil;
+import egovframework.com.cmm.util.EgovResourceCloseHelper;
+
+/**
+ * ??????????????
+ *
+ * @author ?
+ * @since 2010.07.15
+ * @version 1.0
+ * @see
+ * 
+ *      <pre>
+ * == ?????Modification Information) ==
+ *
+ *  ????               ????            ????
+ *  ----------   --------    ---------------------------
+ *  2019.12.05   ???             KISA ?? ??(???? ??, ????????
+ *      </pre>
+ **/
+public class ProxyServer extends Thread {
+	/** logger **/
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyServer.class);
+
+	private final ProxyLogRepository proxyLogRepository;
+	private final EgovIdGnrService egovProxyLogIdGnrService;
+
+	ServerSocket serverSocket = null;
+	Socket client = null;
+	Socket server = null;
+
+	private String svcIp = null;
+	private String localIp = null;
+	private int localPort;
+	private int remotePort;
+	private String threadName = null;
+
+	DataInputStream disReader;
+	DataOutputStream dosWriter;
+
+	byte[] request = new byte[1024];
+	byte[] reply = new byte[4096];
+
+	public ProxyServer(String svcHost, String localIp, int localPort, int remotePort, String threadName,
+			ProxyLogRepository proxyLogRepository, EgovIdGnrService egovProxyLogIdGnrService) {
+
+		try {
+			setSvcIp(svcHost);
+			setLocalIp(localIp);
+			setLocalPort(localPort);
+			setRemotePort(remotePort);
+			setThreadName(threadName);
+
+			this.proxyLogRepository = proxyLogRepository;
+			this.egovProxyLogIdGnrService = egovProxyLogIdGnrService;
+
+			serverSocket = SSLServerSocketFactory.getDefault().createServerSocket(localPort);// 2022.01. Unencrypted
+																								// Socket
+
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public void run() {
+
+		runServer();
+	}
+
+	public void runServer() {
+
+		boolean runningThread = true;
+
+		try {
+			while (runningThread) {
+
+				try {
+					serverSocket.setSoTimeout(2000);
+					LOGGER.info("client wait......");
+
+					client = serverSocket.accept();
+
+				} catch (IOException ce) {
+					LOGGER.debug("Socket server accept IO exception", ce);
+					continue;
+				}
+
+				if (client.isConnected()) {
+
+					insertProxyLog();
+
+					LOGGER.info("client connect");
+					InputStream streamFromClient = client.getInputStream();
+					OutputStream streamToClient = client.getOutputStream();
+
+					String svcIp = EgovWebUtil.filePathBlackList(getSvcIp());
+					server = SSLSocketFactory.getDefault().createSocket(svcIp, remotePort);// 2022.01. Unencrypted
+																							// Socket ??
+
+					InputStream streamFromServer = server.getInputStream();
+					OutputStream streamToServer = server.getOutputStream();
+
+					ProxyThread proxyThread = new ProxyThread(client, streamFromClient, streamToClient,
+							streamFromServer, streamToServer);
+					Thread thread = new Thread(proxyThread, getThreadName() + "-" + server.getLocalPort());
+					thread.start();
+
+					int bytesRead;
+					try {
+						while ((bytesRead = streamFromServer.read(reply)) != -1) {
+							streamToClient.write(reply, 0, bytesRead);
+							streamToClient.flush();
+						}
+					} catch (IOException e) {
+						LOGGER.debug("Socket IO exception", e);
+					} finally {
+						streamToClient.close();
+						if (proxyThread.getIsStop()) {
+							runningThread = false;
+							break;
+						}
+					}
+				}
+			}
+
+		} catch (IOException e) {
+			LOGGER.debug("Server IO exception", e);
+		} finally {
+			EgovResourceCloseHelper.closeSockets(server);
+			EgovResourceCloseHelper.closeSocketObjects(client, serverSocket);
+		}
+	}
+
+	public void insertProxyLog() {
+
+		try {
+
+			String clntIp = "";
+			// KISA ?? ??(2018-10-29, ????
+			if (client.getInetAddress() != null) {
+				if (!EgovWebUtil.isIPAddress((client.getInetAddress().getHostAddress()))) {
+					throw new RuntimeException("IP is needed. (" + client.getInetAddress().getHostAddress() + ")");
+				}
+				clntIp = client.getInetAddress().getHostAddress();
+			}
+
+			com.company.project.domain.monitoring.ProxyLog entity = com.company.project.domain.monitoring.ProxyLog
+					.builder()
+					.proxyId(getThreadName())
+					.logId(egovProxyLogIdGnrService.getNextStringId())
+					.clntIp(clntIp)
+					.clntPort(String.valueOf(getLocalPort()))
+					.conectTime(LocalDateTime.now())
+					.frstRegisterId("SYSTEM")
+					.frstRegisterPnttm(LocalDateTime.now())
+					.lastUpdusrId("SYSTEM")
+					.lastUpdusrPnttm(LocalDateTime.now())
+					.build();
+
+			LOGGER.info(entity.getProxyId());
+			LOGGER.info(entity.getLogId());
+			LOGGER.info(entity.getClntIp());
+			LOGGER.info(entity.getClntPort());
+
+			proxyLogRepository.save(entity);
+
+		} catch (Exception e) {
+			LOGGER.debug("proxyLog Insert Error", e);
+		}
+	}
+
+	/**
+	 * @return the svcIp
+	 **/
+	public String getSvcIp() {
+		return svcIp;
+	}
+
+	/**
+	 * @param svcIp the svcIp to set
+	 **/
+	public void setSvcIp(String svcIp) {
+		this.svcIp = svcIp;
+	}
+
+	/**
+	 * @return the localIp
+	 **/
+	public String getLocalIp() {
+		return localIp;
+	}
+
+	/**
+	 * @param localIp the localIp to set
+	 **/
+	public void setLocalIp(String localIp) {
+		this.localIp = localIp;
+	}
+
+	/**
+	 * @return the localPort
+	 **/
+	public int getLocalPort() {
+		return localPort;
+	}
+
+	/**
+	 * @param localPort the localPort to set
+	 **/
+	public void setLocalPort(int localPort) {
+		this.localPort = localPort;
+	}
+
+	/**
+	 * @return the remotePort
+	 **/
+	public int getRemotePort() {
+		return remotePort;
+	}
+
+	/**
+	 * @param remotePort the remotePort to set
+	 **/
+	public void setRemotePort(int remotePort) {
+		this.remotePort = remotePort;
+	}
+
+	/**
+	 * @return the threadName
+	 **/
+	public String getThreadName() {
+		return threadName;
+	}
+
+	/**
+	 * @param threadName the threadName to set
+	 **/
+	public void setThreadName(String threadName) {
+		this.threadName = threadName;
+	}
+
+}

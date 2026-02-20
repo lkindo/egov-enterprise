@@ -32,45 +32,45 @@ import jakarta.validation.Valid;
 
 /**
  *
- * Q&A를 처리하는 Controller 클래스
+ * Q&A瑜?泥섎━?섎뒗 Controller ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일     	수정자           			수정내용
+*   ?섏젙??    	?섏젙??          			?섏젙?댁슜
 *  ------------   --------    ---------------------------------------------
 
  *
  *      </pre>
  */
 /**
- * 사용자 계정을 처리하는 비즈니스 구현 클래스
+ * ?ъ슜??怨꾩젙??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * <p>
- * <b>NOTE:</b> Exception 종류를 EgovBizException, RuntimeException 에서만 동작한다.
- * fail.common.msg 메세지키가 Message Resource 에 정의 되어 있어야 한다.
+ * <b>NOTE:</b> Exception 醫낅쪟瑜?EgovBizException, RuntimeException ?먯꽌留??숈옉?쒕떎.
+ * fail.common.msg 硫붿꽭吏?ㅺ? Message Resource ???뺤쓽 ?섏뼱 ?덉뼱???쒕떎.
  * 
- * @author 공통컴포넌트 개발팀 홍길동
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?띻만??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.10.21  이기하          삭제시 비밀번호 확인 추가(최종감리 반영)
- *   2016.08.05  김연호          표준프레임워크 3.6 개선
- *   2025.08.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.08.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessarySemicolon(필요없는 ; 문장 존재)
- *   2025.08.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.10.21  ?닿린??         ??젣??鍮꾨?踰덊샇 ?뺤씤 異붽?(理쒖쥌媛먮━ 諛섏쁺)
+ *   2016.08.05  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2025.08.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.08.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessarySemicolon(?꾩슂?녿뒗 ; 臾몄옣 議댁옱)
+ *   2025.08.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -94,14 +94,14 @@ public class EgovQnaController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * Q&A정보 목록을 조회한다. (pageing)
+	 * Q&A?뺣낫 紐⑸줉??議고쉶?쒕떎. (pageing)
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olh/qna/EgovQnaListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "Q&A관리", order = 550, gid = 50)
+	@IncludedInfo(name = "Q&A愿由?, order = 550, gid = 50)
 	@RequestMapping(value = "/uss/olh/qna/selectQnaList.do")
 	public String selectQnaList(@ModelAttribute("searchVO") QnaVO searchVO, ModelMap model) throws Exception {
 
@@ -122,7 +122,7 @@ public class EgovQnaController {
 		List<QnaVO> resultList = egovQnaService.selectQnaList(searchVO);
 		model.addAttribute("resultList", resultList);
 
-		// 인증여부 체크
+		// ?몄쬆?щ? 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -139,7 +139,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보 목록에 대한 상세정보를 조회한다.
+	 * Q&A?뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param passwordConfirmAt
 	 * @param qnaVO
@@ -154,15 +154,15 @@ public class EgovQnaController {
 
 		qnaVO.setQaId(qaId);
 
-		// 조회수 수정처리
+		// 議고쉶???섏젙泥섎━
 		egovQnaService.updateQnaInqireCo(qnaVO);
 
 		QnaVO vo = egovQnaService.selectQnaDetail(qnaVO);
 
-		// 작성 비밀번호를 얻는다.
+		// ?묒꽦 鍮꾨?踰덊샇瑜??삳뒗??
 //		String writngPassword = vo.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 복호화한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 蹂듯샇?뷀븳??
 //		vo.setWritngPassword(EgovFileScrty.decode(writngPassword));
 
 		model.addAttribute("result", vo);
@@ -171,7 +171,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보를 등록하기 위한 전 처리(인증체크)
+	 * Q&A?뺣낫瑜??깅줉?섍린 ?꾪븳 ??泥섎━(?몄쬆泥댄겕)
 	 * 
 	 * @param searchVO
 	 * @param qnaManageVO
@@ -182,7 +182,7 @@ public class EgovQnaController {
 	@RequestMapping("/uss/olh/qna/insertQnaView.do")
 	public String insertQnaView(@ModelAttribute("searchVO") QnaVO searchVO, QnaVO qnaVO, Model model) throws Exception {
 
-		// 인증여부 체크
+		// ?몄쬆?щ? 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -190,14 +190,14 @@ public class EgovQnaController {
 			return "egovframework/com/uss/olh/qna/EgovQnaRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		String wrterNm = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()); // 사용자명
-		String emailAdres = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getEmail()); // email 주소
+		String wrterNm = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()); // ?ъ슜?먮챸
+		String emailAdres = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getEmail()); // email 二쇱냼
 
-		qnaVO.setWrterNm(wrterNm); // 작성자명
-		qnaVO.setEmailAdres(emailAdres); // email 주소
+		qnaVO.setWrterNm(wrterNm); // ?묒꽦?먮챸
+		qnaVO.setEmailAdres(emailAdres); // email 二쇱냼
 
 		model.addAttribute("qnaVO", qnaVO);
 
@@ -206,7 +206,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보를 등록한다.
+	 * Q&A?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param qnaVO
@@ -222,18 +222,18 @@ public class EgovQnaController {
 			return "egovframework/com/uss/olh/qna/EgovQnaRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		qnaVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		qnaVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		qnaVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		qnaVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
-		// 작성비밀번호를 암호화 하기 위해서 Get
+		// ?묒꽦鍮꾨?踰덊샇瑜??뷀샇???섍린 ?꾪빐??Get
 //		String writngPassword = qnaVO.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 암호화 한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 ?뷀샇???쒕떎.
 //		qnaVO.setWritngPassword(EgovFileScrty.encode(writngPassword));
 
 		egovQnaService.insertQna(qnaVO);
@@ -242,7 +242,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보를 수정하기 위한 전 처리
+	 * Q&A?뺣낫瑜??섏젙?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param qnaVO
 	 * @param searchVO
@@ -256,10 +256,10 @@ public class EgovQnaController {
 
 		QnaVO vo = egovQnaService.selectQnaDetail(qnaVO);
 
-		// 작성 비밀번호를 얻는다.
+		// ?묒꽦 鍮꾨?踰덊샇瑜??삳뒗??
 //		String writngPassword = vo.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 복호화한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 蹂듯샇?뷀븳??
 //		vo.setWritngPassword(EgovFileScrty.decode(writngPassword));
 
 		model.addAttribute("qnaVO", vo);
@@ -268,7 +268,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보를 수정처리한다.
+	 * Q&A?뺣낫瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param qnaVO
@@ -286,30 +286,30 @@ public class EgovQnaController {
 		}
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 사용자권한체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ?ъ슜?먭텒?쒖껜??START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		QnaVO vo = egovQnaService.selectQnaDetail(qnaVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 사용자권한체크 END
+		// @ XSS ?ъ슜?먭텒?쒖껜??END
 		// --------------------------------------------------------------------------------------------
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		qnaVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		qnaVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
-		// 작성비밀번호를 암호화 하기 위해서 Get
+		// ?묒꽦鍮꾨?踰덊샇瑜??뷀샇???섍린 ?꾪빐??Get
 //		String writngPassword = qnaManageVO.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 암호화 한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 ?뷀샇???쒕떎.
 //		qnaManageVO.setWritngPassword(EgovFileScrty.encode(writngPassword));
 
 		egovQnaService.updateQna(qnaVO);
@@ -319,7 +319,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A정보를 삭제처리한다.
+	 * Q&A?뺣낫瑜???젣泥섎━?쒕떎.
 	 * 
 	 * @param qnaVO
 	 * @param searchVO
@@ -331,19 +331,19 @@ public class EgovQnaController {
 			throws Exception {
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 사용자권한체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ?ъ슜?먭텒?쒖껜??START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
 
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		QnaVO vo = egovQnaService.selectQnaDetail(qnaVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 사용자권한체크 END
+		// @ XSS ?ъ슜?먭텒?쒖껜??END
 		// --------------------------------------------------------------------------------------------
 
 		egovQnaService.deleteQna(qnaVO);
@@ -352,14 +352,14 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A답변정보 목록을 조회한다. (pageing)
+	 * Q&A?듬??뺣낫 紐⑸줉??議고쉶?쒕떎. (pageing)
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olh/qna/EgovQnaAnswerList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "Q&A답변관리", order = 551, gid = 50)
+	@IncludedInfo(name = "Q&A?듬?愿由?, order = 551, gid = 50)
 	@RequestMapping(value = "/uss/olh/qna/selectQnaAnswerList.do")
 	public String selectQnaAnswerList(@ModelAttribute("searchVO") QnaVO searchVO, ModelMap model) throws Exception {
 
@@ -388,7 +388,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A답변정보 목록에 대한 상세정보를 조회한다.
+	 * Q&A?듬??뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param qnaVO
 	 * @param searchVO
@@ -408,7 +408,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A답변정보를 수정하기 위한 전 처리(공통코드 처리)
+	 * Q&A?듬??뺣낫瑜??섏젙?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param qnaVO
 	 * @param searchVO
@@ -420,7 +420,7 @@ public class EgovQnaController {
 	public String updateQnaAnswerView(QnaVO qnaVO, @ModelAttribute("searchVO") QnaVO searchVO, ModelMap model)
 			throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM028");
 
@@ -434,7 +434,7 @@ public class EgovQnaController {
 	}
 
 	/**
-	 * Q&A답변정보를 수정처리한다.
+	 * Q&A?듬??뺣낫瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param qnaVO
 	 * @param searchVO
@@ -444,10 +444,10 @@ public class EgovQnaController {
 	@RequestMapping("/uss/olh/qna/updateQnaAnswer.do")
 	public String updateQnaAnswer(QnaVO qnaVO, @ModelAttribute("searchVO") QnaVO searchVO) throws Exception {
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		qnaVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		qnaVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovQnaService.updateQnaAnswer(qnaVO);
 

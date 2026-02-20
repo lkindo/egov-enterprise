@@ -10,8 +10,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 위키 북마크 정보 Entity
- * 레거시 테이블: NWIKIBKMK
+ * ?袁り텕 ?브낮彛???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NWIKIBKMK
  */
 @Entity
 @Table(name = "NWIKIBKMK")

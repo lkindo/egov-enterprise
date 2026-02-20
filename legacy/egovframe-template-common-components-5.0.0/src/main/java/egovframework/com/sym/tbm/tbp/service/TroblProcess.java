@@ -3,85 +3,85 @@ package egovframework.com.sym.tbm.tbp.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 장애처리결과정보에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?μ븷泥섎━寃곌낵?뺣낫?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 장애관리의 장애ID, 장애명, 장애종류, 장애설명, 장애발생시간, 장애요청자명, 장애요청시간, 장애처리결과, 장애처리자명, 장애처리시간,
- * 처리상태 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?μ븷愿由ъ쓽 ?μ븷ID, ?μ븷紐? ?μ븷醫낅쪟, ?μ븷?ㅻ챸, ?μ븷諛쒖깮?쒓컙, ?μ븷?붿껌?먮챸, ?μ븷?붿껌?쒓컙, ?μ븷泥섎━寃곌낵, ?μ븷泥섎━?먮챸, ?μ븷泥섎━?쒓컙,
+ * 泥섎━?곹깭 ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:57
+ * @created 28-6-2010 ?ㅼ쟾 10:44:57
  */
 public class TroblProcess extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 장애 ID
+	 * ?μ븷 ID
 	 */
 	private String troblId;
 	/**
-	 * 장애 명
+	 * ?μ븷 紐?
 	 */
 	private String troblNm;
 	/**
-	 * 장애 종류
+	 * ?μ븷 醫낅쪟
 	 */
 	private String troblKnd;
 	/**
-	 * 장애 종류 명
+	 * ?μ븷 醫낅쪟 紐?
 	 */
 	private String troblKndNm;	
 	/**
-	 * 장애 설명
+	 * ?μ븷 ?ㅻ챸
 	 */
 	private String troblDc;
 	/**
-	 * 장애 발생 시간
+	 * ?μ븷 諛쒖깮 ?쒓컙
 	 */
 	private String troblOccrrncTime;
 	/**
-	 * 장애 요청자 명
+	 * ?μ븷 ?붿껌??紐?
 	 */
 	private String troblRqesterNm;
 	/**
-	 * 장애 요청 시간
+	 * ?μ븷 ?붿껌 ?쒓컙
 	 */
 	private String troblRequstTime;
 	/**
-	 * 장애 처리 결과
+	 * ?μ븷 泥섎━ 寃곌낵
 	 */
 	private String troblProcessResult;
 	/**
-	 * 장애 처리자 명
+	 * ?μ븷 泥섎━??紐?
 	 */
 	private String troblOpetrNm;
 	/**
-	 * 장애 처리 시간
+	 * ?μ븷 泥섎━ ?쒓컙
 	 */
 	private String troblProcessTime;
 	/**
-	 * 처리 상태
+	 * 泥섎━ ?곹깭
 	 */
 	private String processSttus;
 	/**
-	 * 처리 상태명
+	 * 泥섎━ ?곹깭紐?
 	 */
 	private String processSttusNm;	
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */   
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */        
     private String frstRegisterId;	
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 

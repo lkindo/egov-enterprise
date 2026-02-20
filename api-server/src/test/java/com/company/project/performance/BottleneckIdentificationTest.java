@@ -202,7 +202,7 @@ class BottleneckIdentificationAndImprovementTest {
                         "nPlusOneUser" + i,
                         "Password123!",
                         "N+1 쿼리 테스트 사용자" + i,
-                        com.company.project.domain.user.Role.USER,
+                        com.company.project.domain.user.entity.Role.USER,
                         "hint",
                         "answer");
                 userService.signup(request);
@@ -405,7 +405,7 @@ class BottleneckIdentificationAndImprovementTest {
                         "pagingUser" + i,
                         "Password123!",
                         "페이징 테스트 사용자" + i,
-                        com.company.project.domain.user.Role.USER,
+                        com.company.project.domain.user.entity.Role.USER,
                         "hint",
                         "answer");
                 userService.signup(request);
@@ -467,7 +467,7 @@ class BottleneckIdentificationAndImprovementTest {
                         "searchUser" + i,
                         "Password123!",
                         "검색 테스트 사용자" + i,
-                        com.company.project.domain.user.Role.USER,
+                        com.company.project.domain.user.entity.Role.USER,
                         "hint",
                         "answer");
                 userService.signup(request);
@@ -586,7 +586,7 @@ class BottleneckIdentificationAndImprovementTest {
                 "authUser",
                 "Password123!",
                 "인증 테스트 사용자",
-                com.company.project.domain.user.Role.USER,
+                com.company.project.domain.user.entity.Role.USER,
                 "hint",
                 "answer");
         userService.signup(signupRequest);

@@ -2,180 +2,180 @@ package egovframework.com.utl.sys.nsm.service;
 
 
 /**
- * 개요
- * - 네트워크서비스 모니터링대상에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링대상의 목록 항목, 조회조건 등을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓽 紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 @SuppressWarnings("serial")
 public class NtwrkSvcMntrngVO extends NtwrkSvcMntrng {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCnd = "";
 
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 	/**
-	 * 검색 조건을 반환합니다.
+	 * 寃??議곌굔??諛섑솚?⑸땲??
 	 *
-	 * @return 검색 조건
+	 * @return 寃??議곌굔
 	 */
 	public String getSearchCnd() {
 		return searchCnd;
 	}
 
 	/**
-	 * 검색 조건을 설정합니다.
+	 * 寃??議곌굔???ㅼ젙?⑸땲??
 	 *
-	 * @param searchCnd 설정할 검색 조건
+	 * @param searchCnd ?ㅼ젙??寃??議곌굔
 	 */
 	public void setSearchCnd(String searchCnd) {
 		this.searchCnd = searchCnd;
 	}
 
 	/**
-	 * 검색어를 반환합니다.
+	 * 寃?됱뼱瑜?諛섑솚?⑸땲??
 	 *
-	 * @return 검색어
+	 * @return 寃?됱뼱
 	 */
 	public String getSearchWrd() {
 		return searchWrd;
 	}
 
 	/**
-	 * 검색어를 설정합니다.
+	 * 寃?됱뼱瑜??ㅼ젙?⑸땲??
 	 *
-	 * @param searchWrd 설정할 검색어
+	 * @param searchWrd ?ㅼ젙??寃?됱뼱
 	 */
 	public void setSearchWrd(String searchWrd) {
 		this.searchWrd = searchWrd;
 	}
 
 	/**
-	 * 현재 페이지 인덱스를 반환합니다.
+	 * ?꾩옱 ?섏씠吏 ?몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 *
-	 * @return 페이지 인덱스
+	 * @return ?섏씠吏 ?몃뜳??
 	 */
 	public int getPageIndex() {
 		return pageIndex;
 	}
 
 	/**
-	 * 현재 페이지 인덱스를 설정합니다.
+	 * ?꾩옱 ?섏씠吏 ?몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 *
-	 * @param pageIndex 설정할 페이지 인덱스
+	 * @param pageIndex ?ㅼ젙???섏씠吏 ?몃뜳??
 	 */
 	public void setPageIndex(int pageIndex) {
 		this.pageIndex = pageIndex;
 	}
 
 	/**
-	 * 페이지 당 보여질 항목의 수를 반환합니다.
+	 * ?섏씠吏 ??蹂댁뿬吏???ぉ???섎? 諛섑솚?⑸땲??
 	 *
-	 * @return 페이지 당 항목 수
+	 * @return ?섏씠吏 ????ぉ ??
 	 */
 	public int getPageUnit() {
 		return pageUnit;
 	}
 
 	/**
-	 * 페이지 당 보여질 항목의 수를 설정합니다.
+	 * ?섏씠吏 ??蹂댁뿬吏???ぉ???섎? ?ㅼ젙?⑸땲??
 	 *
-	 * @param pageUnit 설정할 페이지 당 항목 수
+	 * @param pageUnit ?ㅼ젙???섏씠吏 ????ぉ ??
 	 */
 	public void setPageUnit(int pageUnit) {
 		this.pageUnit = pageUnit;
 	}
 
 	/**
-	 * 페이지 크기를 반환합니다.
+	 * ?섏씠吏 ?ш린瑜?諛섑솚?⑸땲??
 	 *
-	 * @return 페이지 크기
+	 * @return ?섏씠吏 ?ш린
 	 */
 	public int getPageSize() {
 		return pageSize;
 	}
 
 	/**
-	 * 페이지 크기를 설정합니다.
+	 * ?섏씠吏 ?ш린瑜??ㅼ젙?⑸땲??
 	 *
-	 * @param pageSize 설정할 페이지 크기
+	 * @param pageSize ?ㅼ젙???섏씠吏 ?ш린
 	 */
 	public void setPageSize(int pageSize) {
 		this.pageSize = pageSize;
 	}
 
 	/**
-	 * 첫번째 인덱스를 반환합니다.
+	 * 泥ル쾲吏??몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 *
-	 * @return 첫번째 인덱스
+	 * @return 泥ル쾲吏??몃뜳??
 	 */
 	public int getFirstIndex() {
 		return firstIndex;
 	}
 
 	/**
-	 * 첫번째 인덱스를 설정합니다.
+	 * 泥ル쾲吏??몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 *
-	 * @param firstIndex 설정할 첫번째 인덱스
+	 * @param firstIndex ?ㅼ젙??泥ル쾲吏??몃뜳??
 	 */
 	public void setFirstIndex(int firstIndex) {
 		this.firstIndex = firstIndex;
 	}
 
 	/**
-	 * 마지막 인덱스를 반환합니다.
+	 * 留덉?留??몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 *
-	 * @return 마지막 인덱스
+	 * @return 留덉?留??몃뜳??
 	 */
 	public int getLastIndex() {
 		return lastIndex;
 	}
 
 	/**
-	 * 마지막 인덱스를 설정합니다.
+	 * 留덉?留??몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 *
-	 * @param lastIndex 설정할 마지막 인덱스
+	 * @param lastIndex ?ㅼ젙??留덉?留??몃뜳??
 	 */
 	public void setLastIndex(int lastIndex) {
 		this.lastIndex = lastIndex;
 	}
 
 	/**
-	 * 페이지당 레코드 수를 반환합니다.
+	 * ?섏씠吏???덉퐫???섎? 諛섑솚?⑸땲??
 	 *
-	 * @return 페이지당 레코드 수
+	 * @return ?섏씠吏???덉퐫????
 	 */
 	public int getRecordCountPerPage() {
 		return recordCountPerPage;
 	}
 
 	/**
-	 * 페이지당 레코드 수를 설정합니다.
+	 * ?섏씠吏???덉퐫???섎? ?ㅼ젙?⑸땲??
 	 *
-	 * @param recordCountPerPage 설정할 페이지당 레코드 수
+	 * @param recordCountPerPage ?ㅼ젙???섏씠吏???덉퐫????
 	 */
 	public void setRecordCountPerPage(int recordCountPerPage) {
 		this.recordCountPerPage = recordCountPerPage;

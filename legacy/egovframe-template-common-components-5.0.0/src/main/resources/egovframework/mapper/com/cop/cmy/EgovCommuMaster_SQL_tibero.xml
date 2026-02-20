@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.7   	정진오     	 	deleteCommunityUserInf과 deleteAllCommunityUserInf의 update 문에
-  							MNGR_AT = 'N' 추가(커뮤니티 탈퇴 시 운영자 인 경우 강제로 비운영자로 변경 필요)
-  2018.10.18    이정은              메인페이지 - 생성된 커뮤니티 목록 추가
+  2011.9.7   	?뺤쭊??    	 	deleteCommunityUserInf怨?deleteAllCommunityUserInf??update 臾몄뿉
+  							MNGR_AT = 'N' 異붽?(而ㅻ??덊떚 ?덊눜 ???댁쁺????寃쎌슦 媛뺤젣濡?鍮꾩슫?곸옄濡?蹂寃??꾩슂)
+  2018.10.18    ?댁젙?              硫붿씤?섏씠吏 - ?앹꽦??而ㅻ??덊떚 紐⑸줉 異붽?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">

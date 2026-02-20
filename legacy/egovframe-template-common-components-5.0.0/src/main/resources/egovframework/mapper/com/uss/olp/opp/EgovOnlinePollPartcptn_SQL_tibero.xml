@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.10.05	정진오		보안 취약점 점검사항에 따른 수정사항 반영
-  							${searchKeyword}를	 #{searchKeyword} 로 변경
-  							${searchCondition}는 <isEqual property="searchCondition" compareValue="선택조건명">으로 수정
-  2011.10.05	정진오		온라인 POLL 중복 투표 체크 SQL 추가  							
+  2011.10.05	?뺤쭊??	蹂댁븞 痍⑥빟???먭??ы빆???곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							${searchKeyword}瑜? #{searchKeyword} 濡?蹂寃?
+  							${searchCondition}??<isEqual property="searchCondition" compareValue="?좏깮議곌굔紐?>?쇰줈 ?섏젙
+  2011.10.05	?뺤쭊??	?⑤씪??POLL 以묐났 ?ы몴 泥댄겕 SQL 異붽?  							
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="OnlinePollPartcptn">
 
-	<!-- 온라인POLL참여::ResultMap 선언 -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::ResultMap ?좎뼵 -->
 	<resultMap id="OnlinePollManageVO" type="egovframework.com.uss.olp.opm.service.OnlinePollManage">
 		<result property="pollId" column="POLL_ID"/>
 		<result property="pollNm" column="POLL_NM"/>
@@ -25,7 +25,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/> 			
 	</resultMap>
 	
-	<!-- 온라인POLL참여::목록조회 게시물정보 -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectOnlinePollManageList" parameterType="comDefaultVO" resultType="egovMap">
 <![CDATA[	
 	SELECT *
@@ -67,7 +67,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 ]]>
 	</select>
-	<!-- 온라인POLL참여::목록조회_게시물 총개수  -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectOnlinePollManageListCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -85,7 +85,7 @@
 	</select>
 	
 	
-	<!-- 온라인POLL참여::상세보기 -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::?곸꽭蹂닿린 -->
 	<select id="selectOnlinePollManageDetail" resultType="egovMap">
 	SELECT 
 		A.POLL_ID,
@@ -106,7 +106,7 @@
 	</select>
 
 	
-	<!-- 온라인POLL항목::목록조회 게시물정보 -->
+	<!-- ?⑤씪?퇠OLL??ぉ::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectOnlinePollItem" resultType="egovMap">
 	 
 		SELECT 
@@ -124,7 +124,7 @@
 	 
 	</select>
 
-	<!-- 온라인POLL참여::온라인POLL결과 입력 -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::?⑤씪?퇠OLL寃곌낵 ?낅젰 -->
 	<insert id="insertOnlinePollResult">	     
 	 
 
@@ -148,7 +148,7 @@
 	 
 	</insert>
 	
-	<!-- 온라인POLL참여::온라인POLL참여 횟수 조회(참여 여부 판단을 위해서) -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::?⑤씪?퇠OLL李몄뿬 ?잛닔 議고쉶(李몄뿬 ?щ? ?먮떒???꾪빐?? -->
 	<select id="selectOnlinePollResult" resultType="int">
 	 
 	 SELECT COUNT(*)
@@ -159,7 +159,7 @@
 	 
 	</select>
 
-	<!-- 온라인POLL참여::온라인POLL통계를 조회한다.  -->
+	<!-- ?⑤씪?퇠OLL李몄뿬::?⑤씪?퇠OLL?듦퀎瑜?議고쉶?쒕떎.  -->
 	<select id="selectOnlinePollPartcptnStatistics" resultType="egovMap">
 <![CDATA[
 	SELECT 

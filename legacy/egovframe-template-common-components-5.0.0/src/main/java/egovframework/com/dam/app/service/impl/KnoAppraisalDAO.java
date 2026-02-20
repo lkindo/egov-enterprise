@@ -10,24 +10,24 @@ import egovframework.com.dam.app.service.KnoAppraisal;
 import egovframework.com.dam.app.service.KnoAppraisalVO;
 
 /**
- * 개요
- * - 지식정보평가에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댄룊媛?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식정보평가에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식정보평가의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 吏?앹젙蹂댄룊媛??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹젙蹂댄룊媛??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:47
+ * @created 12-8-2010 ?ㅽ썑 3:44:47
  */
 
 @Repository("KnoAppraisalDAO")
 public class KnoAppraisalDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 등록된 지식정보평가 정보를 조회 한다.
-	 * @param KnoAppraisalVO - 지식정보평가 VO
-	 * @return String - 지식정보평가 VO
+	 * ?깅줉??吏?앹젙蹂댄룊媛 ?뺣낫瑜?議고쉶 ?쒕떎.
+	 * @param KnoAppraisalVO - 吏?앹젙蹂댄룊媛 VO
+	 * @return String - 吏?앹젙蹂댄룊媛 VO
 	 *
 	 * @param KnoAppraisalVO
 	 */
@@ -36,9 +36,9 @@ public class KnoAppraisalDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 지식정보평가 목록 총 개수를 조회한다.
-	 * @param MapTeamVO - 지식정보평가 Vo
-	 * @return int - 지식정보평가 토탈 카운트 수
+	 * 吏?앹젙蹂댄룊媛 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param MapTeamVO - 吏?앹젙蹂댄룊媛 Vo
+	 * @return int - 吏?앹젙蹂댄룊媛 ?좏깉 移댁슫????
 	 *
 	 * @param KnoAppraisalVO
 	 */
@@ -47,9 +47,9 @@ public class KnoAppraisalDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 지식정보평가 상세 정보를 조회 한다.
-	 * @param KnoAppraisalVO - 지식정보평가 VO
-	 * @return String - 지식정보평가 VO
+	 * 吏?앹젙蹂댄룊媛 ?곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
+	 * @param KnoAppraisalVO - 吏?앹젙蹂댄룊媛 VO
+	 * @return String - 吏?앹젙蹂댄룊媛 VO
 	 *
 	 * @param KnoAppraisalVO
 	 */
@@ -58,8 +58,8 @@ public class KnoAppraisalDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 지식정보평가 정보를 신규로 등록한다.
-	 * @param knoAps - 지식정보평가 model
+	 * 吏?앹젙蹂댄룊媛 ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param knoAps - 吏?앹젙蹂댄룊媛 model
 	 *
 	 * @param knoAps
 	 */
@@ -68,8 +68,8 @@ public class KnoAppraisalDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 기 등록 된 지식정보평가 정보를 수정 한다.
-	 * @param AppraisalknoAps - 지식정보평가 model
+	 * 湲??깅줉 ??吏?앹젙蹂댄룊媛 ?뺣낫瑜??섏젙 ?쒕떎.
+	 * @param AppraisalknoAps - 吏?앹젙蹂댄룊媛 model
 	 *
 	 * @param knoAps
 	 */
@@ -78,8 +78,8 @@ public class KnoAppraisalDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 기 등록된 지식정보평가 정보를 삭제한다.
-	 * @param AppraisalknoAps - 지식정보평가 model
+	 * 湲??깅줉??吏?앹젙蹂댄룊媛 ?뺣낫瑜???젣?쒕떎.
+	 * @param AppraisalknoAps - 吏?앹젙蹂댄룊媛 model
 	 *
 	 * @param knoAps
 	 */

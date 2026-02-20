@@ -13,27 +13,27 @@ import egovframework.com.uss.ion.wik.bmk.service.WikiBookmark;
 import jakarta.annotation.Resource;
 
 /**
- * 위키북마크를 처리하는 ServiceImpl Class 구현
+ * ?꾪궎遺곷쭏?щ? 泥섎━?섎뒗 ServiceImpl Class 援ы쁽
  * 
- * @author 공통콤포넌트 장동한
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.10.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.20  장동한          최초 생성
- *   2025.08.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessarySemicolon(필요없는 ; 문장 존재)
+ *   2010.10.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2025.08.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessarySemicolon(?꾩슂?녿뒗 ; 臾몄옣 議댁옱)
  *
  *      </pre>
  */
 @Service("egovWikiBookmarkService")
 public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl implements EgovWikiBookmarkService {
 
-	/* 위키북마크 DAO */
+	/* ?꾪궎遺곷쭏??DAO */
 	@Resource(name = "wikiBookmarkDao")
 	private WikiBookmarkDao dao;
 
@@ -44,9 +44,9 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovWikiBookmarkServiceImpl.class);
 
 	/**
-	 * 위키북마크 목록을 조회한다.
+	 * ?꾪궎遺곷쭏??紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param wikiBookmark -조회할 정보가 담긴 객체
+	 * @param wikiBookmark -議고쉶???뺣낫媛 ?닿릿 媛앹껜
 	 * @return List
 	 * @throws Exception
 	 */
@@ -56,10 +56,10 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 위키북마크를(을) 목록 전체 건수를(을) 조회한다.
+	 * ?꾪궎遺곷쭏?щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
 	 * 
-	 * @param wikiBookmark -조회할 정보가 담긴 객체
-	 * @return int -조회한건수가담긴Integer
+	 * @param wikiBookmark -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+	 * @return int -議고쉶?쒓굔?섍??닿릿Integer
 	 * @throws Exception
 	 */
 	@Override
@@ -68,10 +68,10 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 위키북마크를(을) 중복을 조회한다.
+	 * ?꾪궎遺곷쭏?щ?(?? 以묐났??議고쉶?쒕떎.
 	 * 
-	 * @param wikiBookmark -조회할 정보가 담긴 객체
-	 * @return int -조회한건수가담긴Integer
+	 * @param wikiBookmark -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+	 * @return int -議고쉶?쒓굔?섍??닿릿Integer
 	 * @throws Exception
 	 */
 	@Override
@@ -80,24 +80,24 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 위키북마크를(을) 등록한다.
+	 * ?꾪궎遺곷쭏?щ?(?? ?깅줉?쒕떎.
 	 * 
-	 * @param wikiBookmark -위키북마크 정보 담김 객체
+	 * @param wikiBookmark -?꾪궎遺곷쭏???뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	@Override
 	public void insertWikiBookmark(WikiBookmark wikiBookmark) throws Exception {
-		// 아이디 가져오기
+		// ?꾩씠??媛?몄삤湲?
 
 		String sUsid = dao.selectWikiBookmarkEmpUniqId(wikiBookmark);
 
 		LOGGER.debug("EgovWikiBookmarkServiceImpl.java sUsid > {}", sUsid);
 
-		// 아이디 비교
+		// ?꾩씠??鍮꾧탳
 		if (sUsid != null) {
-			// 위키북마크 키 설정
+			// ?꾪궎遺곷쭏?????ㅼ젙
 			wikiBookmark.setWikiBkmkId(idgenService.getNextStringId());
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			wikiBookmark.setUsid(sUsid);
 			wikiBookmark.setFrstRegisterId(sUsid);
 			wikiBookmark.setLastUpdusrId(sUsid);
@@ -107,9 +107,9 @@ public class EgovWikiBookmarkServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 위키북마크를(을) 삭제한다.
+	 * ?꾪궎遺곷쭏?щ?(?? ??젣?쒕떎.
 	 * 
-	 * @param wikiBookmark -위키북마크 정보 담김 객체
+	 * @param wikiBookmark -?꾪궎遺곷쭏???뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	@Override

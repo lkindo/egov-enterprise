@@ -1,18 +1,18 @@
 /**
- * 개요
- * - 자료이용현황 통계에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 자료이용현황 통계에 대한 등록, 조회 기능을 제공한다.
- * - 자료이용현황 통계의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
  *
- *     수정일       		 수정자                   수정내용
+ *     ?섏젙??      		 ?섏젙??                  ?섏젙?댁슜
  *     -------          --------        ---------------------------
- *    2011.09.19     	 서준식 			초기 게시기간 설정
+ *    2011.09.19     	 ?쒖???			珥덇린 寃뚯떆湲곌컙 ?ㅼ젙
  * @author lee.m.j
  * @version 1.0
- * @created 08-9-2009 오후 1:40:19
+ * @created 08-9-2009 ?ㅽ썑 1:40:19
  */
 
 package egovframework.com.sts.dst.web;
@@ -34,7 +34,7 @@ import egovframework.com.utl.fcc.service.EgovDateUtil;
 import jakarta.annotation.Resource;
 /*
 *
-* 데이터 사용 통계 컨트롤러 클래스
+* ?곗씠???ъ슜 ?듦퀎 而⑦듃濡ㅻ윭 ?대옒??
 * */
 @Controller
 public class EgovDtaUseStatsContoller {
@@ -49,8 +49,8 @@ public class EgovDtaUseStatsContoller {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 자료이용현황 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param reprtStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return String
 	 */
 	@RequestMapping("/sts/dst/selectDtaUseStatsListView.do")
@@ -69,11 +69,11 @@ public class EgovDtaUseStatsContoller {
 	}
 
 	/**
-	 * 자료이용현황 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param reprtStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return String
 	 */
-	@IncludedInfo(name="자료이용현황통계", listUrl="/sts/dst/selectDtaUseStatsListView.do", order = 161 ,gid = 30)
+	@IncludedInfo(name="?먮즺?댁슜?꾪솴?듦퀎", listUrl="/sts/dst/selectDtaUseStatsListView.do", order = 161 ,gid = 30)
 	@RequestMapping("/sts/dst/selectDtaUseStatsList.do")
 	public String selectDtaUseStatsList(@RequestParam("pmFromDate") String pmFromDate,
             							@RequestParam("pmToDate") String pmToDate,
@@ -132,8 +132,8 @@ public class EgovDtaUseStatsContoller {
 	}
 
 	/**
-	 * 자료이용현황 통계의 상세정보를 조회한다.
-	 * @param reprtStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param reprtStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return String
 	 */
 	@RequestMapping("/sts/dst/getDtaUseStats.do")

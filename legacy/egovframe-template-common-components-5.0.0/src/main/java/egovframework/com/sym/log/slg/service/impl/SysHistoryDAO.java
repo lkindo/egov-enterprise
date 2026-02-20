@@ -10,14 +10,14 @@ import egovframework.com.sym.log.slg.service.SysHistoryVO;
 
 /**
  * @Class Name : SysHistoryDAO.java
- * @Description : 시스템 이력정보를 관리하기 위한 데이터 처리 클래스
+ * @Description : ?쒖뒪???대젰?뺣낫瑜?愿由ы븯湲??꾪븳 ?곗씠??泥섎━ ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 9.   이삼섭
+ *    2009. 3. 9.   ?댁궪??
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 9.
  * @version
  * @see
@@ -28,8 +28,8 @@ public class SysHistoryDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 시스템 이력정보를 생성한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜??앹꽦?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 */
 	public int insertSysHistory(SysHistory history) throws Exception{
 		return insert("SysHistoryDAO.insertSysHistory", history);
@@ -37,16 +37,16 @@ public class SysHistoryDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 시스템 이력정보를 수정한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜??섏젙?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 */
 	public void updateSysHistory(SysHistory history) throws Exception{
 		update("SysHistoryDAO.updateSysHistory", history);
 	}
 
 	/**
-	 * 시스템 이력정보를 삭제한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜???젣?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 */
 	public void deleteSysHistory(SysHistory history) throws Exception{
 		delete("SysHistoryDAO.deleteSysHistory", history);
@@ -54,16 +54,16 @@ public class SysHistoryDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 시스템 이력정보 목록을 조회한다.
+	 * ?쒖뒪???대젰?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 */
 	public List<SysHistoryVO> selectSysHistorList(SysHistoryVO historyVO) throws Exception{
 		return selectList("SysHistoryDAO.selectSysHistoryList", historyVO);
 	}
 
 	/**
-	 * 시스템 이력정보 목록의 글 개수를 조회한다.
+	 * ?쒖뒪???대젰?뺣낫 紐⑸줉??湲 媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param history
 	 * @return
 	 * @throws Exception
@@ -73,9 +73,9 @@ public class SysHistoryDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 시스템 이력정보를 조회한다.
+	 * ?쒖뒪???대젰?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 */
 	public SysHistoryVO selectSysHistory(SysHistoryVO historyVO) throws Exception{
 

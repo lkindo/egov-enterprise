@@ -2,67 +2,67 @@ package egovframework.com.dam.spe.req.service;
 
 
 /**
- * 지식정보제공/지식정보요청 Model and VO Class 구현
- * @author 공통서비스 장동한
+ * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?Model and VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.08.30
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  장동한          최초 생성
+ *   2010.08.30  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public class RequestOffer {
 
-	/** 지식ID */
+	/** 吏?쒲D */
 	private String knoId;
 
-	/** 조식ID */
+	/** 議곗떇ID */
 	private String orgnztId;
 
-	/** 전문가ID */
+	/** ?꾨Ц媛ID */
 	private String speId;
 
-	/** 지식유형코드 */
+	/** 吏?앹쑀?뺤퐫??*/
 	private String knoTypeCd;
 
-	/** 사용자ID */
+	/** ?ъ슜?륤D */
 	private String emplyrId;
 
-	/** 지식명 */
+	/** 吏?앸챸 */
 	private String knoNm;
 
-	/** 지식내용 */
+	/** 吏?앸궡??*/
 	private String knoCn;
 
-	/** 첨부파일ID */
+	/** 泥⑤??뚯씪ID */
 	private String atchFileId;
 
-	/** 부모지식ID */
+	/** 遺紐⑥??쒲D */
 	private String ansParents;
 
-	/** 답변깊이 */
+	/** ?듬?源딆씠 */
 	private Integer ansDepth;
 
-	/** 답변순서 */
+	/** ?듬??쒖꽌 */
 	private Integer ansSeq;
 
-	/** 답변그룹번호 */
+	/** ?듬?洹몃９踰덊샇 */
 	private Integer ansNumber;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
 	/**

@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.company.project.domain.notification.QNotification.notification;
 
 /**
- * 정보알림 Repository Custom 구현체
+ * ?類ｋ궖???뵝 Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class NotificationRepositoryImpl implements NotificationRepositoryCustom {

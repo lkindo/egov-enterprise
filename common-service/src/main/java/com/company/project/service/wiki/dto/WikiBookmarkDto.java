@@ -13,19 +13,19 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "위키 북마크 정보 DTO")
+@Schema(description = "Description")
 public class WikiBookmarkDto {
 
-    @Schema(description = "북마크 ID")
+    @Schema(description = "Description")
     private String wikiBkmkId;
 
-    @Schema(description = "사용자 ID")
+    @Schema(description = "Description")
     private String userId;
 
-    @Schema(description = "북마크 명")
+    @Schema(description = "Description")
     private String wikiBkmkNm;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static WikiBookmarkDto from(WikiBookmark entity) {

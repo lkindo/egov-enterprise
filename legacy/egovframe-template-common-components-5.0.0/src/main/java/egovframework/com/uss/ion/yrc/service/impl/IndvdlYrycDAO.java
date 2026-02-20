@@ -8,12 +8,12 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.ion.yrc.service.IndvdlYrycManage;
 
 /**
- * 개요
- * - 연차관리에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?곗감愿由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 연차관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * @author 이기하
+ * ?곸꽭?댁슜
+ * - ?곗감愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * @author ?닿린??
  * @version 1.0
  * @created 2014.11.14
  */
@@ -22,40 +22,40 @@ import egovframework.com.uss.ion.yrc.service.IndvdlYrycManage;
 public class IndvdlYrycDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 연차를 조회처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * ?곗감瑜?議고쉶泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	public List<IndvdlYrycManage> selectIndvdlYrycManageList(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		return selectList("indvdlYrycDAO.selectIndvdlYrycManageList", indvdlYrycManage);
 	}
 
 	/**
-	 * 연차목록 총 개수를 조회한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * ?곗감紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	public int selectIndvdlYrycManageListTotCnt(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		return (Integer)selectOne("indvdlYrycDAO.selectIndvdlYrycManageListTotCnt", indvdlYrycManage);
 	}
 
 	/**
-	 * 연차를 입력처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * ?곗감瑜??낅젰泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	public void insertIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		insert("indvdlYrycDAO.insertIndvdlYrycManage", indvdlYrycManage);
 	}
 
 	/**
-	 * 연차를 수정처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * ?곗감瑜??섏젙泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	public void updtIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		update("indvdlYrycDAO.updateIndvdlYrycManage", indvdlYrycManage);
 	}
 
 	/**
-	 * 연차를 삭제처리한다.
-	 * @param indvdlYrycManage - 연차관리 model
+	 * ?곗감瑜???젣泥섎━?쒕떎.
+	 * @param indvdlYrycManage - ?곗감愿由?model
 	 */
 	public void deleteIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		delete("indvdlYrycDAO.deleteIndvdlYrycManage", indvdlYrycManage);

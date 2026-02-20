@@ -7,14 +7,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @Class Name  : SysHistory.java
- * @Description : 시스템 처리 이력관리를 위한 데이터 처리 모델
+ * @Description : ?쒖뒪??泥섎━ ?대젰愿由щ? ?꾪븳 ?곗씠??泥섎━ 紐⑤뜽
  * @Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *     -------          --------        ---------------------------
- *   2009.03.06       이삼섭                  최초 생성
+ *   2009.03.06       ?댁궪??                 理쒖큹 ?앹꽦
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 03. 06
  * @version 1.0
  * @see
@@ -24,40 +24,40 @@ public class SysHistory implements Serializable {
 
 	private static final long serialVersionUID = 2790964197430747133L;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String histId = "";
 	/**
-	 * 최초등록자아이디
+	 * 理쒖큹?깅줉?먯븘?대뵒
 	 *
 	 */
 	private String frstRegisterId = "";
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 이력내용
+	 * ?대젰?댁슜
 	 */
 	private String histCn = "";
 	/**
-	 * 이력구분코드
+	 * ?대젰援щ텇肄붾뱶
 	 */
 	private String histSeCode = "";
 	/**
-	 * 최종수정자아이디
+	 * 理쒖쥌?섏젙?먯븘?대뵒
 	 */
 	private String lastUpdusrId = "";
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 	/**
-	 * 시스템명
+	 * ?쒖뒪?쒕챸
 	 */
 	private String sysNm = "";
 	/**
-	 * 첨부파일ID
+	 * 泥⑤??뚯씪ID
 	 */
 	private String atchFileId = "";
 	/**

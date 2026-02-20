@@ -12,21 +12,21 @@ import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 
 /**
- * Cross-Site Scripting 체크하여 값을 되돌려 받는 핸들러 JSP TLD, 자바에서 사용가능
+ * Cross-Site Scripting 泥댄겕?섏뿬 媛믪쓣 ?섎룎??諛쏅뒗 ?몃뱾??JSP TLD, ?먮컮?먯꽌 ?ъ슜媛??
  *
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.11.09
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.11.09  장동한          최초 생성
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.05.22  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙), CloseResource(리소스 닫기), AssignmentInOperand(피연산자의 할당)
+ *   2010.11.09  ?λ룞??         理쒖큹 ?앹꽦
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.05.22  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃), CloseResource(由ъ냼???リ린), AssignmentInOperand(?쇱뿰?곗옄???좊떦)
  *
  *      </pre>
  */
@@ -55,7 +55,7 @@ public class EgovComCrossSiteHndlr extends BodyTagSupport {
 			"\r", "\n", // "\r","\n",
 			"&#37;", "&#33;", "&#43;", "&#45;" };
 
-	// 23.06.08 taglibs 라이브러리 취약점 패치 간 변경사항 김혜준
+	// 23.06.08 taglibs ?쇱씠釉뚮윭由?痍⑥빟???⑥튂 媛?蹂寃쎌궗??源?쒖?
 	public static final int HIGHEST_SPECIAL = '>';
 	public static char[][] specialCharactersRepresentation = new char[HIGHEST_SPECIAL + 1][];
 	static {
@@ -106,7 +106,7 @@ public class EgovComCrossSiteHndlr extends BodyTagSupport {
 				return SKIP_BODY;
 			} else {
 				// if we don't have a 'default' attribute, just go to the body
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				if (StringUtils.isEmpty(def)) {
 					needBody = true;
 					return EVAL_BODY_BUFFERED;

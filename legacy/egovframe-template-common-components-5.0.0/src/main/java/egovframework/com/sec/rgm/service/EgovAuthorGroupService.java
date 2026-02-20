@@ -4,18 +4,18 @@ import java.util.List;
 
 
 /**
- * 권한그룹에 관한 서비스 인터페이스 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳洹몃９??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이문준          최초 생성
+ *   2009.03.20  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,21 +23,21 @@ import java.util.List;
 public interface EgovAuthorGroupService {
 
 	/**
-	 * 그룹별 할당된 시스템 메뉴 접근권한을 삭제
+	 * 洹몃９蹂??좊떦???쒖뒪??硫붾돱 ?묎렐沅뚰븳????젣
 	 * @param authorGroup AuthorGroup
 	 * @exception Exception
 	 */
 	public void deleteAuthorGroup(AuthorGroup authorGroup) throws Exception;
 
 	/**
-	 * 그룹에 권한정보를 할당하여 데이터베이스에 등록
+	 * 洹몃９??沅뚰븳?뺣낫瑜??좊떦?섏뿬 ?곗씠?곕쿋?댁뒪???깅줉
 	 * @param authorGroup AuthorGroup
 	 * @exception Exception
 	 */
 	public void insertAuthorGroup(AuthorGroup authorGroup) throws Exception;
 
 	/**
-	 * 그룹별 할당된 권한 목록 조회
+	 * 洹몃９蹂??좊떦??沅뚰븳 紐⑸줉 議고쉶
 	 * @param authorGroupVO AuthorGroupVO
 	 * @return List<AuthorGroupVO>
 	 * @exception Exception
@@ -45,14 +45,14 @@ public interface EgovAuthorGroupService {
 	public List<AuthorGroupVO> selectAuthorGroupList(AuthorGroupVO authorGroupVO) throws Exception;
 
 	/**
-	 * 화면에 조회된 그룹권한정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
+	 * ?붾㈃??議고쉶??洹몃９沅뚰븳?뺣낫瑜??섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
 	 * @param authorGroup AuthorGroup
 	 * @exception Exception
 	 */
 	public void updateAuthorGroup(AuthorGroup authorGroup) throws Exception;
 	
     /**
-	 * 목록조회 카운트를 반환한다
+	 * 紐⑸줉議고쉶 移댁슫?몃? 諛섑솚?쒕떎
 	 * @param authorGroupVO AuthorGroupVO
 	 * @return int
 	 * @exception Exception

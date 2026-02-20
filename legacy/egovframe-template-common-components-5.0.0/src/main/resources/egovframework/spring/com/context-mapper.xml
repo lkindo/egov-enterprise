@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 	
-    <!-- 실행환경에서 빈이름 참조(EgovAbstractDAO) -->
+    <!-- ?ㅽ뻾?섍꼍?먯꽌 鍮덉씠由?李몄“(EgovAbstractDAO) -->
 	<bean id="egov.lobHandler" class="org.springframework.jdbc.support.lob.DefaultLobHandler" lazy-init="true" />
 
 	<!-- Mybatis setup for Mybatis Database Layer -->

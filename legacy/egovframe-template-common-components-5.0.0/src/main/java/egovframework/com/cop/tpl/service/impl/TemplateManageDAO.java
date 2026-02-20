@@ -9,19 +9,19 @@ import egovframework.com.cop.tpl.service.TemplateInf;
 import egovframework.com.cop.tpl.service.TemplateInfVO;
 
 /**
- * 템플릿 정보관리를 위한 데이터 접근 클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?쒗뵆由??뺣낫愿由щ? ?꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.03.17   이삼섭           최초 생성
- *  2019.05.17   신용호           selectTemplateWhiteList() 추가
+ *  2009.03.17   ?댁궪??          理쒖큹 ?앹꽦
+ *  2019.05.17   ?좎슜??          selectTemplateWhiteList() 異붽?
  *
  * </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.cop.tpl.service.TemplateInfVO;
 public class TemplateManageDAO extends EgovComAbstractDAO {
 
     /**
-     * 템플릿 정보를 삭제한다.
+     * ?쒗뵆由??뺣낫瑜???젣?쒕떎.
      * 
      * @param tmplatInf
      * @throws Exception
@@ -39,7 +39,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿 정보를 등록한다.
+     * ?쒗뵆由??뺣낫瑜??깅줉?쒕떎.
      * 
      * @param tmplatInf
      * @throws Exception
@@ -49,7 +49,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿 정보를 수정한다.
+     * ?쒗뵆由??뺣낫瑜??섏젙?쒕떎.
      * 
      * @param tmplatInf
      * @throws Exception
@@ -59,7 +59,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿에 대한 화이트리스트 목록를 조회한다.
+     * ?쒗뵆由우뿉 ????붿씠?몃━?ㅽ듃 紐⑸줉瑜?議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return
@@ -70,7 +70,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 템플릿에 대한 목록를 조회한다.
+     * ?쒗뵆由우뿉 ???紐⑸줉瑜?議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return
@@ -81,7 +81,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿에 대한 목록 전체 건수를 조회한다.
+     * ?쒗뵆由우뿉 ???紐⑸줉 ?꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return
@@ -92,7 +92,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿에 대한 상세정보를 조회한다.
+     * ?쒗뵆由우뿉 ????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return
@@ -104,7 +104,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿에 대한 미리보기 정보를 조회한다.
+     * ?쒗뵆由우뿉 ???誘몃━蹂닿린 ?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return
@@ -115,7 +115,7 @@ public class TemplateManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 템플릿 구분에 따른 목록을 조회한다.
+     * ?쒗뵆由?援щ텇???곕Ⅸ 紐⑸줉??議고쉶?쒕떎.
      * 
      * @param tmplatInfVO
      * @return

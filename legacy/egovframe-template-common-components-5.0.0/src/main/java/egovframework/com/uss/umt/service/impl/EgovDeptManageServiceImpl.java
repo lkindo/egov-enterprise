@@ -16,9 +16,9 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
     private DeptManageDAO deptManageDAO;
 
 	/**
-	 * 부서를 관리하기 위해 등록된 부서목록을 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return List - 부서 목록
+	 * 遺?쒕? 愿由ы븯湲??꾪빐 ?깅줉??遺?쒕ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param deptManageVO - 遺??Vo
+	 * @return List - 遺??紐⑸줉
 	 *
 	 * @param deptManageVO
 	 */
@@ -28,9 +28,9 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 부서목록 총 개수를 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return int - 부서 카운트 수
+	 * 遺?쒕ぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param deptManageVO - 遺??Vo
+	 * @return int - 遺??移댁슫????
 	 *
 	 * @param deptManageVO
 	 */
@@ -40,9 +40,9 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
-	 * @param deptManageVO - 부서 Vo
-	 * @return deptManageVO - 부서 Vo
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param deptManageVO - 遺??Vo
+	 * @return deptManageVO - 遺??Vo
 	 *
 	 * @param deptManageVO
 	 */
@@ -52,8 +52,8 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 부서정보를 신규로 등록한다.
-	 * @param deptManageVO - 부서 model
+	 * 遺?쒖젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param deptManageVO - 遺??model
 	 *
 	 * @param deptManageVO
 	 */
@@ -63,8 +63,8 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 부서정보를 수정한다.
-	 * @param deptManageVO - 부서 model
+	 * 湲??깅줉??遺?쒖젙蹂대? ?섏젙?쒕떎.
+	 * @param deptManageVO - 遺??model
 	 *
 	 * @param deptManageVO
 	 */
@@ -74,8 +74,8 @@ public class EgovDeptManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 기 등록된 부서정보를 삭제한다.
-	 * @param deptManageVO - 부서 model
+	 * 湲??깅줉??遺?쒖젙蹂대? ??젣?쒕떎.
+	 * @param deptManageVO - 遺??model
 	 *
 	 * @param deptManageVO
 	 */

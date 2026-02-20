@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * 외부 인력 정보 Repository
+ * ?紐? ?紐껋젾 ?類ｋ궖 Repository
  */
 public interface ExternalHrRepository extends JpaRepository<ExternalHr, String> {
     Page<ExternalHr> findByExtrlHrNmContaining(String extrlHrNm, Pageable pageable);

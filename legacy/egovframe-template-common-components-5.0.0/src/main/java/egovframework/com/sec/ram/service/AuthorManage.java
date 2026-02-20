@@ -3,19 +3,19 @@ package egovframework.com.sec.ram.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 권한관리에 대한 model 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이문준          최초 생성
- *   2024.10.29	LeeBaekHaeng	시큐어코딩 일련번호 PK 파라미터 암복호화
+ *   2009.03.20  ?대Ц以          理쒖큹 ?앹꽦
+ *   2024.10.29	LeeBaekHaeng	?쒗걧?댁퐫???쇰젴踰덊샇 PK ?뚮씪誘명꽣 ?붾났?명솕
  * </pre>
  */
 
@@ -26,53 +26,53 @@ public class AuthorManage extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 권한관리
+	 * 沅뚰븳愿由?
 	 */	
 	private AuthorManage authorManage;
 	/**
-	 * 권한코드
+	 * 沅뚰븳肄붾뱶
 	 */
 	private String authorCode;
 	/**
-	 * 권한코드 암호화
+	 * 沅뚰븳肄붾뱶 ?뷀샇??
 	 */
 	private String authorCodeEncrypt;
 	/**
-	 * 권한등록일자
+	 * 沅뚰븳?깅줉?쇱옄
 	 */
 	private String authorCreatDe;
 	/**
-	 * 권한코드설명
+	 * 沅뚰븳肄붾뱶?ㅻ챸
 	 */
 	private String authorDc;
 	/**
-	 * 권한 명
+	 * 沅뚰븳 紐?
 	 */
 	private String authorNm;
 	
 	/**
-	 * authorManage attribute 를 리턴한다.
+	 * authorManage attribute 瑜?由ы꽩?쒕떎.
 	 * @return AuthorManage
 	 */
 	public AuthorManage getAuthorManage() {
 		return authorManage;
 	}
 	/**
-	 * authorManage attribute 값을 설정한다.
+	 * authorManage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorManage AuthorManage 
 	 */
 	public void setAuthorManage(AuthorManage authorManage) {
 		this.authorManage = authorManage;
 	}
 	/**
-	 * authorCode attribute 를 리턴한다.
+	 * authorCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAuthorCode() {
 		return authorCode;
 	}
 	/**
-	 * authorCode attribute 값을 설정한다.
+	 * authorCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorCode String 
 	 */
 	public void setAuthorCode(String authorCode) {
@@ -88,42 +88,42 @@ public class AuthorManage extends ComDefaultVO {
 	}
 
 	/**
-	 * authorCreatDe attribute 를 리턴한다.
+	 * authorCreatDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAuthorCreatDe() {
 		return authorCreatDe;
 	}
 	/**
-	 * authorCreatDe attribute 값을 설정한다.
+	 * authorCreatDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorCreatDe String 
 	 */
 	public void setAuthorCreatDe(String authorCreatDe) {
 		this.authorCreatDe = authorCreatDe;
 	}
 	/**
-	 * authorDc attribute 를 리턴한다.
+	 * authorDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAuthorDc() {
 		return authorDc;
 	}
 	/**
-	 * authorDc attribute 값을 설정한다.
+	 * authorDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorDc String 
 	 */
 	public void setAuthorDc(String authorDc) {
 		this.authorDc = authorDc;
 	}
 	/**
-	 * authorNm attribute 를 리턴한다.
+	 * authorNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAuthorNm() {
 		return authorNm;
 	}
 	/**
-	 * authorNm attribute 값을 설정한다.
+	 * authorNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorNm String 
 	 */
 	public void setAuthorNm(String authorNm) {

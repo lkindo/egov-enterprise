@@ -3,16 +3,16 @@ package egovframework.com.uss.olp.opm.service;
 import java.io.Serializable;
 
 /**
- * 온라인POLL항목 VO Class 구현
- * @author 공통서비스 장동한
+ * ?⑤씪?퇠OLL??ぉ VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -20,35 +20,35 @@ public class OnlinePollItem implements Serializable {
 
 	private static final long serialVersionUID = -5318527177437211052L;
 
-	/** 온라인POLL 아이디  */
+	/** ?⑤씪?퇠OLL ?꾩씠?? */
     private String pollId;
 
-    /** 온라인POLL 이름 */
+    /** ?⑤씪?퇠OLL ?대쫫 */
     private String pollNm;
 
-    /** 온라인POLL항목 아이디  */
+    /** ?⑤씪?퇠OLL??ぉ ?꾩씠?? */
     private String pollIemId;
 
-    /** 온라인POLL항목 이름 */
+    /** ?⑤씪?퇠OLL??ぉ ?대쫫 */
     private String pollIemNm;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
-    /** 컨트롤 명령어 */
+    /** 而⑦듃濡?紐낅졊??*/
     private String cmd;
 
     /**
-     * pollId 리턴
+     * pollId 由ы꽩
      *
      * @return the pollId
      */
@@ -57,7 +57,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollId 설정
+     * pollId ?ㅼ젙
      *
      * @param pollId the pollId to set
      */
@@ -66,7 +66,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollNm 리턴
+     * pollNm 由ы꽩
      *
      * @return the pollNm
      */
@@ -75,7 +75,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollNm 설정
+     * pollNm ?ㅼ젙
      *
      * @param pollNm the pollNm to set
      */
@@ -84,7 +84,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollIemId 리턴
+     * pollIemId 由ы꽩
      *
      * @return the pollIemId
      */
@@ -93,7 +93,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollIemId 설정
+     * pollIemId ?ㅼ젙
      *
      * @param pollIemId the pollIemId to set
      */
@@ -102,7 +102,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollIemNm 리턴
+     * pollIemNm 由ы꽩
      *
      * @return the pollIemNm
      */
@@ -111,7 +111,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * pollIemNm 설정
+     * pollIemNm ?ㅼ젙
      *
      * @param pollIemNm the pollIemNm to set
      */
@@ -120,7 +120,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 리턴
+     * frstRegisterPnttm 由ы꽩
      *
      * @return the frstRegisterPnttm
      */
@@ -129,7 +129,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 설정
+     * frstRegisterPnttm ?ㅼ젙
      *
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
@@ -138,7 +138,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * frstRegisterId 리턴
+     * frstRegisterId 由ы꽩
      *
      * @return the frstRegisterId
      */
@@ -147,7 +147,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * frstRegisterId 설정
+     * frstRegisterId ?ㅼ젙
      *
      * @param frstRegisterId the frstRegisterId to set
      */
@@ -156,7 +156,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 리턴
+     * lastUpdusrPnttm 由ы꽩
      *
      * @return the lastUpdusrPnttm
      */
@@ -165,7 +165,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 설정
+     * lastUpdusrPnttm ?ㅼ젙
      *
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
@@ -174,7 +174,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * lastUpdusrId 리턴
+     * lastUpdusrId 由ы꽩
      *
      * @return the lastUpdusrId
      */
@@ -183,7 +183,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * lastUpdusrId 설정
+     * lastUpdusrId ?ㅼ젙
      *
      * @param lastUpdusrId the lastUpdusrId to set
      */
@@ -192,7 +192,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * cmd 리턴
+     * cmd 由ы꽩
      *
      * @return the cmd
      */
@@ -201,7 +201,7 @@ public class OnlinePollItem implements Serializable {
     }
 
     /**
-     * cmd 설정
+     * cmd ?ㅼ젙
      *
      * @param cmd the cmd to set
      */

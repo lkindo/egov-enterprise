@@ -28,7 +28,7 @@ public class CounselService implements EgovCounselService {
                 .writeDate(dto.getWriteDate())
                 .writerId(dto.getWriterId())
                 .writerNm(dto.getWriterNm())
-                .status("1") // 접수
+                .status("1") // ?묒닔
                 .frstRegisterId(dto.getWriterId())
                 .lastUpdusrId(dto.getWriterId())
                 .build();
@@ -40,7 +40,7 @@ public class CounselService implements EgovCounselService {
     public void updateCounsel(CounselDto dto) {
         counselRepository.findById(Objects.requireNonNull(dto.getCounselId()))
                 .ifPresent(c -> {
-                    // 필드 수동 업데이트 로직 생략 (Update 메서드 확장 가능)
+                    // ?꾨뱶 ?섎룞 ?낅뜲?댄듃 濡쒖쭅 ?앸왂 (Update 硫붿꽌???뺤옣 媛??
                 });
     }
 
@@ -57,8 +57,8 @@ public class CounselService implements EgovCounselService {
                 .ifPresent(c -> c.updateAnswer(
                         dto.getManagerContent(),
                         dto.getManagerDate(),
-                        "2", // 답변완료
-                        dto.getWriterId() // 관리자 ID 필요
+                        "2", // ?듬??꾨즺
+                        dto.getWriterId() // 愿由ъ옄 ID ?꾩슂
                 ));
     }
 

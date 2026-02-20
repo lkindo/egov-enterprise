@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 시스템 로그 DTO
+ * ?쒖뒪??濡쒓렇 DTO
  */
 @Getter
 @Setter
@@ -15,20 +15,20 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SysLogDto {
-    /** 요청 ID */
+    /** ?붿껌 ID */
     private String requstId;
-    /** 서비스명 */
+    /** ?쒕퉬?ㅻ챸 */
     private String srvcNm;
-    /** 메서드명 */
+    /** 硫붿꽌?쒕챸 */
     private String methodNm;
-    /** 처리구분코드 */
+    /** 泥섎━援щ텇肄붾뱶 */
     private String processSeCode;
-    /** 처리시간 */
+    /** 泥섎━?쒓컙 */
     private String processTime;
-    /** 요청자ID */
+    /** ?붿껌?륤D */
     private String rqesterId;
-    /** 요청자IP */
+    /** ?붿껌?륤P */
     private String rqesterIp;
-    /** 발생일 */
+    /** 諛쒖깮??*/
     private String occrrncDe;
 }

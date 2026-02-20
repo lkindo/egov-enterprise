@@ -11,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * BoardRepository JPA 테스트
+ * BoardRepository JPA ???뮞??
  */
 @DataJpaTest
 @Import(TestQuerydslConfig.class)
@@ -25,12 +25,12 @@ class BoardRepositoryTest {
     private BoardMasterRepository boardMasterRepository;
 
     @Test
-    @DisplayName("게시판 마스터 저장 및 조회 테스트")
+    @DisplayName("野껊슣???筌띾뜆???????獄?鈺곌퀬?????뮞??)
     void saveBoardMaster() {
         // given
         BoardMaster master = BoardMaster.builder()
                 .bbsId("TEST_BBS_001")
-                .bbsNm("테스트 게시판")
+                .bbsNm("???뮞??野껊슣???)
                 .bbsTyCode("BBST01")
                 .bbsAttrbCode("BBSA01")
                 .frstRegisterId("SYSTEM")
@@ -42,17 +42,17 @@ class BoardRepositoryTest {
 
         // then
         assertThat(saved.getBbsId()).isEqualTo("TEST_BBS_001");
-        assertThat(saved.getBbsNm()).isEqualTo("테스트 게시판");
+        assertThat(saved.getBbsNm()).isEqualTo("???뮞??野껊슣???);
     }
 
     @Test
-    @DisplayName("게시물 저장 및 조회 테스트")
+    @DisplayName("野껊슣?녻눧?????獄?鈺곌퀬?????뮞??)
     void saveBoard() {
         // given
         BoardMaster master = java.util.Objects.requireNonNull(boardMasterRepository.save(
                 java.util.Objects.requireNonNull(BoardMaster.builder()
                         .bbsId("TEST_BBS_002")
-                        .bbsNm("테스트 게시판2")
+                        .bbsNm("???뮞??野껊슣???")
                         .bbsTyCode("BBST01")
                         .bbsAttrbCode("BBSA01")
                         .frstRegisterId("SYSTEM")
@@ -60,8 +60,8 @@ class BoardRepositoryTest {
 
         Board board = Board.builder()
                 .bbsId(java.util.Objects.requireNonNull(master.getBbsId()))
-                .nttSj("테스트 제목")
-                .nttCn("테스트 내용")
+                .nttSj("???뮞????뺛걠")
+                .nttCn("???뮞????곸뒠")
                 .ntceBgnde("20230101")
                 .ntceEndde("99991231")
                 .ntcrId("TESTER")
@@ -73,7 +73,7 @@ class BoardRepositoryTest {
         Board saved = java.util.Objects.requireNonNull(boardRepository.save(java.util.Objects.requireNonNull(board)));
 
         // then
-        assertThat(saved.getNttSj()).isEqualTo("테스트 제목");
-        assertThat(saved.getNttCn()).isEqualTo("테스트 내용");
+        assertThat(saved.getNttSj()).isEqualTo("???뮞????뺛걠");
+        assertThat(saved.getNttCn()).isEqualTo("???뮞????곸뒠");
     }
 }

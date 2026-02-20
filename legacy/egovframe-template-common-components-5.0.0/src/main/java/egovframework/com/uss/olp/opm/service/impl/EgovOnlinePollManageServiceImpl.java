@@ -14,16 +14,16 @@ import egovframework.com.uss.olp.opm.service.OnlinePollManage;
 import jakarta.annotation.Resource;
 
 /**
- * 온라인POLL관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * ?⑤씪?퇠OLL愿由щ? 泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -42,8 +42,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     private EgovIdGnrService idgenOnlinePollItemService;
 
     /**
-     * 온라인POLL관리를(을) 목록을 조회 한다.
-     * @param OnlinePoll 회정정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? 紐⑸줉??議고쉶 ?쒕떎.
+     * @param OnlinePoll ?뚯젙?뺣낫媛 ?닿? VO
      * @return List
      * @throws Exception
      */
@@ -53,8 +53,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param searchVO  議고쉶???뺣낫媛 ?닿릿 VO
      * @return int
      * @throws Exception
      */
@@ -64,8 +64,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 상세조회 한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param onlinePollManage ?⑤씪?퇠OLL愿由??뺣낫媛 ?닿? VO
      * @return List
      * @throws Exception
      */
@@ -75,8 +75,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 등록한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? ?깅줉?쒕떎.
+     * @param onlinePollManage ?⑤씪?퇠OLL愿由??뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -87,8 +87,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 수정한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? ?섏젙?쒕떎.
+     * @param onlinePollManage ?⑤씪?퇠OLL愿由??뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -97,8 +97,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 삭제한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? ??젣?쒕떎.
+     * @param onlinePollManage ?⑤씪?퇠OLL愿由??뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -107,8 +107,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL관리를(을) 통계를 조회 한다.
-     * @param onlinePollManage 온라인POLL관리 정보가 담김 VO
+     * ?⑤씪?퇠OLL愿由щ?(?? ?듦퀎瑜?議고쉶 ?쒕떎.
+     * @param onlinePollManage ?⑤씪?퇠OLL愿由??뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -117,8 +117,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL항목를(을) 조회한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
+     * ?⑤씪?퇠OLL??ぉ瑜??? 議고쉶?쒕떎.
+     * @param onlinePollItem  ?⑤씪?퇠OLL??ぉ ?뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -127,8 +127,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL항목를(을) 등록한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
+     * ?⑤씪?퇠OLL??ぉ瑜??? ?깅줉?쒕떎.
+     * @param onlinePollItem  ?⑤씪?퇠OLL??ぉ ?뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -139,8 +139,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL항목를(을) 수정한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
+     * ?⑤씪?퇠OLL??ぉ瑜??? ?섏젙?쒕떎.
+     * @param onlinePollItem  ?⑤씪?퇠OLL??ぉ ?뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override
@@ -149,8 +149,8 @@ public class EgovOnlinePollManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL항목를(을) 삭제한다.
-     * @param onlinePollItem  온라인POLL항목 정보가 담김 VO
+     * ?⑤씪?퇠OLL??ぉ瑜??? ??젣?쒕떎.
+     * @param onlinePollItem  ?⑤씪?퇠OLL??ぉ ?뺣낫媛 ?닿? VO
      * @throws Exception
      */
     @Override

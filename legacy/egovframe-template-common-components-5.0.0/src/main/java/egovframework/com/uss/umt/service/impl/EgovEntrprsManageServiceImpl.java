@@ -15,20 +15,20 @@ import egovframework.com.utl.sim.service.EgovFileScrty;
 import jakarta.annotation.Resource;
 
 /**
- * 기업회원관리에 관한 비지니스클래스를 정의한다.
- * @author 공통서비스 개발팀 조재영
+ * 湲곗뾽?뚯썝愿由ъ뿉 愿??鍮꾩??덉뒪?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
- *   2014.12.08	 이기하			암호화방식 변경(EgovFileScrty.encryptPassword)
- *   2017.07.21  장동한 			로그인인증제한 작업
+ *   2009.04.10  議곗옱??         理쒖큹 ?앹꽦
+ *   2014.12.08	 ?닿린??		?뷀샇?붾갑??蹂寃?EgovFileScrty.encryptPassword)
+ *   2017.07.21  ?λ룞??			濡쒓렇?몄씤利앹젣???묒뾽
  *
  * </pre>
  */
@@ -52,18 +52,18 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
     private EgovIdGnrService idgenService;
 
     /**
-	 * 기업회원의 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	 * @param entrprsManageVO 기업회원등록정보
-	 * @return result 등록결과
+	 * 湲곗뾽?뚯썝??湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
+	 * @param entrprsManageVO 湲곗뾽?뚯썝?깅줉?뺣낫
+	 * @return result ?깅줉寃곌낵
 	 * @throws Exception
 	 */
     @Override
 	public String insertEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception  {
-        //고유아이디 셋팅
+        //怨좎쑀?꾩씠???뗮똿
     	String uniqId = idgenService.getNextStringId();
         entrprsManageVO.setUniqId(uniqId);
-        //패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+        //?⑥뒪?뚮뱶 ?뷀샇??
+		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		entrprsManageVO.setEntrprsMberPassword(pass);
 
         String result = entrprsManageDAO.insertEntrprsmber(entrprsManageVO);
@@ -71,9 +71,9 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
     }
 
     /**
-	 * 기 등록된 사용자 중 검색조건에 맞는기업회원의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param uniqId 조회대상 기업회원아이디
-	 * @return entrprsManageVO 기업회원정보
+	 * 湲??깅줉???ъ슜??以?寃?됱“嫄댁뿉 留욌뒗湲곗뾽?뚯썝???뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param uniqId 議고쉶???湲곗뾽?뚯썝?꾩씠??
+	 * @return entrprsManageVO 湲곗뾽?뚯썝?뺣낫
 	 * @throws Exception
 	 */
     @Override
@@ -83,21 +83,21 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
     }
 
 	/**
-	 * 화면에 조회된 기업회원의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
-	 * @param entrprsManageVO 기업회원수정정보
+	 * ?붾㈃??議고쉶??湲곗뾽?뚯썝??湲곕낯?뺣낫瑜??섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
+	 * @param entrprsManageVO 湲곗뾽?뚯썝?섏젙?뺣낫
 	 * @throws Exception
 	 */
     @Override
 	public void updateEntrprsmber(EntrprsManageVO entrprsManageVO) throws Exception {
-    	//패스워드 암호화
-		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 보안약점 조치 (2018-10-29, 윤창원)
+    	//?⑥뒪?뚮뱶 ?뷀샇??
+		String pass = EgovFileScrty.encryptPassword(entrprsManageVO.getEntrprsMberPassword(), EgovStringUtil.isNullToString(entrprsManageVO.getEntrprsmberId()));//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		entrprsManageVO.setEntrprsMberPassword(pass);
 		entrprsManageDAO.updateEntrprsmber(entrprsManageVO);
     }
 
 	/**
-	 * 화면에 조회된 기업회원의 정보를 데이터베이스에서 삭제
-	 * @param checkedIdForDel 삭제대상기업회원아이디
+	 * ?붾㈃??議고쉶??湲곗뾽?뚯썝???뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ??젣
+	 * @param checkedIdForDel ??젣??곴린?낇쉶?먯븘?대뵒
 	 * @throws Exception
 	 */
     @Override
@@ -108,22 +108,22 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
             String [] id = element.split(":");
             //log.debug("id[0]:"+id[0]);
             if (id[0].equals("USR03")){
-                //업무사용자(직원)삭제
+                //?낅Т?ъ슜??吏곸썝)??젣
                 userManageDAO.deleteUser(id[1]);
             }else if(id[0].equals("USR01")){
-                //일반회원삭제
+                //?쇰컲?뚯썝??젣
                 mberManageDAO.deleteMber(id[1]);
             }else if(id[0].equals("USR02")){
-                //기업회원삭제
+                //湲곗뾽?뚯썝??젣
                 entrprsManageDAO.deleteEntrprsmber(id[1]);
             }
         }
     }
 
 	/**
-	 * 기업회원용 약관정보 조회
-	 * @param stplatId 기업회원약관아이디
-	 * @return stplatList 기업회원약관정보
+	 * 湲곗뾽?뚯썝???쎄??뺣낫 議고쉶
+	 * @param stplatId 湲곗뾽?뚯썝?쎄??꾩씠??
+	 * @return stplatList 湲곗뾽?뚯썝?쎄??뺣낫
 	 * @throws Exception
 	 */
     @Override
@@ -133,8 +133,8 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
     }
 
 	/**
-	 * 기업회원 암호 수정
-	 * @param passVO 기업회원수정정보(비밀번호)
+	 * 湲곗뾽?뚯썝 ?뷀샇 ?섏젙
+	 * @param passVO 湲곗뾽?뚯썝?섏젙?뺣낫(鍮꾨?踰덊샇)
 	 * @throws Exception
 	 */
 	@Override
@@ -143,9 +143,9 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기업회원이 비밀번호를 기억하지 못할 때 비밀번호를 찾을 수 있도록 함
-	 * @param passVO 기업회원암호 조회조건정보
-	 * @return entrprsManageVO 기업회원암호정보
+	 * 湲곗뾽?뚯썝??鍮꾨?踰덊샇瑜?湲곗뼲?섏? 紐삵븷 ??鍮꾨?踰덊샇瑜?李얠쓣 ???덈룄濡???
+	 * @param passVO 湲곗뾽?뚯썝?뷀샇 議고쉶議곌굔?뺣낫
+	 * @return entrprsManageVO 湲곗뾽?뚯썝?뷀샇?뺣낫
 	 * @throws Exception
 	 */
 	@Override
@@ -155,9 +155,9 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기 등록된기업 회원 중 검색조건에 맞는 회원들의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param userSearchVO 검색조건
-	 * @return List<EntrprsManageVO> 기업회원목록정보
+	 * 湲??깅줉?쒓린???뚯썝 以?寃?됱“嫄댁뿉 留욌뒗 ?뚯썝?ㅼ쓽 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @return List<EntrprsManageVO> 湲곗뾽?뚯썝紐⑸줉?뺣낫
 	 * @throws Exception
 	 */
 	@Override
@@ -166,9 +166,9 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
     /**
-     * 기업회원 총 개수를 조회한다.
-     * @param userSearchVO 검색조건
-     * @return 사용자 총 개수(int)
+     * 湲곗뾽?뚯썝 珥?媛쒖닔瑜?議고쉶?쒕떎.
+     * @param userSearchVO 寃?됱“嫄?
+     * @return ?ъ슜??珥?媛쒖닔(int)
      * @throws Exception
      */
     @Override
@@ -177,8 +177,8 @@ public class EgovEntrprsManageServiceImpl extends EgovAbstractServiceImpl implem
     }
 
     /**
-     * 로그인인증제한 해제
-     * @param entrprsManageVO 기업회원정보
+     * 濡쒓렇?몄씤利앹젣???댁젣
+     * @param entrprsManageVO 湲곗뾽?뚯썝?뺣낫
      * @return void
      * @throws Exception
      */

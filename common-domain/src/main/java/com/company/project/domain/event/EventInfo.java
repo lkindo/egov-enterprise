@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 이벤트 정보 Entity
- * 레거시 테이블: NEVENTINFO
+ * ??源???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NEVENTINFO
  */
 @Entity
 @Table(name = "NEVENTINFO")

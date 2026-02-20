@@ -1,18 +1,18 @@
 package egovframework.com.sym.mnu.mcm.service;
 
 /** 
- * 사이트맵 생성을 위한 클래스를 정의한다
- * @author 개발환경 개발팀 이용
+ * ?ъ씠?몃㏊ ?앹꽦???꾪븳 ?대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -41,13 +41,13 @@ public class MenuSiteMap{
 	public void setBndeFilePath(String bndeFilePath) {
 		this.bndeFilePath = bndeFilePath;
 	}
-	/** 사이트맵 */
-	   /** 생성자ID **/
+	/** ?ъ씠?몃㏊ */
+	   /** ?앹꽦?륤D **/
 	   private   String   creatPersonId;
-	   /** 맵생성ID */
+	   /** 留듭깮?켌D */
 	   private   String   mapCreatId;
-	   /** 맵파일명 */
+	   /** 留듯뙆?쇰챸 */
 	   private   String   bndeFileNm;
-	   /** 맵파일경로 */
+	   /** 留듯뙆?쇨꼍濡?*/
 	   private   String   bndeFilePath;
 }

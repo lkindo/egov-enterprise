@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 간부일정 정보 Entity
- * 레거시 테이블: NLEADERSCHDUL
+ * 揶쏄쑬???깆젟 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NLEADERSCHDUL
  */
 @Entity
 @Table(name = "NLEADERSCHDUL")

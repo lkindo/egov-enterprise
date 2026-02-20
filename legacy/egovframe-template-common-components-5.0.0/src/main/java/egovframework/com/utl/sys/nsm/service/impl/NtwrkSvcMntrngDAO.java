@@ -10,23 +10,23 @@ import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLogVO;
 import egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링대상에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 네트워크서비스 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 @Repository("NtwrkSvcMntrngDAO")
 public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 주어진 조건에 맞는 네트워크서비스 모니터링 대상 목록을 불러온다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
-	 * @return List<NtwrkSvcMntrngVO> - 네트워크서비스 모니터링 대상 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???紐⑸줉??遺덈윭?⑤떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
+	 * @return List<NtwrkSvcMntrngVO> - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???List
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
@@ -35,9 +35,9 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 네트워크서비스 모니터링 대상을 불러온다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
-	 * @return NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ??곸쓣 遺덈윭?⑤떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
+	 * @return NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
@@ -46,8 +46,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 대상 정보를 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링 대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ????뺣낫瑜??섏젙?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???model
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -56,8 +56,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 대상 정보를 등록한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링 대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ????뺣낫瑜??깅줉?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???model
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -66,8 +66,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 등록을 위한 중복 조회를 수행한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????깅줉???꾪븳 以묐났 議고쉶瑜??섑뻾?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
 	 * @return int
 	 *
 	 * @param ntwrkSvcMntrngVO
@@ -77,8 +77,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 대상 정보를 삭제한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링 대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ????뺣낫瑜???젣?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???model
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -87,8 +87,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 목록에 대한 전체 건수를 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
 	 * @return int
 	 *
 	 * @param ntwrkSvcMntrngVO
@@ -98,8 +98,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 결과를 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링 대상 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???model
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -108,9 +108,9 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 네트워크서비스 모니터링 로그 목록을 불러온다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링 로그 VO
-	 * @return  List<NtwrkSvcMntrngLogVO> - 네트워크서비스 모니터링 로그 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 紐⑸줉??遺덈윭?⑤떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 VO
+	 * @return  List<NtwrkSvcMntrngLogVO> - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 List
 	 *
 	 * @param ntwrkSvcMntrngLogVO
 	 */
@@ -119,8 +119,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 로그 목록에 대한 전체 건수를 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링 로그 VO
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 VO
 	 * @return int
 	 *
 	 * @param ntwrkSvcMntrngLogVO
@@ -130,9 +130,9 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 네트워크서비스 모니터링 로그를 불러온다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링 로그 VO
-	 * @return NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링 로그 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇瑜?遺덈윭?⑤떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 VO
+	 * @return NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 VO
 	 *
 	 * @param ntwrkSvcMntrngLogVO
 	 */
@@ -141,8 +141,8 @@ public class NtwrkSvcMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링 로그 정보를 등록한다.
-	 * @param NtwrkSvcMntrngLog - 네트워크서비스 모니터링 로그 model
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param NtwrkSvcMntrngLog - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇 model
 	 *
 	 * @param ntwrkSvcMntrngLog
 	 */

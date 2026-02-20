@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 인터넷서비스안내에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 인터넷서비스안내에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 인터넷서비스안내의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:52
+ * @created 03-8-2009 ?ㅽ썑 2:08:52
  */
 
 package egovframework.com.uss.ion.isg.service.impl;
@@ -24,17 +24,17 @@ import egovframework.com.uss.ion.isg.service.IntnetSvcGuidanceVO;
 public class IntnetSvcGuidanceDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 인터넷서비스안내정보를 관리하기 위해 등록된 인터넷서비스안내 목록을 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return List - 인터넷서비스안내 목록
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???명꽣?룹꽌鍮꾩뒪?덈궡 紐⑸줉??議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return List - ?명꽣?룹꽌鍮꾩뒪?덈궡 紐⑸줉
 	 */	
 	public List<IntnetSvcGuidanceVO> selectIntnetSvcGuidanceList(IntnetSvcGuidanceVO intnetSvcGuidanceVO) throws Exception {
 		return selectList("intnetSvcGuidanceDAO.selectIntnetSvcGuidanceList", intnetSvcGuidanceVO);
 	}
 
     /**
-	 * 인터넷서비스안내목록 총 개수를 조회한다.
-	 * @param mainImageVO - 인터넷서비스안내 VO
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
 	 * @return int
 	 */
     public int selectIntnetSvcGuidanceListTotCnt(IntnetSvcGuidanceVO intnetSvcGuidanceVO) throws Exception {
@@ -42,42 +42,42 @@ public class IntnetSvcGuidanceDAO extends EgovComAbstractDAO {
     }
 	
 	/**
-	 * 등록된 인터넷서비스안내의 상세정보를 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return IntnetSvcGuidanceVO - 인터넷서비스안내 VO
+	 * ?깅줉???명꽣?룹꽌鍮꾩뒪?덈궡???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return IntnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
 	 */
 	public IntnetSvcGuidanceVO selectIntnetSvcGuidance(IntnetSvcGuidanceVO intnetSvcGuidanceVO) throws Exception {
 		return (IntnetSvcGuidanceVO) selectOne("intnetSvcGuidanceDAO.selectIntnetSvcGuidance", intnetSvcGuidanceVO);
 	}
 
 	/**
-	 * 인터넷서비스안내정보를 신규로 등록한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
 	 */
 	public void insertIntnetSvcGuidance(IntnetSvcGuidance intnetSvcGuidance) throws Exception {
 		insert("intnetSvcGuidanceDAO.insertIntnetSvcGuidance", intnetSvcGuidance);
 	}
 
 	/**
-	 * 기 등록된 인터넷서비스안내정보를 수정한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
+	 * 湲??깅줉???명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜??섏젙?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
 	 */
 	public void updateIntnetSvcGuidance(IntnetSvcGuidance intnetSvcGuidance) throws Exception {
 		update("intnetSvcGuidanceDAO.updateIntnetSvcGuidance", intnetSvcGuidance);
 	}
 
 	/**
-	 * 기 등록된 인터넷서비스안내정보를 삭제한다.
-	 * @param intnetSvcGuidance - 인터넷서비스안내 model
+	 * 湲??깅줉???명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫瑜???젣?쒕떎.
+	 * @param intnetSvcGuidance - ?명꽣?룹꽌鍮꾩뒪?덈궡 model
 	 */
 	public void deleteIntnetSvcGuidance(IntnetSvcGuidance intnetSvcGuidance) throws Exception {
 		delete("intnetSvcGuidanceDAO.deleteIntnetSvcGuidance", intnetSvcGuidance);
 	}
 	
 	/**
-	 * 인터넷서비스안내정보 적용결과를 조회한다.
-	 * @param intnetSvcGuidanceVO - 인터넷서비스안내 VO
-	 * @return List - 인터넷서비스안내 목록
+	 * ?명꽣?룹꽌鍮꾩뒪?덈궡?뺣낫 ?곸슜寃곌낵瑜?議고쉶?쒕떎.
+	 * @param intnetSvcGuidanceVO - ?명꽣?룹꽌鍮꾩뒪?덈궡 VO
+	 * @return List - ?명꽣?룹꽌鍮꾩뒪?덈궡 紐⑸줉
 	 */
 	public List<IntnetSvcGuidanceVO> selectIntnetSvcGuidanceResult(IntnetSvcGuidanceVO intnetSvcGuidanceVO) throws Exception {
 		return selectList("intnetSvcGuidanceDAO.selectIntnetSvcGuidanceResult", intnetSvcGuidanceVO);

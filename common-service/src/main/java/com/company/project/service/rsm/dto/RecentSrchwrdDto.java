@@ -14,31 +14,31 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "최근 검색어 정보 DTO")
+@Schema(description = "Description")
 public class RecentSrchwrdDto {
 
-    @Schema(description = "검색어 관리 ID")
+    @Schema(description = "Description")
     private String srchwrdManageId;
 
-    @Schema(description = "검색어 관리 명")
+    @Schema(description = "Description")
     private String srchwrdManageNm;
 
-    @Schema(description = "검색어 연결 URL")
+    @Schema(description = "Description")
     private String srchwrdConectUrl;
 
-    @Schema(description = "사용자 검색 여부")
+    @Schema(description = "Description")
     private String userSearchAt;
 
-    @Schema(description = "검색어 ID")
+    @Schema(description = "Description")
     private String srchwrdId;
 
-    @Schema(description = "검색어 명")
+    @Schema(description = "Description")
     private String srchwrdNm;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static RecentSrchwrdDto from(RecentSrchwrdManage entity) {

@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 당직 일지 정보 Entity
- * 레거시 테이블: NBNDTDIARY
+ * ?諭彛???? ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NBNDTDIARY
  */
 @Entity
 @Table(name = "NBNDTDIARY")

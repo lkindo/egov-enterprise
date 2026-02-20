@@ -12,11 +12,11 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  ------- 	   --------    ---------------------------
-*   2011.10.10  이기하		보안점검 조치(널포인트 역참조 방지)
+*   2011.10.10  ?닿린??	蹂댁븞?먭? 議곗튂(?먰룷?명듃 ??갭議?諛⑹?)
 * </pre>
 */
 
@@ -34,10 +34,10 @@ public class AjaxXmlView extends AbstractView {
 
 			writer = response.getWriter();
 			//			writer.write((String) model.get("ajaxXml"));
-			writer.write(EgovWebUtil.clearXSSMaximum((String)model.get("ajaxXml")));//Request로 들어오는 Parameter만 XSS 처리 필요
+			writer.write(EgovWebUtil.clearXSSMaximum((String)model.get("ajaxXml")));//Request濡??ㅼ뼱?ㅻ뒗 Parameter留?XSS 泥섎━ ?꾩슂
 
 		} finally {
-			// 2011.10.10 보안점검 조치(널포인트 역참조 방지)
+			// 2011.10.10 蹂댁븞?먭? 議곗튂(?먰룷?명듃 ??갭議?諛⑹?)
 			if (writer != null) {
 				writer.close();
 			}

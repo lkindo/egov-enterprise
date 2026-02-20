@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 행사관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?됱궗愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 행사관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?됱궗愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 
@@ -22,42 +22,42 @@ public class EventManageVO extends EventManage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 배너 목록
+	 * 諛곕꼫 紐⑸줉
 	 */
 	List<EventManageVO> eventManageList;
 
 	/**
-	*  신청자ID
+	*  ?좎껌?륤D
 	*/
 	private String applcntId;
 
 	/**
-	*  신청일자
+	*  ?좎껌?쇱옄
 	*/
 	private String reqstDe;
 
 	/**
-	*  결재자ID
+	*  寃곗옱?륤D
 	*/
 	private String sanctnerId;
 
 	/**
-	*  승인여부
+	*  ?뱀씤?щ?
 	*/
 	private String confmAt;
 
 	/**
-	*  결재일시
+	*  寃곗옱?쇱떆
 	*/
 	private String sanctnDt;
 
 	/**
-	*  반려사유
+	*  諛섎젮?ъ쑀
 	*/
 	private String returnResn;
 
 	/**
-	*  약식결재ID
+	*  ?쎌떇寃곗옱ID
 	*/
 	private String infrmlSanctnId;
 
@@ -97,47 +97,47 @@ public class EventManageVO extends EventManage implements Serializable {
 	private String eventTemp7;
 
 	/**
-	*  결재자명
+	*  寃곗옱?먮챸
 	*/
 	private String sanctnerNm;
 
 	/**
-	*  신청자명
+	*  ?좎껌?먮챸
 	*/
 	private String applcntNm;
 
 	/**
-	*  행사구분명
+	*  ?됱궗援щ텇紐?
 	*/
 	private String eventSeNm;
 
 	/**
-	*  검색 연도
+	*  寃???곕룄
 	*/
 	private String searchYear;
 
 	/**
-	*  검색 월
+	*  寃????
 	*/
 	private String searchMonth;
 
 	/**
-	*  검색 명
+	*  寃??紐?
 	*/
 	private String searchNm;
 
 	/**
-	*  검색 구분명
+	*  寃??援щ텇紐?
 	*/
 	private String searchSe;
 
 	/**
-	*  체크 행사접수기간 일수
+	*  泥댄겕 ?됱궗?묒닔湲곌컙 ?쇱닔
 	*/
 	private int eventDayCount;
 
 	/**
-	*  체크 행사참여인원
+	*  泥댄겕 ?됱궗李몄뿬?몄썝
 	*/
 	private int eventAtdrnCount;
 
@@ -152,7 +152,7 @@ public class EventManageVO extends EventManage implements Serializable {
 	private String searchFromDateView;
 
 	/**
-	*  검색 승인여부
+	*  寃???뱀씤?щ?
 	*/
 	private String searchConfmAt;
 

@@ -19,22 +19,22 @@ import egovframework.com.ssi.syi.ist.service.EgovCntcSttusService;
 import jakarta.annotation.Resource;
 
 /**
- * 연계현황 관리에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한
- * Controller를 정의한다
+ * ?곌퀎?꾪솴 愿由ъ뿉 愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳
+ * Controller瑜??뺤쓽?쒕떎
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.06.30  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions, LocalVariableNamingConventions
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.06.30  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions, LocalVariableNamingConventions
  *
  *      </pre>
  */
@@ -49,7 +49,7 @@ public class EgovCntcSttusController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 연계현황 상세내역을 조회한다.
+	 * ?곌퀎?꾪솴 ?곸꽭?댁뿭??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param cntcSttus
@@ -66,7 +66,7 @@ public class EgovCntcSttusController {
 	}
 
 	/**
-	 * 연계현황 목록을 조회한다.
+	 * ?곌퀎?꾪솴 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -74,7 +74,7 @@ public class EgovCntcSttusController {
 	 * @return "egovframework/com/cmm/sym/ccm/EgovCcmCntcSttusList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "연계현황관리", listUrl = "/ssi/syi/ist/getCntcSttusList.do", order = 1220, gid = 70)
+	@IncludedInfo(name = "?곌퀎?꾪솴愿由?, listUrl = "/ssi/syi/ist/getCntcSttusList.do", order = 1220, gid = 70)
 	@RequestMapping(value = "/ssi/syi/ist/getCntcSttusList.do")
 	public String selectCntcSttusLogList(@ModelAttribute("searchVO") CntcSttusVO searchVO, ModelMap model)
 			throws Exception {
@@ -103,7 +103,7 @@ public class EgovCntcSttusController {
 	}
 
 	/**
-	 * Map 내용을 확인한다.
+	 * Map ?댁슜???뺤씤?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @return

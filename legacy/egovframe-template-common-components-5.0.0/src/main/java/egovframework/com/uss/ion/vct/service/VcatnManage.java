@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.vct.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 휴가관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?닿?愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 휴가관리의 신청자ID,휴가구분,시작일자,종료일자,신청일자,휴가사유,발생연도,결재자ID,승인여부,결재일시,반려사유,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?닿?愿由ъ쓽 ?좎껌?륤D,?닿?援щ텇,?쒖옉?쇱옄,醫낅즺?쇱옄,?좎껌?쇱옄,?닿??ъ쑀,諛쒖깮?곕룄,寃곗옱?륤D,?뱀씤?щ?,寃곗옱?쇱떆,諛섎젮?ъ쑀,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class VcatnManage extends ComDefaultVO {
@@ -20,88 +20,88 @@ public class VcatnManage extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	*  신청자ID	      
+	*  ?좎껌?륤D	      
 	*/ 
 	private String applcntId;
 
 	/**
-	*  휴가구분	      
+	*  ?닿?援щ텇	      
 	*/ 
 	private String vcatnSe;
 
 	/**
-	*  시작일자	      
+	*  ?쒖옉?쇱옄	      
 	*/ 
 	private String bgnde;
 
 	/**
-	*  종료일자	      
+	*  醫낅즺?쇱옄	      
 	*/ 
 	private String endde;
 	
 	/**
-	*  신청일자	      
+	*  ?좎껌?쇱옄	      
 	*/ 
 	private String reqstDe;
 
 	/**
-	*  휴가사유	      
+	*  ?닿??ъ쑀	      
 	*/ 
 	private String vcatnResn;
 	
 	/**
-	*  발생연도	      
+	*  諛쒖깮?곕룄	      
 	*/ 
 	private String occrrncYear;
 
 	/**
-	*  정오구분	      
+	*  ?뺤삤援щ텇	      
 	*/ 
 	private String noonSe;
 	
 	/**
-	*  결재자ID	      
+	*  寃곗옱?륤D	      
 	*/ 
 	private String sanctnerId;
 
 	/**
-	*  승인여부	      
+	*  ?뱀씤?щ?	      
 	*/ 
 	private String confmAt;
 
 	/**
-	*  결재일시	      
+	*  寃곗옱?쇱떆	      
 	*/ 
 	private String sanctnDt;
 
 	/**
-	*  반려사유	      
+	*  諛섎젮?ъ쑀	      
 	*/ 
 	private String returnResn;
 
 	/**
-	*  약식결재ID	      
+	*  ?쎌떇寃곗옱ID	      
 	*/ 
 	private String infrmlSanctnId;	
 	
 	
 	/**
-	*  최초등록자ID	
+	*  理쒖큹?깅줉?륤D	
 	*/ 
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점	
+	*  理쒖큹?깅줉?쒖젏	
 	*/ 
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID	
+	*  理쒖쥌?섏젙?륤D	
 	*/ 
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점	
+	*  理쒖쥌?섏젙?쒖젏	
 	*/ 
 	private String lastUpdusrPnttm;
 

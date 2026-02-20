@@ -12,26 +12,26 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 지식맵(지식유형)에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앸㏊(吏?앹쑀???????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식맵(지식유형)에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식맵(지식유형)의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앸㏊(吏?앹쑀????????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앸㏊(吏?앹쑀????議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.08.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.12  박종선          최초 생성
- *   2025.06.14  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙)
+ *   2010.08.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2025.06.14  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -42,10 +42,10 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	private MapMaterialDAO mapMaterialDAO;
 
 	/**
-	 * 등록된 지식맵(지식유형) 정보를 조회 한다.
+	 * ?깅줉??吏?앸㏊(吏?앹쑀?? ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param mapMaterialVO- 지식맵(지식유형) VO
-	 * @return String - 지식맵(지식유형)목록
+	 * @param mapMaterialVO- 吏?앸㏊(吏?앹쑀?? VO
+	 * @return String - 吏?앸㏊(吏?앹쑀??紐⑸줉
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -55,10 +55,10 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 지식맵(지식유형) 목록 총 개수를 조회한다.
+	 * 吏?앸㏊(吏?앹쑀?? 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param MapMaterialVO - 지식맵(지식유형) Vo
-	 * @return int - 지식맵(지식유형) 토탈 카운트 수
+	 * @param MapMaterialVO - 吏?앸㏊(吏?앹쑀?? Vo
+	 * @return int - 吏?앸㏊(吏?앹쑀?? ?좏깉 移댁슫????
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -68,10 +68,10 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 지식맵(지식유형)상세 정보를 조회 한다.
+	 * 吏?앸㏊(吏?앹쑀???곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param MapMaterialVO - 지식맵(지식유형) VO
-	 * @return String - 지식맵(지식유형)VO
+	 * @param MapMaterialVO - 吏?앸㏊(吏?앹쑀?? VO
+	 * @return String - 吏?앸㏊(吏?앹쑀??VO
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -82,9 +82,9 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 지식맵(지식유형) 정보를 신규로 등록한다.
+	 * 吏?앸㏊(吏?앹쑀?? ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param konTypeNm     - 지식맵(지식유형) model
+	 * @param konTypeNm     - 吏?앸㏊(吏?앹쑀?? model
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -94,9 +94,9 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록 된 지식맵(지식유형)링 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앸㏊(吏?앹쑀??留??뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param konTypeNm     - 지식맵(지식유형) model
+	 * @param konTypeNm     - 吏?앸㏊(吏?앹쑀?? model
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -106,9 +106,9 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 지식맵(지식유형) 정보를 삭제한다.
+	 * 湲??깅줉??吏?앸㏊(吏?앹쑀?? ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param konTypeNm     - 지식맵(지식유형) model
+	 * @param konTypeNm     - 吏?앸㏊(吏?앹쑀?? model
 	 *
 	 * @param MapMaterialVO
 	 */
@@ -118,10 +118,10 @@ public class EgovMapMaterialServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 지식유형코드 중복 여부 체크(위치 : 1260.지식맵관리(유형) > 등록)
+	 * 吏?앹쑀?뺤퐫??以묐났 ?щ? 泥댄겕(?꾩튂 : 1260.吏?앸㏊愿由??좏삎) > ?깅줉)
 	 * 
 	 * @param knoTypeCd
-	 * @return 중복여부
+	 * @return 以묐났?щ?
 	 * @throws Exception
 	 */
 	@Override

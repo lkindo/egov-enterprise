@@ -13,20 +13,20 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 /**
- * 다국어 properties 파일을 팩키지 구조의 폴더로 읽어드리는 MessageSource
+ * ?ㅺ뎅??properties ?뚯씪???⑺궎吏 援ъ“???대뜑濡??쎌뼱?쒕━??MessageSource
  * 
- * @author 2016 표준프레임워크 유지보수 장동한
+ * @author 2016 ?쒖??꾨젅?꾩썙???좎?蹂댁닔 ?λ룞??
  * @since 2016.06.10
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2016.06.10  장동한          최초 생성
- *   2025.05.29  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드), UnnecessarySemicolon(불필요한 세미콜론)
+ *   2016.06.10  ?λ룞??         理쒖큹 ?앹꽦
+ *   2025.05.29  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶), UnnecessarySemicolon(遺덊븘?뷀븳 ?몃?肄쒕줎)
  *
  *      </pre>
  */

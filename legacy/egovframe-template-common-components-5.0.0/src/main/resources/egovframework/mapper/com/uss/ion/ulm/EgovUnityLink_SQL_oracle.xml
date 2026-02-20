@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.10.06	정진오 		보안 취약점 점검사항 반영 $->#변경
+  2011.10.06	?뺤쭊??		蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 --><!--Converted at: Wed May 11 15:51:24 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="UnityLink">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="UnityLinkVO" type="egovframework.com.uss.ion.ulm.service.UnityLink">
 		<result property="unityLinkId" column="UNITY_LINK_ID"/>
 		<result property="unityLinkSeCode" column="UNITY_LINK_SE_CODE"/>
@@ -20,7 +20,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 통합링크:: 메인 셈플 목록 -->
+	<!-- ?듯빀留곹겕:: 硫붿씤 ?덊뵆 紐⑸줉 -->
 	<select id="selectUnityLinkSample" resultType="egovMap">
 	SELECT
 		A.UNITY_LINK_ID,
@@ -36,7 +36,7 @@
 		ORDER BY A.FRST_REGIST_PNTTM DESC
 	</select>
 
-	<!-- 통합링크::목록조회 게시물정보 -->
+	<!-- ?듯빀留곹겕::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectUnityLink" parameterType="comDefaultVO" resultType="egovMap">
 	
 	SELECT *
@@ -76,7 +76,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- 통합링크::목록조회_게시물 총개수  -->
+	<!-- ?듯빀留곹겕::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectUnityLinkCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -94,7 +94,7 @@
 	 </if>
 	</select>
 
-    <!-- 통합링크::삭제  -->
+    <!-- ?듯빀留곹겕::??젣  -->
 	<delete id="deleteUnityLink">
 		
 			DELETE FROM COMTNUNITYLINK
@@ -102,7 +102,7 @@
 		
 	</delete>
 
-	<!-- 통합링크::수정  -->
+	<!-- ?듯빀留곹겕::?섏젙  -->
 	<update id="updateUnityLink">
  
 UPDATE COMTNUNITYLINK
@@ -117,7 +117,7 @@ WHERE UNITY_LINK_ID=#{unityLinkId}
  
 	</update>
 
-	<!-- 통합링크::상세보기 -->
+	<!-- ?듯빀留곹겕::?곸꽭蹂닿린 -->
 	<select id="selectUnityLinkDetail" resultMap="UnityLinkVO">
 	SELECT
 		A.UNITY_LINK_ID,
@@ -134,7 +134,7 @@ WHERE UNITY_LINK_ID=#{unityLinkId}
 		AND A.UNITY_LINK_ID=#{unityLinkId}
 	</select>
 
-	<!-- 통합링크::입력  -->
+	<!-- ?듯빀留곹겕::?낅젰  -->
 	<insert id="insertUnityLink">
 	 
 

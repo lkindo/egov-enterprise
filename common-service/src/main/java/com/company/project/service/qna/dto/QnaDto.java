@@ -13,64 +13,64 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Q&A 정보 DTO")
+@Schema(description = "Description")
 public class QnaDto {
 
     @Schema(description = "Q&A ID")
     private String qaId;
 
-    @Schema(description = "질문 제목")
+    @Schema(description = "Description")
     private String qestnSj;
 
-    @Schema(description = "질문 내용")
+    @Schema(description = "Description")
     private String qestnCn;
 
-    @Schema(description = "작성 비밀번호")
+    @Schema(description = "Description")
     private String writngPassword;
 
-    @Schema(description = "작성자 이름")
+    @Schema(description = "Description")
     private String wrterNm;
 
-    @Schema(description = "이메일 주소")
+    @Schema(description = "Description")
     private String emailAdres;
 
-    @Schema(description = "이메일 답변 여부")
+    @Schema(description = "Description")
     private String emailAnswerAt;
 
-    @Schema(description = "지역 번호")
+    @Schema(description = "Description")
     private String areaNo;
 
-    @Schema(description = "중간 전화번호")
+    @Schema(description = "Description")
     private String middleTelno;
 
-    @Schema(description = "끝 전화번호")
+    @Schema(description = "Description")
     private String endTelno;
 
-    @Schema(description = "질문 처리 상태 코드")
+    @Schema(description = "Description")
     private String qnaProcessSttusCode;
 
-    @Schema(description = "답변 내용")
+    @Schema(description = "Description")
     private String answerCn;
 
-    @Schema(description = "답변 일자")
+    @Schema(description = "Description")
     private String answerDe;
 
-    @Schema(description = "조회수")
+    @Schema(description = "Description")
     private Integer inqireCo;
 
-    @Schema(description = "작성 일자")
+    @Schema(description = "Description")
     private String writngDe;
 
-    @Schema(description = "최초등록자 ID")
+    @Schema(description = "Description")
     private String frstRegisterId;
 
-    @Schema(description = "최초등록시점")
+    @Schema(description = "Description")
     private LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "최종수정자 ID")
+    @Schema(description = "Description")
     private String lastUpdusrId;
 
-    @Schema(description = "최종수정시점")
+    @Schema(description = "Description")
     private LocalDateTime lastUpdusrPnttm;
 
     public static QnaDto from(Qna entity) {

@@ -1,30 +1,30 @@
 package egovframework.com.dam.mgm.service;
 
 /**
- * 개요
- * - 지식정보에 대한 VO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댁뿉 ???VO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식정보의 목록 항목 및 조회 조건 등을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 吏?앹젙蹂댁쓽 紐⑸줉 ??ぉ 諛?議고쉶 議곌굔 ?깆쓣 愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:49
+ * @created 12-8-2010 ?ㅽ썑 3:44:49
  */
 public class KnoManagementVO extends KnoManagement {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
     
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";    
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-	/** 페이지사이즈 */
+	/** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
     
     /** firstIndex */

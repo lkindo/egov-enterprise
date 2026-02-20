@@ -36,22 +36,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 지식정보제공/지식정보요청를 처리하는 Controller Class 구현
+ * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? 泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.08.30
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.12.09  신용호          KISA 보안약점 조치 (위험한 형식 파일 업로드)
- *   2025.06.18  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.08.30  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.12.09  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (?꾪뿕???뺤떇 ?뚯씪 ?낅줈??
+ *   2025.06.18  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -77,7 +77,7 @@ public class EgovRequestOfferController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -85,7 +85,7 @@ public class EgovRequestOfferController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 지식정보제공/지식정보요청 목록을 조회한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -94,19 +94,19 @@ public class EgovRequestOfferController {
 	 * @return "egovframework/com/dam/spe/req/EgovRequestOfferVOList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "지식정보제공", listUrl = "/dam/spe/req/listRequestOffer.do", order = 1291, gid = 80)
+	@IncludedInfo(name = "吏?앹젙蹂댁젣怨?, listUrl = "/dam/spe/req/listRequestOffer.do", order = 1291, gid = 80)
 	@RequestMapping(value = "/dam/spe/req/listRequestOffer.do")
 	public String EgovRequestOfferList(@ModelAttribute("searchVO") RequestOfferVO searchVO,
 			@RequestParam Map<?, ?> commandMap, RequestOfferVO requestOfferVO, ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		/** EgovPropertyService.sample */
@@ -135,11 +135,11 @@ public class EgovRequestOfferController {
 		paginationInfo.setTotalRecordCount(totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 
-		// (지식전문가/지식사용자) 검사 및 설정
+		// (吏?앹쟾臾멸?/吏?앹궗?⑹옄) 寃??諛??ㅼ젙
 		HashMap<String, String> hmParam = new HashMap<String, String>();
 		hmParam.put("speId", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-		// 지식전문가 일때
+		// 吏?앹쟾臾멸? ?쇰븣
 		if (egovRequestOfferVOService.selectRequestOfferSpeCheck(hmParam)) {
 			model.addAttribute("IS_SPE", "Y");
 		} else {
@@ -153,7 +153,7 @@ public class EgovRequestOfferController {
 	}
 
 	/**
-	 * 지식정보제공/지식정보요청 목록을 상세조회 조회한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param RequestOfferVO
@@ -166,13 +166,13 @@ public class EgovRequestOfferController {
 	public String EgovRequestOfferDetail(@ModelAttribute("searchVO") RequestOfferVO searchVO,
 			RequestOfferVO requestOfferVO, @RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/dam/spe/req/EgovComDamRequestOfferDetail";
@@ -184,13 +184,13 @@ public class EgovRequestOfferController {
 			HashMap<String, String> hmParam = new HashMap<String, String>();
 			hmParam.put("ansParents", requestOfferVO.getKnoId());
 
-			// 하위답변 검색 건수를 체크
+			// ?섏쐞?듬? 寃??嫄댁닔瑜?泥댄겕
 			if (egovRequestOfferVOService.selectRequestOfferDelCnt(hmParam) > 0) {
-				// 에러 메세지 출력
+				// ?먮윭 硫붿꽭吏 異쒕젰
 				String reusltScript = "";
 
 				reusltScript += "<script type='text/javaScript' language='javascript'>";
-				reusltScript += "alert(' 하위 답변이 등록되어 있어 삭제할수 없습니다!  ');";
+				reusltScript += "alert(' ?섏쐞 ?듬????깅줉?섏뼱 ?덉뼱 ??젣?좎닔 ?놁뒿?덈떎!  ');";
 				reusltScript += "</script>";
 
 				model.addAttribute("reusltScript", reusltScript);
@@ -203,11 +203,11 @@ public class EgovRequestOfferController {
 		}
 
 		if (!sCmd.equals("del")) {
-			// 상세정보 불러오기
+			// ?곸꽭?뺣낫 遺덈윭?ㅺ린
 			RequestOfferVO requestOfferVOs = egovRequestOfferVOService.selectRequestOfferDetail(requestOfferVO);
 			model.addAttribute("requestOfferVO", requestOfferVOs);
 
-			// 조직유형 불러오기
+			// 議곗쭅?좏삎 遺덈윭?ㅺ린
 			MapTeamVO mapTeamVO = new MapTeamVO();
 			mapTeamVO.setRecordCountPerPage(999999);
 			mapTeamVO.setFirstIndex(0);
@@ -215,7 +215,7 @@ public class EgovRequestOfferController {
 			List<MapTeamVO> mapTeamList = mapTeamService.selectMapTeamList(mapTeamVO);
 			model.addAttribute("mapTeamList", mapTeamList);
 
-			// 지식유형코드불러오기
+			// 吏?앹쑀?뺤퐫?쒕텋?ъ삤湲?
 			MapMaterialVO searchMatVO = new MapMaterialVO();
 			searchMatVO.setRecordCountPerPage(999999);
 			searchMatVO.setFirstIndex(0);
@@ -224,14 +224,14 @@ public class EgovRequestOfferController {
 			List<MapMaterialVO> mapMaterialList = mapMaterialService.selectMapMaterialList(searchMatVO);
 			model.addAttribute("mapMaterialList", mapMaterialList);
 
-			// (지식전문가/지식사용자) 검사 및 설정
+			// (吏?앹쟾臾멸?/吏?앹궗?⑹옄) 寃??諛??ㅼ젙
 			HashMap<String, String> hmParam = new HashMap<String, String>();
 			hmParam.put("speId", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			model.addAttribute("USER_UNIQ_ID",
 					loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			// 지식전문가 일때
+			// 吏?앹쟾臾멸? ?쇰븣
 			if (egovRequestOfferVOService.selectRequestOfferSpeCheck(hmParam)) {
 				model.addAttribute("IS_SPE", "Y");
 			} else {
@@ -245,7 +245,7 @@ public class EgovRequestOfferController {
 	}
 
 	/**
-	 * 지식정보제공/지식정보요청를 수정 조회 한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? ?섏젙 議고쉶 ?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -260,7 +260,7 @@ public class EgovRequestOfferController {
 			@RequestParam Map<?, ?> commandMap, @ModelAttribute("requestOfferVO") RequestOfferVO requestOfferVO,
 			MapMaterial mapMaterial, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -271,12 +271,12 @@ public class EgovRequestOfferController {
 		RequestOfferVO requestOfferVOs = new RequestOfferVO();
 
 		if (!sCmd.equals("change")) {
-			// 수정정보 불러오기
+			// ?섏젙?뺣낫 遺덈윭?ㅺ린
 			requestOfferVOs = egovRequestOfferVOService.selectRequestOfferDetail(requestOfferVO);
 			model.addAttribute("requestOfferVO", requestOfferVOs);
 		}
 
-		// 조직유형 불러오기
+		// 議곗쭅?좏삎 遺덈윭?ㅺ린
 		MapTeamVO mapTeamVO = new MapTeamVO();
 		mapTeamVO.setRecordCountPerPage(999999);
 		mapTeamVO.setFirstIndex(0);
@@ -284,7 +284,7 @@ public class EgovRequestOfferController {
 		List<MapTeamVO> mapTeamList = mapTeamService.selectMapTeamList(mapTeamVO);
 		model.addAttribute("mapTeamList", mapTeamList);
 
-		// 지식유형코드불러오기
+		// 吏?앹쑀?뺤퐫?쒕텋?ъ삤湲?
 		MapMaterialVO searchMatVO = new MapMaterialVO();
 		searchMatVO.setRecordCountPerPage(999999);
 		searchMatVO.setFirstIndex(0);
@@ -298,7 +298,7 @@ public class EgovRequestOfferController {
 		List<MapMaterialVO> mapMaterialList = mapMaterialService.selectMapMaterialList(searchMatVO);
 		model.addAttribute("mapMaterialList", mapMaterialList);
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -309,7 +309,7 @@ public class EgovRequestOfferController {
 	}
 
 	/**
-	 * 지식정보제공/지식정보요청를 수정한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? ?섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -325,17 +325,17 @@ public class EgovRequestOfferController {
 			@Valid @ModelAttribute("RequestOfferVO") RequestOfferVO requestOfferVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -351,10 +351,10 @@ public class EgovRequestOfferController {
 			if (bindingResult.hasErrors()) {
 				return sLocationUrl;
 			}
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			requestOfferVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			requestOfferVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			// 첨부파일 관련 ID 생성 start....
+			// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 			String atchFileId = requestOfferVO.getAtchFileId();
 
 			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -366,8 +366,8 @@ public class EgovRequestOfferController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					requestOfferVO.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					requestOfferVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					FileVO fvo = new FileVO();
@@ -377,12 +377,12 @@ public class EgovRequestOfferController {
 					fileMngService.updateFileInfs(fvoList);
 				}
 			}
-			// 저장
+			// ???
 			egovRequestOfferVOService.updateRequestOffer(requestOfferVO);
 			sLocationUrl = "forward:/dam/spe/req/listRequestOffer.do";
 		} else {
 
-			// 수정정보 불러오기
+			// ?섏젙?뺣낫 遺덈윭?ㅺ린
 			RequestOfferVO resultRequestOfferVO = egovRequestOfferVOService.selectRequestOfferDetail(requestOfferVO);
 			model.addAttribute("requestOfferVO", resultRequestOfferVO);
 		}
@@ -391,7 +391,7 @@ public class EgovRequestOfferController {
 	}
 
 	/**
-	 * 지식정보제공/지식정보요청를 등록 조회 한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? ?깅줉 議고쉶 ?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -409,7 +409,7 @@ public class EgovRequestOfferController {
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -439,7 +439,7 @@ public class EgovRequestOfferController {
 
 		model.addAttribute("cmd", sCmd);
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -450,7 +450,7 @@ public class EgovRequestOfferController {
 	}
 
 	/**
-	 * 지식정보제공/지식정보요청를 등록을 처리 한다.
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? ?깅줉??泥섎━ ?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -466,17 +466,17 @@ public class EgovRequestOfferController {
 			@Valid @ModelAttribute("requestOfferVO") RequestOfferVO requestOfferVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -492,7 +492,7 @@ public class EgovRequestOfferController {
 				return sLocationUrl;
 			}
 
-			// 첨부파일 관련 첨부파일ID 생성
+			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			String atchFileId = "";
 
 			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -500,32 +500,32 @@ public class EgovRequestOfferController {
 
 			if (!files.isEmpty()) {
 				List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+				atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 
-				// 리턴받은 첨부파일ID를 셋팅한다..
+				// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
 				requestOfferVO.setAtchFileId(atchFileId);
 			}
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			requestOfferVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			requestOfferVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-			// (지식전문가/지식사용자) 검사 및 설정
+			// (吏?앹쟾臾멸?/吏?앹궗?⑹옄) 寃??諛??ㅼ젙
 			HashMap<String, String> hmParam = new HashMap<String, String>();
 			hmParam.put("speId", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-			// 지식전문가 일때
+			// 吏?앹쟾臾멸? ?쇰븣
 			if (sCmd.equals("reply") && egovRequestOfferVOService.selectRequestOfferSpeCheck(hmParam)) {
 				requestOfferVO.setSpeId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-				// 지식전문가 아니고 reply 일때
+				// 吏?앹쟾臾멸? ?꾨땲怨?reply ?쇰븣
 			} else if (sCmd.equals("reply")) {
 				return "egovframework/com/dam/spe/req/EgovComDamRequestOfferRegist";
-				// 일반사용자일때
+				// ?쇰컲?ъ슜?먯씪??
 			} else {
 				requestOfferVO.setEmplyrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			}
 
-			// 저장
+			// ???
 			egovRequestOfferVOService.insertRequestOffer(requestOfferVO);
 
 			sLocationUrl = "forward:/dam/spe/req/listRequestOffer.do";

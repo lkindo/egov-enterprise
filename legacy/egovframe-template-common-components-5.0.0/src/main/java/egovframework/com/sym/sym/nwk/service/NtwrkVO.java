@@ -6,11 +6,11 @@ import java.util.List;
 
 /**
  * <pre>
- * 개요
- * - 네트워크에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크의 목록 항목, 조회조건 등을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
  * </pre>
  * 
  * @author lee.m.j
@@ -19,12 +19,12 @@ import java.util.List;
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.19  lee.m.j       최초 생성
- *   2025.07.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidArrayLoops(배열의 값을 루프문을 이용하여 복사하는 것 보다, System.arraycopy() 메소드를 이용하여 복사하는 것이 효율적이며 수행 속도가 빠름)
+ *   2010.08.19  lee.m.j       理쒖큹 ?앹꽦
+ *   2025.07.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidArrayLoops(諛곗뿴??媛믪쓣 猷⑦봽臾몄쓣 ?댁슜?섏뿬 蹂듭궗?섎뒗 寃?蹂대떎, System.arraycopy() 硫붿냼?쒕? ?댁슜?섏뿬 蹂듭궗?섎뒗 寃껋씠 ?⑥쑉?곸씠硫??섑뻾 ?띾룄媛 鍮좊쫫)
  *
  *      </pre>
  */
@@ -33,19 +33,19 @@ public class NtwrkVO extends Ntwrk {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 관리항목
+	 * 愿由ы빆紐?
 	 */
 	private String strManageIem;
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
 	private String strUserNm;
 	/**
-	 * 네트워크목록
+	 * ?ㅽ듃?뚰겕紐⑸줉
 	 */
 	private List<NtwrkVO> ntwrkList;
 	/**
-	 * 삭제여부
+	 * ??젣?щ?
 	 */
 	private String delYn[];
 
@@ -99,7 +99,7 @@ public class NtwrkVO extends Ntwrk {
 		if (delYn == null) {
 			return null;
 		}
-		return Arrays.copyOf(delYn, delYn.length);  // System.arraycopy 대신 사용
+		return Arrays.copyOf(delYn, delYn.length);  // System.arraycopy ????ъ슜
 	}
 	
 	/**

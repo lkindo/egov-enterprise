@@ -3,64 +3,64 @@ package egovframework.com.utl.sys.pxy.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요 - 프록시로그정보에 대한 model 클래스를 정의한다.
+ * 媛쒖슂 - ?꾨줉?쒕줈洹몄젙蹂댁뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용 - 프록시로그정보의 프록시 ID, 로그 ID, 클라이언트 IP, 클라이언트 포트, 접속 시간 등의 항목을 관리한다.
+ * ?곸꽭?댁슜 - ?꾨줉?쒕줈洹몄젙蹂댁쓽 ?꾨줉??ID, 濡쒓렇 ID, ?대씪?댁뼵??IP, ?대씪?댁뼵???ы듃, ?묒냽 ?쒓컙 ?깆쓽 ??ぉ??愿由ы븳??
  *
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:49
+ * @created 28-6-2010 ?ㅼ쟾 10:44:49
  */
 public class ProxyLog extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 
     /**
-     * 프록시 ID
+     * ?꾨줉??ID
      */
     private String proxyId;
 
     /**
-     * 프록시 명
+     * ?꾨줉??紐?
      */
     private String proxyNm;
 
     /**
-     * 로그 ID
+     * 濡쒓렇 ID
      */
     private String logId;
 
     /**
-     * 클라이언트 IP
+     * ?대씪?댁뼵??IP
      */
     private String clntIp;
 
     /**
-     * 클라이언트 포트
+     * ?대씪?댁뼵???ы듃
      */
     private String clntPort;
 
     /**
-     * 접속시간
+     * ?묒냽?쒓컙
      */
     private String conectTime;
 
     /**
-     * 최초등록시점
+     * 理쒖큹?깅줉?쒖젏
      */
     private String frstRegisterPnttm;
 
     /**
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId;
 
     /**
-     * 최종수정시점
+     * 理쒖쥌?섏젙?쒖젏
      */
     private String lastUpdusrPnttm;
 
     /**
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId;
 

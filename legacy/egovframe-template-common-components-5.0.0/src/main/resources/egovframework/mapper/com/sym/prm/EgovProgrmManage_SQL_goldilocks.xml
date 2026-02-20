@@ -3,7 +3,7 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="progrmManageDAO">
  
-    <!-- 프로그램목록 관리 -->
+    <!-- ?꾨줈洹몃옩紐⑸줉 愿由?-->
 	<resultMap id="progrmManage" type="egovframework.com.sym.prm.service.ProgrmManageVO">
 		<result property="progrmFileNm" column="progrmFileNm"/>
 		<result property="progrmStrePath" column="progrmStrePath"/>
@@ -38,7 +38,7 @@
 		 
 	</select> 
  
-	<!-- 총건수 조회 -->
+	<!-- 珥앷굔??議고쉶 -->
 	<select id="selectProgrmListTotCnt_S" parameterType="comDefaultVO" resultType="int">
 		
 		SELECT COUNT(*) AS "totcnt"
@@ -47,7 +47,7 @@
 		
 	</select>
 
-	<!-- 파일명존재여부 조회 -->
+	<!-- ?뚯씪紐낆〈?ъ뿬遺 議고쉶 -->
 	<select id="selectProgrmNMTotCnt" parameterType="comDefaultVO" resultType="int">
 		
 		SELECT COUNT(*) AS "totcnt"
@@ -109,7 +109,7 @@
 		                                
 	</delete> 
 
-	<!-- 메뉴정보 총건수 조회 -->
+	<!-- 硫붾돱?뺣낫 珥앷굔??議고쉶 -->
 	<select id="selectProgrmListTotCnt" parameterType="egovframework.com.sym.prm.service.ProgrmManageVO" resultType="int">
 		
 		SELECT COUNT(PROGRM_FILE_NM) AS "totcnt" FROM COMTNPROGRMLIST

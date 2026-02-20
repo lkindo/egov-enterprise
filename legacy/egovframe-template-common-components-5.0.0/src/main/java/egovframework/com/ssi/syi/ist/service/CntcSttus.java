@@ -3,18 +3,18 @@ package egovframework.com.ssi.syi.ist.service;
 import java.io.Serializable;
 
 /**
- * 연계현황 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎?꾪솴 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -24,87 +24,87 @@ public class CntcSttus implements Serializable {
 	private static final long serialVersionUID = -6726609672185845666L;
 
 	/*
-	 * 연계ID
+	 * ?곌퀎ID
 	 */
 	private String cntcId        = "";
 
 	/*
-	 * 연계명
+	 * ?곌퀎紐?
 	 */
 	private String cntcNm        = "";
 
 	/*
-	 * 연계유형
+	 * ?곌퀎?좏삎
 	 */
 	private String cntcType      = "";
 
 	/*
-	 * 총연계건수
+	 * 珥앹뿰怨꾧굔??
 	 */
 	private String cntAll        = "";
 
 	/*
-	 * 성공연계수
+	 * ?깃났?곌퀎??
 	 */
 	private String cntSuccess    = "";
 
 	/*
-	 * 실패연계수
+	 * ?ㅽ뙣?곌퀎??
 	 */
 	private String cntFail       = "";
 
 	/*
-	 * 제공기관ID
+	 * ?쒓났湲곌?ID
 	 */
 	private String provdInsttId  = "";
 
 	/*
-	 * 제공기관명
+	 * ?쒓났湲곌?紐?
 	 */
 	private String provdInsttNm  = "";
 
 	/*
-	 * 제공시스템ID
+	 * ?쒓났?쒖뒪?쏧D
 	 */
 	private String provdSysId    = "";
 
 	/*
-	 * 제공시스템명
+	 * ?쒓났?쒖뒪?쒕챸
 	 */
 	private String provdSysNm    = "";
 
 	/*
-	 * 제공서비스ID
+	 * ?쒓났?쒕퉬?짪D
 	 */
 	private String provdSvcId    = "";
 
 	/*
-	 * 제공서비스명
+	 * ?쒓났?쒕퉬?ㅻ챸
 	 */
 	private String provdSvcNm    = "";
 
 	/*
-	 * 요청기관ID
+	 * ?붿껌湲곌?ID
 	 */
 	private String requstInsttId = "";
 
 	/*
-	 * 요청기관명
+	 * ?붿껌湲곌?紐?
 	 */
 	private String requstInsttNm = "";
 
 	/*
-	 * 요청시스템ID
+	 * ?붿껌?쒖뒪?쏧D
 	 */
 	private String requstSysId   = "";
 
 	/*
-	 * 요청시스템명
+	 * ?붿껌?쒖뒪?쒕챸
 	 */
 	private String requstSysNm   = "";
 
 	/**
-	 * cntcId attribute 를 리턴한다.
+	 * cntcId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntcId() {
@@ -112,7 +112,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntcId attribute 값을 설정한다.
+	 * cntcId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntcId String
 	 */
 	public void setCntcId(String cntcId) {
@@ -120,7 +120,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntcNm attribute 를 리턴한다.
+	 * cntcNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntcNm() {
@@ -128,7 +128,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntcNm attribute 값을 설정한다.
+	 * cntcNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntcNm String
 	 */
 	public void setCntcNm(String cntcNm) {
@@ -136,7 +136,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntcType attribute 를 리턴한다.
+	 * cntcType attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntcType() {
@@ -144,7 +144,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntcType attribute 값을 설정한다.
+	 * cntcType attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntcType String
 	 */
 	public void setCntcType(String cntcType) {
@@ -152,7 +152,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntAll attribute 를 리턴한다.
+	 * cntAll attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntAll() {
@@ -160,7 +160,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntAll attribute 값을 설정한다.
+	 * cntAll attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntAll String
 	 */
 	public void setCntAll(String cntAll) {
@@ -168,7 +168,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntSuccess attribute 를 리턴한다.
+	 * cntSuccess attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntSuccess() {
@@ -176,7 +176,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntSuccess attribute 값을 설정한다.
+	 * cntSuccess attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntSuccess String
 	 */
 	public void setCntSuccess(String cntSuccess) {
@@ -184,7 +184,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntFail attribute 를 리턴한다.
+	 * cntFail attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntFail() {
@@ -192,7 +192,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * cntFail attribute 값을 설정한다.
+	 * cntFail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntFail String
 	 */
 	public void setCntFail(String cntFail) {
@@ -200,7 +200,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdInsttId attribute 를 리턴한다.
+	 * provdInsttId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdInsttId() {
@@ -208,7 +208,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdInsttId attribute 값을 설정한다.
+	 * provdInsttId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdInsttId String
 	 */
 	public void setProvdInsttId(String provdInsttId) {
@@ -216,7 +216,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdInsttNm attribute 를 리턴한다.
+	 * provdInsttNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdInsttNm() {
@@ -224,7 +224,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdInsttNm attribute 값을 설정한다.
+	 * provdInsttNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdInsttNm String
 	 */
 	public void setProvdInsttNm(String provdInsttNm) {
@@ -232,7 +232,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSysId attribute 를 리턴한다.
+	 * provdSysId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdSysId() {
@@ -240,7 +240,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSysId attribute 값을 설정한다.
+	 * provdSysId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdSysId String
 	 */
 	public void setProvdSysId(String provdSysId) {
@@ -248,7 +248,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSysNm attribute 를 리턴한다.
+	 * provdSysNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdSysNm() {
@@ -256,7 +256,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSysNm attribute 값을 설정한다.
+	 * provdSysNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdSysNm String
 	 */
 	public void setProvdSysNm(String provdSysNm) {
@@ -264,7 +264,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSvcId attribute 를 리턴한다.
+	 * provdSvcId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdSvcId() {
@@ -272,7 +272,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSvcId attribute 값을 설정한다.
+	 * provdSvcId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdSvcId String
 	 */
 	public void setProvdSvcId(String provdSvcId) {
@@ -280,7 +280,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSvcNm attribute 를 리턴한다.
+	 * provdSvcNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProvdSvcNm() {
@@ -288,7 +288,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * provdSvcNm attribute 값을 설정한다.
+	 * provdSvcNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param provdSvcNm String
 	 */
 	public void setProvdSvcNm(String provdSvcNm) {
@@ -296,7 +296,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstInsttId attribute 를 리턴한다.
+	 * requstInsttId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRequstInsttId() {
@@ -304,7 +304,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstInsttId attribute 값을 설정한다.
+	 * requstInsttId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param requstInsttId String
 	 */
 	public void setRequstInsttId(String requstInsttId) {
@@ -312,7 +312,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstInsttNm attribute 를 리턴한다.
+	 * requstInsttNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRequstInsttNm() {
@@ -320,7 +320,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstInsttNm attribute 값을 설정한다.
+	 * requstInsttNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param requstInsttNm String
 	 */
 	public void setRequstInsttNm(String requstInsttNm) {
@@ -328,7 +328,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstSysId attribute 를 리턴한다.
+	 * requstSysId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRequstSysId() {
@@ -336,7 +336,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstSysId attribute 값을 설정한다.
+	 * requstSysId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param requstSysId String
 	 */
 	public void setRequstSysId(String requstSysId) {
@@ -344,7 +344,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstSysNm attribute 를 리턴한다.
+	 * requstSysNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRequstSysNm() {
@@ -352,7 +352,7 @@ public class CntcSttus implements Serializable {
 	}
 
 	/**
-	 * requstSysNm attribute 값을 설정한다.
+	 * requstSysNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param requstSysNm String
 	 */
 	public void setRequstSysNm(String requstSysNm) {

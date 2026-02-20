@@ -19,11 +19,11 @@ import jakarta.servlet.http.HttpSession;
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자       수정내용
+ *   ?섏젙??       ?섏젙??      ?섏젙?댁슜
  *  -------       --------    ---------------------------
- *   2014.08.07	표준프레임워크센터	최초 생성
+ *   2014.08.07	?쒖??꾨젅?꾩썙?ъ꽱??理쒖큹 ?앹꽦
  *
  * </pre>
  */

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 롤 관리 DTO
+ * 濡?愿由?DTO
  */
 @Getter
 @Setter
@@ -15,19 +15,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoleManageDto {
-    /** 롤 코드 */
+    /** 濡?肄붾뱶 */
     private String roleCode;
-    /** 롤 명 */
+    /** 濡?紐?*/
     private String roleNm;
-    /** 롤 패턴 */
+    /** 濡??⑦꽩 */
     private String rolePttrn;
-    /** 롤 설명 */
+    /** 濡??ㅻ챸 */
     private String roleDc;
-    /** 롤 유형 */
+    /** 濡??좏삎 */
     private String roleTy;
-    /** 롤 정렬순서 */
+    /** 濡??뺣젹?쒖꽌 */
     private String roleSort;
-    /** 생성일시 */
+    /** ?앹꽦?쇱떆 */
     private String creatDt;
 
     // Manual getters to bypass potential Lombok issues

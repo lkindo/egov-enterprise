@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 /**
  *
- * 사이트정보를 처리하는 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?ъ씠?몄젙蹂대? 泥섎━?섎뒗 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,22 +23,22 @@ public class SiteDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -8481725059952489640L;
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
 
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -51,7 +51,7 @@ public class SiteDefaultVO implements Serializable {
     private int recordCountPerPage = 10;
 
 	/**
-	 * searchCondition attribute 를 리턴한다.
+	 * searchCondition attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSearchCondition() {
@@ -59,7 +59,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchCondition attribute 값을 설정한다.
+	 * searchCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return searchCondition String
 	 */
 	public void setSearchCondition(String searchCondition) {
@@ -67,7 +67,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 를 리턴한다.
+	 * searchKeyword attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSearchKeyword() {
@@ -75,7 +75,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 값을 설정한다.
+	 * searchKeyword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return searchKeyword String
 	 */
 	public void setSearchKeyword(String searchKeyword) {
@@ -83,7 +83,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 를 리턴한다.
+	 * searchUseYn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSearchUseYn() {
@@ -91,7 +91,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 값을 설정한다.
+	 * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return searchUseYn String
 	 */
 	public void setSearchUseYn(String searchUseYn) {
@@ -99,7 +99,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 를 리턴한다.
+	 * pageIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getPageIndex() {
@@ -107,7 +107,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 값을 설정한다.
+	 * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return pageIndex int
 	 */
 	public void setPageIndex(int pageIndex) {
@@ -115,7 +115,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 를 리턴한다.
+	 * pageUnit attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getPageUnit() {
@@ -123,7 +123,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 값을 설정한다.
+	 * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return pageUnit int
 	 */
 	public void setPageUnit(int pageUnit) {
@@ -131,7 +131,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 를 리턴한다.
+	 * pageSize attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getPageSize() {
@@ -139,7 +139,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 값을 설정한다.
+	 * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return pageSize int
 	 */
 	public void setPageSize(int pageSize) {
@@ -147,7 +147,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 를 리턴한다.
+	 * firstIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getFirstIndex() {
@@ -155,7 +155,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 값을 설정한다.
+	 * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return firstIndex int
 	 */
 	public void setFirstIndex(int firstIndex) {
@@ -163,7 +163,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 를 리턴한다.
+	 * lastIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getLastIndex() {
@@ -171,7 +171,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 값을 설정한다.
+	 * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastIndex int
 	 */
 	public void setLastIndex(int lastIndex) {
@@ -179,7 +179,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 를 리턴한다.
+	 * recordCountPerPage attribute 瑜?由ы꽩?쒕떎.
 	 * @return the int
 	 */
 	public int getRecordCountPerPage() {
@@ -187,7 +187,7 @@ public class SiteDefaultVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을 설정한다.
+	 * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return recordCountPerPage int
 	 */
 	public void setRecordCountPerPage(int recordCountPerPage) {

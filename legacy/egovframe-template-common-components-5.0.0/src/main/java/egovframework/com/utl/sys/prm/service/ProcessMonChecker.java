@@ -10,28 +10,28 @@ import egovframework.com.cmm.service.Globals;
 
 /**
  * <pre>
- * 개요
- * - 프로세스 모니터링을 위한 Check 클래스
+ * 媛쒖슂
+ * - ?꾨줈?몄뒪 紐⑤땲?곕쭅???꾪븳 Check ?대옒??
  *
- * 상세내용
- * - 프로세스의 상태 결과를 제공한다.
+ * ?곸꽭?댁슜
+ * - ?꾨줈?몄뒪???곹깭 寃곌낵瑜??쒓났?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.09.07
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.09.07  박종선          최초 생성
- *   2019.12.06  신용호          KISA 보안약점 조치 (부적절한 예외처리)
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.09.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.09.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2010.09.07  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2019.12.06  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (遺?곸젅???덉쇅泥섎━)
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.09.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.09.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -42,11 +42,11 @@ public class ProcessMonChecker {
 
 	/**
 	 * <pre>
-	 * Comment : 프로세스 정보를 확인한다. (
+	 * Comment : ?꾨줈?몄뒪 ?뺣낫瑜??뺤씤?쒕떎. (
 	 * </pre>
 	 * 
 	 * @param String processName
-	 * @return List<String[]> 프로세스 정보를 리턴한다.
+	 * @return List<String[]> ?꾨줈?몄뒪 ?뺣낫瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.01.12.)
 	 * @see
 	 */
@@ -60,18 +60,18 @@ public class ProcessMonChecker {
 			if (Globals.OS_TYPE == null) {
 				throw new RuntimeException("Globals.OS_TYPE property value is needed!!!");
 			}
-			// 2011.10.10 보안점검 후속조치 끝
+			// 2011.10.10 蹂댁븞?먭? ?꾩냽議곗튂 ??
 
 			if ("WINDOWS".equals(Globals.OS_TYPE)) {
-				cnt = -1; // 윈도우의 경우 정상 프로세스 일때 두번째 줄에 결과를 리턴한다.
+				cnt = -1; // ?덈룄?곗쓽 寃쎌슦 ?뺤긽 ?꾨줈?몄뒪 ?쇰븣 ?먮쾲吏?以꾩뿉 寃곌낵瑜?由ы꽩?쒕떎.
 				String execStr = "tasklist /fo table /nh /fi \"imagename eq " + processNm + "\"";
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				FileSystemUtils util = new FileSystemUtils();
 				p = util.processOperate("EgovNetworkState", execStr);
 
 			} else if ("UNIX".equals(Globals.OS_TYPE)) {
 				String cmd = "/bin/csh" + "-c" + "ps -A | grep " + EgovWebUtil.removeOSCmdRisk(processNm);
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				FileSystemUtils util = new FileSystemUtils();
 				p = util.processOperate("EgovNetworkState", cmd);
 			}

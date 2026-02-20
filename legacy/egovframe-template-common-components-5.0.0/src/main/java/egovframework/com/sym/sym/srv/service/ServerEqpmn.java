@@ -3,77 +3,77 @@ package egovframework.com.sym.sym.srv.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 서버장비에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?λ퉬?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 서버장비의 ID, 서버 장비 명, 서버 장비 IP, 서버 장비 관리자 명, 운영체제 정보, CPU 정보, 메모리 정보 등의 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?λ퉬??ID, ?쒕쾭 ?λ퉬 紐? ?쒕쾭 ?λ퉬 IP, ?쒕쾭 ?λ퉬 愿由ъ옄 紐? ?댁쁺泥댁젣 ?뺣낫, CPU ?뺣낫, 硫붾え由??뺣낫 ?깆쓽 ??ぉ??愿由ы븳??
  * 
- * @author 이문준
+ * @author ?대Ц以
  * @version 1.0
- * @created 28-6-2010 오전 10:44:54
+ * @created 28-6-2010 ?ㅼ쟾 10:44:54
  */
 public class ServerEqpmn extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버 장비 ID
+	 * ?쒕쾭 ?λ퉬 ID
 	 */
 	private String serverEqpmnId;
 	/**
-	 * 서버 장비 명
+	 * ?쒕쾭 ?λ퉬 紐?
 	 */
 	private String serverEqpmnNm;
 	/**
-	 * 서버 장비 IP
+	 * ?쒕쾭 ?λ퉬 IP
 	 */
 	private String serverEqpmnIp;
 	/**
-	 * 서버 장비 관리자 명
+	 * ?쒕쾭 ?λ퉬 愿由ъ옄 紐?
 	 */
 	private String serverEqpmnMngrNm;
 	/**
-	 * 관리자 이메일 주소
+	 * 愿由ъ옄 ?대찓??二쇱냼
 	 */
 	private String mngrEmailAddr;
 	/**
-	 * 운영체제 정보
+	 * ?댁쁺泥댁젣 ?뺣낫
 	 */
 	private String opersysmInfo;
 	/**
-	 * CPU 정보
+	 * CPU ?뺣낫
 	 */
 	private String cpuInfo;
 	/**
-	 * 메모리 정보
+	 * 硫붾え由??뺣낫
 	 */
 	private String moryInfo;
 	/**
-	 * 하드디스크 정보
+	 * ?섎뱶?붿뒪???뺣낫
 	 */
 	private String hdDisk;
 	/**
-	 * 기타 정보
+	 * 湲고? ?뺣낫
 	 */
 	private String etcInfo;
     /**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */    
     private String regstYmd;    
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */   
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */        
     private String frstRegisterId;		
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 

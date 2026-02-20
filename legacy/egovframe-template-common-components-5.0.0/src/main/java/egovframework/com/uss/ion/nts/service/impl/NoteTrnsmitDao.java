@@ -9,17 +9,17 @@ import org.springframework.stereotype.Repository;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.ion.nts.service.NoteTrnsmit;
 /**
- * 보낸쪽지함관리를 처리하는 Dao Class 구현
- * @author 공통콤포넌트 장동한
+ * 蹂대궦履쎌??④?由щ? 泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2017.09.14	 장동한 		   표준프레임워크 3.7 개선
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
+ *   2017.09.14	 ?λ룞??		   ?쒖??꾨젅?꾩썙??3.7 媛쒖꽑
  *
  * </pre>
  */
@@ -27,9 +27,9 @@ import egovframework.com.uss.ion.nts.service.NoteTrnsmit;
 public class NoteTrnsmitDao extends EgovComAbstractDAO {
 
     /**
-     * 보낸쪽지함관리를(을) 목록을 한다.
-     * @param noteTrnsmit -조회할 정보가 담긴 객체
-     * @return List -조회한목록이담긴List
+     * 蹂대궦履쎌??④?由щ?(?? 紐⑸줉???쒕떎.
+     * @param noteTrnsmit -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return List -議고쉶?쒕ぉ濡앹씠?닿릿List
      * @throws Exception
      */
     public List<EgovMap> selectNoteTrnsmitList(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -37,9 +37,9 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 보낸쪽지함관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param noteTrnsmit -조회할 정보가 담긴 객체
-     * @return int -조회한건수가담긴Integer
+     * 蹂대궦履쎌??④?由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param noteTrnsmit -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔?섍??닿릿Integer
      * @throws Exception
      */
     public int selectNoteTrnsmitListCnt(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -47,9 +47,9 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 보낸쪽지함관리를(을) 상세조회 한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
-     * @return Map -조회한정보가담긴Map
+     * 蹂대궦履쎌??④?由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
+     * @return Map -議고쉶?쒖젙蹂닿??닿릿Map
      * @throws Exception
      */
     public Map<?, ?> selectNoteTrnsmitDetail(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -57,8 +57,8 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 보낸쪽지함관리를(을) 삭제한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
+     * 蹂대궦履쎌??④?由щ?(?? ??젣?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteTrnsmit(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -66,8 +66,8 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함를(을) 삭제한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
+     * 諛쏆?履쎌??⑤?(?? ??젣?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteRecptn(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -75,8 +75,8 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지를(을) 삭제한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
+     * 履쎌?瑜??? ??젣?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteManage(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -84,8 +84,8 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지관리/보낸족지함삭제
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
+     * 履쎌?愿由?蹂대궦議깆??⑥궘??
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteTrnsmitRelation(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -93,9 +93,9 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은편지함 건수를 조회한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
-     * @return int -조회한건수가담긴Integer
+     * 諛쏆??몄???嫄댁닔瑜?議고쉶?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
+     * @return int -議고쉶?쒓굔?섍??닿릿Integer
      * @throws Exception
      */
     public int selectTrnsmitRelationCnt(NoteTrnsmit noteTrnsmit) throws Exception {
@@ -104,9 +104,9 @@ public class NoteTrnsmitDao extends EgovComAbstractDAO {
 
 
     /**
-     * 수신자목록을 조회한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담김 객체
-     * @return List -조회한목록이담긴List
+     * ?섏떊?먮ぉ濡앹쓣 議고쉶?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
+     * @return List -議고쉶?쒕ぉ濡앹씠?닿릿List
      * @throws Exception
      */
     public List<EgovMap> selectNoteTrnsmitCnfirm(NoteTrnsmit noteTrnsmit) throws Exception {

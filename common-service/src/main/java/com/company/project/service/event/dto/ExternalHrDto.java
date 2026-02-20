@@ -13,49 +13,49 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "외부 인력 정보 DTO")
+@Schema(description = "Description")
 public class ExternalHrDto {
 
-    @Schema(description = "외부 인력 ID")
+    @Schema(description = "Description")
     private String extrlHrId;
 
-    @Schema(description = "이벤트 ID")
+    @Schema(description = "Description")
     private String eventId;
 
-    @Schema(description = "외부 인력 명")
+    @Schema(description = "Description")
     private String extrlHrNm;
 
-    @Schema(description = "성별 코드")
+    @Schema(description = "Description")
     private String sexdstnCode;
 
-    @Schema(description = "성별 명")
+    @Schema(description = "Description")
     private String sexdstnCodeNm;
 
-    @Schema(description = "지역 번호")
+    @Schema(description = "Description")
     private String areaNo;
 
-    @Schema(description = "중간 전화번호")
+    @Schema(description = "Description")
     private String middleTelno;
 
-    @Schema(description = "끝 전화번호")
+    @Schema(description = "Description")
     private String endTelno;
 
-    @Schema(description = "이메일 주소")
+    @Schema(description = "Description")
     private String emailAdres;
 
-    @Schema(description = "직업 유형 코드")
+    @Schema(description = "Description")
     private String occpTyCode;
 
-    @Schema(description = "직업 유형 명")
+    @Schema(description = "Description")
     private String occpTyCodeNm;
 
-    @Schema(description = "생년월일")
+    @Schema(description = "Description")
     private String brth;
 
-    @Schema(description = "소속 기관 명")
+    @Schema(description = "Description")
     private String psitnInsttNm;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static ExternalHrDto from(ExternalHr entity) {

@@ -9,32 +9,32 @@ import egovframework.com.uss.ion.ans.service.AnnvrsryManage;
 import egovframework.com.uss.ion.ans.service.AnnvrsryManageVO;
 
 /**
- * 개요
- * - 기념일관리에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 湲곕뀗?쇨?由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 기념일관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 기념일관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - 湲곕뀗?쇨?由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 湲곕뀗?쇨?由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 @Repository("annvrsryManageDAO")
 public class AnnvrsryManageDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 기념일관리정보를 관리하기 위해 등록된 기념일관리 목록을 조회한다.
-	 * @param annvrsryManageVO - 기념일관리 VO
-	 * @return List - 기념일관리 목록
+	 * 湲곕뀗?쇨?由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉??湲곕뀗?쇨?由?紐⑸줉??議고쉶?쒕떎.
+	 * @param annvrsryManageVO - 湲곕뀗?쇨?由?VO
+	 * @return List - 湲곕뀗?쇨?由?紐⑸줉
 	 */	
 	public List<AnnvrsryManageVO> selectAnnvrsryManageList(AnnvrsryManageVO annvrsryManageVO) throws Exception {
 		return selectList("annvrsryManageDAO.selectAnnvrsryManageList", annvrsryManageVO);
 	}
 
     /**
-	 * 기념일관리목록 총 개수를 조회한다.
-	 * @param annvrsryManageVO - 기념일관리 VO
+	 * 湲곕뀗?쇨?由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param annvrsryManageVO - 湲곕뀗?쇨?由?VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -43,50 +43,50 @@ public class AnnvrsryManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 등록된 기념일관리의 상세정보를 조회한다.
-	 * @param annvrsryManageVO - 기념일관리 VO
-	 * @return AnnvrsryManageVO - 기념일관리 VO
+	 * ?깅줉??湲곕뀗?쇨?由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param annvrsryManageVO - 湲곕뀗?쇨?由?VO
+	 * @return AnnvrsryManageVO - 湲곕뀗?쇨?由?VO
 	 */
 	public AnnvrsryManageVO selectAnnvrsryManage(AnnvrsryManageVO annvrsryManageVO)  throws Exception {
 		return (AnnvrsryManageVO) selectOne("annvrsryManageDAO.selectAnnvrsryManage", annvrsryManageVO);
 	}
 
 	/**
-	 * 기념일관리정보를 신규로 등록한다.
-	 * @param annvrsryManage - 기념일관리 model
+	 * 湲곕뀗?쇨?由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param annvrsryManage - 湲곕뀗?쇨?由?model
 	 */
 	public void insertAnnvrsryManage(AnnvrsryManage annvrsryManage) throws Exception {
 		insert("annvrsryManageDAO.insertAnnvrsryManage", annvrsryManage);
 	}
 
 	/**
-	 * 기 등록된 기념일관리정보를 수정한다.
-	 * @param annvrsryManage - 기념일관리 model
+	 * 湲??깅줉??湲곕뀗?쇨?由ъ젙蹂대? ?섏젙?쒕떎.
+	 * @param annvrsryManage - 湲곕뀗?쇨?由?model
 	 */
 	public void updateAnnvrsryManage(AnnvrsryManage annvrsryManage) throws Exception {
 		update("annvrsryManageDAO.updateAnnvrsryManage", annvrsryManage);
 	}
 
 	/**
-	 * 기 등록된 기념일관리정보를 삭제한다.
-	 * @param annvrsryManage - 기념일관리 model
+	 * 湲??깅줉??湲곕뀗?쇨?由ъ젙蹂대? ??젣?쒕떎.
+	 * @param annvrsryManage - 湲곕뀗?쇨?由?model
 	 */
 	public void deleteAnnvrsryManage(AnnvrsryManage annvrsryManage) throws Exception {
         delete("annvrsryManageDAO.deleteAnnvrsryManage",annvrsryManage);
 	}
 
 	/**
-	 * 등록된 기념일관리의 상세정보를 조회한다.
-	 * @param annvrsryManageVO - 기념일관리 VO
-	 * @return AnnvrsryManageVO - 기념일관리 VO
+	 * ?깅줉??湲곕뀗?쇨?由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param annvrsryManageVO - 湲곕뀗?쇨?由?VO
+	 * @return AnnvrsryManageVO - 湲곕뀗?쇨?由?VO
 	 */	
 	public List<AnnvrsryManageVO> selectAnnvrsryGdcc(AnnvrsryManageVO annvrsryManageVO)  throws Exception {
 		return selectList("annvrsryManageDAO.selectAnnvrsryGdcc", annvrsryManageVO);
 	}
 
     /**
-	 * 기념일관리 등록시 중복여부를 조회한다.
-	 * @param annvrsryManage - 기념일관리 VO
+	 * 湲곕뀗?쇨?由??깅줉??以묐났?щ?瑜?議고쉶?쒕떎.
+	 * @param annvrsryManage - 湲곕뀗?쇨?由?VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -95,9 +95,9 @@ public class AnnvrsryManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 등록된 기념일관리의 상세정보를 조회한다.
-	 * @param annvrsryManageVO - 기념일관리 VO
-	 * @return AnnvrsryManageVO - 기념일관리 VO
+	 * ?깅줉??湲곕뀗?쇨?由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param annvrsryManageVO - 湲곕뀗?쇨?由?VO
+	 * @return AnnvrsryManageVO - 湲곕뀗?쇨?由?VO
 	 */
 	public AnnvrsryManageVO selectAnnvrsryManageBnde(AnnvrsryManageVO annvrsryManageVO)  throws Exception {
 		return (AnnvrsryManageVO) selectOne("annvrsryManageDAO.selectAnnvrsryManageBnde", annvrsryManageVO);

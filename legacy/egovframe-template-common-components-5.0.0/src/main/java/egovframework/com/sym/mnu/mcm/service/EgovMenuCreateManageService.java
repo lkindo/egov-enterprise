@@ -8,25 +8,25 @@ import egovframework.com.cmm.ComDefaultVO;
 
 
 /**
- * 메뉴관리에 관한 서비스 인터페이스 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * 硫붾돱愿由ъ뿉 愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovMenuCreateManageService {
 
 	/**
-	 * ID 존재여부를 조회
+	 * ID 議댁옱?щ?瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -34,7 +34,7 @@ public interface EgovMenuCreateManageService {
 	int selectUsrByPk(ComDefaultVO vo) throws Exception;
 
 	/**
-	 * ID에 대한 권한코드를 조회
+	 * ID?????沅뚰븳肄붾뱶瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return List
 	 * @exception Exception
@@ -43,7 +43,7 @@ public interface EgovMenuCreateManageService {
 
 
 	/**
-     * 메뉴생성관리 목록을 조회
+     * 硫붾돱?앹꽦愿由?紐⑸줉??議고쉶
      * 
      * @param vo ComDefaultVO
      * @return List
@@ -52,7 +52,7 @@ public interface EgovMenuCreateManageService {
     List<EgovMap> selectMenuCreatManagList(ComDefaultVO vo) throws Exception;
 
 	/**
-	 * 메뉴생성관리 총건수를 조회한다.
+	 * 硫붾돱?앹꽦愿由?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -60,7 +60,7 @@ public interface EgovMenuCreateManageService {
 	int selectMenuCreatManagTotCnt(ComDefaultVO vo) throws Exception;
 
 	/**
-     * 메뉴생성 내역을 조회
+     * 硫붾돱?앹꽦 ?댁뿭??議고쉶
      * 
      * @param vo MenuCreatVO
      * @return List
@@ -70,7 +70,7 @@ public interface EgovMenuCreateManageService {
 
 
 	/**
-	 * 화면에 조회된 메뉴정보로 메뉴생성내역 데이터베이스에서 입력
+	 * ?붾㈃??議고쉶??硫붾돱?뺣낫濡?硫붾돱?앹꽦?댁뿭 ?곗씠?곕쿋?댁뒪?먯꽌 ?낅젰
 	 * @param checkedScrtyForInsert String
 	 * @param checkedMenuNoForInsert String
 	 * @exception Exception
@@ -78,7 +78,7 @@ public interface EgovMenuCreateManageService {
 	void insertMenuCreatList(String checkedScrtyForInsert, String checkedMenuNoForInsert) throws Exception;
 
 	/**
-	 * 메뉴생성 사이트맵 내용 조회
+	 * 硫붾돱?앹꽦 ?ъ씠?몃㏊ ?댁슜 議고쉶
 	 * @param vo MenuSiteMapVO
 	 * @return List
 	 * @exception Exception
@@ -86,7 +86,7 @@ public interface EgovMenuCreateManageService {
 	List<EgovMap> selectMenuCreatSiteMapList(MenuSiteMapVO vo) throws Exception;
 
 	/**
-	 * 사용자 권한별 사이트맵 내용 조회
+	 * ?ъ슜??沅뚰븳蹂??ъ씠?몃㏊ ?댁슜 議고쉶
 	 * @param vo MenuSiteMapVO
 	 * @return List
 	 * @exception Exception
@@ -94,8 +94,8 @@ public interface EgovMenuCreateManageService {
 	 List<?> selectSiteMapByUser(MenuSiteMapVO vo) throws Exception;
 
 	 /**
-	 * 사이트맵 등록
-	 * 개발환경에서 테스트용 함수로 보안 취약
+	 * ?ъ씠?몃㏊ ?깅줉
+	 * 媛쒕컻?섍꼍?먯꽌 ?뚯뒪?몄슜 ?⑥닔濡?蹂댁븞 痍⑥빟
 	 * @param vo MenuSiteMapVO
 	 * @param vHtmlValue String
 	 * @return boolean

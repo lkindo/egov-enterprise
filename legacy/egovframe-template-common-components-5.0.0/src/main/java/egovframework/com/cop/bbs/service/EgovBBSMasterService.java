@@ -9,11 +9,11 @@ import egovframework.com.cmm.LoginVO;
 
 /**
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -------			--------	---------------------------
- *   2024.10.29		inganyoyo	Controller는 Transaction 처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+ *   2024.10.29		inganyoyo	Controller??Transaction 泥섎━瑜??섏? ?딆븘 Controller?먯꽌 ?ㅻ쪟 諛쒖깮 ???곗씠???뺥빀???ㅻ쪟 臾몄젣 諛쒖깮
  * </pre>
  */
 
@@ -32,7 +32,7 @@ public interface EgovBBSMasterService {
 	void insertBBSMasterInf(BoardMaster boardMaster) throws Exception;
 
 	/*
-	 * 블로그 관련
+	 * 釉붾줈洹?愿??
 	 */
 	Map<String, Object> selectBlogMasterInfs(BoardMasterVO boardMasterVO);
 	

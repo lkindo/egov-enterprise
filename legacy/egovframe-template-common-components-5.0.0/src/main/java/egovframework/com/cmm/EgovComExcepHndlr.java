@@ -6,14 +6,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @Class Name : EgovComExcepHndlr.java
- * @Description : 공통서비스의 exception 처리 클래스
+ * @Description : 怨듯넻?쒕퉬?ㅼ쓽 exception 泥섎━ ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 13.     이삼섭
+ *    2009. 3. 13.     ?댁궪??
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 13.
  * @version
  * @see
@@ -28,7 +28,7 @@ public class EgovComExcepHndlr implements ExceptionHandler {
     private SimpleSSLMail mailSender;
      */
     /**
-     * 발생된 Exception을 처리한다.
+     * 諛쒖깮??Exception??泥섎━?쒕떎.
      */
     @Override
 	public void occur(Exception ex, String packageName) {

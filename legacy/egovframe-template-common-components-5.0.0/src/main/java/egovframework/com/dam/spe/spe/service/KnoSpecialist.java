@@ -1,71 +1,71 @@
 package egovframework.com.dam.spe.spe.service;
 
 /**
- * 개요
- * - 지식전문가에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹쟾臾멸??????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 소속조직, 지식유형, 승인일자, 전문가성명, 전문지식명 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - ?뚯냽議곗쭅, 吏?앹쑀?? ?뱀씤?쇱옄, ?꾨Ц媛?깅챸, ?꾨Ц吏?앸챸 ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:51
+ * @created 12-8-2010 ?ㅽ썑 3:44:51
  */
 public class KnoSpecialist {
 
 	/**
-	 * 전문가ID
+	 * ?꾨Ц媛ID
 	 */
 	private String speId;
 	/**
-	 * 전문가명
+	 * ?꾨Ц媛紐?
 	 */
 	private String userNm;
 	/**
-	 * 소속조직ID
+	 * ?뚯냽議곗쭅ID
 	 */
 	private String orgnztId;
 	/**
-	 * 소속조직명
+	 * ?뚯냽議곗쭅紐?
 	 */
 	private String orgnztNm;	
 	/**
-	 * 지식유형코드
+	 * 吏?앹쑀?뺤퐫??
 	 */
 	private String knoTypeCd;
 	/**
-	 * 승인유형코드
+	 * ?뱀씤?좏삎肄붾뱶
 	 */
 	private String appTypeCd;
 	/**
-	 * 승인유형명
+	 * ?뱀씤?좏삎紐?
 	 */
 	private String appTypeNm;	
 	/**
-	 * 지식유형명
+	 * 吏?앹쑀?뺣챸
 	 */
 	private String knoTypeNm;
 	/**
-	 * 전문가설명
+	 * ?꾨Ц媛?ㅻ챸
 	 */
 	private String speExpCn;	
 	/**
-	 * 전문가승인일
+	 * ?꾨Ц媛?뱀씤??
 	 */
 	private String speConfmDe;
 	/** 
-	 * 최초등록아이디
+	 * 理쒖큹?깅줉?꾩씠??
 	 */
 	private String frstRegisterId = "";		
 	/** 
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**

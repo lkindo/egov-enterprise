@@ -1,12 +1,12 @@
 package com.company.project.constants;
 
 /**
- * 공통 상수 클래스
+ * 怨듯넻 ?곸닔 ?대옒??
  */
 public class Constants {
     
     /**
-     * 캐시 관련 상수
+     * 罹먯떆 愿???곸닔
      */
     public static class Cache {
         public static final String USERS_CACHE = "users";
@@ -16,7 +16,7 @@ public class Constants {
     }
     
     /**
-     * 시스템 설정 관련 상수
+     * ?쒖뒪???ㅼ젙 愿???곸닔
      */
     public static class System {
         public static final String DEFAULT_PAGE_SIZE = "10";
@@ -25,7 +25,7 @@ public class Constants {
     }
     
     /**
-     * 사용자 관련 상수
+     * ?ъ슜??愿???곸닔
      */
     public static class User {
         public static final String DEFAULT_ROLE = "USER";
@@ -38,7 +38,7 @@ public class Constants {
     }
 
     /**
-     * 게시판 관련 상수
+     * 寃뚯떆??愿???곸닔
      */
     public static class Board {
         public static final String DEFAULT_TEMPLATE_ID = "DEFAULT_TMPL";
@@ -47,7 +47,7 @@ public class Constants {
     }
 
     /**
-     * 파일 업로드 관련 상수
+     * ?뚯씪 ?낅줈??愿???곸닔
      */
     public static class File {
         public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -56,7 +56,7 @@ public class Constants {
     }
 
     /**
-     * 보안 관련 상수
+     * 蹂댁븞 愿???곸닔
      */
     public static class Security {
         public static final String JWT_HEADER = "Authorization";

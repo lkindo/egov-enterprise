@@ -3,31 +3,31 @@ package egovframework.com.cop.sms.service;
 import java.util.Map;
 
 /**
- * 문자메시지를 위한 서비스 인터페이스 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏瑜??꾪븳 ?쒕퉬???명꽣?섏씠???대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.18  한성곤          최초 생성
+ *   2009.06.18  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovSmsInfoService {
     /**
-     * 문자메시지 목록을 조회 한다.
+     * 臾몄옄硫붿떆吏 紐⑸줉??議고쉶 ?쒕떎.
      * 
      * @param SmsVO
      */
     public Map<String, Object> selectSmsInfs(SmsVO searchVO) throws Exception;
     
     /**
-     * 문자메시지를 전송(등록)한다.
+     * 臾몄옄硫붿떆吏瑜??꾩넚(?깅줉)?쒕떎.
      * 
      * @param sms
      * @throws Exception
@@ -35,7 +35,7 @@ public interface EgovSmsInfoService {
     public void insertSmsInf(Sms sms) throws Exception;
     
     /**
-     * 문자메시지에 대한 상세정보를 조회한다.
+     * 臾몄옄硫붿떆吏??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param searchVO
      * @return
@@ -44,7 +44,7 @@ public interface EgovSmsInfoService {
     public SmsVO selectSmsInf(SmsVO searchVO) throws Exception;
     
     /**
-     * 문자메시지 실 전송을 요청한다.
+     * 臾몄옄硫붿떆吏 ???꾩넚???붿껌?쒕떎.
      * 
      * @param smsConn
      * @return
@@ -53,7 +53,7 @@ public interface EgovSmsInfoService {
     public SmsConnection sendRequsest(SmsConnection smsConn) throws Exception;
     
     /**
-     * 여러 건의 문자메시지 실 전송을 요청한다.
+     * ?щ윭 嫄댁쓽 臾몄옄硫붿떆吏 ???꾩넚???붿껌?쒕떎.
      * 
      * @param smsConn
      * @return

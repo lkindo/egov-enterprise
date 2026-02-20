@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.web;
 
@@ -45,7 +45,7 @@ public class EgovOrgManageLdapController {
     EgovMessageSource egovMessageSource;
 
     /**
-     * 부서의 하위 부서 목록을 조회 한다.
+     * 遺?쒖쓽 ?섏쐞 遺??紐⑸줉??議고쉶 ?쒕떎.
      * @param dn
      * @param model
      * @return
@@ -60,7 +60,7 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * @param dn
 	 * @param model
 	 * @return
@@ -75,7 +75,7 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 등록된 사용자의 상세정보를 조회한다.
+	 * ?깅줉???ъ슜?먯쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * @param dn
 	 * @param model
 	 * @return
@@ -90,9 +90,9 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 부서를 등록한다.
-	 * @param parentDn 등록될 부서의 상위 부서
-	 * @param ou 등록될 부서명
+	 * 遺?쒕? ?깅줉?쒕떎.
+	 * @param parentDn ?깅줉??遺?쒖쓽 ?곸쐞 遺??
+	 * @param ou ?깅줉??遺?쒕챸
 	 * @param model
 	 * @return
 	 * @throws Exception
@@ -109,9 +109,9 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 사용자를 등록한다.
-	 * @param parentDn 등록될 사용자의 상위 부서
-	 * @param ou 등록될 사용자명
+	 * ?ъ슜?먮? ?깅줉?쒕떎.
+	 * @param parentDn ?깅줉???ъ슜?먯쓽 ?곸쐞 遺??
+	 * @param ou ?깅줉???ъ슜?먮챸
 	 * @param model
 	 * @return
 	 * @throws Exception
@@ -128,12 +128,12 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 부서를 삭제한다.
-	 * @param dn 삭제할 부서의 DN
+	 * 遺?쒕? ??젣?쒕떎.
+	 * @param dn ??젣??遺?쒖쓽 DN
 	 * @param model
 	 * @return
 	 * @throws Exception
-	 * 하위부서까지 모두 삭제된다.
+	 * ?섏쐞遺?쒓퉴吏 紐⑤몢 ??젣?쒕떎.
 	 */
 	@RequestMapping(value = "/ext/ldapumt/dpt/deleteNode.do")
 	public ModelAndView removeDeptManage(@RequestParam("dn") String dn, ModelMap model) throws Exception {
@@ -147,9 +147,9 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 부서의 이름을 변경한다.
-	 * @param dn 변경될 부서의 DN
-	 * @param name 변경될 이름
+	 * 遺?쒖쓽 ?대쫫??蹂寃쏀븳??
+	 * @param dn 蹂寃쎈맆 遺?쒖쓽 DN
+	 * @param name 蹂寃쎈맆 ?대쫫
 	 * @param model
 	 * @return
 	 * @throws Exception
@@ -166,9 +166,9 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 사용자의 이름을 변경한다.
-	 * @param dn 변경될 사용자의 DN
-	 * @param name 변경될 이름
+	 * ?ъ슜?먯쓽 ?대쫫??蹂寃쏀븳??
+	 * @param dn 蹂寃쎈맆 ?ъ슜?먯쓽 DN
+	 * @param name 蹂寃쎈맆 ?대쫫
 	 * @param model
 	 * @return
 	 * @throws Exception
@@ -185,9 +185,9 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 조직을 이동한다.
-	 * @param dn 이동할 대상 DN
-	 * @param parentDn 이동될 DN
+	 * 議곗쭅???대룞?쒕떎.
+	 * @param dn ?대룞?????DN
+	 * @param parentDn ?대룞??DN
 	 * @param model
 	 * @return
 	 * @throws Exception
@@ -204,7 +204,7 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 부서정보를 변경한다.
+	 * 遺?쒖젙蹂대? 蹂寃쏀븳??
 	 * @param ucorgVO
 	 * @param model
 	 * @return
@@ -223,7 +223,7 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 사용자 정보를 변경한다.
+	 * ?ъ슜???뺣낫瑜?蹂寃쏀븳??
 	 * @param userVO
 	 * @param model
 	 * @return
@@ -241,11 +241,11 @@ public class EgovOrgManageLdapController {
 	}
 
 	/**
-	 * 조직도 트리화면으로 이동
+	 * 議곗쭅???몃━?붾㈃?쇰줈 ?대룞
 	 * @return
 	 * @throws Exception
 	 */
-	@IncludedInfo(name="LDAP 조직도 트리",order = 3100 ,gid = 100)
+	@IncludedInfo(name="LDAP 議곗쭅???몃━",order = 3100 ,gid = 100)
     @RequestMapping("/ext/ldapumt/dpt/selectDeptManageTreeView.do")
     public String selectDeptManageTreeView() throws Exception {
 
@@ -253,11 +253,11 @@ public class EgovOrgManageLdapController {
     }
 
     /**
-     * 조직도 그래프로 이동
+     * 議곗쭅??洹몃옒?꾨줈 ?대룞
      * @return String
      * @exception Exception
      */
-	@IncludedInfo(name="LDAP 조직도 그래프",order = 3110 ,gid = 100)
+	@IncludedInfo(name="LDAP 議곗쭅??洹몃옒??,order = 3110 ,gid = 100)
     @RequestMapping("/ext/ldapumt/dpt/selectDeptManageOrgChartView.do")
     public String selectDeptManageOrgChartView() throws Exception {
 

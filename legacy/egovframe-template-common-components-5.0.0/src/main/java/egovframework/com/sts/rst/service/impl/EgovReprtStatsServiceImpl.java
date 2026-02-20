@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 보고서통계에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - 蹂닿퀬?쒗넻怨꾩뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 보고서통계에 대한 등록, 조회 기능을 제공한다.
- * - 보고서통계의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 蹂닿퀬?쒗넻怨꾩뿉 ????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 蹂닿퀬?쒗넻怨꾩쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:09:16
+ * @created 03-8-2009 ?ㅽ썑 2:09:16
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.8.3   lee.m.j          최초 생성 *
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2009.8.3   lee.m.j          理쒖큹 ?앹꽦 *
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -38,9 +38,9 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	private ReprtStatsDAO reprtStatsDAO;
 
 	/**
-	 * 보고서 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 목록
+	 * 蹂닿퀬???듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return List - 蹂닿퀬?쒗넻怨?紐⑸줉
 	 */
 	@Override
 	public List<ReprtStatsVO> selectReprtStatsList(ReprtStatsVO reprtStatsVO) throws Exception {
@@ -48,8 +48,8 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
     /**
-	 * 보고서통계목록 페이징 총 개수를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
+	 * 蹂닿퀬?쒗넻怨꾨ぉ濡??섏씠吏?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
 	 * @return int
 	 */
 	@Override
@@ -58,8 +58,8 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
     /**
-	 * 보고서통계목록 총 개수를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
+	 * 蹂닿퀬?쒗넻怨꾨ぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
 	 * @return int
 	 */
 	@Override
@@ -68,9 +68,9 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 보고서 통계정보의 상세정보를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return ReprtStatsVO - 보고서통계 VO
+	 * 蹂닿퀬???듦퀎?뺣낫???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return ReprtStatsVO - 蹂닿퀬?쒗넻怨?VO
 	 */
 	@Override
 	public List<ReprtStatsVO> selectReprtStats(ReprtStatsVO reprtStatsVO) throws Exception {
@@ -78,8 +78,8 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 보고서 통계정보를 생성한 뒤 저장한다.
-	 * @param reprtStats - 보고서통계 model
+	 * 蹂닿퀬???듦퀎?뺣낫瑜??앹꽦??????ν븳??
+	 * @param reprtStats - 蹂닿퀬?쒗넻怨?model
 	 */
 	@Override
 	public void insertReprtStats(ReprtStats reprtStats) throws Exception {
@@ -87,9 +87,9 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 등록일자별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * ?깅줉?쇱옄蹂??듦퀎?뺣낫瑜?洹몃옒?꾨줈 ?쒗쁽?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return List - 蹂닿퀬?쒗넻怨?VO
 	 */
 	@Override
 	public List<ReprtStatsVO> selectReprtStatsBarList(ReprtStatsVO reprtStatsVO) throws Exception {
@@ -97,9 +97,9 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 보고서유형별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * 蹂닿퀬?쒖쑀?뺣퀎 ?듦퀎?뺣낫瑜?洹몃옒?꾨줈 ?쒗쁽?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return List - 蹂닿퀬?쒗넻怨?VO
 	 */
 	@Override
 	public List<ReprtStatsVO> selectReprtStatsByReprtTyList(ReprtStatsVO reprtStatsVO) throws Exception {
@@ -107,9 +107,9 @@ public class EgovReprtStatsServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 진행상태별 통계정보를 그래프로 표현한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return List - 보고서통계 VO
+	 * 吏꾪뻾?곹깭蹂??듦퀎?뺣낫瑜?洹몃옒?꾨줈 ?쒗쁽?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return List - 蹂닿퀬?쒗넻怨?VO
 	 */
 	@Override
 	public List<ReprtStatsVO> selectReprtStatsByReprtSttusList(ReprtStatsVO reprtStatsVO) throws Exception {

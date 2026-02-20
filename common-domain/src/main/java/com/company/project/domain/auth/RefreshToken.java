@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.Instant;
 
 /**
- * JWT 리프레시 토큰 엔티티
+ * JWT ?귐뗫늄??됰뻻 ?醫뤾쿃 ?酉???
  */
 @Entity
 @Table(name = "COMTN_REFRESH_TOKEN")

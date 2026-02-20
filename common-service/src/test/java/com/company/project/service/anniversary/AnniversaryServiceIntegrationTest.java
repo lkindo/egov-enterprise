@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * AnniversaryService 통합 테스트
- * Note: DB 제약조건 문제로 인해 현재 비활성화됨
+ * AnniversaryService ?듯빀 ?뚯뒪??
+ * Note: DB ?쒖빟議곌굔 臾몄젣濡??명빐 ?꾩옱 鍮꾪솢?깊솕??
  */
 @DataJpaTest(properties = {
         "spring.jpa.show-sql=true",
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(AnniversaryService.class)
 @Transactional
 @Rollback
-@org.junit.jupiter.api.Disabled("DB 제약조건 문제 - 후속 작업 필요")
+@org.junit.jupiter.api.Disabled("DB ?쒖빟議곌굔 臾몄젣 - ?꾩냽 ?묒뾽 ?꾩슂")
 public class AnniversaryServiceIntegrationTest {
 
     @Autowired
@@ -67,7 +67,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("기념일 중복 확인 - 자신 제외 시 0 개 반환")
+    @DisplayName("湲곕뀗??以묐났 ?뺤씤 - ?먯떊 ?쒖쇅 ??0 媛?諛섑솚")
     void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
@@ -77,7 +77,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("기념일 중복 확인 - 다른 것 제외 시 1 개 반환")
+    @DisplayName("湲곕뀗??以묐났 ?뺤씤 - ?ㅻⅨ 寃??쒖쇅 ??1 媛?諛섑솚")
     void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
@@ -87,7 +87,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("기념일 중복 확인 - 다른 것과 충돌 시 1 개 반환")
+    @DisplayName("湲곕뀗??以묐났 ?뺤씤 - ?ㅻⅨ 寃껉낵 異⑸룎 ??1 媛?諛섑솚")
     void checkAnniversaryDuplicate_ConflictWithOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231225", "Wedding", "ANN_001");
@@ -97,7 +97,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("기념일 중복 확인 - 충돌 없음 시 0 개 반환")
+    @DisplayName("湲곕뀗??以묐났 ?뺤씤 - 異⑸룎 ?놁쓬 ??0 媛?諛섑솚")
     void checkAnniversaryDuplicate_NoConflict_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20240101", "New Year", "ANN_001");

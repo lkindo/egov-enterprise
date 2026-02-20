@@ -18,19 +18,19 @@ import egovframework.com.cmm.service.Globals;
 import egovframework.com.cmm.util.EgovResourceCloseHelper;
 
 /**
- * 개요
- * - 파일시스템 모니터링을 위한 Check 클래스
+ * 媛쒖슂
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅???꾪븳 Check ?대옒??
  *
- * 상세내용
- * - 파일시스템의 총크기와 여유크기의 결과를 제공한다.
- * - Open Souce인 Apache Commons IO 를 이용한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?뚯씪?쒖뒪?쒖쓽 珥앺겕湲곗? ?ъ쑀?ш린??寃곌낵瑜??쒓났?쒕떎.
+ * - Open Souce??Apache Commons IO 瑜??댁슜?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2017-02-08    이정은        시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+ *   2017-02-08    ?댁젙?        ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
  */
 public class FileSystemChecker {
 
@@ -40,9 +40,9 @@ public class FileSystemChecker {
 	private static final FileSystemChecker INSTANCE = new FileSystemChecker();
 
 	/**
-	 * 파일시스템의 여유크기를 계산한다. (GB 단위)
-	 * @param String - 파일시스템명
-	 * @return  int - 파일시스템 여유크기
+	 * ?뚯씪?쒖뒪?쒖쓽 ?ъ쑀?ш린瑜?怨꾩궛?쒕떎. (GB ?⑥쐞)
+	 * @param String - ?뚯씪?쒖뒪?쒕챸
+	 * @return  int - ?뚯씪?쒖뒪???ъ쑀?ш린
 	 *
 	 * @param path
 	 */
@@ -51,9 +51,9 @@ public class FileSystemChecker {
 	}
 
 	/**
-	 * 파일시스템의 크기를 계산한다. (GB 단위)
-	 * @param String - 파일시스템명
-	 * @return  int - 파일시스템 크기
+	 * ?뚯씪?쒖뒪?쒖쓽 ?ш린瑜?怨꾩궛?쒕떎. (GB ?⑥쐞)
+	 * @param String - ?뚯씪?쒖뒪?쒕챸
+	 * @return  int - ?뚯씪?쒖뒪???ш린
 	 *
 	 * @param path
 	 */
@@ -62,10 +62,10 @@ public class FileSystemChecker {
 	}
 
 	/**
-	 * 파일시스템의 크기를 계산한다.
-	 * @param String - 파일시스템명
-	 * @param String - OS종류
-	 * @return  long - 파일시스템 크기
+	 * ?뚯씪?쒖뒪?쒖쓽 ?ш린瑜?怨꾩궛?쒕떎.
+	 * @param String - ?뚯씪?쒖뒪?쒕챸
+	 * @param String - OS醫낅쪟
+	 * @return  long - ?뚯씪?쒖뒪???ш린
 	 *
 	 * @param path
 	 * @param os
@@ -85,9 +85,9 @@ public class FileSystemChecker {
 	}
 
 	/**
-	 * 윈도우즈 OS에서의 파일시스템의 크기를 계산한다.
-	 * @param String - 파일시스템명
-	 * @return  long - 파일시스템 크기
+	 * ?덈룄?곗쫰 OS?먯꽌???뚯씪?쒖뒪?쒖쓽 ?ш린瑜?怨꾩궛?쒕떎.
+	 * @param String - ?뚯씪?쒖뒪?쒕챸
+	 * @return  long - ?뚯씪?쒖뒪???ш린
 	 *
 	 * @param path
 	 */
@@ -99,7 +99,7 @@ public class FileSystemChecker {
 
 		File folder = new File("C:\\temp\\");
 		if (!folder.isDirectory()) {
-			//2017.02.08 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if(folder.mkdirs()){
 				LOGGER.debug("[file.mkdirs] folder : Directory Creation Success");
 			}else{
@@ -142,7 +142,7 @@ public class FileSystemChecker {
 			totalSpace = Long.valueOf(size) * 1024;
 		}
 
-		// 불필요
+		// 遺덊븘??
 		/*
 		if (line == null) {
 			throw new IllegalStateException("Exception caught when using diskpart command");
@@ -153,9 +153,9 @@ public class FileSystemChecker {
 	}
 
 	/**
-	 * UNIX OS에서의 파일시스템의 크기를 계산한다.
-	 * @param String - 파일시스템명
-	 * @return  long - 파일시스템 크기
+	 * UNIX OS?먯꽌???뚯씪?쒖뒪?쒖쓽 ?ш린瑜?怨꾩궛?쒕떎.
+	 * @param String - ?뚯씪?쒖뒪?쒕챸
+	 * @return  long - ?뚯씪?쒖뒪???ш린
 	 *
 	 * @param path
 	 */
@@ -219,10 +219,10 @@ public class FileSystemChecker {
 	}
 
 	/**
-	 * OS커맨드를 수행한 뒤 그 결과값을 라인별로 반환해준다.
-	 * @param String - OS 커맨드
-	 * @param int - 최대라인 수
-	 * @return  List<String> - 결과라인 리스트
+	 * OS而ㅻ㎤?쒕? ?섑뻾????洹?寃곌낵媛믪쓣 ?쇱씤蹂꾨줈 諛섑솚?댁???
+	 * @param String - OS 而ㅻ㎤??
+	 * @param int - 理쒕??쇱씤 ??
+	 * @return  List<String> - 寃곌낵?쇱씤 由ъ뒪??
 	 *
 	 * @param cmdAttribs
 	 * @param max

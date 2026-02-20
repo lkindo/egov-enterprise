@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.model;
 
 /**
 * @Class Name : Message.java
-* @Description : Message VO들의 인터페이스
+* @Description : Message VO?ㅼ쓽 ?명꽣?섏씠??
 * @Modification Information
 *
-*    수정일       수정자         수정내용
+*    ?섏젙??      ?섏젙??        ?섏젙?댁슜
 *    -------        -------     -------------------
-*    2014. 11. 27.    이영지
+*    2014. 11. 27.    ?댁쁺吏
 *
 */
 public interface Message {

@@ -25,23 +25,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 행정전문용어사전관리를 처리하는 Controller Class 구현
+ * ?됱젙?꾨Ц?⑹뼱?ъ쟾愿由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.09.19  서준식          삭제 후 리스트 상세조회시 다시 삭제되는 문제 수정
- *   2016.08.10  김연호          표준프레임워크 3.6
- *   2025.08.20  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.09.19  ?쒖???         ??젣 ??由ъ뒪???곸꽭議고쉶???ㅼ떆 ??젣?섎뒗 臾몄젣 ?섏젙
+ *   2016.08.10  源?고샇          ?쒖??꾨젅?꾩썙??3.6
+ *   2025.08.20  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -64,7 +64,7 @@ public class EgovAdministrationWordController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 행정전문용어사전 목록을 조회한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param administrationWord
@@ -72,7 +72,7 @@ public class EgovAdministrationWordController {
 	 * @return "egovframework/com/uss/olh/awm/EgovAdministrationWordList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "행정전문용어사전", order = 560, gid = 50)
+	@IncludedInfo(name = "?됱젙?꾨Ц?⑹뼱?ъ쟾", order = 560, gid = 50)
 	@RequestMapping(value = "/uss/olh/awm/selectAdministrationWordList.do")
 	public String egovAdministrationWordList(@ModelAttribute("searchVO") AdministrationWordVO searchVO, ModelMap model)
 			throws Exception {
@@ -102,7 +102,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전 목록을 상세조회 조회한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param administrationWord
@@ -122,14 +122,14 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전관리 목록을 조회한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "egovframework/com/uss/olh/awm/EgovAdministrationWordManageList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "행정전문용어사전관리", order = 561, gid = 50)
+	@IncludedInfo(name = "?됱젙?꾨Ц?⑹뼱?ъ쟾愿由?, order = 561, gid = 50)
 	@RequestMapping(value = "/uss/olh/awm/selectAdministrationWordManageList.do")
 	public String egovAdministrationWordManageList(@ModelAttribute("searchVO") AdministrationWordVO searchVO,
 			ModelMap model) throws Exception {
@@ -158,7 +158,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전관리 목록을 상세조회 조회한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾愿由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param administrationWord
@@ -178,7 +178,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전을 등록하기 위한 전 처리(공통코드 처리)
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾???깅줉?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -189,7 +189,7 @@ public class EgovAdministrationWordController {
 	public String insertAdministrationWordView(@ModelAttribute("searchVO") AdministrationWordVO searchVO, Model model)
 			throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM102");
 
@@ -203,7 +203,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전을 등록한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾???깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param administrationWordVO
@@ -220,13 +220,13 @@ public class EgovAdministrationWordController {
 			return "egovframework/com/uss/olh/awm/EgovAdministrationWordRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		administrationWordVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		administrationWordVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		administrationWordVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		administrationWordVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovAdministrationWordService.insertAdministrationWord(administrationWordVO);
 
@@ -234,7 +234,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전을 수정하기 위한 전 처리(공통코드 처리)
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾???섏젙?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param administWordId
 	 * @param searchVO
@@ -246,7 +246,7 @@ public class EgovAdministrationWordController {
 	public String updateAdministrationWordView(@RequestParam("administWordId") String administWordId,
 			@ModelAttribute("searchVO") AdministrationWordVO searchVO, ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM102");
 
@@ -263,7 +263,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전을 수정한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾???섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param administrationWordVO
@@ -283,7 +283,7 @@ public class EgovAdministrationWordController {
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		administrationWordVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		administrationWordVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 		egovAdministrationWordService.updateAdministrationWord(administrationWordVO);
 
 		return "forward:/uss/olh/awm/selectAdministrationWordManageList.do";
@@ -291,7 +291,7 @@ public class EgovAdministrationWordController {
 	}
 
 	/**
-	 * 행정전문용어사전을 삭제한다.
+	 * ?됱젙?꾨Ц?⑹뼱?ъ쟾????젣?쒕떎.
 	 * 
 	 * @param hpcmVO
 	 * @param searchVO

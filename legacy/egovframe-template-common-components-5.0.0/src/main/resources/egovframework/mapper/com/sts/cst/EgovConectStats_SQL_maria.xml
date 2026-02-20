@@ -3,9 +3,9 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="ConectStatsDAO">
 	
-	<!-- 접속통계 조회 -->
+	<!-- ?묒냽?듦퀎 議고쉶 -->
 	<select id="selectConectStats" parameterType="egovframework.com.sts.com.StatsVO" resultType="egovframework.com.sts.com.StatsVO">
-		<!-- 서비스별 통계 -->
+		<!-- ?쒕퉬?ㅻ퀎 ?듦퀎 -->
 		<if test='statsKind == "SERVICE"'>
 			SELECT METHOD_NM AS conectMethod
 			     , IFNULL(SUM(CREAT_CO),0) AS creatCo
@@ -14,15 +14,15 @@
 			     , IFNULL(SUM(DELETE_CO),0) AS deleteCo
 			     , IFNULL(SUM(OUTPT_CO),0) AS outptCo
 			     , IFNULL(SUM(ERROR_CO),0) AS errorCo
-			     <!-- 기간검색(년) -->
+			     <!-- 湲곌컙寃???? -->
 				 <if test='pdKind == "Y"'>
 			     , SUBSTR(OCCRRNC_DE, 1, 4) AS statsDate
 			     </if>
-			     <!-- 기간검색(월) -->
+			     <!-- 湲곌컙寃???? -->
 			     <if test='pdKind == "M"'>
 			     , CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)) AS statsDate
 			     </if>
-			     <!-- 기간검색(일) -->
+			     <!-- 湲곌컙寃???? -->
 			     <if test='pdKind == "D"'>
 			     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(OCCRRNC_DE, 1, 4), '-'), SUBSTR(OCCRRNC_DE, 5, 2)), '-'), SUBSTR(OCCRRNC_DE, 7, 2)) AS statsDate
 			     </if>
@@ -36,18 +36,18 @@
 		 	 ORDER BY statsDate
 		</if>
 		
-		<!-- 개인별 통계 -->
+		<!-- 媛쒖씤蹂??듦퀎 -->
 		<if test='statsKind == "PRSONAL"'>
 			SELECT COUNT(CONECT_ID) AS statsCo
-			     <!-- 기간검색(년) -->
+			     <!-- 湲곌컙寃???? -->
 				 <if test='pdKind == "Y"'>
 			     , SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 1, 4) AS statsDate
 			     </if>
-			     <!-- 기간검색(월) -->
+			     <!-- 湲곌컙寃???? -->
 			     <if test='pdKind == "M"'>
 			     , CONCAT(CONCAT(SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 1, 4), '-'), SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 5, 2)) AS statsDate
 			     </if>
-			     <!-- 기간검색(일) -->
+			     <!-- 湲곌컙寃???? -->
 			     <if test='pdKind == "D"'>
 			     , CONCAT(CONCAT(CONCAT(CONCAT(SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 1, 4), '-'), SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 5, 2)), '-'), SUBSTR(DATE_FORMAT(CREAT_DT, '%Y%m%d'), 7, 2)) AS statsDate
 			     </if>
@@ -60,7 +60,7 @@
 			     , 0 AS errorCo
 			  FROM COMTNLOGINLOG
 		 	 WHERE CONECT_ID = #{detailStatsKind}
-			   <!-- 시작일자~종료일자 기간제한 -->
+			   <!-- ?쒖옉?쇱옄~醫낅즺?쇱옄 湲곌컙?쒗븳 -->
 			   AND DATE_FORMAT(CREAT_DT, '%Y%m%d') BETWEEN #{fromDate} AND #{toDate}
 			 GROUP BY statsDate, conectMethod, creatCo, updtCo, inqireCo, deleteCo, outptCo, errorCo
 			 ORDER BY statsDate

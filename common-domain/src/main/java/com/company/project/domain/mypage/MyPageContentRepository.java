@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * 마이페이지 컨텐츠 Repository
+ * 筌띾뜆???륁뵠筌왖 ?뚢뫂?쀯㎘?Repository
  */
 public interface MyPageContentRepository extends JpaRepository<MyPageContent, String> {
 

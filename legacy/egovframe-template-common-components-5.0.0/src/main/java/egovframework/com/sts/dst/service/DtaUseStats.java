@@ -1,12 +1,12 @@
 /**
- * 개요
- * - 자료이용현황 통계에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 자료이용현황 통계정보의 자료이용현황ID,게시판ID,게시글ID,자료명,자료이용횟수) 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫???먮즺?댁슜?꾪솴ID,寃뚯떆?륤D,寃뚯떆湲ID,?먮즺紐??먮즺?댁슜?잛닔) ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 09-8-2009 오후 2:09:15
+ * @created 09-8-2009 ?ㅽ썑 2:09:15
  */
 
 package egovframework.com.sts.dst.service;
@@ -20,59 +20,59 @@ public class DtaUseStats extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 자료이용현황ID
+	 * ?먮즺?댁슜?꾪솴ID
 	 */
     private String dtaUseStatsId;
 	/**
-	 * 게시판ID
+	 * 寃뚯떆?륤D
 	 */
     private String bbsId;
 	/**
-	 * 게시판명
+	 * 寃뚯떆?먮챸
 	 */
     private String bbsNm;    
 	/**
-	 * 게시글ID
+	 * 寃뚯떆湲ID
 	 */
     private String nttId;
 	/**
-	 * 게시글 제목
+	 * 寃뚯떆湲 ?쒕ぉ
 	 */
     private String nttSj;
 	/**
-	 * 첨부파일ID
+	 * 泥⑤??뚯씪ID
 	 */
     private String atchFileId;
 	/**
-	 * 파일연번
+	 * ?뚯씪?곕쾲
 	 */
     private String fileSn;
 	/**
-	 * 다운횟수
+	 * ?ㅼ슫?잛닔
 	 */
     private String downCnt;    
 	/**
-	 * 파일명
+	 * ?뚯씪紐?
 	 */
     private String fileNm;
 	/**
-	 * 사용자ID
+	 * ?ъ슜?륤D
 	 */
     private String userId;
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
     private String userNm;    
 	/**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */
     private String regdate;
 	/**
-	 * 그래프용 등록일자
+	 * 洹몃옒?꾩슜 ?깅줉?쇱옄
 	 */
 	private String grpRegDate;
 	/**
-	 * 그래프용 등록일자 카운트
+	 * 洹몃옒?꾩슜 ?깅줉?쇱옄 移댁슫??
 	 */
 	private String grpCnt;
 

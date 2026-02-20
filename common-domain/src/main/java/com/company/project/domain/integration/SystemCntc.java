@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 시스템 연계 관리 엔티티
+ * ??뽯뮞???怨뚰??온???酉???
  */
 @Entity
 @Table(name = "COMTNSYSTEMCNTC")

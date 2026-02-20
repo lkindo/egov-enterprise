@@ -204,14 +204,14 @@
 		
 	</select>
 
-	<!-- 2024.10.29 권태성 휴일일자 검색 조건인 경우 searchKeyword를 formattedDtKeyword로 변경 -->
+	<!-- 2024.10.29 沅뚰깭???댁씪?쇱옄 寃??議곌굔??寃쎌슦 searchKeyword瑜?formattedDtKeyword濡?蹂寃?-->
 	<select id="selectRestdeList" parameterType="egovframework.com.sym.cal.service.RestdeVO" resultType="egovMap">
 		
 			SELECT  * 
 			  FROM  (
 			SELECT ROWNUM RNUM, ALL_LIST.* 
 			  FROM  (
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 			SELECT  A.RESTDE_NO
 				 ,  A.RESTDE RESTDE_DE
 			     ,  A.RESTDE DBMS_KIND
@@ -231,7 +231,7 @@
 				A.RESTDE_NM LIKE '%' || #{searchKeyword} || '%'
 			</if>
 		<![CDATA[
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 				    ) ALL_LIST
 				    )
 			 WHERE  RNUM  > #{firstIndex}
@@ -239,7 +239,7 @@
 		]]>
 	</select>
 
-	<!-- 2024.10.29 권태성 휴일일자 검색 조건인 경우 searchKeyword를 formattedDtKeyword로 변경 -->
+	<!-- 2024.10.29 沅뚰깭???댁씪?쇱옄 寃??議곌굔??寃쎌슦 searchKeyword瑜?formattedDtKeyword濡?蹂寃?-->
 	<select id="selectRestdeListTotCnt" parameterType="egovframework.com.sym.cal.service.RestdeVO" resultType="int">
 		
 			SELECT  COUNT(*) totcnt 

@@ -16,15 +16,15 @@ import egovframework.com.uss.ion.ism.service.SanctnerVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 약식결재관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쎌떇寃곗옱愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 약식결재관리에 대한 등록, 승인, 반려, 삭제기능을 제공한다.
- * - 결재자에 대한 목록조회기능을 제공한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쎌떇寃곗옱愿由ъ뿉 ????깅줉, ?뱀씤, 諛섎젮, ??젣湲곕뒫???쒓났?쒕떎.
+ * - 寃곗옱?먯뿉 ???紐⑸줉議고쉶湲곕뒫???쒓났?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:25
+ * @created 28-6-2010 ?ㅼ쟾 11:29:25
  */
 
 @Controller
@@ -40,7 +40,7 @@ public class EgovInfrmlSanctnController {
     EgovMessageSource egovMessageSource;
 
 	/**
-	 * 결재자 정보에 대한 팝업 목록을 조회한다.
+	 * 寃곗옱???뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * @param SanctnerVO
 	 * @return  String
 	 *
@@ -52,7 +52,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 결재자 정보에 대한 목록을 조회한다.
+	 * 寃곗옱???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param SanctnerVO
 	 * @return  String
 	 *
@@ -88,7 +88,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 결재자 정보에 대한 목록을 조회한다. Old 삭제 후 반영
+	 * 寃곗옱???뺣낫?????紐⑸줉??議고쉶?쒕떎. Old ??젣 ??諛섏쁺
 	 * @param SanctnerVO
 	 * @return  String
 	 *
@@ -124,7 +124,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 약식결재 정보의 상세화면으로 이동한다.
+	 * ?쎌떇寃곗옱 ?뺣낫???곸꽭?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * @param InfrmlSanctn
 	 * @return  String
 	 *
@@ -133,7 +133,7 @@ public class EgovInfrmlSanctnController {
 	@RequestMapping("/uss/ion/ism/selectInfrmlSanctn.do")
 	public String selectInfrmlSanctn(
 			@ModelAttribute("infrmlSanctn") InfrmlSanctn infrmlSanctn, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -152,7 +152,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 약식결재 반려처리 화면을 호출한다.
+	 * ?쎌떇寃곗옱 諛섎젮泥섎━ ?붾㈃???몄텧?쒕떎.
 	 * @param
 	 * @return  String
 	 *
@@ -164,7 +164,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 약식결재 승인처리 화면을 호출한다.
+	 * ?쎌떇寃곗옱 ?뱀씤泥섎━ ?붾㈃???몄텧?쒕떎.
 	 * @param
 	 * @return  String
 	 *
@@ -176,7 +176,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 약식결재 반려처리 화면을 호출한다. Old 삭제 후 반영
+	 * ?쎌떇寃곗옱 諛섎젮泥섎━ ?붾㈃???몄텧?쒕떎. Old ??젣 ??諛섏쁺
 	 * @param
 	 * @return  String
 	 *
@@ -188,7 +188,7 @@ public class EgovInfrmlSanctnController {
 	}
 
 	/**
-	 * 약식결재 승인처리 화면을 호출한다. Old 삭제 후 반영
+	 * ?쎌떇寃곗옱 ?뱀씤泥섎━ ?붾㈃???몄텧?쒕떎. Old ??젣 ??諛섏쁺
 	 * @param
 	 * @return  String
 	 *

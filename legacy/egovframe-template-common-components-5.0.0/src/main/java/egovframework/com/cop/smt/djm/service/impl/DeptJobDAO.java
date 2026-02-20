@@ -13,20 +13,20 @@ import egovframework.com.cop.smt.djm.service.DeptJobVO;
 import egovframework.com.cop.smt.djm.service.DeptVO;
 
 /**
- * 개요 - 부서업무에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂 - 遺?쒖뾽臾댁뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용 - 부서업무에 대한 등록, 수정, 삭제, 조회기능을 제공한다. - 부서업무의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - 遺?쒖뾽臾댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎. - 遺?쒖뾽臾댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * 
- * @author 장철호
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:05
+ * @created 28-6-2010 ?ㅼ쟾 10:59:05
  * 
  *          <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  *          </pre>
  */
@@ -34,7 +34,7 @@ import egovframework.com.cop.smt.djm.service.DeptVO;
 public class DeptJobDAO extends EgovComAbstractDAO {
 
     /**
-     * 주어진 조건에 맞는 담당자를 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 ?대떦?먮? 遺덈윭?⑤떎.
      * 
      * @param chargerVO
      * @return List
@@ -44,7 +44,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 담당자 목록에 대한 전체 건수를 조회한다.
+     * ?대떦??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param chargerVO
      * @return int
@@ -54,7 +54,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 맞는 부서를 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 遺?쒕? 遺덈윭?⑤떎.
      * 
      * @param deptVO
      * @return List
@@ -64,7 +64,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서 목록에 대한 전체 건수를 조회한다.
+     * 遺??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param deptVO
      * @return int
@@ -74,7 +74,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 맞는 부서를 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 遺?쒕? 遺덈윭?⑤떎.
      * 
      * @param orgnztId
      * @return String
@@ -84,7 +84,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 따른 부서업무함 목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕Ⅸ 遺?쒖뾽臾댄븿 紐⑸줉??遺덈윭?⑤떎.
      * 
      * @param deptJobBxVO
      * @return List
@@ -94,7 +94,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 따른 부서업무함 목록 전체를 불러온다.
+     * 二쇱뼱吏?議곌굔???곕Ⅸ 遺?쒖뾽臾댄븿 紐⑸줉 ?꾩껜瑜?遺덈윭?⑤떎.
      * 
      * @return List
      */
@@ -103,7 +103,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 목록에 대한 전체 건수를 조회한다.
+     * 遺?쒖뾽臾댄븿 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param DeptJobBxVO
      * @return int
@@ -115,7 +115,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 맞는 부서업무함을 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 遺?쒖뾽臾댄븿??遺덈윭?⑤떎.
      * 
      * @param deptJobBxVO
      * @return DeptJobBxVO
@@ -125,7 +125,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보를 수정한다.
+     * 遺?쒖뾽臾댄븿 ?뺣낫瑜??섏젙?쒕떎.
      * 
      * @param deptJobBxVO
      * @return int
@@ -135,7 +135,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함의 표시순서가 중복되는지를 조회한다.
+     * 遺?쒖뾽臾댄븿???쒖떆?쒖꽌媛 以묐났?섎뒗吏瑜?議고쉶?쒕떎.
      * 
      * @param deptJobBxVO
      * @return int
@@ -145,7 +145,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보의 표시순서를 수정한다. (표시순서 증가)
+     * 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎. (?쒖떆?쒖꽌 利앷?)
      * 
      * @param deptJobBx
      * @return int
@@ -155,7 +155,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보의 표시순서를 수정한다. (표시순서 감소)
+     * 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎. (?쒖떆?쒖꽌 媛먯냼)
      * 
      * @param deptJobBx
      * @return int
@@ -165,7 +165,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보의 표시순서를 수정한다.
+     * 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎.
      * 
      * @param deptJobBx
      * @return int
@@ -175,7 +175,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 만족하는 전체 부서업무함 정보의 표시순서를 수정한다.
+     * 二쇱뼱吏?議곌굔??留뚯”?섎뒗 ?꾩껜 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎.
      * 
      * @param deptJobBxVO
      * @return int
@@ -185,7 +185,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 등록시 부서업무함의 표시순서를 조회한다.
+     * ?깅줉??遺?쒖뾽臾댄븿???쒖떆?쒖꽌瑜?議고쉶?쒕떎.
      * 
      * @param deptId
      * @return int
@@ -195,7 +195,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보를 등록한다.
+     * 遺?쒖뾽臾댄븿 ?뺣낫瑜??깅줉?쒕떎.
      * 
      * @param DeptJobBx
      * 
@@ -206,7 +206,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서내 부서업무함명의 건수를 조회한다.
+     * 遺?쒕궡 遺?쒖뾽臾댄븿紐낆쓽 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param deptJobBx
      * @return int
@@ -216,7 +216,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무함 정보를 삭제한다.
+     * 遺?쒖뾽臾댄븿 ?뺣낫瑜???젣?쒕떎.
      * 
      * @param deptJobBx
      * @return int
@@ -226,7 +226,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 따른 부서업무 목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕Ⅸ 遺?쒖뾽臾?紐⑸줉??遺덈윭?⑤떎.
      * 
      * @param deptJobVO
      * @return List
@@ -236,7 +236,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무 목록에 대한 전체 건수를 조회한다.
+     * 遺?쒖뾽臾?紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param deptJobVO
      * @return int
@@ -246,7 +246,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 주어진 조건에 맞는 부서업무를 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 遺?쒖뾽臾대? 遺덈윭?⑤떎.
      * 
      * @param deptJobVO
      * @return DeptJobVO
@@ -256,7 +256,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무 정보를 수정한다.
+     * 遺?쒖뾽臾??뺣낫瑜??섏젙?쒕떎.
      * 
      * @param deptJob
      * @return int
@@ -266,7 +266,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무 정보를 등록한다.
+     * 遺?쒖뾽臾??뺣낫瑜??깅줉?쒕떎.
      * 
      * @param deptJob
      * @return int
@@ -276,7 +276,7 @@ public class DeptJobDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 부서업무 정보를 삭제한다.
+     * 遺?쒖뾽臾??뺣낫瑜???젣?쒕떎.
      * 
      * @param deptJob
      * @return int

@@ -3,21 +3,21 @@ package egovframework.com.sts.rst.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 보고서통계에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 蹂닿퀬?쒗넻怨꾩뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 보고서통계정보의 보고서ID, 보고서명, 보고서현황 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - 蹂닿퀬?쒗넻怨꾩젙蹂댁쓽 蹂닿퀬?쏧D, 蹂닿퀬?쒕챸, 蹂닿퀬?쒗쁽????ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:09:15
+ * @created 03-8-2009 ?ㅽ썑 2:09:15
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.8.3	lee.m.j		최초 생성 *  
- *  2011.8.26	정진오		IncludedInfo annotation 추가
+ *  2009.8.3	lee.m.j		理쒖큹 ?앹꽦 *  
+ *  2011.8.26	?뺤쭊??	IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -26,39 +26,39 @@ public class ReprtStats extends ComDefaultVO {
 	
 	/** serialVersionUID */
 	private static final long serialVersionUID = 1L;
-	/** 보고서ID */
+	/** 蹂닿퀬?쏧D */
     private String reprtId;
-	/** 보고서명 */
+	/** 蹂닿퀬?쒕챸 */
     private String reprtNm;
-	/** 보고서유형 */
+	/** 蹂닿퀬?쒖쑀??*/
     private String reprtTy;
-	/** 보고서유형명 */
+	/** 蹂닿퀬?쒖쑀?뺣챸 */
     private String reprtTyNm;    
-	/** 보고서현황 */
+	/** 蹂닿퀬?쒗쁽??*/
     private String reprtSttus;
-	/** 보고서현황명 */
+	/** 蹂닿퀬?쒗쁽?⑸챸 */
     private String reprtSttusNm;    
-	/** 보고서 카운트 */
+	/** 蹂닿퀬??移댁슫??*/
     private String cnt;    
-	/** 사용자 ID */
+	/** ?ъ슜??ID */
 	private String userId;
-	/** 등록일자 */
+	/** ?깅줉?쇱옄 */
 	private String regDate;
-	/** 그래프용 등록일자 */
+	/** 洹몃옒?꾩슜 ?깅줉?쇱옄 */
 	private String grpRegDate;
-	/** 그래프용 등록일자 카운트 */
+	/** 洹몃옒?꾩슜 ?깅줉?쇱옄 移댁슫??*/
 	private String grpCnt;
-	/** 그래프용 보고서유형 */
+	/** 洹몃옒?꾩슜 蹂닿퀬?쒖쑀??*/
 	private String grpReprtTy;
-	/** 그래프용 보고서유형명 */
+	/** 洹몃옒?꾩슜 蹂닿퀬?쒖쑀?뺣챸 */
 	private String grpReprtTyNm;	
-	/** 그래프용 보고서유형 카운트 */
+	/** 洹몃옒?꾩슜 蹂닿퀬?쒖쑀??移댁슫??*/
 	private String grpReprtTyCnt;
-	/** 그래프용 진행상태 */
+	/** 洹몃옒?꾩슜 吏꾪뻾?곹깭 */
 	private String grpReprtSttus;
-	/** 그래프용 진행상태명 */
+	/** 洹몃옒?꾩슜 吏꾪뻾?곹깭紐?*/
 	private String grpReprtSttusNm;	
-	/** 그래프용 진행상태 카운트 */
+	/** 洹몃옒?꾩슜 吏꾪뻾?곹깭 移댁슫??*/
 	private String grpReprtSttusCnt;
 	/**
 	 * @return the reprtId

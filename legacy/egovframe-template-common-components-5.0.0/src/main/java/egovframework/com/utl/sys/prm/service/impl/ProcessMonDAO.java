@@ -11,125 +11,125 @@ import egovframework.com.utl.sys.prm.service.ProcessMonLogVO;
 import egovframework.com.utl.sys.prm.service.ProcessMonVO;
 
 /**
- * 개요
- * - PROCESS모니터링에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - PROCESS紐⑤땲?곕쭅?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - PROCESS모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - PROCESS모니터링의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - PROCESS紐⑤땲?곕쭅??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - PROCESS紐⑤땲?곕쭅??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:46
+ * @created 08-9-2010 ?ㅽ썑 3:54:46
  */
 
 @Repository("ProcessMonDAO")
 public class ProcessMonDAO extends EgovComAbstractDAO {
 
 	/**
-     * 등록된 PROCESS모니터링 목록을 조회한다.
+     * ?깅줉??PROCESS紐⑤땲?곕쭅 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param processMonVO - PROCESS모니터링 Vo
-     * @return List - PROCESS모니터링 목록
+     * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+     * @return List - PROCESS紐⑤땲?곕쭅 紐⑸줉
      */
     public List<ProcessMonVO> selectProcessMonList(ProcessMonVO processMonVO) throws Exception {
         return selectList("ProcessMonDAO.selectProcessMonList", processMonVO);
     }
 
     /**
-     * PROCESS모니터링 목록 총 개수를 조회한다.
+     * PROCESS紐⑤땲?곕쭅 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
      *
-     * @param ProcessMonVO - PROCESS모니터링 Vo
-     * @return int - PROCESS모니터링 토탈 카운트 수
+     * @param ProcessMonVO - PROCESS紐⑤땲?곕쭅 Vo
+     * @return int - PROCESS紐⑤땲?곕쭅 ?좏깉 移댁슫????
      */
     public int selectProcessMonTotCnt(ProcessMonVO processMonVO) throws Exception {
         return selectOne("ProcessMonDAO.selectProcessMonTotCnt", processMonVO);
     }
 
     /**
-     * 등록된 PROCESS모니터링의 상세정보를 조회한다.
+     * ?깅줉??PROCESS紐⑤땲?곕쭅???곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param processMonVO - PROCESS모니터링 Vo
-     * @return processMonVO - PROCESS모니터링 Vo
+     * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+     * @return processMonVO - PROCESS紐⑤땲?곕쭅 Vo
      */
     public ProcessMonVO selectProcessMon(ProcessMonVO processMonVO) throws Exception {
         return selectOne("ProcessMonDAO.selectProcessMon", processMonVO);
     }
 
     /**
-     * PROCESS모니터링 정보를 신규로 등록한다.
+     * PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
      *
-     * @param processNm - PROCESS모니터링 model
-     * @return int - 등록 결과
+     * @param processNm - PROCESS紐⑤땲?곕쭅 model
+     * @return int - ?깅줉 寃곌낵
      */
     public int insertProcessMon(ProcessMon processMon) throws Exception {
         return insert("ProcessMonDAO.insertProcessMon", processMon);
     }
 
     /**
-     * 기 등록된 PROCESS모니터링 정보를 수정한다.
+     * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??섏젙?쒕떎.
      *
-     * @param processNm - PROCESS모니터링 model
-     * @return int - 수정 결과
+     * @param processNm - PROCESS紐⑤땲?곕쭅 model
+     * @return int - ?섏젙 寃곌낵
      */
     public int updateProcessMon(ProcessMon processMon) throws Exception {
         return update("ProcessMonDAO.updateProcessMon", processMon);
     }
 
     /**
-     * 기 등록된 PROCESS모니터링 정보를 삭제한다.
+     * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜???젣?쒕떎.
      *
-     * @param processNm - PROCESS모니터링 model
-     * @return int - 삭제 결과
+     * @param processNm - PROCESS紐⑤땲?곕쭅 model
+     * @return int - ??젣 寃곌낵
      */
     public int deleteProcessMon(ProcessMon processMon) throws Exception {
         return delete("ProcessMonDAO.deleteProcessMon", processMon);
     }
 
     /**
-     * 프로세스 모니터링로그 목록을 조회한다.
+     * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param ProcessMonVO - 프로세스모니터링로그 VO
-     * @return List<ProcessMonLogVO> - 프로세스모니터링로그 List
+     * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 VO
+     * @return List<ProcessMonLogVO> - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 List
      */
     public List<ProcessMonLogVO> selectProcessMonLogList(ProcessMonLogVO processMonLogVO) throws Exception {
         return selectList("ProcessMonDAO.selectProcessMonLogList", processMonLogVO);
     }
 
     /**
-     * PROCESS모니터링로그 목록 총 개수를 조회한다.
+     * PROCESS紐⑤땲?곕쭅濡쒓렇 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
      *
-     * @param ProcessMonVO - PROCESS모니터링로그 Vo
-     * @return int - PROCESS모니터링로그 토탈 카운트 수
+     * @param ProcessMonVO - PROCESS紐⑤땲?곕쭅濡쒓렇 Vo
+     * @return int - PROCESS紐⑤땲?곕쭅濡쒓렇 ?좏깉 移댁슫????
      */
     public int selectProcessMonLogTotCnt(ProcessMonLogVO processMonLogVO) throws Exception {
         return selectOne("ProcessMonDAO.selectProcessMonLogTotCnt", processMonLogVO);
     }
 
     /**
-     * 프로세스 모니터링로그의 상세정보를 조회한다.
+     * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇???곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
-     * @param ProcessMonVO - 프로세스모니터링로그 model
-     * @return ProcessMonVO - 프로세스모니터링로그 model
+     * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
+     * @return ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
      */
     public ProcessMonLogVO selectProcessMonLog(ProcessMonLogVO processMonLogVO) {
         return selectOne("ProcessMonDAO.selectProcessMonLog", processMonLogVO);
     }
 
     /**
-     * PROCESS모니터링로그 대상 정보를 등록한다.
+     * PROCESS紐⑤땲?곕쭅濡쒓렇 ????뺣낫瑜??깅줉?쒕떎.
      *
-     * @param ProcessMonLog - 파일시스템모니터링 대상 model
-     * @return int - 등록 결과
+     * @param ProcessMonLog - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
+     * @return int - ?깅줉 寃곌낵
      */
     public int insertProcessMonLog(ProcessMonLog processMonLog) throws Exception {
         return insert("ProcessMonDAO.insertProcessMonLog", processMonLog);
     }
 
     /**
-     * 프로세스 모니터링 결과 정보를 수정한다.
+     * ?꾨줈?몄뒪 紐⑤땲?곕쭅 寃곌낵 ?뺣낫瑜??섏젙?쒕떎.
      *
-     * @param ProcessMon - 프로세스 대상 model
-     * @return int - 수정 결과
+     * @param ProcessMon - ?꾨줈?몄뒪 ???model
+     * @return int - ?섏젙 寃곌낵
      */
     public int updateProcessMonSttus(ProcessMon processMon) throws Exception {
         return update("ProcessMonDAO.updateProcessMonSttus", processMon);

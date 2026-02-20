@@ -9,18 +9,18 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.olp.mgt.service.MeetingManageVO;
 /**
- * 회의관리를 처리하기 위한 Dao 구현 Class
- * @author 공통서비스 장동한
+ * ?뚯쓽愿由щ? 泥섎━?섍린 ?꾪븳 Dao 援ы쁽 Class
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -28,8 +28,8 @@ import egovframework.com.uss.olp.mgt.service.MeetingManageVO;
 public class MeetingManageDao extends EgovComAbstractDAO {
 
     /**
-	 * 부서 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -38,8 +38,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 아이디 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?꾩씠??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -48,8 +48,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?뚯쓽?뺣낫 紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -58,8 +58,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보를 상세조회 한다.
-	 * @param MeetingManageVO - 회정정보가 담김 VO
+	 * ?뚯쓽?뺣낫瑜??곸꽭議고쉶 ?쒕떎.
+	 * @param MeetingManageVO - ?뚯젙?뺣낫媛 ?닿? VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -68,8 +68,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보를 목록 전체 건수를 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?뚯쓽?뺣낫瑜?紐⑸줉 ?꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -78,8 +78,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보를 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?뚯쓽?뺣낫瑜??깅줉?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void insertMeetingManage(MeetingManageVO meetingManageVO){
@@ -87,8 +87,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보를 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?뚯쓽?뺣낫瑜??섏젙?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void updateMeetingManage(MeetingManageVO meetingManageVO){
@@ -96,8 +96,8 @@ public class MeetingManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 회의정보를 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?뚯쓽?뺣낫瑜???젣?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void deleteMeetingManage(MeetingManageVO meetingManageVO){

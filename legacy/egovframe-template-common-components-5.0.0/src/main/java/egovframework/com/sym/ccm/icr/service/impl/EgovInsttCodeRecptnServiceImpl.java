@@ -31,29 +31,29 @@ import egovframework.com.sym.ccm.icr.service.InsttCodeRecptnVO;
 import jakarta.annotation.Resource;
 
 /**
- * 기관코드에 대한 서비스 구현클래스를 정의한다.
+ * 湲곌?肄붾뱶??????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  홍길동          최초 생성
- *   2009.04.01  이중호          최초 생성
- *   2011.09.05	 서준식          파일 읽기 무한 루프 오류 수정
- *   2011.10.07  이기하          finally문을 추가하여 에러시 자원반환할 수 있도록 추가
- *   2017.02.08  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2023.08.10  정진오          기관코드수신 방식 수정(공공데이터포털 이용)
- *   2025.07.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryImport(불필요한 import문 선언)
- *   2025.07.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-InefficientStringBuffering(StringBuffer 함수내에서 비문자열 연산 이용하여 직접 결합하는 코드 사용을 탐지. append 메소드 사용을 권장)
- *   2025.07.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.07.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AssignmentInOperand(피연산자내에 할당문이 사용됨. 해당 코드를 복잡하고 가독성이 떨어지게 만듬)
+ *   2009.03.20  ?띻만??         理쒖큹 ?앹꽦
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.09.05	 ?쒖???         ?뚯씪 ?쎄린 臾댄븳 猷⑦봽 ?ㅻ쪟 ?섏젙
+ *   2011.10.07  ?닿린??         finally臾몄쓣 異붽??섏뿬 ?먮윭???먯썝諛섑솚?????덈룄濡?異붽?
+ *   2017.02.08  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2023.08.10  ?뺤쭊??         湲곌?肄붾뱶?섏떊 諛⑹떇 ?섏젙(怨듦났?곗씠?고룷???댁슜)
+ *   2025.07.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryImport(遺덊븘?뷀븳 import臾??좎뼵)
+ *   2025.07.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-InefficientStringBuffering(StringBuffer ?⑥닔?댁뿉??鍮꾨Ц?먯뿴 ?곗궛 ?댁슜?섏뿬 吏곸젒 寃고빀?섎뒗 肄붾뱶 ?ъ슜???먯?. append 硫붿냼???ъ슜??沅뚯옣)
+ *   2025.07.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.07.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AssignmentInOperand(?쇱뿰?곗옄?댁뿉 ?좊떦臾몄씠 ?ъ슜?? ?대떦 肄붾뱶瑜?蹂듭옟?섍퀬 媛?낆꽦???⑥뼱吏寃?留뚮벉)
  *
  *      </pre>
  */
@@ -70,42 +70,42 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	private EgovIdGnrService idgenService;
 
 	/**
-	 * 기관코드수신을 처리한다.
+	 * 湲곌?肄붾뱶?섏떊??泥섎━?쒕떎.
 	 */
 	@Override
 	public void insertInsttCodeRecptn() throws Exception {
 		List<HashMap<String, String>> list = apiLink();
 		for (HashMap<String, String> row : list) {
 			InsttCodeRecptn insttCodeRecptn = new InsttCodeRecptn();
-			insttCodeRecptn.setOccrrDe(ObjectUtils.isEmpty(row.get("crtDe")) ? "20000101" : row.get("crtDe")); // 날짜 >> crt_de 생성일 x 20000101
-			insttCodeRecptn.setInsttCode(row.get("orgCd")); // 기관코드 >> org_cd 기관코드
-			insttCodeRecptn.setOpertSn(idgenService.getNextIntegerId()); // 작업일련번호 >> idgenService.getNextIntegerId()
-			insttCodeRecptn.setChangeSeCode("01"); // 변경구분코드 01 코드생성 02 코드변경 03 코드말소 >> 01 / 02
-			insttCodeRecptn.setProcessSe("00"); // 작업구분 00 수신처리 01 처리완료 11 생성오류 12 변경오류 13 말소오류>> 00
-			insttCodeRecptn.setEtcCode(row.get("locatstdCd")); // 기타코드 >> locatstd_cd 소재지코드
-			insttCodeRecptn.setAllInsttNm(row.get("fullNm")); // 전체기관명 >> full_nm 기관명전체
-			insttCodeRecptn.setLowestInsttNm(row.get("lowNm")); // 최하위기관명 >> low_nm 기관명최하위
-			insttCodeRecptn.setInsttAbrvNm(row.get("abbrNm")); // 기관약칭명 >> abbr_nm 기관명약어
-			insttCodeRecptn.setOdr(row.get("gapNo")); // 차수 >> gap_no 차수
-			insttCodeRecptn.setOrd(row.get("rankNo")); // 서열 >> rank_no 서열
-			insttCodeRecptn.setInsttOdr(row.get("subChasu")); // 소속기관차수 >> sub_chasu 소속기관차수
-			insttCodeRecptn.setUpperInsttCode(row.get("highCd")); // 차상위기관코드 >> high_cd 상위기관코드
-			insttCodeRecptn.setBestInsttCode(row.get("highstCd")); // 최상위기관코드 >> highst_cd 최상위기관코드
-			insttCodeRecptn.setReprsntInsttCode(row.get("repCd")); // 대표기관코드 >> rep_cd 대표기관코드
-			insttCodeRecptn.setInsttTyLclas(row.get("typebigNm")); // 기관유형(대) >> typebig_nm 기관대분류
-			insttCodeRecptn.setInsttTyMclas(row.get("typemidNm")); // 기관유형(중) >> typemid_nm 기관중분류
-			insttCodeRecptn.setInsttTySclas(row.get("typesmlNm")); // 기관유형(소) >> typesml_nm 기관소분류
-			insttCodeRecptn.setTelno(""); // 전화번호 >> x
-			insttCodeRecptn.setFxnum(""); // 팩스번호 >> x
-			insttCodeRecptn.setCreatDe(row.get("crtDe")); // 생성일자 >> crt_de 생성일
-			insttCodeRecptn.setAblDe(row.get("clsDe")); // 폐지일자 >> cls_de 폐지일
-			insttCodeRecptn.setAblEnnc(row.get("stopSelt")); // 폐지구분 >> stop_selt 폐지구분
-			insttCodeRecptn.setChangede(row.get("chgDe")); // 변경일자 >> chg_de 변경일
-			insttCodeRecptn.setChangeTime(""); // 변경시간 >> x
-			insttCodeRecptn.setBsisDe(row.get("baseDate")); // 기초날짜 >> base_date 기초일자
-			insttCodeRecptn.setSortOrdr(0); // 정렬순서 >> x
-			insttCodeRecptn.setFrstRegisterId("System Batch"); // 등록자 Batch System
-			insttCodeRecptn.setLastUpdusrId("System Batch"); // 수정자 Batch System
+			insttCodeRecptn.setOccrrDe(ObjectUtils.isEmpty(row.get("crtDe")) ? "20000101" : row.get("crtDe")); // ?좎쭨 >> crt_de ?앹꽦??x 20000101
+			insttCodeRecptn.setInsttCode(row.get("orgCd")); // 湲곌?肄붾뱶 >> org_cd 湲곌?肄붾뱶
+			insttCodeRecptn.setOpertSn(idgenService.getNextIntegerId()); // ?묒뾽?쇰젴踰덊샇 >> idgenService.getNextIntegerId()
+			insttCodeRecptn.setChangeSeCode("01"); // 蹂寃쎄뎄遺꾩퐫??01 肄붾뱶?앹꽦 02 肄붾뱶蹂寃?03 肄붾뱶留먯냼 >> 01 / 02
+			insttCodeRecptn.setProcessSe("00"); // ?묒뾽援щ텇 00 ?섏떊泥섎━ 01 泥섎━?꾨즺 11 ?앹꽦?ㅻ쪟 12 蹂寃쎌삤瑜?13 留먯냼?ㅻ쪟>> 00
+			insttCodeRecptn.setEtcCode(row.get("locatstdCd")); // 湲고?肄붾뱶 >> locatstd_cd ?뚯옱吏肄붾뱶
+			insttCodeRecptn.setAllInsttNm(row.get("fullNm")); // ?꾩껜湲곌?紐?>> full_nm 湲곌?紐낆쟾泥?
+			insttCodeRecptn.setLowestInsttNm(row.get("lowNm")); // 理쒗븯?꾧린愿紐?>> low_nm 湲곌?紐낆턀?섏쐞
+			insttCodeRecptn.setInsttAbrvNm(row.get("abbrNm")); // 湲곌??쎌묶紐?>> abbr_nm 湲곌?紐낆빟??
+			insttCodeRecptn.setOdr(row.get("gapNo")); // 李⑥닔 >> gap_no 李⑥닔
+			insttCodeRecptn.setOrd(row.get("rankNo")); // ?쒖뿴 >> rank_no ?쒖뿴
+			insttCodeRecptn.setInsttOdr(row.get("subChasu")); // ?뚯냽湲곌?李⑥닔 >> sub_chasu ?뚯냽湲곌?李⑥닔
+			insttCodeRecptn.setUpperInsttCode(row.get("highCd")); // 李⑥긽?꾧린愿肄붾뱶 >> high_cd ?곸쐞湲곌?肄붾뱶
+			insttCodeRecptn.setBestInsttCode(row.get("highstCd")); // 理쒖긽?꾧린愿肄붾뱶 >> highst_cd 理쒖긽?꾧린愿肄붾뱶
+			insttCodeRecptn.setReprsntInsttCode(row.get("repCd")); // ??쒓린愿肄붾뱶 >> rep_cd ??쒓린愿肄붾뱶
+			insttCodeRecptn.setInsttTyLclas(row.get("typebigNm")); // 湲곌??좏삎(?) >> typebig_nm 湲곌??遺꾨쪟
+			insttCodeRecptn.setInsttTyMclas(row.get("typemidNm")); // 湲곌??좏삎(以? >> typemid_nm 湲곌?以묐텇瑜?
+			insttCodeRecptn.setInsttTySclas(row.get("typesmlNm")); // 湲곌??좏삎(?? >> typesml_nm 湲곌??뚮텇瑜?
+			insttCodeRecptn.setTelno(""); // ?꾪솕踰덊샇 >> x
+			insttCodeRecptn.setFxnum(""); // ?⑹뒪踰덊샇 >> x
+			insttCodeRecptn.setCreatDe(row.get("crtDe")); // ?앹꽦?쇱옄 >> crt_de ?앹꽦??
+			insttCodeRecptn.setAblDe(row.get("clsDe")); // ?먯??쇱옄 >> cls_de ?먯???
+			insttCodeRecptn.setAblEnnc(row.get("stopSelt")); // ?먯?援щ텇 >> stop_selt ?먯?援щ텇
+			insttCodeRecptn.setChangede(row.get("chgDe")); // 蹂寃쎌씪??>> chg_de 蹂寃쎌씪
+			insttCodeRecptn.setChangeTime(""); // 蹂寃쎌떆媛?>> x
+			insttCodeRecptn.setBsisDe(row.get("baseDate")); // 湲곗큹?좎쭨 >> base_date 湲곗큹?쇱옄
+			insttCodeRecptn.setSortOrdr(0); // ?뺣젹?쒖꽌 >> x
+			insttCodeRecptn.setFrstRegisterId("System Batch"); // ?깅줉??Batch System
+			insttCodeRecptn.setLastUpdusrId("System Batch"); // ?섏젙??Batch System
 
 			InsttCodeRecptnVO vo = new InsttCodeRecptnVO();
 			vo.setSearchCondition("CodeList");
@@ -121,7 +121,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드를 수신하기 위한 요청을 설정한다.
+	 * 湲곌?肄붾뱶瑜??섏떊?섍린 ?꾪븳 ?붿껌???ㅼ젙?쒕떎.
 	 */
 	public static String requestString(int pageNo, int numOfRows) throws IOException {
 		String serviceKey = EgovProperties.getProperty("Globals.data.serviceKey");
@@ -136,31 +136,31 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 		sb.append("=");
 		sb.append(serviceKey);
 
-		// 페이지번호
+		// ?섏씠吏踰덊샇
 		sb.append("&");
 		sb.append(URLEncoder.encode("pageNo", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode(Integer.toString(pageNo), "UTF-8"));
 
-		// 한 페이지 결과 수
+		// ???섏씠吏 寃곌낵 ??
 		sb.append("&");
 		sb.append(URLEncoder.encode("numOfRows", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode(Integer.toString(numOfRows), "UTF-8"));
 
-		// 요청자료형식(XML/JSON) Default: XML
+		// ?붿껌?먮즺?뺤떇(XML/JSON) Default: XML
 		sb.append("&");
 		sb.append(URLEncoder.encode("type", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode("JSON", "UTF-8"));
 
-		// 기관명(옵션)
+		// 湲곌?紐??듭뀡)
 		sb.append("&");
 		sb.append(URLEncoder.encode("full_nm", "UTF-8"));
 		sb.append("=");
-		sb.append(URLEncoder.encode("행정안전부", "UTF-8"));
+		sb.append(URLEncoder.encode("?됱젙?덉쟾遺", "UTF-8"));
 
-		// 사용:0, 폐지:1(옵션)
+		// ?ъ슜:0, ?먯?:1(?듭뀡)
 		sb.append("&");
 		sb.append(URLEncoder.encode("stop_selt", "UTF-8"));
 		sb.append("=");
@@ -170,7 +170,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드 페이지수를 확인한다.
+	 * 湲곌?肄붾뱶 ?섏씠吏?섎? ?뺤씤?쒕떎.
 	 */
 	public static int numberOfRows() throws IOException, ParseException {
 		int pageNo = 1;
@@ -209,7 +209,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드를 수신한다.
+	 * 湲곌?肄붾뱶瑜??섏떊?쒕떎.
 	 */
 	public static List<HashMap<String, String>> apiLink() throws IOException, ParseException {
 		List<HashMap<String, String>> organizationCodeList = new ArrayList<>();
@@ -285,7 +285,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드 상세내역을 조회한다.
+	 * 湲곌?肄붾뱶 ?곸꽭?댁뿭??議고쉶?쒕떎.
 	 */
 	@Override
 	public InsttCodeRecptn selectInsttCodeDetail(InsttCodeRecptn insttCodeRecptn) throws Exception {
@@ -294,7 +294,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드수신 목록을 조회한다.
+	 * 湲곌?肄붾뱶?섏떊 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectInsttCodeRecptnList(InsttCodeRecptnVO searchVO) throws Exception {
@@ -302,7 +302,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드수신 총 개수를 조회한다.
+	 * 湲곌?肄붾뱶?섏떊 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectInsttCodeRecptnListTotCnt(InsttCodeRecptnVO searchVO) throws Exception {
@@ -310,7 +310,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드 목록을 조회한다.
+	 * 湲곌?肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectInsttCodeList(InsttCodeRecptnVO searchVO) throws Exception {
@@ -318,7 +318,7 @@ public class EgovInsttCodeRecptnServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 기관코드 총 개수를 조회한다.
+	 * 湲곌?肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectInsttCodeListTotCnt(InsttCodeRecptnVO searchVO) throws Exception {

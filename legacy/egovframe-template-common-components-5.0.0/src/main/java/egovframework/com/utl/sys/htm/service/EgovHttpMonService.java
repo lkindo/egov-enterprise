@@ -4,117 +4,117 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 개요 - HTTP서비스 모니터링에 대한 Service Interface를 정의한다.
+ * 媛쒖슂 - HTTP?쒕퉬??紐⑤땲?곕쭅?????Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용 - HTTP서비스 모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - HTTP서비스 모니터링의 조회기능은 목록조회,
- * 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - HTTP?쒕퉬??紐⑤땲?곕쭅??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - HTTP?쒕퉬??紐⑤땲?곕쭅??議고쉶湲곕뒫? 紐⑸줉議고쉶,
+ * ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 박종선
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 17-6-2010 오후 5:12:43
+ * @created 17-6-2010 ?ㅽ썑 5:12:43
  */
 public interface EgovHttpMonService {
 
 	/**
-	 * 등록된 HTTP서비스모니터링 목록을 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return List - HTTP서비스모니터링 목록
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return List - HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉
 	 *
 	 * @param httpMonVO
 	 */
 	public List<HttpMonVO> selectHttpMonList(HttpMonVO searchVO) throws Exception;
 
 	/**
-	 * HTTP서비스모니터링 목록 총 개수를 조회한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return int - HTTP서비스 토탈 카운트 수
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return int - HTTP?쒕퉬???좏깉 移댁슫????
 	 *
 	 * @param httpMonVO
 	 */
 	int selectHttpMonTotCnt(HttpMonVO searchVO) throws Exception;
 
 	/**
-	 * 등록된 HTTP서비스모니터링의 상세정보를 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곸쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param httpMonVO - HTTP서비스모니터링 Vo
-	 * @return httpMonVO - HTTP서비스모니터링 Vo
+	 * @param httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
 	 *
 	 * @param httpMonVO
 	 */
 	HttpMon selectHttpMonDetail(HttpMon httpMon) throws Exception;
 
 	/**
-	 * HTTP서비스모니터링 정보를 신규로 등록한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
 	void insertHttpMon(HttpMon httpMon) throws Exception;
 
 	/**
-	 * 기 등록된 HTTP서비스모니터링 정보를 수정한다.
+	 * 湲??깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??섏젙?쒕떎.
 	 *
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
 	void updateHttpMon(HttpMon httpMon) throws Exception;
 
 	/**
-	 * 기 등록된 HTTP서비스모니터링 정보를 삭제한다.
+	 * 湲??깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜???젣?쒕떎.
 	 *
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
 	void deleteHttpMon(HttpMon httpMon) throws Exception;
 
 	/**
-	 * 등록된 HTTP서비스모니터링로그 목록을 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return List - HTTP서비스모니터링 목록
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return List - HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉
 	 *
 	 * @param httpMonVO
 	 */
 	public Map<String, Object> selectHttpMonLogList(HttpMonLogVO httpMonLogVO) throws Exception;
 
 	/**
-	 * HTTP서비스모니터링로그 목록 총 개수를 조회한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 *
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return int - HTTP서비스 토탈 카운트 수
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return int - HTTP?쒕퉬???좏깉 移댁슫????
 	 *
 	 * @param httpMonVO
 	 */
 	// int selectHttpMonLogTotCnt(HttpMonLogVO searchVO) throws Exception;
 
 	/**
-	 * 등록된 HTTP서비스모니터링로그의 상세정보를 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹몄쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param httpMonVO - HTTP서비스모니터링 Vo
-	 * @return httpMonVO - HTTP서비스모니터링 Vo
+	 * @param httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
 	 *
 	 * @param httpMonVO
 	 */
 	HttpMonLog selectHttpMonDetailLog(HttpMonLog httpMonLog) throws Exception;
 
 	/**
-	 * HTTP서비스모니터링로그 정보를 등록한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹??뺣낫瑜??깅줉?쒕떎.
 	 *
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
 	void insertHttpMonLog(HttpMonLog httpMonLog) throws Exception;
 
 	/**
-	 * HTTP서비스 모니터링 결과를 수정한다.
+	 * HTTP?쒕퉬??紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
 	 *
-	 * @param HttpMon - HTTP서비스 모니터링대상 model
+	 * @param HttpMon - HTTP?쒕퉬??紐⑤땲?곕쭅???model
 	 *
 	 * @param httpMon
 	 */

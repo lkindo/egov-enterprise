@@ -1,15 +1,15 @@
 /**
  * @Class Name  : EgovStringUtil.java
- * @Description : 문자열 데이터 처리 관련 유틸리티
+ * @Description : 臾몄옄???곗씠??泥섎━ 愿???좏떥由ы떚
  * @Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *     -------          --------        ---------------------------
- *   2009.01.13     박정규          최초 생성
- *   2009.02.13     이삼섭          내용 추가
- *   2024.10.29		Chung10Kr		명사에 맞는 조사 반환 기능 개발
+ *   2009.01.13     諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2009.02.13     ?댁궪??         ?댁슜 異붽?
+ *   2024.10.29		Chung10Kr		紐낆궗??留욌뒗 議곗궗 諛섑솚 湲곕뒫 媛쒕컻
  *
- * @author 공통 서비스 개발팀 박정규
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009. 01. 13
  * @version 1.0
  * @see
@@ -42,15 +42,15 @@ import java.util.Locale;
 
 public class EgovStringUtil {
 	/**
-	 * 빈 문자열 <code>""</code>.
+	 * 鍮?臾몄옄??<code>""</code>.
 	 */
 	public static final String EMPTY = "";
 
-	// 221116	김혜준	2022 시큐어코딩 조치
+	// 221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 	private static SecureRandom rnd = new SecureRandom();
 
 	/**
-	 * <p>Padding을 할 수 있는 최대 수치</p>
+	 * <p>Padding???????덈뒗 理쒕? ?섏튂</p>
 	 */
 	// private static final int PAD_LIMIT = 8192;
 
@@ -68,11 +68,11 @@ public class EgovStringUtil {
 	 */
 
 	/**
-	 * 문자열이 지정한 길이를 초과했을때 지정한길이에다가 해당 문자열을 붙여주는 메서드.
-	 * @param source 원본 문자열 배열
-	 * @param output 더할문자열
-	 * @param slength 지정길이
-	 * @return 지정길이로 잘라서 더할분자열 합친 문자열
+	 * 臾몄옄?댁씠 吏?뺥븳 湲몄씠瑜?珥덇낵?덉쓣??吏?뺥븳湲몄씠?먮떎媛 ?대떦 臾몄옄?댁쓣 遺숈뿬二쇰뒗 硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??諛곗뿴
+	 * @param output ?뷀븷臾몄옄??
+	 * @param slength 吏?뺢만??
+	 * @return 吏?뺢만?대줈 ?섎씪???뷀븷遺꾩옄???⑹튇 臾몄옄??
 	 */
 	public static String cutString(String source, String output, int slength) {
 		String returnVal = null;
@@ -87,10 +87,10 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 문자열이 지정한 길이를 초과했을때 해당 문자열을 삭제하는 메서드
-	 * @param source 원본 문자열 배열
-	 * @param slength 지정길이
-	 * @return 지정길이로 잘라서 더할분자열 합친 문자열
+	 * 臾몄옄?댁씠 吏?뺥븳 湲몄씠瑜?珥덇낵?덉쓣???대떦 臾몄옄?댁쓣 ??젣?섎뒗 硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??諛곗뿴
+	 * @param slength 吏?뺢만??
+	 * @return 吏?뺢만?대줈 ?섎씪???뷀븷遺꾩옄???⑹튇 臾몄옄??
 	 */
 	public static String cutString(String source, int slength) {
 		String result = null;
@@ -106,7 +106,7 @@ public class EgovStringUtil {
 
 	/**
 	 * <p>
-	 * String이 비었거나("") 혹은 null 인지 검증한다.
+	 * String??鍮꾩뿀嫄곕굹("") ?뱀? null ?몄? 寃利앺븳??
 	 * </p>
 	 *
 	 * <pre>
@@ -117,15 +117,15 @@ public class EgovStringUtil {
 	 *  StringUtil.isEmpty("  bob  ") = false
 	 * </pre>
 	 *
-	 * @param str - 체크 대상 스트링오브젝트이며 null을 허용함
-	 * @return <code>true</code> - 입력받은 String 이 빈 문자열 또는 null인 경우
+	 * @param str - 泥댄겕 ????ㅽ듃留곸삤釉뚯젥?몄씠硫?null???덉슜??
+	 * @return <code>true</code> - ?낅젰諛쏆? String ??鍮?臾몄옄???먮뒗 null??寃쎌슦
 	 */
 	public static boolean isEmpty(String str) {
 		return str == null || str.length() == 0;
 	}
 
 	/**
-	 * <p>기준 문자열에 포함된 모든 대상 문자(char)를 제거한다.</p>
+	 * <p>湲곗? 臾몄옄?댁뿉 ?ы븿??紐⑤뱺 ???臾몄옄(char)瑜??쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.remove(null, *)       = null
@@ -134,9 +134,9 @@ public class EgovStringUtil {
 	 * StringUtil.remove("queued", 'z') = "queued"
 	 * </pre>
 	 *
-	 * @param str  입력받는 기준 문자열
-	 * @param remove  입력받는 문자열에서 제거할 대상 문자열
-	 * @return 제거대상 문자열이 제거된 입력문자열. 입력문자열이 null인 경우 출력문자열은 null
+	 * @param str  ?낅젰諛쏅뒗 湲곗? 臾몄옄??
+	 * @param remove  ?낅젰諛쏅뒗 臾몄옄?댁뿉???쒓굅?????臾몄옄??
+	 * @return ?쒓굅???臾몄옄?댁씠 ?쒓굅???낅젰臾몄옄?? ?낅젰臾몄옄?댁씠 null??寃쎌슦 異쒕젰臾몄옄?댁? null
 	 */
 	public static String remove(String str, char remove) {
 		if (isEmpty(str) || str.indexOf(remove) == -1) {
@@ -153,7 +153,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>문자열 내부의 콤마 character(,)를 모두 제거한다.</p>
+	 * <p>臾몄옄???대???肄ㅻ쭏 character(,)瑜?紐⑤몢 ?쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.removeCommaChar(null)       = null
@@ -161,16 +161,16 @@ public class EgovStringUtil {
 	 * StringUtil.removeCommaChar("asdfg,qweqe") = "asdfgqweqe"
 	 * </pre>
 	 *
-	 * @param str 입력받는 기준 문자열
-	 * @return " , "가 제거된 입력문자열
-	 *  입력문자열이 null인 경우 출력문자열은 null
+	 * @param str ?낅젰諛쏅뒗 湲곗? 臾몄옄??
+	 * @return " , "媛 ?쒓굅???낅젰臾몄옄??
+	 *  ?낅젰臾몄옄?댁씠 null??寃쎌슦 異쒕젰臾몄옄?댁? null
 	 */
 	public static String removeCommaChar(String str) {
 		return remove(str, ',');
 	}
 
 	/**
-	 * <p>문자열 내부의 마이너스 character(-)를 모두 제거한다.</p>
+	 * <p>臾몄옄???대???留덉씠?덉뒪 character(-)瑜?紐⑤몢 ?쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.removeMinusChar(null)       = null
@@ -178,20 +178,20 @@ public class EgovStringUtil {
 	 * StringUtil.removeMinusChar("a-sdfg-qweqe") = "asdfgqweqe"
 	 * </pre>
 	 *
-	 * @param str  입력받는 기준 문자열
-	 * @return " - "가 제거된 입력문자열
-	 *  입력문자열이 null인 경우 출력문자열은 null
+	 * @param str  ?낅젰諛쏅뒗 湲곗? 臾몄옄??
+	 * @return " - "媛 ?쒓굅???낅젰臾몄옄??
+	 *  ?낅젰臾몄옄?댁씠 null??寃쎌슦 異쒕젰臾몄옄?댁? null
 	 */
 	public static String removeMinusChar(String str) {
 		return remove(str, '-');
 	}
 
 	/**
-	 * 원본 문자열의 포함된 특정 문자열을 새로운 문자열로 변환하는 메서드
-	 * @param source 원본 문자열
-	 * @param subject 원본 문자열에 포함된 특정 문자열
-	 * @param object 변환할 문자열
-	 * @return sb.toString() 새로운 문자열로 변환된 문자열
+	 * ?먮낯 臾몄옄?댁쓽 ?ы븿???뱀젙 臾몄옄?댁쓣 ?덈줈??臾몄옄?대줈 蹂?섑븯??硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??
+	 * @param subject ?먮낯 臾몄옄?댁뿉 ?ы븿???뱀젙 臾몄옄??
+	 * @param object 蹂?섑븷 臾몄옄??
+	 * @return sb.toString() ?덈줈??臾몄옄?대줈 蹂?섎맂 臾몄옄??
 	 */
 	public static String replace(String source, String subject, String object) {
 		StringBuffer rtnStr = new StringBuffer();
@@ -211,11 +211,11 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 원본 문자열의 포함된 특정 문자열 첫번째 한개만 새로운 문자열로 변환하는 메서드
-	 * @param source 원본 문자열
-	 * @param subject 원본 문자열에 포함된 특정 문자열
-	 * @param object 변환할 문자열
-	 * @return sb.toString() 새로운 문자열로 변환된 문자열 / source 특정문자열이 없는 경우 원본 문자열
+	 * ?먮낯 臾몄옄?댁쓽 ?ы븿???뱀젙 臾몄옄??泥ル쾲吏??쒓컻留??덈줈??臾몄옄?대줈 蹂?섑븯??硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??
+	 * @param subject ?먮낯 臾몄옄?댁뿉 ?ы븿???뱀젙 臾몄옄??
+	 * @param object 蹂?섑븷 臾몄옄??
+	 * @return sb.toString() ?덈줈??臾몄옄?대줈 蹂?섎맂 臾몄옄??/ source ?뱀젙臾몄옄?댁씠 ?녿뒗 寃쎌슦 ?먮낯 臾몄옄??
 	 */
 	public static String replaceOnce(String source, String subject, String object) {
 		StringBuffer rtnStr = new StringBuffer();
@@ -233,12 +233,12 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <code>subject</code>에 포함된 각각의 문자를 object로 변환한다.
+	 * <code>subject</code>???ы븿??媛곴컖??臾몄옄瑜?object濡?蹂?섑븳??
 	 *
-	 * @param source 원본 문자열
-	 * @param subject 원본 문자열에 포함된 특정 문자열
-	 * @param object 변환할 문자열
-	 * @return sb.toString() 새로운 문자열로 변환된 문자열
+	 * @param source ?먮낯 臾몄옄??
+	 * @param subject ?먮낯 臾몄옄?댁뿉 ?ы븿???뱀젙 臾몄옄??
+	 * @param object 蹂?섑븷 臾몄옄??
+	 * @return sb.toString() ?덈줈??臾몄옄?대줈 蹂?섎맂 臾몄옄??
 	 */
 	public static String replaceChar(String source, String subject, String object) {
 		StringBuffer rtnStr = new StringBuffer();
@@ -262,9 +262,9 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p><code>str</code> 중 <code>searchStr</code>의 시작(index) 위치를 반환.</p>
+	 * <p><code>str</code> 以?<code>searchStr</code>???쒖옉(index) ?꾩튂瑜?諛섑솚.</p>
 	 *
-	 * <p>입력값 중 <code>null</code>이 있을 경우 <code>-1</code>을 반환.</p>
+	 * <p>?낅젰媛?以?<code>null</code>???덉쓣 寃쎌슦 <code>-1</code>??諛섑솚.</p>
 	 *
 	 * <pre>
 	 * StringUtil.indexOf(null, *)          = -1
@@ -276,9 +276,9 @@ public class EgovStringUtil {
 	 * StringUtil.indexOf("aabaabaa", "")   = 0
 	 * </pre>
 	 *
-	 * @param str  검색 문자열
-	 * @param searchStr  검색 대상문자열
-	 * @return 검색 문자열 중 검색 대상문자열이 있는 시작 위치 검색대상 문자열이 없거나 null인 경우 -1
+	 * @param str  寃??臾몄옄??
+	 * @param searchStr  寃????곷Ц?먯뿴
+	 * @return 寃??臾몄옄??以?寃????곷Ц?먯뿴???덈뒗 ?쒖옉 ?꾩튂 寃?됰???臾몄옄?댁씠 ?녾굅??null??寃쎌슦 -1
 	 */
 	public static int indexOf(String str, String searchStr) {
 		if (str == null || searchStr == null) {
@@ -289,27 +289,27 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>오라클의 decode 함수와 동일한 기능을 가진 메서드이다.
-	 * <code>sourStr</code>과 <code>compareStr</code>의 값이 같으면
-	 * <code>returStr</code>을 반환하며, 다르면  <code>defaultStr</code>을 반환한다.
+	 * <p>?ㅻ씪?댁쓽 decode ?⑥닔? ?숈씪??湲곕뒫??媛吏?硫붿꽌?쒖씠??
+	 * <code>sourStr</code>怨?<code>compareStr</code>??媛믪씠 媛숈쑝硫?
+	 * <code>returStr</code>??諛섑솚?섎ŉ, ?ㅻⅤ硫? <code>defaultStr</code>??諛섑솚?쒕떎.
 	 * </p>
 	 *
 	 * <pre>
 	 * StringUtil.decode(null, null, "foo", "bar")= "foo"
 	 * StringUtil.decode("", null, "foo", "bar") = "bar"
 	 * StringUtil.decode(null, "", "foo", "bar") = "bar"
-	 * StringUtil.decode("하이", "하이", null, "bar") = null
-	 * StringUtil.decode("하이", "하이  ", "foo", null) = null
-	 * StringUtil.decode("하이", "하이", "foo", "bar") = "foo"
-	 * StringUtil.decode("하이", "하이  ", "foo", "bar") = "bar"
+	 * StringUtil.decode("?섏씠", "?섏씠", null, "bar") = null
+	 * StringUtil.decode("?섏씠", "?섏씠  ", "foo", null) = null
+	 * StringUtil.decode("?섏씠", "?섏씠", "foo", "bar") = "foo"
+	 * StringUtil.decode("?섏씠", "?섏씠  ", "foo", "bar") = "bar"
 	 * </pre>
 	 *
-	 * @param sourceStr 비교할 문자열
-	 * @param compareStr 비교 대상 문자열
-	 * @param returnStr sourceStr와 compareStr의 값이 같을 때 반환할 문자열
-	 * @param defaultStr sourceStr와 compareStr의 값이 다를 때 반환할 문자열
-	 * @return sourceStr과 compareStr의 값이 동일(equal)할 때 returnStr을 반환하며,
-	 *         <br/>다르면 defaultStr을 반환한다.
+	 * @param sourceStr 鍮꾧탳??臾몄옄??
+	 * @param compareStr 鍮꾧탳 ???臾몄옄??
+	 * @param returnStr sourceStr? compareStr??媛믪씠 媛숈쓣 ??諛섑솚??臾몄옄??
+	 * @param defaultStr sourceStr? compareStr??媛믪씠 ?ㅻ? ??諛섑솚??臾몄옄??
+	 * @return sourceStr怨?compareStr??媛믪씠 ?숈씪(equal)????returnStr??諛섑솚?섎ŉ,
+	 *         <br/>?ㅻⅤ硫?defaultStr??諛섑솚?쒕떎.
 	 */
 	public static String decode(String sourceStr, String compareStr, String returnStr, String defaultStr) {
 		//		if (sourceStr == null && compareStr == null) {
@@ -340,34 +340,34 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>오라클의 decode 함수와 동일한 기능을 가진 메서드이다.
-	 * <code>sourStr</code>과 <code>compareStr</code>의 값이 같으면
-	 * <code>returStr</code>을 반환하며, 다르면  <code>sourceStr</code>을 반환한다.
+	 * <p>?ㅻ씪?댁쓽 decode ?⑥닔? ?숈씪??湲곕뒫??媛吏?硫붿꽌?쒖씠??
+	 * <code>sourStr</code>怨?<code>compareStr</code>??媛믪씠 媛숈쑝硫?
+	 * <code>returStr</code>??諛섑솚?섎ŉ, ?ㅻⅤ硫? <code>sourceStr</code>??諛섑솚?쒕떎.
 	 * </p>
 	 *
 	 * <pre>
 	 * StringUtil.decode(null, null, "foo") = "foo"
 	 * StringUtil.decode("", null, "foo") = ""
 	 * StringUtil.decode(null, "", "foo") = null
-	 * StringUtil.decode("하이", "하이", "foo") = "foo"
-	 * StringUtil.decode("하이", "하이 ", "foo") = "하이"
-	 * StringUtil.decode("하이", "바이", "foo") = "하이"
+	 * StringUtil.decode("?섏씠", "?섏씠", "foo") = "foo"
+	 * StringUtil.decode("?섏씠", "?섏씠 ", "foo") = "?섏씠"
+	 * StringUtil.decode("?섏씠", "諛붿씠", "foo") = "?섏씠"
 	 * </pre>
 	 *
-	 * @param sourceStr 비교할 문자열
-	 * @param compareStr 비교 대상 문자열
-	 * @param returnStr sourceStr와 compareStr의 값이 같을 때 반환할 문자열
-	 * @return sourceStr과 compareStr의 값이 동일(equal)할 때 returnStr을 반환하며,
-	 *         <br/>다르면 sourceStr을 반환한다.
+	 * @param sourceStr 鍮꾧탳??臾몄옄??
+	 * @param compareStr 鍮꾧탳 ???臾몄옄??
+	 * @param returnStr sourceStr? compareStr??媛믪씠 媛숈쓣 ??諛섑솚??臾몄옄??
+	 * @return sourceStr怨?compareStr??媛믪씠 ?숈씪(equal)????returnStr??諛섑솚?섎ŉ,
+	 *         <br/>?ㅻⅤ硫?sourceStr??諛섑솚?쒕떎.
 	 */
 	public static String decode(String sourceStr, String compareStr, String returnStr) {
 		return decode(sourceStr, compareStr, returnStr, sourceStr);
 	}
 
 	/**
-	 * 객체가 null인지 확인하고 null인 경우 "" 로 바꾸는 메서드
-	 * @param object 원본 객체
-	 * @return resultVal 문자열
+	 * 媛앹껜媛 null?몄? ?뺤씤?섍퀬 null??寃쎌슦 "" 濡?諛붽씀??硫붿꽌??
+	 * @param object ?먮낯 媛앹껜
+	 * @return resultVal 臾몄옄??
 	 */
 	public static String isNullToString(Object object) {
 		String string = "";
@@ -381,9 +381,9 @@ public class EgovStringUtil {
 
 	/**
 	 *<pre>
-	 * 인자로 받은 String이 null일 경우 &quot;&quot;로 리턴한다.
-	 * &#064;param src null값일 가능성이 있는 String 값.
-	 * &#064;return 만약 String이 null 값일 경우 &quot;&quot;로 바꾼 String 값.
+	 * ?몄옄濡?諛쏆? String??null??寃쎌슦 &quot;&quot;濡?由ы꽩?쒕떎.
+	 * &#064;param src null媛믪씪 媛?μ꽦???덈뒗 String 媛?
+	 * &#064;return 留뚯빟 String??null 媛믪씪 寃쎌슦 &quot;&quot;濡?諛붽씔 String 媛?
 	 *</pre>
 	 */
 	public static String nullConvert(Object src) {
@@ -401,9 +401,9 @@ public class EgovStringUtil {
 
 	/**
 	 *<pre>
-	 * 인자로 받은 String이 null일 경우 &quot;&quot;로 리턴한다.
-	 * &#064;param src null값일 가능성이 있는 String 값.
-	 * &#064;return 만약 String이 null 값일 경우 &quot;&quot;로 바꾼 String 값.
+	 * ?몄옄濡?諛쏆? String??null??寃쎌슦 &quot;&quot;濡?由ы꽩?쒕떎.
+	 * &#064;param src null媛믪씪 媛?μ꽦???덈뒗 String 媛?
+	 * &#064;return 留뚯빟 String??null 媛믪씪 寃쎌슦 &quot;&quot;濡?諛붽씔 String 媛?
 	 *</pre>
 	 */
 	public static String nullConvertInt(Object src) {
@@ -421,9 +421,9 @@ public class EgovStringUtil {
 
 	/**
 	 *<pre>
-	 * 인자로 받은 String이 null일 경우 &quot;&quot;로 리턴한다.
-	 * &#064;param src null값일 가능성이 있는 String 값.
-	 * &#064;return 만약 String이 null 값일 경우 &quot;&quot;로 바꾼 String 값.
+	 * ?몄옄濡?諛쏆? String??null??寃쎌슦 &quot;&quot;濡?由ы꽩?쒕떎.
+	 * &#064;param src null媛믪씪 媛?μ꽦???덈뒗 String 媛?
+	 * &#064;return 留뚯빟 String??null 媛믪씪 寃쎌슦 &quot;&quot;濡?諛붽씔 String 媛?
 	 *</pre>
 	 */
 	public static String nullConvert(String src) {
@@ -437,9 +437,9 @@ public class EgovStringUtil {
 
 	/**
 	 *<pre>
-	 * 인자로 받은 String이 null일 경우 &quot;0&quot;로 리턴한다.
-	 * &#064;param src null값일 가능성이 있는 String 값.
-	 * &#064;return 만약 String이 null 값일 경우 &quot;0&quot;로 바꾼 String 값.
+	 * ?몄옄濡?諛쏆? String??null??寃쎌슦 &quot;0&quot;濡?由ы꽩?쒕떎.
+	 * &#064;param src null媛믪씪 媛?μ꽦???덈뒗 String 媛?
+	 * &#064;return 留뚯빟 String??null 媛믪씪 寃쎌슦 &quot;0&quot;濡?諛붽씔 String 媛?
 	 *</pre>
 	 */
 	public static int zeroConvert(Object src) {
@@ -453,9 +453,9 @@ public class EgovStringUtil {
 
 	/**
 	 *<pre>
-	 * 인자로 받은 String이 null일 경우 &quot;&quot;로 리턴한다.
-	 * &#064;param src null값일 가능성이 있는 String 값.
-	 * &#064;return 만약 String이 null 값일 경우 &quot;&quot;로 바꾼 String 값.
+	 * ?몄옄濡?諛쏆? String??null??寃쎌슦 &quot;&quot;濡?由ы꽩?쒕떎.
+	 * &#064;param src null媛믪씪 媛?μ꽦???덈뒗 String 媛?
+	 * &#064;return 留뚯빟 String??null 媛믪씪 寃쎌슦 &quot;&quot;濡?諛붽씔 String 媛?
 	 *</pre>
 	 */
 	public static int zeroConvert(String src) {
@@ -468,8 +468,8 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>문자열에서 {@link Character#isWhitespace(char)}에 정의된
-	 * 모든 공백문자를 제거한다.</p>
+	 * <p>臾몄옄?댁뿉??{@link Character#isWhitespace(char)}???뺤쓽??
+	 * 紐⑤뱺 怨듬갚臾몄옄瑜??쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.removeWhitespace(null)         = null
@@ -478,8 +478,8 @@ public class EgovStringUtil {
 	 * StringUtil.removeWhitespace("   ab  c  ") = "abc"
 	 * </pre>
 	 *
-	 * @param str  공백문자가 제거도어야 할 문자열
-	 * @return the 공백문자가 제거된 문자열, null이 입력되면 <code>null</code>이 리턴
+	 * @param str  怨듬갚臾몄옄媛 ?쒓굅?꾩뼱????臾몄옄??
+	 * @return the 怨듬갚臾몄옄媛 ?쒓굅??臾몄옄?? null???낅젰?섎㈃ <code>null</code>??由ы꽩
 	 */
 	public static String removeWhitespace(String str) {
 		if (isEmpty(str)) {
@@ -501,10 +501,10 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * Html 코드가 들어간 문서를 표시할때 태그에 손상없이 보이기 위한 메서드
+	 * Html 肄붾뱶媛 ?ㅼ뼱媛?臾몄꽌瑜??쒖떆?좊븣 ?쒓렇???먯긽?놁씠 蹂댁씠湲??꾪븳 硫붿꽌??
 	 *
 	 * @param strString
-	 * @return HTML 태그를 치환한 문자열
+	 * @return HTML ?쒓렇瑜?移섑솚??臾몄옄??
 	 */
 	public static String checkHtmlView(String strString) {
 		String strNew = "";
@@ -547,10 +547,10 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 문자열을 지정한 분리자에 의해 배열로 리턴하는 메서드.
-	 * @param source 원본 문자열
-	 * @param separator 분리자
-	 * @return result 분리자로 나뉘어진 문자열 배열
+	 * 臾몄옄?댁쓣 吏?뺥븳 遺꾨━?먯뿉 ?섑빐 諛곗뿴濡?由ы꽩?섎뒗 硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??
+	 * @param separator 遺꾨━??
+	 * @return result 遺꾨━?먮줈 ?섎돇?댁쭊 臾몄옄??諛곗뿴
 	 */
 	public static String[] split(String source, String separator) throws NullPointerException {
 		String[] returnVal = null;
@@ -577,7 +577,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>{@link String#toLowerCase()}를 이용하여 소문자로 변환한다.</p>
+	 * <p>{@link String#toLowerCase()}瑜??댁슜?섏뿬 ?뚮Ц?먮줈 蹂?섑븳??</p>
 	 *
 	 * <pre>
 	 * StringUtil.lowerCase(null)  = null
@@ -585,8 +585,8 @@ public class EgovStringUtil {
 	 * StringUtil.lowerCase("aBc") = "abc"
 	 * </pre>
 	 *
-	 * @param str 소문자로 변환되어야 할 문자열
-	 * @return 소문자로 변환된 문자열, null이 입력되면 <code>null</code> 리턴
+	 * @param str ?뚮Ц?먮줈 蹂?섎릺?댁빞 ??臾몄옄??
+	 * @return ?뚮Ц?먮줈 蹂?섎맂 臾몄옄?? null???낅젰?섎㈃ <code>null</code> 由ы꽩
 	 */
 	public static String lowerCase(String str) {
 		if (str == null) {
@@ -597,7 +597,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>{@link String#toUpperCase()}를 이용하여 대문자로 변환한다.</p>
+	 * <p>{@link String#toUpperCase()}瑜??댁슜?섏뿬 ?臾몄옄濡?蹂?섑븳??</p>
 	 *
 	 * <pre>
 	 * StringUtil.upperCase(null)  = null
@@ -605,8 +605,8 @@ public class EgovStringUtil {
 	 * StringUtil.upperCase("aBc") = "ABC"
 	 * </pre>
 	 *
-	 * @param str 대문자로 변환되어야 할 문자열
-	 * @return 대문자로 변환된 문자열, null이 입력되면 <code>null</code> 리턴
+	 * @param str ?臾몄옄濡?蹂?섎릺?댁빞 ??臾몄옄??
+	 * @return ?臾몄옄濡?蹂?섎맂 臾몄옄?? null???낅젰?섎㈃ <code>null</code> 由ы꽩
 	 */
 	public static String upperCase(String str) {
 		if (str == null) {
@@ -617,7 +617,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>입력된 String의 앞쪽에서 두번째 인자로 전달된 문자(stripChars)를 모두 제거한다.</p>
+	 * <p>?낅젰??String???욎そ?먯꽌 ?먮쾲吏??몄옄濡??꾨떖??臾몄옄(stripChars)瑜?紐⑤몢 ?쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.stripStart(null, *)          = null
@@ -630,9 +630,9 @@ public class EgovStringUtil {
 	 * StringUtil.stripStart("yxabc  ", "xyz") = "abc  "
 	 * </pre>
 	 *
-	 * @param str 지정된 문자가 제거되어야 할 문자열
-	 * @param stripChars 제거대상 문자열
-	 * @return 지정된 문자가 제거된 문자열, null이 입력되면 <code>null</code> 리턴
+	 * @param str 吏?뺣맂 臾몄옄媛 ?쒓굅?섏뼱????臾몄옄??
+	 * @param stripChars ?쒓굅???臾몄옄??
+	 * @return 吏?뺣맂 臾몄옄媛 ?쒓굅??臾몄옄?? null???낅젰?섎㈃ <code>null</code> 由ы꽩
 	 */
 	public static String stripStart(String str, String stripChars) {
 		int strLen;
@@ -656,7 +656,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>입력된 String의 뒤쪽에서 두번째 인자로 전달된 문자(stripChars)를 모두 제거한다.</p>
+	 * <p>?낅젰??String???ㅼそ?먯꽌 ?먮쾲吏??몄옄濡??꾨떖??臾몄옄(stripChars)瑜?紐⑤몢 ?쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.stripEnd(null, *)          = null
@@ -669,9 +669,9 @@ public class EgovStringUtil {
 	 * StringUtil.stripEnd("  abcyx", "xyz") = "  abc"
 	 * </pre>
 	 *
-	 * @param str 지정된 문자가 제거되어야 할 문자열
-	 * @param stripChars 제거대상 문자열
-	 * @return 지정된 문자가 제거된 문자열, null이 입력되면 <code>null</code> 리턴
+	 * @param str 吏?뺣맂 臾몄옄媛 ?쒓굅?섏뼱????臾몄옄??
+	 * @param stripChars ?쒓굅???臾몄옄??
+	 * @return 吏?뺣맂 臾몄옄媛 ?쒓굅??臾몄옄?? null???낅젰?섎㈃ <code>null</code> 由ы꽩
 	 */
 	public static String stripEnd(String str, String stripChars) {
 		int end;
@@ -695,7 +695,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>입력된 String의 앞, 뒤에서 두번째 인자로 전달된 문자(stripChars)를 모두 제거한다.</p>
+	 * <p>?낅젰??String???? ?ㅼ뿉???먮쾲吏??몄옄濡??꾨떖??臾몄옄(stripChars)瑜?紐⑤몢 ?쒓굅?쒕떎.</p>
 	 *
 	 * <pre>
 	 * StringUtil.strip(null, *)          = null
@@ -707,9 +707,9 @@ public class EgovStringUtil {
 	 * StringUtil.strip("  abcyx", "xyz") = "  abc"
 	 * </pre>
 	 *
-	 * @param str 지정된 문자가 제거되어야 할 문자열
-	 * @param stripChars 제거대상 문자열
-	 * @return 지정된 문자가 제거된 문자열, null이 입력되면 <code>null</code> 리턴
+	 * @param str 吏?뺣맂 臾몄옄媛 ?쒓굅?섏뼱????臾몄옄??
+	 * @param stripChars ?쒓굅???臾몄옄??
+	 * @return 吏?뺣맂 臾몄옄媛 ?쒓굅??臾몄옄?? null???낅젰?섎㈃ <code>null</code> 由ы꽩
 	 */
 	public static String strip(String str, String stripChars) {
 		if (isEmpty(str)) {
@@ -723,11 +723,11 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 문자열을 지정한 분리자에 의해 지정된 길이의 배열로 리턴하는 메서드.
-	 * @param source 원본 문자열
-	 * @param separator 분리자
-	 * @param arraylength 배열 길이
-	 * @return 분리자로 나뉘어진 문자열 배열
+	 * 臾몄옄?댁쓣 吏?뺥븳 遺꾨━?먯뿉 ?섑빐 吏?뺣맂 湲몄씠??諛곗뿴濡?由ы꽩?섎뒗 硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??
+	 * @param separator 遺꾨━??
+	 * @param arraylength 諛곗뿴 湲몄씠
+	 * @return 遺꾨━?먮줈 ?섎돇?댁쭊 臾몄옄??諛곗뿴
 	 */
 	public static String[] split(String source, String separator, int arraylength) throws NullPointerException {
 		String[] returnVal = new String[arraylength];
@@ -751,11 +751,11 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 문자열 A에서 Z사이의 랜덤 문자열을 구하는 기능을 제공 시작문자열과 종료문자열 사이의 랜덤 문자열을 구하는 기능
+	 * 臾몄옄??A?먯꽌 Z?ъ씠???쒕뜡 臾몄옄?댁쓣 援ы븯??湲곕뒫???쒓났 ?쒖옉臾몄옄?닿낵 醫낅즺臾몄옄???ъ씠???쒕뜡 臾몄옄?댁쓣 援ы븯??湲곕뒫
 	 *
-	 * @param startChr - 첫 문자
-	 * @param endChr - 마지막문자
-	 * @return 랜덤문자
+	 * @param startChr - 泥?臾몄옄
+	 * @param endChr - 留덉?留됰Ц??
+	 * @return ?쒕뜡臾몄옄
 	 * @exception MyException
 	 * @see
 	 */
@@ -764,37 +764,37 @@ public class EgovStringUtil {
 		int randomInt;
 		String randomStr = null;
 
-		// 시작문자 및 종료문자를 아스키숫자로 변환한다.
+		// ?쒖옉臾몄옄 諛?醫낅즺臾몄옄瑜??꾩뒪?ㅼ닽?먮줈 蹂?섑븳??
 		int startInt = Integer.valueOf(startChr);
 		int endInt = Integer.valueOf(endChr);
 
-		// 시작문자열이 종료문자열보가 클경우
+		// ?쒖옉臾몄옄?댁씠 醫낅즺臾몄옄?대낫媛 ?닿꼍??
 		if (startInt > endInt) {
 			throw new IllegalArgumentException("Start String: " + startChr + " End String: " + endChr);
 		}
 
 		do {
-			// 시작문자 및 종료문자 중에서 랜덤 숫자를 발생시킨다.
+			// ?쒖옉臾몄옄 諛?醫낅즺臾몄옄 以묒뿉???쒕뜡 ?レ옄瑜?諛쒖깮?쒗궓??
 			randomInt = rnd.nextInt(endInt + 1);
-		} while (randomInt < startInt); // 입력받은 문자 'A'(65)보다 작으면 다시 랜덤 숫자 발생.
+		} while (randomInt < startInt); // ?낅젰諛쏆? 臾몄옄 'A'(65)蹂대떎 ?묒쑝硫??ㅼ떆 ?쒕뜡 ?レ옄 諛쒖깮.
 
-		// 랜덤 숫자를 문자로 변환 후 스트링으로 다시 변환
+		// ?쒕뜡 ?レ옄瑜?臾몄옄濡?蹂?????ㅽ듃留곸쑝濡??ㅼ떆 蹂??
 		randomStr = (char)randomInt + "";
 
-		// 랜덤문자열를 리턴
+		// ?쒕뜡臾몄옄?대? 由ы꽩
 		return randomStr;
 	}
 
 	/**
-	 * 문자열을 다양한 문자셋(EUC-KR[KSC5601],UTF-8..)을 사용하여 인코딩하는 기능 역으로 디코딩하여 원래의 문자열을
-	 * 복원하는 기능을 제공함 String temp = new String(문자열.getBytes("바꾸기전 인코딩"),"바꿀 인코딩");
-	 * String temp = new String(문자열.getBytes("8859_1"),"KSC5601"); => UTF-8 에서
+	 * 臾몄옄?댁쓣 ?ㅼ뼇??臾몄옄??EUC-KR[KSC5601],UTF-8..)???ъ슜?섏뿬 ?몄퐫?⑺븯??湲곕뒫 ??쑝濡??붿퐫?⑺븯???먮옒??臾몄옄?댁쓣
+	 * 蹂듭썝?섎뒗 湲곕뒫???쒓났??String temp = new String(臾몄옄??getBytes("諛붽씀湲곗쟾 ?몄퐫??),"諛붽? ?몄퐫??);
+	 * String temp = new String(臾몄옄??getBytes("8859_1"),"KSC5601"); => UTF-8 ?먯꽌
 	 * EUC-KR
 	 *
-	 * @param srcString - 문자열
-	 * @param srcCharsetNm - 원래 CharsetNm
+	 * @param srcString - 臾몄옄??
+	 * @param srcCharsetNm - ?먮옒 CharsetNm
 	 * @param charsetNm - CharsetNm
-	 * @return 인(디)코딩 문자열
+	 * @return ????肄붾뵫 臾몄옄??
 	 * @exception MyException
 	 * @see
 	 */
@@ -816,9 +816,9 @@ public class EgovStringUtil {
 	}
 
 	/**
-	     * 특수문자를 웹 브라우저에서 정상적으로 보이기 위해 특수문자를 처리('<' -> & lT)하는 기능이다
+	     * ?뱀닔臾몄옄瑜???釉뚮씪?곗??먯꽌 ?뺤긽?곸쑝濡?蹂댁씠湲??꾪빐 ?뱀닔臾몄옄瑜?泥섎━('<' -> & lT)?섎뒗 湲곕뒫?대떎
 	     * @param 	srcString 		- '<'
-	     * @return 	변환문자열('<' -> "&lt"
+	     * @return 	蹂?섎Ц?먯뿴('<' -> "&lt"
 	     * @exception MyException
 	     * @see
 	     */
@@ -855,10 +855,10 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 응용어플리케이션에서 고유값을 사용하기 위해 시스템에서17자리의TIMESTAMP값을 구하는 기능
+	 * ?묒슜?댄뵆由ъ??댁뀡?먯꽌 怨좎쑀媛믪쓣 ?ъ슜?섍린 ?꾪빐 ?쒖뒪?쒖뿉??7?먮━?쁔IMESTAMP媛믪쓣 援ы븯??湲곕뒫
 	 *
 	 * @param
-	 * @return Timestamp 값
+	 * @return Timestamp 媛?
 	 * @exception MyException
 	 * @see
 	 */
@@ -866,7 +866,7 @@ public class EgovStringUtil {
 
 		String rtnStr = null;
 
-		// 문자열로 변환하기 위한 패턴 설정(연도-월-일 시:분:초:초(자정이후 초))
+		// 臾몄옄?대줈 蹂?섑븯湲??꾪븳 ?⑦꽩 ?ㅼ젙(?곕룄-??????遺?珥?珥??먯젙?댄썑 珥?)
 		String pattern = "yyyyMMddhhmmssSSS";
 
 		SimpleDateFormat sdfCurrent = new SimpleDateFormat(pattern, Locale.KOREA);
@@ -878,7 +878,7 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * html의 특수문자를 표현하기 위해
+	 * html???뱀닔臾몄옄瑜??쒗쁽?섍린 ?꾪빐
 	 *
 	 * @param srcString
 	 * @return String
@@ -901,14 +901,14 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * <p>날짜 형식의 문자열 내부에 마이너스 character(-)를 추가한다.</p>
+	 * <p>?좎쭨 ?뺤떇??臾몄옄???대???留덉씠?덉뒪 character(-)瑜?異붽??쒕떎.</p>
 	 *
 	 * <pre>
 	 *   StringUtil.addMinusChar("20100901") = "2010-09-01"
 	 * </pre>
 	 *
-	 * @param date  입력받는 문자열
-	 * @return " - "가 추가된 입력문자열
+	 * @param date  ?낅젰諛쏅뒗 臾몄옄??
+	 * @return " - "媛 異붽????낅젰臾몄옄??
 	 */
 	public static String addMinusChar(String date) {
 		if (date.length() == 8) {
@@ -920,47 +920,47 @@ public class EgovStringUtil {
 	}
 
 	/**
-	 * 주어진 명사에 맞는 보조사를 반환한다.
-	 * 예: "이름" -> "이름은", "나이" -> "나이는"
+	 * 二쇱뼱吏?紐낆궗??留욌뒗 蹂댁“?щ? 諛섑솚?쒕떎.
+	 * ?? "?대쫫" -> "?대쫫?", "?섏씠" -> "?섏씠??
 	 *
-	 * @param noun 명사
-	 * @return 보조사 조사 ("은" 또는 "는")
+	 * @param noun 紐낆궗
+	 * @return 蹂댁“??議곗궗 ("?" ?먮뒗 "??)
 	 */
 	public static String getAuxiliaryParticle(String noun){
-		return noun+( hasFinalConsonant(noun) ? "은" : "는") ;
+		return noun+( hasFinalConsonant(noun) ? "?" : "??) ;
 	}
 
 
 	/**
-	 * 주어진 명사에 맞는 주격 조사를 반환한다.
-	 * 예: "책상" -> "책상이", "청소기" -> "청소기"
+	 * 二쇱뼱吏?紐낆궗??留욌뒗 二쇨꺽 議곗궗瑜?諛섑솚?쒕떎.
+	 * ?? "梨낆긽" -> "梨낆긽??, "泥?냼湲? -> "泥?냼湲?
 	 *
-	 * @param noun 명사
-	 * @return 주격 조사 ("이" 또는 "")
+	 * @param noun 紐낆궗
+	 * @return 二쇨꺽 議곗궗 ("?? ?먮뒗 "")
 	 */
 	public static String getSubjectParticle(String noun) {
-		return hasFinalConsonant(noun) ? noun+"이" : noun;
+		return hasFinalConsonant(noun) ? noun+"?? : noun;
 	}
 
 
 
 	/**
-	 * 주어진 명사에 맞는 목적격 조사를 반환한다.
-	 * 예: "책상" -> "책상을", "청소기" -> "청소기를"
+	 * 二쇱뼱吏?紐낆궗??留욌뒗 紐⑹쟻寃?議곗궗瑜?諛섑솚?쒕떎.
+	 * ?? "梨낆긽" -> "梨낆긽??, "泥?냼湲? -> "泥?냼湲곕?"
 	 *
-	 * @param noun 명사
-	 * @return 목적격 조사 ("을" 또는 "를")
+	 * @param noun 紐낆궗
+	 * @return 紐⑹쟻寃?議곗궗 ("?? ?먮뒗 "瑜?)
 	 */
 	public static String getObjectParticle(String noun) {
-		return noun + (hasFinalConsonant(noun) ? "을" : "를");
+		return noun + (hasFinalConsonant(noun) ? "?? : "瑜?);
 	}
 
 
 	/**
-	 * 주어진 명사가 종성을 가지는지 여부를 확인한다.
+	 * 二쇱뼱吏?紐낆궗媛 醫낆꽦??媛吏?붿? ?щ?瑜??뺤씤?쒕떎.
 	 *
-	 * @param noun 명사
-	 * @return 종성이 있으면 true, 없으면 false
+	 * @param noun 紐낆궗
+	 * @return 醫낆꽦???덉쑝硫?true, ?놁쑝硫?false
 	 */
 	private static boolean hasFinalConsonant(String noun) {
 		char lastChar = noun.charAt(noun.length() - 1);

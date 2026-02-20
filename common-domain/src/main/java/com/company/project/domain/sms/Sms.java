@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * SMS JPA Entity
- * 레거시 테이블: NSMS
+ * ??뉕탢?????뵠?? NSMS
  */
 @Entity
 @Table(name = "NSMS")

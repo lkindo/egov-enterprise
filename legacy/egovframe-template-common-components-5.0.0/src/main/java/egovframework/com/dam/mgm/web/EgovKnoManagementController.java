@@ -29,23 +29,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 지식정보에 대한 Controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댁뿉 ???Controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식정보에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식정보의 조회 기능은 목록 조회, 상세 조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앹젙蹂댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹젙蹂댁쓽 議고쉶 湲곕뒫? 紐⑸줉 議고쉶, ?곸꽭 議고쉶濡?援щ텇?쒕떎.
  *
- * @author 박종선
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:38
+ * @created 12-8-2010 ?ㅽ썑 3:44:38
  *  <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------        --------    ---------------------------
- *   2010.8.12  박종선          최초 생성
- *   2011.8.26  정진오          IncludedInfo annotation 추가
+ *   2010.8.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2011.8.26  ?뺤쭊??         IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -66,13 +66,13 @@ public class EgovKnoManagementController {
     EgovMessageSource egovMessageSource;
 
     /**
-	 * 등록된 지식정보 목록을 조회한다.
-	 * @param searchVO 지식정보 조회 조건 VO
-	 * @param model 뷰에 전달할 모델
-	 * @return 목록 화면 경로
-	 * @throws Exception 조회 조건이 유효하지 않거나 데이터 접근 중 오류가 발생한 경우
+	 * ?깅줉??吏?앹젙蹂?紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO 吏?앹젙蹂?議고쉶 議곌굔 VO
+	 * @param model 酉곗뿉 ?꾨떖??紐⑤뜽
+	 * @return 紐⑸줉 ?붾㈃ 寃쎈줈
+	 * @throws Exception 議고쉶 議곌굔???좏슚?섏? ?딄굅???곗씠???묎렐 以??ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
-	@IncludedInfo(name = "지식정보관리", listUrl = "/dam/mgm/EgovComDamManagementList.do", order = 1280, gid = 80)
+	@IncludedInfo(name = "吏?앹젙蹂닿?由?, listUrl = "/dam/mgm/EgovComDamManagementList.do", order = 1280, gid = 80)
 	@RequestMapping(value="/dam/mgm/EgovComDamManagementList.do")
     public String selectKnoManagementList(@ModelAttribute("searchVO") KnoManagementVO searchVO, ModelMap model) throws Exception {
 
@@ -101,22 +101,22 @@ public class EgovKnoManagementController {
 	}
 
 	/**
-	 * 지식정보 상세 정보를 조회한다.
-	 * @param knoManagement 조회할 지식정보 식별 정보가 담긴 모델
-	 * @param model 뷰에 전달할 모델
-	 * @return 상세 화면 경로
-	 * @throws Exception 식별자가 없거나 해당 지식정보가 존재하지 않거나 데이터 접근 오류가 발생한 경우
+	 * 吏?앹젙蹂??곸꽭 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param knoManagement 議고쉶??吏?앹젙蹂??앸퀎 ?뺣낫媛 ?닿릿 紐⑤뜽
+	 * @param model 酉곗뿉 ?꾨떖??紐⑤뜽
+	 * @return ?곸꽭 ?붾㈃ 寃쎈줈
+	 * @throws Exception ?앸퀎?먭? ?녾굅???대떦 吏?앹젙蹂닿? 議댁옱?섏? ?딄굅???곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	@RequestMapping(value="/dam/mgm/EgovComDamManagement.do")
 	public String selectKnoManagement(KnoManagement knoManagement, ModelMap model) throws Exception {
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
-        // 로그인 객체 선언
+        // 濡쒓렇??媛앹껜 ?좎뼵
 	    LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 	    knoManagement.setEmplyrId(loginVO.getUniqId());
@@ -127,23 +127,23 @@ public class EgovKnoManagementController {
 	}
 
 	/**
-	 * 지식정보 수정 화면을 표시한다.
-	 * @param knoManagement 수정 대상 지식정보 식별 정보가 담긴 모델
-	 * @param model 뷰에 전달할 모델
-	 * @return 수정 화면 경로
-	 * @throws Exception 조회 중 오류가 발생한 경우
+	 * 吏?앹젙蹂??섏젙 ?붾㈃???쒖떆?쒕떎.
+	 * @param knoManagement ?섏젙 ???吏?앹젙蹂??앸퀎 ?뺣낫媛 ?닿릿 紐⑤뜽
+	 * @param model 酉곗뿉 ?꾨떖??紐⑤뜽
+	 * @return ?섏젙 ?붾㈃ 寃쎈줈
+	 * @throws Exception 議고쉶 以??ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	@GetMapping(value="/dam/mgm/EgovComDamManagementModify.do")
 	public String updateKnoManagementView(KnoManagement knoManagement, ModelMap model) throws Exception {
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 	    LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
         if (loginVO != null) {
             knoManagement.setEmplyrId(loginVO.getUniqId());
@@ -154,10 +154,10 @@ public class EgovKnoManagementController {
 	}
 
 	/**
-     * 지식정보 수정 화면 초기 데이터를 설정한다.
-     * @param knoManagement 수정 대상 지식정보 식별 정보가 담긴 모델
-     * @param model 뷰에 전달할 모델
-     * @throws Exception 데이터 조회 중 오류가 발생한 경우
+     * 吏?앹젙蹂??섏젙 ?붾㈃ 珥덇린 ?곗씠?곕? ?ㅼ젙?쒕떎.
+     * @param knoManagement ?섏젙 ???吏?앹젙蹂??앸퀎 ?뺣낫媛 ?닿릿 紐⑤뜽
+     * @param model 酉곗뿉 ?꾨떖??紐⑤뜽
+     * @throws Exception ?곗씠??議고쉶 以??ㅻ쪟媛 諛쒖깮??寃쎌슦
      */
     private void updateKnoManagementViewInit(KnoManagement knoManagement, ModelMap model) throws Exception {
         model.addAttribute("resultKnoManagement", knoManagementService.selectKnoManagement(knoManagement));
@@ -167,24 +167,24 @@ public class EgovKnoManagementController {
     }
 
 	/**
-    * 기 등록된 지식정보를 수정한다.
-    * @param knoManagement 수정할 지식정보 모델
-    * @param bindingResult 검증 결과
-    * @param model 뷰에 전달할 모델
-    * @return 목록 화면으로 이동 경로
-    * @throws Exception 대상이 존재하지 않거나 권한 없음, 검증 실패 처리 또는 데이터 접근 오류가 발생한 경우
+    * 湲??깅줉??吏?앹젙蹂대? ?섏젙?쒕떎.
+    * @param knoManagement ?섏젙??吏?앹젙蹂?紐⑤뜽
+    * @param bindingResult 寃利?寃곌낵
+    * @param model 酉곗뿉 ?꾨떖??紐⑤뜽
+    * @return 紐⑸줉 ?붾㈃?쇰줈 ?대룞 寃쎈줈
+    * @throws Exception ??곸씠 議댁옱?섏? ?딄굅??沅뚰븳 ?놁쓬, 寃利??ㅽ뙣 泥섎━ ?먮뒗 ?곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
     */
     @PostMapping(value = "/dam/mgm/EgovComDamManagementModify.do")
     public String updateKnoManagement(@Valid KnoManagement knoManagement, BindingResult bindingResult, ModelMap model) throws Exception {
 
-        // Spring Security 사용자권한 처리
+        // Spring Security ?ъ슜?먭텒??泥섎━
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
         if (!isAuthenticated) {
             model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-        // 로그인 객체 선언
+        // 濡쒓렇??媛앹껜 ?좎뼵
         LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
         if (loginVO != null) {
             knoManagement.setEmplyrId(loginVO.getUniqId());

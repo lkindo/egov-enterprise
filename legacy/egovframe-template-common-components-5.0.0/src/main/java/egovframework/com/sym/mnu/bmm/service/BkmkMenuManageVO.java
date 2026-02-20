@@ -1,18 +1,18 @@
 package egovframework.com.sym.mnu.bmm.service;
 
 /**
- * 바로가기메뉴관리를 위한 VO 모델 클래스
- * @author 공통컴포넌트개발팀 윤성록
+ * 諛붾줈媛湲곕찓?닿?由щ? ?꾪븳 VO 紐⑤뜽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25  윤성록          최초 생성
+ *   2009.9.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -20,57 +20,57 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
 
 	private static final long serialVersionUID = 7602193410939256848L;
 
-	/** 검색시작일 */
+	/** 寃?됱떆?묒씪 */
     private String searchBgnDe = "";
 
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
 
-    /** 검색종료일 */
+    /** 寃?됱쥌猷뚯씪 */
     private String searchEndDe = "";
 
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
 
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private long sortOrdr = 0L;
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int rowNo = 0;
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 최종 수정자명 */
+    /** 理쒖쥌 ?섏젙?먮챸 */
     private String lastUpdusrNm = "";
 
-    /** 메뉴 설명*/
+    /** 硫붾돱 ?ㅻ챸*/
     String menuDc = "";
 
 
     /**
-     * searchBgnDe attribute를 리턴한다.
+     * searchBgnDe attribute瑜?由ы꽩?쒕떎.
      *
      * @return the searchBgnDe
      */
@@ -79,7 +79,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchBgnDe attribute 값을 설정한다.
+     * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param searchBgnDe
      *            the searchBgnDe to set
@@ -89,7 +89,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      *
      * @return the searchCnd
      */
@@ -98,7 +98,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param searchCnd
      *            the searchCnd to set
@@ -108,7 +108,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchEndDe attribute를 리턴한다.
+     * searchEndDe attribute瑜?由ы꽩?쒕떎.
      *
      * @return the searchEndDe
      */
@@ -117,7 +117,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchEndDe attribute 값을 설정한다.
+     * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param searchEndDe
      *            the searchEndDe to set
@@ -127,7 +127,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      *
      * @return the searchWrd
      */
@@ -136,7 +136,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param searchWrd
      *            the searchWrd to set
@@ -146,7 +146,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      *
      * @return the sortOrdr
      */
@@ -155,7 +155,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param sortOrdr
      *            the sortOrdr to set
@@ -165,7 +165,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchUseYn attribute를 리턴한다.
+     * searchUseYn attribute瑜?由ы꽩?쒕떎.
      *
      * @return the searchUseYn
      */
@@ -174,7 +174,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * searchUseYn attribute 값을 설정한다.
+     * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param searchUseYn
      *            the searchUseYn to set
@@ -184,7 +184,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      *
      * @return the pageIndex
      */
@@ -193,7 +193,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param pageIndex
      *            the pageIndex to set
@@ -203,7 +203,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      *
      * @return the pageUnit
      */
@@ -212,7 +212,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param pageUnit
      *            the pageUnit to set
@@ -222,7 +222,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      *
      * @return the pageSize
      */
@@ -231,7 +231,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param pageSize
      *            the pageSize to set
@@ -241,7 +241,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      *
      * @return the firstIndex
      */
@@ -250,7 +250,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param firstIndex
      *            the firstIndex to set
@@ -260,7 +260,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      *
      * @return the lastIndex
      */
@@ -269,7 +269,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param lastIndex
      *            the lastIndex to set
@@ -279,7 +279,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      *
      * @return the recordCountPerPage
      */
@@ -288,7 +288,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param recordCountPerPage
      *            the recordCountPerPage to set
@@ -298,7 +298,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * getRowNo attribute를 리턴한다.
+     * getRowNo attribute瑜?由ы꽩?쒕떎.
      *
      * @return the getRowNo
      */
@@ -307,7 +307,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * getRowNo attribute 값을 설정한다.
+     * getRowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param getRowNo
      *            the getRowNo to set
@@ -317,7 +317,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      *
      * @return the frstRegisterNm
      */
@@ -326,7 +326,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param frstRegisterNm
      *            the frstRegisterNm to set
@@ -336,7 +336,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * lastUpdusrNm attribute를 리턴한다.
+     * lastUpdusrNm attribute瑜?由ы꽩?쒕떎.
      *
      * @return the lastUpdusrNm
      */
@@ -345,7 +345,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * lastUpdusrNm attribute 값을 설정한다.
+     * lastUpdusrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param lastUpdusrNm
      *            the lastUpdusrNm to set
@@ -355,7 +355,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * menuDc attribute를 리턴한다.
+     * menuDc attribute瑜?由ы꽩?쒕떎.
      *
      * @return the menuDc
      */
@@ -364,7 +364,7 @@ public class BkmkMenuManageVO extends BkmkMenuManage{
     }
 
     /**
-     * menuDc attribute 값을 설정한다.
+     * menuDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      *
      * @param menuDc
      *            the menuDc to set

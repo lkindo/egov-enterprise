@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.mtg.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 회의실관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅺ?由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 회의실관리의 회의실코드,회의실명,개방시작시간,개방종료시간,수용가능인원,위치구분,위치상세,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅺ?由ъ쓽 ?뚯쓽?ㅼ퐫???뚯쓽?ㅻ챸,媛쒕갑?쒖옉?쒓컙,媛쒕갑醫낅즺?쒓컙,?섏슜媛?μ씤???꾩튂援щ텇,?꾩튂?곸꽭,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class MtgPlaceManage extends ComDefaultVO {
@@ -21,62 +21,62 @@ public class MtgPlaceManage extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	*  회의실ID
+	*  ?뚯쓽?짪D
 	*/
 	private String mtgPlaceId;
 	
 	/**
-	* 회의실명
+	* ?뚯쓽?ㅻ챸
 	*/
 	private String mtgPlaceNm;
 	
 	/**
-	* 개방시작시간
+	* 媛쒕갑?쒖옉?쒓컙
 	*/
 	private String opnBeginTm;
 	
 	/**
-	* 개방종료시간
+	* 媛쒕갑醫낅즺?쒓컙
 	*/
 	private String opnEndTm;
 	
 	/**
-	* 수용가능인원
+	* ?섏슜媛?μ씤??
 	*/
 	private int aceptncPosblNmpr;
 	
 	/**
-	* 위치구분
+	* ?꾩튂援щ텇
 	*/
 	private String lcSe;
 	
 	/**
-	* 위치상세
+	* ?꾩튂?곸꽭
 	*/
 	private String lcDetail;
 	
 	/**
-	* 첨부파일
+	* 泥⑤??뚯씪
 	*/
 	private String atchFileId;
 
 	/**
-	* 최초등록자ID
+	* 理쒖큹?깅줉?륤D
 	*/
 	private String frstRegisterId;
 	
 	/**
-	* 최초등록시점
+	* 理쒖큹?깅줉?쒖젏
 	*/
 	private String frstRegisterPnttm;
 	
 	/**
-	* 최종수정자ID
+	* 理쒖쥌?섏젙?륤D
 	*/
 	private String lastUpdusrId;
 	
 	/**
-	* 최종수정시점
+	* 理쒖쥌?섏젙?쒖젏
 	*/
 	private String lastUpdusrPnttm;
 

@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * 스크랩 DTO
+ * ?ㅽ겕??DTO
  */
 @Getter
 @Builder

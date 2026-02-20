@@ -45,7 +45,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     void setUp() {
         validLoginVO = new LoginVO();
         validLoginVO.setId("testUser");
-        validLoginVO.setName("?�스???�용??);
+        validLoginVO.setName("?스???용??");
         validLoginVO.setUniqId("USR00001");
         validLoginVO.setEmail("test@example.com");
         validLoginVO.setPassword("encodedPassword");
@@ -53,7 +53,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
 
         mockUser = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("N") // Not locked
@@ -61,7 +61,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - 로그???�비?�에???�외 발생 ??BadCredentialsException 발생")
+    @DisplayName("?증 - 로그???비?에???외 발생 ??BadCredentialsException 발생")
     void authenticate_fail_withLoginServiceException() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenThrow(new RuntimeException("Login service error"));
@@ -75,7 +75,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??ID가 null??경우 BadCredentialsException 발생")
+    @DisplayName("?증 - ?용??ID가 null??경우 BadCredentialsException 발생")
     void authenticate_fail_withNullUserId() throws Exception {
         // Given
         LoginVO loginVOWithNullId = new LoginVO();
@@ -91,7 +91,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??ID가 �?문자?�인 경우 BadCredentialsException 발생")
+    @DisplayName("?증 - ?용??ID가 ?문자?인 경우 BadCredentialsException 발생")
     void authenticate_fail_withEmptyUserId() throws Exception {
         // Given
         LoginVO loginVOWithEmptyId = new LoginVO();
@@ -107,7 +107,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - 존재?��? ?�는 ?�용?�로 ?�한 BadCredentialsException 발생")
+    @DisplayName("?증 - 존재?? ?는 ?용?로 ?한 BadCredentialsException 발생")
     void authenticate_fail_withNonExistentUser() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -122,12 +122,12 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�긴 계정?�로 ?�한 AccountStatusException 발생")
+    @DisplayName("?증 - ?긴 계정?로 ?한 AccountStatusException 발생")
     void authenticate_fail_withLockedAccount() throws Exception {
         // Given
         User lockedUser = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("Y") // Locked
@@ -145,7 +145,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�이?�베?�스 ?�결 ?�류�??�한 BadCredentialsException 발생")
+    @DisplayName("?증 - ?이?베?스 ?결 ?류??한 BadCredentialsException 발생")
     void authenticate_fail_withDatabaseConnectionError() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -160,7 +160,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??권한 조회 �??�외 발생")
+    @DisplayName("?증 - ?용??권한 조회 ??외 발생")
     void authenticate_fail_withAuthorityRetrievalError() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -176,7 +176,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용???�보 매핑 �??�외 발생")
+    @DisplayName("?증 - ?용???보 매핑 ??외 발생")
     void authenticate_fail_withUserMappingError() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -203,12 +203,12 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??계정 ?�태 검�?�??�외 발생")
+    @DisplayName("?증 - ?용??계정 ?태 검???외 발생")
     void authenticate_fail_withAccountStatusValidationError() throws Exception {
         // Given
         User userWithInvalidStatus = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("Y") // Locked
@@ -226,12 +226,12 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??계정 ?�태 검�?- 비활?�화??계정")
+    @DisplayName("?증 - ?용??계정 ?태 검?- 비활?화??계정")
     void authenticate_fail_withInactiveAccount() throws Exception {
         // Given
         User inactiveUser = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("Y") // Inactive/Locked
@@ -249,7 +249,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용???�보가 null??경우 ?�외 발생")
+    @DisplayName("?증 - ?용???보가 null??경우 ?외 발생")
     void authenticate_fail_withNullUserInfo() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(null);
@@ -263,7 +263,7 @@ class EgovAuthenticationProviderSecurityExceptionTest {
     }
 
     @Test
-    @DisplayName("?�증 - ?�용??고유 ID가 null??경우 ?�외 발생")
+    @DisplayName("?증 - ?용??고유 ID가 null??경우 ?외 발생")
     void authenticate_fail_withNullUniqId() throws Exception {
         // Given
         LoginVO loginVOWithNullUniqId = new LoginVO();

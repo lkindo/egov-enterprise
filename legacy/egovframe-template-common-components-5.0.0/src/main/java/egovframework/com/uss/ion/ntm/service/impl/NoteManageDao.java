@@ -10,17 +10,17 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.ion.ntm.service.NoteManageVO;
 /**
- * 쪽지 관리(보내기)를 처리하는 Dao Class 구현
- * @author 공통콤포넌트 장동한
+ * 履쎌? 愿由?蹂대궡湲?瑜?泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일          수정자           수정내용
+ *   ?섏젙??         ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한           최초 생성
- *   2017.06.05   최두영          공통컴포넌트 3.7 개발
+ *   2009.07.03  ?λ룞??          理쒖큹 ?앹꽦
+ *   2017.06.05   理쒕몢??         怨듯넻而댄룷?뚰듃 3.7 媛쒕컻
  *
  * </pre>
  */
@@ -28,8 +28,8 @@ import egovframework.com.uss.ion.ntm.service.NoteManageVO;
 public class NoteManageDao extends EgovComAbstractDAO {
 
     /**
-     * 쪽지관리 정보를 조회한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 履쎌?愿由??뺣낫瑜?議고쉶?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public Map<?, ?> selectNoteManage(NoteManageVO noteManage) throws Exception {
@@ -37,8 +37,8 @@ public class NoteManageDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지 관리(보내기)를(을) 등록한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 履쎌? 愿由?蹂대궡湲?瑜??? ?깅줉?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void insertNoteManage(NoteManageVO noteManage) throws Exception {
@@ -47,8 +47,8 @@ public class NoteManageDao extends EgovComAbstractDAO {
 
 
     /**
-     * 보낸쪽지를 등록한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 蹂대궦履쎌?瑜??깅줉?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void insertNoteTrnsmit(NoteManageVO noteManage) throws Exception {
@@ -57,8 +57,8 @@ public class NoteManageDao extends EgovComAbstractDAO {
 
 
     /**
-     * 받은쪽지를 등록한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 諛쏆?履쎌?瑜??깅줉?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void insertNoteRecptn(NoteManageVO noteManage) throws Exception {
@@ -66,9 +66,9 @@ public class NoteManageDao extends EgovComAbstractDAO {
     }
 
     /**
-	 * 수신자/참조자선택팝업 목록을 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return List -회원정보 리스트
+	 * ?섏떊??李몄“?먯꽑?앺뙘??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return List -?뚯썝?뺣낫 由ъ뒪??
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectNoteEmpListPopup(ComDefaultVO searchVO) throws Exception {
@@ -76,9 +76,9 @@ public class NoteManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 수신자/참조자선택팝업 건수를 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return int -조회된 데이터 개수
+	 * ?섏떊??李몄“?먯꽑?앺뙘??嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return int -議고쉶???곗씠??媛쒖닔
 	 * @throws Exception
 	 */
 	public int selectNoteEmpListPopupCnt(ComDefaultVO searchVO) throws Exception{

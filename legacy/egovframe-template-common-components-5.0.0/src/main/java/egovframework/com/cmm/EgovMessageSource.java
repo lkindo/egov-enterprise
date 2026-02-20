@@ -6,19 +6,19 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 /**
- * 메시지 리소스 사용을 위한 MessageSource 인터페이스 및 ReloadableResourceBundleMessageSource 클래스의 구현체
- * @author 공통서비스 개발팀 이문준
+ * 硫붿떆吏 由ъ냼???ъ슜???꾪븳 MessageSource ?명꽣?섏씠??諛?ReloadableResourceBundleMessageSource ?대옒?ㅼ쓽 援ы쁽泥?
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2017.07.21  장동한 			args, locale 설정
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2017.07.21  ?λ룞??			args, locale ?ㅼ젙
  *
  * </pre>
  */
@@ -45,8 +45,8 @@ public class EgovMessageSource extends ReloadableResourceBundleMessageSource imp
 	}
 	
 	/**
-	 * 정의된 메세지 조회
-	 * @param code - 메세지 코드
+	 * ?뺤쓽??硫붿꽭吏 議고쉶
+	 * @param code - 硫붿꽭吏 肄붾뱶
 	 * @return String
 	 */	
 	public String getMessage(String code) {
@@ -54,9 +54,9 @@ public class EgovMessageSource extends ReloadableResourceBundleMessageSource imp
 	}
 	
 	/**
-	 * 정의된 메세지 조회
-	 * @param code - 메세지 코드
-	 * @param locale - 로케일
+	 * ?뺤쓽??硫붿꽭吏 議고쉶
+	 * @param code - 硫붿꽭吏 肄붾뱶
+	 * @param locale - 濡쒖???
 	 * @return String
 	 */	
 	public String getMessage(String code, Locale locale) {
@@ -64,9 +64,9 @@ public class EgovMessageSource extends ReloadableResourceBundleMessageSource imp
 	}
 	
 	/**
-	 * 정의된 메세지 조회
-	 * @param code - 메세지 코드
-	 * @param args - 매개변수
+	 * ?뺤쓽??硫붿꽭吏 議고쉶
+	 * @param code - 硫붿꽭吏 肄붾뱶
+	 * @param args - 留ㅺ컻蹂??
 	 * @return String
 	 */	
 	public String getMessageArgs(String code, Object[] args) {
@@ -74,10 +74,10 @@ public class EgovMessageSource extends ReloadableResourceBundleMessageSource imp
 	}
 	
 	/**
-	 * 정의된 메세지 조회
-	 * @param code - 메세지 코드
-	 * @param args - 매개변수
-	 * @param locale - 로케일
+	 * ?뺤쓽??硫붿꽭吏 議고쉶
+	 * @param code - 硫붿꽭吏 肄붾뱶
+	 * @param args - 留ㅺ컻蹂??
+	 * @param locale - 濡쒖???
 	 * @return String
 	 */	
 	public String getMessageArgsLocale(String code, Object[] args, Locale locale) {

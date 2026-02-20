@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * 당직 정보 Repository
+ * ?諭彛??類ｋ궖 Repository
  */
 public interface BndtManageRepository extends JpaRepository<BndtManage, BndtManageId>, BndtManageRepositoryCustom {
     List<BndtManage> findByBndtDeStartingWith(String bndtDePrefix);

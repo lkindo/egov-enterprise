@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 우편번호 관리 서비스
+ * ?고렪踰덊샇 愿由??쒕퉬??
  */
 @Service("zipManageService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class ZipManageService {
     private final ZipRepository zipRepository;
 
     /**
-     * 우편번호 목록 조회
+     * ?고렪踰덊샇 紐⑸줉 議고쉶
      */
     public List<ZipDto> selectZipList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -46,14 +46,14 @@ public class ZipManageService {
     }
 
     /**
-     * 우편번호 목록 총 건수
+     * ?고렪踰덊샇 紐⑸줉 珥?嫄댁닔
      */
     public int selectZipListTotCnt(ComDefaultVO searchVO) {
         return (int) zipRepository.count();
     }
 
     /**
-     * 우편번호 상세 조회
+     * ?고렪踰덊샇 ?곸꽭 議고쉶
      */
     public ZipDto selectZipDetail(ZipDto dto) {
         return zipRepository
@@ -63,11 +63,11 @@ public class ZipManageService {
     }
 
     /**
-     * 우편번호 등록
+     * ?고렪踰덊샇 ?깅줉
      */
     @Transactional
     public void insertZip(ZipDto dto) {
-        // 자동 일련번호 생성
+        // ?먮룞 ?쇰젴踰덊샇 ?앹꽦
         List<Zip> existing = zipRepository.findByZip(Objects.requireNonNull(dto.getZip()));
         int newSn = existing.isEmpty() ? 1 : existing.stream().mapToInt(Zip::getSn).max().orElse(0) + 1;
 
@@ -85,7 +85,7 @@ public class ZipManageService {
     }
 
     /**
-     * 우편번호 수정
+     * ?고렪踰덊샇 ?섏젙
      */
     @Transactional
     public void updateZip(ZipDto dto) {
@@ -97,7 +97,7 @@ public class ZipManageService {
     }
 
     /**
-     * 우편번호 삭제
+     * ?고렪踰덊샇 ??젣
      */
     @Transactional
     public void deleteZip(ZipDto dto) {
@@ -105,7 +105,7 @@ public class ZipManageService {
     }
 
     /**
-     * 우편번호 검색 (팝업용)
+     * ?고렪踰덊샇 寃??(?앹뾽??
      */
     public List<ZipDto> searchZip(String keyword) {
         if (keyword == null || keyword.isEmpty()) {

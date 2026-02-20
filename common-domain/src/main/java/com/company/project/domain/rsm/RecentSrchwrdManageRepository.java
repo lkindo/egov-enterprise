@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 최근 검색어 관리 Repository
+ * 筌ㅼ뮄??野꺜??깅선 ?온??Repository
  */
 public interface RecentSrchwrdManageRepository extends JpaRepository<RecentSrchwrdManage, String> {
     Page<RecentSrchwrdManage> findBySrchwrdManageNmContaining(String srchwrdManageNm, Pageable pageable);

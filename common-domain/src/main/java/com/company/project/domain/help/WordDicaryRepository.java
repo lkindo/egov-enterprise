@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 용어사전 Repository
+ * ??밸선????Repository
  */
 public interface WordDicaryRepository extends JpaRepository<WordDicary, String> {
     Page<WordDicary> findByWordNmContaining(String wordNm, Pageable pageable);

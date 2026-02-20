@@ -17,18 +17,18 @@ import egovframework.com.cop.ems.service.SndngMailVO;
 import jakarta.annotation.Resource;
 
 /**
- * 발송메일 내역을 조회하는 컨트롤러 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪 ?댁뿭??議고쉶?섎뒗 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
@@ -48,16 +48,16 @@ public class EgovSndngMailDtlsController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 발송메일 내역을 조회한다
+	 * 諛쒖넚硫붿씪 ?댁뿭??議고쉶?쒕떎
 	 * @param searchVO ComDefaultVO
 	 * @return String
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "발송메일내역", order = 361, gid = 40)
+	@IncludedInfo(name = "諛쒖넚硫붿씪?댁뿭", order = 361, gid = 40)
 	@RequestMapping(value = "/cop/ems/selectSndngMailList.do")
 	public String selectSndngMailList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
 
-		// 발송메일 내역 조회
+		// 諛쒖넚硫붿씪 ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -84,7 +84,7 @@ public class EgovSndngMailDtlsController {
 	}
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * @param sndngMailVO SndngMailVO
 	 * @return String
 	 * @exception
@@ -96,10 +96,10 @@ public class EgovSndngMailDtlsController {
 			return "egovframework/com/cmm/egovError";
 		}
 
-		// 1. 발송메일을 삭제한다.
+		// 1. 諛쒖넚硫붿씪????젣?쒕떎.
 		sndngMailDtlsService.deleteSndngMailList(sndngMailVO);
 
-		// 2. 발송메일 목록 페이지 이동
+		// 2. 諛쒖넚硫붿씪 紐⑸줉 ?섏씠吏 ?대룞
 		return "redirect:/cop/ems/selectSndngMailList.do";
 	}
 }

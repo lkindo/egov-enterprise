@@ -1,13 +1,13 @@
 /**
  * @Class Name  : EgovNumberUtil.java
- * @Description : 숫자 데이터 처리 관련 유틸리티
+ * @Description : ?レ옄 ?곗씠??泥섎━ 愿???좏떥由ы떚
  * @Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *     -------          --------        ---------------------------
- *   2009.02.13       이삼섭                  최초 생성
+ *   2009.02.13       ?댁궪??                 理쒖큹 ?앹꽦
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 02. 13
  * @version 1.0
  * @see
@@ -24,41 +24,41 @@ import java.util.Locale;
 
 public class EgovNumberUtil {
 
-	// 221116	김혜준	2022 시큐어코딩 조치
+	// 221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 	private static SecureRandom rnd = new SecureRandom();
 
 	/**
-	 * 특정숫자 집합에서 랜덤 숫자를 구하는 기능 시작숫자와 종료숫자 사이에서 구한 랜덤 숫자를 반환한다
+	 * ?뱀젙?レ옄 吏묓빀?먯꽌 ?쒕뜡 ?レ옄瑜?援ы븯??湲곕뒫 ?쒖옉?レ옄? 醫낅즺?レ옄 ?ъ씠?먯꽌 援ы븳 ?쒕뜡 ?レ옄瑜?諛섑솚?쒕떎
 	 *
-	 * @param startNum - 시작숫자
-	 * @param endNum - 종료숫자
-	 * @return 랜덤숫자
+	 * @param startNum - ?쒖옉?レ옄
+	 * @param endNum - 醫낅즺?レ옄
+	 * @return ?쒕뜡?レ옄
 	 * @see
 	 */
 	public static int getRandomNum(int startNum, int endNum) {
 		int randomNum = 0;
 
 		do {
-			// 종료숫자내에서 랜덤 숫자를 발생시킨다.
+			// 醫낅즺?レ옄?댁뿉???쒕뜡 ?レ옄瑜?諛쒖깮?쒗궓??
 			randomNum = rnd.nextInt(endNum + 1);
-		} while (randomNum < startNum); // 랜덤 숫자가 시작숫자보다 작을경우 다시 랜덤숫자를 발생시킨다.
+		} while (randomNum < startNum); // ?쒕뜡 ?レ옄媛 ?쒖옉?レ옄蹂대떎 ?묒쓣寃쎌슦 ?ㅼ떆 ?쒕뜡?レ옄瑜?諛쒖깮?쒗궓??
 
 		return randomNum;
 	}
 
 	/**
-	 * 특정 숫자 집합에서 특정 숫자가 있는지 체크하는 기능 12345678에서 7이 있는지 없는지 체크하는 기능을 제공함
+	 * ?뱀젙 ?レ옄 吏묓빀?먯꽌 ?뱀젙 ?レ옄媛 ?덈뒗吏 泥댄겕?섎뒗 湲곕뒫 12345678?먯꽌 7???덈뒗吏 ?녿뒗吏 泥댄겕?섎뒗 湲곕뒫???쒓났??
 	 *
-	 * @param sourceInt - 특정숫자집합
-	 * @param searchInt - 검색숫자
-	 * @return 존재여부
+	 * @param sourceInt - ?뱀젙?レ옄吏묓빀
+	 * @param searchInt - 寃?됱닽??
+	 * @return 議댁옱?щ?
 	 * @see
 	 */
 	public static Boolean getNumSearchCheck(int sourceInt, int searchInt) {
 		String sourceStr = String.valueOf(sourceInt);
 		String searchStr = String.valueOf(searchInt);
 
-		// 특정숫자가 존재하는지 하여 위치값을 리턴한다. 없을 시 -1
+		// ?뱀젙?レ옄媛 議댁옱?섎뒗吏 ?섏뿬 ?꾩튂媛믪쓣 由ы꽩?쒕떎. ?놁쓣 ??-1
 		if (sourceStr.indexOf(searchStr) == -1) {
 			return false;
 		} else {
@@ -67,10 +67,10 @@ public class EgovNumberUtil {
 	}
 
 	/**
-	 * 숫자타입을 문자열로 변환하는 기능 숫자 20081212를 문자열 '20081212'로 변환하는 기능
+	 * ?レ옄??낆쓣 臾몄옄?대줈 蹂?섑븯??湲곕뒫 ?レ옄 20081212瑜?臾몄옄??'20081212'濡?蹂?섑븯??湲곕뒫
 	 *
-	 * @param srcNumber - 숫자
-	 * @return 문자열
+	 * @param srcNumber - ?レ옄
+	 * @return 臾몄옄??
 	 * @see
 	 */
 	public static String getNumToStrCnvr(int srcNumber) {
@@ -82,9 +82,9 @@ public class EgovNumberUtil {
 	}
 
 	/**
-	 * 숫자타입을 데이트 타입으로 변환하는 기능
-	 * 숫자 20081212를 데이트타입  '2008-12-12'로 변환하는 기능
-	 * @param srcNumber - 숫자
+	 * ?レ옄??낆쓣 ?곗씠????낆쑝濡?蹂?섑븯??湲곕뒫
+	 * ?レ옄 20081212瑜??곗씠?명??? '2008-12-12'濡?蹂?섑븯??湲곕뒫
+	 * @param srcNumber - ?レ옄
 	 * @return String
 	 * @see
 	 */
@@ -95,7 +95,7 @@ public class EgovNumberUtil {
 
 		String srcStr = String.valueOf(srcNumber);
 
-		// Date 형태인 8자리 및 14자리만 정상처리
+		// Date ?뺥깭??8?먮━ 諛?14?먮━留??뺤긽泥섎━
 		if (srcStr.length() != 8 && srcStr.length() != 14) {
 			throw new IllegalArgumentException("Invalid Number: " + srcStr + " Length=" + srcStr.trim().length());
 		}
@@ -123,10 +123,10 @@ public class EgovNumberUtil {
 	}
 
 	/**
-	 * 체크할 숫자 중에서 숫자인지 아닌지 체크하는 기능
-	 * 숫자이면 True, 아니면 False를 반환한다
-	 * @param checkStr - 체크문자열
-	 * @return 숫자여부
+	 * 泥댄겕???レ옄 以묒뿉???レ옄?몄? ?꾨땶吏 泥댄겕?섎뒗 湲곕뒫
+	 * ?レ옄?대㈃ True, ?꾨땲硫?False瑜?諛섑솚?쒕떎
+	 * @param checkStr - 泥댄겕臾몄옄??
+	 * @return ?レ옄?щ?
 	 * @see
 	 */
 	public static Boolean getNumberValidCheck(String checkStr) {
@@ -138,7 +138,7 @@ public class EgovNumberUtil {
 
 		for (i = 0; i < checkStrLt; i++) {
 
-			// 아스키코드값( '0'-> 48, '9' -> 57)
+			// ?꾩뒪?ㅼ퐫?쒓컪( '0'-> 48, '9' -> 57)
 			if (checkStr.charAt(i) > 47 && checkStr.charAt(i) < 58) {
 				continue;
 			} else {
@@ -150,17 +150,17 @@ public class EgovNumberUtil {
 	}
 
 	/**
-	 * 특정숫자를 다른 숫자로 치환하는 기능 숫자 12345678에서 123를 999로 변환하는 기능을 제공(99945678)
+	 * ?뱀젙?レ옄瑜??ㅻⅨ ?レ옄濡?移섑솚?섎뒗 湲곕뒫 ?レ옄 12345678?먯꽌 123瑜?999濡?蹂?섑븯??湲곕뒫???쒓났(99945678)
 	 *
-	 * @param srcNumber - 숫자집합
-	 * @param cnvrSrcNumber - 원래숫자
-	 * @param cnvrTrgtNumber - 치환숫자
-	 * @return 치환숫자
+	 * @param srcNumber - ?レ옄吏묓빀
+	 * @param cnvrSrcNumber - ?먮옒?レ옄
+	 * @param cnvrTrgtNumber - 移섑솚?レ옄
+	 * @return 移섑솚?レ옄
 	 * @see
 	 */
 	public static int getNumberCnvr(int srcNumber, int cnvrSrcNumber, int cnvrTrgtNumber) {
 
-		// 입력받은 숫자를 문자열로 변환
+		// ?낅젰諛쏆? ?レ옄瑜?臾몄옄?대줈 蹂??
 		String source = String.valueOf(srcNumber);
 		String subject = String.valueOf(cnvrSrcNumber);
 		String object = String.valueOf(cnvrTrgtNumber);
@@ -169,35 +169,35 @@ public class EgovNumberUtil {
 		String preStr = "";
 		String nextStr = source;
 
-		// 원본숫자에서 변환대상숫자의 위치를  찾는다.
+		// ?먮낯?レ옄?먯꽌 蹂?섎??곸닽?먯쓽 ?꾩튂瑜? 李얜뒗??
 		while (source.indexOf(subject) >= 0) {
-			preStr = source.substring(0, source.indexOf(subject)); // 변환대상숫자 위치까지 숫자를 잘라낸다
+			preStr = source.substring(0, source.indexOf(subject)); // 蹂?섎??곸닽???꾩튂源뚯? ?レ옄瑜??섎씪?몃떎
 			nextStr = source.substring(source.indexOf(subject) + subject.length(), source.length());
 			source = nextStr;
-			rtnStr.append(preStr).append(object); // 변환대상위치 숫자에 변환할 숫자를 붙여준다.
+			rtnStr.append(preStr).append(object); // 蹂?섎??곸쐞移??レ옄??蹂?섑븷 ?レ옄瑜?遺숈뿬以??
 		}
-		rtnStr.append(nextStr); // 변환대상 숫자 이후 숫자를 붙여준다.
+		rtnStr.append(nextStr); // 蹂?섎????レ옄 ?댄썑 ?レ옄瑜?遺숈뿬以??
 
 		return Integer.parseInt(rtnStr.toString());
 	}
 
 	/**
-	 * 특정숫자가 실수인지, 정수인지, 음수인지 체크하는 기능 123이 실수인지, 정수인지, 음수인지 체크하는 기능을 제공함
+	 * ?뱀젙?レ옄媛 ?ㅼ닔?몄?, ?뺤닔?몄?, ?뚯닔?몄? 泥댄겕?섎뒗 湲곕뒫 123???ㅼ닔?몄?, ?뺤닔?몄?, ?뚯닔?몄? 泥댄겕?섎뒗 湲곕뒫???쒓났??
 	 *
-	 * @param srcNumber - 숫자집합
-	 * @return -1(음수), 0(정수), 1(실수)
+	 * @param srcNumber - ?レ옄吏묓빀
+	 * @return -1(?뚯닔), 0(?뺤닔), 1(?ㅼ닔)
 	 * @see
 	 */
 	public static int checkRlnoInteger(double srcNumber) {
 
-		// byte 1바이트 		▶소수점이 없는 숫자로, 범위 -2^7 ~ 2^7 -1
-		// short 2바이트		▶소수점이 없는 숫자로, 범위 -2^15 ~ 2^15 -1
-		// int 4바이트 		▶소수점이 없는 숫자로, 범위 -2^31 ~ 2^31 - 1
-		// long 8바이트 		▶소수점이 없는 숫자로, 범위 -2^63 ~ 2^63-1
+		// byte 1諛붿씠??		?띠냼?섏젏???녿뒗 ?レ옄濡? 踰붿쐞 -2^7 ~ 2^7 -1
+		// short 2諛붿씠??	?띠냼?섏젏???녿뒗 ?レ옄濡? 踰붿쐞 -2^15 ~ 2^15 -1
+		// int 4諛붿씠??		?띠냼?섏젏???녿뒗 ?レ옄濡? 踰붿쐞 -2^31 ~ 2^31 - 1
+		// long 8諛붿씠??		?띠냼?섏젏???녿뒗 ?レ옄濡? 踰붿쐞 -2^63 ~ 2^63-1
 
-		// float 4바이트		▶소수점이 있는 숫자로, 끝에 F 또는 f 가 붙는 숫자 (예:3.14f)
-		// double 8바이트	▶소수점이 있는 숫자로, 끝에 아무것도 붙지 않는 숫자 (예:3.14)
-		//							▶소수점이 있는 숫자로, 끝에 D 또는 d 가 붙는 숫자(예:3.14d)
+		// float 4諛붿씠??	?띠냼?섏젏???덈뒗 ?レ옄濡? ?앹뿉 F ?먮뒗 f 媛 遺숇뒗 ?レ옄 (??3.14f)
+		// double 8諛붿씠???띠냼?섏젏???덈뒗 ?レ옄濡? ?앹뿉 ?꾨Т寃껊룄 遺숈? ?딅뒗 ?レ옄 (??3.14)
+		//							?띠냼?섏젏???덈뒗 ?レ옄濡? ?앹뿉 D ?먮뒗 d 媛 遺숇뒗 ?レ옄(??3.14d)
 
 		String cnvrString = null;
 

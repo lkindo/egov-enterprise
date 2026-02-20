@@ -13,14 +13,14 @@ import egovframework.com.cop.adb.service.AddressBookVO;
 
 /**
  * @Class Name : AdressBookDAO.java
- * @Description : 주소록을 관리하는 서비스를 정의하기위한 데이터 접근 클래스
+ * @Description : 二쇱냼濡앹쓣 愿由ы븯???쒕퉬?ㅻ? ?뺤쓽?섍린?꾪븳 ?곗씠???묎렐 ?대옒??
  * @Modification Information
  *
- *    수정일          수정자         수정내용
+ *    ?섏젙??         ?섏젙??        ?섏젙?댁슜
  *   -------        -------     -------------------
- *    2009.9.25.    윤성록       최초 생성
- *    2016.12.13    최두영       클래스명 변경
- * @author 공통 컴포넌트 개발팀 윤성록
+ *    2009.9.25.    ?ㅼ꽦濡?      理쒖큹 ?앹꽦
+ *    2016.12.13    理쒕몢??      ?대옒?ㅻ챸 蹂寃?
+ * @author 怨듯넻 而댄룷?뚰듃 媛쒕컻? ?ㅼ꽦濡?
  * @since 2009. 9. 25.
  * @version
  * @see
@@ -30,7 +30,7 @@ import egovframework.com.cop.adb.service.AddressBookVO;
 public class AddressBookDAO extends EgovComAbstractDAO{
     
     /**
-     * 주어진 조건에 따른 주소록목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕Ⅸ 二쇱냼濡앸ぉ濡앹쓣 遺덈윭?⑤떎.
      * 
      * @param AddressBookVO
      * @return
@@ -41,7 +41,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주어진 조건에 따라 주소록에 추가할 사용자목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕씪 二쇱냼濡앹뿉 異붽????ъ슜?먮ぉ濡앹쓣 遺덈윭?⑤떎.
      * 
      * @param AddressBookUserVO
      * @return
@@ -52,7 +52,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주어진 조건에 따라 주소록에 추가할 명함목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕씪 二쇱냼濡앹뿉 異붽???紐낇븿紐⑸줉??遺덈윭?⑤떎.
      * 
      * @param AddressBookUserVO
      * @return
@@ -63,7 +63,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주어진 조건에 따라 주소록에 기등록된 구성원의 목록을 불러온다.
+     * 二쇱뼱吏?議곌굔???곕씪 二쇱냼濡앹뿉 湲곕벑濡앸맂 援ъ꽦?먯쓽 紐⑸줉??遺덈윭?⑤떎.
      * 
      * @param AddressBookVO
      * @return
@@ -74,7 +74,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }  
 
     /**
-     * 주어진 조건에 맞는 주소록을 불러온다.
+     * 二쇱뼱吏?議곌굔??留욌뒗 二쇱냼濡앹쓣 遺덈윭?⑤떎.
      * 
      * @param AddressBookVO
      * @return
@@ -85,7 +85,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }        
     
     /**
-     * 주소록 정보를 등록한다.
+     * 二쇱냼濡??뺣낫瑜??깅줉?쒕떎.
      * 
      * @param AddressBook
      * @throws Exception
@@ -95,7 +95,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주소록을 구성하는 구성원을 등록한다.
+     * 二쇱냼濡앹쓣 援ъ꽦?섎뒗 援ъ꽦?먯쓣 ?깅줉?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -105,7 +105,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
 
     /**
-     * 주소록 정보를 수정한다.
+     * 二쇱냼濡??뺣낫瑜??섏젙?쒕떎.
      * 
      * @param AddressBook
      * @throws Exception
@@ -115,7 +115,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주소록 구성원을 삭제한다.
+     * 二쇱냼濡?援ъ꽦?먯쓣 ??젣?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -125,7 +125,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }    
     
     /**
-     * 주소록 목록에 대한 전체 건수를 조회한다.
+     * 二쇱냼濡?紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -135,7 +135,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 사용자 목록에 대한 전체 건수를 조회한다.
+     * ?ъ슜??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -145,7 +145,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 명함 목록에 대한 전체 건수를 조회한다.
+     * 紐낇븿 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -155,7 +155,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주소록을 구성할 사용자의 정보를 조회한다.
+     * 二쇱냼濡앹쓣 援ъ꽦???ъ슜?먯쓽 ?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception
@@ -165,7 +165,7 @@ public class AddressBookDAO extends EgovComAbstractDAO{
     }
     
     /**
-     * 주소록을 구성할 명함의 정보를 조회한다.
+     * 二쇱냼濡앹쓣 援ъ꽦??紐낇븿???뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param AddressBookUser
      * @throws Exception

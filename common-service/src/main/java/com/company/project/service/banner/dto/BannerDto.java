@@ -13,37 +13,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "배너 정보 DTO")
+@Schema(description = "Description")
 public class BannerDto {
 
-    @Schema(description = "배너 ID")
+    @Schema(description = "Description")
     private String bannerId;
 
-    @Schema(description = "배너 명")
+    @Schema(description = "Description")
     private String bannerNm;
 
-    @Schema(description = "링크 URL")
+    @Schema(description = "Description")
     private String linkUrl;
 
-    @Schema(description = "배너 이미지 명")
+    @Schema(description = "Description")
     private String bannerImage;
 
-    @Schema(description = "배너 설명")
+    @Schema(description = "Description")
     private String bannerDc;
 
-    @Schema(description = "정렬 순서")
+    @Schema(description = "Description")
     private Integer sortOrdr;
 
-    @Schema(description = "반영 여부")
+    @Schema(description = "Description")
     private String reflctAt;
 
-    @Schema(description = "배너 이미지 파일 ID")
+    @Schema(description = "Description")
     private String bannerImageFile;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static BannerDto from(Banner entity) {

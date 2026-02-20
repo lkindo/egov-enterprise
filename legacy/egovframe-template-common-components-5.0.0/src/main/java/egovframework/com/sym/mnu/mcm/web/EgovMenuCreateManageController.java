@@ -23,25 +23,25 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 메뉴목록 관리및 메뉴생성, 사이트맵 생성을 처리하는 비즈니스 구현 클래스
+ * 硫붾돱紐⑸줉 愿由щ컦 硫붾돱?앹꽦, ?ъ씠?몃㏊ ?앹꽦??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- * 	 2011.07.29  서준식          사이트맵 저장경로 수정
- *	 2011.08.26  정진오          IncludedInfo annotation 추가
- *	 2013.06.17  이기하          사이트맵 생성시 경로 오류 수정
- *   2018.08.09  신용호          X-XSS 관련 크롬에서 오탐되는 부분 수정
- *   2018.09.10  신용호          selectMenuCreatManagList 불필요한 로직 제거
- *   2025.07.17  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ * 	 2011.07.29  ?쒖???         ?ъ씠?몃㏊ ??κ꼍濡??섏젙
+ *	 2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *	 2013.06.17  ?닿린??         ?ъ씠?몃㏊ ?앹꽦??寃쎈줈 ?ㅻ쪟 ?섏젙
+ *   2018.08.09  ?좎슜??         X-XSS 愿???щ＼?먯꽌 ?ㅽ깘?섎뒗 遺遺??섏젙
+ *   2018.09.10  ?좎슜??         selectMenuCreatManagList 遺덊븘?뷀븳 濡쒖쭅 ?쒓굅
+ *   2025.07.17  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -63,27 +63,27 @@ public class EgovMenuCreateManageController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	/*********** 메뉴 생성 관리 ***************/
+	/*********** 硫붾돱 ?앹꽦 愿由?***************/
 
 	/**
-	 * *메뉴생성목록을 조회한다.
+	 * *硫붾돱?앹꽦紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/mcm/EgovMenuCreatManage"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mcm/EgovMenuCreatManage"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "메뉴생성관리", order = 1100, gid = 60)
+	@IncludedInfo(name = "硫붾돱?앹꽦愿由?, order = 1100, gid = 60)
 	@RequestMapping(value = "/sym/mnu/mcm/EgovMenuCreatManageSelect.do")
 	public String selectMenuCreatManagList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -103,7 +103,7 @@ public class EgovMenuCreateManageController {
 		 * 
 		 * int IDcnt = menuCreateManageService.selectUsrByPk(searchVO); if (IDcnt == 0)
 		 * { resultMsg = egovMessageSource.getMessage("info.nodata.msg"); } else { //
-		 * AuthorCode 검색 MenuCreatVO vo = new MenuCreatVO(); vo =
+		 * AuthorCode 寃??MenuCreatVO vo = new MenuCreatVO(); vo =
 		 * menuCreateManageService.selectAuthorByUsr(searchVO);
 		 * searchVO.setSearchKeyword(vo.getAuthorCode()); } }
 		 */
@@ -121,15 +121,15 @@ public class EgovMenuCreateManageController {
 	}
 
 	/**
-	 * 메뉴생성 세부화면을 조회한다.
+	 * 硫붾돱?앹꽦 ?몃??붾㈃??議고쉶?쒕떎.
 	 *
 	 * @param menuCreatVO MenuCreatVO
-	 * @return 출력페이지정보 "sym/mnu/mcm/EgovMenuCreat"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mcm/EgovMenuCreat"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mcm/EgovMenuCreatSelect.do")
 	public String selectMenuCreatList(@ModelAttribute MenuCreatVO menuCreatVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -143,11 +143,11 @@ public class EgovMenuCreateManageController {
 	}
 
 	/**
-	 * 메뉴생성처리 및 메뉴생성내역을 등록한다.
+	 * 硫붾돱?앹꽦泥섎━ 諛?硫붾돱?앹꽦?댁뿭???깅줉?쒕떎.
 	 *
 	 * @param checkedAuthorForInsert String
 	 * @param checkedMenuNoForInsert String
-	 * @return 출력페이지정보 등록처리시 "forward:/sym/mnu/mcm/EgovMenuCreatSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??"forward:/sym/mnu/mcm/EgovMenuCreatSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping("/sym/mnu/mcm/EgovMenuCreatInsert.do")
@@ -155,7 +155,7 @@ public class EgovMenuCreateManageController {
 			@RequestParam("checkedMenuNoForInsert") String checkedMenuNoForInsert,
 			@ModelAttribute("menuCreatVO") MenuCreatVO menuCreatVO, ModelMap model) throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -172,18 +172,18 @@ public class EgovMenuCreateManageController {
 		return "forward:/sym/mnu/mcm/EgovMenuCreatSelect.do";
 	}
 
-	/* 메뉴사이트맵 생성조회 */
+	/* 硫붾돱?ъ씠?몃㏊ ?앹꽦議고쉶 */
 	/**
-	 * 메뉴사이트맵을 생성할 내용을 조회한다.
+	 * 硫붾돱?ъ씠?몃㏊???앹꽦???댁슜??議고쉶?쒕떎.
 	 *
 	 * @param menuSiteMapVO MenuSiteMapVO
-	 * @return 출력페이지정보 등록처리시 "sym/mnu/mcm/EgovMenuCreatSiteMap"
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??"sym/mnu/mcm/EgovMenuCreatSiteMap"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mcm/EgovMenuCreatSiteMapSelect.do")
 	public String selectMenuCreatSiteMap(@ModelAttribute("menuSiteMapVO") MenuSiteMapVO menuSiteMapVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -198,11 +198,11 @@ public class EgovMenuCreateManageController {
 	}
 
 	/**
-	 * 메뉴사이트맵 생성처리 및 사이트맵을 등록한다. 개발환경에서 테스트용 함수로 보안 취약
+	 * 硫붾돱?ъ씠?몃㏊ ?앹꽦泥섎━ 諛??ъ씠?몃㏊???깅줉?쒕떎. 媛쒕컻?섍꼍?먯꽌 ?뚯뒪?몄슜 ?⑥닔濡?蹂댁븞 痍⑥빟
 	 *
 	 * @param menuSiteMapVO MenuSiteMapVO
 	 * @param valueHtml     String
-	 * @return 출력페이지정보 "sym/mnu/mcm/EgovMenuCreatSiteMap"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mcm/EgovMenuCreatSiteMap"
 	 * @exception Exception
 	 */
 	/*
@@ -210,7 +210,7 @@ public class EgovMenuCreateManageController {
 	 * String selectMenuCreatSiteMapInsert(@ModelAttribute("menuSiteMapVO")
 	 * MenuSiteMapVO menuSiteMapVO, @RequestParam("valueHtml") String valueHtml,
 	 * ModelMap model ,HttpServletResponse response) throws Exception { boolean
-	 * chkCreat = false; String resultMsg = ""; // 0. Spring Security 사용자권한 처리
+	 * chkCreat = false; String resultMsg = ""; // 0. Spring Security ?ъ슜?먭텒??泥섎━
 	 * Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); if
 	 * (!isAuthenticated) { model.addAttribute("message",
 	 * egovMessageSource.getMessage("fail.common.login")); return
@@ -220,7 +220,7 @@ public class EgovMenuCreateManageController {
 	 * + System.getProperty("file.separator") + ".." // +
 	 * System.getProperty("file.separator") + "..");
 	 * 
-	 * // 사이트맵 파일 생성 위치 지정 //String currentPath =
+	 * // ?ъ씠?몃㏊ ?뚯씪 ?앹꽦 ?꾩튂 吏??//String currentPath =
 	 * EgovMenuCreateManageController.class.getResource("").getPath(); String
 	 * currentPath =
 	 * EgovMenuCreateManageController.class.getProtectionDomain().getCodeSource() ==
@@ -235,7 +235,7 @@ public class EgovMenuCreateManageController {
 	 * //System.out.println("===>>> menuSiteMapVO.getMapCreatId() = "+menuSiteMapVO.
 	 * getMapCreatId());
 	 * 
-	 * // 사이트맵 파일 생성 위치 지정 if ("WINDOWS".equals(Globals.OS_TYPE)) { // menuSiteMapVO
+	 * // ?ъ씠?몃㏊ ?뚯씪 ?앹꽦 ?꾩튂 吏??if ("WINDOWS".equals(Globals.OS_TYPE)) { // menuSiteMapVO
 	 * // .setTmp_rootPath("D:/egovframework/workspace/egovcmm/src/main/webapp" //
 	 * ); }else{menuSiteMapVO.setTmp_rootPath( //
 	 * "/product/jeus/webhome/was_com/egovframework-com-1_0/egovframework-com-1_0_war___"
@@ -254,18 +254,18 @@ public class EgovMenuCreateManageController {
 	 * return "egovframework/com/sym/mnu/mcm/EgovMenuCreatSiteMap"; }
 	 */
 
-	/* 메뉴사이트맵 생성조회 */
+	/* 硫붾돱?ъ씠?몃㏊ ?앹꽦議고쉶 */
 	/**
-	 * 메뉴사이트맵을 생성할 내용을 조회한다.
+	 * 硫붾돱?ъ씠?몃㏊???앹꽦???댁슜??議고쉶?쒕떎.
 	 *
 	 * @param menuSiteMapVO MenuSiteMapVO
-	 * @return 출력페이지정보 등록처리시 "sym/mnu/mcm/EgovMenuCreatSiteMap"
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??"sym/mnu/mcm/EgovMenuCreatSiteMap"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mcm/EgovSiteMap.do")
 	public String selectSiteMap(@ModelAttribute("menuCreatVO") MenuSiteMapVO menuSiteMapVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));

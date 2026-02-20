@@ -11,19 +11,19 @@ import egovframework.com.sec.ram.service.EgovAuthorManageService;
 import jakarta.annotation.Resource;
 
 /**
- * 권한관리에 관한 ServiceImpl 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳愿由ъ뿉 愿??ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2024.10.29	LeeBaekHaeng	@Override 표기
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2024.10.29	LeeBaekHaeng	@Override ?쒓린
  *
  * </pre>
  */
@@ -35,7 +35,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     private AuthorManageDAO authorManageDAO;
 
     /**
-	 * 권한 목록을 조회한다.
+	 * 沅뚰븳 紐⑸줉??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return List<AuthorManageVO>
 	 * @exception Exception
@@ -46,7 +46,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
 	/**
-	 * 권한을 등록한다.
+	 * 沅뚰븳???깅줉?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -56,7 +56,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-	 * 권한을 수정한다.
+	 * 沅뚰븳???섏젙?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -66,7 +66,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-	 * 권한을 삭제한다.
+	 * 沅뚰븳????젣?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @exception Exception
 	 */
@@ -76,7 +76,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-	 * 권한을 조회한다.
+	 * 沅뚰븳??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return AuthorManageVO
 	 * @exception Exception
@@ -91,7 +91,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-	 * 권한 목록 카운트를 조회한다.
+	 * 沅뚰븳 紐⑸줉 移댁슫?몃? 議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return int
 	 * @exception Exception
@@ -102,7 +102,7 @@ public class EgovAuthorManageServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-	 * 모든 권한목록을 조회한다.
+	 * 紐⑤뱺 沅뚰븳紐⑸줉??議고쉶?쒕떎.
 	 * @param authorManageVO AuthorManageVO
 	 * @return List<AuthorManageVO>
 	 * @exception Exception

@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: always
+    include-exception: true
+spring:
+  main:
+    allow-circular-references: true
+    lazy-initialization: false
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
+    username: ${DB_USERNAME:egov}
+    password: ${DB_PASSWORD:egov123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+logging:
+  level:
+    root: info
+    com.company.project: debug
+    egovframework: debug
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: debug
+
+jwt:
+  # CRITICAL: JWT_SECRET environment variable MUST be set.
+  # We use a default empty value here to allow custom validation in JwtTokenProvider to throw a readable error.
+  secret: ${JWT_SECRET:}

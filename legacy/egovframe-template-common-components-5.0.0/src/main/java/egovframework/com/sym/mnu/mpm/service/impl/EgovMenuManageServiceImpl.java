@@ -25,23 +25,23 @@ import egovframework.com.sym.prm.service.impl.ProgrmManageDAO;
 import jakarta.annotation.Resource;
 
 /**
- * 메뉴목록관리, 생성, 사이트맵을 처리하는 비즈니스 구현 클래스를 정의한다.
+ * 硫붾돱紐⑸줉愿由? ?앹꽦, ?ъ씠?몃㏊??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2011.07.01  서준식          자기 메뉴 정보를 상위메뉴 정보로 참조하는 메뉴정보가 있는지 조회하는 selectUpperMenuNoByPk() 메서드 추가
- *   2017-02-13  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2019-12-06  신용호          KISA 보안약점 조치 (부적절한 예외처리)
- *   2025.07.18  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.07.01  ?쒖???         ?먭린 硫붾돱 ?뺣낫瑜??곸쐞硫붾돱 ?뺣낫濡?李몄“?섎뒗 硫붾돱?뺣낫媛 ?덈뒗吏 議고쉶?섎뒗 selectUpperMenuNoByPk() 硫붿꽌??異붽?
+ *   2017-02-13  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2019-12-06  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (遺?곸젅???덉쇅泥섎━)
+ *   2025.07.18  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
  *
  *      </pre>
  */
@@ -58,7 +58,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	private EgovExcelService excelZipService;
 
 	/**
-	 * 메뉴 상세정보를 조회
+	 * 硫붾돱 ?곸꽭?뺣낫瑜?議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return MenuManageVO
@@ -70,7 +70,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴 목록을 조회
+	 * 硫붾돱 紐⑸줉??議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return List
@@ -82,7 +82,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴목록 총건수를 조회한다.
+	 * 硫붾돱紐⑸줉 珥앷굔?섎? 議고쉶?쒕떎.
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return int
@@ -94,7 +94,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴번호를 상위메뉴로 참조하고 있는 메뉴 존재여부를 조회
+	 * 硫붾돱踰덊샇瑜??곸쐞硫붾돱濡?李몄“?섍퀬 ?덈뒗 硫붾돱 議댁옱?щ?瑜?議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return int
@@ -106,7 +106,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴번호 존재 여부를 조회한다.
+	 * 硫붾돱踰덊샇 議댁옱 ?щ?瑜?議고쉶?쒕떎.
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return int
@@ -118,7 +118,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴 정보를 등록
+	 * 硫붾돱 ?뺣낫瑜??깅줉
 	 * 
 	 * @param vo MenuManageVO
 	 * @exception Exception
@@ -129,7 +129,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴 정보를 수정
+	 * 硫붾돱 ?뺣낫瑜??섏젙
 	 * 
 	 * @param vo MenuManageVO
 	 * @exception Exception
@@ -140,7 +140,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴 정보를 삭제
+	 * 硫붾돱 ?뺣낫瑜???젣
 	 * 
 	 * @param vo MenuManageVO
 	 * @exception Exception
@@ -151,7 +151,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 화면에 조회된 메뉴 목록 정보를 데이터베이스에서 삭제
+	 * ?붾㈃??議고쉶??硫붾돱 紐⑸줉 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * 
 	 * @param checkedMenuNoForDel String
 	 * @exception Exception
@@ -172,10 +172,10 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		}
 	}
 
-	/* 메뉴 생성 관리 */
+	/* 硫붾돱 ?앹꽦 愿由?*/
 
 	/**
-	 * 메뉴 목록을 조회
+	 * 硫붾돱 紐⑸줉??議고쉶
 	 * 
 	 * @return List
 	 * @exception Exception
@@ -185,9 +185,9 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		return menuManageDAO.selectMenuList();
 	}
 
-	/* ### 메뉴관련 프로세스 ### */
+	/* ### 硫붾돱愿???꾨줈?몄뒪 ### */
 	/**
-	 * MainMenu Head Menu 조회
+	 * MainMenu Head Menu 議고쉶
 	 * 
 	 * @param vo MenuManageVO
 	 * @return List
@@ -199,7 +199,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * MainMenu Head Left 조회
+	 * MainMenu Head Left 議고쉶
 	 * 
 	 * @param vo MenuManageVO
 	 * @return List
@@ -211,7 +211,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * MainMenu Head MenuURL 조회
+	 * MainMenu Head MenuURL 議고쉶
 	 * 
 	 * @param iMenuNo int
 	 * @param sUniqId String
@@ -226,7 +226,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * MainMenu Head Menu MenuNo 조회
+	 * MainMenu Head Menu MenuNo 議고쉶
 	 * 
 	 * @param iMenuNo int
 	 * @param sUniqId String
@@ -246,7 +246,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * MainMenu Head Menu Last MenuNo 조회
+	 * MainMenu Head Menu Last MenuNo 議고쉶
 	 * 
 	 * @param iMenuNo int
 	 * @param sUniqId String
@@ -268,9 +268,9 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		return chkMenuNo;
 	}
 
-	/* ### 일괄처리 프로세스 ### */
+	/* ### ?쇨큵泥섎━ ?꾨줈?몄뒪 ### */
 	/**
-	 * 메뉴일괄초기화 프로세스 메뉴목록테이블, 프로그램 목록테이블 전체 삭제
+	 * 硫붾돱?쇨큵珥덇린???꾨줈?몄뒪 硫붾돱紐⑸줉?뚯씠釉? ?꾨줈洹몃옩 紐⑸줉?뚯씠釉??꾩껜 ??젣
 	 * 
 	 * @return boolean
 	 * @exception Exception
@@ -279,18 +279,18 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	public boolean menuBndeAllDelete() throws Exception {
 		if (!deleteAllProgrmDtls()) {
 			return false;
-		} // 프로그램변경요청 테이블
+		} // ?꾨줈洹몃옩蹂寃쎌슂泥??뚯씠釉?
 		if (!deleteAllMenuList()) {
 			return false;
-		} // 메뉴정보 테이블
+		} // 硫붾돱?뺣낫 ?뚯씠釉?
 		if (!deleteAllProgrm()) {
 			return false;
-		} // 프로그램목록 테이블
+		} // ?꾨줈洹몃옩紐⑸줉 ?뚯씠釉?
 		return true;
 	}
 
 	/**
-	 * 메뉴일괄등록 프로세스
+	 * 硫붾돱?쇨큵?깅줉 ?꾨줈?몄뒪
 	 * 
 	 * @param vo          MenuManageVO
 	 * @param inputStream InputStream
@@ -304,36 +304,36 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 
 		switch (Integer.parseInt(message)) {
 		case 99:
-			LOGGER.debug("프로그램목록/메뉴정보테이블 데이타 존재오류 - 초기화 하신 후 다시 처리하세요.");
-			sMessage = "프로그램목록/메뉴정보테이블 데이타 존재오류 - 초기화 하신 후 다시 처리하세요.";
+			LOGGER.debug("?꾨줈洹몃옩紐⑸줉/硫붾돱?뺣낫?뚯씠釉??곗씠? 議댁옱?ㅻ쪟 - 珥덇린???섏떊 ???ㅼ떆 泥섎━?섏꽭??");
+			sMessage = "?꾨줈洹몃옩紐⑸줉/硫붾돱?뺣낫?뚯씠釉??곗씠? 議댁옱?ㅻ쪟 - 珥덇린???섏떊 ???ㅼ떆 泥섎━?섏꽭??";
 			break;
 		case 90:
-			LOGGER.debug("파일존재하지 않음.");
-			sMessage = "파일존재하지 않음.";
+			LOGGER.debug("?뚯씪議댁옱?섏? ?딆쓬.");
+			sMessage = "?뚯씪議댁옱?섏? ?딆쓬.";
 			break;
 		case 91:
-			LOGGER.debug("프로그램시트의 cell 개수 오류.");
-			sMessage = "프로그램시트의 cell 개수 오류.";
+			LOGGER.debug("?꾨줈洹몃옩?쒗듃??cell 媛쒖닔 ?ㅻ쪟.");
+			sMessage = "?꾨줈洹몃옩?쒗듃??cell 媛쒖닔 ?ㅻ쪟.";
 			break;
 		case 92:
-			LOGGER.debug("메뉴정보시트의 cell 개수 오류.");
-			sMessage = "메뉴정보시트의 cell 개수 오류.";
+			LOGGER.debug("硫붾돱?뺣낫?쒗듃??cell 媛쒖닔 ?ㅻ쪟.");
+			sMessage = "硫붾돱?뺣낫?쒗듃??cell 媛쒖닔 ?ㅻ쪟.";
 			break;
 		case 93:
-			LOGGER.debug("엑셀 시트개수 오류.");
-			sMessage = "엑셀 시트개수 오류.";
+			LOGGER.debug("?묒? ?쒗듃媛쒖닔 ?ㅻ쪟.");
+			sMessage = "?묒? ?쒗듃媛쒖닔 ?ㅻ쪟.";
 			break;
 		case 95:
-			LOGGER.debug("메뉴정보 입력시 에러.");
-			sMessage = "메뉴정보 입력시 에러.";
+			LOGGER.debug("硫붾돱?뺣낫 ?낅젰???먮윭.");
+			sMessage = "硫붾돱?뺣낫 ?낅젰???먮윭.";
 			break;
 		case 96:
-			LOGGER.debug("프로그램목록입력시 에러.");
-			sMessage = "프로그램목록입력시 에러.";
+			LOGGER.debug("?꾨줈洹몃옩紐⑸줉?낅젰???먮윭.");
+			sMessage = "?꾨줈洹몃옩紐⑸줉?낅젰???먮윭.";
 			break;
 		default:
-			LOGGER.debug("일괄배치처리 완료.");
-			sMessage = "일괄배치처리 완료.";
+			LOGGER.debug("?쇨큵諛곗튂泥섎━ ?꾨즺.");
+			sMessage = "?쇨큵諛곗튂泥섎━ ?꾨즺.";
 			break;
 		}
 		LOGGER.debug(message);
@@ -341,7 +341,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴목록_프로그램목록 일괄생성
+	 * 硫붾돱紐⑸줉_?꾨줈洹몃옩紐⑸줉 ?쇨큵?앹꽦
 	 * 
 	 * @param inputStream InputStream
 	 * @return String
@@ -355,65 +355,65 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		// String xlsFile = null;
 		try {
 			/*
-			 * 오류 메세지 정보 message = "99"; //프로그램목록테이블 데이타 존재오류. message = "99"; //메뉴정보테이블 데이타
-			 * 존재오류. message = "90"; //파일존재하지 않음. message = "91"; //프로그램시트의 cell 개수 오류
-			 * message = "92"; //메뉴정보시트의 cell 개수 오류 message = "93"; //엑셀 시트개수 오류 message =
-			 * "95"; //메뉴정보 입력시 에러 message = "96"; //프로그램목록입력시 에러 message = "0"; //일괄배치처리 완료
+			 * ?ㅻ쪟 硫붿꽭吏 ?뺣낫 message = "99"; //?꾨줈洹몃옩紐⑸줉?뚯씠釉??곗씠? 議댁옱?ㅻ쪟. message = "99"; //硫붾돱?뺣낫?뚯씠釉??곗씠?
+			 * 議댁옱?ㅻ쪟. message = "90"; //?뚯씪議댁옱?섏? ?딆쓬. message = "91"; //?꾨줈洹몃옩?쒗듃??cell 媛쒖닔 ?ㅻ쪟
+			 * message = "92"; //硫붾돱?뺣낫?쒗듃??cell 媛쒖닔 ?ㅻ쪟 message = "93"; //?묒? ?쒗듃媛쒖닔 ?ㅻ쪟 message =
+			 * "95"; //硫붾돱?뺣낫 ?낅젰???먮윭 message = "96"; //?꾨줈洹몃옩紐⑸줉?낅젰???먮윭 message = "0"; //?쇨큵諛곗튂泥섎━ ?꾨즺
 			 */
 
 			if (progrmManageDAO.selectProgrmListTotCnt() > 0) {
 				return requestValue = "99";
-			} // 프로그램목록테이블 데이타 존재오류.
+			} // ?꾨줈洹몃옩紐⑸줉?뚯씠釉??곗씠? 議댁옱?ㅻ쪟.
 			if (menuManageDAO.selectMenuListTotCnt() > 0) {
 				return requestValue = "99";
-			} // 메뉴정보테이블 데이타 존재오류.
+			} // 硫붾돱?뺣낫?뚯씠釉??곗씠? 議댁옱?ㅻ쪟.
 
 			HSSFWorkbook hssfWB = (HSSFWorkbook) excelZipService.loadWorkbook(inputStream);
-			// 엑셀 파일 시트 개수 확인 sheet = 2 첫번째시트 = 프로그램목록 두번째시트 = 메뉴목록
+			// ?묒? ?뚯씪 ?쒗듃 媛쒖닔 ?뺤씤 sheet = 2 泥ル쾲吏몄떆??= ?꾨줈洹몃옩紐⑸줉 ?먮쾲吏몄떆??= 硫붾돱紐⑸줉
 			if (hssfWB.getNumberOfSheets() == 2) {
-				HSSFSheet progrmSheet = hssfWB.getSheetAt(0); // 프로그램목록 시트 가져오기
-				HSSFSheet menuSheet = hssfWB.getSheetAt(1); // 메뉴정보 시트 가져오기
-				HSSFRow progrmRow = progrmSheet.getRow(1); // 프로그램 row 가져오기
-				HSSFRow menuRow = menuSheet.getRow(1); // 메뉴정보 row 가져오기
-				progrmSheetRowCnt = progrmRow.getPhysicalNumberOfCells(); // 프로그램 cell Cnt
-				menuSheetRowCnt = menuRow.getPhysicalNumberOfCells(); // 메뉴정보 cell Cnt
+				HSSFSheet progrmSheet = hssfWB.getSheetAt(0); // ?꾨줈洹몃옩紐⑸줉 ?쒗듃 媛?몄삤湲?
+				HSSFSheet menuSheet = hssfWB.getSheetAt(1); // 硫붾돱?뺣낫 ?쒗듃 媛?몄삤湲?
+				HSSFRow progrmRow = progrmSheet.getRow(1); // ?꾨줈洹몃옩 row 媛?몄삤湲?
+				HSSFRow menuRow = menuSheet.getRow(1); // 硫붾돱?뺣낫 row 媛?몄삤湲?
+				progrmSheetRowCnt = progrmRow.getPhysicalNumberOfCells(); // ?꾨줈洹몃옩 cell Cnt
+				menuSheetRowCnt = menuRow.getPhysicalNumberOfCells(); // 硫붾돱?뺣낫 cell Cnt
 
-				// 프로그램 시트 파일 데이타 검증 cell = 5개
+				// ?꾨줈洹몃옩 ?쒗듃 ?뚯씪 ?곗씠? 寃利?cell = 5媛?
 				if (progrmSheetRowCnt != 5) {
-					return requestValue = "91"; // 프로그램시트의 cell 개수 오류
+					return requestValue = "91"; // ?꾨줈洹몃옩?쒗듃??cell 媛쒖닔 ?ㅻ쪟
 				}
 
-				// 메뉴목록 시트 파일 데이타 검증 cell = 8개
+				// 硫붾돱紐⑸줉 ?쒗듃 ?뚯씪 ?곗씠? 寃利?cell = 8媛?
 				if (menuSheetRowCnt != 8) {
-					return requestValue = "92"; // 메뉴정보시트의 cell 개수 오류
+					return requestValue = "92"; // 硫붾돱?뺣낫?쒗듃??cell 媛쒖닔 ?ㅻ쪟
 				}
 
-				/* sheet1번 = 프로그램목록 , sheet2번 = 메뉴정보 */
+				/* sheet1踰?= ?꾨줈洹몃옩紐⑸줉 , sheet2踰?= 硫붾돱?뺣낫 */
 				success = progrmRegist(progrmSheet);
 				if (success) {
 					success = menuRegist(menuSheet);
 					if (success) {
-						return requestValue = "0"; // 일괄배치처리 완료
+						return requestValue = "0"; // ?쇨큵諛곗튂泥섎━ ?꾨즺
 					} else {
 						deleteAllProgrmDtls();
 						deleteAllProgrm();
 						deleteAllMenuList();
-						return requestValue = "95"; // 메뉴정보 입력시 에러
+						return requestValue = "95"; // 硫붾돱?뺣낫 ?낅젰???먮윭
 					}
 				} else {
 					deleteAllProgrmDtls();
 					deleteAllProgrm();
-					return requestValue = "96"; // 프로그램목록입력시 에러
+					return requestValue = "96"; // ?꾨줈洹몃옩紐⑸줉?낅젰???먮윭
 				}
 			} else {
-				return requestValue = "93"; // 엑셀 시트개수 오류
+				return requestValue = "93"; // ?묒? ?쒗듃媛쒖닔 ?ㅻ쪟
 			}
 		} catch (BaseException e) {
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 			requestValue = "99";
 
 		} catch (Exception e) {
-			// 2017.02.13 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.02.13 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 			requestValue = "99";
 		}
@@ -421,7 +421,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로그램목록 일괄등록
+	 * ?꾨줈洹몃옩紐⑸줉 ?쇨큵?깅줉
 	 * 
 	 * @param progrmSheet HSSFSheet
 	 * @return boolean
@@ -431,31 +431,31 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		int count = 0;
 		boolean success = false;
 		try {
-			int rows = progrmSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
-			for (int j = 1; j < rows; j++) { // row 루프
+			int rows = progrmSheet.getPhysicalNumberOfRows(); // ??媛쒖닔 媛?몄삤湲?
+			for (int j = 1; j < rows; j++) { // row 猷⑦봽
 				ProgrmManageVO vo = new ProgrmManageVO();
-				HSSFRow row = progrmSheet.getRow(j); // row 가져오기
+				HSSFRow row = progrmSheet.getRow(j); // row 媛?몄삤湲?
 				if (row != null) {
-					// int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
+					// int cells = row.getPhysicalNumberOfCells(); //cell 媛쒖닔 媛?몄삤湲?
 
 					HSSFCell cell = null;
-					cell = row.getCell(0); // 프로그램명
+					cell = row.getCell(0); // ?꾨줈洹몃옩紐?
 					if (cell != null) {
 						vo.setProgrmFileNm("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(1); // 프로그램한글명
+					cell = row.getCell(1); // ?꾨줈洹몃옩?쒓?紐?
 					if (cell != null) {
 						vo.setProgrmKoreanNm("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(2); // 프로그램저장경로
+					cell = row.getCell(2); // ?꾨줈洹몃옩??κ꼍濡?
 					if (cell != null) {
 						vo.setProgrmStrePath("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(3); // 프로그램 URL
+					cell = row.getCell(3); // ?꾨줈洹몃옩 URL
 					if (cell != null) {
 						vo.setURL("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(4); // 프로그램설명
+					cell = row.getCell(4); // ?꾨줈洹몃옩?ㅻ챸
 					if (cell != null) {
 						vo.setProgrmDc("" + cell.getStringCellValue());
 					}
@@ -474,7 +474,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 			success = false;
 
 		} catch (Exception e) {
-			// 2017.02.13 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.02.13 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 			success = false;
 		}
@@ -482,7 +482,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴정보 일괄등록
+	 * 硫붾돱?뺣낫 ?쇨큵?깅줉
 	 * 
 	 * @param menuSheet HSSFSheet
 	 * @return boolean
@@ -492,42 +492,42 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 		boolean success = false;
 		int count = 0;
 		try {
-			int rows = menuSheet.getPhysicalNumberOfRows(); // 행 개수 가져오기
-			for (int j = 1; j < rows; j++) { // row 루프
+			int rows = menuSheet.getPhysicalNumberOfRows(); // ??媛쒖닔 媛?몄삤湲?
+			for (int j = 1; j < rows; j++) { // row 猷⑦봽
 				MenuManageVO vo = new MenuManageVO();
-				HSSFRow row = menuSheet.getRow(j); // row 가져오기
+				HSSFRow row = menuSheet.getRow(j); // row 媛?몄삤湲?
 				if (row != null) {
-					// int cells = row.getPhysicalNumberOfCells(); //cell 개수 가져오기
+					// int cells = row.getPhysicalNumberOfCells(); //cell 媛쒖닔 媛?몄삤湲?
 					HSSFCell cell = null;
-					cell = row.getCell(0); // 메뉴번호
+					cell = row.getCell(0); // 硫붾돱踰덊샇
 					if (cell != null && cell.getCellType() == CellType.NUMERIC) {
 						vo.setMenuNo((int) cell.getNumericCellValue());
 					}
-					cell = row.getCell(1); // 메뉴순서
+					cell = row.getCell(1); // 硫붾돱?쒖꽌
 					if (cell != null && cell.getCellType() == CellType.NUMERIC) {
 						vo.setMenuOrdr((int) cell.getNumericCellValue());
 					}
-					cell = row.getCell(2); // 메뉴명
+					cell = row.getCell(2); // 硫붾돱紐?
 					if (cell != null) {
 						vo.setMenuNm("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(3); // 상위메뉴번호
+					cell = row.getCell(3); // ?곸쐞硫붾돱踰덊샇
 					if (cell != null && cell.getCellType() == CellType.NUMERIC) {
 						vo.setUpperMenuId((int) cell.getNumericCellValue());
 					}
-					cell = row.getCell(4); // 메뉴설명
+					cell = row.getCell(4); // 硫붾돱?ㅻ챸
 					if (cell != null) {
 						vo.setMenuDc("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(5); // 관련이미지경로
+					cell = row.getCell(5); // 愿?⑥씠誘몄?寃쎈줈
 					if (cell != null) {
 						vo.setRelateImagePath("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(6); // 관련이미지명
+					cell = row.getCell(6); // 愿?⑥씠誘몄?紐?
 					if (cell != null) {
 						vo.setRelateImageNm("" + cell.getStringCellValue());
 					}
-					cell = row.getCell(7); // 프로그램파일명
+					cell = row.getCell(7); // ?꾨줈洹몃옩?뚯씪紐?
 					if (cell != null) {
 						vo.setProgrmFileNm("" + cell.getStringCellValue());
 					}
@@ -546,7 +546,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 			success = false;
 
 		} catch (Exception e) {
-			// 2017.02.13 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.02.13 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 			success = false;
 		}
@@ -555,7 +555,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴정보 전체데이타 초기화
+	 * 硫붾돱?뺣낫 ?꾩껜?곗씠? 珥덇린??
 	 * 
 	 * @return boolean
 	 * @exception Exception
@@ -565,7 +565,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로그램 정보를 등록
+	 * ?꾨줈洹몃옩 ?뺣낫瑜??깅줉
 	 * 
 	 * @param vo ProgrmManageVO
 	 * @return boolean
@@ -577,7 +577,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 메뉴정보를 일괄 등록
+	 * 硫붾돱?뺣낫瑜??쇨큵 ?깅줉
 	 * 
 	 * @param vo MenuManageVO
 	 * @return boolean
@@ -589,7 +589,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로그램 정보 전체데이타 초기화
+	 * ?꾨줈洹몃옩 ?뺣낫 ?꾩껜?곗씠? 珥덇린??
 	 * 
 	 * @return boolean
 	 * @exception Exception
@@ -599,7 +599,7 @@ public class EgovMenuManageServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 프로그램변경내역 정보 전체데이타 초기화
+	 * ?꾨줈洹몃옩蹂寃쎈궡???뺣낫 ?꾩껜?곗씠? 珥덇린??
 	 * 
 	 * @return boolean
 	 * @exception Exception

@@ -19,18 +19,18 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import jakarta.annotation.Resource;
 
 /**
- * 요소기술 json 관한 controller 클래스를 정의한다.
- * @author 2016 표준프레임웤크 유지보수 장동한
+ * ?붿냼湲곗닠 json 愿??controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 2016 ?쒖??꾨젅?꾩썶???좎?蹂댁닔 ?λ룞??
  * @since 2016.07.14
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2016.07.14  장동한          최초 생성
+ *   2016.07.14  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -52,7 +52,7 @@ public class EgovUtlJsonController {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovUtlJsonController.class);
 
     /**
-	 * json 단건조회
+	 * json ?④굔議고쉶
 	 * @return String
 	 * @exception Exception
 	 */
@@ -80,7 +80,7 @@ public class EgovUtlJsonController {
     	return modelAndView;
     }
     /**
-	 * json 다건조회
+	 * json ?ㅺ굔議고쉶
 	 * @return String
 	 * @exception Exception
 	 */

@@ -9,18 +9,18 @@ import egovframework.com.uss.cmt.service.CmtDefaultVO;
 import egovframework.com.uss.cmt.service.CmtManageVO;
 
 /**
- * 출퇴근관리에 관한 데이터 접근 클래스를 정의한다.
- * @author 표준프레임워크 개발팀
+ * 異쒗눜洹쇨?由ъ뿉 愿???곗씠???묎렐 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author ?쒖??꾨젅?꾩썙??媛쒕컻?
  * @since 2014.11.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일          수정자         수정내용
+ *  ?섏젙??         ?섏젙??        ?섏젙?댁슜
  *  ----------    ----------    ---------------------------
- *  2014.11.10     개발팀         최초 생성
+ *  2014.11.10     媛쒕컻?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -32,25 +32,25 @@ public class EgovCmtManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	* 출근 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	* @param cmtManageVO 업무사용자 등록정보
-	* @return String result 등록결과
+	* 異쒓렐 湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
+	* @param cmtManageVO ?낅Т?ъ슜???깅줉?뺣낫
+	* @return String result ?깅줉寃곌낵
 	*/
 	public String insertWrkStartCmtInfo(CmtManageVO cmtManageVO) {
 		return Integer.toString(insert("cmtManageDAO.insertWrkStartCmtInfo_S", cmtManageVO));
 	}
 
 	/**
-	* 퇴근 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	* @param cmtManageVO 업무사용자 등록정보
-	* @return String result 등록결과
+	* ?닿렐 湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
+	* @param cmtManageVO ?낅Т?ъ슜???깅줉?뺣낫
+	* @return String result ?깅줉寃곌낵
 	*/
 	public int insertWrkEndCmtInfo(CmtManageVO cmtManageVO) {
 		return update("cmtManageDAO.insertWrkEndCmtInfo_S", cmtManageVO);
 	}
 
 	/**
-	 * 퇴근정보 입력을 위한 출근정보 id 조회
+	 * ?닿렐?뺣낫 ?낅젰???꾪븳 異쒓렐?뺣낫 id 議고쉶
 	 * @param cmtManageVO
 	 * @return String wrktmId
 	 */
@@ -60,7 +60,7 @@ public class EgovCmtManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 퇴근정보 입력을 위한 출근정보조회
+	 * ?닿렐?뺣낫 ?낅젰???꾪븳 異쒓렐?뺣낫議고쉶
 	 * @param cmtManageVO
 	 * @return cmtManageVO
 	 */

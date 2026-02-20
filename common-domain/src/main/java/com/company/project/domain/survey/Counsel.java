@@ -41,7 +41,7 @@ public class Counsel extends BaseTimeEntity {
     private String managerDate;
 
     @Column(name = "QNA_PROCESS_STTUS_CODE", length = 1)
-    private String status; // 1:접수, 2:답변완료
+    private String status; // 1:?臾믩땾, 2:????袁⑥┷
 
     @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
     private String frstRegisterId;

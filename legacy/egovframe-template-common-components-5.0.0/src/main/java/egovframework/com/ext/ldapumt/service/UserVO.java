@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service;
 
 /**
 *
-* 사용자 VO 객 체 
-* @author 전우성
+* ?ъ슜??VO 媛?泥?
+* @author ?꾩슦??
 * @since 2014.10.12
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2014.10.12  전우성          최초 생성
+*   2014.10.12  ?꾩슦??         理쒖큹 ?앹꽦
 *
 * </pre>
 */

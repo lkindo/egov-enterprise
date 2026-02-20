@@ -1,31 +1,31 @@
 package egovframework.com.dam.per.service;
 
 /**
- * 개요
- * - 개인지식정보에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛쒖씤吏?앹젙蹂댁뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 개인지식정보의 목록 항목, 조회조건 등을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 媛쒖씤吏?앹젙蹂댁쓽 紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:50
+ * @created 12-8-2010 ?ㅽ썑 3:44:50
  */
 
 public class KnoPersonalVO extends KnoPersonal {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
     
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";    
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-	/** 페이지사이즈 */
+	/** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
     
     /** firstIndex */

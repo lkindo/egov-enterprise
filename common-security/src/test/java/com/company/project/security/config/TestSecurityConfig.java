@@ -11,8 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * 테스트용 Security 설정
- * 모든 요청을 허용하여 테스트 실행
+ * ???뮞?紐꾩뒠 Security ??쇱젟
+ * 筌뤴뫀諭??遺욧퍕????됱뒠??뤿연 ???뮞????쎈뻬
  */
 @TestConfiguration
 @EnableWebSecurity

@@ -12,8 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 명함 JPA Entity
- * 레거시 테이블: NNCRD
+ * 筌뤿굟釉?JPA Entity
+ * ??뉕탢?????뵠?? NNCRD
  */
 @Entity
 @Table(name = "NNCRD")

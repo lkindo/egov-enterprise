@@ -31,28 +31,28 @@ import egovframework.com.sym.ccm.acr.service.EgovAdministCodeRecptnService;
 import jakarta.annotation.Resource;
 
 /**
- * 법정동코드에 대한 서비스 구현클래스를 정의한다.
+ * 踰뺤젙?숈퐫?쒖뿉 ????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.10.07  이기하          finally문을 추가하여 에러시 자원반환할 수 있도록 추가
- *   2017.02.08  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2023.08.10  정진오          법정동코드수신 방식 수정(공공데이터포털 이용)
- *   2024.10.29  권태성          API 수신 데이터 등록 시 기본 사용여부 값 적용(insertAdministCodeRecptn())
- *   2025.07.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryImport(불필요한 import문 선언)
- *   2025.07.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-InefficientStringBuffering(StringBuffer 함수내에서 비문자열 연산 이용하여 직접 결합하는 코드 사용을 탐지. append 메소드 사용을 권장)
- *   2025.07.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.07.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AssignmentInOperand(피연산자내에 할당문이 사용됨. 해당 코드를 복잡하고 가독성이 떨어지게 만듬)
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.10.07  ?닿린??         finally臾몄쓣 異붽??섏뿬 ?먮윭???먯썝諛섑솚?????덈룄濡?異붽?
+ *   2017.02.08  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2023.08.10  ?뺤쭊??         踰뺤젙?숈퐫?쒖닔??諛⑹떇 ?섏젙(怨듦났?곗씠?고룷???댁슜)
+ *   2024.10.29  沅뚰깭??         API ?섏떊 ?곗씠???깅줉 ??湲곕낯 ?ъ슜?щ? 媛??곸슜(insertAdministCodeRecptn())
+ *   2025.07.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryImport(遺덊븘?뷀븳 import臾??좎뼵)
+ *   2025.07.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-InefficientStringBuffering(StringBuffer ?⑥닔?댁뿉??鍮꾨Ц?먯뿴 ?곗궛 ?댁슜?섏뿬 吏곸젒 寃고빀?섎뒗 肄붾뱶 ?ъ슜???먯?. append 硫붿냼???ъ슜??沅뚯옣)
+ *   2025.07.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.07.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AssignmentInOperand(?쇱뿰?곗옄?댁뿉 ?좊떦臾몄씠 ?ъ슜?? ?대떦 肄붾뱶瑜?蹂듭옟?섍퀬 媛?낆꽦???⑥뼱吏寃?留뚮벉)
  *
  *      </pre>
  */
@@ -70,7 +70,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	private EgovIdGnrService idgenService;
 
 	/**
-	 * 법정동코드수신을 처리한다.
+	 * 踰뺤젙?숈퐫?쒖닔?좎쓣 泥섎━?쒕떎.
 	 */
 	@Override
 	public void insertAdministCodeRecptn() throws Exception {
@@ -78,26 +78,26 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		for (HashMap<String, String> row : list) {
 			AdministCodeRecptn administCodeRecptn = new AdministCodeRecptn();
 
-			// 날짜 >> adpt_de 생성일 x 20000101
+			// ?좎쭨 >> adpt_de ?앹꽦??x 20000101
 			administCodeRecptn.setOccrrDe(ObjectUtils.isEmpty(row.get("adptDe")) ? "20000101" : row.get("adptDe"));
 
-			administCodeRecptn.setAdministZoneSe("1"); // 행정구역부분 1 법정동 2 행정동
-			administCodeRecptn.setAdministZoneCode(row.get("regionCd")); // 행정구역코드 >> region_cd
-			administCodeRecptn.setOpertSn(idgenService.getNextIntegerId()); // 작업일련번호 >> idgenService.getNextIntegerId()
-			administCodeRecptn.setChangeSeCode("01"); // 변경구분코드 01 코드생성 02 코드변경 03 코드말소 >> 01 / 02
-			administCodeRecptn.setProcessSe("00"); // 작업구분 00 수신처리 01 처리완료 11 생성오류 12 변경오류 13 말소오류>> 00
-			administCodeRecptn.setAdministZoneNm(row.get("locataddNm")); // 행정구역명 >> locatadd_nm 지역주소명
-			administCodeRecptn.setLowestAdministZoneNm(row.get("locallowNm")); // 최하위행정구역명 >> locallow_nm 최하위지역명
-			administCodeRecptn.setCtprvnCode(row.get("sidoCd")); // 시도코드 >> sido_cd 시도코드
-			administCodeRecptn.setSignguCode(row.get("sggCd")); // 시군구코드 >> sgg_cd 시군구코드
-			administCodeRecptn.setEmdCode(row.get("umdCd")); // 읍면동코드 >> umd_cd 읍면동코드
-			administCodeRecptn.setLiCode(row.get("riCd")); // 리코드 >> ri_cd 리코드
-			administCodeRecptn.setCreatDe(row.get("adptDe")); // 생성일자 >> adpt_de 생성일
-			administCodeRecptn.setAblDe(""); // 폐지일자 >> x
-			administCodeRecptn.setAblEnnc(""); // 폐지유무 >> x
-			administCodeRecptn.setFrstRegisterId("Batch System"); // 등록자 Batch System
-			administCodeRecptn.setLastUpdusrId("Batch System"); // 수정자 Batch System
-			administCodeRecptn.setUseAt("Y"); // 사용여부 >> Y
+			administCodeRecptn.setAdministZoneSe("1"); // ?됱젙援ъ뿭遺遺?1 踰뺤젙??2 ?됱젙??
+			administCodeRecptn.setAdministZoneCode(row.get("regionCd")); // ?됱젙援ъ뿭肄붾뱶 >> region_cd
+			administCodeRecptn.setOpertSn(idgenService.getNextIntegerId()); // ?묒뾽?쇰젴踰덊샇 >> idgenService.getNextIntegerId()
+			administCodeRecptn.setChangeSeCode("01"); // 蹂寃쎄뎄遺꾩퐫??01 肄붾뱶?앹꽦 02 肄붾뱶蹂寃?03 肄붾뱶留먯냼 >> 01 / 02
+			administCodeRecptn.setProcessSe("00"); // ?묒뾽援щ텇 00 ?섏떊泥섎━ 01 泥섎━?꾨즺 11 ?앹꽦?ㅻ쪟 12 蹂寃쎌삤瑜?13 留먯냼?ㅻ쪟>> 00
+			administCodeRecptn.setAdministZoneNm(row.get("locataddNm")); // ?됱젙援ъ뿭紐?>> locatadd_nm 吏??＜?뚮챸
+			administCodeRecptn.setLowestAdministZoneNm(row.get("locallowNm")); // 理쒗븯?꾪뻾?뺢뎄??챸 >> locallow_nm 理쒗븯?꾩???챸
+			administCodeRecptn.setCtprvnCode(row.get("sidoCd")); // ?쒕룄肄붾뱶 >> sido_cd ?쒕룄肄붾뱶
+			administCodeRecptn.setSignguCode(row.get("sggCd")); // ?쒓뎔援ъ퐫??>> sgg_cd ?쒓뎔援ъ퐫??
+			administCodeRecptn.setEmdCode(row.get("umdCd")); // ?띾㈃?숈퐫??>> umd_cd ?띾㈃?숈퐫??
+			administCodeRecptn.setLiCode(row.get("riCd")); // 由ъ퐫??>> ri_cd 由ъ퐫??
+			administCodeRecptn.setCreatDe(row.get("adptDe")); // ?앹꽦?쇱옄 >> adpt_de ?앹꽦??
+			administCodeRecptn.setAblDe(""); // ?먯??쇱옄 >> x
+			administCodeRecptn.setAblEnnc(""); // ?먯??좊Т >> x
+			administCodeRecptn.setFrstRegisterId("Batch System"); // ?깅줉??Batch System
+			administCodeRecptn.setLastUpdusrId("Batch System"); // ?섏젙??Batch System
+			administCodeRecptn.setUseAt("Y"); // ?ъ슜?щ? >> Y
 
 			AdministCodeRecptnVO vo = new AdministCodeRecptnVO();
 			vo.setSearchCondition("CodeList");
@@ -114,7 +114,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드를 수신하기 위한 요청을 설정한다.
+	 * 踰뺤젙?숈퐫?쒕? ?섏떊?섍린 ?꾪븳 ?붿껌???ㅼ젙?쒕떎.
 	 */
 	public static String requestString(int pageNo, int numOfRows) throws IOException {
 		String serviceKey = EgovProperties.getProperty("Globals.data.serviceKey");
@@ -129,35 +129,35 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 		sb.append("=");
 		sb.append(serviceKey);
 
-		// 페이지번호
+		// ?섏씠吏踰덊샇
 		sb.append("&");
 		sb.append(URLEncoder.encode("pageNo", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode(Integer.toString(pageNo), "UTF-8"));
 
-		// 한 페이지 결과 수
+		// ???섏씠吏 寃곌낵 ??
 		sb.append("&");
 		sb.append(URLEncoder.encode("numOfRows", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode(Integer.toString(numOfRows), "UTF-8"));
 
-		// 요청자료형식(XML/JSON) Default: XML
+		// ?붿껌?먮즺?뺤떇(XML/JSON) Default: XML
 		sb.append("&");
 		sb.append(URLEncoder.encode("type", "UTF-8"));
 		sb.append("=");
 		sb.append(URLEncoder.encode("JSON", "UTF-8"));
 
-		// 지역주소명(옵션)
+		// 吏??＜?뚮챸(?듭뀡)
 		sb.append("&");
 		sb.append(URLEncoder.encode("locatadd_nm", "UTF-8"));
 		sb.append("=");
-		sb.append(URLEncoder.encode("서울특별시", "UTF-8"));
+		sb.append(URLEncoder.encode("?쒖슱?밸퀎??, "UTF-8"));
 
 		return sb.toString();
 	}
 
 	/**
-	 * 법정동코드 페이지수를 확인한다.
+	 * 踰뺤젙?숈퐫???섏씠吏?섎? ?뺤씤?쒕떎.
 	 */
 	public static int numberOfRows() throws IOException, ParseException {
 		int pageNo = 1;
@@ -196,7 +196,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드를 수신한다.
+	 * 踰뺤젙?숈퐫?쒕? ?섏떊?쒕떎.
 	 */
 	public static List<HashMap<String, String>> apiLink() throws IOException, ParseException {
 		List<HashMap<String, String>> administCodeList = new ArrayList<>();
@@ -262,7 +262,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드 상세내역을 조회한다.
+	 * 踰뺤젙?숈퐫???곸꽭?댁뿭??議고쉶?쒕떎.
 	 */
 	@Override
 	public AdministCodeRecptn selectAdministCodeDetail(AdministCodeRecptn administCodeRecptn) throws Exception {
@@ -271,7 +271,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드수신 목록을 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectAdministCodeRecptnList(AdministCodeRecptnVO searchVO) throws Exception {
@@ -279,7 +279,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드수신 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectAdministCodeRecptnListTotCnt(AdministCodeRecptnVO searchVO) throws Exception {
@@ -287,7 +287,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드 목록을 조회한다.
+	 * 踰뺤젙?숈퐫??紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<EgovMap> selectAdministCodeList(AdministCodeRecptnVO searchVO) throws Exception {
@@ -295,7 +295,7 @@ public class EgovAdministCodeRecptnServiceImpl extends EgovAbstractServiceImpl
 	}
 
 	/**
-	 * 법정동코드 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫??珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectAdministCodeListTotCnt(AdministCodeRecptnVO searchVO) throws Exception {

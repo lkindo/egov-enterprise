@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.09.09   	서준식     	 	테이블 표준화에 따른 수정사항 반영
-  							INDVDL_INFO_POLICY_AGRE_AT 컬럼명에 INDVDL_INFOSCR_POLICY_AGRE_AT Alias 추가
-  2011.10.06	정진오 		보안 취약점 점검사항 반영 $->#변경
+  2011.09.09   	?쒖???    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							INDVDL_INFO_POLICY_AGRE_AT 而щ읆紐낆뿉 INDVDL_INFOSCR_POLICY_AGRE_AT Alias 異붽?
+  2011.10.06	?뺤쭊??		蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="IndvdlInfoPolicy">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="IndvdlInfoPolicyVO" type="egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy">
 		<result property="indvdlInfoId" column="INDVDL_INFO_POLICY_ID"/>
 		<result property="indvdlInfoNm" column="INDVDL_INFO_POLICY_NM"/>
@@ -22,7 +22,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/> 			
 	</resultMap> 
 	
-	<!-- 개인정보보호정책확인::목록조회 게시물정보 -->
+	<!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectIndvdlInfoPolicy" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT
@@ -51,7 +51,7 @@
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	
 	</select>
-	<!-- 개인정보보호정책확인::목록조회_게시물 총개수  -->
+	<!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectIndvdlInfoPolicyCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -69,7 +69,7 @@
 	 </if>
 	</select>
 	
-    <!-- 개인정보보호정책확인::삭제  -->
+    <!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::??젣  -->
 	<delete id="deleteIndvdlInfoPolicy">
 		
 			DELETE FROM COMTNINDVDLINFOPOLICY 
@@ -77,7 +77,7 @@
 		
 	</delete>
 
-	<!-- 개인정보보호정책확인::수정  -->
+	<!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::?섏젙  -->
 	<update id="updateIndvdlInfoPolicy">
 	 
 	UPDATE COMTNINDVDLINFOPOLICY 
@@ -91,7 +91,7 @@
 	 
 	</update>
 	
-	<!-- 개인정보보호정책확인::상세보기 -->
+	<!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::?곸꽭蹂닿린 -->
 	<select id="selectIndvdlInfoPolicyDetail" resultMap="IndvdlInfoPolicyVO">
 	SELECT 
 		A.INDVDL_INFO_POLICY_ID,
@@ -107,7 +107,7 @@
 		AND A.INDVDL_INFO_POLICY_ID=#{indvdlInfoId}
 	</select>
 
-	<!-- 개인정보보호정책확인::입력  -->
+	<!-- 媛쒖씤?뺣낫蹂댄샇?뺤콉?뺤씤::?낅젰  -->
 	<insert id="insertIndvdlInfoPolicy">	     
 	 
 	

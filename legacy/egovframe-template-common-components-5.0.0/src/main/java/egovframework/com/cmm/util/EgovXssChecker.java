@@ -8,20 +8,20 @@ import egovframework.com.cmm.exception.EgovXssException;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * EgovXssChecker 클래스
+ * EgovXssChecker ?대옒??
  *
- * @author 장동한
+ * @author ?λ룞??
  * @since 2016.10.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  -------      -------------  ----------------------
- *   2016.10.17  장동한           최초 생성
- *   2017.03.03     조성원 	  시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-209]
+ *   2016.10.17  ?λ룞??          理쒖큹 ?앹꽦
+ *   2017.03.03     議곗꽦??	  ?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-209]
  * </pre>
  */
 
@@ -30,32 +30,32 @@ public class EgovXssChecker {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovXssChecker.class);
 
 	/**
-	 * 사용자에 대한 크로스사이트스크립트(Xss) 확인한다.
-	 * 수정, 상세조회, 삭제시 사용
+	 * ?ъ슜?먯뿉 ????щ줈?ㅼ궗?댄듃?ㅽ겕由쏀듃(Xss) ?뺤씤?쒕떎.
+	 * ?섏젙, ?곸꽭議고쉶, ??젣???ъ슜
 	 * @param uniqId Stirng
 	 * @return boolean
 	 * @exception IllegalArgumentException
 	 */
 	public static boolean checkerUserXss(HttpServletRequest request, String sUniqId) throws Exception {
 
-		//@ 공통모듈을 이용한 권한체크
+		//@ 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (loginVO != null) {
-			// 221116	김혜준	2022 시큐어코딩 조치
+			// 221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 			LOGGER.debug("@Step1. XSS Check uniqId  : {}", sUniqId);
 			LOGGER.debug("Step2. XSS Session uniqId  : {}", loginVO.getId());
 			LOGGER.debug("Step3. XSS Session getUniqId  : {}", loginVO.getUniqId());
 			LOGGER.debug("Step4. XSS Session getAuthorities  : {}", EgovUserDetailsHelper.getAuthorities());
 
-			//체크 값에 대한 무결성 체크
+			//泥댄겕 媛믪뿉 ???臾닿껐??泥댄겕
 			//			if(sUniqId == null || (loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId())) == null){
 			//				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");
-			//			} else if (loginVO.getUniqId().equals("")) { // KISA 보안약점 조치 (2018-12-11, 신용호)
+			//			} else if (loginVO.getUniqId().equals("")) { // KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
 			//				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");
 			//			}
 			//
-			//			//사용자에에 대한 Xss 체크
+			//			//?ъ슜?먯뿉?????Xss 泥댄겕
 			//			if(!sUniqId.equals(loginVO.getUniqId())){
 			//				throw new EgovXssException("XSS00002", "errors.xss.checkerUser");
 			//			}
@@ -64,7 +64,7 @@ public class EgovXssChecker {
 				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");
 			}
 
-			//사용자에에 대한 Xss 체크
+			//?ъ슜?먯뿉?????Xss 泥댄겕
 			if (!sUniqId.equals(loginVO.getUniqId())) {
 				throw new EgovXssException("XSS00002", "errors.xss.checkerUser");
 			}

@@ -33,23 +33,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 일지관리를 처리하는 Controller Class 구현
+ * ?쇱?愿由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.12.09  신용호          KISA 보안약점 조치 (위험한 형식 파일 업로드)
- *   2020.10.28  신용호          파일 업로드 수정 (multiRequest.getFiles)
- *   2025.06.10  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.12.09  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (?꾪뿕???뺤떇 ?뚯씪 ?낅줈??
+ *   2020.10.28  ?좎슜??         ?뚯씪 ?낅줈???섏젙 (multiRequest.getFiles)
+ *   2025.06.10  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -69,7 +69,7 @@ public class EgovDiaryManageController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -77,7 +77,7 @@ public class EgovDiaryManageController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 일지관리 목록을 조회한다.
+	 * ?쇱?愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -86,7 +86,7 @@ public class EgovDiaryManageController {
 	 * @return "egovframework/com/cop/smt/dsm/EgovDiaryManageList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "일지관리", order = 340, gid = 40)
+	@IncludedInfo(name = "?쇱?愿由?, order = 340, gid = 40)
 	@RequestMapping(value = "/cop/smt/dsm/EgovDiaryManageList.do")
 	public String egovDiaryManageList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, DiaryManageVO diaryManageVO, ModelMap model) throws Exception {
@@ -128,7 +128,7 @@ public class EgovDiaryManageController {
 	}
 
 	/**
-	 * 일지관리 목록을 상세조회 조회한다.
+	 * ?쇱?愿由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param diaryManageVO
@@ -156,7 +156,7 @@ public class EgovDiaryManageController {
 	}
 
 	/**
-	 * 일지관리를 수정한다. / 초기페이지
+	 * ?쇱?愿由щ? ?섏젙?쒕떎. / 珥덇린?섏씠吏
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -172,14 +172,14 @@ public class EgovDiaryManageController {
 			@RequestParam Map<?, ?> commandMap, DiaryManageVO diaryManageVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/dsm/EgovDiaryManageModify";
@@ -188,7 +188,7 @@ public class EgovDiaryManageController {
 
 		model.addAttribute("diaryManageVO", egovDiaryManageService.selectDiaryManageDetail(diaryManageVO));
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -199,7 +199,7 @@ public class EgovDiaryManageController {
 	}
 
 	/**
-	 * 일지관리를 수정한다. / 수정처리작업
+	 * ?쇱?愿由щ? ?섏젙?쒕떎. / ?섏젙泥섎━?묒뾽
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -216,17 +216,17 @@ public class EgovDiaryManageController {
 			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -243,13 +243,13 @@ public class EgovDiaryManageController {
 				return sLocationUrl;
 			}
 			/*
-			 * ***************************************************************** // 아이디설정
+			 * ***************************************************************** // ?꾩씠?붿꽕??
 			 */
 			diaryManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			diaryManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			/*
-			 * ***************************************************************** // 첨부파일 관련
-			 * ID 생성 start....
+			 * ***************************************************************** // 泥⑤??뚯씪 愿??
+			 * ID ?앹꽦 start....
 			 */
 			String atchFileId = diaryManageVO.getAtchFileId();
 
@@ -262,8 +262,8 @@ public class EgovDiaryManageController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DIARY_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					diaryManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					diaryManageVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					FileVO fvo = new FileVO();
@@ -275,8 +275,8 @@ public class EgovDiaryManageController {
 			}
 
 			/*
-			 * ***************************************************************** // 일지정보
-			 * 업데이트
+			 * ***************************************************************** // ?쇱??뺣낫
+			 * ?낅뜲?댄듃
 			 */
 			egovDiaryManageService.updateDiaryManage(diaryManageVO);
 			sLocationUrl = "redirect:/cop/smt/dsm/EgovDiaryManageList.do";
@@ -286,7 +286,7 @@ public class EgovDiaryManageController {
 	}
 
 	/**
-	 * 일지관리를 등록한다. / 등록 초기페이지
+	 * ?쇱?愿由щ? ?깅줉?쒕떎. / ?깅줉 珥덇린?섏씠吏
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -302,17 +302,17 @@ public class EgovDiaryManageController {
 			@RequestParam Map<?, ?> commandMap, @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -325,7 +325,7 @@ public class EgovDiaryManageController {
 	}
 
 	/**
-	 * 일지관리를 등록한다. / 등록처리작업
+	 * ?쇱?愿由щ? ?깅줉?쒕떎. / ?깅줉泥섎━?묒뾽
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -342,17 +342,17 @@ public class EgovDiaryManageController {
 			@Valid @ModelAttribute("diaryManageVO") DiaryManageVO diaryManageVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -370,7 +370,7 @@ public class EgovDiaryManageController {
 				return sLocationUrl;
 			}
 
-			// 첨부파일 관련 첨부파일ID 생성
+			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
@@ -379,13 +379,13 @@ public class EgovDiaryManageController {
 
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "DIARY_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+				atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 			}
 
-			// 리턴받은 첨부파일ID를 셋팅한다..
+			// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
 			diaryManageVO.setAtchFileId(atchFileId);
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			diaryManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			diaryManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 

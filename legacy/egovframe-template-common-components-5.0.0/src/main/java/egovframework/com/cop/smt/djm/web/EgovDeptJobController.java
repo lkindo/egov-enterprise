@@ -39,30 +39,30 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 부서업무에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 遺?쒖뾽臾댁뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 부서업무에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 부서업무의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 遺?쒖뾽臾댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 遺?쒖뾽臾댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 장철호
- * @since 28-6-2010 오전 10:59:05
+ * @author ?μ쿋??
+ * @since 28-6-2010 ?ㅼ쟾 10:59:05
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.28  장철호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.12.09  신용호          KISA 보안약점 조치 (위험한 형식 파일 업로드)
- *   2020.10.27  신용호          파일 업로드 수정 (multiRequest.getFiles), 널(null) 값 체크
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.06.10  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.06.28  ?μ쿋??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.12.09  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (?꾪뿕???뺤떇 ?뚯씪 ?낅줈??
+ *   2020.10.27  ?좎슜??         ?뚯씪 ?낅줈???섏젙 (multiRequest.getFiles), ??null) 媛?泥댄겕
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.06.10  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -81,7 +81,7 @@ public class EgovDeptJobController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-    // 첨부파일 관련
+    // 泥⑤??뚯씪 愿??
 	@Resource(name="EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -91,7 +91,7 @@ public class EgovDeptJobController {
 	// Logger log = Logger.getLogger(this.getClass());
 
 	/**
-	 * 담당자 정보에 대한 팝업 목록을 조회한다.
+	 * ?대떦???뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param ChargerVO
 	 * @return String
@@ -105,7 +105,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 담당자 정보에 대한 목록을 조회한다.
+	 * ?대떦???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param ChargerVO
 	 * @return String
@@ -142,7 +142,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서 정보에 대한 팝업 목록을 조회한다.
+	 * 遺???뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param DeptVO
 	 * @return String
@@ -155,7 +155,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서 정보에 대한 목록을 조회한다.
+	 * 遺???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param DeptVO
 	 * @return String
@@ -190,7 +190,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보에 대한 팝업 목록을 조회한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param DeptVO
 	 * @return String
@@ -204,7 +204,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보에 대한 목록을 조회한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param DeptJobBxVO
 	 * @return String
@@ -212,7 +212,7 @@ public class EgovDeptJobController {
 	 * @param deptJobBxVO
 	 */
 	@SuppressWarnings("unchecked")
-	@IncludedInfo(name = "부서업무함관리", order = 400, gid = 40)
+	@IncludedInfo(name = "遺?쒖뾽臾댄븿愿由?, order = 400, gid = 40)
 	@RequestMapping("/cop/smt/djm/selectDeptJobBxList.do")
 	public String selectDeptJobBxList(@ModelAttribute("searchVO") DeptJobBxVO deptJobBxVO, ModelMap model)
 			throws Exception {
@@ -243,7 +243,7 @@ public class EgovDeptJobController {
 
 		model.addAttribute("resultList", map.get("resultList"));
 		model.addAttribute("resultCnt", map.get("resultCnt"));
-		// KISA 보안약점 조치 - 널(null) 값 체크
+		// KISA 蹂댁븞?쎌젏 議곗튂 - ??null) 媛?泥댄겕
 		if (list == null) {
 			model.addAttribute("resultNum", 0);
 		} else {
@@ -255,7 +255,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보를 조회한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param DeptJobBxVO
 	 * @return String
@@ -272,7 +272,7 @@ public class EgovDeptJobController {
 //	}
 
 	/**
-	 * 부서업무함 정보의 등록화면으로 이동한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫???깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param DeptJobBx
 	 * @return String
@@ -284,7 +284,7 @@ public class EgovDeptJobController {
 			throws Exception {
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobBxRegist";
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -295,7 +295,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 등록시 표시순서를 조회한다.
+	 * 遺?쒖뾽臾댄븿 ?깅줉???쒖떆?쒖꽌瑜?議고쉶?쒕떎.
 	 * 
 	 * @param DeptJobBx
 	 * @return String
@@ -312,7 +312,7 @@ public class EgovDeptJobController {
 			sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobBxUpdt";
 		}
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -324,7 +324,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보의 수정화면으로 이동한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫???섏젙?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param DeptJobBx
 	 * @return String
@@ -334,7 +334,7 @@ public class EgovDeptJobController {
 	@RequestMapping("/cop/smt/djm/modifyDeptJobBx.do")
 	public String modifyDeptJobBx(@ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -353,7 +353,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보를 수정한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜??섏젙?쒕떎.
 	 * 
 	 * @param DeptJobBxVO
 	 * @return String
@@ -379,7 +379,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보의 표시순서를 수정한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎.
 	 * 
 	 * @param DeptJobBx
 	 * @return String
@@ -406,7 +406,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보를 등록한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param DeptJobBxVO
 	 * @return String
@@ -416,14 +416,14 @@ public class EgovDeptJobController {
 	@RequestMapping("/cop/smt/djm/insertDeptJobBx.do")
 	public String insertDeptJobBx(@Valid @ModelAttribute("deptJobBxVO") DeptJobBxVO deptJobBxVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobBxRegist";
@@ -432,11 +432,11 @@ public class EgovDeptJobController {
 			return sLocationUrl;
 		}
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		deptJobBxVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		deptJobBxVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-		// 부서내 부서업무함명 중복체크
+		// 遺?쒕궡 遺?쒖뾽臾댄븿紐?以묐났泥댄겕
 		if (deptJobService.selectDeptJobBxCheck(deptJobBxVO) > 0) {
 			model.addAttribute("deptJobBxNmDuplicated", "true");
 			sLocationUrl = "forward:/cop/smt/djm/addDeptJobBx.do";
@@ -448,7 +448,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무함 정보를 삭제한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param DeptJobBx
 	 * @return String
@@ -457,7 +457,7 @@ public class EgovDeptJobController {
 	 */
 	@RequestMapping("/cop/smt/djm/deleteDeptJobBx.do")
 	public String deleteDeptJobBx(@ModelAttribute("deptJobBxVO") DeptJobBx deptJobBx, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -468,19 +468,19 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보에 대한 목록을 조회한다.
+	 * 遺?쒖뾽臾??뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param DeptJobVO
 	 * @return String
 	 *
 	 * @param deptJobVO
 	 */
-	@IncludedInfo(name = "부서업무정보", order = 401, gid = 40)
+	@IncludedInfo(name = "遺?쒖뾽臾댁젙蹂?, order = 401, gid = 40)
 	@RequestMapping("/cop/smt/djm/selectDeptJobList.do")
 	public String selectDeptJobList(@ModelAttribute("searchVO") DeptJobVO deptJobVO, ModelMap model) throws Exception {
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -516,7 +516,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보의 등록화면으로 이동한다.
+	 * 遺?쒖뾽臾??뺣낫???깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param DeptJob
 	 * @return String
@@ -527,7 +527,7 @@ public class EgovDeptJobController {
 	public String addDeptJob(@ModelAttribute("deptJobVO") DeptJobVO deptJobVO, ModelMap model) throws Exception {
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobRegist";
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -538,7 +538,7 @@ public class EgovDeptJobController {
 		deptJobVO.setDeptNm(deptJobService.selectDept(deptJobVO.getSearchDeptId()));
 		deptJobVO.setDeptJobBxId(deptJobVO.getSearchDeptJobBxId());
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -549,7 +549,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보의 수정화면으로 이동한다.
+	 * 遺?쒖뾽臾??뺣낫???섏젙?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param DeptJob
 	 * @return String
@@ -558,7 +558,7 @@ public class EgovDeptJobController {
 	 */
 	@RequestMapping("/cop/smt/djm/modifyDeptJob.do")
 	public String modifyDeptJob(@ModelAttribute("deptJobVO") DeptJobVO deptJobVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -577,7 +577,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보를 조회한다.
+	 * 遺?쒖뾽臾??뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param DeptJobVO
 	 * @return String
@@ -590,7 +590,7 @@ public class EgovDeptJobController {
 		model.addAttribute("deptJob", deptJob);
 
 		/*
-		 * 공통코드 우선순위 조회
+		 * 怨듯넻肄붾뱶 ?곗꽑?쒖쐞 議고쉶
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM059");
@@ -601,7 +601,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보를 수정한다.
+	 * 遺?쒖뾽臾??뺣낫瑜??섏젙?쒕떎.
 	 * 
 	 * @param DeptJob
 	 * @return String
@@ -614,7 +614,7 @@ public class EgovDeptJobController {
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -627,10 +627,10 @@ public class EgovDeptJobController {
 		}
 
 		/*
-		 * ***************************************************************** // 첨부파일 관련
-		 * ID 생성 start....
+		 * ***************************************************************** // 泥⑤??뚯씪 愿??
+		 * ID ?앹꽦 start....
 		 */
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		String atchFileId = deptJobVO.getAtchFileId();
 
 		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -641,8 +641,8 @@ public class EgovDeptJobController {
 			if ("N".equals(atchFileAt)) {
 				List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
 				atchFileId = fileMngService.insertFileInfs(fvoList);
-				// 첨부파일 ID 셋팅
-				deptJobVO.setAtchFileId(atchFileId); // 첨부파일 ID
+				// 泥⑤??뚯씪 ID ?뗮똿
+				deptJobVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			} else {
 				FileVO fvo = new FileVO();
@@ -660,7 +660,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보를 등록한다.
+	 * 遺?쒖뾽臾??뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param DeptJob
 	 * @return String
@@ -671,21 +671,21 @@ public class EgovDeptJobController {
 	public String insertDeptJob(final MultipartHttpServletRequest multiRequest,
 			@Valid @ModelAttribute("deptJobVO") DeptJobVO deptJobVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/djm/EgovDeptJobRegist";
 
 		if (bindingResult.hasErrors()) {
 
-			// 파일업로드 제한
+			// ?뚯씪?낅줈???쒗븳
 			String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 			String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -695,7 +695,7 @@ public class EgovDeptJobController {
 			return sLocationUrl;
 		}
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -704,13 +704,13 @@ public class EgovDeptJobController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		deptJobVO.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		deptJobVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		deptJobVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		deptJobVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -721,7 +721,7 @@ public class EgovDeptJobController {
 	}
 
 	/**
-	 * 부서업무 정보를 삭제한다.
+	 * 遺?쒖뾽臾??뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param DeptJob
 	 * @return String
@@ -730,22 +730,22 @@ public class EgovDeptJobController {
 	 */
 	@RequestMapping("/cop/smt/djm/deleteDeptJob.do")
 	public String deleteDeptJob(@ModelAttribute("deptJobVO") DeptJob deptJob, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = deptJob.getAtchFileId();
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		deptJobService.deleteDeptJob(deptJob);
 		return "forward:/cop/smt/djm/selectDeptJobList.do";

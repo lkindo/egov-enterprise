@@ -11,19 +11,19 @@ import egovframework.com.cmm.service.EgovProperties;
 import egovframework.com.sym.bat.service.BatchOpert;
 
 /**
- * BatchOpert클래스에대한 validator 클래스.
- * common validator가 처리하지 못하는 부분 검사.
+ * BatchOpert?대옒?ㅼ뿉???validator ?대옒??
+ * common validator媛 泥섎━?섏? 紐삵븯??遺遺?寃??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -------			--------    ---------------------------
- *  2010.08.20		김진만		최초 생성
- *  2023.06.09		김수용		NSR 보안조치 (사용자 접근 폴더 제한 기능 추가)
+ *  2010.08.20		源吏꾨쭔		理쒖큹 ?앹꽦
+ *  2023.06.09		源?섏슜		NSR 蹂댁븞議곗튂 (?ъ슜???묎렐 ?대뜑 ?쒗븳 湲곕뒫 異붽?)
  * </pre>
  */
 @Component("batchOpertValidator")
@@ -44,22 +44,22 @@ public class BatchOpertValidator implements Validator {
 	 */
 	@Override
 	public void validate(Object obj, Errors errors) {
-		// 배치프로그램으로 지정된 값이 파일로 존재하는지 검사한다.
+		// 諛곗튂?꾨줈洹몃옩?쇰줈 吏?뺣맂 媛믪씠 ?뚯씪濡?議댁옱?섎뒗吏 寃?ы븳??
 		BatchOpert batchOpert = (BatchOpert) obj;
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		String filePath = EgovProperties.getProperty("SHELL.batchShellFolder") + batchOpert.getBatchProgrm();
 		File file = new File(EgovWebUtil.filePathBlackList(filePath));
 		try {
 			if (!file.exists()) {
-				errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, "배치프로그램 {0}이  존재하지 않습니다.");
+				errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, "諛곗튂?꾨줈洹몃옩 {0}?? 議댁옱?섏? ?딆뒿?덈떎.");
 				return;
 			}
 			if (!file.isFile()) {
-				errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, "배치프로그램 {0}이 파일이 아닙니다.");
+				errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, "諛곗튂?꾨줈洹몃옩 {0}???뚯씪???꾨떃?덈떎.");
 				return;
 			}
 		} catch (SecurityException se) {
-			errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, " 배치프로그램 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
+			errors.rejectValue("batchProgrm", "errors.batchProgrm", new Object[] { batchOpert.getBatchProgrm() }, " 諛곗튂?꾨줈洹몃옩 {0}???묎렐?????놁뒿?덈떎. ?뚯씪?묎렐沅뚰븳???뺤씤?섏꽭??");
 		}
 
 	}

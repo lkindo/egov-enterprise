@@ -47,7 +47,7 @@ class EgovAuthenticationProviderTest {
     void setUp() {
         validLoginVO = new LoginVO();
         validLoginVO.setId("testUser");
-        validLoginVO.setName("?�스???�용??);
+        validLoginVO.setName("?스???용??");
         validLoginVO.setUniqId("USR00001");
         validLoginVO.setEmail("test@example.com");
         validLoginVO.setPassword("encodedPassword");
@@ -55,7 +55,7 @@ class EgovAuthenticationProviderTest {
 
         mockUser = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("N") // Not locked
@@ -63,7 +63,7 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�공 - ?�효???�용???�보")
+    @DisplayName("?증 ?공 - ?효???용???보")
     void authenticate_success_withValidCredentials() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -86,14 +86,14 @@ class EgovAuthenticationProviderTest {
 
         CustomUserDetails userDetails = (CustomUserDetails) result.getPrincipal();
         assertThat(userDetails.getUsername()).isEqualTo("testUser");
-        assertThat(userDetails.getUser().getUserNm()).isEqualTo("?�스???�용??);
+        assertThat(userDetails.getUser().getUserNm()).isEqualTo("?스???용??");
         assertThat(userDetails.getAuthorities())
                 .extracting(org.springframework.security.core.GrantedAuthority::getAuthority)
                 .contains("ROLE_USER");
     }
 
     @Test
-    @DisplayName("?�증 ?�패 - ?�용??ID가 null??경우")
+    @DisplayName("?증 ?패 - ?용??ID가 null??경우")
     void authenticate_fail_withNullUserId() throws Exception {
         // Given
         LoginVO invalidLoginVO = new LoginVO();
@@ -109,7 +109,7 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�패 - ?�용??ID가 �?문자?�인 경우")
+    @DisplayName("?증 ?패 - ?용??ID가 ?문자?인 경우")
     void authenticate_fail_withEmptyUserId() throws Exception {
         // Given
         LoginVO invalidLoginVO = new LoginVO();
@@ -125,7 +125,7 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�패 - 존재?��? ?�는 ?�용??)
+    @DisplayName("?증 ?패 - 존재?? ?는 ?용??")
     void authenticate_fail_withNonExistentUser() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class))).thenReturn(validLoginVO);
@@ -140,12 +140,12 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�패 - ?�긴 계정")
+    @DisplayName("?증 ?패 - ?긴 계정")
     void authenticate_fail_withLockedAccount() throws Exception {
         // Given
         User lockedUser = User.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?스???용??")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .lockAt("Y") // Locked
@@ -163,7 +163,7 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�패 - 로그???�비???�외 발생")
+    @DisplayName("?증 ?패 - 로그???비???외 발생")
     void authenticate_fail_withLoginServiceException() throws Exception {
         // Given
         when(loginService.actionLogin(any(LoginVO.class)))
@@ -178,14 +178,14 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("supports - UsernamePasswordAuthenticationToken 지??)
+    @DisplayName("supports - UsernamePasswordAuthenticationToken 지??")
     void supports_usernamePasswordAuthenticationToken() {
         // When & Then
         assertThat(authenticationProvider.supports(UsernamePasswordAuthenticationToken.class)).isTrue();
     }
 
     @Test
-    @DisplayName("supports - ?�른 Authentication ?�??미�???)
+    @DisplayName("supports - ?른 Authentication ???미???")
     void supports_otherAuthenticationType() {
         // When & Then
         assertThat(authenticationProvider.supports(org.springframework.security.core.Authentication.class)).isFalse();

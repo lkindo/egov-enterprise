@@ -6,18 +6,18 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
  *
- * 연계메시지에 관한 서비스 인터페이스 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎硫붿떆吏??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -25,88 +25,88 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 public interface EgovCntcMessageService {
 
 	/**
-	 * 연계메시지를 삭제한다.
+	 * ?곌퀎硫붿떆吏瑜???젣?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */
 	void deleteCntcMessage(CntcMessage cntcMessage) throws Exception;
 
 	/**
-	 * 연계메시지 항목을 삭제한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ????젣?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */
 	void deleteCntcMessageItem(CntcMessageItem cntcMessageItem) throws Exception;
 
 	/**
-	 * 연계메시지를 등록한다.
+	 * ?곌퀎硫붿떆吏瑜??깅줉?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */
 	void insertCntcMessage(CntcMessage cntcMessage) throws Exception;
 
 	/**
-	 * 연계메시지 항목을 등록한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ???깅줉?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */
 	void insertCntcMessageItem(CntcMessageItem cntcMessageItem) throws Exception;
 
 	/**
-	 * 연계메시지 상세항목을 조회한다.
+	 * ?곌퀎硫붿떆吏 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cntcMessage
-	 * @return CntcMessage(연계메시지)
+	 * @return CntcMessage(?곌퀎硫붿떆吏)
 	 * @throws Exception
 	 */
 	CntcMessage selectCntcMessageDetail(CntcMessage cntcMessage) throws Exception;
 
 	/**
-	 * 연계메시지항목 상세항목을 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param cntcMessage
-	 * @return CntcMessage(연계메시지)
+	 * @return CntcMessage(?곌퀎硫붿떆吏)
 	 * @throws Exception
 	 */
 	CntcMessageItem selectCntcMessageItemDetail(CntcMessageItem cntcMessageItem) throws Exception;
 
 	/**
-	 * 연계메시지 목록을 조회한다.
+	 * ?곌퀎硫붿떆吏 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(연계메시지 목록)
+	 * @return List(?곌퀎硫붿떆吏 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectCntcMessageList(CntcMessageVO searchVO) throws Exception;
 
     /**
-	 * 연계메시지 총 개수를 조회한다.
+	 * ?곌퀎硫붿떆吏 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(연계메시지 총 개수)
+     * @return int(?곌퀎硫붿떆吏 珥?媛쒖닔)
      */
     int selectCntcMessageListTotCnt(CntcMessageVO searchVO) throws Exception;
 
 	/**
-	 * 연계메시지항목 목록을 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(연계메시지 목록)
+	 * @return List(?곌퀎硫붿떆吏 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectCntcMessageItemList(CntcMessageItemVO searchVO) throws Exception;
 
     /**
-	 * 연계메시지항목 총 개수를 조회한다.
+	 * ?곌퀎硫붿떆吏??ぉ 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(연계메시지 총 개수)
+     * @return int(?곌퀎硫붿떆吏 珥?媛쒖닔)
      */
     int selectCntcMessageItemListTotCnt(CntcMessageItemVO searchVO) throws Exception;
 
 	/**
-	 * 연계메시지를 수정한다.
+	 * ?곌퀎硫붿떆吏瑜??섏젙?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */
 	void updateCntcMessage(CntcMessage cntcMessage) throws Exception;
 
 	/**
-	 * 연계메시지 항목을 수정한다.
+	 * ?곌퀎硫붿떆吏 ??ぉ???섏젙?쒕떎.
 	 * @param cntcMessage
 	 * @throws Exception
 	 */

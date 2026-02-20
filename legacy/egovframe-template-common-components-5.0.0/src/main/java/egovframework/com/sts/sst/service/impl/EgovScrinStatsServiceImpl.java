@@ -10,19 +10,19 @@ import egovframework.com.sts.sst.service.EgovScrinStatsService;
 import jakarta.annotation.Resource;
 
 /**
- * 화면 통계 검색 비즈니스 구현 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?붾㈃ ?듦퀎 寃??鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.sst)
+ *  2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.sst)
  *
  *  </pre>
  */
@@ -34,7 +34,7 @@ public class EgovScrinStatsServiceImpl extends EgovAbstractServiceImpl implement
     private ScrinStatsDAO scrinStatsDAO;
 
     /**
-	 * 화면 통계를 조회한다
+	 * ?붾㈃ ?듦퀎瑜?議고쉶?쒕떎
 	 * @param vo StatsVO
 	 * @return List
 	 * @exception Exception

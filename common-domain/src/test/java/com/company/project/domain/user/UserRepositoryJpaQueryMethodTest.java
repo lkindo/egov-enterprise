@@ -22,12 +22,12 @@ class UserRepositoryJpaQueryMethodTest {
     private UserRepository userRepository;
 
     @Test
-    @DisplayName("사용자 ID로 사용자 조회 성공")
+    @DisplayName("?????ID嚥??????鈺곌퀬???源껊궗")
     void findById_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
@@ -39,16 +39,16 @@ class UserRepositoryJpaQueryMethodTest {
         // Then
         assertThat(result).isPresent();
         assertThat(result.get().getUserId()).isEqualTo("testUser");
-        assertThat(result.get().getUserNm()).isEqualTo("테스트 사용자");
+        assertThat(result.get().getUserNm()).isEqualTo("???뮞???????);
     }
 
     @Test
-    @DisplayName("고유 ID로 사용자 조회 성공")
+    @DisplayName("?⑥쥙? ID嚥??????鈺곌퀬???源껊궗")
     void findByEsntlId_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
@@ -64,12 +64,12 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("이름과 이메일로 사용자 조회 성공")
+    @DisplayName("??已ユ???李??곗쨮 ?????鈺곌퀬???源껊궗")
     void findByUserNmAndEmailAdres_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .emailAdres("test@example.com")
                 .password("encodedPassword")
@@ -77,22 +77,22 @@ class UserRepositoryJpaQueryMethodTest {
         userRepository.save(java.util.Objects.requireNonNull(user));
 
         // When
-        Optional<User> result = userRepository.findByUserNmAndEmailAdres("테스트 사용자", "test@example.com");
+        Optional<User> result = userRepository.findByUserNmAndEmailAdres("???뮞???????, "test@example.com");
 
         // Then
         assertThat(result).isPresent();
         assertThat(result.get().getUserId()).isEqualTo("testUser");
-        assertThat(result.get().getUserNm()).isEqualTo("테스트 사용자");
+        assertThat(result.get().getUserNm()).isEqualTo("???뮞???????);
         assertThat(result.get().getEmailAdres()).isEqualTo("test@example.com");
     }
 
     @Test
-    @DisplayName("사용자 ID와 이름과 이메일로 사용자 조회 성공")
+    @DisplayName("?????ID?? ??已ユ???李??곗쨮 ?????鈺곌퀬???源껊궗")
     void findByUserIdAndUserNmAndEmailAdres_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .emailAdres("test@example.com")
                 .password("encodedPassword")
@@ -100,18 +100,18 @@ class UserRepositoryJpaQueryMethodTest {
         userRepository.save(java.util.Objects.requireNonNull(user));
 
         // When
-        Optional<User> result = userRepository.findByUserIdAndUserNmAndEmailAdres("testUser", "테스트 사용자",
+        Optional<User> result = userRepository.findByUserIdAndUserNmAndEmailAdres("testUser", "???뮞???????,
                 "test@example.com");
 
         // Then
         assertThat(result).isPresent();
         assertThat(result.get().getUserId()).isEqualTo("testUser");
-        assertThat(result.get().getUserNm()).isEqualTo("테스트 사용자");
+        assertThat(result.get().getUserNm()).isEqualTo("???뮞???????);
         assertThat(result.get().getEmailAdres()).isEqualTo("test@example.com");
     }
 
     @Test
-    @DisplayName("존재하지 않는 사용자 ID로 조회 시 빈 결과 반환")
+    @DisplayName("鈺곕똻???? ??낅뮉 ?????ID嚥?鈺곌퀬??????野껉퀗??獄쏆꼹??)
     void findById_nonExistent_returnsEmpty() {
         // When
         Optional<User> result = userRepository.findById("nonexistent");
@@ -121,7 +121,7 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 고유 ID로 조회 시 빈 결과 반환")
+    @DisplayName("鈺곕똻???? ??낅뮉 ?⑥쥙? ID嚥?鈺곌퀬??????野껉퀗??獄쏆꼹??)
     void findByEsntlId_nonExistent_returnsEmpty() {
         // When
         Optional<User> result = userRepository.findByEsntlId("USR_NONEXISTENT");
@@ -131,28 +131,28 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 이름과 이메일로 조회 시 빈 결과 반환")
+    @DisplayName("鈺곕똻???? ??낅뮉 ??已ユ???李??곗쨮 鈺곌퀬??????野껉퀗??獄쏆꼹??)
     void findByUserNmAndEmailAdres_nonExistent_returnsEmpty() {
         // When
-        Optional<User> result = userRepository.findByUserNmAndEmailAdres("없는 사용자", "nonexistent@example.com");
+        Optional<User> result = userRepository.findByUserNmAndEmailAdres("??용뮉 ?????, "nonexistent@example.com");
 
         // Then
         assertThat(result).isEmpty();
     }
 
     @Test
-    @DisplayName("모든 사용자 조회 성공")
+    @DisplayName("筌뤴뫀諭??????鈺곌퀬???源껊궗")
     void findAll_success() {
         // Given
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("사용자1")
+                .userNm("?????")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("사용자2")
+                .userNm("?????")
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
@@ -168,12 +168,12 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("사용자 ID 존재 여부 확인 성공")
+    @DisplayName("?????ID 鈺곕똻????? ?類ㅼ뵥 ?源껊궗")
     void existsById_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
@@ -187,7 +187,7 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 사용자 ID 존재 여부 확인")
+    @DisplayName("鈺곕똻???? ??낅뮉 ?????ID 鈺곕똻????? ?類ㅼ뵥")
     void existsById_nonExistent_returnsFalse() {
         // When
         boolean exists = userRepository.existsById("nonexistent");
@@ -197,12 +197,12 @@ class UserRepositoryJpaQueryMethodTest {
     }
 
     @Test
-    @DisplayName("사용자 저장 성공")
+    @DisplayName("??????????源껊궗")
     void save_success() {
         // Given
         User user = User.builder()
                 .userId("newUser")
-                .userNm("신규 사용자")
+                .userNm("?醫됲뇣 ?????)
                 .esntlId("USR_NEW001")
                 .password("encodedPassword")
                 .build();
@@ -213,40 +213,40 @@ class UserRepositoryJpaQueryMethodTest {
         // Then
         assertThat(savedUser).isNotNull();
         assertThat(savedUser.getUserId()).isEqualTo("newUser");
-        assertThat(savedUser.getUserNm()).isEqualTo("신규 사용자");
+        assertThat(savedUser.getUserNm()).isEqualTo("?醫됲뇣 ?????);
         assertThat(savedUser.getEsntlId()).isEqualTo("USR_NEW001");
     }
 
     @Test
-    @DisplayName("사용자 업데이트 성공")
+    @DisplayName("???????낅쑓??꾨뱜 ?源껊궗")
     void update_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User savedUser = java.util.Objects.requireNonNull(userRepository.save(java.util.Objects.requireNonNull(user)));
 
         // When
-        savedUser.update("수정된 사용자", "hint", "answer", "empNo", "ihidnum", "M", "1990-01-01", "02", "123", "456",
-                "010-1234-5678", "homeadres", "detailAdres", "zip", "offmTelno", "moblphonNo", "test@test.com", "과장",
+        savedUser.update("??륁젟???????, "hint", "answer", "empNo", "ihidnum", "M", "1990-01-01", "02", "123", "456",
+                "010-1234-5678", "homeadres", "detailAdres", "zip", "offmTelno", "moblphonNo", "test@test.com", "?⑥눘??,
                 "GRP001", "ORG001", "INST001", com.company.project.domain.user.Role.USER, "subDn");
         User updatedUser = java.util.Objects
                 .requireNonNull(userRepository.save(java.util.Objects.requireNonNull(savedUser)));
 
         // Then
-        assertThat(updatedUser.getUserNm()).isEqualTo("수정된 사용자");
+        assertThat(updatedUser.getUserNm()).isEqualTo("??륁젟???????);
     }
 
     @Test
-    @DisplayName("사용자 삭제 성공")
+    @DisplayName("??????????源껊궗")
     void deleteById_success() {
         // Given
         User user = User.builder()
                 .userId("testUser")
-                .userNm("테스트 사용자")
+                .userNm("???뮞???????)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();

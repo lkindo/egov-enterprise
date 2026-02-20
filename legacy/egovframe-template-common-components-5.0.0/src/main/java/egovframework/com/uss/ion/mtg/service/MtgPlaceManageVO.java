@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 회의실관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅺ?由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 회의실관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅺ?由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class MtgPlaceManageVO extends MtgPlaceManage implements Serializable {
@@ -21,87 +21,87 @@ public class MtgPlaceManageVO extends MtgPlaceManage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 회의실관리 목록
+	 * ?뚯쓽?ㅺ?由?紐⑸줉
 	 */
 	List<MtgPlaceManageVO> mtgPlaceManageList;
 
 	/**
-	*  예약ID
+	*  ?덉빟ID
 	*/
 	private String resveId;
 
 	/**
-	*  회의제목
+	*  ?뚯쓽?쒕ぉ
 	*/
 	private String mtgSj;
 
 	/**
-	*  예약자ID
+	*  ?덉빟?륤D
 	*/
 	private String resveManId;
 
 	/**
-	*  예약일자
+	*  ?덉빟?쇱옄
 	*/
 	private String resveDe;
 
 	/**
-	*  예약시작시간
+	*  ?덉빟?쒖옉?쒓컙
 	*/
 	private String resveBeginTm;
 
 	/**
-	*  예약종료시간
+	*  ?덉빟醫낅즺?쒓컙
 	*/
 	private String resveEndTm;
 
 	/**
-	*  참석인원
+	*  李몄꽍?몄썝
 	*/
 	private int atndncNmpr;
 
 	/**
-	*  회의내용
+	*  ?뚯쓽?댁슜
 	*/
 	private String mtgCn;
 
 	/**
-	*  list 번호
+	*  list 踰덊샇
 	*/
 	private int rowCount;
 
 	/**
-	*  출력 변수	1
+	*  異쒕젰 蹂??1
 	*/
 	private String mtgPlaceTemp1;
 
 	/**
-	*  출력 변수	2
+	*  異쒕젰 蹂??2
 	*/
 	private String mtgPlaceTemp2;
 
 	/**
-	*  출력 변수	3
+	*  異쒕젰 蹂??3
 	*/
 	private String mtgPlaceTemp3;
 
 	/**
-	*  출력 변수	4
+	*  異쒕젰 蹂??4
 	*/
 	private String mtgPlaceTemp4;
 
 	/**
-	*  출력 변수	5
+	*  異쒕젰 蹂??5
 	*/
 	private String mtgPlaceTemp5;
 
 	/**
-	*  ID 변수
+	*  ID 蹂??
 	*/
 	private String usidTemp;
 
 	/**
-	*  시간출력 변수
+	*  ?쒓컙異쒕젰 蹂??
 	*/
 	private String resveTemp0800;
 	private String resveTemp0830;
@@ -132,7 +132,7 @@ public class MtgPlaceManageVO extends MtgPlaceManage implements Serializable {
 	private String resveTemp2100;
 
 	/**
-	*  resveDeView 변수
+	*  resveDeView 蹂??
 	*/
 	private String resveDeView;
 

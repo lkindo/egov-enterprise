@@ -11,7 +11,7 @@ import org.egovframe.rte.fdl.security.userdetails.jdbc.EgovUsersByUsernameMappin
 import egovframework.com.cmm.LoginVO;
 
 /**
- * mapRow 결과를 사용자 EgovUserDetails Object 에 정의한다.
+ * mapRow 寃곌낵瑜??ъ슜??EgovUserDetails Object ???뺤쓽?쒕떎.
  * 
  * @author ByungHun Woo
  * @since 2009.06.01
@@ -19,12 +19,12 @@ import egovframework.com.cmm.LoginVO;
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    -------------    ----------------------
- *   2009.03.10  ByungHun Woo    최초 생성
- *   2009.03.20  이문준          UPDATE
+ *   2009.03.10  ByungHun Woo    理쒖큹 ?앹꽦
+ *   2009.03.20  ?대Ц以          UPDATE
  *
  * </pre>
  */
@@ -32,7 +32,7 @@ import egovframework.com.cmm.LoginVO;
 public class EgovSessionMapping extends EgovUsersByUsernameMapping {
 	
 	/**
-	 * 사용자정보를 테이블에서 조회하여 EgovUsersByUsernameMapping 에 매핑한다.
+	 * ?ъ슜?먯젙蹂대? ?뚯씠釉붿뿉??議고쉶?섏뿬 EgovUsersByUsernameMapping ??留ㅽ븨?쒕떎.
 	 * @param ds DataSource
 	 * @param usersByUsernameQuery String
 	 */
@@ -42,7 +42,7 @@ public class EgovSessionMapping extends EgovUsersByUsernameMapping {
 
 	/**
 	 * mapRow Override
-	 * @param rs ResultSet 결과
+	 * @param rs ResultSet 寃곌낵
 	 * @param rownum row num
 	 * @return Object EgovUserDetails
 	 * @exception SQLException
@@ -60,12 +60,12 @@ public class EgovSessionMapping extends EgovUsersByUsernameMapping {
         String strUserEmail = rs.getString("user_email");
         String strOrgnztId  = rs.getString("orgnzt_id");
         String strUniqId    = rs.getString("esntl_id");
-        /**2010.06.30 *이용   *조직명 추가  */
+        /**2010.06.30 *?댁슜   *議곗쭅紐?異붽?  */
         String strOrgnztNm    = rs.getString("orgnzt_nm");
 
         
 
-        // 세션 항목 설정
+        // ?몄뀡 ??ぉ ?ㅼ젙
         LoginVO loginVO = new LoginVO();
         loginVO.setId(strUserId);
         loginVO.setPassword(strPassWord);
@@ -74,7 +74,7 @@ public class EgovSessionMapping extends EgovUsersByUsernameMapping {
         loginVO.setEmail(strUserEmail);
         loginVO.setOrgnztId(strOrgnztId);
         loginVO.setUniqId(strUniqId);
-        /**2010.06.30 *이용   *조직명 추가  */
+        /**2010.06.30 *?댁슜   *議곗쭅紐?異붽?  */
         loginVO.setOrgnztNm(strOrgnztNm);
         
         return new EgovUserDetails(strUserId, strPassWord, strEnabled, loginVO);

@@ -3,38 +3,38 @@ package egovframework.com.sym.mnu.bmm.service;
 import java.io.Serializable;
 
 /**
- * 바로가기메뉴관리를 위한 모델 클래스
- * @author 공통컴포넌트개발팀 윤성록
+ * 諛붾줈媛湲곕찓?닿?由щ? ?꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25  윤성록          최초 생성
+ *   2009.9.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class BkmkMenuManage implements Serializable{
 
-    /** 메뉴 아이디 */
+    /** 硫붾돱 ?꾩씠??*/
     String menuId = "";
     
-    /** 메뉴명 */
+    /** 硫붾돱紐?*/
     String menuNm = "";
     
-    /** 메뉴 URL */
+    /** 硫붾돱 URL */
     String progrmStrePath = "";
     
-    /** 등록자 아이디 */
+    /** ?깅줉???꾩씠??*/
     String userId = "";
     
     /**
-     * menuId attribute를 리턴한다.
+     * menuId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the menuId
      */
@@ -43,7 +43,7 @@ public class BkmkMenuManage implements Serializable{
     }    
 
     /**
-     * menuId attribute 값을 설정한다.
+     * menuId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param menuId
      *            the menuId to set
@@ -53,7 +53,7 @@ public class BkmkMenuManage implements Serializable{
     }
     
     /**
-     * menuNm attribute를 리턴한다.
+     * menuNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the menuNm
      */
@@ -62,7 +62,7 @@ public class BkmkMenuManage implements Serializable{
     }    
 
     /**
-     * menuNm attribute 값을 설정한다.
+     * menuNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param menuNm
      *            the menuNm to set
@@ -72,7 +72,7 @@ public class BkmkMenuManage implements Serializable{
     }
     
     /**
-     * progrmStrePath attribute를 리턴한다.
+     * progrmStrePath attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the progrmStrePath
      */
@@ -82,7 +82,7 @@ public class BkmkMenuManage implements Serializable{
     
 
     /**
-     * progrmStrePath attribute 값을 설정한다.
+     * progrmStrePath attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param progrmStrePath
      *            the progrmStrePath to set
@@ -92,7 +92,7 @@ public class BkmkMenuManage implements Serializable{
     }
     
     /**
-     * userId attribute를 리턴한다.
+     * userId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userId
      */
@@ -101,7 +101,7 @@ public class BkmkMenuManage implements Serializable{
     }    
 
     /**
-     * userId attribute 값을 설정한다.
+     * userId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userId
      *            the userId to set

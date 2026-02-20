@@ -16,18 +16,18 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  *
- * 전자관인 출력 화면 Controller 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?꾩옄愿??異쒕젰 ?붾㈃ Controller ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.02.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.01  이중호          최초 생성
+ *   2009.02.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -37,7 +37,7 @@ public class EgovPrntngOutptController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovPrntngOutptController.class);
 
 	/**
-	 * 전자관인 출력 화면 컨트롤
+	 * ?꾩옄愿??異쒕젰 ?붾㈃ 而⑦듃濡?
 	 * @param request
 	 * @param response
 	 * @return
@@ -49,21 +49,21 @@ public class EgovPrntngOutptController {
 		LOGGER.info("EgovPrntngOutptController start....");
 		Map<String, Object> cmdModel = new HashMap<>();
 
-		// 이동할 JSP
+		// ?대룞??JSP
 		String jspStr = "";
-		// 결과정보
+		// 寃곌낵?뺣낫
 		//String resultStr = "";
-		// 실행명령어
+		// ?ㅽ뻾紐낅졊??
 		String cmdStr = request.getParameter("cmdStr");
 		if (cmdStr == null || cmdStr.equals("")) {
 			cmdStr = "";
 		}
 
-		// 실행명령어에 따른 JSP 할당
-		if (cmdStr.equals("ComUtlPaoErncslOutpt")) { // test 샘플용 경로
+		// ?ㅽ뻾紐낅졊?댁뿉 ?곕Ⅸ JSP ?좊떦
+		if (cmdStr.equals("ComUtlPaoErncslOutpt")) { // test ?섑뵆??寃쎈줈
 			jspStr = "egovframework/com/utl/pao/EgovErncslOutpt";
 
-			cmdModel.put("resultStr", "UTILITY 직접 호출");
+			cmdModel.put("resultStr", "UTILITY 吏곸젒 ?몄텧");
 		} else {
 			jspStr = "/egovDevIndex";
 		}

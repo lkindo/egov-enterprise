@@ -7,18 +7,18 @@ import egovframework.com.cop.bbs.service.BoardMaster;
 import egovframework.com.cop.bbs.service.BoardMasterVO;
 
 /**
- * 2단계 기능 추가 (댓글관리, 만족도조사) 관리를 위한 데이터 접근 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“?? 愿由щ? ?꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.26
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.26  한성곤          최초 생성
+ *   2009.06.26  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -26,7 +26,7 @@ import egovframework.com.cop.bbs.service.BoardMasterVO;
 public class BBSAddedOptionsDAO extends EgovComAbstractDAO {
 
     /**
-     * 신규 게시판 추가기능 정보를 등록한다.
+     * ?좉퇋 寃뚯떆??異붽?湲곕뒫 ?뺣낫瑜??깅줉?쒕떎.
      * 
      * @param BoardMaster
      */
@@ -35,7 +35,7 @@ public class BBSAddedOptionsDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 게시판 추가기능 정보 한 건을 상세조회 한다.
+     * 寃뚯떆??異붽?湲곕뒫 ?뺣낫 ??嫄댁쓣 ?곸꽭議고쉶 ?쒕떎.
      * 
      * @param BoardMasterVO
      */
@@ -44,7 +44,7 @@ public class BBSAddedOptionsDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 게시판 추가기능 정보를 수정한다.
+     * 寃뚯떆??異붽?湲곕뒫 ?뺣낫瑜??섏젙?쒕떎.
      * 
      * @param BoardMaster
      */

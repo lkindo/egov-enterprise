@@ -6,21 +6,21 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /**
- * Egov 양식 기반 UUID
+ * Egov ?묒떇 湲곕컲 UUID
  * 
- * @author 익명
+ * @author ?듬챸
  * @since 2004.12.07
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2004.12.07  익명           최초 생성
- *   2025.09.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
- *   2025.09.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2004.12.07  ?듬챸           理쒖큹 ?앹꽦
+ *   2025.09.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
+ *   2025.09.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -80,7 +80,7 @@ public class EgovFormBasedUUID implements Serializable {
 	 */
 	private static volatile SecureRandom numberGenerator = null;
 
-	// 221116 김혜준 2022 시큐어코딩 조치
+	// 221116 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 	private static SecureRandom makeSecureRandom() {
 		SecureRandom ng = numberGenerator;
 		if (ng == null) {
@@ -152,19 +152,19 @@ public class EgovFormBasedUUID implements Serializable {
 	public static EgovFormBasedUUID nameUUIDFromBytes(byte[] name) {
 		MessageDigest md;
 		try {
-			// 2011.10.10 보안점검 후속조치 암호화 알고리즘 변경(MD5 -> SHA-256)
+			// 2011.10.10 蹂댁븞?먭? ?꾩냽議곗튂 ?뷀샇???뚭퀬由ъ쬁 蹂寃?MD5 -> SHA-256)
 			// md = MessageDigest.getInstance("MD5");
 			md = MessageDigest.getInstance("SHA-256");
 		} catch (NoSuchAlgorithmException nsae) {
 			// throw new InternalError("MD5 not supported");
 			throw new InternalError("SHA-256 not supported");
 		}
-		// 2011.10.10 보안점검 후속조치
+		// 2011.10.10 蹂댁븞?먭? ?꾩냽議곗튂
 		if (md == null) {
 			throw new RuntimeException("MessageDigest is null!!");
 		}
-		// 2014.09.20 보안점검 후속 조치
-		// Random 방식의 salt 추가
+		// 2014.09.20 蹂댁븞?먭? ?꾩냽 議곗튂
+		// Random 諛⑹떇??salt 異붽?
 		SecureRandom ng = makeSecureRandom();
 		byte[] randomBytes = new byte[16];
 		ng.nextBytes(randomBytes);
@@ -175,7 +175,7 @@ public class EgovFormBasedUUID implements Serializable {
 
 		byte[] md5Bytes = new byte[8];
 		System.arraycopy(sha, 0, md5Bytes, 0, 8);
-		// 2011.10.10 보안점검 후속조치 끝
+		// 2011.10.10 蹂댁븞?먭? ?꾩냽議곗튂 ??
 
 		md5Bytes[6] &= 0x0f; /* clear version */
 		md5Bytes[6] |= 0x30; /* set to version 3 */
@@ -434,11 +434,11 @@ public class EgovFormBasedUUID implements Serializable {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		// 보안 취약점 점검 지적사항 반영 시작
+		// 蹂댁븞 痍⑥빟???먭? 吏?곸궗??諛섏쁺 ?쒖옉
 		if (obj == null) {
 			return false;
 		}
-		// 보안 취약점 점검 지적사항 반영 시작 끝
+		// 蹂댁븞 痍⑥빟???먭? 吏?곸궗??諛섏쁺 ?쒖옉 ??
 		if (!(obj instanceof EgovFormBasedUUID)) {
 			return false;
 		}

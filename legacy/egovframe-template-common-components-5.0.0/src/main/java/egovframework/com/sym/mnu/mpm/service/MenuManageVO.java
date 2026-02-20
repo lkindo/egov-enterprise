@@ -1,56 +1,56 @@
 package egovframework.com.sym.mnu.mpm.service;
 
 /**
- * 메뉴목록관리 처리를 위한 VO 클래스르를 정의한다
+ * 硫붾돱紐⑸줉愿由?泥섎━瑜??꾪븳 VO ?대옒?ㅻⅤ瑜??뺤쓽?쒕떎
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2025.07.17  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2025.07.17  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
 public class MenuManageVO {
 
-	/** 메뉴정보 */
-	/** 메뉴번호 */
+	/** 硫붾돱?뺣낫 */
+	/** 硫붾돱踰덊샇 */
 	private int menuNo;
-	/** 메뉴순서 */
+	/** 硫붾돱?쒖꽌 */
 	private int menuOrdr;
-	/** 메뉴명 */
+	/** 硫붾돱紐?*/
 	private String menuNm;
-	/** 상위메뉴번호 */
+	/** ?곸쐞硫붾돱踰덊샇 */
 	private int upperMenuId;
-	/** 메뉴설명 */
+	/** 硫붾돱?ㅻ챸 */
 	private String menuDc;
-	/** 관련이미지경로 */
+	/** 愿?⑥씠誘몄?寃쎈줈 */
 	private String relateImagePath;
-	/** 관련이미지명 */
+	/** 愿?⑥씠誘몄?紐?*/
 	private String relateImageNm;
-	/** 프로그램파일명 */
+	/** ?꾨줈洹몃옩?뚯씪紐?*/
 	private String progrmFileNm;
 
-	/** 사이트맵 */
-	/** 생성자ID **/
+	/** ?ъ씠?몃㏊ */
+	/** ?앹꽦?륤D **/
 	private String creatPersonId;
 
-	/** 권한정보설정 */
-	/** 권한코드 */
+	/** 沅뚰븳?뺣낫?ㅼ젙 */
+	/** 沅뚰븳肄붾뱶 */
 	private String authorCode;
 
-	/** 기타VO변수 */
+	/** 湲고?VO蹂??*/
 	private String tempValue;
 	private int tempInt;
 
-	/** Login 메뉴관련 VO변수 */
+	/** Login 硫붾돱愿??VO蹂??*/
 	/** tmp_Id */
 	private String tmpId;
 	/** tmp_Password */
@@ -69,7 +69,7 @@ public class MenuManageVO {
 	private String tmpCmd;
 
 	/**
-	 * menuNo attribute를 리턴한다.
+	 * menuNo attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -78,7 +78,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuNo attribute 값을 설정한다.
+	 * menuNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param menuNo int
 	 */
@@ -87,7 +87,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuOrdr attribute를 리턴한다.
+	 * menuOrdr attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -96,7 +96,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuOrdr attribute 값을 설정한다.
+	 * menuOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param menuOrdr int
 	 */
@@ -105,7 +105,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuNm attribute를 리턴한다.
+	 * menuNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -114,7 +114,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuNm attribute 값을 설정한다.
+	 * menuNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param menuNm String
 	 */
@@ -123,7 +123,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * upperMenuId attribute를 리턴한다.
+	 * upperMenuId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -132,7 +132,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * upperMenuId attribute 값을 설정한다.
+	 * upperMenuId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param upperMenuId int
 	 */
@@ -141,7 +141,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuDc attribute를 리턴한다.
+	 * menuDc attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -150,7 +150,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * menuDc attribute 값을 설정한다.
+	 * menuDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param menuDc String
 	 */
@@ -159,7 +159,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * relateImagePath attribute를 리턴한다.
+	 * relateImagePath attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -168,7 +168,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * relateImagePath attribute 값을 설정한다.
+	 * relateImagePath attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param relateImagePath String
 	 */
@@ -177,7 +177,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * relateImageNm attribute를 리턴한다.
+	 * relateImageNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -186,7 +186,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * relateImageNm attribute 값을 설정한다.
+	 * relateImageNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param relateImageNm String
 	 */
@@ -195,7 +195,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * progrmFileNm attribute를 리턴한다.
+	 * progrmFileNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -204,7 +204,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * progrmFileNm attribute 값을 설정한다.
+	 * progrmFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmFileNm String
 	 */
@@ -213,7 +213,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * creatPersonId attribute를 리턴한다.
+	 * creatPersonId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -222,7 +222,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * creatPersonId attribute 값을 설정한다.
+	 * creatPersonId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param creatPersonId String
 	 */
@@ -231,7 +231,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * authorCode attribute를 리턴한다.
+	 * authorCode attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -240,7 +240,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * authorCode attribute 값을 설정한다.
+	 * authorCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param authorCode String
 	 */
@@ -249,7 +249,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_Id attribute를 리턴한다.
+	 * tmp_Id attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -258,7 +258,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpId attribute 값을 설정한다.
+	 * tmpId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpId String
 	 */
@@ -267,7 +267,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_Password attribute를 리턴한다.
+	 * tmp_Password attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -276,7 +276,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpPassword attribute 값을 설정한다.
+	 * tmpPassword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpPassword String
 	 */
@@ -285,7 +285,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_Name attribute를 리턴한다.
+	 * tmp_Name attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -294,7 +294,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpName attribute 값을 설정한다.
+	 * tmpName attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpName String
 	 */
@@ -303,7 +303,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_UserSe attribute를 리턴한다.
+	 * tmp_UserSe attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -312,7 +312,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpUserSe attribute 값을 설정한다.
+	 * tmpUserSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpUserSe String
 	 */
@@ -321,7 +321,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_Email attribute를 리턴한다.
+	 * tmp_Email attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -330,7 +330,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpEmail attribute 값을 설정한다.
+	 * tmpEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpEmail String
 	 */
@@ -339,7 +339,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_OrgnztId attribute를 리턴한다.
+	 * tmp_OrgnztId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -348,7 +348,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpOrgnztId attribute 값을 설정한다.
+	 * tmpOrgnztId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpOrgnztId String
 	 */
@@ -357,7 +357,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_UniqId attribute를 리턴한다.
+	 * tmp_UniqId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -366,7 +366,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_UniqId attribute 값을 설정한다.
+	 * tmp_UniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmp_UniqId String
 	 */
@@ -375,7 +375,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmp_Cmd attribute를 리턴한다.
+	 * tmp_Cmd attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -384,7 +384,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tmpCmd attribute 값을 설정한다.
+	 * tmpCmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpCmd String
 	 */
@@ -393,7 +393,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tempValue attribute를 리턴한다.
+	 * tempValue attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -402,7 +402,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tempValue attribute 값을 설정한다.
+	 * tempValue attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tempValue String
 	 */
@@ -411,7 +411,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tempInt attribute를 리턴한다.
+	 * tempInt attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -420,7 +420,7 @@ public class MenuManageVO {
 	}
 
 	/**
-	 * tempInt attribute 값을 설정한다.
+	 * tempInt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tempInt int
 	 */

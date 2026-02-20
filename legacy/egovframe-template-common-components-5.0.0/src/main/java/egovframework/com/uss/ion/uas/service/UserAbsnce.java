@@ -1,12 +1,12 @@
 /**
- * 개요
- * - 사용자부재에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ슜?먮??ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 사용자부재의 사용자ID, 사용자부재여부 항목을 관리한다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - ?ъ슜?먮??ъ쓽 ?ъ슜?륤D, ?ъ슜?먮??ъ뿬遺 ??ぉ??愿由ы븳??
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:09:34
+ * @created 03-8-2009 ?ㅽ썑 2:09:34
  */
 
 package egovframework.com.uss.ion.uas.service;
@@ -20,27 +20,27 @@ public class UserAbsnce extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 사용자ID
+	 * ?ъ슜?륤D
 	 */
 	private String userId;
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
 	private String userNm;	
 	/**
-	 * 사용자부재여부
+	 * ?ъ슜?먮??ъ뿬遺
 	 */
 	private String userAbsnceAt;
 	/**
-	 * 최종등록자ID
+	 * 理쒖쥌?깅줉?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종등록시점
+	 * 理쒖쥌?깅줉?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 등록여부
+	 * ?깅줉?щ?
 	 */
 	private String regYn;	
 

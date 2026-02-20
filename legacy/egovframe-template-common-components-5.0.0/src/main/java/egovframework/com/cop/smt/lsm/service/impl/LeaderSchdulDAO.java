@@ -11,23 +11,23 @@ import egovframework.com.cop.smt.lsm.service.LeaderSttus;
 import egovframework.com.cop.smt.lsm.service.LeaderSttusVO;
 
 /**
- * 개요
- * - 간부일정에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??쇱젙?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 간부일정에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 간부일정의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 媛꾨??쇱젙??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 媛꾨??쇱젙??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:06
+ * @created 28-6-2010 ?ㅼ쟾 10:59:06
  */
 @Repository("LeaderSchdulDAO")
 public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	
 	/**
-	 * 주어진 조건에 맞는 사용자를 불러온다.
-	 * @param EmplyrVO - 사용자 VO
-	 * @return List- 사용자 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?ъ슜?먮? 遺덈윭?⑤떎.
+	 * @param EmplyrVO - ?ъ슜??VO
+	 * @return List- ?ъ슜??List
 	 * 
 	 * @param emplyrVO
 	 */	
@@ -36,9 +36,9 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 사용자 목록에 대한 전체 건수를 조회한다.
-	 * @param EmplyrVO - 사용자 VO
-	 * @return int - 사용자 목록 개수
+	 * ?ъ슜??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param EmplyrVO - ?ъ슜??VO
+	 * @return int - ?ъ슜??紐⑸줉 媛쒖닔
 	 * 
 	 * @param emplyrVO
 	 */
@@ -47,9 +47,9 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 따른 간부일정 목록을 월별로 불러온다.
-	 * @param LeaderSchdulVO - 간부일정 VO
-	 * @return List - 간부일정 List
+	 * 二쇱뼱吏?議곌굔???곕Ⅸ 媛꾨??쇱젙 紐⑸줉???붾퀎濡?遺덈윭?⑤떎.
+	 * @param LeaderSchdulVO - 媛꾨??쇱젙 VO
+	 * @return List - 媛꾨??쇱젙 List
 	 * 
 	 * @param leaderSchdulVO
 	 */
@@ -59,9 +59,9 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 간부일정을 불러온다.
-	 * @param LeaderSchdulVO - 간부일정 VO
-	 * @return LeaderSchdulVO - 간부일정 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 媛꾨??쇱젙??遺덈윭?⑤떎.
+	 * @param LeaderSchdulVO - 媛꾨??쇱젙 VO
+	 * @return LeaderSchdulVO - 媛꾨??쇱젙 VO
 	 * 
 	 * @param leaderSchdulVO
 	 */
@@ -70,8 +70,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부일정 정보를 수정한다.
-	 * @param LeaderSchdul - 간부일정 model
+	 * 媛꾨??쇱젙 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param LeaderSchdul - 媛꾨??쇱젙 model
 	 * 
 	 * @param leaderSchdul
 	 */
@@ -80,8 +80,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부일정 정보를 등록한다.
-	 * @param LeaderSchdul - 간부일정 model
+	 * 媛꾨??쇱젙 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param LeaderSchdul - 媛꾨??쇱젙 model
 	 * 
 	 * @param leaderSchdul
 	 */
@@ -90,8 +90,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 간부일정 일자 정보를 등록한다.
-	 * @param LeaderSchdul - 간부일정 model
+	 * 媛꾨??쇱젙 ?쇱옄 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param LeaderSchdul - 媛꾨??쇱젙 model
 	 * 
 	 * @param leaderSchdul
 	 */
@@ -100,8 +100,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부일정 정보를 삭제한다.
-	 * @param LeaderSchdul - 간부일정 model
+	 * 媛꾨??쇱젙 ?뺣낫瑜???젣?쒕떎.
+	 * @param LeaderSchdul - 媛꾨??쇱젙 model
 	 * 
 	 * @param leaderSchdul
 	 */
@@ -110,8 +110,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 간부일정일자 정보를 삭제한다.
-	 * @param LeaderSchdul - 간부일정 model
+	 * 媛꾨??쇱젙?쇱옄 ?뺣낫瑜???젣?쒕떎.
+	 * @param LeaderSchdul - 媛꾨??쇱젙 model
 	 * 
 	 * @param leaderSchdul
 	 */
@@ -120,9 +120,9 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 따른 간부상태 목록을 불러온다.
-	 * @param LeaderSttusVO - 간부상태 VO
-	 * @return List - 간부상태 List
+	 * 二쇱뼱吏?議곌굔???곕Ⅸ 媛꾨??곹깭 紐⑸줉??遺덈윭?⑤떎.
+	 * @param LeaderSttusVO - 媛꾨??곹깭 VO
+	 * @return List - 媛꾨??곹깭 List
 	 * 
 	 * @param LeaderSttusVO
 	 */
@@ -131,8 +131,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 간부상태 목록에 대한 전체 건수를 조회한다.
-	 * @param LeaderSttusVO - 간부상태 VO
+	 * 媛꾨??곹깭 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param LeaderSttusVO - 媛꾨??곹깭 VO
 	 * @return int
 	 * 
 	 * @param LeaderSttusVO
@@ -142,9 +142,9 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 맞는 간부상태를 불러온다.
-	 * @param LeaderSttusVO - 간부상태 VO
-	 * @return LeaderSttusVO - 간부상태 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 媛꾨??곹깭瑜?遺덈윭?⑤떎.
+	 * @param LeaderSttusVO - 媛꾨??곹깭 VO
+	 * @return LeaderSttusVO - 媛꾨??곹깭 VO
 	 * 
 	 * @param leaderSttusVO
 	 */
@@ -153,8 +153,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부상태 정보를 수정한다.
-	 * @param LeaderSttus - 간부상태 model
+	 * 媛꾨??곹깭 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */
@@ -163,8 +163,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부상태 정보를 등록한다.
-	 * @param LeaderSttus - 간부상태 model
+	 * 媛꾨??곹깭 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */
@@ -173,8 +173,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 간부상태 등록을 위한 중복 조회를 수행한다.
-	 * @param LeaderSttus - 간부상태 model
+	 * 媛꾨??곹깭 ?깅줉???꾪븳 以묐났 議고쉶瑜??섑뻾?쒕떎.
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * @return int
 	 * 
 	 * @param leaderSttus
@@ -184,8 +184,8 @@ public class LeaderSchdulDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 간부상태 정보를 삭제한다.
-	 * @param LeaderSttus - 간부상태 model
+	 * 媛꾨??곹깭 ?뺣낫瑜???젣?쒕떎.
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */

@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 통합 링크 정보 Entity
- * 레거시 테이블: NUNITYLINK
+ * ???? 筌띻낱寃??類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NUNITYLINK
  */
 @Entity
 @Table(name = "NUNITYLINK")

@@ -4,21 +4,21 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 /**
- * 교차접속 스크립트 공격 취약성 방지(파라미터 문자열 교체)
+ * 援먯감?묒냽 ?ㅽ겕由쏀듃 怨듦꺽 痍⑥빟??諛⑹?(?뚮씪誘명꽣 臾몄옄??援먯껜)
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일         수정자     수정내용
+ *  ?섏젙??        ?섏젙??    ?섏젙?댁슜
  *  ----------   --------  ---------------------------
- *  2011.10.10   한성곤      최초 생성
- *	2017-02-07   이정은      시큐어코딩(ES) - 시큐어코딩 경로 조작 및 자원 삽입[CWE-22, CWE-23, CWE-95, CWE-99]
- *  2018.08.17   신용호      filePathBlackList 수정
- *  2018.10.10   신용호      . => \\.으로 수정
- *  2022.05.10   정진오      clearXSS() 메소드 추가
- *  2022.06.09   김장하      NSR 보안조치 (removeOSCmdRisk 함수에 윈도우 다중 명령 실행 키워드 추가)
- *  2023.08.10   신용호      removeLDAPInjectionRisk() 오류 수정
- *  2024.12.04   신용호      filePathBlackList() basePath 추가
+ *  2011.10.10   ?쒖꽦怨?     理쒖큹 ?앹꽦
+ *	2017-02-07   ?댁젙?      ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??寃쎈줈 議곗옉 諛??먯썝 ?쎌엯[CWE-22, CWE-23, CWE-95, CWE-99]
+ *  2018.08.17   ?좎슜??     filePathBlackList ?섏젙
+ *  2018.10.10   ?좎슜??     . => \\.?쇰줈 ?섏젙
+ *  2022.05.10   ?뺤쭊??     clearXSS() 硫붿냼??異붽?
+ *  2022.06.09   源?ν븯      NSR 蹂댁븞議곗튂 (removeOSCmdRisk ?⑥닔???덈룄???ㅼ쨷 紐낅졊 ?ㅽ뻾 ?ㅼ썙??異붽?)
+ *  2023.08.10   ?좎슜??     removeLDAPInjectionRisk() ?ㅻ쪟 ?섏젙
+ *  2024.12.04   ?좎슜??     filePathBlackList() basePath 異붽?
  * </pre>
  */
 
@@ -88,14 +88,14 @@ public class EgovWebUtil {
 	}
 
 	/**
-	 * 파일경로 보안취약점 조치
-	 * # 주의사항
-	 * 1. basePath는 반드시 지정해야 한다.
-	 * 2. basePath는 ROOT Path "/" 사용 금지 한다.
-	 * 3. basePath 하위 디렉토리는 업로드한 파일이 존재하도록 구성하며 중요파일이 존재하지 않도록 관리한다.
+	 * ?뚯씪寃쎈줈 蹂댁븞痍⑥빟??議곗튂
+	 * # 二쇱쓽?ы빆
+	 * 1. basePath??諛섎뱶??吏?뺥빐???쒕떎.
+	 * 2. basePath??ROOT Path "/" ?ъ슜 湲덉? ?쒕떎.
+	 * 3. basePath ?섏쐞 ?붾젆?좊━???낅줈?쒗븳 ?뚯씪??議댁옱?섎룄濡?援ъ꽦?섎ŉ 以묒슂?뚯씪??議댁옱?섏? ?딅룄濡?愿由ы븳??
 	 *
-	 * @param value 파일명
-	 * @param basePath 기본 경로
+	 * @param value ?뚯씪紐?
+	 * @param basePath 湲곕낯 寃쎈줈
 	 * @return
 	 */
 	public static String filePathBlackList(String value, String basePath) {
@@ -109,7 +109,7 @@ public class EgovWebUtil {
 	}
 
 	/**
-	 * 행안부 보안취약점 점검 조치 방안.
+	 * ?됱븞遺 蹂댁븞痍⑥빟???먭? 議곗튂 諛⑹븞.
 	 *
 	 * @param value
 	 * @return
@@ -162,10 +162,10 @@ public class EgovWebUtil {
 	}
 
 	/**
-	 * LDAP 파라미터에서 특수문자 제거.
-	 * 파라미터 별로 제거를 해야 함.
-	 * 일괄 연결된 파라미터들은 따로 처리해야 함.
-	 * TODO : LDAP Injection Prevent 로직 추가 필요
+	 * LDAP ?뚮씪誘명꽣?먯꽌 ?뱀닔臾몄옄 ?쒓굅.
+	 * ?뚮씪誘명꽣 蹂꾨줈 ?쒓굅瑜??댁빞 ??
+	 * ?쇨큵 ?곌껐???뚮씪誘명꽣?ㅼ? ?곕줈 泥섎━?댁빞 ??
+	 * TODO : LDAP Injection Prevent 濡쒖쭅 異붽? ?꾩슂
 	 * @param value
 	 * @return
 	 */
@@ -176,11 +176,11 @@ public class EgovWebUtil {
 			return "";
 		}
 
-		/*모든 특수문자 제거*/
-//		String match = "[^\uAC00-\uD7A30-9a-zA-Z]";//특수문자 = 한글,숫자,영문 제외
+		/*紐⑤뱺 ?뱀닔臾몄옄 ?쒓굅*/
+//		String match = "[^\uAC00-\uD7A30-9a-zA-Z]";//?뱀닔臾몄옄 = ?쒓?,?レ옄,?곷Ц ?쒖쇅
 //		returnValue = returnValue.replaceAll(match, "");
 
-		/*특수문자 선택적 제거*/
+		/*?뱀닔臾몄옄 ?좏깮???쒓굅*/
 		returnValue = returnValue.replaceAll("\\*", "");
 		returnValue = returnValue.replaceAll("&", "");
 		returnValue = returnValue.replaceAll("\\|", "");
@@ -190,7 +190,7 @@ public class EgovWebUtil {
 		returnValue = returnValue.replaceAll("\\)", "");
 		returnValue = returnValue.replaceAll("\\\\", "");
 		//...
-		//개별로 필요한 항목들 추가 필요
+		//媛쒕퀎濡??꾩슂????ぉ??異붽? ?꾩슂
 
 		return returnValue;
 	}

@@ -1,44 +1,35 @@
 package com.company.project.common.util;
 
 import com.company.project.domain.user.entity.User;
-import java.util.Objects;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserManageDto;
+import org.springframework.stereotype.Component;
 
-/**
- * ?¨Ïö©??Í¥Ä??DTO Îß§Ìïë ?†Ìã∏Î¶¨Ìã∞ ?¥Îûò??
- */
+import java.util.Objects;
+
+@Component
 public class UserDtoMapper {
 
-    /**
-     * User ?îÌã∞?∞Î? UserDtoÎ°?Î≥Ä??
-     */
     public static UserDto toUserDto(User user) {
-        if (user == null) {
-            return null;
-        }
-
+        if (user == null) return null;
         return UserDto.builder()
                 .userId(Objects.requireNonNull(user.getUserId()))
                 .userNm(Objects.requireNonNull(user.getUserNm()))
                 .esntlId(Objects.requireNonNull(user.getEsntlId()))
                 .role(user.getRole() != null ? user.getRole().name() : null)
-                .createdDate(user.getSbscrbDe())
+                .emplNo(user.getEmplNo())
+                .ofcpsNm(user.getOfcpsNm())
+                .createdDate(user.getCreatedDate())
                 .build();
     }
 
-    /**
-     * User ?îÌã∞?∞Î? UserManageDtoÎ°?Î≥Ä??
-     */
     public static UserManageDto toUserManageDto(User user) {
-        if (user == null) {
-            return null;
-        }
-
+        if (user == null) return null;
         return UserManageDto.builder()
                 .userId(user.getUserId())
                 .esntlId(user.getEsntlId())
                 .userNm(user.getUserNm())
+                .emplNo(user.getEmplNo())
                 .sexdstnCode(user.getSexdstnCode())
                 .brthdy(user.getBrth())
                 .areaNo(user.getAreaNo())
@@ -53,42 +44,19 @@ public class UserDtoMapper {
                 .groupId(user.getGroupId())
                 .orgnztId(user.getOrgnztId())
                 .insttCode(user.getInsttCode())
-                .emplyrSttusCode(user.getRole() != null ? user.getRole().name() : null)
+                .emplyrSttusCode(user.getEmpStatus())
                 .sbscrbDe(user.getSbscrbDe() != null ? user.getSbscrbDe().toString() : null)
-                .subDn(user.getSubDn())
                 .build();
     }
 
-    /**
-     * UserManageDtoÎ•?User ?îÌã∞?∞Î°ú Î≥Ä??(?ÑÏöî???®Ïä§?åÎìú ?∏ÏΩî????Ï∂îÍ? Î°úÏßÅ ?¨Ìï®)
-     */
-    public static User toUserEntity(UserManageDto dto) {
-        if (dto == null) {
-            return null;
-        }
-
+    public static User toEntity(UserDto userDto) {
+        if (userDto == null) return null;
         return User.builder()
-                .userId(Objects.requireNonNull(dto.getUserId()))
-                .esntlId(Objects.requireNonNull(dto.getEsntlId()))
-                .userNm(Objects.requireNonNull(dto.getUserNm()))
-                .password(Objects.requireNonNull(dto.getPassword()))
-                .passwordHint(dto.getPasswordHint())
-                .passwordCnsr(dto.getPasswordCnsr())
-                .emplNo(dto.getEmplNo())
-                .sexdstnCode(dto.getSexdstnCode())
-                .brth(dto.getBrthdy())
-                .areaNo(dto.getAreaNo())
-                .homemiddleTelno(dto.getHomemiddleTelno())
-                .homeendTelno(dto.getHomeendTelno())
-                .moblphonNo(dto.getMoblphonNo())
-                .emailAdres(dto.getEmailAdres())
-                .zip(dto.getZip())
-                .homeadres(dto.getHomeadres())
-                .detailAdres(dto.getDetailAdres())
-                .ofcpsNm(dto.getOfcpsNm())
-                .groupId(dto.getGroupId())
-                .orgnztId(dto.getOrgnztId())
-                .insttCode(dto.getInsttCode())
+                .userId(userDto.getUserId())
+                .userNm(userDto.getUserNm())
+                .esntlId(userDto.getEsntlId())
+                .emplNo(userDto.getEmplNo())
+                .ofcpsNm(userDto.getOfcpsNm())
                 .build();
     }
 }

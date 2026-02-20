@@ -2,48 +2,48 @@ package egovframework.com.cop.smt.mrm.service;
 
 
 /**
- * 개요
- * - 보고자에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 蹂닿퀬?먯뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 보고자의 목록 항목, 조회조건 등을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 蹂닿퀬?먯쓽 紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:26
+ * @created 28-6-2010 ?ㅼ쟾 11:29:26
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class ReportrVO extends Reportr {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-     /** 현재페이지 */
+     /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
 	public String getSearchCnd() {

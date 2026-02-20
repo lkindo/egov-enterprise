@@ -27,19 +27,19 @@ public class Schedule implements Serializable {
     private String schdulId;
 
     @Column(name = "SCHDUL_SE", length = 1)
-    private String schdulSe; // 1: 회의, 2: 세미나, 3: 강의 등
+    private String schdulSe; // 1: ???벥, 2: ?紐??? 3: 揶쏅벡????
 
     @Column(name = "SCHDUL_DEPT_ID", length = 20)
     private String schdulDeptId;
 
     @Column(name = "SCHDUL_KND_CODE", length = 1)
-    private String schdulKindCode; // 1: 부서일정, 2: 개인일정
+    private String schdulKindCode; // 1: ?봔??뽰뵬?? 2: 揶쏆뮇???깆젟
 
     @Column(name = "SCHDUL_BGNDE", length = 20)
-    private String schdulBgnde; // 문자열 타임스탬프 (YYYYMMDDHHMM)
+    private String schdulBgnde; // ?얜챷??????袁⑸뮞??遊?(YYYYMMDDHHMM)
 
     @Column(name = "SCHDUL_ENDDE", length = 20)
-    private String schdulEndde; // 문자열 타임스탬프 (YYYYMMDDHHMM)
+    private String schdulEndde; // ?얜챷??????袁⑸뮞??遊?(YYYYMMDDHHMM)
 
     @Column(name = "SCHDUL_NM", length = 255)
     private String schdulNm;
@@ -51,7 +51,7 @@ public class Schedule implements Serializable {
     private String schdulPlace;
 
     @Column(name = "SCHDUL_IPCR_CODE", length = 1)
-    private String schdulIpcrCode; // 중요도 (A,B,C)
+    private String schdulIpcrCode; // 餓λ쵐???(A,B,C)
 
     @Column(name = "SCHDUL_CHARGER_ID", length = 20)
     private String schdulChargerId;
@@ -60,7 +60,7 @@ public class Schedule implements Serializable {
     private String atchFileId;
 
     @Column(name = "REPTIT_SE_CODE", length = 1)
-    private String reptitSeCode; // 1:당일, 2:반복, 3:연속
+    private String reptitSeCode; // 1:?諭?? 2:獄쏆꼶?? 3:?怨쀫꺗
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;

@@ -1,95 +1,95 @@
 package egovframework.com.dam.app.service;
 
 /**
- * 개요
- * - 지식정보평가에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댄룊媛?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 소속조직, 지식유형, 등록일자, 지식명, 지식내용, 첨부파일,평가일자, 평가결과 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - ?뚯냽議곗쭅, 吏?앹쑀?? ?깅줉?쇱옄, 吏?앸챸, 吏?앸궡?? 泥⑤??뚯씪,?됯??쇱옄, ?됯?寃곌낵 ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:47
+ * @created 12-8-2010 ?ㅽ썑 3:44:47
  */
 public class KnoAppraisal {
 
 	/**
-	 * 지식ID
+	 * 吏?쒲D
 	 */
 	private String knoId;
 	/**
-	 * 소속조직ID
+	 * ?뚯냽議곗쭅ID
 	 */
 	private String orgnztId;
 	/**
-	 * 소속조직명
+	 * ?뚯냽議곗쭅紐?
 	 */
 	private String orgnztNm;
 	/**
-	 * 평가자ID
+	 * ?됯??륤D
 	 */
 	private String speId;	
 	/**
-	 * 사용자ID
+	 * ?ъ슜?륤D
 	 */
 	private String emplyrId;
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
 	private String userNm;
 	/**
-	 * 지식유형코드
+	 * 吏?앹쑀?뺤퐫??
 	 */
 	private String knoTypeCd;
 	/**
-	 * 지식유형명
+	 * 吏?앹쑀?뺣챸
 	 */
 	private String knoTypeNm;
 	/**
-	 * 지식명
+	 * 吏?앸챸
 	 */
 	private String knoNm;
 	/**
-	 * 지식내용
+	 * 吏?앸궡??
 	 */
 	private String knoCn;
 	/**
-	 * 지식평가
+	 * 吏?앺룊媛
 	 */
 	private String knoAps;
 	/**
-	 * 평가일자
+	 * ?됯??쇱옄
 	 */
 	private String appYmd;	
 	/**
-	 * 개인지식공개여부
+	 * 媛쒖씤吏?앷났媛쒖뿬遺
 	 */
 	private String othbcAt;	
 	/**
-	 * 등록자명
+	 * ?깅줉?먮챸
 	 */
 	private String regstNm;	
 	/**
-	 * 수집일자
+	 * ?섏쭛?쇱옄
 	 */
 	private String colYmd;
 	/**
-	 * 첨부파일ID
+	 * 泥⑤??뚯씪ID
 	 */
 	private String atchFileId;
 	/** 
-	 * 최초등록아이디
+	 * 理쒖큹?깅줉?꾩씠??
 	 */
 	private String frstRegisterId = "";		
 	/** 
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**

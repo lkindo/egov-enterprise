@@ -62,7 +62,7 @@ public class EgovArticleDAO extends EgovComAbstractDAO {
 	}
 	
 	/*
-	 * 블로그 관련
+	 * 釉붾줈洹?愿??
 	 */
 	public BoardVO selectArticleCnOne(BoardVO boardVO) {
 		return (BoardVO) selectOne("BBSArticle.selectArticleCnOne", boardVO);

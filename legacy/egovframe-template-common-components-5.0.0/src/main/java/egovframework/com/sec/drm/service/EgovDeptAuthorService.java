@@ -4,18 +4,18 @@ import java.util.List;
 
 
 /**
- * 부서권한관리에 관한 서비스 인터페이스 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 遺?쒓텒?쒓?由ъ뿉 愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이문준          최초 생성
+ *   2009.03.20  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,7 +23,7 @@ import java.util.List;
 public interface EgovDeptAuthorService {
 
 	/**
-	 * 부서별 할당된 권한목록 조회
+	 * 遺?쒕퀎 ?좊떦??沅뚰븳紐⑸줉 議고쉶
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @return List<DeptAuthorVO>
 	 * @exception Exception
@@ -31,28 +31,28 @@ public interface EgovDeptAuthorService {
 	public List<DeptAuthorVO> selectDeptAuthorList(DeptAuthorVO deptAuthorVO) throws Exception;
 
 	/**
-	 * 부서에 해당하는 사용자에게 시스템 메뉴/접근권한을 일괄 할당
+	 * 遺?쒖뿉 ?대떦?섎뒗 ?ъ슜?먯뿉寃??쒖뒪??硫붾돱/?묎렐沅뚰븳???쇨큵 ?좊떦
 	 * @param deptAuthor DeptAuthor
 	 * @exception Exception
 	 */
 	public void insertDeptAuthor(DeptAuthor deptAuthor) throws Exception;
 
 	/**
-	 * 부서별 시스템 메뉴 접근권한을 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
+	 * 遺?쒕퀎 ?쒖뒪??硫붾돱 ?묎렐沅뚰븳???섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
 	 * @param deptAuthor
 	 * @exception Exception
 	 */
 	public void updateDeptAuthor(DeptAuthor deptAuthor) throws Exception;
 
 	/**
-	 * 불필요한 부서권한를 조회하여 데이터베이스에서 삭제
+	 * 遺덊븘?뷀븳 遺?쒓텒?쒕? 議고쉶?섏뿬 ?곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * @param deptAuthor DeptAuthor
 	 * @exception Exception
 	 */
 	public void deleteDeptAuthor(DeptAuthor deptAuthor) throws Exception;
 
     /**
-	 * 부서권한 목록조회 카운트를 반환한다
+	 * 遺?쒓텒??紐⑸줉議고쉶 移댁슫?몃? 諛섑솚?쒕떎
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @return int
 	 * @exception Exception
@@ -60,7 +60,7 @@ public interface EgovDeptAuthorService {
 	public int selectDeptAuthorListTotCnt(DeptAuthorVO deptAuthorVO) throws Exception;		
 	
 	/**
-	 * 부서목록 조회
+	 * 遺?쒕ぉ濡?議고쉶
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @return List<DeptAuthorVO>
 	 * @exception Exception
@@ -68,7 +68,7 @@ public interface EgovDeptAuthorService {
 	public List<DeptAuthorVO> selectDeptList(DeptAuthorVO deptAuthorVO) throws Exception;	
 	
     /**
-	 * 부서 목록조회 카운트를 반환한다
+	 * 遺??紐⑸줉議고쉶 移댁슫?몃? 諛섑솚?쒕떎
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @return int
 	 * @exception Exception

@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 /**
- * 배치작업 서비스 인터페이스
+ * 諛곗튂?묒뾽 ?쒕퉬???명꽣?섏씠??
  */
 public interface EgovBatchOpertService {
 

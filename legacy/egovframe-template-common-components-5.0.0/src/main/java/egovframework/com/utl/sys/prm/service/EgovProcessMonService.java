@@ -4,107 +4,107 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 개요 - PROCESS모니터링에 대한 Service Interface를 정의한다.
+ * 媛쒖슂 - PROCESS紐⑤땲?곕쭅?????Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용 - PROCESS모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - PROCESS모니터링의 조회기능은 목록조회,
- * 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - PROCESS紐⑤땲?곕쭅??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - PROCESS紐⑤땲?곕쭅??議고쉶湲곕뒫? 紐⑸줉議고쉶,
+ * ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 박종선
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:45
+ * @created 08-9-2010 ?ㅽ썑 3:54:45
  */
 public interface EgovProcessMonService {
 
 	/**
-	 * 등록된 PROCESS모니터링 목록을 조회한다.
+	 * ?깅줉??PROCESS紐⑤땲?곕쭅 紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return List - PROCESS모니터링 목록
+	 * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+	 * @return List - PROCESS紐⑤땲?곕쭅 紐⑸줉
 	 *
 	 * @param processMonVO
 	 */
 	public List<ProcessMonVO> selectProcessMonList(ProcessMonVO processMonVO) throws Exception;
 
 	/**
-	 * PROCESS모니터링 목록 총 개수를 조회한다.
+	 * PROCESS紐⑤땲?곕쭅 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 *
-	 * @param HttpMonVO - PROCESS모니터링 Vo
-	 * @return int - PROCESS모니터링 토탈 카운트 수
+	 * @param HttpMonVO - PROCESS紐⑤땲?곕쭅 Vo
+	 * @return int - PROCESS紐⑤땲?곕쭅 ?좏깉 移댁슫????
 	 *
 	 * @param httpMonVO
 	 */
 	int selectProcessMonTotCnt(ProcessMonVO searchVO) throws Exception;
 
 	/**
-	 * 등록된 PROCESS모니터링의 상세정보를 조회한다.
+	 * ?깅줉??PROCESS紐⑤땲?곕쭅???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param processMonVO - PROCESS모니터링 Vo
-	 * @return processMonVO - PROCESS모니터링 Vo
+	 * @param processMonVO - PROCESS紐⑤땲?곕쭅 Vo
+	 * @return processMonVO - PROCESS紐⑤땲?곕쭅 Vo
 	 *
 	 * @param processMonVO
 	 */
 	ProcessMonVO selectProcessMon(ProcessMonVO processMonVO) throws Exception;
 
 	/**
-	 * PROCESS모니터링 정보를 신규로 등록한다.
+	 * PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
 	public void insertProcessMon(ProcessMon processMon) throws Exception;
 
 	/**
-	 * 기 등록된 PROCESS모니터링 정보를 수정한다.
+	 * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??섏젙?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
 	public void updateProcessMon(ProcessMon processMon) throws Exception;
 
 	/**
-	 * 기 등록된 PROCESS모니터링 정보를 삭제한다.
+	 * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜???젣?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
 	 *
 	 * @param processNm
 	 */
 	public void deleteProcessMon(ProcessMon processMon) throws Exception;
 
 	/**
-	 * 프로세스 모니터링로그 목록을 조회한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param ProcessMonVO - 프로세스모니터링로그 VO
-	 * @return List<ProcessMonVO> - 프로세스모니터링로그 List
+	 * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return List<ProcessMonVO> - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 List
 	 *
 	 * @param processMonVO
 	 */
 	public Map<String, Object> selectProcessMonLogList(ProcessMonLogVO processMonLogVO) throws Exception;
 
 	/**
-	 * 프로세스 모니터링로그의 상세정보를 조회한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param ProcessMonVO - 프로세스모니터링로그 model
-	 * @return ProcessMonVO - 프로세스모니터링로그 model
+	 * @param ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
+	 * @return ProcessMonVO - ?꾨줈?몄뒪紐⑤땲?곕쭅濡쒓렇 model
 	 *
 	 * @param processMonVO
 	 */
 	public ProcessMonLogVO selectProcessMonLog(ProcessMonLogVO processMonLogVO) throws Exception;
 
 	/**
-	 * 프로세스 모니터링 결과를 수정한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
 	 *
-	 * @param ProcessMon - 프로세스 모니터링대상 model
+	 * @param ProcessMon - ?꾨줈?몄뒪 紐⑤땲?곕쭅???model
 	 *
 	 * @param processMon
 	 */
 	public void updateProcessMonSttus(ProcessMon processMon) throws Exception;
 
 	/**
-	 * 프로세스 모니터링로그를 등록한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇瑜??깅줉?쒕떎.
 	 *
-	 * @param ProcessMonLog - 프로세스 모니터링로그 model
+	 * @param ProcessMonLog - ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 model
 	 *
 	 * @param processMonLog
 	 */

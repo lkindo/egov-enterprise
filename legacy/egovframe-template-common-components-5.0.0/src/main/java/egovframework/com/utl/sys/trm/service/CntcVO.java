@@ -5,50 +5,50 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 연계정보에 대한 VO 클래스
+ * ?곌퀎?뺣낫?????VO ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class CntcVO extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -4961144967939216693L;
 	/**
-	 * 연계ID
+	 * ?곌퀎ID
 	 */
 	private String cntcId;
 	/**
-	 * 연계명
+	 * ?곌퀎紐?
 	 */
 	private String cntcNm;
 	/**
-	 * 제공기관명
+	 * ?쒓났湲곌?紐?
 	 */
 	private String provdInsttNm;
 	/**
-	 * 제공시스템명
+	 * ?쒓났?쒖뒪?쒕챸
 	 */
 	private String provdSysNm;
 	/**
-	 * 제공서비스명
+	 * ?쒓났?쒕퉬?ㅻ챸
 	 */
 	private String provdSvcNm;
 	/**
-	 * 요청기관명
+	 * ?붿껌湲곌?紐?
 	 */
 	private String requstInsttNm;
 	/**
-	 * 요청시스템명
+	 * ?붿껌?쒖뒪?쒕챸
 	 */
 	private String requstSysNm;
 	/**

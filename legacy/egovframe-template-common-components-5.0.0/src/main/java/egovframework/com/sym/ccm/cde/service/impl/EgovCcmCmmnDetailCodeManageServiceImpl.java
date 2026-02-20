@@ -12,18 +12,18 @@ import jakarta.annotation.Resource;
 
 /**
 *
-* 공통상세코드에 대한 서비스 구현클래스를 정의한다
-* @author 공통서비스 개발팀 이중호
+* 怨듯넻?곸꽭肄붾뱶??????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎
+* @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
 * @since 2009.04.01
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2009.04.01  이중호          최초 생성
+*   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
 *
 * </pre>
 */
@@ -34,7 +34,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
     private CmmnDetailCodeManageDAO cmmnDetailCodeManageDAO;
 
 	/**
-	 * 공통상세코드 총 개수를 조회한다.
+	 * 怨듯넻?곸꽭肄붾뱶 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public int selectCmmnDetailCodeListTotCnt(CmmnDetailCodeVO searchVO) throws Exception {
@@ -42,7 +42,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	}
 
 	/**
-	 * 공통상세코드 목록을 조회한다.
+	 * 怨듯넻?곸꽭肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 */
 	@Override
 	public List<CmmnDetailCodeVO> selectCmmnDetailCodeList(CmmnDetailCodeVO searchVO) throws Exception {
@@ -50,7 +50,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	}
 
 	/**
-	 * 공통상세코드 상세항목을 조회한다.
+	 * 怨듯넻?곸꽭肄붾뱶 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @throws Exception
 	 */
 	@Override
@@ -60,7 +60,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	}
 
 	/**
-	 * 공통상세코드를 삭제한다.
+	 * 怨듯넻?곸꽭肄붾뱶瑜???젣?쒕떎.
 	 * @throws Exception
 	 */
 	@Override
@@ -70,7 +70,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	}
 
 	/**
-	 * 공통상세코드를 등록한다.
+	 * 怨듯넻?곸꽭肄붾뱶瑜??깅줉?쒕떎.
 	 */
 	@Override
 	public void insertCmmnDetailCode(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {
@@ -79,7 +79,7 @@ public class EgovCcmCmmnDetailCodeManageServiceImpl extends EgovAbstractServiceI
 	}
 
 	/**
-	 * 공통상세코드를 수정한다.
+	 * 怨듯넻?곸꽭肄붾뱶瑜??섏젙?쒕떎.
 	 */
 	@Override
 	public void updateCmmnDetailCode(CmmnDetailCodeVO cmmnDetailCodeVO) throws Exception {

@@ -7,18 +7,18 @@ import com.github.scribejava.core.builder.api.DefaultApi20;
 /**
  * OAuth VO
  * 
- * @author 표프센
+ * @author ?쒗봽??
  * @since 2020.03.11
  * @version 3.9.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2020.03.11  표프센          최초 생성
- *   2025.06.25  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드)
+ *   2020.03.11  ?쒗봽??         理쒖큹 ?앹꽦
+ *   2025.06.25  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶)
  *
  *      </pre>
  */
@@ -75,7 +75,7 @@ public class OAuthVO implements OAuthConfig {
 		return origin;
 	}
 
-	// scope 추가
+	// scope 異붽?
 	public String getScope() {
 		return scope;
 	}

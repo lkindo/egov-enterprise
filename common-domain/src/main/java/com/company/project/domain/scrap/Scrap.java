@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 스크랩 JPA Entity
- * 레거시 테이블: COMTNSCRAP
+ * ??쎄쾿??JPA Entity
+ * ??뉕탢?????뵠?? COMTNSCRAP
  */
 @Entity
 @Table(name = "NSCRAP")

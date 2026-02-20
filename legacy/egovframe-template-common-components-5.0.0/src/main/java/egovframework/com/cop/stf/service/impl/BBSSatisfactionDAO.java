@@ -9,18 +9,18 @@ import egovframework.com.cop.bbs.service.Satisfaction;
 import egovframework.com.cop.bbs.service.SatisfactionVO;
 
 /**
- * 만족도조사를 위한 데이터 접근 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 留뚯”?꾩“?щ? ?꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.29
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.29  한성곤          최초 생성
+ *   2009.06.29  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -28,7 +28,7 @@ import egovframework.com.cop.bbs.service.SatisfactionVO;
 public class BBSSatisfactionDAO extends EgovComAbstractDAO {
 
     /**
-     * 만족도조사에 대한 목록을 조회 한다.
+     * 留뚯”?꾩“?ъ뿉 ???紐⑸줉??議고쉶 ?쒕떎.
      * 
      * @param satisfactionVO
      * @return
@@ -39,7 +39,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사에 대한 목록 건수를 조회 한다.
+     * 留뚯”?꾩“?ъ뿉 ???紐⑸줉 嫄댁닔瑜?議고쉶 ?쒕떎.
      * 
      * @param satisfactionVO
      * @return
@@ -50,7 +50,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사를 등록한다.
+     * 留뚯”?꾩“?щ? ?깅줉?쒕떎.
      * 
      * @param satisfaction
      * @throws Exception
@@ -60,7 +60,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사를 삭제한다.
+     * 留뚯”?꾩“?щ? ??젣?쒕떎.
      * 
      * @param satisfactionVO
      * @throws Exception
@@ -70,7 +70,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사에 대한 내용을 조회한다.
+     * 留뚯”?꾩“?ъ뿉 ????댁슜??議고쉶?쒕떎.
      * 
      * @param satisfactionVO
      * @return
@@ -81,7 +81,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사에 대한 내용을 수정한다.
+     * 留뚯”?꾩“?ъ뿉 ????댁슜???섏젙?쒕떎.
      * 
      * @param satisfaction
      * @throws Exception
@@ -91,7 +91,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도조사에 대한 패스워드를 조회 한다.
+     * 留뚯”?꾩“?ъ뿉 ????⑥뒪?뚮뱶瑜?議고쉶 ?쒕떎.
      * 
      * @param satisfaction
      * @return
@@ -102,7 +102,7 @@ public class BBSSatisfactionDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 만족도 전체 점수를 제공한다.
+     * 留뚯”???꾩껜 ?먯닔瑜??쒓났?쒕떎.
      * 
      * @param satisfactionVO
      * @return

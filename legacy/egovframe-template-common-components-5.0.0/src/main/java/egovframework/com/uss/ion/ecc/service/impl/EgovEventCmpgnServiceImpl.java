@@ -58,10 +58,10 @@ public class EgovEventCmpgnServiceImpl extends EgovAbstractServiceImpl implement
 
 	@Override
 	public void deleteEventCmpgn(EventCmpgnVO eventCmpgnVO) {
-		//행사/이벤트/캠페인에 속한 외부인사정보를 삭제한다.
+		//?됱궗/?대깽??罹좏럹?몄뿉 ?랁븳 ?몃??몄궗?뺣낫瑜???젣?쒕떎.
 		egovEventCmpgnDao.deleteEventCmpgnTnextrlHr(eventCmpgnVO);
 
-		//행사/이벤트/캠페인을 삭제한다.
+		//?됱궗/?대깽??罹좏럹?몄쓣 ??젣?쒕떎.
 		egovEventCmpgnDao.deleteEventCmpgn(eventCmpgnVO);
 
 	}

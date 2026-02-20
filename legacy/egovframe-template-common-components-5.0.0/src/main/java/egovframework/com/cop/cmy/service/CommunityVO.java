@@ -5,80 +5,80 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 커뮤니티 관리를 위한 VO 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 而ㅻ??덊떚 愿由щ? ?꾪븳 VO ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.4.2  이삼섭          최초 생성
+ *   2009.4.2  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class CommunityVO extends Community implements Serializable {
 
-    /** 검색시작일 */
+    /** 寃?됱떆?묒씪 */
     private String searchBgnDe = "";
     
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색종료일 */
+    /** 寃?됱쥌猷뚯씪 */
     private String searchEndDe = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private long sortOrdr = 0L;
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int rowNo = 0;
 
-    /** 등록구분 코드명 */
+    /** ?깅줉援щ텇 肄붾뱶紐?*/
     private String registSeCodeNm = "";
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 게시판 아이드 */
+    /** 寃뚯떆???꾩씠??*/
     private String bbsId = "";
 
-    /** 게시판 이름 */
+    /** 寃뚯떆???대쫫 */
     private String bbsNm = "";
     
-    /** 제공 URL */
+    /** ?쒓났 URL */
     private String provdUrl = "";
 
     /**
-     * searchBgnDe attribute를 리턴한다.
+     * searchBgnDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchBgnDe
      */
@@ -87,7 +87,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchBgnDe attribute 값을 설정한다.
+     * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchBgnDe
      *            the searchBgnDe to set
@@ -97,7 +97,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchCnd
      */
@@ -106,7 +106,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchCnd
      *            the searchCnd to set
@@ -116,7 +116,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchEndDe attribute를 리턴한다.
+     * searchEndDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchEndDe
      */
@@ -125,7 +125,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchEndDe attribute 값을 설정한다.
+     * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchEndDe
      *            the searchEndDe to set
@@ -135,7 +135,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchWrd
      */
@@ -144,7 +144,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchWrd
      *            the searchWrd to set
@@ -154,7 +154,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the sortOrdr
      */
@@ -163,7 +163,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param sortOrdr
      *            the sortOrdr to set
@@ -173,7 +173,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchUseYn attribute를 리턴한다.
+     * searchUseYn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchUseYn
      */
@@ -182,7 +182,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * searchUseYn attribute 값을 설정한다.
+     * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchUseYn
      *            the searchUseYn to set
@@ -192,7 +192,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageIndex
      */
@@ -201,7 +201,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageIndex
      *            the pageIndex to set
@@ -211,7 +211,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageUnit
      */
@@ -220,7 +220,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageUnit
      *            the pageUnit to set
@@ -230,7 +230,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageSize
      */
@@ -239,7 +239,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageSize
      *            the pageSize to set
@@ -249,7 +249,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the firstIndex
      */
@@ -258,7 +258,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param firstIndex
      *            the firstIndex to set
@@ -268,7 +268,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastIndex
      */
@@ -277,7 +277,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastIndex
      *            the lastIndex to set
@@ -287,7 +287,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the recordCountPerPage
      */
@@ -296,7 +296,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param recordCountPerPage
      *            the recordCountPerPage to set
@@ -306,7 +306,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * rowNo attribute를 리턴한다.
+     * rowNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the rowNo
      */
@@ -315,7 +315,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * rowNo attribute 값을 설정한다.
+     * rowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param rowNo
      *            the rowNo to set
@@ -325,7 +325,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * registSeCodeNm attribute를 리턴한다.
+     * registSeCodeNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the registSeCodeNm
      */
@@ -334,7 +334,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * registSeCodeNm attribute 값을 설정한다.
+     * registSeCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param registSeCodeNm
      *            the registSeCodeNm to set
@@ -344,7 +344,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterNm
      */
@@ -353,7 +353,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterNm
      *            the frstRegisterNm to set
@@ -363,7 +363,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * bbsId attribute를 리턴한다.
+     * bbsId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsId
      */
@@ -372,7 +372,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * bbsId attribute 값을 설정한다.
+     * bbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsId
      *            the bbsId to set
@@ -382,7 +382,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * bbsNm attribute를 리턴한다.
+     * bbsNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsNm
      */
@@ -391,7 +391,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * bbsNm attribute 값을 설정한다.
+     * bbsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsNm
      *            the bbsNm to set
@@ -401,7 +401,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * provdUrl attribute를 리턴한다.
+     * provdUrl attribute瑜?由ы꽩?쒕떎.
      * @return the provdUrl
      */
     public String getProvdUrl() {
@@ -409,7 +409,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * provdUrl attribute 값을 설정한다.
+     * provdUrl attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param provdUrl the provdUrl to set
      */
     public void setProvdUrl(String provdUrl) {
@@ -417,7 +417,7 @@ public class CommunityVO extends Community implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

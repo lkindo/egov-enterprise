@@ -30,20 +30,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 배치스케줄관리에 대한 controller 클래스
+ * 諛곗튂?ㅼ?以꾧?由ъ뿉 ???controller ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 
@@ -54,11 +54,11 @@ public class EgovBatchSchdulController {
 	@Resource(name = "egovBatchSchdulService")
 	private EgovBatchSchdulService egovBatchSchdulService;
 
-	/* Property 서비스 */
+	/* Property ?쒕퉬??*/
 	@Resource(name = "propertiesService")
 	private EgovPropertyService propertyService;
 
-	/* 메세지 서비스 */
+	/* 硫붿꽭吏 ?쒕퉬??*/
 	@Resource(name = "egovMessageSource")
 	private EgovMessageSource egovMessageSource;
 
@@ -70,7 +70,7 @@ public class EgovBatchSchdulController {
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	/** 배치스케줄러 서비스 */
+	/** 諛곗튂?ㅼ?以꾨윭 ?쒕퉬??*/
 	@Resource(name = "batchScheduler")
 	private BatchScheduler batchScheduler;
 
@@ -78,10 +78,10 @@ public class EgovBatchSchdulController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovBatchSchdulController.class);
 
 	/**
-	 * 배치스케줄을 삭제한다.
-	 * @return 리턴URL
+	 * 諛곗튂?ㅼ?以꾩쓣 ??젣?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 삭제대상 배치스케줄model
+	 * @param batchSchdul ??젣???諛곗튂?ㅼ?以꼖odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -93,7 +93,7 @@ public class EgovBatchSchdulController {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 배치스케줄러에 스케줄정보반영
+		// 諛곗튂?ㅼ?以꾨윭???ㅼ?以꾩젙蹂대컲??
 		batchScheduler.deleteBatchSchdul(batchSchdul);
 
 		egovBatchSchdulService.deleteBatchSchdul(batchSchdul);
@@ -102,26 +102,26 @@ public class EgovBatchSchdulController {
 	}
 
 	/**
-	 * 배치스케줄을 등록한다.
-	 * @return 리턴URL
+	 * 諛곗튂?ㅼ?以꾩쓣 ?깅줉?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 등록대상 배치스케줄model
+	 * @param batchSchdul ?깅줉???諛곗튂?ㅼ?以꼖odel
 	 * @param bindingResult	BindingResult
 	 * @param model			ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/addBatchSchdul.do")
 	public String insertBatchSchdul(@Valid @ModelAttribute BatchSchdul batchSchdul, BindingResult bindingResult, ModelMap model) throws Exception {
-		LOGGER.debug(" 인서트 대상정보 : {}", batchSchdul);
+		LOGGER.debug(" ?몄꽌????곸젙蹂?: {}", batchSchdul);
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (bindingResult.hasErrors()) {
@@ -129,45 +129,45 @@ public class EgovBatchSchdulController {
 			return "egovframework/com/sym/bat/EgovBatchSchdulRegist";
 		} else {
 			batchSchdul.setBatchSchdulId(idgenService.getNextStringId());
-			//아이디 설정
+			//?꾩씠???ㅼ젙
 			batchSchdul.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			batchSchdul.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
 			egovBatchSchdulService.insertBatchSchdul(batchSchdul);
 
-			// 배치스케줄러에 스케줄정보반영
+			// 諛곗튂?ㅼ?以꾨윭???ㅼ?以꾩젙蹂대컲??
 			BatchSchdul target = egovBatchSchdulService.selectBatchSchdul(batchSchdul);
 			batchScheduler.insertBatchSchdul(target);
 
-			//Exception 없이 진행시 등록성공메시지
+			//Exception ?놁씠 吏꾪뻾???깅줉?깃났硫붿떆吏
 			model.addAttribute("resultMsg", "success.common.insert");
 		}
 		return "forward:/sym/bat/getBatchSchdulList.do";
 	}
 
 	/**
-	 * 배치스케줄정보을 상세조회한다.
-	 * @return 리턴URL
+	 * 諛곗튂?ㅼ?以꾩젙蹂댁쓣 ?곸꽭議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 조회대상 배치스케줄model
+	 * @param batchSchdul 議고쉶???諛곗튂?ㅼ?以꼖odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/getBatchSchdul.do")
 	public String selectBatchSchdul(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model) throws Exception {
-		LOGGER.debug(" 조회조건 : {}", batchSchdul);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", batchSchdul);
 		BatchSchdul result = egovBatchSchdulService.selectBatchSchdul(batchSchdul);
 		model.addAttribute("resultInfo", result);
-		LOGGER.debug(" 결과값 : {}", result);
+		LOGGER.debug(" 寃곌낵媛?: {}", result);
 
 		return "egovframework/com/sym/bat/EgovBatchSchdulDetail";
 	}
 
 	/**
-	 * 등록화면을 위한 배치스케줄정보을 조회한다.
-	 * @return 리턴URL
+	 * ?깅줉?붾㈃???꾪븳 諛곗튂?ㅼ?以꾩젙蹂댁쓣 議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 조회대상 배치스케줄model
+	 * @param batchSchdul 議고쉶???諛곗튂?ㅼ?以꼖odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -181,10 +181,10 @@ public class EgovBatchSchdulController {
 	}
 
 	/**
-	 * 수정화면을 위한 배치스케줄정보을 조회한다.
-	 * @return 리턴URL
+	 * ?섏젙?붾㈃???꾪븳 諛곗튂?ㅼ?以꾩젙蹂댁쓣 議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 조회대상 배치스케줄model
+	 * @param batchSchdul 議고쉶???諛곗튂?ㅼ?以꼖odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -192,31 +192,31 @@ public class EgovBatchSchdulController {
 	public String selectBatchSchdulForUpdate(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model) throws Exception {
 		referenceData(model);
 
-		LOGGER.debug(" 조회조건 : {}", batchSchdul);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", batchSchdul);
 		BatchSchdul result = egovBatchSchdulService.selectBatchSchdul(batchSchdul);
 		model.addAttribute("batchSchdul", result);
-		LOGGER.debug(" 결과값 : {}", result);
+		LOGGER.debug(" 寃곌낵媛?: {}", result);
 
 		return "egovframework/com/sym/bat/EgovBatchSchdulUpdt";
 	}
 
 	/**
-	 * Reference Data 를 설정한다.
-	 * @param model   화면용spring Model객체
+	 * Reference Data 瑜??ㅼ젙?쒕떎.
+	 * @param model   ?붾㈃?쯵pring Model媛앹껜
 	 * @throws Exception
 	 */
 	private void referenceData(ModelMap model) throws Exception {
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
-		//DBMS종류코드목록을 코드정보로부터 조회
+		//DBMS醫낅쪟肄붾뱶紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 		vo.setCodeId("COM047");
 		List<CmmnDetailCode> executCycleList = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("executCycleList", executCycleList);
-		//요일구분코드목록을 코드정보로부터 조회
+		//?붿씪援щ텇肄붾뱶紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 		vo.setCodeId("COM074");
 		List<CmmnDetailCode> executSchdulDfkSeList = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("executSchdulDfkSeList", executSchdulDfkSeList);
 
-		// 실행스케줄 시, 분, 초 값 설정.
+		// ?ㅽ뻾?ㅼ?以??? 遺? 珥?媛??ㅼ젙.
 		Map<String, String> executSchdulHourList = new LinkedHashMap<>();
 		for (int i = 0; i < 24; i++) {
 			if (i < 10) {
@@ -247,14 +247,14 @@ public class EgovBatchSchdulController {
 	}
 
 	/**
-	 * 배치스케줄 목록을 조회한다.
-	 * @return 리턴URL
+	 * 諛곗튂?ㅼ?以?紐⑸줉??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
-	@IncludedInfo(name = "스케줄처리", listUrl = "/sym/bat/getBatchSchdulList.do", order = 1140, gid = 60)
+	@IncludedInfo(name = "?ㅼ?以꾩쿂由?, listUrl = "/sym/bat/getBatchSchdulList.do", order = 1140, gid = 60)
 	@RequestMapping("/sym/bat/getBatchSchdulList.do")
 	public String selectBatchSchdulList(@ModelAttribute("searchVO") BatchSchdul searchVO, ModelMap model) throws Exception {
 		searchVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -282,23 +282,23 @@ public class EgovBatchSchdulController {
 	}
 
 	/**
-	 * 배치스케줄을 수정한다.
-	 * @return 리턴URL
+	 * 諛곗튂?ㅼ?以꾩쓣 ?섏젙?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param batchSchdul 수정대상 배치스케줄model
+	 * @param batchSchdul ?섏젙???諛곗튂?ㅼ?以꼖odel
 	 * @param bindingResult		BindingResult
 	 * @param model				ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/bat/updateBatchSchdul.do")
 	public String updateBatchSchdul(@Valid @ModelAttribute BatchSchdul batchSchdul, BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (bindingResult.hasErrors()) {
@@ -307,11 +307,11 @@ public class EgovBatchSchdulController {
 			return "egovframework/com/sym/bat/EgovBatchSchdulUpdt";
 		}
 
-		// 정보 업데이트
+		// ?뺣낫 ?낅뜲?댄듃
 		batchSchdul.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		egovBatchSchdulService.updateBatchSchdul(batchSchdul);
 
-		// 배치스케줄러에 스케줄정보반영
+		// 諛곗튂?ㅼ?以꾨윭???ㅼ?以꾩젙蹂대컲??
 		BatchSchdul target = egovBatchSchdulService.selectBatchSchdul(batchSchdul);
 		batchScheduler.updateBatchSchdul(target);
 

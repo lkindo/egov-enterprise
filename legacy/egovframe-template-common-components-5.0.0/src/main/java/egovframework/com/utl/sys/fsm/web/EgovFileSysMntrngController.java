@@ -29,24 +29,24 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 파일시스템 모니터링대상에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 파일시스템 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 파일시스템 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:26
+ * @created 28-6-2010 ?ㅼ쟾 11:33:26
  *  <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.28	장철호		최초 생성
- *  2011.08.26	정진오		IncludedInfo annotation 추가
- *  2023.06.09	김수용		NSR 보안조치 (파일시스템 변수에서 개행문자 제거)
- *  2024.05.02  김수용        NSR 보안조치 (파일시스템명에서 악의적인 문자열 제거)
+ *  2010.06.28	?μ쿋??	理쒖큹 ?앹꽦
+ *  2011.08.26	?뺤쭊??	IncludedInfo annotation 異붽?
+ *  2023.06.09	源?섏슜		NSR 蹂댁븞議곗튂 (?뚯씪?쒖뒪??蹂?섏뿉??媛쒗뻾臾몄옄 ?쒓굅)
+ *  2024.05.02  源?섏슜        NSR 蹂댁븞議곗튂 (?뚯씪?쒖뒪?쒕챸?먯꽌 ?낆쓽?곸씤 臾몄옄???쒓굅)
  * </pre>
  */
 @Controller
@@ -62,16 +62,16 @@ public class EgovFileSysMntrngController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 파일시스템 모니터링대상 정보에 대한 목록을 조회한다.
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅????뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * @param FileSysMntrngVO
 	 * @return  String
 	 *
 	 * @param fileSysMntrngVO
 	 */
-	@IncludedInfo(name = "파일시스템모니터링", order = 2130, gid = 90)
+	@IncludedInfo(name = "?뚯씪?쒖뒪?쒕え?덊꽣留?, order = 2130, gid = 90)
 	@RequestMapping("/utl/sys/fsm/selectFileSysMntrngList.do")
 	public String selectFileSysMntrngList(@ModelAttribute("searchVO") FileSysMntrngVO fileSysMntrngVO, ModelMap model) throws Exception {
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		//LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		fileSysMntrngVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -98,9 +98,9 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보의 등록페이지로 이동한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링 VO
-	 * @return  String - 리턴 URL
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫???깅줉?섏씠吏濡??대룞?쒕떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -108,7 +108,7 @@ public class EgovFileSysMntrngController {
 	public String addFileSysMntrng(@ModelAttribute("fileSysMntrngVO") FileSysMntrngVO fileSysMntrngVO, BindingResult bindingResult, ModelMap model) throws Exception {
 		String sLocationUrl = "egovframework/com/utl/sys/fsm/EgovFileSysMntrngRegist";
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -119,15 +119,15 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보의 수정페이지로 이동한다.
-	 * @param FileSysMntrngVO - 파일시스템 모니터링 VO
-	 * @return  String - 리턴 URL
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫???섏젙?섏씠吏濡??대룞?쒕떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪??紐⑤땲?곕쭅 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param fileSysMntrngVO
 	 */
 	@RequestMapping("/utl/sys/fsm/modifyFileSysMntrng.do")
 	public String modifyFileSysMntrng(@ModelAttribute("fileSysMntrngVO") FileSysMntrngVO fileSysMntrngVO, BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -152,7 +152,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링대상 정보를 조회한다.
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅????뺣낫瑜?議고쉶?쒕떎.
 	 * @param FileSysMntrngVO
 	 * @return  String
 	 *
@@ -173,7 +173,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링대상 정보를 수정한다.
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅????뺣낫瑜??섏젙?쒕떎.
 	 * @param FileSysMntrng
 	 * @return  String
 	 *
@@ -207,7 +207,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링대상 정보를 등록한다.
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅????뺣낫瑜??깅줉?쒕떎.
 	 * @param FileSysMntrng
 	 * @return  String
 	 *
@@ -218,14 +218,14 @@ public class EgovFileSysMntrngController {
 		@Valid @ModelAttribute("fileSysMntrngVO") FileSysMntrngVO fileSysMntrngVO,
 		BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/utl/sys/fsm/EgovFileSysMntrngRegist";
@@ -234,7 +234,7 @@ public class EgovFileSysMntrngController {
 			return sLocationUrl;
 		}
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		fileSysMntrngVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		fileSysMntrngVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -249,7 +249,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링대상 정보를 삭제한다.
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅????뺣낫瑜???젣?쒕떎.
 	 * @param FileSysMntrng
 	 * @return  String
 	 *
@@ -257,7 +257,7 @@ public class EgovFileSysMntrngController {
 	 */
 	@RequestMapping("/utl/sys/fsm/deleteFileSysMntrng.do")
 	public String deleteFileSysMntrng(@ModelAttribute("fileSysMntrngVO") FileSysMntrngVO fileSysMntrngVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -268,7 +268,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템의 크기를 조회한다.
+	 * ?뚯씪?쒖뒪?쒖쓽 ?ш린瑜?議고쉶?쒕떎.
 	 * @param FileSysMntrng
 	 * @return  String
 	 *
@@ -291,15 +291,15 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링로그 정보에 대한 목록을 조회한다.
-	 * @param FileSysMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  String - 리턴 URL
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
+	 * @param FileSysMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
 	@RequestMapping("/utl/sys/fsm/selectFileSysMntrngLogList.do")
 	public String selectFileSysMntrngLogList(@ModelAttribute("searchVO") FileSysMntrngLogVO fileSysMntrngLogVO, ModelMap model) throws Exception {
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		//LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		fileSysMntrngLogVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -314,7 +314,7 @@ public class EgovFileSysMntrngController {
 		fileSysMntrngLogVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		fileSysMntrngLogVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		// 조회기간설정
+		// 議고쉶湲곌컙?ㅼ젙
 		if (fileSysMntrngLogVO.getSearchBgnDe() != null && fileSysMntrngLogVO.getSearchEndDe() != null) {
 			if (!fileSysMntrngLogVO.getSearchBgnDe().equals("") && !fileSysMntrngLogVO.getSearchEndDe().equals("")) {
 				fileSysMntrngLogVO.setSearchBgnDt(fileSysMntrngLogVO.getSearchBgnDe() + " " + fileSysMntrngLogVO.getSearchBgnHour());
@@ -341,9 +341,9 @@ public class EgovFileSysMntrngController {
 			//System.out.println(list.get(k).getCreatDt());
 		}
 
-		// 조회시작시
+		// 議고쉶?쒖옉??
 		model.addAttribute("searchBgnHour", getTimeHH());
-		// 조회종료시
+		// 議고쉶醫낅즺??
 		model.addAttribute("searchEndHour", getTimeHH());
 
 		model.addAttribute("resultList", list);
@@ -354,9 +354,9 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 파일시스템 모니터링로그 정보를 조회한다.
-	 * @param FileSysMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  String - 리턴 URL
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param FileSysMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
@@ -375,7 +375,7 @@ public class EgovFileSysMntrngController {
 	}
 
 	/**
-	 * 시간의 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 * @return  List
 	 * @throws
 	 */

@@ -1,43 +1,43 @@
 package egovframework.com.dam.map.tea.service;
 
 /**
- * 개요
- * - 지식맵(조직별)에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앸㏊(議곗쭅蹂??????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 조직분류, 등록일자, 지식URL 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 議곗쭅遺꾨쪟, ?깅줉?쇱옄, 吏?쓀RL ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 22-7-2010 오전 10:57:44
+ * @created 22-7-2010 ?ㅼ쟾 10:57:44
  */
 public class MapTeam {
 
 	/**
-	 * 조직ID
+	 * 議곗쭅ID
 	 */
 	private String orgnztId;
 	/**
-	 * 조직분류
+	 * 議곗쭅遺꾨쪟
 	 */
 	private String orgnztNm;
 	/**
-	 * 분류일자
+	 * 遺꾨쪟?쇱옄
 	 */
 	private String clYmd;
 	/**
-	 * 지식URL
+	 * 吏?쓀RL
 	 */
 	private String knoUrl;
     /**
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "";	
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnt;
 	

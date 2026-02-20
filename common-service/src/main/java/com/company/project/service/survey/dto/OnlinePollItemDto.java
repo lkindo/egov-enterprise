@@ -13,25 +13,25 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "온라인 투표 항목 DTO")
+@Schema(description = "Description")
 public class OnlinePollItemDto {
 
-    @Schema(description = "항목 ID")
+    @Schema(description = "Description")
     private String pollIemId;
 
-    @Schema(description = "투표 ID")
+    @Schema(description = "Description")
     private String pollId;
 
-    @Schema(description = "항목 명")
+    @Schema(description = "Description")
     private String pollIemNm;
 
-    @Schema(description = "득표 수")
+    @Schema(description = "Description")
     private Long voteCount;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static OnlinePollItemDto from(OnlinePollItem entity) {

@@ -25,17 +25,17 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * RSS태그관리를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * RSS?쒓렇愿由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -56,10 +56,10 @@ public class EgovRssTagManageController {
     protected EgovPropertyService propertiesService;
 
     /**
-     * RSS태그관리 목록을 조회한다.
+     * RSS?쒓렇愿由?紐⑸줉??議고쉶?쒕떎.
      * @param commandMap -Request Variable
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/rss/listRssTagManageTableColumnList.do")
@@ -81,15 +81,15 @@ public class EgovRssTagManageController {
 	}
 
     /**
-     * RSS태그관리 목록을 조회한다.
-     * @param searchVO -검색정보가 담긴 객체
+     * RSS?쒓렇愿由?紐⑸줉??議고쉶?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param rssManage -RSS태그관리 객체
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param rssManage -RSS?쒓렇愿由?媛앹껜
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
-    @IncludedInfo(name="RSS태그관리", listUrl="/uss/ion/rss/listRssTagManage.do", order = 820 ,gid = 50)
+    @IncludedInfo(name="RSS?쒓렇愿由?, listUrl="/uss/ion/rss/listRssTagManage.do", order = 820 ,gid = 50)
     @RequestMapping(value = "/uss/ion/rss/listRssTagManage.do")
     public String EgovRssTagManageList(
             @ModelAttribute("searchVO") RssManage searchVO,
@@ -98,20 +98,20 @@ public class EgovRssTagManageController {
             RssManage rssManage, ModelMap model)
             throws Exception {
 
-    	//변수 설정
+    	//蹂???ㅼ젙
     	String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
 
-        //로그인 객체 선언
+        //濡쒓렇??媛앹껜 ?좎뼵
         LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-        //삭제 모드로 실행시
+        //??젣 紐⑤뱶濡??ㅽ뻾??
         if(sCmd.equals("del")){
 
         	for(String checkData : checkList) {
@@ -123,7 +123,7 @@ public class EgovRssTagManageController {
 	            egovRssManageService.deleteRssTagManage(rssManage);
             }
 
-	        //페이지 인텍스 설정
+	        //?섏씠吏 ?명뀓???ㅼ젙
 	        searchVO.setPageIndex(1);
         }
 
@@ -156,12 +156,12 @@ public class EgovRssTagManageController {
     }
 
     /**
-     * RSS태그관리 목록을 상세조회 조회한다.
-     * @param searchVO -검색정보가 담긴 객체
-     * @param rssManage -RSS태그관리 객체
+     * RSS?쒓렇愿由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
+     * @param rssManage -RSS?쒓렇愿由?媛앹껜
      * @param commandMap -Request Variable
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/rss/detailRssTagManage.do")
@@ -178,7 +178,7 @@ public class EgovRssTagManageController {
             egovRssManageService.deleteRssTagManage(rssManage);
             sLocationUrl = "redirect:/uss/ion/rss/listRssTagManage.do";
         } else {
-            //상세정보 불러오기
+            //?곸꽭?뺣낫 遺덈윭?ㅺ린
         	RssManage rssManages = egovRssManageService.selectRssTagManageDetail(rssManage);
             model.addAttribute("rssManage", rssManages);
         }
@@ -188,13 +188,13 @@ public class EgovRssTagManageController {
     }
 
     /**
-     * RSS태그관리를 수정한다.
-     * @param searchVO -검색정보가 담긴 객체
+     * RSS?쒓렇愿由щ? ?섏젙?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param rssManage -RSS태그관리 객체
-     * @param BindingResult	-Validator 하기위한 객체
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param rssManage -RSS?쒓렇愿由?媛앹껜
+     * @param BindingResult	-Validator ?섍린?꾪븳 媛앹껜
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/rss/updtRssTagManage.do")
@@ -204,14 +204,14 @@ public class EgovRssTagManageController {
             @Valid @ModelAttribute("rssManage") RssManage rssManage,
             BindingResult bindingResult, ModelMap model) throws Exception {
 
-            // 0. Spring Security 사용자권한 처리
+            // 0. Spring Security ?ъ슜?먭텒??泥섎━
             Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
             if (!isAuthenticated) {
                 model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
                 return "redirect:/uat/uia/egovLoginUsr.do";
             }
 
-            // 로그인 객체 선언
+            // 濡쒓렇??媛앹껜 ?좎뼵
             LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
             String sLocationUrl = "egovframework/com/uss/ion/rss/EgovRssTagManageUpdt";
@@ -223,18 +223,18 @@ public class EgovRssTagManageController {
                 if(bindingResult.hasErrors()){
                     return sLocationUrl;
                 }
-                //아이디 설정
+                //?꾩씠???ㅼ젙
                 rssManage.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
                 rssManage.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-                //저장
+                //???
                 egovRssManageService.updateRssTagManage(rssManage);
                 sLocationUrl = "forward:/uss/ion/rss/listRssTagManage.do";
             } else {
 
-            	//테이블 목록 불러오기
+            	//?뚯씠釉?紐⑸줉 遺덈윭?ㅺ린
             	model.addAttribute("trgetSvcTableList", egovRssManageService.selectRssTagManageTableList());
 
-                //수정정보 불러오기
+                //?섏젙?뺣낫 遺덈윭?ㅺ린
                 RssManage rssManageVO = egovRssManageService.selectRssTagManageDetail(rssManage);
                 model.addAttribute("rssManage", rssManageVO);
             }
@@ -243,13 +243,13 @@ public class EgovRssTagManageController {
     }
 
     /**
-     * RSS태그관리를 등록한다.
-     * @param searchVO -검색정보가 담긴 객체
+     * RSS?쒓렇愿由щ? ?깅줉?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param rssManage -RSS태그관리 객체
-     * @param BindingResult	-Validator 하기위한 객체
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param rssManage -RSS?쒓렇愿由?媛앹껜
+     * @param BindingResult	-Validator ?섍린?꾪븳 媛앹껜
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/rss/registRssTagManage.do")
@@ -259,14 +259,14 @@ public class EgovRssTagManageController {
             @Valid @ModelAttribute("rssManage") RssManage rssManage,
             BindingResult bindingResult, ModelMap model) throws Exception {
 
-            // 0. Spring Security 사용자권한 처리
+            // 0. Spring Security ?ъ슜?먭텒??泥섎━
             Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
             if (!isAuthenticated) {
                 model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
                 return "redirect:/uat/uia/egovLoginUsr.do";
             }
 
-            // 로그인 객체 선언
+            // 濡쒓렇??媛앹껜 ?좎뼵
             LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
             String sLocationUrl = "egovframework/com/uss/ion/rss/EgovRssTagManageRegist";
@@ -277,10 +277,10 @@ public class EgovRssTagManageController {
                 if(bindingResult.hasErrors()){
                     return sLocationUrl;
                 }
-                //아이디 설정
+                //?꾩씠???ㅼ젙
                 rssManage.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
                 rssManage.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-                //저장
+                //???
                 egovRssManageService.insertRssTagManage(rssManage);
 
                 sLocationUrl = "forward:/uss/ion/rss/listRssTagManage.do";

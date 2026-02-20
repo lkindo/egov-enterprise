@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 메인화면이미지에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붿씤?붾㈃?대?吏?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 메인화면이미지에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 메인화면이미지의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 硫붿씤?붾㈃?대?吏??????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 硫붿씤?붾㈃?대?吏??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:08:58
+ * @created 03-8-2009 ?ㅽ썑 2:08:58
  */
 
 package egovframework.com.uss.ion.msi.service.impl;
@@ -25,17 +25,17 @@ import egovframework.com.uss.ion.msi.service.MainImageVO;
 public class MainImageDAO extends EgovComAbstractDAO {
 	
 	/**
-	 * 메인화면이미지정보를 관리하기 위해 등록된 메인화면이미지 목록을 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return List - 메인이미지 목록
+	 * 硫붿씤?붾㈃?대?吏?뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉??硫붿씤?붾㈃?대?吏 紐⑸줉??議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return List - 硫붿씤?대?吏 紐⑸줉
 	 */
 	public List<MainImageVO> selectMainImageList(MainImageVO mainImageVO) throws Exception {
 		return selectList("mainImageDAO.selectMainImageList", mainImageVO);
 	}
 
     /**
-	 * 메인화면이미지목록 총 개수를 조회한다.
-	 * @param mainImageVO - 메인화면이미지 VO
+	 * 硫붿씤?붾㈃?대?吏紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?붾㈃?대?吏 VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -44,50 +44,50 @@ public class MainImageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 등록된 메인화면이미지의 상세정보를 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return MainImageVO - 메인이미지 VO
+	 * ?깅줉??硫붿씤?붾㈃?대?吏???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return MainImageVO - 硫붿씤?대?吏 VO
 	 */
 	public MainImageVO selectMainImage(MainImageVO mainImageVO) throws Exception {
 		return (MainImageVO) selectOne("mainImageDAO.selectMainImage", mainImageVO);
 	}
 
 	/**
-	 * 메인화면이미지정보를 신규로 등록한다.
-	 * @param mainImage - 메인이미지 model
+	 * 硫붿씤?붾㈃?대?吏?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
 	 */
 	public void insertMainImage(MainImage mainImage) throws Exception {
 		insert("mainImageDAO.insertMainImage", mainImage);
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보를 수정한다.
-	 * @param mainImage - 메인이미지 model
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫瑜??섏젙?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
 	 */
 	public void updateMainImage(MainImage mainImage) throws Exception {
 		update("mainImageDAO.updateMainImage", mainImage);
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보를 삭제한다.
-	 * @param mainImage - 메인이미지 model
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫瑜???젣?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
 	 */
 	public void deleteMainImage(MainImage mainImage) throws Exception {
 		delete("mainImageDAO.deleteMainImage", mainImage);
 	}
 
 	/**
-	 * 기 등록된 메인화면이미지정보의 이미지파일을 삭제하기 위해 파일정보를 조회한다.
-	 * @param mainImage - 메인이미지 model
+	 * 湲??깅줉??硫붿씤?붾㈃?대?吏?뺣낫???대?吏?뚯씪????젣?섍린 ?꾪빐 ?뚯씪?뺣낫瑜?議고쉶?쒕떎.
+	 * @param mainImage - 硫붿씤?대?吏 model
 	 */
 	public FileVO selectMainImageFile(MainImage mainImage) throws Exception {
 		return (FileVO) selectOne("mainImageDAO.selectMainImageFile", mainImage);
 	}
 
 	/**
-	 * 메인화면이미지가 특정화면에 반영된 결과를 조회한다.
-	 * @param mainImageVO - 메인이미지 VO
-	 * @return MainImageVO - 메인이미지 VO
+	 * 硫붿씤?붾㈃?대?吏媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param mainImageVO - 硫붿씤?대?吏 VO
+	 * @return MainImageVO - 硫붿씤?대?吏 VO
 	 */
 	public List<MainImageVO> selectMainImageResult(MainImageVO mainImageVO) throws Exception {
 		return selectList("mainImageDAO.selectMainImageResult", mainImageVO);

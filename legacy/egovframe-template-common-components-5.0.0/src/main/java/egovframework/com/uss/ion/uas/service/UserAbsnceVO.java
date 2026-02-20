@@ -7,26 +7,26 @@ import lombok.Setter;
 
 /**
  * <pre>
- * 개요
- * - 사용자부재에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ슜?먮??ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 사용자부재의 목록 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?ъ슜?먮??ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
  * </pre>
  * 
- * @author 이문준
+ * @author ?대Ц以
  * @since 2009.08.03
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.08.03  이문준          최초 생성
- *   2025.08.16  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-MethodReturnsInternalArray(Private 배열에 Public 데이터 할당)
- *   2025.08.16  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-ArrayIsStoredDirectly(Public 메소드부터 반환된 Private 배열)
+ *   2009.08.03  ?대Ц以          理쒖큹 ?앹꽦
+ *   2025.08.16  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-MethodReturnsInternalArray(Private 諛곗뿴??Public ?곗씠???좊떦)
+ *   2025.08.16  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ArrayIsStoredDirectly(Public 硫붿냼?쒕???諛섑솚??Private 諛곗뿴)
  *
  *      </pre>
  */
@@ -38,19 +38,19 @@ public class UserAbsnceVO extends UserAbsnce {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 사용자부재 목록
+	 * ?ъ슜?먮???紐⑸줉
 	 */
 	private List<UserAbsnceVO> userAbsnceList;
 
 	/**
-	 * 삭제대상 목록
+	 * ??젣???紐⑸줉
 	 */
 	@Getter
 	@Setter
 	private String[] delYn;
 
 	/**
-	 * 부재여부 조회조건
+	 * 遺?ъ뿬遺 議고쉶議곌굔
 	 */
 	private String selAbsnceAt;
 

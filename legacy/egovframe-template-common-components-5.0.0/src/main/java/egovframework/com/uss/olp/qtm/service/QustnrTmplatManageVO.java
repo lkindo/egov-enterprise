@@ -6,20 +6,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 설문템플릿 VO Class 구현
+ * ?ㅻЦ?쒗뵆由?VO Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *   2025.08.26  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidArrayLoops(배열의 값을 루프문을 이용하여 복사하는 것 보다, System.arraycopy() 메소드를 이용하여 복사하는 것이 효율적이며 수행 속도가 빠름)
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2025.08.26  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidArrayLoops(諛곗뿴??媛믪쓣 猷⑦봽臾몄쓣 ?댁슜?섏뿬 蹂듭궗?섎뒗 寃?蹂대떎, System.arraycopy() 硫붿냼?쒕? ?댁슜?섏뿬 蹂듭궗?섎뒗 寃껋씠 ?⑥쑉?곸씠硫??섑뻾 ?띾룄媛 鍮좊쫫)
  *
  *      </pre>
  */
@@ -27,40 +27,40 @@ public class QustnrTmplatManageVO implements Serializable {
 
 	private static final long serialVersionUID = 4589288390515705950L;
 
-	/** 설문템플릿 아이디 */
+	/** ?ㅻЦ?쒗뵆由??꾩씠??*/
 	private String qestnrTmplatId = "";
 
-	/** 설문템플릿 유형 */
+	/** ?ㅻЦ?쒗뵆由??좏삎 */
 	private String qestnrTmplatTy = "";
 
-	/** 설문템플 이미지내용 */
+	/** ?ㅻЦ?쒗뵆 ?대?吏?댁슜 */
 	@Getter
 	@Setter
 	private byte[] qestnrTmplatImagepathnm;
 
-	/** 설문템플릿 설명 */
+	/** ?ㅻЦ?쒗뵆由??ㅻ챸 */
 	private String qestnrTmplatCn = "";
 
-	/** 설문템플릿경로명 */
+	/** ?ㅻЦ?쒗뵆由욧꼍濡쒕챸 */
 	private String qestnrTmplatCours;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
 
-	/** 최초등록자아이디 */
+	/** 理쒖큹?깅줉?먯븘?대뵒 */
 	private String frstRegisterId = "";
 
-	/** 최종수정자 시점 */
+	/** 理쒖쥌?섏젙???쒖젏 */
 	private String lastUpdusrPnttm = "";
 
-	/** 최종수정자아이디 */
+	/** 理쒖쥌?섏젙?먯븘?대뵒 */
 	private String lastUpdusrId = "";
 
-	/** 화면 명령 처리 */
+	/** ?붾㈃ 紐낅졊 泥섎━ */
 	private String cmd = "";
 
 	/**
-	 * qestnrTmplatId attribute 를 리턴한다.
+	 * qestnrTmplatId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -69,7 +69,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatId attribute 값을 설정한다.
+	 * qestnrTmplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return qestnrTmplatId String
 	 */
@@ -78,7 +78,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatTy attribute 를 리턴한다.
+	 * qestnrTmplatTy attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -87,7 +87,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatTy attribute 값을 설정한다.
+	 * qestnrTmplatTy attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return qestnrTmplatTy String
 	 */
@@ -96,7 +96,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatCn attribute 를 리턴한다.
+	 * qestnrTmplatCn attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -105,7 +105,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatCn attribute 값을 설정한다.
+	 * qestnrTmplatCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return qestnrTmplatCn String
 	 */
@@ -114,7 +114,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatCours attribute 를 리턴한다.
+	 * qestnrTmplatCours attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -123,7 +123,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatCours attribute 값을 설정한다.
+	 * qestnrTmplatCours attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return qestnrTmplatCours String
 	 */
@@ -132,7 +132,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -141,7 +141,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return frstRegisterPnttm String
 	 */
@@ -150,7 +150,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -159,7 +159,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return frstRegisterId String
 	 */
@@ -168,7 +168,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -177,7 +177,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return lastUpdusrPnttm String
 	 */
@@ -186,7 +186,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -195,7 +195,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return lastUpdusrId String
 	 */
@@ -204,7 +204,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * cmd attribute 를 리턴한다.
+	 * cmd attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -213,7 +213,7 @@ public class QustnrTmplatManageVO implements Serializable {
 	}
 
 	/**
-	 * cmd attribute 값을 설정한다.
+	 * cmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return cmd String
 	 */

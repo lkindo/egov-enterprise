@@ -1,49 +1,49 @@
 package egovframework.com.cop.smt.lsm.service;
 
 /**
- * 개요
- * - 간부일정에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??쇱젙?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 간부일정의 목록 항목, 조회조건 등을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 媛꾨??쇱젙??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:06
+ * @created 28-6-2010 ?ㅼ쟾 10:59:06
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class LeaderSchdulVO extends LeaderSchdul {
 	
-	/** 월별/주별/일별 일정조회 조회조건 */
+	/** ?붾퀎/二쇰퀎/?쇰퀎 ?쇱젙議고쉶 議고쉶議곌굔 */
 	private String searchMode;
-	/** 월 조회조건	 */
+	/** ??議고쉶議곌굔	 */
 	private String searchMonth;
-	/** 시작일자 조회조건 */
+	/** ?쒖옉?쇱옄 議고쉶議곌굔 */
 	private String searchBgnDe;
-	/** 종료일자 조회조건	*/
+	/** 醫낅즺?쇱옄 議고쉶議곌굔	*/
 	private String searchEndDe;
-	/** 일자 조회조건 */
+	/** ?쇱옄 議고쉶議곌굔 */
 	private String searchDay;
-	/** 년 조회조건 */
+	/** ??議고쉶議곌굔 */
 	private String year;
-	/** 월 조회조건 */
+	/** ??議고쉶議곌굔 */
 	private String month;
-	/** 주 조회조건 */
+	/** 二?議고쉶議곌굔 */
 	private String week;
-	/** 일 조회조건 */
+	/** ??議고쉶議곌굔 */
 	private String day;
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
 	private String searchCondition;
-	/** 검색단어 */
+	/** 寃?됰떒??*/
 	private String searchKeyword;
-	/** 보조검색단어 */
+	/** 蹂댁“寃?됰떒??*/
 	private String searchKeywordEx;
 	
 	public String getSearchMode() {

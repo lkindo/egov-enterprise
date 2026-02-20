@@ -3,55 +3,55 @@ package egovframework.com.cop.cmt.service;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 댓글관리 서비스를 위한 VO 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?볤?愿由??쒕퉬?ㅻ? ?꾪븳 VO ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.29
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.29  한성곤          최초 생성
+ *   2009.06.29  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class CommentVO extends Comment {
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private long sortOrdr = 0L;
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int subPageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int subPageUnit = 5;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int subPageSize = 5;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int subFirstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int subLastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int subRecordCountPerPage = 5;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int subRowNo = 0;
     
-    /** 호출 TYPE (head or body)*/
+    /** ?몄텧 TYPE (head or body)*/
     private String type = "";
     
-    /** 수정 처리 여부 */
+    /** ?섏젙 泥섎━ ?щ? */
     private boolean isModified = false;
     
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * @return the sortOrdr
      */
     public long getSortOrdr() {
@@ -59,7 +59,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param sortOrdr the sortOrdr to set
      */
     public void setSortOrdr(long sortOrdr) {
@@ -67,7 +67,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageIndex attribute를 리턴한다.
+     * subPageIndex attribute瑜?由ы꽩?쒕떎.
      * @return the subPageIndex
      */
     public int getSubPageIndex() {
@@ -75,7 +75,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageIndex attribute 값을 설정한다.
+     * subPageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subPageIndex the subPageIndex to set
      */
     public void setSubPageIndex(int subPageIndex) {
@@ -83,7 +83,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageUnit attribute를 리턴한다.
+     * subPageUnit attribute瑜?由ы꽩?쒕떎.
      * @return the subPageUnit
      */
     public int getSubPageUnit() {
@@ -91,7 +91,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageUnit attribute 값을 설정한다.
+     * subPageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subPageUnit the subPageUnit to set
      */
     public void setSubPageUnit(int subPageUnit) {
@@ -99,7 +99,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageSize attribute를 리턴한다.
+     * subPageSize attribute瑜?由ы꽩?쒕떎.
      * @return the subPageSize
      */
     public int getSubPageSize() {
@@ -107,7 +107,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subPageSize attribute 값을 설정한다.
+     * subPageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subPageSize the subPageSize to set
      */
     public void setSubPageSize(int subPageSize) {
@@ -115,7 +115,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subFirstIndex attribute를 리턴한다.
+     * subFirstIndex attribute瑜?由ы꽩?쒕떎.
      * @return the subFirstIndex
      */
     public int getSubFirstIndex() {
@@ -123,7 +123,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subFirstIndex attribute 값을 설정한다.
+     * subFirstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subFirstIndex the subFirstIndex to set
      */
     public void setSubFirstIndex(int subFirstIndex) {
@@ -131,7 +131,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subLastIndex attribute를 리턴한다.
+     * subLastIndex attribute瑜?由ы꽩?쒕떎.
      * @return the subLastIndex
      */
     public int getSubLastIndex() {
@@ -139,7 +139,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subLastIndex attribute 값을 설정한다.
+     * subLastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subLastIndex the subLastIndex to set
      */
     public void setSubLastIndex(int subLastIndex) {
@@ -147,7 +147,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subRecordCountPerPage attribute를 리턴한다.
+     * subRecordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * @return the subRecordCountPerPage
      */
     public int getSubRecordCountPerPage() {
@@ -155,7 +155,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subRecordCountPerPage attribute 값을 설정한다.
+     * subRecordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subRecordCountPerPage the subRecordCountPerPage to set
      */
     public void setSubRecordCountPerPage(int subRecordCountPerPage) {
@@ -163,7 +163,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subRowNo attribute를 리턴한다.
+     * subRowNo attribute瑜?由ы꽩?쒕떎.
      * @return the subRowNo
      */
     public int getSubRowNo() {
@@ -171,7 +171,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * subRowNo attribute 값을 설정한다.
+     * subRowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param subRowNo the subRowNo to set
      */
     public void setSubRowNo(int subRowNo) {
@@ -179,7 +179,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * type attribute를 리턴한다.
+     * type attribute瑜?由ы꽩?쒕떎.
      * @return the type
      */
     public String getType() {
@@ -187,7 +187,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * type attribute 값을 설정한다.
+     * type attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param type the type to set
      */
     public void setType(String type) {
@@ -195,7 +195,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * isModified attribute를 리턴한다.
+     * isModified attribute瑜?由ы꽩?쒕떎.
      * @return the isModified
      */
     public boolean isModified() {
@@ -203,7 +203,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * isModified attribute 값을 설정한다.
+     * isModified attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param isModified the isModified to set
      */
     public void setModified(boolean isModified) {
@@ -211,7 +211,7 @@ public class CommentVO extends Comment {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

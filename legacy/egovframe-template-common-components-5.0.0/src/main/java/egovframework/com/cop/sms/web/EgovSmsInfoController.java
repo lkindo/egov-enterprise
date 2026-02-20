@@ -23,19 +23,19 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 문자메시지 서비스 컨트롤러 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏 ?쒕퉬??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.18 한성곤          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.06.18 ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -55,18 +55,18 @@ public class EgovSmsInfoController {
 	//private static final Logger LOGGER = LoggerFactory.getLogger(EgovSmsInfoController.class);
 
 	/**
-	 * 문자메시지 목록을 조회한다.
+	 * 臾몄옄硫붿떆吏 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param smsVO
 	 * @param model
 	 * @return
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "문자메시지", order = 310, gid = 40)
+	@IncludedInfo(name = "臾몄옄硫붿떆吏", order = 310, gid = 40)
 	@RequestMapping("/cop/sms/selectSmsList.do")
 	public String selectSmsList(@ModelAttribute("searchVO") SmsVO smsVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -101,7 +101,7 @@ public class EgovSmsInfoController {
 	}
 
 	/**
-	 * 문자메시지 전송(등록)을 위한 전송 페이지로 이동한다.
+	 * 臾몄옄硫붿떆吏 ?꾩넚(?깅줉)???꾪븳 ?꾩넚 ?섏씠吏濡??대룞?쒕떎.
 	 *
 	 * @param smsVO
 	 * @param model
@@ -119,7 +119,7 @@ public class EgovSmsInfoController {
 	}
 
 	/**
-	 * 문자메시지 전송을 요청한다.
+	 * 臾몄옄硫붿떆吏 ?꾩넚???붿껌?쒕떎.
 	 *
 	 * @param smsVO
 	 * @param sms
@@ -140,10 +140,10 @@ public class EgovSmsInfoController {
 			return "egovframework/com/cop/sms/EgovSmsInfoRegist";
 		}
 
-		// 서버 점검 추가
+		// ?쒕쾭 ?먭? 異붽?
 		/*
 		if (true) {
-		    model.addAttribute("msg", "서버와의 연결이 정상적이지 않습니다.");
+		    model.addAttribute("msg", "?쒕쾭????곌껐???뺤긽?곸씠吏 ?딆뒿?덈떎.");
 		    return "egovframework/com/cop/sms/EgovSmsInfoRegist";
 		}
 		*/
@@ -158,7 +158,7 @@ public class EgovSmsInfoController {
 	}
 
 	/**
-	 * 문자메시지에 대한 상세정보를 조회한다.
+	 * 臾몄옄硫붿떆吏??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param smsVO
 	 * @param model
@@ -168,7 +168,7 @@ public class EgovSmsInfoController {
 	@RequestMapping("/cop/sms/selectSms.do")
 	public String selectSms(@ModelAttribute("searchVO") SmsVO smsVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {

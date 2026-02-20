@@ -11,18 +11,18 @@ import egovframework.com.sym.ccm.zip.service.ZipVO;
 
 /**
  *
- * 우편번호에 대한 데이터 접근 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * ?고렪踰덊샇??????곗씠???묎렐 ?대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -30,7 +30,7 @@ import egovframework.com.sym.ccm.zip.service.ZipVO;
 public class ZipManageDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 우편번호를 삭제한다.
+	 * ?고렪踰덊샇瑜???젣?쒕떎.
 	 * @param zip
 	 * @throws Exception
 	 */
@@ -39,7 +39,7 @@ public class ZipManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 우편번호 전체를 삭제한다.
+	 * ?고렪踰덊샇 ?꾩껜瑜???젣?쒕떎.
 	 * @throws Exception
 	 */
 	public void deleteAllZip() throws Exception {
@@ -47,7 +47,7 @@ public class ZipManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 우편번호를 등록한다.
+	 * ?고렪踰덊샇瑜??깅줉?쒕떎.
 	 * @param zip
 	 * @throws Exception
 	 */
@@ -56,7 +56,7 @@ public class ZipManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 우편번호 엑셀파일을 등록한다.
+	 * ?고렪踰덊샇 ?묒??뚯씪???깅줉?쒕떎.
 	 * @param zip
 	 * @throws Exception
 	 */
@@ -66,9 +66,9 @@ public class ZipManageDAO extends EgovComAbstractDAO {
 
 
 	/**
-	 * 우편번호 상세항목을 조회한다.
+	 * ?고렪踰덊샇 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param zip
-	 * @return Zip(우편번호)
+	 * @return Zip(?고렪踰덊샇)
 	 */
 	public Zip selectZipDetail(Zip zip) throws Exception {
 		return (Zip) selectOne("ZipManageDAO.selectZipDetail", zip);
@@ -76,9 +76,9 @@ public class ZipManageDAO extends EgovComAbstractDAO {
 
 
     /**
-	 * 우편번호 목록을 조회한다.
+	 * ?고렪踰덊샇 紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(우편번호 목록)
+     * @return List(?고렪踰덊샇 紐⑸줉)
      * @throws Exception
      */
 	public List<EgovMap> selectZipList(ZipVO searchVO) throws Exception {
@@ -86,16 +86,16 @@ public class ZipManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 우편번호 총 개수를 조회한다.
+	 * ?고렪踰덊샇 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(우편번호 총 개수)
+     * @return int(?고렪踰덊샇 珥?媛쒖닔)
      */
     public int selectZipListTotCnt(ZipVO searchVO) throws Exception {
         return (Integer)selectOne("ZipManageDAO.selectZipListTotCnt", searchVO);
     }
 
 	/**
-	 * 우편번호를 수정한다.
+	 * ?고렪踰덊샇瑜??섏젙?쒕떎.
 	 * @param zip
 	 * @throws Exception
 	 */

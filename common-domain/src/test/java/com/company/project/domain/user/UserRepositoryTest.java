@@ -27,7 +27,7 @@ public class UserRepositoryTest {
 
         userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("user1")
-                .userNm("홍길동")
+                .userNm("??삳쭔??)
                 .role(Role.USER)
                 .password("pass1")
                 .esntlId("USR1")
@@ -35,7 +35,7 @@ public class UserRepositoryTest {
 
         userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("admin1")
-                .userNm("관리자")
+                .userNm("?온?귐딆쁽")
                 .role(Role.ADMIN)
                 .password("pass2")
                 .esntlId("ADM1")
@@ -43,7 +43,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("아이디로 사용자 검색")
+    @DisplayName("?袁⑹뵠?遺얠쨮 ?????野꺜??)
     void searchByUserId() {
         Page<User> result = userRepository.searchUsers(null, "0", "user1",
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
@@ -53,17 +53,17 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("이름으로 사용자 검색")
+    @DisplayName("??已??곗쨮 ?????野꺜??)
     void searchByUserNm() {
-        Page<User> result = userRepository.searchUsers(null, "1", "관리자",
+        Page<User> result = userRepository.searchUsers(null, "1", "?온?귐딆쁽",
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("관리자");
+        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("?온?귐딆쁽");
     }
 
     @Test
-    @DisplayName("역할(Role) 필터링")
+    @DisplayName("??釉?Role) ?袁り숲筌?)
     void searchByRole() {
         Page<User> result = userRepository.searchUsers("ADMIN", null, null,
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
@@ -73,7 +73,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("아이디 중복 체크")
+    @DisplayName("?袁⑹뵠??餓λ쵎??筌ｋ똾寃?)
     void checkIdDplct() {
         int count = userRepository.checkIdDplct("user1");
         assertThat(count).isEqualTo(1);

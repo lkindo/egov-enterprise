@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service;
 
@@ -23,19 +23,19 @@ import java.util.Map;
 
 /**
 *
-* Controller에서 요청하는 서비스를 제공하는 Service객체의 인터페이스를 정의한다.
-* @author 전우성
+* Controller?먯꽌 ?붿껌?섎뒗 ?쒕퉬?ㅻ? ?쒓났?섎뒗 Service媛앹껜???명꽣?섏씠?ㅻ? ?뺤쓽?쒕떎.
+* @author ?꾩슦??
 * @since 2014.10.12
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2014.10.12  전우성          최초 생성
-*   2023.08.10  신용호          LDAP 오류 수정
+*   2014.10.12  ?꾩슦??         理쒖큹 ?앹꽦
+*   2023.08.10  ?좎슜??         LDAP ?ㅻ쪟 ?섏젙
 
 *
 * </pre>
@@ -44,103 +44,103 @@ import java.util.Map;
 public interface EgovOrgManageLdapService {
 
 	/**
-	 * 하위부서 목록 조회 
-	 * @param dn 조회할 부서의 dn
+	 * ?섏쐞遺??紐⑸줉 議고쉶 
+	 * @param dn 議고쉶??遺?쒖쓽 dn
 	 * @return
 	 * @throws Exception
 	 */
 	public Map<Object, Object> selectDeptManageSubList(String dn) throws Exception;
 
 	/**
-	 * 하위부서의 목록 조회
-	 * @param ouCode 조회할 부서의  oucode 
+	 * ?섏쐞遺?쒖쓽 紐⑸줉 議고쉶
+	 * @param ouCode 議고쉶??遺?쒖쓽  oucode 
 	 * @return
 	 * @throws Exception
 	 */
 	public List<Object> selectDeptManageSubListByOuCode(String ouCode) throws Exception;
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
-	 * @param vo - 부서 Vo
-	 * @return deptManageVO - 부서 Vo
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param vo - 遺??Vo
+	 * @return deptManageVO - 遺??Vo
 	 * @param bannerVO
 	 */
 	public UcorgVO selectDeptManage(UcorgVO vo) throws Exception;
 
 	/**
-	 * 기 등록된 부서정보를 수정한다.
-	 * @param vo - 부서 vo
+	 * 湲??깅줉??遺?쒖젙蹂대? ?섏젙?쒕떎.
+	 * @param vo - 遺??vo
 	 */
 	public void updateDeptManage(UcorgVO vo) throws Exception;
 
 	/**
-	 * 신규부서를 등록 
-	 * @param parentDn 등록할 부서의 상위부서 
-	 * @param ou 부id
+	 * ?좉퇋遺?쒕? ?깅줉 
+	 * @param parentDn ?깅줉??遺?쒖쓽 ?곸쐞遺??
+	 * @param ou 遺id
 	 * @return
 	 * @throws Exception
 	 */
 	public Map<Object, Object> insertDeptManage(String parentDn, String ou) throws Exception;
 	
 	/**
-	 * 신규 사용자를 등록 
-	 * @param parentDn 사용자의 부서
-	 * @param cn 사용자의 id
+	 * ?좉퇋 ?ъ슜?먮? ?깅줉 
+	 * @param parentDn ?ъ슜?먯쓽 遺??
+	 * @param cn ?ъ슜?먯쓽 id
 	 * @return
 	 * @throws Exception
 	 */
 	public Map<Object, Object> insertUserManage(String parentDn, String cn) throws Exception;
 
 	/**
-	 * 부서 정보 삭제  
+	 * 遺???뺣낫 ??젣  
 	 * @param dn
 	 */
 	public void deleteDeptManage(String dn);
 
 	/**
-	 * 부서 이름 변경 
+	 * 遺???대쫫 蹂寃?
 	 * @param dn
 	 * @param name
 	 */
 	public void renameDeptManage(String dn, String name);
 
 	/**
-	 * 사용자 이름 변경 
+	 * ?ъ슜???대쫫 蹂寃?
 	 * @param dn
 	 * @param name
 	 */
 	public void renameUserManage(String dn, String name);
 
 	/**
-	 * 조직을 이동한다
+	 * 議곗쭅???대룞?쒕떎
 	 * @param dn
 	 * @param parentDn
 	 */
 	public void moveOrgManage(String dn, String parentDn);
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
-	 * @param dn 부서의 DN
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param dn 遺?쒖쓽 DN
 	 * @return
 	 */
 	public Map<Object, Object> selectDeptManage(String dn);
 
 	/**
-	 * 등록된 사용자의 상세정보를 조회한다.
-	 * @param dn 사용자의 DN
+	 * ?깅줉???ъ슜?먯쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param dn ?ъ슜?먯쓽 DN
 	 * @return
 	 */
 	public Map<Object, Object> selectUserManage(String dn);
 
 	/**
-	 * 등록된 부서의 정보를 수정한다.
+	 * ?깅줉??遺?쒖쓽 ?뺣낫瑜??섏젙?쒕떎.
 	 * @param ucorgVO
 	 * @throws Exception
 	 */
 	public void modifyDeptManage(UcorgVO ucorgVO) throws Exception;
 
 	/**
-	 * 등록된 사용자의 정보를 수정한다.
+	 * ?깅줉???ъ슜?먯쓽 ?뺣낫瑜??섏젙?쒕떎.
 	 * @param ucorgVO
 	 * @throws Exception
 	 */

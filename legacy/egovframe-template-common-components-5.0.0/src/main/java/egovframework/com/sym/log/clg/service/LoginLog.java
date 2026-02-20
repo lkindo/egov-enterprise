@@ -4,16 +4,16 @@ import java.io.Serializable;
 
 /**
  * @Class Name : LoginLog.java
- * @Description : 접속 로그 관리를 위한 VO 클래스
+ * @Description : ?묒냽 濡쒓렇 愿由щ? ?꾪븳 VO ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------      -------     -------------------
- *    2009. 3. 11.  이삼섭      최초생성
- *    2011. 7. 01.  이기하      패키지 분리(sym.log -> sym.log.clg)
- *    2011.09.14       서준식      화면에 검색일자를 표시하기위한 멤버변수 추가.
+ *    2009. 3. 11.  ?댁궪??     理쒖큹?앹꽦
+ *    2011. 7. 01.  ?닿린??     ?⑦궎吏 遺꾨━(sym.log -> sym.log.clg)
+ *    2011.09.14       ?쒖???     ?붾㈃??寃?됱씪?먮? ?쒖떆?섍린?꾪븳 硫ㅻ쾭蹂??異붽?.
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -23,61 +23,61 @@ public class LoginLog implements Serializable {
 
 	private static final long serialVersionUID = 3492444929272088373L;
 
-	/** 로그ID */
+	/** 濡쒓렇ID */
 	private String logId;
 
-	/** 사용자ID */
+	/** ?ъ슜?륤D */
 	private String loginId;
 
-	/** 사용자명 */
+	/** ?ъ슜?먮챸 */
 	private String loginNm;
 
-	/** 접속IP */
+	/** ?묒냽IP */
 	private String loginIp;
 
-	/** 로그유형 */
+	/** 濡쒓렇?좏삎 */
 	private String loginMthd;
 
-	/** 에러발생여부 */
+	/** ?먮윭諛쒖깮?щ? */
 	private String errOccrrAt;
 
-	/** 에러코드 */
+	/** ?먮윭肄붾뱶 */
 	private String errorCode;
 
-	/** 생성일시 */
+	/** ?앹꽦?쇱떆 */
 	private String creatDt;
 
 	/**
-	 * 검색시작일
+	 * 寃?됱떆?묒씪
 	 */
 	private String searchBgnDe = "";
 	/**
-	 * 검색조건
+	 * 寃?됱“嫄?
 	 */
 	private String searchCnd = "";
 	/**
-	 * 검색종료일
+	 * 寃?됱쥌猷뚯씪
 	 */
 	private String searchEndDe = "";
 	/**
-	 * 검색단어
+	 * 寃?됰떒??
 	 */
 	private String searchWrd = "";
 	/**
-	 * 정렬순서(DESC,ASC)
+	 * ?뺣젹?쒖꽌(DESC,ASC)
 	 */
 	private String sortOrdr = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -93,16 +93,16 @@ public class LoginLog implements Serializable {
 	private int rowNo = 0;
 
 	/**
-	 * 검색시작일_화면용
+	 * 寃?됱떆?묒씪_?붾㈃??
 	 */
 	private String searchBgnDeView = "";//2011.09.14
 
 	/**
-	 * 검색종료일_화면용
+	 * 寃?됱쥌猷뚯씪_?붾㈃??
 	 */
 	private String searchEndDeView = "";//2011.09.14
 	/**
-	 * 검색종료일_화면용
+	 * 寃?됱쥌猷뚯씪_?붾㈃??
 	 */
 	public String getSearchEndDeView() {
 		return searchEndDeView;
@@ -112,7 +112,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색시작일_화면용
+	 * 寃?됱떆?묒씪_?붾㈃??
 	 */
 	public String getSearchBgnDeView() {
 		return searchBgnDeView;
@@ -122,7 +122,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 로그 ID
+	 * 濡쒓렇 ID
 	 */
 	public String getLogId() {
 		return logId;
@@ -132,7 +132,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 로그인 ID
+	 * 濡쒓렇??ID
 	 */
 	public String getLoginId() {
 		return loginId;
@@ -142,7 +142,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 로그인 IP
+	 * 濡쒓렇??IP
 	 */
 	public String getLoginIp() {
 		return loginIp;
@@ -152,7 +152,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 로그인 방식
+	 * 濡쒓렇??諛⑹떇
 	 */
 	public String getLoginMthd() {
 		return loginMthd;
@@ -162,7 +162,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 오류 발생 여부
+	 * ?ㅻ쪟 諛쒖깮 ?щ?
 	 */
 	public String getErrOccrrAt() {
 		return errOccrrAt;
@@ -172,7 +172,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 오류 코드
+	 * ?ㅻ쪟 肄붾뱶
 	 */
 	public String getErrorCode() {
 		return errorCode;
@@ -182,7 +182,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 생성 날짜
+	 * ?앹꽦 ?좎쭨
 	 */
 	public String getCreatDt() {
 		return creatDt;
@@ -192,7 +192,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색 시작일
+	 * 寃???쒖옉??
 	 */
 	public String getSearchBgnDe() {
 		return searchBgnDe;
@@ -202,7 +202,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색 조건
+	 * 寃??議곌굔
 	 */
 	public String getSearchCnd() {
 		return searchCnd;
@@ -212,7 +212,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색 종료일
+	 * 寃??醫낅즺??
 	 */
 	public String getSearchEndDe() {
 		return searchEndDe;
@@ -222,7 +222,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색 단어
+	 * 寃???⑥뼱
 	 */
 	public String getSearchWrd() {
 		return searchWrd;
@@ -232,7 +232,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 정렬 순서
+	 * ?뺣젹 ?쒖꽌
 	 */
 	public String getSortOrdr() {
 		return sortOrdr;
@@ -242,7 +242,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 검색 사용 여부
+	 * 寃???ъ슜 ?щ?
 	 */
 	public String getSearchUseYn() {
 		return searchUseYn;
@@ -252,7 +252,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 페이지 인덱스
+	 * ?섏씠吏 ?몃뜳??
 	 */
 	public int getPageIndex() {
 		return pageIndex;
@@ -262,7 +262,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 페이지 단위
+	 * ?섏씠吏 ?⑥쐞
 	 */
 	public int getPageUnit() {
 		return pageUnit;
@@ -272,7 +272,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 페이지 크기
+	 * ?섏씠吏 ?ш린
 	 */
 	public int getPageSize() {
 		return pageSize;
@@ -282,7 +282,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 첫번째 인덱스
+	 * 泥ル쾲吏??몃뜳??
 	 */
 	public int getFirstIndex() {
 		return firstIndex;
@@ -292,7 +292,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 마지막 인덱스
+	 * 留덉?留??몃뜳??
 	 */
 	public int getLastIndex() {
 		return lastIndex;
@@ -302,7 +302,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 페이지 당 레코드 개수
+	 * ?섏씠吏 ???덉퐫??媛쒖닔
 	 */
 	public int getRecordCountPerPage() {
 		return recordCountPerPage;
@@ -312,7 +312,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 행 번호
+	 * ??踰덊샇
 	 */
 	public int getRowNo() {
 		return rowNo;
@@ -322,7 +322,7 @@ public class LoginLog implements Serializable {
 	}
 
 	/**
-	 * 로그인 이름
+	 * 濡쒓렇???대쫫
 	 */
 	public String getLoginNm() {
 		return loginNm;

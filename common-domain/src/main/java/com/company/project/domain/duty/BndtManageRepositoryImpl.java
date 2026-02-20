@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 당직 정보 Repository Custom 구현체
+ * ?諭彛??類ｋ궖 Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class BndtManageRepositoryImpl implements BndtManageRepositoryCustom {

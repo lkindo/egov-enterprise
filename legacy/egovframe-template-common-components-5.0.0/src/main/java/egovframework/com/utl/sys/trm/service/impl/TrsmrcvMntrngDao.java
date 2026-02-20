@@ -10,28 +10,28 @@ import egovframework.com.utl.sys.trm.service.TrsmrcvMntrng;
 import egovframework.com.utl.sys.trm.service.TrsmrcvMntrngLog;
 
 /**
- * 송수신모니터링관리에 대한 DAO 클래스를 정의한다.
+ * ?≪닔?좊え?덊꽣留곴?由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @Repository("trsmrcvMntrngDao")
 public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 
 	/**
-	 * 송수신모니터링을 삭제한다.
+	 * ?≪닔?좊え?덊꽣留곸쓣 ??젣?쒕떎.
 	 *
-	 * @param trsmrcvMntrng    삭제할 송수신모니터링 VO
+	 * @param trsmrcvMntrng    ??젣???≪닔?좊え?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void deleteTrsmrcvMntrng(TrsmrcvMntrng trsmrcvMntrng) throws Exception {
@@ -39,9 +39,9 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링을 등록한다.
+	 * ?≪닔?좊え?덊꽣留곸쓣 ?깅줉?쒕떎.
 	 *
-	 * @param trsmrcvMntrng 저장할 송수신모니터링 VO
+	 * @param trsmrcvMntrng ??ν븷 ?≪닔?좊え?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void insertTrsmrcvMntrng(TrsmrcvMntrng trsmrcvMntrng) throws Exception {
@@ -49,9 +49,9 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링로그를 등록한다.
+	 * ?≪닔?좊え?덊꽣留곷줈洹몃? ?깅줉?쒕떎.
 	 *
-	 * @param trsmrcvMntrngLog 저장할 송수신모니터링로그 VO
+	 * @param trsmrcvMntrngLog ??ν븷 ?≪닔?좊え?덊꽣留곷줈洹?VO
 	 * @exception Exception Exception
 	 */
 	public void insertTrsmrcvMntrngLog(TrsmrcvMntrngLog trsmrcvMntrngLog) throws Exception {
@@ -59,10 +59,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링정보를 상세조회 한다.
-	 * @return 송수신모니터링정보
+	 * ?≪닔?좊え?덊꽣留곸젙蹂대? ?곸꽭議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곸젙蹂?
 	 *
-	 * @param trsmrcvMntrng    조회할 KEY가 있는 송수신모니터링 VO
+	 * @param trsmrcvMntrng    議고쉶??KEY媛 ?덈뒗 ?≪닔?좊え?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public TrsmrcvMntrng selectTrsmrcvMntrng(TrsmrcvMntrng trsmrcvMntrng) throws Exception {
@@ -70,10 +70,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링로그정보를 상세조회 한다.
-	 * @return 송수신모니터링로그정보
+	 * ?≪닔?좊え?덊꽣留곷줈洹몄젙蹂대? ?곸꽭議고쉶 ?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷줈洹몄젙蹂?
 	 *
-	 * @param trsmrcvMntrngLog    조회할 KEY가 있는 송수신모니터링로그 VO
+	 * @param trsmrcvMntrngLog    議고쉶??KEY媛 ?덈뒗 ?≪닔?좊え?덊꽣留곷줈洹?VO
 	 * @exception Exception Exception
 	 */
 	public TrsmrcvMntrngLog selectTrsmrcvMntrngLog(TrsmrcvMntrngLog trsmrcvMntrngLog) throws Exception {
@@ -81,10 +81,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링정보목록을  조회한다.
-	 * @return 송수신모니터링목록
+	 * ?≪닔?좊え?덊꽣留곸젙蹂대ぉ濡앹쓣  議고쉶?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷ぉ濡?
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<TrsmrcvMntrng> selectTrsmrcvMntrngList(TrsmrcvMntrng searchVO) throws Exception {
@@ -92,10 +92,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?≪닔?좊え?덊꽣留?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectTrsmrcvMntrngListCnt(TrsmrcvMntrng searchVO) throws Exception {
@@ -103,10 +103,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링로그정보목록을  조회한다.
-	 * @return 송수신모니터링로그목록
+	 * ?≪닔?좊え?덊꽣留곷줈洹몄젙蹂대ぉ濡앹쓣  議고쉶?쒕떎.
+	 * @return ?≪닔?좊え?덊꽣留곷줈洹몃ぉ濡?
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<TrsmrcvMntrngLog> selectTrsmrcvMntrngLogList(TrsmrcvMntrngLog searchVO) throws Exception {
@@ -114,10 +114,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링로그 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?≪닔?좊え?덊꽣留곷줈洹?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectTrsmrcvMntrngLogListCnt(TrsmrcvMntrngLog searchVO) throws Exception {
@@ -125,9 +125,9 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 송수신모니터링정보를 수정한다.
+	 * ?≪닔?좊え?덊꽣留곸젙蹂대? ?섏젙?쒕떎.
 	 *
-	 * @param trsmrcvMntrng    수정대상 송수신모니터링 VO
+	 * @param trsmrcvMntrng    ?섏젙????≪닔?좊え?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void updateTrsmrcvMntrng(TrsmrcvMntrng trsmrcvMntrng) throws Exception {
@@ -135,10 +135,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계정보목록을  조회한다.
-	 * @return 연계정보목록
+	 * ?곌퀎?뺣낫紐⑸줉?? 議고쉶?쒕떎.
+	 * @return ?곌퀎?뺣낫紐⑸줉
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<CntcVO> selectCntcList(CntcVO searchVO) throws Exception {
@@ -146,10 +146,10 @@ public class TrsmrcvMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 연계정보 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * ?곌퀎?뺣낫 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectCntcListCnt(CntcVO searchVO) throws Exception {

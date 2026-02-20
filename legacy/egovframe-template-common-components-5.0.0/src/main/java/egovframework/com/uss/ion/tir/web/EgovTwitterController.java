@@ -30,18 +30,18 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import twitter4j.CreateTweetResponse;
 
 /**
- * 트위터 수신, 송신를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * ?몄쐞???섏떊, ?≪떊瑜?泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.10.04
  * @version 1.0
  * @see
  * <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.04  장동한          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2010.10.04  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -60,41 +60,41 @@ public class EgovTwitterController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	/** 트위터 송신(목록) 서비스 */
+	/** ?몄쐞???≪떊(紐⑸줉) ?쒕퉬??*/
 	@Resource(name = "egovTwitterTrnsmitService")
 	private EgovTwitterTrnsmitService egovTwitterTrnsmitService;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovTwitterController.class);
 
 	/**
-	 * 트위터를 메인 인증 페이지조회
+	 * ?몄쐞?곕? 硫붿씤 ?몄쬆 ?섏씠吏議고쉶
 	 * @param commandMap 	-Request  Variable
-	 * @return String 		-리턴 URL
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
-	@IncludedInfo(name = "Twitter연동", order = 830, gid = 50)
+	@IncludedInfo(name = "Twitter?곕룞", order = 830, gid = 50)
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterMain.do")
 	public String EgovTwitterMain(@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 		return "egovframework/com/uss/ion/tir/EgovTwitterMain";
 	}
 
 	/**
-	 * 트위터를 인증키 관리 페이지를 조회한다.
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * ?몄쐞?곕? ?몄쬆??愿由??섏씠吏瑜?議고쉶?쒕떎.
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterAccount.do", method = RequestMethod.GET)
 	public String EgovTwitterAccountGet(ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		HashMap<String, String> hmPram = new HashMap<String, String>();
@@ -102,7 +102,7 @@ public class EgovTwitterController {
 
 		Map<?, ?> mapResult = egovTwitterTrnsmitService.selectTwitterAccount(hmPram);
 
-		//Consumer key/Consumer secret 키 값 조회
+		//Consumer key/Consumer secret ??媛?議고쉶
 		if (mapResult == null) {
 			model.addAttribute("consumerKey", "");
 			model.addAttribute("consumerSecret", "");
@@ -115,23 +115,23 @@ public class EgovTwitterController {
 	}
 
 	/**
-	 * 트위터를 인증키 관리 페이지를  수정한다.
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * ?몄쐞?곕? ?몄쬆??愿由??섏씠吏瑜? ?섏젙?쒕떎.
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterAccount.do", method = RequestMethod.POST)
 	public String EgovTwitterAccountPost(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sConsumerKey = request.getParameter("ConsumerKey") == null ? "" : (String) request.getParameter("ConsumerKey");
@@ -154,21 +154,21 @@ public class EgovTwitterController {
 			egovTwitterTrnsmitService.insertTwitterAccount(hmPram);
 		}
 
-		//저장된키 키 Attribute 설정
+		//??λ맂????Attribute ?ㅼ젙
 		model.addAttribute("consumerKey", sConsumerKey);
 		model.addAttribute("consumerSecret", sConsumerSecret);
 
-		//트위터 세션정보 삭제
+		//?몄쐞???몄뀡?뺣낫 ??젣
 		WebUtils.setSessionAttribute(request, "sCONSUMER_KEY", null);
 		WebUtils.setSessionAttribute(request, "sCONSUMER_SECRET", null);
 		WebUtils.setSessionAttribute(request, "atoken", null);
 		WebUtils.setSessionAttribute(request, "astoken", null);
 
-		//저장메세지 설정
+		//??λ찓?몄? ?ㅼ젙
 		String ReusltScript = "";
 
 		ReusltScript += "<script type='text/javaScript' language='javascript'>";
-		ReusltScript += "alert(' 작성된  트위터 인증키(ConsumerKey/ConsumerSecret)를 저장 하였습니다!  ');";
+		ReusltScript += "alert(' ?묒꽦?? ?몄쐞???몄쬆??ConsumerKey/ConsumerSecret)瑜?????섏??듬땲??  ');";
 		ReusltScript += "</script>";
 
 		model.addAttribute("reusltScript", ReusltScript);
@@ -177,22 +177,22 @@ public class EgovTwitterController {
 	}
 
 	/**
-	 * 트위터를 인증 페이지를 조회한다.
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * ?몄쐞?곕? ?몄쬆 ?섏씠吏瑜?議고쉶?쒕떎.
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterPopup.do")
 	public String EgovTwitterPopupGet(ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		HashMap<String, String> hmPram = new HashMap<String, String>();
@@ -200,7 +200,7 @@ public class EgovTwitterController {
 
 		Map<?, ?> mapResult = egovTwitterTrnsmitService.selectTwitterAccount(hmPram);
 
-		//Consumer key/Consumer secret 키 값 조회
+		//Consumer key/Consumer secret ??媛?議고쉶
 		if (mapResult == null) {
 			model.addAttribute("consumerKey", "");
 			model.addAttribute("consumerSecret", "");
@@ -213,12 +213,12 @@ public class EgovTwitterController {
 	}
 
 	/**
-	 * 트위터를 인증 페이지를 조회한다.
-	 * @param searchVO 		-트위터 Model
+	 * ?몄쐞?곕? ?몄쬆 ?섏씠吏瑜?議고쉶?쒕떎.
+	 * @param searchVO 		-?몄쐞??Model
 	 * @param commandMap 	-Request  Variable
-	 * @param twitterInfo 	-트위터 Model
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * @param twitterInfo 	-?몄쐞??Model
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterPopupActor.do")
@@ -229,14 +229,14 @@ public class EgovTwitterController {
 		String sConsumerKey = commandMap.get("ConsumerKey") == null ? "" : (String) commandMap.get("ConsumerKey");
 		String sConsumerSecret = commandMap.get("ConsumerSecret") == null ? "" : (String) commandMap.get("ConsumerSecret");
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		HashMap<String, String> hmPram = new HashMap<String, String>();
@@ -249,7 +249,7 @@ public class EgovTwitterController {
 		LOGGER.info("EgovTwitterPopupPost>");
 		LOGGER.info("selectTwitterAccountCheck>" + egovTwitterTrnsmitService.selectTwitterAccountCheck(hmPram));
 
-		//Consumer key/Consumer secret 키 값 저장 체크시
+		//Consumer key/Consumer secret ??媛????泥댄겕??
 		if (sCheckKey.equals("1")) {
 			if (egovTwitterTrnsmitService.selectTwitterAccountCheck(hmPram) > 0) {
 				egovTwitterTrnsmitService.updtTwitterAccount(hmPram);
@@ -265,9 +265,9 @@ public class EgovTwitterController {
 	}
 
 	/**
-	 * 트위터를 인증 페이지를 조회한다.
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * ?몄쐞?곕? ?몄쬆 ?섏씠吏瑜?議고쉶?쒕떎.
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/selectTwitterPopupProcess.do")
@@ -277,9 +277,9 @@ public class EgovTwitterController {
 
 
 	/**
-	 * 트위터를 송신 페이지를 조회 한다.
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * ?몄쐞?곕? ?≪떊 ?섏씠吏瑜?議고쉶 ?쒕떎.
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/registTwitterTrnsmit.do", method = RequestMethod.GET)
@@ -292,13 +292,13 @@ public class EgovTwitterController {
 		String astoken = (String) WebUtils.getSessionAttribute(request, "astoken");
 
 		HashMap<String, Object> hmParam = new HashMap<String, Object>();
-		// 인증키값 설정
+		// ?몄쬆?ㅺ컪 ?ㅼ젙
 		hmParam.put("sCONSUMER_KEY", sCONSUMER_KEY);
 		hmParam.put("sCONSUMER_SECRET", sCONSUMER_SECRET);
 		hmParam.put("atoken", atoken);
 		hmParam.put("astoken", astoken);
 
-		Map<?, ?> userResult = egovTwitterTrnsmitService.twitterUserAccount(hmParam); // 유저정보
+		Map<?, ?> userResult = egovTwitterTrnsmitService.twitterUserAccount(hmParam); // ?좎??뺣낫
 
 		model.addAttribute("userID", userResult.get("userName"));
 		model.addAttribute("userName", userResult.get("userScreenName"));
@@ -308,14 +308,14 @@ public class EgovTwitterController {
 	}
 
 	/**
-	 * 트위터를 송신을 등록 처리 한다.
-	 * @param searchVO 		-트위터 Model
+	 * ?몄쐞?곕? ?≪떊???깅줉 泥섎━ ?쒕떎.
+	 * @param searchVO 		-?몄쐞??Model
 	 * @param commandMap 	-Request Variable
-	 * @param twitterInfo 	-트위터 Model
-	 * @param request -HttpServletRequest 객체
-	 * @param response -HttpServletResponse 객체
-	 * @param model 		-Spring 제공하는 ModelMap
-	 * @return String 		-리턴 URL
+	 * @param twitterInfo 	-?몄쐞??Model
+	 * @param request -HttpServletRequest 媛앹껜
+	 * @param response -HttpServletResponse 媛앹껜
+	 * @param model 		-Spring ?쒓났?섎뒗 ModelMap
+	 * @return String 		-由ы꽩 URL
 	 * @throws Exception	-Exception Throws
 	 */
 	@RequestMapping(value = "/uss/ion/tir/registTwitterTrnsmit.do", method = RequestMethod.POST)
@@ -330,7 +330,7 @@ public class EgovTwitterController {
 
 		HashMap<String, Object> hmParam = new HashMap<String, Object>();
 
-		// 인증키값 설정
+		// ?몄쬆?ㅺ컪 ?ㅼ젙
 		hmParam.put("sCONSUMER_KEY", sCONSUMER_KEY);
 		hmParam.put("sCONSUMER_SECRET", sCONSUMER_SECRET);
 		hmParam.put("atoken", atoken);
@@ -338,10 +338,10 @@ public class EgovTwitterController {
 		LOGGER.info("[Controller]===>>> atoken = " + atoken);
 		LOGGER.info("[Controller]===>>> astoken = " + astoken);
 
-		// 트위터 글 게시
+		// ?몄쐞??湲 寃뚯떆
 		CreateTweetResponse tweetResult = egovTwitterTrnsmitService.twitterTrnsmitRegist(hmParam,
 				twitterInfo.getTwitterText());
-		Map<?, ?> userResult = egovTwitterTrnsmitService.twitterUserAccount(hmParam); // 유저정보
+		Map<?, ?> userResult = egovTwitterTrnsmitService.twitterUserAccount(hmParam); // ?좎??뺣낫
 
 		twitterInfo.setTwitterTweetId(tweetResult.getId());
 		twitterInfo.setTwitterText(tweetResult.getText());
@@ -360,7 +360,7 @@ public class EgovTwitterController {
 	public String deleteTweet(@RequestParam("tweetID") String tID, HttpServletRequest request) throws Exception {
 
 		tID = tID.replace("&quot;", "");
-		LOGGER.info("트윗 아이디 >>> " + tID);
+		LOGGER.info("?몄쐵 ?꾩씠??>>> " + tID);
 
 		String sCONSUMER_KEY = (String) WebUtils.getSessionAttribute(request, "sCONSUMER_KEY");
 		String sCONSUMER_SECRET = (String) WebUtils.getSessionAttribute(request, "sCONSUMER_SECRET");
@@ -370,7 +370,7 @@ public class EgovTwitterController {
 
 		HashMap<String, Object> hmParam = new HashMap<String, Object>();
 
-		// 인증키값 설정
+		// ?몄쬆?ㅺ컪 ?ㅼ젙
 		hmParam.put("sCONSUMER_KEY", sCONSUMER_KEY);
 		hmParam.put("sCONSUMER_SECRET", sCONSUMER_SECRET);
 		hmParam.put("atoken", atoken);
@@ -378,7 +378,7 @@ public class EgovTwitterController {
 		
 		boolean deleteResult = egovTwitterTrnsmitService.twitterDelete(hmParam, tID);
 
-		LOGGER.info("트윗 삭제");
+		LOGGER.info("?몄쐵 ??젣");
 		LOGGER.info("DELETERESULT >>> " + deleteResult);
 		
 		return "egovframework/com/uss/ion/tir/EgovTwitterMain";

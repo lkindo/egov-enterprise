@@ -51,10 +51,10 @@
 	</repositories>
 
     <dependencies>
-        <!-- 실행환경 라이브러리 -->
+        <!-- ?ㅽ뻾?섍꼍 ?쇱씠釉뚮윭由?-->
         <!--
-        mybatis를 사용하는 데 jdk1.5로 컴파일 할 경우 아래와 같이 변경해 주시기 바랍니다.
-        (3.2.X 버전에서 부터 jdk1.6으로 컴파일 되어 발생하는 현상)
+        mybatis瑜??ъ슜?섎뒗 ??jdk1.5濡?而댄뙆????寃쎌슦 ?꾨옒? 媛숈씠 蹂寃쏀빐 二쇱떆湲?諛붾엻?덈떎.
+        (3.2.X 踰꾩쟾?먯꽌 遺??jdk1.6?쇰줈 而댄뙆???섏뼱 諛쒖깮?섎뒗 ?꾩긽)
           <dependency>
            <groupId>org.egovframe.rte</groupId>
            <artifactId>org.egovframe.rte.psl.dataaccess</artifactId>
@@ -79,11 +79,11 @@
         </dependency>
 
         <!--
-        JBoss의 경우는 <body-context>부분을 empty로 수정하여 적용하시면 되며,
-        pom.xml을 아래와 같이 적용하시면 수정된 jar를 참조하실 수 있습니다.
-        (기존 org.egovframe.rte.ptl.mvc dependency에 내부적으로 참조되고 있어,
-        해당 부분을 exclude 처리해야 함)
-        아래 주석을 해제하시면 됩니다.
+        JBoss??寃쎌슦??<body-context>遺遺꾩쓣 empty濡??섏젙?섏뿬 ?곸슜?섏떆硫??섎ŉ,
+        pom.xml???꾨옒? 媛숈씠 ?곸슜?섏떆硫??섏젙??jar瑜?李몄“?섏떎 ???덉뒿?덈떎.
+        (湲곗〈 org.egovframe.rte.ptl.mvc dependency???대??곸쑝濡?李몄“?섍퀬 ?덉뼱,
+        ?대떦 遺遺꾩쓣 exclude 泥섎━?댁빞 ??
+        ?꾨옒 二쇱꽍???댁젣?섏떆硫??⑸땲??
         -->
         <dependency>
             <groupId>org.egovframe.rte</groupId>
@@ -120,9 +120,9 @@
 			<artifactId>egovframe-rte-fdl-access</artifactId>
 			<version>${egovframe.rte.version}</version>
 		</dependency>
-        <!-- 실행환경 라이브러리 끝 -->
+        <!-- ?ㅽ뻾?섍꼍 ?쇱씠釉뚮윭由???-->
 
-        <!-- SLF4J API 및 Log4j2 바인딩 -->
+        <!-- SLF4J API 諛?Log4j2 諛붿씤??-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -163,20 +163,20 @@
 			<version>5.0.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- JSP 구문을 지원하기 위한 표준 사양 -->
+		<!-- JSP 援щЦ??吏?먰븯湲??꾪븳 ?쒖? ?ъ뼇 -->
 		<dependency>
 			<groupId>jakarta.servlet.jsp</groupId>
 			<artifactId>jakarta.servlet.jsp-api</artifactId>
 			<version>4.0.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- JSTL 태그의 표준 사양 -->
+		<!-- JSTL ?쒓렇???쒖? ?ъ뼇 -->
 		<dependency>
 			<groupId>jakarta.servlet.jsp.jstl</groupId>
 			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
 			<version>3.0.2</version>
 		</dependency>
-		<!-- JSTL 태그가 실제로 작동하게 하는 구현 -->
+		<!-- JSTL ?쒓렇媛 ?ㅼ젣濡??묐룞?섍쾶 ?섎뒗 援ы쁽 -->
 		<dependency>
 			<groupId>org.glassfish.web</groupId>
 			<artifactId>jakarta.servlet.jsp.jstl</artifactId>
@@ -218,30 +218,30 @@
         </dependency>
         <!-- Scheduling end-->
 
-        <!-- 공통컴포넌트 시작 -->
+        <!-- 怨듯넻而댄룷?뚰듃 ?쒖옉 -->
 
-        <!-- Validation 에서 사용 antlr.TokenStream -->
+        <!-- Validation ?먯꽌 ?ъ슜 antlr.TokenStream -->
         <dependency>
             <groupId>org.antlr</groupId>
 	        <artifactId>antlr4</artifactId>
 	        <version>4.13.2</version>
         </dependency>
 
-        <!-- 우편번호를 위한 라이브러리 -->
+        <!-- ?고렪踰덊샇瑜??꾪븳 ?쇱씠釉뚮윭由?-->
         <dependency>
             <groupId>oro</groupId>
             <artifactId>oro</artifactId>
             <version>2.0.8</version>
         </dependency>
 
-        <!-- 요소기술 달력을 위한 라이브러리 -->
+        <!-- ?붿냼湲곗닠 ?щ젰???꾪븳 ?쇱씠釉뚮윭由?-->
         <dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
 			<version>77.1</version>
         </dependency>
 
-        <!-- FTP용 3rd party 라이브러리 -->
+        <!-- FTP??3rd party ?쇱씠釉뚮윭由?-->
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
@@ -271,7 +271,7 @@
 			<artifactId>ldapsdk</artifactId>
 			<version>4.1</version>
 		</dependency>
-        <!-- PDF변환용 라이브러리 -->
+        <!-- PDF蹂?섏슜 ?쇱씠釉뚮윭由?-->
         <dependency>
             <groupId>com.artofsolving</groupId>
             <artifactId>jodconverter</artifactId>
@@ -354,7 +354,7 @@
             <version>${spring.maven.artifact.version}</version>
         </dependency> -->
         
-        <!-- WebSocket Messenger - Spring WebSocket 사용 -->
+        <!-- WebSocket Messenger - Spring WebSocket ?ъ슜 -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-websocket</artifactId>
@@ -365,13 +365,13 @@
             <artifactId>spring-messaging</artifactId>
             <version>${spring.framework.version}</version>
         </dependency>
-        <!-- Jakarta WebSocket API (백업용) -->
+        <!-- Jakarta WebSocket API (諛깆뾽?? -->
         <dependency>
 			<groupId>jakarta.websocket</groupId>
 			<artifactId>jakarta.websocket-api</artifactId>
 			<version>2.2.0</version>
 		</dependency>
-		<!-- Jakarta WebSocket 서버 구현체 -->
+		<!-- Jakarta WebSocket ?쒕쾭 援ы쁽泥?-->
 		<dependency>
 			<groupId>jakarta.websocket</groupId>
 			<artifactId>jakarta.websocket-client-api</artifactId>
@@ -393,7 +393,7 @@
         </dependency>
 
         <!-- ajax json -->
-        <!-- social에서 참조 하고 있어 임시 주석 처리 -->
+        <!-- social?먯꽌 李몄“ ?섍퀬 ?덉뼱 ?꾩떆 二쇱꽍 泥섎━ -->
 		<dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -410,7 +410,7 @@
 			<version>2.18.2</version>
         </dependency>
 
-        <!-- LDAP조직도관리 관련 라이브러리  -->
+        <!-- LDAP議곗쭅?꾧?由?愿???쇱씠釉뚮윭由? -->
         <dependency>
             <groupId>org.springframework.ldap</groupId>
             <artifactId>spring-ldap-core</artifactId>
@@ -477,16 +477,16 @@
 			<version>2.6.0</version>
 		</dependency>
 
-        <!-- 3rd party 라이브러리로 별도의 설치 필요 끝 -->
+        <!-- 3rd party ?쇱씠釉뚮윭由щ줈 蹂꾨룄???ㅼ튂 ?꾩슂 ??-->
 
-		<!-- 법정도코드, 기관코드 연계 -->
+		<!-- 踰뺤젙?꾩퐫?? 湲곌?肄붾뱶 ?곌퀎 -->
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
 			<version>1.1.1</version>
 		</dependency>
 
-        <!-- 공통컴포넌트 끝 -->
+        <!-- 怨듯넻而댄룷?뚰듃 ??-->
 
 		<dependency>
 			<groupId>junit</groupId>
@@ -531,7 +531,7 @@
 		    <scope>test</scope>
 		</dependency>
 
-        <!-- 3rd party 라이브러리로 별도의 설치 필요 -->
+        <!-- 3rd party ?쇱씠釉뚮윭由щ줈 蹂꾨룄???ㅼ튂 ?꾩슂 -->
         <!-- oracle 11g driver -->
         <dependency>
             <groupId>project</groupId>
@@ -570,7 +570,7 @@
 			<version>2.7.0</version>
 		</dependency>
 
-        <!-- GPKI인증서 로그인처리 라이브러리 -->
+        <!-- GPKI?몄쬆??濡쒓렇?몄쿂由??쇱씠釉뚮윭由?-->
         <!--<dependency>
             <groupId>project</groupId>
             <artifactId>gpkisecureweb</artifactId>
@@ -582,13 +582,13 @@
             <version>1.4.0</version>
         </dependency>-->
 
-		<!-- 디지털원패스 라이브러리 시작 -->
+		<!-- ?붿??몄썝?⑥뒪 ?쇱씠釉뚮윭由??쒖옉 -->
 		<!--<dependency>
 			<groupId>project</groupId>
 			<artifactId>onepass</artifactId>
 			<version>2.0.0</version>
 		</dependency>-->
-		<!-- 디지털원패스 라이브러리 끝 -->
+		<!-- ?붿??몄썝?⑥뒪 ?쇱씠釉뚮윭由???-->
 
 		<dependency>
 		    <groupId>jakarta.faces</groupId>

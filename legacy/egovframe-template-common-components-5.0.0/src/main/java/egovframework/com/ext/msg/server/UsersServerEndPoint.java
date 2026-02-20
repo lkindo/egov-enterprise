@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server;
 
@@ -41,22 +41,22 @@ import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 
 /**
- * 현재 가능한 대화사용자 리스트를 처리하는 WebSocket 서버클래스
+ * ?꾩옱 媛?ν븳 ??붿궗?⑹옄 由ъ뒪?몃? 泥섎━?섎뒗 WebSocket ?쒕쾭?대옒??
  * 
- * @author 이영지
+ * @author ?댁쁺吏
  * @since 2014.11.27
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.11.27  이영지          최초 생성
- *   2020.11.02  신용호          KISA 보안약점 조치 (Random Seed값 추가)
- *   2023.06.09  김장하          NSR 보안조치 (사용자이름 크로스사이트 스크립트 방지)
- *   2025.06.23  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(리소스 닫기), EmptyControlStatement(빈 제어문), UnnecessarySemicolon(불필요한 세미콜론)
+ *   2014.11.27  ?댁쁺吏          理쒖큹 ?앹꽦
+ *   2020.11.02  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (Random Seed媛?異붽?)
+ *   2023.06.09  源?ν븯          NSR 蹂댁븞議곗튂 (?ъ슜?먯씠由??щ줈?ㅼ궗?댄듃 ?ㅽ겕由쏀듃 諛⑹?)
+ *   2025.06.23  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(由ъ냼???リ린), EmptyControlStatement(鍮??쒖뼱臾?, UnnecessarySemicolon(遺덊븘?뷀븳 ?몃?肄쒕줎)
  *
  *      </pre>
  */
@@ -65,15 +65,15 @@ public class UsersServerEndPoint {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UsersServerEndPoint.class);
 	private static Set<Session> connectedAllUsers = Collections.synchronizedSet(new HashSet<Session>());
 
-	// Spring bean과 연동하기 위해서는 ServerAppConfig를 configurator로 등록해주면 된다.
+	// Spring bean怨??곕룞?섍린 ?꾪빐?쒕뒗 ServerAppConfig瑜?configurator濡??깅줉?댁＜硫??쒕떎.
 	/*
 	 * @Resource(name="TestService") TestService testService;
 	 */
 
 	/**
-	 * Handshaking 함수
+	 * Handshaking ?⑥닔
 	 * 
-	 * @param userSession 사용자 session
+	 * @param userSession ?ъ슜??session
 	 */
 	@OnOpen
 	public void handleOpen(Session userSession) {
@@ -81,10 +81,10 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * Message전달 함수
+	 * Message?꾨떖 ?⑥닔
 	 * 
-	 * @param message     메시지
-	 * @param userSession 사용자 session
+	 * @param message     硫붿떆吏
+	 * @param userSession ?ъ슜??session
 	 * @throws IOException
 	 * @throws EncodeException
 	 */
@@ -100,8 +100,8 @@ public class UsersServerEndPoint {
 			String connectionType = jsonObject.getString("connectionType");
 
 			if ("firstConnection".equals(connectionType) && username == null) {
-				// 맨 처음 접속 시,
-				// 사용자의 이름을 가져옴
+				// 留?泥섏쓬 ?묒냽 ??
+				// ?ъ슜?먯쓽 ?대쫫??媛?몄샂
 				username = EgovWebUtil.clearXSSMaximum(jsonObject.getString("username"));
 
 				LOGGER.info(username + " is entered.");
@@ -114,33 +114,33 @@ public class UsersServerEndPoint {
 					}
 				} else {
 					if (LOGGER.isDebugEnabled()) {
-						LOGGER.debug("username을 다시 입력하게하는 로직 넣기.");
+						LOGGER.debug("username???ㅼ떆 ?낅젰?섍쾶?섎뒗 濡쒖쭅 ?ｊ린.");
 					}
 				}
 
 			} else if ("chatConnection".equals(connectionType)) {
-				// chatroomId로 또다른 webSocket url에 접근한다.
-				// id generation으로 대체가능.
+				// chatroomId濡??먮떎瑜?webSocket url???묎렐?쒕떎.
+				// id generation?쇰줈 ?泥닿???
 				String chatroomId = genRandom();
 
-				// 다른 사용자와 대화하고자 시도할 때
-				// 채팅룸 사용자 저장
+				// ?ㅻⅨ ?ъ슜?먯? ??뷀븯怨좎옄 ?쒕룄????
+				// 梨꾪똿猷??ъ슜?????
 				Set<Session> chatroomMembers = new HashSet<Session>();
 				chatroomMembers.add(userSession);
 
-				// 선택한 사용자를 사용자들 안에서 찾기.
+				// ?좏깮???ъ슜?먮? ?ъ슜?먮뱾 ?덉뿉??李얘린.
 				String connectingUser = EgovWebUtil.clearXSSMaximum(jsonObject.getString("connectingUser"));
 
 				if (connectingUser != null && !username.equals(connectingUser)) {
-					// 사용자들 중 선택한 유저와 연결
+					// ?ъ슜?먮뱾 以??좏깮???좎?? ?곌껐
 					for (Session session : connectedAllUsers) {// NOPMD - CloseResource
 						if (connectingUser.equals(session.getUserProperties().get("username"))) {
-							// 선택한 사용자면 chatroomMember로 추가.
+							// ?좏깮???ъ슜?먮㈃ chatroomMember濡?異붽?.
 							chatroomMembers.add(session);
 						}
 					}
 
-					// chatroomMembers에게 room입장하라는 신호 보내기
+					// chatroomMembers?먭쾶 room?낆옣?섎씪???좏샇 蹂대궡湲?
 					for (Session session : chatroomMembers) {// NOPMD - CloseResource
 
 						session.getBasicRemote()
@@ -160,13 +160,13 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * 연결을 끊기 직전에 호출되는 함수
+	 * ?곌껐???딄린 吏곸쟾???몄텧?섎뒗 ?⑥닔
 	 * 
 	 * @param userSession
 	 * @throws IOException
 	 * @throws EncodeException
 	 */
-	// 예외처리 필요!
+	// ?덉쇅泥섎━ ?꾩슂!
 	@OnClose
 	public void handleClose(Session userSession) throws IOException, EncodeException {
 
@@ -184,7 +184,7 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * 연결되어있는 user정보를 가져오는 함수
+	 * ?곌껐?섏뼱?덈뒗 user?뺣낫瑜?媛?몄삤???⑥닔
 	 * 
 	 * @return user set
 	 */
@@ -200,7 +200,7 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * 유저 정보가 담긴 Set<String>을 json으로 변환해주는 함수
+	 * ?좎? ?뺣낫媛 ?닿릿 Set<String>??json?쇰줈 蹂?섑빐二쇰뒗 ?⑥닔
 	 * 
 	 * @param set
 	 * @return jsondata
@@ -216,13 +216,13 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * 동일한 username을 가진 user session이 있는지 확인하는 함수
+	 * ?숈씪??username??媛吏?user session???덈뒗吏 ?뺤씤?섎뒗 ?⑥닔
 	 * 
-	 * @param username 사용자이름
-	 * @return 존재여부
+	 * @param username ?ъ슜?먯씠由?
+	 * @return 議댁옱?щ?
 	 */
 	private boolean isExisted(String username) {
-		// 이미 username을 가진 session이 있는지 검사.
+		// ?대? username??媛吏?session???덈뒗吏 寃??
 		for (Session existedUser : connectedAllUsers) {// NOPMD - CloseResource
 			if (username.equals(existedUser.getUserProperties().get("username"))) {
 				return true;
@@ -232,15 +232,15 @@ public class UsersServerEndPoint {
 	}
 
 	/**
-	 * chatroomId를 위한 랜덤값을 생성하는 함수
+	 * chatroomId瑜??꾪븳 ?쒕뜡媛믪쓣 ?앹꽦?섎뒗 ?⑥닔
 	 * 
 	 * @return chatroomId
 	 */
 	private String genRandom() {
 		String chatroomId = "";
-		SecureRandom rnd = new SecureRandom(); // 221115 김혜준 2022 시큐어코딩 조치
+		SecureRandom rnd = new SecureRandom(); // 221115 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 		for (int i = 0; i < 8; i++) {
-			chatroomId += (char) ((rnd.nextDouble() * 26) + 97);// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			chatroomId += (char) ((rnd.nextDouble() * 26) + 97);// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		}
 		return chatroomId;
 	}

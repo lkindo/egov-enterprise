@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 통계 정보를 위한 VO 클래스
+ * ?듦퀎 ?뺣낫瑜??꾪븳 VO ?대옒??
  */
 @Getter
 @Setter
@@ -19,7 +19,7 @@ public class StatsVO {
     private long outptCo;
     private long errorCo;
 
-    // BBS 관련
+    // BBS 愿??
     private String mxmmInqireBbsId;
     private String mxmmInqireBbsNm;
     private long maxStatsCo;

@@ -4,31 +4,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 정보알림이를 위한 서비스 인터페이스 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뺣낫?뚮┝?대? ?꾪븳 ?쒕퉬???명꽣?섏씠???대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.6.8  한성곤          최초 생성
+ *   2009.6.8  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovNotificationService {
     /**
-     * 정보알림이 목록을 조회 한다.
+     * ?뺣낫?뚮┝??紐⑸줉??議고쉶 ?쒕떎.
      * 
      * @param BoardMasterVO
      */
     public Map<String, Object> selectNotificationInfs(NotificationVO searchVO) throws Exception;
     
     /**
-     * 정보알림이 정보를 등록한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??깅줉?쒕떎.
      * 
      * @param notification
      * @throws Exception
@@ -36,7 +36,7 @@ public interface EgovNotificationService {
     public void insertNotificationInf(Notification notification) throws Exception;
     
     /**
-     * 정보알림이에 대한 상세정보를 조회한다.
+     * ?뺣낫?뚮┝?댁뿉 ????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param searchVO
      * @return
@@ -45,7 +45,7 @@ public interface EgovNotificationService {
     public NotificationVO selectNotificationInf(NotificationVO searchVO) throws Exception;
     
     /**
-     * 정보알림이 정보를 수정한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??섏젙?쒕떎.
      * 
      * @param notification
      * @throws Exception
@@ -53,7 +53,7 @@ public interface EgovNotificationService {
     public void updateNotifictionInf(Notification notification) throws Exception;
     
     /**
-     * 정보알림이 정보를 삭제한다.
+     * ?뺣낫?뚮┝???뺣낫瑜???젣?쒕떎.
      * 
      * @param notification
      * @throws Exception
@@ -61,7 +61,7 @@ public interface EgovNotificationService {
     public void deleteNotifictionInf(Notification notification) throws Exception;
     
     /**
-     * 정보알림이 알림시간 등에 대한 점검을 수행한다.
+     * ?뺣낫?뚮┝???뚮┝?쒓컙 ?깆뿉 ????먭????섑뻾?쒕떎.
      * 
      * @param notification
      * @return
@@ -70,7 +70,7 @@ public interface EgovNotificationService {
     public boolean checkNotification(Notification notification) throws Exception;
     
     /**
-     * 정보알림이 정보 표시를 수행한다.
+     * ?뺣낫?뚮┝???뺣낫 ?쒖떆瑜??섑뻾?쒕떎.
      * 
      * @return
      * @throws Exception

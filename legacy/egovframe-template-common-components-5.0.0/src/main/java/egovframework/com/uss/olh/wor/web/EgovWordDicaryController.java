@@ -24,20 +24,20 @@ import jakarta.validation.Valid;
 
 /**
 *
-* 용어사전을 처리하는 Controller 클래스
-* @author 공통서비스 개발팀 박정규
+* ?⑹뼱?ъ쟾??泥섎━?섎뒗 Controller ?대옒??
+* @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
 * @since 2009.04.01
 * @version 1.0
 * @see
 *
 * <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2009.04.01  박정규          최초 생성
-*   2011.8.26	정진오			IncludedInfo annotation 추가
-*   2016.08.02	김연호			표준프레임워크 3.6 적용
+*   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+*   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
+*   2016.08.02	源?고샇			?쒖??꾨젅?꾩썙??3.6 ?곸슜
 *
 *
 * </pre>
@@ -57,13 +57,13 @@ public class EgovWordDicaryController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 용어사전목록을 조회한다.
+	 * ?⑹뼱?ъ쟾紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param model
 	 * @return	"/uss/olh/wor/EgovWordDicaryListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "용어사전", order = 530, gid = 50)
+	@IncludedInfo(name = "?⑹뼱?ъ쟾", order = 530, gid = 50)
 	@RequestMapping(value = "/uss/olh/wor/selectWordDicaryList.do")
 	public String selectWordDicaryList(@ModelAttribute("searchVO") WordDicaryVO searchVO, ModelMap model) throws Exception {
 
@@ -92,7 +92,7 @@ public class EgovWordDicaryController {
 	}
 
 	/**
-	 * 용어사전 목록에 대한 상세정보를 조회한다.
+	 * ?⑹뼱?ъ쟾 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * @param wordDicaryVO
 	 * @param searchVO
 	 * @param model
@@ -110,7 +110,7 @@ public class EgovWordDicaryController {
 	}
 
 	/**
-	 * 용어사전정보를 등록하기 위한 첫 화면
+	 * ?⑹뼱?ъ쟾?뺣낫瑜??깅줉?섍린 ?꾪븳 泥??붾㈃
 	 * @param searchVO
 	 * @param model
 	 * @return	"/uss/olh/wor/EgovWordDicaryRegist"
@@ -125,7 +125,7 @@ public class EgovWordDicaryController {
 	}
 
 	/**
-	 * 용어사전정보를 등록한다.
+	 * ?⑹뼱?ъ쟾?뺣낫瑜??깅줉?쒕떎.
 	 * @param searchVO
 	 * @param wordDicaryVO
 	 * @param bindingResult
@@ -143,12 +143,12 @@ public class EgovWordDicaryController {
 			return "egovframework/com/uss/olh/wor/EgovWordDicaryRegist";
 		}
 
-		// 로그인VO에서  사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌  ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		wordDicaryVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		wordDicaryVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		wordDicaryVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		wordDicaryVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovWordDicaryService.insertWordDicary(wordDicaryVO);
 
@@ -156,7 +156,7 @@ public class EgovWordDicaryController {
 	}
 
 	/**
-	 * 용어사전정보를 수정하기 위한 초기 화면
+	 * ?⑹뼱?ъ쟾?뺣낫瑜??섏젙?섍린 ?꾪븳 珥덇린 ?붾㈃
 	 * @param wordId
 	 * @param searchVO
 	 * @param model
@@ -175,7 +175,7 @@ public class EgovWordDicaryController {
 	}
 
 	/**
-	 * 용어사전정보를 수정한다.
+	 * ?⑹뼱?ъ쟾?뺣낫瑜??섏젙?쒕떎.
 	 * @param searchVO
 	 * @param wordDicaryVO
 	 * @param bindingResult
@@ -193,18 +193,18 @@ public class EgovWordDicaryController {
 			return "egovframework/com/uss/olh/wor/EgovWordDicaryUpdt";
 		}
 
-		// 로그인VO에서  사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌  ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		wordDicaryVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		wordDicaryVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 		egovWordDicaryService.updateWordDicary(wordDicaryVO);
 
 		return "forward:/uss/olh/wor/selectWordDicaryList.do";
 	}
 
 	/**
-	 * 용어사전정보를 삭제한다.
+	 * ?⑹뼱?ъ쟾?뺣낫瑜???젣?쒕떎.
 	 * @param wordDicaryVO
 	 * @param searchVO
 	 * @return	"forward:/uss/olh/wor/selectWordDicaryList.do"

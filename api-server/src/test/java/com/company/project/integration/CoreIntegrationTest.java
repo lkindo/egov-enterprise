@@ -38,7 +38,7 @@ class CoreIntegrationTest {
                                 "coreIntegrationUser",
                                 "password123!",
                                 "핵심 통합 테스트 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
         }
@@ -97,7 +97,7 @@ class CoreIntegrationTest {
                                 "coreIntegrationUser", // 동일한 ID
                                 "password456!",
                                 "중복 테스트 사용자",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
@@ -116,14 +116,14 @@ class CoreIntegrationTest {
                                 "multiUser1",
                                 "password123!",
                                 "다중 사용자1",
-                                com.company.project.domain.user.Role.USER,
+                                com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
                 UserSignupRequest request2 = new UserSignupRequest(
                                 "multiUser2",
                                 "password123!",
                                 "다중 사용자2",
-                                com.company.project.domain.user.Role.ADMIN,
+                                com.company.project.domain.user.entity.Role.ADMIN,
                                 "hint",
                                 "answer");
 

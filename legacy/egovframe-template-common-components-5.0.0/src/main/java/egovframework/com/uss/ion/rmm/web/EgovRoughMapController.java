@@ -24,27 +24,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * -  약도 관리에 대한 Controller를 정의한다.
+ * 媛쒖슂
+ * -  ?쎈룄 愿由ъ뿉 ???Controller瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * -  약도에 대한 등록, 수정, 삭제, 조회, 상세조회 요청 사항을 Service와 매핑 처리한다.
+ * ?곸꽭?댁슜
+ * -  ?쎈룄??????깅줉, ?섏젙, ??젣, 議고쉶, ?곸꽭議고쉶 ?붿껌 ?ы빆??Service? 留ㅽ븨 泥섎━?쒕떎.
  * </pre>
  *
- * @author 옥찬우
+ * @author ?μ갔??
  * @since 2014.08.27
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.08.27  옥찬우          최초 생성
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2024.10.29  권태성          상세 페이지에서 목록으로 이동 시 검색 결과로 이동하기 위한 인자 전달
- *   2025.08.12  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2014.08.27  ?μ갔??         理쒖큹 ?앹꽦
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2024.10.29  沅뚰깭??         ?곸꽭 ?섏씠吏?먯꽌 紐⑸줉?쇰줈 ?대룞 ??寃??寃곌낵濡??대룞?섍린 ?꾪븳 ?몄옄 ?꾨떖
+ *   2025.08.12  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -60,19 +60,19 @@ public class EgovRoughMapController {
 	protected EgovPropertyService propertyService;
 
 	/**
-	 * 약도 목록 조회 Service interface 호출 및 결과를 반환한다.
+	 * ?쎈룄 紐⑸줉 議고쉶 Service interface ?몄텧 諛?寃곌낵瑜?諛섑솚?쒕떎.
 	 * 
 	 * @param RoughMapDefaultVO
 	 * @param model
-	 * @return String 약도 목록 조회 화면
+	 * @return String ?쎈룄 紐⑸줉 議고쉶 ?붾㈃
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "약도 관리", order = 943, gid = 50)
+	@IncludedInfo(name = "?쎈룄 愿由?, order = 943, gid = 50)
 	@RequestMapping("/com/uss/ion/rmm/selectRoughMapList.do")
 	public String selectRoughMapList(@ModelAttribute("searchVO") RoughMapDefaultVO searchVO, ModelMap model)
 			throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -103,17 +103,17 @@ public class EgovRoughMapController {
 	}
 
 	/**
-	 * 약도 상세조회 Service interface 호출 및 결과를 반환한다.
+	 * ?쎈룄 ?곸꽭議고쉶 Service interface ?몄텧 諛?寃곌낵瑜?諛섑솚?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
-	 * @return String 건물 위치정보 상세조회 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 ?곸꽭議고쉶 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping("/com/uss/ion/rmm/selectRoughMapDetail.do")
 	public String selectRoughMap(RoughMapVO searchVO, ModelMap model) throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -127,16 +127,16 @@ public class EgovRoughMapController {
 	}
 
 	/**
-	 * 약도 등록 화면으로 이동한다.
+	 * ?쎈룄 ?깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param RoughMapDefaultVO
 	 * @param model
-	 * @return String 건물 위치정보 등록 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 ?깅줉 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/com/uss/ion/rmm/registRoughMap.do")
 	public String goRoughMapRegist(@ModelAttribute("roughMap") RoughMapVO roughMap, Model model) throws Exception {
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -147,17 +147,17 @@ public class EgovRoughMapController {
 	}
 
 	/**
-	 * 약도 등록 Service interface 호출 및 결과를 반환한다.
+	 * ?쎈룄 ?깅줉 Service interface ?몄텧 諛?寃곌낵瑜?諛섑솚?쒕떎.
 	 * 
 	 * @param RoughMapVO
-	 * @return String 건물 위치정보 목록 조회 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 紐⑸줉 議고쉶 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping("/com/uss/ion/rmm/insertRoughMap.do")
 	public String insertRoughMap(@ModelAttribute("roughMap") RoughMapVO roughMap, BindingResult bindingResult)
 			throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -170,26 +170,26 @@ public class EgovRoughMapController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		roughMap.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
-		roughMap.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getId())); // 최종수정자ID
+		roughMap.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getId())); // 理쒖쥌?섏젙?륤D
 		egovRoughMapService.insertRoughMap(roughMap);
 
 		return "forward:/com/uss/ion/rmm/selectRoughMapList.do";
 	}
 
 	/**
-	 * 약도 수정 화면으로 이동한다.
+	 * ?쎈룄 ?섏젙 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 * 
 	 * @param RoughMapDefaultVO
 	 * @param model
-	 * @return String 건물 위치정보 수정 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 ?섏젙 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/com/uss/ion/rmm/updateRoughMapView.do")
 	public String goRoughMapUpdt(@ModelAttribute("roughMap") RoughMapVO roughMap, ModelMap model) throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -205,17 +205,17 @@ public class EgovRoughMapController {
 	}
 
 	/**
-	 * 약도 수정 Service interface 호출 및 결과를 반환한다.
+	 * ?쎈룄 ?섏젙 Service interface ?몄텧 諛?寃곌낵瑜?諛섑솚?쒕떎.
 	 * 
 	 * @param RoughMapVO
-	 * @return String 건물 위치정보 목록 조회 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 紐⑸줉 議고쉶 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/com/uss/ion/rmm/updateRoughMap.do")
 	public String updateRoughMap(@ModelAttribute("roughMap") RoughMapVO roughMap, BindingResult bindingResult)
 			throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -228,7 +228,7 @@ public class EgovRoughMapController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		roughMap.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 		egovRoughMapService.updateRoughMap(roughMap);
 
@@ -236,16 +236,16 @@ public class EgovRoughMapController {
 	}
 
 	/**
-	 * 약도 삭제 Service interface 호출 및 결과를 반환한다.
+	 * ?쎈룄 ??젣 Service interface ?몄텧 諛?寃곌낵瑜?諛섑솚?쒕떎.
 	 * 
 	 * @param RoughMapVO
-	 * @return String 건물 위치정보 목록 조회 화면
+	 * @return String 嫄대Ъ ?꾩튂?뺣낫 紐⑸줉 議고쉶 ?붾㈃
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/com/uss/ion/rmm/deleteRoughMap.do")
 	public String deleteRoughMap(@ModelAttribute("roughMap") RoughMapVO roughMap) throws Exception {
 
-		// 권한 체크
+		// 沅뚰븳 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (!isAuthenticated) {
@@ -254,8 +254,8 @@ public class EgovRoughMapController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 사용자 인증여부 판단
-		// 2022.11.11 시큐어코딩 처리
+		// ?ъ슜???몄쬆?щ? ?먮떒
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		roughMap.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 		egovRoughMapService.deleteRoughMap(roughMap);
 

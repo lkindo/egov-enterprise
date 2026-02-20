@@ -9,18 +9,18 @@ import egovframework.com.cop.ems.service.AtchmnFileVO;
 import egovframework.com.cop.ems.service.SndngMailVO;
 
 /**
- * 발송메일을 등록하는 DAO 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪???깅줉?섎뒗 DAO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
@@ -28,7 +28,7 @@ import egovframework.com.cop.ems.service.SndngMailVO;
 public class SndngMailRegistDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 발송할 메일을 등록한다
+	 * 諛쒖넚??硫붿씪???깅줉?쒕떎
 	 * @param vo SndngMailVO
 	 * @return SndngMailVO
 	 * @exception Exception
@@ -39,7 +39,7 @@ public class SndngMailRegistDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 발송할 메일에 있는 첨부파일 목록을 조회한다.
+	 * 諛쒖넚??硫붿씪???덈뒗 泥⑤??뚯씪 紐⑸줉??議고쉶?쒕떎.
 	 * @param vo SndngMailVO
 	 * @return List
 	 * @exception Exception
@@ -49,7 +49,7 @@ public class SndngMailRegistDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 발송결과를 수정한다.
+	 * 諛쒖넚寃곌낵瑜??섏젙?쒕떎.
 	 * @param vo SndngMailVO
 	 * @return SndngMailVO
 	 * @exception Exception

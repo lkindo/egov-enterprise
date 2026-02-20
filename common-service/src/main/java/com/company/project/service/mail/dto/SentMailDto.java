@@ -11,31 +11,31 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "발송메일 정보 DTO")
+@Schema(description = "Description")
 public class SentMailDto {
 
-    @Schema(description = "메시지 ID")
+    @Schema(description = "Description")
     private String mssageId;
 
-    @Schema(description = "제목")
+    @Schema(description = "Description")
     private String sj;
 
-    @Schema(description = "내용")
+    @Schema(description = "Description")
     private String emailCn;
 
-    @Schema(description = "발신자")
+    @Schema(description = "Description")
     private String dsptchPerson;
 
-    @Schema(description = "수신자")
+    @Schema(description = "Description")
     private String recptnPerson;
 
-    @Schema(description = "발송결과코드")
+    @Schema(description = "Description")
     private String sndngResultCode;
 
-    @Schema(description = "발송일시")
+    @Schema(description = "Description")
     private String sndngDe;
 
-    @Schema(description = "첨부파일 ID")
+    @Schema(description = "Description")
     private String atchFileId;
 
     public static SentMailDto from(SentMail entity) {

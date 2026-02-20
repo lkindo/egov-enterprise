@@ -4,43 +4,43 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 길이, 부피, 넓이, 무게 환산 데이터를 생성하는 Service Class 구현
+ * 湲몄씠, 遺?? ?볦씠, 臾닿쾶 ?섏궛 ?곗씠?곕? ?앹꽦?섎뒗 Service Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2025.09.03  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(변수명에 밑줄 사용)
- *   2025.09.03  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2025.09.03  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
+ *   2025.09.03  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
 public class EgovUnitCalcUtil {
 
-	// 길이
+	// 湲몄씠
 	private final Map<String, Double> hmVt = new HashMap<>();
 
-	// 부피
+	// 遺??
 	private final Map<String, Double> hmVl = new HashMap<>();
 
-	// 넓이
+	// ?볦씠
 	private final Map<String, Double> hmAr = new HashMap<>();
 
-	// 무게
+	// 臾닿쾶
 	private final Map<String, Double> hmWt = new HashMap<>();
 
 	/**
-	 * 생성자를 통하여 길이, 부피, 넓이, 무게 환산 데이터를 생성한다.
+	 * ?앹꽦?먮? ?듯븯??湲몄씠, 遺?? ?볦씠, 臾닿쾶 ?섏궛 ?곗씠?곕? ?앹꽦?쒕떎.
 	 */
 	public EgovUnitCalcUtil() {
-		// 길이
+		// 湲몄씠
 		hmVt.put("vt0", (double) 0);
 		hmVt.put("vt1", (double) 1);
 		hmVt.put("vt2", 0.01);
@@ -53,7 +53,7 @@ public class EgovUnitCalcUtil {
 		hmVt.put("vt9", 0.033 / 360);
 		hmVt.put("vt10", 0.033 / 1296);
 
-		// 부피
+		// 遺??
 		hmVl.put("vl0", (double) 0);
 		hmVl.put("vl1", 1 / 0.18039);
 		hmVl.put("vl2", 1 / 1.8039);
@@ -66,7 +66,7 @@ public class EgovUnitCalcUtil {
 		hmVl.put("vl9", 1000 / Math.pow(2.54 * 36, 3));
 		hmVl.put("vl10", 1000 / (Math.pow(2.54, 3) * 231));
 
-		// 넓이
+		// ?볦씠
 		hmAr.put("ar0", (double) 0);
 		hmAr.put("ar1", 1089d / 100d);
 		hmAr.put("ar2", 1089d / 3600d);
@@ -79,7 +79,7 @@ public class EgovUnitCalcUtil {
 		hmAr.put("ar9", 1 / (Math.pow(2.54 * 36 / 100, 2) * 4840));
 		hmAr.put("ar10", 0.0001);
 
-		// 무게
+		// 臾닿쾶
 		hmWt.put("wt0", (double) 0);
 		hmWt.put("wt1", (double) 1);
 		hmWt.put("wt2", (double) 1000);
@@ -95,12 +95,12 @@ public class EgovUnitCalcUtil {
 	}
 
 	/**
-	 * 길이단위를 환산하여 리턴한다.
+	 * 湲몄씠?⑥쐞瑜??섏궛?섏뿬 由ы꽩?쒕떎.
 	 * 
-	 * @param nLength          -길이
-	 * @param sLengthUnit-길이   단위
-	 * @param sLengthUnitAs-길이 환산 단위
-	 * @return double -환산된 길이
+	 * @param nLength          -湲몄씠
+	 * @param sLengthUnit-湲몄씠   ?⑥쐞
+	 * @param sLengthUnitAs-湲몄씠 ?섏궛 ?⑥쐞
+	 * @return double -?섏궛??湲몄씠
 	 */
 	public double convertLengthCalcUnit(double nLength, String sLengthUnit, String sLengthUnitAs) {
 
@@ -111,12 +111,12 @@ public class EgovUnitCalcUtil {
 	}
 
 	/**
-	 * 부피단위를 환산하여 리턴한다.
+	 * 遺?쇰떒?꾨? ?섏궛?섏뿬 由ы꽩?쒕떎.
 	 * 
-	 * @param nVolume          -부피
-	 * @param sVolumeUnit-부피   단위
-	 * @param sVolumeUnitAs-부피 환산 단위
-	 * @return double -환산된 부피
+	 * @param nVolume          -遺??
+	 * @param sVolumeUnit-遺??  ?⑥쐞
+	 * @param sVolumeUnitAs-遺???섏궛 ?⑥쐞
+	 * @return double -?섏궛??遺??
 	 */
 	public double convertVolumeCalcUnit(double nVolume, String sVolumeUnit, String sVolumeUnitAs) {
 
@@ -127,12 +127,12 @@ public class EgovUnitCalcUtil {
 	}
 
 	/**
-	 * 무게단위를 환산하여 리턴한다.
+	 * 臾닿쾶?⑥쐞瑜??섏궛?섏뿬 由ы꽩?쒕떎.
 	 * 
-	 * @param nWeight       -무게
-	 * @param sWeightUnit   -무게 단위
-	 * @param sWeightUnitAs -무게 환산 단위
-	 * @return double -환산된 무게
+	 * @param nWeight       -臾닿쾶
+	 * @param sWeightUnit   -臾닿쾶 ?⑥쐞
+	 * @param sWeightUnitAs -臾닿쾶 ?섏궛 ?⑥쐞
+	 * @return double -?섏궛??臾닿쾶
 	 */
 	public double convertWeightCalcUnit(double nWeight, String sWeightUnit, String sWeightUnitAs) {
 
@@ -143,12 +143,12 @@ public class EgovUnitCalcUtil {
 	}
 
 	/**
-	 * 넓이단위를 환산하여 리턴한다.
+	 * ?볦씠?⑥쐞瑜??섏궛?섏뿬 由ы꽩?쒕떎.
 	 * 
-	 * @param nWidth          -넓이
-	 * @param sWidthUnit-넓이   단위
-	 * @param sWidthUnitAs-넓이 환산 단위
-	 * @return double -환산된 넓이
+	 * @param nWidth          -?볦씠
+	 * @param sWidthUnit-?볦씠   ?⑥쐞
+	 * @param sWidthUnitAs-?볦씠 ?섏궛 ?⑥쐞
+	 * @return double -?섏궛???볦씠
 	 */
 	public double convertWidthCalcUnit(double nWidth, String sWidthUnit, String sWidthUnitAs) {
 

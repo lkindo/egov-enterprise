@@ -8,21 +8,21 @@ import egovframework.com.cop.smt.mtm.service.MemoTodo;
 import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
 
 /**
- * 개요
- * - 메모할일에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붾え?좎씪?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 메모할일에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 메모할일의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 硫붾え?좎씪??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 硫붾え?좎씪??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:12:47
+ * @created 19-7-2010 ?ㅼ쟾 10:12:47
  *   <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -30,9 +30,9 @@ import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
 public class MemoTodoDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 주어진 조건에 맞는 메모할일 목록을 불러온다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return List<MemoTodoVO> - 메모할일 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 硫붾え?좎씪 紐⑸줉??遺덈윭?⑤떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return List<MemoTodoVO> - 硫붾え?좎씪 List
 	 * 
 	 * @param memoTodoVO
 	 */	
@@ -51,9 +51,9 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 메모할일을 불러온다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return MemoTodoVO - 메모할일 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 硫붾え?좎씪??遺덈윭?⑤떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return MemoTodoVO - 硫붾え?좎씪 VO
 	 * 
 	 * @param memoTodoVO
 	 */
@@ -69,8 +69,8 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 메모할일 정보를 수정한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 * 
 	 * @param memoTodo
 	 */
@@ -79,8 +79,8 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 메모할일 정보를 등록한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 * 
 	 * @param memoTodo
 	 */
@@ -89,8 +89,8 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 메모할일 정보를 삭제한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜???젣?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 * 
 	 * @param memoTodo
 	 */
@@ -99,9 +99,9 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 메모할일 목록에 대한 전체 건수를 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return int - 메모할일 목록 개수
+	 * 硫붾え?좎씪 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return int - 硫붾え?좎씪 紐⑸줉 媛쒖닔
 	 * 
 	 * @param memoTodoVO
 	 */
@@ -110,9 +110,9 @@ public class MemoTodoDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 메모할일 목록 중 오늘의 할일을 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  List - 메모할일 List
+	 * 硫붾え?좎씪 紐⑸줉 以??ㅻ뒛???좎씪??議고쉶?쒕떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return  List - 硫붾え?좎씪 List
 	 * 
 	 * @param memoTodoVO
 	 */

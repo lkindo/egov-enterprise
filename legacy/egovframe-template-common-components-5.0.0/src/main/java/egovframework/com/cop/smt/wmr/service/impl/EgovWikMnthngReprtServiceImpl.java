@@ -14,21 +14,21 @@ import egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * 주간월간보고에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * 二쇨컙?붽컙蹂닿퀬?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 주간월간보고에 대한 등록, 수정, 삭제, 조회, 승인기능을 제공한다.
- * - 주간월간보고의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 二쇨컙?붽컙蹂닿퀬??????깅줉, ?섏젙, ??젣, 議고쉶, ?뱀씤湲곕뒫???쒓났?쒕떎.
+ * - 二쇨컙?붽컙蹂닿퀬??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:12:47
+ * @created 19-7-2010 ?ㅼ쟾 10:12:47
  *   <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -42,7 +42,7 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	private EgovIdGnrService idgenServiceWikMnthngReprt;
 
 	/**
-	 * 보고자 목록을 조회한다.
+	 * 蹂닿퀬??紐⑸줉??議고쉶?쒕떎.
 	 * @param ReportrVO
 	 * @return  Map<String, Object>
 	 *
@@ -62,7 +62,7 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 사용자 직위명 정보를 조회한다.
+	 * ?ъ슜??吏곸쐞紐??뺣낫瑜?議고쉶?쒕떎.
 	 * @param String
 	 * @return  String
 	 *
@@ -74,9 +74,9 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 주간월간보고 목록을 조회한다.
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return  List<WikMnthngReprtVO> - 주간월간보고 List
+	 * 二쇨컙?붽컙蹂닿퀬 紐⑸줉??議고쉶?쒕떎.
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return  List<WikMnthngReprtVO> - 二쇨컙?붽컙蹂닿퀬 List
 	 *
 	 * @param wikMnthngReprtVO
 	 */
@@ -94,9 +94,9 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 주간월간보고 정보를 조회한다.
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return  WikMnthngReprtVO - 주간월간보고 VO
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return  WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
 	 *
 	 * @param wikMnthngReprtVO
 	 */
@@ -111,8 +111,8 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 			String hour = resultVO.getFrstRegisterPnttm().substring(8,10);
 			String min = resultVO.getFrstRegisterPnttm().substring(10,12);
 
-			String yymmddhhmm = year + "/" + month + "/" + day + "  " + hour + "시 " + min + "분";
-			resultVO.setReprtSttus("등록 (" + yymmddhhmm + ") ");
+			String yymmddhhmm = year + "/" + month + "/" + day + "  " + hour + "??" + min + "遺?;
+			resultVO.setReprtSttus("?깅줉 (" + yymmddhhmm + ") ");
 		}else{
 			String year = resultVO.getConfmDt().substring(0,4);
 			String month = resultVO.getConfmDt().substring(4,6);
@@ -120,16 +120,16 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 			String hour = resultVO.getConfmDt().substring(8,10);
 			String min = resultVO.getConfmDt().substring(10,12);
 
-			String yymmddhhmm = year + "/" + month + "/" + day + "  " + hour + "시 " + min + "분";
-			resultVO.setReprtSttus("승인 (" + yymmddhhmm  + ") ");
+			String yymmddhhmm = year + "/" + month + "/" + day + "  " + hour + "??" + min + "遺?;
+			resultVO.setReprtSttus("?뱀씤 (" + yymmddhhmm  + ") ");
 		}
 
 		return resultVO;
 	}
 
 	/**
-	 * 주간월간보고 정보를 수정한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 *
 	 * @param wikMnthngReprt
 	 */
@@ -139,8 +139,8 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 주간월간보고 정보를 등록한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 *
 	 * @param wikMnthngReprt
 	 */
@@ -151,8 +151,8 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 주간월간보고 정보를 승인한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??뱀씤?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 *
 	 * @param wikMnthngReprt
 	 */
@@ -164,8 +164,8 @@ public class EgovWikMnthngReprtServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 주간월간보고 정보를 삭제한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜???젣?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 *
 	 * @param wikMnthngReprt
 	 */

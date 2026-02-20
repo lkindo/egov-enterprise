@@ -3,54 +3,54 @@ package egovframework.com.cop.ems.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 발송메일 VO 클래스
+ * 諛쒖넚硫붿씪 VO ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
- *  2011.12.06  이기하          첨부파일경로(fileStreCours), 첨부파일이름(orignlFileNm) 추가
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.12.06  ?닿린??         泥⑤??뚯씪寃쎈줈(fileStreCours), 泥⑤??뚯씪?대쫫(orignlFileNm) 異붽?
  *
  *      </pre>
  */
 public class SndngMailVO extends ComDefaultVO {
 
-	/** 메세지ID */
+	/** 硫붿꽭吏ID */
 	private String mssageId;
-	/** 발신자 */
+	/** 諛쒖떊??*/
 	private String dsptchPerson;
-	/** 수신자 */
+	/** ?섏떊??*/
 	private String recptnPerson;
-	/** 제목 */
+	/** ?쒕ぉ */
 	private String sj;
-	/** 발송결과코드 */
+	/** 諛쒖넚寃곌낵肄붾뱶 */
 	private String sndngResultCode;
-	/** 메일내용 */
+	/** 硫붿씪?댁슜 */
 	private String emailCn;
-	/** 첨부파일ID */
+	/** 泥⑤??뚯씪ID */
 	private String atchFileId;
-	/** 첨부파일경로 */
+	/** 泥⑤??뚯씪寃쎈줈 */
 	private String fileStreCours;
-	/** 첨부파일이름 */
+	/** 泥⑤??뚯씪?대쫫 */
 	private String orignlFileNm;
-	/** 발신일자 */
+	/** 諛쒖떊?쇱옄 */
 	private String sndngDe;
-	/** 첨부파일ID 리스트 */
+	/** 泥⑤??뚯씪ID 由ъ뒪??*/
 	private String atchFileIdList;
-	/** 발송요청XML내용 */
+	/** 諛쒖넚?붿껌XML?댁슜 */
 	private String xmlContent;
-	/** 팝업링크여부(Y/N) */
+	/** ?앹뾽留곹겕?щ?(Y/N) */
 	private String link;
 
 	/**
-	 * mssageId attribute 를 리턴한다.
+	 * mssageId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -59,7 +59,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * mssageId attribute 값을 설정한다.
+	 * mssageId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param mssageId String
 	 */
@@ -68,7 +68,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * dsptchPerson attribute 를 리턴한다.
+	 * dsptchPerson attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -77,7 +77,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * dsptchPerson attribute 값을 설정한다.
+	 * dsptchPerson attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param dsptchPerson String
 	 */
@@ -86,7 +86,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * recptnPerson attribute 를 리턴한다.
+	 * recptnPerson attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -95,7 +95,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * recptnPerson attribute 값을 설정한다.
+	 * recptnPerson attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param recptnPerson String
 	 */
@@ -104,7 +104,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sj attribute 를 리턴한다.
+	 * sj attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -113,7 +113,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sj attribute 값을 설정한다.
+	 * sj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param sj String
 	 */
@@ -122,7 +122,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sndngResultCode attribute 를 리턴한다.
+	 * sndngResultCode attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -131,7 +131,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sndngResultCode attribute 값을 설정한다.
+	 * sndngResultCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param sndngResultCode String
 	 */
@@ -140,7 +140,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * emailCn attribute 를 리턴한다.
+	 * emailCn attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -149,7 +149,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * emailCn attribute 값을 설정한다.
+	 * emailCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param emailCn String
 	 */
@@ -158,7 +158,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -167,7 +167,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param atchFileId String
 	 */
@@ -192,7 +192,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sndngDe attribute 를 리턴한다.
+	 * sndngDe attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -201,7 +201,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * sndngDe attribute 값을 설정한다.
+	 * sndngDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param sndngDe String
 	 */
@@ -210,7 +210,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * atchFileIdList attribute 를 리턴한다.
+	 * atchFileIdList attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -219,7 +219,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * atchFileIdList attribute 값을 설정한다.
+	 * atchFileIdList attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param atchFileIdList String
 	 */
@@ -228,7 +228,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * xmlContent attribute 를 리턴한다.
+	 * xmlContent attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -237,7 +237,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * xmlContent attribute 값을 설정한다.
+	 * xmlContent attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param xmlContent String
 	 */
@@ -246,7 +246,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * link attribute 를 리턴한다.
+	 * link attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -255,7 +255,7 @@ public class SndngMailVO extends ComDefaultVO {
 	}
 
 	/**
-	 * link attribute 값을 설정한다.
+	 * link attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param link String
 	 */

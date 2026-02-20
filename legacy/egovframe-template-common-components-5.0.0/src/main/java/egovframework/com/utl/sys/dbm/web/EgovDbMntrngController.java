@@ -28,23 +28,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * DB서비스모니터링관리에 대한 controller 클래스를 정의한다.
+ * DB?쒕퉬?ㅻえ?덊꽣留곴?由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * DB서비스모니터링관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * DB서비스모니터링관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 김진만
+ * DB?쒕퉬?ㅻえ?덊꽣留곴?由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * DB?쒕퉬?ㅻえ?덊꽣留곴?由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일                수정자           수정내용
+ *  ?섏젙??               ?섏젙??          ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2010.06.21   김진만            최초 생성
- *  2011.08.26	 정진오             IncludedInfo annotation 추가
- *  2019-12-06   신용호            KISA 보안약점 조치 (부적절한 예외처리)
+ *  2010.06.21   源吏꾨쭔            理쒖큹 ?앹꽦
+ *  2011.08.26	 ?뺤쭊??            IncludedInfo annotation 異붽?
+ *  2019-12-06   ?좎슜??           KISA 蹂댁븞?쎌젏 議곗튂 (遺?곸젅???덉쇅泥섎━)
  *
  * </pre>
  */
@@ -69,10 +69,10 @@ public class EgovDbMntrngController {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovDbMntrngController.class);
 
 	/**
-	 * DB서비스모니터링을 삭제한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ??젣?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 삭제대상 DB서비스모니터링model
+	 * @param dbMntrng ??젣???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -91,10 +91,10 @@ public class EgovDbMntrngController {
 	}
 
 	/**
-	 * DB서비스모니터링을 등록한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ?깅줉?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 등록대상 DB서비스모니터링model
+	 * @param dbMntrng ?깅줉???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param bindingResult	BindingResult
 	 * @param model			ModelMap
 	 * @exception Exception Exception
@@ -102,14 +102,14 @@ public class EgovDbMntrngController {
 	@RequestMapping("/utl/sys/dbm/addDbMntrng.do")
 	public String insertDbMntrng(@Valid DbMntrng dbMntrng, BindingResult bindingResult, ModelMap model)
 	  throws Exception{
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
         checkDuplication(dbMntrng, bindingResult);
     	if (bindingResult.hasErrors()){
@@ -117,41 +117,41 @@ public class EgovDbMntrngController {
     		model.addAttribute("dbMntrng", dbMntrng);
     		return "egovframework/com/utl/sys/dbm/EgovDbMntrngRegist";
 		}else{
-    		//아이디 설정
+    		//?꾩씠???ㅼ젙
 			dbMntrng.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			dbMntrng.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
 			egovDbMntrngService.insertDbMntrng(dbMntrng);
-	        //Exception 없이 진행시 등록성공메시지
+	        //Exception ?놁씠 吏꾪뻾???깅줉?깃났硫붿떆吏
 	        model.addAttribute("resultMsg", "success.common.insert");
 		}
     	return "forward:/utl/sys/dbm/getDbMntrngList.do";
 	}
 
 	/**
-	 * DB서비스모니터링정보을 상세조회한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂댁쓣 ?곸꽭議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 조회대상 DB서비스모니터링model
+	 * @param dbMntrng 議고쉶???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/utl/sys/dbm/getDbMntrng.do")
 	public String selectDbMntrng(@ModelAttribute("searchVO")DbMntrng dbMntrng, ModelMap model)
 	  throws Exception{
-		LOGGER.debug(" 조회조건 : {}", dbMntrng);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", dbMntrng);
         DbMntrng result = egovDbMntrngService.selectDbMntrng(dbMntrng);
         model.addAttribute("resultInfo", result);
-        LOGGER.debug(" 결과값 : {}", result);
+        LOGGER.debug(" 寃곌낵媛?: {}", result);
 
         return "egovframework/com/utl/sys/dbm/EgovDbMntrngDetail";
 	}
 
 	/**
-	 * DB서비스모니터링로그정보을 상세조회한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몄젙蹂댁쓣 ?곸꽭議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 조회대상 DB서비스모니터링로그model
+	 * @param dbMntrng 議고쉶???DB?쒕퉬?ㅻえ?덊꽣留곷줈洹퇹odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -159,19 +159,19 @@ public class EgovDbMntrngController {
 	@RequestMapping("/utl/sys/dbm/getDbMntrngLog.do")
 	public String selectDbMntrngLog(@ModelAttribute("searchVO")DbMntrngLog dbMntrngLog, ModelMap model)
 	  throws Exception{
-		LOGGER.debug(" 조회조건 : {}", dbMntrngLog);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", dbMntrngLog);
         DbMntrngLog result = egovDbMntrngService.selectDbMntrngLog(dbMntrngLog);
         model.addAttribute("resultInfo", result);
-        LOGGER.debug(" 결과값 : {}", result);
+        LOGGER.debug(" 寃곌낵媛?: {}", result);
 
         return "egovframework/com/utl/sys/dbm/EgovDbMntrngLogDetail";
 	}
 
 	/**
-	 * 등록화면을 위한 DB서비스모니터링정보을 조회한다.
-	 * @return 리턴URL
+	 * ?깅줉?붾㈃???꾪븳 DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂댁쓣 議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 조회대상 DB서비스모니터링model
+	 * @param dbMntrng 議고쉶???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -185,24 +185,24 @@ public class EgovDbMntrngController {
 	}
 
 	/**
-	 * Reference Data 를 설정한다.
-	 * @param model   화면용spring Model객체
+	 * Reference Data 瑜??ㅼ젙?쒕떎.
+	 * @param model   ?붾㈃?쯵pring Model媛앹껜
 	 * @throws Exception
 	 */
 	private void referenceData(ModelMap model) throws Exception {
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
-        //DBMS종류코드목록을 코드정보로부터 조회
+        //DBMS醫낅쪟肄붾뱶紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
         vo.setCodeId("COM048");
         List<CmmnDetailCode> dbmsKindList = cmmUseService.selectCmmCodeDetail(vo);
-        model.addAttribute("dbmsKindList",      dbmsKindList);     //DBMS종류코드목록
+        model.addAttribute("dbmsKindList",      dbmsKindList);     //DBMS醫낅쪟肄붾뱶紐⑸줉
 	}
 
 	/**
-	 * 수정화면을 위한 DB서비스모니터링정보을 조회한다.
-	 * @return 리턴URL
+	 * ?섏젙?붾㈃???꾪븳 DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂댁쓣 議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 조회대상 DB서비스모니터링model
+	 * @param dbMntrng 議고쉶???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -211,25 +211,25 @@ public class EgovDbMntrngController {
 	  throws Exception{
         referenceData(model);
 
-        // DB서비스모니터링 정보 조회.
-        LOGGER.debug(" 조회조건 : {}", dbMntrng);
+        // DB?쒕퉬?ㅻえ?덊꽣留??뺣낫 議고쉶.
+        LOGGER.debug(" 議고쉶議곌굔 : {}", dbMntrng);
         DbMntrng result = egovDbMntrngService.selectDbMntrng(dbMntrng);
         model.addAttribute("dbMntrng", result);
-        LOGGER.debug(" 결과값 : {}", result);
+        LOGGER.debug(" 寃곌낵媛?: {}", result);
 
       return "egovframework/com/utl/sys/dbm/EgovDbMntrngUpdt";
 	}
 
 	/**
-	 * DB서비스모니터링 목록을 조회한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留?紐⑸줉??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@SuppressWarnings("unused")
-	@IncludedInfo(name="DB서비스모니터링", order = 2090 ,gid = 90)
+	@IncludedInfo(name="DB?쒕퉬?ㅻえ?덊꽣留?, order = 2090 ,gid = 90)
 	@RequestMapping("/utl/sys/dbm/getDbMntrngList.do")
 	public String selectDbMntrngList(@ModelAttribute("searchVO") DbMntrng searchVO, ModelMap model)
 	  throws Exception{
@@ -261,10 +261,10 @@ public class EgovDbMntrngController {
 	}
 
 	/**
-	 * DB서비스모니터링로그 목록을 조회한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -275,8 +275,8 @@ public class EgovDbMntrngController {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		//searchVO.setUniqId(user.getUniqId());
-        // DB서비스모니터링 정보 조회.
-		LOGGER.debug(" 조회조건 : {}", searchVO);
+        // DB?쒕퉬?ㅻえ?덊꽣留??뺣낫 議고쉶.
+		LOGGER.debug(" 議고쉶議곌굔 : {}", searchVO);
 
 
 		searchVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -304,10 +304,10 @@ public class EgovDbMntrngController {
 	}
 
 	/**
-	 * DB서비스모니터링을 수정한다.
-	 * @return 리턴URL
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ?섏젙?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param dbMntrng 수정대상 DB서비스모니터링model
+	 * @param dbMntrng ?섏젙???DB?쒕퉬?ㅻえ?덊꽣留걅odel
 	 * @param bindingResult		BindingResult
 	 * @param model				ModelMap
 	 * @exception Exception Exception
@@ -316,13 +316,13 @@ public class EgovDbMntrngController {
 	public String updateDbMntrng(@Valid DbMntrng dbMntrng, BindingResult bindingResult, ModelMap model)
 	  throws Exception{
 
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		if (bindingResult.hasErrors()) {
 			referenceData(model);
@@ -330,7 +330,7 @@ public class EgovDbMntrngController {
 		    return "egovframework/com/utl/sys/dbm/EgovDbMntrngUpdt";
 		}
 
-		// 정보 업데이트
+		// ?뺣낫 ?낅뜲?댄듃
 		dbMntrng.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 	    egovDbMntrngService.updateDbMntrng(dbMntrng);
 
@@ -347,16 +347,16 @@ public class EgovDbMntrngController {
 			exist = egovDbMntrngService.selectDbMntrng(dbMntrng);
 			if (exist != null) {
 				errors.rejectValue("dataSourcNm", "errors.dataSourcNm", new Object [] { dataSourcNm },
-			    "모니터링대상으로 데이타소스명 {0}이 이미 존재합니다.");
+			    "紐⑤땲?곕쭅??곸쑝濡??곗씠??뚯뒪紐?{0}???대? 議댁옱?⑸땲??");
 				return ;
 			}
 		} catch (SQLException  se) {
 			errors.rejectValue("dataSourcNm", "errors.dataSourcNm", new Object [] { dataSourcNm },
-				    " 모니터링대상으로 데이타소스명 {0}을 중복체크중 시스템에러가 발생했습니다. ");
+				    " 紐⑤땲?곕쭅??곸쑝濡??곗씠??뚯뒪紐?{0}??以묐났泥댄겕以??쒖뒪?쒖뿉?ш? 諛쒖깮?덉뒿?덈떎. ");
 					return ;
 		} catch (Exception  se) {
 			errors.rejectValue("dataSourcNm", "errors.dataSourcNm", new Object [] { dataSourcNm },
-		    " 모니터링대상으로 데이타소스명 {0}을 중복체크중 시스템에러가 발생했습니다. ");
+		    " 紐⑤땲?곕쭅??곸쑝濡??곗씠??뚯뒪紐?{0}??以묐났泥댄겕以??쒖뒪?쒖뿉?ш? 諛쒖깮?덉뒿?덈떎. ");
 			return ;
 		}
 

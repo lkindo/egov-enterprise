@@ -18,20 +18,20 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovComUtlController.java
- * @Description : 공통유틸리티성 작업을 위한 Controller
+ * @Description : 怨듯넻?좏떥由ы떚???묒뾽???꾪븳 Controller
  * @Modification Information
  * @
- * @ 수정일              수정자          수정내용
+ * @ ?섏젙??             ?섏젙??         ?섏젙?댁슜
  * @ ----------  --------  ---------------------------
- *   2009.03.02  조재영      최초 생성
- *   2011.10.07  이기하      .action -> .do로 변경하면서 동일 매핑이 되어 삭제처리
- *   2015.11.12  김연호      한국인터넷진흥원 웹 취약점 개선
- *   2019.04.25  신용호      moveToPage() 화이트리스트 처리
- *   2022.11.11  김혜준      시큐어코딩 처리
- *   2023.05.23  신용호      moveToPage() 추가 보완 조치
- *   2024.07.08  신용호      decryptId(), encryptId() 추가
+ *   2009.03.02  議곗옱??     理쒖큹 ?앹꽦
+ *   2011.10.07  ?닿린??     .action -> .do濡?蹂寃쏀븯硫댁꽌 ?숈씪 留ㅽ븨???섏뼱 ??젣泥섎━
+ *   2015.11.12  源?고샇      ?쒓뎅?명꽣?룹쭊?μ썝 ??痍⑥빟??媛쒖꽑
+ *   2019.04.25  ?좎슜??     moveToPage() ?붿씠?몃━?ㅽ듃 泥섎━
+ *   2022.11.11  源?쒖?      ?쒗걧?댁퐫??泥섎━
+ *   2023.05.23  ?좎슜??     moveToPage() 異붽? 蹂댁셿 議곗튂
+ *   2024.07.08  ?좎슜??     decryptId(), encryptId() 異붽?
  *
- *  @author 공통서비스 개발팀 조재영
+ *  @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  *  @since 2009.03.02
  *  @version 1.0
  *  @see
@@ -44,7 +44,7 @@ public class EgovComUtlController {
     //private EgovUserManageService egovUserManageService;
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovComUtlController.class);
 	
-	/** 암호화서비스 */
+	/** ?뷀샇?붿꽌鍮꾩뒪 */
 	private static EgovEnvCryptoService cryptoService;
 	
 
@@ -62,13 +62,13 @@ public class EgovComUtlController {
 
    
     /**
-	 * JSP 호출작업만 처리하는 공통 함수
+	 * JSP ?몄텧?묒뾽留?泥섎━?섎뒗 怨듯넻 ?⑥닔
 	 */
 	@RequestMapping(value="/EgovPageLink.do")
 	public String moveToPage(@RequestParam(value="linkIndex",required=true,defaultValue="0") Integer linkIndex){
 
 		String link = "";
-		// 화이트 리스트가 비었는지 확인
+		// ?붿씠??由ъ뒪?멸? 鍮꾩뿀?붿? ?뺤씤
 		if (egovWhitelist == null || egovWhitelist.isEmpty() || egovWhitelist.size() <= linkIndex) {
 			link="egovframework/com/cmm/egovError";
 			return link;
@@ -80,14 +80,14 @@ public class EgovComUtlController {
 		link = link.replace("%", "");
 		link = link.replace(".", "");
 
-		// 안전한 경로 문자열로 조치
+		// ?덉쟾??寃쎈줈 臾몄옄?대줈 議곗튂
 		link = EgovWebUtil.filePathBlackList(link);
 		
 		return link;
 	}
 	
     /**
-	 * 모달조회
+	 * 紐⑤떖議고쉶
 	 * @return String
 	 * @exception Exception
 	 */
@@ -106,9 +106,9 @@ public class EgovComUtlController {
 
 	
 	/**
-	 * 암호화 문자열을 복호화 하는 메서드.
-	 * @param source 암호화 문자열
-	 * @return 원본 문자열
+	 * ?뷀샇??臾몄옄?댁쓣 蹂듯샇???섎뒗 硫붿꽌??
+	 * @param source ?뷀샇??臾몄옄??
+	 * @return ?먮낯 臾몄옄??
 	 */
 	public static String decryptId(String base64CipherId) {
 		String returnVal = "CIPHER_ID_DECRIPT_EXCEPTION_02";
@@ -123,9 +123,9 @@ public class EgovComUtlController {
 	}
 	
 	/**
-	 * 원본 문자열을 암호화 하는 메서드.
-	 * @param source 원본 문자열
-	 * @return 암호화 문자열(Base64 Format, UrlDecode)
+	 * ?먮낯 臾몄옄?댁쓣 ?뷀샇???섎뒗 硫붿꽌??
+	 * @param source ?먮낯 臾몄옄??
+	 * @return ?뷀샇??臾몄옄??Base64 Format, UrlDecode)
 	 */
 	public static String encryptId(String plainTextId) {
 		String returnVal = "";

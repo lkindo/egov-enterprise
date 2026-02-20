@@ -102,7 +102,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
        
 			SELECT 
 				ADBK_ID, ADBK_NM, OTHBC_SCOPE, USE_AT, WRTER_ID, TRGET_ORGNZT_ID,
@@ -110,9 +110,9 @@
 			FROM
 				COMTNADBKMANAGE		
 			WHERE USE_AT = 'Y'		
-				AND( OTHBC_SCOPE = '회사	'
+				AND( OTHBC_SCOPE = '?뚯궗	'
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '부서'
+						OR (OTHBC_SCOPE = '遺??
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)		
 					
 				
@@ -129,7 +129,7 @@
 	<![CDATA[		
 			ORDER BY ADBK_NM 
 						
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
                     ) ALL_LIST
                     ) Z
@@ -154,9 +154,9 @@
 			FROM
 				COMTNADBKMANAGE		
 			WHERE USE_AT = 'Y'
-				AND (OTHBC_SCOPE = '회사'	
+				AND (OTHBC_SCOPE = '?뚯궗'	
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '부서'
+						OR (OTHBC_SCOPE = '遺??
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)
 				
 				
@@ -180,7 +180,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
        
 			SELECT 
 				EMPLYR_ID, USER_NM, EMAIL_ADRES, 
@@ -221,7 +221,7 @@
 			ORDER BY USER_NM 
 	
 								
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
                     ) ALL_LIST
                     ) Z
@@ -237,7 +237,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
      
 			SELECT 
 				NCRD_ID, NM,  EMAIL_ADRES, TELNO, MBTLNUM
@@ -251,7 +251,7 @@
 			ORDER BY NM 
 
 									
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
                     ) ALL_LIST
                     ) Z
@@ -262,7 +262,7 @@
  	
  	<select id="selectUserList" parameterType="egovframework.com.cop.adb.service.AddressBookVO" resultType="egovframework.com.cop.adb.service.AddressBookUser">
  		
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
       
 		SELECT 
 				ADBK_CONSTNT_ID As adbkUserId,          
@@ -279,7 +279,7 @@
 				COMTNADBK
 			WHERE	ADBK_ID = #{adbkId}					
  							
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         	
  	
  					

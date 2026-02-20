@@ -8,50 +8,50 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 쪽지 관리(보내기)를 처리하는 Service Class 구현
- * @author 공통서비스 장동한
+ * 履쎌? 愿由?蹂대궡湲?瑜?泥섎━?섎뒗 Service Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovNoteManageService {
 
     /**
-     * 쪽지관리 정보를 조회한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 履쎌?愿由??뺣낫瑜?議고쉶?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public Map<?, ?> selectNoteManage(NoteManageVO noteManage) throws Exception;
 
      /**
-	 * 쪽지 관리(보내기)를(을) 등록한다.
-	 * @param noteManage  쪽지 관리(보내기) 정보 담김 객체
-	 * @param commandMap -Request 변수
+	 * 履쎌? 愿由?蹂대궡湲?瑜??? ?깅줉?쒕떎.
+	 * @param noteManage  履쎌? 愿由?蹂대궡湲? ?뺣낫 ?닿? 媛앹껜
+	 * @param commandMap -Request 蹂??
 	 * @throws Exception
 	 */
 	void  insertNoteManage(NoteManageVO noteManage, @RequestParam Map<?, ?> commandMap) throws Exception;
 
     /**
-	 * 수신자/참조자선택팝업 목록을 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return List -회원정보 리스트
+	 * ?섏떊??李몄“?먯꽑?앺뙘??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return List -?뚯썝?뺣낫 由ъ뒪??
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectNoteEmpListPopup(ComDefaultVO searchVO) throws Exception;
 
     /**
-	 *  수신자/참조자선택팝업 개수를 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return int -조회된 데이터 건수
+	 *  ?섏떊??李몄“?먯꽑?앺뙘??媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return int -議고쉶???곗씠??嫄댁닔
 	 * @throws Exception
 	 */
 	public int selectNoteEmpListPopupCnt(ComDefaultVO searchVO) throws Exception;

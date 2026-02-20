@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 통합 링크 Repository
+ * ???? 筌띻낱寃?Repository
  */
 @org.springframework.stereotype.Repository("ulmUnityLinkRepository")
 public interface UnityLinkRepository extends JpaRepository<UnityLink, String> {

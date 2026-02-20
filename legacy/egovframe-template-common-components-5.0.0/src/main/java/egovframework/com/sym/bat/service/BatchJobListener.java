@@ -14,17 +14,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 배치작업의 실행시작, 완료를 저장하는 Quartz JobListener 클래스를 정의한다.
+ * 諛곗튂?묒뾽???ㅽ뻾?쒖옉, ?꾨즺瑜???ν븯??Quartz JobListener ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010-08-30   김진만     최초 생성
- *  2017-02-06   이정은     시큐어코딩(ES) - 시큐어코딩  부적절한 예외 처리[CWE-253, CWE-440, CWE-756]
+ *  2010-08-30   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2017-02-06   ?댁젙?     ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫?? 遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-756]
  * </pre>
  */
 
@@ -40,7 +40,7 @@ public class BatchJobListener implements JobListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BatchJobListener.class);
 
 	/**
-	 * 배치스케줄 서비스를 설정한다.
+	 * 諛곗튂?ㅼ?以??쒕퉬?ㅻ? ?ㅼ젙?쒕떎.
 	 *
 	 * @param egovBatchSchdulService the egovBatchSchdulService to set
 	 */
@@ -49,7 +49,7 @@ public class BatchJobListener implements JobListener {
 	}
 
 	/**
-	 * 배치결과ID 생성서비스
+	 * 諛곗튂寃곌낵ID ?앹꽦?쒕퉬??
 	 * @param idgenService the idgenService to set
 	 */
 	public void setIdgenService(EgovIdGnrService idgenService) {
@@ -57,7 +57,7 @@ public class BatchJobListener implements JobListener {
 	}
 
 	/**
-	 * Job Listener 이름을 리턴한다.
+	 * Job Listener ?대쫫??由ы꽩?쒕떎.
 	 * @see org.quartz.JobListener#getName()
 	 */
 	@Override
@@ -66,7 +66,7 @@ public class BatchJobListener implements JobListener {
 	}
 
 	/**
-	 * Batch 작업을 실행하기전에 Batch결과 '수행중'상태로 저장한다.
+	 * Batch ?묒뾽???ㅽ뻾?섍린?꾩뿉 Batch寃곌낵 '?섑뻾以??곹깭濡???ν븳??
 	 *
 	 * @param jobContext JobExecutionContext
 	 * @see org.quartz.JobListener#jobToBeExecuted(JobExecutionContext jobContext)
@@ -77,12 +77,12 @@ public class BatchJobListener implements JobListener {
 		BatchResult batchResult = new BatchResult();
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
 		try {
-			// 결과 값 세팅.
+			// 寃곌낵 媛??명똿.
 			batchResult.setBatchResultId(idgenService.getNextStringId());
 			batchResult.setBatchSchdulId(dataMap.getString("batchSchdulId"));
 			batchResult.setBatchOpertId(dataMap.getString("batchOpertId"));
 			batchResult.setParamtr(dataMap.getString("paramtr"));
-			batchResult.setSttus("03"); // 상태는 수행중
+			batchResult.setSttus("03"); // ?곹깭???섑뻾以?
 			batchResult.setErrorInfo("");
 
 			String executBeginTimeStr = null;
@@ -96,20 +96,20 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.insertBatchResult(batchResult);
 
-			// 저장이 이상없이 완료되면  datamap에 배치결과ID를 저장한다.
+			// ??μ씠 ?댁긽?놁씠 ?꾨즺?섎㈃  datamap??諛곗튂寃곌낵ID瑜???ν븳??
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		//2017.02.06 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+		//2017.02.06 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 		} catch (FdlException e) {
-			LOGGER.error("[FdlException] 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(insert) 에러 : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
+			LOGGER.error("[FdlException] 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???insert) ?먮윭 : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			LOGGER.error("(Ko) 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(insert) 에러 : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
+			LOGGER.error("(Ko) 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???insert) ?먮윭 : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
 			LOGGER.error("(En) [" + e.getClass() + "] BatchScheduleID : {}, BatchJobID : {}, BatchResult(insert) Error : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
 		}
 
 	}
 
 	/**
-	 * Batch 작업을 완료한후 Batch결과 '완료'상태로 저장한다.
+	 * Batch ?묒뾽???꾨즺?쒗썑 Batch寃곌낵 '?꾨즺'?곹깭濡???ν븳??
 	 *
 	 * @param jobContext JobExecutionContext
 	 * @see org.quartz.JobListener#jobWasExecuted(JobExecutionContext jobContext)
@@ -117,13 +117,13 @@ public class BatchJobListener implements JobListener {
 	@Override
 	public void jobWasExecuted(JobExecutionContext jobContext, JobExecutionException jee) {
 		LOGGER.debug("job[{}] jobWasExecuted", jobContext.getJobDetail().getKey().getName());
-		LOGGER.debug("job[{}] 수행시간 : {}, {}", jobContext.getJobDetail().getKey().getName(), jobContext.getFireTime(), jobContext.getJobRunTime());
+		LOGGER.debug("job[{}] ?섑뻾?쒓컙 : {}, {}", jobContext.getJobDetail().getKey().getName(), jobContext.getFireTime(), jobContext.getJobRunTime());
 
 		int jobResult = 99;
 		BatchResult batchResult = new BatchResult();
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
 		try {
-			// 결과 값 세팅.
+			// 寃곌낵 媛??명똿.
 			batchResult.setBatchResultId(dataMap.getString("batchResultId"));
 			batchResult.setBatchSchdulId(dataMap.getString("batchSchdulId"));
 			batchResult.setBatchOpertId(dataMap.getString("batchOpertId"));
@@ -132,20 +132,20 @@ public class BatchJobListener implements JobListener {
 				jobResult = (Integer) jobContext.getResult();
 			}
 			if (jobResult == 0) {
-				// 배치작업 성공.
+				// 諛곗튂?묒뾽 ?깃났.
 				batchResult.setSttus("01");
 				batchResult.setErrorInfo("");
 			} else {
-				// 배치작업이 0이 아닌값을 리턴하면 에러 상황임.
+				// 諛곗튂?묒뾽??0???꾨땶媛믪쓣 由ы꽩?섎㈃ ?먮윭 ?곹솴??
 				batchResult.setSttus("02");
-				batchResult.setErrorInfo("배치작업이 결과값 [" + jobResult + "]를 리턴했습니다. \n" + "배치프로그램 [" + dataMap.getString("batchProgrm") + "]의 로그를 확인하세요");
+				batchResult.setErrorInfo("諛곗튂?묒뾽??寃곌낵媛?[" + jobResult + "]瑜?由ы꽩?덉뒿?덈떎. \n" + "諛곗튂?꾨줈洹몃옩 [" + dataMap.getString("batchProgrm") + "]??濡쒓렇瑜??뺤씤?섏꽭??);
 			}
-			// 수행중 exception이 발생한 경우
+			// ?섑뻾以?exception??諛쒖깮??寃쎌슦
 			if (jee != null) {
-				LOGGER.error("JobExecutionException 발생 : {}", jee);
+				LOGGER.error("JobExecutionException 諛쒖깮 : {}", jee);
 				batchResult.setSttus("02");
 				String errorInfo = batchResult.getErrorInfo();
-				batchResult.setErrorInfo(errorInfo + "\n" + "JobExecutionException 발생 : " + jee);
+				batchResult.setErrorInfo(errorInfo + "\n" + "JobExecutionException 諛쒖깮 : " + jee);
 			}
 
 			String executEndTimeStr = null;
@@ -158,16 +158,16 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.updateBatchResult(batchResult);
 
-			// 저장이 이상없이 완료되면  datamap에 배치결과ID를 저장한다.
+			// ??μ씠 ?댁긽?놁씠 ?꾨즺?섎㈃  datamap??諛곗튂寃곌낵ID瑜???ν븳??
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		} catch (ClassCastException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
-			LOGGER.error("[ClassCastException] 배치결과ID : {}, 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(update) 에러 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+		} catch (ClassCastException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
+			LOGGER.error("[ClassCastException] 諛곗튂寃곌낵ID : {}, 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???update) ?먮윭 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 			LOGGER.error("[ClassCastException] ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			//2017.02.06 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
-			LOGGER.error("(Ko) 배치결과ID : {}, 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(update) 에러 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			//2017.02.06 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+			LOGGER.error("(Ko) 諛곗튂寃곌낵ID : {}, 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???update) ?먮윭 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 			LOGGER.error("(En) ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
@@ -175,7 +175,7 @@ public class BatchJobListener implements JobListener {
 	}
 
 	/**
-	 * Batch 작업을 실행한 후에 Batch결과 '에러'상태로 저장한다.
+	 * Batch ?묒뾽???ㅽ뻾???꾩뿉 Batch寃곌낵 '?먮윭'?곹깭濡???ν븳??
 	 *
 	 * @param jobContext JobExecutionContext
 	 *
@@ -188,14 +188,14 @@ public class BatchJobListener implements JobListener {
 		BatchResult batchResult = new BatchResult();
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
 		try {
-			// 결과 값 세팅.
+			// 寃곌낵 媛??명똿.
 			batchResult.setBatchResultId(dataMap.getString("batchResultId"));
 			batchResult.setBatchSchdulId(dataMap.getString("batchSchdulId"));
 			batchResult.setBatchOpertId(dataMap.getString("batchOpertId"));
 			batchResult.setParamtr(dataMap.getString("paramtr"));
-			// 스케줄러가 배치작업을 실행하지 않음.
+			// ?ㅼ?以꾨윭媛 諛곗튂?묒뾽???ㅽ뻾?섏? ?딆쓬.
 			batchResult.setSttus("02");
-			batchResult.setErrorInfo("스케줄러가 배치작업을 실행하지 않았습니다(jobExecutionVetoed 이벤트). 스케줄러 로그를 확인하세요");
+			batchResult.setErrorInfo("?ㅼ?以꾨윭媛 諛곗튂?묒뾽???ㅽ뻾?섏? ?딆븯?듬땲??jobExecutionVetoed ?대깽??. ?ㅼ?以꾨윭 濡쒓렇瑜??뺤씤?섏꽭??);
 
 			String executEndTimeStr = null;
 			Date executEndTime = new Date();
@@ -207,18 +207,18 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.updateBatchResult(batchResult);
 
-			// 저장이 이상없이 완료되면  datamap에 배치결과ID를 저장한다.
+			// ??μ씠 ?댁긽?놁씠 ?꾨즺?섎㈃  datamap??諛곗튂寃곌낵ID瑜???ν븳??
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		} catch (ClassCastException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
-			LOGGER.error("[ClassCastException] 배치결과ID : {}, 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(update) 에러 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+		} catch (ClassCastException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
+			LOGGER.error("[ClassCastException] 諛곗튂寃곌낵ID : {}, 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???update) ?먮윭 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 			LOGGER.error("[ClassCastException] ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			//2017.02.06 	이정은 	시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
-			LOGGER.error("(Ko) 배치결과ID : {}, 배치스케줄ID : {}, 배치작업ID : {}, 배치결과저장(update) 에러 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			//2017.02.06 	?댁젙? 	?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+			LOGGER.error("(Ko) 諛곗튂寃곌낵ID : {}, 諛곗튂?ㅼ?以껱D : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???update) ?먮윭 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("(En) ["+ e.getClass() +"] BachResultID : {}, BatchScheduleID : {}, 배치작업ID : {}, 배치결과저장(update) 에러 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			LOGGER.error("(En) ["+ e.getClass() +"] BachResultID : {}, BatchScheduleID : {}, 諛곗튂?묒뾽ID : {}, 諛곗튂寃곌낵???update) ?먮윭 : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		}
 

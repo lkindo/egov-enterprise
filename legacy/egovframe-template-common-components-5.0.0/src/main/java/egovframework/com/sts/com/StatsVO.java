@@ -1,435 +1,435 @@
 package egovframework.com.sts.com;
 
 /**
- * 통계 결과 VO 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?듦퀎 寃곌낵 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.com)
+ *  2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.com)
  *
  *  </pre>
  */
 public class StatsVO {
 
-	/** 결과통계수 */
+	/** 寃곌낵?듦퀎??*/
 	private int statsCo;
-	/** 결과일자 */
+	/** 寃곌낵?쇱옄 */
 	private String statsDate;
-	/** 최대통계수 */
+	/** 理쒕??듦퀎??*/
 	private int maxStatsCo;
-	/** 최소통계수 */
+	/** 理쒖냼?듦퀎??*/
 	private int minStatsCo;
-	/** 생성글수 */
+	/** ?앹꽦湲??*/
 	private int creatCo;
-	/** 총조회수 */
+	/** 珥앹“?뚯닔 */
 	private int totInqireCo;
-	/** 평균조회수 */
+	/** ?됯퇏議고쉶??*/
 	private float avrgInqireCo;
-	/** 최대조회게시물ID */
+	/** 理쒕?議고쉶寃뚯떆臾퍲D */
 	private String mxmmInqireBbsId;
-	/** 최대조회게시물제목 */
+	/** 理쒕?議고쉶寃뚯떆臾쇱젣紐?*/
 	private String mxmmInqireBbsNm;
-	/** 최소조회게시물ID */
+	/** 理쒖냼議고쉶寃뚯떆臾퍲D */
 	private String mummInqireBbsId;
-	/** 최소조회게시물제목 */
+	/** 理쒖냼議고쉶寃뚯떆臾쇱젣紐?*/
 	private String mummInqireBbsNm;
-	/** 최고게시자ID */
+	/** 理쒓퀬寃뚯떆?륤D */
 	private String topNtcepersonId;
-	/** 최고게시글수 */
+	/** 理쒓퀬寃뚯떆湲??*/
 	private int topNtcepersonCo;
-	/** 접속프로그램메소드 */
+	/** ?묒냽?꾨줈洹몃옩硫붿냼??*/
 	private String conectMethod;
-	/** 수정글수 */
+	/** ?섏젙湲??*/
 	private int updtCo;
-	/** 조회글수 */
+	/** 議고쉶湲??*/
 	private int inqireCo;
-	/** 삭제글수 */
+	/** ??젣湲??*/
 	private int deleteCo;
-	/** 출력횟수 */
+	/** 異쒕젰?잛닔 */
 	private int outptCo;
-	/** 에러횟수 */
+	/** ?먮윭?잛닔 */
 	private int errorCo;
-	/** 시작일자 */
+	/** ?쒖옉?쇱옄 */
 	private String fromDate;
-	/** 종료일자 */
+	/** 醫낅즺?쇱옄 */
 	private String toDate;
-	/** 기간구분 */
+	/** 湲곌컙援щ텇 */
 	private String pdKind;
-	/** 통계구분 */
+	/** ?듦퀎援щ텇 */
 	private String statsKind;
-	/** 세부통계구분 */
+	/** ?몃??듦퀎援щ텇 */
 	private String detailStatsKind;
-	/** 탭구분 */
+	/** ??뎄遺?*/
 	private String tabKind;
-	/** 그래프길이 */
+	/** 洹몃옒?꾧만??*/
 	private float maxUnit;
 	/**
-	 * statsCo attribute 를 리턴한다.
+	 * statsCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getStatsCo() {
 		return statsCo;
 	}
 	/**
-	 * statsCo attribute 값을 설정한다.
+	 * statsCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param statsCo int
 	 */
 	public void setStatsCo(int statsCo) {
 		this.statsCo = statsCo;
 	}
 	/**
-	 * statsDate attribute 를 리턴한다.
+	 * statsDate attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getStatsDate() {
 		return statsDate;
 	}
 	/**
-	 * statsDate attribute 값을 설정한다.
+	 * statsDate attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param statsDate String
 	 */
 	public void setStatsDate(String statsDate) {
 		this.statsDate = statsDate;
 	}
 	/**
-	 * maxStatsCo attribute 를 리턴한다.
+	 * maxStatsCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getMaxStatsCo() {
 		return maxStatsCo;
 	}
 	/**
-	 * maxStatsCo attribute 값을 설정한다.
+	 * maxStatsCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param maxStatsCo int
 	 */
 	public void setMaxStatsCo(int maxStatsCo) {
 		this.maxStatsCo = maxStatsCo;
 	}
 	/**
-	 * minStatsCo attribute 를 리턴한다.
+	 * minStatsCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getMinStatsCo() {
 		return minStatsCo;
 	}
 	/**
-	 * minStatsCo attribute 값을 설정한다.
+	 * minStatsCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param minStatsCo int
 	 */
 	public void setMinStatsCo(int minStatsCo) {
 		this.minStatsCo = minStatsCo;
 	}
 	/**
-	 * creatCo attribute 를 리턴한다.
+	 * creatCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getCreatCo() {
 		return creatCo;
 	}
 	/**
-	 * creatCo attribute 값을 설정한다.
+	 * creatCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param creatCo int
 	 */
 	public void setCreatCo(int creatCo) {
 		this.creatCo = creatCo;
 	}
 	/**
-	 * totInqireCo attribute 를 리턴한다.
+	 * totInqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getTotInqireCo() {
 		return totInqireCo;
 	}
 	/**
-	 * totInqireCo attribute 값을 설정한다.
+	 * totInqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param totInqireCo int
 	 */
 	public void setTotInqireCo(int totInqireCo) {
 		this.totInqireCo = totInqireCo;
 	}
 	/**
-	 * avrgInqireCo attribute 를 리턴한다.
+	 * avrgInqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return float
 	 */
 	public float getAvrgInqireCo() {
 		return avrgInqireCo;
 	}
 	/**
-	 * avrgInqireCo attribute 값을 설정한다.
+	 * avrgInqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param avrgInqireCo float
 	 */
 	public void setAvrgInqireCo(float avrgInqireCo) {
 		this.avrgInqireCo = avrgInqireCo;
 	}
 	/**
-	 * mxmmInqireBbsId attribute 를 리턴한다.
+	 * mxmmInqireBbsId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMxmmInqireBbsId() {
 		return mxmmInqireBbsId;
 	}
 	/**
-	 * mxmmInqireBbsId attribute 값을 설정한다.
+	 * mxmmInqireBbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mxmmInqireBbsId String
 	 */
 	public void setMxmmInqireBbsId(String mxmmInqireBbsId) {
 		this.mxmmInqireBbsId = mxmmInqireBbsId;
 	}
 	/**
-	 * mxmmInqireBbsNm attribute 를 리턴한다.
+	 * mxmmInqireBbsNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMxmmInqireBbsNm() {
 		return mxmmInqireBbsNm;
 	}
 	/**
-	 * mxmmInqireBbsNm attribute 값을 설정한다.
+	 * mxmmInqireBbsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mxmmInqireBbsNm String
 	 */
 	public void setMxmmInqireBbsNm(String mxmmInqireBbsNm) {
 		this.mxmmInqireBbsNm = mxmmInqireBbsNm;
 	}
 	/**
-	 * mummInqireBbsId attribute 를 리턴한다.
+	 * mummInqireBbsId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMummInqireBbsId() {
 		return mummInqireBbsId;
 	}
 	/**
-	 * mummInqireBbsId attribute 값을 설정한다.
+	 * mummInqireBbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mummInqireBbsId String
 	 */
 	public void setMummInqireBbsId(String mummInqireBbsId) {
 		this.mummInqireBbsId = mummInqireBbsId;
 	}
 	/**
-	 * mummInqireBbsNm attribute 를 리턴한다.
+	 * mummInqireBbsNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMummInqireBbsNm() {
 		return mummInqireBbsNm;
 	}
 	/**
-	 * mummInqireBbsNm attribute 값을 설정한다.
+	 * mummInqireBbsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mummInqireBbsNm String
 	 */
 	public void setMummInqireBbsNm(String mummInqireBbsNm) {
 		this.mummInqireBbsNm = mummInqireBbsNm;
 	}
 	/**
-	 * topNtcepersonId attribute 를 리턴한다.
+	 * topNtcepersonId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getTopNtcepersonId() {
 		return topNtcepersonId;
 	}
 	/**
-	 * topNtcepersonId attribute 값을 설정한다.
+	 * topNtcepersonId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param topNtcepersonId String
 	 */
 	public void setTopNtcepersonId(String topNtcepersonId) {
 		this.topNtcepersonId = topNtcepersonId;
 	}
 	/**
-	 * topNtcepersonCo attribute 를 리턴한다.
+	 * topNtcepersonCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getTopNtcepersonCo() {
 		return topNtcepersonCo;
 	}
 	/**
-	 * topNtcepersonCo attribute 값을 설정한다.
+	 * topNtcepersonCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param topNtcepersonCo int
 	 */
 	public void setTopNtcepersonCo(int topNtcepersonCo) {
 		this.topNtcepersonCo = topNtcepersonCo;
 	}
 	/**
-	 * conectMethod attribute 를 리턴한다.
+	 * conectMethod attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getConectMethod() {
 		return conectMethod;
 	}
 	/**
-	 * conectMethod attribute 값을 설정한다.
+	 * conectMethod attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param conectMethod String
 	 */
 	public void setConectMethod(String conectMethod) {
 		this.conectMethod = conectMethod;
 	}
 	/**
-	 * updtCo attribute 를 리턴한다.
+	 * updtCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getUpdtCo() {
 		return updtCo;
 	}
 	/**
-	 * updtCo attribute 값을 설정한다.
+	 * updtCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param updtCo int
 	 */
 	public void setUpdtCo(int updtCo) {
 		this.updtCo = updtCo;
 	}
 	/**
-	 * inqireCo attribute 를 리턴한다.
+	 * inqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getInqireCo() {
 		return inqireCo;
 	}
 	/**
-	 * inqireCo attribute 값을 설정한다.
+	 * inqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param inqireCo int
 	 */
 	public void setInqireCo(int inqireCo) {
 		this.inqireCo = inqireCo;
 	}
 	/**
-	 * deleteCo attribute 를 리턴한다.
+	 * deleteCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getDeleteCo() {
 		return deleteCo;
 	}
 	/**
-	 * deleteCo attribute 값을 설정한다.
+	 * deleteCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param deleteCo int
 	 */
 	public void setDeleteCo(int deleteCo) {
 		this.deleteCo = deleteCo;
 	}
 	/**
-	 * outptCo attribute 를 리턴한다.
+	 * outptCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getOutptCo() {
 		return outptCo;
 	}
 	/**
-	 * outptCo attribute 값을 설정한다.
+	 * outptCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param outptCo int
 	 */
 	public void setOutptCo(int outptCo) {
 		this.outptCo = outptCo;
 	}
 	/**
-	 * errorCo attribute 를 리턴한다.
+	 * errorCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getErrorCo() {
 		return errorCo;
 	}
 	/**
-	 * errorCo attribute 값을 설정한다.
+	 * errorCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param errorCo int
 	 */
 	public void setErrorCo(int errorCo) {
 		this.errorCo = errorCo;
 	}
 	/**
-	 * fromDate attribute 를 리턴한다.
+	 * fromDate attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFromDate() {
 		return fromDate;
 	}
 	/**
-	 * fromDate attribute 값을 설정한다.
+	 * fromDate attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fromDate String
 	 */
 	public void setFromDate(String fromDate) {
 		this.fromDate = fromDate;
 	}
 	/**
-	 * toDate attribute 를 리턴한다.
+	 * toDate attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getToDate() {
 		return toDate;
 	}
 	/**
-	 * toDate attribute 값을 설정한다.
+	 * toDate attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param toDate String
 	 */
 	public void setToDate(String toDate) {
 		this.toDate = toDate;
 	}
 	/**
-	 * pdKind attribute 를 리턴한다.
+	 * pdKind attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getPdKind() {
 		return pdKind;
 	}
 	/**
-	 * pdKind attribute 값을 설정한다.
+	 * pdKind attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param pdKind String
 	 */
 	public void setPdKind(String pdKind) {
 		this.pdKind = pdKind;
 	}
 	/**
-	 * statsKind attribute 를 리턴한다.
+	 * statsKind attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getStatsKind() {
 		return statsKind;
 	}
 	/**
-	 * statsKind attribute 값을 설정한다.
+	 * statsKind attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param statsKind String
 	 */
 	public void setStatsKind(String statsKind) {
 		this.statsKind = statsKind;
 	}
 	/**
-	 * detailStatsKind attribute 를 리턴한다.
+	 * detailStatsKind attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getDetailStatsKind() {
 		return detailStatsKind;
 	}
 	/**
-	 * detailStatsKind attribute 값을 설정한다.
+	 * detailStatsKind attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param detailStatsKind String
 	 */
 	public void setDetailStatsKind(String detailStatsKind) {
 		this.detailStatsKind = detailStatsKind;
 	}
 	/**
-	 * tabKind attribute 를 리턴한다.
+	 * tabKind attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getTabKind() {
 		return tabKind;
 	}
 	/**
-	 * tabKind attribute 값을 설정한다.
+	 * tabKind attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param tabKind String
 	 */
 	public void setTabKind(String tabKind) {
 		this.tabKind = tabKind;
 	}
 	/**
-	 * maxUnit attribute 를 리턴한다.
+	 * maxUnit attribute 瑜?由ы꽩?쒕떎.
 	 * @return float
 	 */
 	public float getMaxUnit() {
 		return maxUnit;
 	}
 	/**
-	 * maxUnit attribute 값을 설정한다.
+	 * maxUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param maxUnit float
 	 */
 	public void setMaxUnit(float maxUnit) {

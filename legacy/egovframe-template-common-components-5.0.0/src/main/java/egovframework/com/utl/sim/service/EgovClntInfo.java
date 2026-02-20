@@ -8,30 +8,30 @@ import egovframework.com.cmm.service.Globals;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 클라이언트(Client)의 IP주소, OS정보, 웹브라우저정보를 조회하는 Business Interface class
+ * ?대씪?댁뼵??Client)??IP二쇱냼, OS?뺣낫, ?밸툕?쇱슦??뺣낫瑜?議고쉶?섎뒗 Business Interface class
  * 
- * @author 공통 서비스 개발팀 박지욱
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.01.19
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.01.19  박지욱          최초 생성
- *   2025.09.04  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.01.19  諛뺤???         理쒖큹 ?앹꽦
+ *   2025.09.04  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
 public class EgovClntInfo {
 
 	/**
-	 * 클라이언트(Client)의 IP주소를 조회하는 기능
+	 * ?대씪?댁뼵??Client)??IP二쇱냼瑜?議고쉶?섎뒗 湲곕뒫
 	 * 
-	 * @param HttpServletRequest request Request객체
-	 * @return String ipAddr IP주소
+	 * @param HttpServletRequest request Request媛앹껜
+	 * @return String ipAddr IP二쇱냼
 	 * @exception Exception
 	 */
 	public static String getClntIP(HttpServletRequest request) throws Exception {
@@ -67,15 +67,15 @@ public class EgovClntInfo {
 			ipAddr = req.getRemoteAddr();
 		}
 
-		// IP주소
+		// IP二쇱냼
 		return ipAddr;
 	}
 
 	/**
-	 * 클라이언트(Client)의 OS 정보를 조회하는 기능
+	 * ?대씪?댁뼵??Client)??OS ?뺣낫瑜?議고쉶?섎뒗 湲곕뒫
 	 * 
-	 * @param HttpServletRequest request Request객체
-	 * @return String osInfo OS 정보
+	 * @param HttpServletRequest request Request媛앹껜
+	 * @return String osInfo OS ?뺣낫
 	 * @exception Exception
 	 */
 	public static String getClntOsInfo(HttpServletRequest request) throws Exception {
@@ -93,17 +93,17 @@ public class EgovClntInfo {
 	}
 
 	/**
-	 * 클라이언트(Client)의 웹브라우저 종류를 조회하는 기능
+	 * ?대씪?댁뼵??Client)???밸툕?쇱슦? 醫낅쪟瑜?議고쉶?섎뒗 湲곕뒫
 	 * 
-	 * @param HttpServletRequest request Request객체
-	 * @return String webKind 웹브라우저 종류
+	 * @param HttpServletRequest request Request媛앹껜
+	 * @return String webKind ?밸툕?쇱슦? 醫낅쪟
 	 * @exception Exception
 	 */
 	public static String getClntWebKind(HttpServletRequest request) throws Exception {
 
 		String userAgent = request.getHeader("user-agent");
 
-		// 웹브라우저 종류 조회
+		// ?밸툕?쇱슦? 醫낅쪟 議고쉶
 		String webKind = "";
 		if (userAgent.toUpperCase().indexOf("GECKO") != -1) {
 			if (userAgent.toUpperCase().indexOf("NESCAPE") != -1) {
@@ -134,17 +134,17 @@ public class EgovClntInfo {
 	}
 
 	/**
-	 * 클라이언트(Client)의 웹브라우저 버전을 조회하는 기능
+	 * ?대씪?댁뼵??Client)???밸툕?쇱슦? 踰꾩쟾??議고쉶?섎뒗 湲곕뒫
 	 * 
-	 * @param HttpServletRequest request Request객체
-	 * @return String webVer 웹브라우저 버전
+	 * @param HttpServletRequest request Request媛앹껜
+	 * @return String webVer ?밸툕?쇱슦? 踰꾩쟾
 	 * @exception Exception
 	 */
 	public static String getClntWebVer(HttpServletRequest request) throws Exception {
 
 		String userAgent = request.getHeader("user-agent");
 
-		// 웹브라우저 버전 조회
+		// ?밸툕?쇱슦? 踰꾩쟾 議고쉶
 		String webVer = "";
 		String[] arr = { "MSIE", "OPERA", "NETSCAPE", "FIREFOX", "SAFARI" };
 		for (int i = 0; i < arr.length; i++) {

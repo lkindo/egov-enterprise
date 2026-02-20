@@ -23,28 +23,28 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 지식맵(조직별)에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앸㏊(議곗쭅蹂??????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식맵(조직별)에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식맵(조직별)의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앸㏊(議곗쭅蹂???????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앸㏊(議곗쭅蹂???議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.07.22
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.07.22  박종선          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2018.08.03  신용호          updateMapTeam method 수정 않되는 문제 처리
- *   2025.06.16  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.07.22  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2018.08.03  ?좎슜??         updateMapTeam method ?섏젙 ?딅릺??臾몄젣 泥섎━
+ *   2025.06.16  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -60,14 +60,14 @@ public class EgovMapTeamController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 등록된 지식맵(조직별) 정보를 조회 한다.
+	 * ?깅줉??吏?앸㏊(議곗쭅蹂? ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param mapTeamVO- 지식맵(조직별) VO
-	 * @return String - 리턴 Url
+	 * @param mapTeamVO- 吏?앸㏊(議곗쭅蹂? VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param MapTeamVO
 	 */
-	@IncludedInfo(name = "지식맵관리(조직)", listUrl = "/dam/map/tea/EgovComDamMapTeamList.do", order = 1261, gid = 80)
+	@IncludedInfo(name = "吏?앸㏊愿由?議곗쭅)", listUrl = "/dam/map/tea/EgovComDamMapTeamList.do", order = 1261, gid = 80)
 	@RequestMapping(value = "/dam/map/tea/EgovComDamMapTeamList.do")
 	public String selectMapTeamList(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("searchVO") MapTeamVO searchVO, ModelMap model) throws Exception {
@@ -95,10 +95,10 @@ public class EgovMapTeamController {
 	}
 
 	/**
-	 * 지식맵(조직별)상세 정보를 조회 한다.
+	 * 吏?앸㏊(議곗쭅蹂??곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param MapTeamVO - 지식맵(조직별) VO
-	 * @return String - 리턴 Url
+	 * @param MapTeamVO - 吏?앸㏊(議곗쭅蹂? VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param MapTeamVO
 	 */
@@ -111,10 +111,10 @@ public class EgovMapTeamController {
 	}
 
 	/**
-	 * 지식맵(조직별) 정보를 신규로 등록한다.
+	 * 吏?앸㏊(議곗쭅蹂? ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param orgnztNm - 지식맵(조직별) model
-	 * @return String - 리턴 Url
+	 * @param orgnztNm - 吏?앸㏊(議곗쭅蹂? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param mapTeam
 	 */
@@ -134,16 +134,16 @@ public class EgovMapTeamController {
 			mapTeamService.insertMapTeam(mapTeam);
 			return "forward:/dam/map/tea/EgovComDamMapTeamList.do";
 		} catch (DuplicateKeyException e) {
-			bindingResult.rejectValue("orgnztId", "error.orgnztId", "이미 등록된 조직ID입니다.");
+			bindingResult.rejectValue("orgnztId", "error.orgnztId", "?대? ?깅줉??議곗쭅ID?낅땲??");
 			return "egovframework/com/dam/map/tea/EgovComDamMapTeamRegist";
 		}
 	}
 
 	/**
-	 * 기 등록 된 지식맵(조직별)링 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앸㏊(議곗쭅蹂?留??뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param orgnztNm - 지식맵(조직별) model
-	 * @return String - 리턴 Url
+	 * @param orgnztNm - 吏?앸㏊(議곗쭅蹂? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param mapTeam
 	 */
@@ -168,10 +168,10 @@ public class EgovMapTeamController {
 	}
 
 	/**
-	 * 기 등록된 지식맵(조직별) 정보를 삭제한다.
+	 * 湲??깅줉??吏?앸㏊(議곗쭅蹂? ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param orgnztNm - 지식맵(조직별) model
-	 * @return String - 리턴 Url
+	 * @param orgnztNm - 吏?앸㏊(議곗쭅蹂? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param orgnztNm
 	 */

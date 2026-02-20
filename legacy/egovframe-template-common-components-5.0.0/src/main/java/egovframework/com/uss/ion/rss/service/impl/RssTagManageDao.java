@@ -20,40 +20,40 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * RSS태그관리를 처리하는 Dao Class 구현
+ * RSS?쒓렇愿由щ? 泥섎━?섎뒗 Dao Class 援ы쁽
  * 
- * @author 공통콤포넌트 장동한
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2011.10.18  서준식          Altibase DB 처리를 위한 코드 추가
- *   2018.10.22  신용호          connection close 관련 수정
- *   2018.12.05  신용호          selectRssTagManageTableList(),selectRssTagManageTableColumnList() 테이블 목록 화이트리스트 제약
- *   2019.05.10  신용호          WhiteList 기능 보완
- *   2025.08.14  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.08.14  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.08.14  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-SimplifyBooleanExpressions(boolean 사용 시 불필요한 비교 연산을 피하도록 함)
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.10.18  ?쒖???         Altibase DB 泥섎━瑜??꾪븳 肄붾뱶 異붽?
+ *   2018.10.22  ?좎슜??         connection close 愿???섏젙
+ *   2018.12.05  ?좎슜??         selectRssTagManageTableList(),selectRssTagManageTableColumnList() ?뚯씠釉?紐⑸줉 ?붿씠?몃━?ㅽ듃 ?쒖빟
+ *   2019.05.10  ?좎슜??         WhiteList 湲곕뒫 蹂댁셿
+ *   2025.08.14  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.08.14  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.08.14  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SimplifyBooleanExpressions(boolean ?ъ슜 ??遺덊븘?뷀븳 鍮꾧탳 ?곗궛???쇳븯?꾨줉 ??
  *
  *      </pre>
  */
 @Repository("rssManageDao")
 public class RssTagManageDao extends EgovComAbstractDAO {
 
-	// RSS에 허용할 테이블 목록 - context-whitelist.xml에서 관리
+	// RSS???덉슜???뚯씠釉?紐⑸줉 - context-whitelist.xml?먯꽌 愿由?
 	@Resource(name = "egovRSSWhitelist")
 	protected List<String> tableWhiteList;
 
 	/**
-	 * JDBC 테이블 목록을조회한다.
+	 * JDBC ?뚯씠釉?紐⑸줉?꾩“?뚰븳??
 	 * 
-	 * @return List -조회한목록이담긴List
+	 * @return List -議고쉶?쒕ぉ濡앹씠?닿릿List
 	 * @throws Exception
 	 */
 	public List<ComDefaultCodeVO> selectRssTagManageTableList() throws Exception {
@@ -72,12 +72,12 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 			try (ResultSet tables = dbmd.getTables(null, null, null, types);) {
 				while (tables.next()) {
 
-					// KISA 보안약점 조치 (2018-12-05, 신용호)
+					// KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-05, ?좎슜??
 					String tableName = tables.getString(columnLabelTableName);
 					if (tableName == null) {
 						tableName = "";
 					}
-					// WhiteList 기능 보완 (2019-05-10, 신용호)
+					// WhiteList 湲곕뒫 蹂댁셿 (2019-05-10, ?좎슜??
 					if (tableWhiteList.contains(tableName.toLowerCase())) {
 						ComDefaultCodeVO codeVO = new ComDefaultCodeVO();
 						codeVO.setCode(tables.getString(columnLabelTableName));
@@ -93,10 +93,10 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * JDBC 테이블 컬럼 목록을 조회한다.
+	 * JDBC ?뚯씠釉?而щ읆 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param map - 컬럼조회정보
-	 * @return List -조회한목록이담긴List
+	 * @param map - 而щ읆議고쉶?뺣낫
+	 * @return List -議고쉶?쒕ぉ濡앹씠?닿릿List
 	 * @throws Exception
 	 */
 	public List<Map<String, String>> selectRssTagManageTableColumnList(Map<String, String> map) throws Exception {
@@ -110,8 +110,8 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 
 		try (Connection conn = getSqlSession().getConnection();) {
 
-			// KISA 보안약점 조치 (2018-12-05, 신용호)
-			// WhiteList 기능 보완 (2019-05-10, 신용호)
+			// KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-05, ?좎슜??
+			// WhiteList 湲곕뒫 蹂댁셿 (2019-05-10, ?좎슜??
 			if (tableWhiteList.contains(sTableName.toLowerCase())) {
 
 				if (sDbType.equals("mysql") || sDbType.equals("maria") || sDbType.equals("postgres")) {
@@ -151,10 +151,10 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 목록을 한다.
+	 * RSS?쒓렇愿由щ?(?? 紐⑸줉???쒕떎.
 	 * 
-	 * @param rssManage -조회할 정보가 담긴 객체
-	 * @return -조회한목록이담긴List
+	 * @param rssManage -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+	 * @return -議고쉶?쒕ぉ濡앹씠?닿릿List
 	 * @throws Exception
 	 */
 	public List<?> selectRssTagManageList(RssManage rssManage) throws Exception {
@@ -163,10 +163,10 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 목록 전체 건수를(을) 조회한다.
+	 * RSS?쒓렇愿由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
 	 * 
-	 * @param rssManage -조회할 정보가 담긴 객체
-	 * @return -조회한건수가담긴Integer
+	 * @param rssManage -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+	 * @return -議고쉶?쒓굔?섍??닿릿Integer
 	 * @throws Exception
 	 */
 	public int selectRssTagManageListCnt(RssManage rssManage) throws Exception {
@@ -174,10 +174,10 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 상세조회 한다.
+	 * RSS?쒓렇愿由щ?(?? ?곸꽭議고쉶 ?쒕떎.
 	 * 
-	 * @param rssManage -RSS태그관리 정보가 담김 객체
-	 * @return RssManage -RSS태그관리 정보가 담김 객체
+	 * @param rssManage -RSS?쒓렇愿由??뺣낫媛 ?닿? 媛앹껜
+	 * @return RssManage -RSS?쒓렇愿由??뺣낫媛 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	public RssManage selectRssTagManageDetail(RssManage rssManage) throws Exception {
@@ -185,9 +185,9 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 등록한다.
+	 * RSS?쒓렇愿由щ?(?? ?깅줉?쒕떎.
 	 * 
-	 * @param rssManage -RSS태그관리 정보가 담김 객체
+	 * @param rssManage -RSS?쒓렇愿由??뺣낫媛 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	public void insertRssTagManage(RssManage rssManage) throws Exception {
@@ -195,9 +195,9 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 수정한다.
+	 * RSS?쒓렇愿由щ?(?? ?섏젙?쒕떎.
 	 * 
-	 * @param rssManage -RSS태그관리 정보가 담김 객체
+	 * @param rssManage -RSS?쒓렇愿由??뺣낫媛 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	public void updateRssTagManage(RssManage rssManage) throws Exception {
@@ -205,9 +205,9 @@ public class RssTagManageDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * RSS태그관리를(을) 삭제한다.
+	 * RSS?쒓렇愿由щ?(?? ??젣?쒕떎.
 	 * 
-	 * @param rssManage -RSS태그관리 정보가 담김 객체
+	 * @param rssManage -RSS?쒓렇愿由??뺣낫媛 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	public void deleteRssTagManage(RssManage rssManage) throws Exception {

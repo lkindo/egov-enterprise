@@ -6,14 +6,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 웹브라우저 종류및 버전 파악하기 ( IE및 Edge, Safari, Chrome, Firefox, Opera ).
+ * ?밸툕?쇱슦? 醫낅쪟諛?踰꾩쟾 ?뚯븙?섍린 ( IE諛?Edge, Safari, Chrome, Firefox, Opera ).
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일              수정자              수정내용
+ *   ?섏젙??             ?섏젙??             ?섏젙?댁슜
  *  -----------  --------    ---------------------------
- *   2018.08.27  신용호              최초 생성
+ *   2018.08.27  ?좎슜??             理쒖큹 ?앹꽦
  *
  * </pre>
  */
