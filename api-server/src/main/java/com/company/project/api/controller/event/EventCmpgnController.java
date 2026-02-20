@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController("eventEventCmpgnController")
 
-@RequestMapping("/api/v1/events")
+@RequestMapping("/api/v1/event-campaigns")
 
 @RequiredArgsConstructor
 

@@ -30,7 +30,7 @@ import java.util.List;
 
 @RestController("prototypeNoteController")
 
-@RequestMapping("/api/v1/notes")
+@RequestMapping("/api/v1/notes-legacy")
 
 @RequiredArgsConstructor
 
