@@ -2,51 +2,7 @@
 # eGovFrame / Java / Gradle / Next.js .gitignore
 # ==========================================
 
-<<<<<<< HEAD
 # ----- OS & IDE -----
-=======
-# ===== Build 결과물 =====
-target/
-build/
-out/
-.gradle/
-bin/
-*.war
-*.jar
-*.class
-
-# ===== Node.js / Frontend =====
-node_modules/
-.npm/
-.next/
-.vercel/
-dist/
-coverage/
-*.tsbuildinfo
-next-env.d.ts
-playwright-report/
-test-results/
-
-# ===== IDE 설정 =====
-# Eclipse
-.project
-.classpath
-.settings/
-*.launch
-.metadata/
-
-# IntelliJ IDEA
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# VS Code
-.vscode/
-*.code-workspace
-
-# ===== 운영체제 =====
->>>>>>> dev1
 # Windows
 Thumbs.db
 Desktop.ini
@@ -57,13 +13,11 @@ $RECYCLE.BIN/
 .AppleDouble
 ._*
 
-<<<<<<< HEAD
 # IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 *.ipr
-out/
 
 # VS Code
 .vscode/
@@ -75,7 +29,6 @@ out/
 .classpath
 .settings/
 .metadata/
-bin/
 *.launch
 
 # ----- Build & Dependencies -----
@@ -91,20 +44,17 @@ vendor/
 *.ear
 *.zip
 *.tar.gz
-gradle-app.setting
 
 # Node.js
 **/node_modules/
-node_modules/
+.npm/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-.pnpm-debug.log*
 
 # Next.js
 **/.next/
-.next/
 dist/
 export/
 
@@ -114,55 +64,13 @@ export/
 .env.development.local
 .env.test.local
 .env.production.local
-*.env
-=======
-# ===== 로그 및 임시 파일 =====
-*.log
-logs/
-*.txt
-!README.md
-!MENU_STRUCTURE.md
-!PRD.MD
-!TRD.MD
-!LLD.MD
-boot_error*
-server_run_*.txt
-
-# ===== 프로젝트 특정 설정 =====
-.jules/
-.sisyphus/
-.agent/
-.gemini/
-
-# ===== Maven / Gradle =====
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-release.properties
-dependency-reduced-pom.xml
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-
-# ===== Tomcat =====
-apache-tomcat-*/
-tomcat/
-
-# ===== Docker =====
-docker-data/
-
-# ===== 환경 설정 (민감 정보) =====
-.env*
-!.env.example
->>>>>>> dev1
 application-local.properties
 application-local.yml
 
-# ----- Project Specific Logs & Temp Files -----
-# Root directory analysis/temp files
+# ----- Logs & Temp Files -----
 *.log
 logs/
 *_log.txt
-javap_*.txt
 *.txt
 !README.md
 !MENU_STRUCTURE.md
@@ -176,8 +84,10 @@ javap_*.txt
 !task.md
 !deps.txt
 !jsp_keys.txt
+boot_error*
+server_run_*.txt
 
-# Additional temp patterns
+# Temp files
 temp_*/
 tmp_*/
 *.tmp
@@ -185,6 +95,7 @@ tmp_*/
 *.bak
 *.swp
 *~
+*.orig
 
 # ----- Tools & Infrastructure -----
 # Docker
@@ -207,23 +118,22 @@ surefire-reports/
 /blob-report/
 /playwright/.cache/
 
+# ----- AI Tools -----
+.jules/
+.sisyphus/
+.agent/
+.gemini/
+
 # ----- Upload/Storage -----
 upload/
 uploads/
 files/
-<<<<<<< HEAD
 storage/
-node_modules
-=======
 
-# ===== 기타 =====
-*.tmp
-*.temp
-*.swp
-*.swo
-*.bak
-*.orig
-test-output/
-surefire-reports/
-.cache/
->>>>>>> dev1
+# ----- Project Specific -----
+# Encoding conversion scripts (one-time use)
+convert-*.py
+encoding-logs/
+
+# Template duplicates (use config-templates instead)
+utf8-project-template/

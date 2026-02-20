@@ -1,35 +1,31 @@
 package com.company.project.service.user;
 
-import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.service.user.dto.UserDto;
+import org.springframework.stereotype.Component;
 
-/**
- * User ?ÑÎ©î?∏Í≥º DTO Í∞ÑÏùò Îß§Ìïë???¥Îãπ?òÎäî ?†Ìã∏Î¶¨Ìã∞ ?¥Îûò??
- */
+import java.util.Objects;
+
+@Component
 public class UserDtoMapper {
 
-    /**
-     * User ?îÌã∞?∞Î? UserDtoÎ°?Î≥Ä??
-     */
     public static UserDto toUserDto(User user) {
         if (user == null) {
             return null;
         }
 
         return UserDto.builder()
-                .userId(user.getUserId())
-                .userNm(user.getUserNm())
-                .esntlId(user.getEsntlId())
+                .userId(Objects.requireNonNull(user.getUserId()))
+                .userNm(Objects.requireNonNull(user.getUserNm()))
+                .esntlId(Objects.requireNonNull(user.getEsntlId()))
                 .role(user.getRole() != null ? user.getRole().name() : null)
-                .createdDate(user.getSbscrbDe())
+                .emplNo(user.getEmplNo())
+                .ofcpsNm(user.getOfcpsNm())
+                .createdDate(user.getCreatedDate())
                 .build();
     }
 
-    /**
-     * UserDtoÎ•?User ?îÌã∞?∞Î°ú Î≥Ä??
-     */
-    public static User toUserEntity(UserDto userDto) {
+    public static User toEntity(UserDto userDto) {
         if (userDto == null) {
             return null;
         }
@@ -38,7 +34,8 @@ public class UserDtoMapper {
                 .userId(userDto.getUserId())
                 .userNm(userDto.getUserNm())
                 .esntlId(userDto.getEsntlId())
-                .role(userDto.getRole() != null ? Role.valueOf(userDto.getRole()) : Role.USER)
+                .emplNo(userDto.getEmplNo())
+                .ofcpsNm(userDto.getOfcpsNm())
                 .build();
     }
 }
