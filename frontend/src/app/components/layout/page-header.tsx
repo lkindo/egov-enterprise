@@ -32,7 +32,7 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
       <nav className="flex items-center text-xs text-muted-foreground gap-1.5">
         <Link href="/" className="hover:text-foreground flex items-center gap-1">
           <Home size={12} />
-          홈
+          í™ˆ
         </Link>
         {autoBreadcrumbs.map((item, idx) => (
           <React.Fragment key={idx}>
