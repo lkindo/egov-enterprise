@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!--Converted at: Wed May 11 15:50:41 KST 2016
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
- 2017.11.07		이정은			날짜로 검색 시 시분초 추가
+ 2017.11.07		?댁젙?			?좎쭨濡?寃?????쒕텇珥?異붽?
   -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="LoginLog">
 
-	<!-- 로그인로그 맵 -->
+	<!-- 濡쒓렇?몃줈洹?留?-->
 	<resultMap id="LoginLogVO" type="egovframework.com.sym.log.clg.service.LoginLog">
 		<result property="logId" column="LOG_ID"/>
 		<result property="creatDt" column="CREAT_DT"/>
@@ -17,7 +17,7 @@
 		<result property="loginNm" column="LOGIN_NM"/>
 	</resultMap>
 
-	<!-- 로그인 로그 등록 -->
+	<!-- 濡쒓렇??濡쒓렇 ?깅줉 -->
 	<insert id="LoginLog.logInsertLoginLog" parameterType="egovframework.com.sym.log.clg.service.LoginLog">
 		
 		<![CDATA[
@@ -40,7 +40,7 @@
 		
 	</insert>
 
-	<!-- 로그인 로그 상세  조회 -->
+	<!-- 濡쒓렇??濡쒓렇 ?곸꽭  議고쉶 -->
 	<select id="LoginLog.selectLoginLog" parameterType="egovframework.com.sym.log.clg.service.LoginLog" resultMap="LoginLogVO">
 		
 		<![CDATA[
@@ -61,7 +61,7 @@
 			
 	</select>
 
-	<!-- 로그인 로그 목록  조회 -->
+	<!-- 濡쒓렇??濡쒓렇 紐⑸줉  議고쉶 -->
 	<select id="LoginLog.selectLoginLogInf" parameterType="egovframework.com.sym.log.clg.service.LoginLog" resultMap="LoginLogVO">
 		
 		<![CDATA[
@@ -96,7 +96,7 @@
 		
 	</select>
 
-	<!-- 로그인 로그 총건수 -->
+	<!-- 濡쒓렇??濡쒓렇 珥앷굔??-->
 	<select id="LoginLog.selectLoginLogInfCnt" parameterType="egovframework.com.sym.log.clg.service.LoginLog" resultType="java.lang.Integer">
 		
 		<![CDATA[

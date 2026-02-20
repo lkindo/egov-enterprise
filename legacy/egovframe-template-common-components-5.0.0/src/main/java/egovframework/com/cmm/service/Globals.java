@@ -2,14 +2,14 @@ package egovframework.com.cmm.service;
 
 /**
  *  Class Name : Globals.java
- *  Description : 시스템 구동 시 프로퍼티를 통해 사용될 전역변수를 정의한다.
+ *  Description : ?쒖뒪??援щ룞 ???꾨줈?쇳떚瑜??듯빐 ?ъ슜???꾩뿭蹂?섎? ?뺤쓽?쒕떎.
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.01.19    박지욱          최초 생성
+ *   2009.01.19    諛뺤???         理쒖큹 ?앹꽦
  *
- *  @author 공통 서비스 개발팀 박지욱
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤???
  *  @since 2009. 01. 19
  *  @version 1.0
  *  @see
@@ -17,47 +17,47 @@ package egovframework.com.cmm.service;
  */
 
 public class Globals {
-	//OS 유형
+	//OS ?좏삎
     public static final String OS_TYPE = EgovProperties.getProperty("Globals.OsType");
-    //DB 유형
+    //DB ?좏삎
     public static final String DB_TYPE = EgovProperties.getProperty("Globals.DbType");
-    //메인 페이지
+    //硫붿씤 ?섏씠吏
     public static final String MAIN_PAGE = EgovProperties.getProperty("Globals.MainPage");
-    //ShellFile 경로
+    //ShellFile 寃쎈줈
     public static final String SHELL_FILE_PATH = EgovProperties.getPathProperty("Globals.ShellFilePath");
-    //퍼로퍼티 파일 위치
+    //?쇰줈?쇳떚 ?뚯씪 ?꾩튂
     public static final String CONF_PATH = EgovProperties.getPathProperty("Globals.ConfPath");
-    //Server정보 프로퍼티 위치
+    //Server?뺣낫 ?꾨줈?쇳떚 ?꾩튂
     public static final String SERVER_CONF_PATH = EgovProperties.getPathProperty("Globals.ServerConfPath");
-    //Client정보 프로퍼티 위치
+    //Client?뺣낫 ?꾨줈?쇳떚 ?꾩튂
     public static final String CLIENT_CONF_PATH = EgovProperties.getPathProperty("Globals.ClientConfPath");
-    //파일포맷 정보 프로퍼티 위치
+    //?뚯씪?щ㎎ ?뺣낫 ?꾨줈?쇳떚 ?꾩튂
     public static final String FILE_FORMAT_PATH = EgovProperties.getPathProperty("Globals.FileFormatPath");
 
-    //파일 업로드 원 파일명
+    //?뚯씪 ?낅줈?????뚯씪紐?
 	public static final String ORIGIN_FILE_NM = "originalFileName";
-	//파일 확장자
+	//?뚯씪 ?뺤옣??
 	public static final String FILE_EXT = "fileExtension";
-	//파일크기
+	//?뚯씪?ш린
 	public static final String FILE_SIZE = "fileSize";
-	//업로드된 파일명
+	//?낅줈?쒕맂 ?뚯씪紐?
 	public static final String UPLOAD_FILE_NM = "uploadFileName";
-	//파일경로
+	//?뚯씪寃쎈줈
 	public static final String FILE_PATH = "filePath";
 
-	//메일발송요청 XML파일경로
+	//硫붿씪諛쒖넚?붿껌 XML?뚯씪寃쎈줈
 	public static final String MAIL_REQUEST_PATH = EgovProperties.getPathProperty("Globals.MailRequestPath");
-	//메일발송응답 XML파일경로
+	//硫붿씪諛쒖넚?묐떟 XML?뚯씪寃쎈줈
 	public static final String MAIL_RESPONSE_PATH = EgovProperties.getPathProperty("Globals.MailRResponsePath");
 
-	// G4C 연결용 IP (localhost)
+	// G4C ?곌껐??IP (localhost)
 	public static final String LOCAL_IP = EgovProperties.getProperty("Globals.LocalIp");
 
-	//SMS 정보 프로퍼티 위치
+	//SMS ?뺣낫 ?꾨줈?쇳떚 ?꾩튂
 	public static final String SMSDB_CONF_PATH = EgovProperties.getPathProperty("Globals.SmsDbConfPath");
 
-	//파일 업로드 가능 확장자들
+	//?뚯씪 ?낅줈??媛???뺤옣?먮뱾
 	public static final String FILE_UP_EXTS = EgovProperties.getProperty("Globals.fileUpload.Extensions");
-	//파일 업로드 최대 용량
+	//?뚯씪 ?낅줈??理쒕? ?⑸웾
 	public static final String FILE_UP_MAX_SIZE = EgovProperties.getProperty("Globals.fileUpload.maxFileSize");
 }

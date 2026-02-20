@@ -12,17 +12,17 @@ import org.springframework.data.repository.query.Param;
 public interface QnaRepository extends JpaRepository<Qna, String> {
 
     /**
-     * 질문 제목 검색
+     * 筌욌뜄揆 ??뺛걠 野꺜??
      */
     Page<Qna> findByQestnSjContaining(String qestnSj, Pageable pageable);
 
     /**
-     * 처리상태별 검색
+     * 筌ｌ꼶??怨밴묶癰?野꺜??
      */
     Page<Qna> findByQnaProcessSttusCode(String qnaProcessSttusCode, Pageable pageable);
 
     /**
-     * 키워드 검색 (질문제목 또는 질문내용)
+     * ??쇱뜖??野꺜??(筌욌뜄揆??뺛걠 ?癒?뮉 筌욌뜄揆??곸뒠)
      */
     @Query("SELECT q FROM Qna q WHERE q.qestnSj LIKE %:keyword% OR q.qestnCn LIKE %:keyword%")
     Page<Qna> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
@@ -32,7 +32,7 @@ public interface QnaRepository extends JpaRepository<Qna, String> {
     }
 
     /**
-     * 미답변 Q&A 목록
+     * 沃섎챶?잒퉪? Q&A 筌뤴뫖以?
      */
     @Query("SELECT q FROM Qna q WHERE q.qnaProcessSttusCode = 'Q'")
     Page<Qna> findUnanswered(Pageable pageable);

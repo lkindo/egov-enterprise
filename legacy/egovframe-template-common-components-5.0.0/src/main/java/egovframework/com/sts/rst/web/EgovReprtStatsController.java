@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 보고서통계에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 蹂닿퀬?쒗넻怨꾩뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 보고서통계에 대한 등록, 조회 기능을 제공한다.
- * - 보고서통계의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 蹂닿퀬?쒗넻怨꾩뿉 ????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 蹂닿퀬?쒗넻怨꾩쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:09:15
+ * @created 03-8-2009 ?ㅽ썑 2:09:15
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.8.3   lee.m.j          최초 생성 *
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2009.8.3   lee.m.j          理쒖큹 ?앹꽦 *
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -61,7 +61,7 @@ public class EgovReprtStatsController {
     private EgovIdGnrService egovReprtStatsIdGnrService;
 
     /**
-	 * 보고서 통계 목록화면 이동
+	 * 蹂닿퀬???듦퀎 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -83,11 +83,11 @@ public class EgovReprtStatsController {
     }
 
 	/**
-	 * 보고서 통계정보의 대상목록을 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return String - 리턴 Url
+	 * 蹂닿퀬???듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="보고서통계", listUrl="/sts/rst/selectReprtStatsListView.do", order = 160 ,gid = 30)
+    @IncludedInfo(name="蹂닿퀬?쒗넻怨?, listUrl="/sts/rst/selectReprtStatsListView.do", order = 160 ,gid = 30)
 	@RequestMapping("/sts/rst/selectReprtStatsList.do")
 	public String selectReprtStatsList(@RequestParam("pmReprtTy") String pmReprtTy,
 			                           @RequestParam("pmDateTy") String pmDateTy,
@@ -156,9 +156,9 @@ public class EgovReprtStatsController {
 	}
 
 	/**
-	 * 보고서 통계정보의 상세정보를 조회한다.
-	 * @param reprtStatsVO - 보고서통계 VO
-	 * @return String - 리턴 Url
+	 * 蹂닿퀬???듦퀎?뺣낫???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param reprtStatsVO - 蹂닿퀬?쒗넻怨?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/sts/rst/getReprtStats.do")
 	public String selectReprtStats(@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
@@ -176,9 +176,9 @@ public class EgovReprtStatsController {
 	}
 
 	/**
-	 * 보고서 통계정보의 등록화면으로 이동한다.
-	 * @param reprtStats - 보고서통계 model
-	 * @return String - 리턴 Url
+	 * 蹂닿퀬???듦퀎?뺣낫???깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @param reprtStats - 蹂닿퀬?쒗넻怨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/sts/rst/addViewReprtStats.do")
 	public String insertViewReprtStats(@ModelAttribute("reprtStatsVO") ReprtStatsVO reprtStatsVO,
@@ -194,9 +194,9 @@ public class EgovReprtStatsController {
 	}
 
 	/**
-	 * 보고서 통계정보를 등록한다.
-	 * @param reprtStats - 보고서통계 model
-	 * @return String - 리턴 Url
+	 * 蹂닿퀬???듦퀎?뺣낫瑜??깅줉?쒕떎.
+	 * @param reprtStats - 蹂닿퀬?쒗넻怨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/sts/rst/addReprtStats.do")
 	public String insertReprtStats(@Valid @ModelAttribute("reprtStats") ReprtStats reprtStats,

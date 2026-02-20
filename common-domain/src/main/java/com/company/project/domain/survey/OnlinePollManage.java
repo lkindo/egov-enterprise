@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 온라인 투표 관리 정보 Entity
- * 레거시 테이블: NONLINEPOLLMANAGE
+ * ??ㅼ뵬????紐??온???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NONLINEPOLLMANAGE
  */
 @Entity
 @Table(name = "NONLINEPOLLMANAGE")

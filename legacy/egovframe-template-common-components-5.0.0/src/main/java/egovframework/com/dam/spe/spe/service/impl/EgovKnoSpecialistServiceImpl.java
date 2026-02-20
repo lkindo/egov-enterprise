@@ -12,26 +12,26 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 지식전문가에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹쟾臾멸??????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식전문가에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식전문가의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앹쟾臾멸???????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹쟾臾멸???議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.08.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.12  박종선          최초 생성
- *   2025.06.18  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙)
+ *   2010.08.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2025.06.18  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -42,10 +42,10 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	private KnoSpecialistDAO knoSpecialistDAO;
 
 	/**
-	 * 등록된 지식전문가 정보를 조회 한다.
+	 * ?깅줉??吏?앹쟾臾멸? ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoSpecialistVO- 지식전문가 VO
-	 * @return String - 지식전문가 목록
+	 * @param KnoSpecialistVO- 吏?앹쟾臾멸? VO
+	 * @return String - 吏?앹쟾臾멸? 紐⑸줉
 	 *
 	 * @param KnoSpecialistVO
 	 */
@@ -55,10 +55,10 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 지식전문가 목록 총 개수를 조회한다.
+	 * 吏?앹쟾臾멸? 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param KnoSpecialistVO - 지식전문가 Vo
-	 * @return int - 지식전문가 토탈 카운트 수
+	 * @param KnoSpecialistVO - 吏?앹쟾臾멸? Vo
+	 * @return int - 吏?앹쟾臾멸? ?좏깉 移댁슫????
 	 *
 	 * @param KnoSpecialistVO
 	 */
@@ -68,10 +68,10 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 지식전문가 상세 정보를 조회 한다.
+	 * 吏?앹쟾臾멸? ?곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KonSpecialistVO - 지식전문가 VO
-	 * @return String - 지식전문가 VO
+	 * @param KonSpecialistVO - 吏?앹쟾臾멸? VO
+	 * @return String - 吏?앹쟾臾멸? VO
 	 *
 	 * @param KonSpecialistVO
 	 */
@@ -82,9 +82,9 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 지식전문가 정보를 신규로 등록한다.
+	 * 吏?앹쟾臾멸? ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param speNm - 지식전문가 model
+	 * @param speNm - 吏?앹쟾臾멸? model
 	 *
 	 * @param speNm
 	 */
@@ -94,9 +94,9 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기 등록 된 지식전문가 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앹쟾臾멸? ?뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param speNm - 지식전문가 model
+	 * @param speNm - 吏?앹쟾臾멸? model
 	 *
 	 * @param speNm
 	 */
@@ -106,9 +106,9 @@ public class EgovKnoSpecialistServiceImpl extends EgovAbstractServiceImpl implem
 	}
 
 	/**
-	 * 기 등록된 지식전문가 정보를 삭제한다.
+	 * 湲??깅줉??吏?앹쟾臾멸? ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param siteUrl - 지식전문가 model
+	 * @param siteUrl - 吏?앹쟾臾멸? model
 	 *
 	 * @param speNm
 	 */

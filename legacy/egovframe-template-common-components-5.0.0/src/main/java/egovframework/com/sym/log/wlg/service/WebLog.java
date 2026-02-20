@@ -4,15 +4,15 @@ import java.io.Serializable;
 
 /**
  * @Class Name : WebLog.java
- * @Description : 웹 로그 관리를 위한 VO 클래스
+ * @Description : ??濡쒓렇 愿由щ? ?꾪븳 VO ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.wlg)
- *    2011.09.14     서준식       화면에 검색일자를 표시하기위한 멤버변수 추가.
- * @author 공통 서비스 개발팀 이삼섭
+ *    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.wlg)
+ *    2011.09.14     ?쒖???      ?붾㈃??寃?됱씪?먮? ?쒖떆?섍린?꾪븳 硫ㅻ쾭蹂??異붽?.
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -23,12 +23,12 @@ public class WebLog implements Serializable {
 	private static final long serialVersionUID = -7768865822788140496L;
 
 	/**
-	 * 요청아이디
+	 * ?붿껌?꾩씠??
 	 */
 	private String requstId = "";
 
 	/**
-	 * 발생일자
+	 * 諛쒖깮?쇱옄
 	 */
 	private String occrrncDe = "";
 
@@ -38,55 +38,55 @@ public class WebLog implements Serializable {
 	private String url = "";
 
 	/**
-	 * 요청자아이디
+	 * ?붿껌?먯븘?대뵒
 	 */
 	private String rqesterId = "";
 
 	/**
-	 * 요청자 이름
+	 * ?붿껌???대쫫
 	 */
 	private String rqsterNm = "";
 
 	/**
-	 * 요청아이피
+	 * ?붿껌?꾩씠??
 	 */
 	private String rqesterIp = "";
 
 	/**
-	 * 검색시작일
+	 * 寃?됱떆?묒씪
 	 */
 	private String searchBgnDe = "";
 
 	/**
-	 * 검색조건
+	 * 寃?됱“嫄?
 	 */
 	private String searchCnd = "";
 
 	/**
-	 * 검색종료일
+	 * 寃?됱쥌猷뚯씪
 	 */
 	private String searchEndDe = "";
 
 	/**
-	 * 검색단어
+	 * 寃?됰떒??
 	 */
 	private String searchWrd = "";
 
 	/**
-	 * 정렬순서(DESC,ASC)
+	 * ?뺣젹?쒖꽌(DESC,ASC)
 	 */
 	private String sortOrdr = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -102,12 +102,12 @@ public class WebLog implements Serializable {
 	private int rowNo = 0;
 
 	/**
-	 * 검색시작일_화면용
+	 * 寃?됱떆?묒씪_?붾㈃??
 	 */
 	private String searchBgnDeView = "";//2011.09.14
 
 	/**
-	 * 검색종료일_화면용
+	 * 寃?됱쥌猷뚯씪_?붾㈃??
 	 */
 	private String searchEndDeView = "";//2011.09.14
 

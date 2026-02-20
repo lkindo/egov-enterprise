@@ -8,18 +8,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * 협업 비로그인 유저용 컨트롤러 클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?묒뾽 鍮꾨줈洹몄씤 ?좎???而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.4.10  이삼섭          최초 생성
+ *   2009.4.10  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class EgovCopViewController {
 
 	/**
-	 * 팝업 페이지를 호출한다.
+	 * ?앹뾽 ?섏씠吏瑜??몄텧?쒕떎.
 	 *
 	 * @param userVO
 	 * @param sessionVO

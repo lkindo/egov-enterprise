@@ -9,18 +9,18 @@ import jakarta.annotation.Resource;
 
 /**
  *
- * 관인이미지에 대한 서비스 구현클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 愿?몄씠誘몄???????쒕퉬??援ы쁽?대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -31,7 +31,7 @@ public class EgovPrntngOutptImpl extends EgovAbstractServiceImpl implements Egov
 	private PrntngOutptDAO prntngOutptDAO;
 
 	/**
-	 * 관인이미지를 조회한다.
+	 * 愿?몄씠誘몄?瑜?議고쉶?쒕떎.
 	 */
 	@Override
 	public PrntngOutptVO selectErncsl(PrntngOutptVO searchVO) throws Exception {

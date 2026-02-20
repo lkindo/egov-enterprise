@@ -5,12 +5,12 @@ import jakarta.servlet.http.HttpSessionBindingListener;
 
 /**
  * @Class Name : EgovHttpSessionBindingListener.java
- * @Description : 중복 로그인 방지를 위해 사용자의 로그인 아이디와 세션을 제어하는 구현 클래스
+ * @Description : 以묐났 濡쒓렇??諛⑹?瑜??꾪빐 ?ъ슜?먯쓽 濡쒓렇???꾩씠?붿? ?몄뀡???쒖뼱?섎뒗 援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.30	표준프레임워크		최초생성
+ *    2014.09.30	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author YJ Kwon
  * @since 2014.09.30
  * @version 3.5
@@ -18,8 +18,8 @@ import jakarta.servlet.http.HttpSessionBindingListener;
 public class EgovHttpSessionBindingListener implements HttpSessionBindingListener {
 
 	/**
-	 * 사용자의 로그인 세션에 EgovHttpSessionBindingListener가 바인딩될 때 자동 호출되는 메소드로,
-	 * 사용자 세션이 이미 존재하는지를 검사하여 하나의 어플리케이션 내에서 하나의 세션만 유지되도록 한다
+	 * ?ъ슜?먯쓽 濡쒓렇???몄뀡??EgovHttpSessionBindingListener媛 諛붿씤?⑸맆 ???먮룞 ?몄텧?섎뒗 硫붿냼?쒕줈,
+	 * ?ъ슜???몄뀡???대? 議댁옱?섎뒗吏瑜?寃?ы븯???섎굹???댄뵆由ъ??댁뀡 ?댁뿉???섎굹???몄뀡留??좎??섎룄濡??쒕떎
 	 * */
 	@Override
 	public void valueBound(HttpSessionBindingEvent event) {
@@ -31,9 +31,9 @@ public class EgovHttpSessionBindingListener implements HttpSessionBindingListene
 
 	/**
 	 *
-	 * 로그아웃 혹은 세션타임아웃 설정에 따라 사용자 세션으로부터
-	 * EgovHttpSessionBindingListener가 제거될 때 자동 호출되는 메소드로,
-	 * 사용자의 로그인 아이디에 해당하는 세션을 ConcurrentHashMap에서 모두 제거한다
+	 * 濡쒓렇?꾩썐 ?뱀? ?몄뀡??꾩븘???ㅼ젙???곕씪 ?ъ슜???몄뀡?쇰줈遺??
+	 * EgovHttpSessionBindingListener媛 ?쒓굅?????먮룞 ?몄텧?섎뒗 硫붿냼?쒕줈,
+	 * ?ъ슜?먯쓽 濡쒓렇???꾩씠?붿뿉 ?대떦?섎뒗 ?몄뀡??ConcurrentHashMap?먯꽌 紐⑤몢 ?쒓굅?쒕떎
 	 * */
 	@Override
 	public void valueUnbound(HttpSessionBindingEvent event) {

@@ -45,7 +45,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getIntnetSvcId()))
                 .ifPresent(isg -> {
-                    // InternetSvcGuidance 엔티티에 update 메소드 추가 필요 시 반영
+                    // InternetSvcGuidance ?뷀떚?곗뿉 update 硫붿냼??異붽? ?꾩슂 ??諛섏쁺
                 });
     }
 
@@ -63,7 +63,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
 
     @Override
     public List<InternetSvcGuidanceDto> getIntnetSvcGuidanceResult() {
-        // ReflectionAt == 'Y' 게시 대상 조회 (Repository 확장 필요)
+        // ReflectionAt == 'Y' 寃뚯떆 ???議고쉶 (Repository ?뺤옣 ?꾩슂)
         return java.util.Collections.emptyList();
     }
 

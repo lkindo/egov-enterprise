@@ -6,9 +6,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 부서업무함 엔티티
+ * ?봔??뽯씜?얜똾釉??酉???
  * 
- * @see NDEPTJOBBX 테이블 매핑
+ * @see NDEPTJOBBX ???뵠??筌띲끋釉?
  */
 @Entity
 @Table(name = "ndeptjobbx")

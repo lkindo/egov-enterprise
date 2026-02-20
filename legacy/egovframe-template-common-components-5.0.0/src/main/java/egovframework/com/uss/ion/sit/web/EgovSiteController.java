@@ -25,21 +25,21 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 사이트정보를 처리하는 Controller 클래스
+ * ?ъ씠?몄젙蹂대? 泥섎━?섎뒗 Controller ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -61,14 +61,14 @@ public class EgovSiteController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 사이트목록을 조회한다.
+	 * ?ъ씠?몃ぉ濡앹쓣 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/ion/sit/EgovSiteList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "사이트관리", order = 680, gid = 50)
+	@IncludedInfo(name = "?ъ씠?멸?由?, order = 680, gid = 50)
 	@RequestMapping(value = "/uss/ion/sit/selectSiteList.do")
 	public String selectSiteList(@ModelAttribute("searchVO") SiteVO searchVO, ModelMap model) throws Exception {
 
@@ -97,7 +97,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보 목록에 대한 상세정보를 조회한다.
+	 * ?ъ씠?몄젙蹂?紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param siteVO
 	 * @param searchVO
@@ -117,7 +117,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보 등록전 단계
+	 * ?ъ씠?몄젙蹂??깅줉???④퀎
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -127,7 +127,7 @@ public class EgovSiteController {
 	@RequestMapping("/uss/ion/sit/insertSiteView.do")
 	public String insertSiteView(@ModelAttribute("searchVO") SiteVO searchVO, Model model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM023");
 
@@ -141,7 +141,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보를 등록한다.
+	 * ?ъ씠?몄젙蹂대? ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param siteVO
@@ -157,13 +157,13 @@ public class EgovSiteController {
 			return "egovframework/com/uss/olh/sit/EgovSiteRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		siteVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		siteVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		siteVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		siteVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovSiteService.insertSite(siteVO);
 
@@ -171,7 +171,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보 수정 전 처리
+	 * ?ъ씠?몄젙蹂??섏젙 ??泥섎━
 	 * 
 	 * @param siteId
 	 * @param searchVO
@@ -183,7 +183,7 @@ public class EgovSiteController {
 	public String updateSiteView(@RequestParam("siteId") String siteId, @ModelAttribute("searchVO") SiteVO searchVO,
 			ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM023");
 
@@ -192,7 +192,7 @@ public class EgovSiteController {
 
 		SiteVO siteVO = new SiteVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		siteVO.setSiteId(siteId);
 
 		model.addAttribute("siteVO", egovSiteService.selectSiteDetail(siteVO));
@@ -201,7 +201,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보를 수정한다.
+	 * ?ъ씠?몄젙蹂대? ?섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param siteVO
@@ -217,10 +217,10 @@ public class EgovSiteController {
 			return "egovframework/com/uss/ion/sit/EgovSiteUpdt";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		siteVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		siteVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovSiteService.updateSite(siteVO);
 
@@ -229,7 +229,7 @@ public class EgovSiteController {
 	}
 
 	/**
-	 * 사이트정보를 삭제처리한다.
+	 * ?ъ씠?몄젙蹂대? ??젣泥섎━?쒕떎.
 	 * 
 	 * @param siteVO
 	 * @param searchVO

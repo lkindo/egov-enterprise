@@ -5,99 +5,99 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 송수신모니터링Log에 대한 model 클래스
+ * ?≪닔?좊え?덊꽣留갟og?????model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.08.16   김진만     최초 생성
+ *  2010.08.16   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class TrsmrcvMntrngLog extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = 5898403212784202108L;
 	/**
-	 * 로그ID
+	 * 濡쒓렇ID
 	 */
 	private String logId;
 	/**
-	 * 연계ID
+	 * ?곌퀎ID
 	 */
 	private String cntcId;
 	/**
-	 * 테스트클래스명
+	 * ?뚯뒪?명겢?섏뒪紐?
 	 */
 	private String testClassNm;
 	/**
-	 * 관리자명
+	 * 愿由ъ옄紐?
 	 */
 	private String mngrNm;
 	/**
-	 * 관리자이메일주소
+	 * 愿由ъ옄?대찓?쇱＜??
 	 */
 	private String mngrEmailAddr;
 	/**
-	 * 모니터링상태
+	 * 紐⑤땲?곕쭅?곹깭
 	 */
 	private String mntrngSttus;
 	/**
-	 * 최종수정자 아이디
+	 * 理쒖쥌?섏젙???꾩씠??
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최초등록자 아이디
+	 * 理쒖큹?깅줉???꾩씠??
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String creatDt;
 	/**
-	 * 로그정보
+	 * 濡쒓렇?뺣낫
 	 */
 	private String logInfo;
 
 
 	/**
-	 * 연계명
+	 * ?곌퀎紐?
 	 */
 	private String cntcNm;
 	/**
-	 * 제공기관명
+	 * ?쒓났湲곌?紐?
 	 */
 	private String provdInsttNm;
 	/**
-	 * 제공시스템명
+	 * ?쒓났?쒖뒪?쒕챸
 	 */
 	private String provdSysNm;
 	/**
-	 * 제공서비스명
+	 * ?쒓났?쒕퉬?ㅻ챸
 	 */
 	private String provdSvcNm;
 	/**
-	 * 요청기관명
+	 * ?붿껌湲곌?紐?
 	 */
 	private String requstInsttNm;
 	/**
-	 * 요청시스템명
+	 * ?붿껌?쒖뒪?쒕챸
 	 */
 	private String requstSysNm;
 	/**
-	 * 모니터링상태명
+	 * 紐⑤땲?곕쭅?곹깭紐?
 	 */
 	private String mntrngSttusNm;
 

@@ -9,7 +9,7 @@
 			  FROM  (
 			SELECT ROWNUM RNUM, ALL_LIST.*
 			  FROM  (
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 			SELECT  ADMINIST_ZONE_SE
 			     ,  ADMINIST_ZONE_CODE
 			     ,  ADMINIST_ZONE_NM
@@ -29,7 +29,7 @@
 				 AND ADMINIST_ZONE_NM LIKE '%' || #{searchKeyword} || '%'
 			</if>
 		<![CDATA[
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 				    ) ALL_LIST
 				    ) Z
 			 WHERE  RNUM  > #{firstIndex}

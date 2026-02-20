@@ -4,145 +4,145 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * 개요
- * - 당직관리에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅愿由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 당직관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 당직관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뱀쭅愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?뱀쭅愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public interface EgovBndtManageService {
 
 	/**
-	 * 당직관리 정보를 관리하기 위해 등록된 당직관리 목록을 조회한다.
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return List - 당직관리 목록
+	 * ?뱀쭅愿由??뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???뱀쭅愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return List - ?뱀쭅愿由?紐⑸줉
 	 */
 	public List<BndtManageVO> selectBndtManageList(BndtManageVO bndtManageVO) throws Exception;
 
 	/**
-	 * 당직관리 목록 총 개수를 조회한다.
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return int - 당직관리 카운트 수
+	 * ?뱀쭅愿由?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return int - ?뱀쭅愿由?移댁슫????
 	 */
 	public int selectBndtManageListTotCnt(BndtManageVO bndtManageVO) throws Exception ;
 
 	/**
-	 * 등록된 당직관리의 상세정보를 조회한다.
-	 * @param bndtManageVO - 당직관리 VO
-	 * @return BndtManageVO - 당직관리 VO
+	 * ?깅줉???뱀쭅愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
+	 * @return BndtManageVO - ?뱀쭅愿由?VO
 	 */
 	public BndtManageVO selectBndtManage(BndtManageVO bndtManageVO) throws Exception;
 
 	/**
-	 * 당직관리 정보를 신규로 등록한다.
-	 * @param bndtManage - 당직관리 model
+	 * ?뱀쭅愿由??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	public void insertBndtManage(BndtManage bndtManage) throws Exception;
 
 	/**
-	 * 기 등록된 당직관리 정보를 수정한다.
-	 * @param bndtManage - 당직관리 model
+	 * 湲??깅줉???뱀쭅愿由??뺣낫瑜??섏젙?쒕떎.
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	public void updtBndtManage(BndtManage bndtManage) throws Exception;
 
 	/**
-	 * 기 등록된 당직관리 정보를 삭제한다.
-	 * @param bndtManage - 당직관리 model
+	 * 湲??깅줉???뱀쭅愿由??뺣낫瑜???젣?쒕떎.
+	 * @param bndtManage - ?뱀쭅愿由?model
 	 */
 	public void deleteBndtManage(BndtManage bndtManage) throws Exception;
 
     /**
-	 * 당직일지 개수를 조회한다.
-	 * @param bndtManageVO - 당직관리 VO
+	 * ?뱀쭅?쇱? 媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
 	 * @return int
 	 * @exception Exception
 	 */
     public int selectBndtDiaryTotCnt(BndtManage bndtManage) throws Exception;
 
-    /***** 당직 체크관리 *****/
+    /***** ?뱀쭅 泥댄겕愿由?*****/
 	/**
-	 * 당직체크관리 정보를 관리하기 위해 등록된 당직체크관리 목록을 조회한다.
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return List - 당직체크관리 목록
+	 * ?뱀쭅泥댄겕愿由??뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???뱀쭅泥댄겕愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return List - ?뱀쭅泥댄겕愿由?紐⑸줉
 	 */
 	public List<BndtCeckManageVO> selectBndtCeckManageList(BndtCeckManageVO bndtCeckManageVO) throws Exception;
 
 	/**
-	 * 당직체크관리 목록 총 개수를 조회한다.
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return int - 당직체크관리 카운트 수
+	 * ?뱀쭅泥댄겕愿由?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return int - ?뱀쭅泥댄겕愿由?移댁슫????
 	 */
 	public int selectBndtCeckManageListTotCnt(BndtCeckManageVO bndtCeckManageVO) throws Exception ;
 
 	/**
-	 * 등록된 당직체크관리의 상세정보를 조회한다.
-	 * @param bndtCeckManageVO - 당직체크관리 VO
-	 * @return BndtCeckManageVO - 당직체크관리 VO
+	 * ?깅줉???뱀쭅泥댄겕愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
+	 * @return BndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
 	 */
 	public BndtCeckManageVO selectBndtCeckManage(BndtCeckManageVO bndtCeckManageVO) throws Exception;
 
 	/**
-	 * 당직체크관리 정보를 신규로 등록한다.
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * ?뱀쭅泥댄겕愿由??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	public void insertBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception;
 
 	/**
-	 * 기 등록된 당직체크관리 정보를 수정한다.
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * 湲??깅줉???뱀쭅泥댄겕愿由??뺣낫瑜??섏젙?쒕떎.
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	public void updtBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception;
 
 	/**
-	 * 기 등록된 당직체크관리 정보를 삭제한다.
-	 * @param bndtCeckManage - 당직체크관리 model
+	 * 湲??깅줉???뱀쭅泥댄겕愿由??뺣낫瑜???젣?쒕떎.
+	 * @param bndtCeckManage - ?뱀쭅泥댄겕愿由?model
 	 */
 	public void deleteBndtCeckManage(BndtCeckManage bndtCeckManage) throws Exception;
 
 
     /**
-	 * 당직체크 중복여부 조회한다.
-	 * @param bndtCeckManageVO - 당직체크관리 VO
+	 * ?뱀쭅泥댄겕 以묐났?щ? 議고쉶?쒕떎.
+	 * @param bndtCeckManageVO - ?뱀쭅泥댄겕愿由?VO
 	 * @return int
 	 * @exception Exception
 	 */
 	public int selectBndtCeckManageDplctAt(BndtCeckManage bndtCeckManage) throws Exception ;
 
 
-    /***** 당직 일지 *****/
+    /***** ?뱀쭅 ?쇱? *****/
 
 	/**
-	 * 등록된 당직일지관리의 상세정보를 조회한다.
-	 * @param bndtDiaryVO - 당직일지관리 VO
-	 * @return BndtDiaryVO - 당직일지관리 VO
+	 * ?깅줉???뱀쭅?쇱?愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bndtDiaryVO - ?뱀쭅?쇱?愿由?VO
+	 * @return BndtDiaryVO - ?뱀쭅?쇱?愿由?VO
 	 */
 	public List<BndtDiaryVO> selectBndtDiary(BndtDiaryVO bndtDiaryVO) throws Exception;
 
 	/**
-	 * 당직일지관리 정보를 신규로 등록한다.
-	 * @param bndtDiary - 당직일지관리 model
+	 * ?뱀쭅?쇱?愿由??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param bndtDiary - ?뱀쭅?쇱?愿由?model
 	 */
 	public void insertBndtDiary(BndtDiary bndtDiary, String diaryForInsert) throws Exception;
 
 	/**
-	 * 기 등록된 당직일지관리 정보를 수정한다.
-	 * @param bndtDiary - 당직일지관리 model
+	 * 湲??깅줉???뱀쭅?쇱?愿由??뺣낫瑜??섏젙?쒕떎.
+	 * @param bndtDiary - ?뱀쭅?쇱?愿由?model
 	 */
 	public void updtBndtDiary(BndtDiary bndtDiary, String diaryForUpdt) throws Exception;
 
 	/**
-	 * 기 등록된 당직일지관리 정보를 삭제한다.
-	 * @param bndtDiary - 당직일지관리 model
+	 * 湲??깅줉???뱀쭅?쇱?愿由??뺣낫瑜???젣?쒕떎.
+	 * @param bndtDiary - ?뱀쭅?쇱?愿由?model
 	 */
 	public void deleteBndtDiary(BndtDiary bndtDiary) throws Exception;
 
 	/**
-	 * 당직자 excel생성
+	 * ?뱀쭅??excel?앹꽦
 	 * @param  inputStream InputStream
 	 * @return  String
 	 * @exception Exception
@@ -150,7 +150,7 @@ public interface EgovBndtManageService {
 	public List<BndtManageVO> selectBndtManageBnde(InputStream inputStream) throws Exception;
 
 	/**
-	 * 당직자 excel생성 (Xlsx사용시)
+	 * ?뱀쭅??excel?앹꽦 (Xlsx?ъ슜??
 	 * @param  inputStream InputStream
 	 * @return  String
 	 * @exception Exception
@@ -158,15 +158,15 @@ public interface EgovBndtManageService {
 	public List<BndtManageVO> selectBndtManageBndeX(InputStream inputStream) throws Exception;
 	
 	/**
-	 * 당직정보를 일괄등록처리한다.
-	 * @param bndtManageVO     - 당직관리 VO
-	 * @param String           - 당직자정보
+	 * ?뱀쭅?뺣낫瑜??쇨큵?깅줉泥섎━?쒕떎.
+	 * @param bndtManageVO     - ?뱀쭅愿由?VO
+	 * @param String           - ?뱀쭅?먯젙蹂?
 	 */
 	public void insertBndtManageBnde(BndtManageVO bndtManageVO, String checkedBndtManageForInsert) throws Exception;
 
     /**
-	 * 당직관리 등록건수 조회한다.
-	 * @param bndtManageVO - 당직관리 VO
+	 * ?뱀쭅愿由??깅줉嫄댁닔 議고쉶?쒕떎.
+	 * @param bndtManageVO - ?뱀쭅愿由?VO
 	 * @return int
 	 * @exception Exception
 	 */

@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  CNTC_MSSAGE_ID			CNTC_MESSAGE_ID
                  ,  CNTC_MSSAGE_NM			CNTC_MESSAGE_NM
@@ -26,7 +26,7 @@
         <if test='searchCondition == "CodeList"'>AND
             1 = 1
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     ) Z
@@ -58,7 +58,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  CNTC_MSSAGE_ID			CNTC_MESSAGE_ID
                  ,  IEM_ID					ITEM_ID
@@ -78,7 +78,7 @@
             	CNTC_MSSAGE_ID = #{cntcMessageId}
            	
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     ) Z

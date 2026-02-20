@@ -2,37 +2,37 @@ package egovframework.com.dam.spe.req.service;
 
 
 /**
- * 지식정보제공/지식정보요청 Model and VO Class 구현
- * @author 공통서비스 장동한
+ * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?Model and VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.08.30
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  장동한          최초 생성
+ *   2010.08.30  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public class RequestOfferVO extends RequestOffer{
 
-	/** 명령어 */
+	/** 紐낅졊??*/
     private String cmd = "";
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
 
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-	/** 페이지사이즈 */
+	/** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
     /** firstIndex */

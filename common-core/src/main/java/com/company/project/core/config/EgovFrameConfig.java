@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.AntPathMatcher;
 
 /**
- * eGovFrame 공통 기반 설정
- * - LeaveaTrace: 예외 처리 추적 서비스
+ * eGovFrame ?⑤벏??疫꿸퀡而???쇱젟
+ * - LeaveaTrace: ??됱뇚 筌ｌ꼶???곕뗄????뺥돩??
  */
 @Configuration
 public class EgovFrameConfig {

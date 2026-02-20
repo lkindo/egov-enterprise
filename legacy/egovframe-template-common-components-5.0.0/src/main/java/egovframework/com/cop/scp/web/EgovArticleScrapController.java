@@ -24,19 +24,19 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 스크랩관리 서비스 컨트롤러 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?ㅽ겕?⑷?由??쒕퉬??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.07.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.10  한성곤          최초 생성
- *   2016.06.13	김연호		표준프레임워크 3.6 개선
+ *   2009.07.10  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2016.06.13	源?고샇		?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
  *
  * </pre>
  */
@@ -59,18 +59,18 @@ public class EgovArticleScrapController {
     //Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 스크랩관리 목록 조회를 제공한다.
+     * ?ㅽ겕?⑷?由?紐⑸줉 議고쉶瑜??쒓났?쒕떎.
      *
      * @param scrapVO
      * @param model
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="스크랩관리", order = 250 ,gid = 40)
+    @IncludedInfo(name="?ㅽ겕?⑷?由?, order = 250 ,gid = 40)
     @RequestMapping("/cop/scp/selectArticleScrapList.do")
     public String selectArticleScrapList(@ModelAttribute("searchVO") ScrapVO scrapVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -104,7 +104,7 @@ public class EgovArticleScrapController {
     }
 
     /**
-     * 스크랩에 대한 상세정보를 조회한다.
+     * ?ㅽ겕?⑹뿉 ????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param scrapVO
      * @param model
@@ -114,7 +114,7 @@ public class EgovArticleScrapController {
     @RequestMapping("/cop/scp/selectArticleScrapDetail.do")
     public String selectArticleScrapDetail(@ModelAttribute("searchVO") ScrapVO scrapVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -126,7 +126,7 @@ public class EgovArticleScrapController {
 		model.addAttribute("sessionUniqId", user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		model.addAttribute("result", scrap);
 
-		//게시판 내용 취득
+		//寃뚯떆???댁슜 痍⑤뱷
 		BoardVO vo = new BoardVO();
 		vo.setNttId(scrap.getNttId());
 		vo.setBbsId(scrap.getBbsId());
@@ -139,7 +139,7 @@ public class EgovArticleScrapController {
     }
 
     /**
-     * 스크랩 등록을 위한 등록 페이지로 이동한다.
+     * ?ㅽ겕???깅줉???꾪븳 ?깅줉 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param scrapVO
      * @param model
@@ -157,7 +157,7 @@ public class EgovArticleScrapController {
 		vo.setNttId(scrapVO.getNttId());
 		vo.setBbsId(scrapVO.getBbsId());
 
-		//게시판 내용 취득
+		//寃뚯떆???댁슜 痍⑤뱷
 		vo = egovArticleService.selectArticleDetail(vo);
 
 		model.addAttribute("articleVO", vo);
@@ -168,7 +168,7 @@ public class EgovArticleScrapController {
 
 
     /**
-     * 스크랩을 등록한다.
+     * ?ㅽ겕?⑹쓣 ?깅줉?쒕떎.
      *
      * @param scrapVO
      * @param scrap
@@ -186,7 +186,7 @@ public class EgovArticleScrapController {
 
 		if (bindingResult.hasErrors()) {
 
-			//게시판 내용 취득
+			//寃뚯떆???댁슜 痍⑤뱷
 		    BoardVO vo = new BoardVO();
 			vo.setNttId(scrapVO.getNttId());
 			vo.setBbsId(scrapVO.getBbsId());
@@ -207,7 +207,7 @@ public class EgovArticleScrapController {
     }
 
     /**
-     * 스크랩을 삭제한다.
+     * ?ㅽ겕?⑹쓣 ??젣?쒕떎.
      *
      * @param ScrapVO
      * @param Scrap
@@ -229,7 +229,7 @@ public class EgovArticleScrapController {
     }
 
     /**
-     * 스크랩 수정 페이지로 이동한다.
+     * ?ㅽ겕???섏젙 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param scrapVO
      * @param model
@@ -242,7 +242,7 @@ public class EgovArticleScrapController {
 
 		model.addAttribute("articleScrapVO", vo);
 
-		//게시판 내용 취득
+		//寃뚯떆???댁슜 痍⑤뱷
 		BoardVO boardVO = new BoardVO();
 		boardVO.setNttId(vo.getNttId());
 		boardVO.setBbsId(vo.getBbsId());
@@ -256,7 +256,7 @@ public class EgovArticleScrapController {
     }
 
     /**
-     * 스크랩을 수정한다.
+     * ?ㅽ겕?⑹쓣 ?섏젙?쒕떎.
      *
      * @param ScrapVO
      * @param Scrap

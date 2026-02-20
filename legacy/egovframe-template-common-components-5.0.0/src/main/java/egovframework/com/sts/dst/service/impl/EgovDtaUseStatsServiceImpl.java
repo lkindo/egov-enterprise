@@ -1,23 +1,23 @@
 /**
- * 개요
- * - 자료이용현황 통계에 대한 ServiceImpl를 정의한다.
+ * 媛쒖슂
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎?????ServiceImpl瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 자료이용현황 통계에 대한 등록, 조회 기능을 제공한다.
- * - 자료이용현황 통계의 조회기능은 목록조회, 상세조회로 구분된다.
- * - 게시판에서 다운로드한 통계만 적용된다.(게시판이 아닌경우는 통계에서 제외함)
+ * ?곸꽭?댁슜
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?먮즺?댁슜?꾪솴 ?듦퀎??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * - 寃뚯떆?먯뿉???ㅼ슫濡쒕뱶???듦퀎留??곸슜?쒕떎.(寃뚯떆?먯씠 ?꾨땶寃쎌슦???듦퀎?먯꽌 ?쒖쇅??
  * @author lee.m.j
  * @version 1.0
- * @created 08-9-2009 오후 1:40:19
+ * @created 08-9-2009 ?ㅽ썑 1:40:19
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2011.8.23  정진오 		SQL Map에서 정의한 파라미터 클래스와 실제 전달하는 클래스가 달라서 발생하는 에러 수정
+ *   2011.8.23  ?뺤쭊??		SQL Map?먯꽌 ?뺤쓽???뚮씪誘명꽣 ?대옒?ㅼ? ?ㅼ젣 ?꾨떖?섎뒗 ?대옒?ㅺ? ?щ씪??諛쒖깮?섎뒗 ?먮윭 ?섏젙
  *   						new DtaUseStats() -> new DtaUseStatsVO()
- *   2011.9.29	이기하		게시판외 다운로드시 에러발생(dtaUseStats 값이 null)을 방지
+ *   2011.9.29	?닿린??	寃뚯떆?먯쇅 ?ㅼ슫濡쒕뱶???먮윭諛쒖깮(dtaUseStats 媛믪씠 null)??諛⑹?
  *
  * </pre>
  */
@@ -54,9 +54,9 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
     private EgovIdGnrService egovDtaUseStatsIdGnrService;
 
 	/**
-	 * 자료이용현황 통계정보의 대상목록을 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return List - 자료이용현황 목록
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡앹쓣 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return List - ?먮즺?댁슜?꾪솴 紐⑸줉
 	 */
 	@Override
 	public List<DtaUseStatsVO> selectDtaUseStatsList(DtaUseStatsVO dtaUseStatsVO) throws Exception {
@@ -64,8 +64,8 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 자료이용현황 통계정보의 대상목록 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫????곷ぉ濡?移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	@Override
@@ -74,8 +74,8 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 자료이용현황 통계정보의 전체 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫???꾩껜 移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	@Override
@@ -84,9 +84,9 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 자료이용현황 통계의 상세정보를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return reprtStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return reprtStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 */
 	@Override
 	public List<DtaUseStatsVO> selectDtaUseStats(DtaUseStatsVO dtaUseStatsVO) throws Exception {
@@ -94,8 +94,8 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 자료이용현황 통계정보의 상세정보목록 카운트를 조회한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
+	 * ?먮즺?댁슜?꾪솴 ?듦퀎?뺣낫???곸꽭?뺣낫紐⑸줉 移댁슫?몃? 議고쉶?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
 	 * @return int
 	 */
 	@Override
@@ -104,9 +104,9 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 자료이용현황 정보를 생성한다.
-	 * @param jp - AOP의 pointcut을 위한 JoinPoint
-	 * @param dtaUseStats - 자료이용현황 model
+	 * ?먮즺?댁슜?꾪솴 ?뺣낫瑜??앹꽦?쒕떎.
+	 * @param jp - AOP??pointcut???꾪븳 JoinPoint
+	 * @param dtaUseStats - ?먮즺?댁슜?꾪솴 model
 	 */
     @Override
 	public void insertDtaUseStats(JoinPoint jp, @RequestParam Map<String, Object> commandMap) throws Exception {
@@ -116,16 +116,16 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-		DtaUseStats dtaUseStats = new DtaUseStatsVO();	//2011.08.23 수정 부분
+		DtaUseStats dtaUseStats = new DtaUseStatsVO();	//2011.08.23 ?섏젙 遺遺?
 		dtaUseStats.setAtchFileId(atchFileId);
 		dtaUseStats.setFileSn(fileSn);
 
 		dtaUseStats = dtaUseStatsDAO.selectInsertDtaUseStats(dtaUseStats);
 
-		// 2011.09.29 게시판외 다운로드시 에러발생(dtaUseStats 값이 null)을 방지
+		// 2011.09.29 寃뚯떆?먯쇅 ?ㅼ슫濡쒕뱶???먮윭諛쒖깮(dtaUseStats 媛믪씠 null)??諛⑹?
 		if (dtaUseStats != null) {
-			DtaUseStats vo = new DtaUseStatsVO();			//2011.08.23 수정 부분
-			String id = user == null ? "" : EgovStringUtil.isNullToString(user.getId()); // KISA 보안약점 조치 (2018-12-11, 신용호)
+			DtaUseStats vo = new DtaUseStatsVO();			//2011.08.23 ?섏젙 遺遺?
+			String id = user == null ? "" : EgovStringUtil.isNullToString(user.getId()); // KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
 			vo.setDtaUseStatsId(egovDtaUseStatsIdGnrService.getNextStringId());
 			vo.setBbsId(dtaUseStats.getBbsId());
 			vo.setNttId(dtaUseStats.getNttId());
@@ -138,9 +138,9 @@ public class EgovDtaUseStatsServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 등록일자별 통계정보를 그래프로 표현한다.
-	 * @param dtaUseStatsVO - 자료이용현황 VO
-	 * @return List - 등록일자별 자료이용현황 목록
+	 * ?깅줉?쇱옄蹂??듦퀎?뺣낫瑜?洹몃옒?꾨줈 ?쒗쁽?쒕떎.
+	 * @param dtaUseStatsVO - ?먮즺?댁슜?꾪솴 VO
+	 * @return List - ?깅줉?쇱옄蹂??먮즺?댁슜?꾪솴 紐⑸줉
 	 */
 	@Override
 	public List<DtaUseStatsVO> selectDtaUseStatsBarList(DtaUseStatsVO dtaUseStatsVO) throws Exception {

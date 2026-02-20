@@ -47,7 +47,7 @@ public class EgovBBSMasterDAO extends EgovComAbstractDAO {
 	}
 	
 	/*
-	 * 블로그 관련
+	 * 釉붾줈洹?愿??
 	 */
 	public List<BlogVO> selectBlogMasterInfs(BoardMasterVO boardMasterVO) {
 		return selectList("BBSMaster.selectBlogMasterList", boardMasterVO);

@@ -70,7 +70,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
         return CommonCodeDto.from(commonCodeRepository.save(Objects.requireNonNull(code)));
     }
-    // --- 공통분류코드 (CmmnClCode) ---
+    // --- 怨듯넻遺꾨쪟肄붾뱶 (CmmnClCode) ---
 
     @Override
     public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO) {
@@ -139,7 +139,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
                 .build();
     }
 
-    // --- 공통코드(그룹) (CmmnCode) ---
+    // --- 怨듯넻肄붾뱶(洹몃９) (CmmnCode) ---
 
     @Override
     public List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO) {
@@ -226,7 +226,7 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
                 .build();
     }
 
-    // --- 공통상세코드 (CmmnDetailCode) ---
+    // --- 怨듯넻?곸꽭肄붾뱶 (CmmnDetailCode) ---
 
     @Override
     public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull ComDefaultVO searchVO) {

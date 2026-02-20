@@ -22,18 +22,18 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 위키북마크를 처리하는 Controller Class 구현
- * @author 공통콤포넌트 장동한
+ * ?꾪궎遺곷쭏?щ? 泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.10.20
  * @version 1.0
  * @see
  * <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.20  장동한          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2010.10.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -55,15 +55,15 @@ public class EgovWikiBookmarkController {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovWikiBookmarkController.class);
 
     /**
-     * 위키북마크 목록을 조회한다.
-     * @param searchVO -위키북마크 model
-     * @param searchVO -위키북마크 model
+     * ?꾪궎遺곷쭏??紐⑸줉??議고쉶?쒕떎.
+     * @param searchVO -?꾪궎遺곷쭏??model
+     * @param searchVO -?꾪궎遺곷쭏??model
      * @param commandMap -Request Variable
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
-    @IncludedInfo(name="Wiki기능", order = 810 ,gid = 50)
+    @IncludedInfo(name="Wiki湲곕뒫", order = 810 ,gid = 50)
     @RequestMapping(value = "/uss/ion/wik/bmk/listWikiBookmark.do")
     public String EgovWikiBookmarkList(
     		@ModelAttribute("searchVO") WikiBookmark searchVO,
@@ -72,20 +72,20 @@ public class EgovWikiBookmarkController {
     		@RequestParam(value="checkList", required=false) List<String> checkList,
             ModelMap model) throws Exception {
 
-    	//변수 설정
+    	//蹂???ㅼ젙
     	String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
 
-        //로그인 객체 선언
+        //濡쒓렇??媛앹껜 ?좎뼵
         LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-        //삭제 모드로 실행시
+        //??젣 紐⑤뱶濡??ㅽ뻾??
         if(sCmd.equals("del")){
 
         	for(String checkData : checkList) {
@@ -94,7 +94,7 @@ public class EgovWikiBookmarkController {
 	            egovWikiBookmarkService.deleteWikiBookmark(wikiBookmark);
             }
 
-	        //페이지 인텍스 설정
+	        //?섏씠吏 ?명뀓???ㅼ젙
 	        searchVO.setPageIndex(1);
 
 	        return "redirect:/uss/ion/wik/bmk/listWikiBookmark.do";
@@ -131,10 +131,10 @@ public class EgovWikiBookmarkController {
 	}
 
     /**
-     * 위키북마크를 등록 한다.
-     * @param wikiBookmark -위키북마크 model
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * ?꾪궎遺곷쭏?щ? ?깅줉 ?쒕떎.
+     * @param wikiBookmark -?꾪궎遺곷쭏??model
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/wik/bmk/registWikiBookmark.do")
@@ -152,7 +152,7 @@ public class EgovWikiBookmarkController {
     		}
     	}
     	//log.debug("Controller EgovWikiBookmarkRegist.WikiBookmark>" + wikiBookmark);
-    	//중복 설정
+    	//以묐났 ?ㅼ젙
     	model.addAttribute("S_DUPL", sDupl);
     	return "egovframework/com/uss/ion/wik/bmk/EgovWikiBookmarkRegist";
 	}

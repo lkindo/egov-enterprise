@@ -13,25 +13,25 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "간부 상태 정보 DTO")
+@Schema(description = "Description")
 public class LeaderStatusDto {
 
-    @Schema(description = "간부 ID")
+    @Schema(description = "Description")
     private String leaderId;
 
-    @Schema(description = "간부 명")
+    @Schema(description = "Description")
     private String leaderNm;
 
-    @Schema(description = "조직 명")
+    @Schema(description = "Description")
     private String orgnztNm;
 
-    @Schema(description = "간부 상태")
+    @Schema(description = "Description")
     private String leaderSttus;
 
-    @Schema(description = "간부 상태 명")
+    @Schema(description = "Description")
     private String leaderSttusNm;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static LeaderStatusDto from(LeaderStatus entity) {

@@ -13,21 +13,21 @@ import egovframework.com.cop.smt.mtm.service.MemoTodoVO;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * 메모할일에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * 硫붾え?좎씪?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 메모할일에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 메모할일의 조회기능은 목록조회, 상세조회, 오늘의 할일조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 硫붾え?좎씪??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 硫붾え?좎씪??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶, ?ㅻ뒛???좎씪議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:06
+ * @created 28-6-2010 ?ㅼ쟾 10:59:06
  *   <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -41,9 +41,9 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	private EgovIdGnrService idgenServiceMemoTodo;
 
 	/**
-	 * 메모할일 목록을 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  Map<String, Object> - 메모할일 List
+	 * 硫붾え?좎씪 紐⑸줉??議고쉶?쒕떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return  Map<String, Object> - 硫붾え?좎씪 List
 	 *
 	 * @param memoTodoVO
 	 */
@@ -61,11 +61,11 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
 	/**
-	 * 메모할일 정보를 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  MemoTodoVO - 메모할일 VO
+	 * 硫붾え?좎씪 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return  MemoTodoVO - 硫붾え?좎씪 VO
 	 *
-	 * @param memoTodoVO - 메모할일 VO
+	 * @param memoTodoVO - 硫붾え?좎씪 VO
 	 */
 	@Override
 	public MemoTodoVO selectMemoTodo(MemoTodoVO memoTodoVO) throws Exception{
@@ -73,10 +73,10 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
 	/**
-	 * 메모할일 정보를 수정한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 *
-	 * @param memoTodo - 메모할일 model
+	 * @param memoTodo - 硫붾え?좎씪 model
 	 */
 	@Override
 	public void updateMemoTodo(MemoTodo memoTodo) throws Exception{
@@ -84,10 +84,10 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
 	/**
-	 * 메모할일 정보를 등록한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 *
-	 * @param memoTodo - 메모할일 model
+	 * @param memoTodo - 硫붾え?좎씪 model
 	 */
 	@Override
 	public void insertMemoTodo(MemoTodo memoTodo) throws Exception{
@@ -96,10 +96,10 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
 	/**
-	 * 메모할일 정보를 삭제한다.
-	 * @param MemoTodo - 메모할일 model
+	 * 硫붾え?좎씪 ?뺣낫瑜???젣?쒕떎.
+	 * @param MemoTodo - 硫붾え?좎씪 model
 	 *
-	 * @param memoTodo - 메모할일 model
+	 * @param memoTodo - 硫붾え?좎씪 model
 	 */
 	@Override
 	public void deleteMemoTodo(MemoTodo memoTodo) throws Exception{
@@ -107,11 +107,11 @@ public class EgovMemoTodoServiceImpl extends EgovAbstractServiceImpl implements 
 	}
 
 	/**
-	 * 메모할일 목록 중 오늘의 할일을 조회한다.
-	 * @param MemoTodoVO - 메모할일 VO
-	 * @return  List<MemoTodoVO> - 메모할일 List
+	 * 硫붾え?좎씪 紐⑸줉 以??ㅻ뒛???좎씪??議고쉶?쒕떎.
+	 * @param MemoTodoVO - 硫붾え?좎씪 VO
+	 * @return  List<MemoTodoVO> - 硫붾え?좎씪 List
 	 *
-	 * @param memoTodoVO - 메모할일 VO
+	 * @param memoTodoVO - 硫붾え?좎씪 VO
 	 */
 	@Override
 	public List<MemoTodoVO> selectMemoTodoListToday(MemoTodoVO memoTodoVO) throws Exception{

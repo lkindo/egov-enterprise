@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 회의실관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅺ?由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 회의실관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 회의실관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅺ?由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?뚯쓽?ㅺ?由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 package egovframework.com.uss.ion.mtg.service.impl;
@@ -42,9 +42,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	private EgovIdGnrService idgenResveService;
 
 	/**
-	 * 회의실관리정보를 관리하기 위해 등록된 회의실관리 목록을 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return List - 회의실관리 목록
+	 * ?뚯쓽?ㅺ?由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???뚯쓽?ㅺ?由?紐⑸줉??議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return List - ?뚯쓽?ㅺ?由?紐⑸줉
 	 */
 	@Override
 	public List<MtgPlaceManageVO> selectMtgPlaceManageList(MtgPlaceManageVO mtgPlaceManageVO) throws Exception{
@@ -52,9 +52,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 회의실관리목록 총 개수를 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return int - 회의실관리 카운트 수
+	 * ?뚯쓽?ㅺ?由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return int - ?뚯쓽?ㅺ?由?移댁슫????
 	 */
 	@Override
 	public int selectMtgPlaceManageListTotCnt(MtgPlaceManageVO mtgPlaceManageVO) throws Exception {
@@ -62,9 +62,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 등록된 회의실관리의 상세정보를 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return MtgPlaceManageVO - 회의실관리 VO
+	 * ?깅줉???뚯쓽?ㅺ?由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return MtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
 	 */
 	@Override
 	public MtgPlaceManage selectMtgPlaceManage(MtgPlaceManageVO mtgPlaceManageVO) throws Exception {
@@ -72,10 +72,10 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 회의실관리정보를 신규로 등록한다.
-	 * @param mtgPlaceManage   - 회의실관리 model
-	 * @param String           - 회의실비품정보
-	 * @param MtgPlaceManageVO - 회의실관리VOl
+	 * ?뚯쓽?ㅺ?由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param mtgPlaceManage   - ?뚯쓽?ㅺ?由?model
+	 * @param String           - ?뚯쓽?ㅻ퉬?덉젙蹂?
+	 * @param MtgPlaceManageVO - ?뚯쓽?ㅺ?由촚Ol
 	 */
 	@Override
 	@SuppressWarnings("unused")
@@ -92,8 +92,8 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 기 등록된 회의실관리정보를 수정한다.
-	 * @param mtgPlaceManage - 회의실관리 model
+	 * 湲??깅줉???뚯쓽?ㅺ?由ъ젙蹂대? ?섏젙?쒕떎.
+	 * @param mtgPlaceManage - ?뚯쓽?ㅺ?由?model
 	 */
 	@Override
 	public void updtMtgPlaceManage(MtgPlaceManage mtgPlaceManage,
@@ -105,8 +105,8 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 		}
 
 	/**
-	 * 기 등록된 회의실관리정보를 삭제한다.
-	 * @param mtgPlaceManage - 회의실관리 model
+	 * 湲??깅줉???뚯쓽?ㅺ?由ъ젙蹂대? ??젣?쒕떎.
+	 * @param mtgPlaceManage - ?뚯쓽?ㅺ?由?model
 	 */
 	@Override
 	public void deleteMtgPlaceManage(MtgPlaceManage mtgPlaceManage) throws Exception {
@@ -114,12 +114,12 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 		mtgPlaceManageDAO.deleteMtgPlaceManage(mtgPlaceManage);
 	}
 
-	/******** 회의실 예약 관리 *************/
+	/******** ?뚯쓽???덉빟 愿由?*************/
 
 	/**
-	 * 회의실 예약정보를 관리하기 위해 등록된 회의실 예약 목록을 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return List - 회의실관리 목록
+	 * ?뚯쓽???덉빟?뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉???뚯쓽???덉빟 紐⑸줉??議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return List - ?뚯쓽?ㅺ?由?紐⑸줉
 	 */
 	@Override
 	public List<MtgPlaceManageVO> selectMtgPlaceResveManageList(MtgPlaceManageVO mtgPlaceManageVO) throws Exception{
@@ -139,9 +139,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 회의실예약 신청화면을 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return MtgPlaceManageVO - 회의실관리 VO
+	 * ?뚯쓽?ㅼ삁???좎껌?붾㈃??議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return MtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
 	 */
 	@Override
 	public MtgPlaceManageVO selectMtgPlaceResve(MtgPlaceManageVO mtgPlaceManageVO) throws Exception {
@@ -149,9 +149,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 등록된 회의실 예약 상세정보를 조회한다.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return MtgPlaceManageVO - 회의실관리 VO
+	 * ?깅줉???뚯쓽???덉빟 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return MtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
 	 */
 	@Override
 	public MtgPlaceManageVO selectMtgPlaceResveDetail(MtgPlaceManageVO mtgPlaceManageVO) throws Exception {
@@ -159,8 +159,8 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 회의실 예약정보를 신규로 등록한다.
-	 * @param mtgPlaceManage - 회의실예약 model
+	 * ?뚯쓽???덉빟?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param mtgPlaceManage - ?뚯쓽?ㅼ삁??model
 	 */
 	@Override
 	public void insertMtgPlaceResve(MtgPlaceResve mtgPlaceResve) throws Exception {
@@ -171,8 +171,8 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 기 등록된 회의실 예약정보를 수정한다.
-	 * @param mtgPlaceManage - 회의실예약 model
+	 * 湲??깅줉???뚯쓽???덉빟?뺣낫瑜??섏젙?쒕떎.
+	 * @param mtgPlaceManage - ?뚯쓽?ㅼ삁??model
 	 */
 	@Override
 	public void updtMtgPlaceResve(MtgPlaceResve mtgPlaceResve) throws Exception {
@@ -181,8 +181,8 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 	}
 
 	/**
-	 * 기 등록된 회의실 예약정보를 삭제한다.
-	 * @param mtgPlaceManage - 회의실예약 model
+	 * 湲??깅줉???뚯쓽???덉빟?뺣낫瑜???젣?쒕떎.
+	 * @param mtgPlaceManage - ?뚯쓽?ㅼ삁??model
 	 */
 	@Override
 	public void deleteMtgPlaceResve(MtgPlaceResve mtgPlaceResve) throws Exception {
@@ -192,9 +192,9 @@ public class EgovMtgPlaceManageServiceImpl extends EgovAbstractServiceImpl imple
 
 
 	/**
-	 * 회의실 중복여부 체크.
-	 * @param mtgPlaceManageVO - 회의실관리 VO
-	 * @return int - 중복건수
+	 * ?뚯쓽??以묐났?щ? 泥댄겕.
+	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
+	 * @return int - 以묐났嫄댁닔
 	 */
 	@Override
 	public int mtgPlaceResveDplactCeck(MtgPlaceManageVO mtgPlaceManageVO) throws Exception {

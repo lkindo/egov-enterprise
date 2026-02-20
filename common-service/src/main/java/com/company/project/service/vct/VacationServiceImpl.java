@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ?��?/?�차 ?�동 계산 ?�진???�합???�비??구현�?
+ * ?닿?/?곗감 ?먮룞 怨꾩궛 ?붿쭊???듯빀???쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor
@@ -59,7 +59,7 @@ public class VacationServiceImpl implements VacationService {
     @Override
     @Transactional
     public void requestVacation(String userId, VacationDto dto) {
-        // 1. ?�여 ?�차 검�?(?�차/반차??경우)
+        // 1. ?붿뿬 ?곗감 寃利?(?곗감/諛섏감??寃쎌슦)
         if ("01".equals(dto.getVcatnSe()) || "02".equals(dto.getVcatnSe())) {
             double requestDays = calculateVacationDays(dto);
             AnnualLeave leaveMaster = annualLeaveRepository.findById(new AnnualLeaveId(dto.getOccrrncYear(), userId))
@@ -70,7 +70,7 @@ public class VacationServiceImpl implements VacationService {
             }
         }
 
-        // 2. ?�청 ?�보 ?�??
+        // 2. ?좎껌 ?뺣낫 ???
         Vacation entity = Vacation.builder()
                 .applcntId(userId)
                 .vcatnSe(dto.getVcatnSe())
@@ -79,7 +79,7 @@ public class VacationServiceImpl implements VacationService {
                 .vcatnResn(dto.getVcatnResn())
                 .reqstDe(LocalDate.now().format(DATE_FORMATTER))
                 .noonSe(dto.getNoonSe())
-                .confmAt("R") // ?�청(Requested)
+                .confmAt("R") // ?좎껌(Requested)
                 .build();
         entity.setFrstRegisterId(userId);
         vacationRepository.save(Objects.requireNonNull(entity));
@@ -111,7 +111,7 @@ public class VacationServiceImpl implements VacationService {
         Vacation entity = vacationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 1. ?�인 처리??경우 ?�차 차감 로직 ?�행
+        // 1. ?뱀씤 泥섎━??寃쎌슦 ?곗감 李④컧 濡쒖쭅 ?ㅽ뻾
         if ("Y".equals(confmAt) && ("01".equals(vcatnSe) || "02".equals(vcatnSe))) {
             double useDays = calculateVacationDays(VacationDto.from(entity));
             AnnualLeave leaveMaster = annualLeaveRepository
@@ -121,20 +121,20 @@ public class VacationServiceImpl implements VacationService {
             leaveMaster.deductLeave(useDays);
         }
 
-        // 2. ?�태 ?�데?�트
+        // 2. ?곹깭 ?낅뜲?댄듃
         entity.setConfmAt(confmAt);
         entity.setSanctnDt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         entity.setReturnResn(returnResn);
         entity.setSanctnerId(userId);
         entity.setLastUpdusrId(userId);
 
-        // 3. ?�림 ?�성
-        String statusText = "Y".equals(confmAt) ? "?�인" : "반려";
+        // 3. ?뚮┝ ?앹꽦
+        String statusText = "Y".equals(confmAt) ? "?뱀씤" : "諛섎젮";
         notificationRepository
                 .save(java.util.Objects.requireNonNull(com.company.project.domain.notification.Notification.builder()
                         .ntfcNo("NOTI_" + UUID.randomUUID().toString().substring(0, 15))
-                        .ntfcSj("?��? ?�청 처리 ?�림")
-                        .ntfcCn("본인???�청???��?가 " + statusText + "?�었?�니??")
+                        .ntfcSj("?닿? ?좎껌 泥섎━ ?뚮┝")
+                        .ntfcCn("蹂몄씤???좎껌???닿?媛 " + statusText + "?섏뿀?듬땲??")
                         .receiverId(applcntId)
                         .linkUrl("/cop/smt/vct")
                         .build()));
@@ -180,15 +180,15 @@ public class VacationServiceImpl implements VacationService {
     }
 
     /**
-     * ?��? ?�청 ?�보로�????�제 ?�용 ?�수�?계산?�는 ?��? 로직
+     * ?닿? ?좎껌 ?뺣낫濡쒕????ㅼ젣 ?ъ슜 ?쇱닔瑜?怨꾩궛?섎뒗 ?대? 濡쒖쭅
      */
     private double calculateVacationDays(VacationDto dto) {
-        // 반차??경우 0.5??고정
+        // 諛섏감??寃쎌슦 0.5??怨좎젙
         if (dto.getNoonSe() != null && !dto.getNoonSe().isEmpty()) {
             return 0.5;
         }
 
-        // ?�반 ?��???경우 ?�짜 차이 계산
+        // ?쇰컲 ?닿???寃쎌슦 ?좎쭨 李⑥씠 怨꾩궛
         try {
             LocalDate start = LocalDate.parse(dto.getBgnde(), DATE_FORMATTER);
             LocalDate end = LocalDate.parse(dto.getEndde(), DATE_FORMATTER);

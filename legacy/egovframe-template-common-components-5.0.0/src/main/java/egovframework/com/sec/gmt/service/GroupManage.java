@@ -3,18 +3,18 @@ package egovframework.com.sec.gmt.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 그룹관리에 대한 model 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 洹몃９愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이문준          최초 생성
+ *   2009.03.20  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -25,91 +25,91 @@ public class GroupManage extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 그룹 관리
+	 * 洹몃９ 愿由?
 	 */
 	private GroupManage groupManage;
 	/**
-	 * 그룹 ID
+	 * 洹몃９ ID
 	 */
 	private String groupId;
 	/**
-	 * 그룹명
+	 * 洹몃９紐?
 	 */
 	private String groupNm;
 	/**
-	 * 그룹등록일시
+	 * 洹몃９?깅줉?쇱떆
 	 */
 	private String groupCreatDe;
 	/**
-	 * 그룹설명
+	 * 洹몃９?ㅻ챸
 	 */
 	private String groupDc;
 	
 	/**
-	 * groupManage attribute 를 리턴한다.
+	 * groupManage attribute 瑜?由ы꽩?쒕떎.
 	 * @return GroupManage
 	 */
 	public GroupManage getGroupManage() {
 		return groupManage;
 	}
 	/**
-	 * groupManage attribute 값을 설정한다.
+	 * groupManage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param groupManage GroupManage 
 	 */
 	public void setGroupManage(GroupManage groupManage) {
 		this.groupManage = groupManage;
 	}
 	/**
-	 * groupId attribute 를 리턴한다.
+	 * groupId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getGroupId() {
 		return groupId;
 	}
 	/**
-	 * groupId attribute 값을 설정한다.
+	 * groupId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param groupId String 
 	 */
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
 	}
 	/**
-	 * groupNm attribute 를 리턴한다.
+	 * groupNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getGroupNm() {
 		return groupNm;
 	}
 	/**
-	 * groupNm attribute 값을 설정한다.
+	 * groupNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param groupNm String 
 	 */
 	public void setGroupNm(String groupNm) {
 		this.groupNm = groupNm;
 	}
 	/**
-	 * groupCreatDe attribute 를 리턴한다.
+	 * groupCreatDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getGroupCreatDe() {
 		return groupCreatDe;
 	}
 	/**
-	 * groupCreatDe attribute 값을 설정한다.
+	 * groupCreatDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param groupCreatDe String 
 	 */
 	public void setGroupCreatDe(String groupCreatDe) {
 		this.groupCreatDe = groupCreatDe;
 	}
 	/**
-	 * groupDc attribute 를 리턴한다.
+	 * groupDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getGroupDc() {
 		return groupDc;
 	}
 	/**
-	 * groupDc attribute 값을 설정한다.
+	 * groupDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param groupDc String 
 	 */
 	public void setGroupDc(String groupDc) {

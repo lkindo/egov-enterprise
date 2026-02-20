@@ -31,12 +31,12 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 프록시서비스정보에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 프록시서비스정보에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 프록시서비스정보의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
  * @author lee.m.j
@@ -45,15 +45,15 @@ import jakarta.validation.Valid;
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.28  lee.m.j      최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.12.05  신용호          KISA 보안약점 조치 (경로조작및 자원 삽입)
- *   2025.09.17  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(변수명에 밑줄 사용)
- *   2025.09.17  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2010.06.28  lee.m.j      理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.12.05  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (寃쎈줈議곗옉諛??먯썝 ?쎌엯)
+ *   2025.09.17  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
+ *   2025.09.17  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -75,7 +75,7 @@ public class EgovProxySvcController {
 	private EgovCmmUseService egovCmmUseService;
 
 	/**
-	 * 프록시서비스정보 목록화면 이동
+	 * ?꾨줉?쒖꽌鍮꾩뒪?뺣낫 紐⑸줉?붾㈃ ?대룞
 	 *
 	 * @return String
 	 */
@@ -85,12 +85,12 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 프록시서비스를 관리하기 위해 등록된 프록시정보 목록을 조회한다.
+	 * ?꾨줉?쒖꽌鍮꾩뒪瑜?愿由ы븯湲??꾪빐 ?깅줉???꾨줉?쒖젙蹂?紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param proxySvcVO - 프록시서비스 Vo
-	 * @return String - 리턴 Url
+	 * @param proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "프록시서비스", order = 2140, gid = 90)
+	@IncludedInfo(name = "?꾨줉?쒖꽌鍮꾩뒪", order = 2140, gid = 90)
 	@RequestMapping(value = "/utl/sys/pxy/selectProxySvcList.do")
 	public String selectProxySvcList(@ModelAttribute("proxySvcVO") ProxySvcVO proxySvcVO, ModelMap model)
 			throws Exception {
@@ -116,11 +116,11 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 등록된 프록시서비스의 상세정보를 조회한다.
+	 * ?깅줉???꾨줉?쒖꽌鍮꾩뒪???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param proxyId    - String
-	 * @param proxySvcVO - 프록시서비스 Vo
-	 * @return String - 리턴 Url
+	 * @param proxySvcVO - ?꾨줉?쒖꽌鍮꾩뒪 Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/getProxySvc.do")
 	public String selectProxySvc(@RequestParam("proxyId") String proxyId,
@@ -134,10 +134,10 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 프록시서비스를 신규로 등록하는 화면으로 이동한다.
+	 * ?꾨줉?쒖꽌鍮꾩뒪瑜??좉퇋濡??깅줉?섎뒗 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param proxySvc - 프록시서비스 model
-	 * @return String - 리턴 Url
+	 * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/addViewProxySvc.do")
 	public String insertViewProxySvc(@ModelAttribute("proxySvcVO") ProxySvcVO proxySvcVO, ModelMap model)
@@ -150,10 +150,10 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 프록시서비스를 신규로 등록한다.
+	 * ?꾨줉?쒖꽌鍮꾩뒪瑜??좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param proxySvc - 프록시서비스 model
-	 * @return String - 리턴 Url
+	 * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/addProxySvc.do")
 	public String insertProxySvc(@ModelAttribute("proxySvcVO") ProxySvcVO proxySvcVO,
@@ -166,7 +166,7 @@ public class EgovProxySvcController {
 		} else {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-			Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+			Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 			if (!isAuthenticated) {
 				return "redirect:/uat/uia/egovLoginUsr.do";
@@ -183,11 +183,11 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 기 등록된 프록시서비스를 수정하는 화면으로 이동한다.
+	 * 湲??깅줉???꾨줉?쒖꽌鍮꾩뒪瑜??섏젙?섎뒗 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
 	 * @param proxyId  - String
-	 * @param proxySvc - 프록시서비스 model
-	 * @return String - 리턴 Url
+	 * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/updtViewProxySvc.do")
 	public String updateViewProxySvc(@RequestParam("proxyId") String proxyId,
@@ -201,10 +201,10 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 기 등록된 프록시서비스를 수정한다.
+	 * 湲??깅줉???꾨줉?쒖꽌鍮꾩뒪瑜??섏젙?쒕떎.
 	 *
-	 * @param proxySvc - 프록시서비스 model
-	 * @return String - 리턴 Url
+	 * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/updtProxySvc.do")
 	public String updateProxySvc(@ModelAttribute("proxySvc") ProxySvc proxySvc,
@@ -217,7 +217,7 @@ public class EgovProxySvcController {
 		} else {
 			LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-			Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+			Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 			if (!isAuthenticated) {
 				return "redirect:/uat/uia/egovLoginUsr.do";
@@ -234,10 +234,10 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 기 등록된 프록시서비스를 삭제한다.
+	 * 湲??깅줉???꾨줉?쒖꽌鍮꾩뒪瑜???젣?쒕떎.
 	 *
-	 * @param proxySvc - 프록시서비스 model
-	 * @return String - 리턴 Url
+	 * @param proxySvc - ?꾨줉?쒖꽌鍮꾩뒪 model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/removeProxySvc.do")
 	public String deleteProxySvc(@RequestParam("proxyId") String proxyId, @ModelAttribute("proxySvc") ProxySvc proxySvc,
@@ -250,7 +250,7 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 프록시서비스정보 목록화면 이동
+	 * ?꾨줉?쒖꽌鍮꾩뒪?뺣낫 紐⑸줉?붾㈃ ?대룞
 	 *
 	 * @return String
 	 */
@@ -267,10 +267,10 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 프록시서비스를 모니터링하기 위해 등록된 프록시로그 목록을 조회한다.
+	 * ?꾨줉?쒖꽌鍮꾩뒪瑜?紐⑤땲?곕쭅?섍린 ?꾪빐 ?깅줉???꾨줉?쒕줈洹?紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param proxyLogVO - 프록시로그 Vo
-	 * @return String - 리턴 Url
+	 * @param proxyLogVO - ?꾨줉?쒕줈洹?Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/pxy/selectProxyLogList.do")
 	public String selectProxyLogList(@ModelAttribute("proxyLogVO") ProxyLogVO proxyLogVO,
@@ -308,7 +308,7 @@ public class EgovProxySvcController {
 	}
 
 	/**
-	 * 공통코드 호출
+	 * 怨듯넻肄붾뱶 ?몄텧
 	 *
 	 * @param comDefaultCodeVO ComDefaultCodeVO
 	 * @param codeId           String

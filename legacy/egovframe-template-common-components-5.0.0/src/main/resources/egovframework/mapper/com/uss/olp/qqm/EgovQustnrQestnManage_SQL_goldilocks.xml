@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.24   	이기하     	 	테이블 표준화에 따른 수정사항 반영
-  							QUSTNR_TMPLAT_ID 를			 	QESTNR_TMPLAT_ID 로 변경
-							FRST_REGIST_PNTTM 를			FRST_REGISTER_PNTTM 로 변경
-							QUSTNR_QESITM_ID 를				QESTNR_QESITM_ID 로 변경
-							QUSTNR_SJ 를					QESTNR_SJ 로 변경
-							QUSTNR_TRGET 를					QESTNR_TRGET 로 변경
-  2011.10.05	정진오		보안 취약점 점검사항에 따른 수정사항 반영
-  							${searchKeyword}를	 #{searchKeyword} 로 변경
-  							${searchCondition}는 <isEqual property="searchCondition" compareValue="선택조건명">으로 수정
-  2017.07.17         김예영			표준프레임워크 v3.7 개선 (주석제거, CDATA 추가)  							
+  2011.8.24   	?닿린??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							QUSTNR_TMPLAT_ID 瑜?		 	QESTNR_TMPLAT_ID 濡?蹂寃?
+							FRST_REGIST_PNTTM 瑜?		FRST_REGISTER_PNTTM 濡?蹂寃?
+							QUSTNR_QESITM_ID 瑜?			QESTNR_QESITM_ID 濡?蹂寃?
+							QUSTNR_SJ 瑜?				QESTNR_SJ 濡?蹂寃?
+							QUSTNR_TRGET 瑜?				QESTNR_TRGET 濡?蹂寃?
+  2011.10.05	?뺤쭊??	蹂댁븞 痍⑥빟???먭??ы빆???곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							${searchKeyword}瑜? #{searchKeyword} 濡?蹂寃?
+  							${searchCondition}??<isEqual property="searchCondition" compareValue="?좏깮議곌굔紐?>?쇰줈 ?섏젙
+  2017.07.17         源?덉쁺			?쒖??꾨젅?꾩썙??v3.7 媛쒖꽑 (二쇱꽍?쒓굅, CDATA 異붽?)  							
 --><!--Converted at: Wed May 11 15:51:40 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="QustnrQestnManage">
 
-	<!-- 설문문항:: 객관식 통계  -->
+	<!-- ?ㅻЦ臾명빆:: 媛앷????듦퀎  -->
 	<select id="selectQustnrManageStatistics" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -33,7 +33,7 @@
 		GROUP BY A.QUSTNR_IEM_ID
 		]]>
 	</select>
-	<!-- 설문문항:: 응답자답변내용 결과/기타답변내용 결과 통계  -->
+	<!-- ?ㅻЦ臾명빆:: ?묐떟?먮떟蹂?댁슜 寃곌낵/湲고??듬??댁슜 寃곌낵 ?듦퀎  -->
 	<select id="selectQustnrManageStatistics2" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -45,7 +45,7 @@
 		]]>
 	</select>
 
-	<!-- 설문문항:: 설문지 제목 검색  -->
+	<!-- ?ㅻЦ臾명빆:: ?ㅻЦ吏 ?쒕ぉ 寃?? -->
 	<select id="selectQustnrManageQESTNR_SJ" parameterType="java.util.Map" resultType="egovMap">
 	<![CDATA[
 	SELECT QUSTNR_SJ
@@ -54,20 +54,20 @@
 	]]>
 	</select>
 
-	<!-- 설문조사(설문결과) 삭제 -->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ寃곌낵) ??젣 -->
 	<delete id="deleteQustnrRespondInfo">
 	<![CDATA[
 	DELETE FROM COMTNQUSTNRRSPNSRESULT WHERE QUSTNR_QESITM_ID = #{qestnrQesitmId}
 	]]>
 	</delete>
-	<!-- 설문항목 삭제 -->
+	<!-- ?ㅻЦ??ぉ ??젣 -->
 	<delete id="deleteQustnrItemManage">
 	<![CDATA[
 	DELETE FROM COMTNQUSTNRIEM WHERE QUSTNR_QESITM_ID = #{qestnrQesitmId}
 	]]>
 	</delete>
 
-	<!-- 설문문항::삭제  -->
+	<!-- ?ㅻЦ臾명빆::??젣  -->
 	<delete id="deleteQustnrQestnManage">
 			<![CDATA[
 			DELETE FROM COMTNQUSTNRQESITM
@@ -75,7 +75,7 @@
 			]]>
 	</delete>
 
-	<!-- 설문문항::수정  -->
+	<!-- ?ㅻЦ臾명빆::?섏젙  -->
 	<update id="updateQustnrQestnManage">
 		<![CDATA[
 		UPDATE COMTNQUSTNRQESITM
@@ -90,7 +90,7 @@
 		]]>
 	</update>
 
-	<!-- 설문문항::상세보기 -->
+	<!-- ?ㅻЦ臾명빆::?곸꽭蹂닿린 -->
 	<select id="selectQustnrQestnManageDetail" parameterType="egovframework.com.uss.olp.qqm.service.QustnrQestnManageVO" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -112,7 +112,7 @@
 		]]>
 	</select>
 
-	<!-- 설문문항::목록조회_게시물정보 -->
+	<!-- ?ㅻЦ臾명빆::紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectQustnrQestnManage" parameterType="comDefaultVO" resultType="egovMap">
 	<![CDATA[
 	SELECT *
@@ -160,7 +160,7 @@
 	]]>
 	</select>
 
-	<!-- 설문문항::목록조회_게시물 총개수  -->
+	<!-- ?ㅻЦ臾명빆::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectQustnrQestnManageCnt" parameterType="comDefaultVO" resultType="int">
 		<![CDATA[
 		SELECT
@@ -182,7 +182,7 @@
 	 </if>
 	</select>
 
-	<!-- 설문문항::입력  -->
+	<!-- ?ㅻЦ臾명빆::?낅젰  -->
 	<insert id="insertQustnrQestnManage">
 	 
 		<![CDATA[

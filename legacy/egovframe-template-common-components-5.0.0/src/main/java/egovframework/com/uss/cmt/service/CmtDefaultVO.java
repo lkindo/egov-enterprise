@@ -3,18 +3,18 @@ package egovframework.com.uss.cmt.service;
 import java.io.Serializable;
 
 /**
- * 출퇴근관리 VO 클래스
- * @author 표준프레임워크센터 개발팀
+ * 異쒗눜洹쇨?由?VO ?대옒??
+ * @author ?쒖??꾨젅?꾩썙?ъ꽱??媛쒕컻?
  * @since 2014.12.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일          수정자       수정내용
+ *   ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2014.12.20     개발팀       최초 생성
+ *   2014.12.20     媛쒕컻?       理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -22,22 +22,22 @@ public class CmtDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -2782974258506027986L;
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
 
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -51,7 +51,7 @@ public class CmtDefaultVO implements Serializable {
 
 
 	/**
-	 * searchCondition attribute 값을  리턴한다.
+	 * searchCondition attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -60,7 +60,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchCondition attribute 값을 설정한다.
+	 * searchCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchCondition String
 	 */
@@ -69,7 +69,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 값을  리턴한다.
+	 * searchKeyword attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -78,7 +78,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 값을 설정한다.
+	 * searchKeyword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchKeyword String
 	 */
@@ -87,7 +87,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 값을  리턴한다.
+	 * searchUseYn attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -96,7 +96,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 값을 설정한다.
+	 * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchUseYn String
 	 */
@@ -105,7 +105,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 값을  리턴한다.
+	 * pageIndex attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -114,7 +114,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 값을 설정한다.
+	 * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageIndex int
 	 */
@@ -123,7 +123,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 값을  리턴한다.
+	 * pageUnit attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -132,7 +132,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 값을 설정한다.
+	 * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageUnit int
 	 */
@@ -141,7 +141,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 값을  리턴한다.
+	 * pageSize attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -150,7 +150,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 값을 설정한다.
+	 * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageSize int
 	 */
@@ -159,7 +159,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 값을  리턴한다.
+	 * firstIndex attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -168,7 +168,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 값을 설정한다.
+	 * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param firstIndex int
 	 */
@@ -177,7 +177,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 값을  리턴한다.
+	 * lastIndex attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -186,7 +186,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 값을 설정한다.
+	 * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param lastIndex int
 	 */
@@ -195,7 +195,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을  리턴한다.
+	 * recordCountPerPage attribute 媛믪쓣  由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -204,7 +204,7 @@ public class CmtDefaultVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을 설정한다.
+	 * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param recordCountPerPage int
 	 */

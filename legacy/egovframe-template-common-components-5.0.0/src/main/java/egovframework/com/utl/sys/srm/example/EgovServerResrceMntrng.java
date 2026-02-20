@@ -22,9 +22,9 @@ import java.lang.reflect.Modifier;
 //import jakarta.management.remote.JMXServiceURL;
 
 /*
- *       수정일         수정자                   수정내용
+ *       ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- * 2017.02.07 	이정은 	시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-210]
+ * 2017.02.07 	?댁젙? 	?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-210]
  */
 
 public class EgovServerResrceMntrng implements EgovServerResrceMntrngMBean {
@@ -40,7 +40,7 @@ public class EgovServerResrceMntrng implements EgovServerResrceMntrngMBean {
 				try {
 					value = method.invoke(operatingSystemMXBean);
 
-				} catch (IllegalAccessException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
+				} catch (IllegalAccessException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					value = e;
 				} catch (IllegalArgumentException e) {
 					value = e;
@@ -90,7 +90,7 @@ public class EgovServerResrceMntrng implements EgovServerResrceMntrngMBean {
 		return (totalMemory - freeMemory) / (double)totalMemory * 100D;
 	}
 
-	//KISA 보안약점 조치 (2018-10-29, 윤창원)
+	//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 /*	public static void main(String[] args) {
 		try {
 
@@ -110,7 +110,7 @@ public class EgovServerResrceMntrng implements EgovServerResrceMntrngMBean {
 
 			cs.start();
 
-		//2017.02.08 	이정은 	시큐어코딩(ES)-오류 메시지를 통한 정보노출[CWE-210]
+		//2017.02.08 	?댁젙? 	?쒗걧?댁퐫??ES)-?ㅻ쪟 硫붿떆吏瑜??듯븳 ?뺣낫?몄텧[CWE-210]
 		} catch (MalformedObjectNameException e) {
 			LOGGER.error("[MalformedObjectNameException] : server connection");
 		} catch (InstanceAlreadyExistsException e) {

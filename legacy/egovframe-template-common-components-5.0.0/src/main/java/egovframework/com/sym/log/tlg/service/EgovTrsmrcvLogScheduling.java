@@ -7,15 +7,15 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovTrsmrcvLogScheduling.java
- * @Description : 송수신 로그 요약을 위한 스케쥴링 클래스
+ * @Description : ?≪닔??濡쒓렇 ?붿빟???꾪븳 ?ㅼ?伊대쭅 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.tlg)
+ *    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.tlg)
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -28,8 +28,8 @@ public class EgovTrsmrcvLogScheduling extends EgovAbstractServiceImpl {
 	private EgovTrsmrcvLogService trsmrcvLogService;
 
 	/**
-	 * 송수신 로그정보를 요약한다.
-	 * 전날의 로그를 요약하여 입력하고, 6개월전의 로그를 삭제한다.
+	 * ?≪닔??濡쒓렇?뺣낫瑜??붿빟?쒕떎.
+	 * ?꾨궇??濡쒓렇瑜??붿빟?섏뿬 ?낅젰?섍퀬, 6媛쒖썡?꾩쓽 濡쒓렇瑜???젣?쒕떎.
 	 *
 	 * @param
 	 * @return

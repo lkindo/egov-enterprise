@@ -22,23 +22,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 행정코드에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한 Controller를
- * 정의한다
+ * ?됱젙肄붾뱶??愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳 Controller瑜?
+ * ?뺤쓽?쒕떎
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2024.10.29  권태성          등록 & 수정의 화면과 데이터를 처리하는 method 분리, validation 적용
- *   2025.07.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2024.10.29  沅뚰깭??         ?깅줉 & ?섏젙???붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━, validation ?곸슜
+ *   2025.07.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -53,7 +53,7 @@ public class EgovCcmAdministCodeManageController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 행정코드를 삭제한다.
+	 * ?됱젙肄붾뱶瑜???젣?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -69,7 +69,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드를 등록화면
+	 * ?됱젙肄붾뱶瑜??깅줉?붾㈃
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -86,7 +86,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드를 등록한다.
+	 * ?됱젙肄붾뱶瑜??깅줉?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -108,7 +108,7 @@ public class EgovCcmAdministCodeManageController {
 		if (vo != null) {
 			administCode.setAdministZoneNm("");
 			administCode.setAdministZoneCode("");
-			model.addAttribute("message", "이미 등록된 행정구역코드가 존재합니다.");
+			model.addAttribute("message", "?대? ?깅줉???됱젙援ъ뿭肄붾뱶媛 議댁옱?⑸땲??");
 			return "egovframework/com/sym/ccm/adc/EgovCcmAdministCodeRegist";
 		}
 
@@ -119,7 +119,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드 상세항목을 조회한다.
+	 * ?됱젙肄붾뱶 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -137,7 +137,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드 목록을 조회한다.
+	 * ?됱젙肄붾뱶 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -145,7 +145,7 @@ public class EgovCcmAdministCodeManageController {
 	 * @return "egovframework/com/sym/ccm/adc/EgovCcmAdministCodeList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "행정코드관리", order = 1010, gid = 60)
+	@IncludedInfo(name = "?됱젙肄붾뱶愿由?, order = 1010, gid = 60)
 	@RequestMapping(value = "/sym/ccm/adc/EgovCcmAdministCodeList.do")
 	public String selectAdministCodeList(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("searchVO") AdministCodeVO searchVO, ModelMap model) throws Exception {
@@ -174,7 +174,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 일반달력 팝업 메인창을 호출한다.
+	 * ?쇰컲?щ젰 ?앹뾽 硫붿씤李쎌쓣 ?몄텧?쒕떎.
 	 * 
 	 * @param model
 	 * @return "egovframework/com/sym/ccm/adc/EgovCcmAdministCodePopup"
@@ -186,7 +186,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드 팝업 목록을 조회한다.
+	 * ?됱젙肄붾뱶 ?앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -222,7 +222,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드 수정화면
+	 * ?됱젙肄붾뱶 ?섏젙?붾㈃
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -243,7 +243,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * 행정코드를 수정한다.
+	 * ?됱젙肄붾뱶瑜??섏젙?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param administCode
@@ -273,7 +273,7 @@ public class EgovCcmAdministCodeManageController {
 	}
 
 	/**
-	 * Map 내용을 확인한다.
+	 * Map ?댁슜???뺤씤?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @return

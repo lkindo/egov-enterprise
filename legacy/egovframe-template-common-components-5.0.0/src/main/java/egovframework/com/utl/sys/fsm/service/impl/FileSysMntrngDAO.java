@@ -10,23 +10,23 @@ import egovframework.com.utl.sys.fsm.service.FileSysMntrngLogVO;
 import egovframework.com.utl.sys.fsm.service.FileSysMntrngVO;
 
 /**
- * 개요
- * - 파일시스템 모니터링대상에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 파일시스템 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 파일시스템 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?뚯씪?쒖뒪??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:26
+ * @created 28-6-2010 ?ㅼ쟾 11:33:26
  */
 @Repository("FileSysMntrngDAO")
 public class FileSysMntrngDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 주어진 조건에 맞는 파일시스템모니터링 대상 목록을 불러온다.
-	 * @param FileSysMntrngVO - 파일시스템모니터링 대상 VO
-	 * @return List<FileSysMntrngVO> - 파일시스템모니터링 대상 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?뚯씪?쒖뒪?쒕え?덊꽣留????紐⑸줉??遺덈윭?⑤떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪?쒕え?덊꽣留????VO
+	 * @return List<FileSysMntrngVO> - ?뚯씪?쒖뒪?쒕え?덊꽣留????List
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -35,9 +35,9 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 파일시스템모니터링 대상을 불러온다.
-	 * @param FileSysMntrngVO - 파일시스템모니터링 대상 VO
-	 * @return FileSysMntrngVO - 파일시스템모니터링 대상 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?뚯씪?쒖뒪?쒕え?덊꽣留???곸쓣 遺덈윭?⑤떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪?쒕え?덊꽣留????VO
+	 * @return FileSysMntrngVO - ?뚯씪?쒖뒪?쒕え?덊꽣留????VO
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -46,8 +46,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보를 수정한다.
-	 * @param FileSysMntrng - 파일시스템모니터링 대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫瑜??섏젙?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -56,8 +56,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보를 등록한다.
-	 * @param FileSysMntrng - 파일시스템모니터링 대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫瑜??깅줉?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -66,8 +66,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보를 삭제한다.
-	 * @param FileSysMntrng - 파일시스템모니터링 대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫瑜???젣?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -76,8 +76,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링대상 목록에 대한 전체 건수를 조회한다.
-	 * @param FileSysMntrngVO - 파일시스템모니터링 대상 VO
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅???紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪?쒕え?덊꽣留????VO
 	 * @return int
 	 *
 	 * @param fileSysMntrngVO
@@ -87,8 +87,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링 결과 정보를 수정한다.
-	 * @param FileSysMntrng - 파일시스템모니터링 대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 寃곌낵 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param FileSysMntrng - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
 	 *
 	 * @param fileSysMntrng
 	 */
@@ -97,9 +97,9 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 파일시스템모니터링 로그 목록을 불러온다.
-	 * @param FileSysMntrngVO - 파일시스템모니터링 로그 VO
-	 * @return List<FileSysMntrngLogVO> - 파일시스템모니터링 로그 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 紐⑸줉??遺덈윭?⑤떎.
+	 * @param FileSysMntrngVO - ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 VO
+	 * @return List<FileSysMntrngLogVO> - ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 List
 	 *
 	 * @param fileSysMntrngVO
 	 */
@@ -108,8 +108,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링로그 목록에 대한 전체 건수를 조회한다.
-	 * @param FileSysMntrngLogVO - 파일시스템모니터링 로그 VO
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅濡쒓렇 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param FileSysMntrngLogVO - ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 VO
 	 * @return int
 	 *
 	 * @param fileSysMntrngLogVO
@@ -119,9 +119,9 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 파일시스템모니터링 로그를 불러온다.
-	 * @param FileSysMntrngLogVO - 파일시스템모니터링 로그 VO
-	 * @return FileSysMntrngLogVO - 파일시스템모니터링 로그 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇瑜?遺덈윭?⑤떎.
+	 * @param FileSysMntrngLogVO - ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 VO
+	 * @return FileSysMntrngLogVO - ?뚯씪?쒖뒪?쒕え?덊꽣留?濡쒓렇 VO
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
@@ -130,8 +130,8 @@ public class FileSysMntrngDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 파일시스템 모니터링 대상 정보를 등록한다.
-	 * @param FileSysMntrngLog - 파일시스템모니터링 대상 model
+	 * ?뚯씪?쒖뒪??紐⑤땲?곕쭅 ????뺣낫瑜??깅줉?쒕떎.
+	 * @param FileSysMntrngLog - ?뚯씪?쒖뒪?쒕え?덊꽣留????model
 	 *
 	 * @param fileSysMntrngLog
 	 */

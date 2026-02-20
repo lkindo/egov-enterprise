@@ -58,7 +58,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�외 발생 ???�러 로그 기록 ?�인")
+        @DisplayName("?외 발생 ???러 로그 기록 ?인")
         void exception_occurs_logsError() throws Exception {
                 // Given
 
@@ -69,7 +69,7 @@ class LoggingVerificationTest {
                                 {
                                     "userId": "duplicateUser",
                                     "password": "password123!",
-                                    "userNm": "중복 ?�용??,
+                                    "userNm": "중복 ?용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -100,7 +100,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?��????�외 발생 ???�러 로그 기록 ?�인")
+        @DisplayName("?????외 발생 ???러 로그 기록 ?인")
         void runtimeException_occurs_logsError() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -110,7 +110,7 @@ class LoggingVerificationTest {
                                 {
                                     "userId": "testUser",
                                     "password": "password123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?스???용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -127,17 +127,17 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�상 ?�청 ???�보 로그 기록 ?�인")
+        @DisplayName("?상 ?청 ???보 로그 기록 ?인")
         void normalRequest_logsInfo() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
-                                .thenReturn(new UserResponse("testUser", "?�규 ?�용??, Role.USER));
+                                .thenReturn(new UserResponse("testUser", "?규 ?용??", Role.USER));
 
                 String requestBody = """
                                 {
                                     "userId": "newUser",
                                     "password": "password123!",
-                                    "userNm": "?�규 ?�용??,
+                                    "userNm": "?규 ?용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -154,7 +154,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�력 검�??�패 ??경고 로그 기록 ?�인")
+        @DisplayName("?력 검??패 ??경고 로그 기록 ?인")
         void validationFailure_logsWarning() throws Exception {
                 // Given
                 String invalidRequestBody = """
@@ -175,11 +175,11 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�용??조회 ?�청 ???�근 로그 기록 ?�인")
+        @DisplayName("?용??조회 ?청 ???근 로그 기록 ?인")
         void userLookupRequest_logsAccess() throws Exception {
                 // Given
                 when(userService.getUserById("testUser"))
-                                .thenReturn(new UserDto("testUser", "?�스???�용??, "USR00001", null, null, null, null));
+                                .thenReturn(new UserDto("testUser", "?스???용??", "USR00001", null, null, null, null));
 
                 // When
                 mockMvc.perform(get("/api/v1/users/testUser")
@@ -192,7 +192,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�이?�베?�스 ?�결 ?�패 ???�러 로그 기록 ?�인")
+        @DisplayName("?이?베?스 ?결 ?패 ???러 로그 기록 ?인")
         void databaseConnectionFailure_logsError() throws Exception {
                 // Given
                 when(userService.getUserList())
@@ -207,7 +207,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�증 ?�패 ??보안 로그 기록 ?�인")
+        @DisplayName("?증 ?패 ??보안 로그 기록 ?인")
         void authenticationFailure_logsSecurityEvent() throws Exception {
                 // When
                 mockMvc.perform(get("/api/v1/admin/users")
@@ -218,7 +218,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("권한 ?�이 관리자 API ?�근 ??보안 로그 기록 ?�인")
+        @DisplayName("권한 ?이 관리자 API ?근 ??보안 로그 기록 ?인")
         void unauthorizedAdminAccess_logsSecurityEvent() throws Exception {
                 // When
                 mockMvc.perform(get("/api/v1/admin/users")
@@ -230,7 +230,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("SQL Injection ?�도 감�? ??보안 로그 기록 ?�인")
+        @DisplayName("SQL Injection ?도 감? ??보안 로그 기록 ?인")
         void sqlInjectionAttempt_logsSecurityEvent() throws Exception {
                 // Given
                 String maliciousParam = "'; DROP TABLE NEMPLYRINFO; --";
@@ -244,7 +244,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("XSS 공격 ?�도 감�? ??보안 로그 기록 ?�인")
+        @DisplayName("XSS 공격 ?도 감? ??보안 로그 기록 ?인")
         void xssAttempt_logsSecurityEvent() throws Exception {
                 // Given
                 String requestBody = """
@@ -268,11 +268,11 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("API ?�출 ???�능 로그 기록 ?�인")
+        @DisplayName("API ?출 ???능 로그 기록 ?인")
         void apiCall_logsPerformanceMetrics() throws Exception {
                 // Given
                 when(userService.getUserList()).thenReturn(Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null)));
+                                new UserDto("user1", "?용??", "USR001", null, null, null, null)));
 
                 // When
                 mockMvc.perform(get("/api/v1/users")
@@ -284,7 +284,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�일 ?�로???�청 ???�일 관??로그 기록 ?�인")
+        @DisplayName("?일 ?로???청 ???일 관??로그 기록 ?인")
         void fileUploadRequest_logsFileOperation() throws Exception {
                 // When
                 mockMvc.perform(multipart("/api/v1/files/upload")
@@ -296,13 +296,13 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�시�??�행 ?�업 ???�닝 로그 기록 ?�인")
+        @DisplayName("?시??행 ?업 ???닝 로그 기록 ?인")
         void longRunningOperation_logsWarning() throws Exception {
                 // Given
                 when(userService.getUserList()).thenAnswer(invocation -> {
                         Thread.sleep(5000); // Simulate long running operation
                         return Arrays.asList(
-                                        new UserDto("user1", "?�용??", "USR001", null, null, null, null));
+                                        new UserDto("user1", "?용??", "USR001", null, null, null, null));
                 });
 
                 // When
@@ -314,7 +314,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("메모�?부�??�외 발생 ???�러 로그 기록 ?�인")
+        @DisplayName("메모?부??외 발생 ???러 로그 기록 ?인")
         void outOfMemoryError_logsError() throws Exception {
                 // Given
                 when(userService.getUserList()).thenThrow(new OutOfMemoryError("Out of memory"));
@@ -328,7 +328,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�레???� 과�?????경고 로그 기록 ?�인")
+        @DisplayName("?레??? 과?????경고 로그 기록 ?인")
         void threadPoolOverload_logsWarning() throws Exception {
                 // Given
                 when(userService.getUserList()).thenThrow(new RejectedExecutionException("Thread pool exhausted"));
@@ -342,7 +342,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�외 발생 ???�상 로그 기록 지???�인")
+        @DisplayName("?외 발생 ???상 로그 기록 지???인")
         void normalLogging_continuesAfterException() throws Exception {
                 // Given - First request causes error
                 when(userService.getUserById("errorUser"))
@@ -357,7 +357,7 @@ class LoggingVerificationTest {
 
                 // Given - Reset mock for normal response
                 when(userService.getUserById("normalUser"))
-                                .thenReturn(new UserDto("normalUser", "?�상 ?�용??, "USR00001", null, null, null, null));
+                                .thenReturn(new UserDto("normalUser", "?상 ?용??", "USR00001", null, null, null, null));
 
                 // When & Then - Normal request after error should still be logged normally
                 mockMvc.perform(get("/api/v1/users/normalUser")
@@ -368,11 +368,11 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("로그 메시지??추적 ID ?�함 ?��? ?�인")
+        @DisplayName("로그 메시지??추적 ID ?함 ?? ?인")
         void logMessage_containsTraceId() throws Exception {
                 // Given
                 when(userService.getUserById("userWithTraceId"))
-                                .thenReturn(new UserDto("userWithTraceId", "추적 ID ?�용??, "USR00001", null, null, null,
+                                .thenReturn(new UserDto("userWithTraceId", "추적 ID ?용??", "USR00001", null, null, null,
                                                 null));
 
                 // When
@@ -384,7 +384,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("?�외 발생 ???�택 ?�레?�스 로그 기록 ?�인")
+        @DisplayName("?외 발생 ???택 ?레?스 로그 기록 ?인")
         void exceptionStackTrace_logged() throws Exception {
                 // Given
                 RuntimeException exception = new RuntimeException("Test exception for stack trace");
@@ -400,7 +400,7 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("보안 관???�벤??로그 ?�맷 ?��????�인")
+        @DisplayName("보안 관???벤??로그 ?맷 ?????인")
         void securityEvent_logFormat_consistency() throws Exception {
                 // Given
                 when(userService.getUserById("securityEvent"))
@@ -416,11 +416,11 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("API ?�청/?�답 로그 ?�맷 ?��????�인")
+        @DisplayName("API ?청/?답 로그 ?맷 ?????인")
         void apiRequestResponse_logFormat_consistency() throws Exception {
                 // Given
                 when(userService.getUserById("logFormatTest"))
-                                .thenReturn(new UserDto("logFormatTest", "로그 ?�맷 ?�스???�용??, "USR00001", null, null, null,
+                                .thenReturn(new UserDto("logFormatTest", "로그 ?맷 ?스???용??", "USR00001", null, null, null,
                                                 null));
 
                 // When
@@ -433,11 +433,11 @@ class LoggingVerificationTest {
         }
 
         @Test
-        @DisplayName("로깅 ?�벨 변�????�작 ?�인")
+        @DisplayName("로깅 ?벨 변????작 ?인")
         void loggingLevel_change_behaviorCheck() throws Exception {
                 // Given
                 when(userService.getUserById("logLevelTest"))
-                                .thenReturn(new UserDto("logLevelTest", "로깅 ?�벨 ?�스???�용??, "USR00001", null, null, null,
+                                .thenReturn(new UserDto("logLevelTest", "로깅 ?벨 ?스???용??", "USR00001", null, null, null,
                                                 null));
 
                 // When

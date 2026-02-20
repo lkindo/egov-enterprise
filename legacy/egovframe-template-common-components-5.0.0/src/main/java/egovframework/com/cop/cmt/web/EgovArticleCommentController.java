@@ -23,19 +23,19 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 댓글 관리를 위한 컨트롤러 클래스
- * @author 공통서비스개발팀 신용호
+ * ?볤? 愿由щ? ?꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?좎슜??
  * @since 2016.07.22
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------       --------    ---------------------------
- *   2016.07.22   신용호              최초 생성
- *   2018.06.27     신용호		    댓글 등록후 처리 예외 수정
+ *   2016.07.22   ?좎슜??             理쒖큹 ?앹꽦
+ *   2018.06.27     ?좎슜??	    ?볤? ?깅줉??泥섎━ ?덉쇅 ?섏젙
  * </pre>
  */
 
@@ -54,7 +54,7 @@ public class EgovArticleCommentController {
     //protected Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 댓글관리 목록 조회를 제공한다.
+     * ?볤?愿由?紐⑸줉 議고쉶瑜??쒓났?쒕떎.
      *
      * @param boardVO
      * @param model
@@ -66,19 +66,19 @@ public class EgovArticleCommentController {
 
     	CommentVO articleCommentVO = new CommentVO();
 
-		// 수정 처리된 후 댓글 등록 화면으로 처리되기 위한 구현
+		// ?섏젙 泥섎━?????볤? ?깅줉 ?붾㈃?쇰줈 泥섎━?섍린 ?꾪븳 援ы쁽
 		if (commentVO.isModified()) {
 		    commentVO.setCommentNo("");
 		    commentVO.setCommentCn("");
 		}
 
-		// 수정을 위한 처리
+		// ?섏젙???꾪븳 泥섎━
 		if (!commentVO.getCommentNo().equals("")) {
 		    return "forward:/cop/cmt/updateArticleCommentView.do";
 		}
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
         if(!isAuthenticated) {
@@ -109,18 +109,18 @@ public class EgovArticleCommentController {
 		model.addAttribute("resultList", map.get("resultList"));
 		model.addAttribute("resultCnt", map.get("resultCnt"));
 		model.addAttribute("paginationInfo", paginationInfo);
-		model.addAttribute("type", "body");	// 댓글 페이지 body import용
+		model.addAttribute("type", "body");	// ?볤? ?섏씠吏 body import??
 
-		model.addAttribute("articleCommentVO", articleCommentVO);	// validator 용도
+		model.addAttribute("articleCommentVO", articleCommentVO);	// validator ?⑸룄
 
-		commentVO.setCommentCn("");	// 등록 후 댓글 내용 처리
+		commentVO.setCommentCn("");	// ?깅줉 ???볤? ?댁슜 泥섎━
 
 		return "egovframework/com/cop/cmt/EgovArticleCommentList";
     }
 
 
     /**
-     * 댓글을 등록한다.
+     * ?볤????깅줉?쒕떎.
      *
      * @param commentVO
      * @param comment
@@ -137,7 +137,7 @@ public class EgovArticleCommentController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "댓글내용은 필수 입력값입니다.");
+		    model.addAttribute("msg", "?볤??댁슜? ?꾩닔 ?낅젰媛믪엯?덈떎.");
 
 		    return "forward:/cop/bbs/selectArticleDetail.do";
 		}
@@ -166,7 +166,7 @@ public class EgovArticleCommentController {
 
 
     /**
-     * 댓글을 삭제한다.
+     * ?볤?????젣?쒕떎.
      *
      * @param commentVO
      * @param comment
@@ -199,7 +199,7 @@ public class EgovArticleCommentController {
 
 
     /**
-     * 댓글 수정 페이지로 이동한다.
+     * ?볤? ?섏젙 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param commentVO
      * @param model
@@ -210,7 +210,7 @@ public class EgovArticleCommentController {
     public String updateArticleCommentView(@ModelAttribute("searchVO") CommentVO commentVO, ModelMap model) throws Exception {
 
 	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-	 //KISA 보안취약점 조치 (2018-12-10, 신용호)
+	 //KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
     Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
     if(!isAuthenticated) {
@@ -253,7 +253,7 @@ public class EgovArticleCommentController {
 
 
     /**
-     * 댓글을 수정한다.
+     * ?볤????섏젙?쒕떎.
      *
      * @param commentVO
      * @param comment
@@ -270,7 +270,7 @@ public class EgovArticleCommentController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "내용은 필수 입력 값입니다.");
+		    model.addAttribute("msg", "?댁슜? ?꾩닔 ?낅젰 媛믪엯?덈떎.");
 
 		    return "forward:/cop/bbs/selectArticleDetail.do";
 		}

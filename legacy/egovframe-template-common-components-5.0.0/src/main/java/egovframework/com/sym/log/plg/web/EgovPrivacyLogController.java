@@ -16,12 +16,12 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovPrivacyLogController.java
- * @Description : 개인정보 조회 이력 관리를 위한 Controller 클래스
+ * @Description : 媛쒖씤?뺣낫 議고쉶 ?대젰 愿由щ? ?꾪븳 Controller ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.11	표준프레임워크		최초생성
+ *    2014.09.11	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author Vincent Han
  * @since 2014.09.11
  * @version 3.5
@@ -36,13 +36,13 @@ public class EgovPrivacyLogController {
 	protected EgovPropertyService propertyService;
 
 	/**
-	 * 개인정보조회 로그 목록 조회
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇 紐⑸줉 議고쉶
 	 *
 	 * @param privacyLog
 	 * @return sym/log/plg/EgovPrivacyLogList
 	 * @throws Exception
 	 */
-	@IncludedInfo(name="개인정보조회로그관리", listUrl="/sym/log/plg/SelectPrivacyLogList.do", order = 1085 ,gid = 60)
+	@IncludedInfo(name="媛쒖씤?뺣낫議고쉶濡쒓렇愿由?, listUrl="/sym/log/plg/SelectPrivacyLogList.do", order = 1085 ,gid = 60)
 	@RequestMapping(value="/sym/log/plg/SelectPrivacyLogList.do")
 	public String selectPrivacyLogList(@ModelAttribute("searchVO") PrivacyLog privacyLog,
 			ModelMap model) throws Exception{
@@ -72,7 +72,7 @@ public class EgovPrivacyLogController {
 	}
 
 	/**
-	 * 개인정보조회 로그 상세 조회
+	 * 媛쒖씤?뺣낫議고쉶 濡쒓렇 ?곸꽭 議고쉶
 	 *
 	 * @param privacyLog
 	 * @param model

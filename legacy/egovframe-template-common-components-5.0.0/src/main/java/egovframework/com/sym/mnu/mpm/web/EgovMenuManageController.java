@@ -36,30 +36,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 메뉴목록 관리및 메뉴생성, 사이트맵 생성을 처리하는 비즈니스 구현 클래스
+ * 硫붾돱紐⑸줉 愿由щ컦 硫붾돱?앹꽦, ?ъ씠?몃㏊ ?앹꽦??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2011.07.01  서준식          메뉴정보 삭제시 참조되고 있는 하위 메뉴가 있는지 체크하는 로직 추가
- *   2011.07.27  서준식          deleteMenuManageList() 메서드에서 메뉴 멀티 삭제 버그 수정
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.10.07  이기하          보안취약점 수정(파일 업로드시 엑셀파일만 가능하도록 추가)
- *   2015.05.28  조정국          메뉴리스트관리 선택시 "정상적으로 조회되었습니다"라는 alert창이 제일 먼저 뜨는것 수정 : 출력메시지 주석처리
- *   2020.11.02  신용호          KISA 보안약점 조치 - 자원해제
- *   2021.02.16  신용호          WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.07.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
- *   2025.07.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.07.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.07.01  ?쒖???         硫붾돱?뺣낫 ??젣??李몄“?섍퀬 ?덈뒗 ?섏쐞 硫붾돱媛 ?덈뒗吏 泥댄겕?섎뒗 濡쒖쭅 異붽?
+ *   2011.07.27  ?쒖???         deleteMenuManageList() 硫붿꽌?쒖뿉??硫붾돱 硫????젣 踰꾧렇 ?섏젙
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.10.07  ?닿린??         蹂댁븞痍⑥빟???섏젙(?뚯씪 ?낅줈?쒖떆 ?묒??뚯씪留?媛?ν븯?꾨줉 異붽?)
+ *   2015.05.28  議곗젙援?         硫붾돱由ъ뒪?멸?由??좏깮??"?뺤긽?곸쑝濡?議고쉶?섏뿀?듬땲???쇰뒗 alert李쎌씠 ?쒖씪 癒쇱? ?⑤뒗寃??섏젙 : 異쒕젰硫붿떆吏 二쇱꽍泥섎━
+ *   2020.11.02  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 - ?먯썝?댁젣
+ *   2021.02.16  ?좎슜??         WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.07.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
+ *   2025.07.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.07.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
  *
  *      </pre>
  */
@@ -85,16 +85,16 @@ public class EgovMenuManageController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 메뉴정보목록을 상세화면 호출 및 상세조회한다.
+	 * 硫붾돱?뺣낫紐⑸줉???곸꽭?붾㈃ ?몄텧 諛??곸꽭議고쉶?쒕떎.
 	 * 
 	 * @param searchKeyword String
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuDetailSelectUpdt"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuDetailSelectUpdt"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageListDetailSelect.do")
 	public String selectMenuManage(@RequestParam("req_menuNo") String searchKeyword,
 			@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -109,23 +109,23 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴목록 리스트조회한다.
+	 * 硫붾돱紐⑸줉 由ъ뒪?몄“?뚰븳??
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuManage"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuManage"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "메뉴관리리스트", order = 1091, gid = 60)
+	@IncludedInfo(name = "硫붾돱愿由щ━?ㅽ듃", order = 1091, gid = 60)
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageSelect.do")
 	public String selectMenuManageList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -151,16 +151,16 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴목록 멀티 삭제한다.
+	 * 硫붾돱紐⑸줉 硫????젣?쒕떎.
 	 * 
 	 * @param checkedMenuNoForDel String
-	 * @return 출력페이지정보 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping("/sym/mnu/mpm/EgovMenuManageListDelete.do")
 	public String deleteMenuManageList(@RequestParam("checkedMenuNoForDel") String checkedMenuNoForDel,
 			@ModelAttribute("menuManageVO") MenuManageVO menuManageVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -174,7 +174,7 @@ public class EgovMenuManageController {
 			menuManageVO.setMenuNo(Integer.parseInt(delMenuNo[0]));
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (menuManageService.selectUpperMenuNoByPk(menuManageVO) != 0) {
 			resultMsg = egovMessageSource.getMessage("fail.common.delete.upperMenuExist");
 			sLocationUrl = "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
@@ -191,11 +191,11 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴정보를 등록화면으로 이동 및 등록 한다.
+	 * 硫붾돱?뺣낫瑜??깅줉?붾㈃?쇰줈 ?대룞 諛??깅줉 ?쒕떎.
 	 * @param menuManageVO    MenuManageVO
 	 * @param commandMap      Map
-	 * @return 출력페이지정보 등록화면 호출시 "sym/mnu/mpm/EgovMenuRegist",
-	 *         출력페이지정보 등록처리시 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉?붾㈃ ?몄텧??"sym/mnu/mpm/EgovMenuRegist",
+	 *         異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??"forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuRegistInsert.do")
@@ -204,7 +204,7 @@ public class EgovMenuManageController {
 			throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -239,10 +239,10 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴정보를 수정 한다.
+	 * 硫붾돱?뺣낫瑜??섏젙 ?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuDetailSelectUpdt.do")
@@ -250,7 +250,7 @@ public class EgovMenuManageController {
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -276,17 +276,17 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴정보를 삭제 한다.
+	 * 硫붾돱?뺣낫瑜???젣 ?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/mnu/mpm/EgovMenuManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuManageDelete.do")
 	public String deleteMenuManage(@ModelAttribute("menuManageVO") MenuManageVO menuManageVO, ModelMap model)
 			throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -306,17 +306,17 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트를 조회한다.
+	 * 硫붾돱由ъ뒪?몃? 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuList"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuList"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "메뉴리스트관리", order = 1090, gid = 60)
+	@IncludedInfo(name = "硫붾돱由ъ뒪?멸?由?, order = 1090, gid = 60)
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListSelect.do")
 	public String selectMenuList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
 //		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -330,10 +330,10 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트의 메뉴정보를 등록한다.
+	 * 硫붾돱由ъ뒪?몄쓽 硫붾돱?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuList"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuList"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListInsert.do")
@@ -341,7 +341,7 @@ public class EgovMenuManageController {
 			ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -373,10 +373,10 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트의 메뉴정보를 수정한다.
+	 * 硫붾돱由ъ뒪?몄쓽 硫붾돱?뺣낫瑜??섏젙?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuList"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuList"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListUpdt.do")
@@ -384,7 +384,7 @@ public class EgovMenuManageController {
 			ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -410,10 +410,10 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트의 메뉴정보를 삭제한다.
+	 * 硫붾돱由ъ뒪?몄쓽 硫붾돱?뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuList"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuList"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListDelete.do")
@@ -421,7 +421,7 @@ public class EgovMenuManageController {
 			ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -436,16 +436,16 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트의 메뉴정보를 이동 메뉴목록을 조회한다.
+	 * 硫붾돱由ъ뒪?몄쓽 硫붾돱?뺣낫瑜??대룞 硫붾돱紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuMvmn"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuMvmn"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListSelectMvmn.do")
 	public String selectMenuListMvmn(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -458,16 +458,16 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴리스트의 메뉴정보를 이동 메뉴목록을 조회한다. (New)
+	 * 硫붾돱由ъ뒪?몄쓽 硫붾돱?뺣낫瑜??대룞 硫붾돱紐⑸줉??議고쉶?쒕떎. (New)
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuMvmn"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuMvmn"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuListSelectMvmnNew.do")
 	public String selectMenuListMvmnNew(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -479,20 +479,20 @@ public class EgovMenuManageController {
 		return "egovframework/com/sym/mnu/mpm/EgovMenuMvmnNew";
 	}
 
-	/* ### 일괄처리 프로세스 ### */
+	/* ### ?쇨큵泥섎━ ?꾨줈?몄뒪 ### */
 
 	/**
-	 * 메뉴생성 일괄삭제프로세스
+	 * 硫붾돱?앹꽦 ?쇨큵??젣?꾨줈?몄뒪
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuBndeRegist"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuBndeRegist"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuBndeAllDelete.do")
 	public String menuBndeAllDelete(@ModelAttribute("menuManageVO") MenuManageVO menuManageVO, ModelMap model)
 			throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -505,12 +505,12 @@ public class EgovMenuManageController {
 	}
 
 	/**
-	 * 메뉴일괄등록화면 호출 및 메뉴일괄등록처리 프로세스
+	 * 硫붾돱?쇨큵?깅줉?붾㈃ ?몄텧 諛?硫붾돱?쇨큵?깅줉泥섎━ ?꾨줈?몄뒪
 	 * 
 	 * @param commandMap   Map
 	 * @param menuManageVO MenuManageVO
 	 * @param request      HttpServletRequest
-	 * @return 출력페이지정보 "sym/mnu/mpm/EgovMenuBndeRegist"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/mpm/EgovMenuBndeRegist"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMenuBndeRegist.do")
@@ -521,7 +521,7 @@ public class EgovMenuManageController {
 		String sMessage = "";
 		String[] fileExtension = {"XLS", "XLSX"};
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -546,11 +546,11 @@ public class EgovMenuManageController {
 					}
 					String fileExtensionName = FilenameUtils.getExtension(originalFilename).toUpperCase();
 					boolean isExist = Arrays.stream(fileExtension).anyMatch(fileExtensionName::equals);
-					// 2022.11.11 시큐어코딩 처리
+					// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 					if (isExist) {
 
 						if (menuManageService.menuBndeAllDelete()) {
-							// KISA 보안약점 조치 - 자원해제
+							// KISA 蹂댁븞?쎌젏 議곗튂 - ?먯썝?댁젣
 							try (InputStream is = file.getInputStream();) {
 								sMessage = menuManageService.menuBndeRegist(menuManageVO, is);
 							} catch (IOException e) {
@@ -566,7 +566,7 @@ public class EgovMenuManageController {
 						}
 
 					} else {
-						LOGGER.info("xls, xlsx 파일 타입만 등록이 가능합니다.");
+						LOGGER.info("xls, xlsx ?뚯씪 ??낅쭔 ?깅줉??媛?ν빀?덈떎.");
 						resultMsg = egovMessageSource.getMessage("fail.common.msg");
 						model.addAttribute("resultMsg", resultMsg);
 						return "egovframework/com/sym/mnu/mpm/EgovMenuBndeRegist";

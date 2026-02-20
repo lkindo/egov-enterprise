@@ -14,28 +14,28 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "SMS 정보 DTO")
+@Schema(description = "Description")
 public class SmsDto {
 
     @Schema(description = "SMS ID")
     private String smsId;
 
-    @Schema(description = "발신 전화번호")
+    @Schema(description = "Description")
     private String trnsmitTelno;
 
-    @Schema(description = "발신 내용")
+    @Schema(description = "Description")
     private String trnsmitCn;
 
-    @Schema(description = "수신 건수")
+    @Schema(description = "Description")
     private Integer recptnCnt;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
-    @Schema(description = "고유 ID")
+    @Schema(description = "Description")
     private String uniqId;
 
     public String getFrstRegisterId() {
@@ -46,13 +46,13 @@ public class SmsDto {
         return createdDate;
     }
 
-    @Schema(description = "수신자 목록")
+    @Schema(description = "Description")
     private List<SmsRecptnDto> recipients;
 
-    @Schema(description = "검색 조건")
+    @Schema(description = "Description")
     private String searchCondition;
 
-    @Schema(description = "검색어")
+    @Schema(description = "Description")
     private String searchWrd;
 
     public static SmsDto from(Sms entity) {

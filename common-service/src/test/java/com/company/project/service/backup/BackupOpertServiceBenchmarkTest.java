@@ -44,7 +44,7 @@ public class BackupOpertServiceBenchmarkTest {
     private EgovCommonCodeService commonCodeService;
 
     @Test
-    @org.junit.jupiter.api.Disabled("NPE 문제 - 후속 작업 필요")
+    @org.junit.jupiter.api.Disabled("NPE 臾몄젣 - ?꾩냽 ?묒뾽 ?꾩슂")
     @Transactional
     public void testGetBackupOpertListPerformance() {
         // Given

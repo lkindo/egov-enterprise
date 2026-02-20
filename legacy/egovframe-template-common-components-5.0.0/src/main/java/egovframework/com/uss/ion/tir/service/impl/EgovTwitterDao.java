@@ -6,16 +6,16 @@ import org.springframework.stereotype.Repository;
 
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 /**
- * RSS태그관리를 처리하는 Dao Class 구현
- * @author 공통콤포넌트 장동한
+ * RSS?쒓렇愿由щ? 泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.10.04
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.10.04  장동한          최초 생성
+ *   2010.10.04  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,9 +23,9 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 public class EgovTwitterDao extends EgovComAbstractDAO {
 
     /**
-     * 트위터 계정을 조회 한다.
-     * @param param -조회할 정보가 담긴 객체
-     * @return Map - 조회 정보가 담긴 Map
+     * ?몄쐞??怨꾩젙??議고쉶 ?쒕떎.
+     * @param param -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return Map - 議고쉶 ?뺣낫媛 ?닿릿 Map
      * @throws Exception
      */
     public Map<?, ?> selectTwitterAccount(Map<?, ?> param) throws Exception {
@@ -34,9 +34,9 @@ public class EgovTwitterDao extends EgovComAbstractDAO {
 
 
     /**
-     * 트위터 계정을 건수를 조회 한다.
-     * @param param -조회할 정보가 담긴 객체
-     * @return int - 조회 정보가 담긴 Integer
+     * ?몄쐞??怨꾩젙??嫄댁닔瑜?議고쉶 ?쒕떎.
+     * @param param -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int - 議고쉶 ?뺣낫媛 ?닿릿 Integer
      * @throws Exception
      */
     public int selectTwitterAccountCheck(Map<?, ?> param) throws Exception {
@@ -44,24 +44,24 @@ public class EgovTwitterDao extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 트위터 계정을 신규로 등록한다.
-	 * @param param - 조회할 정보가 담긴 Map
+	 * ?몄쐞??怨꾩젙???좉퇋濡??깅줉?쒕떎.
+	 * @param param - 議고쉶???뺣낫媛 ?닿릿 Map
 	 */
 	public void insertTwitterAccount(Map<?, ?> param) throws Exception {
 		insert("Twitter.insertTwitterAccount", param);
 	}
 
 	/**
-	 * 트위터 계정을 수정한다.
-	 * @param param - 조회할 정보가 담긴 Map
+	 * ?몄쐞??怨꾩젙???섏젙?쒕떎.
+	 * @param param - 議고쉶???뺣낫媛 ?닿릿 Map
 	 */
 	public void updtTwitterAccount(Map<?, ?> param) throws Exception {
 		update("Twitter.updateTwitterAccount", param);
 	}
 
 	/**
-	 * 트위터 계정을 삭제한다.
-	 * @param param - 조회할 정보가 담긴 Map
+	 * ?몄쐞??怨꾩젙????젣?쒕떎.
+	 * @param param - 議고쉶???뺣낫媛 ?닿릿 Map
 	 */
 	public void deleteTwitterAccount(Map<?, ?> param) throws Exception {
         delete("Twitter.deleteTwitterAccount",param);

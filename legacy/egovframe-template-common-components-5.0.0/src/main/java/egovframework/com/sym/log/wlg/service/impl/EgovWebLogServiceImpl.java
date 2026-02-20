@@ -14,15 +14,15 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovWebLogServiceImpl.java
- * @Description : 웹로그 관리를 위한 서비스 구현 클래스
+ * @Description : ?밸줈洹?愿由щ? ?꾪븳 ?쒕퉬??援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.wlg)
+ *    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.wlg)
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -40,7 +40,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements
 	private EgovIdGnrService egovWebLogIdGnrService;
 
 	/**
-	 * 웹 로그를 기록한다.
+	 * ??濡쒓렇瑜?湲곕줉?쒕떎.
 	 *
 	 * @param WebLog
 	 */
@@ -53,7 +53,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 웹 로그정보를 요약한다.
+	 * ??濡쒓렇?뺣낫瑜??붿빟?쒕떎.
 	 *
 	 * @param
 	 */
@@ -64,7 +64,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 웹 로그정보 상제정보를 조회한다.
+	 * ??濡쒓렇?뺣낫 ?곸젣?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param webLog
 	 * @return webLog
@@ -77,7 +77,7 @@ public class EgovWebLogServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 웹 로그정보 목록을 조회한다.
+	 * ??濡쒓렇?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param WebLog
 	 */

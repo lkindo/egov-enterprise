@@ -2,58 +2,58 @@ package egovframework.com.cop.adb.service;
 
 import java.io.Serializable;
 /**
- * 주소록 관리를 위한 모델 클래스
- * @author 공통컴포넌트개발팀 윤성록
+ * 二쇱냼濡?愿由щ? ?꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25  윤성록          최초 생성
- *   2016.12.13 최두영          클래스명 변경
+ *   2009.9.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
+ *   2016.12.13 理쒕몢??         ?대옒?ㅻ챸 蹂寃?
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class AddressBook implements Serializable{
   
-    /** 주소록 아이디 */
+    /** 二쇱냼濡??꾩씠??*/
     private String adbkId = "";
     
-    /** 주소록 명 */
+    /** 二쇱냼濡?紐?*/
     private String adbkNm = "";
     
-    /** 주소록 공개범위 */
+    /** 二쇱냼濡?怨듦컻踰붿쐞 */
     private String othbcScope = "";
     
-    /** 최초등록자 부서 */
+    /** 理쒖큹?깅줉??遺??*/
     private String trgetOrgnztId = "";
     
-    /** 주소록 사용여부 */
+    /** 二쇱냼濡??ъ슜?щ? */
     private String useAt = "";
     
-    /** 주소록 등록자 아이디*/
+    /** 二쇱냼濡??깅줉???꾩씠??/
     private String wrterId = "";
     
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
     
     
     /**
-     * AdbkId attribute를 리턴한다.
+     * AdbkId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the AdbkId
      */
@@ -62,7 +62,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * AdbkId attribute 값을 설정한다.
+     * AdbkId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param AdbkId
      *            the AdbkId to set
@@ -72,7 +72,7 @@ public class AddressBook implements Serializable{
     }   
     
     /**
-     * adbkNm attribute를 리턴한다.
+     * adbkNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the adbkNm
      */
@@ -81,7 +81,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * AdbkNm attribute 값을 설정한다.
+     * AdbkNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param AdbkNm
      *            the AdbkNm to set
@@ -91,7 +91,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * othbcScope attribute를 리턴한다.
+     * othbcScope attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the othbcScope
      */
@@ -100,7 +100,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * othbcScope attribute 값을 설정한다.
+     * othbcScope attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param othbcScope
      *            the othbcScope to set
@@ -110,7 +110,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * trgetOrgnztId attribute를 리턴한다.
+     * trgetOrgnztId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the trgetOrgnztId
      */
@@ -119,7 +119,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * trgetOrgnztId attribute 값을 설정한다.
+     * trgetOrgnztId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param trgetOrgnztId
      *            the trgetOrgnztId to set
@@ -129,7 +129,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the useAt
      */
@@ -138,7 +138,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param useAt
      *            the useAt to set
@@ -148,7 +148,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * wrterId attribute를 리턴한다.
+     * wrterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the wrterId
      */
@@ -157,7 +157,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * wrterId attribute 값을 설정한다.
+     * wrterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param wrterId
      *            the wrterId to set
@@ -167,7 +167,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -176,7 +176,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -186,7 +186,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -195,7 +195,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -205,7 +205,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrId
      */
@@ -214,7 +214,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param AdbkNm
      *            the lastUpdusrId to set
@@ -224,7 +224,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrPnttm
      */
@@ -233,7 +233,7 @@ public class AddressBook implements Serializable{
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrPnttm
      *            the lastUpdusrPnttm to set

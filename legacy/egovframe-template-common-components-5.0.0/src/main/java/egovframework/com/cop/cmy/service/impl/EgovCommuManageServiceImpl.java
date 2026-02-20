@@ -33,7 +33,7 @@ public class EgovCommuManageServiceImpl extends EgovAbstractServiceImpl implemen
 	@Override
 	public Map<String, Object> selectCommuInf(CommunityVO cmmntyVO) {
 
-		//커뮤니티 기본정보 확인
+		//而ㅻ??덊떚 湲곕낯?뺣낫 ?뺤씤
 		CommunityVO vo = egovCommuMasterDao.selectCommuMasterDetail(cmmntyVO);
 
 		CommunityUser cmmntyUser = new CommunityUser();
@@ -44,8 +44,8 @@ public class EgovCommuManageServiceImpl extends EgovAbstractServiceImpl implemen
 		cmmntyUser = egovCommuManageDao.selectSingleCommuUserDetail(cmmntyUser);
 
 		//-----------------------------------------------------------------
-		// 관리자 정보를 처리한다. (여러 명이 있을 수 있음 - DB 설계 문제상 문제)
-		// 위의 처리는 cmmntyVO.getEmplyrId()가 ""이기 때문에 의미 없음..
+		// 愿由ъ옄 ?뺣낫瑜?泥섎━?쒕떎. (?щ윭 紐낆씠 ?덉쓣 ???덉쓬 - DB ?ㅺ퀎 臾몄젣??臾몄젣)
+		// ?꾩쓽 泥섎━??cmmntyVO.getEmplyrId()媛 ""?닿린 ?뚮Ц???섎? ?놁쓬..
 		//-----------------------------------------------------------------
 		List<CommunityUser> managers = egovCommuManageDao.selectCommuManagerList(cmmntyVO);
 
@@ -58,7 +58,7 @@ public class EgovCommuManageServiceImpl extends EgovAbstractServiceImpl implemen
 		    cmmntyUser.setEmplyrNm(managers.get(0).getEmplyrNm());
 		} else if (managers.size() > 1) {
 		    cmmntyUser.setEmplyrId(managers.get(0).getEmplyrId());
-		    cmmntyUser.setEmplyrNm(managers.get(0).getEmplyrNm() + "외 " + (managers.size() - 1) + "명");
+		    cmmntyUser.setEmplyrNm(managers.get(0).getEmplyrNm() + "??" + (managers.size() - 1) + "紐?);
 		} else {
 			LOGGER.debug("No managers...");
 		}

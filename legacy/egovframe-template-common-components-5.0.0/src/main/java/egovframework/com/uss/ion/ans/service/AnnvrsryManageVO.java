@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.ans.service;
 import java.util.List;
 
 /**
- * 개요
- * - 기념일관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 湲곕뀗?쇨?由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 기념일관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - 湲곕뀗?쇨?由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 //public class AnnvrsryManageVO extends AnnvrsryManage implements Serializable {
@@ -21,37 +21,37 @@ public class AnnvrsryManageVO extends AnnvrsryManage{
 	 */
 	private static final long serialVersionUID = 1L;	
 	/**
-	 * 기념일관리 목록
+	 * 湲곕뀗?쇨?由?紐⑸줉
 	 */	
 	List<AnnvrsryManageVO> annvrsryManageList;
 
 	/**
-	*  list 번호      
+	*  list 踰덊샇      
 	*/ 
 	private int rowCount;
 
 	/**
-	*  출력 변수	1
+	*  異쒕젰 蹂??1
 	*/ 
 	private String annvrsryTemp1;
 
 	/**
-	*  출력 변수	2
+	*  異쒕젰 蹂??2
 	*/ 
 	private String annvrsryTemp2;
 
 	/**
-	*  출력 변수	3
+	*  異쒕젰 蹂??3
 	*/ 
 	private String annvrsryTemp3;
 
 	/**
-	*  출력 변수	4
+	*  異쒕젰 蹂??4
 	*/ 
 	private String annvrsryTemp4;
 
 	/**
-	*  출력 변수	5
+	*  異쒕젰 蹂??5
 	*/ 
 	private String annvrsryTemp5;
 

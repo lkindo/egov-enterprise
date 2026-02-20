@@ -11,19 +11,19 @@ import egovframework.com.sym.mnu.mcm.service.MenuCreatVO;
 import egovframework.com.sym.mnu.mcm.service.MenuSiteMapVO;
 
 /**
- * 메뉴생성, 사이트맵 생성에 대한 DAO 클래스를 정의한다. *
- * @author 공통컴포넌트 개발팀 서준식
+ * 硫붾돱?앹꽦, ?ъ씠?몃㏊ ?앹꽦?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎. *
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?쒖???
  * @since 2011.06.30
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2011.06.30  서 준 식   최초 생성(MenuManageDAO 클래스로 부터 분리
- *   					   메소드들을 MenuManageDAO 클래스에서 분리해옮)
+ *   2011.06.30  ??以 ??  理쒖큹 ?앹꽦(MenuManageDAO ?대옒?ㅻ줈 遺??遺꾨━
+ *   					   硫붿냼?쒕뱾??MenuManageDAO ?대옒?ㅼ뿉??遺꾨━?댁삷)
  *
  * </pre>
  */
@@ -34,7 +34,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * ID 존재여부를 조회
+	 * ID 議댁옱?щ?瑜?議고쉶
 	 * @param vo MenuManageVO
 	 * @return int
 	 * @exception Exception
@@ -44,7 +44,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * ID에 대한 권한코드를 조회
+	 * ID?????沅뚰븳肄붾뱶瑜?議고쉶
 	 * @param vo MenuCreatVO
 	 * @return int
 	 * @exception Exception
@@ -54,7 +54,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-     * 메뉴생성관리 내역을 조회
+     * 硫붾돱?앹꽦愿由??댁뿭??議고쉶
      * 
      * @param vo ComDefaultVO
      * @return List
@@ -65,7 +65,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
     }
 
 	/**
-	 * 메뉴생성관리 총건수를 조회한다.
+	 * 硫붾돱?앹꽦愿由?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -74,9 +74,9 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
         return (Integer)selectOne("menuManageDAO.selectMenuCreatManageTotCnt_S", vo);
     }
 
-    /*********** 메뉴 생성 관리 ***************/
+    /*********** 硫붾돱 ?앹꽦 愿由?***************/
     /**
-     * 메뉴생성 내역을 조회
+     * 硫붾돱?앹꽦 ?댁뿭??議고쉶
      * 
      * @param vo MenuCreatVO
      * @return List
@@ -87,7 +87,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
     }
 
 	/**
-	 * 메뉴생성내역 등록
+	 * 硫붾돱?앹꽦?댁뿭 ?깅줉
 	 * @param vo MenuCreatVO
 	 * @exception Exception
 	 */
@@ -96,7 +96,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴생성 사이트맵 내용 조회
+	 * 硫붾돱?앹꽦 ?ъ씠?몃㏊ ?댁슜 議고쉶
 	 * @param vo MenuSiteMapVO
 	 * @return List
 	 * @exception Exception
@@ -108,7 +108,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 사이트맵 등록
+	 * ?ъ씠?몃㏊ ?깅줉
 	 * @param vo MenuSiteMapVO
 	 * @exception Exception
 	 */
@@ -117,7 +117,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 사용자 권한별 사이트맵 내용 조회
+	 * ?ъ슜??沅뚰븳蹂??ъ씠?몃㏊ ?댁슜 議고쉶
 	 * @param vo MenuSiteMapVO
 	 * @return List
 	 * @exception Exception
@@ -127,7 +127,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴생성내역 존재여부 조회한다.
+	 * 硫붾돱?앹꽦?댁뿭 議댁옱?щ? 議고쉶?쒕떎.
 	 * @param vo MenuCreatVO
 	 * @return int
 	 * @exception Exception
@@ -138,7 +138,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 메뉴생성내역 수정
+	 * 硫붾돱?앹꽦?댁뿭 ?섏젙
 	 * @param vo MenuCreatVO
 	 * @exception Exception
 	 */
@@ -148,7 +148,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 메뉴생성내역 삭제
+	 * 硫붾돱?앹꽦?댁뿭 ??젣
 	 * @param vo MenuCreatVO
 	 * @exception Exception
 	 */
@@ -157,7 +157,7 @@ public class MenuCreateManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 사이트맵 존재여부 조회한다.
+	 * ?ъ씠?몃㏊ 議댁옱?щ? 議고쉶?쒕떎.
 	 * @param vo MenuSiteMapVO
 	 * @return int
 	 * @exception Exception

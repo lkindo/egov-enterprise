@@ -27,24 +27,24 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 프로그램목록 관리및 변경을 처리하는 비즈니스 구현 클래스
+ * ?꾨줈洹몃옩紐⑸줉 愿由щ컦 蹂寃쎌쓣 泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2011.08.22  서준식          selectProgrmChangRequstProcess() 메서드 처리일자 trim 처리
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2024.09.04  권태성          등록 화면과 데이터를 처리하는 method 분리, validation 적용
- *   2025.07.21  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
- *   2025.07.21  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.08.22  ?쒖???         selectProgrmChangRequstProcess() 硫붿꽌??泥섎━?쇱옄 trim 泥섎━
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2024.09.04  沅뚰깭??         ?깅줉 ?붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━, validation ?곸슜
+ *   2025.07.21  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
+ *   2025.07.21  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -68,16 +68,16 @@ public class EgovProgrmManageController {
 	private EgovSndngMailRegistService sndngMailRegistService;
 
 	/**
-	 * 프로그램목록을 상세화면 호출 및 상세조회한다.
+	 * ?꾨줈洹몃옩紐⑸줉???곸꽭?붾㈃ ?몄텧 諛??곸꽭議고쉶?쒕떎.
 	 * 
 	 * @param progrmFileNm String
-	 * @return 출력페이지정보 "sym/prm/EgovProgramListDetailSelectUpdt"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramListDetailSelectUpdt"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListDetailSelect.do")
 	public String selectProgrm(@RequestParam("tmp_progrmNm") String progrmFileNm,
 			@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -92,22 +92,22 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록 리스트조회한다.
+	 * ?꾨줈洹몃옩紐⑸줉 由ъ뒪?몄“?뚰븳??
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramListManage"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramListManage"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "프로그램관리", order = 1111, gid = 60)
+	@IncludedInfo(name = "?꾨줈洹몃옩愿由?, order = 1111, gid = 60)
 	@RequestMapping(value = "/sym/prm/EgovProgramListManageSelect.do")
 	public String selectProgrmList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -133,10 +133,10 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록 멀티 삭제한다.
+	 * ?꾨줈洹몃옩紐⑸줉 硫????젣?쒕떎.
 	 * 
 	 * @param checkedProgrmFileNmForDel String
-	 * @return 출력페이지정보 "forward:/sym/prm/EgovProgramListManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/prm/EgovProgramListManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping("/sym/prm/EgovProgrmManageListDelete.do")
@@ -144,7 +144,7 @@ public class EgovProgrmManageController {
 			@ModelAttribute("progrmManageVO") ProgrmManageVO progrmManageVO, ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -165,17 +165,17 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록 등록화면
+	 * ?꾨줈洹몃옩紐⑸줉 ?깅줉?붾㈃
 	 * 
 	 * @param progrmManageVO ProgrmManageVO
-	 * @return 출력페이지정보 등록화면 호출시 "sym/prm/EgovProgramListRegist", 출력페이지정보 등록처리시
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉?붾㈃ ?몄텧??"sym/prm/EgovProgramListRegist", 異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??
 	 *         "forward:/sym/prm/EgovProgramListManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListRegistView.do")
 	public String insertProgrmListView(@ModelAttribute("progrmManageVO") ProgrmManageVO progrmManageVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -185,7 +185,7 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록을 등록한다.
+	 * ?꾨줈洹몃옩紐⑸줉???깅줉?쒕떎.
 	 * 
 	 * @param progrmManageVO
 	 * @param bindingResult
@@ -197,7 +197,7 @@ public class EgovProgrmManageController {
 	public String insertProgrmList(@ModelAttribute("progrmManageVO") ProgrmManageVO progrmManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -217,19 +217,19 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록을 수정 한다.
+	 * ?꾨줈洹몃옩紐⑸줉???섏젙 ?쒕떎.
 	 * 
 	 * @param progrmManageVO ProgrmManageVO
-	 * @return 출력페이지정보 "forward:/sym/prm/EgovProgramListManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/prm/EgovProgramListManageSelect.do"
 	 * @exception Exception
 	 */
-	/* 프로그램목록수정 */
+	/* ?꾨줈洹몃옩紐⑸줉?섏젙 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListDetailSelectUpdt.do")
 	public String updateProgrmList(@ModelAttribute("progrmManageVO") ProgrmManageVO progrmManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		String resultMsg = "";
 		String sLocationUrl = null;
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -251,17 +251,17 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램목록을 삭제 한다.
+	 * ?꾨줈洹몃옩紐⑸줉????젣 ?쒕떎.
 	 * 
 	 * @param progrmManageVO ProgrmManageVO
-	 * @return 출력페이지정보 "forward:/sym/prm/EgovProgramListManageSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/prm/EgovProgramListManageSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListManageDelete.do")
 	public String deleteProgrmList(@ModelAttribute("progrmManageVO") ProgrmManageVO progrmManageVO, ModelMap model)
 			throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -274,23 +274,23 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경요청목록 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?ぉ濡?議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChangeRequst"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChangeRequst"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "프로그램변경요청관리", order = 1112, gid = 60)
+	@IncludedInfo(name = "?꾨줈洹몃옩蹂寃쎌슂泥??由?, order = 1112, gid = 60)
 	@RequestMapping(value = "/sym/prm/EgovProgramChangeRequstSelect.do")
 	public String selectProgrmChangeRequstList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -316,16 +316,16 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경요청목록을 상세조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?ぉ濡앹쓣 ?곸꽭議고쉶?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChangRequstDetailSelectUpdt"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChangRequstDetailSelectUpdt"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstDetailSelect.do")
 	public String selectProgrmChangeRequst(@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO,
 			ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -342,32 +342,32 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경요청 화면을 호출및 프로그램변경요청을 등록한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥??붾㈃???몄텧諛??꾨줈洹몃옩蹂寃쎌슂泥?쓣 ?깅줉?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
 	 * @param commandMap        Map
-	 * @return 출력페이지정보 등록화면 호출시 "sym/prm/EgovProgramChangRequstStre", 출력페이지정보 등록처리시
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?깅줉?붾㈃ ?몄텧??"sym/prm/EgovProgramChangRequstStre", 異쒕젰?섏씠吏?뺣낫 ?깅줉泥섎━??
 	 *         "forward:/sym/prm/EgovProgramChangeRequstSelect.do"
 	 * @exception Exception
 	 */
-	/* 프로그램변경요청등록 */
+	/* ?꾨줈洹몃옩蹂寃쎌슂泥?벑濡?*/
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstStre.do")
 	public String insertProgrmChangeRequst(@RequestParam Map<?, ?> commandMap,
 			@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO, BindingResult bindingResult,
 			ModelMap model) throws Exception {
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String sLocationUrl = null;
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("insert")) {
-			// beanValidator 처리
+			// beanValidator 泥섎━
 			if (bindingResult.hasErrors()) {
 				sLocationUrl = "egovframework/com/sym/prm/EgovProgramChangRequstStre";
 				return sLocationUrl;
@@ -382,7 +382,7 @@ public class EgovProgrmManageController {
 			resultMsg = egovMessageSource.getMessage("success.common.insert");
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangeRequstSelect.do";
 		} else {
-			/* MAX요청번호 조회 */
+			/* MAX?붿껌踰덊샇 議고쉶 */
 			ProgrmManageDtlVO resultVO = progrmManageService.selectProgrmChangeRequstNo(progrmManageDtlVO);
 			progrmManageDtlVO.setRqesterNo(resultVO.getRqesterNo());
 			progrmManageDtlVO.setRqesterPersonId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
@@ -393,10 +393,10 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경 요청을 수정 한다.
+	 * ?꾨줈洹몃옩蹂寃??붿껌???섏젙 ?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보 "forward:/sym/prm/EgovProgramChangeRequstSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/prm/EgovProgramChangeRequstSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstDetailSelectUpdt.do")
@@ -404,21 +404,21 @@ public class EgovProgrmManageController {
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		String resultMsg = "";
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// beanValidator 처리
+		// beanValidator 泥섎━
 		if (bindingResult.hasErrors()) {
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangRequstDetailSelect.do";
 			return sLocationUrl;
 		}
 
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (EgovStringUtil.isNullToString(progrmManageDtlVO.getRqesterPersonId())
 				.equals(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()))) {
 			if (progrmManageDtlVO.getChangerqesterCn() == null || progrmManageDtlVO.getChangerqesterCn().equals("")) {
@@ -431,7 +431,7 @@ public class EgovProgrmManageController {
 			resultMsg = egovMessageSource.getMessage("success.common.update");
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangeRequstSelect.do";
 		} else {
-			resultMsg = "수정이 실패하였습니다. 변경요청 수정은 변경요청자만 수정가능합니다.";
+			resultMsg = "?섏젙???ㅽ뙣?섏??듬땲?? 蹂寃쎌슂泥??섏젙? 蹂寃쎌슂泥?옄留??섏젙媛?ν빀?덈떎.";
 			progrmManageDtlVO.setTmpProgrmNm(progrmManageDtlVO.getProgrmFileNm());
 			progrmManageDtlVO.setTmpRqesterNo(progrmManageDtlVO.getRqesterNo());
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangRequstDetailSelect.do";
@@ -441,25 +441,25 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경 요청을 삭제 한다.
+	 * ?꾨줈洹몃옩蹂寃??붿껌????젣 ?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보 "forward:/sym/prm/EgovProgramChangeRequstSelect.do"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "forward:/sym/prm/EgovProgramChangeRequstSelect.do"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstDelete.do")
 	public String deleteProgrmChangeRequst(@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO,
 			ModelMap model) throws Exception {
 		String sLocationUrl = null;
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (EgovStringUtil.isNullToString(progrmManageDtlVO.getRqesterPersonId())
 				.equals(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getId()))) {
 			// progrmManageDtlVO.setRqesterPersonId(user.getId());
@@ -468,33 +468,33 @@ public class EgovProgrmManageController {
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangeRequstSelect.do";
 		} else {
 			model.addAttribute("resultMsg",
-					egovMessageSource.getMessage("comSymPrm.progrmManageController.checkRqesterPersonId")); // 삭제에
-																											// 실패하였습니다.
-																											// 변경요청자만
-																											// 삭제가능합니다.
+					egovMessageSource.getMessage("comSymPrm.progrmManageController.checkRqesterPersonId")); // ??젣??
+																											// ?ㅽ뙣?섏??듬땲??
+																											// 蹂寃쎌슂泥?옄留?
+																											// ??젣媛?ν빀?덈떎.
 			sLocationUrl = "forward:/sym/prm/EgovProgramChangRequstDetailSelect.do";
 		}
 		return sLocationUrl;
 	}
 
 	/**
-	 * 프로그램변경 요청에 대한 처리 사항을 조회한다.
+	 * ?꾨줈洹몃옩蹂寃??붿껌?????泥섎━ ?ы빆??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChangeRequstProcess"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChangeRequstProcess"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "프로그램변경요청처리", order = 1113, gid = 60)
+	@IncludedInfo(name = "?꾨줈洹몃옩蹂寃쎌슂泥?쿂由?, order = 1113, gid = 60)
 	@RequestMapping(value = "/sym/prm/EgovProgramChangeRequstProcessListSelect.do")
 	public String selectProgrmChangeRequstProcessList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -520,16 +520,16 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경 요청에 대한 처리 사항을 상세조회한다.
+	 * ?꾨줈洹몃옩蹂寃??붿껌?????泥섎━ ?ы빆???곸꽭議고쉶?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChangRequstProcessDetailSelectUpdt"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChangRequstProcessDetailSelectUpdt"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstProcessDetailSelect.do")
 	public String selectProgrmChangRequstProcess(
 			@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -553,10 +553,10 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경요청처리 내용을 수정 한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由??댁슜???섏젙 ?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보
+	 * @return 異쒕젰?섏씠吏?뺣낫
 	 *         "forward:/sym/prm/EgovProgramChangeRequstProcessListSelect.do"
 	 * @exception Exception
 	 */
@@ -567,7 +567,7 @@ public class EgovProgrmManageController {
 			ModelMap model) throws Exception {
 		String sLocationUrl = null;
 		boolean result = true;
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -581,7 +581,7 @@ public class EgovProgrmManageController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (progrmManageDtlVO.getOpetrId() != null) {
 			if (progrmManageDtlVO.getOpetrId()
 					.equals(user == null ? "" : EgovStringUtil.isNullToString(user.getId()))) {
@@ -599,40 +599,40 @@ public class EgovProgrmManageController {
 				ProgrmManageDtlVO vo = new ProgrmManageDtlVO();
 				vo = progrmManageService.selectRqesterEmail(progrmManageDtlVO);
 				String sTemp = null;
-				// KISA 보안약점 조치 (2018-10-29, 윤창원)
+				// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 				if ("A".equals(progrmManageDtlVO.getProcessSttus())) {
-					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusA"); // 신청중
+					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusA"); // ?좎껌以?
 				} else if ("P".equals(progrmManageDtlVO.getProcessSttus())) {
-					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusP"); // 진행중
+					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusP"); // 吏꾪뻾以?
 				} else if ("R".equals(progrmManageDtlVO.getProcessSttus())) {
-					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusR"); // 반려
+					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusR"); // 諛섎젮
 				} else if ("C".equals(progrmManageDtlVO.getProcessSttus())) {
-					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusC"); // 처리완료
+					sTemp = egovMessageSource.getMessage("comSymPrm.progrmManageController.processSttusC"); // 泥섎━?꾨즺
 				}
-				// 프로그램 변경요청 사항을 이메일로 발송한다.(메일연동솔루션 활용)
+				// ?꾨줈洹몃옩 蹂寃쎌슂泥??ы빆???대찓?쇰줈 諛쒖넚?쒕떎.(硫붿씪?곕룞?붾（???쒖슜)
 				SndngMailVO sndngMailVO = new SndngMailVO();
 				sndngMailVO.setDsptchPerson(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 				sndngMailVO.setRecptnPerson(vo.getTmpEmail());
-				sndngMailVO.setSj(egovMessageSource.getMessage("comSymPrm.progrmManageController.email.Sj")); // 프로그램변경요청
-																												// 처리.
+				sndngMailVO.setSj(egovMessageSource.getMessage("comSymPrm.progrmManageController.email.Sj")); // ?꾨줈洹몃옩蹂寃쎌슂泥?
+																												// 泥섎━.
 				sndngMailVO.setEmailCn(
-						egovMessageSource.getMessage("comSymPrm.progrmManageController.email.emailCn") + " : " + sTemp); // 프로그램
-																															// 변경요청
-																															// 사항이
-																															// 처리
-																															// 되었습니다
+						egovMessageSource.getMessage("comSymPrm.progrmManageController.email.emailCn") + " : " + sTemp); // ?꾨줈洹몃옩
+																															// 蹂寃쎌슂泥?
+																															// ?ы빆??
+																															// 泥섎━
+																															// ?섏뿀?듬땲??
 				sndngMailVO.setAtchFileId(null);
 				result = sndngMailRegistService.insertSndngMail(sndngMailVO);
 				sLocationUrl = "forward:/sym/prm/EgovProgramChangeRequstProcessListSelect.do";
 			} else {
 				model.addAttribute("resultMsg", egovMessageSource
-						.getMessage("comSymPrm.progrmManageController.updateProgrmChangRequstProcess.fail")); // 수정이
-																												// 실패하였습니다.
-																												// 변경요청처리
-																												// 수정은
-																												// 변경처리해당
-																												// 담당자만
-																												// 처리가능합니다.
+						.getMessage("comSymPrm.progrmManageController.updateProgrmChangRequstProcess.fail")); // ?섏젙??
+																												// ?ㅽ뙣?섏??듬땲??
+																												// 蹂寃쎌슂泥?쿂由?
+																												// ?섏젙?
+																												// 蹂寃쎌쿂由ы빐??
+																												// ?대떦?먮쭔
+																												// 泥섎━媛?ν빀?덈떎.
 				progrmManageDtlVO.setTmpProgrmNm(progrmManageDtlVO.getProgrmFileNm());
 				progrmManageDtlVO.setTmpRqesterNo(progrmManageDtlVO.getRqesterNo());
 				sLocationUrl = "forward:/sym/prm/EgovProgramChangRequstProcessDetailSelect.do";
@@ -642,18 +642,18 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경요청처리를 삭제 한다.
+	 * ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由щ? ??젣 ?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보
+	 * @return 異쒕젰?섏씠吏?뺣낫
 	 *         "forward:/sym/prm/EgovProgramChangeRequstProcessListSelect.do"
 	 * @exception Exception
 	 */
-	/* 프로그램변경요청처리 삭제 */
+	/* ?꾨줈洹몃옩蹂寃쎌슂泥?쿂由???젣 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChangRequstProcessDelete.do")
 	public String deleteProgrmChangRequstProcess(
 			@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -665,23 +665,23 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램변경이력리스트를 조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌씠?λ━?ㅽ듃瑜?議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChgHst"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChgHst"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "프로그램변경이력", order = 1114, gid = 60)
+	@IncludedInfo(name = "?꾨줈洹몃옩蹂寃쎌씠??, order = 1114, gid = 60)
 	@RequestMapping(value = "/sym/prm/EgovProgramChgHstListSelect.do")
 	public String selectProgrmChgHstList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		/** EgovPropertyService.sample */
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -706,18 +706,18 @@ public class EgovProgrmManageController {
 		return "egovframework/com/sym/prm/EgovProgramChgHst";
 	}
 
-	/* 프로그램변경이력상세조회 */
+	/* ?꾨줈洹몃옩蹂寃쎌씠?μ긽?몄“??*/
 	/**
-	 * 프로그램변경이력을 상세조회한다.
+	 * ?꾨줈洹몃옩蹂寃쎌씠?μ쓣 ?곸꽭議고쉶?쒕떎.
 	 * 
 	 * @param progrmManageDtlVO ProgrmManageDtlVO
-	 * @return 출력페이지정보 "sym/prm/EgovProgramChgHstDetail"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovProgramChgHstDetail"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramChgHstListDetailSelect.do")
 	public String selectProgramChgHstListDetail(
 			@ModelAttribute("progrmManageDtlVO") ProgrmManageDtlVO progrmManageDtlVO, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -732,22 +732,22 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램파일명을 조회한다.
+	 * ?꾨줈洹몃옩?뚯씪紐낆쓣 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovFileNmSearch"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovFileNmSearch"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListSearch.do")
 	public String selectProgrmListSearch(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
 
@@ -772,22 +772,22 @@ public class EgovProgrmManageController {
 	}
 
 	/**
-	 * 프로그램파일명을 조회한다. (New)
+	 * ?꾨줈洹몃옩?뚯씪紐낆쓣 議고쉶?쒕떎. (New)
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/prm/EgovFileNmSearch"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/prm/EgovFileNmSearch"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/prm/EgovProgramListSearchNew.do")
 	public String selectProgrmListSearchNew(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
-		// 내역 조회
+		// ?댁뿭 議고쉶
 		searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
 		searchVO.setPageSize(propertiesService.getInt("pageSize"));
 

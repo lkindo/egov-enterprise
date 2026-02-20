@@ -3,11 +3,11 @@ package egovframework.com.utl.sys.htm.service;
 public class HttpMonResult {
 
 	/**
-	 * 모니터링 정상여부
+	 * 紐⑤땲?곕쭅 ?뺤긽?щ?
 	 */
 	private boolean nrmltAt;
 	/**
-	 * 원인 Exception
+	 * ?먯씤 Exception
 	 */
 	private Throwable cause;
 

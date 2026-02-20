@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service.impl;
 
@@ -31,19 +31,19 @@ import egovframework.com.ext.ldapumt.service.UserVO;
 
 /**
  *
- * 사용자 관련 기능을 제공하는 DAO객체
+ * ?ъ슜??愿??湲곕뒫???쒓났?섎뒗 DAO媛앹껜
  * 
- * @author 전우성
+ * @author ?꾩슦??
  * @since 2014.10.12
  * @version 1.0
  * @see
  *
  *      <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*   수정일      수정자           수정내용
+*   ?섏젙??     ?섏젙??          ?섏젙?댁슜
 *  -------    --------    ---------------------------
-*   2014.10.12  전우성          최초 생성
+*   2014.10.12  ?꾩슦??         理쒖큹 ?앹꽦
  *
  *      </pre>
  */
@@ -65,7 +65,7 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 					SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
 							UserVO.class));
 		} catch (NameNotFoundException e) {
-			logger.error("[NameNotFoundException] : search fail");// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			logger.error("[NameNotFoundException] : search fail");// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		}
 
 		return ucorgList;
@@ -73,7 +73,7 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 사용자를 추가한다.
+	 * ?ъ슜?먮? 異붽??쒕떎.
 	 * 
 	 * @param vo
 	 */
@@ -87,17 +87,17 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 사용자를 이동한다
+	 * ?ъ슜?먮? ?대룞?쒕떎
 	 * 
-	 * @param oldDn 이동 대상 사용자
-	 * @param newDn 이동 부서
+	 * @param oldDn ?대룞 ????ъ슜??
+	 * @param newDn ?대룞 遺??
 	 */
 	public void moveUserManage(String oldDn, String newDn) {
 		ldapTemplate.rename(oldDn, newDn);
 	}
 
 	/**
-	 * 등록된 사용자를 조회한다
+	 * ?깅줉???ъ슜?먮? 議고쉶?쒕떎
 	 * 
 	 * @param dn
 	 * @return
@@ -107,7 +107,7 @@ public class UserManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 사용자 정보를 수정한다.
+	 * ?ъ슜???뺣낫瑜??섏젙?쒕떎.
 	 * 
 	 * @param vo
 	 */

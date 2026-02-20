@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 인증 서비스 구현체
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
- * - EgovAbstractServiceImpl 상속 및 EgovAuthService 인터페이스 구현
+ * ?몄쬆 ?쒕퉬??援ы쁽泥?
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
+ * - EgovAbstractServiceImpl ?곸냽 諛?EgovAuthService ?명꽣?섏씠??援ы쁽
  */
 @Service("egovAuthService")
 public class AuthService extends EgovAbstractServiceImpl implements EgovAuthService {

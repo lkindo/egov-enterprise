@@ -42,30 +42,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 게시물 관리를 위한 컨트롤러 클래스
+ * 寃뚯떆臾?愿由щ? ?꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스개발팀 이삼섭
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.19  이삼섭          최초 생성
- *   2009.06.29  한성곤          2단계 기능 추가 (댓글관리, 만족도조사)
- *   2011.07.01  안민정          댓글, 스크랩, 만족도 조사 기능의 종속성 제거
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.09.07  서준식          유효 게시판 게시일 지나도 게시물이 조회되던 오류 수정
- *   2016.06.13  김연호          표준프레임워크 3.6 개선
- *   2019.05.17  신용호          KISA 취약점 조치 및 보완
- *   2020.10.27  신용호          파일 업로드 수정 (multiRequest.getFiles)
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2024.10.29  이백행          게시판 검색조건 유지
- *   2024.10.29  inganyoyo     Transaction 처리 오류 수정(Article)
- *   2025.06.03  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(매개변수 재할당 방지)
+ *   2009.03.19  ?댁궪??         理쒖큹 ?앹꽦
+ *   2009.06.29  ?쒖꽦怨?         2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“??
+ *   2011.07.01  ?덈???         ?볤?, ?ㅽ겕?? 留뚯”??議곗궗 湲곕뒫??醫낆냽???쒓굅
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.09.07  ?쒖???         ?좏슚 寃뚯떆??寃뚯떆??吏?섎룄 寃뚯떆臾쇱씠 議고쉶?섎뜕 ?ㅻ쪟 ?섏젙
+ *   2016.06.13  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2019.05.17  ?좎슜??         KISA 痍⑥빟??議곗튂 諛?蹂댁셿
+ *   2020.10.27  ?좎슜??         ?뚯씪 ?낅줈???섏젙 (multiRequest.getFiles)
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2024.10.29  ?대갚??         寃뚯떆??寃?됱“嫄??좎?
+ *   2024.10.29  inganyoyo     Transaction 泥섎━ ?ㅻ쪟 ?섏젙(Article)
+ *   2025.06.03  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(留ㅺ컻蹂???ы븷??諛⑹?)
  *
  *      </pre>
  */
@@ -105,7 +105,7 @@ public class EgovArticleController {
     //protected Logger log = Logger.getLogger(this.getClass());
 
 	/**
-	 * XSS 방지 처리.
+	 * XSS 諛⑹? 泥섎━.
 	 * 
 	 * @param data
 	 * @return
@@ -136,7 +136,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 목록을 조회한다.
+	 * 寃뚯떆臾쇱뿉 ???紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -148,7 +148,7 @@ public class EgovArticleController {
 	public String selectArticleList(@ModelAttribute("searchVO") BoardVO boardVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -160,7 +160,7 @@ public class EgovArticleController {
 		vo.setUniqId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 		BoardMasterVO master = egovBBSMasterService.selectBBSMasterInf(vo);
 
-		// 방명록은 방명록 게시판으로 이동
+		// 諛⑸챸濡앹? 諛⑸챸濡?寃뚯떆?먯쑝濡??대룞
 		if (master.getBbsTyCode().equals("BBST03")) {
 			return "forward:/cop/bbs/selectGuestArticleList.do";
 		}
@@ -181,13 +181,13 @@ public class EgovArticleController {
 		Map<String, Object> map = egovArticleService.selectArticleList(boardVO);
 		int totCnt = Integer.parseInt((String) map.get("resultCnt"));
 
-		// 공지사항 추출
+		// 怨듭??ы빆 異붿텧
 		List<BoardVO> noticeList = egovArticleService.selectNoticeArticleList(boardVO);
 
 		paginationInfo.setTotalRecordCount(totCnt);
 
 		// -------------------------------
-		// 기본 BBS template 지정
+		// 湲곕낯 BBS template 吏??
 		// -------------------------------
 		if (master.getTmplatCours() == null || master.getTmplatCours().equals("")) {
 			master.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
@@ -208,7 +208,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 상세 정보를 조회한다.
+	 * 寃뚯떆臾쇱뿉 ????곸꽭 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -220,7 +220,7 @@ public class EgovArticleController {
 	public String selectArticleDetail(@ModelAttribute("searchVO") BoardVO boardVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -232,7 +232,7 @@ public class EgovArticleController {
 		model.addAttribute("result", vo);
 		model.addAttribute("sessionUniqId", (user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-		// 비밀글은 작성자만 볼수 있음
+		// 鍮꾨?湲? ?묒꽦?먮쭔 蹂쇱닔 ?덉쓬
 		if (!EgovStringUtil.isEmpty(vo.getSecretAt()) && vo.getSecretAt().equals("Y")
 				&& !((user == null || user.getUniqId() == null) ? "" : user.getUniqId())
 						.equals(vo.getFrstRegisterId())) {
@@ -240,7 +240,7 @@ public class EgovArticleController {
 		}
 
 		// ----------------------------
-		// template 처리 (기본 BBS template 지정 포함)
+		// template 泥섎━ (湲곕낯 BBS template 吏???ы븿)
 		// ----------------------------
 		BoardMasterVO master = new BoardMasterVO();
 
@@ -256,8 +256,8 @@ public class EgovArticleController {
 		//// -----------------------------
 
 		// ----------------------------
-		// 2009.06.29 : 2단계 기능 추가
-		// 2011.07.01 : 댓글, 만족도 조사 기능의 종속성 제거
+		// 2009.06.29 : 2?④퀎 湲곕뒫 異붽?
+		// 2011.07.01 : ?볤?, 留뚯”??議곗궗 湲곕뒫??醫낆냽???쒓굅
 		// ----------------------------
 		if (egovArticleCommentService != null) {
 			if (egovArticleCommentService.canUseComment(boardVO.getBbsId())) {
@@ -277,7 +277,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물 등록을 위한 등록페이지로 이동한다.
+	 * 寃뚯떆臾??깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param model
@@ -301,7 +301,7 @@ public class EgovArticleController {
 		}
 
 		// ----------------------------
-		// 기본 BBS template 지정
+		// 湲곕낯 BBS template 吏??
 		// ----------------------------
 		if (bdMstr.getTmplatCours() == null || bdMstr.getTmplatCours().equals("")) {
 			bdMstr.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
@@ -315,7 +315,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물을 등록한다.
+	 * 寃뚯떆臾쇱쓣 ?깅줉?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param board
@@ -331,7 +331,7 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
@@ -345,7 +345,7 @@ public class EgovArticleController {
 			master = egovBBSMasterService.selectBBSMasterInf(master);
 
 			// ----------------------------
-			// 기본 BBS template 지정
+			// 湲곕낯 BBS template 吏??
 			// ----------------------------
 			if (master.getTmplatCours() == null || master.getTmplatCours().equals("")) {
 				master.setTmplatCours("css/egovframework/com/cop/tpl/egovBaseTemplate.css");
@@ -357,7 +357,7 @@ public class EgovArticleController {
 			return "egovframework/com/cop/bbs/EgovArticleRegist";
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 
 		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
@@ -366,21 +366,21 @@ public class EgovArticleController {
 		board.setBbsId(boardVO.getBbsId());
 		board.setBlogId(boardVO.getBlogId());
 
-		// 익명등록 처리
+		// ?듬챸?깅줉 泥섎━
 		if (board.getAnonymousAt() != null && board.getAnonymousAt().equals("Y")) {
-			board.setNtcrId("anonymous"); // 게시물 통계 집계를 위해 등록자 ID 저장
-			board.setNtcrNm("익명"); // 게시물 통계 집계를 위해 등록자 Name 저장
+			board.setNtcrId("anonymous"); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??ID ???
+			board.setNtcrNm("?듬챸"); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??Name ???
 			board.setFrstRegisterId("anonymous");
 
 		} else {
-			board.setNtcrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); // 게시물 통계 집계를 위해 등록자 ID
-																									// 저장
-			board.setNtcrNm((user == null || user.getName() == null) ? "" : user.getName()); // 게시물 통계 집계를 위해 등록자 Name
-																								// 저장
+			board.setNtcrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??ID
+																									// ???
+			board.setNtcrNm((user == null || user.getName() == null) ? "" : user.getName()); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??Name
+																								// ???
 
 		}
 
-		board.setNttCn(unscript(board.getNttCn())); // XSS 방지
+		board.setNttCn(unscript(board.getNttCn())); // XSS 諛⑹?
 		egovArticleService.insertArticleAndFiles(board, files);
 
 		if (boardVO.getBlogAt().equals("Y")) {
@@ -396,7 +396,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 답변 등록을 위한 등록페이지로 이동한다.
+	 * 寃뚯떆臾쇱뿉 ????듬? ?깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param model
@@ -407,7 +407,7 @@ public class EgovArticleController {
 	public String addReplyBoardArticle(@ModelAttribute("searchVO") BoardVO boardVO, ModelMap model) throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();// KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -422,7 +422,7 @@ public class EgovArticleController {
 		BoardVO result = egovArticleService.selectArticleDetail(boardVO);
 
 		// ----------------------------
-		// 기본 BBS template 지정
+		// 湲곕낯 BBS template 吏??
 		// ----------------------------
 		if (master.getTmplatCours() == null || master.getTmplatCours().equals("")) {
 			master.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
@@ -441,7 +441,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 답변을 등록한다.
+	 * 寃뚯떆臾쇱뿉 ????듬????깅줉?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param board
@@ -457,7 +457,7 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
@@ -469,7 +469,7 @@ public class EgovArticleController {
 		master = egovBBSMasterService.selectBBSMasterInf(master);
 
 		// ----------------------------
-		// 기본 BBS template 지정
+		// 湲곕낯 BBS template 吏??
 		// ----------------------------
 		if (master.getTmplatCours() == null || master.getTmplatCours().equals("")) {
 			master.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
@@ -484,9 +484,9 @@ public class EgovArticleController {
 			return "egovframework/com/cop/bbs/EgovArticleReply";
 		}
 
-		// 인증된 권한 목록
+		// ?몄쬆??沅뚰븳 紐⑸줉
 		List<String> authList = EgovUserDetailsHelper.getAuthorities();
-		// 관리자 권한 체크
+		// 愿由ъ옄 沅뚰븳 泥댄겕
 		if (!authList.contains("ROLE_ADMIN")) {
 			BoardVO vo = egovArticleService.selectArticleDetail(boardVO);
 			if (vo == null || "Y".equals(vo.getSecretAt())) {
@@ -500,7 +500,7 @@ public class EgovArticleController {
 			}
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		board.setReplyAt("Y");
@@ -510,19 +510,19 @@ public class EgovArticleController {
 		board.setSortOrdr(boardVO.getSortOrdr());
 		board.setReplyLc(Integer.toString(Integer.parseInt(boardVO.getReplyLc()) + 1));
 
-		// 익명등록 처리
+		// ?듬챸?깅줉 泥섎━
 		if (board.getAnonymousAt() != null && board.getAnonymousAt().equals("Y")) {
-			board.setNtcrId("anonymous"); // 게시물 통계 집계를 위해 등록자 ID 저장
-			board.setNtcrNm("익명"); // 게시물 통계 집계를 위해 등록자 Name 저장
+			board.setNtcrId("anonymous"); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??ID ???
+			board.setNtcrNm("?듬챸"); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??Name ???
 			board.setFrstRegisterId("anonymous");
 
 		} else {
-			board.setNtcrId((user == null || user.getId() == null) ? "" : user.getId()); // 게시물 통계 집계를 위해 등록자 ID 저장
-			board.setNtcrNm((user == null || user.getName() == null) ? "" : user.getName()); // 게시물 통계 집계를 위해 등록자 Name
-																								// 저장
+			board.setNtcrId((user == null || user.getId() == null) ? "" : user.getId()); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??ID ???
+			board.setNtcrNm((user == null || user.getName() == null) ? "" : user.getName()); // 寃뚯떆臾??듦퀎 吏묎퀎瑜??꾪빐 ?깅줉??Name
+																								// ???
 
 		}
-		board.setNttCn(unscript(board.getNttCn())); // XSS 방지
+		board.setNttCn(unscript(board.getNttCn())); // XSS 諛⑹?
 
 		egovArticleService.insertArticleAndFiles(board, files);
 
@@ -530,7 +530,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물 수정을 위한 수정페이지로 이동한다.
+	 * 寃뚯떆臾??섏젙???꾪븳 ?섏젙?섏씠吏濡??대룞?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param vo
@@ -561,13 +561,13 @@ public class EgovArticleController {
 		}
 
 		// ----------------------------
-		// 기본 BBS template 지정
+		// 湲곕낯 BBS template 吏??
 		// ----------------------------
 		if (bmvo.getTmplatCours() == null || bmvo.getTmplatCours().equals("")) {
 			bmvo.setTmplatCours("/css/egovframework/com/cop/tpl/egovBaseTemplate.css");
 		}
 
-		// 익명 등록글인 경우 수정 불가
+		// ?듬챸 ?깅줉湲??寃쎌슦 ?섏젙 遺덇?
 		if (bdvo.getNtcrId().equals("anonymous")) {
 			model.addAttribute("result", bdvo);
 			model.addAttribute("boardMasterVO", bmvo);
@@ -586,7 +586,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 내용을 수정한다.
+	 * 寃뚯떆臾쇱뿉 ????댁슜???섏젙?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param board
@@ -602,23 +602,23 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 대응 권한체크 체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ???沅뚰븳泥댄겕 泥댄겕 START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		BoardVO vo = egovArticleService.selectArticleDetail(boardVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(multiRequest, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 대응 권한체크 체크 END
+		// @ XSS ???沅뚰븳泥댄겕 泥댄겕 END
 		// --------------------------------------------------------------------------------------------
 
 		String atchFileId = boardVO.getAtchFileId();
@@ -644,12 +644,12 @@ public class EgovArticleController {
 
 		board.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-		board.setNtcrNm(""); // dummy 오류 수정 (익명이 아닌 경우 validator 처리를 위해 dummy로 지정됨)
-		board.setPassword(""); // dummy 오류 수정 (익명이 아닌 경우 validator 처리를 위해 dummy로 지정됨)
+		board.setNtcrNm(""); // dummy ?ㅻ쪟 ?섏젙 (?듬챸???꾨땶 寃쎌슦 validator 泥섎━瑜??꾪빐 dummy濡?吏?뺣맖)
+		board.setPassword(""); // dummy ?ㅻ쪟 ?섏젙 (?듬챸???꾨땶 寃쎌슦 validator 泥섎━瑜??꾪빐 dummy濡?吏?뺣맖)
 
-		board.setNttCn(unscript(board.getNttCn())); // XSS 방지
+		board.setNttCn(unscript(board.getNttCn())); // XSS 諛⑹?
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		egovArticleService.updateArticleAndFiles(board, files, atchFileId);
@@ -663,7 +663,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 게시물에 대한 내용을 삭제한다.
+	 * 寃뚯떆臾쇱뿉 ????댁슜????젣?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param board
@@ -680,22 +680,22 @@ public class EgovArticleController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 대응 권한체크 체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ???沅뚰븳泥댄겕 泥댄겕 START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		BoardVO vo = egovArticleService.selectArticleDetail(boardVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 대응 권한체크 체크 END
+		// @ XSS ???沅뚰븳泥댄겕 泥댄겕 END
 		// --------------------------------------------------------------------------------------------
 
 		BoardVO bdvo = egovArticleService.selectArticleDetail(boardVO);
-		// 익명 등록글인 경우 수정 불가
+		// ?듬챸 ?깅줉湲??寃쎌슦 ?섏젙 遺덇?
 		if (bdvo.getNtcrId().equals("anonymous")) {
 			model.addAttribute("result", bdvo);
 			model.addAttribute("boardMasterVO", bdMstr);
@@ -720,7 +720,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 방명록에 대한 목록을 조회한다.
+	 * 諛⑸챸濡앹뿉 ???紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -734,11 +734,11 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 수정 및 삭제 기능 제어를 위한 처리
+		// ?섏젙 諛???젣 湲곕뒫 ?쒖뼱瑜??꾪븳 泥섎━
 		model.addAttribute("sessionUniqId", (user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
 		BoardVO vo = new BoardVO();
@@ -784,7 +784,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 방명록에 대한 내용을 등록한다.
+	 * 諛⑸챸濡앹뿉 ????댁슜???깅줉?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param board
@@ -800,7 +800,7 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
@@ -847,7 +847,7 @@ public class EgovArticleController {
 
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		board.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
 		egovArticleService.insertArticleAndFiles(board, null);
@@ -861,7 +861,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 방명록에 대한 내용을 삭제한다.
+	 * 諛⑸챸濡앹뿉 ????댁슜????젣?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -884,7 +884,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 방명록 수정을 위한 특정 내용을 조회한다.
+	 * 諛⑸챸濡??섏젙???꾪븳 ?뱀젙 ?댁슜??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -899,11 +899,11 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 수정 및 삭제 기능 제어를 위한 처리
+		// ?섏젙 諛???젣 湲곕뒫 ?쒖뼱瑜??꾪븳 泥섎━
 		model.addAttribute("sessionUniqId", (user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
 		BoardVO vo = egovArticleService.selectArticleDetail(boardVO);
@@ -938,7 +938,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 방명록을 수정하고 게시판 메인페이지를 조회한다.
+	 * 諛⑸챸濡앹쓣 ?섏젙?섍퀬 寃뚯떆??硫붿씤?섏씠吏瑜?議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -954,7 +954,7 @@ public class EgovArticleController {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
-		if (!isAuthenticated) { // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		if (!isAuthenticated) { // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
@@ -1000,7 +1000,7 @@ public class EgovArticleController {
 			return "egovframework/com/cop/bbs/EgovGuestArticleList";
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		egovArticleService.updateArticle(board);
 		boardVO.setNttCn("");
 		boardVO.setPassword("");
@@ -1011,11 +1011,11 @@ public class EgovArticleController {
 	}
 
 	/*********************
-	 * 블로그관련
+	 * 釉붾줈洹멸???
 	 ********************/
 
 	/**
-	 * 블로그 게시판에 대한 목록을 조회한다.
+	 * 釉붾줈洹?寃뚯떆?먯뿉 ???紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -1028,7 +1028,7 @@ public class EgovArticleController {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -1042,13 +1042,13 @@ public class EgovArticleController {
 
 		boardVO.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-		// 블로그 카테고리관리 권한(로그인 한 사용자만 가능)
+		// 釉붾줈洹?移댄뀒怨좊━愿由?沅뚰븳(濡쒓렇?????ъ슜?먮쭔 媛??
 		int loginUserCnt = egovArticleService.selectLoginUser(boardVO);
 
-		// 블로그 게시판 제목 추출
+		// 釉붾줈洹?寃뚯떆???쒕ぉ 異붿텧
 		List<BoardVO> blogNameList = egovArticleService.selectBlogNmList(boardVO);
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		model.addAttribute("sessionUniqId", (user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
 		model.addAttribute("articleVO", boardVO);
@@ -1060,7 +1060,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 블로그 게시물에 대한 상세 타이틀을 조회한다.
+	 * 釉붾줈洹?寃뚯떆臾쇱뿉 ????곸꽭 ??댄???議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -1073,7 +1073,7 @@ public class EgovArticleController {
 			throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			throw new IllegalAccessException("Login Required!");
@@ -1110,7 +1110,7 @@ public class EgovArticleController {
 			mav.addObject("blogCnOne", vo);
 		}
 
-		// 비밀글은 작성자만 볼수 있음
+		// 鍮꾨?湲? ?묒꽦?먮쭔 蹂쇱닔 ?덉쓬
 		if (!EgovStringUtil.isEmpty(vo.getSecretAt()) && vo.getSecretAt().equals("Y")
 				&& !((user == null || user.getUniqId() == null) ? "" : user.getUniqId())
 						.equals(vo.getFrstRegisterId())) {
@@ -1120,7 +1120,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 블로그 게시물에 대한 상세 내용을 조회한다.
+	 * 釉붾줈洹?寃뚯떆臾쇱뿉 ????곸꽭 ?댁슜??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -1135,7 +1135,7 @@ public class EgovArticleController {
 
 		boardVO.setLastUpdusrId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			throw new IllegalAccessException("Login Required!");
@@ -1144,7 +1144,7 @@ public class EgovArticleController {
 		BoardVO vo = egovArticleService.selectArticleDetail(boardVO);
 
 		// ----------------------------
-		// 댓글 처리
+		// ?볤? 泥섎━
 		// ----------------------------
 		CommentVO articleCommentVO = new CommentVO();
 		commentVO.setWrterNm((user == null || user.getName() == null) ? "" : user.getName());
@@ -1163,19 +1163,19 @@ public class EgovArticleController {
 
 		paginationInfo.setTotalRecordCount(totCnt);
 
-		// 댓글 처리 END
+		// ?볤? 泥섎━ END
 		// ----------------------------
 
 		List<BoardVO> blogCnList = egovArticleService.selectArticleDetailCn(boardVO);
 		ModelAndView mav = new ModelAndView("jsonView");
 
-		// 수정 처리된 후 댓글 등록 화면으로 처리되기 위한 구현
+		// ?섏젙 泥섎━?????볤? ?깅줉 ?붾㈃?쇰줈 泥섎━?섍린 ?꾪븳 援ы쁽
 		if (commentVO.isModified()) {
 			commentVO.setCommentNo("");
 			commentVO.setCommentCn("");
 		}
 
-		// 수정을 위한 처리
+		// ?섏젙???꾪븳 泥섎━
 		if (!commentVO.getCommentNo().equals("")) {
 			mav.setViewName("forward:/cop/cmt/updateArticleCommentView.do");
 		}
@@ -1185,11 +1185,11 @@ public class EgovArticleController {
 		mav.addObject("paginationInfo", paginationInfo);
 		mav.addObject("resultList", map.get("resultList"));
 		mav.addObject("resultCnt", map.get("resultCnt"));
-		mav.addObject("articleCommentVO", articleCommentVO); // validator 용도
+		mav.addObject("articleCommentVO", articleCommentVO); // validator ?⑸룄
 
-		commentVO.setCommentCn(""); // 등록 후 댓글 내용 처리
+		commentVO.setCommentCn(""); // ?깅줉 ???볤? ?댁슜 泥섎━
 
-		// 비밀글은 작성자만 볼수 있음
+		// 鍮꾨?湲? ?묒꽦?먮쭔 蹂쇱닔 ?덉쓬
 		if (!EgovStringUtil.isEmpty(vo.getSecretAt()) && vo.getSecretAt().equals("Y")
 				&& !((user == null || user.getUniqId() == null) ? "" : user.getUniqId())
 						.equals(vo.getFrstRegisterId())) {
@@ -1200,7 +1200,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 개인블로그 관리
+	 * 媛쒖씤釉붾줈洹?愿由?
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -1240,7 +1240,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 템플릿에 대한 미리보기용 게시물 목록을 조회한다.
+	 * ?쒗뵆由우뿉 ???誘몃━蹂닿린??寃뚯떆臾?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param boardVO
 	 * @param sessionVO
@@ -1252,11 +1252,11 @@ public class EgovArticleController {
 	public String previewBoardArticles(@ModelAttribute("searchVO") BoardVO boardVO, ModelMap model) throws Exception {
 		// LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-		String template = boardVO.getSearchWrd(); // 템플릿 URL
+		String template = boardVO.getSearchWrd(); // ?쒗뵆由?URL
 
 		BoardMasterVO master = new BoardMasterVO();
 
-		master.setBbsNm("미리보기 게시판");
+		master.setBbsNm("誘몃━蹂닿린 寃뚯떆??);
 
 		boardVO.setPageUnit(propertyService.getInt("pageUnit"));
 		boardVO.setPageSize(propertyService.getInt("pageSize"));
@@ -1275,9 +1275,9 @@ public class EgovArticleController {
 		List<BoardVO> list = new ArrayList<>();
 
 		target = new BoardVO();
-		target.setNttSj("게시판 기능 설명");
+		target.setNttSj("寃뚯떆??湲곕뒫 ?ㅻ챸");
 		target.setFrstRegisterId("ID");
-		target.setFrstRegisterNm("관리자");
+		target.setFrstRegisterNm("愿由ъ옄");
 		target.setFrstRegisterPnttm("2019-01-01");
 		target.setInqireCo(7);
 		target.setParnts("0");
@@ -1288,9 +1288,9 @@ public class EgovArticleController {
 		list.add(target);
 
 		target = new BoardVO();
-		target.setNttSj("게시판 부가 기능 설명");
+		target.setNttSj("寃뚯떆??遺媛 湲곕뒫 ?ㅻ챸");
 		target.setFrstRegisterId("ID");
-		target.setFrstRegisterNm("관리자");
+		target.setFrstRegisterNm("愿由ъ옄");
 		target.setFrstRegisterPnttm("2019-01-01");
 		target.setInqireCo(7);
 		target.setParnts("0");
@@ -1304,7 +1304,7 @@ public class EgovArticleController {
 
 		int totCnt = list.size();
 
-		// 공지사항 추출
+		// 怨듭??ы빆 異붿텧
 		List<BoardVO> noticeList = egovArticleService.selectNoticeArticleList(boardVO);
 
 		paginationInfo.setTotalRecordCount(totCnt);
@@ -1324,7 +1324,7 @@ public class EgovArticleController {
 	}
 
 	/**
-	 * 미리보기 커뮤니티 메인페이지를 조회한다.
+	 * 誘몃━蹂닿린 而ㅻ??덊떚 硫붿씤?섏씠吏瑜?議고쉶?쒕떎.
 	 * 
 	 * @param cmmntyVO
 	 * @param sessionVO
@@ -1336,7 +1336,7 @@ public class EgovArticleController {
 	public String previewBlogMainPage(@ModelAttribute("searchVO") BoardVO boardVO, ModelMap model) throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			throw new IllegalAccessException("Login Required!");
@@ -1345,22 +1345,22 @@ public class EgovArticleController {
 		String tmplatCours = boardVO.getSearchWrd();
 
 		BlogVO master = new BlogVO();
-		master.setBlogNm("미리보기 블로그");
-		master.setBlogIntrcn("미리보기를 위한 블로그입니다.");
+		master.setBlogNm("誘몃━蹂닿린 釉붾줈洹?);
+		master.setBlogIntrcn("誘몃━蹂닿린瑜??꾪븳 釉붾줈洹몄엯?덈떎.");
 		master.setUseAt("Y");
 		master.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
 		boardVO.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());
 
-		// 블로그 카테고리관리 권한(로그인 한 사용자만 가능)
+		// 釉붾줈洹?移댄뀒怨좊━愿由?沅뚰븳(濡쒓렇?????ъ슜?먮쭔 媛??
 		int loginUserCnt = egovArticleService.selectLoginUser(boardVO);
 
-		// 블로그 게시판 제목 추출
+		// 釉붾줈洹?寃뚯떆???쒕ぉ 異붿텧
 		List<BoardVO> blogNameList = new ArrayList<>();
 
 		BoardVO target = null;
 		target = new BoardVO();
-		target.setBbsNm("블로그게시판#1");
+		target.setBbsNm("釉붾줈洹멸쾶?쒗뙋#1");
 
 		blogNameList.add(target);
 
@@ -1375,10 +1375,10 @@ public class EgovArticleController {
 
 		model.addAttribute("preview", "true");
 
-		// 안전한 경로 문자열로 조치
+		// ?덉쟾??寃쎈줈 臾몄옄?대줈 議곗튂
 		tmplatCours = EgovWebUtil.filePathBlackList(tmplatCours);
 
-		// 화이트 리스트 체크
+		// ?붿씠??由ъ뒪??泥댄겕
 		List<TemplateInfVO> templateWhiteList = egovTemplateManageService.selectTemplateWhiteList();
 		LOGGER.debug("Template > WhiteList Count = {}", templateWhiteList.size());
 		if (tmplatCours == null) {

@@ -3,86 +3,86 @@ package egovframework.com.sym.sym.bak.service;
 import java.util.List;
 
 /**
- * 백업작업관리에 대한 Service Interface를 정의한다.
+ * 諛깆뾽?묒뾽愿由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public interface EgovBackupOpertService {
 
 	/**
-	 * 백업작업을  삭제한다.
+	 * 諛깆뾽?묒뾽?? ??젣?쒕떎.
 	 *
-	 * @param backupOpert    삭제대상 백업작업model
+	 * @param backupOpert    ??젣???諛깆뾽?묒뾽model
 	 * @exception Exception Exception
 	 */
 	public void deleteBackupOpert(BackupOpert backupOpert) throws Exception;
 
 	/**
-	 * 백업작업을 등록한다.
+	 * 諛깆뾽?묒뾽???깅줉?쒕떎.
 	 *
-	 * @param backupOpert    등록대상 백업작업model
+	 * @param backupOpert    ?깅줉???諛깆뾽?묒뾽model
 	 * @exception Exception Exception
 	 */
 	public void insertBackupOpert(BackupOpert backupOpert) throws Exception;
 
 	/**
-	 * 백업작업을  상세조회 한다.
-	 * @return 백업작업정보
+	 * 諛깆뾽?묒뾽?? ?곸꽭議고쉶 ?쒕떎.
+	 * @return 諛깆뾽?묒뾽?뺣낫
 	 *
-	 * @param backupOpert    조회대상 백업작업model
+	 * @param backupOpert    議고쉶???諛깆뾽?묒뾽model
 	 * @exception Exception Exception
 	 */
 	public BackupOpert selectBackupOpert(BackupOpert backupOpert) throws Exception;
 
 	/**
-     * 백업작업 목록을 조회한다.
+     * 諛깆뾽?묒뾽 紐⑸줉??議고쉶?쒕떎.
      * 
-     * @return 백업작업목록
+     * @return 諛깆뾽?묒뾽紐⑸줉
      *
-     * @param searchVO 조회조건VO
+     * @param searchVO 議고쉶議곌굔VO
      * @exception Exception Exception
      */
     public List<BackupOpert> selectBackupOpertList(BackupOpert searchVO) throws Exception;
 
 	/**
-	 * 백업작업 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * 諛깆뾽?묒뾽 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectBackupOpertListCnt(BackupOpert searchVO) throws Exception;
 
 	/**
-	 * 백업작업을 수정한다.
+	 * 諛깆뾽?묒뾽???섏젙?쒕떎.
 	 *
-	 * @param backupOpert    수정대상 백업작업model
+	 * @param backupOpert    ?섏젙???諛깆뾽?묒뾽model
 	 * @exception Exception Exception
 	 */
 	public void updateBackupOpert(BackupOpert backupOpert) throws Exception;
 
 	/**
-	 * 백업결과를 등록한다.
-	 * @param backupResult    등록대상 백업결과model
+	 * 諛깆뾽寃곌낵瑜??깅줉?쒕떎.
+	 * @param backupResult    ?깅줉???諛깆뾽寃곌낵model
 	 * @exception Exception Exception
 	 */
 	public void insertBackupResult(BackupResult backupResult) throws Exception;
 
 	/**
-	 * 백업결과정보를 수정한다.
+	 * 諛깆뾽寃곌낵?뺣낫瑜??섏젙?쒕떎.
 	 *
-	 * @param backupResult    수정대상 백업결과model
+	 * @param backupResult    ?섏젙???諛깆뾽寃곌낵model
 	 * @exception Exception Exception
 	 */
 	public void updateBackupResult(BackupResult backupResult) throws Exception;

@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 외부 인력 정보 Entity
- * 레거시 테이블: NEXTRLHRINFO
+ * ?紐? ?紐껋젾 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NEXTRLHRINFO
  */
 @Entity
 @Table(name = "NEXTRLHRINFO")

@@ -25,19 +25,19 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 정보알림이 서비스 컨트롤러 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뺣낫?뚮┝???쒕퉬??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.6.8  한성곤          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.6.8  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -54,14 +54,14 @@ public class EgovNotificationController {
     EgovMessageSource egovMessageSource;
 
     /**
-     * 정보알림이에 대한 목록을 조회한다.
+     * ?뺣낫?뚮┝?댁뿉 ???紐⑸줉??議고쉶?쒕떎.
      *
      * @param notificationVO
      * @param model
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="정보알림이", order = 730 ,gid = 50)
+    @IncludedInfo(name="?뺣낫?뚮┝??, order = 730 ,gid = 50)
     @RequestMapping("/uss/ion/noi/selectNotificationList.do")
     public String selectNotificationList(@ModelAttribute("searchVO") NotificationVO notificationVO, ModelMap model) throws Exception {
 	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
@@ -94,7 +94,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 신규 정보알림이 등록을 위한 등록페이지로 이동한다.
+     * ?좉퇋 ?뺣낫?뚮┝???깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
      *
      * @param notificationVO
      * @param model
@@ -112,7 +112,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 신규 정보알림이 정보를 등록한다.
+     * ?좉퇋 ?뺣낫?뚮┝???뺣낫瑜??깅줉?쒕떎.
      *
      * @param notificationVO
      * @param boardMaster
@@ -150,7 +150,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 정보알림이에 대한 상세정보를 조회한다.
+     * ?뺣낫?뚮┝?댁뿉 ????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param notificationVO
      * @param model
@@ -170,7 +170,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 정보알림이 수정을 위해 수정페이지로 이동한다.
+     * ?뺣낫?뚮┝???섏젙???꾪빐 ?섏젙?섏씠吏濡??대룞?쒕떎.
      *
      * @param notificationVO
      * @param model
@@ -187,7 +187,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 정보알림이 정보를 수정한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??섏젙?쒕떎.
      *
      * @param notificationVO
      * @param notification
@@ -231,7 +231,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 정보알림이 정보를 삭제한다.
+     * ?뺣낫?뚮┝???뺣낫瑜???젣?쒕떎.
      *
      * @param notificationVO
      * @param notification
@@ -255,7 +255,7 @@ public class EgovNotificationController {
     }
 
     /**
-     * 정보알림이 표시를 조회한다.
+     * ?뺣낫?뚮┝???쒖떆瑜?議고쉶?쒕떎.
      *
      * @param notificationVO
      * @param model

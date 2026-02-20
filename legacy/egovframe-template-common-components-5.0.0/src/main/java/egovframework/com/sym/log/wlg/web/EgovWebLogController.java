@@ -18,16 +18,16 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovWebLogController.java
- * @Description : 시스템 로그정보를 관리하기 위한 컨트롤러 클래스
+ * @Description : ?쒖뒪??濡쒓렇?뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.wlg)
- *    2011.8.26	정진오			IncludedInfo annotation 추가
+ *    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.wlg)
+ *    2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -44,13 +44,13 @@ public class EgovWebLogController {
 	protected EgovPropertyService propertyService;
 
 	/**
-     * 웹 로그 목록 조회
+     * ??濡쒓렇 紐⑸줉 議고쉶
      *
      * @param webLog
      * @return sym/log/wlg/EgovWebLogList
      * @throws Exception
      */
-    @IncludedInfo(name = "웹로그관리", listUrl = "/sym/log/wlg/SelectWebLogList.do", order = 1070, gid = 60)
+    @IncludedInfo(name = "?밸줈洹멸?由?, listUrl = "/sym/log/wlg/SelectWebLogList.do", order = 1070, gid = 60)
     @RequestMapping(value = "/sym/log/wlg/SelectWebLogList.do")
     public String selectWebLogInf(@ModelAttribute("searchVO") WebLog webLog, ModelMap model) throws Exception {
 
@@ -78,7 +78,7 @@ public class EgovWebLogController {
 	}
 
 	/**
-	 * 웹 로그 상세 조회
+	 * ??濡쒓렇 ?곸꽭 議고쉶
 	 *
 	 * @param webLog
 	 * @param model

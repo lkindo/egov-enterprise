@@ -26,21 +26,21 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 /**
- * 행사/이벤트/캠페인을 처리하는 Controller Class 구현
+ * ?됱궗/?대깽??罹좏럹?몄쓣 泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.05  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.05  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -62,7 +62,7 @@ public class EgovEventCmpgnController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 행사/이벤트/캠페인 목록을 조회한다.
+	 * ?됱궗/?대깽??罹좏럹??紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param eventCmpgnVO
@@ -70,7 +70,7 @@ public class EgovEventCmpgnController {
 	 * @return "egovframework/com/uss/ion/ecc/EgovEventCmpgnList
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "행사/이벤트/캠페인", order = 710, gid = 50)
+	@IncludedInfo(name = "?됱궗/?대깽??罹좏럹??, order = 710, gid = 50)
 	@RequestMapping(value = "/uss/ion/ecc/selectEventCmpgnList.do")
 	public String selectEventCmpgnList(@ModelAttribute("searchVO") EventCmpgnVO searchVO, ModelMap model)
 			throws Exception {
@@ -101,7 +101,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인 목록을 조회한다.(Popup)
+	 * ?됱궗/?대깽??罹좏럹??紐⑸줉??議고쉶?쒕떎.(Popup)
 	 * 
 	 * @param searchVO
 	 * @param eventCmpgnVO
@@ -139,7 +139,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인 목록에 대한 상세정보를 조회한다.
+	 * ?됱궗/?대깽??罹좏럹??紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param eventCmpgnVO
 	 * @param searchVO
@@ -159,7 +159,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인 등록전 단계
+	 * ?됱궗/?대깽??罹좏럹???깅줉???④퀎
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -170,7 +170,7 @@ public class EgovEventCmpgnController {
 	public String insertEventCmpgnView(@ModelAttribute("searchVO") EventCmpgnVO searchVO, Model model)
 			throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM035");
 
@@ -184,7 +184,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인을 등록한다.
+	 * ?됱궗/?대깽??罹좏럹?몄쓣 ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param eventCmpgnVO
@@ -200,13 +200,13 @@ public class EgovEventCmpgnController {
 			return "egovframework/com/uss/olh/ecc/EgovEventCmpgnRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		eventCmpgnVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		eventCmpgnVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		eventCmpgnVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		eventCmpgnVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovEventCmpgnService.insertEventCmpgn(eventCmpgnVO);
 
@@ -214,7 +214,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인을 수정하기 전 처리
+	 * ?됱궗/?대깽??罹좏럹?몄쓣 ?섏젙?섍린 ??泥섎━
 	 * 
 	 * @param eventId
 	 * @param searchVO
@@ -226,7 +226,7 @@ public class EgovEventCmpgnController {
 	public String updateEventCmpgnView(@RequestParam("eventId") String eventId,
 			@ModelAttribute("searchVO") EventCmpgnVO searchVO, ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM035");
 
@@ -235,7 +235,7 @@ public class EgovEventCmpgnController {
 
 		EventCmpgnVO eventCmpgnVO = new EventCmpgnVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		eventCmpgnVO.setEventId(eventId);
 		model.addAttribute("eventCmpgnVO", egovEventCmpgnService.selectEventCmpgnDetail(eventCmpgnVO));
 
@@ -243,7 +243,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인을 수정처리한다.
+	 * ?됱궗/?대깽??罹좏럹?몄쓣 ?섏젙泥섎━?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param eventCmpgnVO
@@ -259,10 +259,10 @@ public class EgovEventCmpgnController {
 			return "egovframework/com/uss/olh/ecc/EgovEventCmpgnUpdt";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		eventCmpgnVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		eventCmpgnVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovEventCmpgnService.updateEventCmpgn(eventCmpgnVO);
 
@@ -271,7 +271,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 행사/이벤트/캠페인을 삭제처리한다.
+	 * ?됱궗/?대깽??罹좏럹?몄쓣 ??젣泥섎━?쒕떎.
 	 * 
 	 * @param eventCmpgnVO
 	 * @param searchVO
@@ -288,7 +288,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보 목록을 조회한다.
+	 * ?몃??몄궗?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param tnextrlHrVO
@@ -296,7 +296,7 @@ public class EgovEventCmpgnController {
 	 * @return "egovframework/com/uss/ion/ecc/EgovTnextrlHrList
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "외부인사정보", order = 711, gid = 50)
+	@IncludedInfo(name = "?몃??몄궗?뺣낫", order = 711, gid = 50)
 	@RequestMapping(value = "/uss/ion/ecc/selectTnextrlHrList.do")
 	public String selectTnextrlHrList(@ModelAttribute("searchVO") TnextrlHrVO searchVO, ModelMap model)
 			throws Exception {
@@ -327,7 +327,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보 목록에 대한 상세정보를 조회한다.
+	 * ?몃??몄궗?뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param tnextrlHrVO
 	 * @param searchVO
@@ -347,7 +347,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보 등록전 단계
+	 * ?몃??몄궗?뺣낫 ?깅줉???④퀎
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -357,13 +357,13 @@ public class EgovEventCmpgnController {
 	@RequestMapping("/uss/ion/ecc/insertTnextrlHrView.do")
 	public String insertTnextrlHrView(@ModelAttribute("searchVO") TnextrlHrVO searchVO, Model model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
-		vo.setCodeId("COM014"); // 성별
+		vo.setCodeId("COM014"); // ?깅퀎
 		List<CmmnDetailCode> sexdstnCode = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("sexdstnCode", sexdstnCode);
 
-		vo.setCodeId("COM034"); // 직업코드
+		vo.setCodeId("COM034"); // 吏곸뾽肄붾뱶
 		List<CmmnDetailCode> occpTyCode = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("occpTyCode", occpTyCode);
 
@@ -374,7 +374,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보를 등록한다.
+	 * ?몃??몄궗?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param tnextrlHrVO
@@ -390,13 +390,13 @@ public class EgovEventCmpgnController {
 			return "egovframework/com/uss/olh/ecc/EgovTnextrlHrRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		tnextrlHrVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		tnextrlHrVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		tnextrlHrVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		tnextrlHrVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovEventCmpgnService.insertTnextrlHr(tnextrlHrVO);
 
@@ -404,7 +404,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보를 수정하기 전 처리
+	 * ?몃??몄궗?뺣낫瑜??섏젙?섍린 ??泥섎━
 	 * 
 	 * @param extrlHrId
 	 * @param searchVO
@@ -416,19 +416,19 @@ public class EgovEventCmpgnController {
 	public String updateTnextrlHrView(@RequestParam("extrlHrId") String extrlHrId,
 			@ModelAttribute("searchVO") TnextrlHrVO searchVO, ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
-		vo.setCodeId("COM014"); // 성별
+		vo.setCodeId("COM014"); // ?깅퀎
 		List<CmmnDetailCode> sexdstnCode = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("sexdstnCode", sexdstnCode);
 
-		vo.setCodeId("COM034"); // 직업코드
+		vo.setCodeId("COM034"); // 吏곸뾽肄붾뱶
 		List<CmmnDetailCode> occpTyCode = cmmUseService.selectCmmCodeDetail(vo);
 		model.addAttribute("occpTyCode", occpTyCode);
 
 		TnextrlHrVO tnextrlHrVO = new TnextrlHrVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		tnextrlHrVO.setExtrlHrId(extrlHrId);
 		model.addAttribute("tnextrlHrVO", egovEventCmpgnService.selectTnextrlHrDetail(tnextrlHrVO));
 
@@ -436,7 +436,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보를 수정처리한다.
+	 * ?몃??몄궗?뺣낫瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param tnextrlHrVO
@@ -452,10 +452,10 @@ public class EgovEventCmpgnController {
 			return "egovframework/com/uss/olh/ecc/EgovTnextrlHrUpdt";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		tnextrlHrVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		tnextrlHrVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovEventCmpgnService.updateTnextrlHr(tnextrlHrVO);
 
@@ -464,7 +464,7 @@ public class EgovEventCmpgnController {
 	}
 
 	/**
-	 * 외부인사정보를 삭제처리한다.
+	 * ?몃??몄궗?뺣낫瑜???젣泥섎━?쒕떎.
 	 * 
 	 * @param tnextrlHrVO
 	 * @param searchVO

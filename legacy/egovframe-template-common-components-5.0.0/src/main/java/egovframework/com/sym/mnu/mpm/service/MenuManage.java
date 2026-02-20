@@ -1,18 +1,18 @@
 package egovframework.com.sym.mnu.mpm.service;
 
 /**
- * 메뉴관리, 메뉴 생성을 위한 모델 클래스를 정의한다.
- * @author 공통서비스 개발팀 이 용
+ * 硫붾돱愿由? 硫붾돱 ?앹꽦???꾪븳 紐⑤뜽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ????
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용          최초 생성
+ *   2009.03.20  ?댁슜          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -20,7 +20,7 @@ package egovframework.com.sym.mnu.mpm.service;
 public class MenuManage {
 
 	/**
-	 * 메뉴설명
+	 * 硫붾돱?ㅻ챸
 	 */
 	private String menuDc;
 	public String getMenuDc() {
@@ -72,31 +72,31 @@ public class MenuManage {
 		this.upperMenuId = upperMenuId;
 	}
 	/**
-	 * 메뉴명
+	 * 硫붾돱紐?
 	 */
 	private String menuNm;
 	/**
-	 * 메뉴번호
+	 * 硫붾돱踰덊샇
 	 */
 	private int menuNo;
 	/**
-	 * 메뉴순서
+	 * 硫붾돱?쒖꽌
 	 */
 	private int menuOrdr;
 	/**
-	 * 프로그램파일명
+	 * ?꾨줈洹몃옩?뚯씪紐?
 	 */
 	private String progrmFileNm;
 	/**
-	 * 관련이미지명
+	 * 愿?⑥씠誘몄?紐?
 	 */
 	private String relateImageNm;
 	/**
-	 * 관련이미지경로
+	 * 愿?⑥씠誘몄?寃쎈줈
 	 */
 	private String relateImagePath;
 	/**
-	 * 상위메뉴번호
+	 * ?곸쐞硫붾돱踰덊샇
 	 */
 	private int upperMenuId;
 }

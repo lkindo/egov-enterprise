@@ -17,24 +17,24 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요 - HTTP서비스모니터링에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂 - HTTP?쒕퉬?ㅻえ?덊꽣留곸뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용 - HTTP서비스모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - HTTP서비스모니터링의 조회기능은 목록조회,
- * 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - HTTP?쒕퉬?ㅻえ?덊꽣留곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - HTTP?쒕퉬?ㅻえ?덊꽣留곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶,
+ * ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.06.17
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.17  박종선          최초 생성
- *   2025.09.13  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(변수명에 밑줄 사용)
+ *   2010.06.17  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2025.09.13  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
@@ -53,10 +53,10 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	private EgovIdGnrService idgenServiceLog;
 
 	/**
-	 * 등록된 HTTP서비스모니터링 목록을 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return List - HTTP서비스모니터링 목록
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return List - HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉
 	 *
 	 * @param httpMonVO
 	 */
@@ -66,10 +66,10 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * HTTP서비스모니터링 목록 총 개수를 조회한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return int - HTTP서비스 토탈 카운트 수
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return int - HTTP?쒕퉬???좏깉 移댁슫????
 	 *
 	 * @param httpMonVO
 	 */
@@ -79,10 +79,10 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 등록된 HTTP서비스모니터링의 상세정보를 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곸쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param httpMonVO - HTTP서비스모니터링 Vo
-	 * @return httpMonVO - HTTP서비스모니터링 Vo
+	 * @param httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
 	 *
 	 * @param httpMonVO
 	 */
@@ -93,9 +93,9 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * HTTP서비스모니터링 정보를 신규로 등록한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
@@ -106,9 +106,9 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 기 등록된 HTTP서비스모니터링 정보를 수정한다.
+	 * 湲??깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜??섏젙?쒕떎.
 	 * 
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
@@ -118,9 +118,9 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 기 등록된 HTTP서비스모니터링 정보를 삭제한다.
+	 * 湲??깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留??뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
@@ -130,10 +130,10 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 등록된 HTTP서비스모니터링로그 목록을 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param HttpMonVO - HTTP서비스모니터링 Vo
-	 * @return List - HTTP서비스모니터링 목록
+	 * @param HttpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return List - HTTP?쒕퉬?ㅻえ?덊꽣留?紐⑸줉
 	 *
 	 * @param httpMonVO
 	 */
@@ -153,10 +153,10 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 등록된 HTTP서비스모니터링로그의 상세정보를 조회한다.
+	 * ?깅줉??HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹몄쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param httpMonVO - HTTP서비스모니터링 Vo
-	 * @return httpMonVO - HTTP서비스모니터링 Vo
+	 * @param httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
+	 * @return httpMonVO - HTTP?쒕퉬?ㅻえ?덊꽣留?Vo
 	 *
 	 * @param httpMonVO
 	 */
@@ -166,9 +166,9 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * HTTP서비스모니터링로그 정보를 등록한다.
+	 * HTTP?쒕퉬?ㅻえ?덊꽣留곷줈洹??뺣낫瑜??깅줉?쒕떎.
 	 * 
-	 * @param siteUrl - HTTP서비스모니터링 model
+	 * @param siteUrl - HTTP?쒕퉬?ㅻえ?덊꽣留?model
 	 *
 	 * @param siteUrl
 	 */
@@ -178,9 +178,9 @@ public class EgovHttpMonServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * HTTP서비스 모니터링 결과를 수정한다.
+	 * HTTP?쒕퉬??紐⑤땲?곕쭅 寃곌낵瑜??섏젙?쒕떎.
 	 * 
-	 * @param httpMonLog - HTTP서비스 모니터링대상 model
+	 * @param httpMonLog - HTTP?쒕퉬??紐⑤땲?곕쭅???model
 	 *
 	 * @param httpMonLog
 	 */

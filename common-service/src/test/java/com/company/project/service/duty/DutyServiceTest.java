@@ -37,7 +37,7 @@ class DutyServiceTest {
         private DutyService dutyService;
 
         @Test
-        @DisplayName("당직 일지 페이징 조회 서비스 테스트")
+        @DisplayName("?뱀쭅 ?쇱? ?섏씠吏?議고쉶 ?쒕퉬???뚯뒪??)
         void getDutyList_Pagination() {
                 // given
                 BndtManage duty = BndtManage.builder()

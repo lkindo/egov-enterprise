@@ -11,19 +11,19 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.olp.qtm.service.QustnrTmplatManageVO;
 
 /**
- * 설문템플릿 Dao Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ?쒗뵆由?Dao Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *   2017.06.21  김예영          표준프레임워크 v3.7개선 (select->selectOne으로 수정)
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2017.06.21  源?덉쁺          ?쒖??꾨젅?꾩썙??v3.7媛쒖꽑 (select->selectOne?쇰줈 ?섏젙)
  *
  * </pre>
  */
@@ -31,8 +31,8 @@ import egovframework.com.uss.olp.qtm.service.QustnrTmplatManageVO;
 public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 
     /**
-	 * 템플릿파일명을 조회한다.
-	 * @param qustnrTmplatManageVO - 조회할 정보가 담긴 VO
+	 * ?쒗뵆由욱뙆?쇰챸??議고쉶?쒕떎.
+	 * @param qustnrTmplatManageVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -42,8 +42,8 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 
 
 	/**
-	 * 설문템플릿 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ?쒗뵆由?紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -52,8 +52,8 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 설문템플릿를(을) 상세조회 한다.
-	 * @param QustnrTmplatManage - 회정정보가 담김 VO
+	 * ?ㅻЦ?쒗뵆由용?(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param QustnrTmplatManage - ?뚯젙?뺣낫媛 ?닿? VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -62,8 +62,8 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 설문템플릿를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ?쒗뵆由용?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -72,8 +72,8 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 설문템플릿를(을) 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ?쒗뵆由용?(?? ?깅줉?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void insertQustnrTmplatManage(QustnrTmplatManageVO qustnrTmplatManageVO){
@@ -81,8 +81,8 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 설문템플릿를(을) 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ?쒗뵆由용?(?? ?섏젙?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void updateQustnrTmplatManage(QustnrTmplatManageVO qustnrTmplatManageVO){
@@ -90,23 +90,23 @@ public class QustnrTmplatManageDao extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 설문템플릿를(을) 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?ㅻЦ?쒗뵆由용?(?? ??젣?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	public void deleteQustnrTmplatManage(QustnrTmplatManageVO qustnrTmplatManageVO){
-		//설문응답자 삭제
+		//?ㅻЦ?묐떟????젣
 		delete("QustnrTmplatManage.deleteQustnrRespondManage", qustnrTmplatManageVO);
-		//설문조사(설문결과) 삭제
+		//?ㅻЦ議곗궗(?ㅻЦ寃곌낵) ??젣
 		delete("QustnrTmplatManage.deleteQustnrRespondInfo", qustnrTmplatManageVO);
-		//설문항목 삭제
+		//?ㅻЦ??ぉ ??젣
 		delete("QustnrTmplatManage.deleteQustnrItemManage", qustnrTmplatManageVO);
-		//설문문항 삭제
+		//?ㅻЦ臾명빆 ??젣
 		delete("QustnrTmplatManage.deleteQustnrQestnManage", qustnrTmplatManageVO);
-		//설문관리 삭제
+		//?ㅻЦ愿由???젣
 		delete("QustnrTmplatManage.deleteQustnrManage", qustnrTmplatManageVO);
 
-		//설문템플릿삭제
+		//?ㅻЦ?쒗뵆由우궘??
 		delete("QustnrTmplatManage.deleteQustnrTmplatManage", qustnrTmplatManageVO);
 	}
 }

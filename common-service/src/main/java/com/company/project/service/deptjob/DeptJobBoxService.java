@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * 부서업무함 서비스 구현체
+ * 遺?쒖뾽臾댄븿 ?쒕퉬??援ы쁽泥?
  */
 @Service("deptJobBoxService")
 @RequiredArgsConstructor

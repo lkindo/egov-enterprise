@@ -3,18 +3,18 @@ package egovframework.com.uss.olp.cns.service;
 
 /**
  * 
- * 상담내용을 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?곷떞?댁슜??泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -22,98 +22,98 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	
     private static final long serialVersionUID = 1L;
     
-    /** 상담 ID */
+    /** ?곷떞 ID */
     private String cnsltId;
     
-    /** 상담제목 */
+    /** ?곷떞?쒕ぉ */
     private String cnsltSj;    
     
-    /** 상담내용 */
+    /** ?곷떞?댁슜 */
     private String cnsltCn;
     
-    /** 공개여부 */
+    /** 怨듦컻?щ? */
     private String othbcAt;
 
-    /** 작성비밀번호 */
+    /** ?묒꽦鍮꾨?踰덊샇 */
     private String writngPassword;
     
-    /** 지역번호 */
+    /** 吏??쾲??*/
     private String areaNo;
     
-    /** 중간전화번호 */     
+    /** 以묎컙?꾪솕踰덊샇 */     
     private String middleTelno;
     
-    /** 끝전화번호 */
+    /** ?앹쟾?붾쾲??*/
     private String endTelno;
     
-    /** 처음휴대폰번호 */
+    /** 泥섏쓬?대??곕쾲??*/
     private String firstMoblphonNo;
     
-    /** 중간휴대폰번호 */     
+    /** 以묎컙?대??곕쾲??*/     
     private String middleMbtlnum;
     
-    /** 끝휴대폰번호 */
+    /** ?앺쑕??곕쾲??*/
     private String endMbtlnum;    
         
-    /** 이메일 주소 */
+    /** ?대찓??二쇱냼 */
     private String emailAdres;
         
-    /** 이메일 답변여부 */
+    /** ?대찓???듬??щ? */
     private String emailAnswerAt;
     
-    /** 첨부파일 ID */
+    /** 泥⑤??뚯씪 ID */
     private String atchFileId;
     
-    /** 작성자 명 */
+    /** ?묒꽦??紐?*/
     private String wrterNm;
     
-    /** 작성일자 */
+    /** ?묒꽦?쇱옄 */
     private String writngDe;
     
-    /** 조회횟수 */
+    /** 議고쉶?잛닔 */
     private String inqireCo;
         
-    /** 질의응답처리상태코드 */
+    /** 吏덉쓽?묐떟泥섎━?곹깭肄붾뱶 */
     private String qnaProcessSttusCode;
 
-    /** 질의응답처리상태코드명 */
+    /** 吏덉쓽?묐떟泥섎━?곹깭肄붾뱶紐?*/
     private String qnaProcessSttusCodeNm;
     
-    /** 조치내용 */
+    /** 議곗튂?댁슜 */
     private String managtCn;
     
-    /** 조치일자 */
+    /** 議곗튂?쇱옄 */
     private String managtDe;
 
-    /** 작성비밀번호 확인여부 */
+    /** ?묒꽦鍮꾨?踰덊샇 ?뺤씤?щ? */
     private String passwordConfirmAt;
     
-    /** 답변자명 */
+    /** ?듬??먮챸 */
     private String emplyrNm;
     
-    /** 사무실전화번호 */
+    /** ?щТ?ㅼ쟾?붾쾲??*/
     private String offmTelno;
 
-    /** 답변자 EMAIL 주소 */
+    /** ?듬???EMAIL 二쇱냼 */
     private String aemailAdres;
     
-    /** 부서명 */
+    /** 遺?쒕챸 */
     private String orgnztNm;
         
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록자ID */
+    /** 理쒖큹?깅줉?륤D */
     private String frstRegisterId;
 
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm;
 
-    /** 최종수정자ID */
+    /** 理쒖쥌?섏젙?륤D */
     private String lastUpdusrId;
 
 	/**
-	 * cnsltId attribute 를 리턴한다.
+	 * cnsltId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCnsltId() {
@@ -121,7 +121,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * cnsltId attribute 값을 설정한다.
+	 * cnsltId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cnsltId String
 	 */
 	public void setCnsltId(String cnsltId) {
@@ -129,7 +129,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * cnsltSj attribute 를 리턴한다.
+	 * cnsltSj attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCnsltSj() {
@@ -137,7 +137,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * cnsltSj attribute 값을 설정한다.
+	 * cnsltSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cnsltSj String
 	 */
 	public void setCnsltSj(String cnsltSj) {
@@ -145,7 +145,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * cnsltCn attribute 를 리턴한다.
+	 * cnsltCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCnsltCn() {
@@ -153,7 +153,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * cnsltCn attribute 값을 설정한다.
+	 * cnsltCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cnsltCn String
 	 */
 	public void setCnsltCn(String cnsltCn) {
@@ -161,7 +161,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * othbcAt attribute 를 리턴한다.
+	 * othbcAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOthbcAt() {
@@ -169,7 +169,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * othbcAt attribute 값을 설정한다.
+	 * othbcAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return othbcAt String
 	 */
 	public void setOthbcAt(String othbcAt) {
@@ -177,7 +177,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * writngPassword attribute 를 리턴한다.
+	 * writngPassword attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWritngPassword() {
@@ -185,7 +185,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * writngPassword attribute 값을 설정한다.
+	 * writngPassword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return writngPassword String
 	 */
 	public void setWritngPassword(String writngPassword) {
@@ -193,7 +193,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * areaNo attribute 를 리턴한다.
+	 * areaNo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAreaNo() {
@@ -201,7 +201,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * areaNo attribute 값을 설정한다.
+	 * areaNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return areaNo String
 	 */
 	public void setAreaNo(String areaNo) {
@@ -209,7 +209,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * middleTelno attribute 를 리턴한다.
+	 * middleTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMiddleTelno() {
@@ -217,7 +217,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * middleTelno attribute 값을 설정한다.
+	 * middleTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return middleTelno String
 	 */
 	public void setMiddleTelno(String middleTelno) {
@@ -225,7 +225,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * endTelno attribute 를 리턴한다.
+	 * endTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEndTelno() {
@@ -233,7 +233,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * endTelno attribute 값을 설정한다.
+	 * endTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return endTelno String
 	 */
 	public void setEndTelno(String endTelno) {
@@ -241,7 +241,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * firstMoblphonNo attribute 를 리턴한다.
+	 * firstMoblphonNo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFirstMoblphonNo() {
@@ -249,7 +249,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * firstMoblphonNo attribute 값을 설정한다.
+	 * firstMoblphonNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return firstMoblphonNo String
 	 */
 	public void setFirstMoblphonNo(String firstMoblphonNo) {
@@ -257,7 +257,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * middleMbtlnum attribute 를 리턴한다.
+	 * middleMbtlnum attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMiddleMbtlnum() {
@@ -265,7 +265,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * middleMbtlnum attribute 값을 설정한다.
+	 * middleMbtlnum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return middleMbtlnum String
 	 */
 	public void setMiddleMbtlnum(String middleMbtlnum) {
@@ -273,7 +273,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * endMbtlnum attribute 를 리턴한다.
+	 * endMbtlnum attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEndMbtlnum() {
@@ -281,7 +281,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * endMbtlnum attribute 값을 설정한다.
+	 * endMbtlnum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return endMbtlnum String
 	 */
 	public void setEndMbtlnum(String endMbtlnum) {
@@ -289,7 +289,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emailAdres attribute 를 리턴한다.
+	 * emailAdres attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmailAdres() {
@@ -297,7 +297,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emailAdres attribute 값을 설정한다.
+	 * emailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emailAdres String
 	 */
 	public void setEmailAdres(String emailAdres) {
@@ -305,7 +305,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emailAnswerAt attribute 를 리턴한다.
+	 * emailAnswerAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmailAnswerAt() {
@@ -313,7 +313,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emailAnswerAt attribute 값을 설정한다.
+	 * emailAnswerAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emailAnswerAt String
 	 */
 	public void setEmailAnswerAt(String emailAnswerAt) {
@@ -321,7 +321,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAtchFileId() {
@@ -329,7 +329,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -337,7 +337,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * wrterNm attribute 를 리턴한다.
+	 * wrterNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWrterNm() {
@@ -345,7 +345,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * wrterNm attribute 값을 설정한다.
+	 * wrterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return wrterNm String
 	 */
 	public void setWrterNm(String wrterNm) {
@@ -353,7 +353,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * writngDe attribute 를 리턴한다.
+	 * writngDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWritngDe() {
@@ -361,7 +361,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * writngDe attribute 값을 설정한다.
+	 * writngDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return writngDe String
 	 */
 	public void setWritngDe(String writngDe) {
@@ -369,7 +369,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 를 리턴한다.
+	 * inqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getInqireCo() {
@@ -377,7 +377,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 값을 설정한다.
+	 * inqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return inqireCo String
 	 */
 	public void setInqireCo(String inqireCo) {
@@ -385,7 +385,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCode attribute 를 리턴한다.
+	 * qnaProcessSttusCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQnaProcessSttusCode() {
@@ -393,7 +393,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCode attribute 값을 설정한다.
+	 * qnaProcessSttusCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qnaProcessSttusCode String
 	 */
 	public void setQnaProcessSttusCode(String qnaProcessSttusCode) {
@@ -401,7 +401,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCodeNm attribute 를 리턴한다.
+	 * qnaProcessSttusCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQnaProcessSttusCodeNm() {
@@ -409,7 +409,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCodeNm attribute 값을 설정한다.
+	 * qnaProcessSttusCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qnaProcessSttusCodeNm String
 	 */
 	public void setQnaProcessSttusCodeNm(String qnaProcessSttusCodeNm) {
@@ -417,7 +417,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * managtCn attribute 를 리턴한다.
+	 * managtCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getManagtCn() {
@@ -425,7 +425,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * managtCn attribute 값을 설정한다.
+	 * managtCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return managtCn String
 	 */
 	public void setManagtCn(String managtCn) {
@@ -433,7 +433,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * managtDe attribute 를 리턴한다.
+	 * managtDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getManagtDe() {
@@ -441,7 +441,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * managtDe attribute 값을 설정한다.
+	 * managtDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return managtDe String
 	 */
 	public void setManagtDe(String managtDe) {
@@ -449,7 +449,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * passwordConfirmAt attribute 를 리턴한다.
+	 * passwordConfirmAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getPasswordConfirmAt() {
@@ -457,7 +457,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * passwordConfirmAt attribute 값을 설정한다.
+	 * passwordConfirmAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return passwordConfirmAt String
 	 */
 	public void setPasswordConfirmAt(String passwordConfirmAt) {
@@ -465,7 +465,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 를 리턴한다.
+	 * emplyrNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmplyrNm() {
@@ -473,7 +473,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 값을 설정한다.
+	 * emplyrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emplyrNm String
 	 */
 	public void setEmplyrNm(String emplyrNm) {
@@ -481,7 +481,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * offmTelno attribute 를 리턴한다.
+	 * offmTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOffmTelno() {
@@ -489,7 +489,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * offmTelno attribute 값을 설정한다.
+	 * offmTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return offmTelno String
 	 */
 	public void setOffmTelno(String offmTelno) {
@@ -497,7 +497,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * aemailAdres attribute 를 리턴한다.
+	 * aemailAdres attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAemailAdres() {
@@ -505,7 +505,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * aemailAdres attribute 값을 설정한다.
+	 * aemailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return aemailAdres String
 	 */
 	public void setAemailAdres(String aemailAdres) {
@@ -513,7 +513,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * orgnztNm attribute 를 리턴한다.
+	 * orgnztNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOrgnztNm() {
@@ -521,7 +521,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * orgnztNm attribute 값을 설정한다.
+	 * orgnztNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return orgnztNm String
 	 */
 	public void setOrgnztNm(String orgnztNm) {
@@ -529,7 +529,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -537,7 +537,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -545,7 +545,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -553,7 +553,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -561,7 +561,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -569,7 +569,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -577,7 +577,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -585,7 +585,7 @@ public class CnsltManageVO extends CnsltManageDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

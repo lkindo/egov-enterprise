@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 약식결재 정보 Entity
- * 레거시 테이블: NINFRMLSANCTN
+ * ??뚮뻼野껉퀣???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NINFRMLSANCTN
  */
 @Entity
 @Table(name = "NINFRMLSANCTN")

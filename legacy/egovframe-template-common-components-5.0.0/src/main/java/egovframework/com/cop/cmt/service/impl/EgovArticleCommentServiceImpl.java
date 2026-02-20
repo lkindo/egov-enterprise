@@ -30,7 +30,7 @@ public class EgovArticleCommentServiceImpl extends EgovAbstractServiceImpl imple
     private EgovIdGnrService egovAnswerNoGnrService;
 
     /**
-     * 댓글 사용 가능 여부를 확인한다.
+     * ?볤? ?ъ슜 媛???щ?瑜??뺤씤?쒕떎.
      */
     @Override
 	public boolean canUseComment(String bbsId) throws Exception {

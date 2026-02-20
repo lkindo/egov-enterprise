@@ -67,7 +67,7 @@ public class EgovLoginControllerTest {
     public void testLoginMessageXssVulnerability() throws Exception {
         String maliciousMessage = "\"><script>alert('xss')</script>";
         // EgovWebUtil.clearXSSMinimum replaces:
-        // " -> &#34;
+        // " -> &#34;"
         // > -> &gt;
         // < -> &lt;
         // ' -> &#39;

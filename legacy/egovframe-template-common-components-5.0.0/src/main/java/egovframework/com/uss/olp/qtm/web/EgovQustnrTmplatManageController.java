@@ -33,21 +33,21 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 /**
- * 설문템플릿 Controller Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ?쒗뵆由?Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일                수정자            수정내용
+ *  ?섏젙??               ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.03.20   장동한            최초 생성
- *  2011.08.26   정진오            IncludedInfo annotation 추가
- *  2020.10.30   신용호            파일업로드 제한을위한 파라미터 전달
- *  2022.11.11   김혜준			   시큐어코딩 처리
+ *  2009.03.20   ?λ룞??           理쒖큹 ?앹꽦
+ *  2011.08.26   ?뺤쭊??           IncludedInfo annotation 異붽?
+ *  2020.10.30   ?좎슜??           ?뚯씪?낅줈???쒗븳?꾩쐞???뚮씪誘명꽣 ?꾨떖
+ *  2022.11.11   源?쒖?			   ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -79,7 +79,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 개별 배포시 메인메뉴를 조회한다.
+	 * 媛쒕퀎 諛고룷??硫붿씤硫붾돱瑜?議고쉶?쒕떎.
 	 * @param model
 	 * @return	"/uss/sam/cpy/"
 	 * @throws Exception
@@ -90,7 +90,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 메뉴를 조회한다.
+	 * 硫붾돱瑜?議고쉶?쒕떎.
 	 * @param model
 	 * @return	"/uss/sam/cpy/EgovLeft"
 	 * @throws Exception
@@ -101,7 +101,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿 목록을 조회한다.
+	 * ?ㅻЦ?쒗뵆由?紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrTmplatManageVO
@@ -109,7 +109,7 @@ public class EgovQustnrTmplatManageController {
 	 * @return "egovframework/com/uss/olp/qtm/EgovQustnrTmplatManageList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "설문템플릿관리", order = 610, gid = 50)
+	@IncludedInfo(name = "?ㅻЦ?쒗뵆由욧?由?, order = 610, gid = 50)
 	@RequestMapping(value = "/uss/olp/qtm/EgovQustnrTmplatManageList.do")
 	public String egovQustnrTmplatManageList(
 		@ModelAttribute("searchVO") ComDefaultVO searchVO,
@@ -154,7 +154,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿 이미지 목록을 상세조회 조회한다.
+	 * ?ㅻЦ?쒗뵆由??대?吏 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * @param request
 	 * @param response
 	 * @param qustnrTmplatManageVO
@@ -175,7 +175,7 @@ public class EgovQustnrTmplatManageController {
 		byte[] img = (byte[])mapResult.get("QUSTNR_TMPLAT_IMAGE_INFOPATHNM");
 
 		String imgtype = "jpeg";
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		response.setHeader("Content-Type", imgtype);
 		response.setHeader("Content-Length", "" + img.length);
 		response.getOutputStream().write(img);
@@ -184,7 +184,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿 목록을 상세조회 조회한다.
+	 * ?ㅻЦ?쒗뵆由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param qustnrTmplatManageVO
 	 * @param commandMap
@@ -216,7 +216,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿를 수정한다.
+	 * ?ㅻЦ?쒗뵆由용? ?섏젙?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrTmplatManageVO
@@ -238,7 +238,7 @@ public class EgovQustnrTmplatManageController {
 		List<EgovMap> resultList = egovQustnrTmplatManageService.selectQustnrTmplatManageDetail(qustnrTmplatManageVO);
         model.addAttribute("resultList", resultList);
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -249,7 +249,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿를 수정처리 한다.
+	 * ?ㅻЦ?쒗뵆由용? ?섏젙泥섎━ ?쒕떎.
 	 * @param multiRequest
 	 * @param searchVO
 	 * @param commandMap
@@ -269,21 +269,21 @@ public class EgovQustnrTmplatManageController {
 		ModelMap model)
 		throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (bindingResult.hasErrors()) {
 			List<EgovMap> resultList = egovQustnrTmplatManageService.selectQustnrTmplatManageDetail(qustnrTmplatManageVO);
             model.addAttribute("resultList", resultList);
 
-			// 파일업로드 제한
+			// ?뚯씪?낅줈???쒗븳
 			String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 			String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -292,7 +292,7 @@ public class EgovQustnrTmplatManageController {
 			return "egovframework/com/uss/olp/qtm/EgovQustnrTmplatManageModify";
 		}
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		qustnrTmplatManageVO
 			.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		qustnrTmplatManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
@@ -304,7 +304,7 @@ public class EgovQustnrTmplatManageController {
 				LOGGER.info("getName => {}", file.getName());
 				LOGGER.info("getOriginalFilename => {}", file.getOriginalFilename());
 
-				// 파일 수정여부 확인
+				// ?뚯씪 ?섏젙?щ? ?뺤씤
 				if (file.getOriginalFilename() != "") {
 					if (file.getName().equals("qestnrTmplatImage")) {
 						qustnrTmplatManageVO.setQestnrTmplatImagepathnm(file.getBytes());
@@ -318,7 +318,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿를 등록한다. / 초기등록페이지
+	 * ?ㅻЦ?쒗뵆由용? ?깅줉?쒕떎. / 珥덇린?깅줉?섏씠吏
 	 * @param searchVO
 	 * @param commandMap
 	 * @param qustnrTmplatManageVO
@@ -334,14 +334,14 @@ public class EgovQustnrTmplatManageController {
 		ModelMap model)
 		throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/uss/olp/qtm/EgovQustnrTmplatManageRegist";
@@ -349,12 +349,12 @@ public class EgovQustnrTmplatManageController {
 		String sCmd = commandMap.get("cmd") == null ? "" : (String)commandMap.get("cmd");
 		LOGGER.info("cmd => {}", sCmd);
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		qustnrTmplatManageVO
 			.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		qustnrTmplatManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions.Images");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -365,7 +365,7 @@ public class EgovQustnrTmplatManageController {
 	}
 
 	/**
-	 * 설문템플릿를 등록 처리 한다.  / 등록처리
+	 * ?ㅻЦ?쒗뵆由용? ?깅줉 泥섎━ ?쒕떎.  / ?깅줉泥섎━
 	 * @param multiRequest
 	 * @param searchVO
 	 * @param qustnrTmplatManageVO
@@ -380,17 +380,17 @@ public class EgovQustnrTmplatManageController {
 		QustnrTmplatManageVO qustnrTmplatManageVO,
 		ModelMap model)
 		throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		qustnrTmplatManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		qustnrTmplatManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -398,10 +398,10 @@ public class EgovQustnrTmplatManageController {
 
 		if (files != null && !files.isEmpty()) {
 			for (MultipartFile file : files.values()) {
-				LOGGER.info("getName => {}", file.getName()); // 파일의 파라미터 이름
-				LOGGER.info("getOriginalFilename => {}", file.getOriginalFilename()); // 파일의 실제 이름
+				LOGGER.info("getName => {}", file.getName()); // ?뚯씪???뚮씪誘명꽣 ?대쫫
+				LOGGER.info("getOriginalFilename => {}", file.getOriginalFilename()); // ?뚯씪???ㅼ젣 ?대쫫
 
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				if (ObjectUtils.isNotEmpty(file.getName()) && ObjectUtils.isNotEmpty(file.getOriginalFilename())) {
 					qustnrTmplatManageVO.setQestnrTmplatImagepathnm(file.getBytes());
 				}

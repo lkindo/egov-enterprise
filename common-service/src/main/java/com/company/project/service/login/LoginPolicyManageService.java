@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 로그???�책 관�??�비??
+ * 濡쒓렇???뺤콉 愿由??쒕퉬??
  */
 @Service("loginPolicyManageService")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     /**
-     * 로그???�책 목록 조회
+     * 濡쒓렇???뺤콉 紐⑸줉 議고쉶
      */
     public List<LoginPolicyDto> selectLoginPolicyList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -57,14 +57,14 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그???�책 목록 �?건수
+     * 濡쒓렇???뺤콉 紐⑸줉 珥?嫄댁닔
      */
     public int selectLoginPolicyListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 로그???�책 ?�세 조회
+     * 濡쒓렇???뺤콉 ?곸꽭 議고쉶
      */
     public LoginPolicyDto selectLoginPolicy(String emplyrId) {
         User user = userRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
@@ -89,7 +89,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그???�책 ?�록
+     * 濡쒓렇???뺤콉 ?깅줉
      */
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
@@ -104,7 +104,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그???�책 ?�정
+     * 濡쒓렇???뺤콉 ?섏젙
      */
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
@@ -114,7 +114,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 로그???�책 ??��
+     * 濡쒓렇???뺤콉 ??젣
      */
     @Transactional
     public void deleteLoginPolicy(String emplyrId) {

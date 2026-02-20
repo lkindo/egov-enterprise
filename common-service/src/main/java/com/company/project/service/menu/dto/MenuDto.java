@@ -15,47 +15,47 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "메뉴 정보")
+@Schema(description = "Description")
 public class MenuDto {
 
-    @Schema(description = "메뉴 번호", example = "1000000")
+    @Schema(description = "Description")
     private Long id;
 
-    @Schema(description = "메뉴 번호 (Legacy 호환)", example = "1000000")
+    @Schema(description = "Description")
     private Long menuNo;
 
-    @Schema(description = "메뉴 명", example = "알림정보")
+    @Schema(description = "Description")
     private String menuNm;
 
-    @Schema(description = "프로그램 파일 명", example = "dir")
+    @Schema(description = "Description")
     private String progrmFileNm;
 
-    @Schema(description = "상위 메뉴 번호", example = "0")
+    @Schema(description = "Description")
     private Long upperMenuNo;
 
-    @Schema(description = "상위 메뉴 번호 (Legacy 호환)", example = "0")
+    @Schema(description = "Description")
     private Long upperMenuId;
 
-    @Schema(description = "메뉴 순서", example = "1")
+    @Schema(description = "Description")
     private Integer menuOrdr;
 
-    @Schema(description = "메뉴 실행 URL", example = "/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_AAAAAAAAAAAA")
+    @Schema(description = "Description")
     private String chkURL;
 
-    @Schema(description = "메뉴 설명", example = "메뉴 상세 설명")
+    @Schema(description = "Description")
     private String menuDc;
 
-    @Schema(description = "관련 이미지 경로", example = "/")
+    @Schema(description = "Description")
     private String relateImagePath;
 
-    @Schema(description = "관련 이미지 명", example = "/")
+    @Schema(description = "Description")
     private String relateImageNm;
 
-    @Schema(description = "생성자 ID", example = "admin")
+    @Schema(description = "Description")
     private String creatPersonId;
 
     @Builder.Default
-    @Schema(description = "하위 메뉴 목록")
+    @Schema(description = "Description")
     private List<MenuDto> children = new ArrayList<>();
 
     public void addChild(MenuDto child) {

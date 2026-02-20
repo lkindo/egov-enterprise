@@ -20,62 +20,62 @@ import egovframework.com.cmm.service.EgovProperties;
 import egovframework.com.cmm.service.Globals;
 
 /**
- * 문자메시지를 위한 DB Util 클래스 (프레임워크 비종속 버전) Apache commons의 DBCP를 활용한 예로 각 프로젝트에 맞게
- * 수정 필요 (EX : DataSource 사용 등)
+ * 臾몄옄硫붿떆吏瑜??꾪븳 DB Util ?대옒??(?꾨젅?꾩썙??鍮꾩쥌??踰꾩쟾) Apache commons??DBCP瑜??쒖슜???덈줈 媛??꾨줈?앺듃??留욊쾶
+ * ?섏젙 ?꾩슂 (EX : DataSource ?ъ슜 ??
  *
- * @author 공통컴포넌트개발팀 한성곤
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.11.24
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.11.24  한성곤          최초 생성
- *   2017-02-13  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2020-07-01  신용호          DBCP2 관련 변경사항 적용
- *   2025.06.09  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(리소스 닫기), AvoidSynchronizedAtMethodLevel(메서드 수준에서 동기화를 피하세요)
+ *   2009.11.24  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2017-02-13  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2020-07-01  ?좎슜??         DBCP2 愿??蹂寃쎌궗???곸슜
+ *   2025.06.09  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(由ъ냼???リ린), AvoidSynchronizedAtMethodLevel(硫붿꽌???섏??먯꽌 ?숆린?붾? ?쇳븯?몄슂)
  *
  *      </pre>
  */
 public class SmsBasicDBUtil {
-	/** Driver load 여부 */
+	/** Driver load ?щ? */
 	private static boolean isDriverLoaded = false;
 
 	/** Connection Pool Alias */
 	private static final String JDBC_ALIAS = EgovProperties.getProperty(Globals.SMSDB_CONF_PATH, "JDBC_ALIAS");
-	/** JDBC Driver 명 */
+	/** JDBC Driver 紐?*/
 	private static final String JDBC_DRIVER = EgovProperties.getProperty(Globals.SMSDB_CONF_PATH, "JDBC_DRIVER");
-	/** JDBC 접속 URL */
+	/** JDBC ?묒냽 URL */
 	private static final String JDBC_URL = EgovProperties.getProperty(Globals.SMSDB_CONF_PATH, "JDBC_URL");
-	/** JDBC 접속 사용자ID */
+	/** JDBC ?묒냽 ?ъ슜?륤D */
 	private static final String JDBC_USER = EgovProperties.getProperty(Globals.SMSDB_CONF_PATH, "JDBC_USER");
-	/** JDBC 접속 패스워드 */
+	/** JDBC ?묒냽 ?⑥뒪?뚮뱶 */
 	private static final String JDBC_PASSWORD = EgovProperties.getProperty(Globals.SMSDB_CONF_PATH, "JDBC_PASSWORD");
-	/** 한번에 pool에서 갖다 쓸 수 있는 최대 커넥션 개수 */
+	/** ?쒕쾲??pool?먯꽌 媛뽯떎 ?????덈뒗 理쒕? 而ㅻ꽖??媛쒖닔 */
 	private static final int MAX_TOTAL = 20;
-	/** 반납직후 pool에 저정될 수 있는 최대 유휴커넥션 개수 */
+	/** 諛섎궔吏곹썑 pool????뺣맆 ???덈뒗 理쒕? ?좏쑕而ㅻ꽖??媛쒖닔 */
 	private static final int MAX_IDLE = 10;
-	/** 사용되지 않고 pool에 유지할 최소한의 커넥션 개수 */
+	/** ?ъ슜?섏? ?딄퀬 pool???좎???理쒖냼?쒖쓽 而ㅻ꽖??媛쒖닔 */
 	private static final int MIN_IDLE = 5;
-	// 최대 커넥션이 20이고 maxIdle이 10인경우
-	// DB요청이 유휴상태가 되면 20개까지 생성된 커넥션풀은 10개까지 유휴커넥션으로 줄어들수 있다. (10~20개까지 커넥션풀의 개수가 생성및
-	// 반납을 반복한다.)
-	// 이후 최소 IDLE까지 줄어들수 있다.
-	/** 커넥션 timeout */
+	// 理쒕? 而ㅻ꽖?섏씠 20?닿퀬 maxIdle??10?멸꼍??
+	// DB?붿껌???좏쑕?곹깭媛 ?섎㈃ 20媛쒓퉴吏 ?앹꽦??而ㅻ꽖?섑?? 10媛쒓퉴吏 ?좏쑕而ㅻ꽖?섏쑝濡?以꾩뼱?ㅼ닔 ?덈떎. (10~20媛쒓퉴吏 而ㅻ꽖?섑???媛쒖닔媛 ?앹꽦諛?
+	// 諛섎궔??諛섎났?쒕떎.)
+	// ?댄썑 理쒖냼 IDLE源뚯? 以꾩뼱?ㅼ닔 ?덈떎.
+	/** 而ㅻ꽖??timeout */
 	private static final int MAX_WAIT_MILLIS = 20000;
-	/** auto commit 여부 */
+	/** auto commit ?щ? */
 	private static final boolean DEFAULT_AUTOCOMMIT = true;
-	/** read only 여부 */
+	/** read only ?щ? */
 	private static final boolean DEFAULT_READONLY = false;
 
 	/** Logger */
 	private static final Logger LOGGER = LoggerFactory.getLogger(SmsBasicDBUtil.class);
 
 	/**
-	 * Connection Pool 생성.
+	 * Connection Pool ?앹꽦.
 	 *
 	 * @param alias
 	 * @param bds
@@ -88,25 +88,25 @@ public class SmsBasicDBUtil {
 
 		poolableConnectionFactory = new PoolableConnectionFactory(factory, null);
 
-		// 커넥션이 유효한지 확인
+		// 而ㅻ꽖?섏씠 ?좏슚?쒖? ?뺤씤
 		poolableConnectionFactory.setValidationQuery(" SELECT 1 FROM DUAL ");
-		// 커넥션 풀의 설정 정보를 생성
+		// 而ㅻ꽖??????ㅼ젙 ?뺣낫瑜??앹꽦
 		GenericObjectPoolConfig<PoolableConnection> poolConfig = new GenericObjectPoolConfig<>();
-		// 유효 커넥션 검사 주기
+		// ?좏슚 而ㅻ꽖??寃??二쇨린
 		poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(1000L * 60L * 1L));
-		// 풀에 있는 커넥션이 유효한지 검사 유무 설정
+		// ????덈뒗 而ㅻ꽖?섏씠 ?좏슚?쒖? 寃???좊Т ?ㅼ젙
 		poolConfig.setTestWhileIdle(true);
-		// 기본값 : false /true 일 경우 validationQuery 를 매번 수행한다.
+		// 湲곕낯媛?: false /true ??寃쎌슦 validationQuery 瑜?留ㅻ쾲 ?섑뻾?쒕떎.
 		poolConfig.setTestOnBorrow(false);
-		// 커넥션 최소개수 설정
+		// 而ㅻ꽖??理쒖냼媛쒖닔 ?ㅼ젙
 		poolConfig.setMinIdle(bds.getMinIdle());
-		// 반납직후 커넥션 최소개수 설정
+		// 諛섎궔吏곹썑 而ㅻ꽖??理쒖냼媛쒖닔 ?ㅼ젙
 		poolConfig.setMaxIdle(bds.getMaxIdle());
-		// 커넥션 최대 개수 설정
+		// 而ㅻ꽖??理쒕? 媛쒖닔 ?ㅼ젙
 		poolConfig.setMaxTotal(bds.getMaxTotal());
 		GenericObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<PoolableConnection>( // NOPMD
 				poolableConnectionFactory, poolConfig);
-		// PoolableConnectionFactory 커넥션 풀 연결
+		// PoolableConnectionFactory 而ㅻ꽖??? ?곌껐
 		poolableConnectionFactory.setPool(connectionPool);
 
 		LOGGER.info("Pool : {}", poolableConnectionFactory.getClass().getName());
@@ -145,7 +145,7 @@ public class SmsBasicDBUtil {
 		if (rs != null) {
 			try {
 				rs.close();
-				// 2017.02.08 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+				// 2017.02.08 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			} catch (SQLException ignore) {
 				LOGGER.error("[SQLExceptionException] : database access error occurs");
 			}
@@ -153,7 +153,7 @@ public class SmsBasicDBUtil {
 		if (stmt != null) {
 			try {
 				stmt.close();
-				// 2017.02.08 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+				// 2017.02.08 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			} catch (SQLException ignore) {
 				LOGGER.error("[SQLExceptionException] : database access error occurs");
 			}
@@ -161,7 +161,7 @@ public class SmsBasicDBUtil {
 		if (conn != null) {
 			try {
 				conn.close();
-				// 2017.02.08 이정은 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+				// 2017.02.08 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			} catch (SQLException ignore) {
 				LOGGER.error("[SQLExceptionException] : database access error occurs");
 			}

@@ -1,12 +1,12 @@
 /**
- * 개요
- * - 로그인화면이미지에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇?명솕硫댁씠誘몄??????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 로그인화면이미지의 일련번호, 이미지명, 링크URL, 이미지설명, 반영여부 항목을 관리한다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 濡쒓렇?명솕硫댁씠誘몄????쇰젴踰덊샇, ?대?吏紐? 留곹겕URL, ?대?吏?ㅻ챸, 諛섏쁺?щ? ??ぉ??愿由ы븳??
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:08:55
+ * @created 03-8-2009 ?ㅽ썑 2:08:55
  */
 
 package egovframework.com.uss.ion.lsi.service;
@@ -20,39 +20,39 @@ public class LoginScrinImage extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 이미지 ID
+	 * ?대?吏 ID
 	 */
 	private String imageId;
 	/**
-	 * 이미지명
+	 * ?대?吏紐?
 	 */	
 	private String imageNm;
 	/**
-	 * 로그인 이미지
+	 * 濡쒓렇???대?吏
 	 */	
 	private String image;
 	/**
-	 * 로그인 이미지 파일
+	 * 濡쒓렇???대?吏 ?뚯씪
 	 */	
 	private String imageFile;
 	/**
-	 * 이미지 설명
+	 * ?대?吏 ?ㅻ챸
 	 */	
 	private String imageDc;
 	/**
-	 * 반영여부
+	 * 諛섏쁺?щ?
 	 */
 	private String reflctAt;
 	/**
-	 * 사용자 ID
+	 * ?ъ슜??ID
 	 */
 	private String userId;
 	/**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */
 	private String regDate;
 	/**
-	 * 파일첨부여부
+	 * ?뚯씪泥⑤??щ?
 	 */
 	private boolean isAtchFile;
 	/**

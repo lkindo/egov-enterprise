@@ -17,15 +17,15 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovTrsmrcvMntrngScheduling.java
- * @Description : 송수신모니터링을 위한 스케쥴링 클래스
+ * @Description : ?≪닔?좊え?덊꽣留곸쓣 ?꾪븳 ?ㅼ?伊대쭅 ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2010.08.16     김진만   최초생성
- *    2022.11.11   	 김혜준   시큐어코딩 처리
+ *    2010.08.16     源吏꾨쭔   理쒖큹?앹꽦
+ *    2022.11.11   	 源?쒖?   ?쒗걧?댁퐫??泥섎━
  *
- * @author  김진만
+ * @author  源吏꾨쭔
  * @version
  * @see
  *
@@ -48,28 +48,28 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovTrsmrcvMntrngScheduling.class);
 
-	// 모니터링 대상을 읽기위한 페이지 크기
+	// 紐⑤땲?곕쭅 ??곸쓣 ?쎄린?꾪븳 ?섏씠吏 ?ш린
 	private static final int RECORD_COUNT_PER_PAGE = 10000;
 
 	/**
-	 * 송수신 모니터링를 수행한다.
+	 * ?≪닔??紐⑤땲?곕쭅瑜??섑뻾?쒕떎.
 	 *
 	 * @param
 	 * @return
 	 * @throws Exception
 	 */
 	public void monitor() throws Exception {
-		// 모니터링 대상 정보 읽어들이기~~~
+		// 紐⑤땲?곕쭅 ????뺣낫 ?쎌뼱?ㅼ씠湲?~~
 		List<TrsmrcvMntrng> targetList = null;
 		TrsmrcvMntrng searchVO = new TrsmrcvMntrng();
-		// 모니터링 대상 검색 조건 초기화
+		// 紐⑤땲?곕쭅 ???寃??議곌굔 珥덇린??
 		searchVO.setPageIndex(1);
 		searchVO.setFirstIndex(0);
 		searchVO.setRecordCountPerPage(RECORD_COUNT_PER_PAGE);
 		targetList = trsmrcvMntrngService.selectTrsmrcvMntrngList(searchVO);
-		LOGGER.debug("조회조건 {}", searchVO);
-		LOGGER.debug("Result 건수 : {}", targetList.size());
-		// 서비스체크 함수 호출.
+		LOGGER.debug("議고쉶議곌굔 {}", searchVO);
+		LOGGER.debug("Result 嫄댁닔 : {}", targetList.size());
+		// ?쒕퉬?ㅼ껜???⑥닔 ?몄텧.
 		Iterator<TrsmrcvMntrng> iter = targetList.iterator();
 		TrsmrcvMntrng target = null;
 		TrsmrcvMntrngResult result = null;
@@ -82,25 +82,25 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			LOGGER.debug("Data : {}", target);
 
 			try {
-				// Checker 클래스 생성.
+				// Checker ?대옒???앹꽦.
 				klass = Class.forName(target.getTestClassNm());
 				checker = (TrsmrcvMntrngChecker)klass.newInstance();
 				LOGGER.debug("Just made: {}", checker);
-				// 서비스 체크 수행.
+				// ?쒕퉬??泥댄겕 ?섑뻾.
 				result = checker.check(target.getCntcId());
 				LOGGER.debug("Result Data: {}", checker);
 			} catch (ClassNotFoundException e) {
-				LOGGER.error("송수신모니터링 Checker클래스 생성에러", e);
+				LOGGER.error("?≪닔?좊え?덊꽣留?Checker?대옒???앹꽦?먮윭", e);
 				result = new TrsmrcvMntrngResult(false, e);
 			} catch (IllegalAccessException e) {
-				LOGGER.error("송수신모니터링 Checker클래스 생성에러", e);
+				LOGGER.error("?≪닔?좊え?덊꽣留?Checker?대옒???앹꽦?먮윭", e);
 				result = new TrsmrcvMntrngResult(false, e);
 			} catch (InstantiationException e) {
-				LOGGER.error("송수신모니터링 Checker클래스 생성에러", e);
+				LOGGER.error("?≪닔?좊え?덊꽣留?Checker?대옒???앹꽦?먮윭", e);
 				result = new TrsmrcvMntrngResult(false, e);
 			}
 
-			// 대상테이블에 DB에 결과값 저장
+			// ??곹뀒?대툝??DB??寃곌낵媛????
 
 			if (result != null && result.isNrmltAt()) {
 				target.setMntrngSttus("01");
@@ -109,7 +109,7 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			}
 			target.setLastUpdusrId("SYSTEM");
 			trsmrcvMntrngService.updateTrsmrcvMntrng(target);
-			// 로그테이블 추가저장.
+			// 濡쒓렇?뚯씠釉?異붽????
 			trsmrcvMntrngLog = new TrsmrcvMntrngLog();
 			trsmrcvMntrngLogId = idgenService.getNextStringId();
 			trsmrcvMntrngLog.setLogId(trsmrcvMntrngLogId);
@@ -122,7 +122,7 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			trsmrcvMntrngLog.setLastUpdusrId("SYSTEM");
 
 			if (result != null && result.getCause() != null) {
-				LOGGER.debug("에러메시지: {}", result.getCause().getMessage());
+				LOGGER.debug("?먮윭硫붿떆吏: {}", result.getCause().getMessage());
 
 				if (result.getCause().getMessage() != null) {
 					trsmrcvMntrngLog
@@ -134,14 +134,14 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 			} else {
 				trsmrcvMntrngLog.setLogInfo("");
 			}
-			LOGGER.debug("insert할 송수신모니터링로그 Data : {}", trsmrcvMntrngLog);
+			LOGGER.debug("insert???≪닔?좊え?덊꽣留곷줈洹?Data : {}", trsmrcvMntrngLog);
 			trsmrcvMntrngService.insertTrsmrcvMntrngLog(trsmrcvMntrngLog);
 
-			// 모니터링시각을 가져오기위해 로그정보를 가져온다.
+			// 紐⑤땲?곕쭅?쒓컖??媛?몄삤湲곗쐞??濡쒓렇?뺣낫瑜?媛?몄삩??
 			trsmrcvMntrngLog = trsmrcvMntrngService.selectTrsmrcvMntrngLog(trsmrcvMntrngLog);
-			LOGGER.debug(" email전송할 송수신모니터링로그 Data : {}", trsmrcvMntrngLog);
+			LOGGER.debug(" email?꾩넚???≪닔?좊え?덊꽣留곷줈洹?Data : {}", trsmrcvMntrngLog);
 
-			// email 전송.
+			// email ?꾩넚.
 			if (result != null && !result.isNrmltAt()) { //2022.01. Possible null pointer dereference
 				sendEmail(trsmrcvMntrngLog);
 			}
@@ -151,9 +151,9 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 	}
 
 	/**
-	 * 이메일을 전송한다.
+	 * ?대찓?쇱쓣 ?꾩넚?쒕떎.
 	 *
-	 * @param   mntrngLog   모니터링 대상정보
+	 * @param   mntrngLog   紐⑤땲?곕쭅 ??곸젙蹂?
 	 * @return
 	 *
 	 */
@@ -163,27 +163,27 @@ public class EgovTrsmrcvMntrngScheduling extends EgovAbstractServiceImpl {
 		String errorContents = "";
 
 		SimpleMailMessage msg = new SimpleMailMessage(this.mntrngMessage);
-		// 수신자
+		// ?섏떊??
 		msg.setTo(mntrngLog.getMngrEmailAddr());
-		// 메일제목
+		// 硫붿씪?쒕ぉ
 		subject = msg.getSubject();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(subject)) {
-			subject = EgovStringUtil.replace(subject, "{모니터링종류}", "송수신모니터링");
+			subject = EgovStringUtil.replace(subject, "{紐⑤땲?곕쭅醫낅쪟}", "?≪닔?좊え?덊꽣留?);
 			msg.setSubject(subject);
 		}
-		// 메일내용
+		// 硫붿씪?댁슜
 		text = msg.getText();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(text)) {
-			text = EgovStringUtil.replace(text, "{모니터링종류}", "송수신모니터링");
-			errorContents = "연계ID : " + mntrngLog.getCntcId() + "\n";
-			errorContents = errorContents + "연계명 : " + mntrngLog.getCntcNm() + "\n";
-			errorContents = errorContents + "테스트클래스명 : " + mntrngLog.getTestClassNm() + "\n";
-			errorContents = errorContents + "상태 : " + mntrngLog.getMntrngSttusNm() + "\n";
-			errorContents = errorContents + "모니터링시각 : " + mntrngLog.getCreatDt() + "\n";
-			errorContents = errorContents + "에러메시지 : " + mntrngLog.getLogInfo() + "\n";
-			text = EgovStringUtil.replace(text, "{에러내용}", errorContents);
+			text = EgovStringUtil.replace(text, "{紐⑤땲?곕쭅醫낅쪟}", "?≪닔?좊え?덊꽣留?);
+			errorContents = "?곌퀎ID : " + mntrngLog.getCntcId() + "\n";
+			errorContents = errorContents + "?곌퀎紐?: " + mntrngLog.getCntcNm() + "\n";
+			errorContents = errorContents + "?뚯뒪?명겢?섏뒪紐?: " + mntrngLog.getTestClassNm() + "\n";
+			errorContents = errorContents + "?곹깭 : " + mntrngLog.getMntrngSttusNm() + "\n";
+			errorContents = errorContents + "紐⑤땲?곕쭅?쒓컖 : " + mntrngLog.getCreatDt() + "\n";
+			errorContents = errorContents + "?먮윭硫붿떆吏 : " + mntrngLog.getLogInfo() + "\n";
+			text = EgovStringUtil.replace(text, "{?먮윭?댁슜}", errorContents);
 			msg.setText(text);
 		}
 

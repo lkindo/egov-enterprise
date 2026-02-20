@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 사용자 권한 관리 서비스
+ * ?ъ슜??沅뚰븳 愿由??쒕퉬??
  */
 @Service("projectUserAuthorityService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class UserAuthorityService {
     private final UserAuthorityRepository userAuthorityRepository;
 
     /**
-     * 사용자 권한 목록 조회
+     * ?ъ슜??沅뚰븳 紐⑸줉 議고쉶
      */
     public List<UserAuthorityDto> selectUserAuthorityList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -39,14 +39,14 @@ public class UserAuthorityService {
     }
 
     /**
-     * 사용자 권한 목록 총 건수
+     * ?ъ슜??沅뚰븳 紐⑸줉 珥?嫄댁닔
      */
     public int selectUserAuthorityListTotCnt(ComDefaultVO searchVO) {
         return (int) userAuthorityRepository.count();
     }
 
     /**
-     * 사용자 권한 상세 조회
+     * ?ъ슜??沅뚰븳 ?곸꽭 議고쉶
      */
     public UserAuthorityDto selectUserAuthority(@NonNull String uniqId) {
         return userAuthorityRepository.findById(Objects.requireNonNull(uniqId))
@@ -55,7 +55,7 @@ public class UserAuthorityService {
     }
 
     /**
-     * 사용자 권한 등록/수정
+     * ?ъ슜??沅뚰븳 ?깅줉/?섏젙
      */
     @Transactional
     public void insertUserAuthority(@NonNull UserAuthorityDto dto) {
@@ -75,7 +75,7 @@ public class UserAuthorityService {
     }
 
     /**
-     * 사용자 권한 삭제
+     * ?ъ슜??沅뚰븳 ??젣
      */
     @Transactional
     public void deleteUserAuthority(@NonNull String uniqId) {

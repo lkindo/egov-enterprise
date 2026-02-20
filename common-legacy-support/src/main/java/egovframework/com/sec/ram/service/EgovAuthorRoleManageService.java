@@ -1,0 +1,55 @@
+package egovframework.com.sec.ram.service;
+
+import java.util.List;
+
+/**
+ * ???? ?????????????????? ???.
+ * @author ???????? ??
+ * @since 2009.06.01
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << ?????Modification Information) >>
+ *   
+ *  ????               ????            ????
+ *  ----------   ---------   ---------------------------
+ *  2009.03.20   ??              ????
+ *  2021.02-09   ???             updateAuthorRole ????
+ *
+ * </pre>
+ **/
+
+public interface EgovAuthorRoleManageService {
+
+	/**
+	 * ?????????
+	 * @param authorRoleManageVO AuthorRoleManageVO
+	 * @return List<AuthorRoleManageVO>
+	 * @exception Exception
+	 **/
+	public List<AuthorRoleManageVO> selectAuthorRoleList(AuthorRoleManageVO authorRoleManageVO) throws Exception;
+	
+	/**
+	 * ??????? ??? ???? ?????????? ?????????????
+	 * @param authorRoleManage AuthorRoleManage
+	 * @exception Exception
+	 **/
+	public void insertAuthorRole(AuthorRoleManage authorRoleManage) throws Exception;
+	
+	/**
+	 * ??????? ?????? ?????? ????
+	 * @param authorRoleManage AuthorRoleManage
+	 * @exception Exception
+	 **/
+	public void deleteAuthorRole(AuthorRoleManage authorRoleManage) throws Exception;
+
+    /**
+	 * ? ??? ???
+	 * @param authorRoleManageVO AuthorRoleManageVO
+	 * @return int
+	 * @exception Exception
+	 **/
+	public int selectAuthorRoleListTotCnt(AuthorRoleManageVO authorRoleManageVO) throws Exception;	
+
+}

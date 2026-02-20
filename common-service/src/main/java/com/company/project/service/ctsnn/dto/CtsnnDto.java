@@ -13,58 +13,58 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "경조사 정보 DTO")
+@Schema(description = "Congratulation/Condolence DTO")
 public class CtsnnDto {
 
-    @Schema(description = "경조사 ID")
+    @Schema(description = "ID")
     private String ctsnnId;
 
-    @Schema(description = "사용자 ID")
+    @Schema(description = "User ID")
     private String usid;
 
-    @Schema(description = "경조사 코드")
+    @Schema(description = "Code")
     private String ctsnnCd;
 
-    @Schema(description = "신청 일자")
+    @Schema(description = "Request Date")
     private String reqstDe;
 
-    @Schema(description = "경조사 명")
+    @Schema(description = "Name")
     private String ctsnnNm;
 
-    @Schema(description = "대상자 명")
+    @Schema(description = "Target Name")
     private String trgterNm;
 
-    @Schema(description = "생년월일")
+    @Schema(description = "Birth Date")
     private String brth;
 
-    @Schema(description = "발생 일자")
+    @Schema(description = "Occurrence Date")
     private String occrrDe;
 
-    @Schema(description = "관계")
+    @Schema(description = "Relation")
     private String relate;
 
-    @Schema(description = "비고")
+    @Schema(description = "Remark")
     private String remark;
 
-    @Schema(description = "승인자 ID")
+    @Schema(description = "Approver ID")
     private String sanctnerId;
 
-    @Schema(description = "승인 여부")
+    @Schema(description = "Confirmation Status")
     private String confmAt;
 
-    @Schema(description = "승인 일시")
+    @Schema(description = "Approval Date")
     private LocalDateTime sanctnDt;
 
-    @Schema(description = "반려 사유")
+    @Schema(description = "Return Reason")
     private String returnResn;
 
-    @Schema(description = "내부 결재 ID")
+    @Schema(description = "Informal Sanction ID")
     private String infrmlSanctnId;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Created By ID")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Created Date")
     private LocalDateTime createdDate;
 
     public static CtsnnDto from(CtsnnManage entity) {

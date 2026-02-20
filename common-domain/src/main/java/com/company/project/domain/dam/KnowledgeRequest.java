@@ -10,8 +10,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * 지식정보제공/요청 JPA Entity
- * 레거시 테이블: NDAMCALRES
+ * 筌왖??뱀젟癰귣똻?ｆ??遺욧퍕 JPA Entity
+ * ??뉕탢?????뵠?? NDAMCALRES
  */
 @Entity
 @Table(name = "NDAMCALRES")

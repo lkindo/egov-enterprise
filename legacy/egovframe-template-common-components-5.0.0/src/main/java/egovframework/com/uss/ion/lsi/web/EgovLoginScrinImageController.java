@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 인터넷서비스안내에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 인터넷서비스안내에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 인터넷서비스안내의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:02
+ * @created 03-8-2009 ?ㅽ썑 2:08:02
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2010.8.3	lee.m.j          최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.8.3	lee.m.j          理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -71,7 +71,7 @@ public class EgovLoginScrinImageController {
     private EgovLoginScrinImageService egovLoginScrinImageService;
 
     /**
-	 * 로그인화면이미지 목록화면 이동
+	 * 濡쒓렇?명솕硫댁씠誘몄? 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -82,11 +82,11 @@ public class EgovLoginScrinImageController {
     }
 
 	/**
-	 * 로그인화면이미지정보를 관리하기 위해 등록된 로그인화면이미지 목록을 조회한다.
-	 * @param loginScrinImageVO - 로그인화면이미지 VO
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?명솕硫댁씠誘몄??뺣낫瑜?愿由ы븯湲??꾪빐 ?깅줉??濡쒓렇?명솕硫댁씠誘몄? 紐⑸줉??議고쉶?쒕떎.
+	 * @param loginScrinImageVO - 濡쒓렇?명솕硫댁씠誘몄? VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="로그인화면이미지관리", order = 750 ,gid = 50)
+    @IncludedInfo(name="濡쒓렇?명솕硫댁씠誘몄?愿由?, order = 750 ,gid = 50)
     @RequestMapping(value="/uss/ion/lsi/selectLoginScrinImageList.do")
 	public String selectLoginScrinImageList(@ModelAttribute("loginScrinImageVO") LoginScrinImageVO loginScrinImageVO,
 			                                 ModelMap model) throws Exception {
@@ -116,9 +116,9 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 등록된 로그인화면이미지의 상세정보를 조회한다.
-	 * @param loginScrinImageVO - 로그인화면이미지 VO
-	 * @return String - 리턴 Url
+	 * ?깅줉??濡쒓렇?명솕硫댁씠誘몄????곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param loginScrinImageVO - 濡쒓렇?명솕硫댁씠誘몄? VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/lsi/getLoginScrinImage.do")
 	public String selectLoginScrinImage(@RequestParam("imageId") String imageId,
@@ -132,8 +132,8 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 로그인화면이미지 등록 화면으로 이동한다.
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?명솕硫댁씠誘몄? ?깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/lsi/addViewLoginScrinImage.do")
 	public String insertViewLoginScrinImage(@ModelAttribute("loginScrinImageVO") LoginScrinImageVO loginScrinImageVO) throws Exception {
@@ -141,9 +141,9 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 로그인화면이미지정보를 신규로 등록한다.
-	 * @param loginScrinImage - 로그인화면이미지 model
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?명솕硫댁씠誘몄??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param loginScrinImage - 濡쒓렇?명솕硫댁씠誘몄? model
+	 * @return String - 由ы꽩 Url
 	 */
     @SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/lsi/addLoginScrinImage.do")
@@ -201,9 +201,9 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 기 등록된 로그인화면이미지정보를 수정한다.
-	 * @param loginScrinImage - 로그인화면이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??濡쒓렇?명솕硫댁씠誘몄??뺣낫瑜??섏젙?쒕떎.
+	 * @param loginScrinImage - 濡쒓렇?명솕硫댁씠誘몄? model
+	 * @return String - 由ы꽩 Url
 	 */
 	@SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/lsi/updtLoginScrinImage.do")
@@ -262,9 +262,9 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 기 등록된 로그인화면이미지정보를 삭제한다.
-	 * @param loginScrinImage - 로그인화면이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??濡쒓렇?명솕硫댁씠誘몄??뺣낫瑜???젣?쒕떎.
+	 * @param loginScrinImage - 濡쒓렇?명솕硫댁씠誘몄? model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/lsi/removeLoginScrinImage.do")
 	public String deleteLoginScrinImage(@RequestParam("imageId") String imageId,
@@ -281,7 +281,7 @@ public class EgovLoginScrinImageController {
 
 
 	/**
-	 * 기 등록된 로그인화면이미지정보 목록을 일괄 삭제한다.
+	 * 湲??깅줉??濡쒓렇?명솕硫댁씠誘몄??뺣낫 紐⑸줉???쇨큵 ??젣?쒕떎.
 	 * @param loginScrinImageIds String
 	 * @param loginScrinImage LoginScrinImage
 	 * @return String
@@ -306,18 +306,18 @@ public class EgovLoginScrinImageController {
 	}
 
 	/**
-	 * 기 등록된 로그인화면이미지정보의 이미지파일을 삭제한다.
-	 * @param loginScrinImage - 로그인화면이미지 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??濡쒓렇?명솕硫댁씠誘몄??뺣낫???대?吏?뚯씪????젣?쒕떎.
+	 * @param loginScrinImage - 濡쒓렇?명솕硫댁씠誘몄? model
+	 * @return String - 由ы꽩 Url
 	 */
 	public String deleteLoginScrinImageFile(LoginScrinImage loginScrinImage){
 		return "";
 	}
 
 	/**
-	 * 로그인화면이미지가 특정화면에 반영된 결과를 조회한다.
-	 * @param loginScrinImageVO - 로그인화면이미지 VO
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?명솕硫댁씠誘몄?媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param loginScrinImageVO - 濡쒓렇?명솕硫댁씠誘몄? VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/lsi/getLoginScrinImageResult.do")
 	public String selectLoginScrinImageResult(@ModelAttribute("loginScrinImageVO") LoginScrinImageVO loginScrinImageVO,

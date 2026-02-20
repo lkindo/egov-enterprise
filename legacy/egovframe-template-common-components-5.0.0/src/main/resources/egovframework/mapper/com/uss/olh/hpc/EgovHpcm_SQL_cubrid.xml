@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.09.19       서준식 		selectHpcmList 등록일자 Character 타입으로 변경
-  2011.09.29    서준식              selectHpcmListTotCnt 검색 조건 수정
+  2011.09.19       ?쒖???		selectHpcmList ?깅줉?쇱옄 Character ??낆쑝濡?蹂寃?
+  2011.09.29    ?쒖???             selectHpcmListTotCnt 寃??議곌굔 ?섏젙
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">

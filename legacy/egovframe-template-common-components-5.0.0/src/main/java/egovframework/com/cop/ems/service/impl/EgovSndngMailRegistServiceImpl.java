@@ -20,23 +20,23 @@ import jakarta.annotation.Resource;
 import noNamespace.SndngMailDocument;
 
 /**
- * 발송메일등록, 발송요청XML파일 생성하는 비즈니스 구현 클래스
+ * 諛쒖넚硫붿씪?깅줉, 諛쒖넚?붿껌XML?뚯씪 ?앹꽦?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.12  박지욱          최초 생성
- *   2011.07.27  서준식          메일 발송내역 DB 저장시 첨부파일이 없으면 NULL로 변경
- *   2011.12.06  이기하          메일 첨부파일이 기능 추가
- *   2015.02.02  표준프레임워크     메일 첨부파일 오류 수정
- *   2025.06.03  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-SimplifyBooleanExpressions(부울 표현식 단순화)
+ *   2009.03.12  諛뺤???         理쒖큹 ?앹꽦
+ *   2011.07.27  ?쒖???         硫붿씪 諛쒖넚?댁뿭 DB ??μ떆 泥⑤??뚯씪???놁쑝硫?NULL濡?蹂寃?
+ *   2011.12.06  ?닿린??         硫붿씪 泥⑤??뚯씪??湲곕뒫 異붽?
+ *   2015.02.02  ?쒖??꾨젅?꾩썙??    硫붿씪 泥⑤??뚯씪 ?ㅻ쪟 ?섏젙
+ *   2025.06.03  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SimplifyBooleanExpressions(遺???쒗쁽???⑥닚??
  *
  *      </pre>
  */
@@ -58,7 +58,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 	private EgovFileMngService fileService;
 
 	/**
-	 * 발송할 메일을 등록한다
+	 * 諛쒖넚??硫붿씪???깅줉?쒕떎
 	 * 
 	 * @param vo SndngMailVO
 	 * @return boolean
@@ -66,16 +66,16 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 	 */
 	@Override
 	public boolean insertSndngMail(SndngMailVO vo) throws Exception {
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		String recptnPersons = EgovStringUtil.isNullToString(vo.getRecptnPerson()).replaceAll(" ", "");
 		String[] recptnPersonList = recptnPersons.split(";");
 
 		for (int j = 0; j < recptnPersonList.length; j++) {
 
-			// 1-0.메세지ID를 생성한다.
+			// 1-0.硫붿꽭吏ID瑜??앹꽦?쒕떎.
 			String mssageId = egovMailMsgIdGnrService.getNextStringId();
 
-			// 1-1.발송메일 데이터를 만든다.
+			// 1-1.諛쒖넚硫붿씪 ?곗씠?곕? 留뚮뱺??
 			SndngMailVO mailVO = new SndngMailVO();
 			mailVO.setMssageId(mssageId);
 			mailVO.setDsptchPerson(vo.getDsptchPerson());
@@ -83,7 +83,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 			mailVO.setSj(vo.getSj());
 			// mailVO.setEmailCn(EgovStringUtil.checkHtmlView(vo.getEmailCn()));
 			mailVO.setEmailCn(vo.getEmailCn());
-			mailVO.setSndngResultCode("R"); // 발송결과 요청
+			mailVO.setSndngResultCode("R"); // 諛쒖넚寃곌낵 ?붿껌
 
 			if (vo.getAtchFileId() == null || vo.getAtchFileId().equals("")) {
 				mailVO.setAtchFileId(null);
@@ -102,26 +102,26 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 				mailVO.setOrignlFileNm(vo.getOrignlFileNm());
 			}
 
-			// 1-3.발송메일을 등록한다.
+			// 1-3.諛쒖넚硫붿씪???깅줉?쒕떎.
 			sndngMailRegistDAO.insertSndngMail(mailVO);
 
-			// 1-4.메일을 발송한다.
+			// 1-4.硫붿씪??諛쒖넚?쒕떎.
 			boolean sendingMailResult = egovSndngMailService.sndngMail(mailVO);
 
 			if (!sendingMailResult) {
-				mailVO.setSndngResultCode("F"); // 발송결과 실패
-				sndngMailRegistDAO.updateSndngMail(mailVO); // 발송상태를 DB에 업데이트 한다.
+				mailVO.setSndngResultCode("F"); // 諛쒖넚寃곌낵 ?ㅽ뙣
+				sndngMailRegistDAO.updateSndngMail(mailVO); // 諛쒖넚?곹깭瑜?DB???낅뜲?댄듃 ?쒕떎.
 				return false;
 			}
 
-			// 1-5.발송메일 요청XML 파일을 생성한다.
+			// 1-5.諛쒖넚硫붿씪 ?붿껌XML ?뚯씪???앹꽦?쒕떎.
 			trnsmitXmlData(mailVO);
 		}
 		return true;
 	}
 
 	/**
-	 * 발송할 메일을 XML파일로 만들어 저장한다.
+	 * 諛쒖넚??硫붿씪??XML?뚯씪濡?留뚮뱾????ν븳??
 	 * 
 	 * @param vo SndngMailVO
 	 * @return boolean
@@ -130,7 +130,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 	@Override
 	public boolean trnsmitXmlData(SndngMailVO vo) throws Exception {
 
-		// 1. 첨부파일 목록 (원파일명, 저장파일명)
+		// 1. 泥⑤??뚯씪 紐⑸줉 (?먰뙆?쇰챸, ??ν뙆?쇰챸)
 		String orignlFileList = "";
 		String streFileList = "";
 		List<AtchmnFileVO> atchmnFileList = sndngMailRegistDAO.selectAtchmnFileList(vo);
@@ -142,7 +142,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 			streFileList += streFile + ";";
 		}
 
-		// 2. XML데이터를 만든다.
+		// 2. XML?곗씠?곕? 留뚮뱺??
 		SndngMailDocument mailDoc;
 		SndngMailDocument.SndngMail mailElement;
 		mailDoc = SndngMailDocument.Factory.newInstance();
@@ -156,7 +156,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 		mailElement.setOrignlFileList(orignlFileList);
 		mailElement.setStreFileList(streFileList);
 
-		// 2. XML파일로 저장한다.
+		// 2. XML?뚯씪濡???ν븳??
 		String xmlFile = Globals.MAIL_REQUEST_PATH + vo.getMssageId() + ".xml";
 		boolean result = EgovXMLDoc.getClassToXML(mailDoc, xmlFile);
 		if (result) {
@@ -166,7 +166,7 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 	}
 
 	/**
-	 * 발송메일 발송결과 XML파일을 읽어 발송결과코드에 수정한다.
+	 * 諛쒖넚硫붿씪 諛쒖넚寃곌낵 XML?뚯씪???쎌뼱 諛쒖넚寃곌낵肄붾뱶???섏젙?쒕떎.
 	 * 
 	 * @param xml String
 	 * @return boolean
@@ -175,14 +175,14 @@ public class EgovSndngMailRegistServiceImpl extends EgovAbstractServiceImpl impl
 	@Override
 	public boolean recptnXmlData(String xmlFile) throws Exception {
 
-		// 1. XML파일에서 발송결과코드를 가져온다.
+		// 1. XML?뚯씪?먯꽌 諛쒖넚寃곌낵肄붾뱶瑜?媛?몄삩??
 		SndngMailDocument mailDoc = EgovXMLDoc.getXMLToClass(xmlFile);
 		SndngMailDocument.SndngMail mailElement = mailDoc.getSndngMail();
 		SndngMailVO sndngMailVO = new SndngMailVO();
 		sndngMailVO.setMssageId(mailElement.getMssageId());
-		sndngMailVO.setSndngResultCode("C"); // 발송결과 완료
+		sndngMailVO.setSndngResultCode("C"); // 諛쒖넚寃곌낵 ?꾨즺
 
-		// 2. DB에 업데이트 한다.
+		// 2. DB???낅뜲?댄듃 ?쒕떎.
 		sndngMailRegistDAO.updateSndngMail(sndngMailVO);
 
 		return true;

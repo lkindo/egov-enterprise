@@ -8,15 +8,15 @@ import java.io.Serializable;
  * @Modification Information
  *
  *<pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일              수정자          수정내용
+ *   ?섏젙??             ?섏젙??         ?섏젙?댁슜
  *   ----------  --------  ---------------------------
- *   2009.03.03     박지욱     최초 생성
- *   2021.05.30     정진오     디지털원패스 사용자키/세션값 추가
+ *   2009.03.03     諛뺤???    理쒖큹 ?앹꽦
+ *   2021.05.30     ?뺤쭊??    ?붿??몄썝?⑥뒪 ?ъ슜?먰궎/?몄뀡媛?異붽?
  *</pre>
  *
- *  @author 공통서비스 개발팀 박지욱
+ *  @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  *  @since 2009.03.03
  *  @version 1.0
  *  @see
@@ -29,216 +29,216 @@ public class LoginVO implements Serializable{
 	 */
 	private static final long serialVersionUID = -8274004534207618049L;
 	
-	/** 아이디 */
+	/** ?꾩씠??*/
 	private String id;
-	/** 이름 */
+	/** ?대쫫 */
 	private String name;
-	/** 주민등록번호 */
+	/** 二쇰??깅줉踰덊샇 */
 	private String ihidNum;
-	/** 이메일주소 */
+	/** ?대찓?쇱＜??*/
 	private String email;
-	/** 비밀번호 */
+	/** 鍮꾨?踰덊샇 */
 	private String password;
-	/** 비밀번호 힌트 */
+	/** 鍮꾨?踰덊샇 ?뚰듃 */
 	private String passwordHint;
-	/** 비밀번호 정답 */
+	/** 鍮꾨?踰덊샇 ?뺣떟 */
 	private String passwordCnsr;
-	/** 사용자구분 */
+	/** ?ъ슜?먭뎄遺?*/
 	private String userSe;
-	/** 조직(부서)ID */
+	/** 議곗쭅(遺??ID */
 	private String orgnztId;
-	/** 조직(부서)명 */
+	/** 議곗쭅(遺??紐?*/
 	private String orgnztNm;
-	/** 고유아이디 */
+	/** 怨좎쑀?꾩씠??*/
 	private String uniqId;
-	/** 로그인 후 이동할 페이지 */
+	/** 濡쒓렇?????대룞???섏씠吏 */
 	private String url;
-	/** 사용자 IP정보 */
+	/** ?ъ슜??IP?뺣낫 */
 	private String ip;
-	/** GPKI인증 DN */
+	/** GPKI?몄쬆 DN */
 	private String dn;
-	/** 디지털원패스 사용자키 */
+	/** ?붿??몄썝?⑥뒪 ?ъ슜?먰궎 */
 	private String onepassUserkey;
-	/** 디지털원패스 사용자세션값 */
+	/** ?붿??몄썝?⑥뒪 ?ъ슜?먯꽭?섍컪 */
 	private String onepassIntfToken;
 
 	/**
-	 * id attribute 를 리턴한다.
+	 * id attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getId() {
 		return id;
 	}
 	/**
-	 * id attribute 값을 설정한다.
+	 * id attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param id String
 	 */
 	public void setId(String id) {
 		this.id = id;
 	}
 	/**
-	 * name attribute 를 리턴한다.
+	 * name attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getName() {
 		return name;
 	}
 	/**
-	 * name attribute 값을 설정한다.
+	 * name attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param name String
 	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 	/**
-	 * ihidNum attribute 를 리턴한다.
+	 * ihidNum attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getIhidNum() {
 		return ihidNum;
 	}
 	/**
-	 * ihidNum attribute 값을 설정한다.
+	 * ihidNum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ihidNum String
 	 */
 	public void setIhidNum(String ihidNum) {
 		this.ihidNum = ihidNum;
 	}
 	/**
-	 * email attribute 를 리턴한다.
+	 * email attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getEmail() {
 		return email;
 	}
 	/**
-	 * email attribute 값을 설정한다.
+	 * email attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param email String
 	 */
 	public void setEmail(String email) {
 		this.email = email;
 	}
 	/**
-	 * password attribute 를 리턴한다.
+	 * password attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getPassword() {
 		return password;
 	}
 	/**
-	 * password attribute 값을 설정한다.
+	 * password attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param password String
 	 */
 	public void setPassword(String password) {
 		this.password = password;
 	}
 	/**
-	 * passwordHint attribute 를 리턴한다.
+	 * passwordHint attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getPasswordHint() {
 		return passwordHint;
 	}
 	/**
-	 * passwordHint attribute 값을 설정한다.
+	 * passwordHint attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param passwordHint String
 	 */
 	public void setPasswordHint(String passwordHint) {
 		this.passwordHint = passwordHint;
 	}
 	/**
-	 * passwordCnsr attribute 를 리턴한다.
+	 * passwordCnsr attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getPasswordCnsr() {
 		return passwordCnsr;
 	}
 	/**
-	 * passwordCnsr attribute 값을 설정한다.
+	 * passwordCnsr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param passwordCnsr String
 	 */
 	public void setPasswordCnsr(String passwordCnsr) {
 		this.passwordCnsr = passwordCnsr;
 	}
 	/**
-	 * userSe attribute 를 리턴한다.
+	 * userSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUserSe() {
 		return userSe;
 	}
 	/**
-	 * userSe attribute 값을 설정한다.
+	 * userSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param userSe String
 	 */
 	public void setUserSe(String userSe) {
 		this.userSe = userSe;
 	}
 	/**
-	 * orgnztId attribute 를 리턴한다.
+	 * orgnztId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOrgnztId() {
 		return orgnztId;
 	}
 	/**
-	 * orgnztId attribute 값을 설정한다.
+	 * orgnztId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param orgnztId String
 	 */
 	public void setOrgnztId(String orgnztId) {
 		this.orgnztId = orgnztId;
 	}
 	/**
-	 * uniqId attribute 를 리턴한다.
+	 * uniqId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUniqId() {
 		return uniqId;
 	}
 	/**
-	 * uniqId attribute 값을 설정한다.
+	 * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param uniqId String
 	 */
 	public void setUniqId(String uniqId) {
 		this.uniqId = uniqId;
 	}
 	/**
-	 * url attribute 를 리턴한다.
+	 * url attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUrl() {
 		return url;
 	}
 	/**
-	 * url attribute 값을 설정한다.
+	 * url attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param url String
 	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 	/**
-	 * ip attribute 를 리턴한다.
+	 * ip attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getIp() {
 		return ip;
 	}
 	/**
-	 * ip attribute 값을 설정한다.
+	 * ip attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ip String
 	 */
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
 	/**
-	 * dn attribute 를 리턴한다.
+	 * dn attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getDn() {
 		return dn;
 	}
 	/**
-	 * dn attribute 값을 설정한다.
+	 * dn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param dn String
 	 */
 	public void setDn(String dn) {
@@ -258,28 +258,28 @@ public class LoginVO implements Serializable{
 	}
 	
 	/**
-	 * 디지털원패스 사용자키를 리턴한다.
+	 * ?붿??몄썝?⑥뒪 ?ъ슜?먰궎瑜?由ы꽩?쒕떎.
 	 * @return onepassUserkey
 	 */
 	public String getOnepassUserkey() {
 		return onepassUserkey;
 	}
 	/**
-	 * 디지털원패스 사용자키를 설정한다.
+	 * ?붿??몄썝?⑥뒪 ?ъ슜?먰궎瑜??ㅼ젙?쒕떎.
 	 * @param onepassUserkey
 	 */
 	public void setOnepassUserkey(String onepassUserkey) {
 		this.onepassUserkey = onepassUserkey;
 	}
 	/**
-	 * 디지털원패스 사용자세션값을 리턴한다.
+	 * ?붿??몄썝?⑥뒪 ?ъ슜?먯꽭?섍컪??由ы꽩?쒕떎.
 	 * @return
 	 */
 	public String getOnepassIntfToken() {
 		return onepassIntfToken;
 	}
 	/**
-	 * 디지털원패스 사용자세션값을 설정한다.
+	 * ?붿??몄썝?⑥뒪 ?ъ슜?먯꽭?섍컪???ㅼ젙?쒕떎.
 	 * @param onepassIntfToken
 	 */
 	public void setOnepassIntfToken(String onepassIntfToken) {

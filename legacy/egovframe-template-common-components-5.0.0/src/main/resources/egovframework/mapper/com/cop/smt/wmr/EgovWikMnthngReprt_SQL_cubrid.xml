@@ -103,7 +103,7 @@
 			</if>		
 	</select>
 	
-	<!-- 사용자::조회 -->
+	<!-- ?ъ슜??:議고쉶 -->
 	<select id="selectWrterClsfNm" parameterType="java.lang.String" resultType="java.lang.String">
 	 
 		SELECT 
@@ -113,7 +113,7 @@
 	 
 	</select>
 	
-	<!-- 주간/월간보고::목록조회 -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::紐⑸줉議고쉶 -->
 	<select id="selectWikMnthngReprtList" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultMap="WikMnthngReprtList">
 		
 	SELECT *
@@ -131,7 +131,7 @@
 			B.USER_NM WRTER_NM,
 			A.REPORT_BGNDE,
 			A.REPORT_ENDDE,
-			(CASE WHEN NVL(A.CONFM_DT, ' ') = ' ' THEN '미승인' ELSE '승인' END) CONFM_DT
+			(CASE WHEN NVL(A.CONFM_DT, ' ') = ' ' THEN '誘몄듅?? ELSE '?뱀씤' END) CONFM_DT
 		FROM COMTNWIKMNTHNGREPRT A
 		LEFT OUTER JOIN COMVNUSERMASTER B
 			ON A.WRTER_ID = B.ESNTL_ID
@@ -178,7 +178,7 @@
 		
 	</select>
 	
-	<!-- 주간/월간보고::목록조회 Count -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::紐⑸줉議고쉶 Count -->
 	<select id="selectWikMnthngReprtListCnt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -218,7 +218,7 @@
 
 	</select>
 	
-	<!-- 주간/월간보고::상세보기 -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::?곸꽭蹂닿린 -->
 	<select id="selectWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprtVO" resultMap="WikMnthngReprtDetail">
 		SELECT 
 			A.REPRT_ID,
@@ -251,7 +251,7 @@
 			AND A.REPRT_ID = #{reprtId}
 	</select>
 	
-	<!-- 주간/월간보고::수정  -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::?섏젙  -->
 	<update id="updateWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		UPDATE COMTNWIKMNTHNGREPRT 
 		SET  
@@ -273,7 +273,7 @@
 			AND REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 주간/월간보고::승인  -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::?뱀씤  -->
 	<update id="confirmWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		UPDATE COMTNWIKMNTHNGREPRT 
 		SET  
@@ -283,7 +283,7 @@
 			AND REPRT_ID = #{reprtId}
 	</update>
 	
-	<!-- 주간/월간보고::삭제  -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::??젣  -->
 	<delete id="deleteWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt"> 
 		
 			DELETE FROM COMTNWIKMNTHNGREPRT 
@@ -293,7 +293,7 @@
 		
 	</delete>
 	
-	<!-- 주간/월간보고::입력  -->
+	<!-- 二쇨컙/?붽컙蹂닿퀬::?낅젰  -->
 	<insert id="insertWikMnthngReprt" parameterType="egovframework.com.cop.smt.wmr.service.WikMnthngReprt">
 	 
 	 

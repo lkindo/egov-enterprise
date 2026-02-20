@@ -37,9 +37,9 @@ public class BackupResultRepositoryImpl implements BackupResultRepositoryCustom 
         }
 
         if (StringUtils.hasText(searchKeyword)) {
-            if ("0".equals(searchCondition)) { // 백업작업명
+            if ("0".equals(searchCondition)) { // 獄쏄퉮毓?臾믩씜筌?
                 builder.and(backupOpert.backupOpertNm.contains(searchKeyword));
-            } else if ("1".equals(searchCondition)) { // 백업작업ID
+            } else if ("1".equals(searchCondition)) { // 獄쏄퉮毓?臾믩씜ID
                 builder.and(backupResult.backupOpert.backupOpertId.contains(searchKeyword));
             }
         }

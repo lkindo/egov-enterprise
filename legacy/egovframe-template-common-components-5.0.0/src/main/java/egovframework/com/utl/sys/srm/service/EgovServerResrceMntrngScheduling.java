@@ -30,22 +30,22 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 서버자원모니터링 Service Interface를 invoke 할 수 있는 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅 Service Interface瑜?invoke ?????덈뒗 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 서버자원모니터링 정보 결과를 확인할 수 있는 함수를 호출할 수 있는 기능을 제공한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅 ?뺣낫 寃곌낵瑜??뺤씤?????덈뒗 ?⑥닔瑜??몄텧?????덈뒗 湲곕뒫???쒓났?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 06-9-2010 오전 11:23:59
+ * @created 06-9-2010 ?ㅼ쟾 11:23:59
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일      	         수정자              수정내용
+ *  ?섏젙??     	         ?섏젙??             ?섏젙?댁슜
  *  ----------   ---------   ---------------------------
- *  2020.11.02   신용호              불필요한 멤버변수 지역변수로 변경
- *  2022.11.11   김혜준              시큐어코딩 처리
+ *  2020.11.02   ?좎슜??             遺덊븘?뷀븳 硫ㅻ쾭蹂??吏????섎줈 蹂寃?
+ *  2022.11.11   源?쒖?              ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -71,7 +71,7 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 	private ServerResrceMntrngVO serverResrceMntrngVO = null;
 
 	/**
-	 * 서버자원 모니터링를 수행한다.
+	 * ?쒕쾭?먯썝 紐⑤땲?곕쭅瑜??섑뻾?쒕떎.
 	 * @param
 	 * @return
 	 */
@@ -124,13 +124,13 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 
 			if (Double.parseDouble(serverResrceMntrng.getCpuUseRt()) > 90 || Double.parseDouble(serverResrceMntrng.getMoryUseRt()) > 90) {
 				serverResrceMntrng.setSvcSttus("02");
-				serverResrceMntrng.setLogInfo("적정수치를 초과하였습니다.");
+				serverResrceMntrng.setLogInfo("?곸젙?섏튂瑜?珥덇낵?섏??듬땲??");
 				sendEmail(serverResrceMntrng);
 				// sendSMS(egovServerResrceMntrngService.selectServerResrceMntrng(serverResrceMntrngVO));
 			}
 			egovServerResrceMntrngService.insertServerResrceMntrng(serverResrceMntrng);
 
-		} catch (IOException e) { //KISA 보안약점 조치 (2018-10-29, 윤창원)
+		} catch (IOException e) { //KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			serverResrceMntrng.setSvcSttus("02");
 
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -177,7 +177,7 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 	}
 
 	/**
-	 * 서버자원 모니터링를 수행한다.
+	 * ?쒕쾭?먯썝 紐⑤땲?곕쭅瑜??섑뻾?쒕떎.
 	 * @param
 	 * @return
 	 */
@@ -188,7 +188,7 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 			for (ServerResrceMntrngVO serverResrceMntrngVO : result) {
 				init(serverResrceMntrngVO);
 			}
-		} catch (NoSuchElementException e) { //KISA 보안약점 조치 (2018-10-29, 윤창원)
+		} catch (NoSuchElementException e) { //KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			LOGGER.debug("Server monitoring error - NoSuchElementException", e);
 
 		} catch (Exception e) {
@@ -197,8 +197,8 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 	}
 
 	/**
-	 * 이메일을 전송한다.
-	 * @param serverResrceMntrngVO - 서버자원모니터링 Vo
+	 * ?대찓?쇱쓣 ?꾩넚?쒕떎.
+	 * @param serverResrceMntrngVO - ?쒕쾭?먯썝紐⑤땲?곕쭅 Vo
 	 * @return
 	 *
 	 * @param serverResrceMntrngVO
@@ -209,42 +209,42 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 		String errorContents = "";
 
 		SimpleMailMessage msg = new SimpleMailMessage(this.mntrngMessage);
-		// 수신자
+		// ?섏떊??
 		msg.setTo(serverResrceMntrng.getMngrEamilAddr());
-		// 메일제목
+		// 硫붿씪?쒕ぉ
 		subject = msg.getSubject();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(subject)) {
-			subject = EgovStringUtil.replace(subject, "{모니터링종류}", "서버자원서비스모니터링");
+			subject = EgovStringUtil.replace(subject, "{紐⑤땲?곕쭅醫낅쪟}", "?쒕쾭?먯썝?쒕퉬?ㅻえ?덊꽣留?);
 			msg.setSubject(subject);
 		}
-		// 메일내용
+		// 硫붿씪?댁슜
 		text = msg.getText();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(text)) {
-			text = EgovStringUtil.replace(text, "{모니터링종류}", "서버자원서비스모니터링");
-			errorContents = "서버명 : ";
+			text = EgovStringUtil.replace(text, "{紐⑤땲?곕쭅醫낅쪟}", "?쒕쾭?먯썝?쒕퉬?ㅻえ?덊꽣留?);
+			errorContents = "?쒕쾭紐?: ";
 			errorContents += serverResrceMntrngVO.getServerNm();
 			errorContents += "\n";
-			errorContents += "서버IP : ";
+			errorContents += "?쒕쾭IP : ";
 			errorContents += serverResrceMntrngVO.getServerEqpmnIp();
 			errorContents += "\n";
-			errorContents += "CPU사용률 : ";
+			errorContents += "CPU?ъ슜瑜?: ";
 			errorContents += serverResrceMntrngVO.getCpuUseRt();
 			errorContents += "\n";
-			errorContents += "메모리사용률 : ";
+			errorContents += "硫붾え由ъ궗?⑸쪧 : ";
 			errorContents += serverResrceMntrngVO.getMoryUseRt();
 			errorContents += "\n";
-			errorContents += "서비스상태 : 비정상";
+			errorContents += "?쒕퉬?ㅼ긽??: 鍮꾩젙??;
 			errorContents += "\n";
-			errorContents += "내용 : ";
+			errorContents += "?댁슜 : ";
 			errorContents += serverResrceMntrngVO.getLogInfo();
 			errorContents += "\n";
-			errorContents += "생성일시 : ";
+			errorContents += "?앹꽦?쇱떆 : ";
 			errorContents += EgovDateUtil.convertDate(serverResrceMntrngVO.getCreatDt(), "", "", "");
 			errorContents += "\n";
-			errorContents += serverResrceMntrngVO.getServerNm() + " 의 서버자원 서비스 상태가 비정상입니다. \n로그를 확인해주세요.";
-			text = EgovStringUtil.replace(text, "{에러내용}", errorContents);
+			errorContents += serverResrceMntrngVO.getServerNm() + " ???쒕쾭?먯썝 ?쒕퉬???곹깭媛 鍮꾩젙?곸엯?덈떎. \n濡쒓렇瑜??뺤씤?댁＜?몄슂.";
+			text = EgovStringUtil.replace(text, "{?먮윭?댁슜}", errorContents);
 			msg.setText(text);
 		}
 
@@ -254,9 +254,9 @@ public class EgovServerResrceMntrngScheduling extends EgovAbstractServiceImpl {
 	public void sendSMS(ServerResrceMntrng serverResrceMntrng) throws Exception {
 		String[] receiveTelno = { "010-6802-0886" };
 		Sms sms = new Sms();
-		sms.setTrnsmitTelno("000-000-0000"); // 발신자
-		sms.setRecptnTelno(receiveTelno); // 수신자
-		sms.setTrnsmitCn("테스트 입니다");
+		sms.setTrnsmitTelno("000-000-0000"); // 諛쒖떊??
+		sms.setRecptnTelno(receiveTelno); // ?섏떊??
+		sms.setTrnsmitCn("?뚯뒪???낅땲??);
 
 		egovSmsInfoService.insertSmsInf(sms);
 	}

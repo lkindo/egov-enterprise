@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.config;
 
@@ -27,15 +27,15 @@ import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 /**
 * @Class Name : ServerAppConfig.java
-* @Description : EndPoint를 bean으로 담기 위해 설정하는 Configurator(다른 Bean과 연동 시 EndPoint에 설정해주어야 함)
+* @Description : EndPoint瑜?bean?쇰줈 ?닿린 ?꾪빐 ?ㅼ젙?섎뒗 Configurator(?ㅻⅨ Bean怨??곕룞 ??EndPoint???ㅼ젙?댁＜?댁빞 ??
 * @Modification Information
 *
-*    수정일       수정자         수정내용
+*    ?섏젙??      ?섏젙??        ?섏젙?댁슜
 *    -------        -------     -------------------
-*    2014. 11. 27.    이영지
+*    2014. 11. 27.    ?댁쁺吏
 *
 */
-//container안의 bean을 DI하기 위해 사용
+//container?덉쓽 bean??DI?섍린 ?꾪빐 ?ъ슜
 public class ServerAppConfig extends Configurator{
 
 	 @Override

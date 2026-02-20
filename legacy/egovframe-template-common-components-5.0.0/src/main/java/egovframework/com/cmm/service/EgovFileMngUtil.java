@@ -35,25 +35,25 @@ import org.springframework.web.multipart.MultipartFile;
 import egovframework.com.cmm.EgovWebUtil;
 
 /**
- * 파일 관리 유틸리티
+ * ?뚯씪 愿由??좏떥由ы떚
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 02. 13
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.13  이삼섭          최초 생성
- *   2011.08.09  서준식          utl.fcc패키지와 Dependency제거를 위해 getTimeStamp()메서드 추가
- *   2017.03.03  조성원          시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2020.10.26  신용호          parseFileInf(List<MultipartFile> files ...) 추가
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2024.12.04  신용호          downFile() KISA 시큐어코딩 처리
- *   2025.05.26  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(공식 매개변수 명명 규칙), CloseResource(리소스 닫기), LocalVariableNamingConventions(지역 변수 명명 규칙), AssignmentInOperand(피연산자의 할당)
+ *   2009.02.13  ?댁궪??         理쒖큹 ?앹꽦
+ *   2011.08.09  ?쒖???         utl.fcc?⑦궎吏? Dependency?쒓굅瑜??꾪빐 getTimeStamp()硫붿꽌??異붽?
+ *   2017.03.03  議곗꽦??         ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2020.10.26  ?좎슜??         parseFileInf(List<MultipartFile> files ...) 異붽?
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2024.12.04  ?좎슜??         downFile() KISA ?쒗걧?댁퐫??泥섎━
+ *   2025.05.26  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(怨듭떇 留ㅺ컻蹂??紐낅챸 洹쒖튃), CloseResource(由ъ냼???リ린), LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃), AssignmentInOperand(?쇱뿰?곗옄???좊떦)
  * 
  *      </pre>
  */
@@ -67,7 +67,7 @@ public class EgovFileMngUtil {
 	private EgovIdGnrService idgenService;
 
 	/**
-	 * 첨부파일에 대한 목록 정보를 취득한다.
+	 * 泥⑤??뚯씪?????紐⑸줉 ?뺣낫瑜?痍⑤뱷?쒕떎.
 	 *
 	 * @param files
 	 * @return
@@ -95,7 +95,7 @@ public class EgovFileMngUtil {
 		File saveFolder = new File(EgovWebUtil.filePathBlackList(storePathString));
 
 		if (!saveFolder.exists() || saveFolder.isFile()) {
-			// 2017.03.03 조성원 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.03.03 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if (saveFolder.mkdirs()) {
 				LOGGER.debug("[file.mkdirs] saveFolder : Creation Success ");
 			} else {
@@ -116,7 +116,7 @@ public class EgovFileMngUtil {
 				continue;
 			}
 
-			// 2022.11.11 시큐어코딩 처리
+			// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 			String fileExt = FilenameUtils.getExtension(orginFileName).toUpperCase();
 			String newName = keyStr + getTimeStamp() + fileKey;
 			long size = file.getSize();
@@ -140,7 +140,7 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 첨부파일에 대한 목록 정보를 취득한다.
+	 * 泥⑤??뚯씪?????紐⑸줉 ?뺣낫瑜?痍⑤뱷?쒕떎.
 	 *
 	 * @param files
 	 * @return
@@ -168,7 +168,7 @@ public class EgovFileMngUtil {
 		File saveFolder = new File(EgovWebUtil.filePathBlackList(storePathString));
 
 		if (!saveFolder.exists() || saveFolder.isFile()) {
-			// 2017.03.03 조성원 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.03.03 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if (saveFolder.mkdirs()) {
 				LOGGER.debug("[file.mkdirs] saveFolder : Creation Success ");
 			} else {
@@ -186,7 +186,7 @@ public class EgovFileMngUtil {
 				continue;
 			}
 
-			// 2022.11.11 시큐어코딩 처리
+			// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 			String fileExt = FilenameUtils.getExtension(orginFileName).toUpperCase();
 			String newName = keyStr + getTimeStamp() + fileKey;
 			long size = file.getSize();
@@ -211,7 +211,7 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 첨부파일을 서버에 저장한다.
+	 * 泥⑤??뚯씪???쒕쾭????ν븳??
 	 *
 	 * @param file
 	 * @param newName
@@ -237,7 +237,7 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 서버의 파일을 다운로드한다.
+	 * ?쒕쾭???뚯씪???ㅼ슫濡쒕뱶?쒕떎.
 	 *
 	 * @param request
 	 * @param response
@@ -287,7 +287,7 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 첨부로 등록된 파일을 서버에 업로드한다.
+	 * 泥⑤?濡??깅줉???뚯씪???쒕쾭???낅줈?쒗븳??
 	 *
 	 * @param file
 	 * @return
@@ -300,12 +300,12 @@ public class EgovFileMngUtil {
 		String orginFileName = file.getOriginalFilename();
 		String fileExt = "";
 		String newName = "";
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(orginFileName)) {
 			fileExt = FilenameUtils.getExtension(orginFileName);
 		}
 
-		// 2012.11 KISA 보안조치
+		// 2012.11 KISA 蹂댁븞議곗튂
 		newName = getTimeStamp();
 		writeFile(file, newName);
 		map.put(Globals.ORIGIN_FILE_NM, orginFileName);
@@ -318,7 +318,7 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 파일을 실제 물리적인 경로에 생성한다.
+	 * ?뚯씪???ㅼ젣 臾쇰━?곸씤 寃쎈줈???앹꽦?쒕떎.
 	 *
 	 * @param file
 	 * @param newName
@@ -329,7 +329,7 @@ public class EgovFileMngUtil {
 		File cFile = new File(EgovWebUtil.filePathBlackList(FILE_STORE_PATH));
 
 		if (!cFile.isDirectory()) {
-			// 2017.03.03 조성원 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017.03.03 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			if (cFile.mkdirs()) {
 				LOGGER.debug("[file.mkdirs] saveFolder : Creation Success ");
 			} else {
@@ -346,10 +346,10 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 서버 파일에 대하여 다운로드를 처리한다.
+	 * ?쒕쾭 ?뚯씪????섏뿬 ?ㅼ슫濡쒕뱶瑜?泥섎━?쒕떎.
 	 *
 	 * @param response
-	 * @param streFileNm  파일된 파일명
+	 * @param streFileNm  ?뚯씪???뚯씪紐?
 	 * @param orignFileNm
 	 * @throws Exception
 	 */
@@ -434,18 +434,18 @@ public class EgovFileMngUtil {
 	}
 
 	/**
-	 * 공통 컴포넌트 utl.fcc 패키지와 Dependency 제거를 위해 내부 메서드로 추가 정의함 응용어플리케이션에서 고유값을 사용하기 위해
-	 * 시스템에서 17자리의 TIMESTAMP값을 구하는 기능
+	 * 怨듯넻 而댄룷?뚰듃 utl.fcc ?⑦궎吏? Dependency ?쒓굅瑜??꾪빐 ?대? 硫붿꽌?쒕줈 異붽? ?뺤쓽???묒슜?댄뵆由ъ??댁뀡?먯꽌 怨좎쑀媛믪쓣 ?ъ슜?섍린 ?꾪빐
+	 * ?쒖뒪?쒖뿉??17?먮━??TIMESTAMP媛믪쓣 援ы븯??湲곕뒫
 	 *
 	 * @param
-	 * @return Timestamp 값
+	 * @return Timestamp 媛?
 	 * @see
 	 */
 	private static String getTimeStamp() {
 
 		String rtnStr = null;
 
-		// 문자열로 변환하기 위한 패턴 설정(연도-월-일 시:분:초:초(자정이후 초))
+		// 臾몄옄?대줈 蹂?섑븯湲??꾪븳 ?⑦꽩 ?ㅼ젙(?곕룄-??????遺?珥?珥??먯젙?댄썑 珥?)
 		String pattern = "yyyyMMddhhmmssSSS";
 
 		SimpleDateFormat sdfCurrent = new SimpleDateFormat(pattern, Locale.KOREA);

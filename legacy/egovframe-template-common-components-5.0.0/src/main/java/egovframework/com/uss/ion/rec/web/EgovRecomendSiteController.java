@@ -23,22 +23,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 추천사이트처리를 하는 Controller 클래스
+ * 異붿쿇?ъ씠?몄쿂由щ? ?섎뒗 Controller ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2016.08.22  김연호          표준프레임워크 3.6 개선
- *   2025.08.12  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2016.08.22  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2025.08.12  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -57,14 +57,14 @@ public class EgovRecomendSiteController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 추천사이트정보 목록을 조회한다.
+	 * 異붿쿇?ъ씠?몄젙蹂?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/ion/rec/EgovRecomendSiteList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "추천사이트관리", order = 700, gid = 50)
+	@IncludedInfo(name = "異붿쿇?ъ씠?멸?由?, order = 700, gid = 50)
 	@RequestMapping(value = "/uss/ion/rec/selectRecomendSiteList.do")
 	public String selectRecomendSiteList(@ModelAttribute("searchVO") RecomendSiteVO searchVO, ModelMap model)
 			throws Exception {
@@ -94,7 +94,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보 목록에 대한 상세정보를 조회한다.
+	 * 異붿쿇?ъ씠?몄젙蹂?紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param recomendSiteVO
 	 * @param searchVO
@@ -114,7 +114,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보를 등록하기 전 처리
+	 * 異붿쿇?ъ씠?몄젙蹂대? ?깅줉?섍린 ??泥섎━
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -132,7 +132,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보를 등록한다.
+	 * 異붿쿇?ъ씠?몄젙蹂대? ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param recomendSiteVO
@@ -149,13 +149,13 @@ public class EgovRecomendSiteController {
 			return "egovframework/com/uss/olh/rec/EgovRecomendSiteRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		recomendSiteVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		recomendSiteVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		recomendSiteVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		recomendSiteVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovRecomendSiteService.insertRecomendSite(recomendSiteVO);
 
@@ -163,7 +163,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보를 수정하기 전 처리
+	 * 異붿쿇?ъ씠?몄젙蹂대? ?섏젙?섍린 ??泥섎━
 	 * 
 	 * @param recomendSiteId
 	 * @param searchVO
@@ -177,7 +177,7 @@ public class EgovRecomendSiteController {
 
 		RecomendSiteVO recomendSiteVO = new RecomendSiteVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		recomendSiteVO.setRecomendSiteId(recomendSiteId);
 		model.addAttribute("recomendSiteVO", egovRecomendSiteService.selectRecomendSiteDetail(recomendSiteVO));
 
@@ -185,7 +185,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보를 수정처리한다.
+	 * 異붿쿇?ъ씠?몄젙蹂대? ?섏젙泥섎━?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param recomendSiteManageVO
@@ -202,10 +202,10 @@ public class EgovRecomendSiteController {
 			return "egovframework/com/uss/olh/rec/EgovRecomendSiteUpdt";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		recomendSiteVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		recomendSiteVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovRecomendSiteService.updateRecomendSite(recomendSiteVO);
 
@@ -214,7 +214,7 @@ public class EgovRecomendSiteController {
 	}
 
 	/**
-	 * 추천사이트정보를 삭제처리한다.
+	 * 異붿쿇?ъ씠?몄젙蹂대? ??젣泥섎━?쒕떎.
 	 * 
 	 * @param recomendSiteVO
 	 * @param searchVO

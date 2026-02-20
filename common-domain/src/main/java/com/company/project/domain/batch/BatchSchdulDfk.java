@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 배치스케줄요일 JPA Entity
- * 레거시 테이블: NBATCHSCHDULDFK
+ * 獄쏄퀣????餓κ쑴???JPA Entity
+ * ??뉕탢?????뵠?? NBATCHSCHDULDFK
  */
 @Entity
 @Table(name = "NBATCHSCHDULDFK")

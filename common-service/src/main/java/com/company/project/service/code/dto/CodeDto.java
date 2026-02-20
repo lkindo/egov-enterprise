@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 공통 코드 정보 DTO
+ * 怨듯넻 肄붾뱶 ?뺣낫 DTO
  */
 @Getter
 @Builder

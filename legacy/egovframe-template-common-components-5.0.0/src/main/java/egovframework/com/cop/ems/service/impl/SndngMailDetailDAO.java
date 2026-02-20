@@ -6,19 +6,19 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.cop.ems.service.SndngMailVO;
 
 /**
- * 발송메일을 상세 조회하는 DAO 클래스
+ * 諛쒖넚硫붿씪???곸꽭 議고쉶?섎뒗 DAO ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일         수정자       수정내용
+ *   ?섏젙??        ?섏젙??      ?섏젙?댁슜
  *  ----------    --------    ---------------------------
- *  2009.03.12     박지욱       최초 생성
+ *  2009.03.12     諛뺤???      理쒖큹 ?앹꽦
  *
  *      </pre>
  */
@@ -26,7 +26,7 @@ import egovframework.com.cop.ems.service.SndngMailVO;
 public class SndngMailDetailDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 발송메일을 상세 조회한다.
+	 * 諛쒖넚硫붿씪???곸꽭 議고쉶?쒕떎.
 	 * 
 	 * @param vo SndngMailVO
 	 * @return SndngMailVO
@@ -37,7 +37,7 @@ public class SndngMailDetailDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * 
 	 * @param vo SndngMailVO
 	 * @exception

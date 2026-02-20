@@ -11,16 +11,16 @@ import egovframework.com.uss.ion.nts.service.EgovNoteTrnsmitService;
 import egovframework.com.uss.ion.nts.service.NoteTrnsmit;
 import jakarta.annotation.Resource;
 /**
- * 보낸쪽지함관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * 蹂대궦履쎌??④?由щ? 泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -33,9 +33,9 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
 
 
     /**
-     * 보낸쪽지함관리를(을) 목록을 조회 한다.
-     * @param noteTrnsmit -조회할 정보가 담긴 객체
-     * @return List -조회목록이담긴List
+     * 蹂대궦履쎌??④?由щ?(?? 紐⑸줉??議고쉶 ?쒕떎.
+     * @param noteTrnsmit -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return List -議고쉶紐⑸줉?대떞湲퀽ist
      * @throws Exception
      */
     @Override
@@ -44,9 +44,9 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 보낸쪽지함관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param noteTrnsmit -조회할 정보가 담긴 객체
-     * @return int -조회한건수가담긴Integer
+     * 蹂대궦履쎌??④?由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param noteTrnsmit -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔?섍??닿릿Integer
      * @throws Exception
      */
     @Override
@@ -55,9 +55,9 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 보낸쪽지함관리를(을) 상세조회 한다.
-     * @param noteTrnsmit -조회할 정보가 담긴 객체
-     * @return Map -조회정보가담긴Map
+     * 蹂대궦履쎌??④?由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param noteTrnsmit -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return Map -議고쉶?뺣낫媛?닿릿Map
      * @throws Exception
      */
     @Override
@@ -66,20 +66,20 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 보낸쪽지함관리를(을) 삭제한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담긴 객체
+     * 蹂대궦履쎌??④?由щ?(?? ??젣?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿릿 媛앹껜
      * @throws Exception
      */
     @Override
 	public void deleteNoteTrnsmit(NoteTrnsmit noteTrnsmit) throws Exception {
 
-        //보낸쪽지함 건수를 조회함
+        //蹂대궦履쎌???嫄댁닔瑜?議고쉶??
         int nCnt = dao.selectTrnsmitRelationCnt(noteTrnsmit);
 
         if(nCnt == 0){
-        	//받은쪽지/쪽지관리 삭제 처리
+        	//諛쏆?履쎌?/履쎌?愿由???젣 泥섎━
         	dao.deleteNoteTrnsmitRelation(noteTrnsmit);
-        	//쪽지정보를 삭제한다.
+        	//履쎌??뺣낫瑜???젣?쒕떎.
         	dao.deleteNoteManage(noteTrnsmit);
         }else{
         	dao.deleteNoteTrnsmit(noteTrnsmit);
@@ -87,8 +87,8 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 보낸쪽지함관리를(을) 삭제한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담긴 객체
+     * 蹂대궦履쎌??④?由щ?(?? ??젣?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿릿 媛앹껜
      * @throws Exception
      */
     @Override
@@ -99,9 +99,9 @@ public class EgovNoteTrnsmitServiceImpl extends EgovAbstractServiceImpl
 
 
     /**
-     * 수신자목록을 조회한다.
-     * @param noteTrnsmit -보낸쪽지함관리 정보가 담긴 객체
-     * @return List -조회목록이담긴List
+     * ?섏떊?먮ぉ濡앹쓣 議고쉶?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌??④?由??뺣낫媛 ?닿릿 媛앹껜
+     * @return List -議고쉶紐⑸줉?대떞湲퀽ist
      * @throws Exception
      */
     @Override

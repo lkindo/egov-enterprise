@@ -13,23 +13,23 @@ import egovframework.com.sym.mnu.mcm.service.MenuSiteMapVO;
 import jakarta.annotation.Resource;
 
 /**
- * 메뉴목록, 사이트맵 생성을 처리하는 비즈니스 구현 클래스를 정의한다.
+ * 硫붾돱紐⑸줉, ?ъ씠?몃㏊ ?앹꽦??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2011.07.01  서준식          EgovMenuManageServiceImpl에서 메뉴 생성 관련 부분 분리
- *   2011.10.07  이기하          finally문을 추가하여 에러시 자원반환할 수 있도록 추가
- *   2011.10.12  이기하          사이트맵 생성시 특수문자 치환
- *   2025.07.16  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.07.01  ?쒖???         EgovMenuManageServiceImpl?먯꽌 硫붾돱 ?앹꽦 愿??遺遺?遺꾨━
+ *   2011.10.07  ?닿린??         finally臾몄쓣 異붽??섏뿬 ?먮윭???먯썝諛섑솚?????덈룄濡?異붽?
+ *   2011.10.12  ?닿린??         ?ъ씠?몃㏊ ?앹꽦???뱀닔臾몄옄 移섑솚
+ *   2025.07.16  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -40,7 +40,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	private MenuCreateManageDAO menuCreateManageDAO;
 
 	/**
-	 * ID 존재여부를 조회
+	 * ID 議댁옱?щ?瑜?議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return int
@@ -52,7 +52,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성 내역을 조회
+	 * 硫붾돱?앹꽦 ?댁뿭??議고쉶
 	 * 
 	 * @param vo MenuCreatVO
 	 * @return List
@@ -64,7 +64,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 화면에 조회된 메뉴정보로 메뉴생성내역 데이터베이스에서 입력
+	 * ?붾㈃??議고쉶??硫붾돱?뺣낫濡?硫붾돱?앹꽦?댁뿭 ?곗씠?곕쿋?댁뒪?먯꽌 ?낅젰
 	 * 
 	 * @param checkedAuthorForInsert String
 	 * @param checkedMenuNoForInsert String
@@ -80,7 +80,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 		menuCreatVO.setAuthorCode(insertAuthor);
 		int resultMenuCreatCnt = menuCreateManageDAO.selectMenuCreatCnt(menuCreatVO);
 
-		// 이전에 존재하는 권한코드에 대한 메뉴설정내역 삭제
+		// ?댁쟾??議댁옱?섎뒗 沅뚰븳肄붾뱶?????硫붾돱?ㅼ젙?댁뿭 ??젣
 		if (resultMenuCreatCnt > 0) {
 			menuCreateManageDAO.deleteMenuCreat(menuCreatVO);
 		}
@@ -92,7 +92,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성관리 목록을 조회
+	 * 硫붾돱?앹꽦愿由?紐⑸줉??議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return List
@@ -104,7 +104,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * ID에 대한 권한코드를 조회
+	 * ID?????沅뚰븳肄붾뱶瑜?議고쉶
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return MenuCreatVO
@@ -116,7 +116,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성관리 총건수를 조회한다.
+	 * 硫붾돱?앹꽦愿由?珥앷굔?섎? 議고쉶?쒕떎.
 	 * 
 	 * @param vo ComDefaultVO
 	 * @return int
@@ -128,7 +128,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 메뉴생성 사이트맵 내용 조회
+	 * 硫붾돱?앹꽦 ?ъ씠?몃㏊ ?댁슜 議고쉶
 	 * 
 	 * @param vo MenuSiteMapVO
 	 * @return List
@@ -140,7 +140,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 사용자 권한별 사이트맵 내용 조회
+	 * ?ъ슜??沅뚰븳蹂??ъ씠?몃㏊ ?댁슜 議고쉶
 	 * 
 	 * @param vo MenuSiteMapVO
 	 * @return List
@@ -152,7 +152,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
 	/**
-	 * 사이트맵 등록 개발환경에서 테스트용 함수로 보안 취약
+	 * ?ъ씠?몃㏊ ?깅줉 媛쒕컻?섍꼍?먯꽌 ?뚯뒪?몄슜 ?⑥닔濡?蹂댁븞 痍⑥빟
 	 * 
 	 * @param menuSiteMapvo MenuSiteMapVO
 	 * @param vHtmlValue    String
@@ -184,7 +184,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	 */
 
 	/**
-	 * 메뉴생성 사이트맵 Html 파일 생성 개발환경에서 테스트용 함수로 보안 취약
+	 * 硫붾돱?앹꽦 ?ъ씠?몃㏊ Html ?뚯씪 ?앹꽦 媛쒕컻?섍꼍?먯꽌 ?뚯뒪?몄슜 ?⑥닔濡?蹂댁븞 痍⑥빟
 	 * 
 	 * @param vSiteMapName String
 	 * @param vHtmlValue   String
@@ -200,7 +200,7 @@ public class EgovMenuCreateManageServiceImpl extends EgovAbstractServiceImpl imp
 	 * File(EgovWebUtil.filePathBlackList(FileName)); out = new BufferedWriter(new
 	 * FileWriter(file));
 	 * 
-	 * // 사이트맵 생성시 특수문자 치환 vHtmlValue = vHtmlValue.replaceAll("&lt;", "<");
+	 * // ?ъ씠?몃㏊ ?앹꽦???뱀닔臾몄옄 移섑솚 vHtmlValue = vHtmlValue.replaceAll("&lt;", "<");
 	 * vHtmlValue = vHtmlValue.replaceAll("&gt;", ">"); vHtmlValue =
 	 * vHtmlValue.replaceAll("&quot;", "\""); vHtmlValue =
 	 * vHtmlValue.replaceAll("&apos;", "'");

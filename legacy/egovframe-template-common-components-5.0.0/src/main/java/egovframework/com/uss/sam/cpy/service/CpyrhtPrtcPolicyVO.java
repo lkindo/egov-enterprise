@@ -2,19 +2,19 @@ package egovframework.com.uss.sam.cpy.service;
 
 /**
  * 
- * 저작권보호정책내용을 처리하는 VO 클래스
+ * ??묎텒蹂댄샇?뺤콉?댁슜??泥섎━?섎뒗 VO ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일          수정자       수정내용
+ *   ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2009.04.01     박정규       최초 생성
+ *   2009.04.01     諛뺤젙洹?      理쒖큹 ?앹꽦
  *
  *      </pre>
  */
@@ -22,26 +22,26 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 
-	/** 저작권 ID */
+	/** ??묎텒 ID */
 	private String cpyrhtId;
 
-	/** 저작권보호정책내용 */
+	/** ??묎텒蹂댄샇?뺤콉?댁슜 */
 	private String cpyrhtPrtcPolicyCn;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId;
 
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId;
 
 	/**
-	 * cpyrhtId attribute 를 리턴한다.
+	 * cpyrhtId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -50,7 +50,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * cpyrhtId attribute 값을 설정한다.
+	 * cpyrhtId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return cpyrhtId String
 	 */
@@ -59,7 +59,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * cpyrhtPrtcPolicyCn attribute 를 리턴한다.
+	 * cpyrhtPrtcPolicyCn attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -68,7 +68,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * cpyrhtPrtcPolicyCn attribute 값을 설정한다.
+	 * cpyrhtPrtcPolicyCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return cpyrhtPrtcPolicyCn String
 	 */
@@ -77,7 +77,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -86,7 +86,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return frstRegisterPnttm String
 	 */
@@ -95,7 +95,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -104,7 +104,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return frstRegisterId String
 	 */
@@ -113,7 +113,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -122,7 +122,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return lastUpdusrPnttm String
 	 */
@@ -131,7 +131,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return the String
 	 */
@@ -140,7 +140,7 @@ public class CpyrhtPrtcPolicyVO extends CpyrhtPrtcPolicyDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @return lastUpdusrId String
 	 */

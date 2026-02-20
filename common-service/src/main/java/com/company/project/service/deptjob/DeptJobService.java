@@ -53,11 +53,11 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            if ("0".equals(searchCondition)) { // 부?�업무명
+            if ("0".equals(searchCondition)) { // 遺?쒖뾽臾대챸
                 builder.and(deptJob.deptJobNm.contains(keyword));
-            } else if ("1".equals(searchCondition)) { // 부?�업무내??
+            } else if ("1".equals(searchCondition)) { // 遺?쒖뾽臾대궡??
                 builder.and(deptJob.deptJobCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // ?�당?�명
+            } else if ("2".equals(searchCondition)) { // ?대떦?먮챸
                 builder.and(deptJob.chargerId.contains(keyword));
             }
         }

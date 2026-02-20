@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 /**
- * 팝업창 Repository
+ * ??밸씜筌?Repository
  */
 @org.springframework.stereotype.Repository("popupPopupDomainRepository")
 public interface PopupDomainRepository extends JpaRepository<Popup, String> {

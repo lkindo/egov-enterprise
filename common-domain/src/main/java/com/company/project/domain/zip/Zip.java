@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 우편번호 엔티티
+ * ?怨좊젶甕곕뜇???酉???
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

@@ -22,23 +22,23 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 발송메일을 상세 조회하는 컨트롤러 클래스
+ * 諛쒖넚硫붿씪???곸꽭 議고쉶?섎뒗 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스 개발팀 박지욱
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.12  박지욱          최초 생성
- *   2011.10.10  이기하          보안점검 후속조치(교차접속 스크립트 공격 취약성 방지(파라미터 문자열 교체), HTTP 응답분할 방지)
- *   2017.03.03  조성원          시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2019.11.29  신용호          KISA 보안약점 조치 : HTTP응답분할(HTTP_Response_Splitting,CRLF)취약점 조치
- *   2025.06.05  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(리소스 닫기)
+ *   2009.03.12  諛뺤???         理쒖큹 ?앹꽦
+ *   2011.10.10  ?닿린??         蹂댁븞?먭? ?꾩냽議곗튂(援먯감?묒냽 ?ㅽ겕由쏀듃 怨듦꺽 痍⑥빟??諛⑹?(?뚮씪誘명꽣 臾몄옄??援먯껜), HTTP ?묐떟遺꾪븷 諛⑹?)
+ *   2017.03.03  議곗꽦??         ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2019.11.29  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 : HTTP?묐떟遺꾪븷(HTTP_Response_Splitting,CRLF)痍⑥빟??議곗튂
+ *   2025.06.05  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(由ъ냼???リ린)
  *
  *      </pre>
  */
@@ -52,7 +52,7 @@ public class EgovSndngMailDetailController {
 	private EgovSndngMailDetailService sndngMailDetailService;
 
 	/**
-	 * 발송메일을 상세 조회한다.
+	 * 諛쒖넚硫붿씪???곸꽭 議고쉶?쒕떎.
 	 * 
 	 * @param sndngMailVO SndngMailVO
 	 * @return String
@@ -66,22 +66,22 @@ public class EgovSndngMailDetailController {
 			return "egovframework/com/cmm/egovError";
 		}
 
-		// 1. 발송메일을 상세 조회한다.
+		// 1. 諛쒖넚硫붿씪???곸꽭 議고쉶?쒕떎.
 		SndngMailVO resultMailVO = sndngMailDetailService.selectSndngMail(sndngMailVO);
 
-		// 2. 결과 리턴
+		// 2. 寃곌낵 由ы꽩
 		model.addAttribute("resultInfo", resultMailVO);
 		if (!resultMailVO.getMssageId().equals("")) {
-			// 발송메일 상세조회 화면 이동
+			// 諛쒖넚硫붿씪 ?곸꽭議고쉶 ?붾㈃ ?대룞
 			return "egovframework/com/cop/ems/EgovMailDetail";
 		} else {
-			// 오류 페이지 이동
+			// ?ㅻ쪟 ?섏씠吏 ?대룞
 			return "egovframework/com/cmm/egovError";
 		}
 	}
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * 
 	 * @param sndngMailVO SndngMailVO
 	 * @return String
@@ -95,18 +95,18 @@ public class EgovSndngMailDetailController {
 			return "egovframework/com/cmm/egovError";
 		}
 
-		// 1. 발송메일을 삭제한다.
+		// 1. 諛쒖넚硫붿씪????젣?쒕떎.
 		sndngMailDetailService.deleteSndngMail(sndngMailVO);
 
-		// 2. 첨부파일을 삭제한다.
+		// 2. 泥⑤??뚯씪????젣?쒕떎.
 		sndngMailDetailService.deleteAtchmnFile(sndngMailVO);
 
-		// 3. 발송메일 목록 페이지 이동
+		// 3. 諛쒖넚硫붿씪 紐⑸줉 ?섏씠吏 ?대룞
 		return "redirect:/cop/ems/selectSndngMailList.do";
 	}
 
 	/**
-	 * 발송메일 내용조회로 돌아간다.
+	 * 諛쒖넚硫붿씪 ?댁슜議고쉶濡??뚯븘媛꾨떎.
 	 * 
 	 * @param sndngMailVO SndngMailVO
 	 * @return String
@@ -120,7 +120,7 @@ public class EgovSndngMailDetailController {
 	}
 
 	/**
-	 * XML형태의 발송요청메일을 조회한다.
+	 * XML?뺥깭??諛쒖넚?붿껌硫붿씪??議고쉶?쒕떎.
 	 * 
 	 * @param sndngMailVO SndngMailVO
 	 * @exception Exception
@@ -129,7 +129,7 @@ public class EgovSndngMailDetailController {
 	public void selectSndngMailXml(@ModelAttribute("sndngMailVO") SndngMailVO sndngMailVO, HttpServletResponse response,
 			ModelMap model) throws Exception {
 
-		// 메일 등록 시 기본 생성 경로로 변경 처리 : 23.08.09
+		// 硫붿씪 ?깅줉 ??湲곕낯 ?앹꽦 寃쎈줈濡?蹂寃?泥섎━ : 23.08.09
 		// String xmlFile = Globals.MAIL_REQUEST_PATH + sndngMailVO.getMssageId() +
 		// ".xml";
 
@@ -155,7 +155,7 @@ public class EgovSndngMailDetailController {
 				if (in != null) {
 					try {
 						in.close();
-						// 2017.03.03 조성원 시큐어코딩(ES)-부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+						// 2017.03.03 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 					} catch (IOException ignore) {
 						LOGGER.error("[" + ignore.getClass() + "] : Connection Close");
 					}

@@ -11,19 +11,19 @@ import egovframework.com.uss.sam.stp.service.StplatManageVO;
 
 /**
  *
- * 약관내용을 처리하는 DAO 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?쎄??댁슜??泥섎━?섎뒗 DAO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2016.06.13  장동한          표준프레임워크 v3.6 개선
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2016.06.13  ?λ룞??         ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
  *
  * </pre>
  */
@@ -32,9 +32,9 @@ public class StplatManageDAO extends EgovComAbstractDAO {
 
 
     /**
-	 * 약관정보 글 목록에 대한 상세내용을 조회한다.
+	 * ?쎄??뺣낫 湲 紐⑸줉??????곸꽭?댁슜??議고쉶?쒕떎.
 	 * @param vo
-	 * @return 조회한 글
+	 * @return 議고쉶??湲
 	 * @exception Exception
 	 */
     public StplatManageVO selectStplatDetail(StplatManageVO vo) throws Exception {
@@ -44,9 +44,9 @@ public class StplatManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 약관정보 글 목록을 조회한다.
+	 * ?쎄??뺣낫 湲 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return 글 목록
+	 * @return 湲 紐⑸줉
 	 * @exception Exception
 	 */
     public List<StplatManageVO> selectStplatList(StplatManageDefaultVO searchVO) throws Exception {
@@ -56,9 +56,9 @@ public class StplatManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 약관정보 글 총 개수를 조회한다.
+	 * ?쎄??뺣낫 湲 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return 글 총 개수
+	 * @return 湲 珥?媛쒖닔
 	 */
     public int selectStplatListTotCnt(StplatManageDefaultVO searchVO) {
 
@@ -67,7 +67,7 @@ public class StplatManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 약관정보 글을 등록한다.
+	 * ?쎄??뺣낫 湲???깅줉?쒕떎.
 	 * @param vo
 	 * @exception Exception
 	 */
@@ -78,7 +78,7 @@ public class StplatManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 약관정보 글을 수정한다.
+	 * ?쎄??뺣낫 湲???섏젙?쒕떎.
 	 * @param vo
 	 * @exception Exception
 	 */
@@ -89,7 +89,7 @@ public class StplatManageDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 약관정보 글을 삭제한다.
+	 * ?쎄??뺣낫 湲????젣?쒕떎.
 	 * @param vo
 	 * @exception Exception
 	 */

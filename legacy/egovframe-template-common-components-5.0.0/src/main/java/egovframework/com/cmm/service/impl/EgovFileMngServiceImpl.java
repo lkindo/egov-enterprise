@@ -13,15 +13,15 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovFileMngServiceImpl.java
- * @Description : 파일정보의 관리를 위한 구현 클래스
+ * @Description : ?뚯씪?뺣낫??愿由щ? ?꾪븳 援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 25.     이삼섭    최초생성
- *    2024.10.29.	LeeBaekHaeng	@Override 표기
+ *    2009. 3. 25.     ?댁궪??   理쒖큹?앹꽦
+ *    2024.10.29.	LeeBaekHaeng	@Override ?쒓린
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 25.
  * @version
  * @see
@@ -34,7 +34,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	private FileManageDAO fileMngDAO;
 
 	/**
-	 * 여러 개의 파일을 삭제한다.
+	 * ?щ윭 媛쒖쓽 ?뚯씪????젣?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#deleteFileInfs(java.util.List)
 	 */
@@ -44,7 +44,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 하나의 파일에 대한 정보(속성 및 상세)를 등록한다.
+	 * ?섎굹???뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??깅줉?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#insertFileInf(egovframework.com.cmm.service.FileVO)
 	 */
@@ -58,7 +58,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 여러 개의 파일에 대한 정보(속성 및 상세)를 등록한다.
+	 * ?щ윭 媛쒖쓽 ?뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??깅줉?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#insertFileInfs(java.util.List)
 	 */
@@ -76,7 +76,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 파일에 대한 목록을 조회한다.
+	 * ?뚯씪?????紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#selectFileInfs(egovframework.com.cmm.service.FileVO)
 	 */
@@ -86,7 +86,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 여러 개의 파일에 대한 정보(속성 및 상세)를 수정한다.
+	 * ?щ윭 媛쒖쓽 ?뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??섏젙?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#updateFileInfs(java.util.List)
 	 */
@@ -97,7 +97,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 하나의 파일을 삭제한다.
+	 * ?섎굹???뚯씪????젣?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#deleteFileInf(egovframework.com.cmm.service.FileVO)
 	 */
@@ -107,7 +107,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 파일에 대한 상세정보를 조회한다.
+	 * ?뚯씪??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#selectFileInf(egovframework.com.cmm.service.FileVO)
 	 */
@@ -117,7 +117,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 파일 구분자에 대한 최대값을 구한다.
+	 * ?뚯씪 援щ텇?먯뿉 ???理쒕?媛믪쓣 援ы븳??
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#getMaxFileSN(egovframework.com.cmm.service.FileVO)
 	 */
@@ -127,7 +127,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 전체 파일을 삭제한다.
+	 * ?꾩껜 ?뚯씪????젣?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#deleteAllFileInf(egovframework.com.cmm.service.FileVO)
 	 */
@@ -137,7 +137,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 파일명 검색에 대한 목록을 조회한다.
+	 * ?뚯씪紐?寃?됱뿉 ???紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#selectFileListByFileNm(egovframework.com.cmm.service.FileVO)
 	 */
@@ -155,7 +155,7 @@ public class EgovFileMngServiceImpl extends EgovAbstractServiceImpl implements E
 	}
 
 	/**
-	 * 이미지 파일에 대한 목록을 조회한다.
+	 * ?대?吏 ?뚯씪?????紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @see egovframework.com.cmm.service.EgovFileMngService#selectImageFileList(egovframework.com.cmm.service.FileVO)
 	 */

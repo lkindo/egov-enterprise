@@ -29,24 +29,24 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * FAQ내용을 처리하는 비즈니스 구현 클래스
+ * FAQ?댁슜??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2016.08.03  김연호          표준프레임워크 3.6 개선
- *   2020.10.27  신용호          파일 업로드 수정 (multiRequest.getFiles)
- *   2021.07.29  정진오          경로 오류 수정
- *   2025.08.20  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2016.08.03  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2020.10.27  ?좎슜??         ?뚯씪 ?낅줈???섏젙 (multiRequest.getFiles)
+ *   2021.07.29  ?뺤쭊??         寃쎈줈 ?ㅻ쪟 ?섏젙
+ *   2025.08.20  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -60,7 +60,7 @@ public class EgovFaqController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -72,14 +72,14 @@ public class EgovFaqController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * FAQ 목록을 조회한다.
+	 * FAQ 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olh/faq/EgovFaqList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "FAQ관리", order = 540, gid = 50)
+	@IncludedInfo(name = "FAQ愿由?, order = 540, gid = 50)
 	@RequestMapping(value = "/uss/olh/faq/selectFaqList.do")
 	public String selectFaqList(@ModelAttribute("searchVO") FaqVO searchVO, ModelMap model) throws Exception {
 
@@ -108,7 +108,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ 목록에 대한 상세정보를 조회한다.
+	 * FAQ 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param faqVO
 	 * @param searchVO
@@ -128,7 +128,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ를 등록하기 위한 전 처리
+	 * FAQ瑜??깅줉?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -140,7 +140,7 @@ public class EgovFaqController {
 
 		model.addAttribute("faqVO", new FaqVO());
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = Globals.FILE_UP_EXTS;
 		String fileUploadMaxSize = Globals.FILE_UP_MAX_SIZE;
 
@@ -152,7 +152,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ를 등록한다.
+	 * FAQ瑜??깅줉?쒕떎.
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -162,7 +162,7 @@ public class EgovFaqController {
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/olh/faq/insertFaq.do")
-	public String insertFaqCn(final MultipartHttpServletRequest multiRequest, // 첨부파일을 위한...
+	public String insertFaqCn(final MultipartHttpServletRequest multiRequest, // 泥⑤??뚯씪???꾪븳...
 			@ModelAttribute("searchVO") FaqVO searchVO, @ModelAttribute("faqManageVO") FaqVO faqVO,
 			BindingResult bindingResult) throws Exception {
 
@@ -170,7 +170,7 @@ public class EgovFaqController {
 			return "egovframework/com/uss/olh/faq/EgovFaqRegist";
 		}
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -179,19 +179,19 @@ public class EgovFaqController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "FAQ_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		faqVO.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		faqVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		faqVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		faqVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		faqVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		faqVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovFaqService.insertFaq(faqVO);
 
@@ -199,7 +199,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ를 수정하기 위한 전 처리
+	 * FAQ瑜??섏젙?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param faqId
 	 * @param searchVO
@@ -213,13 +213,13 @@ public class EgovFaqController {
 
 		FaqVO faqVO = new FaqVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		faqVO.setFaqId(faqId);
 
-		// 변수명은 CoC 에 따라 JSTL사용을 위해
+		// 蹂?섎챸? CoC ???곕씪 JSTL?ъ슜???꾪빐
 		model.addAttribute("faqVO", egovFaqService.selectFaqDetail(faqVO));
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = Globals.FILE_UP_EXTS;
 		String fileUploadMaxSize = Globals.FILE_UP_MAX_SIZE;
 
@@ -230,7 +230,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ를 수정처리한다.
+	 * FAQ瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param atchFileAt
 	 * @param multiRequest
@@ -250,7 +250,7 @@ public class EgovFaqController {
 			return "egovframework/com/uss/olh/faq/EgovFaqUpdt";
 		}
 
-		// 첨부파일 관련 ID 생성 start....
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 		String atchFileId = faqVO.getAtchFileId();
 
 		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -268,12 +268,12 @@ public class EgovFaqController {
 				fileMngService.updateFileInfs(fvoList);
 			}
 		}
-		// 첨부파일 관련 ID 생성 end...
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 end...
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		faqVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		faqVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovFaqService.updateFaq(faqVO);
 
@@ -282,7 +282,7 @@ public class EgovFaqController {
 	}
 
 	/**
-	 * FAQ를 삭제처리한다.
+	 * FAQ瑜???젣泥섎━?쒕떎.
 	 * 
 	 * @param faqVO
 	 * @param searchVO
@@ -292,17 +292,17 @@ public class EgovFaqController {
 	@RequestMapping("/uss/olh/faq/deleteFaq.do")
 	public String deleteFaq(FaqVO faqVO, @ModelAttribute("searchVO") FaqVO searchVO) throws Exception {
 
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = faqVO.getAtchFileId();
 
 		egovFaqService.deleteFaq(faqVO);
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		return "forward:/uss/olh/faq/selectFaqList.do";
 	}

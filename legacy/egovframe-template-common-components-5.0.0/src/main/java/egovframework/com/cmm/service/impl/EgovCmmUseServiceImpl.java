@@ -13,21 +13,21 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import jakarta.annotation.Resource;
 
 /**
- * 공통코드등 전체 업무에서 공용해서 사용해야 하는 서비스를 정의하기위한 서비스 구현 클래스
+ * 怨듯넻肄붾뱶???꾩껜 ?낅Т?먯꽌 怨듭슜?댁꽌 ?ъ슜?댁빞 ?섎뒗 ?쒕퉬?ㅻ? ?뺤쓽?섍린?꾪븳 ?쒕퉬??援ы쁽 ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.03.11
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이삼섭          최초 생성
- *   2024.10.29  이백행          @Override 표기
- *   2025.07.16  이백행          2025년 컨트리뷰션 `throws Exception` 제거
+ *   2009.03.11  ?댁궪??         理쒖큹 ?앹꽦
+ *   2024.10.29  ?대갚??         @Override ?쒓린
+ *   2025.07.16  ?대갚??         2025??而⑦듃由щ럭??`throws Exception` ?쒓굅
  *
  *      </pre>
  */
@@ -38,7 +38,7 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
     private CmmUseDAO cmmUseDAO;
 
 	/**
-	 * 공통코드를 조회한다.
+	 * 怨듯넻肄붾뱶瑜?議고쉶?쒕떎.
 	 *
 	 * @param comDefaultCodeVO
 	 * @return
@@ -49,7 +49,7 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * ComDefaultCodeVO의 리스트를 받아서 여러개의 코드 리스트를 맵에 담아서 리턴한다.
+	 * ComDefaultCodeVO??由ъ뒪?몃? 諛쏆븘???щ윭媛쒖쓽 肄붾뱶 由ъ뒪?몃? 留듭뿉 ?댁븘??由ы꽩?쒕떎.
 	 *
 	 * @param comDefaultCodeVOs
 	 * @return
@@ -64,10 +64,10 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 조직정보를 코드형태로 리턴한다.
+	 * 議곗쭅?뺣낫瑜?肄붾뱶?뺥깭濡?由ы꽩?쒕떎.
 	 *
-	 * @param 조회조건정보 vo
-	 * @return 조직정보 List
+	 * @param 議고쉶議곌굔?뺣낫 vo
+	 * @return 議곗쭅?뺣낫 List
 	 */
 	@Override
 	public List<CmmnDetailCode> selectOgrnztIdDetail(ComDefaultCodeVO comDefaultCodeVO) {
@@ -75,10 +75,10 @@ public class EgovCmmUseServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 그룹정보를 코드형태로 리턴한다.
+	 * 洹몃９?뺣낫瑜?肄붾뱶?뺥깭濡?由ы꽩?쒕떎.
 	 *
-	 * @param 조회조건정보 vo
-	 * @return 그룹정보 List
+	 * @param 議고쉶議곌굔?뺣낫 vo
+	 * @return 洹몃９?뺣낫 List
 	 */
 	@Override
 	public List<CmmnDetailCode> selectGroupIdDetail(ComDefaultCodeVO comDefaultCodeVO) {

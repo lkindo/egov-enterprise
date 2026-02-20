@@ -35,27 +35,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요 - 팝업창에 대한 Controller를 정의한다.
+ * 媛쒖슂 - ?앹뾽李쎌뿉 ???Controller瑜??뺤쓽?쒕떎.
  *
- * 상세내용 - 팝업창에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다. - 팝업창의 조회기능은 목록조회, 상세조회로, 사용자
- * 화면 보기로 구분된다.
+ * ?곸꽭?댁슜 - ?앹뾽李쎌뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎. - ?앹뾽李쎌쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡? ?ъ슜??
+ * ?붾㈃ 蹂닿린濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이창원
+ * @author ?댁갹??
  * @since 2009.08.05
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.08.05  이창원          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.05.17  신용호          취약점 조치 및 보완
- *   2025.08.11  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.08.11  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2009.08.05  ?댁갹??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.05.17  ?좎슜??         痍⑥빟??議곗튂 諛?蹂댁셿
+ *   2025.08.11  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.08.11  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -77,14 +77,14 @@ public class EgovPopupManageController {
 	private EgovPopupManageService egovPopupManageService;
 
 	/**
-	 * 팝업창관리 목록을 조회한다.
+	 * ?앹뾽李쎄?由?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param popupManageVO
 	 * @param model
 	 * @return "egovframework/com/uss/ion/pwm/listPopupManage"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "팝업창관리", order = 720, gid = 50)
+	@IncludedInfo(name = "?앹뾽李쎄?由?, order = 720, gid = 50)
 	@RequestMapping(value = "/uss/ion/pwm/listPopup.do")
 	public String egovPopupManageList(@RequestParam Map<?, ?> commandMap, PopupManageVO popupManageVO, ModelMap model)
 			throws Exception {
@@ -119,7 +119,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 통합링크관리 목록을 상세조회 조회한다.
+	 * ?듯빀留곹겕愿由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param popupManageVO
 	 * @param commandMap
@@ -139,7 +139,7 @@ public class EgovPopupManageController {
 			egovPopupManageService.deletePopup(popupManageVO);
 			sLocationUrl = "forward:/uss/ion/pwm/listPopup.do";
 		} else {
-			// 상세정보 불러오기
+			// ?곸꽭?뺣낫 遺덈윭?ㅺ린
 			PopupManageVO popupManageVOs = egovPopupManageService.selectPopup(popupManageVO);
 			model.addAttribute("popupManageVO", popupManageVOs);
 		}
@@ -148,7 +148,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 통합링크관리를 수정한다.
+	 * ?듯빀留곹겕愿由щ? ?섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param popupManageVO
@@ -160,27 +160,27 @@ public class EgovPopupManageController {
 	@RequestMapping(value = "/uss/ion/pwm/updtPopup.do")
 	public String egovPopupManageUpdt(@RequestParam Map<?, ?> commandMap, PopupManageVO popupManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/uss/ion/pwm/EgovPopupUpdt";
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		// 팝업창시작일자(시)
+		// ?앹뾽李쎌떆?묒씪????
 		model.addAttribute("ntceBgndeHH", getTimeHH());
-		// 팝업창시작일자(분)
+		// ?앹뾽李쎌떆?묒씪??遺?
 		model.addAttribute("ntceBgndeMM", getTimeMM());
-		// 팝업창종료일자(시)
+		// ?앹뾽李쎌쥌猷뚯씪????
 		model.addAttribute("ntceEnddeHH", getTimeHH());
-		// 팝업창정료일자(분)
+		// ?앹뾽李쎌젙猷뚯씪??遺?
 		model.addAttribute("ntceEnddeMM", getTimeMM());
 
 		if (sCmd.equals("save")) {
@@ -189,10 +189,10 @@ public class EgovPopupManageController {
 			if (bindingResult.hasErrors()) {
 				return sLocationUrl;
 			}
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			popupManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			popupManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			// 저장
+			// ???
 			egovPopupManageService.updatePopup(popupManageVO);
 		} else {
 
@@ -214,7 +214,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 통합링크관리를 등록한다.
+	 * ?듯빀留곹겕愿由щ? ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param popupManageVO
@@ -227,14 +227,14 @@ public class EgovPopupManageController {
 	public String egovPopupManageRegist(@RequestParam Map<?, ?> commandMap,
 			@ModelAttribute("popupManageVO") PopupManageVO popupManageVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/uss/ion/pwm/EgovPopupRegist";
@@ -247,29 +247,29 @@ public class EgovPopupManageController {
 			if (bindingResult.hasErrors()) {
 				return sLocationUrl;
 			}
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			popupManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			popupManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			// 저장
+			// ???
 			egovPopupManageService.insertPopup(popupManageVO);
 
 			sLocationUrl = "forward:/uss/ion/pwm/listPopup.do";
 		}
 
-		// 팝업창시작일자(시)
+		// ?앹뾽李쎌떆?묒씪????
 		model.addAttribute("ntceBgndeHH", getTimeHH());
-		// 팝업창시작일자(분)
+		// ?앹뾽李쎌떆?묒씪??遺?
 		model.addAttribute("ntceBgndeMM", getTimeMM());
-		// 팝업창종료일자(시)
+		// ?앹뾽李쎌쥌猷뚯씪????
 		model.addAttribute("ntceEnddeHH", getTimeHH());
-		// 팝업창정료일자(분)
+		// ?앹뾽李쎌젙猷뚯씪??遺?
 		model.addAttribute("ntceEnddeMM", getTimeMM());
 
 		return sLocationUrl;
 	}
 
 	/**
-	 * 팝업창정보를 조회한다.
+	 * ?앹뾽李쎌젙蹂대? 議고쉶?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @param popupManageVO
@@ -282,7 +282,7 @@ public class EgovPopupManageController {
 
 		response.setHeader("Content-Type", "text/html;charset=utf-8");
 
-		PrintWriter out = null; // NOPMD - CloseResource 규칙 무시
+		PrintWriter out = null; // NOPMD - CloseResource 洹쒖튃 臾댁떆
 		try {
 			out = new PrintWriter(new OutputStreamWriter(response.getOutputStream(), "UTF-8"));
 
@@ -304,7 +304,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 팝업창을 오픈 한다.
+	 * ?앹뾽李쎌쓣 ?ㅽ뵂 ?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @param popupManageVO
@@ -339,12 +339,12 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 팝업창관리 메인 테스트 목록을 조회한다.
+	 * ?앹뾽李쎄?由?硫붿씤 ?뚯뒪??紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param popupManageVO
 	 * @param model
 	 * @return "egovframework/com/uss/ion/pwm/listMainPopup"
-	 * @throws Exception 팝업창리스트를 가져온다.
+	 * @throws Exception ?앹뾽李쎈━?ㅽ듃瑜?媛?몄삩??
 	 */
 	@RequestMapping(value = "/uss/ion/pwm/listMainPopup.do")
 
@@ -356,7 +356,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 시간을 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 * 
 	 * @return List
 	 * @throws
@@ -385,7 +385,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 분을 LIST를 반환한다.
+	 * 遺꾩쓣 LIST瑜?諛섑솚?쒕떎.
 	 * 
 	 * @return List
 	 * @throws
@@ -414,7 +414,7 @@ public class EgovPopupManageController {
 	}
 
 	/**
-	 * 0을 붙여 반환
+	 * 0??遺숈뿬 諛섑솚
 	 * 
 	 * @return String
 	 * @throws

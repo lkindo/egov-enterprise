@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * FAQ 정보 Entity
- * 레거시 테이블: NFAQINFO
+ * FAQ ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NFAQINFO
  */
 @Entity
 @Table(name = "NFAQINFO")

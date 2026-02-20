@@ -5,84 +5,84 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 배치결과관리에 대한 model 클래스
+ * 諛곗튂寃곌낵愿由ъ뿉 ???model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class BatchResult extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = 8673713935753272633L;
 	/**
-	 * 배치결과ID
+	 * 諛곗튂寃곌낵ID
 	 */
 	private String batchResultId;
 	/**
-	 * 배치스케줄ID
+	 * 諛곗튂?ㅼ?以껱D
 	 */
 	private String batchSchdulId;
 
 	/**
-	 * 배치작업ID
+	 * 諛곗튂?묒뾽ID
 	 */
 	private String batchOpertId;
 	/**
-	 * 파라미터
+	 * ?뚮씪誘명꽣
 	 */
 	private String paramtr;
 	/**
-	 * 상태
+	 * ?곹깭
 	 */
 	private String sttus;
 	/**
-	 * 실행시작시각
+	 * ?ㅽ뻾?쒖옉?쒓컖
 	 */
 	private String executBeginTime;
 	/**
-	 * 실행종료시각
+	 * ?ㅽ뻾醫낅즺?쒓컖
 	 */
 	private String executEndTime;
 	/**
-	 * 최종수정자 아이디
+	 * 理쒖쥌?섏젙???꾩씠??
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최초등록자 아이디
+	 * 理쒖큹?깅줉???꾩씠??
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 	/**
-	 * 에러정보
+	 * ?먮윭?뺣낫
 	 */
 	private String errorInfo;
 
 	/**
-	 * 배치작업명
+	 * 諛곗튂?묒뾽紐?
 	 */
 	private String batchOpertNm;
 	/**
-	 * 배치프로그램
+	 * 諛곗튂?꾨줈洹몃옩
 	 */
 	private String batchProgrm;
 	/**
-	 * 상태명
+	 * ?곹깭紐?
 	 */
 	private String sttusNm;
 

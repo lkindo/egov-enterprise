@@ -57,7 +57,7 @@ public class CtsnnManageService implements EgovCtsnnManageService {
                 .occrrDe(dto.getOccrrDe())
                 .relate(dto.getRelate())
                 .remark(dto.getRemark())
-                .confmAt("N") // 초기 상태: 미승인
+                .confmAt("N") // 珥덇린 ?곹깭: 誘몄듅??
                 .infrmlSanctnId(dto.getInfrmlSanctnId())
                 .build();
         ctsnnManageRepository.save(Objects.requireNonNull(entity));
@@ -69,7 +69,7 @@ public class CtsnnManageService implements EgovCtsnnManageService {
         CtsnnManage entity = ctsnnManageRepository.findById(Objects.requireNonNull(ctsnnId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 승인된 건은 수정 불가 처리 로직 등 추가 가능
+        // ?뱀씤??嫄댁? ?섏젙 遺덇? 泥섎━ 濡쒖쭅 ??異붽? 媛??
 
         entity.update(dto.getCtsnnCd(), dto.getCtsnnNm(), dto.getReqstDe(), dto.getTrgterNm(),
                 dto.getBrth(), dto.getOccrrDe(), dto.getRelate(), dto.getRemark());

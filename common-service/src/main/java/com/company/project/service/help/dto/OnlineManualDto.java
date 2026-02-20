@@ -13,28 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "온라인매뉴얼 정보 DTO")
+@Schema(description = "Description")
 public class OnlineManualDto {
 
-    @Schema(description = "매뉴얼 ID")
+    @Schema(description = "Description")
     private String onlineMnlId;
 
-    @Schema(description = "매뉴얼 명")
+    @Schema(description = "Description")
     private String onlineMnlNm;
 
-    @Schema(description = "매뉴얼 구분 코드")
+    @Schema(description = "Description")
     private String onlineMnlSeCode;
 
-    @Schema(description = "매뉴얼 정의")
+    @Schema(description = "Description")
     private String onlineMnlDf;
 
-    @Schema(description = "매뉴얼 설명")
+    @Schema(description = "Description")
     private String onlineMnlDc;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static OnlineManualDto from(OnlineManual entity) {

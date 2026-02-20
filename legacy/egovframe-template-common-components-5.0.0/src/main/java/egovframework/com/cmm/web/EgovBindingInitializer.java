@@ -10,21 +10,21 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.WebBindingInitializer;
 
 /**
- * 파일 조회, 삭제, 다운로드 처리를 위한 컨트롤러 클래스
+ * ?뚯씪 議고쉶, ??젣, ?ㅼ슫濡쒕뱶 泥섎━瑜??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 표준프레임워크팀 이삼섭
+ * @author ?쒖??꾨젅?꾩썙?ы? ?댁궪??
  * @since 2022.12.22
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2022.12.22  신용호          atchFileId 파라미터 추가 보완
- *   2024.07.05  신용호          reprtId/noteId/noteTrnsmitId/noteRecptnId 파라미터 추가 보완
- *   2025.05.29  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-SimpleDateFormatNeedsLocale(간단한 날짜 형식에 로캘이 필요합니다.)
+ *   2022.12.22  ?좎슜??         atchFileId ?뚮씪誘명꽣 異붽? 蹂댁셿
+ *   2024.07.05  ?좎슜??         reprtId/noteId/noteTrnsmitId/noteRecptnId ?뚮씪誘명꽣 異붽? 蹂댁셿
+ *   2025.05.29  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SimpleDateFormatNeedsLocale(媛꾨떒???좎쭨 ?뺤떇??濡쒖틮???꾩슂?⑸땲??)
  *
  *      </pre>
  */
@@ -39,10 +39,10 @@ public class EgovBindingInitializer implements WebBindingInitializer {
 
 		binder.registerCustomEditor(String.class, "atchFileId", new EgovAtchFileIdPropertyEditor());
 
-		binder.registerCustomEditor(String.class, "reprtId", new EgovCipherIdPropertyEditor()); // 메모보고/주간/월간 보고
-		binder.registerCustomEditor(String.class, "noteId", new EgovCipherIdPropertyEditor()); // 쪽지관리
-		binder.registerCustomEditor(String.class, "noteTrnsmitId", new EgovCipherIdPropertyEditor()); // 쪽지관리
-		binder.registerCustomEditor(String.class, "noteRecptnId", new EgovCipherIdPropertyEditor()); // 쪽지관리
+		binder.registerCustomEditor(String.class, "reprtId", new EgovCipherIdPropertyEditor()); // 硫붾え蹂닿퀬/二쇨컙/?붽컙 蹂닿퀬
+		binder.registerCustomEditor(String.class, "noteId", new EgovCipherIdPropertyEditor()); // 履쎌?愿由?
+		binder.registerCustomEditor(String.class, "noteTrnsmitId", new EgovCipherIdPropertyEditor()); // 履쎌?愿由?
+		binder.registerCustomEditor(String.class, "noteRecptnId", new EgovCipherIdPropertyEditor()); // 履쎌?愿由?
 	}
 
 }

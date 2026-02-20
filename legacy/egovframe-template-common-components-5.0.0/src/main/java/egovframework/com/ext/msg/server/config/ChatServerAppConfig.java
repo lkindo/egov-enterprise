@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.config;
 
@@ -28,26 +28,26 @@ import jakarta.websocket.server.ServerEndpointConfig;
 import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 /**
- * 사용자리스트에서 다른사용자 선택 시, 사용자와 대화가능한 방(새로운 EndPoint 객체)을 만드는 Configurator
+ * ?ъ슜?먮━?ㅽ듃?먯꽌 ?ㅻⅨ?ъ슜???좏깮 ?? ?ъ슜?먯? ??붽??ν븳 諛??덈줈??EndPoint 媛앹껜)??留뚮뱶??Configurator
  * 
- * @author 이영지
+ * @author ?댁쁺吏
  * @since 2014.11.27
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.11.27  이영지          최초 생성
- *   2025.06.23  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-FieldNamingConventions(필드 명명 규칙)
+ *   2014.11.27  ?댁쁺吏          理쒖큹 ?앹꽦
+ *   2025.06.23  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FieldNamingConventions(?꾨뱶 紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
 public class ChatServerAppConfig extends Configurator {
 
-	// 대화창 서버객체(ChatServerEndPoint) 저장하는 Map
+	// ??붿갹 ?쒕쾭媛앹껜(ChatServerEndPoint) ??ν븯??Map
 	private final static Map<String, ChatServerEndPoint> ENDPOINT_MAP = new HashMap<String, ChatServerEndPoint>();
 	private String currentUri;
 

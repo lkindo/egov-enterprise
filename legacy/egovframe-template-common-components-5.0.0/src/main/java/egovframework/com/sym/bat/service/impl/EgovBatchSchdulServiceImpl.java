@@ -11,39 +11,39 @@ import egovframework.com.sym.bat.service.EgovBatchSchdulService;
 import jakarta.annotation.Resource;
 
 /**
- * 배치스케줄관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 諛곗튂?ㅼ?以꾧?由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @Service("egovBatchSchdulService")
 public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implements EgovBatchSchdulService {
 
 	/**
-	 * 배치스케줄DAO
+	 * 諛곗튂?ㅼ?以껪AO
 	 */
 	@Resource(name = "batchSchdulDao")
 	private BatchSchdulDao batchSchdulDao;
 
 	/**
-	 * 배치결과DAO
+	 * 諛곗튂寃곌낵DAO
 	 */
 	@Resource(name = "batchResultDao")
 	private BatchResultDao batchResultDao;
 
 	/**
-	 * 배치스케줄을 삭제한다.
-	 * @param batchSchdul    삭제대상 배치스케줄model
+	 * 諛곗튂?ㅼ?以꾩쓣 ??젣?쒕떎.
+	 * @param batchSchdul    ??젣???諛곗튂?ㅼ?以꼖odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -52,8 +52,8 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치스케줄을 등록한다.
-	 * @param batchSchdul    등록대상 배치스케줄model
+	 * 諛곗튂?ㅼ?以꾩쓣 ?깅줉?쒕떎.
+	 * @param batchSchdul    ?깅줉???諛곗튂?ㅼ?以꼖odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -62,10 +62,10 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치스케줄을 상세조회 한다.
-	 * @return 배치스케줄정보
+	 * 諛곗튂?ㅼ?以꾩쓣 ?곸꽭議고쉶 ?쒕떎.
+	 * @return 諛곗튂?ㅼ?以꾩젙蹂?
 	 *
-	 * @param batchSchdul 조회대상 배치스케줄model
+	 * @param batchSchdul 議고쉶???諛곗튂?ㅼ?以꼖odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -74,10 +74,10 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치스케줄의 목록을 조회 한다.
-	 * @return 배치스케줄목록
+	 * 諛곗튂?ㅼ?以꾩쓽 紐⑸줉??議고쉶 ?쒕떎.
+	 * @return 諛곗튂?ㅼ?以꾨ぉ濡?
 	 *
-	 * @param searchVO 	조회정보가 담긴 VO
+	 * @param searchVO 	議고쉶?뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -87,10 +87,10 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치스케줄 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * 諛곗튂?ㅼ?以?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -100,9 +100,9 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치스케줄정보를 수정한다.
+	 * 諛곗튂?ㅼ?以꾩젙蹂대? ?섏젙?쒕떎.
 	 *
-	 * @param batchSchdul    수정대상 배치스케줄model
+	 * @param batchSchdul    ?섏젙???諛곗튂?ㅼ?以꼖odel
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -111,8 +111,8 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치결과를 등록한다.
-	 * @param batchResult    등록대상 배치결과model
+	 * 諛곗튂寃곌낵瑜??깅줉?쒕떎.
+	 * @param batchResult    ?깅줉???諛곗튂寃곌낵model
 	 * @exception Exception Exception
 	 */
 	@Override
@@ -121,9 +121,9 @@ public class EgovBatchSchdulServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 배치결과정보를 수정한다.
+	 * 諛곗튂寃곌낵?뺣낫瑜??섏젙?쒕떎.
 	 *
-	 * @param batchResult    수정대상 배치결과model
+	 * @param batchResult    ?섏젙???諛곗튂寃곌낵model
 	 * @exception Exception Exception
 	 */
 	@Override

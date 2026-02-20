@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 최근 검색어 정보 Entity
- * 레거시 테이블: NRECENTSRCHWRD
+ * 筌ㅼ뮄??野꺜??깅선 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NRECENTSRCHWRD
  */
 @Entity
 @Table(name = "NRECENTSRCHWRD")

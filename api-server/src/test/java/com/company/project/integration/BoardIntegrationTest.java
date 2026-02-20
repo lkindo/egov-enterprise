@@ -2,7 +2,7 @@ package com.company.project.integration;
 
 import com.company.project.config.MinimalTestConfig;
 import com.company.project.domain.board.Board;
-import com.company.project.domain.board.BoardId;
+
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.service.board.BoardMasterService;
 import com.company.project.service.board.BoardService;
@@ -101,7 +101,7 @@ public class BoardIntegrationTest {
                 boardService.deletePost(bbsId, nttId, "USER_001");
                 // Soft delete 확인 (useAt="N") - getPostDetail filters by useAt='Y', so we use
                 // repository directly
-                Board deletedPost = boardRepository.findById(new BoardId(nttId, bbsId))
+                Board deletedPost = boardRepository.findById(nttId)
                                 .orElse(null);
                 assertThat(deletedPost).isNotNull();
                 assertThat(deletedPost.getUseAt()).isEqualTo("N");

@@ -5,14 +5,14 @@ import java.util.Map;
 
 /**
  * @Class Name : EgovFileMngService.java
- * @Description : 파일정보의 관리를 위한 서비스 인터페이스
+ * @Description : ?뚯씪?뺣낫??愿由щ? ?꾪븳 ?쒕퉬???명꽣?섏씠??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 25.     이삼섭    최초생성
+ *    2009. 3. 25.     ?댁궪??   理쒖큹?앹꽦
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 25.
  * @version
  * @see
@@ -21,7 +21,7 @@ import java.util.Map;
 public interface EgovFileMngService {
 
     /**
-     * 파일에 대한 목록을 조회한다.
+     * ?뚯씪?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param fvo
      * @return
@@ -30,7 +30,7 @@ public interface EgovFileMngService {
     public List<FileVO> selectFileInfs(FileVO fvo) throws Exception;
 
     /**
-     * 하나의 파일에 대한 정보(속성 및 상세)를 등록한다.
+     * ?섎굹???뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??깅줉?쒕떎.
      *
      * @param fvo
      * @throws Exception
@@ -38,7 +38,7 @@ public interface EgovFileMngService {
     public String insertFileInf(FileVO fvo) throws Exception;
 
     /**
-     * 여러 개의 파일에 대한 정보(속성 및 상세)를 등록한다.
+     * ?щ윭 媛쒖쓽 ?뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??깅줉?쒕떎.
      *
      * @param fvoList
      * @throws Exception
@@ -46,7 +46,7 @@ public interface EgovFileMngService {
     public String insertFileInfs(List<FileVO> fvoList) throws Exception;
 
     /**
-     * 여러 개의 파일에 대한 정보(속성 및 상세)를 수정한다.
+     * ?щ윭 媛쒖쓽 ?뚯씪??????뺣낫(?띿꽦 諛??곸꽭)瑜??섏젙?쒕떎.
      *
      * @param fvoList
      * @throws Exception
@@ -54,7 +54,7 @@ public interface EgovFileMngService {
     public void updateFileInfs(List<FileVO> fvoList) throws Exception;
 
     /**
-     * 여러 개의 파일을 삭제한다.
+     * ?щ윭 媛쒖쓽 ?뚯씪????젣?쒕떎.
      *
      * @param fvoList
      * @throws Exception
@@ -62,7 +62,7 @@ public interface EgovFileMngService {
     public void deleteFileInfs(List<FileVO> fvoList) throws Exception;
 
     /**
-     * 하나의 파일을 삭제한다.
+     * ?섎굹???뚯씪????젣?쒕떎.
      *
      * @param fvo
      * @throws Exception
@@ -70,7 +70,7 @@ public interface EgovFileMngService {
     public void deleteFileInf(FileVO fvo) throws Exception;
 
     /**
-     * 파일에 대한 상세정보를 조회한다.
+     * ?뚯씪??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param fvo
      * @return
@@ -79,7 +79,7 @@ public interface EgovFileMngService {
     public FileVO selectFileInf(FileVO fvo) throws Exception;
 
     /**
-     * 파일 구분자에 대한 최대값을 구한다.
+     * ?뚯씪 援щ텇?먯뿉 ???理쒕?媛믪쓣 援ы븳??
      *
      * @param fvo
      * @return
@@ -88,7 +88,7 @@ public interface EgovFileMngService {
     public int getMaxFileSN(FileVO fvo) throws Exception;
 
     /**
-     * 전체 파일을 삭제한다.
+     * ?꾩껜 ?뚯씪????젣?쒕떎.
      *
      * @param fvo
      * @throws Exception
@@ -96,7 +96,7 @@ public interface EgovFileMngService {
     public void deleteAllFileInf(FileVO fvo) throws Exception;
 
     /**
-     * 파일명 검색에 대한 목록을 조회한다.
+     * ?뚯씪紐?寃?됱뿉 ???紐⑸줉??議고쉶?쒕떎.
      *
      * @param fvo
      * @return
@@ -105,7 +105,7 @@ public interface EgovFileMngService {
     public Map<String, Object> selectFileListByFileNm(FileVO fvo) throws Exception;
 
     /**
-     * 이미지 파일에 대한 목록을 조회한다.
+     * ?대?吏 ?뚯씪?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param vo
      * @return

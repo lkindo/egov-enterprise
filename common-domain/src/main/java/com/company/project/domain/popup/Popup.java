@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 팝업창 관리 JPA Entity
- * 레거시 테이블: COMTNPOPUPMANAGE
+ * ??밸씜筌??온??JPA Entity
+ * ??뉕탢?????뵠?? COMTNPOPUPMANAGE
  */
 @Entity(name = "PopupDomain")
 @Table(name = "NPOPUPMANAGE")

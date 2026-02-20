@@ -45,7 +45,7 @@ class UserControllerIntegrationTest {
                 UserResponse response = new UserResponse(
                                 "newUser",
                                 "신규 사용자",
-                                com.company.project.domain.user.Role.USER);
+                                com.company.project.domain.user.entity.Role.USER);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 

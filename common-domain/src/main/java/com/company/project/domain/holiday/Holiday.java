@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 휴일 JPA Entity
- * 레거시 테이블: COMTNRESTDE
+ * ??곸뵬 JPA Entity
+ * ??뉕탢?????뵠?? COMTNRESTDE
  */
 @Entity
 @Table(name = "NRESTDE")

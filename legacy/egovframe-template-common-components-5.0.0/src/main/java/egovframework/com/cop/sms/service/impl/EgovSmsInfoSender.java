@@ -16,27 +16,27 @@ import x3.client.smeapi.impl.SMEConnectionFactoryImpl;
 import x3.client.smeapi.impl.SMELogger;
 
 /**
- * 문자메시지 연동 처리를 위한 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏 ?곕룞 泥섎━瑜??꾪븳 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.08.05
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.08.05  한성곤          최초 생성
+ *   2009.08.05  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public class EgovSmsInfoSender {
-    /** SMS 서버 URL */
+    /** SMS ?쒕쾭 URL */
     private final String connString;	// ex) sme://000.000.000.000:20000
-    /** SMS 연계 ID */
+    /** SMS ?곌퀎 ID */
     private final String smsId;
-    /** SMS 연계 password */
+    /** SMS ?곌퀎 password */
     private final String smsPwd;
 
     /** SMS G/W Connection Factory */
@@ -51,8 +51,8 @@ public class EgovSmsInfoSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovSmsInfoSender.class);
 
     /**
-     * SMS 연계를 위한 생성자.
-     * SMEConfig 설정파일로부터 필요한 연결 정보 및 로그 관련 정보를 얻는다.
+     * SMS ?곌퀎瑜??꾪븳 ?앹꽦??
+     * SMEConfig ?ㅼ젙?뚯씪濡쒕????꾩슂???곌껐 ?뺣낫 諛?濡쒓렇 愿???뺣낫瑜??삳뒗??
      *
      * @param configFile
      * @throws Exception
@@ -86,31 +86,31 @@ public class EgovSmsInfoSender {
     }
 
     /**
-     * SMS 연결을 위한 Connection 및 Session 생성한다.
-     * 발송건이 있을 경우만 open()을 호출하고 close()를 호출하여 종료한다.
-     * 만약 DB 와 연동시 select로 데이타 검출시 데이타가 없으면
-     * open()을 호출하지 않는다. (중요!!! 꼭 데이타가 있을 경우만 open() 을 하여 접속)
+     * SMS ?곌껐???꾪븳 Connection 諛?Session ?앹꽦?쒕떎.
+     * 諛쒖넚嫄댁씠 ?덉쓣 寃쎌슦留?open()???몄텧?섍퀬 close()瑜??몄텧?섏뿬 醫낅즺?쒕떎.
+     * 留뚯빟 DB ? ?곕룞??select濡??곗씠? 寃異쒖떆 ?곗씠?媛 ?놁쑝硫?
+     * open()???몄텧?섏? ?딅뒗?? (以묒슂!!! 瑗??곗씠?媛 ?덉쓣 寃쎌슦留?open() ???섏뿬 ?묒냽)
      *
      * @throws SMEException
      */
     public void open() throws SMEException {
 	this.factSender = new SMEConnectionFactoryImpl(connString);
-	this.connSender = factSender.createConnection(smsId, smsPwd); // 아이디와 패스워드입니다.
+	this.connSender = factSender.createConnection(smsId, smsPwd); // ?꾩씠?붿? ?⑥뒪?뚮뱶?낅땲??
 	this.sessSender = connSender.createSession();
 	this.sender = sessSender.createSender();
 
-	// 현재 발송한 호에 대해서 리포트 수신을 위해서는 true 로 설정해야  리포트 수신을 할 수 있다.
-	// 만약 false 로 세팅하고 발송을 하면 현재 발송한 호에 대해서는 결과수신을 할 수 없다.
-	// 리포트가 필요없는 기관에서는 아래 디폴트값인 false를 유지한다.
-	// false로 설정을 하면 보내는 메시지에 대해서 결과를 수신할 수 없습니다.
-	// [2008-08-25] 리포트 수신 필수조건으로 변경
-	// 리포트는 필수 수신입니다.
+	// ?꾩옱 諛쒖넚???몄뿉 ??댁꽌 由ы룷???섏떊???꾪빐?쒕뒗 true 濡??ㅼ젙?댁빞  由ы룷???섏떊???????덈떎.
+	// 留뚯빟 false 濡??명똿?섍퀬 諛쒖넚???섎㈃ ?꾩옱 諛쒖넚???몄뿉 ??댁꽌??寃곌낵?섏떊???????녿떎.
+	// 由ы룷?멸? ?꾩슂?녿뒗 湲곌??먯꽌???꾨옒 ?뷀뤃?멸컪??false瑜??좎??쒕떎.
+	// false濡??ㅼ젙???섎㈃ 蹂대궡??硫붿떆吏????댁꽌 寃곌낵瑜??섏떊?????놁뒿?덈떎.
+	// [2008-08-25] 由ы룷???섏떊 ?꾩닔議곌굔?쇰줈 蹂寃?
+	// 由ы룷?몃뒗 ?꾩닔 ?섏떊?낅땲??
 	this.sessSender.setReceiverCreated(true);
 	this.connSender.start();
     }
 
     /**
-     * SMS를 전송한다.
+     * SMS瑜??꾩넚?쒕떎.
      *
      * @param smsConn
      * @return
@@ -121,27 +121,27 @@ public class EgovSmsInfoSender {
 	try {
 	    request = sessSender.createRequest();
 	    // destination
-	    request.setTo(smsConn.getCallTo()); //수신번호
+	    request.setTo(smsConn.getCallTo()); //?섏떊踰덊샇
 	    // origination
-	    request.setFrom(smsConn.getCallFrom()); //발신번호
+	    request.setFrom(smsConn.getCallFrom()); //諛쒖떊踰덊샇
 	    // callback
-	    request.setCallback(smsConn.getCallBack()); //회신번호(콜백번호)
+	    request.setCallback(smsConn.getCallBack()); //?뚯떊踰덊샇(肄쒕갚踰덊샇)
 
 	    // callbackurl
-	    // 무선인터넷 주소  휴대전화 인터넷 (WAP) 페이지 접속용 URL
-	    // 단문자메세지 외의 별도 과금이 되므로 WAP 페이지가 있는 기관에서만 사용
-	    // 해당 URL 접속시 수신자에게 과금이 되므로 주의.
-	    request.setCallbackURL(smsConn.getCallBackUrl()); //CallbackURL은 선택사항 입니다.
+	    // 臾댁꽑?명꽣??二쇱냼  ?대??꾪솕 ?명꽣??(WAP) ?섏씠吏 ?묒냽??URL
+	    // ?⑤Ц?먮찓?몄? ?몄쓽 蹂꾨룄 怨쇨툑???섎?濡?WAP ?섏씠吏媛 ?덈뒗 湲곌??먯꽌留??ъ슜
+	    // ?대떦 URL ?묒냽???섏떊?먯뿉寃?怨쇨툑???섎?濡?二쇱쓽.
+	    request.setCallbackURL(smsConn.getCallBackUrl()); //CallbackURL? ?좏깮?ы빆 ?낅땲??
 
-	    // message (메세지내용)
+	    // message (硫붿꽭吏?댁슜)
 	    request.setText(smsConn.getText());
 
 	    // serial *MUST* be unique number in single SME.
-	    // 반드시 메시지 발송시 연속되는 일련번호 형식을 띈 고유값이어야 함
-	    // SMS G/W로 전송누적 일련번호
-	    // 예) 'TestMessage-000000' 숫자 또는 문자 + 숫자로 조합 가능 ( 40 byte )
-	    // 예) '200808251259590001'
-	    request.setMessageId(smsConn.getMessageId()); //일련번호 고유값
+	    // 諛섎뱶??硫붿떆吏 諛쒖넚???곗냽?섎뒗 ?쇰젴踰덊샇 ?뺤떇????怨좎쑀媛믪씠?댁빞 ??
+	    // SMS G/W濡??꾩넚?꾩쟻 ?쇰젴踰덊샇
+	    // ?? 'TestMessage-000000' ?レ옄 ?먮뒗 臾몄옄 + ?レ옄濡?議고빀 媛??( 40 byte )
+	    // ?? '200808251259590001'
+	    request.setMessageId(smsConn.getMessageId()); //?쇰젴踰덊샇 怨좎쑀媛?
 
 	    sender = sessSender.createSender();
 	    SMEResponse res = sender.send(request);
@@ -155,25 +155,25 @@ public class EgovSmsInfoSender {
 		smsConn.setResultMessage("");
 		break;
 	    case 3000:
-		smsConn.setResultMessage("착발신 번호 포맷 오류 또는 부재");
+		smsConn.setResultMessage("李⑸컻??踰덊샇 ?щ㎎ ?ㅻ쪟 ?먮뒗 遺??);
 		break;
 	    case 3001:
-		smsConn.setResultMessage("콜백번호 포맷 오류");
+		smsConn.setResultMessage("肄쒕갚踰덊샇 ?щ㎎ ?ㅻ쪟");
 		break;
 	    case 3002:
-		smsConn.setResultMessage("MessageID 포맷 오류 또는 부재");
+		smsConn.setResultMessage("MessageID ?щ㎎ ?ㅻ쪟 ?먮뒗 遺??);
 		break;
 	    case 3003:
-		smsConn.setResultMessage("Text 및 Callback URL 포맷 오류");
+		smsConn.setResultMessage("Text 諛?Callback URL ?щ㎎ ?ㅻ쪟");
 		break;
 	    case 4005:
-		smsConn.setResultMessage("SMG Server 스팸 메시지로 처리 거부됨");
+		smsConn.setResultMessage("SMG Server ?ㅽ뙵 硫붿떆吏濡?泥섎━ 嫄곕???);
 		break;
 	    case 5000:
-		smsConn.setResultMessage("SMG Server 내부 에러 (인증실패,연결실패)");
+		smsConn.setResultMessage("SMG Server ?대? ?먮윭 (?몄쬆?ㅽ뙣,?곌껐?ㅽ뙣)");
 		break;
 	    default:
-		smsConn.setResultMessage("알 수 없는 오류 발생");
+		smsConn.setResultMessage("?????녿뒗 ?ㅻ쪟 諛쒖깮");
 	    }
 
 	} catch (SMEException ex) {
@@ -184,8 +184,8 @@ public class EgovSmsInfoSender {
     }
 
     /**
-     * SMS 연결을 위한 Connection 및 Session 해제한다.
-     * 메시지 처리 전송후 반드시 종료해야 한다.
+     * SMS ?곌껐???꾪븳 Connection 諛?Session ?댁젣?쒕떎.
+     * 硫붿떆吏 泥섎━ ?꾩넚??諛섎뱶??醫낅즺?댁빞 ?쒕떎.
      */
     public void close() {
 	try {

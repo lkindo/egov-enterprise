@@ -9,7 +9,7 @@
 			  FROM  (
 			SELECT ROWNUM RNUM, ALL_LIST.*
 			  FROM  (
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 			SELECT  RDMN_CODE
 			     ,  SN
 			     ,  CTPRVN_NM
@@ -42,7 +42,7 @@
 				DETAIL_BULD_NM LIKE '%' || #{searchKeyword} || '%'
 			</if>
 		<![CDATA[
-			/* 구현 Sql */
+			/* 援ы쁽 Sql */
 				    ) ALL_LIST
 				    )
 			 WHERE  RNUM  > #{firstIndex}

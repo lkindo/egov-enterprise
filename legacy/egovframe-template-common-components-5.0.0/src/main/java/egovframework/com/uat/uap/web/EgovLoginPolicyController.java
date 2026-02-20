@@ -1,21 +1,21 @@
 /**
- * 개요
- * - 로그인정책에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇?몄젙梨낆뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 로그인정책에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 로그인정책의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 濡쒓렇?몄젙梨낆뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 濡쒓렇?몄젙梨낆쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:53
+ * @created 03-8-2009 ?ㅽ썑 2:08:53
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2009.8.3    이문준     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
- *  2024.10.29	LeeBaekHaeng	검색조건 유지
+ *  2009.8.3    ?대Ц以     理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
+ *  2024.10.29	LeeBaekHaeng	寃?됱“嫄??좎?
  * </pre>
  */
 
@@ -50,8 +50,8 @@ public class EgovLoginPolicyController {
 	EgovLoginPolicyService egovLoginPolicyService;
 
 	/**
-	 * 로그인정책 목록 조회화면으로 이동한다.
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?몄젙梨?紐⑸줉 議고쉶?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/selectLoginPolicyListView.do")
 	public String selectLoginPolicyListView() throws Exception {
@@ -59,11 +59,11 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 로그인정책 목록을 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?몄젙梨?紐⑸줉??議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name="로그인정책관리", order = 30 ,gid = 10)
+	@IncludedInfo(name="濡쒓렇?몄젙梨낃?由?, order = 30 ,gid = 10)
 	@RequestMapping("/uat/uap/selectLoginPolicyList.do")
 	public String selectLoginPolicyList(@ModelAttribute("loginPolicyVO") LoginPolicyVO loginPolicyVO,
 			                             ModelMap model) throws Exception {
@@ -90,9 +90,9 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 로그인정책 목록의 상세정보를 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?몄젙梨?紐⑸줉???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/getLoginPolicy.do")
 	public String selectLoginPolicy(@RequestParam("emplyrId") String emplyrId,
@@ -114,9 +114,9 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 로그인정책 정보 등록화면으로 이동한다.
-	 * @param loginPolicy - 로그인정책 model
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?몄젙梨??뺣낫 ?깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/addLoginPolicyView.do")
 	public String insertLoginPolicyView(@RequestParam("emplyrId") String emplyrId,
@@ -132,9 +132,9 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 로그인정책 정보를 신규로 등록한다.
-	 * @param loginPolicy - 로그인정책 model
-	 * @return String - 리턴 Url
+	 * 濡쒓렇?몄젙梨??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/addLoginPolicy.do")
 	public String insertLoginPolicy(@Valid @ModelAttribute("loginPolicy") LoginPolicy loginPolicy,
@@ -162,9 +162,9 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 기 등록된 로그인정책 정보를 수정한다.
-	 * @param loginPolicy - 로그인정책 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??濡쒓렇?몄젙梨??뺣낫瑜??섏젙?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/updtLoginPolicy.do")
 	public String updateLoginPolicy(@Valid @ModelAttribute("loginPolicy") LoginPolicy loginPolicy,
@@ -190,9 +190,9 @@ public class EgovLoginPolicyController {
 	}
 
 	/**
-	 * 기 등록된 로그인정책 정보를 삭제한다.
-	 * @param loginPolicy - 로그인정책 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??濡쒓렇?몄젙梨??뺣낫瑜???젣?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping("/uat/uap/removeLoginPolicy.do")
 	public String deleteLoginPolicy(@ModelAttribute("loginPolicy") LoginPolicy loginPolicy,

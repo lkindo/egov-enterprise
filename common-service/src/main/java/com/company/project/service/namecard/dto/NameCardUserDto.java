@@ -12,25 +12,25 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "명함 사용 정보 DTO")
+@Schema(description = "Description")
 public class NameCardUserDto {
 
-    @Schema(description = "명함 ID")
+    @Schema(description = "Description")
     private String ncrdId;
 
-    @Schema(description = "사용자 ID")
+    @Schema(description = "Description")
     private String emplyrId;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private String creatDt;
 
-    @Schema(description = "등록구분코드")
+    @Schema(description = "Description")
     private String registSeCode;
 
-    @Schema(description = "사용여부")
+    @Schema(description = "Description")
     private String useAt;
 
-    @Schema(description = "명함 정보")
+    @Schema(description = "Description")
     private NameCardDto nameCard;
 
     public static NameCardUserDto from(NameCardUser entity, NameCard nameCard) {
@@ -44,7 +44,7 @@ public class NameCardUserDto {
                 .build();
     }
 
-    // 누락된 메서드들 추가
+    // ?꾨씫??硫붿꽌?쒕뱾 異붽?
     public String getCreatDt() {
         return this.creatDt != null ? this.creatDt.toString() : null;
     }

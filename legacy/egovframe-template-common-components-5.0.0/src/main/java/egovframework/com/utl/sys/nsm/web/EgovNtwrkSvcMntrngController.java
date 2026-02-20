@@ -25,22 +25,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링대상에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링대상에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 네트워크서비스 모니터링대상의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅??곸쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:42
+ * @created 28-6-2010 ?ㅼ쟾 11:33:42
  *  <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.28   장철호     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.28   ?μ쿋??    理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 @Controller
@@ -56,17 +56,17 @@ public class EgovNtwrkSvcMntrngController {
     EgovMessageSource egovMessageSource;
 
 	/**
-	 * 네트워크서비스 모니터링대상 정보에 대한 목록을 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????뺣낫?????紐⑸줉??議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
     @SuppressWarnings("unused")
-	@IncludedInfo(name="네트워크서비스모니터링", order = 2120 ,gid = 90)
+	@IncludedInfo(name="?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留?, order = 2120 ,gid = 90)
     @RequestMapping("/utl/sys/nsm/selectNtwrkSvcMntrngList.do")
 	public String selectNtwrkSvcMntrngList(@ModelAttribute("searchVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO, ModelMap model) throws Exception{
-    	//로그인 객체 선언
+    	//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		ntwrkSvcMntrngVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -93,9 +93,9 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
     /**
-	 * 네트워크서비스 모니터링 대상 정보의 등록페이지로 이동한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ????뺣낫???깅줉?섏씠吏濡??대룞?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
@@ -103,7 +103,7 @@ public class EgovNtwrkSvcMntrngController {
 	public String addNtwrkSvcMntrng(@ModelAttribute("ntwrkSvcMntrngVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO, BindingResult bindingResult, ModelMap model) throws Exception{
     	String sLocationUrl = "egovframework/com/utl/sys/nsm/EgovNtwrkSvcMntrngRegist";
 
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -114,15 +114,15 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
     /**
-	 * 네트워크서비스 모니터링 대상 정보의 수정페이지로 이동한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링 대상 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ????뺣낫???섏젙?섏씠吏濡??대룞?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 ???VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
     @RequestMapping("/utl/sys/nsm/modifyNtwrkSvcMntrng.do")
 	public String modifyNtwrkSvcMntrng(@ModelAttribute("ntwrkSvcMntrngVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO, BindingResult bindingResult, ModelMap model) throws Exception{
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -131,7 +131,7 @@ public class EgovNtwrkSvcMntrngController {
 
     	NtwrkSvcMntrngVO resultVO = ntwrkSvcMntrngService.selectNtwrkSvcMntrng(ntwrkSvcMntrngVO);
 
-    	//시스템 IP 설정
+    	//?쒖뒪??IP ?ㅼ젙
     	String[] sysIps = resultVO.getSysIp().split("[.]");
     	resultVO.setSysIp1(sysIps[0]);
     	resultVO.setSysIp2(sysIps[1]);
@@ -154,9 +154,9 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 정보를 조회한다.
-	 * @param NtwrkSvcMntrngVO - 네트워크서비스 모니터링대상 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????뺣낫瑜?議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngVO
 	 */
@@ -164,7 +164,7 @@ public class EgovNtwrkSvcMntrngController {
 	public String selectNtwrkSvcMntrng(@ModelAttribute("ntwrkSvcMntrngVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO, ModelMap model) throws Exception{
     	NtwrkSvcMntrng ntwrkSvcMntrng = ntwrkSvcMntrngService.selectNtwrkSvcMntrng(ntwrkSvcMntrngVO);
 
-    	//시스템 IP 설정
+    	//?쒖뒪??IP ?ㅼ젙
     	String[] sysIps = ntwrkSvcMntrng.getSysIp().split("[.]");
     	ntwrkSvcMntrng.setSysIp1(sysIps[0]);
     	ntwrkSvcMntrng.setSysIp2(sysIps[1]);
@@ -183,9 +183,9 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 정보를 수정한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????뺣낫瑜??섏젙?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -204,7 +204,7 @@ public class EgovNtwrkSvcMntrngController {
 		}
 
 		if (isAuthenticated) {
-			//시스템 IP 설정
+			//?쒖뒪??IP ?ㅼ젙
 			String sysIp = "";
 			sysIp += ntwrkSvcMntrngVO.getSysIp1();
 			sysIp += ".";
@@ -223,9 +223,9 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 정보를 등록한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????뺣낫瑜??깅줉?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
@@ -234,14 +234,14 @@ public class EgovNtwrkSvcMntrngController {
 		@Valid @ModelAttribute("ntwrkSvcMntrngVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO,
 		BindingResult bindingResult, ModelMap model) throws Exception{
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/utl/sys/nsm/EgovNtwrkSvcMntrngRegist";
@@ -250,7 +250,7 @@ public class EgovNtwrkSvcMntrngController {
 			return sLocationUrl;
 		}
 
-		//시스템 IP 설정
+		//?쒖뒪??IP ?ㅼ젙
 		String sysIp = "";
 		sysIp += ntwrkSvcMntrngVO.getSysIp1();
 		sysIp += ".";
@@ -261,7 +261,7 @@ public class EgovNtwrkSvcMntrngController {
 		sysIp += ntwrkSvcMntrngVO.getSysIp4();
 		ntwrkSvcMntrngVO.setSysIp(sysIp);
 
-		//아이디 설정
+		//?꾩씠???ㅼ젙
 		ntwrkSvcMntrngVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		ntwrkSvcMntrngVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -277,15 +277,15 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링대상 정보를 삭제한다.
-	 * @param NtwrkSvcMntrng - 네트워크서비스 모니터링대상 model
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅????뺣낫瑜???젣?쒕떎.
+	 * @param NtwrkSvcMntrng - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???model
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrng
 	 */
     @RequestMapping("/utl/sys/nsm/deleteNtwrkSvcMntrng.do")
 	public String deleteNtwrkSvcMntrng(@ModelAttribute("ntwrkSvcMntrngVO") NtwrkSvcMntrngVO ntwrkSvcMntrngVO, ModelMap model) throws Exception{
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -296,16 +296,16 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링로그 정보에 대한 목록을 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngLogVO
 	 */
 	@SuppressWarnings({ "unchecked", "unused" })
 	@RequestMapping("/utl/sys/nsm/selectNtwrkSvcMntrngLogList.do")
 	public String selectNtwrkSvcMntrngLogList(@ModelAttribute("searchVO") NtwrkSvcMntrngLogVO ntwrkSvcMntrngLogVO, ModelMap model) throws Exception{
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		ntwrkSvcMntrngLogVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -320,7 +320,7 @@ public class EgovNtwrkSvcMntrngController {
 		ntwrkSvcMntrngLogVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		ntwrkSvcMntrngLogVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		// 조회기간설정
+		// 議고쉶湲곌컙?ㅼ젙
 		if(ntwrkSvcMntrngLogVO.getSearchBgnDe() != null && ntwrkSvcMntrngLogVO.getSearchEndDe() != null){
 			if(!ntwrkSvcMntrngLogVO.getSearchBgnDe().equals("") && !ntwrkSvcMntrngLogVO.getSearchEndDe().equals("")){
 				ntwrkSvcMntrngLogVO.setSearchBgnDt(ntwrkSvcMntrngLogVO.getSearchBgnDe() + " " + ntwrkSvcMntrngLogVO.getSearchBgnHour());
@@ -346,9 +346,9 @@ public class EgovNtwrkSvcMntrngController {
 			//System.out.println(list.get(k).getCreatDt());
 		}
 
-		// 조회시작시
+		// 議고쉶?쒖옉??
     	model.addAttribute("searchBgnHour", getTimeHH());
-    	// 조회종료시
+    	// 議고쉶醫낅즺??
     	model.addAttribute("searchEndHour", getTimeHH());
 
 		model.addAttribute("resultList", list);
@@ -359,9 +359,9 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 네트워크서비스 모니터링로그 정보를 조회한다.
-	 * @param NtwrkSvcMntrngLogVO - 네트워크서비스 모니터링로그 VO
-	 * @return  String - 리턴 URL
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param NtwrkSvcMntrngLogVO - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return  String - 由ы꽩 URL
 	 *
 	 * @param ntwrkSvcMntrngLogVO
 	 */
@@ -380,7 +380,7 @@ public class EgovNtwrkSvcMntrngController {
 	}
 
 	/**
-	 * 시간의 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 * @return  List
 	 * @throws
 	 */

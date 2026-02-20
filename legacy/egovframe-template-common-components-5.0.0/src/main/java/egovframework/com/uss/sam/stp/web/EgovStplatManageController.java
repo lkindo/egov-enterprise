@@ -24,22 +24,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 약관내용을 처리하는 비즈니스 구현 클래스
+ * ?쎄??댁슜??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2016.06.13  장동한          표준프레임워크 v3.6 개선
- *   2025.08.27  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2016.06.13  ?λ룞??         ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
+ *   2025.08.27  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -58,7 +58,7 @@ public class EgovStplatManageController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 개별 배포시 메인메뉴를 조회한다.
+	 * 媛쒕퀎 諛고룷??硫붿씤硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param model
 	 * @return "/uss/sam/stp/EgovMain"
@@ -70,7 +70,7 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 메뉴를 조회한다.
+	 * 硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param model
 	 * @return "/uss/sam/stp/EgovLeft"
@@ -82,14 +82,14 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 약관정보 목록을 조회한다.
+	 * ?쎄??뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/sam/stp/EgovStplatListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "약관관리", order = 490, gid = 50)
+	@IncludedInfo(name = "?쎄?愿由?, order = 490, gid = 50)
 	@RequestMapping(value = "/uss/sam/stp/StplatListInqire.do")
 	public String selectStplatList(@ModelAttribute("searchVO") StplatManageDefaultVO searchVO, ModelMap model)
 			throws Exception {
@@ -119,7 +119,7 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 약관정보상세내용을 조회한다.
+	 * ?쎄??뺣낫?곸꽭?댁슜??議고쉶?쒕떎.
 	 * 
 	 * @param stplatManageVO
 	 * @param searchVO
@@ -139,7 +139,7 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 약관정보를 등록하기 위한 전 처리
+	 * ?쎄??뺣낫瑜??깅줉?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -154,7 +154,7 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 약관정보를 등록한다.
+	 * ?쎄??뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param stplatManageVO
@@ -171,10 +171,10 @@ public class EgovStplatManageController {
 			return "egovframework/com/uss/sam/stp/EgovStplatCnRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -182,8 +182,8 @@ public class EgovStplatManageController {
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		stplatManageVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		stplatManageVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		stplatManageVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		stplatManageVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		stplatManageService.insertStplatCn(stplatManageVO);
 
@@ -191,7 +191,7 @@ public class EgovStplatManageController {
 	}
 
 	/**
-	 * 약관정보를 수정하기 위한 전 처리
+	 * ?쎄??뺣낫瑜??섏젙?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param useStplatId
 	 * @param searchVO
@@ -205,20 +205,20 @@ public class EgovStplatManageController {
 
 		StplatManageVO stplatManageVO = new StplatManageVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		stplatManageVO.setUseStplatId(useStplatId);
 
-		// 변수명은 CoC 에 따라
+		// 蹂?섎챸? CoC ???곕씪
 		model.addAttribute(selectStplatDetail(stplatManageVO, searchVO, model));
 
-		// 변수명은 CoC 에 따라 JSTL사용을 위해
+		// 蹂?섎챸? CoC ???곕씪 JSTL?ъ슜???꾪빐
 		model.addAttribute("stplatManageVO", stplatManageService.selectStplatDetail(stplatManageVO));
 
 		return "egovframework/com/uss/sam/stp/EgovStplatCnUpdt";
 	}
 
 	/**
-	 * 약관정보를 수정 처리한다.
+	 * ?쎄??뺣낫瑜??섏젙 泥섎━?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param stplatManageVO
@@ -235,24 +235,24 @@ public class EgovStplatManageController {
 			return "egovframework/com/uss/sam/stp/EgovStplatCnUpdt";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		stplatManageVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		stplatManageVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 		stplatManageService.updateStplatCn(stplatManageVO);
 
 		return "forward:/uss/sam/stp/StplatListInqire.do";
 	}
 
 	/**
-	 * 약관정보를 삭제 처리한다.
+	 * ?쎄??뺣낫瑜???젣 泥섎━?쒕떎.
 	 * 
 	 * @param stplatManageVO
 	 * @param searchVO

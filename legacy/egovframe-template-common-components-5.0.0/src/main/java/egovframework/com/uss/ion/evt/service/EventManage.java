@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.evt.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 행사관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?됱궗愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 행사관리의 행사ID,행사구분,행사명,행사목적,행사시작일자,행사종료일자,행사주최기관명,행사주관기관명,행사장소,행사내용,비용발생여부,참가비용,정원,참조URL,접수시작일자,접수종료일자,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?됱궗愿由ъ쓽 ?됱궗ID,?됱궗援щ텇,?됱궗紐??됱궗紐⑹쟻,?됱궗?쒖옉?쇱옄,?됱궗醫낅즺?쇱옄,?됱궗二쇱턀湲곌?紐??됱궗二쇨?湲곌?紐??됱궗?μ냼,?됱궗?댁슜,鍮꾩슜諛쒖깮?щ?,李멸?鍮꾩슜,?뺤썝,李몄“URL,?묒닔?쒖옉?쇱옄,?묒닔醫낅즺?쇱옄,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class EventManage extends ComDefaultVO {
@@ -21,102 +21,102 @@ public class EventManage extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	*  행사ID	      
+	*  ?됱궗ID	      
 	*/ 
 	private String eventId;
 
 	/**
-	*  행사구분	      
+	*  ?됱궗援щ텇	      
 	*/ 
 	private String eventSe;
 
 	/**
-	*  행사명	      
+	*  ?됱궗紐?      
 	*/ 
 	private String eventNm;
 
 	/**
-	*  행사목적	      
+	*  ?됱궗紐⑹쟻	      
 	*/ 
 	private String eventPurps;
 
 	/**
-	*  행사시작일자	
+	*  ?됱궗?쒖옉?쇱옄	
 	*/ 
 	private String eventBeginDe;
 
 	/**
-	*  행사종료일자	
+	*  ?됱궗醫낅즺?쇱옄	
 	*/ 
 	private String eventEndDe;
 
 	/**
-	*  행사주최기관명	
+	*  ?됱궗二쇱턀湲곌?紐?
 	*/ 
 	private String eventAuspcInsttNm;
 
 	/**
-	*  행사주관기관명	
+	*  ?됱궗二쇨?湲곌?紐?
 	*/ 
 	private String eventMngtInsttNm;
 
 	/**
-	*  행사장소	      
+	*  ?됱궗?μ냼	      
 	*/ 
 	private String eventPlace;
 
 	/**
-	*  행사내용	      
+	*  ?됱궗?댁슜	      
 	*/ 
 	private String eventCn;
 
 	/**
-	*  비용발생여부	
+	*  鍮꾩슜諛쒖깮?щ?	
 	*/ 
 	private String ctOccrrncAt;
 
 	/**
-	*  참가비용	      
+	*  李멸?鍮꾩슜	      
 	*/ 
 	private int partcptCt;
 
 	/**
-	*  정원	         
+	*  ?뺤썝	         
 	*/ 
 	private int psncpa;
 
 	/**
-	*  참조URL	      
+	*  李몄“URL	      
 	*/ 
 	private String refrnUrl;
 
 	/**
-	*  접수시작일자	
+	*  ?묒닔?쒖옉?쇱옄	
 	*/ 
 	private String rceptBeginDe;
 
 	/**
-	*  접수종료일자	
+	*  ?묒닔醫낅즺?쇱옄	
 	*/ 
 	private String rceptEndDe;
 
 	/**
-	*  최초등록자ID	
+	*  理쒖큹?깅줉?륤D	
 	*/ 
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점	
+	*  理쒖큹?깅줉?쒖젏	
 	*/ 
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID	
+	*  理쒖쥌?섏젙?륤D	
 	*/ 
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점	
+	*  理쒖쥌?섏젙?쒖젏	
 	*/ 
 	private String lastUpdusrPnttm;
 

@@ -18,20 +18,20 @@ import egovframework.com.sts.ust.service.EgovUserStatsService;
 import jakarta.annotation.Resource;
 
 /**
- * 사용자 통계 검색 컨트롤러 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?ъ슜???듦퀎 寃??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.19
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일     수정자          수정내용
+ *   ?섏젙??    ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.sst)
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.sst)
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -52,17 +52,17 @@ public class EgovUserStatsController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovUserStatsController.class);
 
     /**
-	 * 사용자 통계를 조회한다
+	 * ?ъ슜???듦퀎瑜?議고쉶?쒕떎
 	 * @param statsVO StatsVO
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="사용자통계", listUrl="/sts/ust/selectUserStats.do", order = 130 ,gid = 30)
+    @IncludedInfo(name="?ъ슜?먰넻怨?, listUrl="/sts/ust/selectUserStats.do", order = 130 ,gid = 30)
     @RequestMapping(value="/sts/ust/selectUserStats.do")
 	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO,
 			ModelMap model) throws Exception {
 
-    	// 세부통계구분 공통코드 목록 조회(회원유형,상태,성별에 대한 세부통계구분코드)
+    	// ?몃??듦퀎援щ텇 怨듯넻肄붾뱶 紐⑸줉 議고쉶(?뚯썝?좏삎,?곹깭,?깅퀎??????몃??듦퀎援щ텇肄붾뱶)
     	ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
     	vo.setCodeId("COM012");
@@ -80,7 +80,7 @@ public class EgovUserStatsController {
 
 			List<StatsVO> userStats = userStatsService.selectUserStats(statsVO);
 			LOGGER.debug("++++++++++++++++++++++ userStats.size() : {}", userStats.size());
-			// 그래프에 표시될 이미지 길이를 결정한다.
+			// 洹몃옒?꾩뿉 ?쒖떆???대?吏 湲몄씠瑜?寃곗젙?쒕떎.
 			float iMaxUnit = 50.0f;
 			for (StatsVO userStat : userStats) {
 				StatsVO sVo = userStat;

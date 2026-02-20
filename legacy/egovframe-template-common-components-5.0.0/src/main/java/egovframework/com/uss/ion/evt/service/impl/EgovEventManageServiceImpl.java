@@ -17,22 +17,22 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 행사관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?됱궗愿由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 행사관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 행사관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?됱궗愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?됱궗愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 이용
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  *
  *  <pre>
- * << 개정이력(Modification Information) >> *
- *   수정일       수정자           수정내용
+ * << 媛쒖젙?대젰(Modification Information) >> *
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------       --------    ---------------------------
- *  2011.8.11     정진오      Dependency 최소화를 위한 불필요 변수 선언 주석처리
+ *  2011.8.11     ?뺤쭊??     Dependency 理쒖냼?붾? ?꾪븳 遺덊븘??蹂???좎뼵 二쇱꽍泥섎━
  *
  * </pre>
  */
@@ -51,9 +51,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
     protected EgovInfrmlSanctnService infrmlSanctnService;
 
 	/**
-	 * 행사관리정보를 관리하기 위해 등록된 행사관리 목록을 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return List - 행사관리 목록
+	 * ?됱궗愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???됱궗愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return List - ?됱궗愿由?紐⑸줉
 	 */
 	@Override
 	public List<EventManageVO> selectEventManageList(EventManageVO eventManageVO) throws Exception{
@@ -73,9 +73,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사관리목록 총 개수를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return int - 행사관리 카운트 수
+	 * ?됱궗愿由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return int - ?됱궗愿由?移댁슫????
 	 */
 	@Override
 	public int selectEventManageListTotCnt(EventManageVO eventManageVO) throws Exception {
@@ -83,9 +83,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 등록된 행사관리의 상세정보를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return EventManageVO - 행사관리 VO
+	 * ?깅줉???됱궗愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return EventManageVO - ?됱궗愿由?VO
 	 */
 	@Override
 	public EventManageVO selectEventManage(EventManageVO eventManageVO) throws Exception {
@@ -93,8 +93,8 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사관리정보를 신규로 등록한다.
-	 * @param eventManage - 행사관리 model
+	 * ?됱궗愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param eventManage - ?됱궗愿由?model
 	 */
 	@Override
 	public void insertEventManage(EventManage eventManage) throws Exception {
@@ -109,8 +109,8 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 행사관리정보를 수정한다.
-	 * @param eventManage - 행사관리 model
+	 * 湲??깅줉???됱궗愿由ъ젙蹂대? ?섏젙?쒕떎.
+	 * @param eventManage - ?됱궗愿由?model
 	 */
 	@Override
 	public void updtEventManage(EventManage eventManage) throws Exception {
@@ -122,19 +122,19 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 행사관리정보를 삭제한다.
-	 * @param eventManage - 행사관리 model
+	 * 湲??깅줉???됱궗愿由ъ젙蹂대? ??젣?쒕떎.
+	 * @param eventManage - ?됱궗愿由?model
 	 */
 	@Override
 	public void deleteEventManage(EventManage eventManage) throws Exception {
 		eventManageDAO.deleteEventManage(eventManage);
 	}
 
-/***  행사접수관리  ****/
+/***  ?됱궗?묒닔愿由? ****/
 	/**
-	 * 행사접수관리정보를 관리하기 위해 등록된 행사접수관리 목록을 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return List - 행사접수관리 목록
+	 * ?됱궗?묒닔愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???됱궗?묒닔愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return List - ?됱궗?묒닔愿由?紐⑸줉
 	 */
 	@Override
 	public List<EventManageVO> selectEventAtdrnList(EventManageVO eventManageVO) throws Exception{
@@ -153,9 +153,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수관리목록 총 개수를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return int - 행사접수관리 카운트 수
+	 * ?됱궗?묒닔愿由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return int - ?됱궗?묒닔愿由?移댁슫????
 	 */
 	@Override
 	public int selectEventAtdrnListTotCnt(EventManageVO eventManageVO) throws Exception {
@@ -163,9 +163,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수승인/반려 처리를 위해 등록된 행사접수 목록을 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return List - 행사접수승인 목록
+	 * ?됱궗?묒닔?뱀씤/諛섎젮 泥섎━瑜??꾪빐 ?깅줉???됱궗?묒닔 紐⑸줉??議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return List - ?됱궗?묒닔?뱀씤 紐⑸줉
 	 */
 	@Override
 	public List<EventManageVO> selectEventRceptConfmList(EventManageVO eventManageVO) throws Exception{
@@ -182,9 +182,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수승인/반려 처리를 위해 등록된 행사접수 목록 총 개수를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return int - 행사접수승인 카운트 수
+	 * ?됱궗?묒닔?뱀씤/諛섎젮 泥섎━瑜??꾪빐 ?깅줉???됱궗?묒닔 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return int - ?됱궗?묒닔?뱀씤 移댁슫????
 	 */
 	@Override
 	public int selectEventRceptConfmListTotCnt(EventManageVO eventManageVO) throws Exception {
@@ -192,9 +192,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사일자, 행사구분 조건에 따른 행사명 목록을 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return List - 행사명 목록
+	 * ?됱궗?쇱옄, ?됱궗援щ텇 議곌굔???곕Ⅸ ?됱궗紐?紐⑸줉??議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return List - ?됱궗紐?紐⑸줉
 	 */
 	@Override
 	public List<EventManageVO> selectEventNmList(EventManageVO eventManageVO) throws Exception{
@@ -204,9 +204,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 
 	/**
-	 * 등록된 행사접수관리의 상세정보를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return EventManageVO - 행사관리 VO
+	 * ?깅줉???됱궗?묒닔愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return EventManageVO - ?됱궗愿由?VO
 	 */
 	@Override
 	public EventManageVO selectEventAtdrn(EventManageVO eventManageVO) throws Exception {
@@ -214,16 +214,16 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수관리정보를 신규로 등록한다.
-	 * @param eventManage - 행사접수관리 model
+	 * ?됱궗?묒닔愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param eventManage - ?됱궗?묒닔愿由?model
 	 */
 	@Override
 	public void insertEventAtdrn(EventAtdrn eventAtdrn) throws Exception {
 
 		/*
-		 * 행사접수 승인처리  신청 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
+		 * ?됱궗?묒닔 ?뱀씤泥섎━  ?좎껌 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
 		 */
-		InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn(converToInfrmlSanctnObject(eventAtdrn)); //신청
+		InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn(converToInfrmlSanctnObject(eventAtdrn)); //?좎껌
 		//InfrmlSanctn infrmlSanctn = infrmlSanctnService.insertInfrmlSanctn("004", eventAtdrn);
 		eventAtdrn.setInfrmlSanctnId(infrmlSanctn.getInfrmlSanctnId());
 		eventAtdrn.setConfmAt(infrmlSanctn.getConfmAt());
@@ -231,29 +231,29 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 행사접수관리정보를 삭제한다.
-	 * @param eventManage - 행사접수관리 model
+	 * 湲??깅줉???됱궗?묒닔愿由ъ젙蹂대? ??젣?쒕떎.
+	 * @param eventManage - ?됱궗?묒닔愿由?model
 	 */
 	@Override
 	public void deleteEventAtdrn(EventAtdrn eventAtdrn) throws Exception {
 		eventAtdrn.setReqstDe(EgovStringUtil.removeMinusChar(eventAtdrn.getReqstDe()));
 		/*
-		 * 행사접수 승인처리  삭제
+		 * ?됱궗?묒닔 ?뱀씤泥섎━  ??젣
 		 */
-		infrmlSanctnService.deleteInfrmlSanctn(converToInfrmlSanctnObject(eventAtdrn));  //삭제
+		infrmlSanctnService.deleteInfrmlSanctn(converToInfrmlSanctnObject(eventAtdrn));  //??젣
 		eventManageDAO.deleteEventAtdrn(eventAtdrn);
 	}
 
 	/**
-	 * 기 등록된 행사접수관리정보를 승인/반려처리한다.
-	 * @param eventManage - 행사접수관리 model
-	 * @param String      - 승인/반려정보
+	 * 湲??깅줉???됱궗?묒닔愿由ъ젙蹂대? ?뱀씤/諛섎젮泥섎━?쒕떎.
+	 * @param eventManage - ?됱궗?묒닔愿由?model
+	 * @param String      - ?뱀씤/諛섎젮?뺣낫
 	 */
 	@Override
 	public void updtEventAtdrn(EventAtdrn eventAtdrn, String checkedEventRceptForConfm) throws Exception {
 
-		//MtgPlaceFxtrs mtgPlaceFxtrs;	// 2011.8.11 수정분 mtg(회의실관리 컴포넌트)와의 의존성 제거
-		//int insertCnt    = 0;			// 2011.8.11 수정분
+		//MtgPlaceFxtrs mtgPlaceFxtrs;	// 2011.8.11 ?섏젙遺?mtg(?뚯쓽?ㅺ?由?而댄룷?뚰듃)????섏〈???쒓굅
+		//int insertCnt    = 0;			// 2011.8.11 ?섏젙遺?
 		String [] eventRceptValues = checkedEventRceptForConfm.split("[$]");
 		String [] sTempEventRcept;
 		String    sTemp=null;
@@ -268,15 +268,15 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 			if(eventAtdrn.getConfmAt().equals("C")){
 				/*
-				 * 승인처리
+				 * ?뱀씤泥섎━
 				 */
-				infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm(converToInfrmlSanctnObject(eventAtdrn));  //승인
+				infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm(converToInfrmlSanctnObject(eventAtdrn));  //?뱀씤
 				//infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm("004", eventAtdrn);
 			}else if(eventAtdrn.getConfmAt().equals("R")){
 				/*
-				 * 반려처리
+				 * 諛섎젮泥섎━
 				 */
-				infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn(converToInfrmlSanctnObject(eventAtdrn));  //반려
+				infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn(converToInfrmlSanctnObject(eventAtdrn));  //諛섎젮
 				//infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn("004", eventAtdrn);
 			}
 			eventAtdrn.setSanctnDt(infrmlSanctn.getSanctnDt());
@@ -287,9 +287,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수자 정보를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return List - 행사관리 목록
+	 * ?됱궗?묒닔???뺣낫瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return List - ?됱궗愿由?紐⑸줉
 	 */
 	@Override
 	public List<EventManageVO> selectEventReqstAtdrnList(EventManageVO eventManageVO) throws Exception{
@@ -297,9 +297,9 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 행사접수자 목록 총 개수를 조회한다.
-	 * @param eventManageVO - 행사관리 VO
-	 * @return int - 행사관리 카운트 수
+	 * ?됱궗?묒닔??紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param eventManageVO - ?됱궗愿由?VO
+	 * @return int - ?됱궗愿由?移댁슫????
 	 */
 	@Override
 	public int selectEventReqstAtdrnListTotCnt(EventManageVO eventManageVO) throws Exception {
@@ -307,24 +307,24 @@ public class EgovEventManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * CtsnnManage model을 InfrmlSanctn model로 변환한다.
+	 * CtsnnManage model??InfrmlSanctn model濡?蹂?섑븳??
 	 * @param CtsnnManage
 	 * @return InfrmlSanctn
 	 */
 	private InfrmlSanctn converToInfrmlSanctnObject(EventAtdrn eventAtdrn) throws Exception{
 		InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-    	infrmlSanctn.setJobSeCode("004");								// 업무구분코드 (공통코드 COM75)
-    	infrmlSanctn.setApplcntId(eventAtdrn.getApplcntId());			    // 사용자ID
-    	infrmlSanctn.setReqstDe(eventAtdrn.getReqstDe());				// 신청일자
-    	infrmlSanctn.setSanctnerId(eventAtdrn.getSanctnerId());		// 결재자ID
-    	infrmlSanctn.setConfmAt(eventAtdrn.getConfmAt());				// 승인구분
-    	infrmlSanctn.setSanctnDt(eventAtdrn.getSanctnDt());			// 결재일시
-    	infrmlSanctn.setReturnResn(eventAtdrn.getReturnResn());		// 반려사유
+    	infrmlSanctn.setJobSeCode("004");								// ?낅Т援щ텇肄붾뱶 (怨듯넻肄붾뱶 COM75)
+    	infrmlSanctn.setApplcntId(eventAtdrn.getApplcntId());			    // ?ъ슜?륤D
+    	infrmlSanctn.setReqstDe(eventAtdrn.getReqstDe());				// ?좎껌?쇱옄
+    	infrmlSanctn.setSanctnerId(eventAtdrn.getSanctnerId());		// 寃곗옱?륤D
+    	infrmlSanctn.setConfmAt(eventAtdrn.getConfmAt());				// ?뱀씤援щ텇
+    	infrmlSanctn.setSanctnDt(eventAtdrn.getSanctnDt());			// 寃곗옱?쇱떆
+    	infrmlSanctn.setReturnResn(eventAtdrn.getReturnResn());		// 諛섎젮?ъ쑀
     	infrmlSanctn.setFrstRegisterId(eventAtdrn.getFrstRegisterId());
     	infrmlSanctn.setFrstRegisterPnttm(eventAtdrn.getFrstRegisterId());
     	infrmlSanctn.setLastUpdusrId(eventAtdrn.getLastUpdusrId());
     	infrmlSanctn.setLastUpdusrPnttm(eventAtdrn.getLastUpdusrPnttm());
-    	infrmlSanctn.setInfrmlSanctnId(eventAtdrn.getInfrmlSanctnId());// 약식결재ID
+    	infrmlSanctn.setInfrmlSanctnId(eventAtdrn.getInfrmlSanctnId());// ?쎌떇寃곗옱ID
     	return infrmlSanctn;
 	}
 

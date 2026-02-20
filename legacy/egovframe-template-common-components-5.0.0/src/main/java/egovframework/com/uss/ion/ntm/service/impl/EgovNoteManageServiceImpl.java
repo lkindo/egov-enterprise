@@ -14,16 +14,16 @@ import egovframework.com.uss.ion.ntm.service.EgovNoteManageService;
 import egovframework.com.uss.ion.ntm.service.NoteManageVO;
 import jakarta.annotation.Resource;
 /**
- * 쪽지 관리(보내기)를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * 履쎌? 愿由?蹂대궡湲?瑜?泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -34,21 +34,21 @@ public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl
     @Resource(name = "noteManageDao")
     private NoteManageDao dao;
 
-    /* 쪽지관리 ID Generator Service */
+    /* 履쎌?愿由?ID Generator Service */
     @Resource(name = "egovNoteManageIdGnrService")
     private EgovIdGnrService noteIdgenService;
 
-    /* 보낸쪽지함관리 ID Generator Service */
+    /* 蹂대궦履쎌??④?由?ID Generator Service */
     @Resource(name = "egovNoteTrnsmitIdGnrService")
     private EgovIdGnrService noteTrnsmitIdgenService;
 
-    /* 받은쪽지함관리 ID Generator Service */
+    /* 諛쏆?履쎌??④?由?ID Generator Service */
     @Resource(name = "egovNoteRecptnIdGnrService")
     private EgovIdGnrService noteRecptnIdgenService;
 
     /**
-     * 쪽지관리 정보를 조회한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담김 객체
+     * 履쎌?愿由??뺣낫瑜?議고쉶?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     @Override
@@ -57,56 +57,56 @@ public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 쪽지 관리(보내기)를(을) 등록한다.
-     * @param noteManage -쪽지 관리(보내기) 정보가 담긴 객체
-     * @param commandMap -Request 변수
+     * 履쎌? 愿由?蹂대궡湲?瑜??? ?깅줉?쒕떎.
+     * @param noteManage -履쎌? 愿由?蹂대궡湲? ?뺣낫媛 ?닿릿 媛앹껜
+     * @param commandMap -Request 蹂??
      * @throws Exception
      */
     @Override
 	public void insertNoteManage(NoteManageVO noteManage, @RequestParam Map<?, ?> commandMap)throws Exception{
 
         /* ****************************************************************
-         * 쪽지관리 처리
+         * 履쎌?愿由?泥섎━
          **************************************************************** */
-    	//쪽지 ID설정
+    	//履쎌? ID?ㅼ젙
     	noteManage.setNoteId(noteIdgenService.getNextStringId());
-    	//쪽지 등록
+    	//履쎌? ?깅줉
     	dao.insertNoteManage(noteManage);
 
         /* ****************************************************************
-         * 보낸쪽지 처리
+         * 蹂대궦履쎌? 泥섎━
          **************************************************************** */
-    	//보낸쪽지함 ID설정
+    	//蹂대궦履쎌???ID?ㅼ젙
     	noteManage.setNoteTrnsmitId(noteTrnsmitIdgenService.getNextStringId());
-    	//발신자 아이디설정
+    	//諛쒖떊???꾩씠?붿꽕??
     	noteManage.setTrnsmiterId(noteManage.getFrstRegisterId());
 
-    	//보낸쪽지등록
+    	//蹂대궦履쎌??깅줉
     	dao.insertNoteTrnsmit(noteManage);
 
-        //수신자 리스트
+        //?섏떊??由ъ뒪??
         String sRecptnEmpList = (String)commandMap.get("recptnEmpList");
         String[] sRecptnEmpListResult = sRecptnEmpList.split(",");
 
-        //수신자구분 리스트
+        //?섏떊?먭뎄遺?由ъ뒪??
         String sRecptnSeList = (String)commandMap.get("recptnSeList");
         String[] sRecptnSeListResult = sRecptnSeList.split(",");
 
 
         /* ****************************************************************
-         * 받은쪽지함 처리
+         * 諛쏆?履쎌???泥섎━
          **************************************************************** */
         for(int i=0;i<sRecptnEmpListResult.length;i++){
 
-        	//받은쪽지함 ID설정
+        	//諛쏆?履쎌???ID?ㅼ젙
         	noteManage.setNoteRecptnId(noteRecptnIdgenService.getNextStringId());
-        	//받은쪽지함 수신여부 설정
+        	//諛쏆?履쎌????섏떊?щ? ?ㅼ젙
         	noteManage.setOpenYn("N");
-        	//받은쪽지함 수신자 설정
+        	//諛쏆?履쎌????섏떊???ㅼ젙
         	noteManage.setRcverId(sRecptnEmpListResult[i]);
-        	//받은쪽지함 수신 구분설정
+        	//諛쏆?履쎌????섏떊 援щ텇?ㅼ젙
         	noteManage.setRecptnSe(sRecptnSeListResult[i]);
-        	//받은쪽지함 등록
+        	//諛쏆?履쎌????깅줉
         	dao.insertNoteRecptn(noteManage);
         }
 
@@ -114,9 +114,9 @@ public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-	 * 수신자/참조자선택팝업 목록을 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return List -회원정보 리스트
+	 * ?섏떊??李몄“?먯꽑?앺뙘??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return List -?뚯썝?뺣낫 由ъ뒪??
 	 * @throws Exception
 	 */
 	@Override
@@ -125,9 +125,9 @@ public class EgovNoteManageServiceImpl extends EgovAbstractServiceImpl
 	}
 
     /**
-	 *  수신자/참조자선택팝업 개수를 조회한다.
-	 * @param searchVO -조회할 정보가 담긴 VO
-	 * @return int -조회된 데이터 건수
+	 *  ?섏떊??李몄“?먯꽑?앺뙘??媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param searchVO -議고쉶???뺣낫媛 ?닿릿 VO
+	 * @return int -議고쉶???곗씠??嫄댁닔
 	 * @throws Exception
 	 */
 	@Override

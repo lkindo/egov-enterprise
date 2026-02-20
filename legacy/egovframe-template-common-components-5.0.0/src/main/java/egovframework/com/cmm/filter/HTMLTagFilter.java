@@ -25,20 +25,20 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * HTMLTagFilter 클래스
+ * HTMLTagFilter ?대옒??
  * 
- * @author 표준프레임워크센터
+ * @author ?쒖??꾨젅?꾩썙?ъ꽱??
  * @since 2020.03.11
  * @version 3.9.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2020.03.11  표프센          최초 생성
- *   2025.05.23  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-UncommentedEmptyMethodBody(주석 처리되지 않은 빈 메서드 본문)
+ *   2020.03.11  ?쒗봽??         理쒖큹 ?앹꽦
+ *   2025.05.23  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UncommentedEmptyMethodBody(二쇱꽍 泥섎━?섏? ?딆? 鍮?硫붿꽌??蹂몃Ц)
  *
  *      </pre>
  */

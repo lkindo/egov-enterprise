@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * 용어사전 정보 Entity
- * 레거시 테이블: NWORDDICARYINFO
+ * ??밸선?????類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NWORDDICARYINFO
  */
 @Entity
 @Table(name = "NWORDDICARYINFO")

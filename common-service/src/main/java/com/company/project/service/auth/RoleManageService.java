@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 롤 관리 서비스
+ * 濡?愿由??쒕퉬??
  */
 @Service("projectRoleManageService")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class RoleManageService {
     private final RoleInfoRepository roleInfoRepository;
 
     /**
-     * 롤 목록 조회
+     * 濡?紐⑸줉 議고쉶
      */
     public List<RoleManageDto> selectRoleList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -40,14 +40,14 @@ public class RoleManageService {
     }
 
     /**
-     * 롤 목록 총 건수
+     * 濡?紐⑸줉 珥?嫄댁닔
      */
     public int selectRoleListTotCnt(ComDefaultVO searchVO) {
         return (int) roleInfoRepository.count();
     }
 
     /**
-     * 롤 상세 조회
+     * 濡??곸꽭 議고쉶
      */
     public RoleManageDto selectRole(String roleCode) {
         return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
@@ -56,7 +56,7 @@ public class RoleManageService {
     }
 
     /**
-     * 롤 등록
+     * 濡??깅줉
      */
     @Transactional
     public void insertRole(RoleManageDto dto) {
@@ -77,7 +77,7 @@ public class RoleManageService {
     }
 
     /**
-     * 롤 수정
+     * 濡??섏젙
      */
     @Transactional
     public void updateRole(RoleManageDto dto) {
@@ -87,7 +87,7 @@ public class RoleManageService {
     }
 
     /**
-     * 롤 삭제
+     * 濡???젣
      */
     @Transactional
     public void deleteRole(String roleCode) {
@@ -95,7 +95,7 @@ public class RoleManageService {
     }
 
     /**
-     * 롤 다중 삭제
+     * 濡??ㅼ쨷 ??젣
      */
     @Transactional
     public void deleteRoles(String[] roleCodes) {

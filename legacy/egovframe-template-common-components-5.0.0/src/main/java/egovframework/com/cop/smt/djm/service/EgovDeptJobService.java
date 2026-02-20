@@ -4,28 +4,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 개요
- * - 부서업무에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - 遺?쒖뾽臾댁뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 부서업무에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 부서업무의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 遺?쒖뾽臾댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 遺?쒖뾽臾댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:05
+ * @created 28-6-2010 ?ㅼ쟾 10:59:05
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovDeptJobService {
 	
 	/**
-	 * 담당자 목록을 조회한다.
+	 * ?대떦??紐⑸줉??議고쉶?쒕떎.
 	 * @param ChargerVO
 	 * @return  Map<String, Object>
 	 * 
@@ -35,7 +35,7 @@ public interface EgovDeptJobService {
 	
 	
 	/**
-	 * 부서 목록을 조회한다.
+	 * 遺??紐⑸줉??議고쉶?쒕떎.
 	 * @param DeptVO
 	 * @return  List
 	 * 
@@ -44,7 +44,7 @@ public interface EgovDeptJobService {
 	public Map<String, Object> selectDeptList(DeptVO deptVO) throws Exception;
 	
 	/**
-	 * 부서 정보를 조회한다.
+	 * 遺???뺣낫瑜?議고쉶?쒕떎.
 	 * @param String
 	 * @return  String
 	 * 
@@ -53,7 +53,7 @@ public interface EgovDeptJobService {
 	public String selectDept(String deptVO) throws Exception;
 	
 	/**
-	 * 부서업무함 목록을 조회한다.
+	 * 遺?쒖뾽臾댄븿 紐⑸줉??議고쉶?쒕떎.
 	 * @param DeptJobBxVO
 	 * @return  List
 	 * 
@@ -62,7 +62,7 @@ public interface EgovDeptJobService {
 	public Map<String, Object> selectDeptJobBxList(DeptJobBxVO deptJobBxVO) throws Exception;
 	
 	/**
-	 * 부서업무함 목록 전체를 조회한다.
+	 * 遺?쒖뾽臾댄븿 紐⑸줉 ?꾩껜瑜?議고쉶?쒕떎.
 	 * @param DeptJobBxVO
 	 * @return  List
 	 * 
@@ -71,7 +71,7 @@ public interface EgovDeptJobService {
 	public List<DeptJobBxVO> selectDeptJobBxListAll() throws Exception;
 
 	/**
-	 * 부서업무함 정보를 조회한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param DeptJobBxVO
 	 * @return  DeptJobBxVO
 	 * 
@@ -80,7 +80,7 @@ public interface EgovDeptJobService {
 	public DeptJobBxVO selectDeptJobBx(DeptJobBxVO deptJobBxVO) throws Exception;
 
 	/**
-	 * 부서업무함 정보를 수정한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜??섏젙?쒕떎.
 	 * @param DeptJobBxVO
 	 * @return
 	 * 
@@ -89,7 +89,7 @@ public interface EgovDeptJobService {
 	public void updateDeptJobBx(DeptJobBxVO deptJobBxVO) throws Exception;
 
 	/**
-	 * 부서업무함 정보의 표시순서를 수정한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫???쒖떆?쒖꽌瑜??섏젙?쒕떎.
 	 * @param DeptJobBx
 	 * @return boolean
 	 * 
@@ -98,7 +98,7 @@ public interface EgovDeptJobService {
 	public boolean updateDeptJobBxOrdr(DeptJobBxVO deptJobBxVO) throws Exception;
 	
 	/**
-	 * 등록시 부서업무함의 순서를 조회한다.
+	 * ?깅줉??遺?쒖뾽臾댄븿???쒖꽌瑜?議고쉶?쒕떎.
 	 * @param String
 	 * @return  int
 	 * 
@@ -107,7 +107,7 @@ public interface EgovDeptJobService {
 	public int selectDeptJobBxOrdr(String deptId) throws Exception;
 	
 	/**
-	 * 부서업무함 정보를 등록한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜??깅줉?쒕떎.
 	 * @param DeptJobBxVO
 	 * @return
 	 * 
@@ -116,7 +116,7 @@ public interface EgovDeptJobService {
 	public void insertDeptJobBx(DeptJobBxVO deptJobBxVO) throws Exception;
 	
 	/**
-	 * 부서내 부서업무함명의 건수를 조회한다.
+	 * 遺?쒕궡 遺?쒖뾽臾댄븿紐낆쓽 嫄댁닔瑜?議고쉶?쒕떎.
 	 * @param DeptJobBx
 	 * @return int
 	 * 
@@ -125,7 +125,7 @@ public interface EgovDeptJobService {
 	public int selectDeptJobBxCheck(DeptJobBx deptJobBx) throws Exception;
 
 	/**
-	 * 부서업무함 정보를 삭제한다.
+	 * 遺?쒖뾽臾댄븿 ?뺣낫瑜???젣?쒕떎.
 	 * @param DeptJobBx
 	 * @return
 	 * 
@@ -134,7 +134,7 @@ public interface EgovDeptJobService {
 	public void deleteDeptJobBx(DeptJobBx deptJobBx) throws Exception;
 
 	/**
-	 * 부서업무 목록을 조회한다.
+	 * 遺?쒖뾽臾?紐⑸줉??議고쉶?쒕떎.
 	 * @param DeptJobVO
 	 * @return  List
 	 * 
@@ -143,7 +143,7 @@ public interface EgovDeptJobService {
 	public Map<String, Object> selectDeptJobList(DeptJobVO deptJobVO) throws Exception;
 
 	/**
-	 * 부서업무 정보를 조회한다.
+	 * 遺?쒖뾽臾??뺣낫瑜?議고쉶?쒕떎.
 	 * @param DeptJobVO
 	 * @return DeptJobVO
 	 * 
@@ -152,7 +152,7 @@ public interface EgovDeptJobService {
 	public DeptJobVO selectDeptJob(DeptJobVO deptJobVO) throws Exception;
 
 	/**
-	 * 부서업무 정보를 수정한다.
+	 * 遺?쒖뾽臾??뺣낫瑜??섏젙?쒕떎.
 	 * @param DeptJob
 	 * @return
 	 * 
@@ -161,7 +161,7 @@ public interface EgovDeptJobService {
 	public void updateDeptJob(DeptJob deptJob) throws Exception;
 
 	/**
-	 * 부서업무 정보를 등록한다.
+	 * 遺?쒖뾽臾??뺣낫瑜??깅줉?쒕떎.
 	 * @param DeptJob
 	 * @return
 	 * 
@@ -170,7 +170,7 @@ public interface EgovDeptJobService {
 	public void insertDeptJob(DeptJob deptJob) throws Exception;
 
 	/**
-	 * 부서업무 정보를 삭제한다.
+	 * 遺?쒖뾽臾??뺣낫瑜???젣?쒕떎.
 	 * @param DeptJob
 	 * @return
 	 * 

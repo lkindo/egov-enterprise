@@ -38,7 +38,7 @@ public class RewardService implements EgovRewardService {
                 .rwardNm(dto.getRwardNm())
                 .pblenCn(dto.getPblenCn())
                 .sanctnerId(dto.getSanctnerId())
-                .confmAt("N") // 초기 상태
+                .confmAt("N") // 珥덇린 ?곹깭
                 .atchFileId(dto.getAtchFileId())
                 .infrmlSanctnId(dto.getInfrmlSanctnId())
                 .frstRegisterId("SYSTEM")
@@ -52,7 +52,7 @@ public class RewardService implements EgovRewardService {
     public void updateReward(RewardDto dto) {
         rewardRepository.findById(Objects.requireNonNull(dto.getRwardId()))
                 .ifPresent(r -> {
-                    // Reward 엔티티에 update 메소드 추가 필요 시 반영
+                    // Reward ?뷀떚?곗뿉 update 硫붿냼??異붽? ?꾩슂 ??諛섏쁺
                 });
     }
 
@@ -74,13 +74,13 @@ public class RewardService implements EgovRewardService {
     public void confirmReward(RewardDto dto) {
         rewardRepository.findById(Objects.requireNonNull(dto.getRwardId()))
                 .ifPresent(r -> {
-                    // 승인 상태 및 반려 사유 업데이트 로직
+                    // ?뱀씤 ?곹깭 諛?諛섎젮 ?ъ쑀 ?낅뜲?댄듃 濡쒖쭅
                 });
     }
 
     @Override
     public Page<RewardDto> getRewardConfirmList(String sanctnerId, Pageable pageable) {
-        // sanctnerId 기반 필터링 로직 (Repository 확장 필요)
+        // sanctnerId 湲곕컲 ?꾪꽣留?濡쒖쭅 (Repository ?뺤옣 ?꾩슂)
         return null;
     }
 

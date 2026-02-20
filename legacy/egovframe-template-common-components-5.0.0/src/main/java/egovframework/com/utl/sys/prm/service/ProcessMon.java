@@ -3,65 +3,65 @@ package egovframework.com.utl.sys.prm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - PROCESS모니터링에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - PROCESS紐⑤땲?곕쭅?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 프로세스명, 프로세스상태, 관리자명, 관리자이메일주소, 최종수정자ID, 최종수정시점 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - ?꾨줈?몄뒪紐? ?꾨줈?몄뒪?곹깭, 愿由ъ옄紐? 愿由ъ옄?대찓?쇱＜?? 理쒖쥌?섏젙?륤D, 理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:46
+ * @created 08-9-2010 ?ㅽ썑 3:54:46
  */
 
 @SuppressWarnings("serial")
 public class ProcessMon implements Serializable  {
 
 	/**
-	 * 프로세스 명
+	 * ?꾨줈?몄뒪 紐?
 	 */
 	private String processNm;
 	/**
-	 * 프로세스아이디
+	 * ?꾨줈?몄뒪?꾩씠??
 	 */
 	private String processId;
 	/**
-	 * 로그ID
+	 * 濡쒓렇ID
 	 */
 	private String logId;
 	/**
-	 * 로그정보
+	 * 濡쒓렇?뺣낫
 	 */
 	private String logInfo;
 	/**
-	 * 프로세스 상태
+	 * ?꾨줈?몄뒪 ?곹깭
 	 */
 	private String procsSttus;
 	/**
-	 * 생성시간
+	 * ?앹꽦?쒓컙
 	 */
 	private String creatDt;
 	/**
-	 * 관리자 명
+	 * 愿由ъ옄 紐?
 	 */
 	private String mngrNm;
 	/**
-	 * 관리자 이메일 주소
+	 * 愿由ъ옄 ?대찓??二쇱냼
 	 */
 	private String mngrEmailAddr;
 	/**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**

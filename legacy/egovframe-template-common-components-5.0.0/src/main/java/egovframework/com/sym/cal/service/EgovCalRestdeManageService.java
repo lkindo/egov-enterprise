@@ -6,126 +6,126 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
  *
- * 휴일에 관한 서비스 인터페이스 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * ?댁씪??愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovCalRestdeManageService {
 
 	/**
-	 * 일반달력 팝업 정보를 조회한다.
+	 * ?쇰컲?щ젰 ?앹뾽 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(일반달력 팝업 날짜정보)
+	 * @return List(?쇰컲?щ젰 ?앹뾽 ?좎쭨?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectNormalRestdePopup(Restde restde)	throws Exception;
 
 	/**
-	 * 행정달력 팝업 정보를 조회한다.
+	 * ?됱젙?щ젰 ?앹뾽 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(행정달력 팝업 날짜정보)
+	 * @return List(?됱젙?щ젰 ?앹뾽 ?좎쭨?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministRestdePopup(Restde restde)	throws Exception;
 
 	/**
-	 * 일반달력 일간 정보를 조회한다.
+	 * ?쇰컲?щ젰 ?쇨컙 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(일반달력 일간 날짜정보)
+	 * @return List(?쇰컲?щ젰 ?쇨컙 ?좎쭨?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectNormalDayCal(Restde restde)	throws Exception;
 
 	/**
-	 * 일반달력 일간 휴일을 조회한다.
+	 * ?쇰컲?щ젰 ?쇨컙 ?댁씪??議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(일반달력 일간 휴일정보)
+	 * @return List(?쇰컲?щ젰 ?쇨컙 ?댁씪?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectNormalDayRestde(Restde restde)	throws Exception;
 
 	/**
-	 * 일반달력 월간 휴일을 조회한다.
+	 * ?쇰컲?щ젰 ?붽컙 ?댁씪??議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(일반달력 월간 휴일정보)
+	 * @return List(?쇰컲?щ젰 ?붽컙 ?댁씪?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectNormalMonthRestde(Restde restde)	throws Exception;
 
 	/**
-	 * 행정달력 일간 정보를 조회한다.
+	 * ?됱젙?щ젰 ?쇨컙 ?뺣낫瑜?議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(행정달력 일간 날짜정보)
+	 * @return List(?됱젙?щ젰 ?쇨컙 ?좎쭨?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministDayCal(Restde restde)	throws Exception;
 
 	/**
-	 * 행정달력 일간 휴일을 조회한다.
+	 * ?됱젙?щ젰 ?쇨컙 ?댁씪??議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(행정달력 일간 휴일정보)
+	 * @return List(?됱젙?щ젰 ?쇨컙 ?댁씪?뺣낫)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministDayRestde(Restde restde)	throws Exception;
 
 	/**
-	 * 행정달력 월간 휴일을 조회한다.
+	 * ?됱젙?щ젰 ?붽컙 ?댁씪??議고쉶?쒕떎.
 	 * @param restde
-	 * @return List(행정달력 월간 휴일정보)
+	 * @return List(?됱젙?щ젰 ?붽컙 ?댁씪?뺣낫)
 	 * @throws Exception
 	 */
 	List<?> selectAdministMonthRestde(Restde restde)	throws Exception;
 
 	/**
-	 * 휴일을 삭제한다.
+	 * ?댁씪????젣?쒕떎.
 	 * @param restde
 	 * @throws Exception
 	 */
 	void deleteRestde(Restde restde) throws Exception;
 
 	/**
-	 * 휴일을 등록한다.
+	 * ?댁씪???깅줉?쒕떎.
 	 * @param restde
 	 * @throws Exception
 	 */
 	void insertRestde(Restde restde) throws Exception;
 
 	/**
-	 * 휴일 상세항목을 조회한다.
+	 * ?댁씪 ?곸꽭??ぉ??議고쉶?쒕떎.
 	 * @param restde
-	 * @return Restde(휴일)
+	 * @return Restde(?댁씪)
 	 * @throws Exception
 	 */
 	Restde selectRestdeDetail(Restde restde) throws Exception;
 
 	/**
-	 * 휴일 목록을 조회한다.
+	 * ?댁씪 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(휴일 목록)
+	 * @return List(?댁씪 紐⑸줉)
 	 * @throws Exception
 	 */
 	List<?> selectRestdeList(RestdeVO searchVO) throws Exception;
 
     /**
-     * 휴일 총 개수를 조회한다.
+     * ?댁씪 珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(휴일 총 개수)
+     * @return int(?댁씪 珥?媛쒖닔)
      */
     int selectRestdeListTotCnt(RestdeVO searchVO) throws Exception;
 
 	/**
-	 * 휴일을 수정한다.
+	 * ?댁씪???섏젙?쒕떎.
 	 * @param restde
 	 * @throws Exception
 	 */

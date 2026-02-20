@@ -19,20 +19,20 @@ import egovframework.com.sec.rgm.service.AuthorGroupVO;
 import egovframework.com.sec.rgm.service.EgovAuthorGroupService;
 import jakarta.annotation.Resource;
 /**
- * 권한그룹에 관한 controller 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳洹몃９??愿??controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2011.08.04  서준식          mberTyCodes 구분자 부분 추가
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.08.04  ?쒖???         mberTyCodes 援щ텇??遺遺?異붽?
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 
@@ -55,7 +55,7 @@ public class EgovAuthorGroupController {
     protected EgovPropertyService propertiesService;
 
     /**
-	 * 권한 목록화면 이동
+	 * 沅뚰븳 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -66,13 +66,13 @@ public class EgovAuthorGroupController {
     }
 
 	/**
-	 * 그룹별 할당된 권한 목록 조회
+	 * 洹몃９蹂??좊떦??沅뚰븳 紐⑸줉 議고쉶
 	 * @param authorGroupVO AuthorGroupVO
 	 * @param authorManageVO AuthorManageVO
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="권한그룹관리", listUrl="/sec/rgm/EgovAuthorGroupList.do", order = 70,gid = 20)
+    @IncludedInfo(name="沅뚰븳洹몃９愿由?, listUrl="/sec/rgm/EgovAuthorGroupList.do", order = 70,gid = 20)
     @RequestMapping(value="/sec/rgm/EgovAuthorGroupList.do")
 	public String selectAuthorGroupList(@ModelAttribute("authorGroupVO") AuthorGroupVO authorGroupVO,
 			                            @ModelAttribute("authorManageVO") AuthorManageVO authorManageVO,
@@ -104,7 +104,7 @@ public class EgovAuthorGroupController {
 	}
 
 	/**
-	 * 그룹에 권한정보를 할당하여 데이터베이스에 등록
+	 * 洹몃９??沅뚰븳?뺣낫瑜??좊떦?섏뿬 ?곗씠?곕쿋?댁뒪???깅줉
 	 * @param userIds String
 	 * @param authorCodes String
 	 * @param regYns String
@@ -116,19 +116,19 @@ public class EgovAuthorGroupController {
 	public String insertAuthorGroup(@RequestParam("userIds") String userIds,
 			                        @RequestParam("authorCodes") String authorCodes,
 			                        @RequestParam("regYns") String regYns,
-			                        @RequestParam("mberTyCodes") String mberTyCodes,// 2011.08.04 수정 부분
+			                        @RequestParam("mberTyCodes") String mberTyCodes,// 2011.08.04 ?섏젙 遺遺?
 			                        @ModelAttribute("authorGroup") AuthorGroup authorGroup,
 			                         ModelMap model) throws Exception {
 
     	String [] strUserIds = userIds.split(";");
     	String [] strAuthorCodes = authorCodes.split(";");
     	String [] strRegYns = regYns.split(";");
-    	String [] strMberTyCodes = mberTyCodes.split(";");// 2011.08.04 수정 부분
+    	String [] strMberTyCodes = mberTyCodes.split(";");// 2011.08.04 ?섏젙 遺遺?
 
     	for(int i=0; i<strUserIds.length;i++) {
     		authorGroup.setUniqId(strUserIds[i]);
     		authorGroup.setAuthorCode(strAuthorCodes[i]);
-    		authorGroup.setMberTyCode(strMberTyCodes[i]);// 2011.08.04 수정 부분
+    		authorGroup.setMberTyCode(strMberTyCodes[i]);// 2011.08.04 ?섏젙 遺遺?
     		if(strRegYns[i].equals("N")) {
 				egovAuthorGroupService.insertAuthorGroup(authorGroup);
 			} else {
@@ -141,7 +141,7 @@ public class EgovAuthorGroupController {
 	}
 
 	/**
-	 * 그룹별 할당된 시스템 메뉴 접근권한을 삭제
+	 * 洹몃９蹂??좊떦???쒖뒪??硫붾돱 ?묎렐沅뚰븳????젣
 	 * @param userIds String
 	 * @param authorGroup AuthorGroup
 	 * @return String

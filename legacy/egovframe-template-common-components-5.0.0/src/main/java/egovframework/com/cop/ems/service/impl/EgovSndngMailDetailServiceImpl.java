@@ -14,25 +14,25 @@ import egovframework.com.utl.sim.service.EgovFileTool;
 import jakarta.annotation.Resource;
 
 /**
- * 발송메일을 상세 조회하는 비즈니스 구현 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪???곸꽭 議고쉶?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
 @Service("sndngMailDetailService")
 public class EgovSndngMailDetailServiceImpl extends EgovAbstractServiceImpl implements EgovSndngMailDetailService {
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
 	@Resource(name = "sndngMailDetailDAO")
@@ -42,7 +42,7 @@ public class EgovSndngMailDetailServiceImpl extends EgovAbstractServiceImpl impl
 	private EgovFileMngService egovFileMngService;
 
 	/**
-	 * 발송메일을 상세 조회한다.
+	 * 諛쒖넚硫붿씪???곸꽭 議고쉶?쒕떎.
 	 * @param vo SndngMailVO
 	 * @return SndngMailVO
 	 * @exception Exception
@@ -50,37 +50,37 @@ public class EgovSndngMailDetailServiceImpl extends EgovAbstractServiceImpl impl
 	@Override
 	public SndngMailVO selectSndngMail(SndngMailVO vo) throws Exception {
 
-		// 1. 발송메일 정보를 조회한다.
+		// 1. 諛쒖넚硫붿씪 ?뺣낫瑜?議고쉶?쒕떎.
 		SndngMailVO resultMailVO = sndngMailDetailDAO.selectSndngMail(vo);
 
 		return resultMailVO;
 	}
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * @param vo SndngMailVO
 	 * @exception
 	 */
 	@Override
 	public void deleteSndngMail(SndngMailVO vo) throws Exception {
 
-		// 1. 발송메일을 삭제한다.
+		// 1. 諛쒖넚硫붿씪????젣?쒕떎.
 		sndngMailDetailDAO.deleteSndngMail(vo);
 
-		// 2. 발송요청XML파일을 삭제한다.
+		// 2. 諛쒖넚?붿껌XML?뚯씪????젣?쒕떎.
 		String xmlFile = vo.getMssageId() + ".xml";
 		EgovFileTool.deleteFile(Globals.MAIL_REQUEST_PATH, xmlFile);
 	}
 
 	/**
-	 * 첨부파일을 삭제한다.
+	 * 泥⑤??뚯씪????젣?쒕떎.
 	 * @param vo SndngMailVO
 	 * @exception
 	 */
 	@Override
 	public void deleteAtchmnFile(SndngMailVO vo) throws Exception {
 
-		// 1. 첨부파일 목록을 삭제한다. (이삼섭 책임 제공)
+		// 1. 泥⑤??뚯씪 紐⑸줉????젣?쒕떎. (?댁궪??梨낆엫 ?쒓났)
 		FileVO fileVO = new FileVO();
 		fileVO.setAtchFileId(vo.getAtchFileId());
 		egovFileMngService.deleteAllFileInf(fileVO);

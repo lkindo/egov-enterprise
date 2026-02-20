@@ -21,19 +21,19 @@ import egovframework.com.sec.ram.service.EgovAuthorManageService;
 import jakarta.annotation.Resource;
 
 /**
- * 부서권한에 관한 controller 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 遺?쒓텒?쒖뿉 愿??controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -57,7 +57,7 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
     protected EgovPropertyService propertiesService;
 
     /**
-	 * 권한 목록화면 이동
+	 * 沅뚰븳 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -67,14 +67,14 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
     }
 
 	/**
-	 * 부서별 할당된 권한목록 조회
+	 * 遺?쒕퀎 ?좊떦??沅뚰븳紐⑸줉 議고쉶
 	 *
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @param authorManageVO AuthorManageVO
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="부서권한관리", listUrl="/sec/drm/EgovDeptAuthorList.do", order = 100,gid = 20)
+    @IncludedInfo(name="遺?쒓텒?쒓?由?, listUrl="/sec/drm/EgovDeptAuthorList.do", order = 100,gid = 20)
     @RequestMapping(value="/sec/drm/EgovDeptAuthorList.do")
 	public String selectDeptAuthorList(@ModelAttribute("deptAuthorVO") DeptAuthorVO deptAuthorVO,
 			                            @ModelAttribute("authorManageVO") AuthorManageVO authorManageVO,
@@ -107,7 +107,7 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
 	}
 
 	/**
-	 * 부서에 권한정보를 할당하여 데이터베이스에 등록
+	 * 遺?쒖뿉 沅뚰븳?뺣낫瑜??좊떦?섏뿬 ?곗씠?곕쿋?댁뒪???깅줉
 	 *
 	 * @param userIds String
 	 * @param authorCodes String
@@ -142,7 +142,7 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
 	}
 
 	/**
-	 * 부서별 할당된 시스템 메뉴 접근권한을 삭제
+	 * 遺?쒕퀎 ?좊떦???쒖뒪??硫붾돱 ?묎렐沅뚰븳????젣
 	 * @param userIds String
 	 * @param deptAuthor DeptAuthor
 	 * @return String
@@ -164,7 +164,7 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
 	}
 
     /**
-	 * 부서조회 팝업 이동
+	 * 遺?쒖“???앹뾽 ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -174,12 +174,12 @@ public class EgovDeptAuthorController extends EgovComAbstractController {
     }
 
 	/**
-	 * 부서별 할당된 권한목록 조회
+	 * 遺?쒕퀎 ?좊떦??沅뚰븳紐⑸줉 議고쉶
 	 * @param deptAuthorVO DeptAuthorVO
 	 * @return String
 	 * @exception Exception
 	 */
-    //@IncludedInfo(name="부서목록관리", order = 101)
+    //@IncludedInfo(name="遺?쒕ぉ濡앷?由?, order = 101)
     @RequestMapping(value="/sec/drm/EgovDeptSearchList.do")
 	public String selectDeptList(@ModelAttribute("deptAuthorVO") DeptAuthorVO deptAuthorVO,
 			                             ModelMap model) throws Exception {

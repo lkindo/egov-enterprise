@@ -1,60 +1,60 @@
 package egovframework.com.cop.smt.mtm.service;
 
 /**
- * 개요
- * - 메모할일에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붾え?좎씪?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 메모할일의 목록 항목, 조회조건 등을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 硫붾え?좎씪??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:12:48
+ * @created 19-7-2010 ?ㅼ쟾 10:12:48
  *  <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class MemoTodoVO extends MemoTodo {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-    /** 사용자ID조회조건 */
+    /** ?ъ슜?륤D議고쉶議곌굔 */
     private String searchId = "";
     
-    /** 일자 조회조건 */
+    /** ?쇱옄 議고쉶議곌굔 */
     private String searchDe = "";
     
-    /** 시작일자 조회조건 */
+    /** ?쒖옉?쇱옄 議고쉶議곌굔 */
     private String searchBgnDe = "";
     
-    /** 종료일자 조회조건 */
+    /** 醫낅즺?쇱옄 議고쉶議곌굔 */
     private String searchEndDe = "";
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
 	public String getSearchCnd() {

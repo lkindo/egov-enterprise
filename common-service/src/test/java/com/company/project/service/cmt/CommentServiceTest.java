@@ -35,7 +35,7 @@ class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    @DisplayName("댓글 생성 성공")
+    @DisplayName("?볤? ?앹꽦 ?깃났")
     void createComment_success() {
         // given
         String userId = "USER_01";
@@ -60,7 +60,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 목록 조회 성공")
+    @DisplayName("?볤? 紐⑸줉 議고쉶 ?깃났")
     void getComments_success() {
         // given
         String bbsId = "BBS_01";
@@ -88,7 +88,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 수정 성공")
+    @DisplayName("?볤? ?섏젙 ?깃났")
     void updateComment_success() {
         // given
         Long commentId = 1L;
@@ -112,7 +112,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제 성공")
+    @DisplayName("?볤? ??젣 ?깃났")
     void deleteComment_success() {
         // given
         Long commentId = 1L;

@@ -3,81 +3,81 @@ package egovframework.com.utl.sys.srm.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 서버자원모니터링에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 서버자원모니터링의 ID, 서버 명, 서버 IP, 서버자원종류, 현황정보 등의 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅??ID, ?쒕쾭 紐? ?쒕쾭 IP, ?쒕쾭?먯썝醫낅쪟, ?꾪솴?뺣낫 ?깆쓽 ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 06-9-2010 오전 11:24:00
+ * @created 06-9-2010 ?ㅼ쟾 11:24:00
  */
 
 public class ServerResrceMntrng extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버 ID
+	 * ?쒕쾭 ID
 	 */
 	private String serverId;
 	/**
-	 * 서버 ID
+	 * ?쒕쾭 ID
 	 */
 	private String serverEqpmnId;
 	/**
-	 * 로그ID
+	 * 濡쒓렇ID
 	 */
 	private String logId;
 	/**
-	 * 서버 명
+	 * ?쒕쾭 紐?
 	 */
 	private String serverNm;
 	/**
-	 * 서버 IP
+	 * ?쒕쾭 IP
 	 */
 	private String serverEqpmnIp;
 	/**
-	 * CPU 사용률
+	 * CPU ?ъ슜瑜?
 	 */
 	private String cpuUseRt;
 	/**
-	 * 메모리 사용률
+	 * 硫붾え由??ъ슜瑜?
 	 */
 	private String moryUseRt;
 	/**
-	 * 서비스상태
+	 * ?쒕퉬?ㅼ긽??
 	 */
 	private String svcSttus;
 	/**
-	 * 서비스상태명
+	 * ?쒕퉬?ㅼ긽?쒕챸
 	 */
 	private String svcSttusNm;
 	/**
-	 * 로그정보
+	 * 濡쒓렇?뺣낫
 	 */
 	private String logInfo;
 	/**
-	 * 관리자이메일
+	 * 愿由ъ옄?대찓??
 	 */
 	private String mngrEamilAddr;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String creatDt;
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
     private String frstRegisterId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**

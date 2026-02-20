@@ -9,15 +9,15 @@ import egovframework.com.sym.log.clg.service.LoginLog;
 
 /**
  * @Class Name : LoginLogDAO.java
- * @Description : 시스템 로그 관리를 위한 데이터 접근 클래스
+ * @Description : ?쒖뒪??濡쒓렇 愿由щ? ?꾪븳 ?곗씠???묎렐 ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------       -------     -------------------
- *    2009. 3. 11.  이삼섭       최초생성
- *    2011. 7. 01.  이기하       패키지 분리(sym.log -> sym.log.clg)
+ *    2009. 3. 11.  ?댁궪??      理쒖큹?앹꽦
+ *    2011. 7. 01.  ?닿린??      ?⑦궎吏 遺꾨━(sym.log -> sym.log.clg)
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -27,7 +27,7 @@ import egovframework.com.sym.log.clg.service.LoginLog;
 public class LoginLogDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 접속로그를 기록한다.
+	 * ?묒냽濡쒓렇瑜?湲곕줉?쒕떎.
 	 *
 	 * @param LoginLog
 	 * @return
@@ -38,7 +38,7 @@ public class LoginLogDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 접속로그 상세보기를 조회한다.
+	 * ?묒냽濡쒓렇 ?곸꽭蹂닿린瑜?議고쉶?쒕떎.
 	 *
 	 * @param loginLog
 	 * @return loginLog
@@ -50,7 +50,7 @@ public class LoginLogDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 접속로그를 목록을 조회한다.
+	 * ?묒냽濡쒓렇瑜?紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param loginLog
 	 * @return
@@ -61,7 +61,7 @@ public class LoginLogDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 접속로그 목록의 숫자를 조회한다.
+	 * ?묒냽濡쒓렇 紐⑸줉???レ옄瑜?議고쉶?쒕떎.
 	 * @param loginLog
 	 * @return
 	 * @throws Exception

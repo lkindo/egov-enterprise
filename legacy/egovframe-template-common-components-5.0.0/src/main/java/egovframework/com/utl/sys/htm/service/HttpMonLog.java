@@ -3,69 +3,69 @@ package egovframework.com.utl.sys.htm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - HTTP모니터링 로그에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - HTTP紐⑤땲?곕쭅 濡쒓렇?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 웹서비스종류, HTTP상태, 관리자명, 관리자이메일주소, 최종수정자ID, 최종수정시점 항목을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - ?뱀꽌鍮꾩뒪醫낅쪟, HTTP?곹깭, 愿由ъ옄紐? 愿由ъ옄?대찓?쇱＜?? 理쒖쥌?섏젙?륤D, 理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:46
+ * @created 08-9-2010 ?ㅽ썑 3:54:46
  */
 
 @SuppressWarnings("serial")
 public class HttpMonLog implements Serializable {
 
 	/**
-	 * 로그ID
+	 * 濡쒓렇ID
 	 */
 	private String logId;
 	/**
-	 * 로그정보
+	 * 濡쒓렇?뺣낫
 	 */
 	private String logInfo;
 	/**
-	 * 사이트URL
+	 * ?ъ씠?퇥RL
 	 */
 	private String siteUrl;
 	/**
-	 * 시스템ID
+	 * ?쒖뒪?쏧D
 	 */
 	private String sysId;
 	/**
-	 * 웹서비스종류
+	 * ?뱀꽌鍮꾩뒪醫낅쪟
 	 */
 	private String webKind;
 	/**
-	 * 웹서비스상태
+	 * ?뱀꽌鍮꾩뒪?곹깭
 	 */
 	private String httpSttusCd;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String creatDt;
 	/**
-	 * 관리자명
+	 * 愿由ъ옄紐?
 	 */
 	private String mngrNm;
 	/**
-	 * 관리자이메일주소
+	 * 愿由ъ옄?대찓?쇱＜??
 	 */
 	private String mngrEmailAddr;
     /*
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "";
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**

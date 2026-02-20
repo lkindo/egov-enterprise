@@ -35,10 +35,13 @@ public class EnterpriseUserDto {
     private String entrprsMberSttus;
     private String groupId;
     private String detailAdres;
+    private String entrprsMberPassword;
+    private String entrprsMberPasswordHint;
+    private String entrprsMberPasswordCnsr;
     private String lockAt;
     private LocalDateTime createdDate;
 
-    public static EnterpriseUserDto fromEntity(EnterpriseUser entity) {
+    public static EnterpriseUserDto from(EnterpriseUser entity) {
         if (entity == null) return null;
         return EnterpriseUserDto.builder()
                 .esntlId(entity.getEsntlId())

@@ -5,106 +5,106 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- *  게시판 속성정보를 담기위한 엔티티 클래스
- * @author 공통서비스개발팀 이삼섭
+ *  寃뚯떆???띿꽦?뺣낫瑜??닿린?꾪븳 ?뷀떚???대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.12  이삼섭          최초 생성
- *   2009.06.26  한성곤		2단계 기능 추가 (댓글관리, 만족도조사)
+ *   2009.03.12  ?댁궪??         理쒖큹 ?앹꽦
+ *   2009.06.26  ?쒖꽦怨?	2?④퀎 湲곕뒫 異붽? (?볤?愿由? 留뚯”?꾩“??
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class BoardMaster implements Serializable {
     
-    /** 게시판 아이디 */
+    /** 寃뚯떆???꾩씠??*/
     private String bbsId = "";
     
-    /** 게시판 소개 */
+    /** 寃뚯떆???뚭컻 */
     private String bbsIntrcn = "";
     
-    /** 게시판 명 */
+    /** 寃뚯떆??紐?*/
     private String bbsNm = "";
     
-    /** 게시판 유형코드 */
+    /** 寃뚯떆???좏삎肄붾뱶 */
     private String bbsTyCode = "";
     
-    /** 파일첨부가능여부 */
+    /** ?뚯씪泥⑤?媛?μ뿬遺 */
     private String fileAtchPosblAt = "";
     
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     public String lastUpdusrId = "";
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
     
-    /** 첨부가능파일숫자 */
+    /** 泥⑤?媛?ν뙆?쇱닽??*/
     private int atchPosblFileNumber = 0;
     
-    /** 첨부가능파일사이즈 */
+    /** 泥⑤?媛?ν뙆?쇱궗?댁쫰 */
     private String atchPosblFileSize = "";
     
-    /** 답장가능여부 */
+    /** ?듭옣媛?μ뿬遺 */
     private String replyPosblAt = "";
     
-    /** 템플릿 아이디 */
+    /** ?쒗뵆由??꾩씠??*/
     private String tmplatId = "";
     
-    /** 사용여부 */
+    /** ?ъ슜?щ? */
     private String useAt = "";
     
-    /** 사용플래그 */
+    /** ?ъ슜?뚮옒洹?*/
     private String bbsUseFlag = "";
     
-    /** 대상 아이디 */
+    /** ????꾩씠??*/
     private String trgetId = "";
     
-    /** 등록구분코드 */
+    /** ?깅줉援щ텇肄붾뱶 */
     private String registSeCode = "";
     
-    /** 유일 아이디 */
+    /** ?좎씪 ?꾩씠??*/
     private String uniqId = "";
     
-    /** 템플릿 명 */
+    /** ?쒗뵆由?紐?*/
     private String tmplatNm = "";
     
-    /** 커뮤니티 ID */
+    /** 而ㅻ??덊떚 ID */
     private String cmmntyId;
     
-    /** 블로그 ID */
+    /** 釉붾줈洹?ID */
     private String blogId;
     
-    /** 블로그 사용 유무 */
+    /** 釉붾줈洹??ъ슜 ?좊Т */
     private String blogAt;
     
     //---------------------------------
-    // 2009.06.26 : 2단계 기능 추가
+    // 2009.06.26 : 2?④퀎 湲곕뒫 異붽?
     //---------------------------------
-    /** 추가 option (댓글-comment, 만족도조사-stsfdg) */
+    /** 異붽? option (?볤?-comment, 留뚯”?꾩“??stsfdg) */
     private String option = "";
     
-    /** 댓글 여부 */
+    /** ?볤? ?щ? */
     private String commentAt = "";
     
-    /** 만족도조사 */
+    /** 留뚯”?꾩“??*/
     private String stsfdgAt = "";
     ////-------------------------------
 
     /**
-     * bbsId attribute를 리턴한다.
+     * bbsId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsId
      */
@@ -113,7 +113,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsId attribute 값을 설정한다.
+     * bbsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsId
      *            the bbsId to set
@@ -123,7 +123,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsIntrcn attribute를 리턴한다.
+     * bbsIntrcn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsIntrcn
      */
@@ -132,7 +132,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsIntrcn attribute 값을 설정한다.
+     * bbsIntrcn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsIntrcn
      *            the bbsIntrcn to set
@@ -142,7 +142,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsNm attribute를 리턴한다.
+     * bbsNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsNm
      */
@@ -151,7 +151,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsNm attribute 값을 설정한다.
+     * bbsNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsNm
      *            the bbsNm to set
@@ -161,7 +161,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsTyCode attribute를 리턴한다.
+     * bbsTyCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsTyCode
      */
@@ -170,7 +170,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsTyCode attribute 값을 설정한다.
+     * bbsTyCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsTyCode
      *            the bbsTyCode to set
@@ -180,7 +180,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * fileAtchPosblAt attribute를 리턴한다.
+     * fileAtchPosblAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fileAtchPosblAt
      */
@@ -189,7 +189,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * fileAtchPosblAt attribute 값을 설정한다.
+     * fileAtchPosblAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fileAtchPosblAt
      *            the fileAtchPosblAt to set
@@ -199,7 +199,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -208,7 +208,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -218,7 +218,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -227,7 +227,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -237,7 +237,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrId
      */
@@ -246,7 +246,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrId
      *            the lastUpdusrId to set
@@ -256,7 +256,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastUpdusrPnttm
      */
@@ -265,7 +265,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastUpdusrPnttm
      *            the lastUpdusrPnttm to set
@@ -275,7 +275,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * atchPosblFileNumber attribute를 리턴한다.
+     * atchPosblFileNumber attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the atchPosblFileNumber
      */
@@ -284,7 +284,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * atchPosblFileNumber attribute 값을 설정한다.
+     * atchPosblFileNumber attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param atchPosblFileNumber
      *            the atchPosblFileNumber to set
@@ -294,7 +294,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * atchPosblFileSize attribute를 리턴한다.
+     * atchPosblFileSize attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the atchPosblFileSize
      */
@@ -303,7 +303,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * atchPosblFileSize attribute 값을 설정한다.
+     * atchPosblFileSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param atchPosblFileSize
      *            the atchPosblFileSize to set
@@ -313,7 +313,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * replyPosblAt attribute를 리턴한다.
+     * replyPosblAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the replyPosblAt
      */
@@ -322,7 +322,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * replyPosblAt attribute 값을 설정한다.
+     * replyPosblAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param replyPosblAt
      *            the replyPosblAt to set
@@ -332,7 +332,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * tmplatId attribute를 리턴한다.
+     * tmplatId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatId
      */
@@ -341,7 +341,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * tmplatId attribute 값을 설정한다.
+     * tmplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatId
      *            the tmplatId to set
@@ -351,7 +351,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the useAt
      */
@@ -360,7 +360,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param useAt
      *            the useAt to set
@@ -370,7 +370,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsUseFlag attribute를 리턴한다.
+     * bbsUseFlag attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the bbsUseFlag
      */
@@ -379,7 +379,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * bbsUseFlag attribute 값을 설정한다.
+     * bbsUseFlag attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param bbsUseFlag
      *            the bbsUseFlag to set
@@ -389,7 +389,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * trgetId attribute를 리턴한다.
+     * trgetId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the trgetId
      */
@@ -398,7 +398,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * trgetId attribute 값을 설정한다.
+     * trgetId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param trgetId
      *            the trgetId to set
@@ -408,7 +408,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * registSeCode attribute를 리턴한다.
+     * registSeCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the registSeCode
      */
@@ -417,7 +417,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * registSeCode attribute 값을 설정한다.
+     * registSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param registSeCode
      *            the registSeCode to set
@@ -427,7 +427,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * uniqId attribute를 리턴한다.
+     * uniqId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the uniqId
      */
@@ -436,7 +436,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * uniqId attribute 값을 설정한다.
+     * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param uniqId
      *            the uniqId to set
@@ -446,7 +446,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * tmplatNm attribute를 리턴한다.
+     * tmplatNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the tmplatNm
      */
@@ -455,7 +455,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * tmplatNm attribute 값을 설정한다.
+     * tmplatNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param tmplatNm
      *            the tmplatNm to set
@@ -465,7 +465,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * option attribute를 리턴한다.
+     * option attribute瑜?由ы꽩?쒕떎.
      * @return the option
      */
     public String getOption() {
@@ -473,7 +473,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * option attribute 값을 설정한다.
+     * option attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param option the option to set
      */
     public void setOption(String option) {
@@ -481,7 +481,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * commentAt attribute를 리턴한다.
+     * commentAt attribute瑜?由ы꽩?쒕떎.
      * @return the commentAt
      */
     public String getCommentAt() {
@@ -489,7 +489,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * commentAt attribute 값을 설정한다.
+     * commentAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param commentAt the commentAt to set
      */
     public void setCommentAt(String commentAt) {
@@ -497,7 +497,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * stsfdgAt attribute를 리턴한다.
+     * stsfdgAt attribute瑜?由ы꽩?쒕떎.
      * @return the stsfdgAt
      */
     public String getStsfdgAt() {
@@ -505,7 +505,7 @@ public class BoardMaster implements Serializable {
     }
 
     /**
-     * stsfdg attribute 값을 설정한다.
+     * stsfdg attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param stsfdgAt the stsfdgAt to set
      */
     public void setStsfdgAt(String stsfdgAt) {
@@ -513,7 +513,7 @@ public class BoardMaster implements Serializable {
     }
     
     /**
-     * cmmntyId attribute를 리턴한다.
+     * cmmntyId attribute瑜?由ы꽩?쒕떎.
      * @return the cmmntyId
      */
     public String getCmmntyId() {
@@ -521,7 +521,7 @@ public class BoardMaster implements Serializable {
     }
     
     /**
-     * cmmntyId attribute 값을 설정한다.
+     * cmmntyId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param cmmntyId the cmmntyId to set
      */
     public void setCmmntyId(String cmmntyId) {
@@ -545,7 +545,7 @@ public class BoardMaster implements Serializable {
 	}
 
 	/**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

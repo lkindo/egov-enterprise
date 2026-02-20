@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 /**
- * 템플릿 서비스 인터페이스
+ * ?쒗뵆由??쒕퉬???명꽣?섏씠??
  */
 public interface EgovTemplateService {
 

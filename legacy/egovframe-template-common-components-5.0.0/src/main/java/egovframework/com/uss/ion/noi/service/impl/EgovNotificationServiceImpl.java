@@ -17,18 +17,18 @@ import egovframework.com.uss.ion.noi.service.NotificationVO;
 import jakarta.annotation.Resource;
 
 /**
- * 정보알림이를 위한 서비스 구현 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뺣낫?뚮┝?대? ?꾪븳 ?쒕퉬??援ы쁽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.08  한성곤          최초 생성
+ *   2009.06.08  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -39,7 +39,7 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
     private NotificationDAO notificationDao;
 
     /**
-     * 정보알림이 목록을 조회 한다.
+     * ?뺣낫?뚮┝??紐⑸줉??議고쉶 ?쒕떎.
      */
     @Override
 	public Map<String, Object> selectNotificationInfs(NotificationVO searchVO) throws Exception {
@@ -55,12 +55,12 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-     * 정보알림이 정보를 등록한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??깅줉?쒕떎.
      */
     @Override
 	public void insertNotificationInf(Notification notification) throws Exception {
 	//---------------------------------------
-	// 알림일자 및 시작 지정
+	// ?뚮┝?쇱옄 諛??쒖옉 吏??
 	//---------------------------------------
 	StringBuffer time = new StringBuffer();
 
@@ -72,13 +72,13 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
 	notification.setNtfcTime(time.toString());
 
 	//---------------------------------------
-	// 사전 알림간격 지정
+	// ?ъ쟾 ?뚮┝媛꾧꺽 吏??
 	//---------------------------------------
 	StringBuffer interval = new StringBuffer();
 
 	String[] array = notification.getBhNtfcIntrvl();
 
-	//KISA 보안약점 조치 (2018-10-29, 윤창원)
+	//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 	if (array == null) {
 		throw new RuntimeException("Method insertNotificationInf : array is null\n");
 	}
@@ -94,13 +94,13 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
 	notification.setBhNtfcIntrvlString(interval.toString());
 
 	//---------------------------------------
-	// 등록 처리
+	// ?깅줉 泥섎━
 	//---------------------------------------
 	notificationDao.insertNotificationInf(notification);
     }
 
     /**
-     * 알림메시지에 대한 상세정보를 조회한다.
+     * ?뚮┝硫붿떆吏??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      */
     @Override
 	public NotificationVO selectNotificationInf(NotificationVO searchVO) throws Exception {
@@ -108,12 +108,12 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-     * 정보알림이 정보를 수정한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??섏젙?쒕떎.
      */
     @Override
 	public void updateNotifictionInf(Notification notification) throws Exception {
 	//---------------------------------------
-	// 알림일자 및 시작 지정
+	// ?뚮┝?쇱옄 諛??쒖옉 吏??
 	//---------------------------------------
 	StringBuffer time = new StringBuffer();
 
@@ -125,7 +125,7 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
 	notification.setNtfcTime(time.toString());
 
 	//---------------------------------------
-	// 사전 알림간격 지정
+	// ?ъ쟾 ?뚮┝媛꾧꺽 吏??
 	//---------------------------------------
 	StringBuffer interval = new StringBuffer();
 
@@ -145,13 +145,13 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
 	notification.setBhNtfcIntrvlString(interval.toString());
 
 	//---------------------------------------
-	// 수정 처리
+	// ?섏젙 泥섎━
 	//---------------------------------------
 	notificationDao.updateNotificationInf(notification);
     }
 
     /**
-     * 정보알림이 정보를 삭제한다.
+     * ?뺣낫?뚮┝???뺣낫瑜???젣?쒕떎.
      */
     @Override
 	public void deleteNotifictionInf(Notification notification) throws Exception {
@@ -159,12 +159,12 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-     * 정보알림이 알림시간 등에 대한 점검을 수행한다.
+     * ?뺣낫?뚮┝???뚮┝?쒓컙 ?깆뿉 ????먭????섑뻾?쒕떎.
      */
     @Override
 	public boolean checkNotification(Notification notification) throws Exception {
 	//---------------------------------------
-	// 알림일자 및 시작 지정
+	// ?뚮┝?쇱옄 諛??쒖옉 吏??
 	//---------------------------------------
 	StringBuffer time = new StringBuffer();
 
@@ -174,7 +174,7 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
 	time.append("00");
 
 	//---------------------------------------
-	// 시간 지정
+	// ?쒓컙 吏??
 	//---------------------------------------
 	SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
 	Calendar alarm = Calendar.getInstance();
@@ -197,21 +197,21 @@ public class EgovNotificationServiceImpl extends EgovAbstractServiceImpl impleme
     }
 
     /**
-     * 정보알림이 정보 표시를 수행한다.
+     * ?뺣낫?뚮┝???뺣낫 ?쒖떆瑜??섑뻾?쒕떎.
      */
     @Override
 	public List<NotificationVO> selectNotificationData() throws Exception {
 	List<NotificationVO> result = new ArrayList<>();
 
 	//------------------------------------------
-	// 검색 조건 지정
+	// 寃??議곌굔 吏??
 	//------------------------------------------
 	NotificationVO vo = new NotificationVO();
 
 	SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
 	SimpleDateFormat other = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
-	// 전후 1시간 조건 지정..
+	// ?꾪썑 1?쒓컙 議곌굔 吏??.
 	Calendar start = Calendar.getInstance();
 	Calendar end = Calendar.getInstance();
 

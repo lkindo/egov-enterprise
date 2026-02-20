@@ -9,13 +9,13 @@
 
 	<aop:config>
 		<aop:aspect id="sysLogAspect" ref="syslog">
-			<!--  insert로 시작되는 service Method -->
+			<!--  insert濡??쒖옉?섎뒗 service Method -->
 			<aop:around pointcut="execution(public * egovframework.com..impl.*Impl.insert*(..))" method="logInsert" />
-			<!--  update로 시작되는 service Method -->
+			<!--  update濡??쒖옉?섎뒗 service Method -->
 			<aop:around pointcut="execution(public * egovframework.com..impl.*Impl.update*(..))" method="logUpdate" />
-			<!--  delete로 시작되는 service Method -->
+			<!--  delete濡??쒖옉?섎뒗 service Method -->
 			<aop:around pointcut="execution(public * egovframework.com..impl.*Impl.delete*(..))" method="logDelete" />
-			<!--  select로 시작되는 service Method -->
+			<!--  select濡??쒖옉?섎뒗 service Method -->
 			<aop:around pointcut="execution(public * egovframework.com..impl.*Impl.select*(..))" method="logSelect" />
 		</aop:aspect>
 	</aop:config>

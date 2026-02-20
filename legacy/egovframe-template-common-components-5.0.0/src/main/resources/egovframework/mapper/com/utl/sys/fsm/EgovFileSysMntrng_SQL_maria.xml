@@ -71,7 +71,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>				
 	</resultMap> 
 	
-	<!-- 파일시스템모니터링관리::목록조회 -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:紐⑸줉議고쉶 -->
 	<select id="selectFileSysMntrngList" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngVO" resultMap="FileSysMntrngList">
 	 
 		SELECT 
@@ -112,7 +112,7 @@
 
 	</select>
 	
-	<!-- 파일시스템모니터링관리::목록조회 Count -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:紐⑸줉議고쉶 Count -->
 	<select id="selectFileSysMntrngListCnt" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -139,7 +139,7 @@
 
 	</select>
 	
-	<!-- 파일시스템모니터링관리::상세보기 -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:?곸꽭蹂닿린 -->
 	<select id="selectFileSysMntrng" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngVO" resultMap="FileSysMntrngDetail">
 		SELECT 
 			A.FILE_SYS_ID,
@@ -165,7 +165,7 @@
 		WHERE A.FILE_SYS_ID = #{fileSysId}
 	</select>
 	
-	<!-- 파일시스템모니터링관리::수정  -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:?섏젙  -->
 	<update id="updateFileSysMntrng" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrng"> 
 		UPDATE COMTNFILESYSMNTRNG 
 		SET  
@@ -181,7 +181,7 @@
 		WHERE FILE_SYS_ID = #{fileSysId}
 	</update>
 	
-	<!-- 파일시스템모니터링관리::삭제  -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:??젣  -->
 	<delete id="deleteFileSysMntrng" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrng"> 
 		
 			DELETE FROM COMTNFILESYSMNTRNG 
@@ -189,7 +189,7 @@
 		
 	</delete>
 	
-	<!-- 파일시스템모니터링관리::입력  -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:?낅젰  -->
 	<insert id="insertFileSysMntrng" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrng">
 	 
 	 
@@ -224,7 +224,7 @@
 	 
 	</insert>
 	
-	<!-- 파일시스템모니터링관리::모니터링결과수정  -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴?由?:紐⑤땲?곕쭅寃곌낵?섏젙  -->
 	<update id="updateFileSysMntrngSttus" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrng"> 
 		UPDATE COMTNFILESYSMNTRNG 
 		SET  
@@ -237,7 +237,7 @@
 		WHERE FILE_SYS_ID = #{fileSysId}
 	</update>
 	
-	<!-- 파일시스템모니터링결과::목록조회 -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴껐怨?:紐⑸줉議고쉶 -->
 	<select id="selectFileSysMntrngLogList" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngLogVO" resultMap="FileSysMntrngLogList">
 	 
 		SELECT 
@@ -286,7 +286,7 @@
 
 	</select>
 	
-	<!-- 파일시스템모니터링결과::목록조회 Count -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴껐怨?:紐⑸줉議고쉶 Count -->
 	<select id="selectFileSysMntrngLogListCnt" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngLogVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -321,7 +321,7 @@
 
 	</select>
 	
-	<!-- 파일시스템모니터링결과::상세보기 -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴껐怨?:?곸꽭蹂닿린 -->
 	<select id="selectFileSysMntrngLog" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngLogVO" resultMap="FileSysMntrngLogDetail">
 		SELECT 
 			A.FILE_SYS_ID,
@@ -348,7 +348,7 @@
 			AND A.LOG_ID = #{logId}
 	</select>
 	
-	<!-- 파일시스템모니터링결과::입력  -->
+	<!-- ?뚯씪?쒖뒪?쒕え?덊꽣留곴껐怨?:?낅젰  -->
 	<insert id="insertFileSysMntrngLog" parameterType="egovframework.com.utl.sys.fsm.service.FileSysMntrngLog">
 	 
 	 

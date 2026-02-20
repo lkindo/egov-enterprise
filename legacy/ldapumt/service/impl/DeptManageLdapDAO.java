@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service.impl;
 
@@ -43,21 +43,21 @@ import jakarta.annotation.Resource;
 
 /**
  *
- * 부서 관련 기능을 제공하는 DAO객체
+ * 遺??愿??湲곕뒫???쒓났?섎뒗 DAO媛앹껜
  * 
- * @author 전우성
+ * @author ?꾩슦??
  * @since 2014.10.12
  * @version 1.0
  * @see
  *
  *      <pre>
-* << 개정이력(Modification Information) >>
+* << 媛쒖젙?대젰(Modification Information) >>
 *
-*  수정일               수정자            수정내용
+*  ?섏젙??              ?섏젙??           ?섏젙?댁슜
 *  ----------   --------   ---------------------------
-*  2014.10.12   전우성            최초 생성
-*  2017-02-13   이정은            시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
-*  2020.08.28   정진오            표준프레임워크 v3.10 개선
+*  2014.10.12   ?꾩슦??           理쒖큹 ?앹꽦
+*  2017-02-13   ?댁젙?            ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+*  2020.08.28   ?뺤쭊??           ?쒖??꾨젅?꾩썙??v3.10 媛쒖꽑
  *
  *      </pre>
  */
@@ -69,9 +69,9 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 	public LdapTemplate ldapTemplate;
 
 	/**
-	 * DN의 하위부서 목록을 조회
+	 * DN???섏쐞遺??紐⑸줉??議고쉶
 	 * 
-	 * @param dn 조회할 객체의 Distinguished Name
+	 * @param dn 議고쉶??媛앹껜??Distinguished Name
 	 * @return
 	 * @throws Exception
 	 */
@@ -84,14 +84,14 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 					SearchControls.ONELEVEL_SCOPE, new ObjectMapper<>(
 							UcorgVO.class));
 		} catch (NameNotFoundException e) {
-			logger.error("[NameNotFoundException] : search fail");// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			logger.error("[NameNotFoundException] : search fail");// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		}
 
 		return ucorgList;
 	}
 
 	/**
-	 * ouCode를 활용하여 하위 부서를 조
+	 * ouCode瑜??쒖슜?섏뿬 ?섏쐞 遺?쒕? 議?
 	 * 
 	 * @param ouCode
 	 * @return
@@ -106,10 +106,10 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vo 부서 Vo
-	 * @return deptManageVO 부서 Vo
+	 * @param vo 遺??Vo
+	 * @return deptManageVO 遺??Vo
 	 * @param bannerVO
 	 */
 	public UcorgVO selectDeptManage(UcorgVO vo) throws Exception {
@@ -134,7 +134,7 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 등록된 부서의 상세정보를 조회한다.
+	 * ?깅줉??遺?쒖쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param dn
 	 * @return
@@ -144,18 +144,18 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 기 등록된 부서정보를 수정한다.
+	 * 湲??깅줉??遺?쒖젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param vo 부서 vo
+	 * @param vo 遺??vo
 	 */
 	public void updateDeptManage(UcorgVO vo) throws Exception {
 		updateOrg(vo);
 	}
 
 	/**
-	 * 부서정보를 등한다.
+	 * 遺?쒖젙蹂대? ?깊븳??
 	 * 
-	 * @param vo 부서 vo
+	 * @param vo 遺??vo
 	 */
 	public void insertDeptManage(UcorgVO vo) throws Exception {
 		BasicAttribute ocattr = new BasicAttribute("objectclass");
@@ -166,28 +166,28 @@ public class DeptManageLdapDAO extends OrgManageLdapDAO {
 	}
 
 	/**
-	 * 부서를 이동한다.
+	 * 遺?쒕? ?대룞?쒕떎.
 	 * 
-	 * @param oldDn 이동대상 부서
-	 * @param newDn 이동할 부서
+	 * @param oldDn ?대룞???遺??
+	 * @param newDn ?대룞??遺??
 	 */
 	public void moveDeptManage(String oldDn, String newDn) {
 		ldapTemplate.rename(oldDn, newDn);
 	}
 
 	/**
-	 * 부서를 삭한다.
+	 * 遺?쒕? ??븳??
 	 * 
-	 * @param vo 부서 vo
+	 * @param vo 遺??vo
 	 */
 	public void deleteDeptManage(String dn) {
 		ldapTemplate.unbind(dn, true);
 	}
 
 	/**
-	 * 하위 부서 존재여부를 확인한다.
+	 * ?섏쐞 遺??議댁옱?щ?瑜??뺤씤?쒕떎.
 	 * 
-	 * @param vo 부서 vo
+	 * @param vo 遺??vo
 	 */
 	public boolean hasChildren(String dn) throws NamingException {
 		ContextSource contextSource = ldapTemplate.getContextSource();

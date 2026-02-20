@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 이벤트 정보 Repository
+ * ??源???類ｋ궖 Repository
  */
 public interface EventInfoRepository extends JpaRepository<EventInfo, String> {
     Page<EventInfo> findByEventCnContaining(String eventCn, Pageable pageable);

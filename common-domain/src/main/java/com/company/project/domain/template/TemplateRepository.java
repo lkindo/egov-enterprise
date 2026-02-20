@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 템플릿 Repository
+ * ??쀫탣??Repository
  */
 @Repository("commonTemplateRepository")
 public interface TemplateRepository extends JpaRepository<Template, String> {

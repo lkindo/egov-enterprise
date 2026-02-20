@@ -3,64 +3,64 @@ package egovframework.com.cop.smt.mrm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 메모보고에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 硫붾え蹂닿퀬?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 보고서ID, 보고서제목, 작성일자, 작성자ID, 작성자명, 작성자직급명, 보고자ID, 보고자명, 보고내용, 지시사항, 지시사항등록일시, 보고자조회일시,
- * 보고서상태 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 蹂닿퀬?쏧D, 蹂닿퀬?쒖젣紐? ?묒꽦?쇱옄, ?묒꽦?륤D, ?묒꽦?먮챸, ?묒꽦?먯쭅湲됰챸, 蹂닿퀬?륤D, 蹂닿퀬?먮챸, 蹂닿퀬?댁슜, 吏?쒖궗?? 吏?쒖궗??벑濡앹씪?? 蹂닿퀬?먯“?뚯씪??
+ * 蹂닿퀬?쒖긽????ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:14:53
+ * @created 19-7-2010 ?ㅼ쟾 10:14:53
  *  <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class MemoReprt implements Serializable{
 
-	/** 보고서ID */
+	/** 蹂닿퀬?쏧D */
 	private String reprtId;
-	/** 보고서제목 */
+	/** 蹂닿퀬?쒖젣紐?*/
 	private String reprtSj;
-	/** 보고일자 */
+	/** 蹂닿퀬?쇱옄 */
 	private String reprtDe;
-	/** 작성자ID */
+	/** ?묒꽦?륤D */
 	private String wrterId;
-	/** 작성자명 */
+	/** ?묒꽦?먮챸 */
 	private String wrterNm;
-	/** 작성자직급명 */
+	/** ?묒꽦?먯쭅湲됰챸 */
 	private String wrterClsfNm;
-	/** 보고자ID */
+	/** 蹂닿퀬?륤D */
 	private String reportrId;
-	/** 보고자명 */
+	/** 蹂닿퀬?먮챸 */
 	private String reportrNm;
-	/** 보고자직급명 */
+	/** 蹂닿퀬?먯쭅湲됰챸 */
 	private String reportrClsfNm;
-	/** 보고내용 */
+	/** 蹂닿퀬?댁슜 */
 	private String reprtCn;
-	/** 첨부파일ID */
+	/** 泥⑤??뚯씪ID */
 	private String atchFileId;
-	/** 지시사항 */
+	/** 吏?쒖궗??*/
 	private String drctMatter;
-	/** 지시사항등록일시 */
+	/** 吏?쒖궗??벑濡앹씪??*/
 	private String drctMatterRegistDt;
-	/** 보고자조회일시 */
+	/** 蹂닿퀬?먯“?뚯씪??*/
 	private String reportrInqireDt;
-	/** 보고서상태 */
+	/** 蹂닿퀬?쒖긽??*/
 	private String reprtSttus;
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId;
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId;
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm;
 	
 	public String getReprtId() {

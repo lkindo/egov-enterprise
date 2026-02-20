@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 템플릿 JPA Entity
- * 레거시 테이블: COMTNTMPLATINFO
+ * ??쀫탣??JPA Entity
+ * ??뉕탢?????뵠?? COMTNTMPLATINFO
  */
 @Entity(name = "CommonTemplate")
 @Table(name = "NTMPLATINFO")

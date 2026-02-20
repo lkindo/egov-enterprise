@@ -13,18 +13,18 @@ import egovframework.com.cop.smt.sdm.service.DeptSchdulManageVO;
 import egovframework.com.cop.smt.sdm.service.EgovDeptSchdulManageService;
 import jakarta.annotation.Resource;
 /**
- * 부서일정관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * 遺?쒖씪?뺢?由щ? 泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -41,8 +41,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	private EgovIdGnrService idgenService;
 
     /**
-	 * 부서 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -52,8 +52,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 아이디 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?꾩씠??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -63,8 +63,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정관리조회
-	 * @param Map(map) - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪?뺢?由ъ“??
+	 * @param Map(map) - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @exception Exception
 	 */
@@ -74,8 +74,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정 목록을 Map(map)형식으로 조회한다.
-	 * @param Map(map) - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪??紐⑸줉??Map(map)?뺤떇?쇰줈 議고쉶?쒕떎.
+	 * @param Map(map) - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @exception Exception
 	 */
@@ -85,8 +85,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정 목록을 VO(model)형식으로 조회한다.
-	 * @param deptSchdulManageVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪??紐⑸줉??VO(model)?뺤떇?쇰줈 議고쉶?쒕떎.
+	 * @param deptSchdulManageVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @exception Exception
 	 */
@@ -96,8 +96,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @exception Exception
 	 */
@@ -107,8 +107,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정를(을) 상세조회 한다.
-	 * @param DeptSchdulManage - 회정정보가 담김 VO
+	 * 遺?쒖씪?뺣?(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param DeptSchdulManage - ?뚯젙?뺣낫媛 ?닿? VO
 	 * @return List
 	 * @exception Exception
 	 */
@@ -118,8 +118,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪?뺣?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -131,8 +131,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정를(을) 등록한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪?뺣?(?? ?깅줉?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception
 	 */
 	@Override
@@ -144,8 +144,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정를(을) 수정한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪?뺣?(?? ?섏젙?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception
 	 */
 	@Override
@@ -154,8 +154,8 @@ public class EgovDeptSchdulManageServiceImpl extends EgovAbstractServiceImpl imp
 	}
 
     /**
-	 * 부서일정를(을) 삭제한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺?쒖씪?뺣?(?? ??젣?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception
 	 */
 	@Override

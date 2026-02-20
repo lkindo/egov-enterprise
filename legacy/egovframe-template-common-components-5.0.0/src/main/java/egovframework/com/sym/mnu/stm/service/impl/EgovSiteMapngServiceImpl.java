@@ -9,19 +9,19 @@ import egovframework.com.sym.mnu.stm.service.SiteMapngVO;
 import jakarta.annotation.Resource;
 
 /**
- * 사이트맵 조회를 처리하는 비즈니스 구현 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * ?ъ씠?몃㏊ 議고쉶瑜?泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
- *   2024.10.29	LeeBaekHaeng	불필요 @SuppressWarnings("unused") 제거
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
+ *   2024.10.29	LeeBaekHaeng	遺덊븘??@SuppressWarnings("unused") ?쒓굅
  *
  * </pre>
  */
@@ -32,7 +32,7 @@ public class EgovSiteMapngServiceImpl extends EgovAbstractServiceImpl implements
     private SiteMapngDAO siteMapngDAO;
 
 	/**
-	 * 사이트맵 조회
+	 * ?ъ씠?몃㏊ 議고쉶
 	 * @param vo ComDefaultVO
 	 * @return SiteMapngVO
 	 * @exception Exception

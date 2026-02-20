@@ -2,41 +2,41 @@ package egovframework.com.utl.fcc.service;
 
 /**
  *
- * 포맷유효성체크 에 대한 Util 클래스
- * @author 공통컴포넌트 개발팀 윤성록
+ * ?щ㎎?좏슚?깆껜???????Util ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.06.23
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.23  윤성록          최초 생성
+ *   2009.06.23  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public class EgovFormatCheckUtil {
 
     /**
-     * <pxxx - xxx- xxxx 형식의 전화번호 앞, 중간, 뒤 문자열 3개 입력 받아 유요한 전화번호형식인지 검사.</p>
+     * <pxxx - xxx- xxxx ?뺤떇???꾪솕踰덊샇 ?? 以묎컙, ??臾몄옄??3媛??낅젰 諛쏆븘 ?좎슂???꾪솕踰덊샇?뺤떇?몄? 寃??</p>
      *
      *
-     * @param   전화번호 문자열( 3개 )
-     * @return  유효한 전화번호 형식인지 여부 (True/False)
+     * @param   ?꾪솕踰덊샇 臾몄옄?? 3媛?)
+     * @return  ?좏슚???꾪솕踰덊샇 ?뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatTell(String tell1, String tell2, String tell3) {
 
 	 String[] check = {"02", "031", "032", "033", "041", "042", "043", "051", "052", "053", "054", "055", "061",
-				 "062", "063", "070", "080", "0505"};	//존재하는 국번 데이터
+				 "062", "063", "070", "080", "0505"};	//議댁옱?섎뒗 援?쾲 ?곗씠??
 	 String temp = tell1 + tell2 + tell3;
 
 	 for(int i=0; i < temp.length(); i++){
     		if (temp.charAt(i) < '0' || temp.charAt(i) > '9') {
 				return false;
 			}
-	 }	//숫자가 아닌 값이 들어왔는지를 확인
+	 }	//?レ옄媛 ?꾨땶 媛믪씠 ?ㅼ뼱?붾뒗吏瑜??뺤씤
 
 	 for(int i = 0; i < check.length; i++){
 		 if(tell1.equals(check[i])) {
@@ -45,7 +45,7 @@ public class EgovFormatCheckUtil {
 		 if(i == check.length - 1) {
 			return false;
 		}
-	 }	//국번입력이 제대로 되었는지를 확인
+	 }	//援?쾲?낅젰???쒕?濡??섏뿀?붿?瑜??뺤씤
 
 	 if(tell2.charAt(0) == '0') {
 		return false;
@@ -54,23 +54,23 @@ public class EgovFormatCheckUtil {
 	 if(tell1.equals("02")){
 		 if((tell2.length() != 3 && tell2.length() !=4) || (tell3.length() != 4))
 		 {
-			return false;	//서울지역(02)국번 입력때의 전화 번호 형식유효성 체크
+			return false;	//?쒖슱吏??02)援?쾲 ?낅젰?뚯쓽 ?꾪솕 踰덊샇 ?뺤떇?좏슚??泥댄겕
 		}
 	 }else{
 		 if((tell2.length() != 3) || (tell3.length() != 4)) {
 			return false;
 		}
-	 }	//서울을 제외한 지역(국번 입력때의 전화 번호 형식유효성 체크
+	 }	//?쒖슱???쒖쇅??吏??援?쾲 ?낅젰?뚯쓽 ?꾪솕 踰덊샇 ?뺤떇?좏슚??泥댄겕
 
 	 return true;
     }
 
     /**
-     * <p>xxx - xxx- xxxx 형식의 전화번호 하나를 입력 받아 유요한 전화번호형식인지 검사.</p>
+     * <p>xxx - xxx- xxxx ?뺤떇???꾪솕踰덊샇 ?섎굹瑜??낅젰 諛쏆븘 ?좎슂???꾪솕踰덊샇?뺤떇?몄? 寃??</p>
      *
      *
-     * @param   전화번호 문자열 (1개)
-     * @return  유효한 전화번호 형식인지 여부 (True/False)
+     * @param   ?꾪솕踰덊샇 臾몄옄??(1媛?
+     * @return  ?좏슚???꾪솕踰덊샇 ?뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatTell(String tellNumber) {
 
@@ -83,10 +83,10 @@ public class EgovFormatCheckUtil {
 
 	 if(tell.length() < 9 || tell.length() > 11  || tell.charAt(0) != '0')
 	 {
-		return false;	//전화번호 길이에 대한 체크
+		return false;	//?꾪솕踰덊샇 湲몄씠?????泥댄겕
 	}
 
-	 if(tell.charAt(1) =='2'){	//서울지역 (02)국번의 경우일때
+	 if(tell.charAt(1) =='2'){	//?쒖슱吏??(02)援?쾲??寃쎌슦?쇰븣
 		 temp1 = tell.substring(0,2);
 		 if(tell.length() == 9){
 			 temp2 = tell.substring(2,5);
@@ -97,14 +97,14 @@ public class EgovFormatCheckUtil {
 		 } else {
 			return false;
 		}
-	 } else if(tell.substring(0,4).equals("0505")){ //평생번호(0505)국번의 경우일때
+	 } else if(tell.substring(0,4).equals("0505")){ //?됱깮踰덊샇(0505)援?쾲??寃쎌슦?쇰븣
 		 if(tell.length() != 11) {
 			return false;
 		}
 		 temp1 = tell.substring(0,4);
 		 temp2 = tell.substring(4,7);
 		 temp3 = tell.substring(7,11);
-	 } else {	// 서울지역 및 "0505" 를 제외한 일반적인 경우일때
+	 } else {	// ?쒖슱吏??諛?"0505" 瑜??쒖쇅???쇰컲?곸씤 寃쎌슦?쇰븣
 		 if(tell.length() != 10) {
 			return false;
 		}
@@ -117,21 +117,21 @@ public class EgovFormatCheckUtil {
     }
 
     /**
-     * <p>xxx - xxx- xxxx 형식의 휴대폰번호 앞, 중간, 뒤 문자열 3개 입력 받아 유요한 휴대폰번호형식인지 검사.</p>
+     * <p>xxx - xxx- xxxx ?뺤떇???대??곕쾲???? 以묎컙, ??臾몄옄??3媛??낅젰 諛쏆븘 ?좎슂???대??곕쾲?명삎?앹씤吏 寃??</p>
      *
      *
-     * @param   휴대폰번호 문자열,(3개)
-     * @return  유효한 휴대폰번호 형식인지 여부 (True/False)
+     * @param   ?대??곕쾲??臾몄옄??(3媛?
+     * @return  ?좏슚???대??곕쾲???뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatCell(String cell1, String cell2, String cell3) {
-	 String[] check = {"010", "011", "016", "017", "018", "019"}; //유효한 휴대폰 첫자리 번호 데이터
+	 String[] check = {"010", "011", "016", "017", "018", "019"}; //?좏슚???대???泥レ옄由?踰덊샇 ?곗씠??
 	 String temp = cell1 + cell2 + cell3;
 
 	 for(int i=0; i < temp.length(); i++){
     		if (temp.charAt(i) < '0' || temp.charAt(i) > '9') {
 				return false;
 			}
-         }	//숫자가 아닌 값이 들어왔는지를 확인
+         }	//?レ옄媛 ?꾨땶 媛믪씠 ?ㅼ뼱?붾뒗吏瑜??뺤씤
 
 	 for(int i = 0; i < check.length; i++){
 	     if(cell1.equals(check[i])) {
@@ -140,7 +140,7 @@ public class EgovFormatCheckUtil {
 	     if(i == check.length - 1) {
 			return false;
 		}
-	 }	// 휴대폰 첫자리 번호입력의 유효성 체크
+	 }	// ?대???泥レ옄由?踰덊샇?낅젰???좏슚??泥댄겕
 
 	 if((cell2.charAt(0) == '0') || (cell2.length() != 3 && cell2.length() !=4) || (cell3.length() != 4)) {
 		return false;
@@ -150,11 +150,11 @@ public class EgovFormatCheckUtil {
     }
 
     /**
-     * <p>XXXXXXXXXX 형식의 휴대폰번호 문자열 3개 입력 받아 유요한 휴대폰번호형식인지 검사.</p>
+     * <p>XXXXXXXXXX ?뺤떇???대??곕쾲??臾몄옄??3媛??낅젰 諛쏆븘 ?좎슂???대??곕쾲?명삎?앹씤吏 寃??</p>
      *
      *
-     * @param   휴대폰번호 문자열(1개)
-     * @return  유효한 휴대폰번호 형식인지 여부 (True/False)
+     * @param   ?대??곕쾲??臾몄옄??1媛?
+     * @return  ?좏슚???대??곕쾲???뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatCell(String cellNumber) {
 
@@ -169,11 +169,11 @@ public class EgovFormatCheckUtil {
 		return false;
 	}
 
-	 if(cell.length() == 10){	//전체 10자리 휴대폰 번호일 경우
+	 if(cell.length() == 10){	//?꾩껜 10?먮━ ?대???踰덊샇??寃쎌슦
 		 temp1 = cell.substring(0,3);
 		 temp2 = cell.substring(3,6);
 		 temp3 = cell.substring(6,10);
-	 }else{		//전체 11자리 휴대폰 번호일 경우
+	 }else{		//?꾩껜 11?먮━ ?대???踰덊샇??寃쎌슦
 		 temp1 = cell.substring(0,3);
 		 temp2 = cell.substring(3,7);
 		 temp3 = cell.substring(7,11);
@@ -183,11 +183,11 @@ public class EgovFormatCheckUtil {
     }
 
     /**
-     * <p> 이메일의  앞, 뒤 문자열 2개 입력 받아 유요한 이메일형식인지 검사.</p>
+     * <p> ?대찓?쇱쓽  ?? ??臾몄옄??2媛??낅젰 諛쏆븘 ?좎슂???대찓?쇳삎?앹씤吏 寃??</p>
      *
      *
-     * @param   이메일 문자열 (2개)
-     * @return  유효한 이메일 형식인지 여부 (True/False)
+     * @param   ?대찓??臾몄옄??(2媛?
+     * @return  ?좏슚???대찓???뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatMail(String mail1, String mail2) {
 
@@ -205,7 +205,7 @@ public class EgovFormatCheckUtil {
 		} else {
 			return false;
 		}
-	 }	// 유효한 문자, 숫자인지 체크
+	 }	// ?좏슚??臾몄옄, ?レ옄?몄? 泥댄겕
 
 	 for(int i = 0; i < mail2.length(); i++){
 		 if(mail2.charAt(i) <= 'z' && mail2.charAt(i) >= 'a') {
@@ -213,7 +213,7 @@ public class EgovFormatCheckUtil {
 		} else if(mail2.charAt(i) == '.'){ count++;  continue;} else {
 			return false;
 		}
-	 }	// 메일 주소의 형식 체크(xxx.xxx 형태)
+	 }	// 硫붿씪 二쇱냼???뺤떇 泥댄겕(xxx.xxx ?뺥깭)
 
 	 if(count == 1) {
 		return true;
@@ -224,15 +224,15 @@ public class EgovFormatCheckUtil {
     }
 
     /**
-     * <p> 이메일의 전체문자열 1개 입력 받아 유요한 이메일형식인지 검사.</p>
+     * <p> ?대찓?쇱쓽 ?꾩껜臾몄옄??1媛??낅젰 諛쏆븘 ?좎슂???대찓?쇳삎?앹씤吏 寃??</p>
      *
      *
-     * @param   이메일 문자열 (1개)
-     * @return  유효한 이메일 형식인지 여부 (True/False)
+     * @param   ?대찓??臾몄옄??(1媛?
+     * @return  ?좏슚???대찓???뺤떇?몄? ?щ? (True/False)
      */
     public static boolean checkFormatMail(String mail) {
 
-	 String[] temp = mail.split("@");	// '@' 를 기점으로 앞, 뒤 문자열 구분
+	 String[] temp = mail.split("@");	// '@' 瑜?湲곗젏?쇰줈 ?? ??臾몄옄??援щ텇
 
 	 if(temp.length == 2) {
 		return checkFormatMail(temp[0], temp[1]);

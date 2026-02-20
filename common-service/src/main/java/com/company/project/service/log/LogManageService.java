@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 로그 관리 서비스
+ * 濡쒓렇 愿由??쒕퉬??
  */
 @Service("logManageService")
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class LogManageService {
     private final SysLogRepository sysLogRepository;
 
     /**
-     * 시스템 로그 등록
+     * ?쒖뒪??濡쒓렇 ?깅줉
      */
     @Transactional
     public void insertSysLog(SysLogDto dto) {
@@ -44,7 +44,7 @@ public class LogManageService {
     }
 
     /**
-     * 시스템 로그 목록 조회
+     * ?쒖뒪??濡쒓렇 紐⑸줉 議고쉶
      */
     public List<SysLogDto> selectSysLogList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -60,7 +60,7 @@ public class LogManageService {
     }
 
     /**
-     * 시스템 로그 목록 총 건수
+     * ?쒖뒪??濡쒓렇 紐⑸줉 珥?嫄댁닔
      */
     public int selectSysLogListTotCnt(ComDefaultVO searchVO) {
         return (int) sysLogRepository.searchSysLogs(
@@ -71,7 +71,7 @@ public class LogManageService {
     }
 
     /**
-     * 시스템 로그 상세 조회
+     * ?쒖뒪??濡쒓렇 ?곸꽭 議고쉶
      */
     public SysLogDto selectSysLog(String requstId) {
         return sysLogRepository.findById(Objects.requireNonNull(requstId))

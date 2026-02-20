@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일          수정자                          수정내용
+	?섏젙??         ?섏젙??                         ?섏젙?댁슜
   ===========      ========    =================================================
-  2011.10.06		이기하     	 	보안 취약점 점검사항 반영 $->#변경
-  2011.12.16		이기하     	 	ID : selectRecentSrchwrdResult
-  									추가 : SRCHWRD_NM, 변경 : FRST_REGIST_PNTTM -> FRST_REGISTER_PNTTM
+  2011.10.06		?닿린??    	 	蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
+  2011.12.16		?닿린??    	 	ID : selectRecentSrchwrdResult
+  									異붽? : SRCHWRD_NM, 蹂寃?: FRST_REGIST_PNTTM -> FRST_REGISTER_PNTTM
 --><!--Converted at: Wed May 11 15:51:18 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="RecentSrchwrd">
 
-	<!-- 최근검색어조회::ResultMap 선언 -->
+	<!-- 理쒓렐寃?됱뼱議고쉶::ResultMap ?좎뼵 -->
 	<resultMap id="RecentSrchwrdVO" type="egovframework.com.uss.ion.rsm.service.RecentSrchwrd">
 		<result property="srchwrdManageId" column="SRCHWRD_MANAGE_ID"/>
 		<result property="srchwrdManageNm" column="SRCHWRD_MANAGE_NM"/>
@@ -22,7 +22,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 최근검색어결과조회::검색어등록 -->
+	<!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::寃?됱뼱?깅줉 -->
 	<insert id="insertRecentSrchwrdResultInquire">
 		INSERT INTO COMTNRECENTSRCHWRD (
 		SRCHWRD_MANAGE_ID,
@@ -44,7 +44,7 @@
 	</insert>
 
 
-	<!-- 최근검색어결과조회::목록조회 게시물정보 -->
+	<!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRecentSrchwrdResultInquire" resultType="egovMap">
 	 
 		SELECT
@@ -60,7 +60,7 @@
 	
 	</select>
 
-	<!-- 최근검색어결과조회::입력  -->
+	<!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::?낅젰  -->
 	<insert id="insertRecentSrchwrdResult">
 		INSERT INTO COMTNRECENTSRCHWRD (
 		SRCHWRD_MANAGE_ID,
@@ -81,7 +81,7 @@
 		)
 	</insert>
 
-    <!-- 최근검색어결과조회::검색어별 삭제   -->
+    <!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::寃?됱뼱蹂???젣   -->
 	<delete id="deleteRecentSrchwrdResult">
 		
 			DELETE FROM COMTNRECENTSRCHWRD
@@ -91,7 +91,7 @@
 		
 	</delete>
 
-    <!-- 최근검색어결과조회::관리별 삭제  -->
+    <!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::愿由щ퀎 ??젣  -->
 	<delete id="deleteRecentSrchwrdResultAll">
 		
 			DELETE FROM COMTNRECENTSRCHWRD
@@ -99,7 +99,7 @@
 		
 	</delete>
 
-	<!-- 최근검색어결과조회::목록조회 게시물정보 -->
+	<!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRecentSrchwrdResult" resultType="egovMap">
 	
 	SELECT *
@@ -136,7 +136,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- 최근검색어결과조회::목록조회_게시물 총개수  -->
+	<!-- 理쒓렐寃?됱뼱寃곌낵議고쉶::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRecentSrchwrdCntResult" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -153,7 +153,7 @@
 
 	</select>
 
-	<!-- 최근검색어관리조회::목록조회 게시물정보 -->
+	<!-- 理쒓렐寃?됱뼱愿由ъ“??:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRecentSrchwrd" resultType="egovMap">
 	
 	SELECT *
@@ -193,7 +193,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- 최근검색어관리조회::목록조회_게시물 총개수  -->
+	<!-- 理쒓렐寃?됱뼱愿由ъ“??:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRecentSrchwrdCnt" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -212,7 +212,7 @@
 
 	</select>
 
-    <!-- 최근검색어관리조회::삭제  -->
+    <!-- 理쒓렐寃?됱뼱愿由ъ“??:??젣  -->
 	<delete id="deleteRecentSrchwrd">
 		
 			DELETE FROM COMTNRECENTSRCHWRDMANAGE
@@ -220,7 +220,7 @@
 		
 	</delete>
 
-	<!-- 최근검색어관리조회::수정  -->
+	<!-- 理쒓렐寃?됱뼱愿由ъ“??:?섏젙  -->
 	<update id="updateRecentSrchwrd">
 	 
 		UPDATE COMTNRECENTSRCHWRDMANAGE
@@ -235,7 +235,7 @@
 	 
 	</update>
 
-	<!-- 최근검색어관리조회::상세보기 -->
+	<!-- 理쒓렐寃?됱뼱愿由ъ“??:?곸꽭蹂닿린 -->
 	<select id="selectRecentSrchwrdDetail" resultMap="RecentSrchwrdVO">
 	SELECT
 		A.SRCHWRD_MANAGE_ID,
@@ -251,7 +251,7 @@
 		AND A.SRCHWRD_MANAGE_ID=#{srchwrdManageId}
 	</select>
 
-	<!-- 최근검색어관리조회::입력  -->
+	<!-- 理쒓렐寃?됱뼱愿由ъ“??:?낅젰  -->
 	<insert id="insertRecentSrchwrd">
 	 
 

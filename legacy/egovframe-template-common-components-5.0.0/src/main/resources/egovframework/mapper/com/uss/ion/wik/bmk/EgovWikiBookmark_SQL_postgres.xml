@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.12   	안민정     	 테이블 표준화에 따른 수정사항 반영
-							USID를					USER_ID 로 변경
-							LAST_UPDUSR_PNTTM를		LAST_UPDT_PNTTM로 변경
-							FRST_REGISTER_PNTTM를 	FRST_REGIST_PNTTM로 변경
-  2011.10.06	정진오 		보안 취약점 점검사항 반영 $->#변경
+  2011.8.12   	?덈???    	 ?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+							USID瑜?				USER_ID 濡?蹂寃?
+							LAST_UPDUSR_PNTTM瑜?	LAST_UPDT_PNTTM濡?蹂寃?
+							FRST_REGISTER_PNTTM瑜?	FRST_REGIST_PNTTM濡?蹂寃?
+  2011.10.06	?뺤쭊??		蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 --><!--Converted at: Wed May 11 15:51:26 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="WikiBookmark">
 
-	<!-- 위키북마크::목록조회 게시물정보 -->
+	<!-- ?꾪궎遺곷쭏??:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectWikiBookmarkList" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT 
@@ -48,7 +48,7 @@
 	
 	</select>
 	
-	<!-- 위키북마크::목록조회_게시물 총개수  -->
+	<!-- ?꾪궎遺곷쭏??:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectWikiBookmarkListCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -64,7 +64,7 @@
 	 </if>
 	</select>
 	
-	<!-- 위키북마크::북마크 중복 체크  -->
+	<!-- ?꾪궎遺곷쭏??:遺곷쭏??以묐났 泥댄겕  -->
 	<select id="selectWikiBookmarkDuplicationCnt" resultType="int">
 		SELECT 
 		COUNT(*) CTN
@@ -75,7 +75,7 @@
 	
 	</select>
 	
-    <!-- 위키북마크::삭제  -->
+    <!-- ?꾪궎遺곷쭏??:??젣  -->
 	<delete id="deleteWikiBookmark">
 		
 			DELETE FROM COMTNWIKIBKMK 
@@ -83,7 +83,7 @@
 		
 	</delete>
 
-	<!-- 위키북마크::입력  -->
+	<!-- ?꾪궎遺곷쭏??:?낅젰  -->
 	<insert id="insertWikiBookmark">	     
 	 
 	INSERT INTO COMTNWIKIBKMK ( 
@@ -105,7 +105,7 @@
 	)
 	 
 	</insert>
-	<!-- 위키북마크::아이디조회  -->
+	<!-- ?꾪궎遺곷쭏??:?꾩씠?붿“?? -->
 	<select id="selectWikiBookmarkEmpUniqId" resultType="String">
 		SELECT ESNTL_ID FROM COMTNEMPLYRINFO WHERE EMPLYR_ID = #{usid}
 	</select>

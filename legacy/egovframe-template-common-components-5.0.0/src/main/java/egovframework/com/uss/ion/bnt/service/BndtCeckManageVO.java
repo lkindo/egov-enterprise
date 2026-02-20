@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 당직체크관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅泥댄겕愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 당직체크관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뱀쭅泥댄겕愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class BndtCeckManageVO extends BndtCeckManage implements Serializable {
@@ -19,27 +19,27 @@ public class BndtCeckManageVO extends BndtCeckManage implements Serializable {
 	private static final long serialVersionUID = -9114350207789216858L;
 
 	/**
-	 * 당직체크리스트관리 목록
+	 * ?뱀쭅泥댄겕由ъ뒪?멸?由?紐⑸줉
 	 */
 	List<BndtCeckManageVO> bndtCeckManageList;
 
 	/**
-	 * 당직체크리스트 Temp변수 1
+	 * ?뱀쭅泥댄겕由ъ뒪??Temp蹂??1
 	 */
 	private String bndtCeckTemp1;
 
 	/**
-	 * 당직체크리스트 당직체크구분 조회조건 변수
+	 * ?뱀쭅泥댄겕由ъ뒪???뱀쭅泥댄겕援щ텇 議고쉶議곌굔 蹂??
 	 */
 	private String searchBndtCeckSe;
 
 	/**
-	 * 당직체크리스트 당직체크코드 조회조건 변수
+	 * ?뱀쭅泥댄겕由ъ뒪???뱀쭅泥댄겕肄붾뱶 議고쉶議곌굔 蹂??
 	 */
 	private String searchBndtCeckCd;
 
 	/**
-	 * 당직체크리스트 당직체크구분 조회조건 변수
+	 * ?뱀쭅泥댄겕由ъ뒪???뱀쭅泥댄겕援щ텇 議고쉶議곌굔 蹂??
 	 */
 	private String searchUseAt;
 

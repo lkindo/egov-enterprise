@@ -8,22 +8,22 @@ import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 
 /**
- * 일반 로그인, 인증서 로그인을 처리하는 DAO 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?쇰컲 濡쒓렇?? ?몄쬆??濡쒓렇?몄쓣 泥섎━?섎뒗 DAO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.06
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.03.06   박지욱            최초 생성
- *  2011.08.26   서준식            EsntlId를 이용한 로그인 추가
- *  2017.07.21   장동한            로그인인증제한 작업
- *  2020.07.08   신용호            비밀번호를 수정한후 경과한 날짜 조회
- *  2021.05.30   정진오            디지털원패스 인증 회원 조회
+ *  2009.03.06   諛뺤???           理쒖큹 ?앹꽦
+ *  2011.08.26   ?쒖???           EsntlId瑜??댁슜??濡쒓렇??異붽?
+ *  2017.07.21   ?λ룞??           濡쒓렇?몄씤利앹젣???묒뾽
+ *  2020.07.08   ?좎슜??           鍮꾨?踰덊샇瑜??섏젙?쒗썑 寃쎄낵???좎쭨 議고쉶
+ *  2021.05.30   ?뺤쭊??           ?붿??몄썝?⑥뒪 ?몄쬆 ?뚯썝 議고쉶
  *  </pre>
  */
 @Repository("loginDAO")
@@ -31,7 +31,7 @@ public class LoginDAO extends EgovComAbstractDAO {
 
     /**
      * 2011.08.26
-	 * EsntlId를 이용한 로그인을 처리한다
+	 * EsntlId瑜??댁슜??濡쒓렇?몄쓣 泥섎━?쒕떎
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -41,7 +41,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 일반 로그인을 처리한다
+	 * ?쇰컲 濡쒓렇?몄쓣 泥섎━?쒕떎
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -51,7 +51,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 인증서 로그인을 처리한다
+	 * ?몄쬆??濡쒓렇?몄쓣 泥섎━?쒕떎
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -62,7 +62,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 아이디를 찾는다.
+	 * ?꾩씠?붾? 李얜뒗??
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -73,7 +73,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 비밀번호를 찾는다.
+	 * 鍮꾨?踰덊샇瑜?李얜뒗??
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -84,7 +84,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 변경된 비밀번호를 저장한다.
+	 * 蹂寃쎈맂 鍮꾨?踰덊샇瑜???ν븳??
 	 * @param vo LoginVO
 	 * @exception Exception
 	 */
@@ -94,7 +94,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     
     
     /**
-	 * 로그인인증제한 내역을 조회한다.
+	 * 濡쒓렇?몄씤利앹젣???댁뿭??議고쉶?쒕떎.
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -104,7 +104,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 로그인인증제한 내역을 업데이트 한다.
+	 * 濡쒓렇?몄씤利앹젣???댁뿭???낅뜲?댄듃 ?쒕떎.
 	 * @param vo LoginVO
 	 * @return vod
 	 * @exception Exception
@@ -114,7 +114,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
     
     /**
-	 * 비밀번호를 수정한후 경과한 날짜를 조회한다.
+	 * 鍮꾨?踰덊샇瑜??섏젙?쒗썑 寃쎄낵???좎쭨瑜?議고쉶?쒕떎.
 	 * @param vo LoginVO
 	 * @return LoginVO
 	 * @exception Exception
@@ -124,7 +124,7 @@ public class LoginDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 디지털원패스 인증 회원 조회한다.
+	 * ?붿??몄썝?⑥뒪 ?몄쬆 ?뚯썝 議고쉶?쒕떎.
 	 * @param id
 	 * @return LoginVO
 	 * @exception Exception

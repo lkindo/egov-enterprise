@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.10.05        서준식               보안 취약점 점검사항 반영 $->#변경	
+  2011.10.05        ?쒖???              蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="OnlinePollManage">
 
-	<!-- 온라인POLL관리::ResultMap 선언 -->
+	<!-- ?⑤씪?퇠OLL愿由?:ResultMap ?좎뼵 -->
 	<resultMap id="OnlinePollManageVO" type="egovframework.com.uss.olp.opm.service.OnlinePollManage">
 		<result property="pollId" column="POLL_ID"/>
 		<result property="pollNm" column="POLL_NM"/>
@@ -22,7 +22,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/> 			
 	</resultMap>
 	
-	<!-- 온라인POLL관리::목록조회 게시물정보 -->
+	<!-- ?⑤씪?퇠OLL愿由?:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectOnlinePollManage" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT
@@ -53,7 +53,7 @@
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	
 	</select>
-	<!-- 온라인POLL관리::목록조회_게시물 총개수  -->
+	<!-- ?⑤씪?퇠OLL愿由?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectOnlinePollManageCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -70,7 +70,7 @@
 	 </if>
 	</select>
 	
-    <!-- 온라인POLL관리::삭제  -->
+    <!-- ?⑤씪?퇠OLL愿由?:??젣  -->
 	<delete id="deleteOnlinePollManage">
 		
 			DELETE FROM COMTNONLINEPOLLMANAGE 
@@ -78,7 +78,7 @@
 		
 	</delete>
 	
-	<!-- 온라인POLL관리::수정  -->
+	<!-- ?⑤씪?퇠OLL愿由?:?섏젙  -->
 	<update id="updateOnlinePollManage">
  
 UPDATE COMTNONLINEPOLLMANAGE 
@@ -96,7 +96,7 @@ WHERE POLL_ID=#{pollId}
  
 	</update>
 	
-	<!-- 온라인POLL관리::상세보기 -->
+	<!-- ?⑤씪?퇠OLL愿由?:?곸꽭蹂닿린 -->
 	<select id="selectOnlinePollManageDetail" resultMap="OnlinePollManageVO">
 	SELECT 
 		A.POLL_ID,
@@ -116,7 +116,7 @@ WHERE POLL_ID=#{pollId}
 		AND A.POLL_ID=#{pollId} 
 	</select>
 
-	<!-- 온라인POLL관리::입력  -->
+	<!-- ?⑤씪?퇠OLL愿由?:?낅젰  -->
 	<insert id="insertOnlinePollManage">	     
 	 
 	
@@ -148,7 +148,7 @@ WHERE POLL_ID=#{pollId}
 	 
 	</insert>
 	
-	<!-- 온라인POLL항목::목록조회 게시물정보 -->
+	<!-- ?⑤씪?퇠OLL??ぉ::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectOnlinePollItem" resultType="egovMap">
 	 
 		SELECT 
@@ -165,7 +165,7 @@ WHERE POLL_ID=#{pollId}
 		ORDER BY POLL_IEM_NM DESC
 	 
 	</select>
-	<!-- 온라인POLL항목::등록  --> 
+	<!-- ?⑤씪?퇠OLL??ぉ::?깅줉  --> 
 	<insert id="insertOnlinePollItem">	     
 	
 	INSERT INTO COMTNONLINEPOLLIEM ( 
@@ -187,7 +187,7 @@ WHERE POLL_ID=#{pollId}
 	)
 	
 	</insert>
-	<!-- 온라인POLL항목::수정  -->
+	<!-- ?⑤씪?퇠OLL??ぉ::?섏젙  -->
 	<update id="updateOnlinePollIteme">
 	
 	UPDATE COMTNONLINEPOLLIEM 
@@ -196,14 +196,14 @@ WHERE POLL_ID=#{pollId}
 	WHERE POLL_IEM_ID=#{pollIemId} 
 	
 	</update>
-	<!-- 온라인POLL결과::온라인POLL ID별  삭제  -->
+	<!-- ?⑤씪?퇠OLL寃곌낵::?⑤씪?퇠OLL ID蹂? ??젣  -->
 	<delete id="deleteOnlinePollResultAll">
 		
 			DELETE FROM COMTNONLINEPOLLRESULT 
 			WHERE POLL_ID=#{pollId}
 		
 	</delete>
-    <!-- 온라인POLL항목::온라인POLL ID별  삭제  -->
+    <!-- ?⑤씪?퇠OLL??ぉ::?⑤씪?퇠OLL ID蹂? ??젣  -->
 	<delete id="deleteOnlinePollItemAll">
 		
 			DELETE FROM COMTNONLINEPOLLIEM 
@@ -211,14 +211,14 @@ WHERE POLL_ID=#{pollId}
 		
 	</delete>
 	
-	<!-- 온라인POLL결과::온라인POLL IEM ID별  삭제  -->
+	<!-- ?⑤씪?퇠OLL寃곌낵::?⑤씪?퇠OLL IEM ID蹂? ??젣  -->
 	<delete id="deleteOnlinePollResultIemid">
 		
 			DELETE FROM COMTNONLINEPOLLRESULT 
 			WHERE POLL_ID=#{pollId} AND POLL_IEM_ID=#{pollIemId}
 		
 	</delete>
-    <!-- 온라인POLL항목::삭제  -->
+    <!-- ?⑤씪?퇠OLL??ぉ::??젣  -->
 	<delete id="deleteOnlinePollItem">
 		
 			DELETE FROM COMTNONLINEPOLLIEM 

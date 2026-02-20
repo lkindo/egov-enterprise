@@ -31,23 +31,23 @@ import egovframework.com.utl.fcc.service.EgovFileUploadUtil;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 실행환경의 파일업로드 처리를 위한 기능 클래스
+ * ?ㅽ뻾?섍꼍???뚯씪?낅줈??泥섎━瑜??꾪븳 湲곕뒫 ?대옒??
  *
- * @author 공통서비스개발팀 이삼섭
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일                수정자             수정내용
+ *  ?섏젙??               ?섏젙??            ?섏젙?댁슜
  *  ----------   --------    ---------------------------
- *  2009.03.25   이삼섭              최초 생성
- *  2011.06.11   서준식              스프링 3.0 업그레이드 API변경으로인한 수정
- *  2020.10.27   신용호              예외처리 수정
- *  2020.10.29   신용호              허용되지 않는 확장자 업로드 제한 (globals.properties > Globals.fileUpload.Extensions)
- *  2025.07.01   유지보수            Spring Framework 6.2.8, JDK 17 기반으로 업데이트
+ *  2009.03.25   ?댁궪??             理쒖큹 ?앹꽦
+ *  2011.06.11   ?쒖???             ?ㅽ봽留?3.0 ?낃렇?덉씠??API蹂寃쎌쑝濡쒖씤???섏젙
+ *  2020.10.27   ?좎슜??             ?덉쇅泥섎━ ?섏젙
+ *  2020.10.29   ?좎슜??             ?덉슜?섏? ?딅뒗 ?뺤옣???낅줈???쒗븳 (globals.properties > Globals.fileUpload.Extensions)
+ *  2025.07.01   ?좎?蹂댁닔            Spring Framework 6.2.8, JDK 17 湲곕컲?쇰줈 ?낅뜲?댄듃
  *
  *      </pre>
  */
@@ -60,19 +60,19 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 
 	/**
-	 * multipart 요청을 파싱하여 파일 업로드 보안 검증을 수행한다.
+	 * multipart ?붿껌???뚯떛?섏뿬 ?뚯씪 ?낅줈??蹂댁븞 寃利앹쓣 ?섑뻾?쒕떎.
 	 * 
-	 * @param request HTTP 요청
-	 * @param encoding 인코딩
+	 * @param request HTTP ?붿껌
+	 * @param encoding ?몄퐫??
 	 * @return MultipartHttpServletRequest
-	 * @throws MultipartException multipart 파싱 중 오류 발생 시
+	 * @throws MultipartException multipart ?뚯떛 以??ㅻ쪟 諛쒖깮 ??
 	 */
 	@Override
 	public MultipartHttpServletRequest resolveMultipart(HttpServletRequest request) throws MultipartException {
 		try {
 			MultipartHttpServletRequest multipartRequest = super.resolveMultipart(request);
 			
-			// 파일 업로드 보안 검증 수행
+			// ?뚯씪 ?낅줈??蹂댁븞 寃利??섑뻾
 			validateUploadedFiles(multipartRequest);
 			
 			return multipartRequest;
@@ -83,16 +83,16 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 
 	/**
-	 * 업로드된 파일들의 보안 검증을 수행한다.
+	 * ?낅줈?쒕맂 ?뚯씪?ㅼ쓽 蹂댁븞 寃利앹쓣 ?섑뻾?쒕떎.
 	 * 
 	 * @param multipartRequest MultipartHttpServletRequest
-	 * @throws SecurityException 보안 검증 실패 시
+	 * @throws SecurityException 蹂댁븞 寃利??ㅽ뙣 ??
 	 */
 	private void validateUploadedFiles(MultipartHttpServletRequest multipartRequest) throws SecurityException {
 		Map<String, List<MultipartFile>> fileMap = multipartRequest.getMultiFileMap();
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		
-		// 파일 개수 제한 검증 추가
+		// ?뚯씪 媛쒖닔 ?쒗븳 寃利?異붽?
 		validateFileCount(multipartRequest);
 		
 		LOGGER.debug("File upload validation - Whitelist extensions: {}", whiteListFileUploadExtensions);
@@ -112,11 +112,11 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 
 	/**
-	 * 개별 파일의 보안 검증을 수행한다.
+	 * 媛쒕퀎 ?뚯씪??蹂댁븞 寃利앹쓣 ?섑뻾?쒕떎.
 	 * 
-	 * @param file 검증할 파일
-	 * @param whiteListFileUploadExtensions 허용된 파일 확장자 목록
-	 * @throws SecurityException 보안 검증 실패 시
+	 * @param file 寃利앺븷 ?뚯씪
+	 * @param whiteListFileUploadExtensions ?덉슜???뚯씪 ?뺤옣??紐⑸줉
+	 * @throws SecurityException 蹂댁븞 寃利??ㅽ뙣 ??
 	 */
 	private void validateFile(MultipartFile file, String whiteListFileUploadExtensions) throws SecurityException {
 		String fileName = file.getOriginalFilename();
@@ -129,20 +129,20 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 		String fileExtension = EgovFileUploadUtil.getFileExtension(fileName);
 		LOGGER.debug("Validating file: {} with extension: {}", fileName, fileExtension);
 		
-		// 확장자가 없는 경우 처리 불가
+		// ?뺤옣?먭? ?녿뒗 寃쎌슦 泥섎━ 遺덇?
 		if (fileExtension == null || fileExtension.trim().isEmpty()) {
 			LOGGER.warn("File extension not found for file: {}", fileName);
 			throw new SecurityException("[No file extension] File extension not allowed.");
 		}
 		
-		// 화이트리스트 검증
+		// ?붿씠?몃━?ㅽ듃 寃利?
 		if (whiteListFileUploadExtensions != null && !whiteListFileUploadExtensions.trim().isEmpty()) {
 			String[] allowedExtensions = whiteListFileUploadExtensions.split(",");
 			boolean isAllowed = false;
 			
 			for (String allowedExt : allowedExtensions) {
 				String trimmedExt = allowedExt.trim().toLowerCase();
-				// 점(.)으로 시작하는 경우 제거
+				// ??.)?쇰줈 ?쒖옉?섎뒗 寃쎌슦 ?쒓굅
 				if (trimmedExt.startsWith(".")) {
 					trimmedExt = trimmedExt.substring(1);
 				}
@@ -160,7 +160,7 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 			LOGGER.debug("No file extension whitelist configured, allowing all extensions");
 		}
 		
-		// 파일 크기 검증 (기본값: 10MB)
+		// ?뚯씪 ?ш린 寃利?(湲곕낯媛? 10MB)
 		long maxFileSize = getMaxFileSize();
 		if (file.getSize() > maxFileSize) {
 			LOGGER.warn("File size [{}] exceeds maximum allowed size [{}] for file: {}", 
@@ -170,16 +170,16 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 
 	/**
-	 * 파일 개수 제한을 검증한다.
+	 * ?뚯씪 媛쒖닔 ?쒗븳??寃利앺븳??
 	 * 
 	 * @param multipartRequest MultipartHttpServletRequest
-	 * @throws SecurityException 파일 개수 제한 초과 시
+	 * @throws SecurityException ?뚯씪 媛쒖닔 ?쒗븳 珥덇낵 ??
 	 */
 	private void validateFileCount(MultipartHttpServletRequest multipartRequest) throws SecurityException {
 		Map<String, List<MultipartFile>> fileMap = multipartRequest.getMultiFileMap();
 		int totalFileCount = 0;
 		
-		// 실제 파일이 업로드된 개수만 계산 (빈 파일 제외)
+		// ?ㅼ젣 ?뚯씪???낅줈?쒕맂 媛쒖닔留?怨꾩궛 (鍮??뚯씪 ?쒖쇅)
 		for (List<MultipartFile> files : fileMap.values()) {
 			for (MultipartFile file : files) {
 				if (file != null && !file.isEmpty()) {
@@ -198,9 +198,9 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 	
 	/**
-	 * 최대 파일 개수를 반환한다.
+	 * 理쒕? ?뚯씪 媛쒖닔瑜?諛섑솚?쒕떎.
 	 * 
-	 * @return 최대 파일 개수
+	 * @return 理쒕? ?뚯씪 媛쒖닔
 	 */
 	private int getMaxFileCount() {
 		String maxFileCountStr = EgovProperties.getProperty("Globals.fileUpload.maxFileCount");
@@ -211,14 +211,14 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 				LOGGER.warn("Invalid maxFileCount configuration: {}, using default", maxFileCountStr);
 			}
 		}
-		// 기본값: 10개 (Tomcat 9.0.106+ 기본값과 동일)
+		// 湲곕낯媛? 10媛?(Tomcat 9.0.106+ 湲곕낯媛믨낵 ?숈씪)
 		return 10;
 	}
 
 	/**
-	 * 최대 파일 크기를 반환한다.
+	 * 理쒕? ?뚯씪 ?ш린瑜?諛섑솚?쒕떎.
 	 * 
-	 * @return 최대 파일 크기 (바이트)
+	 * @return 理쒕? ?뚯씪 ?ш린 (諛붿씠??
 	 */
 	private long getMaxFileSize() {
 		String maxFileSizeStr = EgovProperties.getProperty("Globals.fileUpload.maxFileSize");
@@ -229,14 +229,14 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 				LOGGER.warn("Invalid maxFileSize configuration: {}, using default", maxFileSizeStr);
 			}
 		}
-		// 기본값: 100MB (수정됨)
+		// 湲곕낯媛? 100MB (?섏젙??
 		return 100 * 1024 * 1024;
 	}
 
 	/**
-	 * multipart 요청이 완료된 후 정리 작업을 수행한다.
+	 * multipart ?붿껌???꾨즺?????뺣━ ?묒뾽???섑뻾?쒕떎.
 	 * 
-	 * @param request HTTP 요청
+	 * @param request HTTP ?붿껌
 	 */
 	@Override
 	public void cleanupMultipart(MultipartHttpServletRequest request) {
@@ -249,10 +249,10 @@ public class EgovMultipartResolver extends StandardServletMultipartResolver {
 	}
 
 	/**
-	 * 요청이 multipart 요청인지 확인한다.
+	 * ?붿껌??multipart ?붿껌?몄? ?뺤씤?쒕떎.
 	 * 
-	 * @param request HTTP 요청
-	 * @return multipart 요청 여부
+	 * @param request HTTP ?붿껌
+	 * @return multipart ?붿껌 ?щ?
 	 */
 	@Override
 	public boolean isMultipart(HttpServletRequest request) {

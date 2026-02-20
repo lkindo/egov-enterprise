@@ -4,25 +4,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 협업 기능에서 사용자 정보를 관리하기 위한 서비스 인터페이스 클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?묒뾽 湲곕뒫?먯꽌 ?ъ슜???뺣낫瑜?愿由ы븯湲??꾪븳 ?쒕퉬???명꽣?섏씠???대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.4.6  이삼섭          최초 생성
+ *   2009.4.6  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovUserInfManageService {
 
 	/**
-	 * 사용자 정보에 대한 목록을 조회한다.
+	 * ?ъ슜???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -31,7 +31,7 @@ public interface EgovUserInfManageService {
 	public Map<String, Object> selectUserList(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 커뮤니티 사용자 목록을 조회한다.
+	 * 而ㅻ??덊떚 ?ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -40,7 +40,7 @@ public interface EgovUserInfManageService {
 	public Map<String, Object> selectCmmntyUserList(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 커뮤니티 관리자 목록을 조회한다.
+	 * 而ㅻ??덊떚 愿由ъ옄 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -49,7 +49,7 @@ public interface EgovUserInfManageService {
 	public Map<String, Object> selectCmmntyMngrList(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 동호회 사용자 목록을 조회한다.
+	 * ?숉샇???ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -58,7 +58,7 @@ public interface EgovUserInfManageService {
 	public Map<String, Object> selectClubUserList(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 동호회 운영자 목록을 조회한다.
+	 * ?숉샇???댁쁺??紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -67,7 +67,7 @@ public interface EgovUserInfManageService {
 	public Map<String, Object> selectClubOprtrList(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 동호회에 대한 모든 사용자 목록을 조회한다.
+	 * ?숉샇?뚯뿉 ???紐⑤뱺 ?ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return
@@ -76,7 +76,7 @@ public interface EgovUserInfManageService {
 	public List<UserInfVO> selectAllClubUser(UserInfVO userVO) throws Exception;
 
 	/**
-	 * 커뮤니티에 대한 모든 사용자 목록을 조회한다.
+	 * 而ㅻ??덊떚?????紐⑤뱺 ?ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @return

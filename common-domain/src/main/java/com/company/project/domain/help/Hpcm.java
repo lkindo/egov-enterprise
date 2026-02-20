@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * 도움말 정보 Entity
- * 레거시 테이블: NHPCMINFO
+ * ?袁?筌??類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NHPCMINFO
  */
 @Entity
 @Table(name = "NHPCMINFO")

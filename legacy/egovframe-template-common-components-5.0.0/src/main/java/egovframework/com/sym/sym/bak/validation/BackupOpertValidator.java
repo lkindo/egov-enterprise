@@ -12,19 +12,19 @@ import egovframework.com.sym.sym.bak.service.BackupOpert;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
- * BackupOpert클래스에대한 validator 클래스.
- * common validator가 처리하지 못하는 부분 검사.
+ * BackupOpert?대옒?ㅼ뿉???validator ?대옒??
+ * common validator媛 泥섎━?섏? 紐삵븯??遺遺?寃??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.09.02   김진만     최초 생성
- *  2022.11.16   신용호     시큐어코딩 조치
+ *  2010.09.02   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2022.11.16   ?좎슜??    ?쒗걧?댁퐫??議곗튂
  * </pre>
  */
 @Component("backupOpertValidator")
@@ -48,53 +48,53 @@ public class BackupOpertValidator implements Validator {
      */
 	@Override
 	public void validate(Object obj, Errors errors) {
-		// 배치프로그램으로 지정된 값이 파일로 존재하는지 검사한다.
+		// 諛곗튂?꾨줈洹몃옩?쇰줈 吏?뺣맂 媛믪씠 ?뚯씪濡?議댁옱?섎뒗吏 寃?ы븳??
 		BackupOpert backupOpert = (BackupOpert) obj;
 		File dir = null;
 		String srcDir = backupOpert.getBackupOrginlDrctry();
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		dir = new File(SOURCE_BASE_DIRECTORY + EgovWebUtil.filePathBlackList(srcDir));
 		try {
 			if (!dir.exists()) {
 				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-			    "디렉토리 {0}이  존재하지 않습니다.");
+			    "?붾젆?좊━ {0}?? 議댁옱?섏? ?딆뒿?덈떎.");
 				return ;
 			}
 			if (!dir.isDirectory()) {
 				errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-			    "본디렉토리 {0}이 디렉토리가 아닙니다.");
+			    "蹂몃뵒?됲넗由?{0}???붾젆?좊━媛 ?꾨떃?덈떎.");
 				return ;
 			}
 		} catch (SecurityException  se) {
 			errors.rejectValue("backupOrginlDrctry", "errors.backupOrginlDrctry", new Object [] { srcDir },
-		    " 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
+		    " ?붾젆?좊━ {0}???묎렐?????놁뒿?덈떎. ?뚯씪?묎렐沅뚰븳???뺤씤?섏꽭??");
 			return ;
 		}
 
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		String targetDir = EgovStringUtil.isNullToString(backupOpert.getBackupStreDrctry());
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		dir = new File(TARGET_BASE_DIRECTORY + EgovWebUtil.filePathBlackList(EgovStringUtil.isNullToString(backupOpert.getBackupStreDrctry())));
 		try {
 			if (!dir.exists()) {
 				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-			    "디렉토리 {0}이  존재하지 않습니다.");
+			    "?붾젆?좊━ {0}?? 議댁옱?섏? ?딆뒿?덈떎.");
 				return ;
 			}
 			if (!dir.isDirectory()) {
 				errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-			    "디렉토리 {0}이 디렉토리가 아닙니다.");
+			    "?붾젆?좊━ {0}???붾젆?좊━媛 ?꾨떃?덈떎.");
 				return ;
 			}
 		} catch (SecurityException  se) {
 			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { targetDir },
-		    " 디렉토리 {0}에 접근할 수 없습니다. 파일접근권한을 확인하세요.");
+		    " ?붾젆?좊━ {0}???묎렐?????놁뒿?덈떎. ?뚯씪?묎렐沅뚰븳???뺤씤?섏꽭??");
 			return ;
 		}
 
 		if ( targetDir.equals(srcDir)) {
 			errors.rejectValue("backupStreDrctry", "errors.backupStreDrctry", new Object [] { srcDir, targetDir },
-		    "백업원본디렉토리{0}과 백업저장디렉토리 {1}이 같은 값을 가질수 없습니다.");
+		    "諛깆뾽?먮낯?붾젆?좊━{0}怨?諛깆뾽??λ뵒?됲넗由?{1}??媛숈? 媛믪쓣 媛吏덉닔 ?놁뒿?덈떎.");
 			return ;
 		}
 

@@ -5,37 +5,37 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 문자메시지 서비스 데이터 처리 모델
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏 ?쒕퉬???곗씠??泥섎━ 紐⑤뜽
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.18  한성곤          최초 생성
+ *   2009.06.18  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class SmsRecptn implements Serializable {
-    /** 문자메시지 ID */
+    /** 臾몄옄硫붿떆吏 ID */
     private String smsId = "";
     
-    /** 수신 전화번호 */
+    /** ?섏떊 ?꾪솕踰덊샇 */
     private String recptnTelno = "";
     
-    /** 결과코드 */
+    /** 寃곌낵肄붾뱶 */
     private String resultCode = "";
     
-    /** 결과메시지 */
+    /** 寃곌낵硫붿떆吏 */
     private String resultMssage = "";
 
     /**
-     * 문자메시지ID smsId attribute를 리턴한다.
+     * 臾몄옄硫붿떆吏ID smsId attribute瑜?由ы꽩?쒕떎.
      * @return the smsId
      */
     public String getSmsId() {
@@ -43,7 +43,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 문자메시지ID smsId attribute 값을 설정한다.
+     * 臾몄옄硫붿떆吏ID smsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param smsId the smsId to set
      */
     public void setSmsId(String smsId) {
@@ -51,7 +51,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 수신전화번호 recptnTelno attribute를 리턴한다.
+     * ?섏떊?꾪솕踰덊샇 recptnTelno attribute瑜?由ы꽩?쒕떎.
      * @return the recptnTelno
      */
     public String getRecptnTelno() {
@@ -59,7 +59,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 수신전화번호 recptnTelno attribute 값을 설정한다.
+     * ?섏떊?꾪솕踰덊샇 recptnTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recptnTelno the recptnTelno to set
      */
     public void setRecptnTelno(String recptnTelno) {
@@ -67,7 +67,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 결과코드 resultCode attribute를 리턴한다.
+     * 寃곌낵肄붾뱶 resultCode attribute瑜?由ы꽩?쒕떎.
      * @return the resultCode
      */
     public String getResultCode() {
@@ -75,7 +75,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 결과코드 resultCode attribute 값을 설정한다.
+     * 寃곌낵肄붾뱶 resultCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param resultCode the resultCode to set
      */
     public void setResultCode(String resultCode) {
@@ -83,7 +83,7 @@ public class SmsRecptn implements Serializable {
     }
     
     /**
-     * 결과메시지 resultMssage attribute를 리턴한다.
+     * 寃곌낵硫붿떆吏 resultMssage attribute瑜?由ы꽩?쒕떎.
      * @return the resultMssage
      */
     public String getResultMssage() {
@@ -91,7 +91,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * 결과메시지 resultMssage attribute 값을 설정한다.
+     * 寃곌낵硫붿떆吏 resultMssage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param resultMssage the resultMssage to set
      */
     public void setResultMssage(String resultMssage) {
@@ -99,7 +99,7 @@ public class SmsRecptn implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

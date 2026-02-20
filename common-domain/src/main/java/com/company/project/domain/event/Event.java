@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 행사관리 JPA Entity
- * 레거시 테이블: COMTNEVENTMANAGE
+ * ??깃텢?온??JPA Entity
+ * ??뉕탢?????뵠?? COMTNEVENTMANAGE
  */
 @Entity(name = "DomainEvent")
 @Table(name = "NEVENTMANAGE")

@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <!-- 배치관리 스케줄러 -->
+    <!-- 諛곗튂愿由??ㅼ?以꾨윭 -->
     <bean id="batchScheduler" class="egovframework.com.sym.bat.service.BatchScheduler" init-method="init" destroy-method="destroy">
         <property name="egovBatchSchdulService" ref="egovBatchSchdulService"/>
         <property name="idgenService" ref="egovBatchResultIdGnrService"/>

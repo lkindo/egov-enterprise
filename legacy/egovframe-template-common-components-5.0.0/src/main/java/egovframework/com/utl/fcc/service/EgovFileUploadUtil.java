@@ -16,26 +16,26 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * @Class Name  : EgovFileUploadUtil.java
- * @Description : Spring 기반 File Upload 유틸리티
+ * @Description : Spring 湲곕컲 File Upload ?좏떥由ы떚
  * @Modification Information
  *
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.08.26   한성곤            최초 생성
- *  2018.08.17   신용호            uploadFilesExt(확장자 기록) 추가
- *  2019.12.06   신용호            checkFileExtension(), checkFileMaxSize() 추가
- *  2020.08.05   신용호            uploadFilesExt Parameter 수정
- *  2021.02.16   신용호            WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
- *  2022.11.11   김혜준            시큐어코딩 처리
+ *  2009.08.26   ?쒖꽦怨?           理쒖큹 ?앹꽦
+ *  2018.08.17   ?좎슜??           uploadFilesExt(?뺤옣??湲곕줉) 異붽?
+ *  2019.12.06   ?좎슜??           checkFileExtension(), checkFileMaxSize() 異붽?
+ *  2020.08.05   ?좎슜??           uploadFilesExt Parameter ?섏젙
+ *  2021.02.16   ?좎슜??           WebUtils.getNativeRequest(request,MultipartHttpServletRequest.class);
+ *  2022.11.11   源?쒖?            ?쒗걧?댁퐫??泥섎━
  *
- * @author 공통컴포넌트 개발팀 한성곤
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?쒖꽦怨?
  * @since 2009.08.26
  * @version 1.0
  * @see
  */
 public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 	/**
-	 * 파일을 Upload 처리한다.
+	 * ?뚯씪??Upload 泥섎━?쒕떎.
 	 *
 	 * @param request
 	 * @param where
@@ -47,13 +47,13 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 		List<EgovFormBasedFileVo> list = new ArrayList<>();
 		MultipartHttpServletRequest mptRequest = WebUtils.getNativeRequest(request, MultipartHttpServletRequest.class);
 
-		if (mptRequest != null) {//2022.01 Possible null pointer dereference due to return value of called method 조치
+		if (mptRequest != null) {//2022.01 Possible null pointer dereference due to return value of called method 議곗튂
 			Iterator<?> fileIter = mptRequest.getFileNames();
 
 			while (fileIter.hasNext()) {
 				MultipartFile mFile = mptRequest.getFile((String)fileIter.next());
 
-				// 2022.11.11 김혜준 시큐어코딩 처리
+				// 2022.11.11 源?쒖? ?쒗걧?댁퐫??泥섎━
 				if (mFile == null) {
 					continue;
 				}
@@ -76,7 +76,7 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 					vo.setSize(mFile.getSize());
 
 					if (tmp.lastIndexOf(".") >= 0) {
-						vo.setPhysicalName(vo.getPhysicalName()); // 2012.11 KISA 보안조치
+						vo.setPhysicalName(vo.getPhysicalName()); // 2012.11 KISA 蹂댁븞議곗튂
 					}
 
 					if (mFile.getSize() > 0) {
@@ -101,7 +101,7 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 파일을 Upload(확장명 저장 및 확장자 제한) 처리한다.
+	 * ?뚯씪??Upload(?뺤옣紐????諛??뺤옣???쒗븳) 泥섎━?쒕떎.
 	 *
 	 * @param request
 	 * @param where
@@ -118,7 +118,7 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 			while (fileIter.hasNext()) {
 				MultipartFile mFile = mptRequest.getFile((String)fileIter.next());
 
-				// 2022.11.11 김혜준 시큐어코딩 처리
+				// 2022.11.11 源?쒖? ?쒗걧?댁퐫??泥섎━
 				if (mFile == null) {
 					continue;
 				}
@@ -137,10 +137,10 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 					if (tmp.lastIndexOf(".") > 0) {
 						ext = getFileExtension(tmp).toLowerCase();
 					} else {
-						throw new SecurityException("Unacceptable file extension."); // 허용되지 않는 확장자 처리
+						throw new SecurityException("Unacceptable file extension."); // ?덉슜?섏? ?딅뒗 ?뺤옣??泥섎━
 					}
 					if (extensionWhiteList.indexOf(ext) < 0) {
-						throw new SecurityException("Unacceptable file extension."); // 허용되지 않는 확장자 처리
+						throw new SecurityException("Unacceptable file extension."); // ?덉슜?섏? ?딅뒗 ?뺤옣??泥섎━
 					}
 
 					vo.setFileName(tmp);
@@ -150,7 +150,7 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 					vo.setSize(mFile.getSize());
 
 					if (tmp.lastIndexOf(".") >= 0) {
-						vo.setPhysicalName(vo.getPhysicalName()); // 2012.11 KISA 보안조치
+						vo.setPhysicalName(vo.getPhysicalName()); // 2012.11 KISA 蹂댁븞議곗튂
 					}
 
 					if (mFile.getSize() > 0) {
@@ -175,10 +175,10 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 파일 확장자를 추출한다.
+	 * ?뚯씪 ?뺤옣?먮? 異붿텧?쒕떎.
 	 *
 	 * @param fileNamePath
-	 * @return 확장자 : "" 또는 추출된 확장자
+	 * @return ?뺤옣??: "" ?먮뒗 異붿텧???뺤옣??
 	 */
 	public static String getFileExtension(String fileNamePath) {
 
@@ -191,12 +191,12 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 파일 확장자의 허용유무를 검증한다.
+	 * ?뚯씪 ?뺤옣?먯쓽 ?덉슜?좊Т瑜?寃利앺븳??
 	 *
 	 * @param fileNamePath
 	 * @param whiteListExtensions : ex) .png.pdf.txt
-	 * @return true : 허용
-	 * @return true : 불가
+	 * @return true : ?덉슜
+	 * @return true : 遺덇?
 	 */
 	public static boolean checkFileExtension(String fileNamePath, String whiteListExtensions) {
 		String extension = getFileExtension(fileNamePath);
@@ -213,12 +213,12 @@ public class EgovFileUploadUtil extends EgovFormBasedFileUtil {
 	}
 
 	/**
-	 * 최대 파일 사이즈 허용유무를 검증한다.
+	 * 理쒕? ?뚯씪 ?ъ씠利??덉슜?좊Т瑜?寃利앺븳??
 	 *
 	 * @param multipartFile
 	 * @param maxFileSize : ex) 1048576 = 1M , 1K = 1024
-	 * @return true : 허용
-	 * @return true : 불가
+	 * @return true : ?덉슜
+	 * @return true : 遺덇?
 	 */
 	public static boolean checkFileMaxSize(MultipartFile multipartFile, long maxFileSize) {
 

@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 배치결과 서비스 구현체
+ * 諛곗튂寃곌낵 ?쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor

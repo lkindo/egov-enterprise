@@ -1,0 +1,80 @@
+package egovframework.com.uss.olp.qim.service;
+
+import java.util.List;
+
+import org.egovframe.rte.psl.dataaccess.util.EgovMap;
+
+import egovframework.com.cmm.ComDefaultVO;
+/**
+ * ???????? ??? Service Class ?
+ * @author ?????????
+ * @since 2009.03.20
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << ?????Modification Information) >>
+ *
+ *   ????     ????          ????
+ *  -------    --------    ---------------------------
+ *   2009.03.20  ???         ????
+ *
+ * </pre>
+ **/
+public interface EgovQustnrItemManageService {
+
+    /**
+	 * ?????????? ?????.
+	 * @param qustnrItemManageVO - ??????? ??? VO
+	 * @return List
+	 * @throws Exception
+	 **/
+	public List<EgovMap> selectQustnrTmplatManageList(QustnrItemManageVO qustnrItemManageVO) throws Exception;
+
+    /**
+	 * ???????????.
+	 * @param searchVO - ???? ?? VO
+	 * @return List
+	 * @throws Exception
+	 **/
+	public List<EgovMap> selectQustnrItemManageList(ComDefaultVO searchVO) throws Exception;
+
+    /**
+	 * ???????? ?????.
+	 * @param qustnrItemManageVO - ??????? ??? VO
+	 * @return List
+	 * @throws Exception
+	 **/
+	public List<EgovMap> selectQustnrItemManageDetail(QustnrItemManageVO qustnrItemManageVO) throws Exception;
+
+    /**
+	 * ???????? ?? ???? ???.
+	 * @param searchVO - ???? ?? VO
+	 * @return int
+	 * @throws Exception
+	 **/
+	public int selectQustnrItemManageListCnt(ComDefaultVO searchVO) throws Exception;
+
+    /**
+	 * ???????? ???.
+	 * @param qustnrItemManageVO - ??????? ??? VO
+	 * @throws Exception
+	 **/
+	void  insertQustnrItemManage(QustnrItemManageVO qustnrItemManageVO) throws Exception;
+
+    /**
+	 * ???????? ????.
+	 * @param qustnrItemManageVO - ??????? ??? VO
+	 * @throws Exception
+	 **/
+	void  updateQustnrItemManage(QustnrItemManageVO qustnrItemManageVO) throws Exception;
+
+    /**
+	 * ???????? ?????.
+	 * @param qustnrItemManageVO - ??????? ??? VO
+	 * @throws Exception
+	 **/
+	void  deleteQustnrItemManage(QustnrItemManageVO qustnrItemManageVO) throws Exception;
+
+
+}

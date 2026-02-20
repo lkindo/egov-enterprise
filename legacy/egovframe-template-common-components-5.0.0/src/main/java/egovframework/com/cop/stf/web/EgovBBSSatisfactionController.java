@@ -22,18 +22,18 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 만족도 서비스 컨트롤러 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 留뚯”???쒕퉬??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.29
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.29  한성곤          최초 생성
+ *   2009.06.29  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All right reserved.
  * </pre>
@@ -53,7 +53,7 @@ public class EgovBBSSatisfactionController {
     //Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 만족도조사 목록 조회를 제공한다.
+     * 留뚯”?꾩“??紐⑸줉 議고쉶瑜??쒓났?쒕떎.
      *
      * @param boardVO
      * @param model
@@ -63,20 +63,20 @@ public class EgovBBSSatisfactionController {
     @RequestMapping("/cop/stf/selectSatisfactionList.do")
     public String selectSatisfactionList(@ModelAttribute("searchVO") SatisfactionVO satisfactionVO, ModelMap model) throws Exception {
 
-	// 수정 처리된 후 만족도조사 등록 화면으로 처리되기 위한 구현
+	// ?섏젙 泥섎━????留뚯”?꾩“???깅줉 ?붾㈃?쇰줈 泥섎━?섍린 ?꾪븳 援ы쁽
 	if (satisfactionVO.isModified()) {
 	    satisfactionVO.setStsfdgNo("");
 	    satisfactionVO.setStsfdgCn("");
 	    satisfactionVO.setStsfdg(0);
 	}
 
-	// 수정을 위한 처리
+	// ?섏젙???꾪븳 泥섎━
 	if (!satisfactionVO.getStsfdgNo().equals("")) {
 	    return "forward:/cop/stf/selectSingleSatisfaction.do";
 	}
 
 	//------------------------------------------
-	// JSP의 <head> 부분 처리 (javascript 생성)
+	// JSP??<head> 遺遺?泥섎━ (javascript ?앹꽦)
 	//------------------------------------------
 	model.addAttribute("type", satisfactionVO.getType());	// head or body
 
@@ -113,14 +113,14 @@ public class EgovBBSSatisfactionController {
 	model.addAttribute("summary", map.get("summary"));
 	model.addAttribute("paginationInfo", paginationInfo);
 
-	satisfactionVO.setStsfdgCn("");	// 등록 후 만족도 내용 처리
-	satisfactionVO.setStsfdg(0);	// 등록 후 만족도 처리
+	satisfactionVO.setStsfdgCn("");	// ?깅줉 ??留뚯”???댁슜 泥섎━
+	satisfactionVO.setStsfdg(0);	// ?깅줉 ??留뚯”??泥섎━
 
 	return "egovframework/com/cop/stf/EgovSatisfactionList";
     }
 
     /**
-     * 익명용 만족도조사 목록 조회를 제공한다.
+     * ?듬챸??留뚯”?꾩“??紐⑸줉 議고쉶瑜??쒓났?쒕떎.
      *
      * @param boardVO
      * @param model
@@ -130,7 +130,7 @@ public class EgovBBSSatisfactionController {
     @RequestMapping("/cop/stf/anonymous/selectSatisfactionList.do")
     public String selectAnonymousSatisfactionList(@ModelAttribute("searchVO") SatisfactionVO satisfactionVO, ModelMap model) throws Exception {
 
-	// 수정 처리된 후 만족도조사 등록 화면으로 처리되기 위한 구현
+	// ?섏젙 泥섎━????留뚯”?꾩“???깅줉 ?붾㈃?쇰줈 泥섎━?섍린 ?꾪븳 援ы쁽
 	if (satisfactionVO.isModified()) {
 	    satisfactionVO.setStsfdgNo("");
 	    satisfactionVO.setStsfdgCn("");
@@ -138,13 +138,13 @@ public class EgovBBSSatisfactionController {
 	    satisfactionVO.setWrterNm("");
 	}
 
-	// 수정을 위한 처리
+	// ?섏젙???꾪븳 泥섎━
 	if (!satisfactionVO.getStsfdgNo().equals("")) {
 	    return "forward:/cop/stf/anonymous/selectSingleSatisfaction.do";
 	}
 
 	//------------------------------------------
-	// JSP의 <head> 부분 처리 (javascript 생성)
+	// JSP??<head> 遺遺?泥섎━ (javascript ?앹꽦)
 	//------------------------------------------
 	model.addAttribute("type", satisfactionVO.getType());	// head or body
 
@@ -178,14 +178,14 @@ public class EgovBBSSatisfactionController {
 	model.addAttribute("paginationInfo", paginationInfo);
 
 	satisfactionVO.setWrterNm("");
-	satisfactionVO.setStsfdgCn("");	// 등록 후 만족도 내용 처리
-	satisfactionVO.setStsfdg(0);	// 등록 후 만족도 처리
+	satisfactionVO.setStsfdgCn("");	// ?깅줉 ??留뚯”???댁슜 泥섎━
+	satisfactionVO.setStsfdg(0);	// ?깅줉 ??留뚯”??泥섎━
 
 	return "egovframework/com/cop/stf/EgovSatisfactionList";
     }
 
     /**
-     * 만족도조사를 등록한다.
+     * 留뚯”?꾩“?щ? ?깅줉?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -202,7 +202,7 @@ public class EgovBBSSatisfactionController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "작성자 및 만족도는 필수 입력값입니다.");
+		    model.addAttribute("msg", "?묒꽦??諛?留뚯”?꾨뒗 ?꾩닔 ?낅젰媛믪엯?덈떎.");
 
 		    return "forward:/cop/bbs/selectBoardArticle.do";
 		}
@@ -224,7 +224,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 익명 만족도조사를 등록한다.
+     * ?듬챸 留뚯”?꾩“?щ? ?깅줉?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -238,7 +238,7 @@ public class EgovBBSSatisfactionController {
 	    BindingResult bindingResult, ModelMap model) throws Exception {
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "작성자 및 만족도는 필수 입력값입니다.");
+		    model.addAttribute("msg", "?묒꽦??諛?留뚯”?꾨뒗 ?꾩닔 ?낅젰媛믪엯?덈떎.");
 
 		    return "forward:/cop/stf/anonymous/selectBoardArticle.do";
 		}
@@ -258,7 +258,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 만족도조사를 삭제한다.
+     * 留뚯”?꾩“?щ? ??젣?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -284,7 +284,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 익명 만족도조사를 삭제한다.
+     * ?듬챸 留뚯”?꾩“?щ? ??젣?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -296,7 +296,7 @@ public class EgovBBSSatisfactionController {
     public String deleteAnonymousSatisfaction(@ModelAttribute("searchVO") SatisfactionVO satisfactionVO, @ModelAttribute("satisfaction") Satisfaction satisfaction, ModelMap model) throws Exception {
 
 	//-------------------------------
-	// 패스워드 비교
+	// ?⑥뒪?뚮뱶 鍮꾧탳
 	//-------------------------------
 	String dbpassword = bbsSatisfactionService.getSatisfactionPassword(satisfactionVO);
 	String enpassword = EgovFileScrty.encryptPassword(satisfactionVO.getConfirmPassword(), satisfaction.getStsfdgNo());
@@ -320,7 +320,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 만족도조사 수정 페이지로 이동한다.
+     * 留뚯”?꾩“???섏젙 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param satisfactionVO
      * @param model
@@ -331,7 +331,7 @@ public class EgovBBSSatisfactionController {
     public String selectSingleSatisfaction(@ModelAttribute("searchVO") SatisfactionVO satisfactionVO, ModelMap model) throws Exception {
 
 	//------------------------------------------
-	// JSP의 <head> 부분 처리 (javascript 생성)
+	// JSP??<head> 遺遺?泥섎━ (javascript ?앹꽦)
 	//------------------------------------------
 	model.addAttribute("type", satisfactionVO.getType());	// head or body
 
@@ -384,7 +384,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 익명 만족도조사 수정 페이지로 이동한다.
+     * ?듬챸 留뚯”?꾩“???섏젙 ?섏씠吏濡??대룞?쒕떎.
      *
      * @param satisfactionVO
      * @param model
@@ -395,7 +395,7 @@ public class EgovBBSSatisfactionController {
     public String selectAnonymousSingleSatisfaction(@ModelAttribute("searchVO") SatisfactionVO satisfactionVO, ModelMap model) throws Exception {
 
 	//------------------------------------------
-	// JSP의 <head> 부분 처리 (javascript 생성)
+	// JSP??<head> 遺遺?泥섎━ (javascript ?앹꽦)
 	//------------------------------------------
 	model.addAttribute("type", satisfactionVO.getType());	// head or body
 
@@ -429,7 +429,7 @@ public class EgovBBSSatisfactionController {
 	model.addAttribute("paginationInfo", paginationInfo);
 
 	//-------------------------------
-	// 패스워드 비교
+	// ?⑥뒪?뚮뱶 鍮꾧탳
 	//-------------------------------
 	String dbpassword = bbsSatisfactionService.getSatisfactionPassword(satisfactionVO);
 	String enpassword = EgovFileScrty.encryptPassword(satisfactionVO.getConfirmPassword(), satisfactionVO.getStsfdgNo());
@@ -465,7 +465,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 만족도조사를 수정한다.
+     * 留뚯”?꾩“?щ? ?섏젙?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -482,7 +482,7 @@ public class EgovBBSSatisfactionController {
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "작성자 및 만족도는 필수 입력값입니다.");
+		    model.addAttribute("msg", "?묒꽦??諛?留뚯”?꾨뒗 ?꾩닔 ?낅젰媛믪엯?덈떎.");
 
 		    return "forward:/cop/bbs/selectArticleDetail.do";
 		}
@@ -503,7 +503,7 @@ public class EgovBBSSatisfactionController {
     }
 
     /**
-     * 익명 만족도조사를 수정한다.
+     * ?듬챸 留뚯”?꾩“?щ? ?섏젙?쒕떎.
      *
      * @param satisfactionVO
      * @param satisfaction
@@ -517,7 +517,7 @@ public class EgovBBSSatisfactionController {
 	    BindingResult bindingResult, ModelMap model) throws Exception {
 
 		if (bindingResult.hasErrors()) {
-		    model.addAttribute("msg", "작성자 및 만족도는 필수 입력값입니다.");
+		    model.addAttribute("msg", "?묒꽦??諛?留뚯”?꾨뒗 ?꾩닔 ?낅젰媛믪엯?덈떎.");
 
 		    return "forward:/cop/bbs/anonymous/selectBoardArticle.do";
 		}

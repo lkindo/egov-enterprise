@@ -6,94 +6,94 @@ import java.util.List;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 배치스케줄관리에 대한 model 클래스
+ * 諛곗튂?ㅼ?以꾧?由ъ뿉 ???model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.17
  * @version 1.0
- * @updated 17-6-2010 오전 10:27:13
+ * @updated 17-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.17   김진만     최초 생성
+ *  2010.06.17   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @SuppressWarnings("serial")
 public class BatchSchdul extends ComDefaultVO implements Serializable {
 
 	/**
-	 * 배치스케줄ID
+	 * 諛곗튂?ㅼ?以껱D
 	 */
 	private String batchSchdulId;
 
 	/**
-	 * 배치작업ID
+	 * 諛곗튂?묒뾽ID
 	 */
 	private String batchOpertId;
 
 	/**
-	 * 실행주기
+	 * ?ㅽ뻾二쇨린
 	 */
 	private String executCycle;
 	/**
-	 * 실행스케줄일자
+	 * ?ㅽ뻾?ㅼ?以꾩씪??
 	 */
 	private String executSchdulDe;
 	/**
-	 * 실행스케줄시
+	 * ?ㅽ뻾?ㅼ?以꾩떆
 	 */
 	private String executSchdulHour;
 	/**
-	 * 실행스케줄분
+	 * ?ㅽ뻾?ㅼ?以꾨텇
 	 */
 	private String executSchdulMnt;
 	/**
-	 * 실행스케줄초
+	 * ?ㅽ뻾?ㅼ?以꾩큹
 	 */
 	private String executSchdulSecnd;
 	/**
-	 * 실행스케줄요일
+	 * ?ㅽ뻾?ㅼ?以꾩슂??
 	 */
 	private String[] executSchdulDfkSes;
 
 	/**
-	 * 최종수정자 아이디
+	 * 理쒖쥌?섏젙???꾩씠??
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최초등록자 아이디
+	 * 理쒖큹?깅줉???꾩씠??
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 
 	/**
-	 * 배치작업명
+	 * 諛곗튂?묒뾽紐?
 	 */
 	private String batchOpertNm;
 	/**
-	 * 배치프로그램
+	 * 諛곗튂?꾨줈洹몃옩
 	 */
 	private String batchProgrm;
 	/**
-	 * 파라미터
+	 * ?뚮씪誘명꽣
 	 */
 	private String paramtr;
 	/**
-	 * 실행주기명
+	 * ?ㅽ뻾二쇨린紐?
 	 */
 	private String executCycleNm;
 	/**
-	 * 실행스케줄
+	 * ?ㅽ뻾?ㅼ?以?
 	 */
 	private String executSchdul;
 
@@ -335,42 +335,42 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * 리스트, 상세화면 화면표시용 실행스케줄속성을 만들어 executSchdul 필드에 저장한다.
+	 * 由ъ뒪?? ?곸꽭?붾㈃ ?붾㈃?쒖떆???ㅽ뻾?ㅼ?以꾩냽?깆쓣 留뚮뱾??executSchdul ?꾨뱶????ν븳??
 	 *
-	 * @param dfkSeList List<BatchSchdulDfk>형의 요일구분코드정보리스트
+	 * @param dfkSeList List<BatchSchdulDfk>?뺤쓽 ?붿씪援щ텇肄붾뱶?뺣낫由ъ뒪??
 	 */
 	public void makeExecutSchdul(List<BatchSchdulDfk> dfkSeList) {
 		String executSchdul = "";
 		String executSchdulDeNm = "";
 
-		// 날짜 출력
+		// ?좎쭨 異쒕젰
 		if (this.executCycle.equals("02") || this.executCycle.equals("01")) {
-			// 매주, 매일인 경우는 스케줄일자를 사용하지 않는다.
+			// 留ㅼ＜, 留ㅼ씪??寃쎌슦???ㅼ?以꾩씪?먮? ?ъ슜?섏? ?딅뒗??
 			executSchdulDeNm = "";
 		} else if (this.executCycle.equals("03")) {
-			// 매월 처리
+			// 留ㅼ썡 泥섎━
 			if (!"".equals(this.executSchdulDe)) {
-				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(6, 8) + "일 ";
+				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(6, 8) + "??";
 			}
 		} else if (this.executCycle.equals("04")) {
-			// 매년의경우 처리
+			// 留ㅻ뀈?섍꼍??泥섎━
 			if (!"".equals(this.executSchdulDe)) {
 				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(4, 6) + "-" + this.executSchdulDe.substring(6, 8) + " ";
 			}
 		} else {
-			// 이외의경우 처리
+			// ?댁쇅?섍꼍??泥섎━
 			if (!"".equals(this.executSchdulDe)) {
 				executSchdulDeNm = executSchdulDeNm + this.executSchdulDe.substring(0, 4) + "-" + this.executSchdulDe.substring(4, 6) + "-" + this.executSchdulDe.substring(6, 8)
 						+ " ";
 			}
 		}
 
-		// 날짜 출력
+		// ?좎쭨 異쒕젰
 		executSchdul = executSchdul + executSchdulDeNm;
 
-		// 요일출력
+		// ?붿씪異쒕젰
 		if (this.executCycle.equals("02")) {
-			// 실행주기가 매주인 경우에만 출력한다.
+			// ?ㅽ뻾二쇨린媛 留ㅼ＜??寃쎌슦?먮쭔 異쒕젰?쒕떎.
 			if (dfkSeList.size() != 0) {
 				for (int i = 0; i < dfkSeList.size(); i++) {
 					if (i != 0) {
@@ -382,54 +382,54 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 			}
 		}
 
-		// 시, 분, 초 출력
-		// 시분초는 항상출력한다.
+		// ?? 遺? 珥?異쒕젰
+		// ?쒕텇珥덈뒗 ??긽異쒕젰?쒕떎.
 		executSchdul = executSchdul + this.executSchdulHour + ":" + this.executSchdulMnt + ":" + this.executSchdulSecnd;
 
-		// 값지정.
+		// 媛믪???
 		this.executSchdul = executSchdul;
 
 	}
 
 	/**
-	 * 실행스케줄을 CronExpression으로 바꿔서 리턴한다.
+	 * ?ㅽ뻾?ㅼ?以꾩쓣 CronExpression?쇰줈 諛붽퓭??由ы꽩?쒕떎.
 	 **/
 	public String toCronExpression() {
 		String cronExpression = "";
 
-		// 초변환
+		// 珥덈???
 		cronExpression = cronExpression + this.executSchdulSecnd;
 
-		// 분변환
+		// 遺꾨???
 		cronExpression = cronExpression + " " + this.executSchdulMnt;
 
-		// 시변환
+		// ?쒕???
 		cronExpression = cronExpression + " " + this.executSchdulHour;
 
-		// 일변환
+		// ?쇰???
 		if (this.executCycle.equals("01")) {
-			// 매일인경우 "*" 출력
+			// 留ㅼ씪?멸꼍??"*" 異쒕젰
 			cronExpression = cronExpression + " " + "*";
 		} else if (this.executCycle.equals("02")) {
-			// 매주인 경우 "?" 출력
+			// 留ㅼ＜??寃쎌슦 "?" 異쒕젰
 			cronExpression = cronExpression + " " + "?";
 		} else {
-			// 이외의 경우 그대로 출력
+			// ?댁쇅??寃쎌슦 洹몃?濡?異쒕젰
 			cronExpression = cronExpression + " " + this.executSchdulDe.substring(6, 8);
 		}
 
-		// 월변환
+		// ?붾???
 		if (this.executCycle.equals("01") || this.executCycle.equals("02") || this.executCycle.equals("03")) {
-			// 매일,매월,매주인경우 "*" 출력
+			// 留ㅼ씪,留ㅼ썡,留ㅼ＜?멸꼍??"*" 異쒕젰
 			cronExpression = cronExpression + " " + "*";
 		} else {
-			// 이외의 경우 그대로 출력
+			// ?댁쇅??寃쎌슦 洹몃?濡?異쒕젰
 			cronExpression = cronExpression + " " + this.executSchdulDe.substring(4, 6);
 		}
 
-		// 주 변환
+		// 二?蹂??
 		if (this.executCycle.equals("02")) {
-			// 매주인경우 day of week를  출력
+			// 留ㅼ＜?멸꼍??day of week瑜? 異쒕젰
 			String dayOfWeek = "";
 			for (int i = 0; i < this.executSchdulDfkSes.length; i++) {
 				if (i != 0) {
@@ -439,13 +439,13 @@ public class BatchSchdul extends ComDefaultVO implements Serializable {
 			}
 			cronExpression = cronExpression + " " + dayOfWeek;
 		} else {
-			// 이외의 경우 "?" 출력
+			// ?댁쇅??寃쎌슦 "?" 異쒕젰
 			cronExpression = cronExpression + " " + "?";
 		}
 
-		// 년변환
+		// ?꾨???
 		if (this.executCycle.equals("05")) {
-			// 한번만인경우 연도 출력
+			// ?쒕쾲留뚯씤寃쎌슦 ?곕룄 異쒕젰
 			cronExpression = cronExpression + " " + this.executSchdulDe.substring(0, 4);
 		}
 		return cronExpression;

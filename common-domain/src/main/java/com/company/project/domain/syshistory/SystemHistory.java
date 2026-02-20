@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 시스템 이력 관리 JPA Entity
- * 레거시 테이블: COMTNSYSHISTORY
+ * ??뽯뮞???????온??JPA Entity
+ * ??뉕탢?????뵠?? COMTNSYSHISTORY
  */
 @Entity
 @Table(name = "NSYSHISTORY")
@@ -59,7 +59,7 @@ public class SystemHistory {
     }
 
     /**
-     * 시스템 이력 수정
+     * ??뽯뮞????????륁젟
      */
     public void update(String sysNm, String histSeCode, String histCn,
             String atchFileId, String updusrId) {

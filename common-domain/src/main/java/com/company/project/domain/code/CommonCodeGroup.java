@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * 공통 코드 그룹 엔티티 (CCMMNCODE 테이블 매핑)
+ * ?⑤벏???꾨뗀諭?域밸챶竊??酉???(CCMMNCODE ???뵠??筌띲끋釉?
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

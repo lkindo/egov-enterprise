@@ -5,80 +5,80 @@ import java.util.Map;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 /**
- * 지식정보제공/지식정보요청를 처리하는 Service Class 구현
- * @author 공통서비스 장동한
+ * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?? 泥섎━?섎뒗 Service Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.08.30
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  장동한          최초 생성
+ *   2010.08.30  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovRequestOfferService {
 
     /**
-     * 삭제시 하위 답변 건수를 조회한다.
-     * @param RequestOfferVO  조회할 정보가 담긴 객체
+     * ??젣???섏쐞 ?듬? 嫄댁닔瑜?議고쉶?쒕떎.
+     * @param RequestOfferVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return int
      * @throws Exception
      */
     public int selectRequestOfferDelCnt(Map<?, ?> map) throws Exception;
 
 	/**
-	 * 등록된 지식전문가 건수를 조회한다.
-	 * @param map  조회할 정보가 담긴 객체
+	 * ?깅줉??吏?앹쟾臾멸? 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param map  議고쉶???뺣낫媛 ?닿릿 媛앹껜
 	 * @return List
 	 * @throws Exception
 	 */
 	public boolean selectRequestOfferSpeCheck(Map<?, ?> map) throws Exception;
 
     /**
-	 * 지식정보제공/지식정보요청 목록을 조회한다.
-	 * @param searchVO  조회할 정보가 담긴 객체
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥?紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
 	 * @return List
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectRequestOfferList(RequestOfferVO requestOfferVO) throws Exception;
 
     /**
-     * 지식정보제공/지식정보요청를(을) 목록 전체 건수를(을) 조회한다.
-     * @param searchVO  조회할 정보가 담긴 객체
+     * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param searchVO  議고쉶???뺣낫媛 ?닿릿 媛앹껜
      * @return int
      * @throws Exception
      */
     public int selectRequestOfferListCnt(RequestOfferVO requestOfferVO) throws Exception;
 
      /**
-	 * 지식정보제공/지식정보요청를(을) 상세조회 한다.
-	 * @param requestOfferVO  지식정보제공/지식정보요청 정보 담김 객체
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫 ?닿? 媛앹껜
 	 * @return List
 	 * @throws Exception
 	 */
 	public RequestOfferVO selectRequestOfferDetail(RequestOfferVO requestOfferVO) throws Exception;
 
      /**
-	 * 지식정보제공/지식정보요청를(을) 등록한다.
-	 * @param requestOfferVO  지식정보제공/지식정보요청 정보 담김 객체
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?깅줉?쒕떎.
+	 * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	void  insertRequestOffer(RequestOfferVO requestOfferVO) throws Exception;
 
      /**
-	 * 지식정보제공/지식정보요청를(을) 수정한다.
-	 * @param requestOfferVO  지식정보제공/지식정보요청 정보 담김 객체
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ?섏젙?쒕떎.
+	 * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	void  updateRequestOffer(RequestOfferVO requestOfferVO) throws Exception;
 
 	/**
-	 * 지식정보제공/지식정보요청를(을) 삭제한다.
-	 * @param requestOfferVO  지식정보제공/지식정보요청 정보 담김 VO
+	 * 吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??(?? ??젣?쒕떎.
+	 * @param requestOfferVO  吏?앹젙蹂댁젣怨?吏?앹젙蹂댁슂泥??뺣낫 ?닿? VO
 	 * @throws Exception
 	 */
 	void  deleteRequestOffer(RequestOfferVO requestOfferVO) throws Exception;

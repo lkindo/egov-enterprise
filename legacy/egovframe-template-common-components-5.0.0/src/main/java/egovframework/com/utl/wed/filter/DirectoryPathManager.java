@@ -30,21 +30,21 @@ import egovframework.com.cmm.EgovWebUtil;
 import egovframework.com.cmm.service.EgovProperties;
 
 /**
- *  이미지 저장 처리 클래스
+ *  ?대?吏 ???泥섎━ ?대옒??
  * @author guavatak
  * @since 2014.12.04
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일        수정자       수정내용
+ *  ?섏젙??       ?섏젙??      ?섏젙?댁슜
  *  ----------  --------    ---------------------------
- *  2014.12.04  표준프레임워크  최초 적용 (패키지 변경 및 소스 정리)
- *  2018.12.28  신용호        getDirectoryPathByDateType() Month의 범위를 1~12가 되도록 수정
- *  2022.11.16  신용호        보안코드 점검 및 수정
- * 	2025.08.30  송하영        2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessarySemicolon(불필요한 괄호사용)
+ *  2014.12.04  ?쒖??꾨젅?꾩썙?? 理쒖큹 ?곸슜 (?⑦궎吏 蹂寃?諛??뚯뒪 ?뺣━)
+ *  2018.12.28  ?좎슜??       getDirectoryPathByDateType() Month??踰붿쐞瑜?1~12媛 ?섎룄濡??섏젙
+ *  2022.11.16  ?좎슜??       蹂댁븞肄붾뱶 ?먭? 諛??섏젙
+ * 	2025.08.30  ?≫븯??       2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessarySemicolon(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  * </pre>
  */
 public class DirectoryPathManager {
@@ -77,13 +77,13 @@ public class DirectoryPathManager {
 	}
 
 	/**
-	 * 주어진 기본 디렉터리, 하위 디렉터리 및 원래 파일 이름에 대한 고유한 파일 이름을 생성합니다.
-	 * 이 메서드는 주어진 이름을 가진 파일이 이미 존재하는 경우 파일의 기본 이름에 순차 번호를 추가하여 새 이름이 생성되도록 보장합니다.
+	 * 二쇱뼱吏?湲곕낯 ?붾젆?곕━, ?섏쐞 ?붾젆?곕━ 諛??먮옒 ?뚯씪 ?대쫫?????怨좎쑀???뚯씪 ?대쫫???앹꽦?⑸땲??
+	 * ??硫붿꽌?쒕뒗 二쇱뼱吏??대쫫??媛吏??뚯씪???대? 議댁옱?섎뒗 寃쎌슦 ?뚯씪??湲곕낯 ?대쫫???쒖감 踰덊샇瑜?異붽??섏뿬 ???대쫫???앹꽦?섎룄濡?蹂댁옣?⑸땲??
 	 *
-	 * @param imageBaseDir 파일이 저장될 예정인 기본 디렉터리.
-	 * @param subDir 기본 디렉터리 아래의 하위 디렉터리.
-	 * @param fileName 파일의 원래 이름.
-	 * @return 고유한 파일 경로를 가리키는 File 객체. 주어진 이름의 파일이 이미 존재하면, 기본 이름에 숫자를 추가하여 고유한 파일 이름이 생성됩니다.
+	 * @param imageBaseDir ?뚯씪????λ맆 ?덉젙??湲곕낯 ?붾젆?곕━.
+	 * @param subDir 湲곕낯 ?붾젆?곕━ ?꾨옒???섏쐞 ?붾젆?곕━.
+	 * @param fileName ?뚯씪???먮옒 ?대쫫.
+	 * @return 怨좎쑀???뚯씪 寃쎈줈瑜?媛由ы궎??File 媛앹껜. 二쇱뼱吏??대쫫???뚯씪???대? 議댁옱?섎㈃, 湲곕낯 ?대쫫???レ옄瑜?異붽??섏뿬 怨좎쑀???뚯씪 ?대쫫???앹꽦?⑸땲??
 	 */
 	public static File getUniqueFile(String imageBaseDir, String subDir, String fileName) {
 

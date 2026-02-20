@@ -5,16 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * 전자정부프레임워크 레거시 SHA-256 암호화 지원을 위한 PasswordEncoder
- * matches() 호출 시 salt(사용자ID) 정보가 필요함에 유의.
+ * ?袁⑹쁽?類??袁⑥쟿?袁⑹뜖????뉕탢??SHA-256 ?酉???筌왖?癒?뱽 ?袁る립 PasswordEncoder
+ * matches() ?紐꾪뀱 ??salt(????瑜짣) ?類ｋ궖揶쎛 ?袁⑹뒄??λ퓠 ?醫롮벥.
  */
 @Slf4j
 public class EgovPasswordEncoder implements PasswordEncoder {
 
     @Override
     public String encode(CharSequence rawPassword) {
-        // 이 인코더는 salt(id) 없이 단독으로 encode할 수 없음.
-        // 일반적으로 신규 암호화는 bcrypt를 사용하도록 유도.
+        // ???紐꾪맜?遺얜뮉 salt(id) ??곸뵠 ??ㅻ즴??곗쨮 encode??????곸벉.
+        // ??곗뺘?怨몄몵嚥??醫됲뇣 ?酉??遺얜뮉 bcrypt???????롫즲嚥??醫딅즲.
         throw new UnsupportedOperationException(
                 "EgovPasswordEncoder requires user ID as salt for encoding. Use BCrypt for new passwords.");
     }
@@ -30,8 +30,8 @@ public class EgovPasswordEncoder implements PasswordEncoder {
 
     @Override
     public boolean matches(CharSequence rawPassword, String encodedPassword) {
-        // salt 정보 없이는 matches 수행 불가.
-        // AuthenticationProvider 단에서 matches(raw, encoded, salt)를 호출해야 함.
+        // salt ?類ｋ궖 ??곸뵠??matches ??묐뻬 ?븍뜃?.
+        // AuthenticationProvider ??λ퓠??matches(raw, encoded, salt)???紐꾪뀱??곷튊 ??
         log.warn("Direct call to EgovPasswordEncoder.matches() without salt is not supported.");
         return false;
     }

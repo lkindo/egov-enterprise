@@ -1,250 +1,250 @@
 package egovframework.com.utl.sys.nsm.service;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링 로그에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링 로그의 목록 항목, 조회조건 등을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 濡쒓렇??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 @SuppressWarnings("serial")
 public class NtwrkSvcMntrngLogVO extends NtwrkSvcMntrngLog {
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCnd = "";
 
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
 
-    /** 시작일자 조회조건 */
+    /** ?쒖옉?쇱옄 議고쉶議곌굔 */
     private String searchBgnDe = "";
 
-    /** 시작시간 조회조건 */
+    /** ?쒖옉?쒓컙 議고쉶議곌굔 */
     private String searchBgnHour = "";
 
-    /** 시작일시 조회조건 */
+    /** ?쒖옉?쇱떆 議고쉶議곌굔 */
     private String searchBgnDt = "";
 
-    /** 종료일자 조회조건 */
+    /** 醫낅즺?쇱옄 議고쉶議곌굔 */
     private String searchEndDe = "";
 
-    /** 종료시간 조회조건 */
+    /** 醫낅즺?쒓컙 議고쉶議곌굔 */
     private String searchEndHour = "";
 
-    /** 종료일시 조회조건 */
+    /** 醫낅즺?쇱떆 議고쉶議곌굔 */
     private String searchEndDt = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 	/**
-	 * 검색 조건을 반환합니다.
+	 * 寃??議곌굔??諛섑솚?⑸땲??
 	 */
 	public String getSearchCnd() {
 		return searchCnd;
 	}
 
 	/**
-	 * 검색 조건을 설정합니다.
+	 * 寃??議곌굔???ㅼ젙?⑸땲??
 	 */
 	public void setSearchCnd(String searchCnd) {
 		this.searchCnd = searchCnd;
 	}
 
 	/**
-	 * 검색어를 반환합니다.
+	 * 寃?됱뼱瑜?諛섑솚?⑸땲??
 	 */
 	public String getSearchWrd() {
 		return searchWrd;
 	}
 
 	/**
-	 * 검색어를 설정합니다.
+	 * 寃?됱뼱瑜??ㅼ젙?⑸땲??
 	 */
 	public void setSearchWrd(String searchWrd) {
 		this.searchWrd = searchWrd;
 	}
 
 	/**
-	 * 검색 시작일을 반환합니다.
+	 * 寃???쒖옉?쇱쓣 諛섑솚?⑸땲??
 	 */
 	public String getSearchBgnDe() {
 		return searchBgnDe;
 	}
 
 	/**
-	 * 검색 시작일을 설정합니다.
+	 * 寃???쒖옉?쇱쓣 ?ㅼ젙?⑸땲??
 	 */
 	public void setSearchBgnDe(String searchBgnDe) {
 		this.searchBgnDe = searchBgnDe;
 	}
 
 	/**
-	 * 검색 시작 시간을 반환합니다.
+	 * 寃???쒖옉 ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getSearchBgnHour() {
 		return searchBgnHour;
 	}
 
 	/**
-	 * 검색 시작 시간을 설정합니다.
+	 * 寃???쒖옉 ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setSearchBgnHour(String searchBgnHour) {
 		this.searchBgnHour = searchBgnHour;
 	}
 
 	/**
-	 * 검색 시작 날짜와 시간을 반환합니다.
+	 * 寃???쒖옉 ?좎쭨? ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getSearchBgnDt() {
 		return searchBgnDt;
 	}
 
 	/**
-	 * 검색 시작 날짜와 시간을 설정합니다.
+	 * 寃???쒖옉 ?좎쭨? ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setSearchBgnDt(String searchBgnDt) {
 		this.searchBgnDt = searchBgnDt;
 	}
 
 	/**
-	 * 검색 종료일을 반환합니다.
+	 * 寃??醫낅즺?쇱쓣 諛섑솚?⑸땲??
 	 */
 	public String getSearchEndDe() {
 		return searchEndDe;
 	}
 
 	/**
-	 * 검색 종료일을 설정합니다.
+	 * 寃??醫낅즺?쇱쓣 ?ㅼ젙?⑸땲??
 	 */
 	public void setSearchEndDe(String searchEndDe) {
 		this.searchEndDe = searchEndDe;
 	}
 
 	/**
-	 * 검색 종료 시간을 반환합니다.
+	 * 寃??醫낅즺 ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getSearchEndHour() {
 		return searchEndHour;
 	}
 
 	/**
-	 * 검색 종료 시간을 설정합니다.
+	 * 寃??醫낅즺 ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setSearchEndHour(String searchEndHour) {
 		this.searchEndHour = searchEndHour;
 	}
 
 	/**
-	 * 검색 종료 날짜와 시간을 반환합니다.
+	 * 寃??醫낅즺 ?좎쭨? ?쒓컙??諛섑솚?⑸땲??
 	 */
 	public String getSearchEndDt() {
 		return searchEndDt;
 	}
 
 	/**
-	 * 검색 종료 날짜와 시간을 설정합니다.
+	 * 寃??醫낅즺 ?좎쭨? ?쒓컙???ㅼ젙?⑸땲??
 	 */
 	public void setSearchEndDt(String searchEndDt) {
 		this.searchEndDt = searchEndDt;
 	}
 
 	/**
-	 * 현재 페이지 인덱스를 반환합니다.
+	 * ?꾩옱 ?섏씠吏 ?몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 */
 	public int getPageIndex() {
 		return pageIndex;
 	}
 
 	/**
-	 * 현재 페이지 인덱스를 설정합니다.
+	 * ?꾩옱 ?섏씠吏 ?몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 */
 	public void setPageIndex(int pageIndex) {
 		this.pageIndex = pageIndex;
 	}
 
 	/**
-	 * 페이지 당 보여질 항목의 수를 반환합니다.
+	 * ?섏씠吏 ??蹂댁뿬吏???ぉ???섎? 諛섑솚?⑸땲??
 	 */
 	public int getPageUnit() {
 		return pageUnit;
 	}
 
 	/**
-	 * 페이지 당 보여질 항목의 수를 설정합니다.
+	 * ?섏씠吏 ??蹂댁뿬吏???ぉ???섎? ?ㅼ젙?⑸땲??
 	 */
 	public void setPageUnit(int pageUnit) {
 		this.pageUnit = pageUnit;
 	}
 
 	/**
-	 * 페이지 크기를 반환합니다.
+	 * ?섏씠吏 ?ш린瑜?諛섑솚?⑸땲??
 	 */
 	public int getPageSize() {
 		return pageSize;
 	}
 
 	/**
-	 * 페이지 크기를 설정합니다.
+	 * ?섏씠吏 ?ш린瑜??ㅼ젙?⑸땲??
 	 */
 	public void setPageSize(int pageSize) {
 		this.pageSize = pageSize;
 	}
 
 	/**
-	 * 첫번째 인덱스를 반환합니다.
+	 * 泥ル쾲吏??몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 */
 	public int getFirstIndex() {
 		return firstIndex;
 	}
 
 	/**
-	 * 첫번째 인덱스를 설정합니다.
+	 * 泥ル쾲吏??몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 */
 	public void setFirstIndex(int firstIndex) {
 		this.firstIndex = firstIndex;
 	}
 
 	/**
-	 * 마지막 인덱스를 반환합니다.
+	 * 留덉?留??몃뜳?ㅻ? 諛섑솚?⑸땲??
 	 */
 	public int getLastIndex() {
 		return lastIndex;
 	}
 
 	/**
-	 * 마지막 인덱스를 설정합니다.
+	 * 留덉?留??몃뜳?ㅻ? ?ㅼ젙?⑸땲??
 	 */
 	public void setLastIndex(int lastIndex) {
 		this.lastIndex = lastIndex;
 	}
 
 	/**
-	 * 페이지당 레코드 수를 반환합니다.
+	 * ?섏씠吏???덉퐫???섎? 諛섑솚?⑸땲??
 	 */
 	public int getRecordCountPerPage() {
 		return recordCountPerPage;
 	}
 
 	/**
-	 * 페이지당 레코드 수를 설정합니다.
+	 * ?섏씠吏???덉퐫???섎? ?ㅼ젙?⑸땲??
 	 */
 	public void setRecordCountPerPage(int recordCountPerPage) {
 		this.recordCountPerPage = recordCountPerPage;

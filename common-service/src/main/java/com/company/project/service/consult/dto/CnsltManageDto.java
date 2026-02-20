@@ -13,43 +13,43 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "상담 관리 DTO")
+@Schema(description = "Consultation Management DTO")
 public class CnsltManageDto {
 
-    @Schema(description = "상담 ID")
+    @Schema(description = "Consultation ID")
     private String cnsltId;
 
-    @Schema(description = "상담 제목")
+    @Schema(description = "Consultation Subject")
     private String cnsltSj;
 
-    @Schema(description = "상담 내용")
+    @Schema(description = "Consultation Content")
     private String cnsltCn;
 
-    @Schema(description = "공개 여부")
+    @Schema(description = "Public Status")
     private String othbcAt;
 
-    @Schema(description = "작성 비밀번호")
+    @Schema(description = "Writing Password")
     private String writngPassword;
 
-    @Schema(description = "작성자 명")
+    @Schema(description = "Writer Name")
     private String wrterNm;
 
-    @Schema(description = "조회수")
+    @Schema(description = "Inquiry Count")
     private Integer inqireCo;
 
-    @Schema(description = "진행 상태 코드")
+    @Schema(description = "Process Status Code")
     private String qnaProcessSttusCode;
 
-    @Schema(description = "처리 내용")
+    @Schema(description = "Management Content")
     private String managtCn;
 
-    @Schema(description = "처리 일자")
+    @Schema(description = "Management Date")
     private String managtDe;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Created By ID")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Created Date")
     private LocalDateTime createdDate;
 
     public static CnsltManageDto from(CnsltManage entity) {

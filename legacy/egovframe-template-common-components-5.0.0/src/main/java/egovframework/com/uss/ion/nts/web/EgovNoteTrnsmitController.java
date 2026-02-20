@@ -25,17 +25,17 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 보낸쪽지함관리를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * 蹂대궦履쎌??④?由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *    2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *    2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -57,15 +57,15 @@ public class EgovNoteTrnsmitController {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovNoteTrnsmitController.class);
 
     /**
-     * 보낸쪽지함관리 목록을 조회한다.
-     * @param searchVO -검색정보가 담긴 객체
+     * 蹂대궦履쎌??④?由?紐⑸줉??議고쉶?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param noteTrnsmit -보낸쪽지함정보가 담긴객체
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param noteTrnsmit -蹂대궦履쎌??⑥젙蹂닿? ?닿릿媛앹껜
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
-	@IncludedInfo(name="보낸쪽지함관리", order = 860 ,gid = 50)
+	@IncludedInfo(name="蹂대궦履쎌??④?由?, order = 860 ,gid = 50)
     @RequestMapping(value = "/uss/ion/nts/listNoteTrnsmit.do")
     public String EgovNoteTrnsmitList(
     		@ModelAttribute("searchVO") NoteTrnsmit searchVO,
@@ -74,23 +74,23 @@ public class EgovNoteTrnsmitController {
             EgovSecurityMap securitymap,
             ModelMap model) throws Exception {
 
-    	//변수 설정
+    	//蹂???ㅼ젙
     	String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
 
     	LOGGER.info("userMap>"+commandMap);
 
-		//Spring Security 사용자권한 처리
+		//Spring Security ?ъ슜?먭텒??泥섎━
 	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 	    if (!isAuthenticated) {
 	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 	        return "redirect:/uat/uia/egovLoginUsr.do";
 	    }
 
-        //로그인 객체 선언
+        //濡쒓렇??媛앹껜 ?좎뼵
         LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-        //삭제 모드로 실행시
+        //??젣 紐⑤뱶濡??ㅽ뻾??
         if(sCmd.equals("del")){
 
         	LOGGER.debug("##### EgovNoteTrnsmitController EgovNoteTrnsmitList()  start");
@@ -120,7 +120,7 @@ public class EgovNoteTrnsmitController {
 
             }
 
-	        //삭제후 페이지 인덱스 설정
+	        //??젣???섏씠吏 ?몃뜳???ㅼ젙
 	        searchVO.setPageIndex(1);
         }
 
@@ -156,11 +156,11 @@ public class EgovNoteTrnsmitController {
     }
 
     /**
-     * 보낸쪽지함관리 목록을 상세조회 조회한다.
-     * @param searchVO -검색정보가 담긴 객체
+     * 蹂대궦履쎌??④?由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
+     * @param searchVO -寃?됱젙蹂닿? ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/nts/detailNoteTrnsmit.do")
@@ -173,14 +173,14 @@ public class EgovNoteTrnsmitController {
 
             String sCmd = securityMap.get("cmd") == null ? "" : (String) securityMap.get("cmd");
 
-    		//Spring Security 사용자권한 처리
+    		//Spring Security ?ъ슜?먭텒??泥섎━
     	    Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	    if (!isAuthenticated) {
     	        model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
     	        return "redirect:/uat/uia/egovLoginUsr.do";
     	    }
 
-            //로그인 객체 선언
+            //濡쒓렇??媛앹껜 ?좎뼵
             LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
             securityMap.put("noteId",searchVO.getNoteId());
@@ -210,11 +210,11 @@ public class EgovNoteTrnsmitController {
     }
 
     /**
-     * 수신자목록을 조회한다.
-     * @param noteTrnsmit -보낸쪽지함 정보가 담긴 객체
+     * ?섏떊?먮ぉ濡앹쓣 議고쉶?쒕떎.
+     * @param noteTrnsmit -蹂대궦履쎌????뺣낫媛 ?닿릿 媛앹껜
      * @param commandMap -Request Variable
-     * @param model -Spring 제공하는 ModelMap
-     * @return String -리턴 URL
+     * @param model -Spring ?쒓났?섎뒗 ModelMap
+     * @return String -由ы꽩 URL
      * @throws Exception
      */
     @RequestMapping(value = "/uss/ion/nts/selectNoteTrnsmitCnfirm.do")

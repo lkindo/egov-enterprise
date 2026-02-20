@@ -3,45 +3,45 @@ package egovframework.com.cop.smt.lsm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 간부상태에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??곹깭?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 간부ID, 간부상태 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 媛꾨?ID, 媛꾨??곹깭 ??ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:06
+ * @created 28-6-2010 ?ㅼ쟾 10:59:06
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  *  */
 @SuppressWarnings("serial")
 public class LeaderSttus  implements Serializable{
 
-	/** 간부ID */
+	/** 媛꾨?ID */
 	private String leaderId;
-	/** 간부명 */
+	/** 媛꾨?紐?*/
 	private String leaderNm;
-	/** 소속 */
+	/** ?뚯냽 */
 	private String orgnztNm;
-	/** 간부상태 */
+	/** 媛꾨??곹깭 */
 	private String leaderSttus;
-	/** 간부상태 */
+	/** 媛꾨??곹깭 */
 	private String leaderSttusNm;
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId = "";
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId = "";
-	/** 최종수정자명 */
+	/** 理쒖쥌?섏젙?먮챸 */
 	private String lastUpdusrNm = "";
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm = "";
 	public String getLeaderId() {
 		return leaderId;

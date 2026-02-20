@@ -2,19 +2,19 @@ package egovframework.com.uss.sam.stp.service;
 
 /**
  * 
- * 약관내용을 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * ?쎄??댁슜??泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2016.06.13  장동한          표준프레임워크 v3.6 개선
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2016.06.13  ?λ룞??         ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
  *
  * </pre>
  */
@@ -22,37 +22,37 @@ public class StplatManageVO extends StplatManageDefaultVO {
 	
     private static final long serialVersionUID = 1L;
     
-    /** 이용약관 ID */
+    /** ?댁슜?쎄? ID */
     private String useStplatId;
     
-	/** 이용약관명 */
+	/** ?댁슜?쎄?紐?*/
     private String useStplatNm;    
     
-    /** 이용약관내용 */
+    /** ?댁슜?쎄??댁슜 */
     private String useStplatCn;
     
-    /** 정보제공동의내용 */
+    /** ?뺣낫?쒓났?숈쓽?댁슜 */
     private String infoProvdAgreCn;
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegistPnttm;
         
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterNm;
     
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
     
-    /** 최초등록자ID */
+    /** 理쒖큹?깅줉?륤D */
     private String frstRegisterId;
 
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm;
     
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdtPnttm;
 
-    /** 최종수정자ID */
+    /** 理쒖쥌?섏젙?륤D */
     private String lastUpdusrId;
 
 	public String getUseStplatId() {

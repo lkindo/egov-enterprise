@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 약도 정보 Entity
- * 레거시 테이블: NROUGHMAP
+ * ??덈즲 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NROUGHMAP
  */
 @Entity
 @Table(name = "NROUGHMAP")

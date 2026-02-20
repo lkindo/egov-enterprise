@@ -12,16 +12,16 @@ import egovframework.com.uss.olp.opr.service.OnlinePollResult;
 import jakarta.annotation.Resource;
 
 /**
- * 온라인POLL결과를 처리하는 Controller Class 구현
- * @author 공통서비스 장동한
+ * ?⑤씪?퇠OLL寃곌낵瑜?泥섎━?섎뒗 Controller Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -36,7 +36,7 @@ public class EgovOnlinePollResultController {
     protected EgovPropertyService propertiesService;
 
     /**
-     * 온라인POLL결과 목록을 조회한다.
+     * ?⑤씪?퇠OLL寃곌낵 紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
      * @param commandMap
      * @param onlinePollVO
@@ -57,7 +57,7 @@ public class EgovOnlinePollResultController {
     }
 
     /**
-     * 온라인POLL결과 목록을 상세조회 조회한다.
+     * ?⑤씪?퇠OLL寃곌낵 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
      * @param searchVO
      * @param onlinePollVO
      * @param commandMap

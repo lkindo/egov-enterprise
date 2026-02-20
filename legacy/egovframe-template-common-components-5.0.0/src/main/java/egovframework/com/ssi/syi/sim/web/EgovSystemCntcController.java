@@ -30,22 +30,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 시스템연계 관리에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한
- * Controller를 정의한다
+ * ?쒖뒪?쒖뿰怨?愿由ъ뿉 愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳
+ * Controller瑜??뺤쓽?쒕떎
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.07.01  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.07.01  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -71,7 +71,7 @@ public class EgovSystemCntcController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 시스템연계를 삭제한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ??젣?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param systemCntc
@@ -86,7 +86,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계를 등록한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ?깅줉?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param systemCntc
@@ -100,7 +100,7 @@ public class EgovSystemCntcController {
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("")) {
-			// 연계기관 리스트박스 데이터
+			// ?곌퀎湲곌? 由ъ뒪?몃컯???곗씠??
 			CntcInsttVO searchCntcInsttVO;
 			searchCntcInsttVO = new CntcInsttVO();
 			searchCntcInsttVO.setRecordCountPerPage(999999);
@@ -109,7 +109,7 @@ public class EgovSystemCntcController {
 			List<EgovMap> cntcInsttList = cntcInsttService.selectCntcInsttList(searchCntcInsttVO);
 			model.addAttribute("cntcInsttList", cntcInsttList);
 
-			// 연계시스템 리스트박스 데이터
+			// ?곌퀎?쒖뒪??由ъ뒪?몃컯???곗씠??
 			CntcSystemVO searchCntcSystemVO;
 			searchCntcSystemVO = new CntcSystemVO();
 			searchCntcSystemVO.setRecordCountPerPage(999999);
@@ -135,7 +135,7 @@ public class EgovSystemCntcController {
 			List<EgovMap> cntcRequstSystemList = cntcInsttService.selectCntcSystemList(searchCntcSystemVO);
 			model.addAttribute("cntcRequstSystemList", cntcRequstSystemList);
 
-			// 연계서비스 리스트박스 데이터
+			// ?곌퀎?쒕퉬??由ъ뒪?몃컯???곗씠??
 			CntcServiceVO searchCntcServiceVO;
 			searchCntcServiceVO = new CntcServiceVO();
 			searchCntcServiceVO.setRecordCountPerPage(999999);
@@ -160,7 +160,7 @@ public class EgovSystemCntcController {
 				return "egovframework/com/ssi/syi/sim/EgovSystemCntcRegist";
 			}
 
-			// 로그인VO에서 사용자 정보 가져오기
+			// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 			LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 			systemCntc.setFrstRegisterId(uniqId);
@@ -177,7 +177,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계 상세내역을 조회한다.
+	 * ?쒖뒪?쒖뿰怨??곸꽭?댁뿭??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param systemCntc
@@ -188,7 +188,7 @@ public class EgovSystemCntcController {
 	@RequestMapping(value = "/ssi/syi/sim/getSystemCntcDetail.do")
 	public String selectSystemCntcDetail(SystemCntc systemCntc, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -201,7 +201,7 @@ public class EgovSystemCntcController {
 		SystemCntc vo = systemCntcService.selectSystemCntcDetail(systemCntc);
 		model.addAttribute("result", vo);
 
-		// 연계기관 리스트박스 데이터
+		// ?곌퀎湲곌? 由ъ뒪?몃컯???곗씠??
 		CntcInsttVO searchCntcInsttVO;
 		searchCntcInsttVO = new CntcInsttVO();
 		searchCntcInsttVO.setRecordCountPerPage(999999);
@@ -210,7 +210,7 @@ public class EgovSystemCntcController {
 		List<EgovMap> cntcInsttList = cntcInsttService.selectCntcInsttList(searchCntcInsttVO);
 		model.addAttribute("cntcInsttList", cntcInsttList);
 
-		// 연계시스템 리스트박스 데이터
+		// ?곌퀎?쒖뒪??由ъ뒪?몃컯???곗씠??
 		CntcSystemVO searchCntcSystemVO;
 		searchCntcSystemVO = new CntcSystemVO();
 		searchCntcSystemVO.setRecordCountPerPage(999999);
@@ -224,7 +224,7 @@ public class EgovSystemCntcController {
 		List<EgovMap> cntcRequstSystemList = cntcInsttService.selectCntcSystemList(searchCntcSystemVO);
 		model.addAttribute("cntcRequstSystemList", cntcRequstSystemList);
 
-		// 연계서비스 리스트박스 데이터
+		// ?곌퀎?쒕퉬??由ъ뒪?몃컯???곗씠??
 		CntcServiceVO searchCntcServiceVO;
 		searchCntcServiceVO = new CntcServiceVO();
 		searchCntcServiceVO.setRecordCountPerPage(999999);
@@ -239,7 +239,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계 목록을 조회한다.
+	 * ?쒖뒪?쒖뿰怨?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param searchVO
@@ -247,12 +247,12 @@ public class EgovSystemCntcController {
 	 * @return "egovframework/com/ssi/syi/sim/EgovCcmSystemCntcList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "시스템연계관리", listUrl = "/ssi/syi/sim/getSystemCntcList.do", order = 1210, gid = 70)
+	@IncludedInfo(name = "?쒖뒪?쒖뿰怨꾧?由?, listUrl = "/ssi/syi/sim/getSystemCntcList.do", order = 1210, gid = 70)
 	@RequestMapping(value = "/ssi/syi/sim/getSystemCntcList.do")
 	public String selectSystemCntcList(@ModelAttribute("searchVO") SystemCntcVO searchVO, ModelMap model)
 			throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -287,7 +287,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계를 수정한다.
+	 * ?쒖뒪?쒖뿰怨꾨? ?섏젙?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param integInstt
@@ -309,7 +309,7 @@ public class EgovSystemCntcController {
 				systemCntc.setRequstInsttId(vo.getRequstInsttId());
 				systemCntc.setProvdSysId(vo.getProvdSysId());
 			}
-			// 연계기관 리스트박스 데이터
+			// ?곌퀎湲곌? 由ъ뒪?몃컯???곗씠??
 			CntcInsttVO searchCntcInsttVO;
 			searchCntcInsttVO = new CntcInsttVO();
 			searchCntcInsttVO.setRecordCountPerPage(999999);
@@ -318,7 +318,7 @@ public class EgovSystemCntcController {
 			List<EgovMap> cntcInsttList = cntcInsttService.selectCntcInsttList(searchCntcInsttVO);
 			model.addAttribute("cntcInsttList", cntcInsttList);
 
-			// 연계시스템 리스트박스 데이터
+			// ?곌퀎?쒖뒪??由ъ뒪?몃컯???곗씠??
 			CntcSystemVO searchCntcSystemVO;
 			searchCntcSystemVO = new CntcSystemVO();
 			searchCntcSystemVO.setRecordCountPerPage(999999);
@@ -332,7 +332,7 @@ public class EgovSystemCntcController {
 			List<EgovMap> cntcRequstSystemList = cntcInsttService.selectCntcSystemList(searchCntcSystemVO);
 			model.addAttribute("cntcRequstSystemList", cntcRequstSystemList);
 
-			// 연계서비스 리스트박스 데이터
+			// ?곌퀎?쒕퉬??由ъ뒪?몃컯???곗씠??
 			CntcServiceVO searchCntcServiceVO;
 			searchCntcServiceVO = new CntcServiceVO();
 			searchCntcServiceVO.setRecordCountPerPage(999999);
@@ -353,7 +353,7 @@ public class EgovSystemCntcController {
 					systemCntc.setRequstInsttId(vo.getRequstInsttId());
 					systemCntc.setProvdSysId(vo.getProvdSysId());
 				}
-				// 연계기관 리스트박스 데이터
+				// ?곌퀎湲곌? 由ъ뒪?몃컯???곗씠??
 				CntcInsttVO searchCntcInsttVO;
 				searchCntcInsttVO = new CntcInsttVO();
 				searchCntcInsttVO.setRecordCountPerPage(999999);
@@ -362,7 +362,7 @@ public class EgovSystemCntcController {
 				List<EgovMap> cntcInsttList = cntcInsttService.selectCntcInsttList(searchCntcInsttVO);
 				model.addAttribute("cntcInsttList", cntcInsttList);
 
-				// 연계시스템 리스트박스 데이터
+				// ?곌퀎?쒖뒪??由ъ뒪?몃컯???곗씠??
 				CntcSystemVO searchCntcSystemVO;
 				searchCntcSystemVO = new CntcSystemVO();
 				searchCntcSystemVO.setRecordCountPerPage(999999);
@@ -376,7 +376,7 @@ public class EgovSystemCntcController {
 				List<EgovMap> cntcRequstSystemList = cntcInsttService.selectCntcSystemList(searchCntcSystemVO);
 				model.addAttribute("cntcRequstSystemList", cntcRequstSystemList);
 
-				// 연계서비스 리스트박스 데이터
+				// ?곌퀎?쒕퉬??由ъ뒪?몃컯???곗씠??
 				CntcServiceVO searchCntcServiceVO;
 				searchCntcServiceVO = new CntcServiceVO();
 				searchCntcServiceVO.setRecordCountPerPage(999999);
@@ -390,7 +390,7 @@ public class EgovSystemCntcController {
 				return "egovframework/com/ssi/syi/sim/EgovSystemCntcUpdt";
 			}
 
-			// 로그인VO에서 사용자 정보 가져오기
+			// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 			LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
@@ -403,7 +403,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계 승인 목록을 조회한다.
+	 * ?쒖뒪?쒖뿰怨??뱀씤 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param integInstt
@@ -418,7 +418,7 @@ public class EgovSystemCntcController {
 	public String selectConfirmSystemCntcList(@ModelAttribute("searchVO") SystemCntcVO searchVO, ModelMap model)
 			throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -453,7 +453,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * 시스템연계 승인 상세내역을 조회한다.
+	 * ?쒖뒪?쒖뿰怨??뱀씤 ?곸꽭?댁뿭??議고쉶?쒕떎.
 	 * 
 	 * @param loginVO
 	 * @param systemCntc
@@ -466,7 +466,7 @@ public class EgovSystemCntcController {
 	public String selectConfirmSystemCntcDetail(SystemCntc systemCntc, @RequestParam Map<?, ?> commandMap,
 			ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -476,7 +476,7 @@ public class EgovSystemCntcController {
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("Confirm")) {
 
-			// 로그인VO에서 사용자 정보 가져오기
+			// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 			LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 			String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
@@ -490,7 +490,7 @@ public class EgovSystemCntcController {
 		SystemCntc vo = systemCntcService.selectSystemCntcDetail(systemCntc);
 		model.addAttribute("result", vo);
 
-		// 연계기관 리스트박스 데이터
+		// ?곌퀎湲곌? 由ъ뒪?몃컯???곗씠??
 		CntcInsttVO searchCntcInsttVO;
 		searchCntcInsttVO = new CntcInsttVO();
 		searchCntcInsttVO.setRecordCountPerPage(999999);
@@ -499,7 +499,7 @@ public class EgovSystemCntcController {
 		List<EgovMap> cntcInsttList = cntcInsttService.selectCntcInsttList(searchCntcInsttVO);
 		model.addAttribute("cntcInsttList", cntcInsttList);
 
-		// 연계시스템 리스트박스 데이터
+		// ?곌퀎?쒖뒪??由ъ뒪?몃컯???곗씠??
 		CntcSystemVO searchCntcSystemVO;
 		searchCntcSystemVO = new CntcSystemVO();
 		searchCntcSystemVO.setRecordCountPerPage(999999);
@@ -513,7 +513,7 @@ public class EgovSystemCntcController {
 		List<EgovMap> cntcRequstSystemList = cntcInsttService.selectCntcSystemList(searchCntcSystemVO);
 		model.addAttribute("cntcRequstSystemList", cntcRequstSystemList);
 
-		// 연계서비스 리스트박스 데이터
+		// ?곌퀎?쒕퉬??由ъ뒪?몃컯???곗씠??
 		CntcServiceVO searchCntcServiceVO;
 		searchCntcServiceVO = new CntcServiceVO();
 		searchCntcServiceVO.setRecordCountPerPage(999999);
@@ -528,7 +528,7 @@ public class EgovSystemCntcController {
 	}
 
 	/**
-	 * Map 내용을 확인한다.
+	 * Map ?댁슜???뺤씤?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @return

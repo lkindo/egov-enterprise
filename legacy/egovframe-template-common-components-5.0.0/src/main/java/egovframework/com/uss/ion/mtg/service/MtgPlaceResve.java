@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.mtg.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 회의실예약에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅼ삁?쎌뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 회의실예약의 예약ID,회의실코드,회의제목,예약자ID,예약시작시간,예약종료시간,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅼ삁?쎌쓽 ?덉빟ID,?뚯쓽?ㅼ퐫???뚯쓽?쒕ぉ,?덉빟?륤D,?덉빟?쒖옉?쒓컙,?덉빟醫낅즺?쒓컙,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class MtgPlaceResve extends ComDefaultVO {
@@ -21,67 +21,67 @@ public class MtgPlaceResve extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	*  예약ID	
+	*  ?덉빟ID	
 	*/ 
 	private String resveId;
 
 	/**
-	*  회의실코드	   
+	*  ?뚯쓽?ㅼ퐫??   
 	*/ 
 	private String mtgPlaceId;
 
 	/**
-	*  회의제목	      
+	*  ?뚯쓽?쒕ぉ	      
 	*/ 
 	private String mtgSj;
 
 	/**
-	*  예약자ID	      
+	*  ?덉빟?륤D	      
 	*/ 
 	private String resveManId;
 
 	/**
-	*  예약일자	      
+	*  ?덉빟?쇱옄	      
 	*/ 
 	private String resveDe;
 	
 	/**
-	*  예약시작시간	
+	*  ?덉빟?쒖옉?쒓컙	
 	*/ 
 	private String resveBeginTm;
 
 	/**
-	*  예약종료시간	
+	*  ?덉빟醫낅즺?쒓컙	
 	*/ 
 	private String resveEndTm;
 
 	/**
-	*  참석인원	
+	*  李몄꽍?몄썝	
 	*/ 
 	private int atndncNmpr;
 	
 	/**
-	*  회의내용	
+	*  ?뚯쓽?댁슜	
 	*/ 
 	private String mtgCn;
 	
 	/**
-	*  최초등록자ID	
+	*  理쒖큹?깅줉?륤D	
 	*/ 
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점	
+	*  理쒖큹?깅줉?쒖젏	
 	*/ 
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID	
+	*  理쒖쥌?섏젙?륤D	
 	*/ 
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점	
+	*  理쒖쥌?섏젙?쒖젏	
 	*/ 
 	private String lastUpdusrPnttm;
 

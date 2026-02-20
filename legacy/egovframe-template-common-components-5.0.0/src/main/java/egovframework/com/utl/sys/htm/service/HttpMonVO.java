@@ -1,35 +1,35 @@
 package egovframework.com.utl.sys.htm.service;
 
 /**
- * 개요
- * - HTTP서비스모니터링에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - HTTP?쒕퉬?ㅻえ?덊꽣留곸뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - HTTP서비스모니터링의 목록 항목, 조회조건 등을 관리한다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - HTTP?쒕퉬?ㅻえ?덊꽣留곸쓽 紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 17-6-2010 오후 5:12:45
+ * @created 17-6-2010 ?ㅽ썑 5:12:45
  */
 public class HttpMonVO extends HttpMon {
 
 	private static final long serialVersionUID = 4909404979727991138L;
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
     private String searchCondition = "";
 
-    /** 검색Keyword */
+    /** 寃?덷eyword */
     private String searchKeyword = "";
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */
@@ -42,7 +42,7 @@ public class HttpMonVO extends HttpMon {
     private int recordCountPerPage = 10;
 
 	/**
-	 * searchCondition attribute 를 리턴한다.
+	 * searchCondition attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSearchCondition() {
@@ -50,7 +50,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * searchCondition attribute 값을 설정한다.
+	 * searchCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param searchCondition String
 	 */
 	public void setSearchCondition(String searchCondition) {
@@ -58,7 +58,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * searchKeyword attribute 를 리턴한다.
+	 * searchKeyword attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSearchKeyword() {
@@ -66,7 +66,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * searchKeyword attribute 값을 설정한다.
+	 * searchKeyword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param searchKeyword String
 	 */
 	public void setSearchKeyword(String searchKeyword) {
@@ -74,7 +74,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * searchUseYn attribute 를 리턴한다.
+	 * searchUseYn attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSearchUseYn() {
@@ -82,7 +82,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * searchUseYn attribute 값을 설정한다.
+	 * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param searchUseYn String
 	 */
 	public void setSearchUseYn(String searchUseYn) {
@@ -90,7 +90,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageIndex attribute 를 리턴한다.
+	 * pageIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getPageIndex() {
@@ -98,7 +98,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageIndex attribute 값을 설정한다.
+	 * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param pageIndex int
 	 */
 	public void setPageIndex(int pageIndex) {
@@ -106,7 +106,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageUnit attribute 를 리턴한다.
+	 * pageUnit attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getPageUnit() {
@@ -114,7 +114,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageUnit attribute 값을 설정한다.
+	 * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param pageUnit int
 	 */
 	public void setPageUnit(int pageUnit) {
@@ -122,7 +122,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageSize attribute 를 리턴한다.
+	 * pageSize attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getPageSize() {
@@ -130,7 +130,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * pageSize attribute 값을 설정한다.
+	 * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param pageSize int
 	 */
 	public void setPageSize(int pageSize) {
@@ -138,7 +138,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * firstIndex attribute 를 리턴한다.
+	 * firstIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getFirstIndex() {
@@ -146,7 +146,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * firstIndex attribute 값을 설정한다.
+	 * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param firstIndex int
 	 */
 	public void setFirstIndex(int firstIndex) {
@@ -154,7 +154,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * lastIndex attribute 를 리턴한다.
+	 * lastIndex attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getLastIndex() {
@@ -162,7 +162,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * lastIndex attribute 값을 설정한다.
+	 * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastIndex int
 	 */
 	public void setLastIndex(int lastIndex) {
@@ -170,7 +170,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * recordCountPerPage attribute 를 리턴한다.
+	 * recordCountPerPage attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getRecordCountPerPage() {
@@ -178,7 +178,7 @@ public class HttpMonVO extends HttpMon {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을 설정한다.
+	 * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param recordCountPerPage int
 	 */
 	public void setRecordCountPerPage(int recordCountPerPage) {

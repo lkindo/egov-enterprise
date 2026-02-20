@@ -23,20 +23,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 바로가기메뉴관리 정보를 관리하기 위한 컨트롤러 클래스
- * @author 공통컴포넌트팀 윤성록
+ * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일       수정자		수정내용
+ *   ?섏젙??      ?섏젙??	?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25    윤성록		최초 생성
- *   2011.8.26	  정진오		IncludedInfo annotation 추가
- *   2022.11.11   김혜준		시큐어코딩 처리
+ *   2009.9.25    ?ㅼ꽦濡?	理쒖큹 ?앹꽦
+ *   2011.8.26	  ?뺤쭊??	IncludedInfo annotation 異붽?
+ *   2022.11.11   源?쒖?		?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -51,7 +51,7 @@ public class EgovBkmkMenuManageController {
     protected EgovPropertyService propertyService;
 
     /**
-     * 바로가기메뉴관리 정보에 대한 목록을 조회한다.
+     * 諛붾줈媛湲곕찓?닿?由??뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param BkmkMenuManageVO
      * @param status
@@ -59,7 +59,7 @@ public class EgovBkmkMenuManageController {
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="바로가기메뉴관리", order = 1110 ,gid = 60)
+    @IncludedInfo(name="諛붾줈媛湲곕찓?닿?由?, order = 1110 ,gid = 60)
     @RequestMapping("/sym/mnu/bmm/selectBkmkMenuManageList.do")
     public String selectBkmkMenuManageList(@ModelAttribute("searchVO") BkmkMenuManageVO bkmkMenuManageVO, SessionStatus status, ModelMap model) throws Exception {
 
@@ -105,7 +105,7 @@ public class EgovBkmkMenuManageController {
     }
 
     /**
-     * 바로가기메뉴관리 정보를 삭제한다.
+     * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜???젣?쒕떎.
      *
      * @param checkMenuIds
      * @param bkmkMenuManageVO
@@ -142,7 +142,7 @@ public class EgovBkmkMenuManageController {
     }
 
     /**
-     * 바로가기메뉴관리 등록화면으로 이동한다.
+     * 諛붾줈媛湲곕찓?닿?由??깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param BkmkMenuManage
      * @param status
@@ -162,7 +162,7 @@ public class EgovBkmkMenuManageController {
     }
 
     /**
-     * 메뉴정보 목록팝업 화면으로 이동한다.
+     * 硫붾돱?뺣낫 紐⑸줉?앹뾽 ?붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param commandMap
      * @param model
@@ -184,7 +184,7 @@ public class EgovBkmkMenuManageController {
     }
 
     /**
-     * 메뉴정보 목록을 조회한다.
+     * 硫붾돱?뺣낫 紐⑸줉??議고쉶?쒕떎.
      *
      * @param BkmkMenuManageVO
      * @param commandMap
@@ -228,7 +228,7 @@ public class EgovBkmkMenuManageController {
     }
 
     /**
-     * 바로가기메뉴관리 정보를 등록한다.
+     * 諛붾줈媛湲곕찓?닿?由??뺣낫瑜??깅줉?쒕떎.
      *
      * @param BkmkMenuManage
      * @param bindingResult
@@ -253,14 +253,14 @@ public class EgovBkmkMenuManageController {
 
         bkmkMenuManage.setUserId(user == null ? "" : EgovStringUtil.isNullToString(user.getId()));
 
-        // 2022.11.11 시큐어코딩 처리
+        // 2022.11.11 ?쒗걧?댁퐫??泥섎━
         bkmkMenuManageService.insertBkmkMenuManage(bkmkMenuManage);
 
         return "forward:/sym/mnu/bmm/selectBkmkMenuManageList.do";
     }
 
     /**
-     * 바로가기메뉴관리 미리보기 화면으로 이동한다.
+     * 諛붾줈媛湲곕찓?닿?由?誘몃━蹂닿린 ?붾㈃?쇰줈 ?대룞?쒕떎.
      *
      * @param BkmkMenuManageVO
      * @param model
@@ -271,7 +271,7 @@ public class EgovBkmkMenuManageController {
     public String previewBkmkInf(@ModelAttribute("searchVO") BkmkMenuManageVO bkmkMenuManageVO,ModelMap model)
             throws Exception {
         String resultMsg    = "";
-        // 0. Spring Security 사용자권한 처리
+        // 0. Spring Security ?ъ슜?먭텒??泥섎━
         LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
         Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 

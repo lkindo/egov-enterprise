@@ -24,19 +24,19 @@ import jakarta.annotation.Resource;
 
 /**
  *
- * 법정동코드를 수신에 관한 요청을 받아 서비스 클래스로 요청을 전달하고 서비스클래스에서 처리한 결과를 웹 화면으로 전달을 위한 Controller를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 踰뺤젙?숈퐫?쒕? ?섏떊??愿???붿껌??諛쏆븘 ?쒕퉬???대옒?ㅻ줈 ?붿껌???꾨떖?섍퀬 ?쒕퉬?ㅽ겢?섏뒪?먯꽌 泥섎━??寃곌낵瑜????붾㈃?쇰줈 ?꾨떖???꾪븳 Controller瑜??뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -56,9 +56,9 @@ public class EgovAdministCodeRecptnController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * TEST 용 Controller
-	 * 실 적용시 Job Scheduler 에 등록하여 처리한다.
-	 * 법정동코드를 수신처리한다.
+	 * TEST ??Controller
+	 * ???곸슜??Job Scheduler ???깅줉?섏뿬 泥섎━?쒕떎.
+	 * 踰뺤젙?숈퐫?쒕? ?섏떊泥섎━?쒕떎.
 	 * @param loginVO
 	 * @param administCode
 	 * @param bindingResult
@@ -84,7 +84,7 @@ public class EgovAdministCodeRecptnController {
     }
 
 	/**
-	 * 법정동코드 상세내역을 조회한다.
+	 * 踰뺤젙?숈퐫???곸꽭?댁뿭??議고쉶?쒕떎.
 	 * @param loginVO
 	 * @param administCode
 	 * @param model
@@ -96,24 +96,24 @@ public class EgovAdministCodeRecptnController {
 			, @ModelAttribute("administCodeRecptnVO") AdministCodeRecptnVO administCodeRecptnVO
 			, ModelMap model
  			) throws Exception {
-		/* 법정동코드 조회 */
+		/* 踰뺤젙?숈퐫??議고쉶 */
 		AdministCodeRecptn vo = administCodeManageService.selectAdministCodeDetail(administCode);
 		model.addAttribute("result", vo);
 
-    	/* 법정동코드수신 리스트 */
+    	/* 踰뺤젙?숈퐫?쒖닔??由ъ뒪??*/
     	administCodeRecptnVO.setRecordCountPerPage(9999999);
     	administCodeRecptnVO.setFirstIndex(0);
 
 
-    	/* 공통코드처리 */
+    	/* 怨듯넻肄붾뱶泥섎━ */
     	ComDefaultCodeVO comCodeVO = new ComDefaultCodeVO();
 
-    	/* 변경구분코드 */
+    	/* 蹂寃쎄뎄遺꾩퐫??*/
     	comCodeVO.setCodeId("COM043");
         List<CmmnDetailCode> changeSeCodeList = cmmUseService.selectCmmCodeDetail(comCodeVO);
         model.addAttribute("changeSeCodeList", changeSeCodeList);
 
-    	/* 처리구분코드 */
+    	/* 泥섎━援щ텇肄붾뱶 */
         comCodeVO.setCodeId("COM044");
         List<CmmnDetailCode> processSeList = cmmUseService.selectCmmCodeDetail(comCodeVO);
         model.addAttribute("processSeList", processSeList);
@@ -126,14 +126,14 @@ public class EgovAdministCodeRecptnController {
 	}
 
     /**
-	 * 법정동코드수신 목록을 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??紐⑸줉??議고쉶?쒕떎.
      * @param loginVO
      * @param searchVO
      * @param model
      * @return "egovframework/com/sym/ccm/adc/EgovCcmAdministCodeList"
      * @throws Exception
      */
-	@IncludedInfo(name="행정코드관리", listUrl="/sym/ccm/acr/getAdministCodeRecptnList.do", order = 1010 ,gid = 60)
+	@IncludedInfo(name="?됱젙肄붾뱶愿由?, listUrl="/sym/ccm/acr/getAdministCodeRecptnList.do", order = 1010 ,gid = 60)
     @RequestMapping(value="/sym/ccm/acr/getAdministCodeRecptnList.do")
 	public String selectAdministCodeRecptnList (@ModelAttribute("searchVO") AdministCodeRecptnVO searchVO
 			, ModelMap model
@@ -163,7 +163,7 @@ public class EgovAdministCodeRecptnController {
 	}
 
     /**
-	 * 법정동코드수신 개인화페이지용 목록을 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??媛쒖씤?뷀럹?댁???紐⑸줉??議고쉶?쒕떎.
      * @param loginVO
      * @param searchVO
      * @param model
@@ -190,7 +190,7 @@ public class EgovAdministCodeRecptnController {
 	}
 
     /**
-     * Map 내용을 확인한다.
+     * Map ?댁슜???뺤씤?쒕떎.
      * @param commandMap
      * @return
      */

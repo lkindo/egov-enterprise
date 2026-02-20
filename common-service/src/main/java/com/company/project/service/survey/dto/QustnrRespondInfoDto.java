@@ -13,37 +13,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "설문 응답 결과 DTO")
+@Schema(description = "Description")
 public class QustnrRespondInfoDto {
 
-    @Schema(description = "응답 결과 ID")
+    @Schema(description = "Description")
     private String qestnrQesrspnsId;
 
-    @Schema(description = "문항 ID")
+    @Schema(description = "Description")
     private String qestnrQesitmId;
 
-    @Schema(description = "설문 ID")
+    @Schema(description = "Description")
     private String qestnrId;
 
-    @Schema(description = "템플릿 ID")
+    @Schema(description = "Description")
     private String qestnrTmplatId;
 
-    @Schema(description = "항목 ID")
+    @Schema(description = "Description")
     private String qustnrIemId;
 
-    @Schema(description = "응답 내용")
+    @Schema(description = "Description")
     private String respondAnswerCn;
 
-    @Schema(description = "응답자 명")
+    @Schema(description = "Description")
     private String respondNm;
 
-    @Schema(description = "기타 응답 내용")
+    @Schema(description = "Description")
     private String etcAnswerCn;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static QustnrRespondInfoDto from(QustnrRespondInfo entity) {

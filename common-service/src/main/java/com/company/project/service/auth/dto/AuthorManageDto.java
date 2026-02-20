@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.springframework.lang.NonNull;
 
 /**
- * 권한 관리 DTO
+ * 沅뚰븳 愿由?DTO
  */
 @Getter
 @Setter
@@ -19,22 +19,22 @@ import org.springframework.lang.NonNull;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthorManageDto extends ComDefaultVO {
-    /** 권한 코드 */
-    @NotBlank(message = "권한 코드는 필수 입력 항목입니다.")
+    /** 沅뚰븳 肄붾뱶 */
+    @NotBlank(message = "沅뚰븳 肄붾뱶???꾩닔 ?낅젰 ??ぉ?낅땲??")
     @Size(max = 30)
     @NonNull
     private String authorCode;
 
-    /** 권한 명 */
-    @NotBlank(message = "권한 명은 필수 입력 항목입니다.")
+    /** 沅뚰븳 紐?*/
+    @NotBlank(message = "沅뚰븳 紐낆? ?꾩닔 ?낅젰 ??ぉ?낅땲??")
     @Size(max = 60)
     @NonNull
     private String authorNm;
 
-    /** 권한 설명 */
+    /** 沅뚰븳 ?ㅻ챸 */
     @Size(max = 200)
     private String authorDc;
 
-    /** 권한 생성일 */
+    /** 沅뚰븳 ?앹꽦??*/
     private String authorCreatDe;
 }

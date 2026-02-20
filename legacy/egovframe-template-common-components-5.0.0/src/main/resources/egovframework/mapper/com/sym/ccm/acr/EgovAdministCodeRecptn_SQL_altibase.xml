@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  ADMINIST_ZONE_SE
                  ,  ADMINIST_ZONE_CODE
@@ -46,7 +46,7 @@
         
         </if>
         <![CDATA[
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
                     ) ALL_LIST
                     )
@@ -184,7 +184,7 @@
                  )
     </insert>
 
-	<!-- 2024.10.29	권태성	법정동코드 > org.mybatis.spring.MyBatisSystemException 오류 수정  -->
+	<!-- 2024.10.29	沅뚰깭??踰뺤젙?숈퐫??> org.mybatis.spring.MyBatisSystemException ?ㅻ쪟 ?섏젙  -->
     <update id="updateAdministCode">
             UPDATE  COMTCADMINISTCODE
                SET  ADMINIST_ZONE_SE            = #{administZoneSe}
@@ -200,7 +200,7 @@
                AND  ADMINIST_ZONE_CODE          = #{administZoneCode}
     </update>
 
-	<!-- 2024.10.29	권태성	법정동코드 > org.mybatis.spring.MyBatisSystemException 오류 수정  -->
+	<!-- 2024.10.29	沅뚰깭??踰뺤젙?숈퐫??> org.mybatis.spring.MyBatisSystemException ?ㅻ쪟 ?섏젙  -->
     <update id="deleteAdministCode">
             UPDATE  COMTCADMINISTCODE
                SET  ABL_ENNC                    = '1'

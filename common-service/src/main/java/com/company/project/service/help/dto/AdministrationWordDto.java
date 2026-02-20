@@ -13,40 +13,40 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "행정용어 정보 DTO")
+@Schema(description = "Description")
 public class AdministrationWordDto {
 
-    @Schema(description = "용어 ID")
+    @Schema(description = "Description")
     private String administWordId;
 
-    @Schema(description = "용어 명")
+    @Schema(description = "Description")
     private String administWordNm;
 
-    @Schema(description = "영문 명")
+    @Schema(description = "Description")
     private String administWordEngNm;
 
-    @Schema(description = "약어 명")
+    @Schema(description = "Description")
     private String administWordAbrv;
 
-    @Schema(description = "주제 영역")
+    @Schema(description = "Description")
     private String themaRelm;
 
-    @Schema(description = "용어 구분")
+    @Schema(description = "Description")
     private String wordDomn;
 
-    @Schema(description = "관련 표준 용어")
+    @Schema(description = "Description")
     private String stdWord;
 
-    @Schema(description = "용어 정의")
+    @Schema(description = "Description")
     private String administWordDf;
 
-    @Schema(description = "용어 설명")
+    @Schema(description = "Description")
     private String administWordDc;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static AdministrationWordDto from(AdministrationWord entity) {

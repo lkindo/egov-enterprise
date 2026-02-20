@@ -222,7 +222,7 @@
     </delete>  
 
 
-<!-- 행사접수 관리 -->
+<!-- ?됱궗?묒닔 愿由?-->
 
     <select id="selectEventAtdrnList" parameterType="egovframework.com.uss.ion.evt.service.EventManageVO" resultType="egovframework.com.uss.ion.evt.service.EventManageVO">
         

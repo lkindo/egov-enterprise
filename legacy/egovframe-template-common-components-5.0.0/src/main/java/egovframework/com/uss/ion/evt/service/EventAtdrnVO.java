@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 행사참석자에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?됱궗李몄꽍?먯뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 행사참석자의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?됱궗李몄꽍?먯쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class EventAtdrnVO extends EventAtdrn implements Serializable {
@@ -21,7 +21,7 @@ public class EventAtdrnVO extends EventAtdrn implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 배너 목록
+	 * 諛곕꼫 紐⑸줉
 	 */
 	List<EventAtdrnVO> eventAtdrnList;
 

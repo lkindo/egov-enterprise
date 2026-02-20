@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 네트워크정보에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?뺣낫?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 장애관리의 네트워크ID, 네트워크IP, 게이트웨이, SUBNET, 도메인이름서버, 관리항목, 사용자명, 사용여부, 
- *   최종수정자ID, 최종수정시점 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?μ븷愿由ъ쓽 ?ㅽ듃?뚰겕ID, ?ㅽ듃?뚰겕IP, 寃뚯씠?몄썾?? SUBNET, ?꾨찓?몄씠由꾩꽌踰? 愿由ы빆紐? ?ъ슜?먮챸, ?ъ슜?щ?, 
+ *   理쒖쥌?섏젙?륤D, 理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 01-7-2010 오전 10:44:57
+ * @created 01-7-2010 ?ㅼ쟾 10:44:57
  */
 
 package egovframework.com.sym.sym.nwk.service;
@@ -18,15 +18,15 @@ public class Ntwrk extends ComDefaultVO {
 
     private static final long serialVersionUID = 1L;
 	/**
-	 * 네트워크ID
+	 * ?ㅽ듃?뚰겕ID
 	 */
     private String ntwrkId;
 	/**
-	 * 네트워크IP
+	 * ?ㅽ듃?뚰겕IP
 	 */
     private String ntwrkIp;
     /**
-	 * 게이트웨이
+	 * 寃뚯씠?몄썾??
 	 */    
     private String gtwy;
     /**
@@ -34,39 +34,39 @@ public class Ntwrk extends ComDefaultVO {
 	 */    
     private String subnet;
     /**
-	 * 도메인이름서버
+	 * ?꾨찓?몄씠由꾩꽌踰?
 	 */    
     private String domnServer;
     /**
-	 * 관리항목
+	 * 愿由ы빆紐?
 	 */    
     private String manageIem;
     /**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */        
     private String userNm;
     /**
-	 * 사용여부
+	 * ?ъ슜?щ?
 	 */    
     private String useAt;
     /**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */    
     private String regstYmd;    
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */   
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */        
     private String frstRegisterId;
     /**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */    
     private String lastUpdusrPnttm;
     /**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */        
     private String lastUpdusrId;
 	/**

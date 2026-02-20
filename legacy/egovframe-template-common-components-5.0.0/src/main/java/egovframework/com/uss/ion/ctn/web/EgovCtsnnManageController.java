@@ -27,22 +27,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요
- * - 경조관리에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 寃쎌“愿由ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 경조관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 경조관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - 寃쎌“愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 寃쎌“愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  *  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2010.6.15	이용          최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.6.15	?댁슜          理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -59,7 +59,7 @@ public class EgovCtsnnManageController {
 	private EgovCmmUseService cmmUseService;
 
     /**
-	 * 경조관리 목록화면 이동
+	 * 寃쎌“愿由?紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -75,11 +75,11 @@ public class EgovCtsnnManageController {
     }
 
 	/**
-	 * 경조관리정보를 관리하기 위해 등록된 경조관리 목록을 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return String - 리턴 Url
+	 * 寃쎌“愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉??寃쎌“愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param ctsnnManageVO - 寃쎌“愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="직원경조사관리",order = 890 ,gid = 50)
+    @IncludedInfo(name="吏곸썝寃쎌“?ш?由?,order = 890 ,gid = 50)
     @RequestMapping(value="/uss/ion/ctn/selectCtsnnManageList.do")
 	 public String selectCtsnnManageList(@ModelAttribute("ctsnnManageVO") CtsnnManageVO ctsnnManageVO,
 			                                 ModelMap model) throws Exception {
@@ -113,9 +113,9 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 등록된 경조관리의 상세정보를 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return String - 리턴 Url
+	 * ?깅줉??寃쎌“愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param ctsnnManageVO - 寃쎌“愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/ctn/EgovCtsnnManageDetail.do")
 	 public String selectCtsnnManage(@ModelAttribute("ctsnnManage") CtsnnManage ctsnnManage,
@@ -123,10 +123,10 @@ public class EgovCtsnnManageController {
 			                         @RequestParam Map<?, ?> commandMap,
 			                         ModelMap model) throws Exception {
 
-    	String sCmd = commandMap.get("cmd") == null ? "" : (String)commandMap.get("cmd"); // 상세정보 구분
+    	String sCmd = commandMap.get("cmd") == null ? "" : (String)commandMap.get("cmd"); // ?곸꽭?뺣낫 援щ텇
     	ctsnnManageVO.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManageVO.getReqstDe()));
 
-        // 등록 상세정보
+        // ?깅줉 ?곸꽭?뺣낫
     	CtsnnManageVO ctsnnManageVOTemp = egovCtsnnManageService.selectCtsnnManage(ctsnnManageVO);
 
     	model.addAttribute("ctsnnManageVO", ctsnnManageVOTemp);
@@ -168,8 +168,8 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 경조관리 등록 화면으로 이동한다.
-	 * @return String - 리턴 Url
+	 * 寃쎌“愿由??깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/ctn/EgovCtsnnRegist.do")
 	 public String insertViewCtsnnManage(@ModelAttribute("ctsnnManage") CtsnnManage ctsnnManage,
@@ -189,9 +189,9 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 경조관리정보를 신규로 등록한다.
-	 * @param ctsnnManage - 경조관리 model
-	 * @return String - 리턴 Url
+	 * 寃쎌“愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param ctsnnManage - 寃쎌“愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/ctn/insertCtsnnManage.do")
 	 public String insertCtsnnManage(   @ModelAttribute("ctsnnManageVO") CtsnnManageVO ctsnnManageVO,
@@ -214,9 +214,9 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 기 등록된 경조관리정보를 수정한다.
-	 * @param ctsnnManage - 경조관리 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??寃쎌“愿由ъ젙蹂대? ?섏젙?쒕떎.
+	 * @param ctsnnManage - 寃쎌“愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	 @RequestMapping(value="/uss/ion/ctn/updtCtsnnManage.do")
 	 public String updtCtsnnManage(     @ModelAttribute("ctsnnManage") CtsnnManage ctsnnManage,
@@ -239,9 +239,9 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 기 등록된 경조관리정보를 삭제한다.
-	 * @param ctsnnManage - 경조관리 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??寃쎌“愿由ъ젙蹂대? ??젣?쒕떎.
+	 * @param ctsnnManage - 寃쎌“愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/ctn/deleteCtsnnManage.do")
 	 public String deleteCtsnnManage(@ModelAttribute("ctsnnManage") CtsnnManage ctsnnManage,
@@ -255,13 +255,13 @@ public class EgovCtsnnManageController {
 	}
 
 
-    /*** 승인관련 ***/
+    /*** ?뱀씤愿??***/
 	/**
-	 * 경조관리정보 승인 처리를 위해 신청된 경조관리 목록을 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return String - 리턴 Url
+	 * 寃쎌“愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌??寃쎌“愿由?紐⑸줉??議고쉶?쒕떎.
+	 * @param ctsnnManageVO - 寃쎌“愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
-    @IncludedInfo(name="직원경조사승인관리",order = 891 ,gid = 50)
+    @IncludedInfo(name="吏곸썝寃쎌“?ъ듅?멸?由?,order = 891 ,gid = 50)
     @RequestMapping(value="/uss/ion/ctn/EgovCtsnnConfmList.do")
 	 public String selectCtsnnManageConfmList(@ModelAttribute("ctsnnManageVO") CtsnnManageVO ctsnnManageVO,
 			                                  ModelMap model) throws Exception {
@@ -276,7 +276,7 @@ public class EgovCtsnnManageController {
 		ctsnnManageVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-    	ctsnnManageVO.setSanctnerId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); //사용자가 승인권자인지 조건값 setting   selectCtsnnManageList
+    	ctsnnManageVO.setSanctnerId((user == null || user.getUniqId() == null) ? "" : user.getUniqId()); //?ъ슜?먭? ?뱀씤沅뚯옄?몄? 議곌굔媛?setting   selectCtsnnManageList
     	ctsnnManageVO.setCtsnnManageList(egovCtsnnManageService.selectCtsnnManageConfmList(ctsnnManageVO));
 		model.addAttribute("ctsnnManageList", ctsnnManageVO.getCtsnnManageList());
 
@@ -296,9 +296,9 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 경조승인관리 상세정보를 조회한다.
-	 * @param ctsnnManageVO - 경조관리 VO
-	 * @return String - 리턴 Url
+	 * 寃쎌“?뱀씤愿由??곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param ctsnnManageVO - 寃쎌“愿由?VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/ctn/EgovCtsnnConfm.do")
 	 public String selectCtsnnConfm( @ModelAttribute("ctsnnManageVO") CtsnnManageVO ctsnnManageVO,
@@ -306,7 +306,7 @@ public class EgovCtsnnManageController {
 							         ModelMap model) throws Exception {
     	ctsnnManageVO.setReqstDe(EgovStringUtil.removeMinusChar(ctsnnManageVO.getReqstDe()));
 
-        // 등록 상세정보
+        // ?깅줉 ?곸꽭?뺣낫
     	CtsnnManageVO ctsnnManageVOTemp = egovCtsnnManageService.selectCtsnnManage(ctsnnManageVO);
 
 		CtsnnManage ctsnnManageTemp = new CtsnnManage();
@@ -331,9 +331,9 @@ public class EgovCtsnnManageController {
     }
 
 	/**
-	 * 기 등록된 경조관리정보를 승인 처리한다.
-	 * @param ctsnnManage - 경조관리 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??寃쎌“愿由ъ젙蹂대? ?뱀씤 泥섎━?쒕떎.
+	 * @param ctsnnManage - 寃쎌“愿由?model
+	 * @return String - 由ы꽩 Url
 	 */
 	 @RequestMapping(value="/uss/ion/ctn/updtCtsnnConfm.do")
 	 public String updateCtsnnManageConfm( @ModelAttribute("ctsnnManage")   CtsnnManage   ctsnnManage,
@@ -360,7 +360,7 @@ public class EgovCtsnnManageController {
 	}
 
 	/**
-	 * 경조관리정보 반려처리 화면을 호출한다.
+	 * 寃쎌“愿由ъ젙蹂?諛섎젮泥섎━ ?붾㈃???몄텧?쒕떎.
 	 * @param ctsnnManage
 	 * @return  String
 	 */

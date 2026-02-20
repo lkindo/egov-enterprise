@@ -17,19 +17,19 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 프로세스 모니터링을 위한 스케쥴링 클래스를 정의한다.
- * @author 박종선
+ * 媛쒖슂
+ * - ?꾨줈?몄뒪 紐⑤땲?곕쭅???꾪븳 ?ㅼ?伊대쭅 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:45
+ * @created 08-9-2010 ?ㅽ썑 3:54:45
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2019.12.06   신용호             KISA 보안약점 조치 (부적절한 예외처리)
- *  2022.11.11   김혜준             시큐어코딩 처리
+ *  2019.12.06   ?좎슜??            KISA 蹂댁븞?쎌젏 議곗튂 (遺?곸젅???덉쇅泥섎━)
+ *  2022.11.11   源?쒖?             ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -48,30 +48,30 @@ public class EgovProcessMonScheduling extends EgovAbstractServiceImpl {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovProcessMonScheduling.class);
 
-	// 모니터링 대상을 읽기위한 페이지 크기
+	// 紐⑤땲?곕쭅 ??곸쓣 ?쎄린?꾪븳 ?섏씠吏 ?ш린
 	private static final int RECORD_COUNT_PER_PAGE = 10000;
 
 	/**
-	 * 프로세스 모니터링를 수행한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅瑜??섑뻾?쒕떎.
 	 * @param
 	 * @return
 	 */
 	public void monitorProcess() throws Exception {
 
-		// 모니터링 대상 정보 읽어들이기
+		// 紐⑤땲?곕쭅 ????뺣낫 ?쎌뼱?ㅼ씠湲?
 		List<ProcessMonVO> targetList = null;
 		ProcessMonVO searchVO = new ProcessMonVO();
 
-		// 모니터링 대상 검색 조건 초기화
+		// 紐⑤땲?곕쭅 ???寃??議곌굔 珥덇린??
 		searchVO.setPageIndex(1);
 		searchVO.setFirstIndex(0);
 		searchVO.setRecordCountPerPage(RECORD_COUNT_PER_PAGE);
 		targetList = egovProcessMonService.selectProcessMonList(searchVO);
 
-		LOGGER.debug("조회조건 {}", searchVO);
-		LOGGER.debug("Result 건수 : {}", targetList.size());
+		LOGGER.debug("議고쉶議곌굔 {}", searchVO);
+		LOGGER.debug("Result 嫄댁닔 : {}", targetList.size());
 
-		// 서비스체크 함수 호출.
+		// ?쒕퉬?ㅼ껜???⑥닔 ?몄텧.
 		Iterator<ProcessMonVO> iter = targetList.iterator();
 		ProcessMon target = null;
 		String procsSttus = null;
@@ -85,7 +85,7 @@ public class EgovProcessMonScheduling extends EgovAbstractServiceImpl {
 			target = iter.next();
 			LOGGER.debug("Data : {}", target);
 
-			// 서비스 체크 수행.
+			// ?쒕퉬??泥댄겕 ?섑뻾.
 			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.KOREA);
 			target.setCreatDt(formatter.format(new java.util.Date()));
 
@@ -105,16 +105,16 @@ public class EgovProcessMonScheduling extends EgovAbstractServiceImpl {
 				nrmltAt = false;
 			}
 
-			// email 전송.
+			// email ?꾩넚.
 			if (!nrmltAt) {
-				target.setProcsSttus("비정상");
+				target.setProcsSttus("鍮꾩젙??);
 				sendEmail(target);
 			}
 
-			// DB에 결과값 저장
+			// DB??寃곌낵媛????
 			target.setProcsSttus(procsSttus);
 			if (procsSttus == "02") {
-				target.setLogInfo("실행 중인 작업 중 지정된 조건에 일치하는 작업이 없습니다.");
+				target.setLogInfo("?ㅽ뻾 以묒씤 ?묒뾽 以?吏?뺣맂 議곌굔???쇱튂?섎뒗 ?묒뾽???놁뒿?덈떎.");
 			}
 
 			target.setLastUpdusrId("SYSTEM");
@@ -123,7 +123,7 @@ public class EgovProcessMonScheduling extends EgovAbstractServiceImpl {
 	}
 
 	/**
-	 * 이메일을 전송한다.
+	 * ?대찓?쇱쓣 ?꾩넚?쒕떎.
 	 * @return
 	 *
 	 * @param target
@@ -134,33 +134,33 @@ public class EgovProcessMonScheduling extends EgovAbstractServiceImpl {
 		String errorContents = "";
 
 		SimpleMailMessage msg = new SimpleMailMessage(this.mntrngMessage);
-		// 수신자
+		// ?섏떊??
 		msg.setTo(target.getMngrEmailAddr());
-		// 메일제목
+		// 硫붿씪?쒕ぉ
 		subject = msg.getSubject();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(subject)) {
-			subject = EgovStringUtil.replace(subject, "{모니터링종류}", "프로세스모니터링");
+			subject = EgovStringUtil.replace(subject, "{紐⑤땲?곕쭅醫낅쪟}", "?꾨줈?몄뒪紐⑤땲?곕쭅");
 			msg.setSubject(subject);
 		}
-		// 메일내용
+		// 硫붿씪?댁슜
 		text = msg.getText();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(text)) {
-			text = EgovStringUtil.replace(text, "{모니터링종류}", "프로세스모니터링");
-			errorContents = "프로세스명 : ";
+			text = EgovStringUtil.replace(text, "{紐⑤땲?곕쭅醫낅쪟}", "?꾨줈?몄뒪紐⑤땲?곕쭅");
+			errorContents = "?꾨줈?몄뒪紐?: ";
 			errorContents += target.getProcessNm();
 			errorContents += "\n";
-			errorContents += "상태 : ";
+			errorContents += "?곹깭 : ";
 			errorContents += target.getProcsSttus();
 			errorContents += "\n";
-			errorContents += "모티터링 시각 : ";
+			errorContents += "紐⑦떚?곕쭅 ?쒓컖 : ";
 			errorContents += EgovDateUtil.convertDate(target.getCreatDt(), "", "", "");
 			errorContents += "\n";
 			if (target.getLogInfo() != null && !target.getLogInfo().equals("")) {
-				errorContents += target.getProcessNm() + " 의 프로세스 상태가 비정상입니다.  \n로그를 확인해주세요.";
+				errorContents += target.getProcessNm() + " ???꾨줈?몄뒪 ?곹깭媛 鍮꾩젙?곸엯?덈떎.  \n濡쒓렇瑜??뺤씤?댁＜?몄슂.";
 			}
-			text = EgovStringUtil.replace(text, "{에러내용}", errorContents);
+			text = EgovStringUtil.replace(text, "{?먮윭?댁슜}", errorContents);
 			msg.setText(text);
 		}
 

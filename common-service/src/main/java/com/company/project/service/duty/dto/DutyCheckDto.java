@@ -11,19 +11,19 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "당직 체크 항목 DTO")
+@Schema(description = "Description")
 public class DutyCheckDto {
 
-    @Schema(description = "당직 체크 구분")
+    @Schema(description = "Description")
     private String bndtCeckSe;
 
-    @Schema(description = "당직 체크 코드")
+    @Schema(description = "Description")
     private String bndtCeckCd;
 
-    @Schema(description = "당직 체크 코드 명")
+    @Schema(description = "Description")
     private String bndtCeckCdNm;
 
-    @Schema(description = "사용 여부")
+    @Schema(description = "Description")
     private String useAt;
 
     public static DutyCheckDto from(BndtCeckManage entity) {

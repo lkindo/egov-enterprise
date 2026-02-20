@@ -16,15 +16,15 @@ public class ProjectCryptoConfig {
 
     @Bean(name = "ariacryptoService")
     public EgovARIACryptoServiceImpl cryptoService() {
-        // EgovPasswordEncoder 설정
+        // EgovPasswordEncoder ??쇱젟
         EgovPasswordEncoder encoder = new EgovPasswordEncoder();
         encoder.setAlgorithm("SHA-256");
 
-        // algorithmKey를 해시하여 verification용으로 설정
+        // algorithmKey????곷뻻??뤿연 verification??뱀몵嚥???쇱젟
         String hashedPassword = encoder.encryptPassword(algorithmKey);
         encoder.setHashedPassword(hashedPassword);
 
-        // EgovARIACryptoServiceImpl 설정
+        // EgovARIACryptoServiceImpl ??쇱젟
         EgovARIACryptoServiceImpl cryptoService = new EgovARIACryptoServiceImpl();
         cryptoService.setBlockSize(1024);
         cryptoService.setPasswordEncoder(encoder);

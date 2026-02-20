@@ -13,9 +13,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * JPA 기반 공통 코드 관리 서비스 구현체
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
- * - EgovAbstractServiceImpl 상속 및 EgovCodeService 인터페이스 구현
+ * JPA 湲곕컲 怨듯넻 肄붾뱶 愿由??쒕퉬??援ы쁽泥?
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
+ * - EgovAbstractServiceImpl ?곸냽 諛?EgovCodeService ?명꽣?섏씠??援ы쁽
  */
 @Service("egovCodeService")
 @Transactional(readOnly = true)
@@ -28,7 +28,7 @@ public class CodeService extends EgovAbstractServiceImpl implements EgovCodeServ
     }
 
     /**
-     * 특정 그룹 코드(CODE_ID)에 속한 상세 코드 목록 조회
+     * ?뱀젙 洹몃９ 肄붾뱶(CODE_ID)???랁븳 ?곸꽭 肄붾뱶 紐⑸줉 議고쉶
      */
     @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
@@ -39,7 +39,7 @@ public class CodeService extends EgovAbstractServiceImpl implements EgovCodeServ
     }
 
     /**
-     * 전체 활성 코드 목록 조회
+     * ?꾩껜 ?쒖꽦 肄붾뱶 紐⑸줉 議고쉶
      */
     @Override
     public List<CodeDto> getAllActiveCodes() {

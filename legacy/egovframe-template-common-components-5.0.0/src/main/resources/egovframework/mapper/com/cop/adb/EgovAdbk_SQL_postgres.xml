@@ -98,9 +98,9 @@
 			FROM
 				COMTNADBKMANAGE
 			WHERE USE_AT = 'Y'
-				AND( OTHBC_SCOPE = '회사	'
+				AND( OTHBC_SCOPE = '?뚯궗	'
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '부서'
+						OR (OTHBC_SCOPE = '遺??
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)
 
 		
@@ -136,9 +136,9 @@
 			FROM
 				COMTNADBKMANAGE
 			WHERE USE_AT = 'Y'
-				AND (OTHBC_SCOPE = '회사'
+				AND (OTHBC_SCOPE = '?뚯궗'
 					OR WRTER_ID = #{wrterId}
-						OR (OTHBC_SCOPE = '부서'
+						OR (OTHBC_SCOPE = '遺??
 							AND TRGET_ORGNZT_ID = #{trgetOrgnztId})	)
 
 

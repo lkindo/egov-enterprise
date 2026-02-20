@@ -5,14 +5,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 개요
- * - 동기화대상 서버에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?숆린?붾????쒕쾭?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 동기화대상 서버의 목록 항목, 조회조건 등을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?숆린?붾????쒕쾭??紐⑸줉 ??ぉ, 議고쉶議곌굔 ?깆쓣 愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:57
+ * @created 28-6-2010 ?ㅼ쟾 10:44:57
  */
 
 public class SynchrnServerVO extends SynchrnServer {
@@ -20,32 +20,32 @@ public class SynchrnServerVO extends SynchrnServer {
 	private static final long serialVersionUID = 1L;
 
 	/**
-     * 동기화대상 서버명 조회조건
+     * ?숆린?붾????쒕쾭紐?議고쉶議곌굔
      */
     private String strSynchrnServerNm;
 
     /**
-     * 동기화대상 서버 목록
+     * ?숆린?붾????쒕쾭 紐⑸줉
      */
     private List<SynchrnServerVO> synchrnServerList;
 
     /**
-     * 동기화 대상 파일
+     * ?숆린??????뚯씪
      */
     private File synchrnFile;
 
     /**
-     * 삭제 대상 파일
+     * ??젣 ????뚯씪
      */
     private String deleteFileNm;
 
     /**
-     * 업로드 위치
+     * ?낅줈???꾩튂
      */
     private String filePath;
 
     /**
-     * 반영여부
+     * 諛섏쁺?щ?
      */
     private String strReflctAt;
 

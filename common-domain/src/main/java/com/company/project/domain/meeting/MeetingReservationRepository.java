@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * 회의실예약 Repository
+ * ???벥??쇱굙??Repository
  */
 public interface MeetingReservationRepository extends JpaRepository<MeetingReservation, String> {
     

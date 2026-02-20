@@ -3,19 +3,19 @@ package egovframework.com.cmm.exception;
 import org.egovframe.rte.fdl.cmmn.exception.BaseRuntimeException;
 
 /**
- * EgovXssException 클래스
+ * EgovXssException ?대옒??
  *
- * @author 장동한
+ * @author ?λ룞??
  * @since 2016.10.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일        수정자           수정내용
+ *   ?섏젙??       ?섏젙??          ?섏젙?댁슜
  *  -------      -------------  ----------------------
- *   2016.10.17  장동한           최초 생성
+ *   2016.10.17  ?λ룞??          理쒖큹 ?앹꽦
  * </pre>
  */
 
@@ -24,10 +24,10 @@ public class EgovFileExtensionException extends BaseRuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * EgovFileExtensionException 생성자.
+	 * EgovFileExtensionException ?앹꽦??
 	 *
-	 * @param defaultMessage 메세지 지정
-	 * @param wrappedException 원인 Exception
+	 * @param defaultMessage 硫붿꽭吏 吏??
+	 * @param wrappedException ?먯씤 Exception
 	 */
 	public EgovFileExtensionException(String message, String messageKey) {
 		this.messageKey = messageKey;

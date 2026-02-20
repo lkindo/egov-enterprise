@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 권한 관리 서비스
+ * 沅뚰븳 愿由??쒕퉬??
  */
 @Service("projectAuthorManageService")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class AuthorManageService {
     private final AuthorityRepository authorityRepository;
 
     /**
-     * 권한 목록 조회
+     * 沅뚰븳 紐⑸줉 議고쉶
      */
     public List<AuthorManageDto> selectAuthorList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -41,14 +41,14 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 목록 총 건수
+     * 沅뚰븳 紐⑸줉 珥?嫄댁닔
      */
     public int selectAuthorListTotCnt(ComDefaultVO searchVO) {
         return (int) authorityRepository.count();
     }
 
     /**
-     * 권한 상세 조회
+     * 沅뚰븳 ?곸꽭 議고쉶
      */
     public AuthorManageDto selectAuthor(@NonNull String authorCode) {
         return authorityRepository.findById(Objects.requireNonNull(authorCode))
@@ -57,7 +57,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 등록
+     * 沅뚰븳 ?깅줉
      */
     @Transactional
     public void insertAuthor(@NonNull AuthorManageDto dto) {
@@ -70,7 +70,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 수정
+     * 沅뚰븳 ?섏젙
      */
     @Transactional
     public void updateAuthor(@NonNull AuthorManageDto dto) {
@@ -80,7 +80,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 삭제
+     * 沅뚰븳 ??젣
      */
     @Transactional
     public void deleteAuthor(@NonNull String authorCode) {
@@ -88,7 +88,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 다중 삭제
+     * 沅뚰븳 ?ㅼ쨷 ??젣
      */
     @Transactional
     public void deleteAuthors(@NonNull String[] authorCodes) {

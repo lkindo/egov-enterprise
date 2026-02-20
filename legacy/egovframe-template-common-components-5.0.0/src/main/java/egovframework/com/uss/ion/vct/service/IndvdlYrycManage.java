@@ -3,14 +3,14 @@ package egovframework.com.uss.ion.vct.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 개인별 연차관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛쒖씤蹂??곗감愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 연차관리의 발생연도,사용자ID,연차발생개수,사용연차개수,잔여연차개수,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?곗감愿由ъ쓽 諛쒖깮?곕룄,?ъ슜?륤D,?곗감諛쒖깮媛쒖닔,?ъ슜?곗감媛쒖닔,?붿뿬?곗감媛쒖닔,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class IndvdlYrycManage extends ComDefaultVO {
@@ -18,47 +18,47 @@ public class IndvdlYrycManage extends ComDefaultVO {
 	private static final long serialVersionUID = -6215242195948154486L;
 
 	/**
-	*  발생연도
+	*  諛쒖깮?곕룄
 	*/
 	private String occrrncYear;
 
 	/**
-	*  사용자ID
+	*  ?ъ슜?륤D
 	*/
 	private String usid;
 
 	/**
-	*  발생연차개수
+	*  諛쒖깮?곗감媛쒖닔
 	*/
 	private double occrncYrycCo;
 
 	/**
-	*  사용연차개수
+	*  ?ъ슜?곗감媛쒖닔
 	*/
 	private double useYrycCo;
 
 	/**
-	*  잔여연차개수
+	*  ?붿뿬?곗감媛쒖닔
 	*/
 	private double remndrYrycCo;
 
 	/**
-	*  최초등록자ID
+	*  理쒖큹?깅줉?륤D
 	*/
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점
+	*  理쒖큹?깅줉?쒖젏
 	*/
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID
+	*  理쒖쥌?섏젙?륤D
 	*/
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점
+	*  理쒖쥌?섏젙?쒖젏
 	*/
 	private String lastUpdusrPnttm;
 

@@ -3,18 +3,18 @@ package egovframework.com.sec.ram.service;
 import java.util.List;
 
 /**
- * 권한관리에 대한 Vo 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이문준          최초 생성
+ *   2009.03.20  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -27,7 +27,7 @@ public class AuthorManageVO extends AuthorManage {
 
 
 	/**
-	 * authorManageList attribute 를 리턴한다.
+	 * authorManageList attribute 瑜?由ы꽩?쒕떎.
 	 * @return List<AuthorManageVO>
 	 */
 	public List<AuthorManageVO> getAuthorManageList() {
@@ -35,7 +35,7 @@ public class AuthorManageVO extends AuthorManage {
 	}
 
 	/**
-	 * authorManageList attribute 값을 설정한다.
+	 * authorManageList attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param authorManageList List<AuthorManageVO> 
 	 */
 	public void setAuthorManageList(List<AuthorManageVO> authorManageList) {

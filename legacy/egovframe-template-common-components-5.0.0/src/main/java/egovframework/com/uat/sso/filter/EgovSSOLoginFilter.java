@@ -22,21 +22,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Egov SSO 로그인 필터
+ * Egov SSO 濡쒓렇???꾪꽣
  * 
- * @author 공통서비스 개발팀 서준식
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?쒖???
  * @since 2011.08.02
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2011.08.02  서준식          최초 생성
- *   2025.07.29  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UncommentedEmptyMethodBody(빈 메소드에 빈메소드임을 나타내는 주석을 추가할 것)
- *   2025.07.29  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2011.08.02  ?쒖???         理쒖큹 ?앹꽦
+ *   2025.07.29  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UncommentedEmptyMethodBody(鍮?硫붿냼?쒖뿉 鍮덈찓?뚮뱶?꾩쓣 ?섑??대뒗 二쇱꽍??異붽???寃?
+ *   2025.07.29  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -55,7 +55,7 @@ public class EgovSSOLoginFilter implements Filter {
 		EgovSSOService egovSSOService = null;
 		try {
 			egovSSOService = (EgovSSOService) act.getBean("egovSSOService");
-			// 221116 김혜준 2022 시큐어코딩 조치
+			// 221116 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 			if (ObjectUtils.isEmpty(egovSSOService)) {
 				LOGGER.error("Fail to create 'EgovSSOService' object");
 				chain.doFilter(request, response);
@@ -77,19 +77,19 @@ public class EgovSSOLoginFilter implements Filter {
 			if (isRemotelyAuthenticated == null) {
 				try {
 					if (egovSSOService != null) {// 2022.01 Null pointers should not be dereferenced
-						// sso서버에 토큰 생성
+						// sso?쒕쾭???좏겙 ?앹꽦
 						egovSSOService.requestIssueToken(request, response);
-						// sso 인증 완료 여부를 세션에 저장
+						// sso ?몄쬆 ?꾨즺 ?щ?瑜??몄뀡?????
 						session.setAttribute("isRemotelyAuthenticated", "true");
 					} else {
 						LOGGER.debug("EgovSSOService is null, skipping SSO token issuance.");
 						session.setAttribute("isRemotelyAuthenticated", "fail");
 					}
 
-					// 로컬 인증 적용 여부 완료를 세션에 저장
+					// 濡쒖뺄 ?몄쬆 ?곸슜 ?щ? ?꾨즺瑜??몄뀡?????
 					session.setAttribute("isLocallyAuthenticated", "true");
 
-				} catch (IllegalStateException ex) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+				} catch (IllegalStateException ex) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					session.setAttribute("isRemotelyAuthenticated", "fail");
 					LOGGER.debug("SSO Authentication fail : invalidated session {}", ex.getMessage());
 				} catch (Exception ex) {
@@ -101,13 +101,13 @@ public class EgovSSOLoginFilter implements Filter {
 		} else if (isLocallyAuthenticated == null) {
 			if (isRemotelyAuthenticated == null) {
 				if (egovSSOService != null) {// 2022.01 Null pointers should not be dereferenced
-					// sso서버에 토큰이 존재하는지 체크함
+					// sso?쒕쾭???좏겙??議댁옱?섎뒗吏 泥댄겕??
 					isSSOLoggedOn = egovSSOService.hasTokenInSSOServer(httpRequest, response);
 					if (isSSOLoggedOn) {
-						// 서버에 토큰이 존재할 경우 로컬 인증을 위해 isRemotelyAuthenticated true로 변경
+						// ?쒕쾭???좏겙??議댁옱??寃쎌슦 濡쒖뺄 ?몄쬆???꾪빐 isRemotelyAuthenticated true濡?蹂寃?
 						session.setAttribute("isRemotelyAuthenticated", "true");
 
-						// 로컬 DB인증을 위한 loginVO 객체를 세션에 저장
+						// 濡쒖뺄 DB?몄쬆???꾪븳 loginVO 媛앹껜瑜??몄뀡?????
 						session.setAttribute("loginVOForDBAuthentication",
 								egovSSOService.getLoginVO(request, response));
 					}
@@ -123,22 +123,22 @@ public class EgovSSOLoginFilter implements Filter {
 		if (isLocallyAuthenticated == null) {
 			if (isRemotelyAuthenticated != null && isRemotelyAuthenticated.equals("true")) {
 				try {
-					// 세션 토큰 정보를 가지고 DB로부터 사용자 정보를 가져옴
+					// ?몄뀡 ?좏겙 ?뺣낫瑜?媛吏怨?DB濡쒕????ъ슜???뺣낫瑜?媛?몄샂
 					LoginVO loginVO = (LoginVO) session.getAttribute("loginVOForDBAuthentication");
 					loginVO = loginService.actionLoginByEsntlId(loginVO);
 					if (loginVO != null && loginVO.getId() != null && !loginVO.getId().equals("")) {
-						// 세션 로그인
+						// ?몄뀡 濡쒓렇??
 						session.setAttribute("loginVO", loginVO);
 
-						// 로컬 인증결과 세션에 저장
+						// 濡쒖뺄 ?몄쬆寃곌낵 ?몄뀡?????
 						session.setAttribute("isLocallyAuthenticated", "true");
 					} else {
 						LOGGER.debug("Local authentication by sso is failed");
 					}
-				} catch (IllegalStateException ex) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+				} catch (IllegalStateException ex) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					LOGGER.debug("Local authentication by sso is failed (Invalidated session) : {}", ex.getMessage());
 				} catch (Exception ex) {
-					// DB인증 예외가 발생할 경우 로그를 남기고 로컬인증을 시키지 않고 그대로 진행함.
+					// DB?몄쬆 ?덉쇅媛 諛쒖깮??寃쎌슦 濡쒓렇瑜??④린怨?濡쒖뺄?몄쬆???쒗궎吏 ?딄퀬 洹몃?濡?吏꾪뻾??
 					LOGGER.debug("Local authentication by sso is failed : {}", ex.getMessage());
 				}
 

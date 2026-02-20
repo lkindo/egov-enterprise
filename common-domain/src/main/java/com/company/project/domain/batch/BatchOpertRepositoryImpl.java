@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.List;
 
 /**
- * 배치작업 Repository Custom 구현체
+ * 獄쏄퀣??臾믩씜 Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class BatchOpertRepositoryImpl implements BatchOpertRepositoryCustom {

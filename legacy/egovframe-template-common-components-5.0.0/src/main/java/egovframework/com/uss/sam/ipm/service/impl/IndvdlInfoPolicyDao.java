@@ -10,19 +10,19 @@ import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy;
 
 /**
- * 개인정보보호정책를 처리하는 Dao Class 구현
+ * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜?泥섎━?섎뒗 Dao Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see
  * 
  *      <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일          수정자       수정내용
+ *   ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2009.07.03     장동한       최초 생성
+ *   2009.07.03     ?λ룞??      理쒖큹 ?앹꽦
  *
  *      </pre>
  */
@@ -30,9 +30,9 @@ import egovframework.com.uss.sam.ipm.service.IndvdlInfoPolicy;
 public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 
 	/**
-	 * 개인정보보호정책를(을) 목록을 한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? 紐⑸줉???쒕떎.
 	 * 
-	 * @param searchVO 조회할 정보가 담긴 VO
+	 * @param searchVO 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -41,9 +41,9 @@ public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보보호정책를(을) 목록 전체 건수를(을) 조회한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
 	 * 
-	 * @param searchVO 조회할 정보가 담긴 VO
+	 * @param searchVO 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -52,9 +52,9 @@ public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보보호정책를(을) 상세조회 한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? ?곸꽭議고쉶 ?쒕떎.
 	 * 
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담김 VO
+	 * @param indvdlInfoPolicy 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?뺣낫媛 ?닿? VO
 	 * @return IndvdlInfoPolicy
 	 * @throws Exception
 	 */
@@ -63,9 +63,9 @@ public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보보호정책를(을) 등록한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? ?깅줉?쒕떎.
 	 * 
-	 * @param qindvdlInfoPolicy 개인정보보호정책 정보가 담김 VO
+	 * @param qindvdlInfoPolicy 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?뺣낫媛 ?닿? VO
 	 * @throws Exception
 	 */
 	public void insertIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
@@ -73,9 +73,9 @@ public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보보호정책를(을) 수정한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? ?섏젙?쒕떎.
 	 * 
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담김 VO
+	 * @param indvdlInfoPolicy 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?뺣낫媛 ?닿? VO
 	 * @throws Exception
 	 */
 	public void updateIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {
@@ -83,9 +83,9 @@ public class IndvdlInfoPolicyDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 개인정보보호정책를(을) 삭제한다.
+	 * 媛쒖씤?뺣낫蹂댄샇?뺤콉瑜??? ??젣?쒕떎.
 	 * 
-	 * @param indvdlInfoPolicy 개인정보보호정책 정보가 담김 VO
+	 * @param indvdlInfoPolicy 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?뺣낫媛 ?닿? VO
 	 * @throws Exception
 	 */
 	public void deleteIndvdlInfoPolicy(IndvdlInfoPolicy indvdlInfoPolicy) throws Exception {

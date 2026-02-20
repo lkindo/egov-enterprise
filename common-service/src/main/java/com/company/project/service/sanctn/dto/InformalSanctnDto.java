@@ -13,49 +13,49 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "약식결재 정보 DTO")
+@Schema(description = "Description")
 public class InformalSanctnDto {
 
-    @Schema(description = "약식결재 ID")
+    @Schema(description = "Description")
     private String infrmlSanctnId;
 
-    @Schema(description = "업무 구분 코드")
+    @Schema(description = "Description")
     private String jobSeCode;
 
-    @Schema(description = "업무 구분 명")
+    @Schema(description = "Description")
     private String jobSeNm;
 
-    @Schema(description = "신청자 ID")
+    @Schema(description = "Description")
     private String applcntId;
 
-    @Schema(description = "신청자 명")
+    @Schema(description = "Description")
     private String applcntNm;
 
-    @Schema(description = "신청 일자")
+    @Schema(description = "Description")
     private String reqstDe;
 
-    @Schema(description = "결재자 ID")
+    @Schema(description = "Description")
     private String sanctnerId;
 
-    @Schema(description = "결재자 명")
+    @Schema(description = "Description")
     private String sanctnerNm;
 
-    @Schema(description = "결재자 조직 명")
+    @Schema(description = "Description")
     private String sanctnerOrgnztNm;
 
-    @Schema(description = "승인 여부")
+    @Schema(description = "Description")
     private String confmAt;
 
-    @Schema(description = "승인 일시")
+    @Schema(description = "Description")
     private LocalDateTime sanctnDt;
 
-    @Schema(description = "반려 사유")
+    @Schema(description = "Description")
     private String returnResn;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static InformalSanctnDto from(InformalSanctn entity) {

@@ -6,8 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 지식전문가 JPA Entity
- * 레거시 테이블: NDAMPRO
+ * 筌왖??뱀읈?얜㈇? JPA Entity
+ * ??뉕탢?????뵠?? NDAMPRO
  */
 @Entity
 @Table(name = "NDAMPRO")

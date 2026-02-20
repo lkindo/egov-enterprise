@@ -9,17 +9,17 @@ import org.springframework.stereotype.Repository;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.uss.ion.ntr.service.NoteRecptn;
 /**
- * 받은쪽지함관리를 처리하는 Dao Class 구현
- * @author 공통콤포넌트 장동한
+ * 諛쏆?履쎌??④?由щ? 泥섎━?섎뒗 Dao Class 援ы쁽
+ * @author 怨듯넻肄ㅽ룷?뚰듃 ?λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2017.09.14	 장동한		   표준프레임워크 3.7 개선
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
+ *   2017.09.14	 ?λ룞??	   ?쒖??꾨젅?꾩썙??3.7 媛쒖꽑
  *
  * </pre>
  */
@@ -27,9 +27,9 @@ import egovframework.com.uss.ion.ntr.service.NoteRecptn;
 public class NoteRecptnDao extends EgovComAbstractDAO {
 
     /**
-     * 받은쪽지함관리를(을) 목록을 한다.
-     * @param noteRecptn  -조회할 정보가 담긴 객체
-     * @return List -조회한목록
+     * 諛쏆?履쎌??④?由щ?(?? 紐⑸줉???쒕떎.
+     * @param noteRecptn  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return List -議고쉶?쒕ぉ濡?
      * @throws Exception
      */
     public List<EgovMap> selectNoteRecptnList(NoteRecptn noteRecptn) throws Exception {
@@ -37,9 +37,9 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param noteRecptn  -조회할 정보가 담긴 객체
-     * @return int -조회한건수
+     * 諛쏆?履쎌??④?由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param noteRecptn  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔??
      * @throws Exception
      */
     public int selectNoteRecptnListCnt(NoteRecptn noteRecptn) throws Exception {
@@ -47,8 +47,8 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함관리를 개봉으로 상태를 바꾼다.
-     * @param noteRecptn  -받은쪽지함관리 정보가 담김 객체
+     * 諛쏆?履쎌??④?由щ? 媛쒕큺?쇰줈 ?곹깭瑜?諛붽씔??
+     * @param noteRecptn  -諛쏆?履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void updateNoteRecptnRelationOpenYn(NoteRecptn noteRecptn) throws Exception {
@@ -56,9 +56,9 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함관리를(을) 상세조회 한다.
-     * @param noteRecptn  -받은쪽지함관리 정보가 담김 객체
-     * @return NoteRecptn -조회한받은쪽지함객체
+     * 諛쏆?履쎌??④?由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param noteRecptn  -諛쏆?履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
+     * @return NoteRecptn -議고쉶?쒕컺?履쎌??④컼泥?
      * @throws Exception
      */
     public Map<?, ?> selectNoteRecptnDetail(NoteRecptn noteRecptn) throws Exception {
@@ -66,8 +66,8 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지관리/쪽지관리,보낸보낸쪽지함, 받은쪽지함 삭제
-     * @param noteRecptn  -보낸쪽지함관리 정보가 담김 객체
+     * 履쎌?愿由?履쎌?愿由?蹂대궦蹂대궦履쎌??? 諛쏆?履쎌?????젣
+     * @param noteRecptn  -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteRecptnRelation(NoteRecptn noteRecptn) throws Exception {
@@ -75,8 +75,8 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함관리를(을) 삭제한다.
-     * @param noteRecptn  -받은쪽지함관리 정보가 담김 객체
+     * 諛쏆?履쎌??④?由щ?(?? ??젣?쒕떎.
+     * @param noteRecptn  -諛쏆?履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteRecptn(NoteRecptn noteRecptn) throws Exception {
@@ -84,8 +84,8 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지관리/보낸족지함삭제
-     * @param noteRecptn  -보낸쪽지함관리 정보가 담김 객체
+     * 履쎌?愿由?蹂대궦議깆??⑥궘??
+     * @param noteRecptn  -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteTrnsmit(NoteRecptn noteRecptn) throws Exception {
@@ -93,8 +93,8 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 쪽지관리/쪽지관리삭제
-     * @param noteRecptn  -보낸쪽지함관리 정보가 담김 객체
+     * 履쎌?愿由?履쎌?愿由ъ궘??
+     * @param noteRecptn  -蹂대궦履쎌??④?由??뺣낫媛 ?닿? 媛앹껜
      * @throws Exception
      */
     public void deleteNoteManage(NoteRecptn noteRecptn) throws Exception {
@@ -102,9 +102,9 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 보낸쪽지함관리 건수를 조회한다.
-     * @param  noteRecptn  -조회할 정보가 담긴 객체
-     * @return int -조회한건수
+     * 蹂대궦履쎌??④?由?嫄댁닔瑜?議고쉶?쒕떎.
+     * @param  noteRecptn  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔??
      * @throws Exception
      */
     public int selectNoteTrnsmitRelationCnt(NoteRecptn noteRecptn) throws Exception {
@@ -112,9 +112,9 @@ public class NoteRecptnDao extends EgovComAbstractDAO {
     }
 
     /**
-     * 받은쪽지함관리 건수를 조회한다.
-     * @param noteRecptn  조회할 정보가 담긴 객체
-     * @return int -조회한건수
+     * 諛쏆?履쎌??④?由?嫄댁닔瑜?議고쉶?쒕떎.
+     * @param noteRecptn  議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔??
      * @throws Exception
      */
     public int selectNoteRecptnRelationCnt(NoteRecptn noteRecptn) throws Exception {

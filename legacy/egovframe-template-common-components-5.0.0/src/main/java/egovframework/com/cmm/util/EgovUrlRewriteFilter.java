@@ -15,21 +15,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * URL 재작성 필터
+ * URL ?ъ옉???꾪꽣
  * 
- * @author 전자정부 표준프레임워크 유지보수
+ * @author ?꾩옄?뺣? ?쒖??꾨젅?꾩썙???좎?蹂댁닔
  * @since 2014. 09.30
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.09.30  표프센          최초생성
- *   2020.11.02  신용호          KISA 보안약점 조치 (CRLF 제거 조치)
- *   2025.05.28  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-StringInstantiation(문자열 인스턴스화)
+ *   2014.09.30  ?쒗봽??         理쒖큹?앹꽦
+ *   2020.11.02  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (CRLF ?쒓굅 議곗튂)
+ *   2025.05.28  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-StringInstantiation(臾몄옄???몄뒪?댁뒪??
  *
  *      </pre>
  */

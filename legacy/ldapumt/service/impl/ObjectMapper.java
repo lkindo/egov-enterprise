@@ -1,5 +1,5 @@
 /*
- * eGovFrame LDAP조직도관리
+ * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * @author 전우성(슈퍼개발자K3)
+ * @author ?꾩슦???덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.ldapumt.service.impl;
 
@@ -36,21 +36,21 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
  *
- * LDAP에서 조회된 결과를 vo에 맵핑해주는 클래
+ * LDAP?먯꽌 議고쉶??寃곌낵瑜?vo??留듯븨?댁＜???대옒
  * 
- * @author 전우성
+ * @author ?꾩슦??
  * @since 2014.10.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.10.12  전우성          최초 생성
- *   2017-02-13  이정은          시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
- *   2025.06.21  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-ImmutableField(불변필드), UselessParentheses(쓸모없는 괄호)
+ *   2014.10.12  ?꾩슦??         理쒖큹 ?앹꽦
+ *   2017-02-13  ?댁젙?          ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
+ *   2025.06.21  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-ImmutableField(遺덈??꾨뱶), UselessParentheses(?몃え?녿뒗 愿꾪샇)
  *
  *      </pre>
  */
@@ -63,7 +63,7 @@ public class ObjectMapper<T> implements ContextMapper<Object> {
 	}
 
 	/**
-	 * ContextAdapter에서 받아온 객체를 vo로 변환한다.
+	 * ContextAdapter?먯꽌 諛쏆븘??媛앹껜瑜?vo濡?蹂?섑븳??
 	 */
 	@Override
 	public Object mapFromContext(Object arg0) throws NamingException {
@@ -74,7 +74,7 @@ public class ObjectMapper<T> implements ContextMapper<Object> {
 
 		try {
 			vo = (LdapObject) type.getDeclaredConstructor().newInstance();
-			// 2017-02-13 이정은 시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+			// 2017-02-13 ?댁젙? ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException e2) {
 			throw new RuntimeException(e2);
@@ -97,22 +97,22 @@ public class ObjectMapper<T> implements ContextMapper<Object> {
 					try {
 						Class<?> o = descriptor.getPropertyType();
 						if (o == int.class) {
-							// KISA 보안약점 조치 (2018-10-29, 윤창원)
+							// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 							PropertyUtils.setProperty(vo, descriptor.getName(), Integer
 									.valueOf(EgovStringUtil.isNullToString(attrs.get(descriptor.getName()).get())));
 						}
 						if (o == String.class) {
-							// KISA 보안약점 조치 (2018-10-29, 윤창원)
+							// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 							PropertyUtils.setProperty(vo, descriptor.getName(),
 									attrs.get(EgovStringUtil.isNullToString(descriptor.getName())).get());
 						}
 						if (o == Boolean.class) {
-							// KISA 보안약점 조치 (2018-10-29, 윤창원)
+							// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 							PropertyUtils.setProperty(vo, descriptor.getName(),
 									"Y".equals(attrs.get(descriptor.getName()).get()));
 						}
 
-						// 2017-02-13 이정은 시큐어코딩(ES) - 시큐어코딩 부적절한 예외 처리[CWE-253, CWE-440, CWE-754]
+						// 2017-02-13 ?댁젙? ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 					} catch (IllegalAccessException e) {
 						throw new RuntimeException(e);
 					} catch (InvocationTargetException e) {

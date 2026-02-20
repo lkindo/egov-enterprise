@@ -1,25 +1,25 @@
 package egovframework.com.cop.ems.service;
 
 /**
- * 발송메일을 상세 조회하는 비즈니스 인터페이스 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪???곸꽭 議고쉶?섎뒗 鍮꾩쫰?덉뒪 ?명꽣?섏씠???대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
 public interface EgovSndngMailDetailService {
 
 	/**
-	 * 발송메일을 상세 조회한다.
+	 * 諛쒖넚硫붿씪???곸꽭 議고쉶?쒕떎.
 	 * @param vo SndngMailVO
 	 * @return SndngMailVO
 	 * @exception Exception
@@ -27,14 +27,14 @@ public interface EgovSndngMailDetailService {
 	SndngMailVO selectSndngMail(SndngMailVO vo) throws Exception;
 
 	/**
-	 * 발송메일을 삭제한다.
+	 * 諛쒖넚硫붿씪????젣?쒕떎.
 	 * @param vo SndngMailVO
 	 * @exception
 	 */
 	void deleteSndngMail(SndngMailVO vo) throws Exception;
 
 	/**
-	 * 첨부파일을 삭제한다.
+	 * 泥⑤??뚯씪????젣?쒕떎.
 	 * @param vo SndngMailVO
 	 * @exception
 	 */

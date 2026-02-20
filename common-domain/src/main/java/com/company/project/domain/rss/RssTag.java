@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * RSS 태그 정보 Entity
- * 레거시 테이블: NRSSTAG
+ * RSS ??볥젃 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NRSSTAG
  */
 @Entity
 @Table(name = "NRSSTAG")

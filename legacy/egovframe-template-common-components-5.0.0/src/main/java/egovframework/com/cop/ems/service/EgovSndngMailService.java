@@ -1,17 +1,17 @@
 package egovframework.com.cop.ems.service;
 
 /**
- * 메일 솔루션과 연동해서 이용해서 메일을 보내는 서비스 클래스
+ * 硫붿씪 ?붾（?섍낵 ?곕룞?댁꽌 ?댁슜?댁꽌 硫붿씪??蹂대궡???쒕퉬???대옒??
  * @since 2011.09.09
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2011.09.09  서준식       최초 작성
+ *  2011.09.09  ?쒖???      理쒖큹 ?묒꽦
  *
  *  </pre>
  */
@@ -19,7 +19,7 @@ package egovframework.com.cop.ems.service;
 public interface EgovSndngMailService {
 
 	/**
-	 * 메일을 발송한다
+	 * 硫붿씪??諛쒖넚?쒕떎
 	 * @param vo SndngMailVO
 	 * @return boolean
 	 * @exception Exception

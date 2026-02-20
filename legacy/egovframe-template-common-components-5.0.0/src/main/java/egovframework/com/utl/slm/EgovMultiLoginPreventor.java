@@ -7,12 +7,12 @@ import jakarta.servlet.http.HttpSession;
 
 /**
  * @Class Name : EgovMultiLoginPreventor.java
- * @Description : 중복 로그인 방지를 위해 사용자의 로그인 아이디와 세션 아이디를 관리하는 구현 클래스
+ * @Description : 以묐났 濡쒓렇??諛⑹?瑜??꾪빐 ?ъ슜?먯쓽 濡쒓렇???꾩씠?붿? ?몄뀡 ?꾩씠?붾? 愿由ы븯??援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2014.09.30	표준프레임워크		최초생성
+ *    2014.09.30	?쒖??꾨젅?꾩썙??	理쒖큹?앹꽦
 * @author YJ Kwon
  * @since 2014.09.30
  * @version 3.5
@@ -22,14 +22,14 @@ public class EgovMultiLoginPreventor {
 	public static ConcurrentHashMap<String, HttpSession> loginUsers = new ConcurrentHashMap<>();
 
 	/**
-	 * 사용자의 로그인 아이디로 생성된 세션이 있는지를 확인한다
+	 * ?ъ슜?먯쓽 濡쒓렇???꾩씠?붾줈 ?앹꽦???몄뀡???덈뒗吏瑜??뺤씤?쒕떎
 	 * */
 	public static boolean findByLoginId(String loginId) {
 		return loginUsers.containsKey(loginId);
 	}
 
 	/**
-	 * 사용자의 로그인 아이디로 이미 존재하는 세션을 무효화한다
+	 * ?ъ슜?먯쓽 濡쒓렇???꾩씠?붾줈 ?대? 議댁옱?섎뒗 ?몄뀡??臾댄슚?뷀븳??
 	 * */
 	public static void invalidateByLoginId(String loginId) {
 		Enumeration<String> e = loginUsers.keys();

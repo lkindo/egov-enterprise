@@ -13,40 +13,40 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * @Class Name : EgovWebLogInterceptor.java
- * @Description : 웹로그 생성을 위한 인터셉터 클래스
+ * @Description : ?밸줈洹??앹꽦???꾪븳 ?명꽣?됲꽣 ?대옒??
  * @Modification Information
  * 
  *               <pre>
- *    수정일        수정자         수정내용
+ *    ?섏젙??       ?섏젙??        ?섏젙?댁슜
  *    -------      -------     -------------------
 
  *               </pre>
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 9.
  * @version
  * @see
  *
  */
 /**
- * 사용자 계정을 처리하는 비즈니스 구현 클래스
+ * ?ъ슜??怨꾩젙??泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * <p>
- * <b>NOTE:</b> Exception 종류를 EgovBizException, RuntimeException 에서만 동작한다.
- * fail.common.msg 메세지키가 Message Resource 에 정의 되어 있어야 한다.
+ * <b>NOTE:</b> Exception 醫낅쪟瑜?EgovBizException, RuntimeException ?먯꽌留??숈옉?쒕떎.
+ * fail.common.msg 硫붿꽭吏?ㅺ? Message Resource ???뺤쓽 ?섏뼱 ?덉뼱???쒕떎.
  * 
- * @author 공통컴포넌트 개발팀 홍길동
+ * @author 怨듯넻而댄룷?뚰듃 媛쒕컻? ?띻만??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.09  이삼섭          최초 생성
- *   2011.07.01  이기하          패키지 분리(sym.log -> sym.log.wlg)
- *   2025.07.15  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
+ *   2009.03.09  ?댁궪??         理쒖큹 ?앹꽦
+ *   2011.07.01  ?닿린??         ?⑦궎吏 遺꾨━(sym.log -> sym.log.wlg)
+ *   2025.07.15  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
  *
  *      </pre>
  */
@@ -56,7 +56,7 @@ public class EgovWebLogInterceptor implements HandlerInterceptor {
 	private EgovWebLogService webLogService;
 
 	/**
-	 * 웹 로그정보를 생성한다.
+	 * ??濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 * 
 	 * @param HttpServletRequest request, HttpServletResponse response, Object
 	 *                           handler

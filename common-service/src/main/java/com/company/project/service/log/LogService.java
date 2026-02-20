@@ -13,9 +13,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * JPA 기반 로그 관리 서비스 구현체
- * - 전자정부프레임워크 5.0 호환성 인증 요건 충족
- * - EgovAbstractServiceImpl 상속 및 EgovLogService 인터페이스 구현
+ * JPA 湲곕컲 濡쒓렇 愿由??쒕퉬??援ы쁽泥?
+ * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
+ * - EgovAbstractServiceImpl ?곸냽 諛?EgovLogService ?명꽣?섏씠??援ы쁽
  */
 @Service("egovLogService")
 @Transactional(readOnly = true)
@@ -28,7 +28,7 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     }
 
     /**
-     * 로그인 로그 기록
+     * 濡쒓렇??濡쒓렇 湲곕줉
      */
     @Override
     @Transactional
@@ -46,7 +46,7 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     }
 
     /**
-     * 최근 로그인 로그 목록 조회
+     * 理쒓렐 濡쒓렇??濡쒓렇 紐⑸줉 議고쉶
      */
     @Override
     public List<LogDto> getRecentLoginLogs() {

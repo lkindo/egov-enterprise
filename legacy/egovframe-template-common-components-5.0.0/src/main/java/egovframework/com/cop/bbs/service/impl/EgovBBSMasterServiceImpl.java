@@ -24,11 +24,11 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -------			--------	---------------------------
- *   2024.10.29		inganyoyo	Controller는 Transaction 처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+ *   2024.10.29		inganyoyo	Controller??Transaction 泥섎━瑜??섏? ?딆븘 Controller?먯꽌 ?ㅻ쪟 諛쒖깮 ???곗씠???뺥빀???ㅻ쪟 臾몄젣 諛쒖깮
  * </pre>
  */
 
@@ -42,7 +42,7 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
     private EgovIdGnrService idgenService;
 
     //---------------------------------
-    // 2009.06.26 : 2단계 기능 추가
+    // 2009.06.26 : 2?④퀎 湲곕뒫 異붽?
     //---------------------------------
     @Resource(name = "BBSAddedOptionsDAO")
     private BBSAddedOptionsDAO addedOptionsDAO;
@@ -77,7 +77,7 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 		egovBBSMasterDao.updateBBSMaster(boardMaster);
 
 		//---------------------------------
-		// 2009.06.26 : 2단계 기능 추가
+		// 2009.06.26 : 2?④퀎 湲곕뒫 異붽?
 		//---------------------------------
 		if (boardMaster.getOption().equals("comment") || boardMaster.getOption().equals("stsfdg")) {
 		    addedOptionsDAO.insertAddedOptionsInf(boardMaster);
@@ -104,7 +104,7 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 	    			resultVO.setOption("stsfdg");
 	    		}
     	    } else {
-    	    	resultVO.setOption("na");	// 미지정 상태로 수정 가능 (이미 지정된 경우는 수정 불가로 처리)
+    	    	resultVO.setOption("na");	// 誘몄????곹깭濡??섏젙 媛??(?대? 吏?뺣맂 寃쎌슦???섏젙 遺덇?濡?泥섎━)
     	    }
     	}
 
@@ -140,16 +140,16 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
 	@Override
 	public void insertBBSMasterInf(BoardMaster boardMaster) throws Exception {
 
-		//2021 github 반영
+		//2021 github 諛섏쁺
 		//String bbsId = idgenService.getNextStringId();
-		//게시판 ID 채번
+		//寃뚯떆??ID 梨꾨쾲
 		String bbsId = idgenService.getNextStringId() + RandomStringUtils.randomAlphabetic(10);
 		boardMaster.setBbsId(bbsId);
 
 		egovBBSMasterDao.insertBBSMasterInf(boardMaster);
 
 		//---------------------------------
-		// 2009.06.26 : 2단계 기능 추가
+		// 2009.06.26 : 2?④퀎 湲곕뒫 異붽?
 		//---------------------------------
 		if (boardMaster.getOption().equals("comment") || boardMaster.getOption().equals("stsfdg")) {
 		    addedOptionsDAO.insertAddedOptionsInf(boardMaster);
@@ -188,8 +188,8 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
   @Override
   public void insertBlogMasterAndBoardBlogUserRqst(Blog blog, LoginVO user) throws Exception {
 
-    String blogId = idgenServiceBlog.getNextStringId(); //블로그 아이디 채번
-    String bbsId = idgenServiceBbs.getNextStringId(); //게시판 아이디 채번
+    String blogId = idgenServiceBlog.getNextStringId(); //釉붾줈洹??꾩씠??梨꾨쾲
+    String bbsId = idgenServiceBbs.getNextStringId(); //寃뚯떆???꾩씠??梨꾨쾲
 
     blog.setRegistSeCode("REGC02");
     blog.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
@@ -197,8 +197,8 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
     blog.setBlogId(blogId);
     blog.setBlogAt("Y");
 
-    // 블로그 개설자의 정보를 등록한다.
-    // 2022.11.11 시큐어코딩 처리
+    // 釉붾줈洹?媛쒖꽕?먯쓽 ?뺣낫瑜??깅줉?쒕떎.
+    // 2022.11.11 ?쒗걧?댁퐫??泥섎━
     BlogUserVO blogUserVO = new BlogUserVO();
     blogUserVO.setBlogId(blogId);
     blogUserVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
@@ -207,8 +207,8 @@ public class EgovBBSMasterServiceImpl extends EgovAbstractServiceImpl implements
     blogUserVO.setUseAt("Y");
     blogUserVO.setFrstRegisterId(
         user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-    // 블로그 정보와 개설자 정보 등록한다
-    // Controller는 Transaction처리를 하지 않아 Controller에서 오류 발생 시 데이터 정합성 오류 문제 발생
+    // 釉붾줈洹??뺣낫? 媛쒖꽕???뺣낫 ?깅줉?쒕떎
+    // Controller??Transaction泥섎━瑜??섏? ?딆븘 Controller?먯꽌 ?ㅻ쪟 諛쒖깮 ???곗씠???뺥빀???ㅻ쪟 臾몄젣 諛쒖깮
 
     this.insertBlogMaster(blog);
     this.insertBoardBlogUserRqst(blogUserVO);

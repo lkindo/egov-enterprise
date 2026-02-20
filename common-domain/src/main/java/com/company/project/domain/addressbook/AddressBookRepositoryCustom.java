@@ -7,6 +7,6 @@ public interface AddressBookRepositoryCustom {
     Page<AddressBook> searchAddressBooks(String userId, String orgnztId, String searchCondition, String searchKeyword,
             Pageable pageable);
 
-    // MyBatis selectManList 대체
+    // MyBatis selectManList ??筌?
     Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchKeyword, Pageable pageable);
 }

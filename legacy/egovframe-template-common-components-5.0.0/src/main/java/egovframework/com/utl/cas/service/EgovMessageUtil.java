@@ -4,20 +4,20 @@ import egovframework.com.cmm.service.EgovProperties;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
- * 메시지 처리 관련 유틸리티
+ * 硫붿떆吏 泥섎━ 愿???좏떥由ы떚
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.02.13
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.13  이삼섭          최초 생성
- *   2025.08.29  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2009.02.13  ?댁궪??         理쒖큹 ?앹꽦
+ *   2025.08.29  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -26,7 +26,7 @@ public class EgovMessageUtil {
 	private static final String PATH_SEP = System.getProperty("file.separator");
 
 	/**
-	 * 해당되는 속성키로부터 에러 메시지를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???먮윭 硫붿떆吏瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @return
@@ -37,7 +37,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 에러 메시지(파라미터 변환 포함)를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???먮윭 硫붿떆吏(?뚮씪誘명꽣 蹂???ы븿)瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @param arrParam
@@ -49,7 +49,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 정보 메시지를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???뺣낫 硫붿떆吏瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @return
@@ -60,7 +60,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 정보 메시지(파라미터 변환 포함)를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???뺣낫 硫붿떆吏(?뚮씪誘명꽣 蹂???ы븿)瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @param arrParam
@@ -72,7 +72,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 경고 메시지를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺??寃쎄퀬 硫붿떆吏瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @return
@@ -83,7 +83,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 경고 메시지(파라미터 변환 포함)를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺??寃쎄퀬 硫붿떆吏(?뚮씪誘명꽣 蹂???ы븿)瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @param arrParam
@@ -95,7 +95,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 확인 메시지를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???뺤씤 硫붿떆吏瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @return
@@ -106,7 +106,7 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 해당되는 속성키로부터 확인 메시지(파라미터 변환 포함)를 얻는다.
+	 * ?대떦?섎뒗 ?띿꽦?ㅻ줈遺???뺤씤 硫붿떆吏(?뚮씪誘명꽣 蹂???ы븿)瑜??삳뒗??
 	 *
 	 * @param strCode
 	 * @param arrParam
@@ -118,13 +118,13 @@ public class EgovMessageUtil {
 	}
 
 	/**
-	 * 주어진 작업 코드, 문자열 코드, 그리고 파라미터 배열을 사용하여 메시지를 반환합니다. 문자열 코드를 사용하여 메시지 속성 파일에서
-	 * 메시지를 가져옵니다. 파라미터 배열이 제공되면 해당 파라미터로 메시지를 교체합니다.
+	 * 二쇱뼱吏??묒뾽 肄붾뱶, 臾몄옄??肄붾뱶, 洹몃━怨??뚮씪誘명꽣 諛곗뿴???ъ슜?섏뿬 硫붿떆吏瑜?諛섑솚?⑸땲?? 臾몄옄??肄붾뱶瑜??ъ슜?섏뿬 硫붿떆吏 ?띿꽦 ?뚯씪?먯꽌
+	 * 硫붿떆吏瑜?媛?몄샃?덈떎. ?뚮씪誘명꽣 諛곗뿴???쒓났?섎㈃ ?대떦 ?뚮씪誘명꽣濡?硫붿떆吏瑜?援먯껜?⑸땲??
 	 *
-	 * @param wrkCode  작업을 지정하는 코드
-	 * @param strCode  메시지 속성 파일에서 메시지를 찾는데 사용되는 코드
-	 * @param arrParam 메시지 내의 파라미터를 교체하는데 사용되는 배열
-	 * @return 교체된 메시지 또는 기본 메시지를 반환
+	 * @param wrkCode  ?묒뾽??吏?뺥븯??肄붾뱶
+	 * @param strCode  硫붿떆吏 ?띿꽦 ?뚯씪?먯꽌 硫붿떆吏瑜?李얜뒗???ъ슜?섎뒗 肄붾뱶
+	 * @param arrParam 硫붿떆吏 ?댁쓽 ?뚮씪誘명꽣瑜?援먯껜?섎뒗???ъ슜?섎뒗 諛곗뿴
+	 * @return 援먯껜??硫붿떆吏 ?먮뒗 湲곕낯 硫붿떆吏瑜?諛섑솚
 	 */
 	private static String getMessage(String wrkCode, String strCode, String[] arrParam) {
 
@@ -138,7 +138,7 @@ public class EgovMessageUtil {
 
 			if (arrParam != null) {
 				for (int i = arrParam.length > 0 ? arrParam.length - 1 : -1; i >= 0; i--) {
-					// KISA 보안약점 조치 (2018-10-29, 윤창원)
+					// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					strMsg = EgovStringUtil.replace(EgovStringUtil.isNullToString(strMsg), "{" + i + "}", arrParam[i]);
 				}
 			}

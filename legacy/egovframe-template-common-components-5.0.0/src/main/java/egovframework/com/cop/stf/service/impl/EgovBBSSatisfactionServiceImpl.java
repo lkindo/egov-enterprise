@@ -17,20 +17,20 @@ import egovframework.com.cop.bbs.service.impl.BBSAddedOptionsDAO;
 import jakarta.annotation.Resource;
 
 /**
- * 만족도조사를 위한 서비스 구현 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * 留뚯”?꾩“?щ? ?꾪븳 ?쒕퉬??援ы쁽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.29
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.29  한성곤          최초 생성
- *   2011.09.15  서준식          addedOptions 적용 방법 수정
- *   2011.10.18  서준식          StsfdgNo 자동 생성 방식으로 변경
+ *   2009.06.29  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2011.09.15  ?쒖???         addedOptions ?곸슜 諛⑸쾿 ?섏젙
+ *   2011.10.18  ?쒖???         StsfdgNo ?먮룞 ?앹꽦 諛⑹떇?쇰줈 蹂寃?
  * </pre>
  */
 @Service("EgovBBSSatisfactionService")
@@ -46,7 +46,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     private EgovIdGnrService egovStsfdgNoGnrService;
 
     /**
-     * 만족도조사 사용 가능 여부를 확인한다.
+     * 留뚯”?꾩“???ъ슜 媛???щ?瑜??뺤씤?쒕떎.
      */
     @Override
 	public boolean canUseSatisfaction(String bbsId) throws Exception {
@@ -71,7 +71,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사에 대한 목록을 조회 한다.
+     * 留뚯”?꾩“?ъ뿉 ???紐⑸줉??議고쉶 ?쒕떎.
      */
     @Override
 	public Map<String, Object> selectSatisfactionList(SatisfactionVO satisfactionVO) throws Exception {
@@ -89,7 +89,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사를 등록한다.
+     * 留뚯”?꾩“?щ? ?깅줉?쒕떎.
      */
     @Override
 	public void insertSatisfaction(Satisfaction satisfaction) throws Exception {
@@ -99,7 +99,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사를 삭제한다.
+     * 留뚯”?꾩“?щ? ??젣?쒕떎.
      */
     @Override
 	public void deleteSatisfaction(SatisfactionVO satisfactionVO) throws Exception {
@@ -107,7 +107,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사에 대한 내용을 조회한다.
+     * 留뚯”?꾩“?ъ뿉 ????댁슜??議고쉶?쒕떎.
      */
     @Override
 	public Satisfaction selectSatisfaction(SatisfactionVO satisfactionVO) throws Exception {
@@ -115,7 +115,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사에 대한 내용을 수정한다.
+     * 留뚯”?꾩“?ъ뿉 ????댁슜???섏젙?쒕떎.
      */
     @Override
 	public void updateSatisfaction(Satisfaction satisfaction) throws Exception {
@@ -123,7 +123,7 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
     }
 
     /**
-     * 만족도조사 패스워드를 가져온다.
+     * 留뚯”?꾩“???⑥뒪?뚮뱶瑜?媛?몄삩??
      */
     @Override
 	public String getSatisfactionPassword(Satisfaction satisfaction) throws Exception {

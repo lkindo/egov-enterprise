@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 그룹 관리 서비스
+ * 洹몃９ 愿由??쒕퉬??
  */
 @Service("projectGroupManageService")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class GroupManageService {
     private final GroupManageRepository groupManageRepository;
 
     /**
-     * 그룹 목록 조회
+     * 洹몃９ 紐⑸줉 議고쉶
      */
     public List<GroupManageDto> selectGroupList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -46,7 +46,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 목록 총 건수
+     * 洹몃９ 紐⑸줉 珥?嫄댁닔
      */
     public int selectGroupListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
@@ -57,7 +57,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 상세 조회
+     * 洹몃９ ?곸꽭 議고쉶
      */
     public GroupManageDto selectGroup(String groupId) {
         return groupManageRepository.findById(Objects.requireNonNull(groupId))
@@ -66,7 +66,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 등록
+     * 洹몃９ ?깅줉
      */
     @Transactional
     public String insertGroup(GroupManageDto dto) {
@@ -86,7 +86,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 수정
+     * 洹몃９ ?섏젙
      */
     @Transactional
     public void updateGroup(GroupManageDto dto) {
@@ -96,7 +96,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 삭제
+     * 洹몃９ ??젣
      */
     @Transactional
     public void deleteGroup(String groupId) {
@@ -104,7 +104,7 @@ public class GroupManageService {
     }
 
     /**
-     * 그룹 다중 삭제
+     * 洹몃９ ?ㅼ쨷 ??젣
      */
     @Transactional
     public void deleteGroups(String[] groupIds) {

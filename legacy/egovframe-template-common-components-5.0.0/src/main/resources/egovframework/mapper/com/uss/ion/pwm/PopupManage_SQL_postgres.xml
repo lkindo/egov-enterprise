@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일          수정자                          수정내용
+	?섏젙??         ?섏젙??                         ?섏젙?댁슜
   ===========      ========    =================================================
-  2011.10.06		이기하     	 	보안 취약점 점검사항 반영 $->#변경
+  2011.10.06		?닿린??    	 	蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="PopupManage">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="PopupManageVOs" type="egovframework.com.uss.ion.pwm.service.PopupManageVO">
 		<result property="popupId" column="POPUP_ID"/>
 		<result property="popupTitleNm" column="POPUP_SJ_NM"/>
@@ -26,7 +26,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 팝업창관리:: 메인 게시물정보 -->
+	<!-- ?앹뾽李쎄?由?: 硫붿씤 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectPopupManageMain" resultType="egovMap">
 	 <![CDATA[
 		SELECT
@@ -51,7 +51,7 @@
 	 ]]>
 	</select>
 
-	<!-- 팝업창관리: 화이트 리스트 정보 -->
+	<!-- ?앹뾽李쎄?由? ?붿씠??由ъ뒪???뺣낫 -->
 	<select id="selectPopupWhiteList" resultType="egovMap">
 	
 		SELECT
@@ -60,7 +60,7 @@
 	
 	</select>
 
-	<!-- 팝업창관리::목록조회 게시물정보 -->
+	<!-- ?앹뾽李쎄?由?:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectPopupManage" resultType="egovMap">
 	 
 		SELECT
@@ -95,7 +95,7 @@
 		LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
 	
 	</select>
-	<!-- 팝업창관리::목록조회_게시물 총개수  -->
+	<!-- ?앹뾽李쎄?由?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectPopupManageCnt" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -113,7 +113,7 @@
 	 </if>
 	</select>
 
-    <!-- 팝업창관리::삭제  -->
+    <!-- ?앹뾽李쎄?由?:??젣  -->
 	<delete id="deletePopupManage">
 		
 			DELETE FROM COMTNPOPUPMANAGE
@@ -121,7 +121,7 @@
 		
 	</delete>
 
-	<!-- 팝업창관리::수정  -->
+	<!-- ?앹뾽李쎄?由?:?섏젙  -->
 	<update id="updatePopupManage">
 	 
 		UPDATE COMTNPOPUPMANAGE
@@ -142,7 +142,7 @@
 	 
 	</update>
 
-	<!-- 팝업창관리::상세보기 -->
+	<!-- ?앹뾽李쎄?由?:?곸꽭蹂닿린 -->
 	<select id="selectPopupManageDetail" resultMap="PopupManageVOs">
 	SELECT
 		A.POPUP_ID,
@@ -165,7 +165,7 @@
 		AND A.POPUP_ID=#{popupId}
 	</select>
 
-	<!-- 팝업창관리::입력  -->
+	<!-- ?앹뾽李쎄?由?:?낅젰  -->
 	<insert id="insertPopupManage">
 	 
 

@@ -3,96 +3,96 @@ package egovframework.com.uss.umt.service;
 import java.util.List;
 
 /**
- * 일반회원관리에 관한 인터페이스클래스를 정의한다.
- * @author 공통서비스 개발팀 조재영
+ * ?쇰컲?뚯썝愿由ъ뿉 愿???명꽣?섏씠?ㅽ겢?섏뒪瑜??뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
- *   2017.07.21  장동한 			로그인인증제한 작업
+ *   2009.04.10  議곗옱??         理쒖큹 ?앹꽦
+ *   2017.07.21  ?λ룞??			濡쒓렇?몄씤利앹젣???묒뾽
  *
  * </pre>
  */
 public interface EgovMberManageService {
 
 	/**
-	 * 사용자의 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
-	 * @param mberManageVO 일반회원 등록정보
-	 * @return 등록결과
+	 * ?ъ슜?먯쓽 湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
+	 * @param mberManageVO ?쇰컲?뚯썝 ?깅줉?뺣낫
+	 * @return ?깅줉寃곌낵
 	 * @throws Exception
 	 */
 	public String insertMber(MberManageVO mberManageVO) throws Exception;
 
 	/**
-	 * 기 등록된 사용자 중 검색조건에 맞는 일반회원의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param mberId 상세조회대상 일반회원아이디
-	 * @return mberManageVO 일반회원상세정보
+	 * 湲??깅줉???ъ슜??以?寃?됱“嫄댁뿉 留욌뒗 ?쇰컲?뚯썝???뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param mberId ?곸꽭議고쉶????쇰컲?뚯썝?꾩씠??
+	 * @return mberManageVO ?쇰컲?뚯썝?곸꽭?뺣낫
 	 * @throws Exception
 	 */
 	public MberManageVO selectMber(String mberId) throws Exception;
 
 	/**
-	 * 기 등록된 회원 중 검색조건에 맞는 회원들의 정보를 데이터베이스에서 읽어와 화면에 출력
-	 * @param userSearchVO 검색조건
-	 * @return List<MberManageVO> 일반회원목록정보
+	 * 湲??깅줉???뚯썝 以?寃?됱“嫄댁뿉 留욌뒗 ?뚯썝?ㅼ쓽 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ?쎌뼱? ?붾㈃??異쒕젰
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @return List<MberManageVO> ?쇰컲?뚯썝紐⑸줉?뺣낫
 	 * @throws Exception
 	 */
 	public List<MberManageVO> selectMberList(UserDefaultVO userSearchVO) throws Exception;
 
     /**
-     * 일반회원 총 개수를 조회한다.
-     * @param userSearchVO 검색조건
-     * @return 일반회원총개수(int)
+     * ?쇰컲?뚯썝 珥?媛쒖닔瑜?議고쉶?쒕떎.
+     * @param userSearchVO 寃?됱“嫄?
+     * @return ?쇰컲?뚯썝珥앷컻??int)
      * @throws Exception
      */
     public int selectMberListTotCnt(UserDefaultVO userSearchVO) throws Exception;
 
 	/**
-	 * 화면에 조회된 일반회원의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
-	 * @param mberManageVO 일반회원수정정보
+	 * ?붾㈃??議고쉶???쇰컲?뚯썝??湲곕낯?뺣낫瑜??섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫
 	 * @throws Exception
 	 */
 	public void updateMber(MberManageVO mberManageVO) throws Exception;
 
 	/**
-	 * 화면에 조회된 사용자의 정보를 데이터베이스에서 삭제
-	 * @param checkedIdForDel 삭제대상 일반회원아이디
+	 * ?붾㈃??議고쉶???ъ슜?먯쓽 ?뺣낫瑜??곗씠?곕쿋?댁뒪?먯꽌 ??젣
+	 * @param checkedIdForDel ??젣????쇰컲?뚯썝?꾩씠??
 	 * @throws Exception
 	 */
 	public void deleteMber(String checkedIdForDel) throws Exception;
 
 	/**
-	 * 일반회원 약관확인
-	 * @param stplatId 일반회원약관아이디
-	 * @return 일반회원약관정보(List)
+	 * ?쇰컲?뚯썝 ?쎄??뺤씤
+	 * @param stplatId ?쇰컲?뚯썝?쎄??꾩씠??
+	 * @return ?쇰컲?뚯썝?쎄??뺣낫(List)
 	 * @throws Exception
 	 */
 	public List<StplatVO> selectStplat(String stplatId)  throws Exception;
 
 	/**
-	 * 일반회원암호수정
-	 * @param mberManageVO 일반회원수정정보(비밀번호)
+	 * ?쇰컲?뚯썝?뷀샇?섏젙
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫(鍮꾨?踰덊샇)
 	 * @throws Exception
 	 */
 	public void updatePassword(MberManageVO mberManageVO) throws Exception;
 
 	/**
-	 * 일반회원이 비밀번호를 기억하지 못할 때 비밀번호를 찾을 수 있도록 함
-	 * @param passVO 일반회원암호 조회조건정보
-	 * @return mberManageVO 일반회원암호정보
+	 * ?쇰컲?뚯썝??鍮꾨?踰덊샇瑜?湲곗뼲?섏? 紐삵븷 ??鍮꾨?踰덊샇瑜?李얠쓣 ???덈룄濡???
+	 * @param passVO ?쇰컲?뚯썝?뷀샇 議고쉶議곌굔?뺣낫
+	 * @return mberManageVO ?쇰컲?뚯썝?뷀샇?뺣낫
 	 * @throws Exception
 	 */
 	public MberManageVO selectPassword(MberManageVO passVO) throws Exception;
 
 	/**
-	 * 로그인인증제한 해제 
-	 * @param mberManageVO 일반회원정보
+	 * 濡쒓렇?몄씤利앹젣???댁젣 
+	 * @param mberManageVO ?쇰컲?뚯썝?뺣낫
 	 * @return void
 	 * @throws Exception
 	 */

@@ -27,7 +27,7 @@ public class SurveyService implements EgovSurveyService {
     private final QustnrQesitmRepository qesitmRepository;
     private final QustnrIemRepository iemRepository;
 
-    // 템플릿
+    // ?쒗뵆由?
     @Override
     public Page<QestnrTmplatDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -70,7 +70,7 @@ public class SurveyService implements EgovSurveyService {
         tmplatRepository.deleteById(Objects.requireNonNull(tmplatId));
     }
 
-    // 설문 정보
+    // ?ㅻЦ ?뺣낫
     @Override
     public Page<QestnrInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -118,7 +118,7 @@ public class SurveyService implements EgovSurveyService {
         infoRepository.deleteById(Objects.requireNonNull(qestnrId));
     }
 
-    // 설문 문항
+    // ?ㅻЦ 臾명빆
     @Override
     public List<QustnrQesitmDto> getQuestionList(String qestnrId) {
         return qesitmRepository.findByQestnrIdOrderByQestnSnAsc(Objects.requireNonNull(qestnrId)).stream()
@@ -166,7 +166,7 @@ public class SurveyService implements EgovSurveyService {
         qesitmRepository.deleteById(Objects.requireNonNull(qesitmId));
     }
 
-    // 설문 항목
+    // ?ㅻЦ ??ぉ
     @Override
     public List<QustnrIemDto> getItemList(String qesitmId) {
         return iemRepository.findByQestnrQesitmIdOrderByIemSnAsc(Objects.requireNonNull(qesitmId)).stream()

@@ -6,8 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 배치작업 JPA Entity
- * 레거시 테이블: COMTNBATCHOPERT
+ * 獄쏄퀣??臾믩씜 JPA Entity
+ * ??뉕탢?????뵠?? COMTNBATCHOPERT
  */
 @Entity
 @Table(name = "NBATCHOPERT")

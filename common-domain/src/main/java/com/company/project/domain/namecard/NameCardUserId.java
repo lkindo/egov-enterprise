@@ -3,7 +3,7 @@ package com.company.project.domain.namecard;
 import java.io.Serializable;
 
 /**
- * 명함 사용자 복합키 클래스
+ * 筌뤿굟釉??????癰귣벏鍮???????
  */
 public class NameCardUserId implements Serializable {
     private String ncrdId;

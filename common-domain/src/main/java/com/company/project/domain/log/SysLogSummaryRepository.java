@@ -11,7 +11,7 @@ import java.util.List;
 public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, SysLogSummaryId> {
 
     /**
-     * 서비스별 통계 조회 (년도별 집계)
+     * ??뺥돩??삵?????鈺곌퀬??(?袁⑤즲癰?筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,
@@ -34,7 +34,7 @@ public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, Sy
             @Param("detailStatsKind") String detailStatsKind);
 
     /**
-     * 서비스별 통계 조회 (월별 집계)
+     * ??뺥돩??삵?????鈺곌퀬??(?遺얩?筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,
@@ -57,7 +57,7 @@ public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, Sy
             @Param("detailStatsKind") String detailStatsKind);
 
     /**
-     * 서비스별 통계 조회 (일별 집계)
+     * ??뺥돩??삵?????鈺곌퀬??(??고?筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,

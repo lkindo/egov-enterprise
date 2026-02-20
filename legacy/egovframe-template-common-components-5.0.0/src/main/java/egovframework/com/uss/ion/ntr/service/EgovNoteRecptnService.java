@@ -5,50 +5,50 @@ import java.util.Map;
 
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 /**
- * 받은쪽지함관리를 처리하는 Service Class 구현
- * @author 공통서비스 장동한
+ * 諛쏆?履쎌??④?由щ? 泥섎━?섎뒗 Service Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovNoteRecptnService {
 
     /**
-	 * 받은쪽지함관리 목록을 조회한다.
-	 * @param noteRecptn  -조회할 정보가 담긴 객체
-	 * @return List -조회목록이담긴List
+	 * 諛쏆?履쎌??④?由?紐⑸줉??議고쉶?쒕떎.
+	 * @param noteRecptn  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+	 * @return List -議고쉶紐⑸줉?대떞湲퀽ist
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectNoteRecptnList(NoteRecptn noteRecptn) throws Exception;
 
     /**
-     * 받은쪽지함관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param noteRecptn  -조회할 정보가 담긴 객체
-     * @return int -조회한건수
+     * 諛쏆?履쎌??④?由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param noteRecptn  -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒓굔??
      * @throws Exception
      */
     public int selectNoteRecptnListCnt(NoteRecptn noteRecptn) throws Exception;
 
      /**
-	 * 받은쪽지함관리를(을) 상세조회 한다.
-	 * @param noteRecptn  -받은쪽지함관리 정보 담김 객체
-	 * @return Mp -조회정보가담긴Map
+	 * 諛쏆?履쎌??④?由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param noteRecptn  -諛쏆?履쎌??④?由??뺣낫 ?닿? 媛앹껜
+	 * @return Mp -議고쉶?뺣낫媛?닿릿Map
 	 * @throws Exception
 	 */
 	public Map<?, ?> selectNoteRecptnDetail(NoteRecptn noteRecptn) throws Exception;
 
 	/**
-	 * 받은쪽지함관리를(을) 삭제한다.
-	 * @param noteRecptn  -받은쪽지함관리 정보 담김 객체
+	 * 諛쏆?履쎌??④?由щ?(?? ??젣?쒕떎.
+	 * @param noteRecptn  -諛쏆?履쎌??④?由??뺣낫 ?닿? 媛앹껜
 	 * @throws Exception
 	 */
 	void  deleteNoteRecptn(NoteRecptn noteRecptn) throws Exception;

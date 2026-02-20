@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 사용자부재에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ슜?먮??ъ뿉 ???controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 사용자부재에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 사용자부재의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - ?ъ슜?먮??ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?ъ슜?먮??ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:09:35
+ * @created 03-8-2009 ?ㅽ썑 2:09:35
  *  <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.8.03  이문준          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.8.03  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -50,11 +50,11 @@ public class EgovUserAbsnceController {
     private EgovUserAbsnceService egovUserAbsnceService;
 
     /**
-	 * 사용자부재 목록화면 이동
+	 * ?ъ슜?먮???紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="사용자부재관리", order = 790 ,gid = 50)
+    @IncludedInfo(name="?ъ슜?먮??ш?由?, order = 790 ,gid = 50)
     @RequestMapping("/uss/ion/uas/selectUserAbsnceListView.do")
     public String selectUserAbsnceListView() throws Exception {
 
@@ -62,9 +62,9 @@ public class EgovUserAbsnceController {
     }
 
 	/**
-	 * 사용자부재정보를 관리하기 위해 등록된 사용자부재 목록을 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return String - 리턴 Url
+	 * ?ъ슜?먮??ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???ъ슜?먮???紐⑸줉??議고쉶?쒕떎.
+	 * @param userAbsnceVO - ?ъ슜?먮???VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/selectUserAbsnceList.do")
 	public String selectUserAbsnceList(@RequestParam("selAbsnceAt") String selAbsnceAt,
@@ -96,9 +96,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 등록된 사용자부재 상세정보를 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return String - 리턴 Url
+	 * ?깅줉???ъ슜?먮????곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param userAbsnceVO - ?ъ슜?먮???VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/getUserAbsnce.do")
 	public String selectUserAbsnce(@RequestParam("userId") String userId,
@@ -119,9 +119,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 사용자부재정보를 신규로 등록한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return String - 리턴 Url
+	 * ?ъ슜?먮??ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param userAbsnce - ?ъ슜?먮???model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/addViewUserAbsnce.do")
 	public String insertUserAbsnceView(@RequestParam("userId") String userId,
@@ -137,9 +137,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 사용자부재정보를 신규로 등록한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return String - 리턴 Url
+	 * ?ъ슜?먮??ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
+	 * @param userAbsnce - ?ъ슜?먮???model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/addUserAbsnce.do")
 	public String insertUserAbsnce(@Valid @ModelAttribute("userAbsnce") UserAbsnce userAbsnce,
@@ -163,9 +163,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 기 등록된 사용자부재정보를 수정한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉???ъ슜?먮??ъ젙蹂대? ?섏젙?쒕떎.
+	 * @param userAbsnce - ?ъ슜?먮???model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/updtUserAbsnce.do")
 	public String updateUserAbsnce(@Valid @ModelAttribute("userAbsnce") UserAbsnce userAbsnce,
@@ -187,9 +187,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 기 등록된 사용자부재정보를 삭제한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉???ъ슜?먮??ъ젙蹂대? ??젣?쒕떎.
+	 * @param userAbsnce - ?ъ슜?먮???model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/removeUserAbsnce.do")
 	public String deleteUserAbsnce(@ModelAttribute("userAbsnce") UserAbsnce userAbsnce,
@@ -201,9 +201,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * 기 등록된 사용자부재정보를 삭제한다.
-	 * @param userAbsnce - 사용자부재 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉???ъ슜?먮??ъ젙蹂대? ??젣?쒕떎.
+	 * @param userAbsnce - ?ъ슜?먮???model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/removeUserAbsnceList.do")
 	public String deleteUserAbsnceList(@RequestParam("userIds") String userIds ,
@@ -222,9 +222,9 @@ public class EgovUserAbsnceController {
 	}
 
 	/**
-	 * MyPage에 사용자부재정보를 제공하기 위해 목록을 조회한다.
-	 * @param userAbsnceVO - 사용자부재 VO
-	 * @return String - 리턴 Url
+	 * MyPage???ъ슜?먮??ъ젙蹂대? ?쒓났?섍린 ?꾪빐 紐⑸줉??議고쉶?쒕떎.
+	 * @param userAbsnceVO - ?ъ슜?먮???VO
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping("/uss/ion/uas/selectUserAbsnceMainList.do")
 	public String selectUserAbsnceMainList(@ModelAttribute("userAbsnceVO") UserAbsnceVO userAbsnceVO,

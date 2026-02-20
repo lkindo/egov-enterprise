@@ -34,23 +34,23 @@ import jakarta.validation.Valid;
 import net.sourceforge.ajaxtags.xml.AjaxXmlBuilder;
 
 /**
- * 최근검색어를 처리하는 Controller Class 구현
+ * 理쒓렐寃?됱뼱瑜?泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2011.12.15  이기하          검색어 없을 시 미저장, 사용자 검색여부 'N'일 때 자동검색 미사용 수정
- *   2020.10.29  권태성          등록 화면과 데이터를 처리하는 method 분리
- *   2025.08.13  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
- *   2025.08.13  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.12.15  ?닿린??         寃?됱뼱 ?놁쓣 ??誘몄??? ?ъ슜??寃?됱뿬遺 'N'?????먮룞寃??誘몄궗???섏젙
+ *   2020.10.29  沅뚰깭??         ?깅줉 ?붾㈃怨??곗씠?곕? 泥섎━?섎뒗 method 遺꾨━
+ *   2025.08.13  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
+ *   2025.08.13  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
  *
  *      </pre>
  */
@@ -72,7 +72,7 @@ public class EgovRecentSrchwrdController {
 	protected EgovPropertyService propertiesService;
 
 	/**
-	 * 최근검색어관리 목록을 조회한다.
+	 * 理쒓렐寃?됱뼱愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -82,7 +82,7 @@ public class EgovRecentSrchwrdController {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unused")
-	@IncludedInfo(name = "최근검색어 조회", order = 760, gid = 50)
+	@IncludedInfo(name = "理쒓렐寃?됱뼱 議고쉶", order = 760, gid = 50)
 	@RequestMapping(value = "/uss/ion/rsm/listRecentSrchwrd.do")
 	public String egovRecentSrchwrdList(@ModelAttribute("searchVO") RecentSrchwrd searchVO,
 			@RequestParam Map<?, ?> commandMap, RecentSrchwrd recentSrchwrdVO, ModelMap model) throws Exception {
@@ -119,7 +119,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어관리 목록을 상세조회 조회한다.
+	 * 理쒓렐寃?됱뼱愿由?紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param recentSrchwrdVO
@@ -148,7 +148,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어관리 수정화면
+	 * 理쒓렐寃?됱뼱愿由??섏젙?붾㈃
 	 * 
 	 * @param searchVO
 	 * @param recentSrchwrdVO
@@ -158,7 +158,7 @@ public class EgovRecentSrchwrdController {
 	 */
 	@RequestMapping(value = "/uss/ion/rsm/updtRecentSrchwrdView.do")
 	public String egovRecentSrchwrdModify(RecentSrchwrd recentSrchwrd, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -172,7 +172,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어관리를 수정한다.
+	 * 理쒓렐寃?됱뼱愿由щ? ?섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param recentSrchwrdVO
@@ -184,7 +184,7 @@ public class EgovRecentSrchwrdController {
 	@RequestMapping(value = "/uss/ion/rsm/updtRecentSrchwrd.do")
 	public String egovRecentSrchwrdModify(RecentSrchwrd recentSrchwrd, BindingResult bindingResult, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -195,21 +195,21 @@ public class EgovRecentSrchwrdController {
 			return "egovframework/com/uss/ion/rsm/EgovRecentSrchwrdUpdt";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		recentSrchwrd.setFrstRegisterId(uniqId);
 		recentSrchwrd.setLastUpdusrId(uniqId);
 
-		// 저장
+		// ???
 		egovRecentSrchwrdService.updateRecentSrchwrd(recentSrchwrd);
 
 		return "redirect:/uss/ion/rsm/listRecentSrchwrd.do";
 	}
 
 	/**
-	 * 최근검색어관리 등록 화면
+	 * 理쒓렐寃?됱뼱愿由??깅줉 ?붾㈃
 	 * 
 	 * @param searchVO
 	 * @param recentSrchwrdVO
@@ -220,7 +220,7 @@ public class EgovRecentSrchwrdController {
 	@RequestMapping(value = "/uss/ion/rsm/registRecentSrchwrdView.do")
 	public String egovRecentSrchwrdRegist(@ModelAttribute("recentSrchwrd") RecentSrchwrd recentSrchwrd, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -231,7 +231,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어관리를 등록한다.
+	 * 理쒓렐寃?됱뼱愿由щ? ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param recentSrchwrdVO
@@ -244,7 +244,7 @@ public class EgovRecentSrchwrdController {
 	public String egovRecentSrchwrdRegist(@RequestParam Map<?, ?> commandMap,
 			@ModelAttribute("recentSrchwrd") RecentSrchwrd recentSrchwrd, BindingResult bindingResult, ModelMap model)
 			throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -255,21 +255,21 @@ public class EgovRecentSrchwrdController {
 			return "egovframework/com/uss/ion/rsm/EgovRecentSrchwrdRegist";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		recentSrchwrd.setFrstRegisterId(uniqId);
 		recentSrchwrd.setLastUpdusrId(uniqId);
 
-		// 저장
+		// ???
 		egovRecentSrchwrdService.insertRecentSrchwrd(recentSrchwrd);
 
 		return "redirect:/uss/ion/rsm/listRecentSrchwrd.do";
 	}
 
 	/**
-	 * 최근검색어결과 목록을 조회한다.
+	 * 理쒓렐寃?됱뼱寃곌낵 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -300,10 +300,10 @@ public class EgovRecentSrchwrdController {
 		searchVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		searchVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		// 건별삭제
+		// 嫄대퀎??젣
 		if (sCmd.equals("del")) {
 			egovRecentSrchwrdService.deleteRecentSrchwrdResult(searchVO);
-			// 관리별삭제
+			// 愿由щ퀎??젣
 		} else if (sCmd.equals("delAll")) {
 			egovRecentSrchwrdService.deleteRecentSrchwrdResultAll(searchVO);
 		}
@@ -327,7 +327,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어 결과를 조회한다.
+	 * 理쒓렐寃?됱뼱 寃곌낵瑜?議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -347,10 +347,10 @@ public class EgovRecentSrchwrdController {
 
 		List<EgovMap> reusltList = null;
 
-		// 사용자검색여부 'Y'인 경우만 검색어 조회
+		// ?ъ슜?먭??됱뿬遺 'Y'??寃쎌슦留?寃?됱뼱 議고쉶
 		if (recentSrchwrdVO.getSrchwrdManageUseYn().equals("Y")) {
 			reusltList = egovRecentSrchwrdService.selectRecentSrchwrdResultInquire(recentSrchwrd);
-		} else { // 2012.11 KISA 보안조치
+		} else { // 2012.11 KISA 蹂댁븞議곗튂
 			reusltList = new ArrayList<>();
 		}
 
@@ -369,7 +369,7 @@ public class EgovRecentSrchwrdController {
 	}
 
 	/**
-	 * 최근검색어를 등록한다.
+	 * 理쒓렐寃?됱뼱瑜??깅줉?쒕떎.
 	 * 
 	 * @param commandMap
 	 * @param recentSrchwrd
@@ -382,23 +382,23 @@ public class EgovRecentSrchwrdController {
 			RecentSrchwrd recentSrchwrd) throws Exception {
 
 		response.setHeader("Content-Type", "text/html;charset=utf-8");
-		Writer writer = new OutputStreamWriter(response.getOutputStream(), "UTF-8"); // NOPMD - CloseResource 규칙 무시
-		PrintWriter out = new PrintWriter(writer); // NOPMD - CloseResource 규칙 무시
+		Writer writer = new OutputStreamWriter(response.getOutputStream(), "UTF-8"); // NOPMD - CloseResource 洹쒖튃 臾댁떆
+		PrintWriter out = new PrintWriter(writer); // NOPMD - CloseResource 洹쒖튃 臾댁떆
 
 		LOGGER.debug("commandMap : {}", commandMap);
 		LOGGER.debug("recentSrchwrd : {}", recentSrchwrd);
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String uniqId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		recentSrchwrd.setFrstRegisterId(uniqId);
 		recentSrchwrd.setLastUpdusrId(uniqId);
 
 		// System.out.println("recentSrchwrd.getSrchwrdNm() : "+
 		// recentSrchwrd.getSrchwrdNm());
 
-		// 검색어가 없을 시 미저장
+		// 寃?됱뼱媛 ?놁쓣 ??誘몄???
 		if (recentSrchwrd.getSrchwrdNm() != null && !recentSrchwrd.getSrchwrdNm().equals("")) {
 			egovRecentSrchwrdService.insertRecentSrchwrdResult(recentSrchwrd);
 		}

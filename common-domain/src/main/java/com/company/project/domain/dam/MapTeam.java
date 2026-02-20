@@ -10,8 +10,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * 지식맵(조직) JPA Entity
- * 레거시 테이블: NDAMMAPTEAM
+ * 筌왖??멥룋(鈺곌퀣彛? JPA Entity
+ * ??뉕탢?????뵠?? NDAMMAPTEAM
  */
 @Entity
 @Table(name = "NDAMMAPTEAM")

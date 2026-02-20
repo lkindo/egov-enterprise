@@ -8,20 +8,20 @@ import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.service.CmmnDetailCode;
 
 /**
- * 공통코드등 전체 업무에서 공용해서 사용해야 하는 서비스를 정의하기위한 데이터 접근 클래스
+ * 怨듯넻肄붾뱶???꾩껜 ?낅Т?먯꽌 怨듭슜?댁꽌 ?ъ슜?댁빞 ?섎뒗 ?쒕퉬?ㅻ? ?뺤쓽?섍린?꾪븳 ?곗씠???묎렐 ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.03.11
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이삼섭          최초 생성
- *   2025.07.16  이백행          2025년 컨트리뷰션 `throws Exception` 제거
+ *   2009.03.11  ?댁궪??         理쒖큹 ?앹꽦
+ *   2025.07.16  ?대갚??         2025??而⑦듃由щ럭??`throws Exception` ?쒓굅
  *
  *      </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.cmm.service.CmmnDetailCode;
 public class CmmUseDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 주어진 조건에 따른 공통코드를 불러온다.
+	 * 二쇱뼱吏?議곌굔???곕Ⅸ 怨듯넻肄붾뱶瑜?遺덈윭?⑤떎.
 	 * 
 	 * @param comDefaultCodeVO
 	 * @return
@@ -39,7 +39,7 @@ public class CmmUseDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 공통코드로 사용할 조직정보를 를 불러온다.
+	 * 怨듯넻肄붾뱶濡??ъ슜??議곗쭅?뺣낫瑜?瑜?遺덈윭?⑤떎.
 	 * 
 	 * @param comDefaultCodeVO
 	 * @return
@@ -49,7 +49,7 @@ public class CmmUseDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 공통코드로 사용할그룹정보를 를 불러온다.
+	 * 怨듯넻肄붾뱶濡??ъ슜?좉렇猷뱀젙蹂대? 瑜?遺덈윭?⑤떎.
 	 * 
 	 * @param comDefaultCodeVO
 	 * @return

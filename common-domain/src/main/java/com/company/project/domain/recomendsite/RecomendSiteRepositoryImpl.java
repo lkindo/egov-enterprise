@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.company.project.domain.recomendsite.QRecomendSite.recomendSite;
 
 /**
- * 추천사이트 Repository Custom 구현체
+ * ?곕뗄荑?????Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class RecomendSiteRepositoryImpl implements RecomendSiteRepositoryCustom {

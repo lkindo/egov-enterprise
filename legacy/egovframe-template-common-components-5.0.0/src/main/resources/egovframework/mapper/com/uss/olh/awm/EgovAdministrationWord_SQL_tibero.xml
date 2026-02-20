@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.5   	이기하     	 	테이블 표준화에 따른 수정사항 반영
-							ADMINIST_WORD_ABRV_NM 를		ADMINIST_WORD_ABRV 로 변경
-							WORD_SE 를						WORD_DOMN 로 변경
-							FRST_REGIST_PNTTM 를			FRST_REGISTER_PNTTM 로 변경
-  2011.09.15      서준식                selectAdministrationWord문의 영문 검색 SQL 변경	
-  2011.10.05    서준식               보안 취약점 점검사항 반영 $->#변경	
+  2011.9.5   	?닿린??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+							ADMINIST_WORD_ABRV_NM 瑜?	ADMINIST_WORD_ABRV 濡?蹂寃?
+							WORD_SE 瑜?					WORD_DOMN 濡?蹂寃?
+							FRST_REGIST_PNTTM 瑜?		FRST_REGISTER_PNTTM 濡?蹂寃?
+  2011.09.15      ?쒖???               selectAdministrationWord臾몄쓽 ?곷Ц 寃??SQL 蹂寃?
+  2011.10.05    ?쒖???              蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="AdministrationWord">
 
-	<!-- 행정전문용어사전::ResultMap 선언 -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::ResultMap ?좎뼵 -->
 	<resultMap id="AdministrationWordVO" type="egovframework.com.uss.olh.awm.service.AdministrationWordVO">
 		<result property="administWordId" column="ADMINIST_WORD_ID"/>
 		<result property="administWordNm" column="ADMINIST_WORD_NM"/>
@@ -30,7 +30,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
 
-	<!-- 행정전문용어사전::목록조회 게시물정보 -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectAdministrationWordList" resultMap="AdministrationWordVO">
 	
 	SELECT *
@@ -104,7 +104,7 @@
 	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- 행정전문용어사전::목록조회_게시물 총개수  -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectAdministrationWordListCnt" resultType="int">
 		SELECT
 		COUNT(*) totcnt
@@ -141,7 +141,7 @@
 	 </if>
 	</select>
 
-    <!-- 행정전문용어사전::삭제  -->
+    <!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::??젣  -->
 	<delete id="deleteAdministrationWord">
 		
 			DELETE FROM COMTNADMINISTRATIONWORD
@@ -149,7 +149,7 @@
 		
 	</delete>
 
-	<!-- 행정전문용어사전::수정  -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::?섏젙  -->
 	<update id="updateAdministrationWord">
 	 
 		UPDATE COMTNADMINISTRATIONWORD
@@ -168,7 +168,7 @@
 	 
 	</update>
 
-	<!-- 행정전문용어사전::상세보기 -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::?곸꽭蹂닿린 -->
 	<select id="selectAdministrationWordDetail" resultMap="AdministrationWordVO">
 		SELECT
 			A.ADMINIST_WORD_ID,
@@ -194,7 +194,7 @@
 		AND A.ADMINIST_WORD_ID=#{administWordId}
 	</select>
 
-	<!-- 행정전문용어사전::입력  -->
+	<!-- ?됱젙?꾨Ц?⑹뼱?ъ쟾::?낅젰  -->
 	<insert id="insertAdministrationWord">
 	 
 		INSERT INTO COMTNADMINISTRATIONWORD (

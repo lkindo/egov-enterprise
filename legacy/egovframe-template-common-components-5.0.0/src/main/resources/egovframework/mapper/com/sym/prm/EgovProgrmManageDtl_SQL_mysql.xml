@@ -3,7 +3,7 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="progrmManageDAO">
 
-    <!-- 프로그램 변경요청  --> 
+    <!-- ?꾨줈洹몃옩 蹂寃쎌슂泥? --> 
 	<resultMap id="progrmManageDtl" type="egovframework.com.sym.prm.service.ProgrmManageDtlVO">
 	  <result property="progrmFileNm" column="PROGRM_FILE_NM"/>
       <result property="rqesterNo" column="REQUST_NO"/>
@@ -17,7 +17,7 @@
       <result property="rqesterSj" column="REQUST_SJ"/>
 	</resultMap>
 	
-    <!-- 프로그램 변경요청 TMP --> 
+    <!-- ?꾨줈洹몃옩 蹂寃쎌슂泥?TMP --> 
 	<resultMap id="progrmManageDtl_Temp" type="egovframework.com.sym.prm.service.ProgrmManageDtlVO">
       <result property="rqesterNo" column="REQUST_NO"/>
 	</resultMap>
@@ -41,7 +41,7 @@
 		 
 	</select>
 
-	<!-- 총건수 조회 -->
+	<!-- 珥앷굔??議고쉶 -->
 	<select id="selectProgrmChangeRequstListTotCnt_S" parameterType="comDefaultVO" resultType="int">
 		
 		SELECT COUNT(*) AS totcnt
@@ -160,7 +160,7 @@
         LIMIT #{recordCountPerPage} OFFSET #{firstIndex}   
 	</select>
 
-	<!-- 총건수 조회   binary(PROCESS_DE) >= #{searchKeywordFrom}  and  binary(PROCESS_DE) =<  #{searchKeywordTo}  -->
+	<!-- 珥앷굔??議고쉶   binary(PROCESS_DE) >= #{searchKeywordFrom}  and  binary(PROCESS_DE) =<  #{searchKeywordTo}  -->
 	<select id="selectChangeRequstProcessListTotCnt_S" parameterType="comDefaultVO" resultType="int">
 		
 		SELECT COUNT(*) AS totcnt

@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 회의실예약에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뚯쓽?ㅼ삁?쎌뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 회의실예약의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뚯쓽?ㅼ삁?쎌쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class MtgPlaceResveVO extends MtgPlaceResve implements Serializable {
@@ -21,7 +21,7 @@ public class MtgPlaceResveVO extends MtgPlaceResve implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 예약 목록
+	 * ?덉빟 紐⑸줉
 	 */
 	List<MtgPlaceResveVO> mtgPlaceResveList;
 

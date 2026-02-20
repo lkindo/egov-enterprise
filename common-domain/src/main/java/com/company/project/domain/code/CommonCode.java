@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * 공통 상세 코드 엔티티 (CCMMNDETAILCODE 테이블 매핑)
+ * ?⑤벏???怨멸쉭 ?꾨뗀諭??酉???(CCMMNDETAILCODE ???뵠??筌띲끋釉?
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,22 +25,22 @@ public class CommonCode implements Serializable {
     @Id
     @Column(name = "CODE_ID", length = 18)
     @NonNull
-    private String codeGroupId; // eGovFrame 표준의 CODE_ID
+    private String codeGroupId; // eGovFrame ?????CODE_ID
 
     @Id
     @Column(name = "CODE", length = 45)
     @NonNull
-    private String code; // 상세 코드
+    private String code; // ?怨멸쉭 ?꾨뗀諭?
 
     @Column(name = "CODE_NM", length = 180)
     @NonNull
-    private String codeNm; // 코드명
+    private String codeNm; // ?꾨뗀諭띰쭗?
 
     @Column(name = "CODE_DC", length = 600)
-    private String codeDc; // 코드 설명
+    private String codeDc; // ?꾨뗀諭???살구
 
     @Column(name = "USE_AT", length = 1)
-    private String useAt; // 사용 여부 (Y/N)
+    private String useAt; // ??????? (Y/N)
 
     @Column(name = "FRST_REGIST_PNTTM")
     private LocalDateTime createdDate;

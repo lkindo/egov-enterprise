@@ -4,18 +4,18 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  *
- * FAQ를 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * FAQ瑜?泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -26,35 +26,35 @@ public class FaqVO extends FaqDefaultVO {
 	/** FAQ ID */
 	private String faqId;
 
-	/** 질문제목 */
+	/** 吏덈Ц?쒕ぉ */
 	private String qestnSj;
 
-	/** 질문내용 */
+	/** 吏덈Ц?댁슜 */
 	private String qestnCn;
 
-	/** 답변내용 */
+	/** ?듬??댁슜 */
 	private String answerCn;
 
-	/** 조회횟수 */
+	/** 議고쉶?잛닔 */
 	private String inqireCo;
 
-	/** 첨부파일ID */
+	/** 泥⑤??뚯씪ID */
 	private String atchFileId;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId;
 
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId;
 
 	/**
-	 * faqId attribute 를 리턴한다.
+	 * faqId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFaqId() {
@@ -62,7 +62,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * faqId attribute 값을 설정한다.
+	 * faqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return faqId String
 	 */
 	public void setFaqId(String faqId) {
@@ -70,7 +70,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * qestnSj attribute 를 리턴한다.
+	 * qestnSj attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnSj() {
@@ -78,7 +78,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * qestnSj attribute 값을 설정한다.
+	 * qestnSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnSj String
 	 */
 	public void setQestnSj(String qestnSj) {
@@ -86,7 +86,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * qestnCn attribute 를 리턴한다.
+	 * qestnCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnCn() {
@@ -94,7 +94,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * qestnCn attribute 값을 설정한다.
+	 * qestnCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnCn String
 	 */
 	public void setQestnCn(String qestnCn) {
@@ -102,7 +102,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * answerCn attribute 를 리턴한다.
+	 * answerCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAnswerCn() {
@@ -110,7 +110,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * answerCn attribute 값을 설정한다.
+	 * answerCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return answerCn String
 	 */
 	public void setAnswerCn(String answerCn) {
@@ -118,7 +118,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 를 리턴한다.
+	 * inqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getInqireCo() {
@@ -126,7 +126,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 값을 설정한다.
+	 * inqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return inqireCo String
 	 */
 	public void setInqireCo(String inqireCo) {
@@ -134,7 +134,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAtchFileId() {
@@ -142,7 +142,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -150,7 +150,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -158,7 +158,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -166,7 +166,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -174,7 +174,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -182,7 +182,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -190,7 +190,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -198,7 +198,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -206,7 +206,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -214,7 +214,7 @@ public class FaqVO extends FaqDefaultVO {
 	}
 
 	/**
-	 * toString 메소드를 대치한다.
+	 * toString 硫붿냼?쒕? ?移섑븳??
 	 */
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);

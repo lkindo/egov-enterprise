@@ -11,21 +11,21 @@ import egovframework.com.utl.fcc.service.EgovDateUtil;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 
 /**
- * 개요
- * - 주간월간보고에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 二쇨컙?붽컙蹂닿퀬?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 주간월간보고에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 주간월간보고의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 二쇨컙?붽컙蹂닿퀬??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 二쇨컙?붽컙蹂닿퀬??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 19-7-2010 오전 10:12:48
+ * @created 19-7-2010 ?ㅼ쟾 10:12:48
  *   <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.7.19	장철호          최초 생성
+ *   2010.7.19	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -33,7 +33,7 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	
 	/**
-	 * 주어진 조건에 맞는 보고자를 불러온다.
+	 * 二쇱뼱吏?議곌굔??留욌뒗 蹂닿퀬?먮? 遺덈윭?⑤떎.
 	 * @param ReportrVO
 	 * @return List
 	 * 
@@ -44,7 +44,7 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 보고자 목록에 대한 전체 건수를 조회한다.
+	 * 蹂닿퀬??紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
 	 * @param ReportrVO
 	 * @return int
 	 * 
@@ -55,7 +55,7 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 맞는 직위명을 불러온다.
+	 * 二쇱뼱吏?議곌굔??留욌뒗 吏곸쐞紐낆쓣 遺덈윭?⑤떎.
 	 * @param DeptVO
 	 * @return String
 	 * 
@@ -66,14 +66,14 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 주어진 조건에 맞는 주간월간보고를 불러온다.
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return List<WikMnthngReprtVO> - 주간월간보고 List
+	 * 二쇱뼱吏?議곌굔??留욌뒗 二쇨컙?붽컙蹂닿퀬瑜?遺덈윭?⑤떎.
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return List<WikMnthngReprtVO> - 二쇨컙?붽컙蹂닿퀬 List
 	 * 
 	 * @param wikMnthngReprtVO
 	 */
 	public List<WikMnthngReprtVO> selectWikMnthngReprtList(WikMnthngReprtVO wikMnthngReprtVO) throws Exception{
-		//날짜관련
+		//?좎쭨愿??
 		wikMnthngReprtVO.setSearchBgnDe(wikMnthngReprtVO.getSearchBgnDe().replaceAll("-", ""));
 		wikMnthngReprtVO.setSearchEndDe(wikMnthngReprtVO.getSearchEndDe().replaceAll("-", ""));
 		
@@ -89,9 +89,9 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주어진 조건에 맞는 주간월간보고 목록을 불러온다.
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return WikMnthngReprtVO - 주간월간보고 VO
+	 * 二쇱뼱吏?議곌굔??留욌뒗 二쇨컙?붽컙蹂닿퀬 紐⑸줉??遺덈윭?⑤떎.
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
 	 * 
 	 * @param wikMnthngReprtVO
 	 */
@@ -104,14 +104,14 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주간월간보고 정보를 수정한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??섏젙?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 * 
 	 * @param wikMnthngReprt
 	 */
 	public void updateWikMnthngReprt(WikMnthngReprt wikMnthngReprt) throws Exception{
-		//날짜관련
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//?좎쭨愿??
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		wikMnthngReprt.setReprtDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtDe()).replaceAll("-", ""));
 		wikMnthngReprt.setReprtBgnDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtBgnDe()).replaceAll("-", ""));
 		wikMnthngReprt.setReprtEndDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtEndDe()).replaceAll("-", ""));
@@ -119,14 +119,14 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주간월간보고 정보를 등록한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??깅줉?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 * 
 	 * @param wikMnthngReprt
 	 */
 	public void insertWikMnthngReprt(WikMnthngReprt wikMnthngReprt) throws Exception{
-		//날짜관련
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//?좎쭨愿??
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		wikMnthngReprt.setReprtDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtDe()).replaceAll("-", ""));
 		wikMnthngReprt.setReprtBgnDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtBgnDe()).replaceAll("-", ""));
 		wikMnthngReprt.setReprtEndDe(EgovStringUtil.isNullToString(wikMnthngReprt.getReprtEndDe()).replaceAll("-", ""));
@@ -134,8 +134,8 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주간월간보고 정보를 삭제한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜???젣?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 * 
 	 * @param wikMnthngReprt
 	 */
@@ -144,8 +144,8 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주간월간보고 정보를 승인한다.
-	 * @param WikMnthngReprt - 주간월간보고 model
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??뱀씤?쒕떎.
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
 	 * 
 	 * @param wikMnthngReprt
 	 */
@@ -154,15 +154,15 @@ public class WikMnthngReprtDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 주간월간보고 목록에 대한 전체 건수를 조회한다.
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return int - 주간월간보고 목록 개수
+	 * 二쇨컙?붽컙蹂닿퀬 紐⑸줉??????꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return int - 二쇨컙?붽컙蹂닿퀬 紐⑸줉 媛쒖닔
 	 * 
 	 * @param wikMnthngReprtVO
 	 */
 	public int selectWikMnthngReprtListCnt(WikMnthngReprtVO wikMnthngReprtVO) throws Exception{
-		//날짜관련
-		//KISA 보안약점 조치 (2018-10-29, 윤창원)
+		//?좎쭨愿??
+		//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		wikMnthngReprtVO.setSearchBgnDe(EgovStringUtil.isNullToString(wikMnthngReprtVO.getSearchBgnDe()).replaceAll("-", ""));
 		wikMnthngReprtVO.setSearchEndDe(EgovStringUtil.isNullToString(wikMnthngReprtVO.getSearchEndDe()).replaceAll("-", ""));
 		

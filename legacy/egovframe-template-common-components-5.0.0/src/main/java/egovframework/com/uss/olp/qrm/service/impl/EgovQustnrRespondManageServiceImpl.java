@@ -12,18 +12,18 @@ import egovframework.com.uss.olp.qrm.service.EgovQustnrRespondManageService;
 import egovframework.com.uss.olp.qrm.service.QustnrRespondManageVO;
 import jakarta.annotation.Resource;
 /**
- * 설문응답자관리 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ?묐떟?먭?由?ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -40,8 +40,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	private EgovIdGnrService idgenService;
 
     /**
-	 * 응답자정보 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?묐떟?먯젙蹂?紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -51,8 +51,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	}
 
     /**
-	 * 응답자정보를(을) 상세조회 한다.
-	 * @param QustnrRespondManage - 회정정보가 담김 VO
+	 * ?묐떟?먯젙蹂대?(?? ?곸꽭議고쉶 ?쒕떎.
+	 * @param QustnrRespondManage - ?뚯젙?뺣낫媛 ?닿? VO
 	 * @return List
 	 * @throws Exception
 	 */
@@ -62,8 +62,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	}
 
     /**
-	 * 응답자정보를(을) 목록 전체 건수를(을) 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?묐떟?먯젙蹂대?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return int
 	 * @throws Exception
 	 */
@@ -73,8 +73,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	}
 
     /**
-	 * 응답자정보를(을) 등록한다.
-	 * @param qustnrRespondManageVO -  응답자정보 정보가 담긴 VO
+	 * ?묐떟?먯젙蹂대?(?? ?깅줉?쒕떎.
+	 * @param qustnrRespondManageVO -  ?묐떟?먯젙蹂??뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	@Override
@@ -87,8 +87,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	}
 
     /**
-	 * 응답자정보를(을) 수정한다.
-	 * @param qustnrRespondManageVO - 응답자정보 조회할 정보가 담긴 VO
+	 * ?묐떟?먯젙蹂대?(?? ?섏젙?쒕떎.
+	 * @param qustnrRespondManageVO - ?묐떟?먯젙蹂?議고쉶???뺣낫媛 ?닿릿 VO
 	 * @throws Exception
 	 */
 	@Override
@@ -97,8 +97,8 @@ public class EgovQustnrRespondManageServiceImpl extends EgovAbstractServiceImpl 
 	}
 
     /**
-	 * 응답자정보를(을) 삭제한다.
-	 * @param qustnrRespondManageVO - 응답자정보 정보가 담긴 VO
+	 * ?묐떟?먯젙蹂대?(?? ??젣?쒕떎.
+	 * @param qustnrRespondManageVO - ?묐떟?먯젙蹂??뺣낫媛 ?닿릿 VO
 	 * @return
 	 * @throws Exception
 	 */

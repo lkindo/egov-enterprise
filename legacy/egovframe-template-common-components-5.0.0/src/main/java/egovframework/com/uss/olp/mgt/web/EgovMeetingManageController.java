@@ -27,19 +27,19 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 회의관리를 처리하기 위한 Controller 구현 Class
- * @author 공통서비스 장동한
+ * ?뚯쓽愿由щ? 泥섎━?섍린 ?꾪븳 Controller 援ы쁽 Class
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.03.20  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  * </pre>
  */
@@ -73,7 +73,7 @@ public class EgovMeetingManageController {
 
 
     /**
-     * 개별 배포시 메인메뉴를 조회한다.
+     * 媛쒕퀎 諛고룷??硫붿씤硫붾돱瑜?議고쉶?쒕떎.
      * @param model
      * @return	"/uss/sam/cpy/"
      * @throws Exception
@@ -84,7 +84,7 @@ public class EgovMeetingManageController {
     }
 
     /**
-     * 메뉴를 조회한다.
+     * 硫붾돱瑜?議고쉶?쒕떎.
      * @param model
      * @return	"/uss/sam/cpy/EgovLeft"
      * @throws Exception
@@ -95,7 +95,7 @@ public class EgovMeetingManageController {
     }
 
     /**
-     * 부서목록을 조회한다.
+     * 遺?쒕ぉ濡앹쓣 議고쉶?쒕떎.
      * @param searchVO
      * @param commandMap
      * @param model
@@ -116,7 +116,7 @@ public class EgovMeetingManageController {
     }
 
     /**
-     * 회원목록을 조회한다.
+     * ?뚯썝紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
      * @param commandMap
      * @param model
@@ -137,7 +137,7 @@ public class EgovMeetingManageController {
     }
 
 	/**
-	 * 회의정보 목록을 조회한다.
+	 * ?뚯쓽?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param commandMap
 	 * @param meetingManageVO
@@ -145,7 +145,7 @@ public class EgovMeetingManageController {
 	 * @return "egovframework/com/uss/olp/mgt/EgovMeetingManageList"
 	 * @throws Exception
 	 */
-    @IncludedInfo(name="회의관리", order = 650 ,gid = 50)
+    @IncludedInfo(name="?뚯쓽愿由?, order = 650 ,gid = 50)
 	@RequestMapping(value="/uss/olp/mgt/EgovMeetingManageList.do")
 	public String egovMeetingManageList(
 			@ModelAttribute("searchVO") ComDefaultVO searchVO,
@@ -183,7 +183,7 @@ public class EgovMeetingManageController {
 	}
 
 	/**
-	 * 회의정보 목록을 상세조회 조회한다.
+	 * ?뚯쓽?뺣낫 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * @param searchVO
 	 * @param meetingManageVO
 	 * @param commandMap
@@ -214,7 +214,7 @@ public class EgovMeetingManageController {
 	}
 
 	/**
-	  * 회의정보를 수정한다.
+	  * ?뚯쓽?뺣낫瑜??섏젙?쒕떎.
 	 * @param searchVO
 	 * @param meetingManageVO
 	 * @param bindingResult
@@ -232,13 +232,13 @@ public class EgovMeetingManageController {
     		ModelMap model)
     throws Exception {
 
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/uss/olp/mgt/EgovMeetingManageModify";
@@ -251,7 +251,7 @@ public class EgovMeetingManageController {
                 model.addAttribute("resultList", resultList);
     			return sLocationUrl;
     		}
-    		//아이디 설정
+    		//?꾩씠???ㅼ젙
         	meetingManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
         	meetingManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -266,7 +266,7 @@ public class EgovMeetingManageController {
 	}
 
 	/**
-	 * 회의정보를 등록한다.
+	 * ?뚯쓽?뺣낫瑜??깅줉?쒕떎.
 	 * @param searchVO
 	 * @param meetingManageVO
 	 * @param bindingResult
@@ -283,14 +283,14 @@ public class EgovMeetingManageController {
 			@RequestParam Map<?, ?> commandMap,
     		ModelMap model)
     throws Exception {
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		//로그인 객체 선언
+		//濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/uss/olp/mgt/EgovMeetingManageRegist";
@@ -302,7 +302,7 @@ public class EgovMeetingManageController {
     		if(bindingResult.hasErrors()){
     			return sLocationUrl;
     		}
-    		//아이디 설정
+    		//?꾩씠???ㅼ젙
         	meetingManageVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
         	meetingManageVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 

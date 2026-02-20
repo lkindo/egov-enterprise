@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!-- 
-	수정일                 수정자                          수정내용
+	?섏젙??                ?섏젙??                         ?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.2   	정진오		FRST_REGIST_PNTTM컬럼에 FRST_REGISTER_PNTTM Alias 추가
-  							SCHDUL_KND_CODE컬럼에 SCHDUL_KIND_CODE Alias 추가
-  							(egovMap을 사용하는 조회 쿼리의경우)
-  							DeptSchdulManage.selectDeptSchdulManageRetrieve에 SCHDUL_CHARGER_NAME 추가(Daily 조회시 필요)
-  2011.10.05    서준식		보안 취약점 점검사항 반영 $->#변경
-  2018.10.15  	이정은		메인페이지/일정관리조회 - 오늘날짜 일정 안나오는 오류 처리
-  2024.10.29  	win777		동적쿼리 조건문 수정(selectDeptSchdulManageRetrieve)
+  2011.9.2   	?뺤쭊??	FRST_REGIST_PNTTM而щ읆??FRST_REGISTER_PNTTM Alias 異붽?
+  							SCHDUL_KND_CODE而щ읆??SCHDUL_KIND_CODE Alias 異붽?
+  							(egovMap???ъ슜?섎뒗 議고쉶 荑쇰━?섍꼍??
+  							DeptSchdulManage.selectDeptSchdulManageRetrieve??SCHDUL_CHARGER_NAME 異붽?(Daily 議고쉶???꾩슂)
+  2011.10.05    ?쒖???	蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
+  2018.10.15  	?댁젙?		硫붿씤?섏씠吏/?쇱젙愿由ъ“??- ?ㅻ뒛?좎쭨 ?쇱젙 ?덈굹?ㅻ뒗 ?ㅻ쪟 泥섎━
+  2024.10.29  	win777		?숈쟻荑쇰━ 議곌굔臾??섏젙(selectDeptSchdulManageRetrieve)
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -38,7 +38,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>				
 	</resultMap>
 	
-	<!-- 부서검색  -->
+	<!-- 遺?쒓??? -->
 	<select id="selectDeptSchdulAuthorGroupPopup" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT
@@ -60,7 +60,7 @@
 	 </if>
 	</select>
 
-      <!-- 아이디 검색  -->
+      <!-- ?꾩씠??寃?? -->
 	<select id="selectDeptSchdulEmpLyrPopup" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT
@@ -94,7 +94,7 @@
 	 </if>
 	</select>
 	
-	<!-- 메인페이지/일정관리조회 -->  
+	<!-- 硫붿씤?섏씠吏/?쇱젙愿由ъ“??-->  
 	<select id="selectDeptSchdulManageMainList" parameterType="java.util.Map" resultType="egovMap">
 	<![CDATA[
 		SELECT MAIN.* 
@@ -138,7 +138,7 @@
 		 
 	</select>
 	
-	<!-- 부서일정정보::목록조회 -->
+	<!-- 遺?쒖씪?뺤젙蹂?:紐⑸줉議고쉶 -->
 	<select id="selectDeptSchdulManageRetrieve" parameterType="java.util.Map" resultType="egovMap">
 	 
 		SELECT 
@@ -200,7 +200,7 @@
 	order by A.SCHDUL_BGNDE , (1+(SUBSTR(A.SCHDUL_ENDDE,1, 8) - SUBSTR(A.SCHDUL_BGNDE, 1, 8))) desc
 	</select>
 	
-	<!-- 부서일정정보::상세보기 -->
+	<!-- 遺?쒖씪?뺤젙蹂?:?곸꽭蹂닿린 -->
 	<select id="selectDeptSchdulManageDetailVO" resultMap="DeptSchdulManage">
 		SELECT 
 			A.SCHDUL_ID,
@@ -227,7 +227,7 @@
 		AND SCHDUL_ID = #{schdulId}
 	</select>
 	
-	<!-- 부서일정정보::목록조회_게시물정보 -->
+	<!-- 遺?쒖씪?뺤젙蹂?:紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectDeptSchdulManage" parameterType="comDefaultVO" resultType="egovMap">
 		
 	SELECT *
@@ -274,7 +274,7 @@
 		
 	</select>
 	
-	<!-- 부서일정정보::목록조회_게시물 총개수  -->
+	<!-- 遺?쒖씪?뺤젙蹂?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectDeptSchdulManageCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -288,7 +288,7 @@
 	</select>
 
 	
-	<!-- 부서일정정보::삭제  -->
+	<!-- 遺?쒖씪?뺤젙蹂?:??젣  -->
 	<delete id="deleteDiaryManage">
 			DELETE FROM COMTNDIARYINFO 
 			WHERE SCHDUL_ID = #{schdulId}
@@ -300,7 +300,7 @@
 		
 	</delete>
 
-	<!-- 부서일정정보::수정  -->
+	<!-- 遺?쒖씪?뺤젙蹂?:?섏젙  -->
 	<update id="updateDeptSchdulManage"> 
 		UPDATE COMTNSCHDULINFO 
 		SET  
@@ -320,7 +320,7 @@
 		WHERE SCHDUL_ID = #{schdulId}
 	</update>
 	
-	<!-- 부서일정정보::상세보기 -->
+	<!-- 遺?쒖씪?뺤젙蹂?:?곸꽭蹂닿린 -->
 	<select id="selectDeptSchdulManageDetail" parameterType="egovframework.com.cop.smt.sdm.service.DeptSchdulManageVO" resultType="egovMap">
 		SELECT 
 			A.SCHDUL_ID,
@@ -347,7 +347,7 @@
 		AND SCHDUL_ID = #{schdulId}
 	</select>
 	
-	<!-- 부서일정정보::입력  -->
+	<!-- 遺?쒖씪?뺤젙蹂?:?낅젰  -->
 	<insert id="insertDeptSchdulManage">
 	 
 	 

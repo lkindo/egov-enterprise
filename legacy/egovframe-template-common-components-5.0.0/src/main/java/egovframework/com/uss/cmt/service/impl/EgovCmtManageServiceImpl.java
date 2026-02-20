@@ -17,21 +17,21 @@ import egovframework.com.uss.cmt.service.EgovCmtManageService;
 import jakarta.annotation.Resource;
 
 /**
- * 출퇴근관리에 관한 비지니스 클래스를 정의한다.
+ * 異쒗눜洹쇨?由ъ뿉 愿??鍮꾩??덉뒪 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * @author 표준프레임워크 개발팀
+ * @author ?쒖??꾨젅?꾩썙??媛쒕컻?
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  개발팀          최초 생성
- *   2025.08.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-SimpleDateFormatNeedsLocale(SimpleDateFormat 인스턴스를 생성할때 Locale 을 지정하는 것이 바람직함)
- *   2025.08.01  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2009.04.10  媛쒕컻?          理쒖큹 ?앹꽦
+ *   2025.08.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SimpleDateFormatNeedsLocale(SimpleDateFormat ?몄뒪?댁뒪瑜??앹꽦?좊븣 Locale ??吏?뺥븯??寃껋씠 諛붾엺吏곹븿)
+ *   2025.08.01  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -51,10 +51,10 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 출퇴근정보 목록 화면에 출력
+	 * 異쒗눜洹쇱젙蹂?紐⑸줉 ?붾㈃??異쒕젰
 	 * 
-	 * @param DeptInfo (부서별 - optional) 검색조건
-	 * @return List<CmtManageVO> 업무사용자 목록정보
+	 * @param DeptInfo (遺?쒕퀎 - optional) 寃?됱“嫄?
+	 * @return List<CmtManageVO> ?낅Т?ъ슜??紐⑸줉?뺣낫
 	 * @throws Exception
 	 */
 	@Override
@@ -64,10 +64,10 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 출근정보 입력, 디바이스를 통해 외부 연계입력가능
+	 * 異쒓렐?뺣낫 ?낅젰, ?붾컮?댁뒪瑜??듯빐 ?몃? ?곌퀎?낅젰媛??
 	 * 
-	 * @param cmtManageVO를 등록정보
-	 * @return result 등록결과
+	 * @param cmtManageVO瑜??깅줉?뺣낫
+	 * @return result ?깅줉寃곌낵
 	 * @throws Exception
 	 */
 	@Override
@@ -77,7 +77,7 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 		String wrktmId = idgenService.getNextStringId();
 		cmtManageVO.setWrktmId(wrktmId);
 
-		// 출근시간
+		// 異쒓렐?쒓컙
 		Date date = Calendar.getInstance().getTime();
 		String wrkStartTime = new SimpleDateFormat("HH:mm").format(date); // NOPMD - SimpleDateFormatNeedsLocale
 		cmtManageVO.setWrkStartTime(wrkStartTime);
@@ -86,10 +86,10 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 퇴근 정보 입력을 위한 wrktm id 확인
+	 * ?닿렐 ?뺣낫 ?낅젰???꾪븳 wrktm id ?뺤씤
 	 * 
-	 * @param cmtManageVO 검색조건
-	 * @return 총사용자개수(int)
+	 * @param cmtManageVO 寃?됱“嫄?
+	 * @return 珥앹궗?⑹옄媛쒖닔(int)
 	 * @throws Exception
 	 */
 	@Override
@@ -99,10 +99,10 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 	}
 
 	/**
-	 * 퇴근 정보 입력
+	 * ?닿렐 ?뺣낫 ?낅젰
 	 * 
-	 * @param cmtManageVO를 등록정보
-	 * @return result 등록결과
+	 * @param cmtManageVO瑜??깅줉?뺣낫
+	 * @return result ?깅줉寃곌낵
 	 * @throws Exception
 	 */
 	@Override
@@ -110,15 +110,15 @@ public class EgovCmtManageServiceImpl extends EgovAbstractServiceImpl implements
 
 		CmtManageVO resultVO = cmtManageDAO.selectWrkStartInfo(cmtManageVO);
 
-		// 퇴근시간
+		// ?닿렐?쒓컙
 		Date date = Calendar.getInstance().getTime();
 		String wrkEndTime = new SimpleDateFormat("HH:mm").format(date); // NOPMD - SimpleDateFormatNeedsLocale
 		resultVO.setWrkEndTime(wrkEndTime);
 
-		// 회사별 Rule 기반으로 workhour / overtime_workhour를 결정한다. ex) DB 연동활용
+		// ?뚯궗蹂?Rule 湲곕컲?쇰줈 workhour / overtime_workhour瑜?寃곗젙?쒕떎. ex) DB ?곕룞?쒖슜
 		resultVO.setWrkHours("8");
 		resultVO.setOvtmwrkHours("0");
-		// 출퇴근시간 Rule 기반으로 출퇴근상태를 구분한다. ex) 정상/지각/조회
+		// 異쒗눜洹쇱떆媛?Rule 湲곕컲?쇰줈 異쒗눜洹쇱긽?쒕? 援щ텇?쒕떎. ex) ?뺤긽/吏媛?議고쉶
 		String msg = egovMessageSource.getMessage("ussCmt.cmtManageServiceImpl.normal");
 		resultVO.setWrkStartStatus(msg);
 		resultVO.setWrkEndStatus(msg);

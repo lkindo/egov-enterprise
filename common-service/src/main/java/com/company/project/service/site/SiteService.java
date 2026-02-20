@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 사이트정보 서비스 구현체
+ * ?ъ씠?몄젙蹂??쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor

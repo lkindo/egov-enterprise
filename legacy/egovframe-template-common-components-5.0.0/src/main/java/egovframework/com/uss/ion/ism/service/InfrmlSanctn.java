@@ -3,83 +3,83 @@ package egovframework.com.uss.ion.ism.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 약식결재관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쎌떇寃곗옱愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 약식결재ID, 업무구분코드, 업무구분명, 연계URL, 신청자ID, 신청자명, 신청일자, 결재자ID, 결재자명, 결재자소속, 승인여부, 결재일시, 반려사유 의 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쎌떇寃곗옱ID, ?낅Т援щ텇肄붾뱶, ?낅Т援щ텇紐? ?곌퀎URL, ?좎껌?륤D, ?좎껌?먮챸, ?좎껌?쇱옄, 寃곗옱?륤D, 寃곗옱?먮챸, 寃곗옱?먯냼?? ?뱀씤?щ?, 寃곗옱?쇱떆, 諛섎젮?ъ쑀 ????ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:26
+ * @created 28-6-2010 ?ㅼ쟾 11:29:26
  */
 @SuppressWarnings("serial")
 public class InfrmlSanctn implements Serializable {
 	/**
-	 * 약식결재ID
+	 * ?쎌떇寃곗옱ID
 	 */
 	private String infrmlSanctnId;
 	/**
-	 * 업무구분코드
+	 * ?낅Т援щ텇肄붾뱶
 	 */
 	private String jobSeCode;
 	/**
-	 * 업무구분명
+	 * ?낅Т援щ텇紐?
 	 */
 	private String jobSeNm;
 	/**
-	 * 신청자ID
+	 * ?좎껌?륤D
 	 */
 	private String applcntId;
 	/**
-	 * 신청자명
+	 * ?좎껌?먮챸
 	 */
 	private String applcntNm;
 	/**
-	 * 신청일자
+	 * ?좎껌?쇱옄
 	 */
 	private String reqstDe = "";
 	/**
-	 * 결재자ID
+	 * 寃곗옱?륤D
 	 */
 	private String sanctnerId;
 	/**
-	 * 결재자명
+	 * 寃곗옱?먮챸
 	 */
 	private String sanctnerNm;
 	/**
-	 * 결재자소속
+	 * 寃곗옱?먯냼??
 	 */
 	private String sanctnerOrgnztNm;
 	/**
-	 * 승인여부
+	 * ?뱀씤?щ?
 	 */
 	private String confmAt = "";
 	/**
-	 * 결재일시
+	 * 寃곗옱?쇱떆
 	 */
 	private String sanctnDt = "";
 	/**
-	 * 반려사유
+	 * 諛섎젮?ъ쑀
 	 */
 	private String returnResn = "";
 	/**
-	 * 최초등록자 ID
+	 * 理쒖큹?깅줉??ID
 	 */
 	private String frstRegisterId = "";
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm = "";
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId = "";
 	/**
-	 * 최종수정자명
+	 * 理쒖쥌?섏젙?먮챸
 	 */
 	private String lastUpdusrNm = "";
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm = "";
 	

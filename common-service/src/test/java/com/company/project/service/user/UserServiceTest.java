@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 /**
- * UserService ?�위 ?�스?? */
+ * UserService ?⑥쐞 ?뚯뒪?? */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -44,20 +44,20 @@ class UserServiceTest {
     private UserService userService;
 
     @Test
-    @DisplayName("?�용??목록 조회 ?�공")
+    @DisplayName("?ъ슜??紐⑸줉 議고쉶 ?깃났")
     void getUserList_success() {
         // given
         User user = User.builder()
                 .userId("testUser")
                 .password("password")
-                .userNm("?�스???�용??)
+                .userNm("?뚯뒪???ъ슜??)
                 .esntlId("USR_001")
                 .role(Role.USER)
                 .build();
 
         UserDto userDto = UserDto.builder()
                 .userId("testUser")
-                .userNm("?�스???�용??)
+                .userNm("?뚯뒪???ъ슜??)
                 .esntlId("USR_001")
                 .role("USER")
                 .build();
@@ -71,25 +71,25 @@ class UserServiceTest {
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getUserId()).isEqualTo("testUser");
-        assertThat(result.get(0).getUserNm()).isEqualTo("?�스???�용??);
+        assertThat(result.get(0).getUserNm()).isEqualTo("?뚯뒪???ъ슜??);
     }
 
     @Test
-    @DisplayName("?�용???�세 조회 ?�공")
+    @DisplayName("?ъ슜???곸꽭 議고쉶 ?깃났")
     void getUserById_success() {
         // given
         String userId = "testUser";
         User user = User.builder()
                 .userId(userId)
                 .password("password")
-                .userNm("?�스???�용??)
+                .userNm("?뚯뒪???ъ슜??)
                 .esntlId("USR_001")
                 .role(Role.ADMIN)
                 .build();
 
         UserDto userDto = UserDto.builder()
                 .userId(userId)
-                .userNm("?�스???�용??)
+                .userNm("?뚯뒪???ъ슜??)
                 .esntlId("USR_001")
                 .role("ADMIN")
                 .build();
@@ -106,7 +106,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("존재?��? ?�는 ?�용??조회 ???�외 발생")
+    @DisplayName("議댁옱?섏? ?딅뒗 ?ъ슜??議고쉶 ???덉쇅 諛쒖깮")
     void getUserById_notFound() {
         // given
         String userId = "notExist";

@@ -2,28 +2,28 @@ package egovframework.com.utl.sys.dbm.service;
 
 
 /**
- * DB서비스모니터링 에 대한 결과 클래스
+ * DB?쒕퉬?ㅻえ?덊꽣留??????寃곌낵 ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.07.15
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.07.15   김진만     최초 생성
+ *  2010.07.15   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class DbMntrngResult {
 
 	/**
-	 * 모니터링 정상여부
+	 * 紐⑤땲?곕쭅 ?뺤긽?щ?
 	 */
 	private boolean nrmltAt;
 	/**
-	 * 원인 Exception
+	 * ?먯씤 Exception
 	 */
 	private Throwable cause;
 

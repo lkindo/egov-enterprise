@@ -7,56 +7,56 @@ import java.util.List;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 문자메시지 서비스 데이터 처리 모델
- * @author 공통컴포넌트개발팀 한성곤
+ * 臾몄옄硫붿떆吏 ?쒕퉬???곗씠??泥섎━ 紐⑤뜽
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.18
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.18  한성곤          최초 생성
- *	 2011.10.07	 이기하		보안취약점 수정(private 배열 처리)
+ *   2009.06.18  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *	 2011.10.07	 ?닿린??	蹂댁븞痍⑥빟???섏젙(private 諛곗뿴 泥섎━)
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class Sms implements Serializable {
-    /** 문자메시지 ID */
+    /** 臾몄옄硫붿떆吏 ID */
     private String smsId = "";
 
-    /** 전송 전화번호 */
+    /** ?꾩넚 ?꾪솕踰덊샇 */
     private String trnsmitTelno = "";
 
-    /** 전송 내용 */
+    /** ?꾩넚 ?댁슜 */
     private String trnsmitCn = "";
 
-    /** 수신 전화번호 개수 */
+    /** ?섏떊 ?꾪솕踰덊샇 媛쒖닔 */
     private int recptnCnt = 0;
 
-    /** 유일 아이디 */
+    /** ?좎씪 ?꾩씠??*/
     private String uniqId = "";
 
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
 
-    /** 수신 정보 List */
+    /** ?섏떊 ?뺣낫 List */
     private List<SmsRecptn> recptn = null;
 
-    /** 수전 전화번호 배열 */
+    /** ?섏쟾 ?꾪솕踰덊샇 諛곗뿴 */
     private String[] recptnTelno = null;
 
     /**
-     * smsId attribute를 리턴한다.
+     * smsId attribute瑜?由ы꽩?쒕떎.
      * @return the smsId
      */
     public String getSmsId() {
@@ -64,7 +64,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * smsId attribute 값을 설정한다.
+     * smsId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param smsId the smsId to set
      */
     public void setSmsId(String smsId) {
@@ -72,7 +72,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * trnsmitTelno attribute를 리턴한다.
+     * trnsmitTelno attribute瑜?由ы꽩?쒕떎.
      * @return the trnsmitTelno
      */
     public String getTrnsmitTelno() {
@@ -80,7 +80,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * trnsmitTelno attribute 값을 설정한다.
+     * trnsmitTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param trnsmitTelno the trnsmitTelno to set
      */
     public void setTrnsmitTelno(String trnsmitTelno) {
@@ -88,7 +88,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * trnsmitCn attribute를 리턴한다.
+     * trnsmitCn attribute瑜?由ы꽩?쒕떎.
      * @return the trnsmitCn
      */
     public String getTrnsmitCn() {
@@ -96,7 +96,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * trnsmitCn attribute 값을 설정한다.
+     * trnsmitCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param trnsmitCn the trnsmitCn to set
      */
     public void setTrnsmitCn(String trnsmitCn) {
@@ -104,7 +104,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
@@ -112,7 +112,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterId the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
@@ -120,7 +120,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -128,7 +128,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -136,7 +136,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
@@ -144,7 +144,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -152,7 +152,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptn attribute를 리턴한다.
+     * recptn attribute瑜?由ы꽩?쒕떎.
      * @return the recptn
      */
     public List<SmsRecptn> getRecptn() {
@@ -160,7 +160,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptn attribute 값을 설정한다.
+     * recptn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recptn the recptn to set
      */
     public void setRecptn(List<SmsRecptn> recptn) {
@@ -168,7 +168,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * uniqId attribute를 리턴한다.
+     * uniqId attribute瑜?由ы꽩?쒕떎.
      * @return the uniqId
      */
     public String getUniqId() {
@@ -176,7 +176,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * uniqId attribute 값을 설정한다.
+     * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param uniqId the uniqId to set
      */
     public void setUniqId(String uniqId) {
@@ -184,7 +184,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptnCnt attribute를 리턴한다.
+     * recptnCnt attribute瑜?由ы꽩?쒕떎.
      * @return the recptnCnt
      */
     public int getRecptnCnt() {
@@ -192,7 +192,7 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptnCnt attribute 값을 설정한다.
+     * recptnCnt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recptnCnt the recptnCnt to set
      */
     public void setRecptnCnt(int recptnCnt) {
@@ -200,16 +200,16 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptnTelno attribute를 리턴한다.
+     * recptnTelno attribute瑜?由ы꽩?쒕떎.
      * @return the recptnTelno
      */
 //    public String[] getRecptnTelno() {
 //        return recptnTelno;
 //    }
-    // 2011.10.07 private 배열을 public 함수가 반환되지 않도록 함
+    // 2011.10.07 private 諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
     public String[] getRecptnTelno() {
-    	// 메소드를 private으로 하거나, 복제본을 반환하거나,
-    	// 수정을 제어하는 public메소드를 별도로 만든다.
+    	// 硫붿냼?쒕? private?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
+    	// ?섏젙???쒖뼱?섎뒗 public硫붿냼?쒕? 蹂꾨룄濡?留뚮뱺??
     	String[] ret = null;
     	if(this.recptnTelno != null) {
     		ret = new String[recptnTelno.length];
@@ -221,13 +221,13 @@ public class Sms implements Serializable {
     }
 
     /**
-     * recptnTelno attribute 값을 설정한다.
+     * recptnTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recptnTelno the recptnTelno to set
      */
 //    public void setRecptnTelno(String[] recptnTelno) {
 //        this.recptnTelno = recptnTelno;
 //    }
-    // 2011.10.07 private 배열-유형 필드에 공용 데이터 할당되지 않도록 함
+    // 2011.10.07 private 諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
 	public void setRecptnTelno(String[] recptnTelno) {
 		this.recptnTelno = new String[recptnTelno.length];
 		for (int i = 0; i < recptnTelno.length; ++i) {
@@ -236,7 +236,7 @@ public class Sms implements Serializable {
 	}
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

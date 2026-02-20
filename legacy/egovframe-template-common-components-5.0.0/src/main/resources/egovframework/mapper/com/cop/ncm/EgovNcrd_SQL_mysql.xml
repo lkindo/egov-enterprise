@@ -57,7 +57,7 @@
 		<result property="frstRegisterId" column="FRST_REGISTER_ID"/>
 	</resultMap>
 			
-	<!-- 2018.05.23 delete 문 외래키(FK) constraint 때문에 두 개 작성-->	
+	<!-- 2018.05.23 delete 臾??몃옒??FK) constraint ?뚮Ц????媛??묒꽦-->	
 	<delete id="deleteNcrdItemUser" parameterType="egovframework.com.cop.ncm.service.NameCardVO">
 	DELETE FROM COMTNNCRDUSER
 	WHERE NCRD_ID = #{ncrdId} 

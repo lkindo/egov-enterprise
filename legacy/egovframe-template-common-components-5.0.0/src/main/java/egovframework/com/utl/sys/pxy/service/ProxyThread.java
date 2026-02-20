@@ -10,53 +10,53 @@ import org.slf4j.LoggerFactory;
 
 import egovframework.com.cmm.util.EgovResourceCloseHelper;
 /**
- * 프록시 스레드 클래스는 클라이언트와 서버 간의 통신을 중계합니다.
+ * ?꾨줉???ㅻ젅???대옒?ㅻ뒗 ?대씪?댁뼵?몄? ?쒕쾭 媛꾩쓽 ?듭떊??以묎퀎?⑸땲??
  */
 public class ProxyThread implements Runnable {
 
-	/** 로그 출력을 위한 로거 */
+	/** 濡쒓렇 異쒕젰???꾪븳 濡쒓굅 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyThread.class);
 
-	/** 클라이언트 소켓 */
+	/** ?대씪?댁뼵???뚯폆 */
 	@SuppressWarnings("unused")
 	private Socket client = null;
 
-	/** 클라이언트로부터의 입력 스트림 */
+	/** ?대씪?댁뼵?몃줈遺?곗쓽 ?낅젰 ?ㅽ듃由?*/
 	private InputStream streamFromClient = null;
-	/** 클라이언트로의 출력 스트림 */
+	/** ?대씪?댁뼵?몃줈??異쒕젰 ?ㅽ듃由?*/
 	@SuppressWarnings("unused")
 	private OutputStream streamToClient = null;
-	/** 서버로부터의 입력 스트림 */
+	/** ?쒕쾭濡쒕??곗쓽 ?낅젰 ?ㅽ듃由?*/
 	@SuppressWarnings("unused")
 	private InputStream streamFromServer = null;
-	/** 서버로의 출력 스트림 */
+	/** ?쒕쾭濡쒖쓽 異쒕젰 ?ㅽ듃由?*/
 	private OutputStream streamToServer = null;
 
-	/** 스레드 중지 여부를 표시하는 플래그 */
+	/** ?ㅻ젅??以묒? ?щ?瑜??쒖떆?섎뒗 ?뚮옒洹?*/
 	private boolean isStop = false;
 
-	/** 요청 데이터 버퍼 */
+	/** ?붿껌 ?곗씠??踰꾪띁 */
 	byte[] request = new byte[1024];
-	/** 응답 데이터 버퍼 */
+	/** ?묐떟 ?곗씠??踰꾪띁 */
 	byte[] reply = new byte[4096];
 
 	/**
-	 * 주어진 클라이언트 소켓을 사용하여 ProxyThread 객체를 생성합니다.
+	 * 二쇱뼱吏??대씪?댁뼵???뚯폆???ъ슜?섏뿬 ProxyThread 媛앹껜瑜??앹꽦?⑸땲??
 	 *
-	 * @param client 클라이언트 소켓
+	 * @param client ?대씪?댁뼵???뚯폆
 	 */
 	public ProxyThread(Socket client) {
 		this.client = client;
 	}
 
 	/**
-	 * 스트림 및 클라이언트 소켓을 사용하여 ProxyThread 객체를 생성합니다.
+	 * ?ㅽ듃由?諛??대씪?댁뼵???뚯폆???ъ슜?섏뿬 ProxyThread 媛앹껜瑜??앹꽦?⑸땲??
 	 *
-	 * @param client 클라이언트 소켓
-	 * @param streamFromClient 클라이언트로부터의 입력 스트림
-	 * @param streamToClient 클라이언트로의 출력 스트림
-	 * @param streamFromServer 서버로부터의 입력 스트림
-	 * @param streamToServer 서버로의 출력 스트림
+	 * @param client ?대씪?댁뼵???뚯폆
+	 * @param streamFromClient ?대씪?댁뼵?몃줈遺?곗쓽 ?낅젰 ?ㅽ듃由?
+	 * @param streamToClient ?대씪?댁뼵?몃줈??異쒕젰 ?ㅽ듃由?
+	 * @param streamFromServer ?쒕쾭濡쒕??곗쓽 ?낅젰 ?ㅽ듃由?
+	 * @param streamToServer ?쒕쾭濡쒖쓽 異쒕젰 ?ㅽ듃由?
 	 */
 	public ProxyThread(Socket client, InputStream streamFromClient, OutputStream streamToClient, InputStream streamFromServer, OutputStream streamToServer) throws IOException {
 		this.client = client;
@@ -67,26 +67,26 @@ public class ProxyThread implements Runnable {
 	}
 
 	/**
-	 * 스레드 중지 여부를 설정합니다.
+	 * ?ㅻ젅??以묒? ?щ?瑜??ㅼ젙?⑸땲??
 	 *
-	 * @param isStop 스레드 중지 여부
+	 * @param isStop ?ㅻ젅??以묒? ?щ?
 	 */
 	public void setIsStop(boolean isStop) {
 		this.isStop = isStop;
 	}
 
 	/**
-	 * 스레드 중지 여부를 반환합니다.
+	 * ?ㅻ젅??以묒? ?щ?瑜?諛섑솚?⑸땲??
 	 *
-	 * @return 스레드 중지 여부
+	 * @return ?ㅻ젅??以묒? ?щ?
 	 */
 	public boolean getIsStop() {
 		return this.isStop;
 	}
 
 	/**
-	 * 프록시 스레드의 주 실행 메서드입니다.
-	 * 클라이언트에서 서버로의 데이터 전달을 처리합니다.
+	 * ?꾨줉???ㅻ젅?쒖쓽 二??ㅽ뻾 硫붿꽌?쒖엯?덈떎.
+	 * ?대씪?댁뼵?몄뿉???쒕쾭濡쒖쓽 ?곗씠???꾨떖??泥섎━?⑸땲??
 	 */
 	@Override
 	public void run() {
@@ -100,13 +100,13 @@ public class ProxyThread implements Runnable {
 
 					strReceive = new String(request, 0, bytesRead);
 
-					// 'stop' 문자열을 받으면 스레드를 중지합니다.
+					// 'stop' 臾몄옄?댁쓣 諛쏆쑝硫??ㅻ젅?쒕? 以묒??⑸땲??
 					if (strReceive.indexOf("stop") > -1) {
 						setIsStop(true);
 						break;
 					}
 
-					// 클라이언트로부터 받은 데이터를 서버로 전송합니다.
+					// ?대씪?댁뼵?몃줈遺??諛쏆? ?곗씠?곕? ?쒕쾭濡??꾩넚?⑸땲??
 					streamToServer.write(request, 0, bytesRead);
 					streamToServer.flush();
 				}
@@ -114,7 +114,7 @@ public class ProxyThread implements Runnable {
 		} catch (IOException e) {
 			LOGGER.debug("Server IO Error", e);
 		} finally {
-			// 자원을 안전하게 닫습니다.
+			// ?먯썝???덉쟾?섍쾶 ?レ뒿?덈떎.
 			EgovResourceCloseHelper.close(streamToServer);
 		}
 	}

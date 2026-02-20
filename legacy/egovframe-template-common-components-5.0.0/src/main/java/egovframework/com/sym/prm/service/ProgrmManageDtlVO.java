@@ -1,60 +1,60 @@
 package egovframework.com.sym.prm.service;
 
 /**
- * 프로그램변경관리 처리를 위한 VO 클래스르를 정의한다
+ * ?꾨줈洹몃옩蹂寃쎄?由?泥섎━瑜??꾪븳 VO ?대옒?ㅻⅤ瑜??뺤쓽?쒕떎
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2025.07.19  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2025.07.19  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
 public class ProgrmManageDtlVO {
 
-	/** 프로그램파일명 */
+	/** ?꾨줈洹몃옩?뚯씪紐?*/
 	private String progrmFileNm;
-	/** 요청번호 */
+	/** ?붿껌踰덊샇 */
 	private int rqesterNo;
-	/** 요청제목 */
+	/** ?붿껌?쒕ぉ */
 	private String rqesterSj;
-	/** 요청자ID */
+	/** ?붿껌?륤D */
 	private String rqesterPersonId;
-	/** 요청일자 */
+	/** ?붿껌?쇱옄 */
 	private String rqesterDe;
-	/** 변경요청내용 */
+	/** 蹂寃쎌슂泥?궡??*/
 	private String changerqesterCn;
-	/** 처리자ID */
+	/** 泥섎━?륤D */
 	private String opetrId;
-	/** 처리상태코드 */
+	/** 泥섎━?곹깭肄붾뱶 */
 	private String processSttus;
-	/** 처리일자 */
+	/** 泥섎━?쇱옄 */
 	private String processDe;
-	/** 요청처리내용 */
+	/** ?붿껌泥섎━?댁슜 */
 	private String rqesterProcessCn;
 
-	/** 요청시작일자 */
+	/** ?붿껌?쒖옉?쇱옄 */
 	private String rqesterDeBegin;
-	/** 요청종료일자 */
+	/** ?붿껌醫낅즺?쇱옄 */
 	private String rqesterDeEnd;
 
-	/** 프로그램파일명 */
+	/** ?꾨줈洹몃옩?뚯씪紐?*/
 	private String tmpProgrmNm;
-	/** 요청번호 */
+	/** ?붿껌踰덊샇 */
 	private int tmpRqesterNo;
 	/** tmp_Email */
 	private String tmpEmail;
 
 	/**
-	 * progrmFileNm attribute를 리턴한다.
+	 * progrmFileNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -63,7 +63,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * progrmFileNm attribute 값을 설정한다.
+	 * progrmFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmFileNm String
 	 */
@@ -72,7 +72,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterNo attribute를 리턴한다.
+	 * rqesterNo attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -81,7 +81,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterNo attribute 값을 설정한다.
+	 * rqesterNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterNo int
 	 */
@@ -90,7 +90,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterSj attribute를 리턴한다.
+	 * rqesterSj attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -99,7 +99,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterSj attribute 값을 설정한다.
+	 * rqesterSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterSj String
 	 */
@@ -108,7 +108,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterPersonId attribute를 리턴한다.
+	 * rqesterPersonId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -117,7 +117,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterPersonId attribute 값을 설정한다.
+	 * rqesterPersonId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterPersonId String
 	 */
@@ -126,7 +126,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDe attribute를 리턴한다.
+	 * rqesterDe attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -135,7 +135,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDe attribute 값을 설정한다.
+	 * rqesterDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterDe String
 	 */
@@ -144,7 +144,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * changerqesterCn attribute를 리턴한다.
+	 * changerqesterCn attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -153,7 +153,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * changerqesterCn attribute 값을 설정한다.
+	 * changerqesterCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param changerqesterCn String
 	 */
@@ -162,7 +162,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * opetrId attribute를 리턴한다.
+	 * opetrId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -171,7 +171,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * opetrId attribute 값을 설정한다.
+	 * opetrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param opetrId String
 	 */
@@ -180,7 +180,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * processSttus attribute를 리턴한다.
+	 * processSttus attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -189,7 +189,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * processSttus attribute 값을 설정한다.
+	 * processSttus attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param processSttus String
 	 */
@@ -198,7 +198,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * processDe attribute를 리턴한다.
+	 * processDe attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -207,7 +207,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * processDe attribute 값을 설정한다.
+	 * processDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param processDe String
 	 */
@@ -216,7 +216,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterProcessCn attribute를 리턴한다.
+	 * rqesterProcessCn attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -225,7 +225,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterProcessCn attribute 값을 설정한다.
+	 * rqesterProcessCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterProcessCn String
 	 */
@@ -234,7 +234,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDeBegin attribute를 리턴한다.
+	 * rqesterDeBegin attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -243,7 +243,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDeBegin attribute 값을 설정한다.
+	 * rqesterDeBegin attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterDeBegin String
 	 */
@@ -252,7 +252,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDeEnd attribute를 리턴한다.
+	 * rqesterDeEnd attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -261,7 +261,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * rqesterDeEnd attribute 값을 설정한다.
+	 * rqesterDeEnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param rqesterDeEnd String
 	 */
@@ -270,7 +270,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmp_progrmNm attribute를 리턴한다.
+	 * tmp_progrmNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -279,7 +279,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmpProgrmNm attribute 값을 설정한다.
+	 * tmpProgrmNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpProgrmNm String
 	 */
@@ -288,7 +288,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmp_rqesterNo attribute를 리턴한다.
+	 * tmp_rqesterNo attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -297,7 +297,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmpRqesterNo attribute 값을 설정한다.
+	 * tmpRqesterNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpRqesterNo int
 	 */
@@ -306,7 +306,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmp_Email attribute를 리턴한다.
+	 * tmp_Email attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -315,7 +315,7 @@ public class ProgrmManageDtlVO {
 	}
 
 	/**
-	 * tmpEmail attribute 값을 설정한다.
+	 * tmpEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpEmail String
 	 */

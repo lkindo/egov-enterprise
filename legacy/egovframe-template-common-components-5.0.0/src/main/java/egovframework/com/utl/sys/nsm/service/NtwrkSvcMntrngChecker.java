@@ -9,27 +9,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링을 위한 Check 클래스
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???꾪븳 Check ?대옒??
  *
- * 상세내용
- * - 소켓으로 네트워크서비스에 접속한 뒤 해당 결과를 제공한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?뚯폆?쇰줈 ?ㅽ듃?뚰겕?쒕퉬?ㅼ뿉 ?묒냽?????대떦 寃곌낵瑜??쒓났?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2017-03-03   조성원      시큐어코딩(ES) - 부적절한 예외 처리[CWE-253, CWE-440, CWE-756]
+ *   2017-03-03   議곗꽦??     ?쒗걧?댁퐫??ES) - 遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-756]
  */
 
 public class NtwrkSvcMntrngChecker {
 
 	/**
-	 * 네트워크서비스 모니터링을 수행한다.
-	 * @param String - 네트워크시스템 IP
-	 * @param int - 네트워크시스템 포트
-	 * @return  NtwrkSvcMntrngResult - 네트워크서비스 모니터링 결과
+	 * ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???섑뻾?쒕떎.
+	 * @param String - ?ㅽ듃?뚰겕?쒖뒪??IP
+	 * @param int - ?ㅽ듃?뚰겕?쒖뒪???ы듃
+	 * @return  NtwrkSvcMntrngResult - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 寃곌낵
 	 *
 	 * @param sysIp
 	 * @param sysPort
@@ -42,21 +42,21 @@ public class NtwrkSvcMntrngChecker {
 		Socket clientSocket = null;
 
 		try {
-			clientSocket = SSLSocketFactory.getDefault().createSocket(sysIp, sysPort);//2022.01. Unencrypted Socket 처리
+			clientSocket = SSLSocketFactory.getDefault().createSocket(sysIp, sysPort);//2022.01. Unencrypted Socket 泥섎━
 			return new NtwrkSvcMntrngResult(true, null);
 		} catch (IOException e) {
-			//log.error("네트워크서비스모니터링 에러 : " + e.getMessage());
+			//log.error("?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留??먮윭 : " + e.getMessage());
 			//log.debug(e.getMessage(), e);
 			return new NtwrkSvcMntrngResult(false, e);
 		} finally {
 			if (clientSocket != null) {
 				try {
 					clientSocket.close();
-				} catch (IOException e) {//KISA 보안약점 조치 (2018-10-29, 윤창원)
+				} catch (IOException e) {//KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 					return new NtwrkSvcMntrngResult(false, e);
 
-					// 2017-03-03   조성원      시큐어코딩(ES) - 부적절한 예외 처리[CWE-253, CWE-440, CWE-756]
+					// 2017-03-03   議곗꽦??     ?쒗걧?댁퐫??ES) - 遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-756]
 				}
 			}
 		}

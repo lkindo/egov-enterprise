@@ -6,25 +6,25 @@ import java.util.List;
 
 /**
  * <pre>
- * 개요
- * - 장애정보에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?μ븷?뺣낫?????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 장애정보의 목록 항목, 조회조건, 삭제대상을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?μ븷?뺣낫??紐⑸줉 ??ぉ, 議고쉶議곌굔, ??젣??곸쓣 愿由ы븳??
  * </pre>
  * 
- * @author 이문준
+ * @author ?대Ц以
  * @since 2010.06.28
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.28  이문준          최초 생성
- *   2025.07.28  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidArrayLoops(배열의 값을 루프문을 이용하여 복사하는 것 보다, System.arraycopy() 메소드를 이용하여 복사하는 것이 효율적이며 수행 속도가 빠름)
+ *   2010.06.28  ?대Ц以          理쒖큹 ?앹꽦
+ *   2025.07.28  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidArrayLoops(諛곗뿴??媛믪쓣 猷⑦봽臾몄쓣 ?댁슜?섏뿬 蹂듭궗?섎뒗 寃?蹂대떎, System.arraycopy() 硫붿냼?쒕? ?댁슜?섏뿬 蹂듭궗?섎뒗 寃껋씠 ?⑥쑉?곸씠硫??섑뻾 ?띾룄媛 鍮좊쫫)
  *
  *      </pre>
  */
@@ -32,24 +32,24 @@ public class TroblReqstVO extends TroblReqst {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 장애정보 목록
+	 * ?μ븷?뺣낫 紐⑸줉
 	 */
 	private List<TroblReqstVO> troblReqstList;
 	/**
-	 * 장애명 조회조건
+	 * ?μ븷紐?議고쉶議곌굔
 	 */
 	private String strTroblNm;
 	/**
-	 * 장애종류 조회조건
+	 * ?μ븷醫낅쪟 議고쉶議곌굔
 	 */
 	private String strTroblKnd;
 	/**
-	 * 처리상태 조회조건
+	 * 泥섎━?곹깭 議고쉶議곌굔
 	 */
 	private String strProcessSttus;
 
 	/**
-	 * 삭제대상 목록
+	 * ??젣???紐⑸줉
 	 */
 	private String delYn[];
 

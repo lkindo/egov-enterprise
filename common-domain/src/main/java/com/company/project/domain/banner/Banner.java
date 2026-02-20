@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 배너 정보 Entity
- * 레거시 테이블: NBANNER
+ * 獄쏄퀡瑗??類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NBANNER
  */
 @Entity
 @Table(name = "NBANNER")

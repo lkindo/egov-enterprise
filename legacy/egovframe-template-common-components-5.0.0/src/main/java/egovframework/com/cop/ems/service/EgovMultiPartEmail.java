@@ -7,20 +7,20 @@ import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.MultiPartEmail;
 
 /**
- * 발송메일에 첨부파일용으로 사용되는 VO 클래스
- * @author 공통서비스 개발팀 이기하
+ * 諛쒖넚硫붿씪??泥⑤??뚯씪?⑹쑝濡??ъ슜?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?닿린??
  * @since 2011.12.06
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *    수정일      	수정자          수정내용
+ *    ?섏젙??     	?섏젙??         ?섏젙?댁슜
  *  ----------     --------    ---------------------------
- *  2011.12.06		이기하          최초 생성
- *  2013.05.23		이기하          thread-safe 하게 변경
- *  2022.11.11      김혜준          시큐어코딩 처리
+ *  2011.12.06		?닿린??         理쒖큹 ?앹꽦
+ *  2013.05.23		?닿린??         thread-safe ?섍쾶 蹂寃?
+ *  2022.11.11      源?쒖?          ?쒗걧?댁퐫??泥섎━
  *
  *  </pre>
  */
@@ -91,7 +91,7 @@ public class EgovMultiPartEmail implements Serializable {
 		email.setHostName(this.host);
 		email.setSmtpPort(this.port);
 		email.setStartTLSEnabled(true);
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		email.setSSLCheckServerIdentity(true);
 		//email.setAuthenticator(new DefaultAuthenticator(this.id, this.password));
 		email.setAuthentication(this.id, this.password);
@@ -113,7 +113,7 @@ public class EgovMultiPartEmail implements Serializable {
 		email.setHostName(this.host);
 		email.setSmtpPort(this.port);
 		email.setStartTLSEnabled(true);
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		email.setSSLCheckServerIdentity(true);
 		//email.setAuthenticator(new DefaultAuthenticator(this.id, this.password));
 		email.setAuthentication(this.id, this.password);

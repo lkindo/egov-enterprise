@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 로그인정책에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇?몄젙梨낆뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 로그인정책에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 로그인정책의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 濡쒓렇?몄젙梨낆뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 濡쒓렇?몄젙梨낆쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:54
+ * @created 03-8-2009 ?ㅽ썑 2:08:54
  *   <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  * 
- *  수정일               수정자            수정내용
+ *  ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2009.08.03   이문준            최초 생성
- *  2021.02.18   신용호            selectLoginPolicyResult() 삭제
+ *  2009.08.03   ?대Ц以            理쒖큹 ?앹꽦
+ *  2021.02.18   ?좎슜??           selectLoginPolicyResult() ??젣
  * </pre>
  */
 
@@ -26,48 +26,48 @@ import java.util.List;
 public interface EgovLoginPolicyService {
 	
 	/**
-	 * 로그인정책 목록을 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
-	 * @return List - 로그인정책 목록
+	 * 濡쒓렇?몄젙梨?紐⑸줉??議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
+	 * @return List - 濡쒓렇?몄젙梨?紐⑸줉
 	 */
 	public List<LoginPolicyVO> selectLoginPolicyList(LoginPolicyVO loginPolicyVO) throws Exception;
 
 	/**
-	 * 로그인정책 목록 수를 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
+	 * 濡쒓렇?몄젙梨?紐⑸줉 ?섎? 議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
 	 * @return int
 	 */
 	public int selectLoginPolicyListTotCnt(LoginPolicyVO loginPolicyVO) throws Exception;
 	
 	/**
-	 * 로그인정책 목록의 상세정보를 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
-	 * @return LoginPolicyVO - 로그인정책 VO
+	 * 濡쒓렇?몄젙梨?紐⑸줉???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
+	 * @return LoginPolicyVO - 濡쒓렇?몄젙梨?VO
 	 */
 	public LoginPolicyVO selectLoginPolicy(LoginPolicyVO loginPolicyVO) throws Exception;
 
 	/**
-	 * 로그인정책 정보를 신규로 등록한다.
-	 * @param loginPolicy - 로그인정책 model
+	 * 濡쒓렇?몄젙梨??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
 	 */
 	public void insertLoginPolicy(LoginPolicy loginPolicy) throws Exception;
 
 	/**
-	 * 기 등록된 로그인정책 정보를 수정한다.
-	 * @param loginPolicy - 로그인정책 model
+	 * 湲??깅줉??濡쒓렇?몄젙梨??뺣낫瑜??섏젙?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
 	 */
 	public void updateLoginPolicy(LoginPolicy loginPolicy) throws Exception;
 
 	/**
-	 * 기 등록된 로그인정책 정보를 삭제한다.
-	 * @param loginPolicy - 로그인정책 model
+	 * 湲??깅줉??濡쒓렇?몄젙梨??뺣낫瑜???젣?쒕떎.
+	 * @param loginPolicy - 濡쒓렇?몄젙梨?model
 	 */
 	public void deleteLoginPolicy(LoginPolicy loginPolicy) throws Exception;
 
 	/**
-	 * 로그인정책에 대한 현재 반영되어 있는 결과를 조회한다.
-	 * @param loginPolicyVO - 로그인정책 VO
-	 * @return LoginPolicyVO - 로그인정책 VO
+	 * 濡쒓렇?몄젙梨낆뿉 ????꾩옱 諛섏쁺?섏뼱 ?덈뒗 寃곌낵瑜?議고쉶?쒕떎.
+	 * @param loginPolicyVO - 濡쒓렇?몄젙梨?VO
+	 * @return LoginPolicyVO - 濡쒓렇?몄젙梨?VO
 	 */
 	/*
 	 * public LoginPolicyVO selectLoginPolicyResult(LoginPolicyVO loginPolicyVO)

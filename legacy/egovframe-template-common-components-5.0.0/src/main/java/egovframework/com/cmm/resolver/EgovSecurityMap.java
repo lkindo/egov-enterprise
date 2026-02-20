@@ -7,27 +7,27 @@ import egovframework.com.cmm.web.EgovComUtlController;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Map타입 적용 파라미터 복호화를 위한 EgovSecurityMap 클래스
+ * Map????곸슜 ?뚮씪誘명꽣 蹂듯샇?붾? ?꾪븳 EgovSecurityMap ?대옒??
  * 
- * @author 표준프레임워크팀 신용호
+ * @author ?쒖??꾨젅?꾩썙?ы? ?좎슜??
  * @since 2024.07.09
  * @version 4.3.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2024.07.09  신용호          Map 타입에서 noteId 복호화 적용을 위한 EgovSecurityMap 추가
- *   2025.05.24  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-SwitchStmtsShouldHaveDefault(스위치 명령문에는 기본값이 있어야 합니다.), AvoidReassigningParameters(매개변수 재할당 방지)
+ *   2024.07.09  ?좎슜??         Map ??낆뿉??noteId 蹂듯샇???곸슜???꾪븳 EgovSecurityMap 異붽?
+ *   2025.05.24  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-SwitchStmtsShouldHaveDefault(?ㅼ쐞移?紐낅졊臾몄뿉??湲곕낯媛믪씠 ?덉뼱???⑸땲??), AvoidReassigningParameters(留ㅺ컻蹂???ы븷??諛⑹?)
  *
  *      </pre>
  * 
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일          수정자        수정내용
+ *   ?섏젙??         ?섏젙??       ?섏젙?댁슜
  *  ----------     --------    ---------------------------
  *
  * 
@@ -45,7 +45,7 @@ public class EgovSecurityMap {
 	public void put(String key, String value) {
 		String value2 = value;
 
-		// 특정 암호화된 파라미터 복호화 처리
+		// ?뱀젙 ?뷀샇?붾맂 ?뚮씪誘명꽣 蹂듯샇??泥섎━
 		switch (key) {
 		case "noteId":
 

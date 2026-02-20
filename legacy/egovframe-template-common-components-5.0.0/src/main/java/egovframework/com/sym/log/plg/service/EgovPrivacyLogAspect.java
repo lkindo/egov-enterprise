@@ -16,7 +16,7 @@ import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import jakarta.annotation.Resource;
 
 /**
- * 개인정보 조회 이력 관리를 위한 Advice
+ * 媛쒖씤?뺣낫 議고쉶 ?대젰 愿由щ? ?꾪븳 Advice
  * 
  * @author Vincent Han
  * @since 2014.09.11
@@ -24,24 +24,24 @@ import jakarta.annotation.Resource;
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  홍길동          최초 생성
- *   2014.09.11  표준프레임워크     최초 생성
- *   2025.07.12  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AssignmentInOperand(피연산자내에 할당문이 사용됨. 해당 코드를 복잡하고 가독성이 떨어지게 만듬)
- *   2025.07.12  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
+ *   2009.03.20  ?띻만??         理쒖큹 ?앹꽦
+ *   2014.09.11  ?쒖??꾨젅?꾩썙??    理쒖큹 ?앹꽦
+ *   2025.07.12  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AssignmentInOperand(?쇱뿰?곗옄?댁뿉 ?좊떦臾몄씠 ?ъ슜?? ?대떦 肄붾뱶瑜?蹂듭옟?섍퀬 媛?낆꽦???⑥뼱吏寃?留뚮벉)
+ *   2025.07.12  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
  *
  *      </pre>
  */
 public class EgovPrivacyLogAspect {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovPrivacyLogAspect.class);
 
-	/** List 기록 시 최대 기록 수 */
+	/** List 湲곕줉 ??理쒕? 湲곕줉 ??*/
 	private int maxListCount = 10; // defalut : 10
 
-	/** 기록 대상 개인정보 항목 */
+	/** 湲곕줉 ???媛쒖씤?뺣낫 ??ぉ */
 	private Map<String, String> target = null;
 
 	public void setMaxListCount(int maxListCount) {
@@ -67,7 +67,7 @@ public class EgovPrivacyLogAspect {
 			return;
 		}
 
-		if (returnVal instanceof List) { // List이며 개별 기록
+		if (returnVal instanceof List) { // List?대ŉ 媛쒕퀎 湲곕줉
 			int count = 0;
 
 			for (Object item : (List<?>) returnVal) {
@@ -83,7 +83,7 @@ public class EgovPrivacyLogAspect {
 
 					++count;
 
-					if (count >= maxListCount) { // 최대 기록 수 처리
+					if (count >= maxListCount) { // 理쒕? 湲곕줉 ??泥섎━
 						LOGGER.info("Max List count reached (skip next list) : maxListCount = {}, target = {}",
 								maxListCount, serviceName);
 						break;
@@ -110,10 +110,10 @@ public class EgovPrivacyLogAspect {
 		List<String> list = new ArrayList<String>();
 
 		for (String key : target.keySet()) {
-			if (data.containsKey(key) && data.get(key) != null && !data.get(key).toString().trim().equals("")) { // 조회된
-																													// 데이터가
-																													// 없으면
-																													// 생략
+			if (data.containsKey(key) && data.get(key) != null && !data.get(key).toString().trim().equals("")) { // 議고쉶??
+																													// ?곗씠?곌?
+																													// ?놁쑝硫?
+																													// ?앸왂
 				list.add(target.get(key));
 
 				LOGGER.debug("Service ('{}') : inquired data = {}", serviceName, key);

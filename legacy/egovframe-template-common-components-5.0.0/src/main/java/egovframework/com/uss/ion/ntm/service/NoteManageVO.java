@@ -5,20 +5,20 @@ import java.util.Arrays;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 쪽지 관리(보내기) Model and VO Class 구현
+ * 履쎌? 愿由?蹂대궡湲? Model and VO Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.16  장동한          최초 생성
- *   2025.08.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidArrayLoops(배열의 값을 루프문을 이용하여 복사하는 것 보다, System.arraycopy() 메소드를 이용하여 복사하는 것이 효율적이며 수행 속도가 빠름)
+ *   2010.06.16  ?λ룞??         理쒖큹 ?앹꽦
+ *   2025.08.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidArrayLoops(諛곗뿴??媛믪쓣 猷⑦봽臾몄쓣 ?댁슜?섏뿬 蹂듭궗?섎뒗 寃?蹂대떎, System.arraycopy() 硫붿냼?쒕? ?댁슜?섏뿬 蹂듭궗?섎뒗 寃껋씠 ?⑥쑉?곸씠硫??섑뻾 ?띾룄媛 鍮좊쫫)
  *
  *      </pre>
  */
@@ -29,52 +29,52 @@ public class NoteManageVO extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	/** 쪽지 ID */
+	/** 履쎌? ID */
 	private String noteId;
 
-	/** 쪽지 송신 ID */
+	/** 履쎌? ?≪떊 ID */
 	private String noteTrnsmitId;
 
-	/** 쪽지 수신 ID */
+	/** 履쎌? ?섏떊 ID */
 	private String noteRecptnId;
 
-	/** 수신자 ID */
+	/** ?섏떊??ID */
 	private String rcverId;
 
-	/** 개봉여부 */
+	/** 媛쒕큺?щ? */
 	private String openYn;
 
-	/** 수신구분 */
+	/** ?섏떊援щ텇 */
 	private String recptnSe;
 
-	/** 쪽지 내용 */
+	/** 履쎌? ?댁슜 */
 	private String noteCn;
 
-	/** 쪽지 제목 */
+	/** 履쎌? ?쒕ぉ */
 	private String noteSj;
 
-	/** 쪽지 발신자 */
+	/** 履쎌? 諛쒖떊??*/
 	private String trnsmiterId;
 
-	/** 쪽지 수신자 목록 */
+	/** 履쎌? ?섏떊??紐⑸줉 */
 	private String recptnEmpList;
 
-	/** 쪽지 첨부파일 아이디 */
+	/** 履쎌? 泥⑤??뚯씪 ?꾩씠??*/
 	private String atchFileId;
 
-	/** 쪽지 첨부파일 */
+	/** 履쎌? 泥⑤??뚯씪 */
 	private byte[] atchFile;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록아이디 */
+	/** 理쒖큹?깅줉?꾩씠??*/
 	private String frstRegisterId;
 
-	/** 최종수정일 */
+	/** 理쒖쥌?섏젙??*/
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자 아이디 */
+	/** 理쒖쥌?섏젙???꾩씠??*/
 	private String lastUpdusrId;
 
 	/**

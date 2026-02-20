@@ -22,26 +22,26 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 휴가관리에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?닿?愿由ъ뿉 ???ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 휴가관리에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 휴가관리의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - ?닿?愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - ?닿?愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 이용
+ * @author ?댁슜
  * @since 2010.06.15
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.06.15  이용           최초 생성
- *   2025.08.18  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2010.06.15  ?댁슜           理쒖큹 ?앹꽦
+ *   2025.08.18  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -57,10 +57,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovVcatnManageServiceImpl.class);
 
 	/**
-	 * 휴가관리정보를 관리하기 위해 등록된 휴가관리 목록을 조회한다.
+	 * ?닿?愿由ъ젙蹂대? 愿由ы븯湲??꾪빐 ?깅줉???닿?愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return List - 휴가관리 목록
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return List - ?닿?愿由?紐⑸줉
 	 */
 	@Override
 	public List<VcatnManageVO> selectVcatnManageList(VcatnManageVO vcatnManageVO) throws Exception {
@@ -78,10 +78,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 휴가관리목록 총 개수를 조회한다.
+	 * ?닿?愿由щぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return int - 휴가관리 카운트 수
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return int - ?닿?愿由?移댁슫????
 	 */
 	@Override
 	public int selectVcatnManageListTotCnt(VcatnManageVO vcatnManageVO) throws Exception {
@@ -89,10 +89,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 등록된 휴가관리의 상세정보를 조회한다.
+	 * ?깅줉???닿?愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return VcatnManageVO - 휴가관리 VO
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return VcatnManageVO - ?닿?愿由?VO
 	 */
 	@Override
 	public VcatnManageVO selectVcatnManage(VcatnManageVO vcatnManageVO) throws Exception {
@@ -103,7 +103,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		vcatnManageVOTemp.setBgnde(EgovDateUtil.formatDate(vcatnManageVOTemp.getBgnde(), "-"));
 		vcatnManageVOTemp.setEndde(EgovDateUtil.formatDate(vcatnManageVOTemp.getEndde(), "-"));
 
-		// 연차정보
+		// ?곗감?뺣낫
 		VcatnManageVO vcatnManageVO1 = selectIndvdlYrycManage(vcatnManageVO.getApplcntId());
 		vcatnManageVOTemp.setOccrrncYear(vcatnManageVO1.getOccrrncYear());
 		vcatnManageVOTemp.setUsid(vcatnManageVO1.getUsid());
@@ -115,10 +115,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 휴가관리정보를 신규로 등록한다.
+	 * ?닿?愿由ъ젙蹂대? ?좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
-	 * @return String 01 : 입력성공, 02 : 연차휴가 등록실패(잔여연차 부족), 03: 반차휴가 등록실패(잔여연차 부족)
+	 * @param vcatnManage - ?닿?愿由?model
+	 * @return String 01 : ?낅젰?깃났, 02 : ?곗감?닿? ?깅줉?ㅽ뙣(?붿뿬?곗감 遺議?, 03: 諛섏감?닿? ?깅줉?ㅽ뙣(?붿뿬?곗감 遺議?
 	 */
 	@Override
 	public String insertVcatnManage(VcatnManage vcatnManage, VcatnManageVO vcatnManageVO) throws Exception {
@@ -131,7 +131,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		String sDay = Integer.toString(cal.get(java.util.Calendar.DATE));
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		String uniqId = "";
 		if (user != null) {
 			uniqId = user.getUniqId();
@@ -139,7 +139,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		vcatnManage.setOccrrncYear(sYear);
 		vcatnManage.setReqstDe(sYear + sMonth + sDay);
 		/*
-		 * 휴가 승인처리 신청 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
+		 * ?닿? ?뱀씤泥섎━ ?좎껌 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
 		 */
 		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
 		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
@@ -149,22 +149,22 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		// vcatnManage);
 		vcatnManage.setInfrmlSanctnId(infrmlSanctn.getInfrmlSanctnId());
 		VcatnManageVO vcatnManageVO1 = selectIndvdlYrycManage(uniqId);
-		double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // 연차테이블의 사용 연차개수
-		double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // 연차테이블의 잔여 연차개수
+		double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // ?곗감?뚯씠釉붿쓽 ?ъ슜 ?곗감媛쒖닔
+		double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // ?곗감?뚯씠釉붿쓽 ?붿뿬 ?곗감媛쒖닔
 		double iCountYryc = 0.0;
 
 		/*
-		 * 시작일자 와 종료일자 사이의 일자 개수 - 공휴일 or 주말 제외
+		 * ?쒖옉?쇱옄 ? 醫낅즺?쇱옄 ?ъ씠???쇱옄 媛쒖닔 - 怨듯쑕??or 二쇰쭚 ?쒖쇅
 		 */
-		// 휴가구분이 연차인 경우
+		// ?닿?援щ텇???곗감??寃쎌슦
 		if ("01".equals(vcatnManage.getVcatnSe())) {
-			// 연차 휴가 연도 체크
+			// ?곗감 ?닿? ?곕룄 泥댄겕
 			if (!getVcatnYearSE(vcatnManage)) {
 				return "09";
 			}
 			iCountYryc = getDateCalc(vcatnManage.getBgnde(), vcatnManage.getEndde());
 			if (iCountYryc == 0) {
-				return "99"; // 연차설정오류
+				return "99"; // ?곗감?ㅼ젙?ㅻ쪟
 			} else if ((iRemndrYrycCo - iCountYryc) < 0) {
 				return "02";
 			} else {
@@ -179,16 +179,16 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 				return "01";
 			}
 		}
-		// 휴가구분이 반차인 경우
+		// ?닿?援щ텇??諛섏감??寃쎌슦
 		else if ("02".equals(vcatnManage.getVcatnSe())) {
 
-			// 연차 휴가 연도 체크
+			// ?곗감 ?닿? ?곕룄 泥댄겕
 			if (!getVcatnYearSE(vcatnManage)) {
 				return "09";
 			}
-			iCountYryc = getDateCalc(vcatnManage.getBgnde(), vcatnManage.getBgnde()); // 반차는 시작일자 종료일자 동일함. 시작일자로만 체크
+			iCountYryc = getDateCalc(vcatnManage.getBgnde(), vcatnManage.getBgnde()); // 諛섏감???쒖옉?쇱옄 醫낅즺?쇱옄 ?숈씪?? ?쒖옉?쇱옄濡쒕쭔 泥댄겕
 			if (iCountYryc == 0) {
-				return "99"; // 연차설정오류
+				return "99"; // ?곗감?ㅼ젙?ㅻ쪟
 			} else if ((iRemndrYrycCo - 0.5) < 0) {
 				return "03";
 			} else {
@@ -210,9 +210,9 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 휴가관리정보를 수정한다.
+	 * 湲??깅줉???닿?愿由ъ젙蹂대? ?섏젙?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
+	 * @param vcatnManage - ?닿?愿由?model
 	 */
 	@Override
 	public String updtVcatnManage(VcatnManage vcatnManage, VcatnManageVO vcatnManageVO) throws Exception {
@@ -223,14 +223,14 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		String sTempBgnde = vcatnManage.getBgnde();
 		String sTempEndde = vcatnManage.getEndde();
 
-		/* 삭제처리 */
+		/* ??젣泥섎━ */
 		vcatnManage.setApplcntId(vcatnManageVO.getApplcntIdKey());
 		vcatnManage.setVcatnSe(vcatnManageVO.getVcatnSeKey());
 		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(vcatnManageVO.getBgndeKey()));
 		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManageVO.getEnddeKey()));
 
 		deleteVcatnManage(vcatnManage);
-		/* 등록처리 */
+		/* ?깅줉泥섎━ */
 		vcatnManage.setApplcntId(sTempApplcntId);
 		vcatnManage.setVcatnSe(sTempVcatnSe);
 		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(sTempBgnde));
@@ -240,10 +240,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		}
 
 		vcatnManageVO.setSearchKeyword(vcatnManage.getBgnde());
-		// 시작일자 포함여부
+		// ?쒖옉?쇱옄 ?ы븿?щ?
 		iTemp = selectVcatnManageDplctAt(vcatnManageVO);
 		vcatnManageVO.setSearchKeyword(vcatnManage.getEndde());
-		// 종료일자 포함여부
+		// 醫낅즺?쇱옄 ?ы븿?щ?
 		iTemp += selectVcatnManageDplctAt(vcatnManageVO);
 
 		if (iTemp == 0) {
@@ -266,15 +266,15 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 기 등록된 휴가관리정보를 삭제한다.
+	 * 湲??깅줉???닿?愿由ъ젙蹂대? ??젣?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
+	 * @param vcatnManage - ?닿?愿由?model
 	 */
 	@Override
 	@SuppressWarnings("unused")
 	public void deleteVcatnManage(VcatnManage vcatnManage) throws Exception {
 		/*
-		 * 휴가 승인처리 삭제 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
+		 * ?닿? ?뱀씤泥섎━ ??젣 infrmlSanctnService.insertInfrmlSanctn("000", vcatnManage);
 		 */
 		vcatnManage.setBgnde(EgovStringUtil.removeMinusChar(vcatnManage.getBgnde()));
 		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
@@ -283,15 +283,15 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 개인연차조회
+		// 媛쒖씤?곗감議고쉶
 		VcatnManageVO vcatnManageVO1 = selectIndvdlYrycManage(vcatnManage.getApplcntId());
-		double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // 연차테이블의 사용 연차개수
-		double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // 연차테이블의 잔여 연차개수
+		double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // ?곗감?뚯씠釉붿쓽 ?ъ슜 ?곗감媛쒖닔
+		double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // ?곗감?뚯씠釉붿쓽 ?붿뿬 ?곗감媛쒖닔
 		double iCountYryc = 0.0;
 		/*
-		 * 시작일자 와 종료일자 사이의 일자 개수 - 공휴일 or 주말 제외
+		 * ?쒖옉?쇱옄 ? 醫낅즺?쇱옄 ?ъ씠???쇱옄 媛쒖닔 - 怨듯쑕??or 二쇰쭚 ?쒖쇅
 		 */
-		// 휴가구분이 연차인 경우
+		// ?닿?援щ텇???곗감??寃쎌슦
 		if ("01".equals(vcatnManage.getVcatnSe())) {
 
 			iCountYryc = getDateCalc(vcatnManage.getBgnde(), vcatnManage.getEndde());
@@ -306,8 +306,8 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 			vcatnManageDAO.deleteVcatnManage(vcatnManage);
 
 		}
-		// 휴가구분이 반차인 경우
-		else if ("02".equals(vcatnManage.getVcatnSe())) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// ?닿?援щ텇??諛섏감??寃쎌슦
+		else if ("02".equals(vcatnManage.getVcatnSe())) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 
 			IndvdlYrycManage indvdlYrycManage = new IndvdlYrycManage();
 			indvdlYrycManage.setUseYrycCo(iUseYrycCo - 0.5);
@@ -324,9 +324,9 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 휴가일자 중복여부 체크
+	 * ?닿??쇱옄 以묐났?щ? 泥댄겕
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
+	 * @param vcatnManageVO - ?닿?愿由?VO
 	 * @return int
 	 * @exception Exception
 	 */
@@ -335,12 +335,12 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		return vcatnManageDAO.selectVcatnManageDplctAt(vcatnManageVO);
 	}
 
-	/*** 승인처리관련 ***/
+	/*** ?뱀씤泥섎━愿??***/
 	/**
-	 * 휴가관리정보 승인 처리를 위해 신청된 휴가관리 목록을 조회한다.
+	 * ?닿?愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???닿?愿由?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return List - 휴가관리 목록
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return List - ?닿?愿由?紐⑸줉
 	 */
 	@Override
 	public List<VcatnManageVO> selectVcatnManageConfmList(VcatnManageVO vcatnManageVO) throws Exception {
@@ -358,10 +358,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 휴가관리정보 승인 처리를 위해 신청된 휴가관리 목록 총 개수를 조회한다.
+	 * ?닿?愿由ъ젙蹂??뱀씤 泥섎━瑜??꾪빐 ?좎껌???닿?愿由?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return int - 휴가관리 카운트 수
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return int - ?닿?愿由?移댁슫????
 	 */
 	@Override
 	public int selectVcatnManageConfmListTotCnt(VcatnManageVO vcatnManageVO) throws Exception {
@@ -369,9 +369,9 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 신청된 휴가를 승인처리한다.
+	 * ?좎껌???닿?瑜??뱀씤泥섎━?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
+	 * @param vcatnManage - ?닿?愿由?model
 	 */
 	@Override
 	public void updtVcatnManageConfm(VcatnManage vcatnManage) throws Exception {
@@ -380,10 +380,10 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		vcatnManage.setEndde(EgovStringUtil.removeMinusChar(vcatnManage.getEndde()));
 		vcatnManage.setReqstDe(EgovStringUtil.removeMinusChar(vcatnManage.getReqstDe()));
 
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if ("C".equals(vcatnManage.getConfmAt())) {
 			/*
-			 * 승인처리
+			 * ?뱀씤泥섎━
 			 */
 			infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnConfm(converToInfrmlSanctnObject(vcatnManage));
 
@@ -394,23 +394,23 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 		} else if ("R".equals(vcatnManage.getConfmAt())) {
 			/*
-			 * 반려처리
+			 * 諛섎젮泥섎━
 			 */
 			infrmlSanctn = infrmlSanctnService.updateInfrmlSanctnReturn(converToInfrmlSanctnObject(vcatnManage));
 			vcatnManage.setSanctnDt(infrmlSanctn.getSanctnDt());
 			vcatnManage.setConfmAt(infrmlSanctn.getConfmAt());
 
-			// 연차 반환처리
-			// 개인연차조회
+			// ?곗감 諛섑솚泥섎━
+			// 媛쒖씤?곗감議고쉶
 			VcatnManageVO vcatnManageVO1 = selectIndvdlYrycManage(vcatnManage.getApplcntId());
-			double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // 연차테이블의 사용 연차개수
-			double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // 연차테이블의 잔여 연차개수
+			double iUseYrycCo = vcatnManageVO1.getUseYrycCo(); // ?곗감?뚯씠釉붿쓽 ?ъ슜 ?곗감媛쒖닔
+			double iRemndrYrycCo = vcatnManageVO1.getRemndrYrycCo(); // ?곗감?뚯씠釉붿쓽 ?붿뿬 ?곗감媛쒖닔
 			double iCountYryc = 0.0;
 
 			/*
-			 * 시작일자 와 종료일자 사이의 일자 개수 - 공휴일 or 주말 제외
+			 * ?쒖옉?쇱옄 ? 醫낅즺?쇱옄 ?ъ씠???쇱옄 媛쒖닔 - 怨듯쑕??or 二쇰쭚 ?쒖쇅
 			 */
-			// 휴가구분이 연차인 경우
+			// ?닿?援щ텇???곗감??寃쎌슦
 			if ("01".equals(vcatnManage.getVcatnSe())) {
 
 				iCountYryc = getDateCalc(vcatnManage.getBgnde(), vcatnManage.getEndde());
@@ -424,7 +424,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 				updtIndvdlYrycManage(indvdlYrycManage);
 			}
-			// 휴가구분이 반차인 경우
+			// ?닿?援щ텇??諛섏감??寃쎌슦
 			else if ("02".equals(vcatnManage.getVcatnSe())) {
 
 				IndvdlYrycManage indvdlYrycManage = new IndvdlYrycManage();
@@ -439,12 +439,12 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		}
 	}
 
-	/*** 연차관련 ***/
+	/*** ?곗감愿??***/
 	/**
-	 * 개인별 연차관리의 상세정보를 조회한다.
+	 * 媛쒖씤蹂??곗감愿由ъ쓽 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param vcatnManageVO - 휴가관리 VO
-	 * @return VcatnManageVO - 휴가관리 VO
+	 * @param vcatnManageVO - ?닿?愿由?VO
+	 * @return VcatnManageVO - ?닿?愿由?VO
 	 */
 	@Override
 	public VcatnManageVO selectIndvdlYrycManage(String sUsid) throws Exception {
@@ -460,18 +460,18 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 개인별 연차를 수정 처리한다.
+	 * 媛쒖씤蹂??곗감瑜??섏젙 泥섎━?쒕떎.
 	 * 
-	 * @param vcatnManage - 휴가관리 model
+	 * @param vcatnManage - ?닿?愿由?model
 	 */
 	@Override
 	public void updtIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception {
 		vcatnManageDAO.updtIndvdlYrycManage(indvdlYrycManage);
 	}
 
-	/****** 일수 계산 ******/
+	/****** ?쇱닔 怨꾩궛 ******/
 	/**
-	 * 해당일자의 날짜사이 일수를 구한다
+	 * ?대떦?쇱옄???좎쭨?ъ씠 ?쇱닔瑜?援ы븳??
 	 * 
 	 * @param String fromDay, String toDay
 	 * @return double
@@ -479,11 +479,11 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	private double getDateCalc(String fromDay, String toDay) throws Exception {
 
-		// 시작일자
+		// ?쒖옉?쇱옄
 		int fromYear = Integer.parseInt(fromDay.substring(0, 4));
 		int fromMonth = Integer.parseInt(fromDay.substring(4, 6)) - 1;
 		int fromDate = Integer.parseInt(fromDay.substring(6, 8));
-		// 종료일자
+		// 醫낅즺?쇱옄
 		int toYear = Integer.parseInt(toDay.substring(0, 4));
 		int toMonth = Integer.parseInt(toDay.substring(4, 6)) - 1;
 		int toDate = Integer.parseInt(toDay.substring(6, 8));
@@ -496,9 +496,9 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 
 		double count = 0.0;
 
-		// 시작일자 부터 종료일자까지 while
+		// ?쒖옉?쇱옄 遺??醫낅즺?쇱옄源뚯? while
 		while (!startDay.after(endDay)) {
-			// 토요일, 일요일은 일수 count에서 제외
+			// ?좎슂?? ?쇱슂?쇱? ?쇱닔 count?먯꽌 ?쒖쇅
 			if (startDay.get(Calendar.DAY_OF_WEEK) != 1 && startDay.get(Calendar.DAY_OF_WEEK) != 7) {
 				count++;
 			}
@@ -509,7 +509,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * 휴가일자 해당연차발생연도에 속하는지 여부 체크
+	 * ?닿??쇱옄 ?대떦?곗감諛쒖깮?곕룄???랁븯?붿? ?щ? 泥댄겕
 	 * 
 	 * @param VcatnManage vcatnManage
 	 * @return boolean
@@ -521,9 +521,9 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 		java.util.Calendar cal = java.util.Calendar.getInstance();
 
 		int iYear = cal.get(java.util.Calendar.YEAR);
-		// 시작일자
+		// ?쒖옉?쇱옄
 		int iYearBgnVcatn = Integer.parseInt(vcatnManage.getBgnde().substring(0, 4));
-		// 종료일자
+		// 醫낅즺?쇱옄
 		int iYearEndVcatn = Integer.parseInt(vcatnManage.getEndde().substring(0, 4));
 		if (iYear == iYearBgnVcatn && iYear == iYearEndVcatn) {
 			bRetrunValue = true;
@@ -532,7 +532,7 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	}
 
 	/**
-	 * VcatnManage model을 InfrmlSanctn model로 변환한다.
+	 * VcatnManage model??InfrmlSanctn model濡?蹂?섑븳??
 	 * 
 	 * @param VcatnManage
 	 * @return InfrmlSanctn
@@ -540,18 +540,18 @@ public class EgovVcatnManageServiceImpl extends EgovAbstractServiceImpl implemen
 	 */
 	private InfrmlSanctn converToInfrmlSanctnObject(VcatnManage vcatnManage) throws Exception {
 		InfrmlSanctn infrmlSanctn = new InfrmlSanctn();
-		infrmlSanctn.setJobSeCode("003"); // 업무구분코드 (공통코드 COM75)
-		infrmlSanctn.setApplcntId(vcatnManage.getApplcntId()); // 신청자ID
-		infrmlSanctn.setReqstDe(vcatnManage.getReqstDe()); // 신청일자
-		infrmlSanctn.setSanctnerId(vcatnManage.getSanctnerId()); // 결재자ID
-		infrmlSanctn.setConfmAt(vcatnManage.getConfmAt()); // 승인구분
-		infrmlSanctn.setSanctnDt(vcatnManage.getSanctnDt()); // 결재일시
-		infrmlSanctn.setReturnResn(vcatnManage.getReturnResn()); // 반려사유
+		infrmlSanctn.setJobSeCode("003"); // ?낅Т援щ텇肄붾뱶 (怨듯넻肄붾뱶 COM75)
+		infrmlSanctn.setApplcntId(vcatnManage.getApplcntId()); // ?좎껌?륤D
+		infrmlSanctn.setReqstDe(vcatnManage.getReqstDe()); // ?좎껌?쇱옄
+		infrmlSanctn.setSanctnerId(vcatnManage.getSanctnerId()); // 寃곗옱?륤D
+		infrmlSanctn.setConfmAt(vcatnManage.getConfmAt()); // ?뱀씤援щ텇
+		infrmlSanctn.setSanctnDt(vcatnManage.getSanctnDt()); // 寃곗옱?쇱떆
+		infrmlSanctn.setReturnResn(vcatnManage.getReturnResn()); // 諛섎젮?ъ쑀
 		infrmlSanctn.setFrstRegisterId(vcatnManage.getFrstRegisterId());
 		infrmlSanctn.setFrstRegisterPnttm(vcatnManage.getFrstRegisterId());
 		infrmlSanctn.setLastUpdusrId(vcatnManage.getLastUpdusrId());
 		infrmlSanctn.setLastUpdusrPnttm(vcatnManage.getLastUpdusrPnttm());
-		infrmlSanctn.setInfrmlSanctnId(vcatnManage.getInfrmlSanctnId());// 약식결재ID
+		infrmlSanctn.setInfrmlSanctnId(vcatnManage.getInfrmlSanctnId());// ?쎌떇寃곗옱ID
 		return infrmlSanctn;
 	}
 

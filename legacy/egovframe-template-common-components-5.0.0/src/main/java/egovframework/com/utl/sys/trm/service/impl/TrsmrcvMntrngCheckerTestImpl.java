@@ -9,41 +9,41 @@ import egovframework.com.utl.sys.trm.service.TrsmrcvMntrngChecker;
 import egovframework.com.utl.sys.trm.service.TrsmrcvMntrngResult;
 
 /**
- * 송수신모니터링을 위한 Check interface 예제 구현클래스
+ * ?≪닔?좊え?덊꽣留곸쓣 ?꾪븳 Check interface ?덉젣 援ы쁽?대옒??
  * 
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.08.16
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.16  김진만          최초 생성
- *	 2025.09.06  이선규          2025년 컨트리뷰션 멘토링 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 WrapperObject 생성)
+ *   2010.08.16  源吏꾨쭔          理쒖큹 ?앹꽦
+ *	 2025.09.06  ?댁꽑洹?         2025??而⑦듃由щ럭??硫섑넗留?PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 WrapperObject ?앹꽦)
  *      </pre>
  */
 
 public class TrsmrcvMntrngCheckerTestImpl implements TrsmrcvMntrngChecker {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrsmrcvMntrngCheckerTestImpl.class);
-	private static SecureRandom oRandom = new SecureRandom(); // 221115 김혜준 2022 시큐어코딩 조치
+	private static SecureRandom oRandom = new SecureRandom(); // 221115 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 
 	/**
-	 * 송수신모니터링을 수행한다.
+	 * ?≪닔?좊え?덊꽣留곸쓣 ?섑뻾?쒕떎.
 	 *
-	 * 연계ID를 이용하여 연계기관과 통신에 필요한 정보를 얻은 다음 연계기관과 통신을 수행한다.
-	 * 통신결과를 TrsmrcvMntrngResult 클래스 객체에 담아서 리턴한다.
+	 * ?곌퀎ID瑜??댁슜?섏뿬 ?곌퀎湲곌?怨??듭떊???꾩슂???뺣낫瑜??살? ?ㅼ쓬 ?곌퀎湲곌?怨??듭떊???섑뻾?쒕떎.
+	 * ?듭떊寃곌낵瑜?TrsmrcvMntrngResult ?대옒??媛앹껜???댁븘??由ы꽩?쒕떎.
 	 *
-	 * 통신결과가 true일때 : TrsmrcvMntrngResult의 nrmltAt에 true, cause에 null을 저장.
-	 * 통신결과가 false일때: TrsmrcvMntrngResult의 nrmltAt에 false, cause에 에러원인 Exception을 저장한다.
+	 * ?듭떊寃곌낵媛 true?쇰븣 : TrsmrcvMntrngResult??nrmltAt??true, cause??null?????
+	 * ?듭떊寃곌낵媛 false?쇰븣: TrsmrcvMntrngResult??nrmltAt??false, cause???먮윭?먯씤 Exception????ν븳??
 	 *
 	 *
-	 * @return 모니터링결과
+	 * @return 紐⑤땲?곕쭅寃곌낵
 	 *
-	 * @param cntcId 모니터링 대상 연계ID
+	 * @param cntcId 紐⑤땲?곕쭅 ????곌퀎ID
 	 *
 	 */
 	@Override
@@ -54,7 +54,7 @@ public class TrsmrcvMntrngCheckerTestImpl implements TrsmrcvMntrngChecker {
 		if (b) {
 			result = new TrsmrcvMntrngResult(b, null);
 		} else {
-			result = new TrsmrcvMntrngResult(b, new UnsupportedOperationException("송수신샘플Check클래스에서 발생한 Exception입니다."));
+			result = new TrsmrcvMntrngResult(b, new UnsupportedOperationException("?≪닔?좎깦?똂heck?대옒?ㅼ뿉??諛쒖깮??Exception?낅땲??"));
 		}
 		LOGGER.debug("result cause : {}", result.getCause());
 		return result;

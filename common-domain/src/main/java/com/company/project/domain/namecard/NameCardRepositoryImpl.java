@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.company.project.domain.namecard.QNameCard.nameCard;
 
 /**
- * 명함 Repository Custom 구현체
+ * 筌뤿굟釉?Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class NameCardRepositoryImpl implements NameCardRepositoryCustom {

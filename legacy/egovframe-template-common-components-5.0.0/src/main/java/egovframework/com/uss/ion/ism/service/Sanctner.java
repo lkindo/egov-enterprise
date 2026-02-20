@@ -3,36 +3,36 @@ package egovframework.com.uss.ion.ism.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 결재자에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 寃곗옱?먯뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 조직명, 직위명, 사용자명, 사용자ID 의 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 議곗쭅紐? 吏곸쐞紐? ?ъ슜?먮챸, ?ъ슜?륤D ????ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:29:26
+ * @created 28-6-2010 ?ㅼ쟾 11:29:26
  */
 @SuppressWarnings("serial")
 public class Sanctner implements Serializable  {
 
 	/**
-	 * 조직명
+	 * 議곗쭅紐?
 	 */
 	private String orgnztNm;
 	/**
-	 * 직위명
+	 * 吏곸쐞紐?
 	 */
 	private String ofcpsNm;
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
 	private String emplyrNm;
 	/**
-	 * 사용자ID
+	 * ?ъ슜?륤D
 	 */
 	private String uniqId;
 	/**
-	 * 사원번호
+	 * ?ъ썝踰덊샇
 	 */
 	private String emplNo;
 	

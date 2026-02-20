@@ -10,87 +10,87 @@ import java.time.format.DateTimeFormatter;
 
 @Getter
 @Builder
-@Schema(description = "게시글 정보")
+@Schema(description = "Description")
 public class BoardDto {
-    @Schema(description = "게시글 ID", example = "1")
+    @Schema(description = "Description")
     private final Long id;
 
-    @Schema(description = "게시판 ID", example = "BBS_000000000001")
+    @Schema(description = "Description")
     private final String bbsId;
 
-    @Schema(description = "게시글 제목", example = "공지사항입니다.")
+    @Schema(description = "Description")
     private final String nttSj;
 
-    @Schema(description = "게시글 내용", example = "내용입니다.")
+    @Schema(description = "Description")
     private final String nttCn;
 
-    @Schema(description = "작성자명", example = "홍길동")
+    @Schema(description = "Description")
     private final String ntcrNm;
 
-    @Schema(description = "조회수", example = "10")
+    @Schema(description = "Description")
     private final Integer inqireCo;
 
-    @Schema(description = "등록일시", example = "2023-12-21T17:00:00")
+    @Schema(description = "Description")
     private final LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "첨부파일 ID", example = "FILE_000000000001")
+    @Schema(description = "Description")
     private final String atchFileId;
 
-    @Schema(description = "게시물 번호")
+    @Schema(description = "Description")
     private final Long nttNo;
 
-    @Schema(description = "정렬 순서")
+    @Schema(description = "Description")
     private final Long sortOrdr;
 
-    @Schema(description = "부모 게시물 번호")
+    @Schema(description = "Description")
     private final String parnts;
 
-    @Schema(description = "답변 여부")
+    @Schema(description = "Description")
     private final String replyAt;
 
-    @Schema(description = "답변 위치")
+    @Schema(description = "Description")
     private final Integer replyLc;
 
-    @Schema(description = "게시 시작일")
+    @Schema(description = "Description")
     private final String ntceBgnde;
 
-    @Schema(description = "게시 종료일")
+    @Schema(description = "Description")
     private final String ntceEndde;
 
-    @Schema(description = "사용 여부")
+    @Schema(description = "Description")
     private final String useAt;
 
-    @Schema(description = "만료 여부")
+    @Schema(description = "Description")
     private final String isExpired;
 
-    @Schema(description = "등록일시 (포맷팅)", example = "2023-12-21")
+    @Schema(description = "Description")
     private final String frstRegisterPnttmStr;
 
-    @Schema(description = "게시물 작성자 ID")
+    @Schema(description = "Description")
     private final String ntcrId;
 
-    @Schema(description = "최초 등록자 ID")
+    @Schema(description = "Description")
     private final String frstRegisterId;
 
-    @Schema(description = "최종 수정자 ID")
+    @Schema(description = "Description")
     private final String lastUpdusrId;
 
-    @Schema(description = "최종 수정일시")
+    @Schema(description = "Description")
     private final LocalDateTime lastUpdtPnttm;
 
-    @Schema(description = "비밀번호")
+    @Schema(description = "Description")
     private final String password;
 
-    @Schema(description = "비밀글 여부")
+    @Schema(description = "Description")
     private final String secretAt;
 
-    @Schema(description = "블로그 여부")
+    @Schema(description = "Description")
     private final String blogAt;
 
-    @Schema(description = "댓글 수")
+    @Schema(description = "Description")
     private final Long commentCo;
 
-    @Schema(description = "게시판 명")
+    @Schema(description = "Description")
     private final String bbsNm;
 
     public static BoardDto from(Board entity) {

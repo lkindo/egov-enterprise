@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 행사참석자 Repository
+ * ??깃텢筌〓챷苑??Repository
  */
 public interface EventAttendanceRepository extends JpaRepository<EventAttendance, EventAttendance.EventAttendanceId> {
     Page<EventAttendance> findByEventId(String eventId, Pageable pageable);

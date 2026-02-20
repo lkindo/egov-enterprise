@@ -7,15 +7,15 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovUserLogScheduling.java
- * @Description : 사용로그 요약을 위한 스케쥴링 클래스
+ * @Description : ?ъ슜濡쒓렇 ?붿빟???꾪븳 ?ㅼ?伊대쭅 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자        수정내용
+ *    ?섏젙??        ?섏젙??       ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭        최초생성
- *    2011. 7. 01.   이기하        패키지 분리(sym.log -> sym.log.ulg)
+ *    2009. 3. 11.   ?댁궪??       理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??       ?⑦궎吏 遺꾨━(sym.log -> sym.log.ulg)
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -28,7 +28,7 @@ public class EgovUserLogScheduling extends EgovAbstractServiceImpl {
 	private EgovUserLogService userLogService;
 
 	/**
-	 * 사용자 로그정보를 생성한다.
+	 * ?ъ슜??濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 *
 	 * @param
 	 * @return

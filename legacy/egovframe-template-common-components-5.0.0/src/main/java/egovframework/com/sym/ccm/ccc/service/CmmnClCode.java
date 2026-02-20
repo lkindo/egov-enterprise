@@ -3,18 +3,18 @@ package egovframework.com.sym.ccm.ccc.service;
 import java.io.Serializable;
 
 /**
- * 공통분류코드 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * 怨듯넻遺꾨쪟肄붾뱶 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,37 +23,37 @@ public class  CmmnClCode implements Serializable {
 	private static final long serialVersionUID = 4861619118930452502L;
 
 	/*
-	 * 분류코드
+	 * 遺꾨쪟肄붾뱶
 	 */
 	private String clCode = "";
 
 	/*
-	 * 분류코드명
+	 * 遺꾨쪟肄붾뱶紐?
 	 */
     private String clCodeNm = "";
 
     /*
-     * 분류코드설명
+     * 遺꾨쪟肄붾뱶?ㅻ챸
      */
     private String clCodeDc = "";
 
     /*
-     * 사용여부
+     * ?ъ슜?щ?
      */
     private String useAt = "";
 
     /*
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "";
 
     /*
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId   = "";
 
 	/**
-	 * clCode attribute 를 리턴한다.
+	 * clCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getClCode() {
@@ -61,7 +61,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * clCode attribute 값을 설정한다.
+	 * clCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param clCode String
 	 */
 	public void setClCode(String clCode) {
@@ -69,7 +69,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * clCodeNm attribute 를 리턴한다.
+	 * clCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getClCodeNm() {
@@ -77,7 +77,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * clCodeNm attribute 값을 설정한다.
+	 * clCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param clCodeNm String
 	 */
 	public void setClCodeNm(String clCodeNm) {
@@ -85,7 +85,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * clCodeDc attribute 를 리턴한다.
+	 * clCodeDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getClCodeDc() {
@@ -93,7 +93,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * clCodeDc attribute 값을 설정한다.
+	 * clCodeDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param clCodeDc String
 	 */
 	public void setClCodeDc(String clCodeDc) {
@@ -101,7 +101,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * useAt attribute 를 리턴한다.
+	 * useAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUseAt() {
@@ -109,7 +109,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * useAt attribute 값을 설정한다.
+	 * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param useAt String
 	 */
 	public void setUseAt(String useAt) {
@@ -117,7 +117,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -125,7 +125,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -133,7 +133,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -141,7 +141,7 @@ public class  CmmnClCode implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

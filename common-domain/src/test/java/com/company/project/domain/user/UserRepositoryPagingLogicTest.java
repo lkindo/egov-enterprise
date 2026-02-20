@@ -25,7 +25,7 @@ class UserRepositoryPagingLogicTest {
     private UserRepository userRepository;
 
     @Test
-    @DisplayName("첫 번째 페이지 사용자 목록 조회 성공")
+    @DisplayName("筌?甕곕뜆????륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
     void findAll_firstPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -45,7 +45,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("두 번째 페이지 사용자 목록 조회 성공")
+    @DisplayName("??甕곕뜆????륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
     void findAll_secondPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -65,7 +65,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("마지막 페이지 사용자 목록 조회 성공")
+    @DisplayName("筌띾뜆?筌???륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
     void findAll_lastPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -85,7 +85,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("페이지 크기 변경 테스트")
+    @DisplayName("??륁뵠筌왖 ??由?癰궰野????뮞??)
     void findAll_withDifferentPageSize_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -103,7 +103,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("페이지 번호 범위 초과 테스트 - 빈 결과 반환")
+    @DisplayName("??륁뵠筌왖 甕곕뜇??甕곕뗄???λ뜃?????뮞??- ??野껉퀗??獄쏆꼹??)
     void findAll_exceedingPageNumber_returnsEmpty() {
         // Given
         createTestData(25); // Create 25 test users
@@ -123,24 +123,24 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("정렬된 페이징 결과 테스트 - 이름 기준 오름차순")
+    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??已?疫꿸퀣? ??살カ筌△뫁??)
     void findAll_sortedByNameAsc_success() {
         // Given
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("가가가")
+                .userNm("揶쎛揶쎛揶쎛")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("나나나")
+                .userNm("??롪돌??)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("다다다")
+                .userNm("??삳뼄??)
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
@@ -157,28 +157,28 @@ class UserRepositoryPagingLogicTest {
         List<String> sortedNames = result.getContent().stream()
                 .map(User::getUserNm)
                 .toList();
-        assertThat(sortedNames).containsExactly("가가가", "나나나", "다다다");
+        assertThat(sortedNames).containsExactly("揶쎛揶쎛揶쎛", "??롪돌??, "??삳뼄??);
     }
 
     @Test
-    @DisplayName("정렬된 페이징 결과 테스트 - 이름 기준 내림차순")
+    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??已?疫꿸퀣? ???앾㎕?λ떄")
     void findAll_sortedByNameDesc_success() {
         // Given
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("가가가")
+                .userNm("揶쎛揶쎛揶쎛")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("나나나")
+                .userNm("??롪돌??)
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("다다다")
+                .userNm("??삳뼄??)
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
@@ -195,28 +195,28 @@ class UserRepositoryPagingLogicTest {
         List<String> sortedNames = result.getContent().stream()
                 .map(User::getUserNm)
                 .toList();
-        assertThat(sortedNames).containsExactly("다다다", "나나나", "가가가");
+        assertThat(sortedNames).containsExactly("??삳뼄??, "??롪돌??, "揶쎛揶쎛揶쎛");
     }
 
     @Test
-    @DisplayName("정렬된 페이징 결과 테스트 - 생성일 기준 오름차순")
+    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??밴쉐??疫꿸퀣? ??살カ筌△뫁??)
     void findAll_sortedByCreatedDateAsc_success() {
         // Given
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("사용자1")
+                .userNm("?????")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("사용자2")
+                .userNm("?????")
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("사용자3")
+                .userNm("?????")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
@@ -235,7 +235,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("페이징 없이 전체 조회 테스트")
+    @DisplayName("??륁뵠筌???곸뵠 ?袁⑷퍥 鈺곌퀬?????뮞??)
     void findAll_unpaged_success() {
         // Given
         createTestData(15); // Create 15 test users
@@ -249,7 +249,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("페이지 크기 0으로 인한 예외 테스트")
+    @DisplayName("??륁뵠筌왖 ??由?0??곗쨮 ?紐낅립 ??됱뇚 ???뮞??)
     void findAll_withZeroPageSize_throwsException() {
         // Given
         createTestData(10); // Create 10 test users
@@ -262,7 +262,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("음수 페이지 번호 테스트")
+    @DisplayName("???땾 ??륁뵠筌왖 甕곕뜇?????뮞??)
     void findAll_withNegativePageNumber_throwsException() {
         // Given
         createTestData(10); // Create 10 test users
@@ -275,13 +275,13 @@ class UserRepositoryPagingLogicTest {
     }
 
     /**
-     * 테스트 데이터 생성
+     * ???뮞???怨쀬뵠????밴쉐
      */
     private void createTestData(int count) {
         for (int i = 1; i <= count; i++) {
             User user = User.builder()
                     .userId("user" + i)
-                    .userNm("사용자" + i)
+                    .userNm("????? + i)
                     .esntlId("USR" + String.format("%05d", i))
                     .password("encodedPassword")
                     .build();

@@ -3,18 +3,18 @@ package egovframework.com.ssi.syi.ims.service;
 import java.io.Serializable;
 
 /**
- * 연계메시지 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?곌퀎硫붿떆吏 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -24,32 +24,32 @@ public class CntcMessage implements Serializable {
 	private static final long serialVersionUID = 8864230247777324500L;
 
 	/*
-	 * 연계메시지ID
+	 * ?곌퀎硫붿떆吏ID
 	 */
 	private String cntcMessageId      = "";
 
 	/*
-	 * 연계메시지명
+	 * ?곌퀎硫붿떆吏紐?
 	 */
 	private String cntcMessageNm      = "";
 
 	/*
-	 * 상위연계메시지ID
+	 * ?곸쐞?곌퀎硫붿떆吏ID
 	 */
 	private String upperCntcMessageId = "";
 
 	/*
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
 	private String frstRegisterId     = "";
 
 	/*
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId       = "";
 
 	/**
-	 * cntcMessageId attribute 를 리턴한다.
+	 * cntcMessageId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntcMessageId() {
@@ -57,7 +57,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * cntcMessageId attribute 값을 설정한다.
+	 * cntcMessageId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntcMessageId String
 	 */
 	public void setCntcMessageId(String cntcMessageId) {
@@ -65,7 +65,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * cntcMessageNm attribute 를 리턴한다.
+	 * cntcMessageNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCntcMessageNm() {
@@ -73,7 +73,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * cntcMessageNm attribute 값을 설정한다.
+	 * cntcMessageNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cntcMessageNm String
 	 */
 	public void setCntcMessageNm(String cntcMessageNm) {
@@ -81,7 +81,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * upperCntcMessageId attribute 를 리턴한다.
+	 * upperCntcMessageId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUpperCntcMessageId() {
@@ -89,7 +89,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * upperCntcMessageId attribute 값을 설정한다.
+	 * upperCntcMessageId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param upperCntcMessageId String
 	 */
 	public void setUpperCntcMessageId(String upperCntcMessageId) {
@@ -97,7 +97,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -105,7 +105,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -113,7 +113,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -121,7 +121,7 @@ public class CntcMessage implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================					 		
-  2011.09.19       서준식 		selectStplatList 등록일자 Character 타입으로 변경
-  2016.06.13       장동한         표준프레임워크 v3.6 리뉴얼
+  2011.09.19       ?쒖???		selectStplatList ?깅줉?쇱옄 Character ??낆쑝濡?蹂寃?
+  2016.06.13       ?λ룞??        ?쒖??꾨젅?꾩썙??v3.6 由щ돱??
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">

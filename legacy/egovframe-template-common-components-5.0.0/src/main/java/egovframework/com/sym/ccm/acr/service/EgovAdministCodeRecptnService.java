@@ -6,18 +6,18 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
  *
- * 법정동코드에 관한 서비스 인터페이스 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 踰뺤젙?숈퐫?쒖뿉 愿???쒕퉬???명꽣?섏씠???대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -25,47 +25,47 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 public interface EgovAdministCodeRecptnService {
 
 	/**
-	 * 법정동코드수신을 처리한다.
+	 * 踰뺤젙?숈퐫?쒖닔?좎쓣 泥섎━?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
 	void insertAdministCodeRecptn() throws Exception;
 
 	/**
-	 * 법정동코드 상세내역을 조회한다.
+	 * 踰뺤젙?숈퐫???곸꽭?댁뿭??議고쉶?쒕떎.
 	 * @param administCode
-	 * @return AdministCode(법정동코드)
+	 * @return AdministCode(踰뺤젙?숈퐫??
 	 * @throws Exception
 	 */
 	AdministCodeRecptn selectAdministCodeDetail(AdministCodeRecptn administCodeRecptn) throws Exception;
 
 	/**
-	 * 법정동코드수신 목록을 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(법정동코드 목록)
+	 * @return List(踰뺤젙?숈퐫??紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministCodeRecptnList(AdministCodeRecptnVO searchVO) throws Exception;
 
     /**
-	 * 법정동코드수신 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(법정동코드 총 개수)
+     * @return int(踰뺤젙?숈퐫??珥?媛쒖닔)
      */
     int selectAdministCodeRecptnListTotCnt(AdministCodeRecptnVO searchVO) throws Exception;
 
 	/**
-	 * 법정동코드 목록을 조회한다.
+	 * 踰뺤젙?숈퐫??紐⑸줉??議고쉶?쒕떎.
 	 * @param searchVO
-	 * @return List(법정동코드 목록)
+	 * @return List(踰뺤젙?숈퐫??紐⑸줉)
 	 * @throws Exception
 	 */
 	List<EgovMap> selectAdministCodeList(AdministCodeRecptnVO searchVO) throws Exception;
 
     /**
-	 * 법정동코드 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(법정동코드 총 개수)
+     * @return int(踰뺤젙?숈퐫??珥?媛쒖닔)
      */
     int selectAdministCodeListTotCnt(AdministCodeRecptnVO searchVO) throws Exception;
 }

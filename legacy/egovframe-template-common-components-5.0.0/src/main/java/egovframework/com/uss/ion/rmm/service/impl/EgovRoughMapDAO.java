@@ -10,24 +10,24 @@ import egovframework.com.uss.ion.rmm.service.RoughMapDefaultVO;
 import egovframework.com.uss.ion.rmm.service.RoughMapVO;
 
 /**
- * 개요
- * - 건물 위치정보에 대한 DB상의 접근, 변경을 처리한다.
+ * 媛쒖슂
+ * - 嫄대Ъ ?꾩튂?뺣낫?????DB?곸쓽 ?묎렐, 蹂寃쎌쓣 泥섎━?쒕떎.
  *
- * 상세내용
- * - 건물 위치정보에 대한 등록, 수정, 삭제 기능을 제공한다.
- * - 건물 위치정보의 조회기능은 목록, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 嫄대Ъ ?꾩튂?뺣낫??????깅줉, ?섏젙, ??젣 湲곕뒫???쒓났?쒕떎.
+ * - 嫄대Ъ ?꾩튂?뺣낫??議고쉶湲곕뒫? 紐⑸줉, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 옥찬우
+ * @author ?μ갔??
  * @since 2014.08.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -----------		------		---------
- *   2014.08.27		옥찬우		최초 생성
+ *   2014.08.27		?μ갔??	理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -36,9 +36,9 @@ import egovframework.com.uss.ion.rmm.service.RoughMapVO;
 public class EgovRoughMapDAO extends EgovComAbstractDAO {
 
     /**
-     * 약도 목록을 조회한다.
+     * ?쎈룄 紐⑸줉??議고쉶?쒕떎.
      * @param roughMapVO
-     * @return List<RoughMapVO> 건물 위치정보 리스트
+     * @return List<RoughMapVO> 嫄대Ъ ?꾩튂?뺣낫 由ъ뒪??
      * @throws Exception
     */
 	public List<EgovMap> selectRoughMapList(RoughMapDefaultVO searchVO) throws Exception {
@@ -46,9 +46,9 @@ public class EgovRoughMapDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 약도 목록의 건수를 조회 한다.
+     * ?쎈룄 紐⑸줉??嫄댁닔瑜?議고쉶 ?쒕떎.
      * @param roughMapVO
-     * @return int 건물 위치정보 목록 건수
+     * @return int 嫄대Ъ ?꾩튂?뺣낫 紐⑸줉 嫄댁닔
      * @throws Exception
     */
     public int selectRoughMapListTotCnt(RoughMapDefaultVO searchVO){
@@ -56,7 +56,7 @@ public class EgovRoughMapDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 약도를 조회한다.
+     * ?쎈룄瑜?議고쉶?쒕떎.
      * @param roughMapVO
      * @return RoughMap
      * @throws Exception
@@ -66,7 +66,7 @@ public class EgovRoughMapDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 약도를 DB에 등록한다.
+     * ?쎈룄瑜?DB???깅줉?쒕떎.
      *
      * @param roughMap
      * @throws Exception
@@ -76,7 +76,7 @@ public class EgovRoughMapDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 약도를 DB에서 수정한다.
+     * ?쎈룄瑜?DB?먯꽌 ?섏젙?쒕떎.
      *
      * @param roughMap
      * @throws Exception
@@ -86,7 +86,7 @@ public class EgovRoughMapDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 약도를 DB에서 삭제한다.
+     * ?쎈룄瑜?DB?먯꽌 ??젣?쒕떎.
      *
      * @param roughMap
      * @throws Exception

@@ -21,20 +21,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 권한관리에 관한 controller 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 沅뚰븳愿由ъ뿉 愿??controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가s
- *   2024.10.29	LeeBaekHaeng	검색조건 유지
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?s
+ *   2024.10.29	LeeBaekHaeng	寃?됱“嫄??좎?
  *
  * </pre>
  */
@@ -55,12 +55,12 @@ public class EgovAuthorManageController {
 
 
 	/**
-	 * 권한 목록을 조회한다
+	 * 沅뚰븳 紐⑸줉??議고쉶?쒕떎
 	 * @param authorManageVO AuthorManageVO
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="권한관리", listUrl="/sec/ram/EgovAuthorList.do", order = 60,gid = 20)
+    @IncludedInfo(name="沅뚰븳愿由?, listUrl="/sec/ram/EgovAuthorList.do", order = 60,gid = 20)
     @RequestMapping(value="/sec/ram/EgovAuthorList.do")
     public String selectAuthorList(@ModelAttribute("authorManageVO") AuthorManageVO authorManageVO,
     		                        ModelMap model)
@@ -92,7 +92,7 @@ public class EgovAuthorManageController {
     }
 
     /**
-	 * 권한 세부정보를 조회한다.
+	 * 沅뚰븳 ?몃??뺣낫瑜?議고쉶?쒕떎.
 	 * @param authorCode String
 	 * @param authorManageVO AuthorManageVO
 	 * @return String
@@ -111,7 +111,7 @@ public class EgovAuthorManageController {
     }
 
     /**
-	 * 권한 등록화면 이동
+	 * 沅뚰븳 ?깅줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -122,7 +122,7 @@ public class EgovAuthorManageController {
     }
 
     /**
-	 * 권한 세부정보를 등록한다.
+	 * 沅뚰븳 ?몃??뺣낫瑜??깅줉?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @param bindingResult BindingResult
 	 * @return String
@@ -148,7 +148,7 @@ public class EgovAuthorManageController {
     }
 
     /**
-	 * 권한 세부정보를 수정한다.
+	 * 沅뚰븳 ?몃??뺣낫瑜??섏젙?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @param bindingResult BindingResult
 	 * @return String
@@ -174,7 +174,7 @@ public class EgovAuthorManageController {
     }
 
     /**
-	 * 권한 세부정보를 삭제한다.
+	 * 沅뚰븳 ?몃??뺣낫瑜???젣?쒕떎.
 	 * @param authorManage AuthorManage
 	 * @return String
 	 * @exception Exception
@@ -193,7 +193,7 @@ public class EgovAuthorManageController {
 	}
 
 	/**
-	 * 권한목록을 삭제한다.
+	 * 沅뚰븳紐⑸줉????젣?쒕떎.
 	 * @param authorCodes String
 	 * @param authorManage AuthorManage
 	 * @return String
@@ -219,7 +219,7 @@ public class EgovAuthorManageController {
 	}
 
 	/**
-	 * 권한제한 화면 이동
+	 * 沅뚰븳?쒗븳 ?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */

@@ -25,24 +25,24 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 커뮤니티 정보를 관리하기 위한 컨트롤러 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 而ㅻ??덊떚 ?뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *   -------       --------    ---------------------------
- *   2009.4.2	이삼섭          최초 생성
- *   2011.8.26	정진오			IncludedInfo annotation 추가
- *   2011.9.7	정진오			커뮤니티 탈퇴 요청이 정상적으로 이뤄지지 않은 사항 수정함
- *   							커뮤니티 탈퇴 요청시 승인자를 선택하므로 탈퇴 승인자가 자신이 될 수 없음에도
- *   							세션에서 가져온 값(탈퇴신청자)을 탈퇴승인자로 설정하도록 되어 있었음
- *   2016.06.13 김연호          표준프레임워크 v3.6 개선
- *   2022.11.11 김혜준          시큐어코딩 처리
+ *   2009.4.2	?댁궪??         理쒖큹 ?앹꽦
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
+ *   2011.9.7	?뺤쭊??		而ㅻ??덊떚 ?덊눜 ?붿껌???뺤긽?곸쑝濡??대쨪吏吏 ?딆? ?ы빆 ?섏젙??
+ *   							而ㅻ??덊떚 ?덊눜 ?붿껌???뱀씤?먮? ?좏깮?섎?濡??덊눜 ?뱀씤?먭? ?먯떊???????놁쓬?먮룄
+ *   							?몄뀡?먯꽌 媛?몄삩 媛??덊눜?좎껌?????덊눜?뱀씤?먮줈 ?ㅼ젙?섎룄濡??섏뼱 ?덉뿀??
+ *   2016.06.13 源?고샇          ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
+ *   2022.11.11 源?쒖?          ?쒗걧?댁퐫??泥섎━
  * </pre>
  */
 
@@ -61,14 +61,14 @@ public class EgovCommuMasterController {
     //Logger log = Logger.getLogger(this.getClass());
 
 	/**
-     * 커뮤니티에 대한 목록을 조회한다.
+     * 而ㅻ??덊떚?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param model
      * @return
      * @throws Exception
      */
-    @IncludedInfo(name="커뮤니티관리", order = 270 ,gid = 40)
+    @IncludedInfo(name="而ㅻ??덊떚愿由?, order = 270 ,gid = 40)
     @RequestMapping("/cop/cmy/selectCommuMasterList.do")
     public String selectCommuMasterList(@ModelAttribute("searchVO") CommunityVO cmmntyVO, ModelMap model) throws Exception {
 	cmmntyVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -97,7 +97,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티 등록을 위한 등록페이지로 이동한다.
+     * 而ㅻ??덊떚 ?깅줉???꾪븳 ?깅줉?섏씠吏濡??대룞?쒕떎.
      *
      * @param cmmntyVO
      * @param model
@@ -112,7 +112,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티 정보를 등록한다.
+     * 而ㅻ??덊떚 ?뺣낫瑜??깅줉?쒕떎.
      *
      * @param cmmntyVO
      * @param cmmnty
@@ -127,7 +127,7 @@ public class EgovCommuMasterController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
@@ -139,10 +139,10 @@ public class EgovCommuMasterController {
 		community.setRegistSeCode("REGC02");
 		community.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		String cmmntyId = egovCommuMasterService.insertCommuMaster(community);
 
-	    //커뮤니티 개설자의 정보를 등록한다.
+	    //而ㅻ??덊떚 媛쒖꽕?먯쓽 ?뺣낫瑜??깅줉?쒕떎.
 	    CommunityUserVO cmmntyUserVO = new CommunityUserVO();
 	    cmmntyUserVO.setCmmntyId(cmmntyId);
 	    cmmntyUserVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
@@ -157,7 +157,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티에 대한 상세정보를 조회한다.
+     * 而ㅻ??덊떚??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param model
@@ -169,7 +169,7 @@ public class EgovCommuMasterController {
 		CommunityVO result = egovCommuMasterService.selectCommuMaster(cmmntyVO);
 
 		//-----------------------
-		// 제공 URL
+		// ?쒓났 URL
 		//-----------------------
 		result.setProvdUrl(request.getContextPath()+ "/cop/cmy/CommuMainPage.do?cmmntyId=" + result.getCmmntyId());
 		////---------------------
@@ -180,7 +180,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티 정보 수정을 위한 수정페이지로 이동한다.
+     * 而ㅻ??덊떚 ?뺣낫 ?섏젙???꾪븳 ?섏젙?섏씠吏濡??대룞?쒕떎.
      *
      * @param cmmntyVO
      * @param model
@@ -199,7 +199,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티 정보를 수정한다.
+     * 而ㅻ??덊떚 ?뺣낫瑜??섏젙?쒕떎.
      *
      * @param cmmntyVO
      * @param status
@@ -213,7 +213,7 @@ public class EgovCommuMasterController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
@@ -234,7 +234,7 @@ public class EgovCommuMasterController {
     }
 
     /**
-     * 커뮤니티 정보를 삭제한다.
+     * 而ㅻ??덊떚 ?뺣낫瑜???젣?쒕떎.
      *
      * @param cmmntyVO
      * @param status
@@ -257,7 +257,7 @@ public class EgovCommuMasterController {
         }
 
     /**
-     * 포트릿을 위한 커뮤니티 정보 목록 정보를 조회한다.
+     * ?ы듃由우쓣 ?꾪븳 而ㅻ??덊떚 ?뺣낫 紐⑸줉 ?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param sessionVO

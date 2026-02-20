@@ -16,20 +16,20 @@ import egovframework.com.sts.cst.service.EgovConectStatsService;
 import jakarta.annotation.Resource;
 
 /**
- * 접속 통계 검색 컨트롤러 클래스
- * @author 공통서비스 개발팀 박지욱
+ * ?묒냽 ?듦퀎 寃??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.19
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.19  박지욱          최초 생성
- *  2011.06.30  이기하          패키지 분리(sts -> sts.cst)
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2009.03.19  諛뺤???         理쒖큹 ?앹꽦
+ *  2011.06.30  ?닿린??         ?⑦궎吏 遺꾨━(sts -> sts.cst)
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -47,12 +47,12 @@ public class EgovConectStatsController {
 	private EgovCmmUseService cmmUseService;*/
 
     /**
-	 * 접속 통계를 조회한다
+	 * ?묒냽 ?듦퀎瑜?議고쉶?쒕떎
 	 * @param statsVO StatsVO
 	 * @return String
 	 * @exception Exception
 	 */
-    @IncludedInfo(name="접속통계", listUrl="/sts/cst/selectConectStats.do", order = 140 ,gid = 30)
+    @IncludedInfo(name="?묒냽?듦퀎", listUrl="/sts/cst/selectConectStats.do", order = 140 ,gid = 30)
     @RequestMapping(value="/sts/cst/selectConectStats.do")
 	public String selectUserStats(@ModelAttribute("statsVO") StatsVO statsVO,
 			ModelMap model) throws Exception {
@@ -61,13 +61,13 @@ public class EgovConectStatsController {
 
 			List<StatsVO> conectStats = conectStatsService.selectConectStats(statsVO);
 
-			// 1. 서비스별
+			// 1. ?쒕퉬?ㅻ퀎
 			if ("SERVICE".equals(statsVO.getStatsKind())) {
 				model.addAttribute("conectStats", conectStats);
 				model.addAttribute("statsInfo", statsVO);
-			// 2. 개인별
+			// 2. 媛쒖씤蹂?
 			} else {
-				// 그래프에 표시될 이미지 길이를 결정한다.
+				// 洹몃옒?꾩뿉 ?쒖떆???대?吏 湲몄씠瑜?寃곗젙?쒕떎.
 				float iMaxUnit = 50.0f;
 				for (StatsVO conectStat : conectStats) {
 					StatsVO vo = conectStat;

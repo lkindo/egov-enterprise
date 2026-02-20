@@ -5,71 +5,71 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 정보알림이 서비스 데이터 처리 모델
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뺣낫?뚮┝???쒕퉬???곗씠??泥섎━ 紐⑤뜽
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.6.8  	 한성곤          최초 생성
- *	 2011.10.07	 이기하		보안취약점 수정(private 배열 처리)
+ *   2009.6.8  	 ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *	 2011.10.07	 ?닿린??	蹂댁븞痍⑥빟???섏젙(private 諛곗뿴 泥섎━)
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class Notification implements Serializable {
-    /** 알림 번호 */
+    /** ?뚮┝ 踰덊샇 */
     private String ntfcNo = "";
 
-    /** 알림 제목 */
+    /** ?뚮┝ ?쒕ぉ */
     private String ntfcSj = "";
 
-    /** 알림 내용 */
+    /** ?뚮┝ ?댁슜 */
     private String ntfcCn = "";
 
-    /** 알림 시간 */
+    /** ?뚮┝ ?쒓컙 */
     private String ntfcDate = "";
 
-    /** 알림 시간 */
+    /** ?뚮┝ ?쒓컙 */
     private String ntfcTime = "";
 
-    /** 사전 알림 간격 */
+    /** ?ъ쟾 ?뚮┝ 媛꾧꺽 */
     private String[] bhNtfcIntrvl = new String[0];
 
-    /** 사전 알림 간격 문자열 */
+    /** ?ъ쟾 ?뚮┝ 媛꾧꺽 臾몄옄??*/
     private String bhNtfcIntrvlString = "";
 
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
 
-    /** 최초 등록자명 */
+    /** 理쒖큹 ?깅줉?먮챸 */
     private String frstRegisterNm = "";
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     public String lastUpdusrId = "";
 
-    /** 최종수정시점 */
+    /** 理쒖쥌?섏젙?쒖젏 */
     private String lastUpdusrPnttm = "";
 
-    /** 유일 아이디 */
+    /** ?좎씪 ?꾩씠??*/
     private String uniqId = "";
 
-    /** 알림 시간 */
+    /** ?뚮┝ ?쒓컙 */
     private String ntfcHH = "";
 
-    /** 알림 시간 */
+    /** ?뚮┝ ?쒓컙 */
     private String ntfcMM = "";
 
     /**
-     * ntfcNo attribute를 리턴한다.
+     * ntfcNo attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcNo
      */
     public String getNtfcNo() {
@@ -77,7 +77,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcNo attribute 값을 설정한다.
+     * ntfcNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcNo the ntfcNo to set
      */
     public void setNtfcNo(String ntfcNo) {
@@ -85,7 +85,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcSj attribute를 리턴한다.
+     * ntfcSj attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcSj
      */
     public String getNtfcSj() {
@@ -93,7 +93,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcSj attribute 값을 설정한다.
+     * ntfcSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcSj the ntfcSj to set
      */
     public void setNtfcSj(String ntfcSj) {
@@ -101,7 +101,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcCn attribute를 리턴한다.
+     * ntfcCn attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcCn
      */
     public String getNtfcCn() {
@@ -109,7 +109,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcCn attribute 값을 설정한다.
+     * ntfcCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcCn the ntfcCn to set
      */
     public void setNtfcCn(String ntfcCn) {
@@ -117,7 +117,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcTime attribute를 리턴한다.
+     * ntfcTime attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcTime
      */
     public String getNtfcTime() {
@@ -125,7 +125,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcTime attribute 값을 설정한다.
+     * ntfcTime attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcTime the ntfcTime to set
      */
     public void setNtfcTime(String ntfcTime) {
@@ -133,16 +133,16 @@ public class Notification implements Serializable {
     }
 
     /**
-     * bhNtfcIntrvl attribute를 리턴한다.
+     * bhNtfcIntrvl attribute瑜?由ы꽩?쒕떎.
      * @return the bhNtfcIntrvl
      */
 //    public String[] getBhNtfcIntrvl() {
 //        return bhNtfcIntrvl;
 //    }
-    // 2011.10.07 private 배열을 public 함수가 반환되지 않도록 함
+    // 2011.10.07 private 諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
     public String[] getBhNtfcIntrvl() {
-    	// 메소드를 private으로 하거나, 복제본을 반환하거나,
-    	// 수정을 제어하는 public메소드를 별도로 만든다.
+    	// 硫붿냼?쒕? private?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
+    	// ?섏젙???쒖뼱?섎뒗 public硫붿냼?쒕? 蹂꾨룄濡?留뚮뱺??
     	String[] ret = null;
     	if(this.bhNtfcIntrvl != null) {
     		ret = new String[bhNtfcIntrvl.length];
@@ -154,13 +154,13 @@ public class Notification implements Serializable {
     }
 
     /**
-     * bhNtfcIntrvl attribute 값을 설정한다.
+     * bhNtfcIntrvl attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param bhNtfcIntrvl the bhNtfcIntrvl to set
      */
 //    public void setBhNtfcIntrvl(String[] bhNtfcIntrvl) {
 //        this.bhNtfcIntrvl = bhNtfcIntrvl;
 //    }
-    // 2011.10.07 private 배열-유형 필드에 공용 데이터 할당되지 않도록 함
+    // 2011.10.07 private 諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
 	public void setBhNtfcIntrvl(String[] bhNtfcIntrvl) {
 		this.bhNtfcIntrvl = new String[bhNtfcIntrvl.length];
 		for (int i = 0; i < bhNtfcIntrvl.length; ++i) {
@@ -170,7 +170,7 @@ public class Notification implements Serializable {
 
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterId
      */
     public String getFrstRegisterId() {
@@ -178,7 +178,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterId the frstRegisterId to set
      */
     public void setFrstRegisterId(String frstRegisterId) {
@@ -186,7 +186,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterPnttm
      */
     public String getFrstRegisterPnttm() {
@@ -194,7 +194,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
     public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -202,7 +202,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute를 리턴한다.
+     * lastUpdusrId attribute瑜?由ы꽩?쒕떎.
      * @return the lastUpdusrId
      */
     public String getLastUpdusrId() {
@@ -210,7 +210,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * lastUpdusrId attribute 값을 설정한다.
+     * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param lastUpdusrId the lastUpdusrId to set
      */
     public void setLastUpdusrId(String lastUpdusrId) {
@@ -218,7 +218,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute를 리턴한다.
+     * lastUpdusrPnttm attribute瑜?由ы꽩?쒕떎.
      * @return the lastUpdusrPnttm
      */
     public String getLastUpdusrPnttm() {
@@ -226,7 +226,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm attribute 값을 설정한다.
+     * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
     public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -234,7 +234,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * uniqId attribute를 리턴한다.
+     * uniqId attribute瑜?由ы꽩?쒕떎.
      * @return the uniqId
      */
     public String getUniqId() {
@@ -242,7 +242,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * uniqId attribute 값을 설정한다.
+     * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param uniqId the uniqId to set
      */
     public void setUniqId(String uniqId) {
@@ -250,7 +250,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcDate attribute를 리턴한다.
+     * ntfcDate attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcDate
      */
     public String getNtfcDate() {
@@ -258,7 +258,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcDate attribute 값을 설정한다.
+     * ntfcDate attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcDate the ntfcDate to set
      */
     public void setNtfcDate(String ntfcDate) {
@@ -266,7 +266,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcHH attribute를 리턴한다.
+     * ntfcHH attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcHH
      */
     public String getNtfcHH() {
@@ -274,7 +274,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcHH attribute 값을 설정한다.
+     * ntfcHH attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcHH the ntfcHH to set
      */
     public void setNtfcHH(String ntfcHH) {
@@ -282,7 +282,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcMM attribute를 리턴한다.
+     * ntfcMM attribute瑜?由ы꽩?쒕떎.
      * @return the ntfcMM
      */
     public String getNtfcMM() {
@@ -290,7 +290,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * ntfcMM attribute 값을 설정한다.
+     * ntfcMM attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param ntfcMM the ntfcMM to set
      */
     public void setNtfcMM(String ntfcMM) {
@@ -298,7 +298,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * bhNtfcIntrvlString attribute를 리턴한다.
+     * bhNtfcIntrvlString attribute瑜?由ы꽩?쒕떎.
      * @return the bhNtfcIntrvlString
      */
     public String getBhNtfcIntrvlString() {
@@ -306,7 +306,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * bhNtfcIntrvlString attribute 값을 설정한다.
+     * bhNtfcIntrvlString attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param bhNtfcIntrvlString the bhNtfcIntrvlString to set
      */
     public void setBhNtfcIntrvlString(String bhNtfcIntrvlString) {
@@ -314,7 +314,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute를 리턴한다.
+     * frstRegisterNm attribute瑜?由ы꽩?쒕떎.
      * @return the frstRegisterNm
      */
     public String getFrstRegisterNm() {
@@ -322,7 +322,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * frstRegisterNm attribute 값을 설정한다.
+     * frstRegisterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param frstRegisterNm the frstRegisterNm to set
      */
     public void setFrstRegisterNm(String frstRegisterNm) {
@@ -330,7 +330,7 @@ public class Notification implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

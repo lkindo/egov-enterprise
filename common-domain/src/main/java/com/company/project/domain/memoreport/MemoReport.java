@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 메모보고 엔티티
- * 레거시 테이블: NMEMOREPRT
+ * 筌롫뗀?덅퉪?욱??酉???
+ * ??뉕탢?????뵠?? NMEMOREPRT
  */
 @Entity
 @Table(name = "NMEMOREPRT")

@@ -4,62 +4,62 @@ import java.io.Serializable;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 일지관리 VO Class 구현
- * @author 공통서비스 장동한
+ * ?쇱?愿由?VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	
-	/** 일지ID */
+	/** ?쇱?ID */
 	private String diaryId;
 	
-	/** 일정내용 */
+	/** ?쇱젙?댁슜 */
 	private String schdulCn;
 	
-	/** 일정ID */
+	/** ?쇱젙ID */
 	private String schdulId;
 	
-	/** 진척률 */
+	/** 吏꾩쿃瑜?*/
 	private String diaryProcsPte;
 	
-	/** 일정명 */
+	/** ?쇱젙紐?*/
 	private String diaryNm;
 	
-	/** 지지사항 */
+	/** 吏吏?ы빆 */
 	private String drctMatter;
 	
-	/** 특이사항 */
+	/** ?뱀씠?ы빆 */
 	private String partclrMatter;
 	
-	/** 첨부파일 */
+	/** 泥⑤??뚯씪 */
 	private String atchFileId;
 	
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
 	
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId = "";
 	
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm = "";
 	
-	/** 최종수정ID */
+	/** 理쒖쥌?섏젙ID */
 	private String lastUpdusrId = "";
 
 	/**
-	 * diaryId attribute 를 리턴한다.
+	 * diaryId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getDiaryId() {
@@ -67,7 +67,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * diaryId attribute 값을 설정한다.
+	 * diaryId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return diaryId String
 	 */
 	public void setDiaryId(String diaryId) {
@@ -75,7 +75,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * schdulCn attribute 를 리턴한다.
+	 * schdulCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSchdulCn() {
@@ -83,7 +83,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * schdulCn attribute 값을 설정한다.
+	 * schdulCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return schdulCn String
 	 */
 	public void setSchdulCn(String schdulCn) {
@@ -91,7 +91,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * schdulId attribute 를 리턴한다.
+	 * schdulId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getSchdulId() {
@@ -99,7 +99,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * schdulId attribute 값을 설정한다.
+	 * schdulId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return schdulId String
 	 */
 	public void setSchdulId(String schdulId) {
@@ -107,7 +107,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * diaryProcsPte attribute 를 리턴한다.
+	 * diaryProcsPte attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getDiaryProcsPte() {
@@ -115,7 +115,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * diaryProcsPte attribute 값을 설정한다.
+	 * diaryProcsPte attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return diaryProcsPte String
 	 */
 	public void setDiaryProcsPte(String diaryProcsPte) {
@@ -123,7 +123,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * diaryNm attribute 를 리턴한다.
+	 * diaryNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getDiaryNm() {
@@ -131,7 +131,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * diaryNm attribute 값을 설정한다.
+	 * diaryNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return diaryNm String
 	 */
 	public void setDiaryNm(String diaryNm) {
@@ -139,7 +139,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * drctMatter attribute 를 리턴한다.
+	 * drctMatter attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getDrctMatter() {
@@ -147,7 +147,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * drctMatter attribute 값을 설정한다.
+	 * drctMatter attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return drctMatter String
 	 */
 	public void setDrctMatter(String drctMatter) {
@@ -155,7 +155,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * partclrMatter attribute 를 리턴한다.
+	 * partclrMatter attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getPartclrMatter() {
@@ -163,7 +163,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * partclrMatter attribute 값을 설정한다.
+	 * partclrMatter attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return partclrMatter String
 	 */
 	public void setPartclrMatter(String partclrMatter) {
@@ -171,7 +171,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * atchFileId attribute 를 리턴한다.
+	 * atchFileId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAtchFileId() {
@@ -179,7 +179,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * atchFileId attribute 값을 설정한다.
+	 * atchFileId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return atchFileId String
 	 */
 	public void setAtchFileId(String atchFileId) {
@@ -187,7 +187,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -195,7 +195,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -203,7 +203,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -211,7 +211,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -219,7 +219,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -227,7 +227,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -235,7 +235,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -243,7 +243,7 @@ public class DiaryManageVO extends ComDefaultVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

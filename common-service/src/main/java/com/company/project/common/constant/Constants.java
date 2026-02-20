@@ -1,11 +1,11 @@
 package com.company.project.common.constant;
 
 /**
- * 공통 상수 클래스
+ * ?⑤벏???怨몃땾 ?????
  */
 public class Constants {
     
-    // 사용자 관련 상수
+    // ??????온???怨몃땾
     public static final class User {
         public static final String USER_PREFIX = "USR_";
         public static final String ESNTL_ID_PREFIX = "USR_";
@@ -15,12 +15,12 @@ public class Constants {
         public static final int MIN_PASSWORD_LENGTH = 8;
     }
     
-    // 캐시 관련 상수
+    // 筌?Ŋ???온???怨몃땾
     public static final class Cache {
         public static final String USERS_CACHE = "users";
     }
     
-    // 권한 관련 상수
+    // 亦낅슦釉??온???怨몃땾
     public static final class Authority {
         public static final String DEFAULT_ROLE = "ROLE_USER";
     }

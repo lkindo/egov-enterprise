@@ -13,22 +13,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "부??조직) ?�보 DTO")
+@Schema(description = "Description")
 public class DeptManageDto {
 
-    @Schema(description = "조직 ID")
+    @Schema(description = "Description")
     private String orgnztId;
 
-    @Schema(description = "조직 �?)
+    @Schema(description = "Description")
     private String orgnztNm;
 
-    @Schema(description = "조직 ?�명")
+    @Schema(description = "Description")
     private String orgnztDc;
 
-    @Schema(description = "?�록??ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "?�록?�시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static DeptManageDto from(DeptManage entity) {

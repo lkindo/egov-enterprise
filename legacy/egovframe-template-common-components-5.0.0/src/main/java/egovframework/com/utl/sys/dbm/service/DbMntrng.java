@@ -5,81 +5,81 @@ import java.io.Serializable;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * DB서비스모니터링에 대한 model 클래스
+ * DB?쒕퉬?ㅻえ?덊꽣留곸뿉 ???model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class DbMntrng extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = 5555816004403245980L;
 	/**
-	 * 데이터소스명
+	 * ?곗씠?곗냼?ㅻ챸
 	 */
 	private String dataSourcNm;
 	/**
-	 * 서버명
+	 * ?쒕쾭紐?
 	 */
 	private String serverNm;
 	/**
-	 * DBMS종류
+	 * DBMS醫낅쪟
 	 */
 	private String dbmsKind;
 	/**
-	 * 체크SQL
+	 * 泥댄겕SQL
 	 */
 	private String ceckSql;
 	/**
-	 * 관리자명
+	 * 愿由ъ옄紐?
 	 */
 	private String mngrNm;
 	/**
-	 * 관리자이메일주소
+	 * 愿由ъ옄?대찓?쇱＜??
 	 */
 	private String mngrEmailAddr;
 	/**
-	 * 모니터링상태
+	 * 紐⑤땲?곕쭅?곹깭
 	 */
 	private String mntrngSttus;
 
 	/**
-	 * 최종수정자 아이디
+	 * 理쒖쥌?섏젙???꾩씠??
 	 */
 	private String lastUpdusrId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최초등록자 아이디
+	 * 理쒖큹?깅줉???꾩씠??
 	 */
 	private String frstRegisterId;
 	/**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
 	private String frstRegisterPnttm;
 	/**
-	 * 생성일시
+	 * ?앹꽦?쇱떆
 	 */
 	private String creatDt;
 
 
 	/**
-	 * 모니터링상태명
+	 * 紐⑤땲?곕쭅?곹깭紐?
 	 */
 	private String mntrngSttusNm;
 	/**
-	 * DBMS종류명
+	 * DBMS醫낅쪟紐?
 	 */
 	private String dbmsKindNm;
 

@@ -15,49 +15,49 @@ import java.util.stream.Collectors;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "이벤트 정보 DTO")
+@Schema(description = "Description")
 public class EventInfoDto {
 
-    @Schema(description = "이벤트 ID")
+    @Schema(description = "Description")
     private String eventId;
 
-    @Schema(description = "이벤트 서비스 시작일")
+    @Schema(description = "Description")
     private String eventSvcBeginDe;
 
-    @Schema(description = "이벤트 서비스 종료일")
+    @Schema(description = "Description")
     private String eventSvcEndDe;
 
-    @Schema(description = "서비스 이용 인원 수")
+    @Schema(description = "Description")
     private Integer svcUseNmprCo;
 
-    @Schema(description = "담당자 명")
+    @Schema(description = "Description")
     private String chargerNm;
 
-    @Schema(description = "이벤트 내용")
+    @Schema(description = "Description")
     private String eventCn;
 
-    @Schema(description = "이벤트 유형 코드")
+    @Schema(description = "Description")
     private String eventTyCode;
 
-    @Schema(description = "이벤트 유형 명")
+    @Schema(description = "Description")
     private String eventTyCodeNm;
 
-    @Schema(description = "준비 내용")
+    @Schema(description = "Description")
     private String prparetgCn;
 
-    @Schema(description = "이벤트 승인 여부")
+    @Schema(description = "Description")
     private String eventConfmAt;
 
-    @Schema(description = "이벤트 승인 일자")
+    @Schema(description = "Description")
     private String eventConfmDe;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
-    @Schema(description = "외부 인력 목록")
+    @Schema(description = "Description")
     private List<ExternalHrDto> externalHrs;
 
     public static EventInfoDto from(EventInfo entity) {

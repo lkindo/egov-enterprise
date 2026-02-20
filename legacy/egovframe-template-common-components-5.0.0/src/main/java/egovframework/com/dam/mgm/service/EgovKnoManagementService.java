@@ -5,60 +5,60 @@ import java.util.List;
 import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 /**
- * 개요
- * - 지식정보에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댁뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식정보에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식정보의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 吏?앹젙蹂댁뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹젙蹂댁쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 12-8-2010 오후 3:44:38
+ * @created 12-8-2010 ?ㅽ썑 3:44:38
  */
 public interface EgovKnoManagementService {
 
 	/**
-	 * 등록된 지식정보 목록을 조회한다.
-	 * @param searchVO 지식정보 조회 조건 VO
-	 * @return 지식정보 목록(List<EgovMap>)
-	 * @throws Exception 조회 조건이 유효하지 않거나 데이터 접근 중 오류가 발생한 경우
+	 * ?깅줉??吏?앹젙蹂?紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO 吏?앹젙蹂?議고쉶 議곌굔 VO
+	 * @return 吏?앹젙蹂?紐⑸줉(List<EgovMap>)
+	 * @throws Exception 議고쉶 議곌굔???좏슚?섏? ?딄굅???곗씠???묎렐 以??ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	List<EgovMap> selectKnoManagementList(KnoManagementVO searchVO) throws Exception;
 
 	/**
-	 * 지식정보 목록 총 개수를 조회한다.
-	 * @param searchVO 지식정보 조회 조건 VO
-	 * @return 총 개수
-	 * @throws Exception 조회 조건이 유효하지 않거나 데이터 접근 중 오류가 발생한 경우
+	 * 吏?앹젙蹂?紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param searchVO 吏?앹젙蹂?議고쉶 議곌굔 VO
+	 * @return 珥?媛쒖닔
+	 * @throws Exception 議고쉶 議곌굔???좏슚?섏? ?딄굅???곗씠???묎렐 以??ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	int selectKnoManagementTotCnt(KnoManagementVO searchVO) throws Exception;
 
 	/**
-	 * 지식정보 상세 정보를 조회한다.
-	 * @param knoManagement 조회할 지식정보 식별 정보가 담긴 모델
-	 * @return 지식정보 상세 모델
-	 * @throws Exception 식별자가 없거나 해당 지식정보가 존재하지 않거나 데이터 접근 오류가 발생한 경우
+	 * 吏?앹젙蹂??곸꽭 ?뺣낫瑜?議고쉶?쒕떎.
+	 * @param knoManagement 議고쉶??吏?앹젙蹂??앸퀎 ?뺣낫媛 ?닿릿 紐⑤뜽
+	 * @return 吏?앹젙蹂??곸꽭 紐⑤뜽
+	 * @throws Exception ?앸퀎?먭? ?녾굅???대떦 吏?앹젙蹂닿? 議댁옱?섏? ?딄굅???곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	KnoManagement selectKnoManagement(KnoManagement knoManagement) throws Exception;
 
 	/**
-	 * 지식정보 정보를 신규로 등록한다.
-	 * @param knoManagement 등록할 지식정보 모델
-	 * @throws Exception 필수 값 누락, 권한 없음, 또는 데이터 접근 오류가 발생한 경우
+	 * 吏?앹젙蹂??뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param knoManagement ?깅줉??吏?앹젙蹂?紐⑤뜽
+	 * @throws Exception ?꾩닔 媛??꾨씫, 沅뚰븳 ?놁쓬, ?먮뒗 ?곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	void insertKnoManagement(KnoManagement knoManagement) throws Exception;
 
 	/**
-	 * 기 등록된 지식정보 정보를 수정한다.
-	 * @param knoManagement 수정할 지식정보 모델
-	 * @throws Exception 대상이 존재하지 않거나 권한 없음, 또는 데이터 접근 오류가 발생한 경우
+	 * 湲??깅줉??吏?앹젙蹂??뺣낫瑜??섏젙?쒕떎.
+	 * @param knoManagement ?섏젙??吏?앹젙蹂?紐⑤뜽
+	 * @throws Exception ??곸씠 議댁옱?섏? ?딄굅??沅뚰븳 ?놁쓬, ?먮뒗 ?곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	void updateKnoManagement(KnoManagement knoManagement) throws Exception;
 
 	/**
-	 * 기 등록된 지식정보 정보를 삭제한다.
-	 * @param knoManagement 삭제할 지식정보 모델
-	 * @throws Exception 대상이 존재하지 않거나 권한 없음, 또는 데이터 접근 오류가 발생한 경우
+	 * 湲??깅줉??吏?앹젙蹂??뺣낫瑜???젣?쒕떎.
+	 * @param knoManagement ??젣??吏?앹젙蹂?紐⑤뜽
+	 * @throws Exception ??곸씠 議댁옱?섏? ?딄굅??沅뚰븳 ?놁쓬, ?먮뒗 ?곗씠???묎렐 ?ㅻ쪟媛 諛쒖깮??寃쎌슦
 	 */
 	void deleteKnoManagement(KnoManagement knoManagement) throws Exception;
 

@@ -5,98 +5,98 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * 사용자 정보 조회를 위한 VO  클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?ъ슜???뺣낫 議고쉶瑜??꾪븳 VO  ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.4.6  이삼섭          최초 생성
+ *   2009.4.6  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class UserInfVO implements Serializable {
 
-	/** 유일 아이디 */
+	/** ?좎씪 ?꾩씠??*/
 	private String uniqId = "";
 
-	/** 사용자 아이디 */
+	/** ?ъ슜???꾩씠??*/
 	private String userId = "";
 
-	/** 사용자 명 */
+	/** ?ъ슜??紐?*/
 	private String userNm = "";
 
-	/** 사용자 우편번호 */
+	/** ?ъ슜???고렪踰덊샇 */
 	private String userZip = "";
 
-	/** 사용자 주소 */
+	/** ?ъ슜??二쇱냼 */
 	private String userAdres = "";
 
-	/** 사용자 이메일 */
+	/** ?ъ슜???대찓??*/
 	private String userEmail = "";
 
-	/** 검색시작일 */
+	/** 寃?됱떆?묒씪 */
 	private String searchBgnDe = "";
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
 	private String searchCnd = "";
 
-	/** 검색종료일 */
+	/** 寃?됱쥌猷뚯씪 */
 	private String searchEndDe = "";
 
-	/** 검색단어 */
+	/** 寃?됰떒??*/
 	private String searchWrd = "";
 
-	/** 정렬순서(DESC,ASC) */
+	/** ?뺣젹?쒖꽌(DESC,ASC) */
 	private String sortOrdr = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
 	private String searchUseYn = "";
 
-	/** 현재페이지 */
+	/** ?꾩옱?섏씠吏 */
 	private int pageIndex = 1;
 
-	/** 페이지개수 */
+	/** ?섏씠吏媛쒖닔 */
 	private int pageUnit = 10;
 
-	/** 페이지사이즈 */
+	/** ?섏씠吏?ъ씠利?*/
 	private int pageSize = 10;
 
-	/** 첫페이지 인덱스 */
+	/** 泥ロ럹?댁? ?몃뜳??*/
 	private int firstIndex = 1;
 
-	/** 마지막페이지 인덱스 */
+	/** 留덉?留됲럹?댁? ?몃뜳??*/
 	private int lastIndex = 1;
 
-	/** 페이지당 레코드 개수 */
+	/** ?섏씠吏???덉퐫??媛쒖닔 */
 	private int recordCountPerPage = 10;
 
-	/** 레코드 번호 */
+	/** ?덉퐫??踰덊샇 */
 	private int rowNo = 0;
 
-	/** 대상 아이디 */
+	/** ????꾩씠??*/
 	private String trgetId = "";
 
-	/** 사용여부 */
+	/** ?ъ슜?щ? */
 	private String useAt = "Y";
 
-	/** 커뮤니티 아이디 */
+	/** 而ㅻ??덊떚 ?꾩씠??*/
 	private String cmmntyId = "";
 
-	/** 동호회 아이디 */
+	/** ?숉샇???꾩씠??*/
 	private String clubId = "";
 
-	/** 대상 중지 여부 (커뮤니티 또는 동호회) */
+	/** ???以묒? ?щ? (而ㅻ??덊떚 ?먮뒗 ?숉샇?? */
 	private String deletedAt = "N";
 
 	/**
-	 * uniqId attribute를 리턴한다.
+	 * uniqId attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the uniqId
 	 */
@@ -105,7 +105,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * uniqId attribute 값을 설정한다.
+	 * uniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param uniqId
 	 *            the uniqId to set
@@ -115,7 +115,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userId attribute를 리턴한다.
+	 * userId attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the userId
 	 */
@@ -124,7 +124,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userId attribute 값을 설정한다.
+	 * userId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param userId
 	 *            the userId to set
@@ -134,7 +134,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userNm attribute를 리턴한다.
+	 * userNm attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the userNm
 	 */
@@ -143,7 +143,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userNm attribute 값을 설정한다.
+	 * userNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param userNm
 	 *            the userNm to set
@@ -153,7 +153,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userZip attribute를 리턴한다.
+	 * userZip attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the userZip
 	 */
@@ -162,7 +162,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userZip attribute 값을 설정한다.
+	 * userZip attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param userZip
 	 *            the userZip to set
@@ -172,7 +172,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userAdres attribute를 리턴한다.
+	 * userAdres attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the userAdres
 	 */
@@ -181,7 +181,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userAdres attribute 값을 설정한다.
+	 * userAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param userAdres
 	 *            the userAdres to set
@@ -191,7 +191,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userEmail attribute를 리턴한다.
+	 * userEmail attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the userEmail
 	 */
@@ -200,7 +200,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * userEmail attribute 값을 설정한다.
+	 * userEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param userEmail
 	 *            the userEmail to set
@@ -210,7 +210,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchBgnDe attribute를 리턴한다.
+	 * searchBgnDe attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the searchBgnDe
 	 */
@@ -219,7 +219,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchBgnDe attribute 값을 설정한다.
+	 * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param searchBgnDe
 	 *            the searchBgnDe to set
@@ -229,7 +229,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchCnd attribute를 리턴한다.
+	 * searchCnd attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the searchCnd
 	 */
@@ -238,7 +238,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchCnd attribute 값을 설정한다.
+	 * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param searchCnd
 	 *            the searchCnd to set
@@ -248,7 +248,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchEndDe attribute를 리턴한다.
+	 * searchEndDe attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the searchEndDe
 	 */
@@ -257,7 +257,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchEndDe attribute 값을 설정한다.
+	 * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param searchEndDe
 	 *            the searchEndDe to set
@@ -267,7 +267,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchWrd attribute를 리턴한다.
+	 * searchWrd attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the searchWrd
 	 */
@@ -276,7 +276,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchWrd attribute 값을 설정한다.
+	 * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param searchWrd
 	 *            the searchWrd to set
@@ -286,7 +286,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * sortOrdr attribute를 리턴한다.
+	 * sortOrdr attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the sortOrdr
 	 */
@@ -295,7 +295,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * sortOrdr attribute 값을 설정한다.
+	 * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param sortOrdr
 	 *            the sortOrdr to set
@@ -305,7 +305,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute를 리턴한다.
+	 * searchUseYn attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the searchUseYn
 	 */
@@ -314,7 +314,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 값을 설정한다.
+	 * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param searchUseYn
 	 *            the searchUseYn to set
@@ -324,7 +324,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute를 리턴한다.
+	 * pageIndex attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the pageIndex
 	 */
@@ -333,7 +333,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 값을 설정한다.
+	 * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param pageIndex
 	 *            the pageIndex to set
@@ -343,7 +343,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute를 리턴한다.
+	 * pageUnit attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the pageUnit
 	 */
@@ -352,7 +352,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 값을 설정한다.
+	 * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param pageUnit
 	 *            the pageUnit to set
@@ -362,7 +362,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute를 리턴한다.
+	 * pageSize attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the pageSize
 	 */
@@ -371,7 +371,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 값을 설정한다.
+	 * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param pageSize
 	 *            the pageSize to set
@@ -381,7 +381,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute를 리턴한다.
+	 * firstIndex attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the firstIndex
 	 */
@@ -390,7 +390,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 값을 설정한다.
+	 * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param firstIndex
 	 *            the firstIndex to set
@@ -400,7 +400,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute를 리턴한다.
+	 * lastIndex attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the lastIndex
 	 */
@@ -409,7 +409,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 값을 설정한다.
+	 * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param lastIndex
 	 *            the lastIndex to set
@@ -419,7 +419,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute를 리턴한다.
+	 * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the recordCountPerPage
 	 */
@@ -428,7 +428,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을 설정한다.
+	 * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param recordCountPerPage
 	 *            the recordCountPerPage to set
@@ -438,7 +438,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * rowNo attribute를 리턴한다.
+	 * rowNo attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the rowNo
 	 */
@@ -447,7 +447,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * rowNo attribute 값을 설정한다.
+	 * rowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param rowNo
 	 *            the rowNo to set
@@ -457,7 +457,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * trgetId attribute를 리턴한다.
+	 * trgetId attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the trgetId
 	 */
@@ -466,7 +466,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * trgetId attribute 값을 설정한다.
+	 * trgetId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param trgetId
 	 *            the trgetId to set
@@ -476,7 +476,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * useAt attribute를 리턴한다.
+	 * useAt attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the useAt
 	 */
@@ -485,7 +485,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * useAt attribute 값을 설정한다.
+	 * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param useAt
 	 *            the useAt to set
@@ -495,7 +495,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * cmmntyId attribute를 리턴한다.
+	 * cmmntyId attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the cmmntyId
 	 */
@@ -504,7 +504,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * cmmntyId attribute 값을 설정한다.
+	 * cmmntyId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param cmmntyId
 	 *            the cmmntyId to set
@@ -514,7 +514,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * clubId attribute를 리턴한다.
+	 * clubId attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the clubId
 	 */
@@ -523,7 +523,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * clubId attribute 값을 설정한다.
+	 * clubId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param clubId
 	 *            the clubId to set
@@ -533,7 +533,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * deletedAt attribute를 리턴한다.
+	 * deletedAt attribute瑜?由ы꽩?쒕떎.
 	 *
 	 * @return the deletedAt
 	 */
@@ -542,7 +542,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * deletedAt attribute 값을 설정한다.
+	 * deletedAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 *
 	 * @param deletedAt
 	 *            the deletedAt to set
@@ -552,7 +552,7 @@ public class UserInfVO implements Serializable {
 	}
 
 	/**
-	 * toString 메소드를 대치한다.
+	 * toString 硫붿냼?쒕? ?移섑븳??
 	 */
 	@Override
 	public String toString() {

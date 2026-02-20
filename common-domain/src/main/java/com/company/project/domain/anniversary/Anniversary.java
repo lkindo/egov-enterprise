@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 기념일 정보 Entity
- * 레거시 테이블: NANNVRSRYMANAGE
+ * 疫꿸퀡????類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NANNVRSRYMANAGE
  */
 @Entity(name = "DomainAnniversary")
 @Table(name = "NANNVRSRYMANAGE")

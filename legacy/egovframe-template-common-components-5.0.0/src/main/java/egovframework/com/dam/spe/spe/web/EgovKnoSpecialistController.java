@@ -30,27 +30,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 지식전문가에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹쟾臾멸??????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식전문가에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식전문가의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앹쟾臾멸???????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹쟾臾멸???議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.08.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.12  박종선          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.06.19  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.08.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.06.19  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -75,14 +75,14 @@ public class EgovKnoSpecialistController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 등록된 지식전문가 정보를 조회 한다.
+	 * ?깅줉??吏?앹쟾臾멸? ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoSpecialistVO- 지식전문가 VO
-	 * @return String - 리턴 Url
+	 * @param KnoSpecialistVO- 吏?앹쟾臾멸? VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoSpecialistVO
 	 */
-	@IncludedInfo(name = "지식전문가관리", listUrl = "/dam/spe/spe/EgovComDamSpecialistList.do", order = 1270, gid = 80)
+	@IncludedInfo(name = "吏?앹쟾臾멸?愿由?, listUrl = "/dam/spe/spe/EgovComDamSpecialistList.do", order = 1270, gid = 80)
 	@RequestMapping(value = "/dam/spe/spe/EgovComDamSpecialistList.do")
 	public String selectKnoSpecialistList(@ModelAttribute("loginVO") LoginVO loginVO,
 			@ModelAttribute("searchVO") KnoSpecialistVO searchVO, ModelMap model) throws Exception {
@@ -112,10 +112,10 @@ public class EgovKnoSpecialistController {
 	}
 
 	/**
-	 * 지식전문가 상세 정보를 조회 한다.
+	 * 吏?앹쟾臾멸? ?곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KonSpecialistVO - 지식전문가 VO
-	 * @return String - 리턴 Url
+	 * @param KonSpecialistVO - 吏?앹쟾臾멸? VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KonSpecialistVO
 	 */
@@ -128,10 +128,10 @@ public class EgovKnoSpecialistController {
 	}
 
 	/**
-	 * 지식전문가 정보를 신규로 등록한다.
+	 * 吏?앹쟾臾멸? ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 * 
-	 * @param speNm - 지식전문가 model
-	 * @return String - 리턴 Url
+	 * @param speNm - 吏?앹쟾臾멸? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param speNm
 	 */
@@ -140,14 +140,14 @@ public class EgovKnoSpecialistController {
 			@ModelAttribute("mapMaterial") MapMaterial mapMaterial, BindingResult bindingResult,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
@@ -203,7 +203,7 @@ public class EgovKnoSpecialistController {
 				return "egovframework/com/dam/spe/spe/EgovComDamSpecialistRegist";
 			}
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			knoSpecialist.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			knoSpecialist.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -217,10 +217,10 @@ public class EgovKnoSpecialistController {
 	}
 
 	/**
-	 * 기 등록 된 지식전문가 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앹쟾臾멸? ?뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param speNm - 지식전문가 model
-	 * @return String - 리턴 Url
+	 * @param speNm - 吏?앹쟾臾멸? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param speNm
 	 */
@@ -228,7 +228,7 @@ public class EgovKnoSpecialistController {
 	public String updateKnoSpecialist(@Valid @ModelAttribute("speId") KnoSpecialist knoSpecialist, BindingResult bindingResult,
 			@RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
@@ -243,7 +243,7 @@ public class EgovKnoSpecialistController {
 				return "egovframework/com/dam/spe/spe/EgovComDamSpecialistModify";
 			}
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			knoSpecialist.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			knoSpecialist.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -255,10 +255,10 @@ public class EgovKnoSpecialistController {
 	}
 
 	/**
-	 * 기 등록된 지식전문가 정보를 삭제한다.
+	 * 湲??깅줉??吏?앹쟾臾멸? ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param siteUrl - 지식전문가 model
-	 * @return String - 리턴 Url
+	 * @param siteUrl - 吏?앹쟾臾멸? model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param speNm
 	 */

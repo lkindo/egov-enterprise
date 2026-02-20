@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 포상관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ긽愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 포상관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?ъ긽愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class RwardManageVO extends RwardManage implements Serializable {
@@ -21,7 +21,7 @@ public class RwardManageVO extends RwardManage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 포상자 목록
+	 * ?ъ긽??紐⑸줉
 	 */
 	List<RwardManageVO> rwardManageList;
 
@@ -39,47 +39,47 @@ public class RwardManageVO extends RwardManage implements Serializable {
 	}
 
 	/**
-	*  포상자명
+	*  ?ъ긽?먮챸
 	*/
 	private String rwardManNm;
 
 	/**
-	*  승인자명
+	*  ?뱀씤?먮챸
 	*/
 	private String sanctnerNm;
 
 	/**
-	*  포상코드명
+	*  ?ъ긽肄붾뱶紐?
 	*/
 	private String rwardCdNm;
 
 	/**
-	*  사용자 소속명
+	*  ?ъ슜???뚯냽紐?
 	*/
 	private String orgnztNm;
 
 	/**
-	*  승인자 소속명
+	*  ?뱀씤???뚯냽紐?
 	*/
 	private String sanctnerOrgnztNm;
 
 	/**
-	*  검색시작일자
+	*  寃?됱떆?묒씪??
 	*/
 	private String searchFromDate;
 
 	/**
-	*  검색종료일자
+	*  寃?됱쥌猷뚯씪??
 	*/
 	private String searchToDate;
 
 	/**
-	*  검색 성명
+	*  寃???깅챸
 	*/
 	private String searchNm;
 
 	/**
-	*  검색 진행구분
+	*  寃??吏꾪뻾援щ텇
 	*/
 	private String searchConfmAt;
 

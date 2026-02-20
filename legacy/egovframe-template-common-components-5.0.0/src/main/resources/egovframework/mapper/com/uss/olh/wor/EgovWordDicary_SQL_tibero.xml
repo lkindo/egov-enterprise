@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?><!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID 삭제  --><!--
-	수정일		수정자					수정내용
+<?xml version="1.0" encoding="UTF-8"?><!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID ??젣  --><!--
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.9.7   	이기하     	 	테이블 표준화에 따른 수정사항 반영
-					 		selectWordDicaryListTotCnt_S에 and A.FRST_REGISTER_ID = B.ESNTL_ID 추가
+  2011.9.7   	?닿린??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+					 		selectWordDicaryListTotCnt_S??and A.FRST_REGISTER_ID = B.ESNTL_ID 異붽?
 					 		
-  2011.09.19       서준식 		selectWordDicaryList_D 등록일자 Character 타입으로 변경
+  2011.09.19       ?쒖???		selectWordDicaryList_D ?깅줉?쇱옄 Character ??낆쑝濡?蹂寃?
 -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -22,8 +22,8 @@
 		<result property="lastUpdusrPnttm" column="LAST_UPDT_PNTTM"/>
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
 	</resultMap>
-<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID 삭제  -->
-	<!-- 용어사전::상세조회  -->
+<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID ??젣  -->
+	<!-- ?⑹뼱?ъ쟾::?곸꽭議고쉶  -->
 	<select id="selectWordDicaryDetail" resultMap="WordDicary">
 		
 			SELECT
@@ -41,8 +41,8 @@
 			WHERE 	A.WORD_ID=#{wordId}	and A.FRST_REGISTER_ID = B.ESNTL_ID
 		
 	</select>
-<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID 삭제  -->
-	<!-- 용어사전::목록조회  -->
+<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID ??젣  -->
+	<!-- ?⑹뼱?ъ쟾::紐⑸줉議고쉶  -->
 	<select id="selectWordDicaryList" parameterType="egovframework.com.uss.olh.wor.service.WordDicaryVO" resultMap="WordDicary">
 		
 			SELECT	WORD_ID,
@@ -80,7 +80,7 @@
 			WHERE ROWNUM <=  #{recordCountPerPage} and RNUM > #{firstIndex}
 			]]>
 	</select>
-<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID 삭제  -->
+<!-- WHERE	A.LAST_UPDUSR_ID = B.ESNTL_ID ??젣  -->
 	<select id="selectWordDicaryListCnt" parameterType="egovframework.com.uss.olh.wor.service.WordDicaryVO" resultType="int">
 		
 			SELECT	COUNT(*) totcnt

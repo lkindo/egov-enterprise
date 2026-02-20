@@ -17,11 +17,11 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 서버자원모니터링에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 서버자원모니터링에 대한 등록, 조회 기능을 제공한다.
+ * ?곸꽭?댁슜
+ * - ?쒕쾭?먯썝紐⑤땲?곕쭅??????깅줉, 議고쉶 湲곕뒫???쒓났?쒕떎.
  * </pre>
  * 
  * @author lee.m.j
@@ -30,13 +30,13 @@ import jakarta.annotation.Resource;
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.09.06  lee.m.j      최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.09.18  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2010.09.06  lee.m.j      理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.09.18  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -50,12 +50,12 @@ public class EgovServerResrceMntrngController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 서버자원모니터링의 대상정보 목록을 조회한다.
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅????곸젙蹂?紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param serverResrceMntrngVO - 서버자원모니터링 Vo
-	 * @return String - 리턴 Url
+	 * @param serverResrceMntrngVO - ?쒕쾭?먯썝紐⑤땲?곕쭅 Vo
+	 * @return String - 由ы꽩 Url
 	 */
-	@IncludedInfo(name = "서버자원모니터링-대상목록", order = 2170, gid = 90)
+	@IncludedInfo(name = "?쒕쾭?먯썝紐⑤땲?곕쭅-??곷ぉ濡?, order = 2170, gid = 90)
 	@RequestMapping(value = "/utl/sys/srm/selectMntrngServerList.do")
 	public String selectMntrngServerList(
 			@ModelAttribute("serverResrceMntrngVO") ServerResrceMntrngVO serverResrceMntrngVO, ModelMap model)
@@ -83,10 +83,10 @@ public class EgovServerResrceMntrngController {
 	}
 
 	/**
-	 * 서버자원모니터링의 로그정보 목록화면 이동
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅??濡쒓렇?뺣낫 紐⑸줉?붾㈃ ?대룞
 	 * 
-	 * @param serverResrceMntrngVO - 서버자원모니터링 Vo
-	 * @return String - 리턴 Url
+	 * @param serverResrceMntrngVO - ?쒕쾭?먯썝紐⑤땲?곕쭅 Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/srm/selectServerResrceMntrngListView.do")
 	public String selectServerResrceMntrngListView(
@@ -102,10 +102,10 @@ public class EgovServerResrceMntrngController {
 	}
 
 	/**
-	 * 서버자원모니터링의 로그정보 목록을 조회한다.
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅??濡쒓렇?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param serverResrceMntrngVO - 서버자원모니터링 Vo
-	 * @return String - 리턴 Url
+	 * @param serverResrceMntrngVO - ?쒕쾭?먯썝紐⑤땲?곕쭅 Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/srm/selectServerResrceMntrngList.do")
 	public String selectServerResrceMntrngList(
@@ -147,10 +147,10 @@ public class EgovServerResrceMntrngController {
 	}
 
 	/**
-	 * 서버자원모니터링 로그의 상세정보를 조회한다.
+	 * ?쒕쾭?먯썝紐⑤땲?곕쭅 濡쒓렇???곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param serverResrceMntrngVO - 서버자원모니터링 Vo
-	 * @return String - 리턴 Url
+	 * @param serverResrceMntrngVO - ?쒕쾭?먯썝紐⑤땲?곕쭅 Vo
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value = "/utl/sys/srm/getServerResrceMntrng.do")
 	public String selectServerResrceMntrng(@RequestParam("logId") String logId,

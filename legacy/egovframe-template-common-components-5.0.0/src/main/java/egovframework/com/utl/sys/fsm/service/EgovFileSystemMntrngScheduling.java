@@ -20,24 +20,24 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링을 위한 스케쥴링클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅???꾪븳 ?ㅼ?伊대쭅?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 네트워크서비스 모니터링 기능을 제공한다.
- * - 네트워크서비스 모니터링 결과를 관리자에게 이메일로 전송한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 湲곕뒫???쒓났?쒕떎.
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅 寃곌낵瑜?愿由ъ옄?먭쾶 ?대찓?쇰줈 ?꾩넚?쒕떎.
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *  수정일       수정자     수정내용
+ *  ?섏젙??      ?섏젙??    ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *  2017.03.03 	 조성원 	시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
- *  2022.11.11   김혜준   시큐어코딩 처리
- *  2024.05.02   김수용   NSR 보안조치 (파일시스템명에서 악의적인 문자열 제거)
+ *  2017.03.03 	 議곗꽦??	?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
+ *  2022.11.11   源?쒖?   ?쒗걧?댁퐫??泥섎━
+ *  2024.05.02   源?섏슜   NSR 蹂댁븞議곗튂 (?뚯씪?쒖뒪?쒕챸?먯꽌 ?낆쓽?곸씤 臾몄옄???쒓굅)
  *
  */
 
@@ -55,11 +55,11 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovFileSystemMntrngScheduling.class);
 
-	// 모니터링 대상을 읽기위한 페이지 크기
+	// 紐⑤땲?곕쭅 ??곸쓣 ?쎄린?꾪븳 ?섏씠吏 ?ш린
 	private static final int RECORD_COUNT_PER_PAGE = 10000;
 
 	/**
-	 * DB서비스 모니터링를 수행한다.
+	 * DB?쒕퉬??紐⑤땲?곕쭅瑜??섑뻾?쒕떎.
 	 *
 	 * @param
 	 * @return
@@ -67,24 +67,24 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
 	 */
 	@SuppressWarnings("unchecked")
 	public void monitorFileSys() throws Exception {
-		// 모니터링 대상 정보 읽어들이기
+		// 紐⑤땲?곕쭅 ????뺣낫 ?쎌뼱?ㅼ씠湲?
 		Map<String, Object> map = null;
-		//2017.03.03 	조성원 	시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
+		//2017.03.03 	議곗꽦??	?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
 		List<FileSysMntrng> targetList = new ArrayList<>();
 		FileSysMntrngVO searchVO = new FileSysMntrngVO();
-		// 모니터링 대상 검색 조건 초기화
+		// 紐⑤땲?곕쭅 ???寃??議곌굔 珥덇린??
 		searchVO.setPageIndex(1);
 		searchVO.setFirstIndex(0);
 		searchVO.setRecordCountPerPage(RECORD_COUNT_PER_PAGE);
 		map = ntwrkSvcMntrngService.selectFileSysMntrngList(searchVO);
-		//2017.03.03 	조성원 	시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
+		//2017.03.03 	議곗꽦??	?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
 		if(map != null){
 			targetList = (List<FileSysMntrng>)map.get("resultList");
 		}
 
-		LOGGER.debug("조회조건 {}", searchVO);
-		LOGGER.debug("Result 건수 : {}", targetList.size());
-		// 서비스체크 함수 호출.
+		LOGGER.debug("議고쉶議곌굔 {}", searchVO);
+		LOGGER.debug("Result 嫄댁닔 : {}", targetList.size());
+		// ?쒕퉬?ㅼ껜???⑥닔 ?몄텧.
 		Iterator<FileSysMntrng> iter = targetList.iterator();
 		FileSysMntrng target = null;
 
@@ -97,7 +97,7 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
 			nrmltAt = true;
 			target = iter.next();
 			LOGGER.debug("Data : {}", target);
-			// 서비스 체크 수행.
+			// ?쒕퉬??泥댄겕 ?섑뻾.
 			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.KOREA);
 			target.setCreatDt(formatter.format(new java.util.Date()));
 
@@ -118,13 +118,13 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
 				nrmltAt = false;
 			}
 
-			// email 전송.
+			// email ?꾩넚.
 			if (!nrmltAt) {
-				target.setMntrngSttus("비정상");
+				target.setMntrngSttus("鍮꾩젙??);
 				sendEmail(target);
 			}
 
-			// DB에 결과값 저장
+			// DB??寃곌낵媛????
 			if (nrmltAt) {
 				target.setMntrngSttus("01");
 			} else {
@@ -137,9 +137,9 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
 	}
 
 	/**
-	 * 이메일을 전송한다.
+	 * ?대찓?쇱쓣 ?꾩넚?쒕떎.
 	 *
-	 * @param   target   모니터링 대상정보
+	 * @param   target   紐⑤땲?곕쭅 ??곸젙蹂?
 	 * @return
 	 *
 	 */
@@ -149,51 +149,51 @@ public class EgovFileSystemMntrngScheduling extends EgovAbstractServiceImpl {
     	String errorContents = "";
 
     	SimpleMailMessage msg = new SimpleMailMessage(this.mntrngMessage);
-        // 수신자
+        // ?섏떊??
         msg.setTo(target.getMngrEmailAddr());
-        // 메일제목
+        // 硫붿씪?쒕ぉ
         subject = msg.getSubject();
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if (StringUtils.isNotEmpty(subject)) {
-			subject = EgovStringUtil.replace(subject, "{모니터링종류}", "파일시스템모니터링");
+			subject = EgovStringUtil.replace(subject, "{紐⑤땲?곕쭅醫낅쪟}", "?뚯씪?쒖뒪?쒕え?덊꽣留?);
 	        msg.setSubject(subject);
 		}
-        // 메일내용
+        // 硫붿씪?댁슜
         text = msg.getText();
-        // 2022.11.11 시큐어코딩 처리
+        // 2022.11.11 ?쒗걧?댁퐫??泥섎━
      	if (StringUtils.isNotEmpty(subject)) {
-	        text = EgovStringUtil.replace(text, "{모니터링종류}", "파일시스템모니터링");
-	        errorContents = "파일시스템명 : ";
+	        text = EgovStringUtil.replace(text, "{紐⑤땲?곕쭅醫낅쪟}", "?뚯씪?쒖뒪?쒕え?덊꽣留?);
+	        errorContents = "?뚯씪?쒖뒪?쒕챸 : ";
 	        errorContents += target.getFileSysNm();
 	        errorContents += "\n";
-	        errorContents += "파일시스템관리명 : ";
+	        errorContents += "?뚯씪?쒖뒪?쒓?由щ챸 : ";
 	        errorContents += target.getFileSysManageNm();
 	        errorContents += "\n";
 	        if(target.getLogInfo() != null && !target.getLogInfo().equals("")){
-	        	errorContents += "해당파일의 파일시스템 정보를 가져오는중 에러가 발생하였습니다.";
+	        	errorContents += "?대떦?뚯씪???뚯씪?쒖뒪???뺣낫瑜?媛?몄삤?붿쨷 ?먮윭媛 諛쒖깮?섏??듬땲??";
 	        }else{
-		        errorContents += "크기 : ";
+		        errorContents += "?ш린 : ";
 		        errorContents += target.getFileSysMg();
 		        errorContents += "GB\n";
-		        errorContents += "임계치 : ";
+		        errorContents += "?꾧퀎移?: ";
 		        errorContents += target.getFileSysThrhld();
 		        errorContents += "GB\n";
-		        errorContents += "사용량 : ";
+		        errorContents += "?ъ슜??: ";
 		        errorContents += target.getFileSysUsgQty();
 		        errorContents += "GB\n";
 	        }
-	        errorContents += "상태 : ";
+	        errorContents += "?곹깭 : ";
 	        errorContents += target.getMntrngSttus();
 	        errorContents += "\n";
-	        errorContents += "모니터링 시각 : ";
+	        errorContents += "紐⑤땲?곕쭅 ?쒓컖 : ";
 	        errorContents += EgovDateUtil.convertDate(target.getCreatDt(), "", "", "");
 	        errorContents += "\n";
 	        if(target.getLogInfo() != null && !target.getLogInfo().equals("")){
-	        	errorContents += target.getFileSysManageNm() + " 의 파일시스템 상태가 비정상입니다.  \n로그를 확인해주세요.";
+	        	errorContents += target.getFileSysManageNm() + " ???뚯씪?쒖뒪???곹깭媛 鍮꾩젙?곸엯?덈떎.  \n濡쒓렇瑜??뺤씤?댁＜?몄슂.";
 	        }else{
-	        	errorContents += target.getFileSysManageNm() + " 의 파일시스템이 임계치를 넘었습니다.";
+	        	errorContents += target.getFileSysManageNm() + " ???뚯씪?쒖뒪?쒖씠 ?꾧퀎移섎? ?섏뿀?듬땲??";
 	        }
-	        text = EgovStringUtil.replace(text, "{에러내용}", errorContents);
+	        text = EgovStringUtil.replace(text, "{?먮윭?댁슜}", errorContents);
 	        msg.setText(text);
      	}
 

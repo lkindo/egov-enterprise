@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 연계 기관 서비스 구현체
+ * ?곌퀎 湲곌? ?쒕퉬??援ы쁽泥?
  */
 @Service
 @RequiredArgsConstructor

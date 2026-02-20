@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 연계 기관 Repository
+ * ?怨뚰?疫꿸퀗? Repository
  */
 public interface IntegrationInstitutionRepository
         extends JpaRepository<IntegrationInstitution, String>, IntegrationInstitutionRepositoryCustom {

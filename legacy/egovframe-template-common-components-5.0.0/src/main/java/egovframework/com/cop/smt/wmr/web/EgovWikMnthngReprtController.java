@@ -35,28 +35,28 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 주간월간보고에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 二쇨컙?붽컙蹂닿퀬?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 주간월간보고에 대한 등록, 수정, 삭제, 조회, 승인기능을 제공한다.
- * - 주간월간보고의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 二쇨컙?붽컙蹂닿퀬??????깅줉, ?섏젙, ??젣, 議고쉶, ?뱀씤湲곕뒫???쒓났?쒕떎.
+ * - 二쇨컙?붽컙蹂닿퀬??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 장철호
- * @since 19-7-2010 오전 10:12:47
+ * @author ?μ쿋??
+ * @since 19-7-2010 ?ㅼ쟾 10:12:47
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.07.19  장철호          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2019.12.06  신용호          KISA 보안약점 조치 (위험한 형식 파일 업로드)
- *   2025.06.12  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.07.19  ?μ쿋??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2019.12.06  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 (?꾪뿕???뺤떇 ?뚯씪 ?낅줈??
+ *   2025.06.12  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -75,7 +75,7 @@ public class EgovWikMnthngReprtController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-    // 첨부파일 관련
+    // 泥⑤??뚯씪 愿??
 	@Resource(name="EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -85,7 +85,7 @@ public class EgovWikMnthngReprtController {
 	// Logger log = Logger.getLogger(this.getClass());
 
 	/**
-	 * 보고자 정보에 대한 팝업 목록을 조회한다.
+	 * 蹂닿퀬???뺣낫??????앹뾽 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param ReportrVO
 	 * @return String
@@ -99,7 +99,7 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 보고자 정보에 대한 목록을 조회한다.
+	 * 蹂닿퀬???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param ReportrVO
 	 * @return String
@@ -136,20 +136,20 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보에 대한 목록을 조회한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprtVO
 	 */
-	@IncludedInfo(name = "주간/월간보고관리", order = 410, gid = 40)
+	@IncludedInfo(name = "二쇨컙/?붽컙蹂닿퀬愿由?, order = 410, gid = 40)
 	@RequestMapping("/cop/smt/wmr/selectWikMnthngReprtList.do")
 	public String selectWikMnthngReprtList(@ModelAttribute("searchVO") WikMnthngReprtVO wikMnthngReprtVO,
 			ModelMap model) throws Exception {
 		// LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		wikMnthngReprtVO.setPageUnit(propertyService.getInt("pageUnit"));
@@ -178,10 +178,10 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보의 등록페이지로 이동한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫???깅줉?섏씠吏濡??대룞?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */
@@ -190,18 +190,18 @@ public class EgovWikMnthngReprtController {
 			BindingResult bindingResult, ModelMap model) throws Exception {
 		String sLocationUrl = "egovframework/com/cop/smt/wmr/EgovWikMnthngReprtRegist";
 
-		// 파일업로드 제한
+		// ?뚯씪?낅줈???쒗븳
 		String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 		String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 1. 로그인 객체 선언
+		// 1. 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.KOREA);
@@ -218,17 +218,17 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보의 수정페이지로 이동한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫???섏젙?섏씠吏濡??대룞?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */
 	@RequestMapping("/cop/smt/wmr/modifyWikMnthngReprt.do")
 	public String modifyWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -258,10 +258,10 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보를 조회한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param WikMnthngReprtVO - 주간월간보고 VO
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprtVO - 二쇨컙?붽컙蹂닿퀬 VO
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprtVO
 	 */
@@ -276,14 +276,14 @@ public class EgovWikMnthngReprtController {
 		model.addAttribute("wikMnthngReprt", wikMnthngReprt);
 
 		/*
-		 * 공통코드 우선순위 조회
+		 * 怨듯넻肄붾뱶 ?곗꽑?쒖쐞 議고쉶
 		 */
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM060");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("reprtSe", listComCode);
 
-		// 1. 로그인 객체 선언
+		// 1. 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		model.addAttribute("uniqId", loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -291,10 +291,10 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보를 수정한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??섏젙?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */
@@ -308,7 +308,7 @@ public class EgovWikMnthngReprtController {
 			WikMnthngReprt wikMnthngReprt = wikMnthngReprtService.selectWikMnthngReprt(wikMnthngReprtVO);
 			model.addAttribute("wikMnthngReprt", wikMnthngReprt);
 
-			// 파일업로드 제한
+			// ?뚯씪?낅줈???쒗븳
 			String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 			String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -320,8 +320,8 @@ public class EgovWikMnthngReprtController {
 
 		if (isAuthenticated) {
 			/*
-			 * ***************************************************************** // 첨부파일 관련
-			 * ID 생성 start....
+			 * ***************************************************************** // 泥⑤??뚯씪 愿??
+			 * ID ?앹꽦 start....
 			 */
 			String atchFileId = wikMnthngReprtVO.getAtchFileId();
 
@@ -334,8 +334,8 @@ public class EgovWikMnthngReprtController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					wikMnthngReprtVO.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					wikMnthngReprtVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					FileVO fvo = new FileVO();
@@ -347,7 +347,7 @@ public class EgovWikMnthngReprtController {
 			}
 
 			wikMnthngReprtVO.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-			// 수정 시 작성자만 가능하도록
+			// ?섏젙 ???묒꽦?먮쭔 媛?ν븯?꾨줉
 			wikMnthngReprtVO.setSearchId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			wikMnthngReprtService.updateWikMnthngReprt(wikMnthngReprtVO);
 		}
@@ -356,31 +356,31 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보를 등록한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */
 	@RequestMapping("/cop/smt/wmr/insertWikMnthngReprt.do")
 	public String insertWikMnthngReprt(final MultipartHttpServletRequest multiRequest,
 			@Valid @ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, BindingResult bindingResult, ModelMap model) throws Exception{
-    	// 0. Spring Security 사용자권한 처리
+    	// 0. Spring Security ?ъ슜?먭텒??泥섎━
     	Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
     	if(!isAuthenticated) {
     		model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
         	return "redirect:/uat/uia/egovLoginUsr.do";
     	}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/wmr/EgovWikMnthngReprtRegist";
 
 		if(bindingResult.hasErrors()){
 
-			// 파일업로드 제한
+			// ?뚯씪?낅줈???쒗븳
 			String whiteListFileUploadExtensions = EgovProperties.getProperty("Globals.fileUpload.Extensions");
 			String fileUploadMaxSize = EgovProperties.getProperty("Globals.fileUpload.maxSize");
 
@@ -389,7 +389,7 @@ public class EgovWikMnthngReprtController {
 			return sLocationUrl;
 		}
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -398,13 +398,13 @@ public class EgovWikMnthngReprtController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		wikMnthngReprtVO.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		wikMnthngReprtVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		wikMnthngReprtVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		wikMnthngReprtVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -415,32 +415,32 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보를 삭제한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */
 	@RequestMapping("/cop/smt/wmr/deleteWikMnthngReprt.do")
 	public String deleteWikMnthngReprt(@ModelAttribute("wikMnthngReprtVO") WikMnthngReprtVO wikMnthngReprtVO, ModelMap model) throws Exception{
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = wikMnthngReprtVO.getAtchFileId();
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		wikMnthngReprtVO.setSearchId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
@@ -449,10 +449,10 @@ public class EgovWikMnthngReprtController {
 	}
 
 	/**
-	 * 주간월간보고 정보를 승인한다.
+	 * 二쇨컙?붽컙蹂닿퀬 ?뺣낫瑜??뱀씤?쒕떎.
 	 * 
-	 * @param WikMnthngReprt - 주간월간보고 model
-	 * @return String - 리턴 URL
+	 * @param WikMnthngReprt - 二쇨컙?붽컙蹂닿퀬 model
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param wikMnthngReprt
 	 */

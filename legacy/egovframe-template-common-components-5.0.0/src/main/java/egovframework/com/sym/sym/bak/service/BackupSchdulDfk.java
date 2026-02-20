@@ -3,17 +3,17 @@ package egovframework.com.sym.sym.bak.service;
 import java.io.Serializable;
 
 /**
- * 백업스케줄요일에 대한 model 클래스
+ * 諛깆뾽?ㅼ?以꾩슂?쇱뿉 ???model ?대옒??
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @version 1.0
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.09.01   김진만     최초 생성
+ *  2010.09.01   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public class BackupSchdulDfk implements Serializable {
@@ -21,17 +21,17 @@ public class BackupSchdulDfk implements Serializable {
 	private static final long serialVersionUID = -6208617298024325398L;
 
 	/**
-	 * 백업작업ID
+	 * 諛깆뾽?묒뾽ID
 	 */
 	private String backupOpertId;
 
 	/**
-	 * 실행스케줄요일
+	 * ?ㅽ뻾?ㅼ?以꾩슂??
 	 */
 	private String executSchdulDfkSe;
 
 	/**
-	 * 실행스케줄요일명
+	 * ?ㅽ뻾?ㅼ?以꾩슂?쇰챸
 	 */
 	private String executSchdulDfkSeNm;
 

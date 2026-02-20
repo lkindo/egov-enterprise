@@ -6,98 +6,98 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 
 /**
- * 명함사용자 정보를 관리하기 위한 모델 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 紐낇븿?ъ슜???뺣낫瑜?愿由ы븯湲??꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.3.28  이삼섭          최초 생성
+ *   2009.3.28  ?댁궪??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class NameCardUser implements Serializable {
 
-    /** 생성일시 */
+    /** ?앹꽦?쇱떆 */
     private String creatDt = "";
     
-    /** 명함아이디 */
+    /** 紐낇븿?꾩씠??*/
     private String ncrdId = "";
     
-    /** 등록구분코드 */
+    /** ?깅줉援щ텇肄붾뱶 */
     private String registSeCode = "";
     
-    /** 사용여부 */
+    /** ?ъ슜?щ? */
     private String useAt = "";
     
-    /** 사용자 아이디 */
+    /** ?ъ슜???꾩씠??*/
     private String emplyrId = "";
     
-    /** 사용자 명 */
+    /** ?ъ슜??紐?*/
     private String userNm = "";
     
-    /** 명함 이름 */
+    /** 紐낇븿 ?대쫫 */
     private String ncrdNm = "";
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm = "";
     
-    /** 최초등록자 아이디 */
+    /** 理쒖큹?깅줉???꾩씠??*/
     private String frstRegisterId = "";
     
-    /** 회사명 */
+    /** ?뚯궗紐?*/
     private String cmpnyNm = "";
     
-    /** 부서명 */
+    /** 遺?쒕챸 */
     private String deptNm = "";
 
-    /** 검색시작일 */
+    /** 寃?됱떆?묒씪 */
     private String searchBgnDe = "";
     
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCnd = "";
     
-    /** 검색종료일 */
+    /** 寃?됱쥌猷뚯씪 */
     private String searchEndDe = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchWrd = "";
     
-    /** 정렬순서(DESC,ASC) */
+    /** ?뺣젹?쒖꽌(DESC,ASC) */
     private String sortOrdr = "";
 
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
-    /** 첫페이지 인덱스 */
+    /** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
 
-    /** 마지막페이지 인덱스 */
+    /** 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
 
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
 
-    /** 레코드 번호 */
+    /** ?덉퐫??踰덊샇 */
     private int rowNo = 0;
 
     /**
-     * creatDt attribute를 리턴한다.
+     * creatDt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the creatDt
      */
@@ -106,7 +106,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * creatDt attribute 값을 설정한다.
+     * creatDt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param creatDt
      *            the creatDt to set
@@ -116,7 +116,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * ncrdId attribute를 리턴한다.
+     * ncrdId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdId
      */
@@ -125,7 +125,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * ncrdId attribute 값을 설정한다.
+     * ncrdId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdId
      *            the ncrdId to set
@@ -135,7 +135,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * registSeCode attribute를 리턴한다.
+     * registSeCode attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the registSeCode
      */
@@ -144,7 +144,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * registSeCode attribute 값을 설정한다.
+     * registSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param registSeCode
      *            the registSeCode to set
@@ -154,7 +154,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * useAt attribute를 리턴한다.
+     * useAt attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the useAt
      */
@@ -163,7 +163,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * useAt attribute 값을 설정한다.
+     * useAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param useAt
      *            the useAt to set
@@ -173,7 +173,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * emplyrId attribute를 리턴한다.
+     * emplyrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the emplyrId
      */
@@ -182,7 +182,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * emplyrId attribute 값을 설정한다.
+     * emplyrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param emplyrId
      *            the emplyrId to set
@@ -192,7 +192,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * userNm attribute를 리턴한다.
+     * userNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the userNm
      */
@@ -201,7 +201,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * userNm attribute 값을 설정한다.
+     * userNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param userNm
      *            the userNm to set
@@ -211,7 +211,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * ncrdNm attribute를 리턴한다.
+     * ncrdNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdNm
      */
@@ -220,7 +220,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * ncrdNm attribute 값을 설정한다.
+     * ncrdNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdNm
      *            the ncrdNm to set
@@ -230,7 +230,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute를 리턴한다.
+     * frstRegisterPnttm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterPnttm
      */
@@ -239,7 +239,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm attribute 값을 설정한다.
+     * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterPnttm
      *            the frstRegisterPnttm to set
@@ -249,7 +249,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute를 리턴한다.
+     * frstRegisterId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the frstRegisterId
      */
@@ -258,7 +258,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * frstRegisterId attribute 값을 설정한다.
+     * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param frstRegisterId
      *            the frstRegisterId to set
@@ -268,7 +268,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * cmpnyNm attribute를 리턴한다.
+     * cmpnyNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the cmpnyNm
      */
@@ -277,7 +277,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * cmpnyNm attribute 값을 설정한다.
+     * cmpnyNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param cmpnyNm
      *            the cmpnyNm to set
@@ -287,7 +287,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * deptNm attribute를 리턴한다.
+     * deptNm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the deptNm
      */
@@ -296,7 +296,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * deptNm attribute 값을 설정한다.
+     * deptNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param deptNm
      *            the deptNm to set
@@ -306,7 +306,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchBgnDe attribute를 리턴한다.
+     * searchBgnDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchBgnDe
      */
@@ -315,7 +315,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchBgnDe attribute 값을 설정한다.
+     * searchBgnDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchBgnDe
      *            the searchBgnDe to set
@@ -325,7 +325,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchCnd attribute를 리턴한다.
+     * searchCnd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchCnd
      */
@@ -334,7 +334,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchCnd attribute 값을 설정한다.
+     * searchCnd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchCnd
      *            the searchCnd to set
@@ -344,7 +344,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchEndDe attribute를 리턴한다.
+     * searchEndDe attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchEndDe
      */
@@ -353,7 +353,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchEndDe attribute 값을 설정한다.
+     * searchEndDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchEndDe
      *            the searchEndDe to set
@@ -363,7 +363,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchWrd attribute를 리턴한다.
+     * searchWrd attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchWrd
      */
@@ -372,7 +372,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchWrd attribute 값을 설정한다.
+     * searchWrd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchWrd
      *            the searchWrd to set
@@ -382,7 +382,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * sortOrdr attribute를 리턴한다.
+     * sortOrdr attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the sortOrdr
      */
@@ -391,7 +391,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * sortOrdr attribute 값을 설정한다.
+     * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param sortOrdr
      *            the sortOrdr to set
@@ -401,7 +401,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchUseYn attribute를 리턴한다.
+     * searchUseYn attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the searchUseYn
      */
@@ -410,7 +410,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * searchUseYn attribute 값을 설정한다.
+     * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param searchUseYn
      *            the searchUseYn to set
@@ -420,7 +420,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageIndex attribute를 리턴한다.
+     * pageIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageIndex
      */
@@ -429,7 +429,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageIndex attribute 값을 설정한다.
+     * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageIndex
      *            the pageIndex to set
@@ -439,7 +439,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageUnit attribute를 리턴한다.
+     * pageUnit attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageUnit
      */
@@ -448,7 +448,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageUnit attribute 값을 설정한다.
+     * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageUnit
      *            the pageUnit to set
@@ -458,7 +458,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageSize attribute를 리턴한다.
+     * pageSize attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the pageSize
      */
@@ -467,7 +467,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * pageSize attribute 값을 설정한다.
+     * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param pageSize
      *            the pageSize to set
@@ -477,7 +477,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * firstIndex attribute를 리턴한다.
+     * firstIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the firstIndex
      */
@@ -486,7 +486,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * firstIndex attribute 값을 설정한다.
+     * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param firstIndex
      *            the firstIndex to set
@@ -496,7 +496,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * lastIndex attribute를 리턴한다.
+     * lastIndex attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the lastIndex
      */
@@ -505,7 +505,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * lastIndex attribute 값을 설정한다.
+     * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param lastIndex
      *            the lastIndex to set
@@ -515,7 +515,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute를 리턴한다.
+     * recordCountPerPage attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the recordCountPerPage
      */
@@ -524,7 +524,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * recordCountPerPage attribute 값을 설정한다.
+     * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param recordCountPerPage
      *            the recordCountPerPage to set
@@ -534,7 +534,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * rowNo attribute를 리턴한다.
+     * rowNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the rowNo
      */
@@ -543,7 +543,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * rowNo attribute 값을 설정한다.
+     * rowNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param rowNo
      *            the rowNo to set
@@ -553,7 +553,7 @@ public class NameCardUser implements Serializable {
     }
 
     /**
-     * toString 메소드를 대치한다.
+     * toString 硫붿냼?쒕? ?移섑븳??
      */
     public String toString() {
 	return ToStringBuilder.reflectionToString(this);

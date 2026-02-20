@@ -15,7 +15,7 @@ public interface EgovRewardService {
 
     Page<RewardDto> getRewardList(String searchKeyword, Pageable pageable);
 
-    // 승인 처리 (약식 승인 연동)
+    // ?뱀씤 泥섎━ (?쎌떇 ?뱀씤 ?곕룞)
     void confirmReward(RewardDto dto);
 
     Page<RewardDto> getRewardConfirmList(String sanctnerId, Pageable pageable);

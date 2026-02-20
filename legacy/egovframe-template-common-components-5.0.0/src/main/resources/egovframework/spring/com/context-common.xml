@@ -12,7 +12,7 @@
 
 	<context:annotation-config/>
 	
-	<!-- 국제화 Message 설정 -->
+	<!-- 援?젣??Message ?ㅼ젙 -->
 	<bean id="messageSource" class="egovframework.com.cmm.util.EgovWildcardReloadableResourceBundleMessageSource">
 		<property name="egovBasenames">
 			<list>
@@ -34,7 +34,7 @@
         </property>
     </bean>
     
-	<!-- 실행환경에서 빈 이름 참조(AbstractServiceImpl) -->
+	<!-- ?ㅽ뻾?섍꼍?먯꽌 鍮??대쫫 李몄“(AbstractServiceImpl) -->
 	<bean id="leaveaTrace" class="org.egovframe.rte.fdl.cmmn.trace.LeaveaTrace">
 		<property name="traceHandlerServices">
 			<list>
@@ -63,7 +63,7 @@
 
 	<bean id="egov.defaultTraceHandler" class="org.egovframe.rte.fdl.cmmn.trace.handler.DefaultTraceHandler" />
 
-	<!-- MULTIPART RESOLVERS : Spring Framework 6.2.8 기반 파일 업로드 설정 -->
+	<!-- MULTIPART RESOLVERS : Spring Framework 6.2.8 湲곕컲 ?뚯씪 ?낅줈???ㅼ젙 -->
 	<bean id="local.MultiCommonsMultipartResolver" class="egovframework.com.cmm.web.EgovMultipartResolver" />
 
 </beans>

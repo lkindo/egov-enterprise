@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.company.project.domain.meeting.QMeetingPlace.meetingPlace;
 
 /**
- * 회의실 정보 Repository Custom 구현체
+ * ???벥???類ｋ궖 Repository Custom ?닌뗭겱筌?
  */
 @RequiredArgsConstructor
 public class MeetingPlaceRepositoryImpl implements MeetingPlaceRepositoryCustom {

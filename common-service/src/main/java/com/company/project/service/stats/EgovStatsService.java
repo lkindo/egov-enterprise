@@ -5,27 +5,27 @@ import com.company.project.service.stats.dto.StatsDto;
 import java.util.List;
 
 /**
- * 통계 서비스 인터페이스
+ * ?듦퀎 ?쒕퉬???명꽣?섏씠??
  */
 public interface EgovStatsService {
 
     /**
-     * 접속 통계 조회
+     * ?묒냽 ?듦퀎 議고쉶
      */
     List<StatsDto> getConnectionStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * 게시물 통계 조회
+     * 寃뚯떆臾??듦퀎 議고쉶
      */
     List<StatsDto> getBoardStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * 사용자 통계 조회
+     * ?ъ슜???듦퀎 議고쉶
      */
     List<StatsDto> getUserStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * 요청 통계 조회
+     * ?붿껌 ?듦퀎 議고쉶
      */
     List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind);
 }

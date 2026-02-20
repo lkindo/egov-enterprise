@@ -9,15 +9,15 @@ import egovframework.com.sym.log.lgm.service.SysLog;
 
 /**
 * @Class Name : SysLogDAO.java
-* @Description : 로그관리(시스템)를 위한 데이터 접근 클래스
+* @Description : 濡쒓렇愿由??쒖뒪??瑜??꾪븳 ?곗씠???묎렐 ?대옒??
 * @Modification Information
 *
-*    수정일         수정자         수정내용
+*    ?섏젙??        ?섏젙??        ?섏젙?댁슜
 *    -------        -------     -------------------
-*    2009. 3. 11.   이삼섭         최초생성
-*    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.lgm)
+*    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+*    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.lgm)
 *
-* @author 공통 서비스 개발팀 이삼섭
+* @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
 * @since 2009. 3. 11.
 * @version
 * @see
@@ -27,7 +27,7 @@ import egovframework.com.sym.log.lgm.service.SysLog;
 public class SysLogDAO extends EgovComAbstractDAO{
 
 	/**
-	 * 시스템 로그정보를 생성한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 *
 	 * @param SysLog
 	 * @return
@@ -39,7 +39,7 @@ public class SysLogDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 시스템 로그정보를 요약한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??붿빟?쒕떎.
 	 *
 	 * @param
 	 * @return
@@ -52,7 +52,7 @@ public class SysLogDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 시스템 로그목록을 조회한다.
+	 * ?쒖뒪??濡쒓렇紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param sysLog
 	 * @return sysLog
@@ -63,7 +63,7 @@ public class SysLogDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 시스템 로그정보 목록의 숫자를 조회한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫 紐⑸줉???レ옄瑜?議고쉶?쒕떎.
 	 * @param sysLog
 	 * @return
 	 * @throws Exception
@@ -73,7 +73,7 @@ public class SysLogDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 시스템 로그 상세정보를 조회한다.
+	 * ?쒖뒪??濡쒓렇 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param sysLog
 	 * @return sysLog

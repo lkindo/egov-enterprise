@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * RSS 태그 정보 Repository
+ * RSS ??볥젃 ?類ｋ궖 Repository
  */
 @org.springframework.stereotype.Repository("rssRssTagRepository")
 public interface RssTagRepository extends JpaRepository<RssTag, String> {

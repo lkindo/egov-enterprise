@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 간부 상태 정보 Entity
- * 레거시 테이블: NLEADERSTTUS
+ * 揶쏄쑬? ?怨밴묶 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NLEADERSTTUS
  */
 @Entity
 @Table(name = "NLEADERSTTUS")

@@ -3,55 +3,55 @@ package egovframework.com.cop.smt.djm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 부서업무에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 遺?쒖뾽臾댁뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 부서업무함ID, 부서업무ID, 부서업무명, 부서업무내용, 업무담당자, 우선순위, 첨부파일ID 의 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 遺?쒖뾽臾댄븿ID, 遺?쒖뾽臾퀹D, 遺?쒖뾽臾대챸, 遺?쒖뾽臾대궡?? ?낅Т?대떦?? ?곗꽑?쒖쐞, 泥⑤??뚯씪ID ????ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:04
+ * @created 28-6-2010 ?ㅼ쟾 10:59:04
  *  <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class DeptJob implements Serializable{
 
-	/** 부서업무함 ID */
+	/** 遺?쒖뾽臾댄븿 ID */
 	private String deptJobBxId;
-	/** 부서업무함명 */
+	/** 遺?쒖뾽臾댄븿紐?*/
 	private String deptJobBxNm;
-	/** 부서 ID */
+	/** 遺??ID */
 	private String deptId;
-	/** 부서명 */
+	/** 遺?쒕챸 */
 	private String deptNm;
-	/** 부서업무 ID */
+	/** 遺?쒖뾽臾?ID */
 	private String deptJobId;
-	/** 부서업무명 */
+	/** 遺?쒖뾽臾대챸 */
 	private String deptJobNm;
-	/** 부서업무내용 */
+	/** 遺?쒖뾽臾대궡??*/
 	private String deptJobCn;
-	/** 업무담당자 ID */
+	/** ?낅Т?대떦??ID */
 	private String chargerId;
-	/** 업무담당자명 */
+	/** ?낅Т?대떦?먮챸 */
 	private String chargerNm;
-	/** 우선순위 */
+	/** ?곗꽑?쒖쐞 */
 	private String priort;
-	/** 첨부파일 ID */
+	/** 泥⑤??뚯씪 ID */
 	private String atchFileId;
-	/** 최초등록자 ID */
+	/** 理쒖큹?깅줉??ID */
 	private String frstRegisterId = "";
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId = "";
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm = "";
 	
 	public String getDeptJobBxId() {

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 행사 캠페인 관리 엔티티
+ * ??깃텢 筌?쥚????온???酉???
  */
 @Entity
 @Table(name = "NEVENTINFO")

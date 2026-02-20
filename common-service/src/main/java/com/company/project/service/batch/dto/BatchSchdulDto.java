@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * 배치스케줄 DTO
+ * 諛곗튂?ㅼ?以?DTO
  */
 @Getter
 @Builder

@@ -11,19 +11,19 @@ import egovframework.com.sym.ccm.acr.service.AdministCodeRecptnVO;
 
 /**
  *
- * 법정동코드에 대한 데이터 접근 클래스를 정의한다
- * @author 공통서비스 개발팀 이중호
+ * 踰뺤젙?숈퐫?쒖뿉 ????곗씠???묎렐 ?대옒?ㅻ? ?뺤쓽?쒕떎
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호         최초 생성
- *   2024.10.29	 권태성			법정동코드 저장 시 NullPointerException 수정(insertAdministCode())
+ *   2009.04.01  ?댁쨷??        理쒖큹 ?앹꽦
+ *   2024.10.29	 沅뚰깭??		踰뺤젙?숈퐫???????NullPointerException ?섏젙(insertAdministCode())
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -32,7 +32,7 @@ import egovframework.com.sym.ccm.acr.service.AdministCodeRecptnVO;
 public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 법정동코드수신을 처리한다.
+	 * 踰뺤젙?숈퐫?쒖닔?좎쓣 泥섎━?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
@@ -41,7 +41,7 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 법정동코드를 등록한다.
+	 * 踰뺤젙?숈퐫?쒕? ?깅줉?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
@@ -52,12 +52,12 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
 				&& beforeData.getAdministZoneCode().equals(administCodeRecptn.getAdministZoneCode())
 				&& beforeData.getAdministZoneSe().equals(administCodeRecptn.getAdministZoneSe())
 		) {
-			// 기등록 자료
+			// 湲곕벑濡??먮즺
 			administCodeRecptn.setProcessSe("10");
 		} else {
 			int rtnValue = update("AdministCodeRecptnDAO.insertAdministCode", administCodeRecptn);
 	        if (rtnValue != 1) {
-	        	// 등록 오류
+	        	// ?깅줉 ?ㅻ쪟
 	        	administCodeRecptn.setProcessSe("11");
 	        }
         }
@@ -65,37 +65,37 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 법정동코드를 수정한다.
+	 * 踰뺤젙?숈퐫?쒕? ?섏젙?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
 	public void updateAdministCode(AdministCodeRecptn administCodeRecptn) throws Exception {
 		int rtnValue = update("AdministCodeRecptnDAO.updateAdministCode", administCodeRecptn);
         if (rtnValue != 1) {
-        	// 변경 오류
+        	// 蹂寃??ㅻ쪟
         	administCodeRecptn.setProcessSe("12");
         }
     	update("AdministCodeRecptnDAO.updateAdministCodeRecptn", administCodeRecptn);
 	}
 
 	/**
-	 * 법정동코드를 삭제한다.
+	 * 踰뺤젙?숈퐫?쒕? ??젣?쒕떎.
 	 * @param administCode
 	 * @throws Exception
 	 */
 	public void deleteAdministCode(AdministCodeRecptn administCodeRecptn) throws Exception {
 		int rtnValue = update("AdministCodeRecptnDAO.deleteAdministCode", administCodeRecptn);
         if (rtnValue != 1) {
-        	// 삭제 오류
+        	// ??젣 ?ㅻ쪟
         	administCodeRecptn.setProcessSe("13");
         }
     	update("AdministCodeRecptnDAO.updateAdministCodeRecptn", administCodeRecptn);
 	}
 
 	/**
-	 * 법정동코드 상세내역을 조회한다.
+	 * 踰뺤젙?숈퐫???곸꽭?댁뿭??議고쉶?쒕떎.
 	 * @param administCode
-	 * @return AdministCode(법정동코드)
+	 * @return AdministCode(踰뺤젙?숈퐫??
 	 */
 	public AdministCodeRecptn selectAdministCodeDetail(AdministCodeRecptn administCodeRecptn) throws Exception {
 		return (AdministCodeRecptn) selectOne("AdministCodeRecptnDAO.selectAdministCodeDetail", administCodeRecptn);
@@ -103,9 +103,9 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
 
 
     /**
-	 * 법정동코드수신 목록을 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(법정동코드 목록)
+     * @return List(踰뺤젙?숈퐫??紐⑸줉)
      * @throws Exception
      */
     public List<EgovMap> selectAdministCodeRecptnList(AdministCodeRecptnVO searchVO) throws Exception {
@@ -113,18 +113,18 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 법정동코드수신 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫?쒖닔??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(법정동코드 총 개수)
+     * @return int(踰뺤젙?숈퐫??珥?媛쒖닔)
      */
     public int selectAdministCodeRecptnListTotCnt(AdministCodeRecptnVO searchVO) throws Exception {
         return (Integer)selectOne("AdministCodeRecptnDAO.selectAdministCodeRecptnListTotCnt", searchVO);
     }
 
     /**
-	 * 법정동코드 목록을 조회한다.
+	 * 踰뺤젙?숈퐫??紐⑸줉??議고쉶?쒕떎.
      * @param searchVO
-     * @return List(법정동코드 목록)
+     * @return List(踰뺤젙?숈퐫??紐⑸줉)
      * @throws Exception
      */
     public List<EgovMap> selectAdministCodeList(AdministCodeRecptnVO searchVO) throws Exception {
@@ -132,9 +132,9 @@ public class AdministCodeRecptnDAO extends EgovComAbstractDAO {
     }
 
     /**
-	 * 법정동코드 총 개수를 조회한다.
+	 * 踰뺤젙?숈퐫??珥?媛쒖닔瑜?議고쉶?쒕떎.
      * @param searchVO
-     * @return int(법정동코드 총 개수)
+     * @return int(踰뺤젙?숈퐫??珥?媛쒖닔)
      */
     public int selectAdministCodeListTotCnt(AdministCodeRecptnVO searchVO) throws Exception {
         return (Integer)selectOne("AdministCodeRecptnDAO.selectAdministCodeListTotCnt", searchVO);

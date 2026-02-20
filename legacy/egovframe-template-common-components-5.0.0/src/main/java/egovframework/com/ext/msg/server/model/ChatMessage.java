@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author 이영지(슈퍼개발자K3)
+ * @author ?댁쁺吏(?덊띁媛쒕컻?륦3)
  */
 package egovframework.com.ext.msg.server.model;
 
 /**
 * @Class Name : ChatMessage.java
-* @Description : 대화정보를 담는 VO
+* @Description : ??붿젙蹂대? ?대뒗 VO
 * @Modification Information
 *
-*    수정일       수정자         수정내용
+*    ?섏젙??      ?섏젙??        ?섏젙?댁슜
 *    -------        -------     -------------------
-*    2014. 11. 27.    이영지
+*    2014. 11. 27.    ?댁쁺吏
 *
 */
 public class ChatMessage implements Message{
 
 	/**
-	 * 사용자명
+	 * ?ъ슜?먮챸
 	 */
 	private String name;
 
@@ -41,7 +41,7 @@ public class ChatMessage implements Message{
 	private String room;
 
 	/**
-	 * 전달 메시지
+	 * ?꾨떖 硫붿떆吏
 	 */
 	private String message;
 

@@ -1,20 +1,20 @@
 /**
- * 개요
- * - 배너에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 諛곕꼫?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 배너에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 배너의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 諛곕꼫??????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 諛곕꼫??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:07:11
+ * @created 03-8-2009 ?ㅽ썑 2:07:11
  *  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.8.3	lee.m.j          최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2009.8.3	lee.m.j          理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
  *  </pre>
  */
@@ -71,7 +71,7 @@ public class EgovBannerController {
     private EgovIdGnrService egovBannerIdGnrService;
 
     /**
-	 * 배너 목록화면 이동
+	 * 諛곕꼫 紐⑸줉?붾㈃ ?대룞
 	 * @return String
 	 * @exception Exception
 	 */
@@ -82,12 +82,12 @@ public class EgovBannerController {
     }
 
 	/**
-	 * 배너를 관리하기 위해 등록된 배너목록을 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return String - 리턴 URL
+	 * 諛곕꼫瑜?愿由ы븯湲??꾪빐 ?깅줉??諛곕꼫紐⑸줉??議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return String - 由ы꽩 URL
 	 * @throws Exception
 	 */
-    @IncludedInfo(name="배너관리", order = 740 ,gid = 50)
+    @IncludedInfo(name="諛곕꼫愿由?, order = 740 ,gid = 50)
     @RequestMapping(value="/uss/ion/bnr/selectBannerList.do")
 	public String selectBannerList(@ModelAttribute("bannerVO") BannerVO bannerVO,
                              		ModelMap model) throws Exception{
@@ -116,9 +116,9 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 등록된 배너의 상세정보를 조회한다.
-	 * @param bannerVO - 배너 Vo
-	 * @return String - 리턴 Url
+	 * ?깅줉??諛곕꼫???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 Vo
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/bnr/getBanner.do")
 	public String selectBanner(@RequestParam("bannerId") String bannerId,
@@ -133,9 +133,9 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 배너등록 화면으로 이동한다.
-	 * @param banner - 배너 model
-	 * @return String - 리턴 Url
+	 * 諛곕꼫?깅줉 ?붾㈃?쇰줈 ?대룞?쒕떎.
+	 * @param banner - 諛곕꼫 model
+	 * @return String - 由ы꽩 Url
 	 */
     @RequestMapping(value="/uss/ion/bnr/addViewBanner.do")
 	public String insertViewBanner(@ModelAttribute("bannerVO") BannerVO bannerVO,
@@ -146,9 +146,9 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 배너정보를 신규로 등록한다.
-	 * @param banner - 배너 model
-	 * @return String - 리턴 Url
+	 * 諛곕꼫?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param banner - 諛곕꼫 model
+	 * @return String - 由ы꽩 Url
 	 */
     @SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/bnr/addBanner.do")
@@ -204,9 +204,9 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 기 등록된 배너정보를 수정한다.
-	 * @param banner - 배너 model
-	 * @return String - 리턴 Url
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜??섏젙?쒕떎.
+	 * @param banner - 諛곕꼫 model
+	 * @return String - 由ы꽩 Url
 	 */
     @SuppressWarnings("unused")
 	@RequestMapping(value="/uss/ion/bnr/updtBanner.do")
@@ -267,7 +267,7 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 기 등록된 배너정보를 삭제한다.
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜???젣?쒕떎.
 	 * @param banner Banner
 	 * @return String
 	 * @exception Exception
@@ -286,7 +286,7 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 기 등록된 배너정보목록을 일괄 삭제한다.
+	 * 湲??깅줉??諛곕꼫?뺣낫紐⑸줉???쇨큵 ??젣?쒕떎.
 	 * @param banners String
 	 * @param banner Banner
 	 * @return String
@@ -311,9 +311,9 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * 배너가 특정화면에 반영된 결과를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return String - 리턴 Url
+	 * 諛곕꼫媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return String - 由ы꽩 Url
 	 */
 	@RequestMapping(value="/uss/ion/bnr/getBannerImage.do")
 	public String selectBannerResult(@ModelAttribute("bannerVO") BannerVO bannerVO,
@@ -327,12 +327,12 @@ public class EgovBannerController {
 	}
 
 	/**
-	 * MyPage에 배너정보를 제공하기 위해 목록을 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return String - 리턴 URL
+	 * MyPage??諛곕꼫?뺣낫瑜??쒓났?섍린 ?꾪빐 紐⑸줉??議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return String - 由ы꽩 URL
 	 * @throws Exception
 	 */
-	@IncludedInfo(name="MYPAGE배너관리", order = 741 ,gid = 50)
+	@IncludedInfo(name="MYPAGE諛곕꼫愿由?, order = 741 ,gid = 50)
     @RequestMapping(value="/uss/ion/bnr/selectBannerMainList.do")
 	public String selectBannerMainList(@ModelAttribute("bannerVO") BannerVO bannerVO,
                              		ModelMap model) throws Exception{

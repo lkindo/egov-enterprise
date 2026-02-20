@@ -15,19 +15,19 @@ import egovframework.com.cop.com.service.UserInfVO;
 import jakarta.annotation.Resource;
 
 /**
- * 협업기능에서 활용하는 사용자 정보 조회용 컨트롤러 클래스
- * @author 공통서비스개발팀 이삼섭
+ * ?묒뾽湲곕뒫?먯꽌 ?쒖슜?섎뒗 ?ъ슜???뺣낫 議고쉶??而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.4.6   이삼섭          최초 생성
- *	 2011.07.21 안민정          커뮤니티 관련 메소드 분리 (->EgovCmyUserInfController)
+ *   2009.4.6   ?댁궪??         理쒖큹 ?앹꽦
+ *	 2011.07.21 ?덈???         而ㅻ??덊떚 愿??硫붿냼??遺꾨━ (->EgovCmyUserInfController)
  *
  * </pre>
  */
@@ -41,7 +41,7 @@ public class EgovCopUserInfController {
 	protected EgovPropertyService propertyService;
 
 	/**
-	 * 사용자 정보에 대한 목록을 조회한다.
+	 * ?ъ슜???뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param userVO
 	 * @param sessionVO

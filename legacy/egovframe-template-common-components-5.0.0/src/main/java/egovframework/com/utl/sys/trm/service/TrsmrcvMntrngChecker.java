@@ -2,14 +2,14 @@ package egovframework.com.utl.sys.trm.service;
 
 /**
  * @Class Name : EgovTrsmrcvMntrngChecker.java
- * @Description : 송수신모니터링을 위한 Check interface
+ * @Description : ?≪닔?좊え?덊꽣留곸쓣 ?꾪븳 Check interface
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2010.08.16     김진만   최초생성
+ *    2010.08.16     源吏꾨쭔   理쒖큹?앹꽦
  *
- * @author  김진만
+ * @author  源吏꾨쭔
  * @version
  * @see
  *
@@ -18,17 +18,17 @@ package egovframework.com.utl.sys.trm.service;
 public interface TrsmrcvMntrngChecker {
 
 	/**
-	 * 송수신모니터링을 수행한다.
+	 * ?≪닔?좊え?덊꽣留곸쓣 ?섑뻾?쒕떎.
 	 *
-	 * 연계ID를 이용하여 연계기관과 통신에 필요한 정보를 얻은 다음 연계기관과 통신을 수행한다.
-	 * 통신결과를 TrsmrcvMntrngResult 클래스 객체에 담아서 리턴한다.
+	 * ?곌퀎ID瑜??댁슜?섏뿬 ?곌퀎湲곌?怨??듭떊???꾩슂???뺣낫瑜??살? ?ㅼ쓬 ?곌퀎湲곌?怨??듭떊???섑뻾?쒕떎.
+	 * ?듭떊寃곌낵瑜?TrsmrcvMntrngResult ?대옒??媛앹껜???댁븘??由ы꽩?쒕떎.
 	 *
-	 * 통신결과가 true일때 : TrsmrcvMntrngResult의 nrmltAt에 true, cause에 null을 저장.
-	 * 통신결과가 false일때: TrsmrcvMntrngResult의 nrmltAt에 false, cause에 에러원인 Exception을 저장한다.
+	 * ?듭떊寃곌낵媛 true?쇰븣 : TrsmrcvMntrngResult??nrmltAt??true, cause??null?????
+	 * ?듭떊寃곌낵媛 false?쇰븣: TrsmrcvMntrngResult??nrmltAt??false, cause???먮윭?먯씤 Exception????ν븳??
 	 *
-	 * @return 모니터링결과
+	 * @return 紐⑤땲?곕쭅寃곌낵
 	 *
-	 * @param cntcId   모니터링 대상 연계ID
+	 * @param cntcId   紐⑤땲?곕쭅 ????곌퀎ID
 	 *
 	 */
 	public TrsmrcvMntrngResult check(String cntcId);

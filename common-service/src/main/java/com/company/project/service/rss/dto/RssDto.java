@@ -14,55 +14,55 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "RSS 정보 DTO")
+@Schema(description = "Description")
 public class RssDto {
 
     @Schema(description = "RSS ID")
     private String rssId;
 
-    @Schema(description = "대상 서비스 명")
+    @Schema(description = "Description")
     private String trgetSvcNm;
 
-    @Schema(description = "대상 서비스 테이블")
+    @Schema(description = "Description")
     private String trgetSvcTable;
 
-    @Schema(description = "대상 서비스 목록 수")
+    @Schema(description = "Description")
     private Integer trgetSvcListCo;
 
-    @Schema(description = "헤더 제목")
+    @Schema(description = "Description")
     private String hderTitle;
 
-    @Schema(description = "헤더 링크")
+    @Schema(description = "Description")
     private String hderLink;
 
-    @Schema(description = "헤더 설명")
+    @Schema(description = "Description")
     private String hderDc;
 
-    @Schema(description = "헤더 태그")
+    @Schema(description = "Description")
     private String hderTag;
 
-    @Schema(description = "헤더 기타")
+    @Schema(description = "Description")
     private String hderEtc;
 
-    @Schema(description = "바디 제목")
+    @Schema(description = "Description")
     private String bdtTitle;
 
-    @Schema(description = "바디 링크")
+    @Schema(description = "Description")
     private String bdtLink;
 
-    @Schema(description = "바디 설명")
+    @Schema(description = "Description")
     private String bdtDc;
 
-    @Schema(description = "바디 태그")
+    @Schema(description = "Description")
     private String bdtTag;
 
-    @Schema(description = "바디 기타 태그")
+    @Schema(description = "Description")
     private String bdtEtcTag;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static RssDto from(Rss entity) {

@@ -9,18 +9,18 @@ import egovframework.com.sec.gmt.service.GroupManage;
 import egovframework.com.sec.gmt.service.GroupManageVO;
 
 /**
- * 그룹관리에 대한 DAO 클래스를 정의한다.
- * @author 공통서비스 개발팀 이문준
+ * 洹몃９愿由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?대Ц以
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이문준          최초 생성
+ *   2009.03.11  ?대Ц以          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -29,7 +29,7 @@ import egovframework.com.sec.gmt.service.GroupManageVO;
 public class GroupManageDAO extends EgovComAbstractDAO {
 
 	/**
-	 * 검색조건에 따른 그룹정보를 조회
+	 * 寃?됱“嫄댁뿉 ?곕Ⅸ 洹몃９?뺣낫瑜?議고쉶
 	 * @param groupManageVO GroupManageVO
 	 * @return GroupManageVO
 	 * @exception Exception
@@ -39,7 +39,7 @@ public class GroupManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 시스템사용 목적별 그룹 목록 조회
+	 * ?쒖뒪?쒖궗??紐⑹쟻蹂?洹몃９ 紐⑸줉 議고쉶
 	 * @param groupManageVO GroupManageVO
 	 * @return GroupManageVO
 	 * @exception Exception
@@ -49,7 +49,7 @@ public class GroupManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 그룹 기본정보를 화면에서 입력하여 항목의 정합성을 체크하고 데이터베이스에 저장
+	 * 洹몃９ 湲곕낯?뺣낫瑜??붾㈃?먯꽌 ?낅젰?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?곗씠?곕쿋?댁뒪?????
 	 * @param groupManage GroupManage
 	 * @exception Exception
 	 */
@@ -58,7 +58,7 @@ public class GroupManageDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 화면에 조회된 그룹의 기본정보를 수정하여 항목의 정합성을 체크하고 수정된 데이터를 데이터베이스에 반영
+	 * ?붾㈃??議고쉶??洹몃９??湲곕낯?뺣낫瑜??섏젙?섏뿬 ??ぉ???뺥빀?깆쓣 泥댄겕?섍퀬 ?섏젙???곗씠?곕? ?곗씠?곕쿋?댁뒪??諛섏쁺
 	 * @param groupManage GroupManage
 	 * @exception Exception
 	 */
@@ -67,7 +67,7 @@ public class GroupManageDAO extends EgovComAbstractDAO {
 	}
 	
 	/**
-	 * 불필요한 그룹정보를 화면에 조회하여 데이터베이스에서 삭제
+	 * 遺덊븘?뷀븳 洹몃９?뺣낫瑜??붾㈃??議고쉶?섏뿬 ?곗씠?곕쿋?댁뒪?먯꽌 ??젣
 	 * @param groupManage GroupManage
 	 * @exception Exception
 	 */
@@ -76,7 +76,7 @@ public class GroupManageDAO extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 롤목록 총 개수를 조회한다.
+	 * 濡ㅻぉ濡?珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param groupManageVO GroupManageVO
 	 * @return int
 	 * @exception Exception

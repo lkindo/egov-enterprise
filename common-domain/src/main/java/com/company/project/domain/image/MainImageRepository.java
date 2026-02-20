@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * 메인 이미지 Repository
+ * 筌롫뗄?????筌왖 Repository
  */
 @org.springframework.stereotype.Repository("imageMainImageRepository")
 public interface MainImageRepository extends JpaRepository<MainImage, String> {

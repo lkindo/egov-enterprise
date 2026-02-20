@@ -3,55 +3,55 @@ package egovframework.com.cop.adb.service;
 import java.io.Serializable;
 
 /**
- * 주소록구성원 관리를 위한 모델 클래스
- * @author 공통컴포넌트개발팀 윤성록
+ * 二쇱냼濡앷뎄?깆썝 愿由щ? ?꾪븳 紐⑤뜽 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *	2016.12.13 최두영          클래스명 변경
+ *	2016.12.13 理쒕몢??         ?대옒?ㅻ챸 蹂寃?
  * </pre>
  */
 @SuppressWarnings("serial")
 public class AddressBookUser implements Serializable{
 
-    /** 주소록구성원 아이디 */
+    /** 二쇱냼濡앷뎄?깆썝 ?꾩씠??*/
     private String adbkUserId = "";  
     
-    /** 주소록 아이디 */
+    /** 二쇱냼濡??꾩씠??*/
     private String adbkId = "";
     
-    /** 사용자 아이디 */
+    /** ?ъ슜???꾩씠??*/
     private String emplyrId = "";
     
-    /** 명함 아이디 */
+    /** 紐낇븿 ?꾩씠??*/
     private String ncrdId = "";
     
-    /** 주소록구성원 이름 */
+    /** 二쇱냼濡앷뎄?깆썝 ?대쫫 */
     private String nm = "";    
 
-    /** 이메일 주소  */
+    /** ?대찓??二쇱냼  */
     private String emailAdres = "";
     
-    /** 집 전화번호  */
+    /** 吏??꾪솕踰덊샇  */
     private String homeTelno = "";
     
-    /** 폰 번호  */
+    /** ??踰덊샇  */
     private String moblphonNo = "";
     
-    /** 회사 번호  */
+    /** ?뚯궗 踰덊샇  */
     private String offmTelno = "";
     
-    /** 팩스 번호  */
+    /** ?⑹뒪 踰덊샇  */
     private String fxnum = "";
         
     /**
-     * adbkUserId attribute를 리턴한다.
+     * adbkUserId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the adbkUserId
      */
@@ -60,7 +60,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * adbkUserId attribute 값을 설정한다.
+     * adbkUserId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param adbkUserId
      *            the adbkUserId to set
@@ -70,7 +70,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * adbkId attribute를 리턴한다.
+     * adbkId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the adbkId
      */
@@ -79,7 +79,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * adbkId attribute 값을 설정한다.
+     * adbkId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param adbkId
      *            the adbkId to set
@@ -89,7 +89,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * emplyrId attribute를 리턴한다.
+     * emplyrId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the emplyrId
      */
@@ -98,7 +98,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * emplyrId attribute 값을 설정한다.
+     * emplyrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param emplyrId
      *            the emplyrId to set
@@ -108,7 +108,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * ncrdId attribute를 리턴한다.
+     * ncrdId attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the ncrdId
      */
@@ -117,7 +117,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * ncrdId attribute 값을 설정한다.
+     * ncrdId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param ncrdId
      *            the ncrdId to set
@@ -127,7 +127,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * nm attribute를 리턴한다.
+     * nm attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the nm
      */
@@ -136,7 +136,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * nm attribute 값을 설정한다.
+     * nm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param nm
      *            the nm to set
@@ -146,7 +146,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * emailAdres attribute를 리턴한다.
+     * emailAdres attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the emailAdres
      */
@@ -155,7 +155,7 @@ public class AddressBookUser implements Serializable{
     }
     
     /**
-     * emailAdres attribute 값을 설정한다.
+     * emailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param emailAdres
      *            the emailAdres to set
@@ -165,7 +165,7 @@ public class AddressBookUser implements Serializable{
     }    
     
     /**
-     * homeTelno attribute를 리턴한다.
+     * homeTelno attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the homeTelno
      */
@@ -174,7 +174,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * homeTelno attribute 값을 설정한다.
+     * homeTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param homeTelno
      *            the homeTelno to set
@@ -184,7 +184,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * moblphonNo attribute를 리턴한다.
+     * moblphonNo attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the moblphonNo
      */
@@ -193,7 +193,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * moblphonNo attribute 값을 설정한다.
+     * moblphonNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param moblphonNo
      *            the moblphonNo to set
@@ -203,7 +203,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * offmTelno attribute를 리턴한다.
+     * offmTelno attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the offmTelno
      */
@@ -212,7 +212,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * offmTelno attribute 값을 설정한다.
+     * offmTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param offmTelno
      *            the offmTelno to set
@@ -222,7 +222,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * fxnum attribute를 리턴한다.
+     * fxnum attribute瑜?由ы꽩?쒕떎.
      * 
      * @return the fxnum
      */
@@ -231,7 +231,7 @@ public class AddressBookUser implements Serializable{
     }
 
     /**
-     * fxnum attribute 값을 설정한다.
+     * fxnum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * 
      * @param fxnum
      *            the fxnum to set

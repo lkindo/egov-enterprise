@@ -34,7 +34,7 @@ public class EgovFaqServiceImpl extends EgovAbstractServiceImpl implements EgovF
 	@Override
 	public FaqVO selectFaqDetail(FaqVO searchVO) throws Exception {
 
-		//조회수 증가
+		//議고쉶??利앷?
 		egovFaqDao.updateFaqInqireCo(searchVO);
 
 		FaqVO resultVO = egovFaqDao.selectFaqDetail(searchVO);

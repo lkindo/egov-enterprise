@@ -13,37 +13,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "FAQ 정보 DTO")
+@Schema(description = "Description")
 public class FaqDto {
 
     @Schema(description = "FAQ ID")
     private String faqId;
 
-    @Schema(description = "질문 제목")
+    @Schema(description = "Description")
     private String qestnSj;
 
-    @Schema(description = "질문 내용")
+    @Schema(description = "Description")
     private String qestnCn;
 
-    @Schema(description = "답변 내용")
+    @Schema(description = "Description")
     private String answerCn;
 
-    @Schema(description = "조회수")
+    @Schema(description = "Description")
     private Integer inqireCo;
 
-    @Schema(description = "첨부파일 ID")
+    @Schema(description = "Description")
     private String atchFileId;
 
-    @Schema(description = "최초등록자 ID")
+    @Schema(description = "Description")
     private String frstRegisterId;
 
-    @Schema(description = "최초등록시점")
+    @Schema(description = "Description")
     private LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "최종수정자 ID")
+    @Schema(description = "Description")
     private String lastUpdusrId;
 
-    @Schema(description = "최종수정시점")
+    @Schema(description = "Description")
     private LocalDateTime lastUpdusrPnttm;
 
     public static FaqDto from(Faq entity) {

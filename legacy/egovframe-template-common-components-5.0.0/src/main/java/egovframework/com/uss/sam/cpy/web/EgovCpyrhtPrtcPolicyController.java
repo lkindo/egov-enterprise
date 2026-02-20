@@ -26,20 +26,20 @@ import jakarta.validation.Valid;
 
 /**
  *
- * 저작권보호정책내용을 처리하는 컨트롤러 클래스
+ * ??묎텒蹂댄샇?뺤콉?댁슜??泥섎━?섎뒗 而⑦듃濡ㅻ윭 ?대옒??
  *
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일          수정자       수정내용
+ *   ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2009.04.01     박정규       최초 생성
- *   2011.08.26     정진오       IncludedInfo annotation 추가
+ *   2009.04.01     諛뺤젙洹?      理쒖큹 ?앹꽦
+ *   2011.08.26     ?뺤쭊??      IncludedInfo annotation 異붽?
  *
  *      </pre>
  */
@@ -58,7 +58,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 개별 배포시 메인메뉴를 조회한다.
+	 * 媛쒕퀎 諛고룷??硫붿씤硫붾돱瑜?議고쉶?쒕떎.
 	 *
 	 * @param model
 	 * @return "/uss/sam/cpy/"
@@ -70,7 +70,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 메뉴를 조회한다.
+	 * 硫붾돱瑜?議고쉶?쒕떎.
 	 *
 	 * @param model
 	 * @return "/uss/sam/cpy/EgovLeft"
@@ -82,14 +82,14 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책 목록을 조회한다. (pageing)
+	 * ??묎텒蹂댄샇?뺤콉 紐⑸줉??議고쉶?쒕떎. (pageing)
 	 *
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/sam/cpy/EgovCpyrhtPrtcPolicyListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "저작권보호정책", order = 500, gid = 50)
+	@IncludedInfo(name = "??묎텒蹂댄샇?뺤콉", order = 500, gid = 50)
 	@RequestMapping(value = "/uss/sam/cpy/CpyrhtPrtcPolicyListInqire.do")
 	public String selectCpyrhtPrtcPolicyList(@ModelAttribute("searchVO") CpyrhtPrtcPolicyDefaultVO searchVO,
 			ModelMap model) throws Exception {
@@ -119,7 +119,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책 목록에 대한 상세정보를 조회한다.
+	 * ??묎텒蹂댄샇?뺤콉 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param cpyrhtPrtcPolicyVO
 	 * @param searchVO
@@ -139,7 +139,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책를 등록하기 위한 전 처리
+	 * ??묎텒蹂댄샇?뺤콉瑜??깅줉?섍린 ?꾪븳 ??泥섎━
 	 *
 	 * @param searchVO
 	 * @param model
@@ -157,7 +157,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책를 등록한다.
+	 * ??묎텒蹂댄샇?뺤콉瑜??깅줉?쒕떎.
 	 *
 	 * @param searchVO
 	 * @param cpyrhtPrtcPolicyVO
@@ -177,13 +177,13 @@ public class EgovCpyrhtPrtcPolicyController {
 
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		cpyrhtPrtcPolicyVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		cpyrhtPrtcPolicyVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		cpyrhtPrtcPolicyVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		cpyrhtPrtcPolicyVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		cpyrhtPrtcPolicyService.insertCpyrhtPrtcPolicyCn(cpyrhtPrtcPolicyVO);
 
@@ -191,7 +191,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책를 수정하기 위한 전 처리
+	 * ??묎텒蹂댄샇?뺤콉瑜??섏젙?섍린 ?꾪븳 ??泥섎━
 	 *
 	 * @param cpyrhtId
 	 * @param searchVO
@@ -205,13 +205,13 @@ public class EgovCpyrhtPrtcPolicyController {
 
 		CpyrhtPrtcPolicyVO cpyrhtPrtcPolicyVO = new CpyrhtPrtcPolicyVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		cpyrhtPrtcPolicyVO.setCpyrhtId(cpyrhtId);
 
-		// 변수명은 CoC 에 따라
+		// 蹂?섎챸? CoC ???곕씪
 		model.addAttribute(selectCpyrhtPrtcPolicyDetail(cpyrhtPrtcPolicyVO, searchVO, model));
 
-		// 변수명은 CoC 에 따라 JSTL사용을 위해
+		// 蹂?섎챸? CoC ???곕씪 JSTL?ъ슜???꾪빐
 		model.addAttribute("cpyrhtPrtcPolicyVO",
 				cpyrhtPrtcPolicyService.selectCpyrhtPrtcPolicyDetail(cpyrhtPrtcPolicyVO));
 
@@ -219,7 +219,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책를 수정처리한다.
+	 * ??묎텒蹂댄샇?뺤콉瑜??섏젙泥섎━?쒕떎.
 	 *
 	 * @param searchVO
 	 * @param cpyrhtPrtcPolicyVO
@@ -239,12 +239,12 @@ public class EgovCpyrhtPrtcPolicyController {
 
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		cpyrhtPrtcPolicyVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		cpyrhtPrtcPolicyVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		cpyrhtPrtcPolicyService.updateCpyrhtPrtcPolicyCn(cpyrhtPrtcPolicyVO);
 
@@ -253,7 +253,7 @@ public class EgovCpyrhtPrtcPolicyController {
 	}
 
 	/**
-	 * 저작권보호정책를 삭제처리한다.
+	 * ??묎텒蹂댄샇?뺤콉瑜???젣泥섎━?쒕떎.
 	 *
 	 * @param cpyrhtPrtcPolicyVO
 	 * @param searchVO

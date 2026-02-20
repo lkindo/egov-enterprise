@@ -3,21 +3,21 @@ package egovframework.com.uss.ion.rwd.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 포상관리에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ъ긽愿由ъ뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 포상관리의 포상자ID,포상코드,포상일자,공적내용,결재자ID,승인여부,결재일시,반려사유,최초등록자ID,최초등록시점,최종수정자ID,최종수정시점 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?ъ긽愿由ъ쓽 ?ъ긽?륤D,?ъ긽肄붾뱶,?ъ긽?쇱옄,怨듭쟻?댁슜,寃곗옱?륤D,?뱀씤?щ?,寃곗옱?쇱떆,諛섎젮?ъ쑀,理쒖큹?깅줉?륤D,理쒖큹?깅줉?쒖젏,理쒖쥌?섏젙?륤D,理쒖쥌?섏젙?쒖젏 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자          수정내용
+ *   ?섏젙??      ?섏젙??         ?섏젙?댁슜
  *  ----------   --------   ---------------------------
- *   2010.06.15  이용			최초 생성
- *   2024.10.29  권태성			포상자 소속을 처리할 변수와 getter, setter 추가
+ *   2010.06.15  ?댁슜			理쒖큹 ?앹꽦
+ *   2024.10.29  沅뚰깭??		?ъ긽???뚯냽??泥섎━??蹂?섏? getter, setter 異붽?
  *  
  * </pre>
  */
@@ -30,22 +30,22 @@ public class RwardManage extends ComDefaultVO {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	*  포상ID	      
+	*  ?ъ긽ID	      
 	*/ 
 	private String rwardId;
 	
 	/**
-	*  포상자ID	      
+	*  ?ъ긽?륤D	      
 	*/ 
 	private String rwardManId;
 	
 	/**
-	*  포상자명	      
+	*  ?ъ긽?먮챸	      
 	*/ 
 	private String rwardManNm;
 
 	/**
-	 * 포상자 소속
+	 * ?ъ긽???뚯냽
 	 */
 	private String rwardManOrgnztNm;
 	
@@ -58,72 +58,72 @@ public class RwardManage extends ComDefaultVO {
 	}
 
 	/**
-	*  포상코드	      
+	*  ?ъ긽肄붾뱶	      
 	*/ 
 	private String rwardCd;
 
 	/**
-	*  포상일자	      
+	*  ?ъ긽?쇱옄	      
 	*/ 
 	private String rwardDe;
 
 	/**
-	*  포상명
+	*  ?ъ긽紐?
 	*/ 
 	private String rwardNm;
 	
 	/**
-	*  공적내용	      
+	*  怨듭쟻?댁슜	      
 	*/ 
 	private String pblenCn;
 
 	/**
-	*  결재자ID	      
+	*  寃곗옱?륤D	      
 	*/ 
 	private String sanctnerId;
 
 	/**
-	*  승인여부	      
+	*  ?뱀씤?щ?	      
 	*/ 
 	private String confmAt;
 
 	/**
-	*  결재일시	      
+	*  寃곗옱?쇱떆	      
 	*/ 
 	private String sanctnDt;
 
 	/**
-	*  반려사유	      
+	*  諛섎젮?ъ쑀	      
 	*/ 
 	private String returnResn;
 
 	/**
-	*  첨부파일ID	      
+	*  泥⑤??뚯씪ID	      
 	*/ 
 	private String atchFileId;
 
 	/**
-	*  약식결재ID      
+	*  ?쎌떇寃곗옱ID      
 	*/ 
 	private String infrmlSanctnId;
 	
 	/**
-	*  최초등록자ID	
+	*  理쒖큹?깅줉?륤D	
 	*/ 
 	private String frstRegisterId;
 
 	/**
-	*  최초등록시점	
+	*  理쒖큹?깅줉?쒖젏	
 	*/ 
 	private String frstRegisterPnttm;
 
 	/**
-	*  최종수정자ID	
+	*  理쒖쥌?섏젙?륤D	
 	*/ 
 	private String lastUpdusrId;
 
 	/**
-	*  최종수정시점	
+	*  理쒖쥌?섏젙?쒖젏	
 	*/ 
 	private String lastUpdusrPnttm;
 	
@@ -352,7 +352,7 @@ public class RwardManage extends ComDefaultVO {
 	}
 
 	/**
-	 * 포상자 소속 Getter Setter
+	 * ?ъ긽???뚯냽 Getter Setter
 	 */
 	public String getRwardManOrgnztNm() {
 		return rwardManOrgnztNm;

@@ -9,25 +9,25 @@ import egovframework.com.uss.ion.noi.service.Notification;
 import egovframework.com.uss.ion.noi.service.NotificationVO;
 
 /**
- * 정보알림이를 위한 데이터 접근 클래스
- * @author 공통컴포넌트개발팀 한성곤
+ * ?뺣낫?뚮┝?대? ?꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.06.08
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.06.08  한성곤          최초 생성
+ *   2009.06.08  ?쒖꽦怨?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @Repository("NotificationDAO")
 public class NotificationDAO extends EgovComAbstractDAO {
     /**
-     * 정보알림이 목록을 조회한다.
+     * ?뺣낫?뚮┝??紐⑸줉??議고쉶?쒕떎.
      * 
      * @param NotificationVO
      */
@@ -36,7 +36,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 정보알림이 목록 숫자를 조회한다
+     * ?뺣낫?뚮┝??紐⑸줉 ?レ옄瑜?議고쉶?쒕떎
      * 
      * @param vo
      * @return
@@ -47,7 +47,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 정보알림이 정보를 등록한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??깅줉?쒕떎.
      * 
      * @param notification
      * @return
@@ -58,7 +58,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 정보알림이에 대한 상세정보를 조회한다.
+     * ?뺣낫?뚮┝?댁뿉 ????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      * 
      * @param searchVO
      * @return
@@ -68,7 +68,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 정보알림이 정보를 수정한다.
+     * ?뺣낫?뚮┝???뺣낫瑜??섏젙?쒕떎.
      * 
      * @param notification
      * @return
@@ -79,7 +79,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 정보알림이 정보를 삭제한다.
+     * ?뺣낫?뚮┝???뺣낫瑜???젣?쒕떎.
      * 
      * @param notification
      * @throws Exception
@@ -89,7 +89,7 @@ public class NotificationDAO extends EgovComAbstractDAO {
     }
     
     /**
-     * 정보알림이 표시를 위한 대상 알림 정보를 얻는다.
+     * ?뺣낫?뚮┝???쒖떆瑜??꾪븳 ????뚮┝ ?뺣낫瑜??삳뒗??
      * 
      * @param vo
      * @return

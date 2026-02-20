@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 보고서 통계 JPA Entity
+ * 癰귣떯???????JPA Entity
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

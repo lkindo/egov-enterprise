@@ -8,8 +8,8 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 /**
- * 행정용어 정보 Entity
- * 레거시 테이블: NADMINISTRATIONWORD
+ * ??깆젟??밸선 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NADMINISTRATIONWORD
  */
 @Entity
 @Table(name = "NADMINISTRATIONWORD")

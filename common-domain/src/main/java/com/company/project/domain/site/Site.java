@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 사이트정보 JPA Entity
- * 레거시 테이블: COMTNSITEINFO
+ * ????紐꾩젟癰?JPA Entity
+ * ??뉕탢?????뵠?? COMTNSITEINFO
  */
 @Entity(name = "SiteDomain")
 @Table(name = "NSITEINFO")

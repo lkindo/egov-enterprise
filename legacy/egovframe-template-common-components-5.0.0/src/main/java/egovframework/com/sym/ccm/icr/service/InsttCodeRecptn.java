@@ -3,18 +3,18 @@ package egovframework.com.sym.ccm.icr.service;
 import java.io.Serializable;
 
 /**
- * 기관코드수신로그 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * 湲곌?肄붾뱶?섏떊濡쒓렇 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * Copyright (C) 2009 by MOPAS  All rights reserved.
  * </pre>
@@ -24,152 +24,152 @@ public class InsttCodeRecptn implements Serializable {
 	private static final long serialVersionUID = 1370791089416059647L;
 
 	/*
-	 * 발생일자
+	 * 諛쒖깮?쇱옄
 	 */
 	private String occrrDe = "" ;
 
 	/*
-	 * 기관코드
+	 * 湲곌?肄붾뱶
 	 */
 	private String insttCode = "" ;
 
     /**
-     * 작업일련번호
+     * ?묒뾽?쇰젴踰덊샇
      */
     int	opertSn = 0;
 
 	/*
-	 * 변경구분코드
+	 * 蹂寃쎄뎄遺꾩퐫??
 	 */
 	private String changeSeCode = "" ;
 
 	/*
-	 * 처리구분
+	 * 泥섎━援щ텇
 	 */
 	private String processSe = "" ;
 
 	/*
-	 * 기타코드
+	 * 湲고?肄붾뱶
 	 */
 	private String etcCode = "" ;
 
 	/*
-	 * 전체기관명
+	 * ?꾩껜湲곌?紐?
 	 */
 	private String allInsttNm = "" ;
 
 	/*
-	 * 최하위기관명
+	 * 理쒗븯?꾧린愿紐?
 	 */
 	private String lowestInsttNm = "" ;
 
 	/*
-	 * 기관약칭명
+	 * 湲곌??쎌묶紐?
 	 */
 	private String insttAbrvNm = "" ;
 
 	/*
-	 * 차수
+	 * 李⑥닔
 	 */
 	private String odr = "" ;
 
 	/*
-	 * 서열
+	 * ?쒖뿴
 	 */
 	private String ord = "" ;
 
 	/*
-	 * 기관차수
+	 * 湲곌?李⑥닔
 	 */
 	private String insttOdr = "" ;
 
 	/*
-	 * 최상위기관코드
+	 * 理쒖긽?꾧린愿肄붾뱶
 	 */
 	private String bestInsttCode = "" ;
 
 	/*
-	 * 상위기관코드
+	 * ?곸쐞湲곌?肄붾뱶
 	 */
 	private String upperInsttCode = "" ;
 
 	/*
-	 * 대표기관코드
+	 * ??쒓린愿肄붾뱶
 	 */
 	private String reprsntInsttCode = "" ;
 
 	/*
-	 * 기관유형대분류
+	 * 湲곌??좏삎?遺꾨쪟
 	 */
 	private String insttTyLclas = "" ;
 
 	/*
-	 * 기관유형중분류
+	 * 湲곌??좏삎以묐텇瑜?
 	 */
 	private String insttTyMclas = "" ;
 
 	/*
-	 * 기관유형소분류
+	 * 湲곌??좏삎?뚮텇瑜?
 	 */
 	private String insttTySclas = "" ;
 
 	/*
-	 * 전화번호
+	 * ?꾪솕踰덊샇
 	 */
 	private String telno = "" ;
 
 	/*
-	 * 팩스번호
+	 * ?⑹뒪踰덊샇
 	 */
 	private String fxnum = "" ;
 
 	/*
-	 * 생성일자
+	 * ?앹꽦?쇱옄
 	 */
 	private String creatDe = "" ;
 
 	/*
-	 * 폐지일자
+	 * ?먯??쇱옄
 	 */
 	private String ablDe = "" ;
 
 	/*
-	 * 폐지유무
+	 * ?먯??좊Т
 	 */
 	private String ablEnnc = "" ;
 
 	/*
-	 * 변경일자
+	 * 蹂寃쎌씪??
 	 */
 	private String changede = "" ;
 
 	/*
-	 * 변경시간
+	 * 蹂寃쎌떆媛?
 	 */
 	private String changeTime = "" ;
 
 	/*
-	 * 기초일자
+	 * 湲곗큹?쇱옄
 	 */
 	private String bsisDe = "" ;
 
 	/*
-	 * 정렬순서
+	 * ?뺣젹?쒖꽌
 	 */
 	private int sortOrdr = 0 ;
 
 	/*
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
 	private String frstRegisterId = "" ;
 
 	/*
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId = "" ;
 
 	/**
-	 * occrrDe attribute 를 리턴한다.
+	 * occrrDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOccrrDe() {
@@ -177,7 +177,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * occrrDe attribute 값을 설정한다.
+	 * occrrDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param occrrDe String
 	 */
 	public void setOccrrDe(String occrrDe) {
@@ -185,7 +185,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttCode attribute 를 리턴한다.
+	 * insttCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttCode() {
@@ -193,7 +193,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttCode attribute 값을 설정한다.
+	 * insttCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttCode String
 	 */
 	public void setInsttCode(String insttCode) {
@@ -201,7 +201,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * opertSn attribute 를 리턴한다.
+	 * opertSn attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getOpertSn() {
@@ -209,7 +209,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * opertSn attribute 값을 설정한다.
+	 * opertSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param opertSn int
 	 */
 	public void setOpertSn(int opertSn) {
@@ -217,7 +217,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeSeCode attribute 를 리턴한다.
+	 * changeSeCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getChangeSeCode() {
@@ -225,7 +225,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeSeCode attribute 값을 설정한다.
+	 * changeSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param changeSeCode String
 	 */
 	public void setChangeSeCode(String changeSeCode) {
@@ -233,7 +233,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * processSe attribute 를 리턴한다.
+	 * processSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getProcessSe() {
@@ -241,7 +241,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * processSe attribute 값을 설정한다.
+	 * processSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param processSe String
 	 */
 	public void setProcessSe(String processSe) {
@@ -249,7 +249,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * etcCode attribute 를 리턴한다.
+	 * etcCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getEtcCode() {
@@ -257,7 +257,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * etcCode attribute 값을 설정한다.
+	 * etcCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param etcCode String
 	 */
 	public void setEtcCode(String etcCode) {
@@ -265,7 +265,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * allInsttNm attribute 를 리턴한다.
+	 * allInsttNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAllInsttNm() {
@@ -273,7 +273,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * allInsttNm attribute 값을 설정한다.
+	 * allInsttNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param allInsttNm String
 	 */
 	public void setAllInsttNm(String allInsttNm) {
@@ -281,7 +281,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lowestInsttNm attribute 를 리턴한다.
+	 * lowestInsttNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLowestInsttNm() {
@@ -289,7 +289,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lowestInsttNm attribute 값을 설정한다.
+	 * lowestInsttNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lowestInsttNm String
 	 */
 	public void setLowestInsttNm(String lowestInsttNm) {
@@ -297,7 +297,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttAbrvNm attribute 를 리턴한다.
+	 * insttAbrvNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttAbrvNm() {
@@ -305,7 +305,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttAbrvNm attribute 값을 설정한다.
+	 * insttAbrvNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttAbrvNm String
 	 */
 	public void setInsttAbrvNm(String insttAbrvNm) {
@@ -313,7 +313,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * odr attribute 를 리턴한다.
+	 * odr attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOdr() {
@@ -321,7 +321,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * odr attribute 값을 설정한다.
+	 * odr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param odr String
 	 */
 	public void setOdr(String odr) {
@@ -329,7 +329,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ord attribute 를 리턴한다.
+	 * ord attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getOrd() {
@@ -337,7 +337,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ord attribute 값을 설정한다.
+	 * ord attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ord String
 	 */
 	public void setOrd(String ord) {
@@ -345,7 +345,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttOdr attribute 를 리턴한다.
+	 * insttOdr attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttOdr() {
@@ -353,7 +353,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttOdr attribute 값을 설정한다.
+	 * insttOdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttOdr String
 	 */
 	public void setInsttOdr(String insttOdr) {
@@ -361,7 +361,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * bestInsttCode attribute 를 리턴한다.
+	 * bestInsttCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getBestInsttCode() {
@@ -369,7 +369,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * bestInsttCode attribute 값을 설정한다.
+	 * bestInsttCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param bestInsttCode String
 	 */
 	public void setBestInsttCode(String bestInsttCode) {
@@ -377,7 +377,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperInsttCode attribute 를 리턴한다.
+	 * upperInsttCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getUpperInsttCode() {
@@ -385,7 +385,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * upperInsttCode attribute 값을 설정한다.
+	 * upperInsttCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param upperInsttCode String
 	 */
 	public void setUpperInsttCode(String upperInsttCode) {
@@ -393,7 +393,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * reprsntInsttCode attribute 를 리턴한다.
+	 * reprsntInsttCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getReprsntInsttCode() {
@@ -401,7 +401,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * reprsntInsttCode attribute 값을 설정한다.
+	 * reprsntInsttCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param reprsntInsttCode String
 	 */
 	public void setReprsntInsttCode(String reprsntInsttCode) {
@@ -409,7 +409,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTyLclas attribute 를 리턴한다.
+	 * insttTyLclas attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttTyLclas() {
@@ -417,7 +417,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTyLclas attribute 값을 설정한다.
+	 * insttTyLclas attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttTyLclas String
 	 */
 	public void setInsttTyLclas(String insttTyLclas) {
@@ -425,7 +425,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTyMclas attribute 를 리턴한다.
+	 * insttTyMclas attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttTyMclas() {
@@ -433,7 +433,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTyMclas attribute 값을 설정한다.
+	 * insttTyMclas attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttTyMclas String
 	 */
 	public void setInsttTyMclas(String insttTyMclas) {
@@ -441,7 +441,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTySclas attribute 를 리턴한다.
+	 * insttTySclas attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getInsttTySclas() {
@@ -449,7 +449,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * insttTySclas attribute 값을 설정한다.
+	 * insttTySclas attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param insttTySclas String
 	 */
 	public void setInsttTySclas(String insttTySclas) {
@@ -457,7 +457,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * telno attribute 를 리턴한다.
+	 * telno attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getTelno() {
@@ -465,7 +465,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * telno attribute 값을 설정한다.
+	 * telno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param telno String
 	 */
 	public void setTelno(String telno) {
@@ -473,7 +473,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * fxnum attribute 를 리턴한다.
+	 * fxnum attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFxnum() {
@@ -481,7 +481,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * fxnum attribute 값을 설정한다.
+	 * fxnum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param fxnum String
 	 */
 	public void setFxnum(String fxnum) {
@@ -489,7 +489,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * creatDe attribute 를 리턴한다.
+	 * creatDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getCreatDe() {
@@ -497,7 +497,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * creatDe attribute 값을 설정한다.
+	 * creatDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param creatDe String
 	 */
 	public void setCreatDe(String creatDe) {
@@ -505,7 +505,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablDe attribute 를 리턴한다.
+	 * ablDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAblDe() {
@@ -513,7 +513,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablDe attribute 값을 설정한다.
+	 * ablDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ablDe String
 	 */
 	public void setAblDe(String ablDe) {
@@ -521,7 +521,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablEnnc attribute 를 리턴한다.
+	 * ablEnnc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getAblEnnc() {
@@ -529,7 +529,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * ablEnnc attribute 값을 설정한다.
+	 * ablEnnc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param ablEnnc String
 	 */
 	public void setAblEnnc(String ablEnnc) {
@@ -537,7 +537,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changede attribute 를 리턴한다.
+	 * changede attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getChangede() {
@@ -545,7 +545,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changede attribute 값을 설정한다.
+	 * changede attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param changede String
 	 */
 	public void setChangede(String changede) {
@@ -553,7 +553,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeTime attribute 를 리턴한다.
+	 * changeTime attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getChangeTime() {
@@ -561,7 +561,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * changeTime attribute 값을 설정한다.
+	 * changeTime attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param changeTime String
 	 */
 	public void setChangeTime(String changeTime) {
@@ -569,7 +569,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * bsisDe attribute 를 리턴한다.
+	 * bsisDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getBsisDe() {
@@ -577,7 +577,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * bsisDe attribute 값을 설정한다.
+	 * bsisDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param bsisDe String
 	 */
 	public void setBsisDe(String bsisDe) {
@@ -585,7 +585,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * sortOrdr attribute 를 리턴한다.
+	 * sortOrdr attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getSortOrdr() {
@@ -593,7 +593,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * sortOrdr attribute 값을 설정한다.
+	 * sortOrdr attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sortOrdr int
 	 */
 	public void setSortOrdr(int sortOrdr) {
@@ -601,7 +601,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -609,7 +609,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -617,7 +617,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -625,7 +625,7 @@ public class InsttCodeRecptn implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {

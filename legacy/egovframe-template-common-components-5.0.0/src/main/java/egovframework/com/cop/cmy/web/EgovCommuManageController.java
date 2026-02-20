@@ -34,20 +34,20 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 커뮤니티 사용자관리, 커뮤니티 게시판을 관리하기 위한 컨트롤러 클래스
- * @author 공통서비스개발팀 김연호
+ * 而ㅻ??덊떚 ?ъ슜?먭?由? 而ㅻ??덊떚 寃뚯떆?먯쓣 愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? 源?고샇
  * @since 2016.08.01
  * @version 3.6
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일               수정자            수정내용
+ *   ?섏젙??              ?섏젙??           ?섏젙?댁슜
  *   ----------   --------   ---------------------------
- *   2016.06.13   김연호            최초 생성 - 표준프레임워크 v3.6 개선
- *   2019.05.17   신용호            KISA 취약점 조치 및 보완
- *   2022.11.11   김혜준            시큐어코딩 처리
+ *   2016.06.13   源?고샇            理쒖큹 ?앹꽦 - ?쒖??꾨젅?꾩썙??v3.6 媛쒖꽑
+ *   2019.05.17   ?좎슜??           KISA 痍⑥빟??議곗튂 諛?蹂댁셿
+ *   2022.11.11   源?쒖?            ?쒗걧?댁퐫??泥섎━
  *
  * </pre>
  */
@@ -80,7 +80,7 @@ public class EgovCommuManageController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-     * 커뮤니티 메인페이지를 조회한다.
+     * 而ㅻ??덊떚 硫붿씤?섏씠吏瑜?議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param sessionVO
@@ -95,20 +95,20 @@ public class EgovCommuManageController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
         cmmntyVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
-        // 2022.11.11 시큐어코딩 처리
+        // 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		Map<String, Object> map = egovCommuManageService.selectCommuInf(cmmntyVO);
 		model.addAttribute("cmmntyVO", map.get("cmmntyVO"));
 		model.addAttribute("cmmntyUser", map.get("cmmntyUser"));
 
 		//--------------------------------
-		// 게시판 목록 정보 처리
+		// 寃뚯떆??紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		BoardMasterVO bbsVo = new BoardMasterVO();
 
@@ -118,7 +118,7 @@ public class EgovCommuManageController {
 
 		model.addAttribute("bbsList", bbsResult);
 		////------------------------------
-		//		221116	김혜준	2022 시큐어코딩 조치
+		//		221116	源?쒖?	2022 ?쒗걧?댁퐫??議곗튂
 		model.addAttribute("isAuthenticated", "Y");
 		model.addAttribute("returnMsg", request.getParameter("returnMsg"));
 
@@ -126,7 +126,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 메인페이지의 기본 내용(게시판 4개 표시) 조회한다.
+     * 而ㅻ??덊떚 硫붿씤?섏씠吏??湲곕낯 ?댁슜(寃뚯떆??4媛??쒖떆) 議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param sessionVO
@@ -139,7 +139,7 @@ public class EgovCommuManageController {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// KISA 보안취약점 조치 (2018-12-10, 신용호)
+		// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
@@ -147,7 +147,7 @@ public class EgovCommuManageController {
 		cmmntyVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
 		//--------------------------------
-		// 게시판 목록 정보 처리
+		// 寃뚯떆??紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		BoardMasterVO bbsVo = new BoardMasterVO();
 
@@ -155,7 +155,7 @@ public class EgovCommuManageController {
 
 		List<BoardMasterVO> bbsResult = egovCommuBBSMasterService.selectCommuBBSMasterListMain(bbsVo);
 
-		// 방명록 제외 처리
+		// 諛⑸챸濡??쒖쇅 泥섎━
 		for (int i = 0; i < bbsResult.size(); i++) {
 		    if ("BBST04".equals(bbsResult.get(i).getBbsTyCode())) {
 			bbsResult.remove(i);
@@ -165,7 +165,7 @@ public class EgovCommuManageController {
 		model.addAttribute("bbsList", bbsResult);
 
 		//--------------------------------
-		// 게시물 목록 정보 처리
+		// 寃뚯떆臾?紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		BoardVO boardVo = null;
 		BoardMasterVO masterVo = null;
@@ -195,7 +195,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 가입신청을 등록한다.
+     * 而ㅻ??덊떚 媛?낆떊泥?쓣 ?깅줉?쒕떎.
      *
      * @param cmmntyUser
      * @param sessionVO
@@ -208,7 +208,7 @@ public class EgovCommuManageController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		//KISA 보안취약점 조치 (2018-12-10, 신용호)
+		//KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
@@ -223,15 +223,15 @@ public class EgovCommuManageController {
 		cmmntyUser.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		cmmntyUser.setMberSttus("A");
 
-	    // 승인요청 처리
+	    // ?뱀씤?붿껌 泥섎━
 	    retVal = egovCommuManageService.checkCommuUserDetail(cmmntyUser);
 
-	    //요청건이 없을 경우
+	    //?붿껌嫄댁씠 ?놁쓣 寃쎌슦
 	    if (!retVal.equals("EXIST")) {
 			egovCommuManageService.insertCommuUserRqst(cmmntyUser);
-			retVal = egovMessageSource.getMessage("comCopCmy.commuMain.joinMember.info.success"); //가입신청이 정상처리되었습니다.
+			retVal = egovMessageSource.getMessage("comCopCmy.commuMain.joinMember.info.success"); //媛?낆떊泥?씠 ?뺤긽泥섎━?섏뿀?듬땲??
 	    } else {
-	    	retVal = egovMessageSource.getMessage("comCopCmy.commuMain.joinMember.info.fail"); //이미 가입처리가 되어 있습니다.
+	    	retVal = egovMessageSource.getMessage("comCopCmy.commuMain.joinMember.info.fail"); //?대? 媛?낆쿂由ш? ?섏뼱 ?덉뒿?덈떎.
 	    }
 
 		model.addAttribute("returnMsg", retVal);
@@ -241,7 +241,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티를 탈퇴한다.
+     * 而ㅻ??덊떚瑜??덊눜?쒕떎.
      *
      * @param cmmntyUser
      * @param sessionVO
@@ -254,26 +254,26 @@ public class EgovCommuManageController {
 
 		LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		//KISA 보안취약점 조치 (2018-12-10, 신용호)
+		//KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		//로그인한 사용자가 관리자인지 확인한다.
+		//濡쒓렇?명븳 ?ъ슜?먭? 愿由ъ옄?몄? ?뺤씤?쒕떎.
 		CommunityUserVO userVO = new CommunityUserVO();
 		userVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		userVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		Boolean isCommuAdmin = egovCommuManageService.selectIsCommuAdmin(userVO);
 
-		//관리자는 탈퇴할 수 없음.
+		//愿由ъ옄???덊눜?????놁쓬.
 		String resultMsg = "";
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if(!isCommuAdmin) {
 			cmmntyUserVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			egovCommuManageService.deleteCommuUser(cmmntyUserVO);
-			resultMsg = egovMessageSource.getMessage("comCopCmy.commuMain.deleteMember.info.success"); //탈퇴신청이 정상처리되었습니다.
+			resultMsg = egovMessageSource.getMessage("comCopCmy.commuMain.deleteMember.info.success"); //?덊눜?좎껌???뺤긽泥섎━?섏뿀?듬땲??
 		} else {
-			resultMsg = egovMessageSource.getMessage("comCopCmy.commuMain.deleteMember.info.admin"); //관리자는 탈퇴할수 없습니다.
+			resultMsg = egovMessageSource.getMessage("comCopCmy.commuMain.deleteMember.info.admin"); //愿由ъ옄???덊눜?좎닔 ?놁뒿?덈떎.
 		}
 
 		model.addAttribute("cmmntyId", cmmntyUserVO.getCmmntyId());
@@ -283,7 +283,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 사용자 목록을 조회한다.
+     * 而ㅻ??덊떚 ?ъ슜??紐⑸줉??議고쉶?쒕떎.
      *
      * @param cmmntyUserVO
      * @param model
@@ -318,7 +318,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 사용자를 등록한다.
+     * 而ㅻ??덊떚 ?ъ슜?먮? ?깅줉?쒕떎.
      *
      * @param cmmntyUserVO
      * @param model
@@ -330,18 +330,18 @@ public class EgovCommuManageController {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		//로그인한 사용자가 관리자인지 확인한다.
+		//濡쒓렇?명븳 ?ъ슜?먭? 愿由ъ옄?몄? ?뺤씤?쒕떎.
 		CommunityUserVO userVO = new CommunityUserVO();
 		userVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		userVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		Boolean isCommuAdmin = egovCommuManageService.selectIsCommuAdmin(userVO);
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if(isCommuAdmin) {
 			cmmntyUserVO.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			egovCommuManageService.insertCommuUser(cmmntyUserVO);
@@ -351,7 +351,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 사용자를 탈퇴시킨다. (가입거절 포함)
+     * 而ㅻ??덊떚 ?ъ슜?먮? ?덊눜?쒗궓?? (媛?낃굅???ы븿)
      *
      * @param cmmntyUserVO
      * @param model
@@ -363,18 +363,18 @@ public class EgovCommuManageController {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		//로그인한 사용자가 관리자인지 확인한다.
+		//濡쒓렇?명븳 ?ъ슜?먭? 愿由ъ옄?몄? ?뺤씤?쒕떎.
 		CommunityUserVO userVO = new CommunityUserVO();
 		userVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		userVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		Boolean isCommuAdmin = egovCommuManageService.selectIsCommuAdmin(userVO);
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if(isCommuAdmin) {
 			egovCommuManageService.deleteCommuUser(cmmntyUserVO);
 		}
@@ -383,7 +383,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 관리자를 등록한다.
+     * 而ㅻ??덊떚 愿由ъ옄瑜??깅줉?쒕떎.
      *
      * @param cmmntyUserVO
      * @param model
@@ -394,19 +394,19 @@ public class EgovCommuManageController {
     public String insertCommuUserAdmin(@ModelAttribute("searchVO") CommunityUserVO cmmntyUserVO, ModelMap model) throws Exception {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		//로그인한 사용자가 관리자인지 확인한다.
+		//濡쒓렇?명븳 ?ъ슜?먭? 愿由ъ옄?몄? ?뺤씤?쒕떎.
 		CommunityUserVO userVO = new CommunityUserVO();
 		userVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		userVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		Boolean isCommuAdmin = egovCommuManageService.selectIsCommuAdmin(userVO);
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if(isCommuAdmin) {
 			cmmntyUserVO.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			egovCommuManageService.insertCommuUserAdmin(cmmntyUserVO);
@@ -416,7 +416,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 관리자를 해제한다.
+     * 而ㅻ??덊떚 愿由ъ옄瑜??댁젣?쒕떎.
      *
      * @param cmmntyUserVO
      * @param model
@@ -428,27 +428,27 @@ public class EgovCommuManageController {
 
     	LoginVO user = (LoginVO)EgovUserDetailsHelper.getAuthenticatedUser();
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-   	 	// KISA 보안취약점 조치 (2018-12-10, 신용호)
+   	 	// KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?좎슜??
         if(!isAuthenticated) {
             return "redirect:/uat/uia/egovLoginUsr.do";
         }
 
-		//로그인한 사용자가 관리자인지 확인한다.
+		//濡쒓렇?명븳 ?ъ슜?먭? 愿由ъ옄?몄? ?뺤씤?쒕떎.
 		CommunityUserVO userVO = new CommunityUserVO();
 		userVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		userVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 		Boolean isCommuAdmin = egovCommuManageService.selectIsCommuAdmin(userVO);
 
-		//커뮤니티 개설자는 관리자해제를 할 수 없음.
+		//而ㅻ??덊떚 媛쒖꽕?먮뒗 愿由ъ옄?댁젣瑜??????놁쓬.
 		CommunityVO cmmntyVO = new CommunityVO();
 		cmmntyVO.setCmmntyId(cmmntyUserVO.getCmmntyId());
 		cmmntyVO = egovCommuMasterService.selectCommuMaster(cmmntyVO);
-		//커뮤니티 최초등록자를 확인한다. 일치할 경우 관리자 해제 불가.
+		//而ㅻ??덊떚 理쒖큹?깅줉?먮? ?뺤씤?쒕떎. ?쇱튂??寃쎌슦 愿由ъ옄 ?댁젣 遺덇?.
 		if(cmmntyVO.getFrstRegisterId().equals(cmmntyUserVO.getEmplyrId())) {
 			return "forward:/cop/cmy/selectCommuUserList.do";
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		if(isCommuAdmin) {
 			cmmntyUserVO.setLastUpdusrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 			egovCommuManageService.deleteCommuUserAdmin(cmmntyUserVO);
@@ -458,7 +458,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 미리보기 커뮤니티 메인페이지를 조회한다.
+     * 誘몃━蹂닿린 而ㅻ??덊떚 硫붿씤?섏씠吏瑜?議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param sessionVO
@@ -478,44 +478,44 @@ public class EgovCommuManageController {
 
 		CommunityVO vo = new CommunityVO();
 
-		vo.setCmmntyNm("미리보기 커뮤니티");
-		vo.setCmmntyIntrcn("미리보기를 위한 커뮤니티입니다.");
+		vo.setCmmntyNm("誘몃━蹂닿린 而ㅻ??덊떚");
+		vo.setCmmntyIntrcn("誘몃━蹂닿린瑜??꾪븳 而ㅻ??덊떚?낅땲??");
 		vo.setUseAt("Y");
-		vo.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));	// 본인
+		vo.setFrstRegisterId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));	// 蹂몄씤
 
 		CommunityUser cmmntyUser = new CommunityUser();
 
 		cmmntyUser.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		cmmntyUser.setEmplyrNm("관리자");
+		cmmntyUser.setEmplyrNm("愿由ъ옄");
 
 		model.addAttribute("cmmntyVO", vo);
 		model.addAttribute("cmmntyUser", cmmntyUser);
 
 		//--------------------------------
-		// 게시판 목록 정보 처리
+		// 寃뚯떆??紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		List<BoardMasterVO> bbsResult = new ArrayList<>();
 
 		BoardMasterVO target = null;
 
 		target = new BoardMasterVO();
-		target.setBbsNm("방명록");
+		target.setBbsNm("諛⑸챸濡?);
 		bbsResult.add(target);
 
 		target = new BoardMasterVO();
-		target.setBbsNm("공지게시판");
+		target.setBbsNm("怨듭?寃뚯떆??);
 		bbsResult.add(target);
 
 		target = new BoardMasterVO();
-		target.setBbsNm("갤러리");
+		target.setBbsNm("媛ㅻ윭由?);
 		bbsResult.add(target);
 
 		target = new BoardMasterVO();
-		target.setBbsNm("자유게시판");
+		target.setBbsNm("?먯쑀寃뚯떆??);
 		bbsResult.add(target);
 
 		target = new BoardMasterVO();
-		target.setBbsNm("자료실");
+		target.setBbsNm("?먮즺??);
 		bbsResult.add(target);
 
 		model.addAttribute("bbsList", bbsResult);
@@ -529,10 +529,10 @@ public class EgovCommuManageController {
 
 		model.addAttribute("preview", "true");
 
-		// 안전한 경로 문자열로 조치
+		// ?덉쟾??寃쎈줈 臾몄옄?대줈 議곗튂
 		tmplatCours = EgovWebUtil.filePathBlackList(tmplatCours);
 
-		// 화이트 리스트 체크
+		// ?붿씠??由ъ뒪??泥댄겕
 		List<TemplateInfVO> templateWhiteList = egovTemplateManageService.selectTemplateWhiteList();
 		LOGGER.debug("Template > WhiteList Count = {}",templateWhiteList.size());
 		if ( tmplatCours == null ) {
@@ -550,7 +550,7 @@ public class EgovCommuManageController {
     }
 
     /**
-     * 커뮤니티 메인페이지의 기본 내용(게시판 4개 표시) 조회한다.
+     * 而ㅻ??덊떚 硫붿씤?섏씠吏??湲곕낯 ?댁슜(寃뚯떆??4媛??쒖떆) 議고쉶?쒕떎.
      *
      * @param cmmntyVO
      * @param sessionVO
@@ -567,32 +567,32 @@ public class EgovCommuManageController {
 		cmmntyVO.setEmplyrId(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
 
 		//--------------------------------
-		// 게시판 목록 정보 처리
+		// 寃뚯떆??紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		List<BoardMasterVO> bbsResult = new ArrayList<>();
 
 		BoardMasterVO master = null;
 
 		master = new BoardMasterVO();
-		master.setBbsNm("공지게시판");
+		master.setBbsNm("怨듭?寃뚯떆??);
 		bbsResult.add(master);
 
 		master = new BoardMasterVO();
-		master.setBbsNm("갤러리");
+		master.setBbsNm("媛ㅻ윭由?);
 		bbsResult.add(master);
 
 		master = new BoardMasterVO();
-		master.setBbsNm("자유게시판");
+		master.setBbsNm("?먯쑀寃뚯떆??);
 		bbsResult.add(master);
 
 		master = new BoardMasterVO();
-		master.setBbsNm("자료실");
+		master.setBbsNm("?먮즺??);
 		bbsResult.add(master);
 
 		model.addAttribute("bbsList", bbsResult);
 
 		//--------------------------------
-		// 게시물 목록 정보 처리
+		// 寃뚯떆臾?紐⑸줉 ?뺣낫 泥섎━
 		//--------------------------------
 		ArrayList<Object> target = new ArrayList<>();	// Object => List<BoardVO>
 		for (int i = 0; i < bbsResult.size() && i < 4; i++) {

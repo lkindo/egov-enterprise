@@ -30,21 +30,21 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * EgovImageProcessController.java
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 4. 2.
  * @version
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.02  이삼섭          최초생성
- *   2014.03.31  유지보수         fileSn 오류수정
- *   2018.08.31  이정은          MimeType 중복설정 제거
- *   2019.11.29  신용호          KISA 보안약점 조치 : HTTP응답분할(HTTP_Response_Splitting,CRLF)취약점 조치
- *   2025.06.03  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙), CloseResource(리소스 닫기), AssignmentInOperand(피연산자의 할당)
+ *   2009.04.02  ?댁궪??         理쒖큹?앹꽦
+ *   2014.03.31  ?좎?蹂댁닔         fileSn ?ㅻ쪟?섏젙
+ *   2018.08.31  ?댁젙?          MimeType 以묐났?ㅼ젙 ?쒓굅
+ *   2019.11.29  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 : HTTP?묐떟遺꾪븷(HTTP_Response_Splitting,CRLF)痍⑥빟??議곗튂
+ *   2025.06.03  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃), CloseResource(由ъ냼???リ린), AssignmentInOperand(?쇱뿰?곗옄???좊떦)
  *
  *      </pre>
  */
@@ -52,7 +52,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Controller
 public class EgovImageProcessController extends HttpServlet {
 
-	/** 암호화서비스 */
+	/** ?뷀샇?붿꽌鍮꾩뒪 */
 	@Resource(name = "egovEnvCryptoService")
 	EgovEnvCryptoService cryptoService;
 
@@ -62,7 +62,7 @@ public class EgovImageProcessController extends HttpServlet {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovImageProcessController.class);
 
 	/**
-	 * 첨부된 이미지에 대한 미리보기 기능을 제공한다.
+	 * 泥⑤????대?吏?????誘몃━蹂닿린 湲곕뒫???쒓났?쒕떎.
 	 *
 	 * @param atchFileId
 	 * @param fileSn
@@ -75,8 +75,8 @@ public class EgovImageProcessController extends HttpServlet {
 	public void getImageInf(SessionVO sessionVO, ModelMap model, @RequestParam Map<String, Object> commandMap,
 			HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-		// 암호화된 atchFileId 를 복호화하고 동일한 세션인 경우만 다운로드할 수 있다. (2022.12.06 추가) - 파일아이디가 유추
-		// 불가능하도록 조치
+		// ?뷀샇?붾맂 atchFileId 瑜?蹂듯샇?뷀븯怨??숈씪???몄뀡??寃쎌슦留??ㅼ슫濡쒕뱶?????덈떎. (2022.12.06 異붽?) - ?뚯씪?꾩씠?붽? ?좎텛
+		// 遺덇??ν븯?꾨줉 議곗튂
 		String param_atchFileId = (String) commandMap.get("atchFileId");
 		param_atchFileId = param_atchFileId.replaceAll(" ", "+");
 		byte[] decodedBytes = Base64.getDecoder().decode(param_atchFileId);
@@ -100,7 +100,7 @@ public class EgovImageProcessController extends HttpServlet {
 		vo.setFileSn(fileSn);
 
 		// ------------------------------------------------------------
-		// fileSn이 없는 경우 마지막 파일 참조
+		// fileSn???녿뒗 寃쎌슦 留덉?留??뚯씪 李몄“
 		// ------------------------------------------------------------
 		if (fileSn == null || fileSn.equals("")) {
 			int newMaxFileSN = fileService.getMaxFileSN(vo);

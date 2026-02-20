@@ -13,28 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "용어사전 정보 DTO")
+@Schema(description = "Description")
 public class WordDicaryDto {
 
-    @Schema(description = "용어 ID")
+    @Schema(description = "Description")
     private String wordId;
 
-    @Schema(description = "용어 명")
+    @Schema(description = "Description")
     private String wordNm;
 
-    @Schema(description = "영문 명")
+    @Schema(description = "Description")
     private String engNm;
 
-    @Schema(description = "용어 설명")
+    @Schema(description = "Description")
     private String wordDc;
 
-    @Schema(description = "동의어")
+    @Schema(description = "Description")
     private String synonm;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static WordDicaryDto from(WordDicary entity) {

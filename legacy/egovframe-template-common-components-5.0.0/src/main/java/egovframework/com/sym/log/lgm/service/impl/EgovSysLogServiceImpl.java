@@ -13,20 +13,20 @@ import egovframework.com.sym.log.lgm.service.SysLog;
 import jakarta.annotation.Resource;
 
 /**
- * 로그관리(시스템)를 위한 서비스 구현 클래스
+ * 濡쒓렇愿由??쒖뒪??瑜??꾪븳 ?쒕퉬??援ы쁽 ?대옒??
  * 
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009.03.11
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.11  이삼섭          최초 생성
- *   2025.07.11  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.11  ?댁궪??         理쒖큹 ?앹꽦
+ *   2025.07.11  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -40,7 +40,7 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 	private EgovIdGnrService egovSysLogIdGnrService;
 
 	/**
-	 * 시스템 로그정보를 생성한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??앹꽦?쒕떎.
 	 *
 	 * @param SysLog
 	 */
@@ -54,7 +54,7 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 시스템 로그정보를 요약한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫瑜??붿빟?쒕떎.
 	 *
 	 * @param
 	 */
@@ -65,7 +65,7 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 시스템 로그정보 목록을 조회한다.
+	 * ?쒖뒪??濡쒓렇?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 *
 	 * @param SysLog
 	 */
@@ -83,7 +83,7 @@ public class EgovSysLogServiceImpl extends EgovAbstractServiceImpl implements Eg
 	}
 
 	/**
-	 * 시스템 로그 상세정보를 조회한다.
+	 * ?쒖뒪??濡쒓렇 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
 	 * @param sysLog
 	 * @return sysLog

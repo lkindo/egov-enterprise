@@ -18,24 +18,24 @@ import twitter4j.JSONArray;
 import twitter4j.JSONObject;
 
 /**
- * 대한민국, 미국,유럽연합, 일본, 중국연합 사이의 환율계산기능을 제공하는 Business Interface class
+ * ??쒕?援? 誘멸뎅,?좊읇?고빀, ?쇰낯, 以묎뎅?고빀 ?ъ씠???섏쑉怨꾩궛湲곕뒫???쒓났?섎뒗 Business Interface class
  * <p>
- * 요소기술 - 환율계산
+ * ?붿냼湲곗닠 - ?섏쑉怨꾩궛
  * 
- * @author 공통 서비스 개발팀 박정규
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.01.13
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.01.13  박정규          최초 생성
- *   2023.08.25  김혜준          외환은행 제공 환율 api에서 한국수출입은행 제공 환율 api로 변경
- *   2025.08.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.08.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2009.01.13  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2023.08.25  源?쒖?          ?명솚????쒓났 ?섏쑉 api?먯꽌 ?쒓뎅?섏텧?낆????쒓났 ?섏쑉 api濡?蹂寃?
+ *   2025.08.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.08.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -43,36 +43,36 @@ public class EgovEhgtCalcUtil {
 
 	static private final String EHGT_URL = "https://www.koreaexim.go.kr/site/program/financial/exchangeJSON";
 	static private final String AUTH_KEY = EgovProperties.getProperty("ehgtCalc.authKey");
-	// 환율....
-	static final char EGHT_USD = 'U'; // 미국
-	static final char EGHT_JPY = 'J'; // 일본
-	static final char EGHT_EUR = 'E'; // 유럽연합
-	static final char EGHT_CNY = 'C'; // 중국연합
+	// ?섏쑉....
+	static final char EGHT_USD = 'U'; // 誘멸뎅
+	static final char EGHT_JPY = 'J'; // ?쇰낯
+	static final char EGHT_EUR = 'E'; // ?좊읇?고빀
+	static final char EGHT_CNY = 'C'; // 以묎뎅?고빀
 
-	static final char EGHT_KWR = 'K'; // 대한민국
+	static final char EGHT_KWR = 'K'; // ??쒕?援?
 
 	static StringBuffer sb = new StringBuffer();
 
 	/**
-	 * 대한민국(KRW), 미국(USD), 유럽연합(EUR), 일본(JPY), 중국원화(CNY) 사이의 환율을 계산하는 기능이다 환율표 -
-	 * 매매기준율 => 미국(USD) - 1485.00(USD), 일본-100(JPY) - 1596.26(JPY) 계산법: 대한민원(KRW) -
-	 * 1,000원 -> 미국(USD)로 변환 시 => 1,000(원)/1485(매매기준율) = 0.67(URS) 계산법: 일본(JPY) -
-	 * 100,000원 -> 대한민국(KRW) 변환 시 => (100,000(원) * 1596.26(매매기준율)) / 100(100엔당
-	 * 기준표이므로) = 1,596,260.00 (KRW) 계산법: 일본(JPY) - 100,000원 -> 미국(USD) 변환 시 => (
-	 * (100,000(원) * 1596.26(매매기준율)) / 100(100엔당 기준표이므로) = 1,596,260.00 (KRW)) /
+	 * ??쒕?援?KRW), 誘멸뎅(USD), ?좊읇?고빀(EUR), ?쇰낯(JPY), 以묎뎅?먰솕(CNY) ?ъ씠???섏쑉??怨꾩궛?섎뒗 湲곕뒫?대떎 ?섏쑉??-
+	 * 留ㅻℓ湲곗???=> 誘멸뎅(USD) - 1485.00(USD), ?쇰낯-100(JPY) - 1596.26(JPY) 怨꾩궛踰? ??쒕???KRW) -
+	 * 1,000??-> 誘멸뎅(USD)濡?蹂????=> 1,000(??/1485(留ㅻℓ湲곗??? = 0.67(URS) 怨꾩궛踰? ?쇰낯(JPY) -
+	 * 100,000??-> ??쒕?援?KRW) 蹂????=> (100,000(?? * 1596.26(留ㅻℓ湲곗???) / 100(100?붾떦
+	 * 湲곗??쒖씠誘濡? = 1,596,260.00 (KRW) 怨꾩궛踰? ?쇰낯(JPY) - 100,000??-> 誘멸뎅(USD) 蹂????=> (
+	 * (100,000(?? * 1596.26(留ㅻℓ湲곗???) / 100(100?붾떦 湲곗??쒖씠誘濡? = 1,596,260.00 (KRW)) /
 	 * 1,485.00 = 1,074.92 (USD)
 	 * 
-	 * @param srcType   - 환율기준
-	 * @param srcAmount - 금액
-	 * @param cnvrType  - 변환환율
-	 * @return 환율금액
+	 * @param srcType   - ?섏쑉湲곗?
+	 * @param srcAmount - 湲덉븸
+	 * @param cnvrType  - 蹂?섑솚??
+	 * @return ?섏쑉湲덉븸
 	 * @exception MyException
 	 * @see
 	 */
 	public void readHtmlParsing(String str) {
 		HttpURLConnection con = null;
 		try {
-			// 입력받은 URL에 연결하여 InputStream을 통해 읽은 후 파싱 한다.
+			// ?낅젰諛쏆? URL???곌껐?섏뿬 InputStream???듯빐 ?쎌? ???뚯떛 ?쒕떎.
 			URL url = new URL(EHGT_URL + str);
 
 			con = (HttpURLConnection) url.openConnection();
@@ -98,7 +98,7 @@ public class EgovEhgtCalcUtil {
 		}
 	}
 
-	// 파서는 콜백 형식으로 되어 있다. 각 태그가 들어 올때 적절한 메소드가 호출됨
+	// ?뚯꽌??肄쒕갚 ?뺤떇?쇰줈 ?섏뼱 ?덈떎. 媛??쒓렇媛 ?ㅼ뼱 ?щ븣 ?곸젅??硫붿냼?쒓? ?몄텧??
 	private class CallbackHandler extends HTMLEditorKit.ParserCallback {
 
 		@Override
@@ -106,33 +106,33 @@ public class EgovEhgtCalcUtil {
 
 			String srcStr = new String(data);
 
-			srcStr = EgovStringUtil.strip(srcStr, " ");
+			srcStr = EgovStringUtil.strip(srcStr, "혻");
 
 			sb.append(srcStr).append("/");
 		}
 	}
 
 	/**
-	 * 주어진 소스 화폐 유형 및 금액에 따라 대상 화폐 유형으로의 환율을 계산하는 메서드.
+	 * 二쇱뼱吏??뚯뒪 ?뷀룓 ?좏삎 諛?湲덉븸???곕씪 ????뷀룓 ?좏삎?쇰줈???섏쑉??怨꾩궛?섎뒗 硫붿꽌??
 	 *
-	 * @param srcType   원래 화폐 유형
-	 * @param srcAmount 변환하려는 금액
-	 * @param cnvrType  대상 화폐 유형
-	 * @return 변환된 금액과 대상 화폐 유형을 포함하는 문자열
-	 * @throws Exception 예외 발생 시
+	 * @param srcType   ?먮옒 ?뷀룓 ?좏삎
+	 * @param srcAmount 蹂?섑븯?ㅻ뒗 湲덉븸
+	 * @param cnvrType  ????뷀룓 ?좏삎
+	 * @return 蹂?섎맂 湲덉븸怨?????뷀룓 ?좏삎???ы븿?섎뒗 臾몄옄??
+	 * @throws Exception ?덉쇅 諛쒖깮 ??
 	 */
 	public static String getEhgtCalc(String srcType, long srcAmount, String cnvrType) throws Exception {
 
-		sb.setLength(0); // 일자 변경 후 재호출 시 오류 방지를 위한 초기화
+		sb.setLength(0); // ?쇱옄 蹂寃????ы샇異????ㅻ쪟 諛⑹?瑜??꾪븳 珥덇린??
 		String rtnStr = null;
 
-		JSONArray eghtStdrRt = null; // Html에서 파싱한 환율매매기준율을 저장하기 위한 문자열배열
+		JSONArray eghtStdrRt = null; // Html?먯꽌 ?뚯떛???섏쑉留ㅻℓ湲곗??⑥쓣 ??ν븯湲??꾪븳 臾몄옄?대같??
 
-		double srcStdrRt = 0.00; // 원래 매매기준율
-		double cnvrStdrRt = 0.00; // 변환 매매기준율
+		double srcStdrRt = 0.00; // ?먮옒 留ㅻℓ湲곗???
+		double cnvrStdrRt = 0.00; // 蹂??留ㅻℓ湲곗???
 
-		// double cnvrAmount = 0.00; // 변환금액
-		String sCnvrAmount = null; // 변환금액
+		// double cnvrAmount = 0.00; // 蹂?섍툑??
+		String sCnvrAmount = null; // 蹂?섍툑??
 
 		String srcStr = null;
 		String cnvrStr = null;
@@ -146,7 +146,7 @@ public class EgovEhgtCalcUtil {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 		String searchDate = "";
 
-		for (int i = 0; i < 10; i++) { // 비영업일/비영업시간 조회 시 전날 데이터 조회하도록 일자 변경 후 요청 반복
+		for (int i = 0; i < 10; i++) { // 鍮꾩쁺?낆씪/鍮꾩쁺?낆떆媛?議고쉶 ???꾨궇 ?곗씠??議고쉶?섎룄濡??쇱옄 蹂寃????붿껌 諛섎났
 			searchDate = currentDate.format(formatter);
 			parser.readHtmlParsing("?authkey=" + AUTH_KEY + "&data=AP01&searchdate=" + searchDate);
 			eghtStdrRt = new JSONArray(sb.toString());
@@ -170,22 +170,22 @@ public class EgovEhgtCalcUtil {
 		char srcChr = srcTypeCnvr.charAt(0);
 		char cnvrChr = cnvrTypeCnvr.charAt(0);
 
-		// 원래 환율기준 정의
+		// ?먮옒 ?섏쑉湲곗? ?뺤쓽
 		switch (srcChr) {
 
-		case EGHT_USD: // 미국
+		case EGHT_USD: // 誘멸뎅
 			srcStr = "USD";
 			break;
 
-		case EGHT_JPY: // 일본
+		case EGHT_JPY: // ?쇰낯
 			srcStr = "JPY(100)";
 			break;
 
-		case EGHT_EUR: // 유럽연합
+		case EGHT_EUR: // ?좊읇?고빀
 			srcStr = "EUR";
 			break;
 
-		case EGHT_CNY: // 중국연합
+		case EGHT_CNY: // 以묎뎅?고빀
 			srcStr = "CNH";
 			break;
 
@@ -194,22 +194,22 @@ public class EgovEhgtCalcUtil {
 			break;
 		}
 
-		// 변환하고자 하는 환율기준 정의
+		// 蹂?섑븯怨좎옄 ?섎뒗 ?섏쑉湲곗? ?뺤쓽
 		switch (cnvrChr) {
 
-		case EGHT_USD: // 미국
+		case EGHT_USD: // 誘멸뎅
 			cnvrStr = "USD";
 			break;
 
-		case EGHT_JPY: // 일본
+		case EGHT_JPY: // ?쇰낯
 			cnvrStr = "JPY(100)";
 			break;
 
-		case EGHT_EUR: // 유럽연합
+		case EGHT_EUR: // ?좊읇?고빀
 			cnvrStr = "EUR";
 			break;
 
-		case EGHT_CNY: // 중국연합
+		case EGHT_CNY: // 以묎뎅?고빀
 			cnvrStr = "CNH";
 			break;
 
@@ -218,8 +218,8 @@ public class EgovEhgtCalcUtil {
 			break;
 		}
 
-		// 변환하고자 하는 국가의 환율매매기준율 추출...
-		// 원래 매매기준율 추출
+		// 蹂?섑븯怨좎옄 ?섎뒗 援?????섏쑉留ㅻℓ湲곗???異붿텧...
+		// ?먮옒 留ㅻℓ湲곗???異붿텧
 		for (int i = 0; i < eghtStdrRt.length(); i++) {
 			JSONObject jsonObject = eghtStdrRt.getJSONObject(i);
 			if (srcStr.equals(jsonObject.getString("cur_unit"))) {
@@ -227,7 +227,7 @@ public class EgovEhgtCalcUtil {
 				break;
 			}
 		}
-		// 변환 매매기준율 추출
+		// 蹂??留ㅻℓ湲곗???異붿텧
 		for (int i = 0; i < eghtStdrRt.length(); i++) {
 			JSONObject jsonObject = eghtStdrRt.getJSONObject(i);
 			if (cnvrStr.equals(jsonObject.getString("cur_unit"))) {
@@ -236,95 +236,95 @@ public class EgovEhgtCalcUtil {
 			}
 		}
 
-		// 정확한 계산을 위한 BigDecimal 형태로 구현.
-		BigDecimal bSrcAmount = new BigDecimal(String.valueOf(srcAmount)); // 변환하고자 하는 금액
-		BigDecimal bSrcStdrRt = new BigDecimal(String.valueOf(srcStdrRt)); // 원래 매매 비율
-		BigDecimal bCnvrStdrRt = new BigDecimal(String.valueOf(cnvrStdrRt)); // 변환 매매 비율
-		BigDecimal bStdr = new BigDecimal("100"); // 변환 매매 비율
+		// ?뺥솗??怨꾩궛???꾪븳 BigDecimal ?뺥깭濡?援ы쁽.
+		BigDecimal bSrcAmount = new BigDecimal(String.valueOf(srcAmount)); // 蹂?섑븯怨좎옄 ?섎뒗 湲덉븸
+		BigDecimal bSrcStdrRt = new BigDecimal(String.valueOf(srcStdrRt)); // ?먮옒 留ㅻℓ 鍮꾩쑉
+		BigDecimal bCnvrStdrRt = new BigDecimal(String.valueOf(cnvrStdrRt)); // 蹂??留ㅻℓ 鍮꾩쑉
+		BigDecimal bStdr = new BigDecimal("100"); // 蹂??留ㅻℓ 鍮꾩쑉
 
-		// 원래 매매기준율 및 변환매매기준율 기준으로 환율금액 계산
+		// ?먮옒 留ㅻℓ湲곗???諛?蹂?섎ℓ留ㅺ린以??湲곗??쇰줈 ?섏쑉湲덉븸 怨꾩궛
 		switch (srcChr) {
 
-		case EGHT_KWR: // 대한민국
+		case EGHT_KWR: // ??쒕?援?
 			if (cnvrChr == 'K') {
-				// 변환금액 = 변환대상금액;
+				// 蹂?섍툑??= 蹂?섎??곴툑??
 				sCnvrAmount = bSrcAmount.toString();
 			} else if (cnvrChr == 'J') {
-				// 변환금액 = (변환대상금액 / 변환매매비율) * 100;
+				// 蹂?섍툑??= (蹂?섎??곴툑??/ 蹂?섎ℓ留ㅻ퉬?? * 100;
 				sCnvrAmount = bSrcAmount.divide(bCnvrStdrRt, 4, 4).multiply(bStdr).setScale(2, 4).toString();
 			} else {
-				// 변환금액 = (변환대상금액 / 변환매매비율);
+				// 蹂?섍툑??= (蹂?섎??곴툑??/ 蹂?섎ℓ留ㅻ퉬??;
 				sCnvrAmount = bSrcAmount.divide(bCnvrStdrRt, 2, 4).toString();
 			}
 			break;
 
-		case EGHT_USD: // 미국
+		case EGHT_USD: // 誘멸뎅
 			if (cnvrChr == 'U') {
-				// 변환금액 = 변환대상금액;
+				// 蹂?섍툑??= 蹂?섎??곴툑??
 				sCnvrAmount = bSrcAmount.toString();
 			} else if (cnvrChr == 'K') {
-				// 변환금액 = 변환대상금액 * 원래 매매 비율;
+				// 蹂?섍툑??= 蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(2, 4).toString();
 			} else if (cnvrChr == 'J') {
-				// cnvrAmount = ((변환대상금액 * 원래 매매 비율) / 변환 매매 비율) * 100;
+				// cnvrAmount = ((蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉) * 100;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).multiply(bStdr)
 						.setScale(2, 4).toString();
 			} else {
-				// cnvrAmount = (변환대상금액 * 원래 매매 비율) / 변환 매매 비율;
+				// cnvrAmount = (蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).toString();
 			}
 			break;
 
-		case EGHT_EUR: // 유럽연합
+		case EGHT_EUR: // ?좊읇?고빀
 			if (cnvrChr == 'E') {
-				// 변환금액 = 변환대상금액;
+				// 蹂?섍툑??= 蹂?섎??곴툑??
 				sCnvrAmount = bSrcAmount.toString();
 			} else if (cnvrChr == 'K') {
-				// cnvrAmount = 변환대상금액 * 원래 매매 비율;
+				// cnvrAmount = 蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(2, 4).toString();
 			} else if (cnvrChr == 'J') {
-				// cnvrAmount = ((변환대상금액 * 원래 매매 비율) / 변환 매매 비율) * 100;
+				// cnvrAmount = ((蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉) * 100;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).multiply(bStdr)
 						.setScale(2, 4).toString();
 			} else {
-				// cnvrAmount = (변환대상금액 * 원래 매매 비율) / 변환 매매 비율;
+				// cnvrAmount = (蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).toString();
 			}
 			break;
 
-		case EGHT_JPY: // 일본
+		case EGHT_JPY: // ?쇰낯
 			if (cnvrChr == 'J') {
-				// 변환금액 = 변환대상금액;
+				// 蹂?섍툑??= 蹂?섎??곴툑??
 				sCnvrAmount = bSrcAmount.toString();
 			} else if (cnvrChr == 'K') {
-				// cnvrAmount = (변환대상금액 * 원래 매매 비율) / 100;
+				// cnvrAmount = (蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 100;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bStdr, 2, 4).toString();
 			} else {
-				// cnvrAmount = ((변환대상금액 * 원래 매매 비율) / 100) / 변환 매매 비율;
+				// cnvrAmount = ((蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 100) / 蹂??留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bStdr, 2, 4)
 						.divide(bCnvrStdrRt, 2, 4).toString();
 			}
 			break;
 
-		case EGHT_CNY: // 중국연합
+		case EGHT_CNY: // 以묎뎅?고빀
 			if (cnvrChr == 'C') {
-				// 변환금액 = 변환대상금액;
+				// 蹂?섍툑??= 蹂?섎??곴툑??
 				sCnvrAmount = bSrcAmount.toString();
 			} else if (cnvrChr == 'K') {
-				// cnvrAmount = 변환대상금액 * 원래 매매 비율;
+				// cnvrAmount = 蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(2, 4).toString();
 			} else if (cnvrChr == 'J') {
-				// cnvrAmount = ((변환대상금액 * 원래 매매 비율) / 변환 매매 비율) * 100;
+				// cnvrAmount = ((蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉) * 100;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).multiply(bStdr)
 						.setScale(2, 4).toString();
 			} else {
-				// cnvrAmount = (변환대상금액 * 원래 매매 비율) / 변환 매매 비율;
+				// cnvrAmount = (蹂?섎??곴툑??* ?먮옒 留ㅻℓ 鍮꾩쑉) / 蹂??留ㅻℓ 鍮꾩쑉;
 				sCnvrAmount = bSrcAmount.multiply(bSrcStdrRt).setScale(4, 4).divide(bCnvrStdrRt, 2, 4).toString();
 			}
 			break;
 
 		default:
-			// 변환금액 = (변환대상금액 / 변환매매비율);
+			// 蹂?섍툑??= (蹂?섎??곴툑??/ 蹂?섎ℓ留ㅻ퉬??;
 			sCnvrAmount = bSrcAmount.divide(bCnvrStdrRt, 2, 4).toString();
 			break;
 		}

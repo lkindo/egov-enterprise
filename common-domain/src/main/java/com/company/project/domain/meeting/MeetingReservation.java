@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 회의실예약 JPA Entity
- * 레거시 테이블: NMTGPLACERESVE
+ * ???벥??쇱굙??JPA Entity
+ * ??뉕탢?????뵠?? NMTGPLACERESVE
  */
 @Entity
 @Table(name = "NMTGPLACERESVE")

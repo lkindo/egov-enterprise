@@ -4,19 +4,19 @@ import java.io.Serializable;
 
 import jakarta.validation.constraints.NotEmpty;
 /**
- * 설문항목관리 VO Class 구현
- * @author 공통서비스 장동한
+ * ?ㅻЦ??ぉ愿由?VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  장동한			최초 생성
- *   2024.10.29  권태성			필수값 BindingResult 검증을 위한 @NotEmpty 추가
+ *   2009.03.20  ?λ룞??		理쒖큹 ?앹꽦
+ *   2024.10.29  沅뚰깭??		?꾩닔媛?BindingResult 寃利앹쓣 ?꾪븳 @NotEmpty 異붽?
  *
  * </pre>
  */
@@ -24,49 +24,49 @@ public class QustnrItemManageVO implements Serializable {
 
 	private static final long serialVersionUID = -8233519594470362395L;
 
-	/** 설문문항 아이디 */
+	/** ?ㅻЦ臾명빆 ?꾩씠??*/
 	private String qestnrQesitmId = "";
 
-	/** 설문지 아이디 */
-	@NotEmpty(message = "설문정보{common.required.msg}")
+	/** ?ㅻЦ吏 ?꾩씠??*/
+	@NotEmpty(message = "?ㅻЦ?뺣낫{common.required.msg}")
 	private String qestnrId = "";
 
-	/** 항목순번 */
-	@NotEmpty(message = "항목순번{common.required.msg}")
+	/** ??ぉ?쒕쾲 */
+	@NotEmpty(message = "??ぉ?쒕쾲{common.required.msg}")
 	private String iemSn = "";
 
-	/** 항목내용 */
-	@NotEmpty(message = "항목내용{common.required.msg}")
+	/** ??ぉ?댁슜 */
+	@NotEmpty(message = "??ぉ?댁슜{common.required.msg}")
 	private String qustnrIemId = "";
 
-	/** 설문항목아이디 */
+	/** ?ㅻЦ??ぉ?꾩씠??*/
 	private String iemCn = "";
 
-	/** 기타답변여부 */
-	@NotEmpty(message = "기타답변여부{common.required.msg}")
+	/** 湲고??듬??щ? */
+	@NotEmpty(message = "湲고??듬??щ?{common.required.msg}")
 	private String etcAnswerAt = "";
 
-	/** 설문항목(을)를 아이디 */
-	@NotEmpty(message = "설문문항정보{common.required.msg}")
+	/** ?ㅻЦ??ぉ(??瑜??꾩씠??*/
+	@NotEmpty(message = "?ㅻЦ臾명빆?뺣낫{common.required.msg}")
 	private String qestnrTmplatId = "";
 
-	/** 최초등록시점  */
+	/** 理쒖큹?깅줉?쒖젏  */
 	private String frstRegisterPnttm = "";
 
-	/** 최초등록아이디 */
+	/** 理쒖큹?깅줉?꾩씠??*/
 	private String frstRegisterId = "";
 
-	/** 최종수정일 */
+	/** 理쒖쥌?섏젙??*/
 	private String lastUpdusrPnttm = "";
 
-	/** 최종수정자 아이디 */
+	/** 理쒖쥌?섏젙???꾩씠??*/
 	private String lastUpdusrId = "";
 
-	/** 컨트롤 명령어 */
+	/** 而⑦듃濡?紐낅졊??*/
 	private String cmd = "";
 
 	/**
-	 * qestnrQesitmId attribute 를 리턴한다.
+	 * qestnrQesitmId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnrQesitmId() {
@@ -74,7 +74,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrQesitmId attribute 값을 설정한다.
+	 * qestnrQesitmId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnrQesitmId String
 	 */
 	public void setQestnrQesitmId(String qestnrQesitmId) {
@@ -82,7 +82,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrId attribute 를 리턴한다.
+	 * qestnrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnrId() {
@@ -90,7 +90,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrId attribute 값을 설정한다.
+	 * qestnrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnrId String
 	 */
 	public void setQestnrId(String qestnrId) {
@@ -98,7 +98,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * iemSn attribute 를 리턴한다.
+	 * iemSn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getIemSn() {
@@ -106,7 +106,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * iemSn attribute 값을 설정한다.
+	 * iemSn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return iemSn String
 	 */
 	public void setIemSn(String iemSn) {
@@ -114,7 +114,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qustnrIemId attribute 를 리턴한다.
+	 * qustnrIemId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQustnrIemId() {
@@ -122,7 +122,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qustnrIemId attribute 값을 설정한다.
+	 * qustnrIemId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qustnrIemId String
 	 */
 	public void setQustnrIemId(String qustnrIemId) {
@@ -130,7 +130,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * iemCn attribute 를 리턴한다.
+	 * iemCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getIemCn() {
@@ -138,7 +138,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * iemCn attribute 값을 설정한다.
+	 * iemCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return iemCn String
 	 */
 	public void setIemCn(String iemCn) {
@@ -146,7 +146,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * etcAnswerAt attribute 를 리턴한다.
+	 * etcAnswerAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEtcAnswerAt() {
@@ -154,7 +154,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * etcAnswerAt attribute 값을 설정한다.
+	 * etcAnswerAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return etcAnswerAt String
 	 */
 	public void setEtcAnswerAt(String etcAnswerAt) {
@@ -162,7 +162,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatId attribute 를 리턴한다.
+	 * qestnrTmplatId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnrTmplatId() {
@@ -170,7 +170,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * qestnrTmplatId attribute 값을 설정한다.
+	 * qestnrTmplatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnrTmplatId String
 	 */
 	public void setQestnrTmplatId(String qestnrTmplatId) {
@@ -178,7 +178,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -186,7 +186,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -194,7 +194,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -202,7 +202,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -210,7 +210,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -218,7 +218,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -226,7 +226,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -234,7 +234,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -242,7 +242,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * cmd attribute 를 리턴한다.
+	 * cmd attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getCmd() {
@@ -250,7 +250,7 @@ public class QustnrItemManageVO implements Serializable {
 	}
 
 	/**
-	 * cmd attribute 값을 설정한다.
+	 * cmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return cmd String
 	 */
 	public void setCmd(String cmd) {

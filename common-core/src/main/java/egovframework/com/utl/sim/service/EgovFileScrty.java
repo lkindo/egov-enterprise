@@ -15,20 +15,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base64인코딩/디코딩 방식을 이용한 데이터를 암호화/복호화하는 Business Interface class
+ * Base64?紐꾪맜???遺욱맜??獄쎻뫗?????곸뒠???怨쀬뵠?怨? ?酉???癰귣벏??酉釉??Business Interface class
  * 
- * @author 공통서비스개발팀 박지욱
+ * @author ?⑤벏???뺥돩??븐뻣獄쏆뮉? 獄쏅벡???
  * @since 2009.01.19
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 揶쏆뮇?????Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ??륁젟??     ??륁젟??          ??륁젟??곸뒠
  *  -------    --------    ---------------------------
- *   2009.01.19  박지욱          최초 생성
- *   2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
+ *   2009.01.19  獄쏅벡???         筌ㅼ뮇????밴쉐
+ *   2011.08.31  JJY            野껋럥???띻펾 ??쀫탣???뚣끉??怨뺤춳??곸췅甕곌쑴????밴쉐
  *
  *      </pre>
  */
@@ -36,22 +36,22 @@ public class EgovFileScrty {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovFileScrty.class);
 
-	// 파일구분자
+	// ???뵬?닌됲뀋??
 	static final char FILE_SEPARATOR = File.separatorChar;
-	// 버퍼사이즈
+	// 甕곌쑵????좑쭩?
 	static final int BUFFER_SIZE = 1024;
 
 	/**
-	 * 파일을 암호화하는 기능
+	 * ???뵬???酉??酉釉??疫꿸퀡??
 	 *
-	 * @param String source 암호화할 파일
-	 * @param String target 암호화된 파일
-	 * @return boolean result 암호화여부 True/False
+	 * @param String source ?酉??酉釉????뵬
+	 * @param String target ?酉??遺얜쭆 ???뵬
+	 * @return boolean result ?酉??遺용연?봔 True/False
 	 * @exception Exception
 	 */
 	public static boolean encryptFile(String source, String target) throws Exception {
 
-		// 암호화 여부
+		// ?酉??????
 		boolean result = false;
 
 		String sourceFile = source.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -99,16 +99,16 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 파일을 복호화하는 기능
+	 * ???뵬??癰귣벏??酉釉??疫꿸퀡??
 	 *
-	 * @param String source 복호화할 파일
-	 * @param String target 복호화된 파일
-	 * @return boolean result 복호화여부 True/False
+	 * @param String source 癰귣벏??酉釉????뵬
+	 * @param String target 癰귣벏??遺얜쭆 ???뵬
+	 * @return boolean result 癰귣벏??遺용연?봔 True/False
 	 * @exception Exception
 	 */
 	public static boolean decryptFile(String source, String target) throws Exception {
 
-		// 복호화 여부
+		// 癰귣벏??????
 		boolean result = false;
 
 		String sourceFile = source.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -154,10 +154,10 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 데이터를 암호화하는 기능
+	 * ?怨쀬뵠?怨? ?酉??酉釉??疫꿸퀡??
 	 *
-	 * @param byte[] data 암호화할 데이터
-	 * @return String result 암호화된 데이터
+	 * @param byte[] data ?酉??酉釉??怨쀬뵠??
+	 * @return String result ?酉??遺얜쭆 ?怨쀬뵠??
 	 * @exception Exception
 	 */
 	public static String encodeBinary(byte[] data) throws Exception {
@@ -169,10 +169,10 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 데이터를 암호화하는 기능
+	 * ?怨쀬뵠?怨? ?酉??酉釉??疫꿸퀡??
 	 *
-	 * @param String data 암호화할 데이터
-	 * @return String result 암호화된 데이터
+	 * @param String data ?酉??酉釉??怨쀬뵠??
+	 * @return String result ?酉??遺얜쭆 ?怨쀬뵠??
 	 * @exception Exception
 	 */
 	public static String encode(String data) throws Exception {
@@ -180,10 +180,10 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 데이터를 복호화하는 기능
+	 * ?怨쀬뵠?怨? 癰귣벏??酉釉??疫꿸퀡??
 	 *
-	 * @param String data 복호화할 데이터
-	 * @return String result 복호화된 데이터
+	 * @param String data 癰귣벏??酉釉??怨쀬뵠??
+	 * @return String result 癰귣벏??遺얜쭆 ?怨쀬뵠??
 	 * @exception Exception
 	 */
 	public static byte[] decodeBinary(String data) throws Exception {
@@ -191,10 +191,10 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 데이터를 복호화하는 기능
+	 * ?怨쀬뵠?怨? 癰귣벏??酉釉??疫꿸퀡??
 	 *
-	 * @param String data 복호화할 데이터
-	 * @return String result 복호화된 데이터
+	 * @param String data 癰귣벏??酉釉??怨쀬뵠??
+	 * @return String result 癰귣벏??遺얜쭆 ?怨쀬뵠??
 	 * @exception Exception
 	 */
 	public static String decode(String data) throws Exception {
@@ -202,12 +202,12 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 비밀번호를 암호화하는 기능(복호화가 되면 안되므로 SHA-256 인코딩 방식 적용).
+	 * ??쑬?甕곕뜇?뉒몴??酉??酉釉??疫꿸퀡??癰귣벏??遺? ??롢늺 ??덈┷沃샕嚥?SHA-256 ?紐꾪맜??獄쎻뫗???怨몄뒠).
 	 * 
-	 * deprecated : 보안 강화를 위하여 salt로 ID를 지정하는 encryptPassword(password, id) 사용
+	 * deprecated : 癰귣똻釉?揶쏅벤?뺟몴??袁る릭??salt嚥?ID??筌왖?類λ릭??encryptPassword(password, id) ????
 	 *
-	 * @param String data 암호화할 비밀번호
-	 * @return String result 암호화된 비밀번호
+	 * @param String data ?酉??酉釉???쑬?甕곕뜇??
+	 * @return String result ?酉??遺얜쭆 ??쑬?甕곕뜇??
 	 * @exception Exception
 	 */
 	@Deprecated
@@ -217,15 +217,15 @@ public class EgovFileScrty {
 			return "";
 		}
 
-		byte[] plainText = null; // 평문
-		byte[] hashValue = null; // 해쉬값
+		byte[] plainText = null; // ??겆?
+		byte[] hashValue = null; // ??곷룴揶?
 		plainText = data.getBytes();
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 
-		// 변경 시 기존 hash 값에 검증 불가.. => deprecated 시키고 유지
+		// 癰궰野???疫꿸퀣??hash 揶쏅?肉?野꺜筌??븍뜃?.. => deprecated ??쀪텕???醫?
 		/*
-		 * // Random 방식의 salt 추가
+		 * // Random 獄쎻뫗???salt ?곕떽?
 		 * SecureRandom ng = new SecureRandom();
 		 * byte[] randomBytes = new byte[16];
 		 * ng.nextBytes(randomBytes);
@@ -244,10 +244,10 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 비밀번호를 암호화하는 기능(복호화가 되면 안되므로 SHA-256 인코딩 방식 적용)
+	 * ??쑬?甕곕뜇?뉒몴??酉??酉釉??疫꿸퀡??癰귣벏??遺? ??롢늺 ??덈┷沃샕嚥?SHA-256 ?紐꾪맜??獄쎻뫗???怨몄뒠)
 	 * 
-	 * @param password 암호화될 패스워드
-	 * @param id       salt로 사용될 사용자 ID 지정
+	 * @param password ?酉??遺얜쭍 ??λ뮞???굡
+	 * @param id       salt嚥???????????ID 筌왖??
 	 * @return
 	 * @throws Exception
 	 */
@@ -257,7 +257,7 @@ public class EgovFileScrty {
 			return "";
 		}
 
-		byte[] hashValue = null; // 해쉬값
+		byte[] hashValue = null; // ??곷룴揶?
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 
@@ -270,11 +270,11 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 비밀번호를 암호화하는 기능(복호화가 되면 안되므로 SHA-256 인코딩 방식 적용)
+	 * ??쑬?甕곕뜇?뉒몴??酉??酉釉??疫꿸퀡??癰귣벏??遺? ??롢늺 ??덈┷沃샕嚥?SHA-256 ?紐꾪맜??獄쎻뫗???怨몄뒠)
 	 * 
-	 * @param data 암호화할 비밀번호
+	 * @param data ?酉??酉釉???쑬?甕곕뜇??
 	 * @param salt Salt
-	 * @return 암호화된 비밀번호
+	 * @return ?酉??遺얜쭆 ??쑬?甕곕뜇??
 	 * @throws Exception
 	 */
 	public static String encryptPassword(String data, byte[] salt) throws Exception {
@@ -283,7 +283,7 @@ public class EgovFileScrty {
 			return "";
 		}
 
-		byte[] hashValue = null; // 해쉬값
+		byte[] hashValue = null; // ??곷룴揶?
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 
@@ -296,15 +296,15 @@ public class EgovFileScrty {
 	}
 
 	/**
-	 * 비밀번호를 암호화된 패스워드 검증(salt가 사용된 경우만 적용).
+	 * ??쑬?甕곕뜇?뉒몴??酉??遺얜쭆 ??λ뮞???굡 野꺜筌?salt揶쎛 ?????野껋럩??쭕??怨몄뒠).
 	 * 
-	 * @param data    원 패스워드
-	 * @param encoded 해쉬처리된 패스워드(Base64 인코딩)
+	 * @param data    ????λ뮞???굡
+	 * @param encoded ??곷룴筌ｌ꼶?????λ뮞???굡(Base64 ?紐꾪맜??
 	 * @return
 	 * @throws Exception
 	 */
 	public static boolean checkPassword(String data, String encoded, byte[] salt) throws Exception {
-		byte[] hashValue = null; // 해쉬값
+		byte[] hashValue = null; // ??곷룴揶?
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 

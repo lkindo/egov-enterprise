@@ -18,22 +18,22 @@ import egovframework.com.sym.sym.bak.service.EgovBackupResultService;
 import jakarta.annotation.Resource;
 
 /**
- * 백업결과관리에 대한 controller 클래스
+ * 諛깆뾽寃곌낵愿由ъ뿉 ???controller ?대옒??
  *
- * 백업결과관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * 백업결과관리의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 김진만
+ * 諛깆뾽寃곌낵愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * 諛깆뾽寃곌낵愿由ъ쓽 議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  * </pre>
  */
 
@@ -44,11 +44,11 @@ public class EgovBackupResultController {
 	@Resource(name = "egovBackupResultService")
 	private EgovBackupResultService egovBackupResultService;
 
-	/* Property 서비스 */
+	/* Property ?쒕퉬??*/
     @Resource(name="propertiesService")
     private EgovPropertyService propertyService;
 
-    /* 메세지 서비스 */
+    /* 硫붿꽭吏 ?쒕퉬??*/
     @Resource(name="egovMessageSource")
     private EgovMessageSource egovMessageSource;
 
@@ -56,10 +56,10 @@ public class EgovBackupResultController {
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovBackupResultController.class);
 
 	/**
-	 * 백업결과을 삭제한다.
-	 * @return 리턴URL
+	 * 諛깆뾽寃곌낵????젣?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param backupResult 삭제대상 백업결과model
+	 * @param backupResult ??젣???諛깆뾽寃곌낵model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
@@ -79,33 +79,33 @@ public class EgovBackupResultController {
 
 
 	/**
-	 * 백업결과정보을 상세조회한다.
-	 * @return 리턴URL
+	 * 諛깆뾽寃곌낵?뺣낫???곸꽭議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param backupResult 조회대상 백업결과model
+	 * @param backupResult 議고쉶???諛깆뾽寃곌낵model
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
 	@RequestMapping("/sym/sym/bak/getBackupResult.do")
 	public String selectBackupResult(@ModelAttribute("searchVO")BackupResult backupResult, ModelMap model)
 	  throws Exception{
-		LOGGER.debug(" 조회조건 : {}", backupResult);
+		LOGGER.debug(" 議고쉶議곌굔 : {}", backupResult);
 		BackupResult result = egovBackupResultService.selectBackupResult(backupResult);
 		model.addAttribute("resultInfo", result);
-		LOGGER.debug(" 결과값 : {}", result);
+		LOGGER.debug(" 寃곌낵媛?: {}", result);
 
 		return "egovframework/com/sym/sym/bak/EgovBackupResultDetail";
 	}
 
 	/**
-	 * 백업결과 목록을 조회한다.
-	 * @return 리턴URL
+	 * 諛깆뾽寃곌낵 紐⑸줉??議고쉶?쒕떎.
+	 * @return 由ы꽩URL
 	 *
-	 * @param searchVO 목록조회조건VO
+	 * @param searchVO 紐⑸줉議고쉶議곌굔VO
 	 * @param model		ModelMap
 	 * @exception Exception Exception
 	 */
-	@IncludedInfo(name="백업결과관리", order = 1151 ,gid = 60)
+	@IncludedInfo(name="諛깆뾽寃곌낵愿由?, order = 1151 ,gid = 60)
 	@RequestMapping("/sym/sym/bak/getBackupResultList.do")
 	public String selectBackupResultList(@ModelAttribute("searchVO")BackupResult searchVO, ModelMap model)
 	  throws Exception{

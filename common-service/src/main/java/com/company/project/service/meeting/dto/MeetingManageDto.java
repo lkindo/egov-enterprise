@@ -13,52 +13,52 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "회의 관리 DTO")
+@Schema(description = "Description")
 public class MeetingManageDto {
 
-    @Schema(description = "회의 ID")
+    @Schema(description = "Description")
     private String mtgId;
 
-    @Schema(description = "회의 명")
+    @Schema(description = "Description")
     private String mtgNm;
 
-    @Schema(description = "회의 안건 내용")
+    @Schema(description = "Description")
     private String mtgMtrCn;
 
-    @Schema(description = "회의 순번")
+    @Schema(description = "Description")
     private Integer mtgSn;
 
-    @Schema(description = "회의 참여인원")
+    @Schema(description = "Description")
     private Integer mtgCo;
 
-    @Schema(description = "회의 일자")
+    @Schema(description = "Description")
     private String mtgDe;
 
-    @Schema(description = "회의 장소")
+    @Schema(description = "Description")
     private String mtgPlace;
 
-    @Schema(description = "회의 시작 시간")
+    @Schema(description = "Description")
     private String mtgBeginTm;
 
-    @Schema(description = "회의 종료 시간")
+    @Schema(description = "Description")
     private String mtgEndTime;
 
-    @Schema(description = "비공개 여부")
+    @Schema(description = "Description")
     private String clsdrMtgAt;
 
-    @Schema(description = "회의 결과 내용")
+    @Schema(description = "Description")
     private String mtgResultCn;
 
-    @Schema(description = "관리 부서 ID")
+    @Schema(description = "Description")
     private String mngtDeptId;
 
-    @Schema(description = "담당자 ID")
+    @Schema(description = "Description")
     private String mnaerId;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static MeetingManageDto from(MeetingManage entity) {

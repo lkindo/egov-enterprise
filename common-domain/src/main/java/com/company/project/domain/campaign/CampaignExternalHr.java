@@ -6,7 +6,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 /**
- * 행사 외부인사 관리 엔티티
+ * ??깃텢 ?紐??紐꾧텢 ?온???酉???
  */
 @Entity
 @Table(name = "NEXTRLHRINFO")

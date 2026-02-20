@@ -1,19 +1,19 @@
 /**
- * 개요
- * - 로그인정책에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 濡쒓렇?몄젙梨낆뿉 ???model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 로그인정책정보의 사용자ID, IP정보, 중복허용여부, 제한여부 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - 濡쒓렇?몄젙梨낆젙蹂댁쓽 ?ъ슜?륤D, IP?뺣낫, 以묐났?덉슜?щ?, ?쒗븳?щ? ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:53
+ * @created 03-8-2009 ?ㅽ썑 2:08:53
  *   <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  * 
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2009.8.3    이문준     최초 생성
- *  2024.10.29	LeeBaekHaeng	시큐어코딩 일련번호 PK 파라미터 암복호화
+ *  2009.8.3    ?대Ц以     理쒖큹 ?앹꽦
+ *  2024.10.29	LeeBaekHaeng	?쒗걧?댁퐫???쇰젴踰덊샇 PK ?뚮씪誘명꽣 ?붾났?명솕
  * </pre>
  */
 
@@ -28,43 +28,43 @@ public class LoginPolicy extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
     /**
-	 * 사용자 ID
+	 * ?ъ슜??ID
 	 */	
 	private String emplyrId;
 	/**
-	 * 사용자 ID 암호화
+	 * ?ъ슜??ID ?뷀샇??
 	 */
 	private String emplyrIdEncrypt;
 	/**
-	 * 사용자 명
+	 * ?ъ슜??紐?
 	 */	
 	private String emplyrNm;	
     /**
-	 * 사용자 구분
+	 * ?ъ슜??援щ텇
 	 */	
 	private String emplyrSe;		
     /**
-	 * IP정보
+	 * IP?뺣낫
 	 */	
     private String ipInfo;
     /**
-	 * 중복허용여부
+	 * 以묐났?덉슜?щ?
 	 */	
     private String dplctPermAt;
     /**
-	 * 제한여부
+	 * ?쒗븳?щ?
 	 */	
     private String lmttAt;
     /**
-	 * 등록자 ID
+	 * ?깅줉??ID
 	 */	
     private String userId;
     /**
-	 * 등록일시
+	 * ?깅줉?쇱떆
 	 */	
     private String regDate;
     /**
-	 * 등록여부
+	 * ?깅줉?щ?
 	 */	
     private String regYn;
     

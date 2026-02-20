@@ -13,16 +13,16 @@ import egovframework.com.uss.ion.ntr.service.EgovNoteRecptnService;
 import egovframework.com.uss.ion.ntr.service.NoteRecptn;
 import jakarta.annotation.Resource;
 /**
- * 받은쪽지함관리를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * 諛쏆?履쎌??④?由щ? 泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -36,9 +36,9 @@ public class EgovNoteRecptnServiceImpl extends EgovAbstractServiceImpl
     private static final Logger LOGGER = LoggerFactory.getLogger(EgovNoteRecptnServiceImpl.class);
 
     /**
-     * 받은쪽지함관리를(을) 목록을 조회 한다.
-     * @param noteRecptn -조회할 정보가 담긴 객체
-     * @return List -조회한목록
+     * 諛쏆?履쎌??④?由щ?(?? 紐⑸줉??議고쉶 ?쒕떎.
+     * @param noteRecptn -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return List -議고쉶?쒕ぉ濡?
      * @throws Exception
      */
     @Override
@@ -47,9 +47,9 @@ public class EgovNoteRecptnServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 받은쪽지함관리를(을) 목록 전체 건수를(을) 조회한다.
-     * @param noteRecptn -조회할 정보가 담긴 객체
-     * @return int -조회한전체건수
+     * 諛쏆?履쎌??④?由щ?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+     * @param noteRecptn -議고쉶???뺣낫媛 ?닿릿 媛앹껜
+     * @return int -議고쉶?쒖쟾泥닿굔??
      * @throws Exception
      */
     @Override
@@ -58,46 +58,46 @@ public class EgovNoteRecptnServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 받은쪽지함관리를(을) 상세조회 한다.
-     * @param noteRecptn -받은쪽지함관리 Model
-     * @return Map -성세조회정보가 담긴 Map
+     * 諛쏆?履쎌??④?由щ?(?? ?곸꽭議고쉶 ?쒕떎.
+     * @param noteRecptn -諛쏆?履쎌??④?由?Model
+     * @return Map -?깆꽭議고쉶?뺣낫媛 ?닿릿 Map
      * @throws Exception
      */
     @Override
 	public Map<?, ?> selectNoteRecptnDetail(NoteRecptn noteRecptn) throws Exception {
-    	//받은쪽지함관리를 개봉으로 상태를 바꾼다.
+    	//諛쏆?履쎌??④?由щ? 媛쒕큺?쇰줈 ?곹깭瑜?諛붽씔??
     	dao.updateNoteRecptnRelationOpenYn(noteRecptn);
         return dao.selectNoteRecptnDetail(noteRecptn);
     }
 
     /**
-     * 받은쪽지함관리를(을) 삭제한다.
-     * @param noteRecptn 받은쪽지함관리 정보가 담긴 객체
+     * 諛쏆?履쎌??④?由щ?(?? ??젣?쒕떎.
+     * @param noteRecptn 諛쏆?履쎌??④?由??뺣낫媛 ?닿릿 媛앹껜
      * @return void
      * @throws Exception
      */
     @Override
 	public void deleteNoteRecptn(NoteRecptn noteRecptn) throws Exception {
 
-        //보낸쪽지함 건수를 조회함
+        //蹂대궦履쎌???嫄댁닔瑜?議고쉶??
         int nNoteTrnsmitCnt = dao.selectNoteTrnsmitRelationCnt(noteRecptn);
 
-        //받은쪽지함 건수를 조회함
+        //諛쏆?履쎌???嫄댁닔瑜?議고쉶??
         int nNoteRecptnCnt = dao.selectNoteRecptnRelationCnt(noteRecptn);
 
         LOGGER.info("nNoteTrnsmitCnt>"+nNoteTrnsmitCnt);
         LOGGER.info("nNoteRecptnCnt>"+nNoteRecptnCnt);
         if(nNoteTrnsmitCnt == 1 && nNoteRecptnCnt==1){
-        	//받은쪽지/쪽지관리 삭제 처리
+        	//諛쏆?履쎌?/履쎌?愿由???젣 泥섎━
         	//dao.deleteNoteRecptnRelation(noteRecptn);
-        	//받은쪽지함삭제
+        	//諛쏆?履쎌??⑥궘??
         	dao.deleteNoteRecptn(noteRecptn);
-        	//보낸쪽지함삭제
+        	//蹂대궦履쎌??⑥궘??
         	dao.deleteNoteTrnsmit(noteRecptn);
-        	//쪽지관리삭제
+        	//履쎌?愿由ъ궘??
         	dao.deleteNoteManage(noteRecptn);
         }else{
-        	//받은쪽지 삭제
+        	//諛쏆?履쎌? ??젣
         	dao.deleteNoteRecptn(noteRecptn);
         }
     }

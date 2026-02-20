@@ -3,7 +3,7 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="RssTagManage">
 
-	<!-- ::ResultMap 선언 -->
+	<!-- ::ResultMap ?좎뼵 -->
 	<resultMap id="RssManageVO" type="egovframework.com.uss.ion.rss.service.RssManage">
 		<result property="rssId" column="RSS_ID"/>
 		<result property="trgetSvcNm" column="TRGET_SVC_NM"/>
@@ -25,7 +25,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/> 			
 	</resultMap>
 
-	<!-- RSS관리::목록조회 게시물정보 -->
+	<!-- RSS愿由?:紐⑸줉議고쉶 寃뚯떆臾쇱젙蹂?-->
 	<select id="selectRssTagManage" parameterType="comDefaultVO" resultType="egovMap">
 		
 	SELECT *
@@ -100,7 +100,7 @@
 	WHERE ROWNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
 	
 	</select>
-	<!-- RSS관리::목록조회_게시물 총개수  -->
+	<!-- RSS愿由?:紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectRssTagManageCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
@@ -145,7 +145,7 @@
 	 </if>
 	</select>
 	
-    <!-- RSS관리::삭제  -->
+    <!-- RSS愿由?:??젣  -->
 	<delete id="deleteRssTagManage">
 		
 			DELETE FROM COMTNRSS 
@@ -153,7 +153,7 @@
 		
 	</delete>
 
-	<!-- RSS관리::수정  -->
+	<!-- RSS愿由?:?섏젙  -->
 	<update id="updateRssTagManage">
  
 UPDATE COMTNRSS 
@@ -177,7 +177,7 @@ WHERE RSS_ID=#{rssId}
  
 	</update>
 	
-	<!-- RSS관리::상세보기 -->
+	<!-- RSS愿由?:?곸꽭蹂닿린 -->
 	<select id="selectRssTagManageDetail" resultMap="RssManageVO">
 	SELECT 
 		A.RSS_ID,
@@ -203,7 +203,7 @@ WHERE RSS_ID=#{rssId}
 		AND A.RSS_ID=#{rssId} 
 	</select>
 
-	<!-- RSS관리::입력  -->
+	<!-- RSS愿由?:?낅젰  -->
 	<insert id="insertRssTagManage">	     
 	 
 	

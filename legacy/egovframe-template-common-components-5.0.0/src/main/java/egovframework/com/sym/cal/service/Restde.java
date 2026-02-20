@@ -5,19 +5,19 @@ import java.io.Serializable;
 import jakarta.validation.constraints.NotEmpty;
 
 /**
- * 휴일 모델 클래스
- * @author 공통서비스 개발팀 이중호
+ * ?댁씪 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호			최초 생성
- *   2024.10.20  권태성		필수값 BindingResult 검증을 위한 @NotEmpty 추가
+ *   2009.04.01  ?댁쨷??		理쒖큹 ?앹꽦
+ *   2024.10.20  沅뚰깭??	?꾩닔媛?BindingResult 寃利앹쓣 ?꾪븳 @NotEmpty 異붽?
  *
  * </pre>
  */
@@ -26,101 +26,101 @@ public class Restde implements Serializable {
 	private static final long serialVersionUID = -8509545779844669658L;
 
 	/*
-	 * 휴일번호
+	 * ?댁씪踰덊샇
 	 */
     private int    restdeNo       = 0;
 
     /*
-     * 휴일일자
+     * ?댁씪?쇱옄
      */
-	@NotEmpty(message = "휴일일자{common.required.msg}")
+	@NotEmpty(message = "?댁씪?쇱옄{common.required.msg}")
     private String restdeDe       = "";
 
     /*
-     * 휴일명
+     * ?댁씪紐?
      */
-	@NotEmpty(message = "휴일명{common.required.msg}")
+	@NotEmpty(message = "?댁씪紐?common.required.msg}")
     private String restdeNm       = "";
 
     /*
-     * 휴일설명
+     * ?댁씪?ㅻ챸
      */
-	@NotEmpty(message = "휴일설명{common.required.msg}")
+	@NotEmpty(message = "?댁씪?ㅻ챸{common.required.msg}")
     private String restdeDc       = "";
 
     /*
-     * 휴일구분
+     * ?댁씪援щ텇
      */
-	@NotEmpty(message = "휴일구분{common.required.msg}")
+	@NotEmpty(message = "?댁씪援щ텇{common.required.msg}")
     private String restdeSe       = "";
 
     /*
-     * 휴일구분코드
+     * ?댁씪援щ텇肄붾뱶
      */
     private String restdeSeCode   = "";
 
     /*
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId = "";
 
     /*
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId   = "";
 
     /*
-     * 년
+     * ??
      */
     private String year           = "";
 
     /*
-     * 월
+     * ??
      */
     private String month          = "";
 
     /*
-     * 일
+     * ??
      */
     private String day            = "";
 
     /*
-     * 휴일여부
+     * ?댁씪?щ?
      */
     private String restdeAt       = "";
 
     /*
-     * 달력셀
+     * ?щ젰?
      */
 	private int    cellNum        = 0;
 
 	/*
-	 * 월별 주순위
+	 * ?붾퀎 二쇱닚??
 	 */
     private int    weeks          = 0;
 
     /*
-     * 월 주수
+     * ??二쇱닔
      */
     private int maxWeeks = 0;
 
     /*
-     * 요일
+     * ?붿씪
      */
     private int    week           = 0;
 
     /*
-     * 시작요일
+     * ?쒖옉?붿씪
      */
     private int    startWeekMonth = 0;
 
     /*
-     * 마지막 일자
+     * 留덉?留??쇱옄
      */
     private int    lastDayMonth   = 0;
 
 	/**
-	 * restdeNo attribute 를 리턴한다.
+	 * restdeNo attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getRestdeNo() {
@@ -128,7 +128,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeNo attribute 값을 설정한다.
+	 * restdeNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeNo int
 	 */
 	public void setRestdeNo(int restdeNo) {
@@ -136,7 +136,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeDe attribute 를 리턴한다.
+	 * restdeDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeDe() {
@@ -144,7 +144,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeDe attribute 값을 설정한다.
+	 * restdeDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeDe String
 	 */
 	public void setRestdeDe(String restdeDe) {
@@ -152,7 +152,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeNm attribute 를 리턴한다.
+	 * restdeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeNm() {
@@ -160,7 +160,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeNm attribute 값을 설정한다.
+	 * restdeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeNm String
 	 */
 	public void setRestdeNm(String restdeNm) {
@@ -168,7 +168,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeDc attribute 를 리턴한다.
+	 * restdeDc attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeDc() {
@@ -176,7 +176,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeDc attribute 값을 설정한다.
+	 * restdeDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeDc String
 	 */
 	public void setRestdeDc(String restdeDc) {
@@ -184,7 +184,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeSe attribute 를 리턴한다.
+	 * restdeSe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeSe() {
@@ -192,7 +192,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeSe attribute 값을 설정한다.
+	 * restdeSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeSe String
 	 */
 	public void setRestdeSe(String restdeSe) {
@@ -200,7 +200,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeSeCode attribute 를 리턴한다.
+	 * restdeSeCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeSeCode() {
@@ -208,7 +208,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeSeCode attribute 값을 설정한다.
+	 * restdeSeCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeSeCode String
 	 */
 	public void setRestdeSeCode(String restdeSeCode) {
@@ -216,7 +216,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getFrstRegisterId() {
@@ -224,7 +224,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -232,7 +232,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getLastUpdusrId() {
@@ -240,7 +240,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -248,7 +248,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * year attribute 를 리턴한다.
+	 * year attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getYear() {
@@ -256,7 +256,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * year attribute 값을 설정한다.
+	 * year attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param year String
 	 */
 	public void setYear(String year) {
@@ -264,7 +264,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * month attribute 를 리턴한다.
+	 * month attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMonth() {
@@ -272,7 +272,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * month attribute 값을 설정한다.
+	 * month attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param month String
 	 */
 	public void setMonth(String month) {
@@ -280,7 +280,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * day attribute 를 리턴한다.
+	 * day attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getDay() {
@@ -288,7 +288,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * day attribute 값을 설정한다.
+	 * day attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param day String
 	 */
 	public void setDay(String day) {
@@ -296,7 +296,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeAt attribute 를 리턴한다.
+	 * restdeAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRestdeAt() {
@@ -304,7 +304,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeAt attribute 값을 설정한다.
+	 * restdeAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param restdeAt String
 	 */
 	public void setRestdeAt(String restdeAt) {
@@ -312,7 +312,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * cellNum attribute 를 리턴한다.
+	 * cellNum attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getCellNum() {
@@ -320,7 +320,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * cellNum attribute 값을 설정한다.
+	 * cellNum attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param cellNum int
 	 */
 	public void setCellNum(int cellNum) {
@@ -328,7 +328,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * weeks attribute 를 리턴한다.
+	 * weeks attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getWeeks() {
@@ -336,7 +336,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * weeks attribute 값을 설정한다.
+	 * weeks attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param weeks int
 	 */
 	public void setWeeks(int weeks) {
@@ -344,7 +344,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * maxWeeks attribute 를 리턴한다.
+	 * maxWeeks attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getMaxWeeks() {
@@ -352,7 +352,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * maxWeeks attribute 값을 설정한다.
+	 * maxWeeks attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param maxWeeks int
 	 */
 	public void setMaxWeeks(int maxWeeks) {
@@ -360,7 +360,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * week attribute 를 리턴한다.
+	 * week attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getWeek() {
@@ -368,7 +368,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * week attribute 값을 설정한다.
+	 * week attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param week int
 	 */
 	public void setWeek(int week) {
@@ -376,7 +376,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * startWeekMonth attribute 를 리턴한다.
+	 * startWeekMonth attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getStartWeekMonth() {
@@ -384,7 +384,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * startWeekMonth attribute 값을 설정한다.
+	 * startWeekMonth attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param startWeekMonth int
 	 */
 	public void setStartWeekMonth(int startWeekMonth) {
@@ -392,7 +392,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * lastDayMonth attribute 를 리턴한다.
+	 * lastDayMonth attribute 瑜?由ы꽩?쒕떎.
 	 * @return int
 	 */
 	public int getLastDayMonth() {
@@ -400,7 +400,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * lastDayMonth attribute 값을 설정한다.
+	 * lastDayMonth attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param lastDayMonth int
 	 */
 	public void setLastDayMonth(int lastDayMonth) {
@@ -408,7 +408,7 @@ public class Restde implements Serializable {
 	}
 
 	/**
-	 * restdeDe 값을 "yyyy-mm-dd" 형식으로 반환한다.
+	 * restdeDe 媛믪쓣 "yyyy-mm-dd" ?뺤떇?쇰줈 諛섑솚?쒕떎.
 	 * @return
 	 */
 	public String getFormattedRestdeDe() {

@@ -1,13 +1,13 @@
 /**
  * @Class Name  : EgovSessionUtil.java
- * @Description : 세션 처리 관련 유틸리티
+ * @Description : ?몄뀡 泥섎━ 愿???좏떥由ы떚
  * @Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *     -------          --------        ---------------------------
- *   2009.02.13       이삼섭                  최초 생성
+ *   2009.02.13       ?댁궪??                 理쒖큹 ?앹꽦
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 02. 13
  * @version 1.0
  * @see
@@ -30,11 +30,11 @@ import jakarta.servlet.http.HttpSession;
 public class EgovSessionCookieUtil {
 
 	/**
-	 * HttpSession에 주어진 키 값으로 세션 정보를 생성하는 기능
+	 * HttpSession??二쇱뼱吏???媛믪쑝濡??몄뀡 ?뺣낫瑜??앹꽦?섎뒗 湲곕뒫
 	 *
 	 * @param request
-	 * @param keyStr - 세션 키
-	 * @param valStr - 세션 값
+	 * @param keyStr - ?몄뀡 ??
+	 * @param valStr - ?몄뀡 媛?
 	 * @throws Exception
 	 */
 	public static void setSessionAttribute(HttpServletRequest request, String keyStr, String valStr) throws Exception {
@@ -44,11 +44,11 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * HttpSession에 주어진 키 값으로 세션 객체를 생성하는 기능
+	 * HttpSession??二쇱뼱吏???媛믪쑝濡??몄뀡 媛앹껜瑜??앹꽦?섎뒗 湲곕뒫
 	 *
-	 * @param request - HttpServletRequest 객체
-	 * @param keyStr  - 설정할 세션의 키
-	 * @param obj     - 설정할 세션의 값(객체)
+	 * @param request - HttpServletRequest 媛앹껜
+	 * @param keyStr  - ?ㅼ젙???몄뀡????
+	 * @param obj     - ?ㅼ젙???몄뀡??媛?媛앹껜)
 	 * @throws Exception
 	 */
 	public static void setSessionAttribute(HttpServletRequest request, String keyStr, Object obj) throws Exception {
@@ -58,10 +58,10 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * HttpSession에 존재하는 주어진 키 값에 해당하는 세션 값을 얻어오는 기능
+	 * HttpSession??議댁옱?섎뒗 二쇱뼱吏???媛믪뿉 ?대떦?섎뒗 ?몄뀡 媛믪쓣 ?살뼱?ㅻ뒗 湲곕뒫
 	 *
 	 * @param request
-	 * @param keyStr - 세션 키
+	 * @param keyStr - ?몄뀡 ??
 	 * @return
 	 * @throws Exception
 	 */
@@ -72,7 +72,7 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * HttpSession 객체내의 모든 값을 호출하는 기능
+	 * HttpSession 媛앹껜?댁쓽 紐⑤뱺 媛믪쓣 ?몄텧?섎뒗 湲곕뒫
 	 *
 	 * @param request
 	 * @return
@@ -92,10 +92,10 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * HttpSession에 존재하는 세션을 주어진 키 값으로 삭제하는 기능
+	 * HttpSession??議댁옱?섎뒗 ?몄뀡??二쇱뼱吏???媛믪쑝濡???젣?섎뒗 湲곕뒫
 	 *
 	 * @param request
-	 * @param keyStr - 세션 키
+	 * @param keyStr - ?몄뀡 ??
 	 * @throws Exception
 	 */
 	public static void removeSessionAttribute(HttpServletRequest request, String keyStr) throws Exception {
@@ -105,87 +105,87 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * 쿠키생성 - 입력받은 분만큼 쿠키를 유지되도록 세팅한다.
-	 * 쿠키의 유효시간은 minute 파라미터에 따라 설정되며, 최대 24시간으로 제한된다.
-	 * 예) minute이 5이면, 쿠키의 유효시간을 5분으로 설정 =>(cookie.setMaxAge(60 * 5))
+	 * 荑좏궎?앹꽦 - ?낅젰諛쏆? 遺꾨쭔??荑좏궎瑜??좎??섎룄濡??명똿?쒕떎.
+	 * 荑좏궎???좏슚?쒓컙? minute ?뚮씪誘명꽣???곕씪 ?ㅼ젙?섎ŉ, 理쒕? 24?쒓컙?쇰줈 ?쒗븳?쒕떎.
+	 * ?? minute??5?대㈃, 荑좏궎???좏슚?쒓컙??5遺꾩쑝濡??ㅼ젙 =>(cookie.setMaxAge(60 * 5))
 	 *
 	 * @param response - Response
-	 * @param cookieNm - 쿠키명
-	 * @param cookieVal - 쿠키값
-	 * @param minute - 지속시킬 시간(분, 최대 24시간)
-	 * @return 없음
+	 * @param cookieNm - 荑좏궎紐?
+	 * @param cookieVal - 荑좏궎媛?
+	 * @param minute - 吏?띿떆???쒓컙(遺? 理쒕? 24?쒓컙)
+	 * @return ?놁쓬
 	 * @exception UnsupportedEncodingException
 	 * @see
 	 */
 	public static void setCookie(HttpServletResponse response, String cookieNm, String cookieVal, int minute)
 		throws UnsupportedEncodingException {
 
-		// 특정의 encode 방식을 사용해 캐릭터 라인을 application/x-www-form-urlencoded 형식으로 변환
-		// 일반 문자열을 웹에서 통용되는 'x-www-form-urlencoded' 형식으로 변환하는 역할
+		// ?뱀젙??encode 諛⑹떇???ъ슜??罹먮┃???쇱씤??application/x-www-form-urlencoded ?뺤떇?쇰줈 蹂??
+		// ?쇰컲 臾몄옄?댁쓣 ?뱀뿉???듭슜?섎뒗 'x-www-form-urlencoded' ?뺤떇?쇰줈 蹂?섑븯????븷
 		String cookieValue = URLEncoder.encode(cookieVal, "utf-8");
 
-		// 쿠키생성 - 쿠키의 이름, 쿠키의 값
+		// 荑좏궎?앹꽦 - 荑좏궎???대쫫, 荑좏궎??媛?
 		Cookie cookie = new Cookie(cookieNm, cookieValue);
 
 		cookie.setSecure(true);
 
-		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 처리
+		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 泥섎━
 
-		// 쿠키의 유효시간 설정
+		// 荑좏궎???좏슚?쒓컙 ?ㅼ젙
 		int maxAge = 60 * minute;
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		if (maxAge > 60 * 60 * 24) {
 			maxAge = 60 * 60 * 24;
 		}
 		cookie.setMaxAge(maxAge);
 
-		// response 내장 객체를 이용해 쿠키를 전송
+		// response ?댁옣 媛앹껜瑜??댁슜??荑좏궎瑜??꾩넚
 		response.addCookie(cookie);
 	}
 
 	/**
-	 * 쿠키 생성 및 설정.
-	 * 이 메서드를 사용하여 생성된 쿠키는 브라우저 세션 동안만 유지됩니다. (유효시간 설정이 없으므로)
+	 * 荑좏궎 ?앹꽦 諛??ㅼ젙.
+	 * ??硫붿꽌?쒕? ?ъ슜?섏뿬 ?앹꽦??荑좏궎??釉뚮씪?곗? ?몄뀡 ?숈븞留??좎??⑸땲?? (?좏슚?쒓컙 ?ㅼ젙???놁쑝誘濡?
 	 *
-	 * @param response - 웹 응답 객체
-	 * @param cookieNm - 생성할 쿠키의 이름
-	 * @param cookieVal - 생성할 쿠키의 값
-	 * @throws UnsupportedEncodingException - UTF-8 인코딩을 지원하지 않는 경우 발생
+	 * @param response - ???묐떟 媛앹껜
+	 * @param cookieNm - ?앹꽦??荑좏궎???대쫫
+	 * @param cookieVal - ?앹꽦??荑좏궎??媛?
+	 * @throws UnsupportedEncodingException - UTF-8 ?몄퐫?⑹쓣 吏?먰븯吏 ?딅뒗 寃쎌슦 諛쒖깮
 	 */
 
 	public static void setCookie(HttpServletResponse response, String cookieNm, String cookieVal)
 			throws UnsupportedEncodingException {
 
-		// 특정의 encode 방식을 사용해 캐릭터 라인을 application/x-www-form-urlencoded 형식으로 변환
-		// 일반 문자열을 웹에서 통용되는 'x-www-form-urlencoded' 형식으로 변환하는 역할
+		// ?뱀젙??encode 諛⑹떇???ъ슜??罹먮┃???쇱씤??application/x-www-form-urlencoded ?뺤떇?쇰줈 蹂??
+		// ?쇰컲 臾몄옄?댁쓣 ?뱀뿉???듭슜?섎뒗 'x-www-form-urlencoded' ?뺤떇?쇰줈 蹂?섑븯????븷
 		String cookieValue = URLEncoder.encode(cookieVal, "utf-8");
 
-		// 쿠키 생성 (보안 위험을 줄이기 위해 CRLF 문자 제거)
+		// 荑좏궎 ?앹꽦 (蹂댁븞 ?꾪뿕??以꾩씠湲??꾪빐 CRLF 臾몄옄 ?쒓굅)
 		Cookie cookie = new Cookie(EgovWebUtil.removeCRLF(cookieNm), EgovWebUtil.removeCRLF(cookieValue));
 
-		// 2011.10.10 보안점검 후속조치
-		cookie.setSecure(true);   // HTTPS에서만 쿠키 사용
-		cookie.setHttpOnly(true); // 자바스크립트에서 쿠키 접근 방지
+		// 2011.10.10 蹂댁븞?먭? ?꾩냽議곗튂
+		cookie.setSecure(true);   // HTTPS?먯꽌留?荑좏궎 ?ъ슜
+		cookie.setHttpOnly(true); // ?먮컮?ㅽ겕由쏀듃?먯꽌 荑좏궎 ?묎렐 諛⑹?
 
-		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 처리
+		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 泥섎━
 
-		// 응답에 쿠키 추가
+		// ?묐떟??荑좏궎 異붽?
 		response.addCookie(cookie);
 	}
 
 	/**
-	 * 쿠키값 사용 - 쿠키값을 읽어들인다.
+	 * 荑좏궎媛??ъ슜 - 荑좏궎媛믪쓣 ?쎌뼱?ㅼ씤??
 	 *
 	 * @param request - Request
-	 * @param name - 쿠키명
-	 * @return 쿠키값
+	 * @param name - 荑좏궎紐?
+	 * @return 荑좏궎媛?
 	 * @exception
 	 * @see
 	 */
 	public static String getCookie(HttpServletRequest request, String cookieNm) throws Exception {
 
-		// 한 도메인에서 여러 개의 쿠키를 사용할 수 있기 때문에 Cookie[] 배열이 반환
-		// Cookie를 읽어서 Cookie 배열로 반환
+		// ???꾨찓?몄뿉???щ윭 媛쒖쓽 荑좏궎瑜??ъ슜?????덇린 ?뚮Ц??Cookie[] 諛곗뿴??諛섑솚
+		// Cookie瑜??쎌뼱??Cookie 諛곗뿴濡?諛섑솚
 		Cookie[] cookies = request.getCookies();
 
 		if (cookies == null) {
@@ -194,13 +194,13 @@ public class EgovSessionCookieUtil {
 
 		String cookieValue = null;
 
-		// 입력받은 쿠키명으로 비교해서 쿠키값을 얻어낸다.
+		// ?낅젰諛쏆? 荑좏궎紐낆쑝濡?鍮꾧탳?댁꽌 荑좏궎媛믪쓣 ?살뼱?몃떎.
 		for (Cookie element : cookies) {
 
 			if (cookieNm.equals(element.getName())) {
 
-				// 특별한 encode 방식을 사용해 application/x-www-form-urlencoded 캐릭터 라인을 디코드
-				// URLEncoder로 인코딩된 결과를 디코딩하는 클래스
+				// ?밸퀎??encode 諛⑹떇???ъ슜??application/x-www-form-urlencoded 罹먮┃???쇱씤???붿퐫??
+				// URLEncoder濡??몄퐫?⑸맂 寃곌낵瑜??붿퐫?⑺븯???대옒??
 				cookieValue = URLDecoder.decode(element.getValue(), "utf-8");
 
 				break;
@@ -211,28 +211,28 @@ public class EgovSessionCookieUtil {
 	}
 
 	/**
-	 * 쿠키값 삭제 - cookie.setMaxAge(0) - 쿠키의 유효시간을 0으로 설정해 줌으로써 쿠키를 삭제하는 것과 동일한 효과
+	 * 荑좏궎媛???젣 - cookie.setMaxAge(0) - 荑좏궎???좏슚?쒓컙??0?쇰줈 ?ㅼ젙??以뚯쑝濡쒖뜥 荑좏궎瑜???젣?섎뒗 寃껉낵 ?숈씪???④낵
 	 *
 	 * @param request - Request
-	 * @param name - 쿠키명
-	 * @return 쿠키값
+	 * @param name - 荑좏궎紐?
+	 * @return 荑좏궎媛?
 	 * @exception
 	 * @see
 	 */
 	public static void setCookie(HttpServletResponse response, String cookieNm) throws UnsupportedEncodingException {
 
-		// 쿠키생성 - 쿠키의 이름, 쿠키의 값
+		// 荑좏궎?앹꽦 - 荑좏궎???대쫫, 荑좏궎??媛?
 		Cookie cookie = new Cookie(EgovWebUtil.removeCRLF(cookieNm), null);
 
 		cookie.setSecure(true);
 
-		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 처리
+		cookie.setHttpOnly(true);//2022.01. Cookie without the HttpOnly flag 泥섎━
 
-		// 쿠키를 삭제하는 메소드가 따로 존재하지 않음
-		// 쿠키의 유효시간을 0으로 설정해 줌으로써 쿠키를 삭제하는 것과 동일한 효과
+		// 荑좏궎瑜???젣?섎뒗 硫붿냼?쒓? ?곕줈 議댁옱?섏? ?딆쓬
+		// 荑좏궎???좏슚?쒓컙??0?쇰줈 ?ㅼ젙??以뚯쑝濡쒖뜥 荑좏궎瑜???젣?섎뒗 寃껉낵 ?숈씪???④낵
 		cookie.setMaxAge(0);
 
-		// response 내장 객체를 이용해 쿠키를 전송
+		// response ?댁옣 媛앹껜瑜??댁슜??荑좏궎瑜??꾩넚
 		response.addCookie(cookie);
 	}
 }

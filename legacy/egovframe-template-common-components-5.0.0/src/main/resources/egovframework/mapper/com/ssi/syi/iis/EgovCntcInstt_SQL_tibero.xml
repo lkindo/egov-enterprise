@@ -10,7 +10,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  INSTT_ID
                  ,  INSTT_NM
@@ -23,7 +23,7 @@
         <if test='searchCondition == "CodeList"'>AND
             1 = 1
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     )
@@ -53,7 +53,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  INSTT_ID
                  ,  SYS_ID
@@ -68,7 +68,7 @@
         <if test='searchCondition == "CodeList"'>AND
             INSTT_ID = #{insttId}
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     )
@@ -98,7 +98,7 @@
             SELECT ROWNUM RNUM, ALL_LIST.*
               FROM  (
         
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         
             SELECT  INSTT_ID
                  ,  SYS_ID
@@ -122,7 +122,7 @@
         <if test='searchCondition == "CodeList_InsttId"'>AND
             INSTT_ID = #{insttId}
         </if>
-        /* 구현 Sql */
+        /* 援ы쁽 Sql */
         <![CDATA[
                     ) ALL_LIST
                     )

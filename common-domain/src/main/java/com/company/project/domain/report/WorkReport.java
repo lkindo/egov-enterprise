@@ -23,7 +23,7 @@ public class WorkReport extends BaseTimeEntity {
     private String reportContent;
 
     @Column(name = "REPRT_SE", length = 1)
-    private String reportType; // 1:주간, 2:월간
+    private String reportType; // 1:雅뚯눊而? 2:?遺쎌퍢
 
     @Column(name = "REPRT_DE", length = 20)
     private String reportDate;
@@ -32,7 +32,7 @@ public class WorkReport extends BaseTimeEntity {
     private String writerId;
 
     @Column(name = "REPRT_STTUS", length = 1)
-    private String reportStatus; // 1:작성중, 2:보고완료
+    private String reportStatus; // 1:?臾믨쉐餓? 2:癰귣떯??袁⑥┷
 
     @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
     private String frstRegisterId;

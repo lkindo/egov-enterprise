@@ -6,16 +6,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @Class Name : SysLog.java
- * @Description : 로그관리(시스템)를 위한 VO 클래스를 정의한다.
+ * @Description : 濡쒓렇愿由??쒖뒪??瑜??꾪븳 VO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * @Modification Information
  *
- *    수정일          수정자         수정내용
+ *    ?섏젙??         ?섏젙??        ?섏젙?댁슜
  *    -------         -------     -------------------
- *    2009. 3. 11.     이삼섭      최초생성
- *    2011. 7. 01.     이기하      패키지 분리(sym.log -> sym.log.lgm)
- *    2011.09.14       서준식      화면에 검색일자를 표시하기위한 멤버변수 추가.
- *    2017.09.19       이정은      검색시작일_화면용, 검색종료일_화면용 삭제
- * @author 공통 서비스 개발팀 이삼섭
+ *    2009. 3. 11.     ?댁궪??     理쒖큹?앹꽦
+ *    2011. 7. 01.     ?닿린??     ?⑦궎吏 遺꾨━(sym.log -> sym.log.lgm)
+ *    2011.09.14       ?쒖???     ?붾㈃??寃?됱씪?먮? ?쒖떆?섍린?꾪븳 硫ㅻ쾭蹂??異붽?.
+ *    2017.09.19       ?댁젙?      寃?됱떆?묒씪_?붾㈃?? 寃?됱쥌猷뚯씪_?붾㈃????젣
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -28,125 +28,125 @@ public class SysLog implements Serializable{
 	private static final long serialVersionUID = 540569951549295059L;
 	
 	/**
-	 * 에러횟수
+	 * ?먮윭?잛닔
 	 */
 	private int errorCo = 0;
 	/**
-	 * 에러코드
+	 * ?먮윭肄붾뱶
 	 */
 	private String errorCode = "";
 	/**
-	 * 에러코드 명
+	 * ?먮윭肄붾뱶 紐?
 	 */
 	private String errorCodeNm = "";
 	/**
-	 * 에러구분
+	 * ?먮윭援щ텇
 	 */
 	private String errorSe = "";
 	/**
-	 * 기관코드
+	 * 湲곌?肄붾뱶
 	 */
 	private String insttCode = "";
 	/**
-	 * 기관코드 명
+	 * 湲곌?肄붾뱶 紐?
 	 */
 	private String insttCodeNm = "";
 	/**
-	 * 업무구분코드
+	 * ?낅Т援щ텇肄붾뱶
 	 */
 	private String jobSeCode = "";
 
 	/**
-	 * 업무구분코드명
+	 * ?낅Т援щ텇肄붾뱶紐?
 	 */
 	private String jobSeCodeNm = "";
 	/**
-	 * 메서드명
+	 * 硫붿꽌?쒕챸
 	 */
 	private String methodNm = "";
 	/**
-	 * 발생일자
+	 * 諛쒖깮?쇱옄
 	 */
 	private String occrrncDe = "";
 	/**
-	 * 처리횟수
+	 * 泥섎━?잛닔
 	 */
 	private int processCo = 0;
 	/**
-	 * 처리구분코드
+	 * 泥섎━援щ텇肄붾뱶
 	 */
 	private String processSeCode = "";
 	/**
-	 * 처리구분코드명
+	 * 泥섎━援щ텇肄붾뱶紐?
 	 */
 	private String processSeCodeNm = "";
 	/**
-	 * 처리시간
+	 * 泥섎━?쒓컙
 	 */
 	private String processTime = "";
 	/**
-	 * 요청아이디
+	 * ?붿껌?꾩씠??
 	 */
 	private String requstId = "";
 	/**
-	 * 요청자아이디
+	 * ?붿껌?먯븘?대뵒
 	 */
 	private String rqesterId = "";
 	/**
-	 * 요청자 이름
+	 * ?붿껌???대쫫
 	 */
 	private String rqsterNm = "";
 	/**
-	 * 요청아이피
+	 * ?붿껌?꾩씠??
 	 */
 	private String rqesterIp = "";
 	/**
-	 * 응답코드
+	 * ?묐떟肄붾뱶
 	 */
 	private String rspnsCode = "";
 	/**
-	 * 응답코드 명
+	 * ?묐떟肄붾뱶 紐?
 	 */
 	private String rspnsCodeNm = "";
 	/**
-	 * 서비스명
+	 * ?쒕퉬?ㅻ챸
 	 */
 	private String srvcNm = "";
 	/**
-	 * 대상메뉴명
+	 * ??곷찓?대챸
 	 */
 	private String trgetMenuNm = "";
 	/**
-	 * 검색시작일
+	 * 寃?됱떆?묒씪
 	 */
 	private String searchBgnDe = "";
 	/**
-	 * 검색조건
+	 * 寃?됱“嫄?
 	 */
 	private String searchCnd = "";
 	/**
-	 * 검색종료일
+	 * 寃?됱쥌猷뚯씪
 	 */
 	private String searchEndDe = "";
 	/**
-	 * 검색단어
+	 * 寃?됰떒??
 	 */
 	private String searchWrd = "";
 	/**
-	 * 정렬순서(DESC,ASC)
+	 * ?뺣젹?쒖꽌(DESC,ASC)
 	 */
 	private String sortOrdr = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
 
-    /** 페이지개수 */
+    /** ?섏씠吏媛쒖닔 */
     private int pageUnit = 10;
 
-    /** 페이지사이즈 */
+    /** ?섏씠吏?ъ씠利?*/
     private int pageSize = 10;
 
     /** firstIndex */

@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 현대화된 파일 관리 서비스 (추상화 인터페이스 기반)
+ * ?꾨??붾맂 ?뚯씪 愿由??쒕퉬??(異붿긽???명꽣?섏씠??湲곕컲)
  */
 @Service("egovFileService")
 @Transactional(readOnly = true)
@@ -42,7 +42,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * 파일 업로드 (멀티파일 지원)
+     * ?뚯씪 ?낅줈??(硫?고뙆??吏??
      */
     @Override
     @Transactional
@@ -76,7 +76,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * 첨부파일 목록 조회
+     * 泥⑤??뚯씪 紐⑸줉 議고쉶
      */
     @Override
     public List<FileDto> getFileList(String atchFileId) {
@@ -90,7 +90,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * 파일 다운로드를 위한 Resource 조회
+     * ?뚯씪 ?ㅼ슫濡쒕뱶瑜??꾪븳 Resource 議고쉶
      */
     @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {

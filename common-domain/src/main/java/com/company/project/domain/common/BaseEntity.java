@@ -12,7 +12,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 생성자, 생성일시, 수정자, 수정일시 자동 기록을 위한 공통 엔티티
+ * ??밴쉐?? ??밴쉐??깅뻻, ??륁젟?? ??륁젟??깅뻻 ?癒?짗 疫꿸퀡以???袁る립 ?⑤벏???酉???
  */
 @Getter
 @Setter

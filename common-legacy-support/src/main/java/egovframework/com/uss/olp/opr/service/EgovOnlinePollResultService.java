@@ -1,0 +1,38 @@
+package egovframework.com.uss.olp.opr.service;
+
+import java.util.List;
+/**
+ * ????LL????? Service Class ?
+ * @author ?????????
+ * @since 2009.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << ?????Modification Information) >>
+ *
+ *   ????     ????          ????
+ *  -------    --------    ---------------------------
+ *   2009.07.03  ???         ????
+ *
+ * </pre>
+ **/
+public interface EgovOnlinePollResultService {
+
+
+    /**
+     * ????LL???? ????.
+     * @param onlinePollResult  ????LL??? ??? VO
+     * @return List
+     * @throws Exception
+     **/
+    public List<?> selectOnlinePollResultList(OnlinePollResult onlinePollResult) throws Exception ;
+
+    /**
+     * ????LL???? ??????.
+     * @param onlinePollResult  ????LL??? ??? VO
+     * @return void
+     * @throws Exception
+     **/
+    public void deleteOnlinePollResult(OnlinePollResult onlinePollResult) throws Exception ;
+}

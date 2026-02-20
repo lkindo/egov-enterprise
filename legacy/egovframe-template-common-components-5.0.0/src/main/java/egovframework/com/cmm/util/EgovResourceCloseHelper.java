@@ -19,18 +19,18 @@ import java.sql.Wrapper;
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2014.09.18  표준프레임워크센터  최초 생성
- *   2025.05.28  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(리소스 닫기)
+ *   2014.09.18  ?쒖??꾨젅?꾩썙?ъ꽱?? 理쒖큹 ?앹꽦
+ *   2025.05.28  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(由ъ냼???リ린)
  *
  *      </pre>
  */
 public class EgovResourceCloseHelper {
 	/**
-	 * Resource close 처리.
+	 * Resource close 泥섎━.
 	 * 
 	 * @param resources
 	 */
@@ -39,7 +39,7 @@ public class EgovResourceCloseHelper {
 			if (resource != null) {
 				try {
 					resource.close();
-				} catch (IOException ignore) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+				} catch (IOException ignore) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 					EgovBasicLogger.ignore("Occurred IOException to close resource is ingored!!");
 				}
 			}
@@ -47,7 +47,7 @@ public class EgovResourceCloseHelper {
 	}
 
 	/**
-	 * JDBC 관련 resource 객체 close 처리
+	 * JDBC 愿??resource 媛앹껜 close 泥섎━
 	 * 
 	 * @param objects
 	 */
@@ -57,13 +57,13 @@ public class EgovResourceCloseHelper {
 				if (object instanceof ResultSet) {
 					try {
 						((ResultSet) object).close();
-					} catch (SQLException ignore) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+					} catch (SQLException ignore) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 						EgovBasicLogger.ignore("Occurred SQLException to close resource is ingored!!");
 					}
 				} else if (object instanceof Statement) {
 					try {
 						((Statement) object).close();
-					} catch (SQLException ignore) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+					} catch (SQLException ignore) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 						EgovBasicLogger.ignore("Occurred SQLException to close resource is ingored!!");
 					}
 				} else if (object instanceof Connection) {
@@ -80,7 +80,7 @@ public class EgovResourceCloseHelper {
 	}
 
 	/**
-	 * Socket 관련 resource 객체 close 처리
+	 * Socket 愿??resource 媛앹껜 close 泥섎━
 	 * 
 	 * @param objects
 	 */
@@ -109,7 +109,7 @@ public class EgovResourceCloseHelper {
 	}
 
 	/**
-	 * Socket 관련 resource 객체 close 처리
+	 * Socket 愿??resource 媛앹껜 close 泥섎━
 	 * 
 	 * @param sockets
 	 */

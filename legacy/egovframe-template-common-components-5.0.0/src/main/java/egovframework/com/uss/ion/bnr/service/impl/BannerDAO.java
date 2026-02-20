@@ -1,13 +1,13 @@
 /**
- * 개요
- * - 배너에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 諛곕꼫?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 배너에 대한 등록, 수정, 삭제, 조회, 반영확인 기능을 제공한다.
- * - 배너의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 이문준
+ * ?곸꽭?댁슜
+ * - 諛곕꼫??????깅줉, ?섏젙, ??젣, 議고쉶, 諛섏쁺?뺤씤 湲곕뒫???쒓났?쒕떎.
+ * - 諛곕꼫??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author ?대Ц以
  * @version 1.0
- * @created 03-8-2009 오후 2:07:11
+ * @created 03-8-2009 ?ㅽ썑 2:07:11
  */
 
 package egovframework.com.uss.ion.bnr.service.impl;
@@ -25,9 +25,9 @@ import egovframework.com.uss.ion.bnr.service.BannerVO;
 public class BannerDAO extends EgovComAbstractDAO {
 	
 	/**
-	 * 배너를 관리하기 위해 등록된 배너목록을 조회한다.
-	 * @param bannerVO - 배너 Vo
-	 * @return List - 배너 목록
+	 * 諛곕꼫瑜?愿由ы븯湲??꾪빐 ?깅줉??諛곕꼫紐⑸줉??議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 Vo
+	 * @return List - 諛곕꼫 紐⑸줉
 	 * @exception Exception
 	 */	
 	public List<BannerVO> selectBannerList(BannerVO bannerVO) throws Exception {
@@ -35,7 +35,7 @@ public class BannerDAO extends EgovComAbstractDAO {
 	}
 
     /**
-	 * 배너목록 총 개수를 조회한다.
+	 * 諛곕꼫紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
 	 * @param bannerVO BannerVO
 	 * @return int
 	 * @exception Exception
@@ -45,9 +45,9 @@ public class BannerDAO extends EgovComAbstractDAO {
     }
 
 	/**
-	 * 등록된 배너의 상세정보를 조회한다.
-	 * @param bannerVO - 배너 Vo
-	 * @return BannerVO - 배너 Vo
+	 * ?깅줉??諛곕꼫???곸꽭?뺣낫瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 Vo
+	 * @return BannerVO - 諛곕꼫 Vo
 	 * 
 	 * @param bannerVO
 	 */
@@ -56,24 +56,24 @@ public class BannerDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 배너정보를 신규로 등록한다.
-	 * @param banner - 배너 model
+	 * 諛곕꼫?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	public void insertBanner(Banner banner) throws Exception {
 		insert("bannerDAO.insertBanner", banner);
 	}
 
 	/**
-	 * 기 등록된 배너정보를 수정한다.
-	 * @param banner - 배너 model
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜??섏젙?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 */
 	public void updateBanner(Banner banner) throws Exception {
         update("bannerDAO.updateBanner", banner);
 	}
 
 	/**
-	 * 기 등록된 배너정보를 삭제한다.
-	 * @param banner - 배너 model
+	 * 湲??깅줉??諛곕꼫?뺣낫瑜???젣?쒕떎.
+	 * @param banner - 諛곕꼫 model
 	 * 
 	 * @param banner
 	 */
@@ -82,18 +82,18 @@ public class BannerDAO extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * 기 등록된 배너정보의 이미지파일을 삭제하기 위해 파일정보를 조회한다.
-	 * @param banner - 배너 model
-	 * @return FileVO - 파일 VO
+	 * 湲??깅줉??諛곕꼫?뺣낫???대?吏?뚯씪????젣?섍린 ?꾪빐 ?뚯씪?뺣낫瑜?議고쉶?쒕떎.
+	 * @param banner - 諛곕꼫 model
+	 * @return FileVO - ?뚯씪 VO
 	 */
 	public FileVO selectBannerFile(Banner banner) throws Exception {
 		return (FileVO) selectOne("bannerDAO.selectBannerFile", banner);
 	}
 
 	/**
-	 * 배너가 특정화면에 반영된 결과를 조회한다.
-	 * @param bannerVO - 배너 VO
-	 * @return BannerVO - 배너 VO
+	 * 諛곕꼫媛 ?뱀젙?붾㈃??諛섏쁺??寃곌낵瑜?議고쉶?쒕떎.
+	 * @param bannerVO - 諛곕꼫 VO
+	 * @return BannerVO - 諛곕꼫 VO
 	 * @exception Exception
 	 */
 	

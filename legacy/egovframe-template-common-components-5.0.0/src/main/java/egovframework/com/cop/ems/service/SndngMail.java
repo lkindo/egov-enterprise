@@ -1,40 +1,40 @@
 package egovframework.com.cop.ems.service;
 
 /**
- * 발송메일 모델 클래스
- * @author 공통서비스 개발팀 박지욱
+ * 諛쒖넚硫붿씪 紐⑤뜽 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤???
  * @since 2009.03.12
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2009.03.12  박지욱          최초 생성
+ *  2009.03.12  諛뺤???         理쒖큹 ?앹꽦
  *
  *  </pre>
  */
 public class SndngMail {
 
-	/** 발신자 */
+	/** 諛쒖떊??*/
 	public String dsptchPerson;
-	/** 내용 */
+	/** ?댁슜 */
 	public String emailCn;
-	/** 메시지ID */
+	/** 硫붿떆吏ID */
 	public String mssageId;
-	/** 수신자 */
+	/** ?섏떊??*/
 	public String recptnPerson;
-	/** 제목 */
+	/** ?쒕ぉ */
 	public String sj;
-	/** 발송결과코드 */
+	/** 諛쒖넚寃곌낵肄붾뱶 */
 	public String sndngResultCode;
-	/** 발신일자 */
+	/** 諛쒖떊?쇱옄 */
 	private String sndngDe;
 
 	/**
-	 * dsptchPerson attribute 를 리턴한다.
+	 * dsptchPerson attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getDsptchPerson() {
@@ -42,7 +42,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * dsptchPerson attribute 값을 설정한다.
+	 * dsptchPerson attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param dsptchPerson String
 	 */
 	public void setDsptchPerson(String dsptchPerson) {
@@ -50,7 +50,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * emailCn attribute 를 리턴한다.
+	 * emailCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getEmailCn() {
@@ -58,7 +58,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * emailCn attribute 값을 설정한다.
+	 * emailCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param emailCn String
 	 */
 	public void setEmailCn(String emailCn) {
@@ -66,7 +66,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * mssageId attribute 를 리턴한다.
+	 * mssageId attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getMssageId() {
@@ -74,7 +74,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * mssageId attribute 값을 설정한다.
+	 * mssageId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param mssageId String
 	 */
 	public void setMssageId(String mssageId) {
@@ -82,7 +82,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * recptnPerson attribute 를 리턴한다.
+	 * recptnPerson attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getRecptnPerson() {
@@ -90,7 +90,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * recptnPerson attribute 값을 설정한다.
+	 * recptnPerson attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param recptnPerson String
 	 */
 	public void setRecptnPerson(String recptnPerson) {
@@ -98,7 +98,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sj attribute 를 리턴한다.
+	 * sj attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSj() {
@@ -106,7 +106,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sj attribute 값을 설정한다.
+	 * sj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sj String
 	 */
 	public void setSj(String sj) {
@@ -114,7 +114,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sndngResultCode attribute 를 리턴한다.
+	 * sndngResultCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSndngResultCode() {
@@ -122,7 +122,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sndngResultCode attribute 값을 설정한다.
+	 * sndngResultCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sndngResultCode String
 	 */
 	public void setSndngResultCode(String sndngResultCode) {
@@ -130,7 +130,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sndngDe attribute 를 리턴한다.
+	 * sndngDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return String
 	 */
 	public String getSndngDe() {
@@ -138,7 +138,7 @@ public class SndngMail {
 	}
 
 	/**
-	 * sndngDe attribute 값을 설정한다.
+	 * sndngDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @param sndngDe String
 	 */
 	public void setSndngDe(String sndngDe) {

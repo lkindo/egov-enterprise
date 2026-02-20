@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * 사용자 정보 DTO
+ * ?ъ슜???뺣낫 DTO
  */
 @Getter
 @Builder
@@ -28,7 +28,7 @@ public class UserDto {
     private String ofcpsNm;
     private LocalDateTime createdDate;
 
-    public static UserDto from(com.company.project.domain.user.User user) {
+    public static UserDto from(com.company.project.domain.user.entity.User user) {
         if (user == null)
             return null;
         return UserDto.builder()

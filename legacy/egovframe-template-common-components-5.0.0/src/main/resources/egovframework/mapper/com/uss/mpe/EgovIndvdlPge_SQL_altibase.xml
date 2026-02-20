@@ -13,7 +13,7 @@
     </resultMap>
 
 
-	<!-- 마이페이지 콘텐츠 목록 -->
+	<!-- 留덉씠?섏씠吏 肄섑뀗痢?紐⑸줉 -->
     <select id="selectIndvdlPgeList" parameterType="egovframework.com.uss.mpe.service.IndvdlPgeVO" resultMap="indvdlPgeMap">
 <![CDATA[
             SELECT CNTNTS_ID, CNTNTS_NM, CNTC_URL, CNTNTS_USE_AT, CNTNTS_LINK_URL, CNTNTS_DC 
@@ -37,7 +37,7 @@
             </if> 
     </select>
     
-    <!-- 마이페이지 콘텐츠 상세보기 -->
+    <!-- 留덉씠?섏씠吏 肄섑뀗痢??곸꽭蹂닿린 -->
 	<select id="selectIndvdlPgeDetail" parameterType="egovframework.com.uss.mpe.service.IndvdlPgeVO" resultMap="indvdlPgeMap">
         
             SELECT CNTNTS_ID, CNTNTS_NM, CNTC_URL, CNTNTS_USE_AT, CNTNTS_LINK_URL, CNTNTS_DC 
@@ -46,7 +46,7 @@
         
     </select>
     
-	<!-- 마이페이지 콘텐츠 등록 -->
+	<!-- 留덉씠?섏씠吏 肄섑뀗痢??깅줉 -->
     <insert id="insertIndvdlPge">
         
             INSERT INTO COMTNINDVDLPGECNTNTS 
@@ -60,7 +60,7 @@
         
     </insert>
     
-    <!-- 마이페이지 콘텐츠 수정 -->
+    <!-- 留덉씠?섏씠吏 肄섑뀗痢??섏젙 -->
 	<update id="updateIndvdlPge" parameterType="egovframework.com.uss.mpe.service.IndvdlPgeVO">
         
             UPDATE COMTNINDVDLPGECNTNTS

@@ -23,21 +23,21 @@ import egovframework.com.sym.mnu.stm.service.EgovSiteMapngService;
 import jakarta.annotation.Resource;
 
 /**
- * 사이트맵 조회 처리를 하는 비즈니스 구현 클래스
+ * ?ъ씠?몃㏊ 議고쉶 泥섎━瑜??섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
- *   2011.07.29  서준식 		사이트 맵 생성 안했을 때 발생하는 오류 수정
- *   2011.8.26	정진오			IncludedInfo annotation 추가
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
+ *   2011.07.29  ?쒖???		?ъ씠??留??앹꽦 ?덊뻽????諛쒖깮?섎뒗 ?ㅻ쪟 ?섏젙
+ *   2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *      </pre>
  */
 
@@ -62,15 +62,15 @@ public class EgovSiteMapngController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	/* 사이트맵조회 */
+	/* ?ъ씠?몃㏊議고쉶 */
 	/**
-	 * 사이트맵 화면을 조회한다.
+	 * ?ъ씠?몃㏊ ?붾㈃??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO ComDefaultVO
-	 * @return 출력페이지정보 "sym/mnu/stm/EgovSiteMapng"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "sym/mnu/stm/EgovSiteMapng"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "사이트맵", order = 1101, gid = 60)
+	@IncludedInfo(name = "?ъ씠?몃㏊", order = 1101, gid = 60)
 	@RequestMapping(value = "/sym/mnu/stm/EgovSiteMapng.do")
 	public String selectSiteMapng(
 			@ModelAttribute("searchVO") ComDefaultVO searchVO,
@@ -78,7 +78,7 @@ public class EgovSiteMapngController {
 			throws Exception {
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		searchVO.setSearchKeyword(user.getId());
-		// AuthorCode 검색
+		// AuthorCode 寃??
 		MenuCreatVO menuVO = menuCreateManageService.selectAuthorByUsr(searchVO);
 
 		MenuSiteMapVO menuSiteMapVO = new MenuSiteMapVO();

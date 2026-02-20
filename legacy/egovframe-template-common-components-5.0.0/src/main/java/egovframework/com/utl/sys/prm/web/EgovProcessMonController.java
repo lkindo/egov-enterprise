@@ -28,22 +28,22 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 개요 - PROCESS모니터링에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂 - PROCESS紐⑤땲?곕쭅?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용 - PROCESS모니터링에 대한 등록, 수정, 삭제, 조회 기능을 제공한다. - PROCESS모니터링에 조회기능은 목록조회,
- * 상세조회로 구분된다.
+ * ?곸꽭?댁슜 - PROCESS紐⑤땲?곕쭅??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎. - PROCESS紐⑤땲?곕쭅??議고쉶湲곕뒫? 紐⑸줉議고쉶,
+ * ?곸꽭議고쉶濡?援щ텇?쒕떎.
  *
- * @author 박종선
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 08-9-2010 오후 3:54:45
+ * @created 08-9-2010 ?ㅽ썑 3:54:45
  *
  *          <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.9.8   박종선     최초 생성
- *  2011.8.26	정진오			IncludedInfo annotation 추가
+ *  2010.9.8   諛뺤쥌??    理쒖큹 ?앹꽦
+ *  2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *          </pre>
  */
 @Controller
@@ -59,14 +59,14 @@ public class EgovProcessMonController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 등록된 PROCESS모니터링 정보를 조회 한다.
+	 * ?깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param processMonVO- PROCESS모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param processMonVO- PROCESS紐⑤땲?곕쭅 VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param processMonVO
 	 */
-	@IncludedInfo(name = "프로세스모니터링", order = 2110, gid = 90)
+	@IncludedInfo(name = "?꾨줈?몄뒪紐⑤땲?곕쭅", order = 2110, gid = 90)
 	@RequestMapping("/utl/sys/prm/EgovComUtlProcessMonList.do")
 	public String selectProcessMonList(@ModelAttribute("searchVO") ProcessMonVO processMonVO, ModelMap model)
 			throws Exception {
@@ -94,10 +94,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * PROCESS모니터링상세 정보를 조회 한다.
+	 * PROCESS紐⑤땲?곕쭅?곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 *
-	 * @param ProcessMonVO - PROCESS모니터링 VO
-	 * @return String - 리턴 Url
+	 * @param ProcessMonVO - PROCESS紐⑤땲?곕쭅 VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param processMonVO
 	 */
@@ -114,10 +114,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * PROCESS모니터링 정보를 신규로 등록한다.
+	 * PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
-	 * @return String - 리턴 Url
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param processNm
 	 */
@@ -126,21 +126,21 @@ public class EgovProcessMonController {
 		@Valid @ModelAttribute("processMonVO") ProcessMonVO processMonVO,
 		BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		if (processMonVO.getProcessNm() == null || processMonVO.getProcessNm().equals("") || bindingResult.hasErrors()) {
 			return "egovframework/com/utl/sys/prm/EgovComUtlProcessMonRegist";
 		}
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		processMonVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 		processMonVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -150,10 +150,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 기 등록 된 PROCESS모니터링 정보를 수정 한다.
+	 * 湲??깅줉 ??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜??섏젙 ?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
-	 * @return String - 리턴 Url
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param processNm
 	 */
@@ -162,10 +162,10 @@ public class EgovProcessMonController {
 		@Valid @ModelAttribute("processMonVO") ProcessMonVO processMonVO,
 		BindingResult bindingResult, @RequestParam Map<?, ?> commandMap, ModelMap model) throws Exception {
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 보안취약점 조치 (2018-12-10, 이정은)
+		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated(); // KISA 蹂댁븞痍⑥빟??議곗튂 (2018-12-10, ?댁젙?)
 
 		if (!isAuthenticated) {
 			return "redirect:/uat/uia/egovLoginUsr.do";
@@ -183,7 +183,7 @@ public class EgovProcessMonController {
 				return "egovframework/com/utl/sys/prm/EgovComUtlProcessMonModify";
 			}
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			processMonVO.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			processMonVO.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -195,10 +195,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 기 등록된 PROCESS모니터링 정보를 삭제한다.
+	 * 湲??깅줉??PROCESS紐⑤땲?곕쭅 ?뺣낫瑜???젣?쒕떎.
 	 *
-	 * @param processNm - PROCESS모니터링 model
-	 * @return String - 리턴 Url
+	 * @param processNm - PROCESS紐⑤땲?곕쭅 model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param processNm
 	 */
@@ -206,7 +206,7 @@ public class EgovProcessMonController {
 	public String deleteProcessMon(@ModelAttribute("processMonVO") ProcessMonVO processMonVO, ModelMap model)
 			throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
@@ -218,7 +218,7 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 프로세스의 상태를 조회한다.
+	 * ?꾨줈?몄뒪???곹깭瑜?議고쉶?쒕떎.
 	 *
 	 * @param processMon
 	 * @return String
@@ -230,7 +230,7 @@ public class EgovProcessMonController {
 			throws Exception {
 
 		// System.out.println("FileSysNm" + fileSysMntrngVO.getFileSysNm());
-		// KISA 보안약점 조치 (2018-10-29, 윤창원)
+		// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 		model.addAttribute("processSttus",
 				ProcessMonChecker.getProcessId(EgovStringUtil.isNullToString(processMonVO.getProcessNm())));
 		model.addAttribute("processMonVO", processMonVO);
@@ -239,10 +239,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 프로세스 모니터링로그 정보에 대한 목록을 조회한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
 	 *
-	 * @param ProcessMonVO - 프로세스 모니터링로그 VO
-	 * @return String - 리턴 URL
+	 * @param ProcessMonVO - ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param processMonVO
 	 */
@@ -262,7 +262,7 @@ public class EgovProcessMonController {
 		processMonLogVO.setLastIndex(paginationInfo.getLastRecordIndex());
 		processMonLogVO.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-		// 조회기간설정
+		// 議고쉶湲곌컙?ㅼ젙
 		if (processMonLogVO.getSearchBgnDe() != null && processMonLogVO.getSearchEndDe() != null) {
 			if (!processMonLogVO.getSearchBgnDe().equals("") && !processMonLogVO.getSearchEndDe().equals("")) {
 				processMonLogVO
@@ -276,9 +276,9 @@ public class EgovProcessMonController {
 		int totCnt = Integer.parseInt((String) map.get("resultCnt"));
 		paginationInfo.setTotalRecordCount(totCnt);
 
-		// 조회시작시
+		// 議고쉶?쒖옉??
 		model.addAttribute("searchBgnHour", getTimeHH());
-		// 조회종료시
+		// 議고쉶醫낅즺??
 		model.addAttribute("searchEndHour", getTimeHH());
 
 		model.addAttribute("resultList", map.get("resultList"));
@@ -289,10 +289,10 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 프로세스 모니터링로그 상세정보를 조회한다.
+	 * ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 ?곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 *
-	 * @param FileSysMntrngLogVO - 프로세스 모니터링로그 VO
-	 * @return String - 리턴 URL
+	 * @param FileSysMntrngLogVO - ?꾨줈?몄뒪 紐⑤땲?곕쭅濡쒓렇 VO
+	 * @return String - 由ы꽩 URL
 	 *
 	 * @param fileSysMntrngLogVO
 	 */
@@ -314,7 +314,7 @@ public class EgovProcessMonController {
 	}
 
 	/**
-	 * 시간의 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 *
 	 * @return List
 	 * @throws

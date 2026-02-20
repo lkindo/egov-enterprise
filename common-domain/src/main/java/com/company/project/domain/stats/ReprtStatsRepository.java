@@ -10,13 +10,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 보고서 통계 Repository
+ * 癰귣떯???????Repository
  */
 @Repository
 public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> {
 
     /**
-     * 보고서 통계 목록 조회 (페이징)
+     * 癰귣떯???????筌뤴뫖以?鈺곌퀬??(??륁뵠筌?
      */
     @Query("""
             SELECT r FROM ReprtStats r
@@ -32,7 +32,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             Pageable pageable);
 
     /**
-     * 보고서 유형별 통계
+     * 癰귣떯????醫륁굨癰?????
      */
     @Query(value = """
             SELECT r.reprt_ty as reprtTy, COUNT(*) as cnt
@@ -46,7 +46,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 보고서 상태별 통계
+     * 癰귣떯????怨밴묶癰?????
      */
     @Query(value = """
             SELECT r.reprt_sttus as reprtSttus, COUNT(*) as cnt
@@ -60,7 +60,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 등록일별 통계
+     * ?源낆쨯??고?????
      */
     @Query(value = """
             SELECT TO_CHAR(r.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
@@ -74,7 +74,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 전체 건수
+     * ?袁⑷퍥 椰꾨똻??
      */
     @Query("""
             SELECT COUNT(r) FROM ReprtStats r

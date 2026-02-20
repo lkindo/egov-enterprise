@@ -4,18 +4,18 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  *
- * Q&A를 처리하는 VO 클래스
- * @author 공통서비스 개발팀 박정규
+ * Q&A瑜?泥섎━?섎뒗 VO ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -26,80 +26,80 @@ public class QnaVO extends QnaDefaultVO {
 	/** QA ID */
 	private String qaId;
 
-	/** 질문제목 */
+	/** 吏덈Ц?쒕ぉ */
 	private String qestnSj;
 
-	/** 질문내용 */
+	/** 吏덈Ц?댁슜 */
 	private String qestnCn;
 
-	/** 작성비밀번호 */
+	/** ?묒꽦鍮꾨?踰덊샇 */
 	private String writngPassword;
 
-	/** 지역번호 */
+	/** 吏??쾲??*/
 	private String areaNo;
 
-	/** 중간전화번호 */
+	/** 以묎컙?꾪솕踰덊샇 */
 	private String middleTelno;
 
-	/** 끝전화번호 */
+	/** ?앹쟾?붾쾲??*/
 	private String endTelno;
 
-	/** 이메일 주소 */
+	/** ?대찓??二쇱냼 */
 	private String emailAdres;
 
-	/** 이메일 답변여부 */
+	/** ?대찓???듬??щ? */
 	private String emailAnswerAt;
 
-	/** 작성자 명 */
+	/** ?묒꽦??紐?*/
 	private String wrterNm;
 
-	/** 작성일자 */
+	/** ?묒꽦?쇱옄 */
 	private String writngDe;
 
-	/** 조회횟수 */
+	/** 議고쉶?잛닔 */
 	private String inqireCo;
 
-	/** 질의응답처리상태코드 */
+	/** 吏덉쓽?묐떟泥섎━?곹깭肄붾뱶 */
 	private String qnaProcessSttusCode;
 
-	/** 질의응답처리상태코드명 */
+	/** 吏덉쓽?묐떟泥섎━?곹깭肄붾뱶紐?*/
 	private String qnaProcessSttusCodeNm;
 
-	/** 답변내용 */
+	/** ?듬??댁슜 */
 	private String answerCn;
 
-	/** 답변일자 */
+	/** ?듬??쇱옄 */
 	private String answerDe;
 
-	/** 작성비밀번호 확인여부 */
+	/** ?묒꽦鍮꾨?踰덊샇 ?뺤씤?щ? */
 	private String passwordConfirmAt;
 
-	/** 답변자명 */
+	/** ?듬??먮챸 */
 	private String emplyrNm;
 
-	/** 사무실전화번호 */
+	/** ?щТ?ㅼ쟾?붾쾲??*/
 	private String offmTelno;
 
-	/** 답변자 EMAIL 주소 */
+	/** ?듬???EMAIL 二쇱냼 */
 	private String aemailAdres;
 
-	/** 부서명 */
+	/** 遺?쒕챸 */
 	private String orgnztNm;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId;
 
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId;
 
 	/**
-	 * qaId attribute 를 리턴한다.
+	 * qaId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQaId() {
@@ -107,7 +107,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qaId attribute 값을 설정한다.
+	 * qaId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qaId String
 	 */
 	public void setQaId(String qaId) {
@@ -115,7 +115,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qestnSj attribute 를 리턴한다.
+	 * qestnSj attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnSj() {
@@ -123,7 +123,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qestnSj attribute 값을 설정한다.
+	 * qestnSj attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnSj String
 	 */
 	public void setQestnSj(String qestnSj) {
@@ -131,7 +131,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qestnCn attribute 를 리턴한다.
+	 * qestnCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQestnCn() {
@@ -139,7 +139,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qestnCn attribute 값을 설정한다.
+	 * qestnCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qestnCn String
 	 */
 	public void setQestnCn(String qestnCn) {
@@ -147,7 +147,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * writngPassword attribute 를 리턴한다.
+	 * writngPassword attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWritngPassword() {
@@ -155,7 +155,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * writngPassword attribute 값을 설정한다.
+	 * writngPassword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return writngPassword String
 	 */
 	public void setWritngPassword(String writngPassword) {
@@ -163,7 +163,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * areaNo attribute 를 리턴한다.
+	 * areaNo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAreaNo() {
@@ -171,7 +171,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * areaNo attribute 값을 설정한다.
+	 * areaNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return areaNo String
 	 */
 	public void setAreaNo(String areaNo) {
@@ -179,7 +179,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * middleTelno attribute 를 리턴한다.
+	 * middleTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getMiddleTelno() {
@@ -187,7 +187,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * middleTelno attribute 값을 설정한다.
+	 * middleTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return middleTelno String
 	 */
 	public void setMiddleTelno(String middleTelno) {
@@ -195,7 +195,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * endTelno attribute 를 리턴한다.
+	 * endTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEndTelno() {
@@ -203,7 +203,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * endTelno attribute 값을 설정한다.
+	 * endTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return endTelno String
 	 */
 	public void setEndTelno(String endTelno) {
@@ -211,7 +211,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emailAdres attribute 를 리턴한다.
+	 * emailAdres attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmailAdres() {
@@ -219,7 +219,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emailAdres attribute 값을 설정한다.
+	 * emailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emailAdres String
 	 */
 	public void setEmailAdres(String emailAdres) {
@@ -227,7 +227,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emailAnswerAt attribute 를 리턴한다.
+	 * emailAnswerAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmailAnswerAt() {
@@ -235,7 +235,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emailAnswerAt attribute 값을 설정한다.
+	 * emailAnswerAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emailAnswerAt String
 	 */
 	public void setEmailAnswerAt(String emailAnswerAt) {
@@ -243,7 +243,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * wrterNm attribute 를 리턴한다.
+	 * wrterNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWrterNm() {
@@ -251,7 +251,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * wrterNm attribute 값을 설정한다.
+	 * wrterNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return wrterNm String
 	 */
 	public void setWrterNm(String wrterNm) {
@@ -259,7 +259,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * writngDe attribute 를 리턴한다.
+	 * writngDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getWritngDe() {
@@ -267,7 +267,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * writngDe attribute 값을 설정한다.
+	 * writngDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return writngDe String
 	 */
 	public void setWritngDe(String writngDe) {
@@ -275,7 +275,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 를 리턴한다.
+	 * inqireCo attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getInqireCo() {
@@ -283,7 +283,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * inqireCo attribute 값을 설정한다.
+	 * inqireCo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return inqireCo String
 	 */
 	public void setInqireCo(String inqireCo) {
@@ -291,7 +291,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCode attribute 를 리턴한다.
+	 * qnaProcessSttusCode attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQnaProcessSttusCode() {
@@ -299,7 +299,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCode attribute 값을 설정한다.
+	 * qnaProcessSttusCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qnaProcessSttusCode String
 	 */
 	public void setQnaProcessSttusCode(String qnaProcessSttusCode) {
@@ -307,7 +307,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCodeNm attribute 를 리턴한다.
+	 * qnaProcessSttusCodeNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getQnaProcessSttusCodeNm() {
@@ -315,7 +315,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * qnaProcessSttusCodeNm attribute 값을 설정한다.
+	 * qnaProcessSttusCodeNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return qnaProcessSttusCodeNm String
 	 */
 	public void setQnaProcessSttusCodeNm(String qnaProcessSttusCodeNm) {
@@ -323,7 +323,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * answerCn attribute 를 리턴한다.
+	 * answerCn attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAnswerCn() {
@@ -331,7 +331,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * answerCn attribute 값을 설정한다.
+	 * answerCn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return answerCn String
 	 */
 	public void setAnswerCn(String answerCn) {
@@ -339,7 +339,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * answerDe attribute 를 리턴한다.
+	 * answerDe attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAnswerDe() {
@@ -347,7 +347,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * answerDe attribute 값을 설정한다.
+	 * answerDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return answerDe String
 	 */
 	public void setAnswerDe(String answerDe) {
@@ -355,7 +355,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * passwordConfirmAt attribute 를 리턴한다.
+	 * passwordConfirmAt attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getPasswordConfirmAt() {
@@ -363,7 +363,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * passwordConfirmAt attribute 값을 설정한다.
+	 * passwordConfirmAt attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return passwordConfirmAt String
 	 */
 	public void setPasswordConfirmAt(String passwordConfirmAt) {
@@ -371,7 +371,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 를 리턴한다.
+	 * emplyrNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getEmplyrNm() {
@@ -379,7 +379,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * emplyrNm attribute 값을 설정한다.
+	 * emplyrNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return emplyrNm String
 	 */
 	public void setEmplyrNm(String emplyrNm) {
@@ -387,7 +387,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * offmTelno attribute 를 리턴한다.
+	 * offmTelno attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOffmTelno() {
@@ -395,7 +395,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * offmTelno attribute 값을 설정한다.
+	 * offmTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return offmTelno String
 	 */
 	public void setOffmTelno(String offmTelno) {
@@ -403,7 +403,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * aemailAdres attribute 를 리턴한다.
+	 * aemailAdres attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getAemailAdres() {
@@ -411,7 +411,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * aemailAdres attribute 값을 설정한다.
+	 * aemailAdres attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return aemailAdres String
 	 */
 	public void setAemailAdres(String aemailAdres) {
@@ -419,7 +419,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * orgnztNm attribute 를 리턴한다.
+	 * orgnztNm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getOrgnztNm() {
@@ -427,7 +427,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * orgnztNm attribute 값을 설정한다.
+	 * orgnztNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return orgnztNm String
 	 */
 	public void setOrgnztNm(String orgnztNm) {
@@ -435,7 +435,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 를 리턴한다.
+	 * frstRegisterPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterPnttm() {
@@ -443,7 +443,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * frstRegisterPnttm attribute 값을 설정한다.
+	 * frstRegisterPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterPnttm String
 	 */
 	public void setFrstRegisterPnttm(String frstRegisterPnttm) {
@@ -451,7 +451,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 를 리턴한다.
+	 * frstRegisterId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getFrstRegisterId() {
@@ -459,7 +459,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * frstRegisterId attribute 값을 설정한다.
+	 * frstRegisterId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return frstRegisterId String
 	 */
 	public void setFrstRegisterId(String frstRegisterId) {
@@ -467,7 +467,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 를 리턴한다.
+	 * lastUpdusrPnttm attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrPnttm() {
@@ -475,7 +475,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrPnttm attribute 값을 설정한다.
+	 * lastUpdusrPnttm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrPnttm String
 	 */
 	public void setLastUpdusrPnttm(String lastUpdusrPnttm) {
@@ -483,7 +483,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 를 리턴한다.
+	 * lastUpdusrId attribute 瑜?由ы꽩?쒕떎.
 	 * @return the String
 	 */
 	public String getLastUpdusrId() {
@@ -491,7 +491,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * lastUpdusrId attribute 값을 설정한다.
+	 * lastUpdusrId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * @return lastUpdusrId String
 	 */
 	public void setLastUpdusrId(String lastUpdusrId) {
@@ -499,7 +499,7 @@ public class QnaVO extends QnaDefaultVO {
 	}
 
 	/**
-	 * toString 메소드를 대치한다.
+	 * toString 硫붿냼?쒕? ?移섑븳??
 	 */
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);

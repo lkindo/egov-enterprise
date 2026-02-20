@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 휴가관리에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?닿?愿由ъ뿉 ???Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 휴가관리의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?닿?愿由ъ쓽 紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class VcatnManageVO extends VcatnManage implements Serializable {
@@ -22,72 +22,72 @@ public class VcatnManageVO extends VcatnManage implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * 휴가 목록
+	 * ?닿? 紐⑸줉
 	 */
 	List<VcatnManageVO> vcatnManageList;
 
 	/**
-	*  신청자명
+	*  ?좎껌?먮챸
 	*/
 	private String applcntNm;
 
 	/**
-	*  승인자명
+	*  ?뱀씤?먮챸
 	*/
 	private String sanctnerNm;
 
 	/**
-	*  휴가구분명
+	*  ?닿?援щ텇紐?
 	*/
 	private String vcatnSeNm;
 
 	/**
-	*  사용자ID
+	*  ?ъ슜?륤D
 	*/
 	private String usid;
 
 	/**
-	*  발생연차개수
+	*  諛쒖깮?곗감媛쒖닔
 	*/
 	private double occrncYrycCo = 0.0;
 
 	/**
-	*  사용연차개수
+	*  ?ъ슜?곗감媛쒖닔
 	*/
 	private double useYrycCo = 0.0;
 
 	/**
-	*  잔여연차개수
+	*  ?붿뿬?곗감媛쒖닔
 	*/
 	private double remndrYrycCo = 0.0;
 
 	/**
-	*  사용자 소속명
+	*  ?ъ슜???뚯냽紐?
 
 	private String orgnztNm;
 	*/
 	/**
-	*  승인자 소속명
+	*  ?뱀씤???뚯냽紐?
 	*/
 	private String sanctnerOrgnztNm;
 
 	/**
-	*  검색 연도
+	*  寃???곕룄
 	*/
 	private String searchYear;
 
 	/**
-	*  검색 월
+	*  寃????
 	*/
 	private String searchMonth;
 
 	/**
-	*  검색 성명
+	*  寃???깅챸
 	*/
 	private String searchNm;
 
 	/**
-	*  검색 진행구분
+	*  寃??吏꾪뻾援щ텇
 	*/
 	private String searchConfmAt;
 
@@ -113,22 +113,22 @@ public class VcatnManageVO extends VcatnManage implements Serializable {
 
 
 	/**
-	*  신청자ID
+	*  ?좎껌?륤D
 	*/
 	private String applcntIdKey;
 
 	/**
-	*  휴가구분
+	*  ?닿?援щ텇
 	*/
 	private String vcatnSeKey;
 
 	/**
-	*  시작일자
+	*  ?쒖옉?쇱옄
 	*/
 	private String bgndeKey;
 
 	/**
-	*  종료일자
+	*  醫낅즺?쇱옄
 	*/
 	private String enddeKey;
 

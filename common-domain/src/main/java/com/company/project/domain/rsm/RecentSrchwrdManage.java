@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 최근 검색어 관리 정보 Entity
- * 레거시 테이블: NRECENTSRCHWRDMANAGE
+ * 筌ㅼ뮄??野꺜??깅선 ?온???類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NRECENTSRCHWRDMANAGE
  */
 @Entity
 @Table(name = "NRECENTSRCHWRDMANAGE")

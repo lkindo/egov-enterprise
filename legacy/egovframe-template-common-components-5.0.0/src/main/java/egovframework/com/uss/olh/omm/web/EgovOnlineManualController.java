@@ -30,22 +30,22 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 온라인메뉴얼를 처리하는 Controller Class 구현
+ * ?⑤씪?몃찓?댁뼹瑜?泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2016.08.12  김연호          표준프레임워크 3.6 개선
- *   2025.08.21  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2016.08.12  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2025.08.21  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -70,7 +70,7 @@ public class EgovOnlineManualController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-	 * 사용자 온라인메뉴얼 목록을 조회한다.
+	 * ?ъ슜???⑤씪?몃찓?댁뼹 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManual
@@ -78,7 +78,7 @@ public class EgovOnlineManualController {
 	 * @return "egovframework/com/uss/olh/omn/EgovOnlineManualList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "사용자온라인매뉴얼", order = 571, gid = 50)
+	@IncludedInfo(name = "?ъ슜?먯삩?쇱씤留ㅻ돱??, order = 571, gid = 50)
 	@RequestMapping(value = "/uss/olh/omn/selectOnlineManualList.do")
 	public String selectOnlineManualUserList(@ModelAttribute("searchVO") OnlineManualVO searchVO, ModelMap model)
 			throws Exception {
@@ -108,7 +108,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 사용자온라인메뉴얼 상세조회 조회한다.
+	 * ?ъ슜?먯삩?쇱씤硫붾돱???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManualVO
@@ -127,7 +127,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼 목록을 조회한다.
+	 * ?⑤씪?몃찓?댁뼹 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManual
@@ -135,7 +135,7 @@ public class EgovOnlineManualController {
 	 * @return "egovframework/com/uss/olh/omm/EgovOnlineManualList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "온라인매뉴얼", order = 570, gid = 50)
+	@IncludedInfo(name = "?⑤씪?몃ℓ?댁뼹", order = 570, gid = 50)
 	@RequestMapping(value = "/uss/olh/omm/selectOnlineManualList.do")
 	public String selectOnlineManualList(@ModelAttribute("searchVO") OnlineManualVO searchVO, ModelMap model)
 			throws Exception {
@@ -165,7 +165,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼 상세조회 조회한다.
+	 * ?⑤씪?몃찓?댁뼹 ?곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManualVO
@@ -184,7 +184,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼을 등록하기 위한 전 처리(공통코드 처리)
+	 * ?⑤씪?몃찓?댁뼹???깅줉?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -195,7 +195,7 @@ public class EgovOnlineManualController {
 	public String insertOnlineManualView(@ModelAttribute("searchVO") OnlineManualVO searchVO, Model model)
 			throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM041");
 
@@ -209,7 +209,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼을 등록한다.
+	 * ?⑤씪?몃찓?댁뼹???깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManualVO
@@ -226,13 +226,13 @@ public class EgovOnlineManualController {
 			return "egovframework/com/uss/olh/omm/EgovOnlineManualRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		onlineManualVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		onlineManualVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		onlineManualVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		onlineManualVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovOnlineManualService.insertOnlineManual(onlineManualVO);
 
@@ -240,7 +240,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼을 수정하기 위한 전 처리(공통코드 처리)
+	 * ?⑤씪?몃찓?댁뼹???섏젙?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param onlineMnlId
 	 * @param searchVO
@@ -252,7 +252,7 @@ public class EgovOnlineManualController {
 	public String updateOnlineManualView(@RequestParam("onlineMnlId") String onlineMnlId,
 			@ModelAttribute("searchVO") OnlineManualVO searchVO, ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM041");
 
@@ -268,7 +268,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼을 수정한다.
+	 * ?⑤씪?몃찓?댁뼹???섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param onlineManualVO
@@ -286,25 +286,25 @@ public class EgovOnlineManualController {
 		}
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 사용자권한체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ?ъ슜?먭텒?쒖껜??START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
 
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		OnlineManualVO vo = egovOnlineManualService.selectOnlineManualDetail(onlineManualVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 사용자권한체크 END
+		// @ XSS ?ъ슜?먭텒?쒖껜??END
 		// --------------------------------------------------------------------------------------------
 
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		onlineManualVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		onlineManualVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 		egovOnlineManualService.updateOnlineManual(onlineManualVO);
 
 		return "forward:/uss/olh/omm/selectOnlineManualList.do";
@@ -312,7 +312,7 @@ public class EgovOnlineManualController {
 	}
 
 	/**
-	 * 온라인메뉴얼을 삭제한다.
+	 * ?⑤씪?몃찓?댁뼹????젣?쒕떎.
 	 * 
 	 * @param onlineManualVO
 	 * @param searchVO
@@ -324,19 +324,19 @@ public class EgovOnlineManualController {
 			@ModelAttribute("searchVO") OnlineManualVO searchVO) throws Exception {
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 사용자권한체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ?ъ슜?먭텒?쒖껜??START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
 
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		OnlineManualVO vo = egovOnlineManualService.selectOnlineManualDetail(onlineManualVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 사용자권한체크 END
+		// @ XSS ?ъ슜?먭텒?쒖껜??END
 		// --------------------------------------------------------------------------------------------
 
 		egovOnlineManualService.deleteOnlineManual(onlineManualVO);

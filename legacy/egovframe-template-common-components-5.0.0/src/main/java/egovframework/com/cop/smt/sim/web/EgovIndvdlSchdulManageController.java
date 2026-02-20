@@ -38,24 +38,24 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 일정관리를 처리하는 Controller Class 구현
+ * ?쇱젙愿由щ? 泥섎━?섎뒗 Controller Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
- *   2011.09.02  정진오          10월 주차 테이블에 날짜가 이상하게 나와서 수정함
- *   2011.09.16  이기하          일지관리가 존재할 때 버튼이 나타나도록 수정
- *   2016.08.12  장동한          일정관리 등록 로직 수정
- *   2020.10.27  신용호          파일 업로드 수정 (multiRequest.getFiles)
- *   2025.06.12  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
+ *   2011.09.02  ?뺤쭊??         10??二쇱감 ?뚯씠釉붿뿉 ?좎쭨媛 ?댁긽?섍쾶 ?섏????섏젙??
+ *   2011.09.16  ?닿린??         ?쇱?愿由ш? 議댁옱????踰꾪듉???섑??섎룄濡??섏젙
+ *   2016.08.12  ?λ룞??         ?쇱젙愿由??깅줉 濡쒖쭅 ?섏젙
+ *   2020.10.27  ?좎슜??         ?뚯씪 ?낅줈???섏젙 (multiRequest.getFiles)
+ *   2025.06.12  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -78,7 +78,7 @@ public class EgovIndvdlSchdulManageController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -86,7 +86,7 @@ public class EgovIndvdlSchdulManageController {
 	private EgovFileMngUtil fileUtil;
 
 	/**
-	 * 메인페이지/일정관리조회
+	 * 硫붿씤?섏씠吏/?쇱젙愿由ъ“??
 	 * 
 	 * @param model
 	 * @return "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageMainList"
@@ -95,14 +95,14 @@ public class EgovIndvdlSchdulManageController {
 	@RequestMapping(value = "/cop/smt/sim/EgovIndvdlSchdulManageMainList.do")
 	public String egovIndvdlSchdulManageMainList(ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		Map<String, String> hmParam = new HashMap<String, String>();
@@ -118,7 +118,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정(일별) 목록을 조회한다.
+	 * ?쇱젙(?쇰퀎) 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -132,12 +132,12 @@ public class EgovIndvdlSchdulManageController {
 			@RequestParam Map<String, String> commandMap, IndvdlSchdulManageVO indvdlSchdulManageVO, ModelMap model)
 			throws Exception {
 
-		// 일정구분 검색 유지
+		// ?쇱젙援щ텇 寃???좎?
 		model.addAttribute("searchKeyword", commandMap.get("searchKeyword"));
 
 		model.addAttribute("searchCondition", commandMap.get("searchCondition"));
 
-		// 공통코드 일정종류
+		// 怨듯넻肄붾뱶 ?쇱젙醫낅쪟
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
@@ -145,8 +145,8 @@ public class EgovIndvdlSchdulManageController {
 		model.addAttribute("schdulSe", listComCode);
 
 		/*
-		 * ***************************************************************** // 캘런더 설정
-		 * 로직
+		 * ***************************************************************** // 罹섎윴???ㅼ젙
+		 * 濡쒖쭅
 		 */
 		Calendar calNow = Calendar.getInstance();
 
@@ -182,7 +182,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정(주간별) 목록을 조회한다.
+	 * ?쇱젙(二쇨컙蹂? 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -196,13 +196,13 @@ public class EgovIndvdlSchdulManageController {
 	public String egovIndvdlSchdulManageWeekList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map commandMap, IndvdlSchdulManageVO indvdlSchdulManageVO, ModelMap model) throws Exception {
 
-		// 일정구분 검색 유지
+		// ?쇱젙援щ텇 寃???좎?
 		model.addAttribute("searchKeyword",
 				commandMap.get("searchKeyword") == null ? "" : (String) commandMap.get("searchKeyword"));
 		model.addAttribute("searchCondition",
 				commandMap.get("searchCondition") == null ? "" : (String) commandMap.get("searchCondition"));
 
-		// 공통코드 일정종류
+		// 怨듯넻肄붾뱶 ?쇱젙醫낅쪟
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
@@ -210,8 +210,8 @@ public class EgovIndvdlSchdulManageController {
 		model.addAttribute("schdulSe", listComCode);
 
 		/*
-		 * ***************************************************************** // 캘런더 설정
-		 * 로직
+		 * ***************************************************************** // 罹섎윴???ㅼ젙
+		 * 濡쒖쭅
 		 */
 		Calendar calNow = Calendar.getInstance();
 		Calendar calBefore = Calendar.getInstance();
@@ -232,7 +232,7 @@ public class EgovIndvdlSchdulManageController {
 			iNowWeek = Integer.parseInt(strWeek);
 		}
 
-		// 연도/월 셋팅
+		// ?곕룄/???뗮똿
 		calNow.set(iNowYear, iNowMonth, 1);
 		calBefore.set(iNowYear, iNowMonth, 1);
 		calNext.set(iNowYear, iNowMonth, 1);
@@ -261,12 +261,12 @@ public class EgovIndvdlSchdulManageController {
 
 		int iBetweenCount = startWeek;
 
-		// 주별로 자른다. BETWEEN 구하기
+		// 二쇰퀎濡??먮Ⅸ?? BETWEEN 援ы븯湲?
 		for (int i = 1; i <= endDay; i++) {
 			sUseDate = Integer.toString(iNowYear);
 			// sUseDate += Integer.toString(iNowMonth).length() == 1 ? "0" +
 			// Integer.toString(iNowMonth+1) : Integer.toString(iNowMonth+1);
-			// (2011.09.02 수정사항) 10월의 주별 날짜가 이상하게 나와서 LeaderSchedule 보고 수정함. 위의 코드가 원래 코드
+			// (2011.09.02 ?섏젙?ы빆) 10?붿쓽 二쇰퀎 ?좎쭨媛 ?댁긽?섍쾶 ?섏???LeaderSchedule 蹂닿퀬 ?섏젙?? ?꾩쓽 肄붾뱶媛 ?먮옒 肄붾뱶
 			sUseDate += Integer.toString(iNowMonth + 1).length() == 1 ? "0" + Integer.toString(iNowMonth + 1)
 					: Integer.toString(iNowMonth + 1);
 			sUseDate += Integer.toString(i).length() == 1 ? "0" + Integer.toString(i) : Integer.toString(i);
@@ -283,7 +283,7 @@ public class EgovIndvdlSchdulManageController {
 				}
 			}
 
-			// 미지막 7일 자동계산
+			// 誘몄?留?7???먮룞怨꾩궛
 			if (i == endDay) {
 
 				for (int j = listWeekDate.size(); j < 7; j++) {
@@ -318,7 +318,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정(월별) 목록을 조회한다.
+	 * ?쇱젙(?붾퀎) 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -332,7 +332,7 @@ public class EgovIndvdlSchdulManageController {
 			@RequestParam Map<String, String> commandMap, IndvdlSchdulManageVO indvdlSchdulManageVO, ModelMap model)
 			throws Exception {
 
-		// 일정구분 검색 유지
+		// ?쇱젙援щ텇 寃???좎?
 		model.addAttribute("searchKeyword",
 				commandMap.get("searchKeyword") == null ? "" : (String) commandMap.get("searchKeyword"));
 		model.addAttribute("searchCondition",
@@ -347,7 +347,7 @@ public class EgovIndvdlSchdulManageController {
 		int iMonth = cal.get(java.util.Calendar.MONTH);
 //		int iDate = cal.get(java.util.Calendar.DATE);
 
-		// 검색 설정
+		// 寃???ㅼ젙
 		String sSearchDate = "";
 		if (sYear == null || sMonth == null) {
 			sSearchDate += Integer.toString(iYear);
@@ -361,7 +361,7 @@ public class EgovIndvdlSchdulManageController {
 					: Integer.toString(iMonth + 1);
 		}
 
-		// 공통코드 일정종류
+		// 怨듯넻肄붾뱶 ?쇱젙醫낅쪟
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
@@ -378,7 +378,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정 목록을 조회한다.
+	 * ?쇱젙 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -387,7 +387,7 @@ public class EgovIndvdlSchdulManageController {
 	 * @return "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "일정관리", order = 330, gid = 40)
+	@IncludedInfo(name = "?쇱젙愿由?, order = 330, gid = 40)
 	@RequestMapping(value = "/cop/smt/sim/EgovIndvdlSchdulManageList.do")
 	public String egovIndvdlSchdulManageList(@ModelAttribute("searchVO") ComDefaultVO searchVO,
 			@RequestParam Map<?, ?> commandMap, IndvdlSchdulManageVO indvdlSchdulManageVO, ModelMap model)
@@ -400,7 +400,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정 목록을 상세조회 조회한다.
+	 * ?쇱젙 紐⑸줉???곸꽭議고쉶 議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param indvdlSchdulManageVO
@@ -423,17 +423,17 @@ public class EgovIndvdlSchdulManageController {
 			sLocationUrl = "redirect:/cop/smt/sim/EgovIndvdlSchdulManageList.do";
 		} else {
 
-			// 공통코드 중요도 조회
+			// 怨듯넻肄붾뱶 以묒슂??議고쉶
 			ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 			voComCode.setCodeId("COM019");
 			List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 			model.addAttribute("schdulIpcrCode", listComCode);
-			// 공통코드 일정구분 조회
+			// 怨듯넻肄붾뱶 ?쇱젙援щ텇 議고쉶
 			voComCode = new ComDefaultCodeVO();
 			voComCode.setCodeId("COM030");
 			listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 			model.addAttribute("schdulSe", listComCode);
-			// 공통코드 반복구분 조회
+			// 怨듯넻肄붾뱶 諛섎났援щ텇 議고쉶
 			voComCode = new ComDefaultCodeVO();
 			voComCode.setCodeId("COM031");
 			listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
@@ -444,7 +444,7 @@ public class EgovIndvdlSchdulManageController {
 			model.addAttribute("resultList", sampleList);
 
 			// -----------------------------------------------------------
-			// 2011.09.16 : 일지관리가 존재할 때 버튼이 나타나도록 수정
+			// 2011.09.16 : ?쇱?愿由ш? 議댁옱????踰꾪듉???섑??섎룄濡??섏젙
 			// -----------------------------------------------------------
 
 			if (EgovComponentChecker.hasComponent("egovDiaryManageService")) {
@@ -458,7 +458,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정 수정 폼
+	 * ?쇱젙 ?섏젙 ??
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -478,29 +478,29 @@ public class EgovIndvdlSchdulManageController {
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 
-		// 공통코드 중요도 조회
+		// 怨듯넻肄붾뱶 以묒슂??議고쉶
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM019");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulIpcrCode", listComCode);
-		// 공통코드 일정구분 조회
+		// 怨듯넻肄붾뱶 ?쇱젙援щ텇 議고쉶
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
 		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
-		// 공통코드 반복구분 조회
+		// 怨듯넻肄붾뱶 諛섎났援щ텇 議고쉶
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM031");
 		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("reptitSeCode", listComCode);
 
-		// 일정시작일자(시)
+		// ?쇱젙?쒖옉?쇱옄(??
 		model.addAttribute("schdulBgndeHH", getTimeHH());
-		// 일정시작일자(분)
+		// ?쇱젙?쒖옉?쇱옄(遺?
 		model.addAttribute("schdulBgndeMM", getTimeMM());
-		// 일정종료일자(시)
+		// ?쇱젙醫낅즺?쇱옄(??
 		model.addAttribute("schdulEnddeHH", getTimeHH());
-		// 일정정료일자(분)
+		// ?쇱젙?뺣즺?쇱옄(遺?
 		model.addAttribute("schdulEnddeMM", getTimeMM());
 
 		IndvdlSchdulManageVO resultIndvdlSchdulManageVOReuslt = egovIndvdlSchdulManageService
@@ -526,7 +526,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정를 수정 처리 한다.
+	 * ?쇱젙瑜??섏젙 泥섎━ ?쒕떎.
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -543,14 +543,14 @@ public class EgovIndvdlSchdulManageController {
 			@Valid @ModelAttribute("indvdlSchdulManageVO") IndvdlSchdulManageVO indvdlSchdulManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageModify";
@@ -560,43 +560,43 @@ public class EgovIndvdlSchdulManageController {
 		if (sCmd.equals("save")) {
 			if (bindingResult.hasErrors()) {
 
-				// 공통코드 중요도 조회
+				// 怨듯넻肄붾뱶 以묒슂??議고쉶
 				ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 				voComCode.setCodeId("COM019");
 				List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 				model.addAttribute("schdulIpcrCode", listComCode);
-				// 공통코드 일정구분 조회
+				// 怨듯넻肄붾뱶 ?쇱젙援щ텇 議고쉶
 				voComCode = new ComDefaultCodeVO();
 				voComCode.setCodeId("COM030");
 				listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 				model.addAttribute("schdulSe", listComCode);
-				// 공통코드 반복구분 조회
+				// 怨듯넻肄붾뱶 諛섎났援щ텇 議고쉶
 				voComCode = new ComDefaultCodeVO();
 				voComCode.setCodeId("COM031");
 				listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 				model.addAttribute("reptitSeCode", listComCode);
 
-				// 일정시작일자(시)
+				// ?쇱젙?쒖옉?쇱옄(??
 				model.addAttribute("schdulBgndeHH", getTimeHH());
-				// 일정시작일자(분)
+				// ?쇱젙?쒖옉?쇱옄(遺?
 				model.addAttribute("schdulBgndeMM", getTimeMM());
-				// 일정종료일자(시)
+				// ?쇱젙醫낅즺?쇱옄(??
 				model.addAttribute("schdulEnddeHH", getTimeHH());
-				// 일정정료일자(분)
+				// ?쇱젙?뺣즺?쇱옄(遺?
 				model.addAttribute("schdulEnddeMM", getTimeMM());
 
 				return sLocationUrl;
 			}
 			/*
-			 * ***************************************************************** // 아이디 설정
+			 * ***************************************************************** // ?꾩씠???ㅼ젙
 			 */
 			indvdlSchdulManageVO
 					.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			indvdlSchdulManageVO
 					.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			/*
-			 * ***************************************************************** // 첨부파일 관련
-			 * ID 생성 start....
+			 * ***************************************************************** // 泥⑤??뚯씪 愿??
+			 * ID ?앹꽦 start....
 			 */
 			String atchFileId = indvdlSchdulManageVO.getAtchFileId();
 
@@ -609,8 +609,8 @@ public class EgovIndvdlSchdulManageController {
 					List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
 					atchFileId = fileMngService.insertFileInfs(fvoList);
 
-					// 첨부파일 ID 셋팅
-					indvdlSchdulManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+					// 泥⑤??뚯씪 ID ?뗮똿
+					indvdlSchdulManageVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 				} else {
 					FileVO fvo = new FileVO();
@@ -622,8 +622,8 @@ public class EgovIndvdlSchdulManageController {
 			}
 
 			/*
-			 * ***************************************************************** // 일정관리정보
-			 * 업데이트 처리
+			 * ***************************************************************** // ?쇱젙愿由ъ젙蹂?
+			 * ?낅뜲?댄듃 泥섎━
 			 */
 			egovIndvdlSchdulManageService.updateIndvdlSchdulManage(indvdlSchdulManageVO);
 			sLocationUrl = "redirect:/cop/smt/sim/EgovIndvdlSchdulManageList.do";
@@ -633,7 +633,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정를 등록 폼
+	 * ?쇱젙瑜??깅줉 ??
 	 * 
 	 * @param searchVO
 	 * @param commandMap
@@ -651,36 +651,36 @@ public class EgovIndvdlSchdulManageController {
 
 		String sLocationUrl = "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageRegist";
 
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 공통코드 중요도 조회
+		// 怨듯넻肄붾뱶 以묒슂??議고쉶
 		ComDefaultCodeVO voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM019");
 		List<CmmnDetailCode> listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulIpcrCode", listComCode);
-		// 공통코드 일정구분 조회
+		// 怨듯넻肄붾뱶 ?쇱젙援щ텇 議고쉶
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM030");
 		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("schdulSe", listComCode);
-		// 공통코드 반복구분 조회
+		// 怨듯넻肄붾뱶 諛섎났援щ텇 議고쉶
 		voComCode = new ComDefaultCodeVO();
 		voComCode.setCodeId("COM031");
 		listComCode = cmmUseService.selectCmmCodeDetail(voComCode);
 		model.addAttribute("reptitSeCode", listComCode);
 
-		// 일정시작일자(시)
+		// ?쇱젙?쒖옉?쇱옄(??
 		model.addAttribute("schdulBgndeHH", getTimeHH());
-		// 일정시작일자(분)
+		// ?쇱젙?쒖옉?쇱옄(遺?
 		model.addAttribute("schdulBgndeMM", getTimeMM());
-		// 일정종료일자(시)
+		// ?쇱젙醫낅즺?쇱옄(??
 		model.addAttribute("schdulEnddeHH", getTimeHH());
-		// 일정정료일자(분)
+		// ?쇱젙?뺣즺?쇱옄(遺?
 		model.addAttribute("schdulEnddeMM", getTimeMM());
 
 		return sLocationUrl;
@@ -688,7 +688,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 일정를 등록 처리 한다.
+	 * ?쇱젙瑜??깅줉 泥섎━ ?쒕떎.
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -704,14 +704,14 @@ public class EgovIndvdlSchdulManageController {
 			@ModelAttribute("searchVO") ComDefaultVO searchVO, @RequestParam Map<?, ?> commandMap,
 			@Valid @ModelAttribute("indvdlSchdulManageVO") IndvdlSchdulManageVO indvdlSchdulManageVO,
 			BindingResult bindingResult, ModelMap model) throws Exception {
-		// 0. Spring Security 사용자권한 처리
+		// 0. Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String sLocationUrl = "egovframework/com/cop/smt/sim/EgovIndvdlSchdulManageRegist";
@@ -725,7 +725,7 @@ public class EgovIndvdlSchdulManageController {
 				return sLocationUrl;
 			}
 
-			// 첨부파일 관련 첨부파일ID 생성
+			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
@@ -734,18 +734,18 @@ public class EgovIndvdlSchdulManageController {
 
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-				atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+				atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 			}
 
-			// 리턴받은 첨부파일ID를 셋팅한다..
-			indvdlSchdulManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+			// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+			indvdlSchdulManageVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-			// 아이디 설정
+			// ?꾩씠???ㅼ젙
 			indvdlSchdulManageVO
 					.setFrstRegisterId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 			indvdlSchdulManageVO
 					.setLastUpdusrId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
-			// 일정 담당자 자신으로 등록(2017.08.12 modify by jdh)
+			// ?쇱젙 ?대떦???먯떊?쇰줈 ?깅줉(2017.08.12 modify by jdh)
 			indvdlSchdulManageVO
 					.setSchdulChargerId(loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId()));
 
@@ -758,7 +758,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 시간을 LIST를 반환한다.
+	 * ?쒓컙??LIST瑜?諛섑솚?쒕떎.
 	 * 
 	 * @return List
 	 * @throws
@@ -787,7 +787,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 분을 LIST를 반환한다.
+	 * 遺꾩쓣 LIST瑜?諛섑솚?쒕떎.
 	 * 
 	 * @return List
 	 * @throws
@@ -816,7 +816,7 @@ public class EgovIndvdlSchdulManageController {
 	}
 
 	/**
-	 * 0을 붙여 반환
+	 * 0??遺숈뿬 諛섑솚
 	 * 
 	 * @return String
 	 * @throws

@@ -17,6 +17,6 @@ public interface EgovInformalSanctnService {
 
     void deleteInfrmlSanctn(String infrmlSanctnId);
 
-    // 승인 및 반려 처리
+    // ?뱀씤 諛?諛섎젮 泥섎━
     void confirmInfrmlSanctn(String infrmlSanctnId, String confmAt, String returnResn);
 }

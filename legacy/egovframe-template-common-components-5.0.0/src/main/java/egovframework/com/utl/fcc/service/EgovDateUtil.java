@@ -14,22 +14,22 @@ import java.util.TimeZone;
 import com.ibm.icu.util.ChineseCalendar;
 
 /**
- * Date 에 대한 Util 클래스
+ * Date ?????Util ?대옒??
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.02.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.02.01  이중호          최초 생성
- *   2025.08.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
- *   2025.08.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.08.30  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AvoidReassigningParameters(넘겨받는 메소드 parameter 값을 직접 변경하는 코드 탐지)
+ *   2009.02.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2025.08.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
+ *   2025.08.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.08.30  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AvoidReassigningParameters(?섍꺼諛쏅뒗 硫붿냼??parameter 媛믪쓣 吏곸젒 蹂寃쏀븯??肄붾뱶 ?먯?)
  *
  *      </pre>
  */
@@ -37,8 +37,8 @@ public class EgovDateUtil {
     private static final  String SIMPLE_DATE_PATTERN = "yyyyMMdd";
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열을 입력 받아 년, 월, 일을 증감한다. 년, 월, 일은 가감할 수를 의미하며,
-	 * 음수를 입력할 경우 감한다.
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄?댁쓣 ?낅젰 諛쏆븘 ?? ?? ?쇱쓣 利앷컧?쒕떎. ?? ?? ?쇱? 媛媛먰븷 ?섎? ?섎??섎ŉ,
+	 * ?뚯닔瑜??낅젰??寃쎌슦 媛먰븳??
 	 * </p>
 	 *
 	 * <pre>
@@ -54,13 +54,13 @@ public class EgovDateUtil {
 	 * DateUtil.addYearMonthDay("20040229", 2, 0, 1)   = "20060301"
 	 * </pre>
 	 *
-	 * @param sDate   날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @param year    가감할 년. 0이 입력될 경우 가감이 없다
-	 * @param month   가감할 월. 0이 입력될 경우 가감이 없다
-	 * @param day     가감할 일. 0이 입력될 경우 가감이 없다
-	 * @return yyyyMMdd 형식의 날짜 문자열
-	 * @throws IllegalArgumentException 날짜 포맷이 정해진 바와 다를 경우. 입력 값이
-	 *                                  <code>null</code>인 경우.
+	 * @param sDate   ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @param year    媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @param month   媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @param day     媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @return yyyyMMdd ?뺤떇???좎쭨 臾몄옄??
+	 * @throws IllegalArgumentException ?좎쭨 ?щ㎎???뺥빐吏?諛붿? ?ㅻ? 寃쎌슦. ?낅젰 媛믪씠
+	 *                                  <code>null</code>??寃쎌슦.
 	 */
 	public static String addYearMonthDay(String sDate, int year, int month, int day) {
 
@@ -89,8 +89,8 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열을 입력 받아 년을 증감한다. <code>year</code>는 가감할 수를
-	 * 의미하며, 음수를 입력할 경우 감한다.
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄?댁쓣 ?낅젰 諛쏆븘 ?꾩쓣 利앷컧?쒕떎. <code>year</code>??媛媛먰븷 ?섎?
+	 * ?섎??섎ŉ, ?뚯닔瑜??낅젰??寃쎌슦 媛먰븳??
 	 * </p>
 	 *
 	 * <pre>
@@ -101,11 +101,11 @@ public class EgovDateUtil {
 	 * DateUtil.addYear("19000101", 200) = "21000101"
 	 * </pre>
 	 *
-	 * @param dateStr 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @param year    가감할 년. 0이 입력될 경우 가감이 없다
-	 * @return yyyyMMdd 형식의 날짜 문자열
-	 * @throws IllegalArgumentException 날짜 포맷이 정해진 바와 다를 경우. 입력 값이
-	 *                                  <code>null</code>인 경우.
+	 * @param dateStr ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @param year    媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @return yyyyMMdd ?뺤떇???좎쭨 臾몄옄??
+	 * @throws IllegalArgumentException ?좎쭨 ?щ㎎???뺥빐吏?諛붿? ?ㅻ? 寃쎌슦. ?낅젰 媛믪씠
+	 *                                  <code>null</code>??寃쎌슦.
 	 */
 	public static String addYear(String dateStr, int year) {
 		return addYearMonthDay(dateStr, year, 0, 0);
@@ -113,8 +113,8 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열을 입력 받아 월을 증감한다. <code>month</code>는 가감할 수를
-	 * 의미하며, 음수를 입력할 경우 감한다.
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄?댁쓣 ?낅젰 諛쏆븘 ?붿쓣 利앷컧?쒕떎. <code>month</code>??媛媛먰븷 ?섎?
+	 * ?섎??섎ŉ, ?뚯닔瑜??낅젰??寃쎌슦 媛먰븳??
 	 * </p>
 	 *
 	 * <pre>
@@ -126,11 +126,11 @@ public class EgovDateUtil {
 	 * DateUtil.addMonth("20060228", -1)  = "20060128"
 	 * </pre>
 	 *
-	 * @param dateStr 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @param month   가감할 월. 0이 입력될 경우 가감이 없다
-	 * @return yyyyMMdd 형식의 날짜 문자열
-	 * @throws IllegalArgumentException 날짜 포맷이 정해진 바와 다를 경우. 입력 값이
-	 *                                  <code>null</code>인 경우.
+	 * @param dateStr ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @param month   媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @return yyyyMMdd ?뺤떇???좎쭨 臾몄옄??
+	 * @throws IllegalArgumentException ?좎쭨 ?щ㎎???뺥빐吏?諛붿? ?ㅻ? 寃쎌슦. ?낅젰 媛믪씠
+	 *                                  <code>null</code>??寃쎌슦.
 	 */
 	public static String addMonth(String dateStr, int month) {
 		return addYearMonthDay(dateStr, 0, month, 0);
@@ -138,10 +138,10 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열을 입력 받아 일(day)를 증감한다. <code>day</code>는 가감할
-	 * 수를 의미하며, 음수를 입력할 경우 감한다. <br/>
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄?댁쓣 ?낅젰 諛쏆븘 ??day)瑜?利앷컧?쒕떎. <code>day</code>??媛媛먰븷
+	 * ?섎? ?섎??섎ŉ, ?뚯닔瑜??낅젰??寃쎌슦 媛먰븳?? <br/>
 	 * <br/>
-	 * 위에 정의된 addDays 메서드는 사용자가 ParseException을 반드시 처리해야 하는 불편함이 있기 때문에 추가된 메서드이다.
+	 * ?꾩뿉 ?뺤쓽??addDays 硫붿꽌?쒕뒗 ?ъ슜?먭? ParseException??諛섎뱶??泥섎━?댁빞 ?섎뒗 遺덊렪?⑥씠 ?덇린 ?뚮Ц??異붽???硫붿꽌?쒖씠??
 	 * </p>
 	 *
 	 * <pre>
@@ -149,15 +149,15 @@ public class EgovDateUtil {
 	 * DateUtil.addDay("20000201", -62) = "19991201"
 	 * DateUtil.addDay("20050831", 3) = "20050903"
 	 * DateUtil.addDay("20050831", 3) = "20050903"
-	 * // 2006년 6월 31일은 실제로 존재하지 않는 날짜이다 -> 20060701로 간주된다
+	 * // 2006??6??31?쇱? ?ㅼ젣濡?議댁옱?섏? ?딅뒗 ?좎쭨?대떎 -> 20060701濡?媛꾩＜?쒕떎
 	 * DateUtil.addDay("20060631", 1) = "20060702"
 	 * </pre>
 	 *
-	 * @param dateStr 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @param day     가감할 일. 0이 입력될 경우 가감이 없다
-	 * @return yyyyMMdd 형식의 날짜 문자열
-	 * @throws IllegalArgumentException 날짜 포맷이 정해진 바와 다를 경우. 입력 값이
-	 *                                  <code>null</code>인 경우.
+	 * @param dateStr ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @param day     媛媛먰븷 ?? 0???낅젰??寃쎌슦 媛媛먯씠 ?녿떎
+	 * @return yyyyMMdd ?뺤떇???좎쭨 臾몄옄??
+	 * @throws IllegalArgumentException ?좎쭨 ?щ㎎???뺥빐吏?諛붿? ?ㅻ? 寃쎌슦. ?낅젰 媛믪씠
+	 *                                  <code>null</code>??寃쎌슦.
 	 */
 	public static String addDay(String dateStr, int day) {
 		return addYearMonthDay(dateStr, 0, 0, day);
@@ -165,10 +165,10 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열 <code>dateStr1</code>과 <code>
-	 * dateStr2</code> 사이의 일 수를 구한다.<br>
-	 * <code>dateStr2</code>가 <code>dateStr1</code> 보다 과거 날짜일 경우에는 음수를 반환한다. 동일한
-	 * 경우에는 0을 반환한다.
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄??<code>dateStr1</code>怨?<code>
+	 * dateStr2</code> ?ъ씠?????섎? 援ы븳??<br>
+	 * <code>dateStr2</code>媛 <code>dateStr1</code> 蹂대떎 怨쇨굅 ?좎쭨??寃쎌슦?먮뒗 ?뚯닔瑜?諛섑솚?쒕떎. ?숈씪??
+	 * 寃쎌슦?먮뒗 0??諛섑솚?쒕떎.
 	 * </p>
 	 *
 	 * <pre>
@@ -179,11 +179,11 @@ public class EgovDateUtil {
 	 * DateUtil.getDaysDiff("20060801","20060801") = 0
 	 * </pre>
 	 *
-	 * @param sDate1 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @param sDate2 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @return 일 수 차이.
-	 * @throws IllegalArgumentException 날짜 포맷이 정해진 바와 다를 경우. 입력 값이
-	 *                                  <code>null</code>인 경우.
+	 * @param sDate1 ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @param sDate2 ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @return ????李⑥씠.
+	 * @throws IllegalArgumentException ?좎쭨 ?щ㎎???뺥빐吏?諛붿? ?ㅻ? 寃쎌슦. ?낅젰 媛믪씠
+	 *                                  <code>null</code>??寃쎌슦.
 	 */
 	public static int getDaysDiff(String sDate1, String sDate2) {
 		String dateStr1 = validChkDate(sDate1);
@@ -215,7 +215,7 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * yyyyMMdd 혹은 yyyy-MM-dd 형식의 날짜 문자열을 입력 받아 유효한 날짜인지 검사.
+	 * yyyyMMdd ?뱀? yyyy-MM-dd ?뺤떇???좎쭨 臾몄옄?댁쓣 ?낅젰 諛쏆븘 ?좏슚???좎쭨?몄? 寃??
 	 * </p>
 	 *
 	 * <pre>
@@ -228,8 +228,8 @@ public class EgovDateUtil {
 	 * DateUtil.checkDate("2006-02-28") = true
 	 * </pre>
 	 *
-	 * @param sDate 날짜 문자열(yyyyMMdd, yyyy-MM-dd의 형식)
-	 * @return 유효한 날짜인지 여부
+	 * @param sDate ?좎쭨 臾몄옄??yyyyMMdd, yyyy-MM-dd???뺤떇)
+	 * @return ?좏슚???좎쭨?몄? ?щ?
 	 */
 	public static boolean checkDate(String sDate) {
 		String dateStr = validChkDate(sDate);
@@ -243,13 +243,13 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * 입력한 년, 월, 일이 유효한지 검사.
+	 * ?낅젰???? ?? ?쇱씠 ?좏슚?쒖? 寃??
 	 * </p>
 	 *
-	 * @param year  연도
-	 * @param month 월
-	 * @param day   일
-	 * @return 유효한 날짜인지 여부
+	 * @param year  ?곕룄
+	 * @param month ??
+	 * @param day   ??
+	 * @return ?좏슚???좎쭨?몄? ?щ?
 	 */
 	public static boolean checkDate(String year, String month, String day) {
 		try {
@@ -268,13 +268,13 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 날짜형태의 String의 날짜 포맷 및 TimeZone을 변경해 주는 메서드
+	 * ?좎쭨?뺥깭??String???좎쭨 ?щ㎎ 諛?TimeZone??蹂寃쏀빐 二쇰뒗 硫붿꽌??
 	 *
-	 * @param strSource      바꿀 날짜 String
-	 * @param fromDateFormat 기존의 날짜 형태
-	 * @param toDateFormat   원하는 날짜 형태
-	 * @param strTimeZone    변경할 TimeZone(""이면 변경 안함)
-	 * @return 소스 String의 날짜 포맷을 변경한 String
+	 * @param strSource      諛붽? ?좎쭨 String
+	 * @param fromDateFormat 湲곗〈???좎쭨 ?뺥깭
+	 * @param toDateFormat   ?먰븯???좎쭨 ?뺥깭
+	 * @param strTimeZone    蹂寃쏀븷 TimeZone(""?대㈃ 蹂寃??덊븿)
+	 * @return ?뚯뒪 String???좎쭨 ?щ㎎??蹂寃쏀븳 String
 	 */
 	public static String convertDate(String strSource, String fromDateFormat, String toDateFormat, String strTimeZone) {
 		SimpleDateFormat simpledateformat = null;
@@ -286,10 +286,10 @@ public class EgovDateUtil {
 			return "";
 		}
 		if (EgovStringUtil.isNullToString(fromDateFormat).isEmpty()) {
-			fromFormat = "yyyyMMddHHmmss"; // default값
+			fromFormat = "yyyyMMddHHmmss"; // default媛?
 		}
 		if (EgovStringUtil.isNullToString(toDateFormat).isEmpty()) {
-			toFormat = "yyyy-MM-dd HH:mm:ss"; // default값
+			toFormat = "yyyy-MM-dd HH:mm:ss"; // default媛?
 		}
 
 		try {
@@ -308,17 +308,17 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * yyyyMMdd 형식의 날짜문자열을 원하는 캐릭터(ch)로 쪼개 돌려준다<br/>
+	 * yyyyMMdd ?뺤떇???좎쭨臾몄옄?댁쓣 ?먰븯??罹먮┃??ch)濡?履쇨컻 ?뚮젮以??br/>
 	 * 
 	 * <pre>
 	* ex) 20030405, ch(.) -> 2003.04.05
 	* ex) 200304, ch(.) -> 2003.04
-	* ex) 20040101,ch(/) --> 2004/01/01 로 리턴
+	* ex) 20040101,ch(/) --> 2004/01/01 濡?由ы꽩
 	 * </pre>
 	 *
-	 * @param sDate yyyyMMdd 형식의 날짜문자열
-	 * @param ch   구분자
-	 * @return 변환된 문자열
+	 * @param sDate yyyyMMdd ?뺤떇???좎쭨臾몄옄??
+	 * @param ch   援щ텇??
+	 * @return 蹂?섎맂 臾몄옄??
 	 */
 	public static String formatDate(String sDate, String ch) {
 		String dateStr = validChkDate(sDate);
@@ -372,15 +372,15 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * HH24MISS 형식의 시간문자열을 원하는 캐릭터(ch)로 쪼개 돌려준다 <br>
+	 * HH24MISS ?뺤떇???쒓컙臾몄옄?댁쓣 ?먰븯??罹먮┃??ch)濡?履쇨컻 ?뚮젮以??<br>
 	 * 
 	 * <pre>
 	 *     ex) 151241, ch(/) -> 15/12/31
 	 * </pre>
 	 *
-	 * @param sTime HH24MISS 형식의 시간문자열
-	 * @param ch  구분자
-	 * @return 변환된 문자열
+	 * @param sTime HH24MISS ?뺤떇???쒓컙臾몄옄??
+	 * @param ch  援щ텇??
+	 * @return 蹂?섎맂 臾몄옄??
 	 */
 	public static String formatTime(String sTime, String ch) {
 		String timeStr = validChkTime(sTime);
@@ -388,10 +388,10 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 연도를 입력 받아 해당 연도 2월의 말일(일수)를 문자열로 반환한다.
+	 * ?곕룄瑜??낅젰 諛쏆븘 ?대떦 ?곕룄 2?붿쓽 留먯씪(?쇱닔)瑜?臾몄옄?대줈 諛섑솚?쒕떎.
 	 *
 	 * @param year
-	 * @return 해당 연도 2월의 말일(일수)
+	 * @return ?대떦 ?곕룄 2?붿쓽 留먯씪(?쇱닔)
 	 */
 	public String leapYear(int year) {
 		if (year % 4 == 0 && year % 100 != 0 || year % 400 == 0) {
@@ -403,7 +403,7 @@ public class EgovDateUtil {
 
 	/**
 	 * <p>
-	 * 입력받은 연도가 윤년인지 아닌지 검사한다.
+	 * ?낅젰諛쏆? ?곕룄媛 ?ㅻ뀈?몄? ?꾨땶吏 寃?ы븳??
 	 * </p>
 	 *
 	 * <pre>
@@ -412,8 +412,8 @@ public class EgovDateUtil {
 	 * DateUtil.isLeapYear(2006) = true
 	 * </pre>
 	 *
-	 * @param year 연도
-	 * @return 윤년 여부
+	 * @param year ?곕룄
+	 * @return ?ㅻ뀈 ?щ?
 	 */
 	public static boolean isLeapYear(int year) {
 		if (year % 4 == 0 && year % 100 != 0 || year % 400 == 0) {
@@ -423,20 +423,20 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 현재(한국기준) 날짜정보를 얻는다. <BR>
-	 * 표기법은 yyyy-mm-dd <BR>
+	 * ?꾩옱(?쒓뎅湲곗?) ?좎쭨?뺣낫瑜??삳뒗?? <BR>
+	 * ?쒓린踰뺤? yyyy-mm-dd <BR>
 	 * 
-	 * @return String yyyymmdd형태의 현재 한국시간. <BR>
+	 * @return String yyyymmdd?뺥깭???꾩옱 ?쒓뎅?쒓컙. <BR>
 	 */
 	public static String getToday() {
 		return getCurrentDate("");
 	}
 
 	/**
-	 * 현재(한국기준) 날짜정보를 얻는다. <BR>
-	 * 표기법은 yyyy-mm-dd <BR>
+	 * ?꾩옱(?쒓뎅湲곗?) ?좎쭨?뺣낫瑜??삳뒗?? <BR>
+	 * ?쒓린踰뺤? yyyy-mm-dd <BR>
 	 * 
-	 * @return String yyyymmdd형태의 현재 한국시간. <BR>
+	 * @return String yyyymmdd?뺥깭???꾩옱 ?쒓뎅?쒓컙. <BR>
 	 */
 	public static String getCurrentDate(String dateType) {
 		Calendar aCalendar = Calendar.getInstance();
@@ -456,12 +456,12 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 날짜형태의 String의 날짜 포맷만을 변경해 주는 메서드
+	 * ?좎쭨?뺥깭??String???좎쭨 ?щ㎎留뚯쓣 蹂寃쏀빐 二쇰뒗 硫붿꽌??
 	 * 
-	 * @param sDate      날짜
-	 * @param sTime      시간
-	 * @param sFormatStr 포멧 스트링 문자열
-	 * @return 지정한 날짜/시간을 지정한 포맷으로 출력
+	 * @param sDate      ?좎쭨
+	 * @param sTime      ?쒓컙
+	 * @param sFormatStr ?щĸ ?ㅽ듃留?臾몄옄??
+	 * @return 吏?뺥븳 ?좎쭨/?쒓컙??吏?뺥븳 ?щ㎎?쇰줈 異쒕젰
 	 * @See Letter Date or Time Component Presentation Examples G Era designator
 	 *      Text AD y Year Year 1996; 96 M Month in year Month July; Jul; 07 w Week
 	 *      in year Number 27 W Week in month Number 2 D Day in year Number 189 d
@@ -499,11 +499,11 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력받은 일자 사이의 임의의 일자를 반환
+	 * ?낅젰諛쏆? ?쇱옄 ?ъ씠???꾩쓽???쇱옄瑜?諛섑솚
 	 * 
-	 * @param sDate1 시작일자
-	 * @param sDate2 종료일자
-	 * @return 임의일자
+	 * @param sDate1 ?쒖옉?쇱옄
+	 * @param sDate2 醫낅즺?쇱옄
+	 * @return ?꾩쓽?쇱옄
 	 */
 	public static String getRandomDate(String sDate1, String sDate2) {
 		String dateStr1 = validChkDate(sDate1);
@@ -542,15 +542,15 @@ public class EgovDateUtil {
 		cal.setTimeInMillis(rand);
 		randomDate = calformat.format(cal.getTime());
 
-		// 랜덤문자열를 리턴
+		// ?쒕뜡臾몄옄?대? 由ы꽩
 		return randomDate;
 	}
 
 	/**
-	 * 입력받은 양력일자를 변환하여 음력일자로 반환
+	 * ?낅젰諛쏆? ?묐젰?쇱옄瑜?蹂?섑븯???뚮젰?쇱옄濡?諛섑솚
 	 * 
-	 * @param sDate 양력일자
-	 * @return 음력일자
+	 * @param sDate ?묐젰?쇱옄
+	 * @return ?뚮젰?쇱옄
 	 */
 	public static Map<String, String> toLunar(String sDate) {
 		String dateStr = validChkDate(sDate);
@@ -596,11 +596,11 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력받은 음력일자를 변환하여 양력일자로 반환
+	 * ?낅젰諛쏆? ?뚮젰?쇱옄瑜?蹂?섑븯???묐젰?쇱옄濡?諛섑솚
 	 * 
-	 * @param sDate      음력일자
-	 * @param iLeapMonth 음력윤달여부(IS_LEAP_MONTH)
-	 * @return 양력일자
+	 * @param sDate      ?뚮젰?쇱옄
+	 * @param iLeapMonth ?뚮젰?ㅻ떖?щ?(IS_LEAP_MONTH)
+	 * @return ?묐젰?쇱옄
 	 */
 	public static String toSolar(String sDate, int iLeapMonth) {
 		String dateStr = validChkDate(sDate);
@@ -633,38 +633,38 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력받은 요일의 영문명을 국문명의 요일로 반환
+	 * ?낅젰諛쏆? ?붿씪???곷Ц紐낆쓣 援?Ц紐낆쓽 ?붿씪濡?諛섑솚
 	 * 
-	 * @param sWeek 영문 요일명
-	 * @return 국문 요일명
+	 * @param sWeek ?곷Ц ?붿씪紐?
+	 * @return 援?Ц ?붿씪紐?
 	 */
 	public static String convertWeek(String sWeek) {
 		String retStr = null;
 
 		if (sWeek.equals("SUN")) {
-			retStr = "일요일";
+			retStr = "?쇱슂??;
 		} else if (sWeek.equals("MON")) {
-			retStr = "월요일";
+			retStr = "?붿슂??;
 		} else if (sWeek.equals("TUE")) {
-			retStr = "화요일";
+			retStr = "?붿슂??;
 		} else if (sWeek.equals("WED")) {
-			retStr = "수요일";
+			retStr = "?섏슂??;
 		} else if (sWeek.equals("THR")) {
-			retStr = "목요일";
+			retStr = "紐⑹슂??;
 		} else if (sWeek.equals("FRI")) {
-			retStr = "금요일";
+			retStr = "湲덉슂??;
 		} else if (sWeek.equals("SAT")) {
-			retStr = "토요일";
+			retStr = "?좎슂??;
 		}
 
 		return retStr;
 	}
 
 	/**
-	 * 입력일자의 유효 여부를 확인
+	 * ?낅젰?쇱옄???좏슚 ?щ?瑜??뺤씤
 	 * 
-	 * @param sDate 일자
-	 * @return 유효 여부
+	 * @param sDate ?쇱옄
+	 * @return ?좏슚 ?щ?
 	 */
 	public static boolean validDate(String sDate) {
 		String dateStr = validChkDate(sDate);
@@ -699,11 +699,11 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력일자, 요일의 유효 여부를 확인
+	 * ?낅젰?쇱옄, ?붿씪???좏슚 ?щ?瑜??뺤씤
 	 * 
-	 * @param sDate 일자
-	 * @param sWeek 요일 (DAY_OF_WEEK)
-	 * @return 유효 여부
+	 * @param sDate ?쇱옄
+	 * @param sWeek ?붿씪 (DAY_OF_WEEK)
+	 * @return ?좏슚 ?щ?
 	 */
 	public static boolean validDate(String sDate, int sWeek) {
 		String dateStr = validChkDate(sDate);
@@ -729,10 +729,10 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력시간의 유효 여부를 확인
+	 * ?낅젰?쒓컙???좏슚 ?щ?瑜??뺤씤
 	 * 
-	 * @param sTime 입력시간
-	 * @return 유효 여부
+	 * @param sTime ?낅젰?쒓컙
+	 * @return ?좏슚 ?щ?
 	 */
 	public static boolean validTime(String sTime) {
 		String timeStr = validChkTime(sTime);
@@ -763,13 +763,13 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력된 일자에 연, 월, 일을 가감한 날짜의 요일을 반환
+	 * ?낅젰???쇱옄???? ?? ?쇱쓣 媛媛먰븳 ?좎쭨???붿씪??諛섑솚
 	 * 
-	 * @param sDate 날짜
-	 * @param year  연
-	 * @param month 월
-	 * @param day   일
-	 * @return 계산된 일자의 요일(DAY_OF_WEEK)
+	 * @param sDate ?좎쭨
+	 * @param year  ??
+	 * @param month ??
+	 * @param day   ??
+	 * @return 怨꾩궛???쇱옄???붿씪(DAY_OF_WEEK)
 	 */
 	public static String addYMDtoWeek(String sDate, int year, int month, int day) {
 		String dateStr = validChkDate(sDate);
@@ -790,16 +790,16 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력된 일자에 연, 월, 일, 시간, 분을 가감한 날짜, 시간을 포멧스트링 형식으로 반환
+	 * ?낅젰???쇱옄???? ?? ?? ?쒓컙, 遺꾩쓣 媛媛먰븳 ?좎쭨, ?쒓컙???щĸ?ㅽ듃留??뺤떇?쇰줈 諛섑솚
 	 * 
-	 * @param sDate     날짜
-	 * @param sTime     시간
-	 * @param year      연
-	 * @param month     월
-	 * @param day       일
-	 * @param hour      시간
-	 * @param minute    분
-	 * @param formatStr 포멧스트링
+	 * @param sDate     ?좎쭨
+	 * @param sTime     ?쒓컙
+	 * @param year      ??
+	 * @param month     ??
+	 * @param day       ??
+	 * @param hour      ?쒓컙
+	 * @param minute    遺?
+	 * @param formatStr ?щĸ?ㅽ듃留?
 	 * @return
 	 */
 	public static String addYMDtoDayTime(String sDate, String sTime, int year, int month, int day, int hour, int minute,
@@ -834,27 +834,27 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력된 일자를 int 형으로 반환
+	 * ?낅젰???쇱옄瑜?int ?뺤쑝濡?諛섑솚
 	 * 
-	 * @param sDate 일자
-	 * @return int(일자)
+	 * @param sDate ?쇱옄
+	 * @return int(?쇱옄)
 	 */
 	public static int datetoInt(String sDate) {
 		return Integer.parseInt(convertDate(sDate, "0000", SIMPLE_DATE_PATTERN));
 	}
 
 	/**
-	 * 입력된 시간을 int 형으로 반환
+	 * ?낅젰???쒓컙??int ?뺤쑝濡?諛섑솚
 	 * 
-	 * @param sTime 시간
-	 * @return int(시간)
+	 * @param sTime ?쒓컙
+	 * @return int(?쒓컙)
 	 */
 	public static int timetoInt(String sTime) {
 		return Integer.parseInt(convertDate("00000101", sTime, "HHmm"));
 	}
 
 	/**
-	 * 입력된 일자 문자열을 확인하고 8자리로 리턴
+	 * ?낅젰???쇱옄 臾몄옄?댁쓣 ?뺤씤?섍퀬 8?먮━濡?由ы꽩
 	 * 
 	 * @param dateStr
 	 * @return
@@ -872,7 +872,7 @@ public class EgovDateUtil {
 	}
 
 	/**
-	 * 입력된 일자 문자열을 확인하고 8자리로 리턴
+	 * ?낅젰???쇱옄 臾몄옄?댁쓣 ?뺤씤?섍퀬 8?먮━濡?由ы꽩
 	 * 
 	 * @param timeStr
 	 * @return

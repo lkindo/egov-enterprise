@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 정보알림 JPA Entity
- * 레거시 테이블: NNTFCINFO
+ * ?類ｋ궖???뵝 JPA Entity
+ * ??뉕탢?????뵠?? NNTFCINFO
  */
 @Entity
 @Table(name = "NNTFCINFO")
@@ -53,19 +53,19 @@ public class Notification extends BaseEntity {
         this.isRead = "Y";
     }
 
-    // 누락된 메서드들 추가
+    // ?袁⑥뵭??筌롫뗄苑??뺣굶 ?곕떽?
     public String getNtfcTime() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
     }
 
     public String getBhNtfcIntrvl() {
-        // 알림 간격 정보는 별도 필드가 없으므로 null 반환
+        // ???뵝 揶쏄쑨爰??類ｋ궖??癰귢쑬猷??袁⑤굡揶쎛 ??곸몵沃샕嚥?null 獄쏆꼹??
         return null;
     }
 
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        // 시간 관련 정보는 BaseEntity에서 관리
+        // ??볦퍢 ?온???類ｋ궖??BaseEntity?癒?퐣 ?온??
     }
 }

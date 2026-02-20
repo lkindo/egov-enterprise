@@ -6,16 +6,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 행정전문용어사전관리 VO Class 구현
- * @author 공통서비스 장동한
+ * ?됱젙?꾨Ц?⑹뼱?ъ쟾愿由?VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -23,60 +23,60 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = -5313141971613650852L;
 
-	/** 행정용어사전 아이디 */
+	/** ?됱젙?⑹뼱?ъ쟾 ?꾩씠??*/
     private String administWordId;
 
-    /** 행정용어사전 명 */
+    /** ?됱젙?⑹뼱?ъ쟾 紐?*/
     private String administWordNm;
 
-    /** 행정용어사전 영문명 */
+    /** ?됱젙?⑹뼱?ъ쟾 ?곷Ц紐?*/
     private String administWordEngNm;
 
-    /** 행정용어사전 약어  */
+    /** ?됱젙?⑹뼱?ъ쟾 ?쎌뼱  */
     private String administWordAbrv;
 
-    /** 주제영역  */
+    /** 二쇱젣?곸뿭  */
     private String themaRelm;
 
-    /** 용어구분  */
+    /** ?⑹뼱援щ텇  */
     private String wordDomn;
     
-    /** 용어구분명  */
+    /** ?⑹뼱援щ텇紐? */
     private String wordDomnNm;
 
-    /** 관련표준용어  */
+    /** 愿?⑦몴以?⑹뼱  */
     private String stdWord;
 
-    /** 행정용어사전 정의 */
+    /** ?됱젙?⑹뼱?ъ쟾 ?뺤쓽 */
     private String administWordDf;
 
-    /** 행정용어사전 설명 */
+    /** ?됱젙?⑹뼱?ъ쟾 ?ㅻ챸 */
     private String administWordDc;
 
-    /** 최초등록시점 */
+    /** 理쒖큹?깅줉?쒖젏 */
     private String frstRegisterPnttm;
 
-    /** 최초등록아이디 */
+    /** 理쒖큹?깅줉?꾩씠??*/
     private String frstRegisterId;
 
-    /** 최종수정일 */
+    /** 理쒖쥌?섏젙??*/
     private String lastUpdusrPnttm;
 
-    /** 최종수정자 아이디 */
+    /** 理쒖쥌?섏젙???꾩씠??*/
     private String lastUpdusrId;
 
-    /** 초성검색 */
+    /** 珥덉꽦寃??*/
     private String choseongA;
 
-    /** 초성검색 */
+    /** 珥덉꽦寃??*/
     private String choseongB;
 
-    /** 컨트롤 명령어 */
+    /** 而⑦듃濡?紐낅졊??*/
     private String cmd;
 
 
     /**
-     * administWordId 리턴
+     * administWordId 由ы꽩
      *
      * @return the administWordId
      */
@@ -85,7 +85,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordId 설정
+     * administWordId ?ㅼ젙
      *
      * @param administWordId the administWordId to set
      */
@@ -94,7 +94,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordNm 리턴
+     * administWordNm 由ы꽩
      *
      * @return the administWordNm
      */
@@ -103,7 +103,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordNm 설정
+     * administWordNm ?ㅼ젙
      *
      * @param administWordNm the administWordNm to set
      */
@@ -112,7 +112,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordEngNm 리턴
+     * administWordEngNm 由ы꽩
      *
      * @return the administWordEngNm
      */
@@ -121,7 +121,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordEngNm 설정
+     * administWordEngNm ?ㅼ젙
      *
      * @param administWordEngNm the administWordEngNm to set
      */
@@ -130,7 +130,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordAbrv 리턴
+     * administWordAbrv 由ы꽩
      *
      * @return the administWordAbrv
      */
@@ -139,7 +139,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordAbrv 설정
+     * administWordAbrv ?ㅼ젙
      *
      * @param administWordAbrv the administWordAbrv to set
      */
@@ -148,7 +148,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * themaRelm 리턴
+     * themaRelm 由ы꽩
      *
      * @return the themaRelm
      */
@@ -157,7 +157,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * themaRelm 설정
+     * themaRelm ?ㅼ젙
      *
      * @param themaRelm the themaRelm to set
      */
@@ -166,7 +166,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * wordDomn 리턴
+     * wordDomn 由ы꽩
      *
      * @return the wordDomn
      */
@@ -175,7 +175,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * wordDomn 설정
+     * wordDomn ?ㅼ젙
      *
      * @param wordDomn the wordDomn to set
      */
@@ -184,7 +184,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * wordDomnNm 리턴
+     * wordDomnNm 由ы꽩
      *
      * @return the wordDomn
      */
@@ -193,7 +193,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
     
     /**
-     * wordDomnNm 설정
+     * wordDomnNm ?ㅼ젙
      *
      * @param wordDomnNm the wordDomnNm to set
      */
@@ -202,7 +202,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
     
     /**
-     * stdWord 리턴
+     * stdWord 由ы꽩
      *
      * @return the stdWord
      */
@@ -211,7 +211,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * stdWord 설정
+     * stdWord ?ㅼ젙
      *
      * @param stdWord the stdWord to set
      */
@@ -220,7 +220,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordDf 리턴
+     * administWordDf 由ы꽩
      *
      * @return the administWordDf
      */
@@ -229,7 +229,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordDf 설정
+     * administWordDf ?ㅼ젙
      *
      * @param administWordDf the administWordDf to set
      */
@@ -238,7 +238,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordDc 리턴
+     * administWordDc 由ы꽩
      *
      * @return the administWordDc
      */
@@ -247,7 +247,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * administWordDc 설정
+     * administWordDc ?ㅼ젙
      *
      * @param administWordDc the administWordDc to set
      */
@@ -256,7 +256,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 리턴
+     * frstRegisterPnttm 由ы꽩
      *
      * @return the frstRegisterPnttm
      */
@@ -265,7 +265,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterPnttm 설정
+     * frstRegisterPnttm ?ㅼ젙
      *
      * @param frstRegisterPnttm the frstRegisterPnttm to set
      */
@@ -274,7 +274,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 리턴
+     * frstRegisterId 由ы꽩
      *
      * @return the frstRegisterId
      */
@@ -283,7 +283,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * frstRegisterId 설정
+     * frstRegisterId ?ㅼ젙
      *
      * @param frstRegisterId the frstRegisterId to set
      */
@@ -292,7 +292,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 리턴
+     * lastUpdusrPnttm 由ы꽩
      *
      * @return the lastUpdusrPnttm
      */
@@ -301,7 +301,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrPnttm 설정
+     * lastUpdusrPnttm ?ㅼ젙
      *
      * @param lastUpdusrPnttm the lastUpdusrPnttm to set
      */
@@ -310,7 +310,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 리턴
+     * lastUpdusrId 由ы꽩
      *
      * @return the lastUpdusrId
      */
@@ -319,7 +319,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * lastUpdusrId 설정
+     * lastUpdusrId ?ㅼ젙
      *
      * @param lastUpdusrId the lastUpdusrId to set
      */
@@ -328,7 +328,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * choseongA 리턴
+     * choseongA 由ы꽩
      *
      * @return the choseongA
      */
@@ -337,7 +337,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * choseongA 설정
+     * choseongA ?ㅼ젙
      *
      * @param choseongA the choseongA to set
      */
@@ -346,7 +346,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * choseongB 리턴
+     * choseongB 由ы꽩
      *
      * @return the choseongB
      */
@@ -355,7 +355,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * choseongB 설정
+     * choseongB ?ㅼ젙
      *
      * @param choseongB the choseongB to set
      */
@@ -364,7 +364,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 리턴
+     * cmd 由ы꽩
      *
      * @return the cmd
      */
@@ -373,7 +373,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-     * cmd 설정
+     * cmd ?ㅼ젙
      *
      * @param cmd the cmd to set
      */
@@ -382,7 +382,7 @@ public class AdministrationWordVO extends ComDefaultVO implements Serializable {
     }
 
     /**
-	 * toString 메소드를 대치한다.
+	 * toString 硫붿냼?쒕? ?移섑븳??
 	 */
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);

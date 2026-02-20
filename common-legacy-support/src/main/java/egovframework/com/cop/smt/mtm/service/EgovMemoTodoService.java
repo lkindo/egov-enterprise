@@ -1,0 +1,78 @@
+package egovframework.com.cop.smt.mtm.service;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * ??
+ * - ????????Service Interface?????.
+ * 
+ * ???
+ * - ?????????, ??, ???? ???????.
+ * - ??????? ?, ??? ??????????.
+ * @author ???
+ * @version 1.0
+ * @created 19-7-2010 ?? 10:12:46
+ *   <pre>
+ * << ?????Modification Information) >>
+ *   
+ *   ????     ????          ????
+ *  -------    --------    ---------------------------
+ *   2010.7.19	???         ????
+ *
+ * </pre>
+ **/
+public interface EgovMemoTodoService {
+
+	/**
+	 * ?? ?????.
+	 * @param MemoTodoVO - ?? VO
+	 * @return  Map<String, Object> - ?? List
+	 * 
+	 * @param memoTodoVO
+	 **/
+	public Map<String, Object> selectMemoTodoList(MemoTodoVO memoTodoVO) throws Exception;
+
+	/**
+	 * ?? ??????.
+	 * @param MemoTodoVO - ?? VO
+	 * @return  MemoTodoVO - ?? VO
+	 * 
+	 * @param memoTodoVO
+	 **/
+	public MemoTodoVO selectMemoTodo(MemoTodoVO memoTodoVO) throws Exception;
+
+	/**
+	 * ?? ???????.
+	 * @param MemoTodo - ?? model
+	 * 
+	 * @param memoTodo
+	 **/
+	public void updateMemoTodo(MemoTodo memoTodo) throws Exception;
+
+	/**
+	 * ?? ??????.
+	 * @param MemoTodo - ?? model
+	 * 
+	 * @param memoTodo
+	 **/
+	public void insertMemoTodo(MemoTodo memoTodo) throws Exception;
+
+	/**
+	 * ?? ????????.
+	 * @param MemoTodo - ?? model
+	 * 
+	 * @param memoTodo
+	 **/
+	public void deleteMemoTodo(MemoTodo memoTodo) throws Exception;
+
+	/**
+	 * ?? ????????????.
+	 * @param MemoTodoVO - ?? VO
+	 * @return  List<MemoTodoVO> - ?? List
+	 * 
+	 * @param memoTodoVO
+	 **/
+	public List<MemoTodoVO> selectMemoTodoListToday(MemoTodoVO memoTodoVO) throws Exception;
+
+}

@@ -3,54 +3,54 @@ package egovframework.com.sym.sym.bak.service;
 import java.util.List;
 
 /**
- * 백업결과관리에 대한 Service Interface를 정의한다.
+ * 諛깆뾽寃곌낵愿由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 public interface EgovBackupResultService {
 
 	/**
-	 * 백업결과을  삭제한다.
+	 * 諛깆뾽寃곌낵?? ??젣?쒕떎.
 	 *
-	 * @param backupResult    삭제대상 백업결과model
+	 * @param backupResult    ??젣???諛깆뾽寃곌낵model
 	 * @exception Exception Exception
 	 */
 	public void deleteBackupResult(BackupResult backupResult) throws Exception;
 
 	/**
-	 * 백업결과을  상세조회 한다.
-	 * @return 백업결과정보
+	 * 諛깆뾽寃곌낵?? ?곸꽭議고쉶 ?쒕떎.
+	 * @return 諛깆뾽寃곌낵?뺣낫
 	 *
-	 * @param backupResult    조회대상 백업결과model
+	 * @param backupResult    議고쉶???諛깆뾽寃곌낵model
 	 * @exception Exception Exception
 	 */
 	public BackupResult selectBackupResult(BackupResult backupResult) throws Exception;
 
 	/**
-	 * 백업결과 목록을 조회한다.
-	 * @return 백업결과목록
+	 * 諛깆뾽寃곌낵 紐⑸줉??議고쉶?쒕떎.
+	 * @return 諛깆뾽寃곌낵紐⑸줉
 	 *
-	 * @param searchVO    조회조건VO
+	 * @param searchVO    議고쉶議곌굔VO
 	 * @exception Exception Exception
 	 */
 	public List<BackupResult> selectBackupResultList(BackupResult searchVO) throws Exception;
 
 	/**
-	 * 백업결과 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * 諛깆뾽寃곌낵 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectBackupResultListCnt(BackupResult searchVO) throws Exception;

@@ -4,21 +4,21 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 개요
- * - 당직일지에 대한 Vo 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?뱀쭅?쇱??????Vo ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 당직일지의 목록 항목을 관리한다.
- * @author 이용
+ * ?곸꽭?댁슜
+ * - ?뱀쭅?쇱???紐⑸줉 ??ぉ??愿由ы븳??
+ * @author ?댁슜
  * @version 1.0
- * @created 06-15-2010 오후 2:08:56
+ * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
 public class BndtDiaryVO extends BndtDiary implements Serializable {
 
 	private static final long serialVersionUID = 1767342530176012296L;
 	/**
-	 * 배너 목록
+	 * 諛곕꼫 紐⑸줉
 	 */
 	List<BndtDiaryVO> bndtDiaryList;
 
@@ -36,7 +36,7 @@ public class BndtDiaryVO extends BndtDiary implements Serializable {
 	}
 
 	/**
-	*  당직체크코드명
+	*  ?뱀쭅泥댄겕肄붾뱶紐?
 	*/
 	private String bndtCeckCdNm;
 

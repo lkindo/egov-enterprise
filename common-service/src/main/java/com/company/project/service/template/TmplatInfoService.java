@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.List;
 
 /**
- * 템플릿 관리 서비스
+ * ?쒗뵆由?愿由??쒕퉬??
  */
 @Service("egovTmplatInfoService")
 @RequiredArgsConstructor

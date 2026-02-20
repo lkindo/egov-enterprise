@@ -11,25 +11,25 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "당직 일지 DTO")
+@Schema(description = "Description")
 public class DutyDiaryDto {
 
-    @Schema(description = "당직자 ID")
+    @Schema(description = "Description")
     private String bndtId;
 
-    @Schema(description = "당직 일자")
+    @Schema(description = "Description")
     private String bndtDe;
 
-    @Schema(description = "당직 체크 구분")
+    @Schema(description = "Description")
     private String bndtCeckSe;
 
-    @Schema(description = "당직 체크 코드")
+    @Schema(description = "Description")
     private String bndtCeckCd;
 
-    @Schema(description = "당직 체크 코드 명")
+    @Schema(description = "Description")
     private String bndtCeckCdNm;
 
-    @Schema(description = "체크 상태")
+    @Schema(description = "Description")
     private String chckSttus;
 
     public static DutyDiaryDto from(BndtDiary entity) {

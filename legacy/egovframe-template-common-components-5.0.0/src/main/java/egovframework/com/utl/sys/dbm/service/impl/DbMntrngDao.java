@@ -8,28 +8,28 @@ import egovframework.com.utl.sys.dbm.service.DbMntrng;
 import egovframework.com.utl.sys.dbm.service.DbMntrngLog;
 
 /**
- * DB서비스모니터링관리에 대한 DAO 클래스를 정의한다.
+ * DB?쒕퉬?ㅻえ?덊꽣留곴?由ъ뿉 ???DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.06.21
  * @version 1.0
- * @updated 21-6-2010 오전 10:27:13
+ * @updated 21-6-2010 ?ㅼ쟾 10:27:13
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일       수정자           수정내용
+ *   ?섏젙??      ?섏젙??          ?섏젙?댁슜
  *  -------     --------    ---------------------------
- *  2010.06.21   김진만     최초 생성
+ *  2010.06.21   源吏꾨쭔     理쒖큹 ?앹꽦
  * </pre>
  */
 @Repository("dbMntrngDao")
 public class DbMntrngDao extends EgovComAbstractDAO {
 
 	/**
-	 * DB서비스모니터링을 삭제한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ??젣?쒕떎.
 	 *
-	 * @param dbMntrng    삭제할 DB서비스모니터링 VO
+	 * @param dbMntrng    ??젣??DB?쒕퉬?ㅻえ?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void deleteDbMntrng(DbMntrng dbMntrng)
@@ -38,9 +38,9 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링을 등록한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸쓣 ?깅줉?쒕떎.
 	 *
-	 * @param dbMntrng 저장할 DB서비스모니터링 VO
+	 * @param dbMntrng ??ν븷 DB?쒕퉬?ㅻえ?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void insertDbMntrng(DbMntrng dbMntrng)
@@ -49,9 +49,9 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링로그를 등록한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몃? ?깅줉?쒕떎.
 	 *
-	 * @param dbMntrngLog 저장할 DB서비스모니터링로그 VO
+	 * @param dbMntrngLog ??ν븷 DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?VO
 	 * @exception Exception Exception
 	 */
 	public void insertDbMntrngLog(DbMntrngLog dbMntrngLog)
@@ -60,10 +60,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링정보를 상세조회 한다.
-	 * @return DB서비스모니터링정보
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂대? ?곸꽭議고쉶 ?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂?
 	 *
-	 * @param dbMntrng    조회할 KEY가 있는 DB서비스모니터링 VO
+	 * @param dbMntrng    議고쉶??KEY媛 ?덈뒗 DB?쒕퉬?ㅻえ?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public DbMntrng selectDbMntrng(DbMntrng dbMntrng)
@@ -72,10 +72,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링로그정보를 상세조회 한다.
-	 * @return DB서비스모니터링로그정보
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몄젙蹂대? ?곸꽭議고쉶 ?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몄젙蹂?
 	 *
-	 * @param dbMntrng    조회할 KEY가 있는 DB서비스모니터링로그 VO
+	 * @param dbMntrng    議고쉶??KEY媛 ?덈뒗 DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?VO
 	 * @exception Exception Exception
 	 */
 	public DbMntrngLog selectDbMntrngLog(DbMntrngLog dbMntrngLog)
@@ -84,10 +84,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링정보목록을  조회한다.
-	 * @return DB서비스모니터링목록
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂대ぉ濡앹쓣  議고쉶?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷ぉ濡?
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<DbMntrng> selectDbMntrngList(DbMntrng searchVO) throws Exception{
@@ -95,10 +95,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * DB?쒕퉬?ㅻえ?덊꽣留?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectDbMntrngListCnt(DbMntrng searchVO)
@@ -107,10 +107,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링로그정보목록을  조회한다.
-	 * @return DB서비스모니터링목록
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹몄젙蹂대ぉ濡앹쓣  議고쉶?쒕떎.
+	 * @return DB?쒕퉬?ㅻえ?덊꽣留곷ぉ濡?
 	 *
-	 * @param searchVO    조회조건이 저장된 VO
+	 * @param searchVO    議고쉶議곌굔????λ맂 VO
 	 * @exception Exception Exception
 	 */
 	public List<DbMntrngLog> selectDbMntrngLogList(DbMntrngLog searchVO)
@@ -119,10 +119,10 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링로그 목록 전체 건수를(을) 조회한다.
-	 * @return 목록건수
+	 * DB?쒕퉬?ㅻえ?덊꽣留곷줈洹?紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
+	 * @return 紐⑸줉嫄댁닔
 	 *
-	 * @param searchVO    조회할 정보가 담긴 VO
+	 * @param searchVO    議고쉶???뺣낫媛 ?닿릿 VO
 	 * @exception Exception Exception
 	 */
 	public int selectDbMntrngLogListCnt(DbMntrngLog searchVO)
@@ -131,9 +131,9 @@ public class DbMntrngDao extends EgovComAbstractDAO {
 	}
 
 	/**
-	 * DB서비스모니터링정보를 수정한다.
+	 * DB?쒕퉬?ㅻえ?덊꽣留곸젙蹂대? ?섏젙?쒕떎.
 	 *
-	 * @param dbMntrng    수정대상 DB서비스모니터링 VO
+	 * @param dbMntrng    ?섏젙???DB?쒕퉬?ㅻえ?덊꽣留?VO
 	 * @exception Exception Exception
 	 */
 	public void updateDbMntrng(DbMntrng dbMntrng)

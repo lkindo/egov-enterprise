@@ -3,44 +3,44 @@ package egovframework.com.sym.prm.service;
 import jakarta.validation.constraints.NotEmpty;
 
 /**
- * 프로그램목록 처리를 위한 VO 클래스르를 정의한다
+ * ?꾨줈洹몃옩紐⑸줉 泥섎━瑜??꾪븳 VO ?대옒?ㅻⅤ瑜??뺤쓽?쒕떎
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2024.10.29  권태성          필수값 BindingResult 검증을 위한 @NotEmpty 추가
- *   2025.07.21  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2024.10.29  沅뚰깭??         ?꾩닔媛?BindingResult 寃利앹쓣 ?꾪븳 @NotEmpty 異붽?
+ *   2025.07.21  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
 public class ProgrmManageVO {
 
-	/** 프로그램파일명 */
-	@NotEmpty(message = "프로그램파일명{common.required.msg}")
+	/** ?꾨줈洹몃옩?뚯씪紐?*/
+	@NotEmpty(message = "?꾨줈洹몃옩?뚯씪紐?common.required.msg}")
 	private String progrmFileNm;
-	/** 프로그램저장경로 */
-	@NotEmpty(message = "프로그램저장경로{common.required.msg}")
+	/** ?꾨줈洹몃옩??κ꼍濡?*/
+	@NotEmpty(message = "?꾨줈洹몃옩??κ꼍濡?common.required.msg}")
 	private String progrmStrePath;
-	/** 프로그램한글명 */
-	@NotEmpty(message = "프로그램한글명{common.required.msg}")
+	/** ?꾨줈洹몃옩?쒓?紐?*/
+	@NotEmpty(message = "?꾨줈洹몃옩?쒓?紐?common.required.msg}")
 	private String progrmKoreanNm;
 	/** URL */
 	@NotEmpty(message = "URL{common.required.msg}")
 	private String url;
-	/** 프로그램설명 */
-	@NotEmpty(message = "프로그램설명{common.required.msg}")
+	/** ?꾨줈洹몃옩?ㅻ챸 */
+	@NotEmpty(message = "?꾨줈洹몃옩?ㅻ챸{common.required.msg}")
 	private String progrmDc;
 
 	/**
-	 * progrmFileNm attribute를 리턴한다.
+	 * progrmFileNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -49,7 +49,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmFileNm attribute 값을 설정한다.
+	 * progrmFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmFileNm String
 	 */
@@ -58,7 +58,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmStrePath attribute를 리턴한다.
+	 * progrmStrePath attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -67,7 +67,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmStrePath attribute 값을 설정한다.
+	 * progrmStrePath attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmStrePath String
 	 */
@@ -76,7 +76,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmKoreanNm attribute를 리턴한다.
+	 * progrmKoreanNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -85,7 +85,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmKoreanNm attribute 값을 설정한다.
+	 * progrmKoreanNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmKoreanNm String
 	 */
@@ -94,7 +94,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * url attribute를 리턴한다.
+	 * url attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -103,7 +103,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * url attribute 값을 설정한다.
+	 * url attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param url String
 	 */
@@ -112,7 +112,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmDc attribute를 리턴한다.
+	 * progrmDc attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -121,7 +121,7 @@ public class ProgrmManageVO {
 	}
 
 	/**
-	 * progrmDc attribute 값을 설정한다.
+	 * progrmDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param progrmDc String
 	 */

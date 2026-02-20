@@ -18,22 +18,22 @@ import egovframework.com.cmm.service.Globals;
 import jakarta.annotation.Resource;
 
 /**
- * 배치쉘스크립트를 실행하는 Quartz Job 클래스를 정의한다.
+ * 諛곗튂?섏뒪?щ┰?몃? ?ㅽ뻾?섎뒗 Quartz Job ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @since 2010.08.30
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.30  김진만          최초 생성
- *   2020.11.05  신용호          KISA 보안약점 조치 - WhiteList처리
- *   2022.11.11  김혜준          시큐어코딩 처리
- *   2025.07.03  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnusedFormalParameter(메소드 선언 내에사용되지 않는 파라미터를 탐지)
+ *   2010.08.30  源吏꾨쭔          理쒖큹 ?앹꽦
+ *   2020.11.05  ?좎슜??         KISA 蹂댁븞?쎌젏 議곗튂 - WhiteList泥섎━
+ *   2022.11.11  源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2025.07.03  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnusedFormalParameter(硫붿냼???좎뼵 ?댁뿉?ъ슜?섏? ?딅뒗 ?뚮씪誘명꽣瑜??먯?)
  *
  *      </pre>
  */
@@ -55,27 +55,27 @@ public class BatchShellScriptJob implements Job {
 
 		JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
 
-		LOGGER.debug("job[{}] Trigger이름 : ", jobContext.getJobDetail().getKey().getName(),
+		LOGGER.debug("job[{}] Trigger?대쫫 : ", jobContext.getJobDetail().getKey().getName(),
 				jobContext.getTrigger().getKey().getName());
-		LOGGER.debug("job[{}] BatchOpert이름 : ", jobContext.getJobDetail().getKey().getName(),
+		LOGGER.debug("job[{}] BatchOpert?대쫫 : ", jobContext.getJobDetail().getKey().getName(),
 				dataMap.getString("batchOpertId"));
-		LOGGER.debug("job[{}] BatchProgram이름 : ", jobContext.getJobDetail().getKey().getName(),
+		LOGGER.debug("job[{}] BatchProgram?대쫫 : ", jobContext.getJobDetail().getKey().getName(),
 				dataMap.getString("batchProgrm"));
-		LOGGER.debug("job[{}] Parameter이름 : ", jobContext.getJobDetail().getKey().getName(),
+		LOGGER.debug("job[{}] Parameter?대쫫 : ", jobContext.getJobDetail().getKey().getName(),
 				dataMap.getString("paramtr"));
 
 		int result = executeProgram(dataMap.getString("batchProgrm"), dataMap.getString("paramtr"));
 
-		// jobContext에 결과값을 저장한다.
+		// jobContext??寃곌낵媛믪쓣 ??ν븳??
 		jobContext.setResult(result);
 	}
 
 	/**
-	 * 시스템에서 특정 쉘프로그램을 실행한다.
+	 * ?쒖뒪?쒖뿉???뱀젙 ?섑봽濡쒓렇?⑥쓣 ?ㅽ뻾?쒕떎.
 	 * 
-	 * @param batchProgrm 배치실행화일
-	 * @param paramtr     배치실행화일에 전달될 파라미터
-	 * @return 배치실행화일리턴값(integer)
+	 * @param batchProgrm 諛곗튂?ㅽ뻾?붿씪
+	 * @param paramtr     諛곗튂?ㅽ뻾?붿씪???꾨떖???뚮씪誘명꽣
+	 * @return 諛곗튂?ㅽ뻾?붿씪由ы꽩媛?integer)
 	 * @exception Exception
 	 */
 	private int executeProgram(String batchProgrm, String paramtr) {
@@ -105,16 +105,16 @@ public class BatchShellScriptJob implements Job {
 						+ whiteListStatus);
 				if (whiteListStatus) {
 					try {
-						// 2022.11.11 시큐어코딩 처리
+						// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 						FileSystemUtils util = new FileSystemUtils();
 						Process process = util.processOperate("BatchShellScriptJob", item);
 						process.waitFor();
 						result = process.exitValue();
-						LOGGER.debug("배치실행화일 - {} 실행완료, 결과값: {}", item, result);
+						LOGGER.debug("諛곗튂?ㅽ뻾?붿씪 - {} ?ㅽ뻾?꾨즺, 寃곌낵媛? {}", item, result);
 					} catch (IOException e) {
-						LOGGER.error("배치스크립트 실행 에러 : {}", e.getMessage());
+						LOGGER.error("諛곗튂?ㅽ겕由쏀듃 ?ㅽ뻾 ?먮윭 : {}", e.getMessage());
 					} catch (InterruptedException e) {
-						LOGGER.error("배치스크립트 실행 에러 : {}", e.getMessage());
+						LOGGER.error("諛곗튂?ㅽ겕由쏀듃 ?ㅽ뻾 ?먮윭 : {}", e.getMessage());
 					}
 				}
 			}

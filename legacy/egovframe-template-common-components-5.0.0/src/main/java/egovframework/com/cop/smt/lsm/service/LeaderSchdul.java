@@ -3,77 +3,77 @@ package egovframework.com.cop.smt.lsm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 간부일정에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??쇱젙?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 일정ID, 일정구분, 일정명, 일정내용, 일정장소, 간부ID, 반복구분코드, 일정시작일자, 일정종료일자, 일정담당자ID 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - ?쇱젙ID, ?쇱젙援щ텇, ?쇱젙紐? ?쇱젙?댁슜, ?쇱젙?μ냼, 媛꾨?ID, 諛섎났援щ텇肄붾뱶, ?쇱젙?쒖옉?쇱옄, ?쇱젙醫낅즺?쇱옄, ?쇱젙?대떦?륤D ??ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 10:59:06
+ * @created 28-6-2010 ?ㅼ쟾 10:59:06
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.6.28	장철호          최초 생성
+ *   2010.6.28	?μ쿋??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 @SuppressWarnings("serial")
 public class LeaderSchdul  implements Serializable{
 
-	/** 일정ID */
+	/** ?쇱젙ID */
 	private String schdulId;
-	/** 일정구분 */
+	/** ?쇱젙援щ텇 */
 	private String schdulSe;
-	/** 일정명 */
+	/** ?쇱젙紐?*/
 	private String schdulNm;
-	/** 일정내용 */
+	/** ?쇱젙?댁슜 */
 	private String schdulCn;
-	/** 일정장소 */
+	/** ?쇱젙?μ냼 */
 	private String schdulPlace;
-	/** 간부ID */
+	/** 媛꾨?ID */
 	private String leaderId;
-	/** 간부명 */
+	/** 媛꾨?紐?*/
 	private String leaderName;
-	/** 반복구분코드 */
+	/** 諛섎났援щ텇肄붾뱶 */
 	private String reptitSeCode;
-	/** 일정일자 */
+	/** ?쇱젙?쇱옄 */
 	private String schdulDe;
-	/** 일정시작일자 */
+	/** ?쇱젙?쒖옉?쇱옄 */
 	private String schdulBgnDe;
-	/** 일정종료일자 */
+	/** ?쇱젙醫낅즺?쇱옄 */
 	private String schdulEndDe;
-	/** 일정담당자ID */
+	/** ?쇱젙?대떦?륤D */
 	private String schdulChargerId;
-	/** 일정담당자명 */
+	/** ?쇱젙?대떦?먮챸 */
 	private String schdulChargerName;
-	/** 최초등록자ID */
+	/** 理쒖큹?깅줉?륤D */
 	private String frstRegisterId = "";
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm = "";
-	/** 최종수정자ID */
+	/** 理쒖쥌?섏젙?륤D */
 	private String lastUpdusrId = "";
-	/** 최종수정시점 */
+	/** 理쒖쥌?섏젙?쒖젏 */
 	private String lastUpdusrPnttm = "";
 	
-	/** 일정시작일자(시간) */
+	/** ?쇱젙?쒖옉?쇱옄(?쒓컙) */
 	private String schdulBgndeHH = "";
 	
-	/** 일정시작일자(분) */
+	/** ?쇱젙?쒖옉?쇱옄(遺? */
 	private String schdulBgndeMM = "";
 	
-	/** 일정종료일자(시간) */
+	/** ?쇱젙醫낅즺?쇱옄(?쒓컙) */
 	private String schdulEnddeHH = "";
 	
-	/** 일정종료일자(분) */
+	/** ?쇱젙醫낅즺?쇱옄(遺? */
 	private String schdulEnddeMM = "";
 	
-	/** 일정시작일자(Year/Month/Day) */
+	/** ?쇱젙?쒖옉?쇱옄(Year/Month/Day) */
 	private String schdulBgndeYYYMMDD = "";
 	
-	/** 일정종료일자(Year/Month/Day) */
+	/** ?쇱젙醫낅즺?쇱옄(Year/Month/Day) */
 	private String schdulEnddeYYYMMDD = "";
 
 	public String getSchdulId() {

@@ -20,23 +20,23 @@ import egovframework.com.utl.fcc.service.EgovStringUtil;
 import jakarta.annotation.Resource;
 
 /**
- * 메인메뉴 해당링크 처리를 하는 비즈니스 구현 클래스
+ * 硫붿씤硫붾돱 ?대떦留곹겕 泥섎━瑜??섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.03.20
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2011.09.07  서준식          사용자 구분 오류 수정
- *   2015.06.19  조정국          미인증사용자에 대한 보안처리
- *   2018.10.12  이정은          메인페이지 통합(업무, 기업, 일반)
- *   2025.07.18  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2011.09.07  ?쒖???         ?ъ슜??援щ텇 ?ㅻ쪟 ?섏젙
+ *   2015.06.19  議곗젙援?         誘몄씤利앹궗?⑹옄?????蹂댁븞泥섎━
+ *   2018.10.12  ?댁젙?          硫붿씤?섏씠吏 ?듯빀(?낅Т, 湲곗뾽, ?쇰컲)
+ *   2025.07.18  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -61,14 +61,14 @@ public class EgovMainMenuManageController {
 	// @Resource(name="EgovFileMngUtil")
 	// private EgovFileMngUtil fileUtil;
 
-	/* ### 메인작업 ### */
-	/* Main Index 조회 */
+	/* ### 硫붿씤?묒뾽 ### */
+	/* Main Index 議고쉶 */
 	/**
-	 * Main메뉴의 Index를 조회한다.
+	 * Main硫붾돱??Index瑜?議고쉶?쒕떎.
 	 * 
 	 * @param menuNo String
 	 * @param chkURL String
-	 * @return 출력페이지정보 "menu_index"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "menu_index"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenuIndex.do")
@@ -85,10 +85,10 @@ public class EgovMainMenuManageController {
 	}
 
 	/**
-	 * Head메뉴를 조회한다.
+	 * Head硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "head"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "head"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenu.do")
@@ -108,19 +108,19 @@ public class EgovMainMenuManageController {
 		List<?> resultList = menuManageService.selectMainMenuHead(menuManageVO);
 		model.addAttribute("list_headmenu", resultList);
 		if (!(user == null ? "" : EgovStringUtil.isNullToString(user.getId())).equals("")) {
-			// 메인 페이지 이동
+			// 硫붿씤 ?섏씠吏 ?대룞
 			return "egovframework/com/EgovMainView";
 		} else {
-			// 오류 페이지 이동
+			// ?ㅻ쪟 ?섏씠吏 ?대룞
 			return "egovframework/com/cmm/error/egovError";
 		}
 	}
 
 	/**
-	 * Head메뉴를 조회한다.
+	 * Head硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "main_head"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "main_head"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenuHead.do")
@@ -140,20 +140,20 @@ public class EgovMainMenuManageController {
 		List<?> resultList = menuManageService.selectMainMenuHead(menuManageVO);
 		model.addAttribute("list_headmenu", resultList);
 		if (!(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId())).equals("")) {
-			// 메인 페이지 이동
+			// 硫붿씤 ?섏씠吏 ?대룞
 			return "egovframework/com/main_head";
 		} else {
-			// 오류 페이지 이동
+			// ?ㅻ쪟 ?섏씠吏 ?대룞
 			return "egovframework/com/cmm/error/egovError";
 		}
 	}
 
 	/**
-	 * 좌측메뉴를 조회한다.
+	 * 醫뚯륫硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
 	 * @param vStartP      String
-	 * @return 출력페이지정보 "main_left"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "main_left"
 	 * @exception Exception
 	 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenuLeft.do")
@@ -179,14 +179,14 @@ public class EgovMainMenuManageController {
 	}
 
 	/**
-	 * 우측화면을 조회한다.
+	 * ?곗륫?붾㈃??議고쉶?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
 	 * @param vStartP      String
-	 * @return 출력페이지정보 해당URL
+	 * @return 異쒕젰?섏씠吏?뺣낫 ?대떦URL
 	 * @exception Exception
 	 */
-	/* Right Menu 조회 */
+	/* Right Menu 議고쉶 */
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenuRight.do")
 	public String selectMainMenuRight(@ModelAttribute("menuManageVO") MenuManageVO menuManageVO,
 			@RequestParam("vStartP") String vStartP, ModelMap model) throws Exception {
@@ -200,20 +200,20 @@ public class EgovMainMenuManageController {
 	}
 
 	/**
-	 * HOME 메인화면 조회한다.
+	 * HOME 硫붿씤?붾㈃ 議고쉶?쒕떎.
 	 * 
 	 * @param menuManageVO MenuManageVO
-	 * @return 출력페이지정보 "EgovMainView"
+	 * @return 異쒕젰?섏씠吏?뺣낫 "EgovMainView"
 	 * @exception Exception
 	 */
-	@IncludedInfo(name = "포털(예제) 메인화면", order = 1, gid = 0)
+	@IncludedInfo(name = "?ы꽭(?덉젣) 硫붿씤?붾㈃", order = 1, gid = 0)
 	@RequestMapping(value = "/sym/mnu/mpm/EgovMainMenuHome.do")
 	public String selectMainMenuHome(@ModelAttribute("menuManageVO") MenuManageVO menuManageVO, ModelMap model)
 			throws Exception {
 
 		LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		if (user == null) {
 			return "index";
 		}
@@ -234,11 +234,11 @@ public class EgovMainMenuManageController {
 		LOGGER.debug("## selectMainMenuHome ## getUniqId  2: {}", user.getUniqId());
 
 		if (!user.getId().equals("")) {
-			// 메인 페이지 이동
+			// 硫붿씤 ?섏씠吏 ?대룞
 			return "egovframework/com/EgovMainView";
 
 		} else {
-			// 오류 페이지 이동
+			// ?ㅻ쪟 ?섏씠吏 ?대룞
 			return "egovframework/com/cmm/error/egovError";
 		}
 	}

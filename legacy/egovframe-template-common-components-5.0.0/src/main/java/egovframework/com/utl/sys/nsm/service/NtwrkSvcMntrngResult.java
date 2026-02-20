@@ -1,24 +1,24 @@
 package egovframework.com.utl.sys.nsm.service;
 
 /**
- * 개요
- * - 네트워크서비스 모니터링에 대한 결과 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?ㅽ듃?뚰겕?쒕퉬??紐⑤땲?곕쭅?????寃곌낵 ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 모니터링 정상여부, 원인 Exception 항목을 관리한다.
- * @author 장철호
+ * ?곸꽭?댁슜
+ * - 紐⑤땲?곕쭅 ?뺤긽?щ?, ?먯씤 Exception ??ぉ??愿由ы븳??
+ * @author ?μ쿋??
  * @version 1.0
- * @created 28-6-2010 오전 11:33:43
+ * @created 28-6-2010 ?ㅼ쟾 11:33:43
  */
 
 public class NtwrkSvcMntrngResult {
 
 	/**
-	 * 모니터링 정상여부
+	 * 紐⑤땲?곕쭅 ?뺤긽?щ?
 	 */
 	private boolean nrmltAt;
 	/**
-	 * 원인 Exception
+	 * ?먯씤 Exception
 	 */
 	private Throwable cause;
 

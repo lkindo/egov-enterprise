@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 메인 이미지 정보 Entity
- * 레거시 테이블: NMAINIMAGE
+ * 筌롫뗄?????筌왖 ?類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NMAINIMAGE
  */
 @Entity
 @Table(name = "NMAINIMAGE")

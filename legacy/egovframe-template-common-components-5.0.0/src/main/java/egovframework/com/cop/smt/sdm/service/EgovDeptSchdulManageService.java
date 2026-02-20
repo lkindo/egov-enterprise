@@ -7,40 +7,40 @@ import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 
 import egovframework.com.cmm.ComDefaultVO;
 /**
- * 부서일정관리를 처리하는 Service Class 구현
- * @author 공통서비스 장동한
+ * 遺?쒖씪?뺢?由щ? 泥섎━?섎뒗 Service Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  장동한          최초 생성
+ *   2009.04.10  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public interface EgovDeptSchdulManageService {
 
     /**
-	 * 부서 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * 遺??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectDeptSchdulManageAuthorGroupPopup(ComDefaultVO searchVO) throws Exception;
     /**
-	 * 아이디 목록을 조회한다.
-	 * @param searchVO - 조회할 정보가 담긴 VO
+	 * ?꾩씠??紐⑸줉??議고쉶?쒕떎.
+	 * @param searchVO - 議고쉶???뺣낫媛 ?닿릿 VO
 	 * @return List
 	 * @throws Exception
 	 */
 	public List<EgovMap> selectDeptSchdulManageEmpLyrPopup(ComDefaultVO searchVO) throws Exception;
 	
 	/**
-	 * 메인페이지/부서일정관리조회 
+	 * 硫붿씤?섏씠吏/遺?쒖씪?뺢?由ъ“??
 	 * @param map
 	 * @return List
 	 * @throws Exception
@@ -48,7 +48,7 @@ public interface EgovDeptSchdulManageService {
 	public List<EgovMap> selectDeptSchdulManageMainList(Map<String, String> map) throws Exception;
 	
 	/**
-	 * 부서일정 목록을 조회한다.
+	 * 遺?쒖씪??紐⑸줉??議고쉶?쒕떎.
 	 * @param map
 	 * @return List
 	 * @throws Exception
@@ -56,7 +56,7 @@ public interface EgovDeptSchdulManageService {
 	public List<EgovMap> selectDeptSchdulManageRetrieve(Map<String, String> map) throws Exception;
 	
 	/**
-	 * 부서일정 목록을 VO(model)형식으로 조회한다. 
+	 * 遺?쒖씪??紐⑸줉??VO(model)?뺤떇?쇰줈 議고쉶?쒕떎. 
 	 * @param deptSchdulManageVO
 	 * @return List
 	 * @throws Exception
@@ -64,7 +64,7 @@ public interface EgovDeptSchdulManageService {
 	public DeptSchdulManageVO selectDeptSchdulManageDetailVO(DeptSchdulManageVO deptSchdulManageVO) throws Exception;
 
 	/**
-	 * 부서일정 목록을 조회한다. 
+	 * 遺?쒖씪??紐⑸줉??議고쉶?쒕떎. 
 	 * @param searchVO
 	 * @return List
 	 * @throws Exception
@@ -72,7 +72,7 @@ public interface EgovDeptSchdulManageService {
 	public List<EgovMap> selectDeptSchdulManageList(ComDefaultVO searchVO) throws Exception;
 	
 	/**
-	 *  부서일정를(을) 상세조회 한다.
+	 *  遺?쒖씪?뺣?(?? ?곸꽭議고쉶 ?쒕떎.
 	 * @param deptSchdulManageVO
 	 * @return List
 	 * @throws Exception
@@ -80,7 +80,7 @@ public interface EgovDeptSchdulManageService {
 	public List<EgovMap> selectDeptSchdulManageDetail(DeptSchdulManageVO deptSchdulManageVO) throws Exception;
 	
 	/**
-	 * 부서일정를(을) 목록 전체 건수를(을) 조회한다.
+	 * 遺?쒖씪?뺣?(?? 紐⑸줉 ?꾩껜 嫄댁닔瑜??? 議고쉶?쒕떎.
 	 * @param searchVO
 	 * @return int
 	 * @throws Exception
@@ -88,21 +88,21 @@ public interface EgovDeptSchdulManageService {
 	public int selectDeptSchdulManageListCnt(ComDefaultVO searchVO) throws Exception;
 	
 	/**
-	 * 부서일정을 등록한다.
+	 * 遺?쒖씪?뺤쓣 ?깅줉?쒕떎.
 	 * @param deptSchdulManageVO
 	 * @throws Exception
 	 */
 	void  insertDeptSchdulManage(DeptSchdulManageVO deptSchdulManageVO) throws Exception;
 	
 	/**
-	 * 부서일정를(을) 수정한다.
+	 * 遺?쒖씪?뺣?(?? ?섏젙?쒕떎.
 	 * @param deptSchdulManageVO
 	 * @throws Exception
 	 */
 	void  updateDeptSchdulManage(DeptSchdulManageVO deptSchdulManageVO) throws Exception;
 	
 	/**
-	 * 부서일정를(을) 삭제한다.
+	 * 遺?쒖씪?뺣?(?? ??젣?쒕떎.
 	 * @param deptSchdulManageVO
 	 * @throws Exception
 	 */

@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 배치작업 Repository Custom 인터페이스
+ * 獄쏄퀣??臾믩씜 Repository Custom ?紐낃숲??륁뵠??
  */
 public interface BatchOpertRepositoryCustom {
     Page<BatchOpert> searchBatchOperts(String searchCondition, String searchKeyword, Pageable pageable);

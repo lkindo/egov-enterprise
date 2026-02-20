@@ -25,16 +25,16 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovTrsmrcvLogController.java
- * @Description : 송수신 로그정보를 관리하기 위한 컨트롤러 클래스
+ * @Description : ?≪닔??濡쒓렇?뺣낫瑜?愿由ы븯湲??꾪븳 而⑦듃濡ㅻ윭 ?대옒??
  * @Modification Information
  *
- *    수정일         수정자         수정내용
+ *    ?섏젙??        ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 11.   이삼섭         최초생성
- *    2011. 7. 01.   이기하         패키지 분리(sym.log -> sym.log.tlg)
- *    2011.8.26	정진오			IncludedInfo annotation 추가
+ *    2009. 3. 11.   ?댁궪??        理쒖큹?앹꽦
+ *    2011. 7. 01.   ?닿린??        ?⑦궎吏 遺꾨━(sym.log -> sym.log.tlg)
+ *    2011.8.26	?뺤쭊??		IncludedInfo annotation 異붽?
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 11.
  * @version
  * @see
@@ -54,13 +54,13 @@ public class EgovTrsmrcvLogController {
 	private EgovCmmUseService cmmUseService;
 
 	/**
-     * 송수신 로그 목록 조회
+     * ?≪닔??濡쒓렇 紐⑸줉 議고쉶
      *
      * @param trsmrcvLog
      * @return sym/log/tlg/EgovTrsmrcvLogList
      * @throws Exception
      */
-    @IncludedInfo(name = "송/수신로그관리", listUrl = "/sym/log/tlg/SelectTrsmrcvLogList.do", order = 1050, gid = 60)
+    @IncludedInfo(name = "???섏떊濡쒓렇愿由?, listUrl = "/sym/log/tlg/SelectTrsmrcvLogList.do", order = 1050, gid = 60)
     @RequestMapping(value = "/sym/log/tlg/SelectTrsmrcvLogList.do")
     public String selectTrsmrcvLogInf(@ModelAttribute("searchVO") TrsmrcvLog trsmrcvLog, ModelMap model)
             throws Exception {
@@ -90,7 +90,7 @@ public class EgovTrsmrcvLogController {
 	}
 
 	/**
-	 * 송수신 로그 상세 조회
+	 * ?≪닔??濡쒓렇 ?곸꽭 議고쉶
 	 *
 	 * @param trsmrcvLog
 	 * @param model
@@ -108,7 +108,7 @@ public class EgovTrsmrcvLogController {
 	}
 
 	/**
-	 * 송수신 로그 테스트 화면
+	 * ?≪닔??濡쒓렇 ?뚯뒪???붾㈃
      *
      * @param trsmrcvLog
      * @return sym/log/slg/EgovSysHistRegist
@@ -124,7 +124,7 @@ public class EgovTrsmrcvLogController {
     }
 
 	/**
-	 * 송수신 로그 테스트
+	 * ?≪닔??濡쒓렇 ?뚯뒪??
 	 *
 	 * @param trsmrcvLog
 	 * @return forward:/sym/log/tlg/SelectTrsmrcvLogList.do

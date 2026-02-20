@@ -10,16 +10,16 @@ import egovframework.com.uss.olp.opr.service.OnlinePollResult;
 import jakarta.annotation.Resource;
 
 /**
- * 온라인POLL결과를 처리하는 ServiceImpl Class 구현
- * @author 공통서비스 장동한
+ * ?⑤씪?퇠OLL寃곌낵瑜?泥섎━?섎뒗 ServiceImpl Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -32,8 +32,8 @@ public class EgovOnlinePollResultServiceImpl extends EgovAbstractServiceImpl
 
 
     /**
-     * 온라인POLL결과를(을) 목록을 한다.
-     * @param onlinePollResult  온라인POLL결과 정보 담김 VO
+     * ?⑤씪?퇠OLL寃곌낵瑜??? 紐⑸줉???쒕떎.
+     * @param onlinePollResult  ?⑤씪?퇠OLL寃곌낵 ?뺣낫 ?닿? VO
      * @return List
      * @throws Exception
      */
@@ -43,8 +43,8 @@ public class EgovOnlinePollResultServiceImpl extends EgovAbstractServiceImpl
     }
 
     /**
-     * 온라인POLL결과를(을) 삭제 한다.
-     * @param onlinePollResult  온라인POLL결과 정보가 담김 VO
+     * ?⑤씪?퇠OLL寃곌낵瑜??? ??젣 ?쒕떎.
+     * @param onlinePollResult  ?⑤씪?퇠OLL寃곌낵 ?뺣낫媛 ?닿? VO
      * @return void
      * @throws Exception
      */

@@ -14,12 +14,12 @@ import java.time.LocalDateTime;
 @Builder
 public class ApprovalDto {
     private String approvalId;
-    private String jobType; // COM060 (1:주간, 2:월간, 01:연차 등)
+    private String jobType; // COM060 (1:二쇨컙, 2:?붽컙, 01:?곗감 ??
     private String jobTypeNm;
     private String applicantId;
     private String requestDate;
     private String approverId;
-    private String status; // R:신청, Y:승인, N:반려
+    private String status; // R:?좎껌, Y:?뱀씤, N:諛섎젮
     private LocalDateTime approvalDate;
     private String returnReason;
 

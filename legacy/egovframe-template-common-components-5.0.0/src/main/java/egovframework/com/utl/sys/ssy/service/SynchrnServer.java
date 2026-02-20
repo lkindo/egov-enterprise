@@ -3,32 +3,32 @@ package egovframework.com.utl.sys.ssy.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요
- * - 동기화대상 서버에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?숆린?붾????쒕쾭?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 동기화대상 서버의 ID, 서버 명, 서버 IP, FTP ID, FTP 비밀번호, 동기화위치 등의 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?숆린?붾????쒕쾭??ID, ?쒕쾭 紐? ?쒕쾭 IP, FTP ID, FTP 鍮꾨?踰덊샇, ?숆린?붿쐞移??깆쓽 ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:57
+ * @created 28-6-2010 ?ㅼ쟾 10:44:57
  */
 public class SynchrnServer extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 서버 ID
+	 * ?쒕쾭 ID
 	 */
 	private String serverId;
 	/**
-	 * 서버 명
+	 * ?쒕쾭 紐?
 	 */
 	private String serverNm;
 	/**
-	 * 서버 IP
+	 * ?쒕쾭 IP
 	 */
 	private String serverIp;
 	/**
-	 * 서버 Port
+	 * ?쒕쾭 Port
 	 */
 	private String serverPort;
 	/**
@@ -36,31 +36,31 @@ public class SynchrnServer extends ComDefaultVO {
 	 */
 	private String ftpId;
 	/**
-	 * FTP 비밀번호
+	 * FTP 鍮꾨?踰덊샇
 	 */
 	private String ftpPassword;
 	/**
-	 * 동기화 위치
+	 * ?숆린???꾩튂
 	 */
 	private String synchrnLc;
 	/**
-	 * 반영 여부
+	 * 諛섏쁺 ?щ?
 	 */
 	private String reflctAt;
     /**
-	 * 최초등록시점
+	 * 理쒖큹?깅줉?쒖젏
 	 */
     private String frstRegisterPnttm;
     /**
-	 * 최초등록자ID
+	 * 理쒖큹?깅줉?륤D
 	 */
     private String frstRegisterId;
 	/**
-	 * 최종수정시점
+	 * 理쒖쥌?섏젙?쒖젏
 	 */
 	private String lastUpdusrPnttm;
 	/**
-	 * 최종수정자ID
+	 * 理쒖쥌?섏젙?륤D
 	 */
 	private String lastUpdusrId;
 

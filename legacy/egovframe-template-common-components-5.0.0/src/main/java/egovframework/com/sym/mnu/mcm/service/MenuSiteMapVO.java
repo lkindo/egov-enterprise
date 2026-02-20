@@ -1,53 +1,53 @@
 package egovframework.com.sym.mnu.mcm.service;
 
 /**
- * 사이트맵/메인메뉴 처리를 위한 VO 클래스르를 정의한다
+ * ?ъ씠?몃㏊/硫붿씤硫붾돱 泥섎━瑜??꾪븳 VO ?대옒?ㅻⅤ瑜??뺤쓽?쒕떎
  * 
- * @author 개발환경 개발팀 이용
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용           최초 생성
- *   2025.07.16  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-FormalParameterNamingConventions(변수명에 밑줄 사용)
+ *   2009.03.20  ?댁슜           理쒖큹 ?앹꽦
+ *   2025.07.16  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-FormalParameterNamingConventions(蹂?섎챸??諛묒쨪 ?ъ슜)
  *
  *      </pre>
  */
 public class MenuSiteMapVO {
 
-	/** 메뉴번호 */
+	/** 硫붾돱踰덊샇 */
 	private int menuNo;
 
-	/* 사이트맵 */
-	/** 생성자ID **/
+	/* ?ъ씠?몃㏊ */
+	/** ?앹꽦?륤D **/
 	private String creatPersonId;
-	/** 맵생성ID */
+	/** 留듭깮?켌D */
 	private String mapCreatId;
-	/** 맵파일명 */
+	/** 留듯뙆?쇰챸 */
 	private String bndeFileNm;
-	/** 맵파일경로 */
+	/** 留듯뙆?쇨꼍濡?*/
 	private String bndeFilePath;
 
-	/* 권한정보설정 */
-	/** 권한코드 */
+	/* 沅뚰븳?뺣낫?ㅼ젙 */
+	/** 沅뚰븳肄붾뱶 */
 	private String authorCode;
-	/** 권한명 */
+	/** 沅뚰븳紐?*/
 	private String authorNm;
-	/** 권한설명 */
+	/** 沅뚰븳?ㅻ챸 */
 	private String authorDc;
-	/** 권한생성일자 */
+	/** 沅뚰븳?앹꽦?쇱옄 */
 	private String authorCreatDe;
 
-	/* 기타VO변수 */
+	/* 湲고?VO蹂??*/
 	/** rootPath Temp */
 	private String tmpRootPath;
 
-	/* Login 메뉴관련 VO변수 */
+	/* Login 硫붾돱愿??VO蹂??*/
 	/** tmp_Id */
 	private String tmpId;
 	/** tmp_Password */
@@ -66,7 +66,7 @@ public class MenuSiteMapVO {
 	private String tmpCmd;
 
 	/**
-	 * menuNo attribute를 리턴한다.
+	 * menuNo attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -75,7 +75,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * menuNo attribute 값을 설정한다.
+	 * menuNo attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param menuNo int
 	 */
@@ -84,7 +84,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * creatPersonId attribute를 리턴한다.
+	 * creatPersonId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -93,7 +93,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * creatPersonId attribute 값을 설정한다.
+	 * creatPersonId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param creatPersonId String
 	 */
@@ -102,7 +102,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * mapCreatId attribute를 리턴한다.
+	 * mapCreatId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -111,7 +111,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * mapCreatId attribute 값을 설정한다.
+	 * mapCreatId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param mapCreatId String
 	 */
@@ -120,7 +120,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * bndeFileNm attribute를 리턴한다.
+	 * bndeFileNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -129,7 +129,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * bndeFileNm attribute 값을 설정한다.
+	 * bndeFileNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param bndeFileNm String
 	 */
@@ -138,7 +138,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * bndeFilePath attribute를 리턴한다.
+	 * bndeFilePath attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -147,7 +147,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * bndeFilePath attribute 값을 설정한다.
+	 * bndeFilePath attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param bndeFilePath String
 	 */
@@ -156,7 +156,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorCode attribute를 리턴한다.
+	 * authorCode attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -165,7 +165,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorCode attribute 값을 설정한다.
+	 * authorCode attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param authorCode String
 	 */
@@ -174,7 +174,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorNm attribute를 리턴한다.
+	 * authorNm attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -183,7 +183,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorNm attribute 값을 설정한다.
+	 * authorNm attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param authorNm String
 	 */
@@ -192,7 +192,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorDc attribute를 리턴한다.
+	 * authorDc attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -201,7 +201,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorDc attribute 값을 설정한다.
+	 * authorDc attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param authorDc String
 	 */
@@ -210,7 +210,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorCreatDe attribute를 리턴한다.
+	 * authorCreatDe attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -219,7 +219,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * authorCreatDe attribute 값을 설정한다.
+	 * authorCreatDe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param authorCreatDe String
 	 */
@@ -228,7 +228,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpId attribute를 리턴한다.
+	 * tmpId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -237,7 +237,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpId attribute 값을 설정한다.
+	 * tmpId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpId String
 	 */
@@ -246,7 +246,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpPassword attribute를 리턴한다.
+	 * tmpPassword attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -255,7 +255,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpPassword attribute 값을 설정한다.
+	 * tmpPassword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpPassword String
 	 */
@@ -264,7 +264,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpName attribute를 리턴한다.
+	 * tmpName attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -273,7 +273,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpName attribute 값을 설정한다.
+	 * tmpName attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpName String
 	 */
@@ -282,7 +282,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpUserSe attribute를 리턴한다.
+	 * tmpUserSe attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -291,7 +291,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpUserSe attribute 값을 설정한다.
+	 * tmpUserSe attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpUserSe String
 	 */
@@ -300,7 +300,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpEmail attribute를 리턴한다.
+	 * tmpEmail attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -309,7 +309,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpEmail attribute 값을 설정한다.
+	 * tmpEmail attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpEmail String
 	 */
@@ -318,7 +318,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpOrgnztId attribute를 리턴한다.
+	 * tmpOrgnztId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -327,7 +327,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpOrgnztId attribute 값을 설정한다.
+	 * tmpOrgnztId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpOrgnztId String
 	 */
@@ -336,7 +336,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpUniqId attribute를 리턴한다.
+	 * tmpUniqId attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -345,7 +345,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpUniqId attribute 값을 설정한다.
+	 * tmpUniqId attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpUniqId String
 	 */
@@ -354,7 +354,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpCmd attribute를 리턴한다.
+	 * tmpCmd attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -363,7 +363,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmpCmd attribute 값을 설정한다.
+	 * tmpCmd attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmpCmd String
 	 */
@@ -372,7 +372,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmprootPath attribute를 리턴한다.
+	 * tmprootPath attribute瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -381,7 +381,7 @@ public class MenuSiteMapVO {
 	}
 
 	/**
-	 * tmprootPath attribute 값을 설정한다.
+	 * tmprootPath attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param tmprootPath String
 	 */

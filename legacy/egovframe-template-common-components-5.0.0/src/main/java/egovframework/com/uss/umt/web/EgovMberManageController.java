@@ -31,27 +31,27 @@ import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * 일반회원관련 요청을 비지니스 클래스로 전달하고 처리된결과를 해당 웹 화면으로 전달하는 Controller를 정의한다
+ * ?쇰컲?뚯썝愿???붿껌??鍮꾩??덉뒪 ?대옒?ㅻ줈 ?꾨떖?섍퀬 泥섎━?쒓껐怨쇰? ?대떦 ???붾㈃?쇰줈 ?꾨떖?섎뒗 Controller瑜??뺤쓽?쒕떎
  * 
- * @author 공통서비스 개발팀 조재영
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.04.10
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.10  조재영          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2014.12.08  이기하          암호화방식 변경(EgovFileScrty.encryptPassword)
- *   2015.06.16  조정국          수정시 유효성체크 후 에러발생 시 목록으로 이동하여 에러메시지 표시
- *   2015.06.19  조정국          미인증 사용자에 대한 보안처리 기준 수정 (!isAuthenticated)
- *   2017.07.21  장동한          로그인인증제한 작업
- *   2021.05.30  정진오          디지털원패스 정보 조회
- *   2022.07.13  김해준          디지털원패스 정보 조회 null 판별 수정
- *   2025.08.28  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.10  議곗옱??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2014.12.08  ?닿린??         ?뷀샇?붾갑??蹂寃?EgovFileScrty.encryptPassword)
+ *   2015.06.16  議곗젙援?         ?섏젙???좏슚?깆껜?????먮윭諛쒖깮 ??紐⑸줉?쇰줈 ?대룞?섏뿬 ?먮윭硫붿떆吏 ?쒖떆
+ *   2015.06.19  議곗젙援?         誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━ 湲곗? ?섏젙 (!isAuthenticated)
+ *   2017.07.21  ?λ룞??         濡쒓렇?몄씤利앹젣???묒뾽
+ *   2021.05.30  ?뺤쭊??         ?붿??몄썝?⑥뒪 ?뺣낫 議고쉶
+ *   2022.07.13  源?댁?          ?붿??몄썝?⑥뒪 ?뺣낫 議고쉶 null ?먮퀎 ?섏젙
+ *   2025.08.28  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -72,19 +72,19 @@ public class EgovMberManageController {
 
 
 	/**
-	 * 일반회원목록을 조회한다. (pageing)
+	 * ?쇰컲?뚯썝紐⑸줉??議고쉶?쒕떎. (pageing)
 	 *
-	 * @param userSearchVO 검색조건정보
-	 * @param model        화면모델
+	 * @param userSearchVO 寃?됱“嫄댁젙蹂?
+	 * @param model        ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovMberManage
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "일반회원관리", order = 470, gid = 50)
+	@IncludedInfo(name = "?쇰컲?뚯썝愿由?, order = 470, gid = 50)
 	@RequestMapping(value = "/uss/umt/EgovMberManage.do")
 	public String selectMberList(@ModelAttribute("userSearchVO") UserDefaultVO userSearchVO, ModelMap model)
 			throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -111,21 +111,21 @@ public class EgovMberManageController {
 		paginationInfo.setTotalRecordCount(totCnt);
 		model.addAttribute("paginationInfo", paginationInfo);
 
-		// 일반회원 상태코드를 코드정보로부터 조회
+		// ?쇰컲?뚯썝 ?곹깭肄붾뱶瑜?肄붾뱶?뺣낫濡쒕???議고쉶
 		ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
 		comDefaultCodeVO.setCodeId("COM013");
 		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		model.addAttribute("entrprsMberSttus_result", mberSttusResult);// 기업회원상태코드목록
+		model.addAttribute("entrprsMberSttus_result", mberSttusResult);// 湲곗뾽?뚯썝?곹깭肄붾뱶紐⑸줉
 
 		return "egovframework/com/uss/umt/EgovMberManage";
 	}
 
 	/**
-	 * 일반회원등록화면으로 이동한다.
+	 * ?쇰컲?뚯썝?깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param userSearchVO 검색조건정보
-	 * @param mberManageVO 일반회원초기화정보
-	 * @param model        화면모델
+	 * @param userSearchVO 寃?됱“嫄댁젙蹂?
+	 * @param mberManageVO ?쇰컲?뚯썝珥덇린?붿젙蹂?
+	 * @param model        ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovMberInsert
 	 * @throws Exception
 	 */
@@ -133,7 +133,7 @@ public class EgovMberManageController {
 	public String insertMberView(@ModelAttribute("userSearchVO") UserDefaultVO userSearchVO,
 			@ModelAttribute("mberManageVO") MberManageVO mberManageVO, Model model) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -141,33 +141,33 @@ public class EgovMberManageController {
 
 		ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
 
-		// 패스워드힌트목록을 코드정보로부터 조회
+		// ?⑥뒪?뚮뱶?뚰듃紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 		comDefaultCodeVO.setCodeId("COM022");
 		List<CmmnDetailCode> passwordHintResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		// 성별구분코드를 코드정보로부터 조회
+		// ?깅퀎援щ텇肄붾뱶瑜?肄붾뱶?뺣낫濡쒕???議고쉶
 		comDefaultCodeVO.setCodeId("COM014");
 		List<CmmnDetailCode> sexdstnCodeResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		// 사용자상태코드를 코드정보로부터 조회
+		// ?ъ슜?먯긽?쒖퐫?쒕? 肄붾뱶?뺣낫濡쒕???議고쉶
 		comDefaultCodeVO.setCodeId("COM013");
 		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		// 그룹정보를 조회 - GROUP_ID정보
+		// 洹몃９?뺣낫瑜?議고쉶 - GROUP_ID?뺣낫
 		comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 
-		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
-		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // 성별구분코드목록
-		model.addAttribute("mberSttus_result", mberSttusResult); // 사용자상태코드목록
-		model.addAttribute("groupId_result", groupIdResult); // 그룹정보 목록
+		model.addAttribute("passwordHint_result", passwordHintResult); // ?⑥뒪?뚰듃?뚰듃紐⑸줉
+		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // ?깅퀎援щ텇肄붾뱶紐⑸줉
+		model.addAttribute("mberSttus_result", mberSttusResult); // ?ъ슜?먯긽?쒖퐫?쒕ぉ濡?
+		model.addAttribute("groupId_result", groupIdResult); // 洹몃９?뺣낫 紐⑸줉
 
 		return "egovframework/com/uss/umt/EgovMberInsert";
 	}
 
 	/**
-	 * 일반회원등록처리후 목록화면으로 이동한다.
+	 * ?쇰컲?뚯썝?깅줉泥섎━??紐⑸줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param mberManageVO  일반회원등록정보
-	 * @param bindingResult 입력값검증용 bindingResult
-	 * @param model         화면모델
+	 * @param mberManageVO  ?쇰컲?뚯썝?깅줉?뺣낫
+	 * @param bindingResult ?낅젰媛믨?利앹슜 bindingResult
+	 * @param model         ?붾㈃紐⑤뜽
 	 * @return forward:/uss/umt/EgovMberManage.do
 	 * @throws Exception
 	 */
@@ -175,7 +175,7 @@ public class EgovMberManageController {
 	public String insertMber(@Valid @ModelAttribute("mberManageVO") MberManageVO mberManageVO, BindingResult bindingResult,
 			Model model) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -185,42 +185,42 @@ public class EgovMberManageController {
 
 			ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
 
-			// 패스워드힌트목록을 코드정보로부터 조회
+			// ?⑥뒪?뚮뱶?뚰듃紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 			comDefaultCodeVO.setCodeId("COM022");
 			List<CmmnDetailCode> passwordHintResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-			// 성별구분코드를 코드정보로부터 조회
+			// ?깅퀎援щ텇肄붾뱶瑜?肄붾뱶?뺣낫濡쒕???議고쉶
 			comDefaultCodeVO.setCodeId("COM014");
 			List<CmmnDetailCode> sexdstnCodeResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-			// 사용자상태코드를 코드정보로부터 조회
+			// ?ъ슜?먯긽?쒖퐫?쒕? 肄붾뱶?뺣낫濡쒕???議고쉶
 			comDefaultCodeVO.setCodeId("COM013");
 			List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-			// 그룹정보를 조회 - GROUP_ID정보
+			// 洹몃９?뺣낫瑜?議고쉶 - GROUP_ID?뺣낫
 			comDefaultCodeVO.setTableNm("COMTNORGNZTINFO");
 			List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(comDefaultCodeVO);
 
-			model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
-			model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // 성별구분코드목록
-			model.addAttribute("mberSttus_result", mberSttusResult); // 사용자상태코드목록
-			model.addAttribute("groupId_result", groupIdResult); // 그룹정보 목록
+			model.addAttribute("passwordHint_result", passwordHintResult); // ?⑥뒪?뚰듃?뚰듃紐⑸줉
+			model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // ?깅퀎援щ텇肄붾뱶紐⑸줉
+			model.addAttribute("mberSttus_result", mberSttusResult); // ?ъ슜?먯긽?쒖퐫?쒕ぉ濡?
+			model.addAttribute("groupId_result", groupIdResult); // 洹몃９?뺣낫 紐⑸줉
 
 			return "egovframework/com/uss/umt/EgovMberInsert";
 		} else {
-			if ("".equals(mberManageVO.getGroupId())) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			if ("".equals(mberManageVO.getGroupId())) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 				mberManageVO.setGroupId(null);
 			}
 			mberManageService.insertMber(mberManageVO);
-			// Exception 없이 진행시 등록 성공메시지
+			// Exception ?놁씠 吏꾪뻾???깅줉 ?깃났硫붿떆吏
 			model.addAttribute("resultMsg", "success.common.insert");
 		}
 		return "forward:/uss/umt/EgovMberManage.do";
 	}
 
 	/**
-	 * 일반회원정보 수정을 위해 일반회원정보를 상세조회한다.
+	 * ?쇰컲?뚯썝?뺣낫 ?섏젙???꾪빐 ?쇰컲?뚯썝?뺣낫瑜??곸꽭議고쉶?쒕떎.
 	 *
-	 * @param mberId       상세조회대상 일반회원아이디
-	 * @param userSearchVO 검색조건
-	 * @param model        화면모델
+	 * @param mberId       ?곸꽭議고쉶????쇰컲?뚯썝?꾩씠??
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @param model        ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovMberSelectUpdt
 	 * @throws Exception
 	 */
@@ -229,7 +229,7 @@ public class EgovMberManageController {
 			@ModelAttribute("searchVO") UserDefaultVO userSearchVO, HttpServletRequest request, Model model)
 			throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -237,39 +237,39 @@ public class EgovMberManageController {
 
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 
-		// 패스워드힌트목록을 코드정보로부터 조회
+		// ?⑥뒪?뚮뱶?뚰듃紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 		vo.setCodeId("COM022");
 		List<CmmnDetailCode> passwordHintResult = cmmUseService.selectCmmCodeDetail(vo);
 
-		// 성별구분코드를 코드정보로부터 조회
+		// ?깅퀎援щ텇肄붾뱶瑜?肄붾뱶?뺣낫濡쒕???議고쉶
 		vo.setCodeId("COM014");
 		List<CmmnDetailCode> sexdstnCodeResult = cmmUseService.selectCmmCodeDetail(vo);
 
-		// 사용자상태코드를 코드정보로부터 조회
+		// ?ъ슜?먯긽?쒖퐫?쒕? 肄붾뱶?뺣낫濡쒕???議고쉶
 		vo.setCodeId("COM013");
 		List<CmmnDetailCode> mberSttusResult = cmmUseService.selectCmmCodeDetail(vo);
 
-		// 그룹정보를 조회 - GROUP_ID정보
+		// 洹몃９?뺣낫瑜?議고쉶 - GROUP_ID?뺣낫
 		vo.setTableNm("COMTNORGNZTINFO");
 		List<CmmnDetailCode> groupIdResult = cmmUseService.selectGroupIdDetail(vo);
 
-		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
-		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // 성별구분코드목록
-		model.addAttribute("mberSttus_result", mberSttusResult); // 사용자상태코드목록
-		model.addAttribute("groupId_result", groupIdResult); // 그룹정보 목록
+		model.addAttribute("passwordHint_result", passwordHintResult); // ?⑥뒪?뚰듃?뚰듃紐⑸줉
+		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // ?깅퀎援щ텇肄붾뱶紐⑸줉
+		model.addAttribute("mberSttus_result", mberSttusResult); // ?ъ슜?먯긽?쒖퐫?쒕ぉ濡?
+		model.addAttribute("groupId_result", groupIdResult); // 洹몃９?뺣낫 紐⑸줉
 
 		MberManageVO mberManageVO = mberManageService.selectMber(mberId);
 		model.addAttribute("mberManageVO", mberManageVO);
 		model.addAttribute("userSearchVO", userSearchVO);
 
-		// 2021.05.30, 정진오, 디지털원패스 정보 조회
+		// 2021.05.30, ?뺤쭊?? ?붿??몄썝?⑥뒪 ?뺣낫 議고쉶
 		LoginVO loginVO = (LoginVO) request.getSession().getAttribute("loginVO");
 		String onepassUserId = loginVO.getUniqId();
 		String onepassUserkey = loginVO.getOnepassUserkey();
 		String onepassIntfToken = loginVO.getOnepassIntfToken();
 		if (mberId.equals(onepassUserId)) {
-			model.addAttribute("onepassUserkey", onepassUserkey); // 디지털원패스 사용자키
-			model.addAttribute("onepassIntfToken", onepassIntfToken); // 디지털원패스 사용자세션값
+			model.addAttribute("onepassUserkey", onepassUserkey); // ?붿??몄썝?⑥뒪 ?ъ슜?먰궎
+			model.addAttribute("onepassIntfToken", onepassIntfToken); // ?붿??몄썝?⑥뒪 ?ъ슜?먯꽭?섍컪
 		} else {
 			model.addAttribute("onepassUserkey", "");
 			model.addAttribute("onepassIntfToken", "");
@@ -279,17 +279,17 @@ public class EgovMberManageController {
 	}
 
 	/**
-	 * 로그인인증제한 해제
+	 * 濡쒓렇?몄씤利앹젣???댁젣
 	 *
-	 * @param mberManageVO 일반회원등록정보
-	 * @param model        화면모델
+	 * @param mberManageVO ?쇰컲?뚯썝?깅줉?뺣낫
+	 * @param model        ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovMberSelectUpdtView.do
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovMberLockIncorrect.do")
 	public String updateLockIncorrect(MberManageVO mberManageVO, Model model) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -301,11 +301,11 @@ public class EgovMberManageController {
 	}
 
 	/**
-	 * 일반회원정보 수정후 목록조회 화면으로 이동한다.
+	 * ?쇰컲?뚯썝?뺣낫 ?섏젙??紐⑸줉議고쉶 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param mberManageVO  일반회원수정정보
-	 * @param bindingResult 입력값검증용 bindingResult
-	 * @param model         화면모델
+	 * @param mberManageVO  ?쇰컲?뚯썝?섏젙?뺣낫
+	 * @param bindingResult ?낅젰媛믨?利앹슜 bindingResult
+	 * @param model         ?붾㈃紐⑤뜽
 	 * @return forward:/uss/umt/EgovMberManage.do
 	 * @throws Exception
 	 */
@@ -313,7 +313,7 @@ public class EgovMberManageController {
 	public String updateMber(@ModelAttribute("mberManageVO") MberManageVO mberManageVO, BindingResult bindingResult,
 			Model model) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -323,22 +323,22 @@ public class EgovMberManageController {
 			model.addAttribute("resultMsg", bindingResult.getAllErrors().get(0).getDefaultMessage());
 			return "forward:/uss/umt/EgovMberManage.do";
 		} else {
-			if ("".equals(mberManageVO.getGroupId())) {// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			if ("".equals(mberManageVO.getGroupId())) {// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 				mberManageVO.setGroupId(null);
 			}
 			mberManageService.updateMber(mberManageVO);
-			// Exception 없이 진행시 수정성공메시지
+			// Exception ?놁씠 吏꾪뻾???섏젙?깃났硫붿떆吏
 			model.addAttribute("resultMsg", "success.common.update");
 			return "forward:/uss/umt/EgovMberManage.do";
 		}
 	}
 
 	/**
-	 * 일반회원정보삭제후 목록조회 화면으로 이동한다.
+	 * ?쇰컲?뚯썝?뺣낫??젣??紐⑸줉議고쉶 ?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param checkedIdForDel 삭제대상 아이디 정보
-	 * @param userSearchVO    검색조건정보
-	 * @param model           화면모델
+	 * @param checkedIdForDel ??젣????꾩씠???뺣낫
+	 * @param userSearchVO    寃?됱“嫄댁젙蹂?
+	 * @param model           ?붾㈃紐⑤뜽
 	 * @return forward:/uss/umt/EgovMberManage.do
 	 * @throws Exception
 	 */
@@ -347,14 +347,14 @@ public class EgovMberManageController {
 			@ModelAttribute("searchVO") UserDefaultVO userSearchVO, HttpServletRequest request, Model model)
 			throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
 		}
 
-		// 2021.05.30, 정진오, 디지털원패스 정보 조회
-		// 2022.07.13, 김해준, null 판별 수정
+		// 2021.05.30, ?뺤쭊?? ?붿??몄썝?⑥뒪 ?뺣낫 議고쉶
+		// 2022.07.13, 源?댁?, null ?먮퀎 ?섏젙
 		LoginVO loginVO = (LoginVO) request.getSession().getAttribute("loginVO");
 		String onepassUserkey = loginVO.getOnepassUserkey();
 		String onepassIntfToken = loginVO.getOnepassIntfToken();
@@ -368,8 +368,8 @@ public class EgovMberManageController {
 		return "forward:/uss/umt/EgovMberManage.do";
 	}
 
-	// 탈퇴 처리 기능에 대한 예시
-	// 221114 김혜준 2022 시큐어코딩 조치
+	// ?덊눜 泥섎━ 湲곕뒫??????덉떆
+	// 221114 源?쒖? 2022 ?쒗걧?댁퐫??議곗튂
 	@RequestMapping("/uss/umt/EgovMberWithdraw.do")
 	public String withdrawMber(Model model) throws Exception {
 
@@ -383,19 +383,19 @@ public class EgovMberManageController {
 		}
 
 		mberManageService.deleteMber(user == null ? "" : EgovStringUtil.isNullToString(user.getUniqId()));
-		// Exception 없이 진행시 삭제성공메시지
+		// Exception ?놁씠 吏꾪뻾????젣?깃났硫붿떆吏
 		model.addAttribute("resultMsg", "success.common.delete");
 
 		return "redirect:/";
 	}
 
 	/**
-	 * 일반회원가입신청 등록화면으로 이동한다.
+	 * ?쇰컲?뚯썝媛?낆떊泥??깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
 	 *
-	 * @param userSearchVO 검색조건
-	 * @param mberManageVO 일반회원가입신청정보
-	 * @param commandMap   파라메터전달용 commandMap
-	 * @param model        화면모델
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @param mberManageVO ?쇰컲?뚯썝媛?낆떊泥?젙蹂?
+	 * @param commandMap   ?뚮씪硫뷀꽣?꾨떖??commandMap
+	 * @param model        ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovMberSbscrb
 	 * @throws Exception
 	 */
@@ -406,21 +406,21 @@ public class EgovMberManageController {
 
 		ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
 
-		// 패스워드힌트목록을 코드정보로부터 조회
+		// ?⑥뒪?뚮뱶?뚰듃紐⑸줉??肄붾뱶?뺣낫濡쒕???議고쉶
 		comDefaultCodeVO.setCodeId("COM022");
 		List<CmmnDetailCode> passwordHintResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
-		// 성별구분코드를 코드정보로부터 조회
+		// ?깅퀎援щ텇肄붾뱶瑜?肄붾뱶?뺣낫濡쒕???議고쉶
 		comDefaultCodeVO.setCodeId("COM014");
 		List<CmmnDetailCode> sexdstnCodeResult = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 
-		model.addAttribute("passwordHint_result", passwordHintResult); // 패스워트힌트목록
-		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // 성별구분코드목록
+		model.addAttribute("passwordHint_result", passwordHintResult); // ?⑥뒪?뚰듃?뚰듃紐⑸줉
+		model.addAttribute("sexdstnCode_result", sexdstnCodeResult); // ?깅퀎援щ텇肄붾뱶紐⑸줉
 		if (!"".equals(commandMap.get("realname"))) {
-			model.addAttribute("mberNm", commandMap.get("realname")); // 실명인증된 이름 - 주민번호 인증
-			model.addAttribute("ihidnum", commandMap.get("ihidnum")); // 실명인증된 주민등록번호 - 주민번호 인증
+			model.addAttribute("mberNm", commandMap.get("realname")); // ?ㅻ챸?몄쬆???대쫫 - 二쇰?踰덊샇 ?몄쬆
+			model.addAttribute("ihidnum", commandMap.get("ihidnum")); // ?ㅻ챸?몄쬆??二쇰??깅줉踰덊샇 - 二쇰?踰덊샇 ?몄쬆
 		}
 		if (!"".equals(commandMap.get("realName"))) {
-			model.addAttribute("mberNm", commandMap.get("realName")); // 실명인증된 이름 - ipin인증
+			model.addAttribute("mberNm", commandMap.get("realName")); // ?ㅻ챸?몄쬆???대쫫 - ipin?몄쬆
 		}
 
 		mberManageVO.setMberSttus("DEFAULT");
@@ -429,57 +429,57 @@ public class EgovMberManageController {
 	}
 
 	/**
-	 * 일반회원가입신청등록처리후로그인화면으로 이동한다.
+	 * ?쇰컲?뚯썝媛?낆떊泥?벑濡앹쿂由ы썑濡쒓렇?명솕硫댁쑝濡??대룞?쒕떎.
 	 *
-	 * @param mberManageVO 일반회원가입신청정보
+	 * @param mberManageVO ?쇰컲?뚯썝媛?낆떊泥?젙蹂?
 	 * @return forward:/uat/uia/egovLoginUsr.do
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovMberSbscrb.do")
 	public String sbscrbMber(@ModelAttribute("mberManageVO") MberManageVO mberManageVO) throws Exception {
 
-		// 가입상태 초기화
+		// 媛?낆긽??珥덇린??
 		mberManageVO.setMberSttus("A");
-		// 그룹정보 초기화
+		// 洹몃９?뺣낫 珥덇린??
 		// mberManageVO.setGroupId("1");
-		// 일반회원가입신청 등록시 일반회원등록기능을 사용하여 등록한다.
+		// ?쇰컲?뚯썝媛?낆떊泥??깅줉???쇰컲?뚯썝?깅줉湲곕뒫???ъ슜?섏뿬 ?깅줉?쒕떎.
 		mberManageService.insertMber(mberManageVO);
 		return "forward:/uat/uia/egovLoginUsr.do";
 	}
 
 	/**
-	 * 일반회원 약관확인
+	 * ?쇰컲?뚯썝 ?쎄??뺤씤
 	 *
-	 * @param model 화면모델
+	 * @param model ?붾㈃紐⑤뜽
 	 * @return uss/umt/EgovStplatCnfirm
 	 * @throws Exception
 	 */
 	@RequestMapping("/uss/umt/EgovStplatCnfirmMber.do")
 	public String sbscrbEntrprsMber(Model model) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		// Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		// if (!isAuthenticated) {
 		// return "index";
 		// }
 
-		// 일반회원용 약관 아이디 설정
+		// ?쇰컲?뚯썝???쎄? ?꾩씠???ㅼ젙
 		String stplatId = "STPLAT_0000000000001";
-		// 회원가입유형 설정-일반회원
+		// ?뚯썝媛?낆쑀???ㅼ젙-?쇰컲?뚯썝
 		String sbscrbTy = "USR01";
-		// 약관정보 조회
+		// ?쎄??뺣낫 議고쉶
 		List<StplatVO> stplatList = mberManageService.selectStplat(stplatId);
-		model.addAttribute("stplatList", stplatList); // 약관정보 포함
-		model.addAttribute("sbscrbTy", sbscrbTy); // 회원가입유형 포함
+		model.addAttribute("stplatList", stplatList); // ?쎄??뺣낫 ?ы븿
+		model.addAttribute("sbscrbTy", sbscrbTy); // ?뚯썝媛?낆쑀???ы븿
 
 		return "egovframework/com/uss/umt/EgovStplatCnfirm";
 	}
 
 	/**
-	 * @param model        화면모델
-	 * @param commandMap   파라메터전달용 commandMap
-	 * @param userSearchVO 검색조건
-	 * @param mberManageVO 일반회원수정정보(비밀번호)
+	 * @param model        ?붾㈃紐⑤뜽
+	 * @param commandMap   ?뚮씪硫뷀꽣?꾨떖??commandMap
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫(鍮꾨?踰덊샇)
 	 * @return uss/umt/EgovMberPasswordUpdt
 	 * @throws Exception
 	 */
@@ -488,7 +488,7 @@ public class EgovMberManageController {
 			@ModelAttribute("searchVO") UserDefaultVO userSearchVO,
 			@ModelAttribute("mberManageVO") MberManageVO mberManageVO) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";
@@ -507,7 +507,7 @@ public class EgovMberManageController {
 
 		String resultMsg = "";
 		resultVO = mberManageService.selectPassword(mberManageVO);
-		// 패스워드 암호화
+		// ?⑥뒪?뚮뱶 ?뷀샇??
 		String encryptPass = EgovFileScrty.encryptPassword(oldPassword, mberManageVO.getMberId());
 		if (encryptPass.equals(resultVO.getPassword())) {
 			if (newPassword.equals(newPassword2)) {
@@ -536,12 +536,12 @@ public class EgovMberManageController {
 	}
 
 	/**
-	 * 일반회원 암호 수정 화면 이동
+	 * ?쇰컲?뚯썝 ?뷀샇 ?섏젙 ?붾㈃ ?대룞
 	 *
-	 * @param model        화면모델
-	 * @param commandMap   파라메터전달용 commandMap
-	 * @param userSearchVO 검색조건
-	 * @param mberManageVO 일반회원수정정보(비밀번호)
+	 * @param model        ?붾㈃紐⑤뜽
+	 * @param commandMap   ?뚮씪硫뷀꽣?꾨떖??commandMap
+	 * @param userSearchVO 寃?됱“嫄?
+	 * @param mberManageVO ?쇰컲?뚯썝?섏젙?뺣낫(鍮꾨?踰덊샇)
 	 * @return uss/umt/EgovMberPasswordUpdt
 	 * @throws Exception
 	 */
@@ -550,7 +550,7 @@ public class EgovMberManageController {
 			@ModelAttribute("searchVO") UserDefaultVO userSearchVO,
 			@ModelAttribute("mberManageVO") MberManageVO mberManageVO) throws Exception {
 
-		// 미인증 사용자에 대한 보안처리
+		// 誘몄씤利??ъ슜?먯뿉 ???蹂댁븞泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			return "index";

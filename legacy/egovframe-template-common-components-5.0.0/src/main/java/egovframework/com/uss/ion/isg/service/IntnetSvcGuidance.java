@@ -1,12 +1,12 @@
 /**
- * 개요
- * - 인터넷서비스안내에 대한 model 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 인터넷서비스안내의 일련번호, 인터넷서비스명, 인터넷서비스설명, 반영여부 항목을 관리한다.
+ * ?곸꽭?댁슜
+ * - ?명꽣?룹꽌鍮꾩뒪?덈궡???쇰젴踰덊샇, ?명꽣?룹꽌鍮꾩뒪紐? ?명꽣?룹꽌鍮꾩뒪?ㅻ챸, 諛섏쁺?щ? ??ぉ??愿由ы븳??
  * @author lee.m.j
  * @version 1.0
- * @created 03-8-2009 오후 2:08:51
+ * @created 03-8-2009 ?ㅽ썑 2:08:51
  */
 
 package egovframework.com.uss.ion.isg.service;
@@ -20,27 +20,27 @@ public class IntnetSvcGuidance extends ComDefaultVO {
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
-	 * 인터넷서비스ID
+	 * ?명꽣?룹꽌鍮꾩뒪ID
 	 */	
 	private String intnetSvcId;
 	/**
-	 * 인터넷서비스명
+	 * ?명꽣?룹꽌鍮꾩뒪紐?
 	 */		
 	private String intnetSvcNm;
 	/**
-	 * 인터넷서비스설명
+	 * ?명꽣?룹꽌鍮꾩뒪?ㅻ챸
 	 */	
 	private String intnetSvcDc;
 	/**
-	 * 반영여부
+	 * 諛섏쁺?щ?
 	 */		
 	private String reflctAt;
 	/**
-	 * 사용자 ID
+	 * ?ъ슜??ID
 	 */
 	private String userId;
 	/**
-	 * 등록일자
+	 * ?깅줉?쇱옄
 	 */
 	private String regDate;
 	

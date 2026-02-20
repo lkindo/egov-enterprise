@@ -51,7 +51,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>				
 	</resultMap> 
 	
-	<!-- 네트워크서비스모니터링관리::목록조회 -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:紐⑸줉議고쉶 -->
 	<select id="selectNtwrkSvcMntrngList" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO" resultMap="NtwrkSvcMntrngList">
 	 
 		SELECT 
@@ -87,7 +87,7 @@
 
 	</select>
 	
-	<!-- 네트워크서비스모니터링관리::목록조회 Count -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:紐⑸줉議고쉶 Count -->
 	<select id="selectNtwrkSvcMntrngListCnt" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -114,7 +114,7 @@
 
 	</select>
 	
-	<!-- 네트워크서비스모니터링관리::상세보기 -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:?곸꽭蹂닿린 -->
 	<select id="selectNtwrkSvcMntrng" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO" resultMap="NtwrkSvcMntrngDetail">
 		SELECT 
 			A.SYS_IP,
@@ -136,7 +136,7 @@
 			AND A.SYS_PORT = #{sysPort}
 	</select>
 	
-	<!-- 네트워크서비스모니터링관리::수정  -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:?섏젙  -->
 	<update id="updateNtwrkSvcMntrng" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrng"> 
 		UPDATE COMTNNTWRKSVCMNTRNG 
 		SET  
@@ -151,7 +151,7 @@
 			AND SYS_PORT = #{oldSysPort}
 	</update>
 	
-	<!-- 네트워크서비스모니터링관리::삭제  -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:??젣  -->
 	<delete id="deleteNtwrkSvcMntrng" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrng"> 
 		
 			DELETE FROM COMTNNTWRKSVCMNTRNG 
@@ -160,7 +160,7 @@
 		
 	</delete>
 	
-	<!-- 네트워크서비스모니터링관리::입력  -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:?낅젰  -->
 	<insert id="insertNtwrkSvcMntrng" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrng">
 	 
 	 
@@ -189,7 +189,7 @@
 	 
 	</insert>
 	
-	<!-- 네트워크서비스모니터링관리::중복 CHECK Count -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:以묐났 CHECK Count -->
 	<select id="selectNtwrkSvcMntrngCheck" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngVO" resultType="java.lang.Integer">
 	 	SELECT 
 			COUNT(SYS_IP) as cnt
@@ -198,7 +198,7 @@
 			AND SYS_PORT = #{sysPort}
 	</select>
 	
-	<!-- 네트워크서비스모니터링관리::모니터링결과수정  -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴?由?:紐⑤땲?곕쭅寃곌낵?섏젙  -->
 	<update id="updateNtwrkSvcMntrngSttus" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrng"> 
 		UPDATE COMTNNTWRKSVCMNTRNG 
 		SET  
@@ -210,7 +210,7 @@
 			AND SYS_PORT = #{sysPort}
 	</update>
 	
-	<!-- 네트워크서비스모니터링결과::목록조회 -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴껐怨?:紐⑸줉議고쉶 -->
 	<select id="selectNtwrkSvcMntrngLogList" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLogVO" resultMap="NtwrkSvcMntrngLogList">
 	 
 		SELECT 
@@ -255,7 +255,7 @@
 
 	</select>
 	
-	<!-- 네트워크서비스모니터링결과::목록조회 Count -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴껐怨?:紐⑸줉議고쉶 Count -->
 	<select id="selectNtwrkSvcMntrngLogListCnt" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLogVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -291,7 +291,7 @@
 
 	</select>
 	
-	<!-- 네트워크서비스모니터링결과::상세보기 -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴껐怨?:?곸꽭蹂닿린 -->
 	<select id="selectNtwrkSvcMntrngLog" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLogVO" resultMap="NtwrkSvcMntrngLogDetail">
 		SELECT 
 			A.SYS_IP,
@@ -314,7 +314,7 @@
 			AND A.LOG_ID = #{logId}
 	</select>
 	
-	<!-- 네트워크서비스모니터링결과::입력  -->
+	<!-- ?ㅽ듃?뚰겕?쒕퉬?ㅻえ?덊꽣留곴껐怨?:?낅젰  -->
 	<insert id="insertNtwrkSvcMntrngLog" parameterType="egovframework.com.utl.sys.nsm.service.NtwrkSvcMntrngLog">
 	 
 	 

@@ -3,86 +3,86 @@ package egovframework.com.utl.sys.pxy.service;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 개요 - 프록시서비스정보에 대한 model 클래스를 정의한다.
+ * 媛쒖슂 - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫?????model ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용 - 프록시서비스정보의 ID, 프록시 명, 프록시 IP, 프록시 포트, 서비스 명, 서비스 설명, 서비스 IP, 서비스 포트,
- * 서비스 상태 등의 항목을 관리한다.
+ * ?곸꽭?댁슜 - ?꾨줉?쒖꽌鍮꾩뒪?뺣낫??ID, ?꾨줉??紐? ?꾨줉??IP, ?꾨줉???ы듃, ?쒕퉬??紐? ?쒕퉬???ㅻ챸, ?쒕퉬??IP, ?쒕퉬???ы듃,
+ * ?쒕퉬???곹깭 ?깆쓽 ??ぉ??愿由ы븳??
  *
  * @author lee.m.j
  * @version 1.0
- * @created 28-6-2010 오전 10:44:50
+ * @created 28-6-2010 ?ㅼ쟾 10:44:50
  */
 public class ProxySvc extends ComDefaultVO {
 
 	private static final long serialVersionUID = 1L;
 
     /**
-     * 프록시 ID
+     * ?꾨줉??ID
      */
     private String proxyId;
 
     /**
-     * 프록시 명
+     * ?꾨줉??紐?
      */
     private String proxyNm;
 
     /**
-     * 프록시 IP
+     * ?꾨줉??IP
      */
     private String proxyIp;
 
     /**
-     * 프록시 포트
+     * ?꾨줉???ы듃
      */
     private String proxyPort;
 
     /**
-     * 서비스 명
+     * ?쒕퉬??紐?
      */
     private String trgetSvcNm;
 
     /**
-     * 서비스 설명
+     * ?쒕퉬???ㅻ챸
      */
     private String svcDc;
 
     /**
-     * 서비스 IP
+     * ?쒕퉬??IP
      */
     private String svcIp;
 
     /**
-     * 서비스 포트
+     * ?쒕퉬???ы듃
      */
     private String svcPort;
 
     /**
-     * 서비스 상태
+     * ?쒕퉬???곹깭
      */
     private String svcSttus;
 
     /**
-     * 서비스 상태
+     * ?쒕퉬???곹깭
      */
     private String svcSttusNm;
 
     /**
-     * 최초등록시점
+     * 理쒖큹?깅줉?쒖젏
      */
     private String frstRegisterPnttm;
 
     /**
-     * 최초등록자ID
+     * 理쒖큹?깅줉?륤D
      */
     private String frstRegisterId;
 
     /**
-     * 최종수정시점
+     * 理쒖쥌?섏젙?쒖젏
      */
     private String lastUpdusrPnttm;
 
     /**
-     * 최종수정자ID
+     * 理쒖쥌?섏젙?륤D
      */
     private String lastUpdusrId;
 

@@ -9,20 +9,20 @@ import egovframework.com.cmm.ComDefaultVO;
 import egovframework.com.cmm.service.impl.EgovComAbstractDAO;
 import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 /**
- * 메뉴관리, 메뉴생성, 사이트맵 생성에 대한 DAO 클래스를 정의한다.
- * @author 개발환경 개발팀 이용
+ * 硫붾돱愿由? 硫붾돱?앹꽦, ?ъ씠?몃㏊ ?앹꽦?????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 媛쒕컻?섍꼍 媛쒕컻? ?댁슜
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이  용          최초 생성
- *   2011.07.01  서준식			자기 메뉴 정보를 상위메뉴 정보로 참조하는 메뉴정보가 있는지 조회하는
- *   							selectUpperMenuNoByPk() 메서드 추가
+ *   2009.03.20  ?? ??         理쒖큹 ?앹꽦
+ *   2011.07.01  ?쒖???		?먭린 硫붾돱 ?뺣낫瑜??곸쐞硫붾돱 ?뺣낫濡?李몄“?섎뒗 硫붾돱?뺣낫媛 ?덈뒗吏 議고쉶?섎뒗
+ *   							selectUpperMenuNoByPk() 硫붿꽌??異붽?
  *
  * </pre>
  */
@@ -31,7 +31,7 @@ import egovframework.com.sym.mnu.mpm.service.MenuManageVO;
 public class MenuManageDAO extends EgovComAbstractDAO{
 
 	/**
-     * 메뉴목록을 조회
+     * 硫붾돱紐⑸줉??議고쉶
      * 
      * @param vo ComDefaultVO
      * @return List
@@ -42,7 +42,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
     }
 
     /**
-	 * 메뉴목록관리 총건수를 조회한다.
+	 * 硫붾돱紐⑸줉愿由?珥앷굔?섎? 議고쉶?쒕떎.
 	 * @param vo ComDefaultVO
 	 * @return int
 	 * @exception Exception
@@ -52,7 +52,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
     }
 
 	/**
-	 * 메뉴목록관리 기본정보를 조회
+	 * 硫붾돱紐⑸줉愿由?湲곕낯?뺣낫瑜?議고쉶
 	 * @param vo ComDefaultVO
 	 * @return MenuManageVO
 	 * @exception Exception
@@ -62,7 +62,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴목록 기본정보를 등록
+	 * 硫붾돱紐⑸줉 湲곕낯?뺣낫瑜??깅줉
 	 * @param vo MenuManageVO
 	 * @exception Exception
 	 */
@@ -71,7 +71,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴목록 기본정보를 수정
+	 * 硫붾돱紐⑸줉 湲곕낯?뺣낫瑜??섏젙
 	 * @param vo MenuManageVO
 	 * @exception Exception
 	 */
@@ -80,7 +80,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴목록 기본정보를 삭제
+	 * 硫붾돱紐⑸줉 湲곕낯?뺣낫瑜???젣
 	 * @param vo MenuManageVO
 	 * @exception Exception
 	 */
@@ -89,7 +89,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 메뉴 전체목록을 조회
+	 * 硫붾돱 ?꾩껜紐⑸줉??議고쉶
 	 * @return list
 	 * @exception Exception
 	 */
@@ -100,7 +100,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 메뉴번호 존재여부를 조회
+	 * 硫붾돱踰덊샇 議댁옱?щ?瑜?議고쉶
 	 * @param vo MenuManageVO
 	 * @return int
 	 * @exception Exception
@@ -112,7 +112,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 메뉴번호를 상위메뉴로 참조하고 있는 메뉴 존재여부를 조회
+	 * 硫붾돱踰덊샇瑜??곸쐞硫붾돱濡?李몄“?섍퀬 ?덈뒗 硫붾돱 議댁옱?щ?瑜?議고쉶
 	 * @param vo MenuManageVO
 	 * @return int
 	 * @exception Exception
@@ -123,7 +123,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 
 
 	/**
-	 * 메뉴정보 전체삭제 초기화
+	 * 硫붾돱?뺣낫 ?꾩껜??젣 珥덇린??
 	 * @return boolean
 	 * @exception Exception
 	 */
@@ -134,7 +134,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
     /**
-	 * 메뉴정보 존재여부 조회한다.
+	 * 硫붾돱?뺣낫 議댁옱?щ? 議고쉶?쒕떎.
 	 * @return int
 	 * @exception Exception
 	 */
@@ -144,9 +144,9 @@ public class MenuManageDAO extends EgovComAbstractDAO{
     }
 
 
-	/*### 메뉴관련 프로세스 ###*/
+	/*### 硫붾돱愿???꾨줈?몄뒪 ###*/
 	/**
-	 * MainMenu Head Menu 조회
+	 * MainMenu Head Menu 議고쉶
 	 * @param vo MenuManageVO
 	 * @return List
 	 * @exception Exception
@@ -156,7 +156,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * MainMenu Left Menu 조회
+	 * MainMenu Left Menu 議고쉶
 	 * @param vo MenuManageVO
 	 * @return List
 	 * @exception Exception
@@ -166,7 +166,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * MainMenu Head MenuURL 조회
+	 * MainMenu Head MenuURL 議고쉶
 	 * @param vo MenuManageVO
 	 * @return  String
 	 * @exception Exception
@@ -176,7 +176,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * MainMenu Left Menu 조회
+	 * MainMenu Left Menu 議고쉶
 	 * @param vo MenuManageVO
 	 * @return int
 	 * @exception Exception
@@ -186,7 +186,7 @@ public class MenuManageDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * MainMenu Left Menu 조회
+	 * MainMenu Left Menu 議고쉶
 	 * @param vo MenuManageVO
 	 * @return int
 	 * @exception Exception

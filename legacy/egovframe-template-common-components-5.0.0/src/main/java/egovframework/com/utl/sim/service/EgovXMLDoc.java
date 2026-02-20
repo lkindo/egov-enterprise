@@ -1,15 +1,15 @@
 /**
  *  Class Name : EgovXMLDoc.java
- *  Description : XML파일을 파싱하여 구조체 형태로 반환 또는 구조체 형태의 데이터를 XML파일로 저장하는 Business Interface class
+ *  Description : XML?뚯씪???뚯떛?섏뿬 援ъ“泥??뺥깭濡?諛섑솚 ?먮뒗 援ъ“泥??뺥깭???곗씠?곕? XML?뚯씪濡???ν븯??Business Interface class
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.02.03    박지욱          최초 생성
- *   2022.11.11    김혜준          시큐어코딩 처리
- *   2024.10.29		LeeBaekHaeng	불필요 형변환 제거 (SndngMailDocument.Factory.parse(xmlFile);)
+ *   2009.02.03    諛뺤???         理쒖큹 ?앹꽦
+ *   2022.11.11    源?쒖?          ?쒗걧?댁퐫??泥섎━
+ *   2024.10.29		LeeBaekHaeng	遺덊븘???뺣????쒓굅 (SndngMailDocument.Factory.parse(xmlFile);)
  *
- *  @author 공통 서비스 개발팀 박지욱
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? 諛뺤???
  *  @since 2009. 02. 03
  *  @version 1.0
  *  @see
@@ -46,7 +46,7 @@ import noNamespace.SndngMailDocument;
 
 public class EgovXMLDoc {
 
-	// 파일구분자
+	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;
 
 	static final String ACCESS_EXTERNAL_DTD = "http://jakarta.xml.XMLConstants/property/accessExternalDTD";
@@ -55,9 +55,9 @@ public class EgovXMLDoc {
 	static final String EXTERNAL_PARAMETER_ENTITIES = "http://xml.org/sax/features/external-parameter-entities";
 
 	/**
-	 * XML파일을 파싱하여 메일발송 클래스(임의)에 내용을 담아 반환
-	 * @param file XML파일
-	 * @return SndngMailDocument mailDoc 메일발송 클래스(XML스키마를 통해 생성된 자바클래스)
+	 * XML?뚯씪???뚯떛?섏뿬 硫붿씪諛쒖넚 ?대옒???꾩쓽)???댁슜???댁븘 諛섑솚
+	 * @param file XML?뚯씪
+	 * @return SndngMailDocument mailDoc 硫붿씪諛쒖넚 ?대옒??XML?ㅽ궎留덈? ?듯빐 ?앹꽦???먮컮?대옒??
 	 */
 	public static SndngMailDocument getXMLToClass(String file) throws Exception {
 		FileInputStream fis = null;
@@ -79,10 +79,10 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * XML데이터를 XML파일로 저장
-	 * @param mailDoc 사용자 임의 클래스(XML스키마를 통해 생성된 자바클래스)
-	 * @param file 저장될 파일
-	 * @return boolean 저장여부 True / False
+	 * XML?곗씠?곕? XML?뚯씪濡????
+	 * @param mailDoc ?ъ슜???꾩쓽 ?대옒??XML?ㅽ궎留덈? ?듯빐 ?앹꽦???먮컮?대옒??
+	 * @param file ??λ맆 ?뚯씪
+	 * @return boolean ??μ뿬遺 True / False
 	 */
 	public static boolean getClassToXML(SndngMailDocument mailDoc, String file) throws Exception {
 		boolean result = false;
@@ -111,9 +111,9 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * XML 파일을 파싱하여 데이터를 조작할 수 있는 Document 객체를 반환
-	 * @param xml XML파일
-	 * @return Document document 문서객체
+	 * XML ?뚯씪???뚯떛?섏뿬 ?곗씠?곕? 議곗옉?????덈뒗 Document 媛앹껜瑜?諛섑솚
+	 * @param xml XML?뚯씪
+	 * @return Document document 臾몄꽌媛앹껜
 	 */
 	public static Document getXMLDocument(String xml) throws Exception {
 		Document xmlDoc = null;
@@ -144,20 +144,20 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * Document의 최상의 Element로 이동
-	 * @param document XML데이터
-	 * @return Element root 루트
+	 * Document??理쒖긽??Element濡??대룞
+	 * @param document XML?곗씠??
+	 * @return Element root 猷⑦듃
 	 */
 	public static Element getRootElement(Document document) throws Exception {
 		return document.getDocumentElement();
 	}
 
 	/**
-	 * 하위에 새로운 Elemenet를 생성
-	 * @param document XML데이터
-	 * @param rt 추가될위치
-	 * @param id 생성될 Element의 ID
-	 * @return Element element 추가된 Element
+	 * ?섏쐞???덈줈??Elemenet瑜??앹꽦
+	 * @param document XML?곗씠??
+	 * @param rt 異붽??좎쐞移?
+	 * @param id ?앹꽦??Element??ID
+	 * @return Element element 異붽???Element
 	 */
 	public static Element insertElement(Document document, Element rt, String id) throws Exception {
 		Element child;
@@ -175,12 +175,12 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * 하위에 문자열을 가지는 새로운 Elemenet를 생성
-	 * @param document XML데이터
-	 * @param rt 추가 위치
-	 * @param id 생성될 Element의 ID
-	 * @param text Element 하위에 들어갈 문자열
-	 * @return Element element 추가된 Element
+	 * ?섏쐞??臾몄옄?댁쓣 媛吏???덈줈??Elemenet瑜??앹꽦
+	 * @param document XML?곗씠??
+	 * @param rt 異붽? ?꾩튂
+	 * @param id ?앹꽦??Element??ID
+	 * @param text Element ?섏쐞???ㅼ뼱媛?臾몄옄??
+	 * @return Element element 異붽???Element
 	 */
 	public static Element insertElement(Document document, Element rt, String id, String text) throws Exception {
 		Element echild;
@@ -201,11 +201,11 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * 하위에 문자열을 추가
-	 * @param document XML데이터
-	 * @param rt 추가 위치
-	 * @param text Element 하위에 들어갈 문자열
-	 * @return Element element 추가된 Element
+	 * ?섏쐞??臾몄옄?댁쓣 異붽?
+	 * @param document XML?곗씠??
+	 * @param rt 異붽? ?꾩튂
+	 * @param text Element ?섏쐞???ㅼ뼱媛?臾몄옄??
+	 * @return Element element 異붽???Element
 	 */
 	public static Text insertText(Document document, Element rt, String text) throws Exception {
 		Text tchild;
@@ -223,9 +223,9 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * 마지막으로 입력되었거나 참조된 XML Node의 상위 Element를 리턴
-	 * @param current 현재노드
-	 * @return Element parent 상위노드
+	 * 留덉?留됱쑝濡??낅젰?섏뿀嫄곕굹 李몄“??XML Node???곸쐞 Element瑜?由ы꽩
+	 * @param current ?꾩옱?몃뱶
+	 * @return Element parent ?곸쐞?몃뱶
 	 */
 	public static Element getParentNode(Element current) throws Exception {
 		Node parent = current.getParentNode();
@@ -233,10 +233,10 @@ public class EgovXMLDoc {
 	}
 
 	/**
-	 * Document 객체를 XML파일로 저장
-	 * @param document 문서객체
-	 * @param file 저장될 파일
-	 * @return boolean 저장여부 True / False
+	 * Document 媛앹껜瑜?XML?뚯씪濡????
+	 * @param document 臾몄꽌媛앹껜
+	 * @param file ??λ맆 ?뚯씪
+	 * @return boolean ??μ뿬遺 True / False
 	 */
 	public static boolean getXMLFile(Document document, String file) throws Exception {
 		boolean retVal = false;

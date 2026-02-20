@@ -26,7 +26,7 @@ public class ProgramService {
     private final ProgramRepository programRepository;
 
     /**
-     * 프로그램 목록 조회
+     * ?꾨줈洹몃옩 紐⑸줉 議고쉶
      */
     public List<ProgramDto> selectProgrmList(ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
@@ -46,7 +46,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 총 갯수 조회
+     * ?꾨줈洹몃옩 珥?媛?닔 議고쉶
      */
     public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
@@ -57,7 +57,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 상세 조회
+     * ?꾨줈洹몃옩 ?곸꽭 議고쉶
      */
     public ProgramDto selectProgrm(ComDefaultVO searchVO) {
         if (searchVO.getSearchKeyword() == null)
@@ -74,7 +74,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 등록
+     * ?꾨줈洹몃옩 ?깅줉
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -90,7 +90,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 수정
+     * ?꾨줈洹몃옩 ?섏젙
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -101,7 +101,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 삭제
+     * ?꾨줈洹몃옩 ??젣
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -110,7 +110,7 @@ public class ProgramService {
     }
 
     /**
-     * 프로그램 목록 멀티 삭제
+     * ?꾨줈洹몃옩 紐⑸줉 硫????젣
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)

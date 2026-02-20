@@ -26,23 +26,23 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 도움말을 처리하는 비즈니스 구현 클래스
+ * ?꾩?留먯쓣 泥섎━?섎뒗 鍮꾩쫰?덉뒪 援ы쁽 ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2011.09.28  서준식          return값 오류 수정
- *   2016.08.02  김연호          표준프레임워크 3.6 개선
- *   2025.08.21  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2011.09.28  ?쒖???         return媛??ㅻ쪟 ?섏젙
+ *   2016.08.02  源?고샇          ?쒖??꾨젅?꾩썙??3.6 媛쒖꽑
+ *   2025.08.21  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -64,14 +64,14 @@ public class EgovHpcmController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 도움말내용 목록을 조회한다. (pageing)
+	 * ?꾩?留먮궡??紐⑸줉??議고쉶?쒕떎. (pageing)
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olh/hpc/EgovHpcmList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "도움말", order = 520, gid = 50)
+	@IncludedInfo(name = "?꾩?留?, order = 520, gid = 50)
 	@RequestMapping(value = "/uss/olh/hpc/selectHpcmList.do")
 	public String selectHpcmList(@ModelAttribute("searchVO") HpcmVO searchVO, ModelMap model) throws Exception {
 
@@ -100,7 +100,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말내용 목록에 대한 상세정보를 조회한다.
+	 * ?꾩?留먮궡??紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param hpcmManageVO
 	 * @param searchVO
@@ -120,7 +120,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말내용를 등록하기 위한 전 처리(공통코드 처리)
+	 * ?꾩?留먮궡?⑸? ?깅줉?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -130,7 +130,7 @@ public class EgovHpcmController {
 	@RequestMapping("/uss/olh/hpc/insertHpcmView.do")
 	public String insertHpcmView(@ModelAttribute("searchVO") HpcmVO searchVO, Model model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM021");
 
@@ -144,7 +144,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말내용를 등록한다.
+	 * ?꾩?留먮궡?⑸? ?깅줉?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param hpcmVO
@@ -160,13 +160,13 @@ public class EgovHpcmController {
 			return "egovframework/com/uss/olh/hpc/EgovHpcmRegist";
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		hpcmVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		hpcmVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		hpcmVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		hpcmVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovHpcmService.insertHpcm(hpcmVO);
 
@@ -174,7 +174,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말내용를 수정하기 위한 전 처리(공통코드 처리)
+	 * ?꾩?留먮궡?⑸? ?섏젙?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶 泥섎━)
 	 * 
 	 * @param hpcmId
 	 * @param searchVO
@@ -186,7 +186,7 @@ public class EgovHpcmController {
 	public String updateHpcmView(@RequestParam("hpcmId") String hpcmId, @ModelAttribute("searchVO") HpcmVO searchVO,
 			ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO vo = new ComDefaultCodeVO();
 		vo.setCodeId("COM021");
 
@@ -202,7 +202,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말을 수정한다.
+	 * ?꾩?留먯쓣 ?섏젙?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param hpcmVO
@@ -221,7 +221,7 @@ public class EgovHpcmController {
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		hpcmVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		hpcmVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 		egovHpcmService.updateHpcm(hpcmVO);
 
 		return "forward:/uss/olh/hpc/selectHpcmList.do";
@@ -229,7 +229,7 @@ public class EgovHpcmController {
 	}
 
 	/**
-	 * 도움말을 삭제한다.
+	 * ?꾩?留먯쓣 ??젣?쒕떎.
 	 * 
 	 * @param hpcmVO
 	 * @param searchVO

@@ -27,7 +27,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>				
 	</resultMap> 
 	
-	<!-- 메모할일::목록조회 -->
+	<!-- 硫붾え?좎씪::紐⑸줉議고쉶 -->
 	<select id="selectMemoTodoList" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodoVO" resultMap="MemoTodoList">
 	 
 		SELECT 
@@ -71,7 +71,7 @@
 
 	</select>
 	
-	<!-- 메모할일::목록조회 Count -->
+	<!-- 硫붾え?좎씪::紐⑸줉議고쉶 Count -->
 	<select id="selectMemoTodoListCnt" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodoVO" resultType="java.lang.Integer">
 	 
 		SELECT 
@@ -102,7 +102,7 @@
 
 	</select>
 	
-	<!-- 메모할일::상세보기 -->
+	<!-- 硫붾え?좎씪::?곸꽭蹂닿린 -->
 	<select id="selectMemoTodo" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodoVO" resultMap="MemoTodoDetail">
 		SELECT 
 			A.TODO_ID,
@@ -124,7 +124,7 @@
 		WHERE A.TODO_ID = #{todoId}
 	</select>
 	
-	<!-- 메모할일::수정  -->
+	<!-- 硫붾え?좎씪::?섏젙  -->
 	<update id="updateMemoTodo" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodo"> 
 		UPDATE COMTNMEMOTODO 
 		SET  
@@ -137,7 +137,7 @@
 		WHERE TODO_ID = #{todoId}
 	</update>
 	
-	<!-- 메모할일::삭제  -->
+	<!-- 硫붾え?좎씪::??젣  -->
 	<delete id="deleteMemoTodo" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodo"> 
 		
 			DELETE FROM COMTNMEMOTODO 
@@ -145,7 +145,7 @@
 		
 	</delete>
 	
-	<!-- 메모할일::입력  -->
+	<!-- 硫붾え?좎씪::?낅젰  -->
 	<insert id="insertMemoTodo" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodo">
 	 
 	 
@@ -177,7 +177,7 @@
 	</insert>
 	
 	
-	<!-- 메모할일::오늘의 할일 목록조회 -->
+	<!-- 硫붾え?좎씪::?ㅻ뒛???좎씪 紐⑸줉議고쉶 -->
 	<select id="selectMemoTodoListToday" parameterType="egovframework.com.cop.smt.mtm.service.MemoTodoVO" resultMap="MemoTodoList">
 	 
 		SELECT 

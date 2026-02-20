@@ -3,21 +3,21 @@ package egovframework.com.sym.cal.service;
 import java.io.Serializable;
 
 /**
- * 휴일 VO 클래스
+ * ?댁씪 VO ?대옒??
  * 
- * @author 공통서비스 개발팀 이중호
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
- *   2024.10.29  권태성          날짜 검색 시 검색어를 DB에 저장된 포맷으로 변환하여 반환
- *   2025.07.04  이백행          컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UselessParentheses(불필요한 괄호사용)
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
+ *   2024.10.29  沅뚰깭??         ?좎쭨 寃????寃?됱뼱瑜?DB????λ맂 ?щ㎎?쇰줈 蹂?섑븯??諛섑솚
+ *   2025.07.04  ?대갚??         而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UselessParentheses(遺덊븘?뷀븳 愿꾪샇?ъ슜)
  *
  *      </pre>
  */
@@ -25,22 +25,22 @@ public class RestdeVO extends Restde implements Serializable {
 
 	private static final long serialVersionUID = 2548377950888283294L;
 
-	/** 검색조건 */
+	/** 寃?됱“嫄?*/
 	private String searchCondition = "";
 
-	/** 검색Keyword */
+	/** 寃?덷eyword */
 	private String searchKeyword = "";
 
-	/** 검색사용여부 */
+	/** 寃?됱궗?⑹뿬遺 */
 	private String searchUseYn = "";
 
-	/** 현재페이지 */
+	/** ?꾩옱?섏씠吏 */
 	private int pageIndex = 1;
 
-	/** 페이지개수 */
+	/** ?섏씠吏媛쒖닔 */
 	private int pageUnit = 10;
 
-	/** 페이지사이즈 */
+	/** ?섏씠吏?ъ씠利?*/
 	private int pageSize = 10;
 
 	/** firstIndex */
@@ -53,7 +53,7 @@ public class RestdeVO extends Restde implements Serializable {
 	private int recordCountPerPage = 10;
 
 	/**
-	 * searchCondition attribute 를 리턴한다.
+	 * searchCondition attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -62,7 +62,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * searchCondition attribute 값을 설정한다.
+	 * searchCondition attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchCondition String
 	 */
@@ -71,7 +71,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 를 리턴한다.
+	 * searchKeyword attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -80,7 +80,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * searchKeyword attribute 값을 설정한다.
+	 * searchKeyword attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchKeyword String
 	 */
@@ -89,7 +89,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * 날짜 검색 시 검색어를 DB에 저장된 포맷으로 변환하여 반환
+	 * ?좎쭨 寃????寃?됱뼱瑜?DB????λ맂 ?щ㎎?쇰줈 蹂?섑븯??諛섑솚
 	 * 
 	 * @return
 	 */
@@ -98,7 +98,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 를 리턴한다.
+	 * searchUseYn attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return String
 	 */
@@ -107,7 +107,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * searchUseYn attribute 값을 설정한다.
+	 * searchUseYn attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param searchUseYn String
 	 */
@@ -116,7 +116,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 를 리턴한다.
+	 * pageIndex attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -125,7 +125,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageIndex attribute 값을 설정한다.
+	 * pageIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageIndex int
 	 */
@@ -134,7 +134,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 를 리턴한다.
+	 * pageUnit attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -143,7 +143,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageUnit attribute 값을 설정한다.
+	 * pageUnit attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageUnit int
 	 */
@@ -152,7 +152,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 를 리턴한다.
+	 * pageSize attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -161,7 +161,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * pageSize attribute 값을 설정한다.
+	 * pageSize attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param pageSize int
 	 */
@@ -170,7 +170,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 를 리턴한다.
+	 * firstIndex attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -179,7 +179,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * firstIndex attribute 값을 설정한다.
+	 * firstIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param firstIndex int
 	 */
@@ -188,7 +188,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 를 리턴한다.
+	 * lastIndex attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -197,7 +197,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * lastIndex attribute 값을 설정한다.
+	 * lastIndex attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param lastIndex int
 	 */
@@ -206,7 +206,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 를 리턴한다.
+	 * recordCountPerPage attribute 瑜?由ы꽩?쒕떎.
 	 * 
 	 * @return int
 	 */
@@ -215,7 +215,7 @@ public class RestdeVO extends Restde implements Serializable {
 	}
 
 	/**
-	 * recordCountPerPage attribute 값을 설정한다.
+	 * recordCountPerPage attribute 媛믪쓣 ?ㅼ젙?쒕떎.
 	 * 
 	 * @param recordCountPerPage int
 	 */

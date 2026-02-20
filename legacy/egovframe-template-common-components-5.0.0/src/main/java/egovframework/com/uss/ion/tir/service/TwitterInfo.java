@@ -6,51 +6,51 @@ import java.util.Date;
 import egovframework.com.cmm.ComDefaultVO;
 
 /**
- * 트위터수신 Model and VO Class 구현
- * @author 공통서비스 장동한
+ * ?몄쐞?곗닔??Model and VO Class 援ы쁽
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2010.06.16
  * @version 1.0
  * @see <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.07.03  장동한          최초 생성
+ *   2009.07.03  ?λ룞??         理쒖큹 ?앹꽦
  * 
  * </pre>
  */
 @SuppressWarnings("serial")
 public class TwitterInfo extends ComDefaultVO implements Serializable{
  
-	/** 트위터 아이디 */
+	/** ?몄쐞???꾩씠??*/
 	private Long twitterId;
 	
-	/** 트위터 비밀번호 */
+	/** ?몄쐞??鍮꾨?踰덊샇 */
 	private String twitterPw;
 	
-	/** 트위터 이름 */
+	/** ?몄쐞???대쫫 */
 	private String twitterNmae;
 	
-	/** 트위터 스크린명 */
+	/** ?몄쐞???ㅽ겕由곕챸 */
 	private String twitterScreenName;
 	
-	/** 트위터 URL */
+	/** ?몄쐞??URL */
 	private String twitterURL;
 	
-	/** 트위터 텍스트 */
+	/** ?몄쐞???띿뒪??*/
 	private String twitterText;
 	
-	/** 트위터 등록일 */
+	/** ?몄쐞???깅줉??*/
 	private Date twitterCreatedAt;
 	
-	/** 트위터 프로파일 이미지명 */
+	/** ?몄쐞???꾨줈?뚯씪 ?대?吏紐?*/
 	private String twitterProfileImageURL;
 	
-	/** 트위터 소스 */
+	/** ?몄쐞???뚯뒪 */
 	 private String twitterSource;
 	 
-	 /** 등록한 트윗 아이디*/
-	 /* 2023 08 23 추가*/
+	 /** ?깅줉???몄쐵 ?꾩씠??/
+	 /* 2023 08 23 異붽?*/
 	 private Long twitterTweetId;
 
 	public Long getTwitterTweetId() {

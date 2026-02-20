@@ -38,22 +38,22 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
- * 상담내용을 처리하는 컨트롤러 클래스
+ * ?곷떞?댁슜??泥섎━?섎뒗 而⑦듃濡ㅻ윭 ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.08.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
- *   2025.08.22  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessarySemicolon(필요없는 ; 문장 존재)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.08.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
+ *   2025.08.22  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessarySemicolon(?꾩슂?녿뒗 ; 臾몄옣 議댁옱)
  *
  *      </pre>
  */
@@ -72,7 +72,7 @@ public class EgovCnsltManageController {
 	@Resource(name = "EgovCmmUseService")
 	private EgovCmmUseService cmmUseService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -84,7 +84,7 @@ public class EgovCnsltManageController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 개별 배포시 메인메뉴를 조회한다.
+	 * 媛쒕퀎 諛고룷??硫붿씤硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param model
 	 * @return "/uss/sam/cpy/"
@@ -96,7 +96,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 메뉴를 조회한다.
+	 * 硫붾돱瑜?議고쉶?쒕떎.
 	 * 
 	 * @param model
 	 * @return "/uss/sam/cpy/EgovLeft"
@@ -108,14 +108,14 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보 목록을 조회한다. (pageing)
+	 * ?곷떞?뺣낫 紐⑸줉??議고쉶?쒕떎. (pageing)
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olp/cns/EgovCnsltListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "상담관리", order = 580, gid = 50)
+	@IncludedInfo(name = "?곷떞愿由?, order = 580, gid = 50)
 	@RequestMapping(value = "/uss/olp/cns/CnsltListInqire.do")
 	public String selectCnsltList(@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO, ModelMap model)
 			throws Exception {
@@ -137,7 +137,7 @@ public class EgovCnsltManageController {
 		List<EgovMap> resultList = cnsltManageService.selectCnsltList(searchVO);
 		model.addAttribute("resultList", resultList);
 
-		// 인증여부 체크
+		// ?몄쬆?щ? 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		// isAuthenticated = false;
@@ -160,7 +160,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보 목록에 대한 상세정보를 조회한다.
+	 * ?곷떞?뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param passwordConfirmAt
 	 * @param cnsltManageVO
@@ -177,12 +177,12 @@ public class EgovCnsltManageController {
 
 		CnsltManageVO vo = cnsltManageService.selectCnsltListDetail(cnsltManageVO);
 
-		vo.setPasswordConfirmAt(passwordConfirmAt); // 작성비밀번호 확인여부
+		vo.setPasswordConfirmAt(passwordConfirmAt); // ?묒꽦鍮꾨?踰덊샇 ?뺤씤?щ?
 
-		// 작성 비밀번호를 얻는다.
+		// ?묒꽦 鍮꾨?踰덊샇瑜??삳뒗??
 		String writngPassword = vo.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 복호화한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 蹂듯샇?뷀븳??
 		vo.setWritngPassword(EgovFileScrty.decode(writngPassword));
 
 		model.addAttribute("result", vo);
@@ -191,7 +191,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * Q&A 조회수를 수정처리 한다.
+	 * Q&A 議고쉶?섎? ?섏젙泥섎━ ?쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -209,7 +209,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 로그인이나 실명확인 처리를 한다.
+	 * 濡쒓렇?몄씠???ㅻ챸?뺤씤 泥섎━瑜??쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -227,7 +227,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보를 등록하기 위한 전 처리(인증체크)
+	 * ?곷떞?뺣낫瑜??깅줉?섍린 ?꾪븳 ??泥섎━(?몄쬆泥댄겕)
 	 * 
 	 * @param searchVO
 	 * @param cnsltManageVO
@@ -239,7 +239,7 @@ public class EgovCnsltManageController {
 	public String insertCnsltDtlsView(@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO,
 			CnsltManageVO cnsltManageVO, Model model) throws Exception {
 
-		// 인증여부 체크
+		// ?몄쬆?щ? 泥댄겕
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 
 		// isAuthenticated = false;
@@ -252,14 +252,14 @@ public class EgovCnsltManageController {
 
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		String wrterNm = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()); // 사용자명
-		String emailAdres = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getEmail()); // email 주소
+		String wrterNm = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getName()); // ?ъ슜?먮챸
+		String emailAdres = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getEmail()); // email 二쇱냼
 
-		cnsltManageVO.setWrterNm(wrterNm); // 작성자명
-		cnsltManageVO.setEmailAdres(emailAdres); // email 주소
+		cnsltManageVO.setWrterNm(wrterNm); // ?묒꽦?먮챸
+		cnsltManageVO.setEmailAdres(emailAdres); // email 二쇱냼
 
 		model.addAttribute("result", cnsltManageVO);
 
@@ -267,7 +267,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보를 등록한다.
+	 * ?곷떞?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -279,7 +279,7 @@ public class EgovCnsltManageController {
 	 */
 	@SuppressWarnings("deprecation")
 	@RequestMapping("/uss/olp/cns/CnsltDtlsRegist.do")
-	public String insertCnsltDtls(final MultipartHttpServletRequest multiRequest, // 첨부파일을 위한...
+	public String insertCnsltDtls(final MultipartHttpServletRequest multiRequest, // 泥⑤??뚯씪???꾪븳...
 			@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO,
 			@ModelAttribute("cnsltManageVO") CnsltManageVO cnsltManageVO, BindingResult bindingResult, ModelMap model)
 			throws Exception {
@@ -290,7 +290,7 @@ public class EgovCnsltManageController {
 
 		}
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -299,25 +299,25 @@ public class EgovCnsltManageController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "CNSLT_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		cnsltManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		cnsltManageVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		cnsltManageVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		cnsltManageVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		cnsltManageVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		cnsltManageVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
-		// 작성비밀번호를 암호화 하기 위해서 Get
-		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 보안약점 조치
-																									// (2018-10-29, 윤창원)
+		// ?묒꽦鍮꾨?踰덊샇瑜??뷀샇???섍린 ?꾪빐??Get
+		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 蹂댁븞?쎌젏 議곗튂
+																									// (2018-10-29, ?ㅼ갹??
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 암호화 한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 ?뷀샇???쒕떎.
 		cnsltManageVO.setWritngPassword(EgovFileScrty.encode(writngPassword));
 
 		cnsltManageService.insertCnsltDtls(cnsltManageVO);
@@ -326,7 +326,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 작성 비밀번호를 확인하기 위한 전 처리
+	 * ?묒꽦 鍮꾨?踰덊샇瑜??뺤씤?섍린 ?꾪븳 ??泥섎━
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -344,7 +344,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 작성 비밀번호를 확인한다.
+	 * ?묒꽦 鍮꾨?踰덊샇瑜??뺤씤?쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -357,28 +357,28 @@ public class EgovCnsltManageController {
 	public String selectPasswordConfirm(CnsltManageVO cnsltManageVO,
 			@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO, Model model) throws Exception {
 
-		// 작성비밀번호를 암호화 하기 위해서 Get
-		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 보안약점 조치
-																									// (2018-10-29, 윤창원)
+		// ?묒꽦鍮꾨?踰덊샇瑜??뷀샇???섍린 ?꾪빐??Get
+		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 蹂댁븞?쎌젏 議곗튂
+																									// (2018-10-29, ?ㅼ갹??
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 암호화 한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 ?뷀샇???쒕떎.
 		cnsltManageVO.setWritngPassword(EgovFileScrty.encode(writngPassword));
 
 		int searchCnt = cnsltManageService.selectCnsltPasswordConfirmCnt(cnsltManageVO);
 
-		if (searchCnt > 0) { // 작성 비밀번호가 일치하는 경우
+		if (searchCnt > 0) { // ?묒꽦 鍮꾨?踰덊샇媛 ?쇱튂?섎뒗 寃쎌슦
 
-			// 상담정보를 수정할 수 있는 화면으로 이동.
+			// ?곷떞?뺣낫瑜??섏젙?????덈뒗 ?붾㈃?쇰줈 ?대룞.
 			return "forward:/uss/olp/cns/CnsltDtlsUpdtView.do";
 
-		} else { // 작성비밀번호가 틀린경우
+		} else { // ?묒꽦鍮꾨?踰덊샇媛 ?由곌꼍??
 
-			// 작성비밀번호 확인 결과 세팅.
+			// ?묒꽦鍮꾨?踰덊샇 ?뺤씤 寃곌낵 ?명똿.
 			// cnsltManageVO.setPasswordConfirmAt("N");
 
 			String passwordConfirmAt = "N";
 
-			// Q&A 상세조회 화면으로 이동.
+			// Q&A ?곸꽭議고쉶 ?붾㈃?쇰줈 ?대룞.
 			return "forward:/uss/olp/cns/CnsltDetailInqire.do?passwordConfirmAt=" + passwordConfirmAt;
 
 		}
@@ -386,7 +386,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보를 수정하기 위한 전 처리(비밀번호 복호화)
+	 * ?곷떞?뺣낫瑜??섏젙?섍린 ?꾪븳 ??泥섎━(鍮꾨?踰덊샇 蹂듯샇??
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -401,23 +401,23 @@ public class EgovCnsltManageController {
 
 		CnsltManageVO vo = cnsltManageService.selectCnsltListDetail(cnsltManageVO);
 
-		// 작성 비밀번호를 얻는다.
+		// ?묒꽦 鍮꾨?踰덊샇瑜??삳뒗??
 		String writngPassword = vo.getWritngPassword();
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 복호화한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 蹂듯샇?뷀븳??
 		vo.setWritngPassword(EgovFileScrty.decode(writngPassword));
 
-		// 복호화된 패스워드를 넘긴다..
+		// 蹂듯샇?붾맂 ?⑥뒪?뚮뱶瑜??섍릿??.
 		model.addAttribute("cnsltManageVO", vo);
 
-		// result에도 세팅(jstl 사용을 위해)
+		// result?먮룄 ?명똿(jstl ?ъ슜???꾪빐)
 		model.addAttribute(selectCnsltListDetail("Y", cnsltManageVO, searchVO, model));
 
 		return "egovframework/com/uss/olp/cns/EgovCnsltDtlsUpdt";
 	}
 
 	/**
-	 * 상담정보를 수정처리한다.
+	 * ?곷떞?뺣낫瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param atchFileAt
 	 * @param multiRequest
@@ -441,7 +441,7 @@ public class EgovCnsltManageController {
 
 		}
 
-		// 첨부파일 관련 ID 생성 start....
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 		String atchFileId = cnsltManageVO.getAtchFileId();
 
 		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -453,8 +453,8 @@ public class EgovCnsltManageController {
 				List<FileVO> fvoList = fileUtil.parseFileInf(files, "CNSLT_", 0, atchFileId, "");
 				atchFileId = fileMngService.insertFileInfs(fvoList);
 
-				// 첨부파일 ID 셋팅
-				cnsltManageVO.setAtchFileId(atchFileId); // 첨부파일 ID
+				// 泥⑤??뚯씪 ID ?뗮똿
+				cnsltManageVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			} else {
 				FileVO fvo = new FileVO();
@@ -464,20 +464,20 @@ public class EgovCnsltManageController {
 				fileMngService.updateFileInfs(fvoList);
 			}
 		}
-		// 첨부파일 관련 ID 생성 end...
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 end...
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		cnsltManageVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		cnsltManageVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
-		// 작성비밀번호를 암호화 하기 위해서 Get
-		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 보안약점 조치
-																									// (2018-10-29, 윤창원)
+		// ?묒꽦鍮꾨?踰덊샇瑜??뷀샇???섍린 ?꾪빐??Get
+		String writngPassword = EgovStringUtil.isNullToString(cnsltManageVO.getWritngPassword());// KISA 蹂댁븞?쎌젏 議곗튂
+																									// (2018-10-29, ?ㅼ갹??
 
-		// EgovFileScrty Util에 있는 암호화 모듈을 적용해서 암호화 한다.
+		// EgovFileScrty Util???덈뒗 ?뷀샇??紐⑤뱢???곸슜?댁꽌 ?뷀샇???쒕떎.
 		cnsltManageVO.setWritngPassword(EgovFileScrty.encode(writngPassword));
 
 		cnsltManageService.updateCnsltDtls(cnsltManageVO);
@@ -487,7 +487,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * 상담정보를 삭제처리한다.
+	 * ?곷떞?뺣낫瑜???젣泥섎━?쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -499,45 +499,45 @@ public class EgovCnsltManageController {
 			@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO) throws Exception {
 
 		// --------------------------------------------------------------------------------------------
-		// @ XSS 사용자권한체크 START
-		// param1 : 사용자고유ID(uniqId,esntlId)
+		// @ XSS ?ъ슜?먭텒?쒖껜??START
+		// param1 : ?ъ슜?먭퀬?쟅D(uniqId,esntlId)
 		// --------------------------------------------------------
-		LOGGER.debug("@ XSS 권한체크 START ----------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 START ----------------------------------------------");
 
-		// step1 DB에서 해당 게시물의 uniqId 조회
+		// step1 DB?먯꽌 ?대떦 寃뚯떆臾쇱쓽 uniqId 議고쉶
 		CnsltManageVO vo = cnsltManageService.selectCnsltListDetail(cnsltManageVO);
 
-		// step2 EgovXssChecker 공통모듈을 이용한 권한체크
+		// step2 EgovXssChecker 怨듯넻紐⑤뱢???댁슜??沅뚰븳泥댄겕
 		EgovXssChecker.checkerUserXss(request, vo.getFrstRegisterId());
-		LOGGER.debug("@ XSS 권한체크 END ------------------------------------------------");
+		LOGGER.debug("@ XSS 沅뚰븳泥댄겕 END ------------------------------------------------");
 		// --------------------------------------------------------
-		// @ XSS 사용자권한체크 END
+		// @ XSS ?ъ슜?먭텒?쒖껜??END
 		// --------------------------------------------------------------------------------------------
 
-		// 첨부파일 삭제를 위한 ID 생성 start....
+		// 泥⑤??뚯씪 ??젣瑜??꾪븳 ID ?앹꽦 start....
 		String atchFileId = cnsltManageVO.getAtchFileId();
 
 		cnsltManageService.deleteCnsltDtls(cnsltManageVO);
 
-		// 첨부파일을 삭제하기 위한 Vo
+		// 泥⑤??뚯씪????젣?섍린 ?꾪븳 Vo
 		FileVO fvo = new FileVO();
 		fvo.setAtchFileId(atchFileId);
 
 		fileMngService.deleteAllFileInf(fvo);
-		// 첨부파일 삭제 End.............
+		// 泥⑤??뚯씪 ??젣 End.............
 
 		return "forward:/uss/olp/cns/CnsltListInqire.do";
 	}
 
 	/**
-	 * Q&A답변정보 목록을 조회한다. (pageing)
+	 * Q&A?듬??뺣낫 紐⑸줉??議고쉶?쒕떎. (pageing)
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/olp/cns/EgovCnsltAnswerListInqire"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "상담답변관리", order = 581, gid = 50)
+	@IncludedInfo(name = "?곷떞?듬?愿由?, order = 581, gid = 50)
 	@RequestMapping(value = "/uss/olp/cnm/CnsltAnswerListInqire.do")
 	public String selectCnsltAnswerList(@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO, ModelMap model)
 			throws Exception {
@@ -567,7 +567,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * Q&A답변정보 목록에 대한 상세정보를 조회한다.
+	 * Q&A?듬??뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -587,7 +587,7 @@ public class EgovCnsltManageController {
 	}
 
 	/**
-	 * Q&A답변정보를 수정하기 위한 전 처리(공통코드처리)
+	 * Q&A?듬??뺣낫瑜??섏젙?섍린 ?꾪븳 ??泥섎━(怨듯넻肄붾뱶泥섎━)
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -599,21 +599,21 @@ public class EgovCnsltManageController {
 	public String updateCnsltDtlsAnswerView(CnsltManageVO cnsltManageVO,
 			@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO, ModelMap model) throws Exception {
 
-		// 공통코드를 가져오기 위한 Vo
+		// 怨듯넻肄붾뱶瑜?媛?몄삤湲??꾪븳 Vo
 		ComDefaultCodeVO comDefaultCodeVO = new ComDefaultCodeVO();
 		comDefaultCodeVO.setCodeId("COM028");
 
 		List<CmmnDetailCode> resultList = cmmUseService.selectCmmCodeDetail(comDefaultCodeVO);
 		model.addAttribute("resultList", resultList);
 
-		// 변수명은 CoC 에 따라
+		// 蹂?섎챸? CoC ???곕씪
 		model.addAttribute(selectCnsltAnswerListDetail(cnsltManageVO, searchVO, model));
 
 		return "egovframework/com/uss/olp/cns/EgovCnsltDtlsAnswerUpdt";
 	}
 
 	/**
-	 * Q&A답변정보를 수정처리한다.
+	 * Q&A?듬??뺣낫瑜??섏젙泥섎━?쒕떎.
 	 * 
 	 * @param cnsltManageVO
 	 * @param searchVO
@@ -624,12 +624,12 @@ public class EgovCnsltManageController {
 	public String updateCnsltDtlsAnswer(CnsltManageVO cnsltManageVO,
 			@ModelAttribute("searchVO") CnsltManageDefaultVO searchVO) throws Exception {
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		cnsltManageVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		cnsltManageVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		cnsltManageService.updateCnsltDtlsAnswer(cnsltManageVO);
 

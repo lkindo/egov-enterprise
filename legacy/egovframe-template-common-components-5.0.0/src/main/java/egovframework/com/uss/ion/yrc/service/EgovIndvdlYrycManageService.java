@@ -3,12 +3,12 @@ package egovframework.com.uss.ion.yrc.service;
 import java.util.List;
 
 /**
- * 개요
- * - 개인연차관리에 대한 Service Interface를 정의한다.
+ * 媛쒖슂
+ * - 媛쒖씤?곗감愿由ъ뿉 ???Service Interface瑜??뺤쓽?쒕떎.
  *
- * 상세내용
- * - 개인연차관리에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * @author 이기하
+ * ?곸꽭?댁슜
+ * - 媛쒖씤?곗감愿由ъ뿉 ????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * @author ?닿린??
  * @version 1.0
  * @created 2014.11.14
  */
@@ -16,32 +16,32 @@ import java.util.List;
 public interface EgovIndvdlYrycManageService {
 
 	/**
-	 * 개인연차를 조회처리한다.
-	 * @param indvdlYrycManage - 개인연차관리 model
+	 * 媛쒖씤?곗감瑜?議고쉶泥섎━?쒕떎.
+	 * @param indvdlYrycManage - 媛쒖씤?곗감愿由?model
 	 */
 	public List<IndvdlYrycManage> selectIndvdlYrycManageList(IndvdlYrycManage indvdlYrycManage) throws Exception;
 
 	/**
-	 * 연차목록 총 개수를 조회한다.
-	 * @param indvdlYrycManage - 개인연차관리 model
+	 * ?곗감紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param indvdlYrycManage - 媛쒖씤?곗감愿由?model
 	 */
 	public int selectIndvdlYrycManageListTotCnt(IndvdlYrycManage indvdlYrycManage) throws Exception;
 
 	/**
-	 * 개인연차를 입력처리한다.
-	 * @param indvdlYrycManage - 개인연차관리 model
+	 * 媛쒖씤?곗감瑜??낅젰泥섎━?쒕떎.
+	 * @param indvdlYrycManage - 媛쒖씤?곗감愿由?model
 	 */
 	public void insertIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception;
 
 	/**
-	 * 개인연차를 수정한다.
-	 * @param indvdlYrycManage - 개인연차관리 model
+	 * 媛쒖씤?곗감瑜??섏젙?쒕떎.
+	 * @param indvdlYrycManage - 媛쒖씤?곗감愿由?model
 	 */
 	public void updtIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception;
 
 	/**
-	 * 개인연차를 삭제한다.
-	 * @param indvdlYrycManage - 개인연차관리 model
+	 * 媛쒖씤?곗감瑜???젣?쒕떎.
+	 * @param indvdlYrycManage - 媛쒖씤?곗감愿由?model
 	 */
 	public void deleteIndvdlYrycManage(IndvdlYrycManage indvdlYrycManage) throws Exception;
 

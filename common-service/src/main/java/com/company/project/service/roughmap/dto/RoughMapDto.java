@@ -13,40 +13,40 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "약도 정보 DTO")
+@Schema(description = "Description")
 public class RoughMapDto {
 
-    @Schema(description = "약도 ID")
+    @Schema(description = "Description")
     private String roughMapId;
 
-    @Schema(description = "약도 제목")
+    @Schema(description = "Description")
     private String roughMapSj;
 
-    @Schema(description = "약도 주소")
+    @Schema(description = "Description")
     private String roughMapAddress;
 
-    @Schema(description = "위도")
+    @Schema(description = "Description")
     private String la;
 
-    @Schema(description = "경도")
+    @Schema(description = "Description")
     private String lo;
 
-    @Schema(description = "마커 위도")
+    @Schema(description = "Description")
     private String markerLa;
 
-    @Schema(description = "마커 경도")
+    @Schema(description = "Description")
     private String markerLo;
 
-    @Schema(description = "정보 창 내용")
+    @Schema(description = "Description")
     private String infoWindow;
 
-    @Schema(description = "줌 레벨")
+    @Schema(description = "Description")
     private String zoomLevel;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static RoughMapDto from(RoughMap entity) {

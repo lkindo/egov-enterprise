@@ -3,19 +3,19 @@ package egovframework.com.uss.sam.ipm.service;
 import java.io.Serializable;
 
 /**
- * 개인정보보호정책 VO Class 구현
+ * 媛쒖씤?뺣낫蹂댄샇?뺤콉 VO Class 援ы쁽
  * 
- * @author 공통서비스 장동한
+ * @author 怨듯넻?쒕퉬???λ룞??
  * @since 2009.07.03
  * @version 1.0
  * @see
  * 
  *      <pre>
- * &lt;&lt; 개정이력(Modification Information) &gt;&gt;
+ * &lt;&lt; 媛쒖젙?대젰(Modification Information) &gt;&gt;
  *
- *   수정일          수정자       수정내용
+ *   ?섏젙??         ?섏젙??      ?섏젙?댁슜
  *  -----------    --------    ---------------------------
- *   2009.07.03     장동한       최초 생성
+ *   2009.07.03     ?λ룞??      理쒖큹 ?앹꽦
  *
  *      </pre>
  */
@@ -23,35 +23,35 @@ public class IndvdlInfoPolicy implements Serializable {
 
 	private static final long serialVersionUID = 2087042986899364386L;
 
-	/** 개인정보보호정책 아이디 */
+	/** 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?꾩씠??*/
 	private String indvdlInfoId;
 
-	/** 개인정보보호정책 명 */
+	/** 媛쒖씤?뺣낫蹂댄샇?뺤콉 紐?*/
 	private String indvdlInfoNm;
 
-	/** 개인정보보호정책 내용 */
+	/** 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?댁슜 */
 	private String indvdlInfoDc;
 
-	/** 개인정보보호정책 동의여부 */
+	/** 媛쒖씤?뺣낫蹂댄샇?뺤콉 ?숈쓽?щ? */
 	private String indvdlInfoYn;
 
-	/** 최초등록시점 */
+	/** 理쒖큹?깅줉?쒖젏 */
 	private String frstRegisterPnttm;
 
-	/** 최초등록아이디 */
+	/** 理쒖큹?깅줉?꾩씠??*/
 	private String frstRegisterId;
 
-	/** 최종수정일 */
+	/** 理쒖쥌?섏젙??*/
 	private String lastUpdusrPnttm;
 
-	/** 최종수정자 아이디 */
+	/** 理쒖쥌?섏젙???꾩씠??*/
 	private String lastUpdusrId;
 
-	/** 컨트롤 명령어 */
+	/** 而⑦듃濡?紐낅졊??*/
 	private String cmd;
 
 	/**
-	 * indvdlInfoId 리턴
+	 * indvdlInfoId 由ы꽩
 	 *
 	 * @return the indvdlInfoId
 	 */
@@ -60,7 +60,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoId 설정
+	 * indvdlInfoId ?ㅼ젙
 	 *
 	 * @param indvdlInfoId the indvdlInfoId to set
 	 */
@@ -69,7 +69,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoNm 리턴
+	 * indvdlInfoNm 由ы꽩
 	 *
 	 * @return the indvdlInfoNm
 	 */
@@ -78,7 +78,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoNm 설정
+	 * indvdlInfoNm ?ㅼ젙
 	 *
 	 * @param indvdlInfoNm the indvdlInfoNm to set
 	 */
@@ -87,7 +87,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoDc 리턴
+	 * indvdlInfoDc 由ы꽩
 	 *
 	 * @return the indvdlInfoDc
 	 */
@@ -96,7 +96,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoDc 설정
+	 * indvdlInfoDc ?ㅼ젙
 	 *
 	 * @param indvdlInfoDc the indvdlInfoDc to set
 	 */
@@ -105,7 +105,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoYn 리턴
+	 * indvdlInfoYn 由ы꽩
 	 *
 	 * @return the indvdlInfoYn
 	 */
@@ -114,7 +114,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * indvdlInfoYn 설정
+	 * indvdlInfoYn ?ㅼ젙
 	 *
 	 * @param indvdlInfoYn the indvdlInfoYn to set
 	 */
@@ -123,7 +123,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm 리턴
+	 * frstRegisterPnttm 由ы꽩
 	 *
 	 * @return the frstRegisterPnttm
 	 */
@@ -132,7 +132,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * frstRegisterPnttm 설정
+	 * frstRegisterPnttm ?ㅼ젙
 	 *
 	 * @param frstRegisterPnttm the frstRegisterPnttm to set
 	 */
@@ -141,7 +141,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId 리턴
+	 * frstRegisterId 由ы꽩
 	 *
 	 * @return the frstRegisterId
 	 */
@@ -150,7 +150,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * frstRegisterId 설정
+	 * frstRegisterId ?ㅼ젙
 	 *
 	 * @param frstRegisterId the frstRegisterId to set
 	 */
@@ -159,7 +159,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm 리턴
+	 * lastUpdusrPnttm 由ы꽩
 	 *
 	 * @return the lastUpdusrPnttm
 	 */
@@ -168,7 +168,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrPnttm 설정
+	 * lastUpdusrPnttm ?ㅼ젙
 	 *
 	 * @param lastUpdusrPnttm the lastUpdusrPnttm to set
 	 */
@@ -177,7 +177,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId 리턴
+	 * lastUpdusrId 由ы꽩
 	 *
 	 * @return the lastUpdusrId
 	 */
@@ -186,7 +186,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * lastUpdusrId 설정
+	 * lastUpdusrId ?ㅼ젙
 	 *
 	 * @param lastUpdusrId the lastUpdusrId to set
 	 */
@@ -195,7 +195,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * cmd 리턴
+	 * cmd 由ы꽩
 	 *
 	 * @return the cmd
 	 */
@@ -204,7 +204,7 @@ public class IndvdlInfoPolicy implements Serializable {
 	}
 
 	/**
-	 * cmd 설정
+	 * cmd ?ㅼ젙
 	 *
 	 * @param cmd the cmd to set
 	 */

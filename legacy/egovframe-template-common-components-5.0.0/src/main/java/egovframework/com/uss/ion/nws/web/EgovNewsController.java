@@ -28,20 +28,20 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
- * 뉴스정보를 처리하는 Controller 클래스
+ * ?댁뒪?뺣낫瑜?泥섎━?섎뒗 Controller ?대옒??
  * 
- * @author 공통서비스 개발팀 박정규
+ * @author 怨듯넻?쒕퉬??媛쒕컻? 諛뺤젙洹?
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  박정규          최초 생성
- *   2025.08.11  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(final이 아닌 변수는 밑줄을 포함할 수 없음)
+ *   2009.04.01  諛뺤젙洹?         理쒖큹 ?앹꽦
+ *   2025.08.11  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(final???꾨땶 蹂?섎뒗 諛묒쨪???ы븿?????놁쓬)
  *
  *      </pre>
  */
@@ -55,7 +55,7 @@ public class EgovNewsController {
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
 
-	// 첨부파일 관련
+	// 泥⑤??뚯씪 愿??
 	@Resource(name = "EgovFileMngService")
 	private EgovFileMngService fileMngService;
 
@@ -67,14 +67,14 @@ public class EgovNewsController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 뉴스정보 목록을 조회한다.
+	 * ?댁뒪?뺣낫 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @param model
 	 * @return "/uss/ion/nws/EgovNewsList"
 	 * @throws Exception
 	 */
-	@IncludedInfo(name = "뉴스관리", order = 670, gid = 50)
+	@IncludedInfo(name = "?댁뒪愿由?, order = 670, gid = 50)
 	@RequestMapping(value = "/uss/ion/nws/selectNewsList.do")
 	public String selectNewsList(@ModelAttribute("searchVO") NewsVO searchVO, ModelMap model) throws Exception {
 
@@ -103,7 +103,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보 목록에 대한 상세정보를 조회한다.
+	 * ?댁뒪?뺣낫 紐⑸줉??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param newsVO
 	 * @param searchVO
@@ -123,7 +123,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보를 등록 전 단계처리
+	 * ?댁뒪?뺣낫瑜??깅줉 ???④퀎泥섎━
 	 * 
 	 * @param searchVO
 	 * @param model
@@ -140,7 +140,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보를 등록한다.
+	 * ?댁뒪?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param multiRequest
 	 * @param searchVO
@@ -154,7 +154,7 @@ public class EgovNewsController {
 			@ModelAttribute("searchVO") NewsVO searchVO, @ModelAttribute("newsVO") NewsVO newsVO,
 			BindingResult bindingResult) throws Exception {
 
-		// 첨부파일 관련 첨부파일ID 생성
+		// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
@@ -163,11 +163,11 @@ public class EgovNewsController {
 
 		if (!files.isEmpty()) {
 			fvoList = fileUtil.parseFileInf(files, "NEWS_", 0, "", "");
-			atchFileId = fileMngService.insertFileInfs(fvoList); // 파일이 생성되고나면 생성된 첨부파일 ID를 리턴한다.
+			atchFileId = fileMngService.insertFileInfs(fvoList); // ?뚯씪???앹꽦?섍퀬?섎㈃ ?앹꽦??泥⑤??뚯씪 ID瑜?由ы꽩?쒕떎.
 		}
 
-		// 리턴받은 첨부파일ID를 셋팅한다..
-		newsVO.setAtchFileId(atchFileId); // 첨부파일 ID
+		// 由ы꽩諛쏆? 泥⑤??뚯씪ID瑜??뗮똿?쒕떎..
+		newsVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 		if(bindingResult.hasErrors()){
 
@@ -175,13 +175,13 @@ public class EgovNewsController {
 
 		}
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String frstRegisterId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
 
-		newsVO.setFrstRegisterId(frstRegisterId); // 최초등록자ID
-		newsVO.setLastUpdusrId(frstRegisterId); // 최종수정자ID
+		newsVO.setFrstRegisterId(frstRegisterId); // 理쒖큹?깅줉?륤D
+		newsVO.setLastUpdusrId(frstRegisterId); // 理쒖쥌?섏젙?륤D
 
 		egovNewsService.insertNews(newsVO);
 
@@ -189,7 +189,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보를 수정하기 전 단계처리
+	 * ?댁뒪?뺣낫瑜??섏젙?섍린 ???④퀎泥섎━
 	 * 
 	 * @param newsId
 	 * @param searchVO
@@ -203,7 +203,7 @@ public class EgovNewsController {
 
 		NewsVO newsVO = new NewsVO();
 
-		// Primary Key 값 세팅
+		// Primary Key 媛??명똿
 		newsVO.setNewsId(newsId);
 		model.addAttribute("newsVO", egovNewsService.selectNewsDetail(newsVO));
 
@@ -211,7 +211,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보를 수정 처리한다
+	 * ?댁뒪?뺣낫瑜??섏젙 泥섎━?쒕떎
 	 * 
 	 * @param atchFileAt
 	 * @param multiRequest
@@ -231,7 +231,7 @@ public class EgovNewsController {
 			return "egovframework/com/uss/olh/nws/EgovNewsInfoUpdt";
 		}
 
-		// 첨부파일 관련 ID 생성 start....
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 		String atchFileId = newsVO.getAtchFileId();
 
 		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -241,7 +241,7 @@ public class EgovNewsController {
 			if ("".equals(atchFileId)) {
 				List<FileVO> fvoList = fileUtil.parseFileInf(files, "NEWS_", 0, atchFileId, "");
 				atchFileId = fileMngService.insertFileInfs(fvoList);
-				newsVO.setAtchFileId(atchFileId); // 첨부파일 ID
+				newsVO.setAtchFileId(atchFileId); // 泥⑤??뚯씪 ID
 
 			} else {
 				FileVO fvo = new FileVO();
@@ -251,13 +251,13 @@ public class EgovNewsController {
 				fileMngService.updateFileInfs(fvoList);
 			}
 		}
-		// 첨부파일 관련 ID 생성 end...
+		// 泥⑤??뚯씪 愿??ID ?앹꽦 end...
 
-		// 로그인VO에서 사용자 정보 가져오기
+		// 濡쒓렇?퇦O?먯꽌 ?ъ슜???뺣낫 媛?몄삤湲?
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		String lastUpdusrId = loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId());
-		newsVO.setLastUpdusrId(lastUpdusrId); // 최종수정자ID
+		newsVO.setLastUpdusrId(lastUpdusrId); // 理쒖쥌?섏젙?륤D
 
 		egovNewsService.updateNews(newsVO);
 
@@ -266,7 +266,7 @@ public class EgovNewsController {
 	}
 
 	/**
-	 * 뉴스정보를 삭제한다.
+	 * ?댁뒪?뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param newsVO
 	 * @param searchVO

@@ -39,9 +39,9 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 List<AddressBook> content = queryFactory
                                 .selectFrom(addressBook)
                                 .where(addressBook.useAt.eq("Y")
-                                                .and(addressBook.othbcScope.eq("회사")
+                                                .and(addressBook.othbcScope.eq("PUBLIC")
                                                                 .or(addressBook.wrterId.eq(userId))
-                                                                .or(addressBook.othbcScope.eq("부서")
+                                                                .or(addressBook.othbcScope.eq("DEPT")
                                                                                 .and(addressBook.trgetOrgnztId
                                                                                                 .eq(orgnztId)))),
                                                 searchPredicate)

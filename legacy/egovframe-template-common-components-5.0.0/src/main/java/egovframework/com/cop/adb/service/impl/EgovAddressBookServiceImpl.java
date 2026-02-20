@@ -16,19 +16,19 @@ import egovframework.com.cop.adb.service.EgovAddressBookService;
 import jakarta.annotation.Resource;
 
 /**
- * 주소록정보를 관리하기 위한 서비스 구현  클래스
- * @author 공통컴포넌트팀 윤성록
+ * 二쇱냼濡앹젙蹂대? 愿由ы븯湲??꾪븳 ?쒕퉬??援ы쁽  ?대옒??
+ * @author 怨듯넻而댄룷?뚰듃? ?ㅼ꽦濡?
  * @since 2009.09.25
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.9.25  윤성록          최초 생성
- *   2016.12.13 최두영          클래스명 변경
+ *   2009.9.25  ?ㅼ꽦濡?         理쒖큹 ?앹꽦
+ *   2016.12.13 理쒕몢??         ?대옒?ㅻ챸 蹂寃?
  *
  * </pre>
  */
@@ -46,7 +46,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     private EgovIdGnrService idgenService2;
 
     /**
-     * 주소록 목록을 조회한다.
+     * 二쇱냼濡?紐⑸줉??議고쉶?쒕떎.
      * @param AddressBookVO
      * @return  Map<String, Object>
      * @exception Exception
@@ -67,7 +67,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 주소록 정보를 조회한다.
+     * 二쇱냼濡??뺣낫瑜?議고쉶?쒕떎.
      * @param AddressBookVO
      * @return  AdressBookVO
      * @exception Exception
@@ -85,7 +85,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 주소록 정보를 삭제한다.
+     * 二쇱냼濡??뺣낫瑜???젣?쒕떎.
      * @param AddressBook
      * @return
      * @exception Exception
@@ -96,7 +96,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 사용자 목록을 조회한다.
+     * ?ъ슜??紐⑸줉??議고쉶?쒕떎.
      * @param AddressBookUserVO
      * @return Map<String, Object>
      * @exception Exception
@@ -116,7 +116,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 명함 목록을 조회한다.
+     * 紐낇븿 紐⑸줉??議고쉶?쒕떎.
      * @param AddressBookUserVO
      * @return Map<String, Object>
      * @exception Exception
@@ -136,7 +136,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 주소록 정보를 등록한다.
+     * 二쇱냼濡??뺣낫瑜??깅줉?쒕떎.
      * @param AddressBookVO
      * @return M
      * @exception Exception
@@ -157,7 +157,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 주소록 정보를 수정한다.
+     * 二쇱냼濡??뺣낫瑜??섏젙?쒕떎.
      * @param AddressBookVO
      * @return
      * @exception Exception
@@ -231,7 +231,7 @@ public class EgovAddressBookServiceImpl extends EgovAbstractServiceImpl implemen
     }
 
     /**
-     * 주소록 구성원 정보를 불러온다.
+     * 二쇱냼濡?援ъ꽦???뺣낫瑜?遺덈윭?⑤떎.
      * @param String
      * @return
      * @exception Exception

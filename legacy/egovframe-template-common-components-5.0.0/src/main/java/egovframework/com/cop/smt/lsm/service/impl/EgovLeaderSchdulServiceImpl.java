@@ -22,26 +22,26 @@ import jakarta.annotation.Resource;
 
 /**
  * <pre>
- * 개요
- * - 간부일정에 대한 ServiceImpl 클래스를 정의한다.
+ * 媛쒖슂
+ * - 媛꾨??쇱젙?????ServiceImpl ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 간부일정에 대한 등록, 수정, 삭제, 조회기능을 제공한다.
- * - 간부일정의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 媛꾨??쇱젙??????깅줉, ?섏젙, ??젣, 議고쉶湲곕뒫???쒓났?쒕떎.
+ * - 媛꾨??쇱젙??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 장철호
- * @since 28-6-2010 오전 10:59:05
+ * @author ?μ쿋??
+ * @since 28-6-2010 ?ㅼ쟾 10:59:05
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2024.10.29  이백행          @Override 표기, 불필요 형변환 제거
- *   2025.06.11  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-UnnecessaryBoxing(불필요한 박싱), SimpleDateFormatNeedsLocale(간단한 날짜 형식에 로케일이 필요합니다.)
+ *   2024.10.29  ?대갚??         @Override ?쒓린, 遺덊븘???뺣????쒓굅
+ *   2025.06.11  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-UnnecessaryBoxing(遺덊븘?뷀븳 諛뺤떛), SimpleDateFormatNeedsLocale(媛꾨떒???좎쭨 ?뺤떇??濡쒖??쇱씠 ?꾩슂?⑸땲??)
  *
  *      </pre>
  */
@@ -57,7 +57,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovLeaderSchdulServiceImpl.class);
 
 	/**
-	 * 사용자 목록을 조회한다.
+	 * ?ъ슜??紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param EmplyrVO
 	 * @return Map<String, Object>
@@ -78,7 +78,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 월별 간부일정 목록을 조회한다.
+	 * ?붾퀎 媛꾨??쇱젙 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param LeaderSchdulVO
 	 * @return List
@@ -91,7 +91,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부일정 정보를 조회한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param LeaderSchdulVO
 	 * @return LeaderSchdulVO
@@ -104,7 +104,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부일정 정보를 수정한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜??섏젙?쒕떎.
 	 * 
 	 * @param LeaderSchdul
 	 * 
@@ -119,7 +119,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부일정 정보를 등록한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param LeaderSchdul
 	 * 
@@ -136,7 +136,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부일정일자 정보를 등록한다.
+	 * 媛꾨??쇱젙?쇱옄 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param LeaderSchdul
 	 * 
@@ -144,7 +144,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	 */
 	private void insertLeaderSchdulDe(LeaderSchdul leaderSchdul) throws Exception {
 		leaderSchdul.setSchdulDe(leaderSchdul.getSchdulBgndeYYYMMDD().replaceAll("-", ""));
-		// SCHEDUL_DE 설정
+		// SCHEDUL_DE ?ㅼ젙
 		if (leaderSchdul.getSchdulBgndeYYYMMDD().equals(leaderSchdul.getSchdulEnddeYYYMMDD())
 				|| "1".equals(leaderSchdul.getReptitSeCode())) {
 			leaderSchdulDAO.insertLeaderSchdulDe(leaderSchdul);
@@ -165,7 +165,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 			String sNowDay = "";
 
 			java.util.Calendar cal = java.util.Calendar.getInstance();
-			// KISA 보안약점 조치 (2018-10-29, 윤창원)
+			// KISA 蹂댁븞?쎌젏 議곗튂 (2018-10-29, ?ㅼ갹??
 			LeaderSchdul leaderSchdulDe = null;
 			if ("2".equals(leaderSchdul.getReptitSeCode()) || "3".equals(leaderSchdul.getReptitSeCode())
 					|| "4".equals(leaderSchdul.getReptitSeCode())) {
@@ -242,7 +242,7 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부일정 정보를 삭제한다.
+	 * 媛꾨??쇱젙 ?뺣낫瑜???젣?쒕떎.
 	 * 
 	 * @param LeaderSchdul
 	 * 
@@ -255,9 +255,9 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태 목록을 조회한다.
+	 * 媛꾨??곹깭 紐⑸줉??議고쉶?쒕떎.
 	 * 
-	 * @param LeaderSttusVO - 간부상태 VO
+	 * @param LeaderSttusVO - 媛꾨??곹깭 VO
 	 * @return Map<String, Object>
 	 * 
 	 * @param leaderSttusVO
@@ -276,10 +276,10 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태 정보를 조회한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜?議고쉶?쒕떎.
 	 * 
-	 * @param LeaderSttusVO - 간부상태 VO
-	 * @return LeaderSttusVO - 간부상태 VO
+	 * @param LeaderSttusVO - 媛꾨??곹깭 VO
+	 * @return LeaderSttusVO - 媛꾨??곹깭 VO
 	 * 
 	 * @param leaderSttusVO
 	 */
@@ -289,9 +289,9 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태 정보를 수정한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜??섏젙?쒕떎.
 	 * 
-	 * @param LeaderSttus - 간부상태 model
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */
@@ -301,9 +301,9 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태 정보를 등록한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
-	 * @param LeaderSttus - 간부상태 model
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */
@@ -313,9 +313,9 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태를 등록하기 위한 중복 조회를 수행한다.
+	 * 媛꾨??곹깭瑜??깅줉?섍린 ?꾪븳 以묐났 議고쉶瑜??섑뻾?쒕떎.
 	 * 
-	 * @param LeaderSttus - 간부상태 model
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * @return int
 	 * 
 	 * @param leaderSttus
@@ -326,9 +326,9 @@ public class EgovLeaderSchdulServiceImpl extends EgovAbstractServiceImpl impleme
 	}
 
 	/**
-	 * 간부상태 정보를 삭제한다.
+	 * 媛꾨??곹깭 ?뺣낫瑜???젣?쒕떎.
 	 * 
-	 * @param LeaderSttus - 간부상태 model
+	 * @param LeaderSttus - 媛꾨??곹깭 model
 	 * 
 	 * @param leaderSttus
 	 */

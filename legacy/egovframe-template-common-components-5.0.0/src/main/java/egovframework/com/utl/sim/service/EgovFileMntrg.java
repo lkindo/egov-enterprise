@@ -3,7 +3,7 @@
  *  Description : 
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
 
  *
@@ -31,22 +31,22 @@ import egovframework.com.cmm.service.EgovProperties;
 import egovframework.com.cmm.util.EgovBasicLogger;
 
 /**
- * 시스템 네트워크 정보를 확인하여 제공하는 Business class
+ * ?쒖뒪???ㅽ듃?뚰겕 ?뺣낫瑜??뺤씤?섏뿬 ?쒓났?섎뒗 Business class
  * 
- * @author 공통 서비스 개발팀 조재영
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? 議곗옱??
  * @since 2009.01.13
  * @version 1.0
  * @see
  *
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.01.13  조재영          최초 생성
- *   2017.03.06  조성원          시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
- *   2025.09.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(부적절한 자원 해제)
- *   2025.09.08  이백행          2025년 컨트리뷰션 PMD로 소프트웨어 보안약점 진단하고 제거하기-AssignmentInOperand(피연산자내에 할당문이 사용됨. 해당 코드를 복잡하고 가독성이 떨어지게 만듬)
+ *   2009.01.13  議곗옱??         理쒖큹 ?앹꽦
+ *   2017.03.06  議곗꽦??         ?쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
+ *   2025.09.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(遺?곸젅???먯썝 ?댁젣)
+ *   2025.09.08  ?대갚??         2025??而⑦듃由щ럭??PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-AssignmentInOperand(?쇱뿰?곗옄?댁뿉 ?좊떦臾몄씠 ?ъ슜?? ?대떦 肄붾뱶瑜?蹂듭옟?섍퀬 媛?낆꽦???⑥뼱吏寃?留뚮벉)
  *
  *      </pre>
  */
@@ -56,49 +56,49 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <p>
-	 * 해당 파일의 변경 유무를 체크하기 위한 Default 초의 stati final 변수, 기본 적용은 값은 60초
+	 * ?대떦 ?뚯씪??蹂寃??좊Т瑜?泥댄겕?섍린 ?꾪븳 Default 珥덉쓽 stati final 蹂?? 湲곕낯 ?곸슜? 媛믪? 60珥?
 	 * </p>
 	 */
-	// static final public long DEFAULT_DELAY = 60000; // 60초
-	static final public long DEFAULT_DELAY = 30000; // 30초
+	// static final public long DEFAULT_DELAY = 60000; // 60珥?
+	static final public long DEFAULT_DELAY = 30000; // 30珥?
 
 	/**
-	 * 최대 문자길이
+	 * 理쒕? 臾몄옄湲몄씠
 	 **/
 	static final int MAX_STR_LEN = 1024;
 
 	/**
 	 * <p>
-	 * 파일의 변경 유무를 체크하기 위한 해당파일명 변수
+	 * ?뚯씪??蹂寃??좊Т瑜?泥댄겕?섍린 ?꾪븳 ?대떦?뚯씪紐?蹂??
 	 * </p>
 	 */
 	protected String filename;
 
 	/**
 	 * <p>
-	 * 해당 파일의 변경 유무를 체크하기 위한 Default 초의 stati final 변수, 기본 적용은 값은
-	 * 60초{@link #DEFAULT_DELAY}.
+	 * ?대떦 ?뚯씪??蹂寃??좊Т瑜?泥댄겕?섍린 ?꾪븳 Default 珥덉쓽 stati final 蹂?? 湲곕낯 ?곸슜? 媛믪?
+	 * 60珥?@link #DEFAULT_DELAY}.
 	 * </p>
 	 */
 	protected long delay = DEFAULT_DELAY;
 
-	File file; // 타겟(감시대상) 디렉토리
-	File logFile; // 감시정보보관용 로그파일
+	File file; // ?寃?媛먯떆??? ?붾젆?좊━
+	File logFile; // 媛먯떆?뺣낫蹂닿???濡쒓렇?뚯씪
 	long lastModif = 0;
 	boolean warnedAlready = false;
 	boolean interrupted = false;
-	List<String> realOriginalList = new ArrayList<String>(); // 최초의 원본리스트
-	List<String> originalList = new ArrayList<String>(); // 직전리스트는 주기적으로 직전목록정보로 갱신된다.
-	List<String> currentList = new ArrayList<String>(); // 직전리스트와 비교할 현시점 리스트
-	List<String> changedList = new ArrayList<String>(); // 직전리스트와 비교한 시점에 발생된 변경리스트
-	List<String> totalChangedList = new ArrayList<String>(); // 최초리스트와 비교한 변경 리스트
-																// totalChangedList는 필요시 checkAndConfigure함수 내에서 주석해제후
-																// 사용(부하량을 고려하여 사용)
+	List<String> realOriginalList = new ArrayList<String>(); // 理쒖큹???먮낯由ъ뒪??
+	List<String> originalList = new ArrayList<String>(); // 吏곸쟾由ъ뒪?몃뒗 二쇨린?곸쑝濡?吏곸쟾紐⑸줉?뺣낫濡?媛깆떊?쒕떎.
+	List<String> currentList = new ArrayList<String>(); // 吏곸쟾由ъ뒪?몄? 鍮꾧탳???꾩떆??由ъ뒪??
+	List<String> changedList = new ArrayList<String>(); // 吏곸쟾由ъ뒪?몄? 鍮꾧탳???쒖젏??諛쒖깮??蹂寃쎈━?ㅽ듃
+	List<String> totalChangedList = new ArrayList<String>(); // 理쒖큹由ъ뒪?몄? 鍮꾧탳??蹂寃?由ъ뒪??
+																// totalChangedList???꾩슂??checkAndConfigure?⑥닔 ?댁뿉??二쇱꽍?댁젣??
+																// ?ъ슜(遺?섎웾??怨좊젮?섏뿬 ?ъ슜)
 	int cnt = 0;
 
 	/**
 	 * <p>
-	 * 감시 하고자 하는 파일명을 파라메타로 받는 기본 컨스트럭터(Constructor).
+	 * 媛먯떆 ?섍퀬???섎뒗 ?뚯씪紐낆쓣 ?뚮씪硫뷀?濡?諛쏅뒗 湲곕낯 而⑥뒪?몃윮??Constructor).
 	 * </p>
 	 *
 	 * @param filename
@@ -108,10 +108,10 @@ public class EgovFileMntrg extends Thread {
 		this.logFile = logFile;
 		this.filename = filename;
 		file = new File(storePathString + FilenameUtils.getName(filename));
-		// 1. 최초생성시 현재 디렉토리의 하위정보를 ArrayList에 보관한다. 보관정보 ==> 절대경로 + "," + 최종수정일시 + "," +
-		// 사이즈
+		// 1. 理쒖큹?앹꽦???꾩옱 ?붾젆?좊━???섏쐞?뺣낫瑜?ArrayList??蹂닿??쒕떎. 蹂닿??뺣낫 ==> ?덈?寃쎈줈 + "," + 理쒖쥌?섏젙?쇱떆 + "," +
+		// ?ъ씠利?
 		File[] fList = file.listFiles();
-		// 2017.03.06 조성원 시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
+		// 2017.03.06 議곗꽦???쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
 		if (fList == null) {
 			fList = new File[0];
 		}
@@ -131,10 +131,10 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <p>
-	 * 감시 하고자 하는 파일의 변경 유무를 체크 하고자 하는 delay 초를 set.
+	 * 媛먯떆 ?섍퀬???섎뒗 ?뚯씪??蹂寃??좊Т瑜?泥댄겕 ?섍퀬???섎뒗 delay 珥덈? set.
 	 * </p>
 	 *
-	 * @param delay 감시 주기 초
+	 * @param delay 媛먯떆 二쇨린 珥?
 	 */
 	public void setDelay(long delay) {
 		this.delay = delay;
@@ -142,7 +142,7 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <p>
-	 * 해당 파일의 변경시 작업 할 내용을 기술 할 추상(abstract) 메소드
+	 * ?대떦 ?뚯씪??蹂寃쎌떆 ?묒뾽 ???댁슜??湲곗닠 ??異붿긽(abstract) 硫붿냼??
 	 * </p>
 	 */
 	// abstract protected void doOnChange();
@@ -151,8 +151,8 @@ public class EgovFileMntrg extends Thread {
 		for (int i = 0; i < changedList.size(); i++) {
 			writeLog(changedList.get(i));
 		}
-		changedList.clear(); // 직전리스트와 비교해서 변경된 내역은 로그처리한 후 초기화한다.
-		originalList = new ArrayList<String>(currentList); // 현재리스트가 직전리스트가 된다.(새로 생성해야 함!)
+		changedList.clear(); // 吏곸쟾由ъ뒪?몄? 鍮꾧탳?댁꽌 蹂寃쎈맂 ?댁뿭? 濡쒓렇泥섎━????珥덇린?뷀븳??
+		originalList = new ArrayList<String>(currentList); // ?꾩옱由ъ뒪?멸? 吏곸쟾由ъ뒪?멸? ?쒕떎.(?덈줈 ?앹꽦?댁빞 ??)
 		cnt++;
 
 		// log.debug("doOnChange() end");
@@ -160,7 +160,7 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <p>
-	 * 파일의 변경 유무를 체크하는 메소드
+	 * ?뚯씪??蹂寃??좊Т瑜?泥댄겕?섎뒗 硫붿냼??
 	 * </p>
 	 */
 	protected void checkAndConfigure() {
@@ -168,9 +168,9 @@ public class EgovFileMntrg extends Thread {
 		try {
 			currentList.clear();
 			file = new File(filename);
-			// 현재정보를 ArrayList에 담는다.
+			// ?꾩옱?뺣낫瑜?ArrayList???대뒗??
 			File[] fList = file.listFiles();
-			// 2017.03.06 조성원 시큐어코딩(ES)-Null Pointer 역참조[CWE-476]
+			// 2017.03.06 議곗꽦???쒗걧?댁퐫??ES)-Null Pointer ??갭議?CWE-476]
 			if (fList == null) {
 				fList = new File[0];
 			}
@@ -193,7 +193,7 @@ public class EgovFileMntrg extends Thread {
 			String str2 = "";
 			// int tmpCnt = 0;
 
-			// 현재하위디렉토리정보와 초최하위디렉토리 정보를 비교한다. 삭제된 경우를 확인함
+			// ?꾩옱?섏쐞?붾젆?좊━?뺣낫? 珥덉턀?섏쐞?붾젆?좊━ ?뺣낫瑜?鍮꾧탳?쒕떎. ??젣??寃쎌슦瑜??뺤씤??
 			for (int i = 0; i < originalList.size(); i++) {
 				for (int j = 0; j < currentList.size(); j++) {
 					str1 = originalList.get(i);
@@ -205,10 +205,10 @@ public class EgovFileMntrg extends Thread {
 				if (isDel) {
 					changedList.add("DEL$" + originalList.get(i));
 				}
-				isDel = true; // 초기화
+				isDel = true; // 珥덇린??
 			}
 
-			// 현재하위디렉토리 정보와 최초하위디렉토리 정보를 비교한다.(신규로 생성되었거나 수정된 경우를 확인함)
+			// ?꾩옱?섏쐞?붾젆?좊━ ?뺣낫? 理쒖큹?섏쐞?붾젆?좊━ ?뺣낫瑜?鍮꾧탳?쒕떎.(?좉퇋濡??앹꽦?섏뿀嫄곕굹 ?섏젙??寃쎌슦瑜??뺤씤??
 			for (int i = 0; i < currentList.size(); i++) {
 				for (int j = 0; j < originalList.size(); j++) {
 					if (currentList.get(i).equals(originalList.get(j))) {
@@ -229,8 +229,8 @@ public class EgovFileMntrg extends Thread {
 						// totalChangedList.add("MODI$"+currentList.get(i));
 					}
 				}
-				isSame = false; // 초기화
-				isNew = true; // 초기화
+				isSame = false; // 珥덇린??
+				isNew = true; // 珥덇린??
 			}
 		} catch (NullPointerException e) {
 			EgovBasicLogger.debug("NullPointerException", e);
@@ -256,7 +256,7 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <p>
-	 * 파일의 변경 유무의 체크를 주기적 초 단위로 실행 시키는 메소드
+	 * ?뚯씪??蹂寃??좊Т??泥댄겕瑜?二쇨린??珥??⑥쐞濡??ㅽ뻾 ?쒗궎??硫붿냼??
 	 * </p>
 	 */
 	@Override
@@ -270,17 +270,17 @@ public class EgovFileMntrg extends Thread {
 			checkAndConfigure();
 		}
 
-		// 2022.11.11 시큐어코딩 처리
+		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		this.interrupt();
 	}
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리(파일)의 최종 수정시간를 확인한다.(기본로케일 java.util.Locale.KOREA 기준)
+	 * Comment : ?붾젆?좊━(?뚯씪)??理쒖쥌 ?섏젙?쒓컙瑜??뺤씤?쒕떎.(湲곕낯濡쒖???java.util.Locale.KOREA 湲곗?)
 	 * </pre>
 	 * 
-	 * @param File f 수정일자를 확인할 대상파일
-	 * @return String result 최종수정일자를 문자열로 리턴한다.
+	 * @param File f ?섏젙?쇱옄瑜??뺤씤????곹뙆??
+	 * @return String result 理쒖쥌?섏젙?쇱옄瑜?臾몄옄?대줈 由ы꽩?쒕떎.
 	 */
 	public static String getLastModifiedTime(File f) {
 		long date = f.lastModified();
@@ -291,11 +291,11 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리(파일)의  로그정보를 기록한다.
+	 * Comment : ?붾젆?좊━(?뚯씪)?? 濡쒓렇?뺣낫瑜?湲곕줉?쒕떎.
 	 * </pre>
 	 * 
-	 * @param String logStr 추가할 로그정보(라인단위)
-	 * @return boolean result 로그추가 성공여부
+	 * @param String logStr 異붽???濡쒓렇?뺣낫(?쇱씤?⑥쐞)
+	 * @return boolean result 濡쒓렇異붽? ?깃났?щ?
 	 */
 	public boolean writeLog(String logStr) {
 		boolean result = false;
@@ -320,10 +320,10 @@ public class EgovFileMntrg extends Thread {
 
 	/**
 	 * <pre>
-	 * Comment : 디렉토리감시 종료여부를 확인한다. 해당 디렉토리에 대한 로그파일이 삭제된 경우는 감시를 종료한다.
+	 * Comment : ?붾젆?좊━媛먯떆 醫낅즺?щ?瑜??뺤씤?쒕떎. ?대떦 ?붾젆?좊━?????濡쒓렇?뚯씪????젣??寃쎌슦??媛먯떆瑜?醫낅즺?쒕떎.
 	 * </pre>
 	 * 
-	 * @return boolean isEnd 감시종료여부 중단하려면 true 리턴, 계속하려면 false 리턴
+	 * @return boolean isEnd 媛먯떆醫낅즺?щ? 以묐떒?섎젮硫?true 由ы꽩, 怨꾩냽?섎젮硫?false 由ы꽩
 	 */
 	public boolean isEnd() {
 		// log.debug("isEnd start");
@@ -332,7 +332,7 @@ public class EgovFileMntrg extends Thread {
 
 		try (FileReader fr = new FileReader(logFile); BufferedReader br = new BufferedReader(fr);) {
 			if (logFile.exists()) {
-				// 로그파일을 읽어서 마지막 끝에 END가 있으면 종료된것임
+				// 濡쒓렇?뚯씪???쎌뼱??留덉?留??앹뿉 END媛 ?덉쑝硫?醫낅즺?쒓쾬??
 
 				// int ch = 0;
 				String line = br.readLine();
@@ -346,7 +346,7 @@ public class EgovFileMntrg extends Thread {
 					isEnd = true;
 				}
 			} else {
-				// 로그파일이 없는 경우(삭제된 경우)도 종료한다.
+				// 濡쒓렇?뚯씪???녿뒗 寃쎌슦(??젣??寃쎌슦)??醫낅즺?쒕떎.
 				isEnd = true;
 			}
 		} catch (IOException e) {

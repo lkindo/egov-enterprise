@@ -49,7 +49,7 @@ class FileServiceUploadTest {
     }
 
     @Test
-    @DisplayName("파일 업로드 성공")
+    @DisplayName("?뚯씪 ?낅줈???깃났")
     void uploadFiles_success() throws IOException {
         // given
         given(multipartFile.isEmpty()).willReturn(false);
@@ -72,7 +72,7 @@ class FileServiceUploadTest {
     }
 
     @Test
-    @DisplayName("파일 업데이트 성공")
+    @DisplayName("?뚯씪 ?낅뜲?댄듃 ?깃났")
     void updateFiles_success() throws IOException {
         // given
         String atchFileId = "FILE_TEST";

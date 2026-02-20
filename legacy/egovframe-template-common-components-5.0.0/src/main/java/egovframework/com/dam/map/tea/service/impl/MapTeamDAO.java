@@ -9,23 +9,23 @@ import egovframework.com.dam.map.tea.service.MapTeam;
 import egovframework.com.dam.map.tea.service.MapTeamVO;
 
 /**
- * 개요
- * - 지식맵(조직별)에 대한 DAO 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앸㏊(議곗쭅蹂??????DAO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식맵(조직별)에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식맵(조직별)의 조회기능은 목록조회, 상세조회로 구분된다.
- * @author 박종선
+ * ?곸꽭?댁슜
+ * - 吏?앸㏊(議곗쭅蹂???????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앸㏊(議곗쭅蹂???議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
+ * @author 諛뺤쥌??
  * @version 1.0
- * @created 22-7-2010 오전 10:57:44
+ * @created 22-7-2010 ?ㅼ쟾 10:57:44
  */
 @Repository("MapTeamDAO")
 public class MapTeamDAO extends EgovComAbstractDAO{
 
 	/**
-	 * 등록된 지식맵(조직별) 목록을 조회 한다.
-	 * @param mapTeamVO- 지식맵(조직별) VO
-	 * @return String - 지식맵(조직별) 목록
+	 * ?깅줉??吏?앸㏊(議곗쭅蹂? 紐⑸줉??議고쉶 ?쒕떎.
+	 * @param mapTeamVO- 吏?앸㏊(議곗쭅蹂? VO
+	 * @return String - 吏?앸㏊(議곗쭅蹂? 紐⑸줉
 	 *
 	 * @param MapTeamVO
 	 */
@@ -34,9 +34,9 @@ public class MapTeamDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 지식맵(조직별) 목록 총 개수를 조회한다.
-	 * @param MapTeamVO - 지식맵(조직별) Vo
-	 * @return int - 지식맵(조직별) 토탈 카운트 수
+	 * 吏?앸㏊(議곗쭅蹂? 紐⑸줉 珥?媛쒖닔瑜?議고쉶?쒕떎.
+	 * @param MapTeamVO - 吏?앸㏊(議곗쭅蹂? Vo
+	 * @return int - 吏?앸㏊(議곗쭅蹂? ?좏깉 移댁슫????
 	 *
 	 * @param MapTeamVO
 	 */
@@ -45,9 +45,9 @@ public class MapTeamDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 지식맵(조직별)상세 정보를 조회 한다.
-	 * @param MapTeamVO - 지식맵(조직별) VO
-	 * @return String - 지식맵(조직별) VO
+	 * 吏?앸㏊(議곗쭅蹂??곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
+	 * @param MapTeamVO - 吏?앸㏊(議곗쭅蹂? VO
+	 * @return String - 吏?앸㏊(議곗쭅蹂? VO
 	 *
 	 * @param MapTeamVO
 	 */
@@ -56,8 +56,8 @@ public class MapTeamDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 지식맵(조직별) 정보를 신규로 등록한다.
-	 * @param siteUrl - 지식맵(조직별) model
+	 * 吏?앸㏊(議곗쭅蹂? ?뺣낫瑜??좉퇋濡??깅줉?쒕떎.
+	 * @param siteUrl - 吏?앸㏊(議곗쭅蹂? model
 	 *
 	 * @param orgnztNm
 	 */
@@ -66,8 +66,8 @@ public class MapTeamDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 기 등록 된 지식맵(조직별) 정보를 수정 한다.
-	 * @param siteUrl - 지식맵(조직별) model
+	 * 湲??깅줉 ??吏?앸㏊(議곗쭅蹂? ?뺣낫瑜??섏젙 ?쒕떎.
+	 * @param siteUrl - 吏?앸㏊(議곗쭅蹂? model
 	 *
 	 * @param orgnztNm
 	 */
@@ -76,8 +76,8 @@ public class MapTeamDAO extends EgovComAbstractDAO{
 	}
 
 	/**
-	 * 기 등록된 지식맵(조직별) 정보를 삭제한다.
-	 * @param siteUrl - 지식맵(조직별) model
+	 * 湲??깅줉??吏?앸㏊(議곗쭅蹂? ?뺣낫瑜???젣?쒕떎.
+	 * @param siteUrl - 吏?앸㏊(議곗쭅蹂? model
 	 *
 	 * @param orgnztNm
 	 */

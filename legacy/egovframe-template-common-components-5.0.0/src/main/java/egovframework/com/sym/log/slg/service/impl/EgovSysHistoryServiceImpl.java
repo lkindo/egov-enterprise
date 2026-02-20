@@ -15,14 +15,14 @@ import jakarta.annotation.Resource;
 
 /**
  * @Class Name : EgovSysHistoryServiceImpl.java
- * @Description : 시스템 이력관리를 위한 서비스 구현 클래스
+ * @Description : ?쒖뒪???대젰愿由щ? ?꾪븳 ?쒕퉬??援ы쁽 ?대옒??
  * @Modification Information
  *
- *    수정일       수정자         수정내용
+ *    ?섏젙??      ?섏젙??        ?섏젙?댁슜
  *    -------        -------     -------------------
- *    2009. 3. 9.   이삼섭
+ *    2009. 3. 9.   ?댁궪??
  *
- * @author 공통 서비스 개발팀 이삼섭
+ * @author 怨듯넻 ?쒕퉬??媛쒕컻? ?댁궪??
  * @since 2009. 3. 9.
  * @version
  * @see
@@ -36,8 +36,8 @@ public class EgovSysHistoryServiceImpl extends EgovAbstractServiceImpl implement
 	private SysHistoryDAO sysHistoryDAO;
 
 	/**
-	 * 시스템 이력정보를 등록한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜??깅줉?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 * @return
 	 * @throws Exception
 	 */
@@ -54,8 +54,8 @@ public class EgovSysHistoryServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템 이력정보를 수정한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜??섏젙?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 * @return
 	 * @throws Exception
 	 */
@@ -66,8 +66,8 @@ public class EgovSysHistoryServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-	 * 시스템 이력정보를 삭제한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜???젣?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 * @return
 	 * @throws Exception
 	 */
@@ -78,9 +78,9 @@ public class EgovSysHistoryServiceImpl extends EgovAbstractServiceImpl implement
 	}
 
 	/**
-     * 시스템 이력정보 목록을 조회한다.
+     * ?쒖뒪???대젰?뺣낫 紐⑸줉??議고쉶?쒕떎.
      *
-     * @param history - 시스템 이력정보가 담긴 모델 객체
+     * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
      * @return
      * @throws Exception
      */
@@ -93,8 +93,8 @@ public class EgovSysHistoryServiceImpl extends EgovAbstractServiceImpl implement
     }
 
 	/**
-	 * 시스템 이력정보를 상세조회한다.
-	 * @param history - 시스템 이력정보가 담긴 모델 객체
+	 * ?쒖뒪???대젰?뺣낫瑜??곸꽭議고쉶?쒕떎.
+	 * @param history - ?쒖뒪???대젰?뺣낫媛 ?닿릿 紐⑤뜽 媛앹껜
 	 * @return
 	 * @throws Exception
 	 */

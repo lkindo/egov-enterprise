@@ -9,25 +9,25 @@ import egovframework.com.sym.ccm.zip.service.Zip;
 
 /**
  *
- * Excel 우편번호 매핑 클래스
- * @author 공통서비스 개발팀 이중호
+ * Excel ?고렪踰덊샇 留ㅽ븨 ?대옒??
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?댁쨷??
  * @since 2009.04.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.04.01  이중호          최초 생성
+ *   2009.04.01  ?댁쨷??         理쒖큹 ?앹꽦
  *
  * </pre>
  */
 public class EgovCcmExcelZipMapping extends EgovExcelMapping {
 
 	/**
-	 * 우편번호 엑셀파일 맵핑
+	 * ?고렪踰덊샇 ?묒??뚯씪 留듯븨
 	 */
 	@Override
 	public Object mappingColumn(Row row) {

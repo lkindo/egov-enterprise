@@ -55,7 +55,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       Pageable pageable);
 
   /**
-   * 자료이용현황 통계 목록 조회
+   * ?癒?┷??곸뒠?袁れ넺 ????筌뤴뫖以?鈺곌퀬??
    */
   @Query("""
       SELECT d FROM DtaUseStats d
@@ -69,7 +69,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       Pageable pageable);
 
   /**
-   * 자료이용현황 전체 건수
+   * ?癒?┷??곸뒠?袁れ넺 ?袁⑷퍥 椰꾨똻??
    */
   @Query("""
       SELECT COUNT(d) FROM DtaUseStats d
@@ -81,7 +81,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       @Param("toDate") String toDate);
 
   /**
-   * 등록일별 자료이용현황 통계
+   * ?源낆쨯??고??癒?┷??곸뒠?袁れ넺 ????
    */
   @Query(value = """
       SELECT TO_CHAR(d.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
@@ -95,7 +95,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       @Param("toDate") String toDate);
 
   /**
-   * 게시판별 자료이용현황 통계
+   * 野껊슣??癒???癒?┷??곸뒠?袁れ넺 ????
    */
   @Query(value = """
       SELECT b.bbs_nm as bbsNm, COUNT(*) as cnt

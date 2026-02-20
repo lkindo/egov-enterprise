@@ -10,18 +10,18 @@ import egovframework.com.cop.ncm.service.NameCardUser;
 import egovframework.com.cop.ncm.service.NameCardVO;
 
 /**
- * 명함정보를 관리하기 위한 데이터 접근 클래스
- * @author 공통서비스개발팀 이삼섭
+ * 紐낇븿?뺣낫瑜?愿由ы븯湲??꾪븳 ?곗씠???묎렐 ?대옒??
+ * @author 怨듯넻?쒕퉬?ㅺ컻諛쒗? ?댁궪??
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일         수정자       수정내용
+ *   ?섏젙??        ?섏젙??      ?섏젙?댁슜
  *  ----------    --------    ---------------------------
- *   2009.3.28     이삼섭       최초 생성
+ *   2009.3.28     ?댁궪??      理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -31,7 +31,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     // Logger log = Logger.getLogger(this.getClass());
 
     /**
-     * 명함 정보를 삭제한다.
+     * 紐낇븿 ?뺣낫瑜???젣?쒕떎.
      *
      * @param nameCard
      * @throws Exception
@@ -45,7 +45,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함 정보를 등록한다.
+     * 紐낇븿 ?뺣낫瑜??깅줉?쒕떎.
      *
      * @param nameCard
      * @throws Exception
@@ -55,7 +55,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함사용자 정보를 등록한다.
+     * 紐낇븿?ъ슜???뺣낫瑜??깅줉?쒕떎.
      *
      * @param ncrdUser
      * @throws Exception
@@ -65,7 +65,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함 정보에 대한 상세정보를 조회한다.
+     * 紐낇븿 ?뺣낫??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
      *
      * @param nameCard
      * @return
@@ -76,7 +76,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함 정보에 대한 목록을 조회한다.
+     * 紐낇븿 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param nameCard
      * @return
@@ -97,7 +97,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함 정보에 대한 목록 전체 건수를 조회한다.
+     * 紐낇븿 ?뺣낫?????紐⑸줉 ?꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      *
      * @param nameCardUser
      * @return
@@ -108,7 +108,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함사용자 정보에 대한 목록 전체 건수를 조회한다.
+     * 紐낇븿?ъ슜???뺣낫?????紐⑸줉 ?꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      *
      * @param ncrdUser
      * @return
@@ -119,7 +119,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함 정보를 수정한다.
+     * 紐낇븿 ?뺣낫瑜??섏젙?쒕떎.
      *
      * @param nameCard
      * @throws Exception
@@ -129,7 +129,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 명함사용자 정보를 수정한다.
+     * 紐낇븿?ъ슜???뺣낫瑜??섏젙?쒕떎.
      *
      * @param nameCardUser
      * @throws Exception
@@ -139,7 +139,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 내 명함 정보에 대한 목록을 조회한다.
+     * ??紐낇븿 ?뺣낫?????紐⑸줉??議고쉶?쒕떎.
      *
      * @param nameCardVO
      * @return
@@ -150,7 +150,7 @@ public class NcrdManageDAO extends EgovComAbstractDAO {
     }
 
     /**
-     * 내 명함 정보에 대한 목록 전체 건수를 조회한다.
+     * ??紐낇븿 ?뺣낫?????紐⑸줉 ?꾩껜 嫄댁닔瑜?議고쉶?쒕떎.
      *
      * @param nameCardVO
      * @return

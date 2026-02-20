@@ -16,7 +16,7 @@ public interface EgovEventCmpgnService {
 
     void deleteEvent(String eventId);
 
-    // 외부 인력 관리
+    // ?몃? ?몃젰 愿由?
     Page<ExternalHrDto> getExternalHrList(String eventId, String keyword, Pageable pageable);
 
     ExternalHrDto getExternalHr(String extrlHrId);

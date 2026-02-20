@@ -25,27 +25,27 @@ import jakarta.validation.Valid;
 
 /**
  * <pre>
- * 개요
- * - 지식정보평가에 대한 controller 클래스를 정의한다.
+ * 媛쒖슂
+ * - 吏?앹젙蹂댄룊媛?????controller ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * 상세내용
- * - 지식정보평가에 대한 등록, 수정, 삭제, 조회 기능을 제공한다.
- * - 지식정보평가의 조회기능은 목록조회, 상세조회로 구분된다.
+ * ?곸꽭?댁슜
+ * - 吏?앹젙蹂댄룊媛??????깅줉, ?섏젙, ??젣, 議고쉶 湲곕뒫???쒓났?쒕떎.
+ * - 吏?앹젙蹂댄룊媛??議고쉶湲곕뒫? 紐⑸줉議고쉶, ?곸꽭議고쉶濡?援щ텇?쒕떎.
  * </pre>
  * 
- * @author 박종선
+ * @author 諛뺤쥌??
  * @since 2010.08.12
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2010.08.12  박종선          최초 생성
- *   2011.08.26  정진오          IncludedInfo annotation 추가
- *   2025.06.13  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-LocalVariableNamingConventions(지역 변수 명명 규칙)
+ *   2010.08.12  諛뺤쥌??         理쒖큹 ?앹꽦
+ *   2011.08.26  ?뺤쭊??         IncludedInfo annotation 異붽?
+ *   2025.06.13  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-LocalVariableNamingConventions(吏??蹂??紐낅챸 洹쒖튃)
  *
  *      </pre>
  */
@@ -64,26 +64,26 @@ public class EgovKnoAppraisalController {
 	EgovMessageSource egovMessageSource;
 
 	/**
-	 * 등록된 지식정보평가 정보를 조회 한다.
+	 * ?깅줉??吏?앹젙蹂댄룊媛 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoAppraisalVO -app 지식정보평가 VO
-	 * @return String - 리턴 Url
+	 * @param KnoAppraisalVO -app 吏?앹젙蹂댄룊媛 VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoAppraisalVO
 	 */
-	@IncludedInfo(name = "지식평가관리", listUrl = "/dam/app/EgovComDamAppraisalList.do", order = 1290, gid = 80)
+	@IncludedInfo(name = "吏?앺룊媛愿由?, listUrl = "/dam/app/EgovComDamAppraisalList.do", order = 1290, gid = 80)
 	@RequestMapping(value = "/dam/app/EgovComDamAppraisalList.do")
 	public String selectKnoAppraisalList(@ModelAttribute("searchVO") KnoAppraisalVO searchVO, ModelMap model)
 			throws Exception {
 
-		// Spring Security 사용자권한 처리
+		// Spring Security ?ъ슜?먭텒??泥섎━
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		if (!isAuthenticated) {
 			model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
 			return "redirect:/uat/uia/egovLoginUsr.do";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
 		/** EgovPropertyService.mapMaterial */
@@ -113,10 +113,10 @@ public class EgovKnoAppraisalController {
 	}
 
 	/**
-	 * 지식정보평가 상세 정보를 조회 한다.
+	 * 吏?앹젙蹂댄룊媛 ?곸꽭 ?뺣낫瑜?議고쉶 ?쒕떎.
 	 * 
-	 * @param KnoAppraisalVO - 지식정보평가 VO
-	 * @return String - 리턴 Url
+	 * @param KnoAppraisalVO - 吏?앹젙蹂댄룊媛 VO
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param KnoAppraisalVO
 	 */
@@ -128,10 +128,10 @@ public class EgovKnoAppraisalController {
 	}
 
 	/**
-	 * 기 등록 된 지식정보평가 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앹젙蹂댄룊媛 ?뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param AppraisalknoAps - 지식정보평가 model
-	 * @return String - 리턴 Url
+	 * @param AppraisalknoAps - 吏?앹젙蹂댄룊媛 model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param knoAps
 	 */
@@ -145,10 +145,10 @@ public class EgovKnoAppraisalController {
 	}
 
 	/**
-	 * 기 등록 된 지식정보평가 정보를 수정 한다.
+	 * 湲??깅줉 ??吏?앹젙蹂댄룊媛 ?뺣낫瑜??섏젙 ?쒕떎.
 	 * 
-	 * @param AppraisalknoAps - 지식정보평가 model
-	 * @return String - 리턴 Url
+	 * @param AppraisalknoAps - 吏?앹젙蹂댄룊媛 model
+	 * @return String - 由ы꽩 Url
 	 *
 	 * @param knoAps
 	 */
@@ -162,10 +162,10 @@ public class EgovKnoAppraisalController {
 			return "egovframework/com/dam/app/EgovComDamAppraisalModify";
 		}
 
-		// 로그인 객체 선언
+		// 濡쒓렇??媛앹껜 ?좎뼵
 		LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
 
-		// 아이디 설정
+		// ?꾩씠???ㅼ젙
 		if (loginVO != null) {
 			knoAppraisal.setLastUpdusrId(loginVO.getUniqId());
 			knoAppraisal.setSpeId(loginVO.getUniqId());

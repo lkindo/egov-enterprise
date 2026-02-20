@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 로그인 로그 관리 서비스
+ * 濡쒓렇??濡쒓렇 愿由??쒕퉬??
  */
 @Service("loginLogManageService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class LoginLogManageService {
     private final LoginLogRepository loginLogRepository;
 
     /**
-     * 로그인 로그 목록 조회
+     * 濡쒓렇??濡쒓렇 紐⑸줉 議고쉶
      */
     public List<LoginLogDto> selectLoginLogList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
@@ -39,14 +39,14 @@ public class LoginLogManageService {
     }
 
     /**
-     * 로그인 로그 목록 총 건수
+     * 濡쒓렇??濡쒓렇 紐⑸줉 珥?嫄댁닔
      */
     public int selectLoginLogListTotCnt(ComDefaultVO searchVO) {
         return (int) loginLogRepository.count();
     }
 
     /**
-     * 로그인 로그 상세 조회
+     * 濡쒓렇??濡쒓렇 ?곸꽭 議고쉶
      */
     public LoginLogDto selectLoginLog(String logId) {
         return loginLogRepository.findById(Objects.requireNonNull(logId))

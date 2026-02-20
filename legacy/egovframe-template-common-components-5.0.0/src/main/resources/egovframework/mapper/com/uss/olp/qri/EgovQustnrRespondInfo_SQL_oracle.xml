@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?><!--
-	수정일		수정자					수정내용
+	?섏젙??	?섏젙??				?섏젙?댁슜
   =========     =======    =================================================
-  2011.8.24   	이기하     	 	테이블 표준화에 따른 수정사항 반영
-  							QUSTNR_TMPLAT_ID 를			 	QESTNR_TMPLAT_ID 로 변경
-							FRST_REGIST_PNTTM 를			FRST_REGISTER_PNTTM 로 변경
-							QUSTNR_QESITM_ID 를				QESTNR_QESITM_ID 로 변경
-							QUSTNR_SJ 를					QESTNR_SJ 로 변경
-							QUSTNR_RSPNS_RESULT_ID 를		QESTNR_QESRSPNS_ID 로 변경
-  2011.10.05    서준식               보안 취약점 점검사항 반영 $->#변경	
-  2017.07.18         김예영			표준프레임워크 v3.7 개선 (주석제거, CDATA 추가)   
+  2011.8.24   	?닿린??    	 	?뚯씠釉??쒖??붿뿉 ?곕Ⅸ ?섏젙?ы빆 諛섏쁺
+  							QUSTNR_TMPLAT_ID 瑜?		 	QESTNR_TMPLAT_ID 濡?蹂寃?
+							FRST_REGIST_PNTTM 瑜?		FRST_REGISTER_PNTTM 濡?蹂寃?
+							QUSTNR_QESITM_ID 瑜?			QESTNR_QESITM_ID 濡?蹂寃?
+							QUSTNR_SJ 瑜?				QESTNR_SJ 濡?蹂寃?
+							QUSTNR_RSPNS_RESULT_ID 瑜?	QESTNR_QESRSPNS_ID 濡?蹂寃?
+  2011.10.05    ?쒖???              蹂댁븞 痍⑥빟???먭??ы빆 諛섏쁺 $->#蹂寃?
+  2017.07.18         源?덉쁺			?쒖??꾨젅?꾩썙??v3.7 媛쒖꽑 (二쇱꽍?쒓굅, CDATA 異붽?)   
 --><!--Converted at: Wed May 11 15:51:41 KST 2016-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="QustnrRespondInfo">
 
-	<!-- 설문등록:: 설문템플릿조회 -->
+	<!-- ?ㅻЦ?깅줉:: ?ㅻЦ?쒗뵆由우“??-->
 	<select id="selectQustnrTmplatManages" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -32,7 +32,7 @@
 		]]>
 	</select>
 
-	<!-- 설문템플릿 화이트리스트 조회 -->
+	<!-- ?ㅻЦ?쒗뵆由??붿씠?몃━?ㅽ듃 議고쉶 -->
 	<select id="selectQustnrTmplatWhiteList" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -41,7 +41,7 @@
 		]]>
 	</select>
 
-	<!-- 설문조사(통계/객관식):: 설문지 전체 통계 -->
+	<!-- ?ㅻЦ議곗궗(?듦퀎/媛앷???:: ?ㅻЦ吏 ?꾩껜 ?듦퀎 -->
 	<select id="selectQustnrRespondInfoManageStatistics1" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -64,7 +64,7 @@
 		GROUP BY A.QUSTNR_TMPLAT_ID,A.QESTNR_ID, A.QUSTNR_QESITM_ID, A.QUSTNR_IEM_ID
 		]]>
 	</select>
-	<!-- 설문조사(통계/주관식):: 설문지 전체 통계 -->
+	<!-- ?ㅻЦ議곗궗(?듦퀎/二쇨???:: ?ㅻЦ吏 ?꾩껜 ?듦퀎 -->
 	<select id="selectQustnrRespondInfoManageStatistics2" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -83,7 +83,7 @@
 		]]>
 	</select>
 
-	<!-- 설문조사(설문등록):: 설문등록 /사용자 정보-->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉):: ?ㅻЦ?깅줉 /?ъ슜???뺣낫-->
 	<select id="selectQustnrRespondInfoManageEmplyrinfo" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -117,7 +117,7 @@
 		AND ESNTL_ID = #{uniqId}
 		]]>
 	</select>
-	<!-- 설문조사(설문등록):: 설문등록 /설문지정보-->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉):: ?ㅻЦ?깅줉 /?ㅻЦ吏?뺣낫-->
 	<select id="selectQustnrRespondInfoManageComtnqestnrinfo" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -139,7 +139,7 @@
 		AND A.QUSTNR_TMPLAT_ID = #{qestnrTmplatId}
 		]]>
 	</select>
-	<!-- 설문조사(설문등록):: 설문등록 /설문문 항정보-->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉):: ?ㅻЦ?깅줉 /?ㅻЦ臾???젙蹂?->
 	<select id="selectQustnrRespondInfoManageComtnqustnrqesitm" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -160,7 +160,7 @@
 		AND A.QUSTNR_TMPLAT_ID = #{qestnrTmplatId}
 		]]>
 	</select>
-	<!-- 설문조사(설문등록):: 설문등록 /설문 항목정보 -->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉):: ?ㅻЦ?깅줉 /?ㅻЦ ??ぉ?뺣낫 -->
 	<select id="selectQustnrRespondInfoManageComtnqustnriem" parameterType="java.util.Map" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -182,7 +182,7 @@
 		]]>
 	</select>
 
-	<!-- 설문조사(설문등록)::목록조회_게시물정보 -->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉)::紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectQustnrRespondInfoManage" parameterType="comDefaultVO" resultType="egovMap">
 	<![CDATA[
 	SELECT *
@@ -228,7 +228,7 @@
 	]]>
 	</select>
 
-	<!-- 설문조사(설문등록)::목록조회_게시물 총개수  -->
+	<!-- ?ㅻЦ議곗궗(?ㅻЦ?깅줉)::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectQustnrRespondInfoManageCnt" parameterType="comDefaultVO" resultType="int">
 		<![CDATA[
 		SELECT
@@ -249,7 +249,7 @@
 	 </if>
 	</select>
 
-	<!-- 응답자결과(설문조사)::설문템플릿정보 -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::?ㅻЦ?쒗뵆由우젙蹂?-->
 	<select id="selectQustnrTmplatManage" parameterType="egovframework.com.uss.olp.qri.service.QustnrRespondInfoVO" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -259,7 +259,7 @@
 		]]>
 	</select>
 
-	<!-- 응답자결과(설문조사)::삭제  -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::??젣  -->
 	<delete id="deleteQustnrRespondInfo">
 			<![CDATA[
 			DELETE FROM COMTNQUSTNRRSPNSRESULT
@@ -268,7 +268,7 @@
 			]]>
 	</delete>
 
-	<!-- 응답자결과(설문조사)::수정  -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::?섏젙  -->
 	<update id="updateQustnrRespondInfo">
 		<![CDATA[
 		UPDATE COMTNQUSTNRRSPNSRESULT
@@ -284,7 +284,7 @@
 		]]>
 	</update>
 
-	<!-- 응답자결과(설문조사)::상세보기 -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::?곸꽭蹂닿린 -->
 	<select id="selectQustnrRespondInfoDetail" parameterType="egovframework.com.uss.olp.qri.service.QustnrRespondInfoVO" resultType="egovMap">
 		<![CDATA[
 		SELECT
@@ -318,7 +318,7 @@
 		]]>
 	</select>
 
-	<!-- 응답자결과(설문조사)::목록조회_게시물정보 -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectQustnrRespondInfo" parameterType="comDefaultVO" resultType="egovMap">
 	<![CDATA[
 	SELECT *
@@ -383,7 +383,7 @@
 	]]>
 	</select>
 
-	<!-- 응답자결과(설문조사)::목록조회_게시물 총개수  -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::紐⑸줉議고쉶_寃뚯떆臾?珥앷컻?? -->
 	<select id="selectQustnrRespondInfoCnt" parameterType="comDefaultVO" resultType="int">
 		<![CDATA[
 		SELECT
@@ -406,7 +406,7 @@
 	 </if>
 	</select>
 
-	<!-- 응답자결과(설문조사)::입력  -->
+	<!-- ?묐떟?먭껐怨??ㅻЦ議곗궗)::?낅젰  -->
 	<insert id="insertQustnrRespondInfo">
 	 
 		<![CDATA[

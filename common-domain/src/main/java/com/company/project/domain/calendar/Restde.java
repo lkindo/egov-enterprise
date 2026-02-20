@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 휴일 관리 엔티티
+ * ??곸뵬 ?온???酉???
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

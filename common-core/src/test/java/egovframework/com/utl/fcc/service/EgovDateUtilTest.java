@@ -171,13 +171,13 @@ public class EgovDateUtilTest {
 
     @Test
     public void testConvertWeek() {
-        assertEquals("일요일", EgovDateUtil.convertWeek("SUN"));
-        assertEquals("월요일", EgovDateUtil.convertWeek("MON"));
-        assertEquals("화요일", EgovDateUtil.convertWeek("TUE"));
-        assertEquals("수요일", EgovDateUtil.convertWeek("WED"));
-        assertEquals("목요일", EgovDateUtil.convertWeek("THR"));
-        assertEquals("금요일", EgovDateUtil.convertWeek("FRI"));
-        assertEquals("토요일", EgovDateUtil.convertWeek("SAT"));
+        assertEquals("??깆뒄??, EgovDateUtil.convertWeek("SUN"));
+        assertEquals("?遺우뒄??, EgovDateUtil.convertWeek("MON"));
+        assertEquals("?遺우뒄??, EgovDateUtil.convertWeek("TUE"));
+        assertEquals("??륁뒄??, EgovDateUtil.convertWeek("WED"));
+        assertEquals("筌뤴뫗???, EgovDateUtil.convertWeek("THR"));
+        assertEquals("疫뀀뜆???, EgovDateUtil.convertWeek("FRI"));
+        assertEquals("?醫롮뒄??, EgovDateUtil.convertWeek("SAT"));
     }
 
     @Test

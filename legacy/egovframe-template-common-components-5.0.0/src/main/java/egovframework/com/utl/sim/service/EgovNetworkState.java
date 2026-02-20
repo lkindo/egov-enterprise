@@ -1,13 +1,13 @@
 /**
  *  Class Name : EgovNetworkState.java
- *  Description : 네트워크(Network)상태 체크 Business Interface class
+ *  Description : ?ㅽ듃?뚰겕(Network)?곹깭 泥댄겕 Business Interface class
  *  Modification Information
  *
- *     수정일         수정자                   수정내용
+ *     ?섏젙??        ?섏젙??                  ?섏젙?댁슜
  *   -------    --------    ---------------------------
- *   2009.02.02    이 용          최초 생성
+ *   2009.02.02    ????         理쒖큹 ?앹꽦
  *
- *  @author 공통 서비스 개발팀 이 용
+ *  @author 怨듯넻 ?쒕퉬??媛쒕컻? ????
  *  @since 2009. 02. 02
  *  @version 1.0
  *  @see
@@ -33,18 +33,18 @@ import egovframework.com.cmm.service.Globals;
 import egovframework.com.cmm.util.EgovResourceCloseHelper;
 
 /**
- * EgovNetworkState 클래스를 정의한다.
+ * EgovNetworkState ?대옒?ㅻ? ?뺤쓽?쒕떎.
  *
- * @author 김진만
+ * @author 源吏꾨쭔
  * @see
  * <pre>
- * == 개정이력(Modification Information) ==
+ * == 媛쒖젙?대젰(Modification Information) ==
  *
- *  수정일		수정자		수정내용
+ *  ?섏젙??	?섏젙??	?섏젙?댁슜
  *  ----------	--------	---------------------------
- *  2020.12.07	신용호		KISA 보안약점 조치
- *  2022.11.11	김혜준		시큐어코딩 처리
- *  2023.06.09	김신해		NSR 보안조치 (SCAN 기능 구현 추가)
+ *  2020.12.07	?좎슜??	KISA 蹂댁븞?쎌젏 議곗튂
+ *  2022.11.11	源?쒖?		?쒗걧?댁퐫??泥섎━
+ *  2023.06.09	源?좏빐		NSR 蹂댁븞議곗튂 (SCAN 湲곕뒫 援ы쁽 異붽?)
  *
  * </pre>
  */
@@ -52,7 +52,7 @@ import egovframework.com.cmm.util.EgovResourceCloseHelper;
 public class EgovNetworkState {
 	public static String addrIP = "";
 	static final char FILE_SEPARATOR = File.separatorChar;
-	// 최대 문자길이
+	// 理쒕? 臾몄옄湲몄씠
 	static final int MAX_STR_LEN = 1024;
 
 	public static final int BUFF_SIZE = 2048;
@@ -61,10 +61,10 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : Local MAC Address를 확인한다.
+	 * Comment : Local MAC Address瑜??뺤씤?쒕떎.
 	 * </pre>
-	 * @param String localIP  로컬 IP주소
-	 * @return String mac        MAC Address를 리턴한다.
+	 * @param String localIP  濡쒖뺄 IP二쇱냼
+	 * @return String mac        MAC Address瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.03.)
 	 * @see
 	 */
@@ -73,13 +73,13 @@ public class EgovNetworkState {
 		String mac = null;
 		try {
 			if ("WINDOWS".equals(Globals.OS_TYPE)) {
-				// 2020-12-07 KISA 보안코드 검증 조치
+				// 2020-12-07 KISA 蹂댁븞肄붾뱶 寃利?議곗튂
 				if (!EgovWebUtil.isIPAddress(localIP)) {
 					throw new SecurityException("IP Address is Not Valid~~~!");
 				}
 
 				String execStr = "nbtstat -A " + localIP;
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				FileSystemUtils util = new FileSystemUtils();
 				Process p = util.processOperate("EgovNetworkState", execStr);
 				InputStream in = p.getInputStream();
@@ -106,10 +106,10 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : Local Port를 확인한다.
+	 * Comment : Local Port瑜??뺤씤?쒕떎.
 	 * </pre>
 
-	 * @return String port       port를 리턴한다.
+	 * @return String port       port瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.03.)
 	 * @see
 	 */
@@ -122,7 +122,7 @@ public class EgovNetworkState {
 
 			if ("WINDOWS".equals(Globals.OS_TYPE)) {
 				String execStr = "netstat -an";
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				FileSystemUtils util = new FileSystemUtils();
 				Process p = util.processOperate("EgovNetworkState", execStr);
 				input = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -142,7 +142,7 @@ public class EgovNetworkState {
 			} else if ("UNIX".equals(Globals.OS_TYPE)) {
 				String cmdStr = EgovProperties.getPathProperty(Globals.SERVER_CONF_PATH, "SHELL." + Globals.OS_TYPE + ".getNetWorkInfo");
 				String command = cmdStr.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR) + "SCAN";
-				// 2022.11.11 시큐어코딩 처리
+				// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 				FileSystemUtils util = new FileSystemUtils();
 				Process p = util.processOperate("EgovNetworkState", command);
 				input = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -170,9 +170,9 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : Local IPAddress를 확인한다.
+	 * Comment : Local IPAddress瑜??뺤씤?쒕떎.
 	 * </pre>
-	 * @return String mac        Local IPAddress를 리턴한다.
+	 * @return String mac        Local IPAddress瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.03.)
 	 * @see
 	 */
@@ -195,10 +195,10 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : 네트워크 상태체크를 확인한다.
+	 * Comment : ?ㅽ듃?뚰겕 ?곹깭泥댄겕瑜??뺤씤?쒕떎.
 	 * </pre>
-	 * @param String localIP           localhost, gateway, host 주소
-	 * @return boolean  status         true/false 를 리턴한다.
+	 * @param String localIP           localhost, gateway, host 二쇱냼
+	 * @return boolean  status         true/false 瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.03.)
 	 * @see
 	 */
@@ -217,15 +217,15 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : 네트워크(MAC,IP,S/M,G/W,DNS) 정보를 확인한다.
+	 * Comment : ?ㅽ듃?뚰겕(MAC,IP,S/M,G/W,DNS) ?뺣낫瑜??뺤씤?쒕떎.
 	 * </pre>
-	 * @param String stringOne         확인할 네트웍 정보 표기 ( ex:"MAC","IP","S/M","G/W","DNS")
-	 * @return String (MAC,IP,S/M,G/W,DNS) 정보를 리턴한다.
+	 * @param String stringOne         ?뺤씤???ㅽ듃???뺣낫 ?쒓린 ( ex:"MAC","IP","S/M","G/W","DNS")
+	 * @return String (MAC,IP,S/M,G/W,DNS) ?뺣낫瑜?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.07.)
 	 * @see
 	 */
 	public static String getNetWorkInfo(String stringOne) throws IOException {
-		// 실행할 명령을 프로퍼티 파일에서 확인한다.
+		// ?ㅽ뻾??紐낅졊???꾨줈?쇳떚 ?뚯씪?먯꽌 ?뺤씤?쒕떎.
 		Process p = null;
 
 		BufferedReader b_out = null;
@@ -235,7 +235,7 @@ public class EgovNetworkState {
 		try {
 			String cmdStr = EgovProperties.getPathProperty(Globals.SERVER_CONF_PATH, "SHELL." + Globals.OS_TYPE + ".getNetWorkInfo");
 			String command = cmdStr.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR) + stringOne;
-			// 2022.11.11 시큐어코딩 처리
+			// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 			FileSystemUtils util = new FileSystemUtils();
 			p = util.processOperate("EgovNetworkState", command);
 			b_out = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -247,10 +247,10 @@ public class EgovNetworkState {
 				if (tmp.length() >= MAX_STR_LEN) {
 					throw new IllegalArgumentException("input too long");
 				}
-				// netstat -v ent0 | grep "하드웨어 주소"   -MAC
-				// prtconf | grep "IP 주소"                 -IP
-				// prtconf | grep "서브넷 마스크"           -SM
-				// prtconf | grep "게이트웨이"              -GW
+				// netstat -v ent0 | grep "?섎뱶?⑥뼱 二쇱냼"   -MAC
+				// prtconf | grep "IP 二쇱냼"                 -IP
+				// prtconf | grep "?쒕툕??留덉뒪??           -SM
+				// prtconf | grep "寃뚯씠?몄썾??              -GW
 				if ("MAC".equals(stringOne)) {
 					outValue = getCharFilter(tmp);
 				} else if ("IP".equals(stringOne)) {
@@ -260,12 +260,12 @@ public class EgovNetworkState {
 				} else if ("GW".equals(stringOne)) {
 					outValue = getCharFilter(tmp);
 				} else if ("DNS".equals(stringOne)) {
-					//tmp = "was은(는) 192.168.200.21입니다";
+					//tmp = "was?(?? 192.168.200.21?낅땲??;
 					outValue = getCharFilter(tmp);
 				} else if ("SCAN".equals(stringOne)) {
 					outValue = getCharFilter(tmp);
 				} else {
-					outValue = "데이타가 존재하지 않습니다.";
+					outValue = "?곗씠?媛 議댁옱?섏? ?딆뒿?덈떎.";
 				}
 			}
 		} finally {
@@ -280,10 +280,10 @@ public class EgovNetworkState {
 
 	/**
 	 * <pre>
-	 * Comment : String 타입의 str값 중 숫자 정보만 필터링, 담아서 리턴.
+	 * Comment : String ??낆쓽 str媛?以??レ옄 ?뺣낫留??꾪꽣留? ?댁븘??由ы꽩.
 	 * </pre>
-	 * @param String str         필터링 대상 정보
-	 * @return String outValue   숫자 정보를 필터링 리턴한다.
+	 * @param String str         ?꾪꽣留?????뺣낫
+	 * @return String outValue   ?レ옄 ?뺣낫瑜??꾪꽣留?由ы꽩?쒕떎.
 	 * @version 1.0 (2009.02.07.)
 	 * @see
 	 */

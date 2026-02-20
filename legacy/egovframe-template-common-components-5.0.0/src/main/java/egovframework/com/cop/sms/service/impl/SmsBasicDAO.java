@@ -11,26 +11,26 @@ import egovframework.com.cop.sms.service.SmsRecptn;
 import egovframework.com.cop.sms.service.SmsVO;
 
 /**
- * 문자메시지를 위한 데이터 접근 클래스 (프레임워크 비종속 버전)
+ * 臾몄옄硫붿떆吏瑜??꾪븳 ?곗씠???묎렐 ?대옒??(?꾨젅?꾩썙??鍮꾩쥌??踰꾩쟾)
  * 
- * @author 공통컴포넌트개발팀 한성곤
+ * @author 怨듯넻而댄룷?뚰듃媛쒕컻? ?쒖꽦怨?
  * @since 2009.11.24
  * @version 1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.11.24  한성곤          최초 생성
- *   2025.06.09  이백행          PMD로 소프트웨어 보안약점 진단하고 제거하기-CloseResource(리소스 닫기)
+ *   2009.11.24  ?쒖꽦怨?         理쒖큹 ?앹꽦
+ *   2025.06.09  ?대갚??         PMD濡??뚰봽?몄썾??蹂댁븞?쎌젏 吏꾨떒?섍퀬 ?쒓굅?섍린-CloseResource(由ъ냼???リ린)
  *
  *      </pre>
  */
 public class SmsBasicDAO {
 	/**
-	 * 문자메시지 목록을 조회한다.
+	 * 臾몄옄硫붿떆吏 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param SmsVO
 	 */
@@ -122,7 +122,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지 목록 숫자를 조회한다
+	 * 臾몄옄硫붿떆吏 紐⑸줉 ?レ옄瑜?議고쉶?쒕떎
 	 * 
 	 * @param SmsVO
 	 * @return
@@ -182,7 +182,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지 정보를 등록한다.
+	 * 臾몄옄硫붿떆吏 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param notification
 	 * @return
@@ -213,7 +213,7 @@ public class SmsBasicDAO {
 
 			conn.setAutoCommit(false);
 
-			smsId = getNextId(conn); // SMS_ID 생성...
+			smsId = getNextId(conn); // SMS_ID ?앹꽦...
 
 			int index = 0;
 
@@ -231,7 +231,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지 수신정보 및 결과 정보를 등록한다.
+	 * 臾몄옄硫붿떆吏 ?섏떊?뺣낫 諛?寃곌낵 ?뺣낫瑜??깅줉?쒕떎.
 	 * 
 	 * @param smsRecptn
 	 * @throws Exception
@@ -259,7 +259,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지에 대한 상세정보를 조회한다.
+	 * 臾몄옄硫붿떆吏??????곸꽭?뺣낫瑜?議고쉶?쒕떎.
 	 * 
 	 * @param searchVO
 	 * @return
@@ -311,7 +311,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지 수신 및 결과 목록을 조회한다.
+	 * 臾몄옄硫붿떆吏 ?섏떊 諛?寃곌낵 紐⑸줉??議고쉶?쒕떎.
 	 * 
 	 * @param SmsRecptn
 	 */
@@ -352,7 +352,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * 문자메시지 전송 결과 수신을 처리한다. EgovSmsInfoReceiver(Schedule job)에 의해 호출된다.
+	 * 臾몄옄硫붿떆吏 ?꾩넚 寃곌낵 ?섏떊??泥섎━?쒕떎. EgovSmsInfoReceiver(Schedule job)???섑빐 ?몄텧?쒕떎.
 	 * 
 	 * @param smsRecptn
 	 * @return
@@ -382,7 +382,7 @@ public class SmsBasicDAO {
 	}
 
 	/**
-	 * ID 처리. transaction 처리를 위해 Connection을 파라미터로 넘겨받음
+	 * ID 泥섎━. transaction 泥섎━瑜??꾪빐 Connection???뚮씪誘명꽣濡??섍꺼諛쏆쓬
 	 * 
 	 * @return
 	 * @throws Exception

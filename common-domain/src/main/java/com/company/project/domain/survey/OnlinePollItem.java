@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 온라인 투표 항목 정보 Entity
- * 레거시 테이블: NONLINEPOLLIEM
+ * ??ㅼ뵬????紐??????類ｋ궖 Entity
+ * ??뉕탢?????뵠?? NONLINEPOLLIEM
  */
 @Entity
 @Table(name = "NONLINEPOLLIEM")

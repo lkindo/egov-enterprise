@@ -10,19 +10,19 @@ import egovframework.com.cmm.ComDefaultVO;
 import jakarta.annotation.Resource;
 
 /**
- * EgovComAbstractController.java 클래스
+ * EgovComAbstractController.java ?대옒??
  *
- * @author 이백행
+ * @author ?대갚??
  * @since 2022.05.04
  * @version 4.1.0
  * @see
  * 
  *      <pre>
- *  == 개정이력(Modification Information) ==
+ *  == 媛쒖젙?대젰(Modification Information) ==
  *
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2022.05.04  이백행          최초 생성
+ *   2022.05.04  ?대갚??         理쒖큹 ?앹꽦
  *
  *      </pre>
  */

@@ -3,23 +3,23 @@ package egovframework.com.uss.ion.rmm.service;
 import java.io.Serializable;
 
 /**
- * 개요
- * - 약도관리에 대한 VO 클래스를 정의한다.
+ * 媛쒖슂
+ * - ?쎈룄愿由ъ뿉 ???VO ?대옒?ㅻ? ?뺤쓽?쒕떎.
  * 
- * 상세내용
- * - 약도정보 조회를 위해 필요한 정보를 관리한다.
+ * ?곸꽭?댁슜
+ * - ?쎈룄?뺣낫 議고쉶瑜??꾪빐 ?꾩슂???뺣낫瑜?愿由ы븳??
  *  
- * @author 옥찬우
+ * @author ?μ갔??
  * @since 2014.08.27
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일			수정자		수정내용
+ *   ?섏젙??		?섏젙??	?섏젙?댁슜
  *  -----------		------		---------
- *   2014.08.27		옥찬우		최초 생성
+ *   2014.08.27		?μ갔??	理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -28,43 +28,43 @@ public class RoughMapDefaultVO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	/** 첫페이지 인덱스 */
+	/** 泥ロ럹?댁? ?몃뜳??*/
     private int firstIndex = 1;
     
-    /** * 마지막페이지 인덱스 */
+    /** * 留덉?留됲럹?댁? ?몃뜳??*/
     private int lastIndex = 1;
     
-    /** 현재페이지 */
+    /** ?꾩옱?섏씠吏 */
     private int pageIndex = 1;
     
-    /** 페이지 사이즈 */
+    /** ?섏씠吏 ?ъ씠利?*/
     private int pageSize = 10;
     
-    /** 페이지 개수 */
+    /** ?섏씠吏 媛쒖닔 */
     private int pageUnit = 10;
     
-    /** 페이지당 레코드 개수 */
+    /** ?섏씠吏???덉퐫??媛쒖닔 */
     private int recordCountPerPage = 10;
     
-    /** 검색조건 */
+    /** 寃?됱“嫄?*/
     private String searchCondition = "";
     
-    /** 검색단어 */
+    /** 寃?됰떒??*/
     private String searchKeyword = "";
     
-    /** 검색사용여부 */
+    /** 寃?됱궗?⑹뿬遺 */
     private String searchUseYn = "";
 
     /**
-     * 첫페이지 인덱스를 가져온다.
-     * @return int 첫페이지 인덱스
+     * 泥ロ럹?댁? ?몃뜳?ㅻ? 媛?몄삩??
+     * @return int 泥ロ럹?댁? ?몃뜳??
      */
     public int getFirstIndex(){
         return firstIndex;
     }
 
     /**
-     * 첫페이지 인덱스를 저장한다.
+     * 泥ロ럹?댁? ?몃뜳?ㅻ? ??ν븳??
      * @param firstIndex
      */
     public void setFirstIndex(int firstIndex){
@@ -72,15 +72,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 마지막페이지 인덱스를 가져온다.
-     * @return int 마지막페이지 인덱스
+     * 留덉?留됲럹?댁? ?몃뜳?ㅻ? 媛?몄삩??
+     * @return int 留덉?留됲럹?댁? ?몃뜳??
      */
     public int getLastIndex(){
         return lastIndex;
     }
 
     /**
-     * 마지막페이지 인덱스를 저장한다.
+     * 留덉?留됲럹?댁? ?몃뜳?ㅻ? ??ν븳??
      * @param lastIndex
      */
     public void setLastIndex(int lastIndex){
@@ -88,15 +88,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 현재페이지를 가져온다.
-     * @return int 현재페이지
+     * ?꾩옱?섏씠吏瑜?媛?몄삩??
+     * @return int ?꾩옱?섏씠吏
      */
     public int getPageIndex(){
         return pageIndex;
     }
 
     /**
-     * 현재페이지를 저장한다.
+     * ?꾩옱?섏씠吏瑜???ν븳??
      * @param pageIndex
      */
     public void setPageIndex(int pageIndex){
@@ -104,15 +104,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 페이지 사이즈를 가져온다.
-     * @return int 페이지 사이즈
+     * ?섏씠吏 ?ъ씠利덈? 媛?몄삩??
+     * @return int ?섏씠吏 ?ъ씠利?
      */
     public int getPageSize(){
         return pageSize;
     }
 
     /**
-     * 페이지 사이즈를 저장한다.
+     * ?섏씠吏 ?ъ씠利덈? ??ν븳??
      * @param pageSize
      */
     public void setPageSize(int pageSize){
@@ -120,15 +120,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 페이지 개수를 가져온다.
-     * @return int 페이지 개수
+     * ?섏씠吏 媛쒖닔瑜?媛?몄삩??
+     * @return int ?섏씠吏 媛쒖닔
      */
     public int getPageUnit(){
         return pageUnit;
     }
 
     /**
-     * 페이지 개수를 저장한다.
+     * ?섏씠吏 媛쒖닔瑜???ν븳??
      * @param pageUnit
      */
     public void setPageUnit(int pageUnit){
@@ -136,15 +136,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 페이지당 레코드 개수를 가져온다.
-     * @return int 페이지당 레코드 개수
+     * ?섏씠吏???덉퐫??媛쒖닔瑜?媛?몄삩??
+     * @return int ?섏씠吏???덉퐫??媛쒖닔
      */
     public int getRecordCountPerPage(){
         return recordCountPerPage;
     }
 
     /**
-     * 페이지당 레코드 개수를 저장한다.
+     * ?섏씠吏???덉퐫??媛쒖닔瑜???ν븳??
      * @param recordCountPerPage
      */
     public void setRecordCountPerPage(int recordCountPerPage){
@@ -152,15 +152,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 검색조건을 가져온다.
-     * @return String 검색조건
+     * 寃?됱“嫄댁쓣 媛?몄삩??
+     * @return String 寃?됱“嫄?
      */
     public String getSearchCondition(){
         return searchCondition;
     }
 
     /**
-     * 검색조건을 저장한다.
+     * 寃?됱“嫄댁쓣 ??ν븳??
      * @param searchCondition
      */
     public void setSearchCondition(String searchCondition){
@@ -168,15 +168,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 검색단어를 가져온다.
-     * @return String 검색단어
+     * 寃?됰떒?대? 媛?몄삩??
+     * @return String 寃?됰떒??
      */
     public String getSearchKeyword(){
         return searchKeyword;
     }
 
     /**
-     * 검색단어를 저장한다.
+     * 寃?됰떒?대? ??ν븳??
      * @param searchKeyword
      */
     public void setSearchKeyword(String searchKeyword){
@@ -184,15 +184,15 @@ public class RoughMapDefaultVO implements Serializable {
     }
 
     /**
-     * 검색사용여부를 가져온다.
-     * @return String 검색사용여부
+     * 寃?됱궗?⑹뿬遺瑜?媛?몄삩??
+     * @return String 寃?됱궗?⑹뿬遺
      */
     public String getSearchUseYn(){
         return searchUseYn;
     }
 
     /**
-     * 검색사용여부를 저장한다.
+     * 寃?됱궗?⑹뿬遺瑜???ν븳??
      * @param searchUseYn
      */
     public void setSearchUseYn(String searchUseYn){

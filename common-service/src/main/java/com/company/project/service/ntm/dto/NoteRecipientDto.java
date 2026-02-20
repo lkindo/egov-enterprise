@@ -11,5 +11,5 @@ public class NoteRecipientDto {
     private String noteRecptnId;
     private String rcverId;
     private String rcverNm;
-    private String recptnSe; // 1: 수신, 2: 참조
+    private String recptnSe; // 1: ?섏떊, 2: 李몄“
 }

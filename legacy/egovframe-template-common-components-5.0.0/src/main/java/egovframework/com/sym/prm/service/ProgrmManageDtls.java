@@ -1,18 +1,18 @@
 package egovframework.com.sym.prm.service;
 
 /**
- * 프로그램변경요청 관리 생성을 위한 모델 클래스를 정의한다.
- * @author 공통서비스 개발팀 이 용
+ * ?꾨줈洹몃옩蹂寃쎌슂泥?愿由??앹꽦???꾪븳 紐⑤뜽 ?대옒?ㅻ? ?뺤쓽?쒕떎.
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ????
  * @since 2009.06.01
  * @version 1.0
  * @see
  *
  * <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *   
- *   수정일      수정자           수정내용
+ *   ?섏젙??     ?섏젙??          ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *   2009.03.20  이용          최초 생성
+ *   2009.03.20  ?댁슜          理쒖큹 ?앹꽦
  *
  * </pre>
  */
@@ -20,15 +20,15 @@ package egovframework.com.sym.prm.service;
 public class ProgrmManageDtls {
 
 	/**
-	 * 변경요청내용
+	 * 蹂寃쎌슂泥?궡??
 	 */
 	private String changerqesterCn;
 	/**
-	 * 처리자ID
+	 * 泥섎━?륤D
 	 */
 	private String opetrId;
 	/**
-	 * 처리일자
+	 * 泥섎━?쇱옄
 	 */
 	private String processDe;
 	public String getChangerqesterCn() {
@@ -92,31 +92,31 @@ public class ProgrmManageDtls {
 		this.rqesterSj = rqesterSj;
 	}
 	/**
-	 * 처리상태코드
+	 * 泥섎━?곹깭肄붾뱶
 	 */
 	private String processSttus;
 	/**
-	 * 프로그램파일명
+	 * ?꾨줈洹몃옩?뚯씪紐?
 	 */
 	private String progrmFileNm;
 	/**
-	 * 요청일자
+	 * ?붿껌?쇱옄
 	 */
 	private String rqesterDe;
 	/**
-	 * 요청번호
+	 * ?붿껌踰덊샇
 	 */
 	private int rqesterNo;
 	/**
-	 * 요청자ID
+	 * ?붿껌?륤D
 	 */
 	private String rqesterpersonId;
 	/**
-	 * 요청처리내용
+	 * ?붿껌泥섎━?댁슜
 	 */
 	private String rqesterProcessCn;
 	/**
-	 * 요청제목
+	 * ?붿껌?쒕ぉ
 	 */
 	private String rqesterSj;
 }

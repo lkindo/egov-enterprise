@@ -15,22 +15,22 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * 인증여부 체크 인터셉터
+ * ?몄쬆?щ? 泥댄겕 ?명꽣?됲꽣
  * 
- * @author 공통서비스 개발팀 서준식
+ * @author 怨듯넻?쒕퉬??媛쒕컻? ?쒖???
  * @since 2011.07.01
  * @version 1.0
  * @see
  *
  *      <pre>
- * << 개정이력(Modification Information) >>
+ * << 媛쒖젙?대젰(Modification Information) >>
  *
- *   수정일      수정자          수정내용
+ *   ?섏젙??     ?섏젙??         ?섏젙?댁슜
  *  -------    --------    ---------------------------
- *  2011.07.01  서준식          최초 생성
- *  2011.09.07  서준식          인증이 필요없는 URL을 패스하는 로직 추가
- *  2017.08.31  장동한          인증된 사용자 체크로직 변경 및 관리자 권한 체크 로직 추가
- *  2021.08.27  신용호          dummy모드 사용시 "60. 권한관리" 접근오류 수정
+ *  2011.07.01  ?쒖???         理쒖큹 ?앹꽦
+ *  2011.09.07  ?쒖???         ?몄쬆???꾩슂?녿뒗 URL???⑥뒪?섎뒗 濡쒖쭅 異붽?
+ *  2017.08.31  ?λ룞??         ?몄쬆???ъ슜??泥댄겕濡쒖쭅 蹂寃?諛?愿由ъ옄 沅뚰븳 泥댄겕 濡쒖쭅 異붽?
+ *  2021.08.27  ?좎슜??         dummy紐⑤뱶 ?ъ슜??"60. 沅뚰븳愿由? ?묎렐?ㅻ쪟 ?섏젙
  *      </pre>
  */
 
@@ -40,7 +40,7 @@ public class AuthenticInterceptor implements HandlerInterceptor {
 	@Autowired
 	private Environment environment;
 
-	/** 관리자 접근 권한 패턴 목록 */
+	/** 愿由ъ옄 ?묎렐 沅뚰븳 ?⑦꽩 紐⑸줉 */
 	private List<String> adminAuthPatternList;
 
 	public List<String> getAdminAuthPatternList() {
@@ -52,33 +52,33 @@ public class AuthenticInterceptor implements HandlerInterceptor {
 	}
 
 	/**
-	 * 인증된 사용자 여부로 인증 여부를 체크한다.
-	 * 관리자 권한에 따라 접근 페이지 권한을 체크한다.
+	 * ?몄쬆???ъ슜???щ?濡??몄쬆 ?щ?瑜?泥댄겕?쒕떎.
+	 * 愿由ъ옄 沅뚰븳???곕씪 ?묎렐 ?섏씠吏 沅뚰븳??泥댄겕?쒕떎.
 	 */
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
-		// 인증된사용자 여부
+		// ?몄쬆?쒖궗?⑹옄 ?щ?
 		boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-		// 미민증사용자 체크
+		// 誘몃?利앹궗?⑹옄 泥댄겕
 		if (!isAuthenticated) {
 			ModelAndView modelAndView = new ModelAndView("redirect:/uat/uia/egovLoginUsr.do");
 			throw new ModelAndViewDefiningException(modelAndView);
 		}
-		// 인증된 권한 목록
+		// ?몄쬆??沅뚰븳 紐⑸줉
 		List<String> authList = EgovUserDetailsHelper.getAuthorities();
-		// 관리자인증여부
+		// 愿由ъ옄?몄쬆?щ?
 		boolean adminAuthUrlPatternMatcher = false;
 		// AntPathRequestMatcher
 		AntPathRequestMatcher antPathRequestMatcher = null;
-		// 관리자가 아닐때 체크함
+		// 愿由ъ옄媛 ?꾨땺??泥댄겕??
 		for (String adminAuthPattern : adminAuthPatternList) {
 			antPathRequestMatcher = new AntPathRequestMatcher(adminAuthPattern);
 			if (antPathRequestMatcher.matches(request)) {
 				adminAuthUrlPatternMatcher = true;
 			}
 		}
-		// 관리자 권한 체크
+		// 愿由ъ옄 沅뚰븳 泥댄겕
 		if (adminAuthUrlPatternMatcher && !authList.contains("ROLE_ADMIN")) {
 			ModelAndView modelAndView = new ModelAndView("redirect:/uat/uia/egovLoginUsr.do?auth_error=1");
 			throw new ModelAndViewDefiningException(modelAndView);

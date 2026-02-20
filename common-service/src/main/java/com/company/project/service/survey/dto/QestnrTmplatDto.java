@@ -13,25 +13,25 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "설문템플릿 정보 DTO")
+@Schema(description = "Description")
 public class QestnrTmplatDto {
 
-    @Schema(description = "템플릿 ID")
+    @Schema(description = "Description")
     private String qestnrTmplatId;
 
-    @Schema(description = "템플릿 유형")
+    @Schema(description = "Description")
     private String qestnrTmplatTy;
 
-    @Schema(description = "템플릿 이미지 경로")
+    @Schema(description = "Description")
     private String qestnrTmplatImagepathnm;
 
-    @Schema(description = "템플릿 설명")
+    @Schema(description = "Description")
     private String qestnrTmplatCn;
 
-    @Schema(description = "등록자 ID")
+    @Schema(description = "Description")
     private String createdBy;
 
-    @Schema(description = "등록일시")
+    @Schema(description = "Description")
     private LocalDateTime createdDate;
 
     public static QestnrTmplatDto from(QestnrTmplat entity) {

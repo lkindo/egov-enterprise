@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 약식결재 Repository
+ * ??뚮뻼野껉퀣??Repository
  */
 public interface InformalSanctnRepository extends JpaRepository<InformalSanctn, String> {
     Page<InformalSanctn> findByApplcntId(String applcntId, Pageable pageable);
