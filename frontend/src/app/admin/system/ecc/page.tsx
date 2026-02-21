@@ -129,10 +129,10 @@ export default function EventCmpgnPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="사내 행사 및 캠페인 관리" 
+      <PageHeader
+        title="사내 행사 및 캠페인 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '행사캠페인' }]}
-        action={
+        actions={
           <Button onClick={handleOpenCreate} className="rounded-full gap-2">
             <Plus size={16} /> 신규 등록
           </Button>

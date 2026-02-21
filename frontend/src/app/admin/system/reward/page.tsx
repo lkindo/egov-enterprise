@@ -137,10 +137,10 @@ export default function RewardPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="임직원 포상 관리" 
+      <PageHeader
+        title="임직원 포상 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '포상관리' }]}
-        action={
+        actions={
           <Button onClick={handleOpenCreate} className="rounded-full gap-2">
             <Plus size={16} /> 신규 포상 등록
           </Button>

@@ -132,10 +132,10 @@ export default function NetworkPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="네트워크 인프라 관리" 
+      <PageHeader
+        title="네트워크 인프라 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '네트워크관리' }]}
-        action={
+        actions={
           <Button className="rounded-full gap-2" onClick={handleOpenCreate}>
             <Plus size={16} /> 신규 네트워크 등록
           </Button>
