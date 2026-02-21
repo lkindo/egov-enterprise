@@ -43,8 +43,16 @@ export default function UserAbsencePage() {
   };
 
   const columns = [
-    { header: '사용자 ID', accessor: 'userId', className: 'font-mono' },
-    { header: '성명', accessor: 'userNm', className: 'font-bold text-foreground' },
+    { 
+      header: '사용자 ID', 
+      accessor: (item: UserAbsence) => item.userId, 
+      className: 'font-mono' 
+    },
+    { 
+      header: '성명', 
+      accessor: (item: UserAbsence) => item.userNm, 
+      className: 'font-bold text-foreground' 
+    },
     {
       header: '부재 여부',
       accessor: (item: UserAbsence) => (
@@ -61,7 +69,11 @@ export default function UserAbsencePage() {
         </div>
       )
     },
-    { header: '최종 수정', accessor: 'lastUpdusrPnttm', className: 'text-[10px] text-muted-foreground' },
+    { 
+      header: '최종 수정', 
+      accessor: (item: UserAbsence) => item.lastUpdusrPnttm, 
+      className: 'text-[10px] text-muted-foreground' 
+    },
     {
       header: '상태 변경',
       className: 'text-right',

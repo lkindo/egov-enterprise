@@ -43,10 +43,17 @@ export default function DeptJobPage() {
       ),
       className: 'w-24'
     },
-    { header: '업무명', accessor: 'deptJobNm', className: 'font-bold text-foreground' },
-    { header: '담당자', accessor: 'chargerNm' },
     { 
-      header: '상태', 
+      header: '업무명', 
+      accessor: (item: DeptJob) => item.deptJobNm, 
+      className: 'font-bold text-foreground' 
+    },
+    { 
+      header: '담당자', 
+      accessor: (item: DeptJob) => item.chargerNm 
+    },
+    {
+      header: '상태',
       accessor: (item: DeptJob) => (
         <div className="flex items-center gap-2">
           {item.sttus === '2' ? <CheckCircle2 size={14} className="text-green-500" /> : <Clock size={14} className="text-orange-500" />}

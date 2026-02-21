@@ -130,7 +130,11 @@ export default function VacationPage() {
                 </div>
             )
         },
-        { header: '사유', accessor: 'vcatnResn', className: 'max-w-[200px] truncate' },
+        { 
+            header: '사유', 
+            accessor: (item: Vacation) => item.vcatnResn, 
+            className: 'max-w-[200px] truncate' 
+        },
         { header: '상태', accessor: (item: Vacation) => getStatusBadge(item.confmAt) },
         {
             header: '관리',
