@@ -27,3 +27,40 @@ export interface MonthlyScheduleResponse {
   schedules: Schedule[];
   yearMonth: string;
 }
+
+export interface DeptSchedule extends Schedule {
+  schdulDeptId: string;
+  deptNm: string;
+}
+
+export interface ScheduleSearchParams {
+  schdulSe?: string;
+  schdulDeptId?: string;
+  schdulBgnde?: string;
+  schdulEndde?: string;
+  schdulNm?: string;
+  pageIndex?: number;
+  size?: number;
+}
+
+export interface WorkReport {
+  reportId: string;
+  reportNm: string;
+  reportCn: string;
+  writngBgnde: string;
+  writngEndde: string;
+  reportDeptId: string;
+  reportDeptNm: string;
+  chargerId: string;
+  chargerNm: string;
+  createdDate: string;
+  sanctnSttus: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface ReportSearchParams {
+  reportNm?: string;
+  writngBgnde?: string;
+  writngEndde?: string;
+  pageIndex?: number;
+  size?: number;
+}

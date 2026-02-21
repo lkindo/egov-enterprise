@@ -95,8 +95,8 @@ export default function AuthorityManagePage() {
     ];
 
     const columns = [
-        { 
-            header: '권한코드', 
+        {
+            header: '권한코드',
             accessor: (item: AuthorManage) => (
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100">
@@ -106,8 +106,12 @@ export default function AuthorityManagePage() {
                 </div>
             )
         },
-        { header: '권한명', accessor: 'authorNm', className: 'font-bold' },
         { 
+            header: '권한명', 
+            accessor: (item: AuthorManage) => item.authorNm, 
+            className: 'font-bold' 
+        },
+        {
             header: '설명', 
             accessor: (item: AuthorManage) => (
                 <span className="text-xs text-muted-foreground line-clamp-1 max-w-[250px]">{item.authorDc || '-'}</span>

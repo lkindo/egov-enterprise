@@ -22,3 +22,17 @@ export interface SummaryStats {
   todayConnects: number;
   pendingTroubles: number;
 }
+
+export interface StatsVO {
+  statsId: string;
+  statsSe: string;
+  statsCn: string;
+  createdDate: string;
+}
+
+export interface StatsSearchParams {
+  statsSe?: string;
+  searchPeriod?: string;
+  pageIndex?: number;
+  size?: number;
+}

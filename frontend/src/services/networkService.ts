@@ -37,5 +37,12 @@ export const networkService = {
   deleteNetwork: async (id: string) => {
     const response = await client.delete(`/admin/system/networks/${id}`);
     return response.data;
+  },
+
+  getNetworkLogs: async (params: { ntwrkId: string; page?: number; size?: number }) => {
+    const response = await client.get(`/admin/system/networks/${params.ntwrkId}/logs`, { params });
+    return response.data;
   }
 };
+
+export type NetworkServiceStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR';
