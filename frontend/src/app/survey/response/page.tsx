@@ -39,7 +39,7 @@ export default function SurveyResponseListPage() {
 
     const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
         queryKey: ['survey-responses', pageIndex, searchKeyword],
-        queryFn: () => getQustnrRespondInfoList({ pageIndex, searchKeyword, pageSize: 10 }),
+        queryFn: () => getQustnrRespondInfoList({ pageIndex, pageSize: 10, respondNm: searchKeyword }),
         retry: false,
     });
 
