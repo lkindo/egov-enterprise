@@ -7,19 +7,20 @@ import { StatusBadge } from '@/app/components/ui/status-badge';
 import { approvalService, Approval } from '@/services/approvalService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { 
-  Inbox, 
-  Send, 
-  Check, 
-  X, 
-  FileText, 
-  Clock, 
-  User, 
+import {
+  Inbox,
+  Send,
+  Check,
+  X,
+  FileText,
+  Clock,
+  User,
   ArrowRight,
   ClipboardCheck,
   History,
   Info,
-  Calendar
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ApprovalStepper } from './ApprovalStepper';
@@ -118,12 +119,12 @@ export default function ApprovalInboxPage() {
     if (!selectedItem) return [];
     return [
       { label: '기안', user: selectedItem.applicantId, status: 'completed' as const, date: selectedItem.requestDate },
-      { label: '검토', user: '이순신 과장', status: selectedItem.status === 'R' ? 'current' : 'completed' as const },
-      { 
-        label: '최종 승인', 
-        user: '관리자', 
-        status: selectedItem.status === 'Y' ? 'completed' : 
-                selectedItem.status === 'N' ? 'rejected' : 'pending' as const 
+      { label: '검토', user: '이순신 과장', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
+      {
+        label: '최종 승인',
+        user: '관리자',
+        status: selectedItem.status === 'Y' ? 'completed' as const :
+                selectedItem.status === 'N' ? 'rejected' as const : 'pending' as const
       }
     ];
   }, [selectedItem]);
