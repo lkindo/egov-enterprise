@@ -68,6 +68,8 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        maxHeapSize = "2048m"
+        forkEvery = 100 // helps prevent memory leaks from building up indefinitely
         finalizedBy jacocoTestReport // test 작업 완료 후 jacocoTestReport 실행
     }
 
