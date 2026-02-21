@@ -295,7 +295,7 @@ const BBSListContent = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-8">
                                                 <div className="font-bold text-slate-400 flex items-center justify-center gap-2">
-                                                    <Calendar size={14} className="opacity-30" />
+                                                    <CalendarIcon size={14} className="opacity-30" />
                                                     {item.frstRegisterPnttm?.substring(0, 10)}
                                                 </div>
                                             </TableCell>
