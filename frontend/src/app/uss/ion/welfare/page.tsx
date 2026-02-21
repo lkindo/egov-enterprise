@@ -99,9 +99,9 @@ export default function WelfarePage() {
       </div>
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={tab === 'reward' ? rewardColumns : ctsnnColumns} 
-          data={data} 
+        <StandardDataTable
+          columns={tab === 'reward' ? (rewardColumns as any) : (ctsnnColumns as any)}
+          data={data}
           loading={loading}
           emptyMessage="등록된 내역이 없습니다."
           className="border-none rounded-none"

@@ -32,7 +32,11 @@ export function ServerResource() {
   }, [loadLogs]);
 
   const columns = [
-    { header: '서버 ID', accessor: 'serverId', className: 'text-xs font-mono text-muted-foreground' },
+    { 
+      header: '서버 ID', 
+      accessor: (item: ServerResrceLog) => item.serverId, 
+      className: 'text-xs font-mono text-muted-foreground' 
+    },
     { 
       header: 'CPU 사용률', 
       accessor: (item: ServerResrceLog) => (
