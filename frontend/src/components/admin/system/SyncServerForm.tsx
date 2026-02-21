@@ -14,7 +14,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
   const [formData, setFormData] = useState<Partial<SyncServer>>({
     serverNm: '',
     serverIp: '',
-    serverPort: '',
+    serverPort: 0,
     targetDrctry: '',
     syncAt: 'Y',
     ...initialData
