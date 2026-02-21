@@ -1,8 +1,8 @@
 package com.company.project.service.cmt;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +35,7 @@ class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    @DisplayName("?볤? ?앹꽦 ?깃났")
+    @DisplayName("Create comment success")
     void createComment_success() {
         // given
         String userId = "USER_01";
@@ -45,9 +45,9 @@ class CommentServiceTest {
         request.setNttId(1L);
         request.setCommentCn("Test Comment");
 
-        Comment savedComment = Comment.builder().id(1L).build();
+        Comment savedComment = mock(Comment.class);
+        when(savedComment.getId()).thenReturn(1L);
 
-        when(commentRepository.findMaxId()).thenReturn(0L);
         when(commentRepository.save(java.util.Objects.requireNonNull(any(Comment.class))))
                 .thenReturn(java.util.Objects.requireNonNull(savedComment));
 
@@ -60,7 +60,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?볤? 紐⑸줉 議고쉶 ?깃났")
+    @DisplayName("Get comments success")
     void getComments_success() {
         // given
         String bbsId = "BBS_01";
@@ -68,7 +68,6 @@ class CommentServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         Comment comment = Comment.builder()
-                .id(1L)
                 .bbsId(bbsId)
                 .nttId(nttId)
                 .commentCn("Comment")
@@ -88,7 +87,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?볤? ?섏젙 ?깃났")
+    @DisplayName("Update comment success")
     void updateComment_success() {
         // given
         Long commentId = 1L;
@@ -96,11 +95,8 @@ class CommentServiceTest {
         CommentSaveRequest request = new CommentSaveRequest();
         request.setCommentCn("Updated Content");
 
-        Comment comment = Comment.builder()
-                .id(commentId)
-                .commentCn("Old Content")
-                .frstRegisterId(userId)
-                .build();
+        Comment comment = mock(Comment.class);
+        when(comment.getFrstRegisterId()).thenReturn(userId);
 
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
@@ -108,20 +104,18 @@ class CommentServiceTest {
         commentService.updateComment(commentId, userId, request);
 
         // then
-        assertThat(comment.getCommentCn()).isEqualTo("Updated Content");
+        verify(comment).update("Updated Content");
     }
 
     @Test
-    @DisplayName("?볤? ??젣 ?깃났")
+    @DisplayName("Delete comment success")
     void deleteComment_success() {
         // given
         Long commentId = 1L;
         String userId = "USER_01";
 
-        Comment comment = Comment.builder()
-                .id(commentId)
-                .useAt("Y")
-                .build();
+        Comment comment = mock(Comment.class);
+        when(comment.getFrstRegisterId()).thenReturn(userId);
 
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
@@ -129,6 +123,6 @@ class CommentServiceTest {
         commentService.deleteComment(commentId, userId);
 
         // then
-        assertThat(comment.getUseAt()).isEqualTo("N");
+        verify(comment).delete();
     }
 }

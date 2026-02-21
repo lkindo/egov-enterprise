@@ -37,7 +37,7 @@ class DutyServiceTest {
         private DutyService dutyService;
 
         @Test
-        @DisplayName("?뱀쭅 ?쇱? ?섏씠吏?議고쉶 ?쒕퉬???뚯뒪??)
+        @DisplayName("Duty List Pagination Test")
         void getDutyList_Pagination() {
                 // given
                 BndtManage duty = BndtManage.builder()

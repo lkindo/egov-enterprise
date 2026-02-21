@@ -24,7 +24,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 /**
- * UserService ?⑥쐞 ?뚯뒪?? */
+ * UserService Test
+ */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -44,20 +45,20 @@ class UserServiceTest {
     private UserService userService;
 
     @Test
-    @DisplayName("?ъ슜??紐⑸줉 議고쉶 ?깃났")
+    @DisplayName("Get user list success")
     void getUserList_success() {
         // given
         User user = User.builder()
                 .userId("testUser")
                 .password("password")
-                .userNm("?뚯뒪???ъ슜??)
+                .userNm("Test User")
                 .esntlId("USR_001")
                 .role(Role.USER)
                 .build();
 
         UserDto userDto = UserDto.builder()
                 .userId("testUser")
-                .userNm("?뚯뒪???ъ슜??)
+                .userNm("Test User")
                 .esntlId("USR_001")
                 .role("USER")
                 .build();
@@ -71,25 +72,25 @@ class UserServiceTest {
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getUserId()).isEqualTo("testUser");
-        assertThat(result.get(0).getUserNm()).isEqualTo("?뚯뒪???ъ슜??);
+        assertThat(result.get(0).getUserNm()).isEqualTo("Test User");
     }
 
     @Test
-    @DisplayName("?ъ슜???곸꽭 議고쉶 ?깃났")
+    @DisplayName("Get user by id success")
     void getUserById_success() {
         // given
         String userId = "testUser";
         User user = User.builder()
                 .userId(userId)
                 .password("password")
-                .userNm("?뚯뒪???ъ슜??)
+                .userNm("Test User")
                 .esntlId("USR_001")
                 .role(Role.ADMIN)
                 .build();
 
         UserDto userDto = UserDto.builder()
                 .userId(userId)
-                .userNm("?뚯뒪???ъ슜??)
+                .userNm("Test User")
                 .esntlId("USR_001")
                 .role("ADMIN")
                 .build();
@@ -106,7 +107,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("議댁옱?섏? ?딅뒗 ?ъ슜??議고쉶 ???덉쇅 諛쒖깮")
+    @DisplayName("Get user by id not found")
     void getUserById_notFound() {
         // given
         String userId = "notExist";

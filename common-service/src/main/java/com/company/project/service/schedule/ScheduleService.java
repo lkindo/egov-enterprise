@@ -141,10 +141,9 @@ public class ScheduleService implements EgovScheduleService {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // Permission Check?
+        // Permission Check
         if (!schedule.getFrstRegisterId().equals(userId)) {
-            // throw new BusinessException(ErrorCode.ACCESS_DENIED);
-            // Skip check for now or assume authorized context
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         schedule.update(
@@ -166,6 +165,11 @@ public class ScheduleService implements EgovScheduleService {
     public void deleteSchedule(String id, String userId) {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!schedule.getFrstRegisterId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         scheduleRepository.delete(Objects.requireNonNull(schedule));
     }
 }

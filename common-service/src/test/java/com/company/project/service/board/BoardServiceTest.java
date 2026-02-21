@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
- * BoardService ?⑥쐞 ?뚯뒪??
+ * BoardService Test
  */
 @ExtendWith(MockitoExtension.class)
 class BoardServiceTest {
@@ -54,22 +54,20 @@ class BoardServiceTest {
         private BoardService boardService;
 
         @Test
-        @DisplayName("寃뚯떆?륤D濡?寃뚯떆臾?紐⑸줉 議고쉶 ?깃났")
+        @DisplayName("Get board posts success")
         void getBoardPosts_success() {
                 // given
                 String bbsId = "TEST_BBS";
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId(bbsId)
-                                .bbsNm("?뚯뒪??寃뚯떆??)
+                                .bbsNm("Test Board")
                                 .bbsTyCode("BBST01")
                                 .build();
 
                 PageRequest pageable = PageRequest.of(0, 10);
                 Page<com.company.project.domain.board.BoardSearchResult> boards = new PageImpl<>(
                                 Objects.requireNonNull(
-                                                List.of(new com.company.project.domain.board.BoardSearchResult()))); // Simplified
-                                                                                                                     // for
-                // mock
+                                                List.of(new com.company.project.domain.board.BoardSearchResult())));
 
                 when(boardMasterRepository.findById(java.util.Objects.requireNonNull(bbsId)))
                                 .thenReturn(Optional.of(master));
@@ -84,7 +82,7 @@ class BoardServiceTest {
         }
 
         @Test
-        @DisplayName("議댁옱?섏? ?딅뒗 寃뚯떆?륤D濡?議고쉶 ???덉쇅 諛쒖깮")
+        @DisplayName("Get board posts not found")
         void getBoardPosts_notFound() {
                 // given
                 String bbsId = "NOT_EXIST";
@@ -97,24 +95,23 @@ class BoardServiceTest {
         }
 
         @Test
-        @DisplayName("寃뚯떆臾??곸꽭 議고쉶 ??議고쉶??利앷?")
+        @DisplayName("Get post detail increase view count")
         void getPostDetail_increaseViewCount() {
                 // given
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId("TEST_BBS")
-                                .bbsNm("?뚯뒪??)
+                                .bbsNm("Test Board")
                                 .bbsTyCode("BBST01")
                                 .build();
 
                 Board board = Board.builder()
-                                .nttId(1L)
                                 .bbsId(Objects.requireNonNull(master.getBbsId()))
-                                .nttSj("?뚯뒪???쒕ぉ")
-                                .nttCn("?뚯뒪???댁슜")
+                                .nttSj("Test Title")
+                                .nttCn("Test Content")
                                 .build();
 
                 com.company.project.domain.board.BoardDetailResult detailResult = new com.company.project.domain.board.BoardDetailResult();
-                detailResult.setNttSj("?뚯뒪???쒕ぉ");
+                detailResult.setNttSj("Test Title");
 
                 when(boardRepository.findArticleDetail(java.util.Objects.requireNonNull(any())))
                                 .thenReturn(Optional.of(detailResult));
@@ -125,13 +122,13 @@ class BoardServiceTest {
                 BoardDto result = boardService.getPostDetail("TEST_BBS", 1L);
 
                 // then
-                assertThat(result.getNttSj()).isEqualTo("?뚯뒪???쒕ぉ");
-                assertThat(board.getInqireCo()).isEqualTo(1); // 議고쉶??1 利앷?
+                assertThat(result.getNttSj()).isEqualTo("Test Title");
+                assertThat(board.getInqireCo()).isEqualTo(1); // View count increased
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("?뚯씪 ?쒕퉬??Mock ?ㅼ젙 ?꾩슂 - ?꾩냽 ?묒뾽")
-        @DisplayName("?뚯씪 泥⑤? 寃뚯떆臾??깅줉 ?깃났")
+        @org.junit.jupiter.api.Disabled("File service mock needed")
+        @DisplayName("Create post with files success")
         void createPostWithFiles_success() throws IOException {
                 // given
                 String userId = "USER_01";
@@ -145,15 +142,19 @@ class BoardServiceTest {
                 List<MultipartFile> files = Objects.requireNonNull(List.of(mock(MultipartFile.class)));
 
                 BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-                com.company.project.domain.user.User user = com.company.project.domain.user.User.builder()
+
+                com.company.project.domain.user.entity.User user = com.company.project.domain.user.entity.User.builder()
                                 .userId(userId).esntlId(esntlId).userNm("Tester").password("pw").build();
-                Board savedBoard = Board.builder().nttId(1L).atchFileId(atchFileId).build();
+
+                Board savedBoard = mock(Board.class);
+                when(savedBoard.getNttId()).thenReturn(1L);
 
                 when(fileService.uploadFiles(files)).thenReturn(atchFileId);
                 when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
                 when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(Objects.requireNonNull(user)));
-                when(boardRepository.findMaxNttId()).thenReturn(0L);
-                when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
+
+                // Removed findMaxNttId and findMaxSortOrdr mocks as they don't exist in repository
+
                 when(boardRepository.save(Objects.requireNonNull(any(Board.class))))
                                 .thenReturn(Objects.requireNonNull(savedBoard));
 
