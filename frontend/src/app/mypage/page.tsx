@@ -131,10 +131,10 @@ export default function MyPageDashboard() {
 
         {/* Right: Tabbed Content Area */}
         <div className="lg:col-span-3 space-y-8">
-          <StandardTabs 
-            tabs={tabs} 
-            activeTab={activeTab} 
-            onChange={setActiveTab} 
+          <StandardTabs
+            items={tabs}
+            activeTab={activeTab}
+            onChange={setActiveTab}
             className="p-1.5 bg-muted/30 rounded-[1.5rem]"
           />
 

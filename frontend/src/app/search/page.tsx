@@ -148,10 +148,10 @@ const SearchResultsContent = () => {
 
         {/* Main Results Area */}
         <div className="flex-1 space-y-8">
-          <StandardTabs 
-            tabs={tabs} 
-            activeTab={activeTab} 
-            onChange={setTab} 
+          <StandardTabs
+            items={tabs}
+            activeTab={activeTab}
+            onChange={setTab}
             className="p-1.5 bg-muted/30 rounded-[1.5rem]"
           />
 

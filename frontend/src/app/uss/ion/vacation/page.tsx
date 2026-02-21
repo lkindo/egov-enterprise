@@ -194,10 +194,10 @@ export default function VacationPage() {
                 />
             </div>
 
-            <StandardTabs 
-                tabs={tabs} 
-                activeTab={activeTab} 
-                onChange={setActiveTab} 
+            <StandardTabs
+                items={tabs}
+                activeTab={activeTab}
+                onChange={setActiveTab}
                 className="mb-6"
             />
 
