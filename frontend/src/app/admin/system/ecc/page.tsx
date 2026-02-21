@@ -92,7 +92,11 @@ export default function EventCmpgnPage() {
         </span>
       )
     },
-    { header: '명칭', accessor: 'eventNm', className: 'font-bold text-primary' },
+    { 
+      header: '명칭', 
+      accessor: (item: EventCmpgn) => item.eventNm, 
+      className: 'font-bold text-primary' 
+    },
     { 
       header: '행사 기간', 
       accessor: (item: EventCmpgn) => (

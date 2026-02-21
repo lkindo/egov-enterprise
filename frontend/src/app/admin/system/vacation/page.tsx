@@ -75,7 +75,10 @@ export default function AdminVacationPage() {
   };
 
   const columns = [
-    { header: '신청자 ID', accessor: 'applcntId' },
+    { 
+      header: '신청자 ID', 
+      accessor: (item: Vacation) => item.applcntId 
+    },
     { 
       header: '구분', 
       accessor: (item: Vacation) => (
