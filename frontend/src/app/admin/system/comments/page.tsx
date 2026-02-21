@@ -30,16 +30,20 @@ export default function CommentAdminPage() {
   }, [loadData]);
 
   const columns = [
-    { header: 'No', accessor: 'commentNo', className: 'w-16 text-muted-foreground font-mono' },
     { 
-      header: '댓글 내용', 
+      header: 'No', 
+      accessor: (item: CommentDetail) => item.commentNo, 
+      className: 'w-16 text-muted-foreground font-mono' 
+    },
+    {
+      header: '댓글 내용',
       accessor: (item: CommentDetail) => (
         <span className="font-bold text-foreground line-clamp-1">{item.commentCn}</span>
       ),
       className: 'min-w-[300px]'
     },
-    { 
-      header: '작성자', 
+    {
+      header: '작성자',
       accessor: (item: CommentDetail) => (
         <div className="flex items-center gap-2">
           <User size={12} className="text-muted-foreground" />
@@ -47,7 +51,11 @@ export default function CommentAdminPage() {
         </div>
       )
     },
-    { header: '작성일', accessor: 'createdDate', className: 'text-[10px] text-muted-foreground' },
+    { 
+      header: '작성일', 
+      accessor: (item: CommentDetail) => item.createdDate, 
+      className: 'text-[10px] text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',

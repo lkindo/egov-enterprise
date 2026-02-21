@@ -97,21 +97,29 @@ export default function ProgramAdminPage() {
   };
 
   const columns = [
-    { 
-      header: '파일명', 
-      accessor: 'progrmFileNm', 
-      className: 'font-mono font-bold text-primary' 
+    {
+      header: '파일명',
+      accessor: (item: Program) => item.progrmFileNm,
+      className: 'font-mono font-bold text-primary'
     },
-    { header: '프로그램명', accessor: 'progrmNm', className: 'font-bold' },
     { 
-      header: 'URL 경로', 
+      header: '프로그램명', 
+      accessor: (item: Program) => item.progrmNm, 
+      className: 'font-bold' 
+    },
+    {
+      header: 'URL 경로',
       accessor: (item: Program) => (
         <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
           {item.url}
         </span>
       )
     },
-    { header: '저장경로', accessor: 'progrmStrePath', className: 'text-xs italic text-muted-foreground' },
+    { 
+      header: '저장경로', 
+      accessor: (item: Program) => item.progrmStrePath, 
+      className: 'text-xs italic text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',

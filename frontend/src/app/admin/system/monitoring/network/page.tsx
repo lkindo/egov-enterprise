@@ -30,14 +30,30 @@ export default function NetworkMonitoringPage() {
   }, [toast]);
 
   const columns = [
-    { header: '대상 시스템', accessor: 'sysNm', className: 'font-black' },
-    { header: 'IP 주소', accessor: 'sysIp', className: 'font-mono text-xs text-muted-foreground' },
-    { header: '포트', accessor: 'sysPort', className: 'w-20 font-mono text-xs' },
     { 
-      header: '연결 상태', 
-      accessor: (item: NetworkServiceStatus) => <StatusBadge status={item.svcSttus === '01' ? 'Y' : 'N'} /> 
+      header: '대상 시스템', 
+      accessor: (item: NetworkServiceStatus) => item.sysNm, 
+      className: 'font-black' 
     },
-    { header: '최종 체크', accessor: 'logDt', className: 'text-[10px] text-muted-foreground font-medium' },
+    { 
+      header: 'IP 주소', 
+      accessor: (item: NetworkServiceStatus) => item.sysIp, 
+      className: 'font-mono text-xs text-muted-foreground' 
+    },
+    { 
+      header: '포트', 
+      accessor: (item: NetworkServiceStatus) => item.sysPort, 
+      className: 'w-20 font-mono text-xs' 
+    },
+    {
+      header: '연결 상태',
+      accessor: (item: NetworkServiceStatus) => <StatusBadge status={item.svcSttus === '01' ? 'Y' : 'N'} />
+    },
+    { 
+      header: '최종 체크', 
+      accessor: (item: NetworkServiceStatus) => item.logDt, 
+      className: 'text-[10px] text-muted-foreground font-medium' 
+    },
     {
       header: '액션',
       className: 'text-right',

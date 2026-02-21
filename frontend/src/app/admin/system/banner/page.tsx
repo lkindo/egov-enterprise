@@ -152,8 +152,16 @@ export default function BannerAdminPage() {
         </div>
       )
     },
-    { header: '배너명', accessor: 'bannerNm', className: 'font-bold' },
-    { header: '순서', accessor: 'sortOrdr', className: 'text-center w-20' },
+    { 
+      header: '배너명', 
+      accessor: (item: Banner) => item.bannerNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '순서', 
+      accessor: (item: Banner) => item.sortOrdr, 
+      className: 'text-center w-20' 
+    },
     { header: '노출여부', accessor: (item: Banner) => <StatusBadge status={item.reflctAt} /> },
     {
       header: '관리',
@@ -168,7 +176,11 @@ export default function BannerAdminPage() {
   ];
 
   const popupColumns = [
-    { header: '팝업명', accessor: 'popupTitleNm', className: 'font-bold' },
+    { 
+      header: '팝업명', 
+      accessor: (item: Popup) => item.popupTitleNm, 
+      className: 'font-bold' 
+    },
     { header: '기간', accessor: (item: Popup) => `${item.ntceBgnde} ~ ${item.ntceEndde}`, className: 'text-xs' },
     { header: '크기', accessor: (item: Popup) => `${item.popupWSize}x${item.popupHSize}`, className: 'text-xs text-muted-foreground' },
     { header: '노출', accessor: (item: Popup) => <StatusBadge status={item.ntceAt} /> },

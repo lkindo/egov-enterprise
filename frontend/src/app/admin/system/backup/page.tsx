@@ -96,9 +96,21 @@ export default function BackupAdminPage() {
   };
 
   const opColumns = [
-    { header: '백업 작업명', accessor: 'backupOpertNm', className: 'font-black text-primary' },
-    { header: '원본 경로', accessor: 'backupOrginlDrctry', className: 'text-xs text-muted-foreground' },
-    { header: '보관 경로', accessor: 'backupStreDrctry', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '백업 작업명', 
+      accessor: (item: BackupOpert) => item.backupOpertNm, 
+      className: 'font-black text-primary' 
+    },
+    { 
+      header: '원본 경로', 
+      accessor: (item: BackupOpert) => item.backupOrginlDrctry, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '보관 경로', 
+      accessor: (item: BackupOpert) => item.backupStreDrctry, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '주기',
       accessor: (item: BackupOpert) => (
@@ -133,7 +145,11 @@ export default function BackupAdminPage() {
   ];
 
   const resColumns = [
-    { header: '작업명', accessor: 'backupOpertNm', className: 'font-bold' },
+    { 
+      header: '작업명', 
+      accessor: (item: BackupResult) => item.backupOpertNm, 
+      className: 'font-bold' 
+    },
     {
       header: '결과',
       accessor: (item: BackupResult) => (
@@ -145,8 +161,16 @@ export default function BackupAdminPage() {
         </div>
       )
     },
-    { header: '시작시간', accessor: 'executBeginTime', className: 'text-xs text-muted-foreground' },
-    { header: '종료시간', accessor: 'executEndTime', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '시작시간', 
+      accessor: (item: BackupResult) => item.executBeginTime, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '종료시간', 
+      accessor: (item: BackupResult) => item.executEndTime, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '로그',
       className: 'text-right',

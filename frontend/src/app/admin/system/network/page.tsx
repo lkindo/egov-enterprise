@@ -83,11 +83,30 @@ export default function NetworkPage() {
   };
 
   const columns = [
-    { header: '관리항목', accessor: 'manageIem', className: 'font-bold' },
-    { header: 'IP 주소', accessor: 'ntwrkIp', className: 'font-mono text-primary' },
-    { header: '서브넷', accessor: 'subnet', className: 'font-mono text-xs' },
-    { header: '게이트웨이', accessor: 'gtwy', className: 'font-mono text-xs' },
-    { header: '관리자', accessor: 'userNm' },
+    { 
+      header: '관리항목', 
+      accessor: (item: Network) => item.manageIem, 
+      className: 'font-bold' 
+    },
+    { 
+      header: 'IP 주소', 
+      accessor: (item: Network) => item.ntwrkIp, 
+      className: 'font-mono text-primary' 
+    },
+    { 
+      header: '서브넷', 
+      accessor: (item: Network) => item.subnet, 
+      className: 'font-mono text-xs' 
+    },
+    { 
+      header: '게이트웨이', 
+      accessor: (item: Network) => item.gtwy, 
+      className: 'font-mono text-xs' 
+    },
+    { 
+      header: '관리자', 
+      accessor: (item: Network) => item.userNm 
+    },
     { 
       header: '상태', 
       accessor: (item: Network) => (

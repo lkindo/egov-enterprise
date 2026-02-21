@@ -104,11 +104,27 @@ export default function SyncServerPage() {
   };
 
   const columns = [
-    { header: '서버명', accessor: 'serverNm', className: 'font-black' },
-    { header: 'IP 주소', accessor: 'serverIp', className: 'font-mono text-xs text-muted-foreground' },
-    { header: '동기화 경로', accessor: 'targetDrctry', className: 'text-xs italic' },
+    { 
+      header: '서버명', 
+      accessor: (item: SyncServer) => item.serverNm, 
+      className: 'font-black' 
+    },
+    { 
+      header: 'IP 주소', 
+      accessor: (item: SyncServer) => item.serverIp, 
+      className: 'font-mono text-xs text-muted-foreground' 
+    },
+    { 
+      header: '동기화 경로', 
+      accessor: (item: SyncServer) => item.targetDrctry, 
+      className: 'text-xs italic' 
+    },
     { header: '동기화 상태', accessor: (item: SyncServer) => <StatusBadge status={item.syncAt} /> },
-    { header: '최종 동기화', accessor: 'syncDt', className: 'text-[10px] text-muted-foreground' },
+    { 
+      header: '최종 동기화', 
+      accessor: (item: SyncServer) => item.syncDt, 
+      className: 'text-[10px] text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',
