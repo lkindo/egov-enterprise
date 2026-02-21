@@ -76,7 +76,12 @@ export default function TroublePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    const isConfirmed = await confirm({
+      title: '장애 티켓 삭제',
+      message: '정말 삭제하시겠습니까?',
+      variant: 'destructive'
+    });
+    if (!isConfirmed) return;
     try {
       const res = await troubleService.deleteTrouble(id);
       if (res.success) {

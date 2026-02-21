@@ -47,4 +47,5 @@ export interface QustnrRespondInfoVO {
   answers: SurveyAnswer[];
   pageIndex?: number;
   size?: number;
+  respondNm?: string;
 }
