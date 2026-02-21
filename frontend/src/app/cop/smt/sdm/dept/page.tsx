@@ -35,15 +35,15 @@ export default function DeptSchedulePage() {
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
     const [params, setParams] = useState<ScheduleSearchParams>({
         pageIndex: 1,
-        searchKeyword: '',
+        schdulNm: '',
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
     const [formData, setFormData] = useState<DeptSchedule>({
         schdulNm: '',
         schdulCn: '',
-        schdulBgnDe: '',
-        schdulEndDe: '',
+        schdulBgnde: '',
+        schdulEndde: '',
         schdulPlace: '',
         schdulIpcrCode: 'A', // A: 전체, B: 부서, C: 개인
     });
@@ -76,8 +76,8 @@ export default function DeptSchedulePage() {
         setFormData({
             schdulNm: '',
             schdulCn: '',
-            schdulBgnDe: format(new Date(), 'yyyy-MM-dd HH:mm'),
-            schdulEndDe: format(new Date(), 'yyyy-MM-dd HH:mm'),
+            schdulBgnde: format(new Date(), 'yyyy-MM-dd HH:mm'),
+            schdulEndde: format(new Date(), 'yyyy-MM-dd HH:mm'),
             schdulPlace: '',
             schdulIpcrCode: 'A',
         });
@@ -159,10 +159,10 @@ export default function DeptSchedulePage() {
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell className="font-medium">{schedule.schdulNm}</TableCell>
                                     <TableCell>
-                                        {schedule.schdulBgnDe} ~ {schedule.schdulEndDe}
+                                        {schedule.schdulBgnde} ~ {schedule.schdulEndde}
                                     </TableCell>
                                     <TableCell>{schedule.schdulPlace}</TableCell>
-                                    <TableCell>{schedule.schdulCharger}</TableCell>
+                                    <TableCell>{schedule.schdulChargerId}</TableCell>
                                     <TableCell>
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)}>
