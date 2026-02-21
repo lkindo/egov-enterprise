@@ -54,7 +54,7 @@ export default function SyncServerPage() {
   const handleSubmit = async (formData: Partial<SyncServer>) => {
     try {
       if (mode === 'create') {
-        await syncService.createSyncServer(formData);
+        await syncService.createSyncServer(formData as Omit<SyncServer, 'serverId'>);
         toast('신규 동기화 서버가 등록되었습니다.', 'success');
       } else {
         await syncService.updateSyncServer(selectedServer!.serverId, formData);

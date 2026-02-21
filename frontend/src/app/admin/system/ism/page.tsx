@@ -77,11 +77,11 @@ export default function InformalSanctionPage() {
       accessor: (item: InfrmlSanctn) => item.applcntId, 
       className: 'font-mono text-xs' 
     },
-    { 
-      header: '상태', 
+    {
+      header: '상태',
       accessor: (item: InfrmlSanctn) => (
         <div className="flex items-center gap-1">
-          {item.confmAt === 'Y' || item.confmAt === 'C' ? (
+          {item.confmAt === 'Y' ? (
             <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={12} /> 승인</span>
           ) : item.confmAt === 'R' ? (
             <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><XCircle size={12} /> 반려</span>

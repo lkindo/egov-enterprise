@@ -13,6 +13,7 @@ import { Vacation, YearlyLeave } from '@/types/vacation';
 import { Plus, Calendar, Info, Send } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 export default function VacationListPage() {
@@ -93,16 +94,16 @@ export default function VacationListPage() {
   };
 
   const columns = [
-    { 
-      header: '구분', 
+    {
+      header: '구분',
       accessor: (item: Vacation) => (
         <span className="font-semibold text-primary">
           {item.vcatnSe === '01' ? '연차' : item.vcatnSe === '02' ? '반차' : '병가'}
         </span>
       )
     },
-    { 
-      header: '휴가 기간', 
+    {
+      header: '휴가 기간',
       accessor: (item: Vacation) => (
         <div className="flex items-center gap-2 text-sm">
           <Calendar size={14} className="text-muted-foreground" />
@@ -110,11 +111,18 @@ export default function VacationListPage() {
         </div>
       )
     },
-    { header: '사유', accessor: 'vcatnResn', className: 'max-w-[200px] truncate' },
-    { header: '신청일', accessor: 'reqstDe' },
     { 
-      header: '상태', 
-      accessor: (item: Vacation) => <StatusBadge status={item.confmAt} /> 
+      header: '사유', 
+      accessor: (item: Vacation) => item.vcatnResn, 
+      className: 'max-w-[200px] truncate' 
+    },
+    { 
+      header: '신청일', 
+      accessor: (item: Vacation) => item.reqstDe 
+    },
+    {
+      header: '상태',
+      accessor: (item: Vacation) => <StatusBadge status={item.confmAt} />
     }
   ];
 
