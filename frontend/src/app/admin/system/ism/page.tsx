@@ -114,7 +114,7 @@ export default function InformalSanctionPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard title="대기 중 결재" count={data.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={<Clock size={18} />} color="text-orange-600" />
-        <SummaryCard title="승인 완료" count={data.filter(i => i.confmAt === 'Y' || i.confmAt === 'C').length} icon={<CheckCircle2 size={18} />} color="text-green-600" />
+        <SummaryCard title="승인 완료" count={data.filter(i => i.confmAt === 'Y').length} icon={<CheckCircle2 size={18} />} color="text-green-600" />
         <SummaryCard title="전체 내역" count={data.length} icon={<FileText size={18} />} color="text-blue-600" />
       </div>
 

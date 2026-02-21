@@ -171,9 +171,9 @@ export default function CtsnnPage() {
             <Heart size={14} /> 경조사 신청 및 처리 현황
           </h3>
         </div>
-        <StandardDataTable 
-          columns={columns} 
-          data={data} 
+        <StandardDataTable
+          columns={columns as any}
+          data={data}
           loading={loading}
           emptyMessage="등록된 경조사 내역이 없습니다."
           className="border-none rounded-none"
