@@ -21,8 +21,8 @@ export default function BoardWritePage() {
     bbsId: 'BBSMSTR_AAAAAAAAAAAA',
     nttSj: '',
     nttCn: '',
-    noticeAt: 'N',
-    secretAt: 'N'
+    noticeAt: 'N' as 'Y' | 'N',
+    secretAt: 'N' as 'Y' | 'N'
   });
 
   const [files, setFiles] = useState<File[]>([]);

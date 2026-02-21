@@ -29,7 +29,7 @@ client.interceptors.response.use(
             originalRequest._retry = true;
             try {
                 // Attempt to reissue tokens via HttpOnly cookie
-                const response = await axios.post('/api/v1/auth/reissue', {}, { withCredentials: true });
+                const response = await axios.post('/api/v1/auth/token/refresh', {}, { withCredentials: true });
                 const { accessToken } = response.data.data;
 
                 // Update original request with new token
