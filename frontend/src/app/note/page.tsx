@@ -6,6 +6,7 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { UserPicker } from '@/app/components/ui/user-picker';
+import { StatusBadge } from '@/app/components/ui/status-badge';
 import { noteService, Note } from '@/services/noteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -77,16 +78,27 @@ export default function NotePage() {
   };
 
   const columns = [
-    { 
-      header: '상태', 
+    {
+      header: '상태',
       accessor: (item: Note) => (
         item.openYn === 'Y' ? <MailOpen size={16} className="text-muted-foreground" /> : <Mail size={16} className="text-primary animate-bounce" />
       ),
       className: 'w-12'
     },
-    { header: '제목', accessor: 'noteSj', className: 'font-bold' },
-    { header: tab === 'received' ? '발신자' : '수신자', accessor: tab === 'received' ? 'trnsmitterId' : 'rcverId' },
-    { header: '일시', accessor: 'sendDt', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '제목', 
+      accessor: (item: Note) => item.noteSj, 
+      className: 'font-bold' 
+    },
+    { 
+      header: tab === 'received' ? '발신자' : '수신자', 
+      accessor: (item: Note) => tab === 'received' ? item.trnsmitterId : item.rcverId 
+    },
+    { 
+      header: '일시', 
+      accessor: (item: Note) => item.sendDt, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',
