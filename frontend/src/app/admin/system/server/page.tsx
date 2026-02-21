@@ -130,10 +130,10 @@ export default function ServerAdminPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="전사 인프라 관리" 
+      <PageHeader
+        title="전사 인프라 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '서버정보' }]}
-        action={
+        actions={
           <Button className="rounded-full gap-2" onClick={handleOpenCreate}>
             <Plus size={16} /> 신규 서버 등록
           </Button>

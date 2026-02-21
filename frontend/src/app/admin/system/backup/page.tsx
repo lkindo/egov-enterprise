@@ -185,7 +185,7 @@ export default function BackupAdminPage() {
       <PageHeader
         title="백업 정책 및 자동화 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '백업관리' }]}
-        action={
+        actions={
           <Button className="rounded-full gap-2" onClick={handleOpenCreate}>
             <Plus size={16} /> 신규 백업 설정
           </Button>

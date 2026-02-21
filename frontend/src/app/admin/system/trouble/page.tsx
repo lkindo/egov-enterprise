@@ -136,9 +136,9 @@ export default function TroublePage() {
   return (
     <div className="space-y-6 pb-12">
       <PageHeader 
-        title="시스템 장애 및 티켓 관리" 
+        title="시스템 장애 및 티켓 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '장애관리' }]}
-        action={
+        actions={
           <Button onClick={handleOpenCreate} className="rounded-full gap-2 bg-red-600 hover:bg-red-700">
             <Plus size={16} /> 장애 접수
           </Button>

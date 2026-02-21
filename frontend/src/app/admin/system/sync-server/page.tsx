@@ -146,10 +146,10 @@ export default function SyncServerPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="서버 데이터 동기화 관리" 
+      <PageHeader
+        title="서버 데이터 동기화 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '서버동기화' }]}
-        action={
+        actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={loadData} className="rounded-full gap-2">
               <RefreshCw size={16} /> 새로고침
