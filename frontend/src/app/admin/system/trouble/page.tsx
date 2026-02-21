@@ -89,9 +89,13 @@ export default function TroublePage() {
   };
 
   const columns = [
-    { header: 'ID', accessor: 'troblId', className: 'w-24 text-muted-foreground font-mono text-[10px]' },
     { 
-      header: '장애명', 
+      header: 'ID', 
+      accessor: (item: Trouble) => item.troblId, 
+      className: 'w-24 text-muted-foreground font-mono text-[10px]' 
+    },
+    {
+      header: '장애명',
       accessor: (item: Trouble) => (
         <div className="flex flex-col">
           <span className="font-bold text-foreground text-sm">{item.troblNm}</span>
@@ -101,14 +105,22 @@ export default function TroublePage() {
         </div>
       )
     },
-    { header: '발생일시', accessor: 'troblOccrrncTime', className: 'text-[11px] font-mono' },
     { 
-      header: '상태', 
+      header: '발생일시', 
+      accessor: (item: Trouble) => item.troblOccrrncTime, 
+      className: 'text-[11px] font-mono' 
+    },
+    {
+      header: '상태',
       accessor: (item: Trouble) => (
         <StatusBadge status={item.processSttus === 'C' ? 'Y' : item.processSttus === 'P' ? 'R' : 'N'} />
       )
     },
-    { header: '요청자', accessor: 'troblRqesterNm', className: 'text-xs' },
+    { 
+      header: '요청자', 
+      accessor: (item: Trouble) => item.troblRqesterNm, 
+      className: 'text-xs' 
+    },
     {
       header: '관리',
       className: 'text-right',

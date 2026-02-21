@@ -59,7 +59,11 @@ export default function BatchAdminPage() {
   };
 
   const scheduleColumns = [
-    { header: '배치 작업명', accessor: 'batchOpertNm', className: 'font-black' },
+    { 
+      header: '배치 작업명', 
+      accessor: (item: BatchSchedule) => item.batchOpertNm, 
+      className: 'font-black' 
+    },
     { 
       header: '주기', 
       accessor: (item: BatchSchedule) => (
@@ -89,9 +93,21 @@ export default function BatchAdminPage() {
   ];
 
   const resultColumns = [
-    { header: '배치 작업명', accessor: 'batchOpertNm', className: 'font-bold' },
-    { header: '시작 시간', accessor: 'executBeginTime', className: 'text-xs' },
-    { header: '종료 시간', accessor: 'executEndTime', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '배치 작업명', 
+      accessor: (item: BatchResult) => item.batchOpertNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '시작 시간', 
+      accessor: (item: BatchResult) => item.executBeginTime, 
+      className: 'text-xs' 
+    },
+    { 
+      header: '종료 시간', 
+      accessor: (item: BatchResult) => item.executEndTime, 
+      className: 'text-xs text-muted-foreground' 
+    },
     { 
       header: '상태', 
       accessor: (item: BatchResult) => <StatusBadge status={item.sttus === '01' ? 'Y' : item.sttus === '03' ? 'R' : 'N'} /> 

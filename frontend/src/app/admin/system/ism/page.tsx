@@ -67,8 +67,16 @@ export default function InformalSanctionPage() {
         </span>
       )
     },
-    { header: '결재명', accessor: 'sancltNm', className: 'font-bold text-primary' },
-    { header: '신청자 ID', accessor: 'applcntId', className: 'font-mono text-xs' },
+    { 
+      header: '결재명', 
+      accessor: (item: InfrmlSanctn) => item.sancltNm, 
+      className: 'font-bold text-primary' 
+    },
+    { 
+      header: '신청자 ID', 
+      accessor: (item: InfrmlSanctn) => item.applcntId, 
+      className: 'font-mono text-xs' 
+    },
     { 
       header: '상태', 
       accessor: (item: InfrmlSanctn) => (

@@ -36,10 +36,26 @@ export default function CommunityAdminPage() {
       ),
       className: 'w-12'
     },
-    { header: '동호회명', accessor: 'cmmntyNm', className: 'font-black text-primary' },
-    { header: '설명', accessor: 'cmmntyIntrcn', className: 'text-sm text-muted-foreground line-clamp-1' },
-    { header: '관리자', accessor: 'frstRegisterId', className: 'text-xs' },
-    { header: '개설일', accessor: 'createdDate', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '동호회명', 
+      accessor: (item) => item.cmmntyNm, 
+      className: 'font-black text-primary' 
+    },
+    { 
+      header: '설명', 
+      accessor: (item) => item.cmmntyIntrcn, 
+      className: 'text-sm text-muted-foreground line-clamp-1' 
+    },
+    { 
+      header: '관리자', 
+      accessor: (item) => item.frstRegisterId, 
+      className: 'text-xs' 
+    },
+    { 
+      header: '개설일', 
+      accessor: (item) => item.createdDate, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',
