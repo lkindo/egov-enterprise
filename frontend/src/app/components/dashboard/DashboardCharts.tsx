@@ -24,7 +24,8 @@ const visitorData = [
   { name: '일', visitors: 349, posts: 43 },
 ];
 
-export function DashboardVisitorChart() {
+// Memoized to prevent re-renders when parent dashboard state updates
+const DashboardVisitorChartComponent = () => {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -66,9 +67,12 @@ export function DashboardVisitorChart() {
       </ResponsiveContainer>
     </div>
   );
-}
+};
+export const DashboardVisitorChart = React.memo(DashboardVisitorChartComponent);
+DashboardVisitorChart.displayName = 'DashboardVisitorChart';
 
-export function DashboardPostChart() {
+// Memoized to prevent re-renders when parent dashboard state updates
+const DashboardPostChartComponent = () => {
   return (
     <div className="h-[200px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -93,4 +97,6 @@ export function DashboardPostChart() {
       </ResponsiveContainer>
     </div>
   );
-}
+};
+export const DashboardPostChart = React.memo(DashboardPostChartComponent);
+DashboardPostChart.displayName = 'DashboardPostChart';

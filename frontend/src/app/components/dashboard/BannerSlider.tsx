@@ -6,7 +6,7 @@ import { bannerService } from '@/services/bannerService';
 import { Banner } from '@/types/banner';
 import { cn } from '@/lib/utils';
 
-export function BannerSlider() {
+const BannerSliderComponent = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -117,4 +117,9 @@ export function BannerSlider() {
       )}
     </div>
   );
-}
+};
+
+// Memoized to prevent re-renders when the parent dashboard state updates.
+// The component manages its own internal state (current slide) and data fetching.
+export const BannerSlider = React.memo(BannerSliderComponent);
+BannerSlider.displayName = 'BannerSlider';

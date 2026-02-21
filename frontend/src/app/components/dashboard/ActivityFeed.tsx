@@ -47,7 +47,7 @@ const activities = [
   }
 ];
 
-export function ActivityFeed() {
+const ActivityFeedComponent = () => {
   return (
     <div className="space-y-6">
       {activities.map((activity, idx) => (
@@ -81,4 +81,9 @@ export function ActivityFeed() {
       ))}
     </div>
   );
-}
+};
+
+// Memoized to prevent unnecessary re-renders when the parent dashboard state updates,
+// as the activity list is static and doesn't depend on parent props.
+export const ActivityFeed = React.memo(ActivityFeedComponent);
+ActivityFeed.displayName = 'ActivityFeed';

@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { popupService } from '@/services/popupService';
 import { Popup } from '@/types/banner';
 
-export function PopupManager() {
+const PopupManagerComponent = () => {
   const [activePopups, setActivePopups] = useState<Popup[]>([]);
   const [visiblePopupIds, setVisiblePopupIds] = useState<string[]>([]);
 
@@ -108,4 +108,9 @@ export function PopupManager() {
       })}
     </>
   );
-}
+};
+
+// Memoized to prevent re-renders when the parent dashboard state updates.
+// The component manages its own internal state (active popups) and data fetching.
+export const PopupManager = React.memo(PopupManagerComponent);
+PopupManager.displayName = 'PopupManager';
