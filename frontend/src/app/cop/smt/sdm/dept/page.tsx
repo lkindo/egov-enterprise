@@ -39,7 +39,7 @@ export default function DeptSchedulePage() {
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
-    const [formData, setFormData] = useState<DeptSchedule>({
+    const [formData, setFormData] = useState<Partial<DeptSchedule>>({
         schdulNm: '',
         schdulCn: '',
         schdulBgnde: '',
@@ -128,8 +128,8 @@ export default function DeptSchedulePage() {
                 <Input
                     placeholder="일정명 또는 내용으로 검색"
                     className="max-w-sm"
-                    value={params.searchKeyword}
-                    onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
+                    value={params.schdulNm}
+                    onChange={(e) => setParams(prev => ({ ...prev, schdulNm: e.target.value }))}
                 />
                 <Button onClick={handleSearch}>조회</Button>
             </div>
