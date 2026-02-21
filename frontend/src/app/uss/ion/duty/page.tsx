@@ -74,7 +74,11 @@ export default function DutyPage() {
   };
 
   const columns = [
-    { header: '당직일자', accessor: 'dutyDe', className: 'font-mono font-bold' },
+    { 
+      header: '당직일자', 
+      accessor: (item: Duty) => item.dutyDe, 
+      className: 'font-mono font-bold' 
+    },
     {
       header: '당직자',
       accessor: (item: Duty) => (
@@ -86,8 +90,16 @@ export default function DutyPage() {
         </div>
       )
     },
-    { header: '직위', accessor: 'postNm', className: 'text-xs text-muted-foreground' },
-    { header: '연락처', accessor: 'telNo', className: 'text-xs' },
+    { 
+      header: '직위', 
+      accessor: (item: Duty) => item.postNm, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '연락처', 
+      accessor: (item: Duty) => item.telNo, 
+      className: 'text-xs' 
+    },
     {
       header: '관리',
       className: 'text-right',

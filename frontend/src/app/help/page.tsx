@@ -38,11 +38,21 @@ export default function HelpCenterPage() {
   }, [tab, toast]);
 
   const qnaColumns = [
-    { header: '제목', accessor: 'qestnSj', className: 'font-bold' },
-    { header: '작성자', accessor: 'wrterNm' },
-    { header: '등록일', accessor: 'writngDe' },
     { 
-      header: '상태', 
+      header: '제목', 
+      accessor: (item: QNA) => item.qestnSj, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '작성자', 
+      accessor: (item: QNA) => item.wrterNm 
+    },
+    { 
+      header: '등록일', 
+      accessor: (item: QNA) => item.writngDe 
+    },
+    {
+      header: '상태',
       accessor: (item: QNA) => (
         <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
       )

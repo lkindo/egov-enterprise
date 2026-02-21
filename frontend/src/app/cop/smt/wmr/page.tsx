@@ -40,12 +40,23 @@ export default function WorkReportListPage() {
       ),
       className: 'w-24'
     },
-    { header: '제목', accessor: 'reprtSj', className: 'font-bold' },
-    { header: '보고일', accessor: 'reprtDe', className: 'text-xs text-muted-foreground' },
-    { header: '작성자', accessor: 'wrterId' },
     { 
-      header: '상태', 
-      accessor: (item: WorkReport) => <StatusBadge status={item.confmDt ? 'Y' : 'R'} /> 
+      header: '제목', 
+      accessor: (item: WorkReport) => item.reprtSj, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '보고일', 
+      accessor: (item: WorkReport) => item.reprtDe, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '작성자', 
+      accessor: (item: WorkReport) => item.wrterId 
+    },
+    {
+      header: '상태',
+      accessor: (item: WorkReport) => <StatusBadge status={item.confmDt ? 'Y' : 'R'} />
     },
     {
       header: '',

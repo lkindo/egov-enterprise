@@ -43,14 +43,25 @@ export default function WelfarePage() {
         </div>
       )
     },
-    { header: '대상자', accessor: 'userNm' },
-    { header: '포상종류', accessor: 'rwardKnd', className: 'text-xs text-muted-foreground' },
-    { header: '포상일', accessor: 'rwardDe', className: 'text-xs font-medium' }
+    { 
+      header: '대상자', 
+      accessor: (item: Reward) => item.userNm 
+    },
+    { 
+      header: '포상종류', 
+      accessor: (item: Reward) => item.rwardKnd, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '포상일', 
+      accessor: (item: Reward) => item.rwardDe, 
+      className: 'text-xs font-medium' 
+    }
   ];
 
   const ctsnnColumns = [
-    { 
-      header: '경조사명', 
+    {
+      header: '경조사명',
       accessor: (item: Ctsnn) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-50 text-pink-600 rounded-lg"><Heart size={16} /></div>
@@ -58,9 +69,20 @@ export default function WelfarePage() {
         </div>
       )
     },
-    { header: '신청자', accessor: 'userNm' },
-    { header: '대상자', accessor: 'trgetNm', className: 'text-xs text-muted-foreground' },
-    { header: '일시', accessor: 'ctsnnDe', className: 'text-xs font-medium' }
+    { 
+      header: '신청자', 
+      accessor: (item: Ctsnn) => item.userNm 
+    },
+    { 
+      header: '대상자', 
+      accessor: (item: Ctsnn) => item.trgetNm, 
+      className: 'text-xs text-muted-foreground' 
+    },
+    { 
+      header: '일시', 
+      accessor: (item: Ctsnn) => item.ctsnnDe, 
+      className: 'text-xs font-medium' 
+    }
   ];
 
   return (
