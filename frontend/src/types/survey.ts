@@ -29,3 +29,16 @@ export interface SurveyResultStats {
   count: number;
   percentage: number;
 }
+
+export interface QustnrRespondInfo {
+  respondId: string;
+  qestnrId: string;
+  respondNm: string;
+  respondDe: string;
+  respondCn?: string;
+}
+
+export interface QustnrRespondInfoVO {
+  qustnrRespondInfo: QustnrRespondInfo;
+  answers: SurveyAnswer[];
+}
