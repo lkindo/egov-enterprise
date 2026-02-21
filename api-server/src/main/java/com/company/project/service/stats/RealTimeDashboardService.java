@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
-
- * ??         ?????      ?????  ???      ??
-
+ * 
+ * ?? ????? ????? ??? ??
+ * 
  */
 
 @Slf4j
@@ -32,16 +32,16 @@ public class RealTimeDashboardService {
 
     private final SimpMessageSendingOperations messagingTemplate;
 
-    // ??         ??         ????(?          - ??               ??Redis ?          ??      )
+    // ?? ?? ????(? - ?? ??Redis ? ?? )
 
     private final AtomicInteger activeUsers = new AtomicInteger(0);
 
     private final AtomicInteger visitsPerMinute = new AtomicInteger(0);
 
     /**
-
-     * ??         ????  ??         ??      ??       (5 ?        ??
-
+     * 
+     * ?? ???? ?? ?? ?? (5 ? ??
+     * 
      */
 
     @Scheduled(fixedRate = 5000)
@@ -73,9 +73,9 @@ public class RealTimeDashboardService {
     }
 
     /**
-
-     * ?         ????         ?
-
+     * 
+     * ? ???? ?
+     * 
      */
 
     public void incrementActiveUsers() {
@@ -87,9 +87,9 @@ public class RealTimeDashboardService {
     }
 
     /**
-
-     * ?         ????        ??
-
+     * 
+     * ? ???? ??
+     * 
      */
 
     public void decrementActiveUsers() {
@@ -99,37 +99,37 @@ public class RealTimeDashboardService {
     }
 
     /**
-
-     * ??      ???                   ?      ? ??         ??
-
+     * 
+     * ?? ??? ? ? ?? ??
+     * 
      */
 
     private int getTodayNewPostsCount() {
 
-        // TODO: ??       ?          ????       ?          ??         ?      ? ??         ??
+        // TODO: 실제 데이터베이스에서 오늘의 게시물 수를 조회하는 로직 구현
 
         return (int) (Math.random() * 10);
 
     }
 
     /**
-
-     *             ????    ??         ??
-
+     * 
+     * pending alerts count
+     * 
      */
 
     private int getPendingAlertsCount() {
 
-        // TODO: ??       ?          ??         ???? ??? ???    ??         ??
+        // TODO: 실제 데이터베이스에서 미처리 알림 수를 조회하는 로직 구현
 
         return (int) (Math.random() * 5);
 
     }
 
     /**
-
-     *              ??         ????        ?(1 ?         ??
-
+     * 
+     * ?? ???? ?(1 ? ??
+     * 
      */
 
     @Scheduled(fixedRate = 60000)
@@ -141,4 +141,3 @@ public class RealTimeDashboardService {
     }
 
 }
-

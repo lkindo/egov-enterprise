@@ -8,7 +8,7 @@ import lombok.*;
  * ??쀫탣???類ｋ궖 ?酉???
  */
 @Entity
-@Table(name = "COMTNTMPLATINFO")
+@Table(name = "NTMPLATINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

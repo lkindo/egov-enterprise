@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "COMTNCMMNTY")
+@Table(name = "NCMMNTY")
 public class Community implements Serializable {
 
     @Id

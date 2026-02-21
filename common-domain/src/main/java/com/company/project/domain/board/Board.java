@@ -105,10 +105,11 @@ public class Board implements Serializable {
     private String blogId;
 
     @Builder
-    public Board(String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
+    public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
             Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
             String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
             String atchFileId) {
+        this.nttId = nttId;
         this.bbsId = Objects.requireNonNull(bbsId);
         this.nttNo = nttNo;
         this.nttSj = nttSj;

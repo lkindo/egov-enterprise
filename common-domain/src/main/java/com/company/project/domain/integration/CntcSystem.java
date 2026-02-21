@@ -4,11 +4,14 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+
 /**
- * ?怨뚰???뽯뮞???酉???
+ * CntcSystem Entity
  */
 @Entity
-@Table(name = "COMTNCNTCSYSTEM")
+@Table(name = "NCNTCSYSTEM")
+@IdClass(CntcSystem.CntcSystemId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -25,6 +28,7 @@ public class CntcSystem extends BaseEntity {
     @Column(name = "SYS_IP", length = 23)
     private String sysIp;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "INSTT_ID")
     private CntcInstt instt;
@@ -37,5 +41,15 @@ public class CntcSystem extends BaseEntity {
         this.sysIp = sysIp;
         this.instt = instt;
         this.useAt = useAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    @Builder
+    public static class CntcSystemId implements Serializable {
+        private String sysId;
+        private String instt;
     }
 }

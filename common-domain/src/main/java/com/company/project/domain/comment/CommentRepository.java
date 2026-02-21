@@ -12,4 +12,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Page<Comment> findByBbsIdAndNttId(@Param("bbsId") String bbsId, @Param("nttId") Long nttId, Pageable pageable);
 
     Page<Comment> findByCommentCnContaining(String commentCn, Pageable pageable);
+
+    @Query("SELECT COALESCE(MAX(c.id), 0) FROM Comment c")
+    Long findMaxId();
 }

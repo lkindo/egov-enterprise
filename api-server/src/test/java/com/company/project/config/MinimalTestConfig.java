@@ -14,19 +14,7 @@ import javax.sql.DataSource;
  * 통합 테스트를 위한 최소 설정
  * 레거시 eGovFrame 컴포넌트를 제외하고 핵심 기능만 로드
  */
-@org.springframework.boot.autoconfigure.SpringBootApplication(scanBasePackages = {
-        "com.company.project.service.user",
-        "com.company.project.service.code",
-        "com.company.project.service.menu",
-        "com.company.project.service.board",
-        "com.company.project.service.file",
-        "com.company.project.domain",
-        "com.company.project.core",
-        "com.company.project.api"
-}, exclude = {
-        org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
-})
+@org.springframework.context.annotation.Configuration
 @ComponentScan(basePackages = {
         "com.company.project.service.user",
         "com.company.project.service.code",

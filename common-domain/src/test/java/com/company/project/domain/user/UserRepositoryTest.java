@@ -1,6 +1,9 @@
 package com.company.project.domain.user;
 
 import com.company.project.domain.config.QuerydslConfig;
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +30,7 @@ public class UserRepositoryTest {
 
         userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("user1")
-                .userNm("??삳쭔??)
+                .userNm("홍길동")
                 .role(Role.USER)
                 .password("pass1")
                 .esntlId("USR1")
@@ -35,7 +38,7 @@ public class UserRepositoryTest {
 
         userRepository.save(java.util.Objects.requireNonNull(User.builder()
                 .userId("admin1")
-                .userNm("?온?귐딆쁽")
+                .userNm("관리자")
                 .role(Role.ADMIN)
                 .password("pass2")
                 .esntlId("ADM1")
@@ -43,7 +46,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("?袁⑹뵠?遺얠쨮 ?????野꺜??)
+    @DisplayName("사용자 ID로 검색")
     void searchByUserId() {
         Page<User> result = userRepository.searchUsers(null, "0", "user1",
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
@@ -53,17 +56,17 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("??已??곗쨮 ?????野꺜??)
+    @DisplayName("사용자 이름으로 검색")
     void searchByUserNm() {
-        Page<User> result = userRepository.searchUsers(null, "1", "?온?귐딆쁽",
+        Page<User> result = userRepository.searchUsers(null, "1", "관리자",
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("?온?귐딆쁽");
+        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("관리자");
     }
 
     @Test
-    @DisplayName("??釉?Role) ?袁り숲筌?)
+    @DisplayName("권한으로 검색")
     void searchByRole() {
         Page<User> result = userRepository.searchUsers("ADMIN", null, null,
                 java.util.Objects.requireNonNull(PageRequest.of(0, 10)));
@@ -73,7 +76,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("?袁⑹뵠??餓λ쵎??筌ｋ똾寃?)
+    @DisplayName("ID 중복 체크")
     void checkIdDplct() {
         int count = userRepository.checkIdDplct("user1");
         assertThat(count).isEqualTo(1);

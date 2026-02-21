@@ -11,6 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,22 +27,22 @@ class UserRepositoryCustomQueryTest {
         private UserRepository userRepository;
 
         @Test
-        @DisplayName("?????野꺜??鈺곌퀗援???怨뺚뀲 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
+        @DisplayName("사용자 검색 조건으로 조회 성공")
         void searchUsersWithCondition_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("???뮞???????")
+                                .userNm("사용자1")
                                 .esntlId("USR00001")
                                 .password("encodedPassword")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("???뮞???????")
+                                .userNm("사용자2")
                                 .esntlId("USR00002")
                                 .password("encodedPassword")
-                                .role(com.company.project.domain.user.Role.ADMIN)
+                                .role(Role.ADMIN)
                                 .build();
                 userRepository.save(java.util.Objects.requireNonNull(user1));
                 userRepository.save(java.util.Objects.requireNonNull(user2));
@@ -56,24 +59,24 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("???????已??곗쨮 ?????野꺜???源껊궗")
+        @DisplayName("이름 포함 사용자 검색")
         void findByUserNmContaining_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("??삳쭔??)
+                                .userNm("홍길동1")
                                 .esntlId("USR00001")
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("??삳쭔??)
+                                .userNm("홍길동2")
                                 .esntlId("USR00002")
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("繹먃筌ｌ쥙??)
+                                .userNm("이순신")
                                 .esntlId("USR00003")
                                 .password("encodedPassword")
                                 .build();
@@ -82,34 +85,34 @@ class UserRepositoryCustomQueryTest {
                 userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
-                List<User> result = userRepository.findByUserNmContaining("??);
+                List<User> result = userRepository.findByUserNmContaining("홍길동");
 
                 // Then
                 assertThat(result).hasSize(2);
-                assertThat(result).extracting(User::getUserNm).containsExactlyInAnyOrder("??삳쭔??, "??삳쭔??);
+                assertThat(result).extracting(User::getUserNm).containsExactlyInAnyOrder("홍길동1", "홍길동2");
         }
 
         @Test
-        @DisplayName("??李??雅뚯눘?쇗에??????野꺜???源껊궗")
+        @DisplayName("이메일 포함 사용자 검색")
         void findByEmailAdresContaining_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00001")
                                 .emailAdres("test1@example.com")
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00002")
                                 .emailAdres("test2@example.com")
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00003")
                                 .emailAdres("other@test.com")
                                 .password("encodedPassword")
@@ -128,26 +131,26 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("鈺곌퀣彛?ID嚥??????野꺜???源껊궗")
+        @DisplayName("조직 ID로 사용자 검색")
         void findByOrgnztId_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00001")
                                 .orgnztId("ORG001")
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00002")
                                 .orgnztId("ORG001")
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00003")
                                 .orgnztId("ORG002")
                                 .password("encodedPassword")
@@ -166,28 +169,28 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("??釉룡에??????野꺜???源껊궗")
+        @DisplayName("권한으로 사용자 검색")
         void findByRole_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00001")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00002")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00003")
-                                .role(com.company.project.domain.user.Role.ADMIN)
+                                .role(Role.ADMIN)
                                 .password("encodedPassword")
                                 .build();
                 userRepository.save(java.util.Objects.requireNonNull(user1));
@@ -195,7 +198,7 @@ class UserRepositoryCustomQueryTest {
                 userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
-                List<User> result = userRepository.findByRole(com.company.project.domain.user.Role.USER);
+                List<User> result = userRepository.findByRole(Role.USER);
 
                 // Then
                 assertThat(result).hasSize(2);
@@ -204,39 +207,39 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("????鈺곌퀗援??곗쨮 ?????野꺜???源껊궗")
+        @DisplayName("조직 및 권한으로 사용자 검색")
         void findByOrgnztIdAndRole_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00001")
                                 .orgnztId("ORG001")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00002")
                                 .orgnztId("ORG001")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00003")
                                 .orgnztId("ORG001")
-                                .role(com.company.project.domain.user.Role.ADMIN)
+                                .role(Role.ADMIN)
                                 .password("encodedPassword")
                                 .build();
                 User user4 = User.builder()
                                 .userId("testUser4")
-                                .userNm("???뮞??")
+                                .userNm("사용자")
                                 .esntlId("USR00004")
                                 .orgnztId("ORG002")
-                                .role(com.company.project.domain.user.Role.USER)
+                                .role(Role.USER)
                                 .password("encodedPassword")
                                 .build();
                 userRepository.save(java.util.Objects.requireNonNull(user1));
@@ -246,7 +249,7 @@ class UserRepositoryCustomQueryTest {
 
                 // When
                 List<User> result = userRepository.findByOrgnztIdAndRole("ORG001",
-                                com.company.project.domain.user.Role.USER);
+                                Role.USER);
 
                 // Then
                 assertThat(result).hasSize(2);
@@ -256,26 +259,26 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("??已??癒?뮉 ??李??곗쨮 ?????野꺜???源껊궗")
+        @DisplayName("이름 또는 이메일 포함 사용자 검색")
         void findByUserNmContainingOrEmailAdresContaining_success() {
                 // Given
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("??삳쭔??)
+                                .userNm("홍길동")
                                 .esntlId("USR00001")
                                 .emailAdres("hong@example.com")
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("繹먃筌ｌ쥙??)
+                                .userNm("이순신")
                                 .esntlId("USR00002")
                                 .emailAdres("kim@test.com")
                                 .password("encodedPassword")
                                 .build();
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("獄쏅벡???)
+                                .userNm("박문수")
                                 .esntlId("USR00003")
                                 .emailAdres("park@example.com")
                                 .password("encodedPassword")
@@ -285,7 +288,7 @@ class UserRepositoryCustomQueryTest {
                 userRepository.save(java.util.Objects.requireNonNull(user3));
 
                 // When
-                List<User> result = userRepository.findByUserNmContainingOrEmailAdresContaining("疫뀀챶猷?, "kim@test.com");
+                List<User> result = userRepository.findByUserNmContainingOrEmailAdresContaining("홍길동", "kim@test.com");
 
                 // Then
                 assertThat(result).hasSize(2);
@@ -293,24 +296,24 @@ class UserRepositoryCustomQueryTest {
         }
 
         @Test
-        @DisplayName("?類ｌ졊???????筌뤴뫖以?鈺곌퀬???源껊궗")
+        @DisplayName("전체 사용자 이름순 정렬 조회")
         void findAllSortedByName_success() {
                 // Given
                 User user3 = User.builder()
                                 .userId("testUser3")
-                                .userNm("揶쎛??")
+                                .userNm("박문수")
                                 .esntlId("USR00003")
                                 .password("encodedPassword")
                                 .build();
                 User user1 = User.builder()
                                 .userId("testUser1")
-                                .userNm("??띾쭔??)
+                                .userNm("홍길동")
                                 .esntlId("USR00001")
                                 .password("encodedPassword")
                                 .build();
                 User user2 = User.builder()
                                 .userId("testUser2")
-                                .userNm("??쇱퓢??)
+                                .userNm("이순신")
                                 .esntlId("USR00002")
                                 .password("encodedPassword")
                                 .build();

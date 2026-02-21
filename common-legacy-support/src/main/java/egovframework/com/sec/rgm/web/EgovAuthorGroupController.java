@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.SessionVO;
-import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.sec.ram.service.AuthorManageVO;
 import egovframework.com.sec.rgm.service.AuthorGroup;
 import egovframework.com.sec.rgm.service.AuthorGroupVO;
@@ -76,7 +75,11 @@ public class EgovAuthorGroupController {
 	}
 
 	/**
-	 * ????????
+	 * 권한 그룹 목록 조회
+	 */
+	@RequestMapping("/sec/rgm/EgovAuthorGroupList.do")
+	public String selectAuthorGroupList(@ModelAttribute("authorGroupVO") AuthorGroupVO authorGroupVO,
+			@ModelAttribute("authorManageVO") AuthorManageVO authorManageVO, ModelMap model) throws Exception {
 		PaginationInfo paginationInfo = new PaginationInfo();
 		paginationInfo.setCurrentPageNo(authorGroupVO.getPageIndex());
 		paginationInfo.setRecordCountPerPage(authorGroupVO.getPageUnit());

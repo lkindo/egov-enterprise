@@ -4,10 +4,8 @@ import com.company.project.domain.syshistory.SystemHistory;
 import com.company.project.domain.syshistory.SystemHistoryRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,10 +15,20 @@ import java.util.List;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@EnableAutoConfiguration
-@Import(com.company.project.config.MinimalTestConfig.class)
 @ActiveProfiles("test")
 public class SystemHistoryTest {
+
+    @org.springframework.context.annotation.Configuration
+    @org.springframework.boot.autoconfigure.EnableAutoConfiguration
+    @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.company.project.domain.syshistory")
+    @org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.company.project.domain")
+    @org.springframework.data.jpa.repository.config.EnableJpaAuditing(auditorAwareRef = "logInUserAuditorAware")
+    static class TestConfig {
+        @org.springframework.context.annotation.Bean
+        public org.springframework.data.domain.AuditorAware<String> logInUserAuditorAware() {
+            return () -> java.util.Optional.of("SYSTEM");
+        }
+    }
 
     @Autowired
     private SystemHistoryRepository systemHistoryRepository;

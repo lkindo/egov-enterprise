@@ -8,7 +8,7 @@ import java.time.Instant;
  * JWT ?귐뗫늄??됰뻻 ?醫뤾쿃 ?酉???
  */
 @Entity
-@Table(name = "COMTN_REFRESH_TOKEN")
+@Table(name = "NREFRESH_TOKEN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

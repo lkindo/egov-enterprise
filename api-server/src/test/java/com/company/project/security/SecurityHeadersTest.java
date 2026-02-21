@@ -39,7 +39,7 @@ public class SecurityHeadersTest {
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @RestController
+    @RestController("headersTestController")
     static class TestController {
         @GetMapping("/test-headers")
         public String test() {

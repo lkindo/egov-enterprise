@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import egovframework.com.cmm.ComDefaultCodeVO;
 import egovframework.com.cmm.EgovMessageSource;
 import egovframework.com.cmm.LoginVO;
-import egovframework.com.cmm.annotation.IncludedInfo;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.utl.fcc.service.EgovStringUtil;
 import egovframework.com.utl.sys.htm.service.EgovHttpMonService;
@@ -132,8 +131,8 @@ public class EgovHttpMonController {
 	 **/
 	@RequestMapping(value = "/utl/sys/htm/EgovComUtlHttpMonRegist.do")
 	public String insertHttpMon(
-		@Valid @ModelAttribute("httpMon") HttpMon httpMon,
-		BindingResult bindingResult, ModelMap model) throws Exception {
+			@Valid @ModelAttribute("httpMon") HttpMon httpMon,
+			BindingResult bindingResult, ModelMap model) throws Exception {
 
 		// Spring Security ?????????
 		Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
@@ -166,10 +165,10 @@ public class EgovHttpMonController {
 	 **/
 	@RequestMapping(value = "/utl/sys/htm/EgovComUtlHttpMonModify.do")
 	public String updateHttpMon(
-		@ModelAttribute("loginVO") LoginVO loginVO,
-		@Valid @ModelAttribute("httpMon") HttpMon httpMon,
-		@RequestParam Map<?, ?> commandMap,
-		BindingResult bindingResult, ModelMap model) throws Exception {
+			@ModelAttribute("loginVO") LoginVO loginVO,
+			@Valid @ModelAttribute("httpMon") HttpMon httpMon,
+			@RequestParam Map<?, ?> commandMap,
+			BindingResult bindingResult, ModelMap model) throws Exception {
 
 		String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
 		if (sCmd.equals("")) {
