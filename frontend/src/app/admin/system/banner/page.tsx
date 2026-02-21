@@ -249,9 +249,9 @@ export default function BannerAdminPage() {
       </div>
 
       {/* Data Table */}
-      <StandardDataTable 
-        columns={activeTab === 'banner' ? (bannerColumns as any) : (popupColumns as any)} 
-        data={activeTab === 'banner' ? banners : popups} 
+      <StandardDataTable
+        columns={activeTab === 'banner' ? (bannerColumns as any) : (popupColumns as any)}
+        data={activeTab === 'banner' ? (banners as any) : (popups as any)}
         loading={loading}
         emptyMessage={`${activeTab === 'banner' ? '배너' : '팝업'}가 없습니다.`}
       />
