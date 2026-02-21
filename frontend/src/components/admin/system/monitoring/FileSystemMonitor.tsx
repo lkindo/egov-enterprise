@@ -74,8 +74,16 @@ export function FileSystemMonitor() {
   };
 
   const columns = [
-    { header: '파일시스템명', accessor: 'fileSysNm', className: 'font-bold' },
-    { header: '마운트 경로', accessor: 'fileSysManageNm', className: 'text-xs font-mono' },
+    { 
+      header: '파일시스템명', 
+      accessor: (item: FileSysMntrng) => item.fileSysNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '마운트 경로', 
+      accessor: (item: FileSysMntrng) => item.fileSysManageNm, 
+      className: 'text-xs font-mono' 
+    },
     { header: '전체 용량', accessor: (item: FileSysMntrng) => `${item.fileSysSize} GB`, className: 'text-xs' },
     { 
       header: '사용량', 

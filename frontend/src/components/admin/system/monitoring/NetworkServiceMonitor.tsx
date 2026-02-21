@@ -73,11 +73,23 @@ export function NetworkServiceMonitor() {
   };
 
   const columns = [
-    { header: '시스템명', accessor: 'sysNm', className: 'font-bold' },
-    { header: 'IP 주소', accessor: 'sysIp', className: 'font-mono text-xs' },
-    { header: '포트', accessor: 'sysPort', className: 'font-mono text-xs w-16' },
     { 
-      header: '상태', 
+      header: '시스템명', 
+      accessor: (item: NtwrkSvcMntrng) => item.sysNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: 'IP 주소', 
+      accessor: (item: NtwrkSvcMntrng) => item.sysIp, 
+      className: 'font-mono text-xs' 
+    },
+    { 
+      header: '포트', 
+      accessor: (item: NtwrkSvcMntrng) => item.sysPort, 
+      className: 'font-mono text-xs w-16' 
+    },
+    {
+      header: '상태',
       accessor: (item: NtwrkSvcMntrng) => (
         <div className="flex items-center gap-1">
           {item.mntrngSttus === '01' ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}

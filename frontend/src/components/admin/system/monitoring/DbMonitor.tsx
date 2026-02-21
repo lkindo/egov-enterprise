@@ -77,8 +77,16 @@ export function DbMonitor() {
   };
 
   const columns = [
-    { header: '데이터소스명', accessor: 'dataSourcNm', className: 'font-bold' },
-    { header: 'DBMS', accessor: 'dbmsKind', className: 'text-xs uppercase font-mono' },
+    { 
+      header: '데이터소스명', 
+      accessor: (item: DbMntrng) => item.dataSourcNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: 'DBMS', 
+      accessor: (item: DbMntrng) => item.dbmsKind, 
+      className: 'text-xs uppercase font-mono' 
+    },
     { header: 'IP/Port', accessor: (item: DbMntrng) => `${item.dbmsIp}:${item.dbmsPort}`, className: 'text-xs font-mono' },
     { 
       header: '상태', 

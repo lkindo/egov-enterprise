@@ -61,8 +61,16 @@ export function ServerResource() {
         </div>
       )
     },
-    { header: '상태', accessor: 'svcSttus', className: 'text-xs' },
-    { header: '측정일시', accessor: 'creatDt', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '상태', 
+      accessor: (item: ServerResrceLog) => item.svcSttus, 
+      className: 'text-xs' 
+    },
+    { 
+      header: '측정일시', 
+      accessor: (item: ServerResrceLog) => item.creatDt, 
+      className: 'text-xs text-muted-foreground' 
+    },
   ];
 
   return (
