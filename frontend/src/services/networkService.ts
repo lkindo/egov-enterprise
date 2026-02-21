@@ -41,8 +41,14 @@ export const networkService = {
 
   getNetworkLogs: async (params: { ntwrkId: string; page?: number; size?: number }) => {
     const response = await client.get(`/admin/system/networks/${params.ntwrkId}/logs`, { params });
-    return response.data;
+    return { success: true, data: { content: response.data } };
   }
 };
 
-export type NetworkServiceStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR';
+export type NetworkServiceStatus = {
+  sysNm: string;
+  sysIp: string;
+  sysPort: string;
+  svcSttus: string;
+  logDt: string;
+};

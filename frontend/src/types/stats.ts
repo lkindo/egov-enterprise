@@ -33,6 +33,9 @@ export interface StatsVO {
 export interface StatsSearchParams {
   statsSe?: string;
   searchPeriod?: string;
+  statsKind?: string;
+  fromDate?: string;
+  toDate?: string;
   pageIndex?: number;
   size?: number;
 }

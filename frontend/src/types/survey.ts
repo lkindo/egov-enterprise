@@ -33,12 +33,18 @@ export interface SurveyResultStats {
 export interface QustnrRespondInfo {
   respondId: string;
   qestnrId: string;
+  qestnrQesitmId: string;
   respondNm: string;
   respondDe: string;
   respondCn?: string;
+  respondAnswerCn?: string;
+  etcAnswerCn?: string;
+  frstRegisterPnttm?: string;
 }
 
 export interface QustnrRespondInfoVO {
   qustnrRespondInfo: QustnrRespondInfo;
   answers: SurveyAnswer[];
+  pageIndex?: number;
+  size?: number;
 }

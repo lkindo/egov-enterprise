@@ -4,6 +4,7 @@ export interface SyncServer {
   serverId: string;
   serverNm: string;
   serverIp: string;
+  serverPort: number;
   targetDrctry: string;
   syncDt: string;
   syncAt: 'Y' | 'N';
