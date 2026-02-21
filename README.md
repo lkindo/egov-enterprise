@@ -109,4 +109,111 @@ pnpm dev
 - **Security**: JWT 기반 인증 및 Spring Security RBAC 적용 완료.
 
 ---
-*Last Updated: 2026-02-08*
+
+## 📝 최근 업데이트 (2026-02-21)
+
+### 프로젝트 위생 개선 (Project Hygiene)
+
+#### 1. Git 저장소 최적화
+- ✅ `.gitignore` 정비: 빌드 산출물 (`bin/`, `build/`, `generated-sources/`) 추적 제외
+- ✅ `.factorypath` 등 IDE 설정 파일 Git 추적 제외
+- ✅ 패키지 잠금 파일 통일: `pnpm-lock.yaml` 우선, `package-lock.json` 및 `yarn.lock` 제외
+
+#### 2. Line Ending 통일
+- ✅ `.gitattributes` 설정: 모든 텍스트 파일 LF 강제
+- ✅ Windows 배치 파일 (`.bat`, `.cmd`) 는 CRLF 유지
+- ✅ Git 설정: `core.autocrlf = input`, `core.eol = lf`
+- ✅ 770+ 개 Java 소스 파일 Line Ending LF 로 통일
+
+#### 3. 보안 강화
+- ✅ 민감 설정 파일 Git 추적 제외: `**/egovProps/conf/`, `*.local.properties`
+- ✅ 암호화 키, 비밀번호 등 중요 정보 커밋 방지
+
+### 변경된 커밋 히스토리
+```
+refactor: add build artifacts to .gitignore and cleanup tracked files
+refactor: enforce LF line endings in .gitattributes
+refactor: update API server configuration
+refactor: apply LF line endings and cleanup Java source code (770 files)
+refactor: update build configuration
+refactor: update frontend files
+chore: add binary file extensions to .gitignore
+chore: add sensitive config directory to .gitignore
+```
+
+---
+
+## 🚀 개발 가이드
+
+### 로컬 개발 환경 설정
+
+#### 1. 필수 요구사항
+- **Java**: 21 (LTS)
+- **Node.js**: 20+
+- **Package Manager**: pnpm (`npm install -g pnpm`)
+- **Database**: PostgreSQL 14+
+
+#### 2. 설정 파일
+```bash
+# 백엔드 설정 (필수)
+cp api-server/src/main/resources/application-dev.yml api-server/src/main/resources/application-local.yml
+cp api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties.sample \
+   api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties
+
+# 프론트엔드 설정
+cp frontend/.env.example frontend/.env.local
+```
+
+#### 3. 데이터베이스 마이그레이션
+```bash
+# 스키마 자동 생성 (application.yml 설정)
+# spring.jpa.hibernate.ddl-auto=update
+```
+
+---
+
+## 📚 추가 문서
+
+- [제품 요구사항 정의서 (PRD)](./docs/PRD.MD)
+- [기술 요구사항 정의서 (TRD)](./docs/TRD.MD)
+- [상세 설계 문서 (LLD)](./docs/LLD.MD)
+- [메뉴 구조](./docs/MENU_STRUCTURE.md)
+
+---
+
+## 🤝 기여 가이드
+
+### Pull Request 전 확인사항
+
+1. **빌드 검증**
+   ```bash
+   # 백엔드
+   ./gradlew clean build
+   
+   # 프론트엔드
+   cd frontend && pnpm type-check && pnpm build
+   ```
+
+2. **코드 포맷**
+   - Java: Google Java Style 적용
+   - TypeScript: ESLint + Prettier 자동 포맷팅
+
+3. **커밋 메시지 컨벤션**
+   ```
+   feat: 새로운 기능
+   fix: 버그 수정
+   refactor: 코드 리팩토링 (기능 변경 없음)
+   docs: 문서 수정
+   chore: 빌드/설정 관련 변경
+   ```
+
+---
+
+## 📞 문의 및 지원
+
+- **이슈 트래커**: GitHub Issues
+- **기술 문의**: 프로젝트 Discussions
+
+---
+
+*Last Updated: 2026-02-21*
