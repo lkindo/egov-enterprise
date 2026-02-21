@@ -78,6 +78,10 @@ yarn.lock
 *.ppt
 *.pptx
 
+# Local configuration with sensitive data
+**/egovProps/conf/
+*.local.properties
+
 # ----- Environment & Secrets -----
 .env
 .env*.local
