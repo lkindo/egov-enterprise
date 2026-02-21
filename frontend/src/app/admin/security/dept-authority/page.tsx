@@ -37,13 +37,17 @@ export default function DeptAuthorityPage() {
   }, [toast]);
 
   const columns = [
-    { 
-      header: '권한 코드', 
-      accessor: 'authorCode', 
-      className: 'font-mono text-xs font-bold text-primary' 
+    {
+      header: '권한 코드',
+      accessor: (item: AuthorInfo) => item.authorCode,
+      className: 'font-mono text-xs font-bold text-primary'
     },
-    { header: '권한 명칭', accessor: 'authorNm', className: 'font-bold' },
     { 
+      header: '권한 명칭', 
+      accessor: (item: AuthorInfo) => item.authorNm, 
+      className: 'font-bold' 
+    },
+    {
       header: '부여 여부', 
       className: 'text-center',
       accessor: (item: AuthorInfo) => (

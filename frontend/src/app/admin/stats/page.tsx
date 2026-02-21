@@ -51,7 +51,11 @@ export default function AdminStatsPage() {
   }, [loadStats]);
 
   const menuColumns = [
-    { header: '메뉴명', accessor: 'menuNm', className: 'font-bold' },
+    { 
+      header: '메뉴명', 
+      accessor: (item: MenuStats) => item.menuNm, 
+      className: 'font-bold' 
+    },
     { header: '사용 횟수', accessor: (item: MenuStats) => item.count.toLocaleString() + ' 회' },
     { 
       header: '비중', 
