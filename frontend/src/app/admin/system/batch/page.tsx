@@ -152,9 +152,9 @@ export default function BatchAdminPage() {
 
       {/* Data Table */}
       <div className="bg-card border rounded-2xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={activeTab === 'schedule' ? scheduleColumns : resultColumns} 
-          data={activeTab === 'schedule' ? schedules : results} 
+        <StandardDataTable
+          columns={activeTab === 'schedule' ? scheduleColumns : resultColumns}
+          data={activeTab === 'schedule' ? (schedules as any) : (results as any)}
           loading={loading}
           emptyMessage="데이터가 없습니다."
           className="border-none rounded-none"
