@@ -97,8 +97,16 @@ export default function ServerAdminPage() {
       ),
       className: 'w-28'
     },
-    { header: '서버명', accessor: 'serverNm', className: 'font-black' },
-    { header: '등록일', accessor: 'regstYmd', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '서버명', 
+      accessor: (item: ServerInfo) => item.serverNm, 
+      className: 'font-black' 
+    },
+    { 
+      header: '등록일', 
+      accessor: (item: ServerInfo) => item.regstYmd, 
+      className: 'text-xs text-muted-foreground' 
+    },
     { 
       header: '상태', 
       accessor: () => (

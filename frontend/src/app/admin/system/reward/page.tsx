@@ -94,9 +94,21 @@ export default function RewardPage() {
         </span>
       )
     },
-    { header: '포상명', accessor: 'rwdNm', className: 'font-bold text-primary' },
-    { header: '대상자 ID', accessor: 'usid', className: 'font-mono text-xs' },
-    { header: '포상일자', accessor: 'rwdDe', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '포상명', 
+      accessor: (item: Reward) => item.rwdNm, 
+      className: 'font-bold text-primary' 
+    },
+    { 
+      header: '대상자 ID', 
+      accessor: (item: Reward) => item.usid, 
+      className: 'font-mono text-xs' 
+    },
+    { 
+      header: '포상일자', 
+      accessor: (item: Reward) => item.rwdDe, 
+      className: 'text-xs text-muted-foreground' 
+    },
     { 
       header: '상태', 
       accessor: (item: Reward) => (

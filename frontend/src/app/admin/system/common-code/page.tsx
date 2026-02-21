@@ -104,9 +104,21 @@ export default function CommonCodePage() {
   };
 
   const columns = [
-    { header: '코드', accessor: 'code', className: 'w-24 font-mono font-bold' },
-    { header: '코드 명칭', accessor: 'codeNm', className: 'font-black text-primary' },
-    { header: '설명', accessor: 'codeDc', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '코드', 
+      accessor: (item: any) => item.code, 
+      className: 'w-24 font-mono font-bold' 
+    },
+    { 
+      header: '코드 명칭', 
+      accessor: (item: any) => item.codeNm, 
+      className: 'font-black text-primary' 
+    },
+    { 
+      header: '설명', 
+      accessor: (item: any) => item.codeDc, 
+      className: 'text-xs text-muted-foreground' 
+    },
     { 
       header: '사용여부', 
       accessor: (item: any) => (
