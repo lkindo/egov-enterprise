@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServerResource } from '@/components/admin/system/monitoring/ServerResource';
 import { HttpMonitor } from '@/components/admin/system/monitoring/HttpMonitor';
 import { DbMonitor } from '@/components/admin/system/monitoring/DbMonitor';

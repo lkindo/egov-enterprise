@@ -9,7 +9,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { Database, Play, History, Plus, Trash2, Edit, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { BackupForm } from '@/components/admin/system/BackupForm';
 
@@ -99,17 +99,17 @@ export default function BackupAdminPage() {
     { header: '백업 작업명', accessor: 'backupOpertNm', className: 'font-black text-primary' },
     { header: '원본 경로', accessor: 'backupOrginlDrctry', className: 'text-xs text-muted-foreground' },
     { header: '보관 경로', accessor: 'backupStreDrctry', className: 'text-xs text-muted-foreground' },
-    { 
-      header: '주기', 
+    {
+      header: '주기',
       accessor: (item: BackupOpert) => (
         <span className="px-2 py-0.5 bg-muted rounded text-[10px] font-bold uppercase">
           {item.executCycle === '01' ? '매일' : item.executCycle === '02' ? '매주' : '기타'}
         </span>
-      ) 
+      )
     },
     { header: '시간', accessor: (item: BackupOpert) => `${item.executSchdulHour}:${item.executSchdulMnt}`, className: 'font-mono text-xs' },
-    { 
-      header: '상태', 
+    {
+      header: '상태',
       accessor: (item: BackupOpert) => (
         <span className={cn(
           "px-2 py-0.5 rounded-full text-[10px] font-black",
@@ -134,8 +134,8 @@ export default function BackupAdminPage() {
 
   const resColumns = [
     { header: '작업명', accessor: 'backupOpertNm', className: 'font-bold' },
-    { 
-      header: '결과', 
+    {
+      header: '결과',
       accessor: (item: BackupResult) => (
         <div className="flex items-center gap-1">
           {item.sttus === '01' ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
@@ -158,8 +158,8 @@ export default function BackupAdminPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="백업 정책 및 자동화 관리" 
+      <PageHeader
+        title="백업 정책 및 자동화 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '백업관리' }]}
         action={
           <Button className="rounded-full gap-2" onClick={handleOpenCreate}>
@@ -181,9 +181,9 @@ export default function BackupAdminPage() {
         <div className="mt-6">
           <TabsContent value="operations" className="space-y-4">
             <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-              <StandardDataTable 
-                columns={opColumns} 
-                data={operations} 
+              <StandardDataTable
+                columns={opColumns}
+                data={operations}
                 loading={loading}
                 emptyMessage="등록된 백업 정책이 없습니다."
                 className="border-none rounded-none"
@@ -193,9 +193,9 @@ export default function BackupAdminPage() {
 
           <TabsContent value="results" className="space-y-4">
             <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-              <StandardDataTable 
-                columns={resColumns} 
-                data={results} 
+              <StandardDataTable
+                columns={resColumns}
+                data={results}
                 loading={loading}
                 emptyMessage="실행 결과 이력이 없습니다."
                 className="border-none rounded-none"
@@ -212,10 +212,10 @@ export default function BackupAdminPage() {
         title={mode === 'create' ? '신규 백업 정책 등록' : '백업 정책 수정'}
         maxWidth="lg"
       >
-        <BackupForm 
-          initialData={selectedOp} 
-          onSubmit={handleSubmit} 
-          onCancel={() => setIsModalOpen(false)} 
+        <BackupForm
+          initialData={selectedOp}
+          onSubmit={handleSubmit}
+          onCancel={() => setIsModalOpen(false)}
         />
       </StandardModal>
     </div>
