@@ -8,7 +8,7 @@ import lombok.*;
  * ?怨뚰?疫꿸퀗? ?酉???
  */
 @Entity
-@Table(name = "COMTNCNTCINSTT")
+@Table(name = "NCNTCINSTT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

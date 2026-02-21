@@ -18,14 +18,15 @@ import org.slf4j.LoggerFactory;
  *
  * @author ?
  * @see
- * <pre>
+ * 
+ *      <pre>
  * == ?????Modification Information) ==
  *
  *   ????      ????          ????
  *  -------     --------    ---------------------------
  *  2010-08-30   ?    ????
  *  2017-02-06   ????     ??????ES) - ?????? ?????? ??CWE-253, CWE-440, CWE-756]
- * </pre>
+ *      </pre>
  **/
 
 public class BatchJobListener implements JobListener {
@@ -50,6 +51,7 @@ public class BatchJobListener implements JobListener {
 
 	/**
 	 * ?ID ??????
+	 * 
 	 * @param idgenService the idgenService to set
 	 **/
 	public void setIdgenService(EgovIdGnrService idgenService) {
@@ -58,6 +60,7 @@ public class BatchJobListener implements JobListener {
 
 	/**
 	 * Job Listener ???????.
+	 * 
 	 * @see org.quartz.JobListener#getName()
 	 **/
 	@Override
@@ -96,14 +99,20 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.insertBatchResult(batchResult);
 
-			// ????????? ???  datamap???ID???????
+			// ????????? ??? datamap???ID???????
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		//2017.02.06 	???? 	??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
+			// 2017.02.06 ???? ??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
 		} catch (FdlException e) {
-			LOGGER.error("[FdlException]          ????        D : {},          ??         ID : {},          ?               ????insert) ?   ?    : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
+			LOGGER.error(
+					"[FdlException]          ????        D : {},          ??         ID : {},          ?               ????insert) ?   ?    : {}",
+					batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			LOGGER.error("(Ko)          ????        D : {},          ??         ID : {},          ?               ????insert) ?   ?    : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("(En) [" + e.getClass() + "] BatchScheduleID : {}, BatchJobID : {}, BatchResult(insert) Error : {}", batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
+			LOGGER.error(
+					"(Ko)          ????        D : {},          ??         ID : {},          ?               ????insert) ?   ?    : {}",
+					batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
+			LOGGER.error(
+					"(En) [" + e.getClass() + "] BatchScheduleID : {}, BatchJobID : {}, BatchResult(insert) Error : {}",
+					batchResult.getBatchSchdulId(), batchResult.getBatchOpertId(), e.getMessage());
 		}
 
 	}
@@ -117,7 +126,8 @@ public class BatchJobListener implements JobListener {
 	@Override
 	public void jobWasExecuted(JobExecutionContext jobContext, JobExecutionException jee) {
 		LOGGER.debug("job[{}] jobWasExecuted", jobContext.getJobDetail().getKey().getName());
-		LOGGER.debug("job[{}] ??      ??       : {}, {}", jobContext.getJobDetail().getKey().getName(), jobContext.getFireTime(), jobContext.getJobRunTime());
+		LOGGER.debug("job[{}] ??      ??       : {}, {}", jobContext.getJobDetail().getKey().getName(),
+				jobContext.getFireTime(), jobContext.getJobRunTime());
 
 		int jobResult = 99;
 		BatchResult batchResult = new BatchResult();
@@ -144,7 +154,6 @@ public class BatchJobListener implements JobListener {
 			if (jee != null) {
 				LOGGER.error("JobExecutionException             ?: {}", jee);
 				batchResult.setSttus("02");
-				String errorInfo = batchResult.getErrorInfo();
 				batchResult.setErrorInfo("Error Info");
 			}
 
@@ -158,18 +167,26 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.updateBatchResult(batchResult);
 
-			// ????????? ???  datamap???ID???????
+			// ????????? ??? datamap???ID???????
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		} catch (ClassCastException e) {//KISA ?? ??(2018-10-29, ????
-			LOGGER.error("[ClassCastException]          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+		} catch (ClassCastException e) {// KISA ?? ??(2018-10-29, ????
+			LOGGER.error(
+					"[ClassCastException]          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("[ClassCastException] ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			LOGGER.error("[ClassCastException] [" + e.getClass()
+					+ "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			//2017.02.06 	???? 	??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
-			LOGGER.error("(Ko)          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			// 2017.02.06 ???? ??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
+			LOGGER.error(
+					"(Ko)          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("(En) ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			LOGGER.error("(En) [" + e.getClass()
+					+ "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		}
 	}
@@ -179,7 +196,8 @@ public class BatchJobListener implements JobListener {
 	 *
 	 * @param jobContext JobExecutionContext
 	 *
-	 * @see org.quartz.JobListener#jobExecutionVetoed(JobExecutionContext jobContext)
+	 * @see org.quartz.JobListener#jobExecutionVetoed(JobExecutionContext
+	 *      jobContext)
 	 **/
 	@Override
 	public void jobExecutionVetoed(JobExecutionContext jobContext) {
@@ -207,18 +225,26 @@ public class BatchJobListener implements JobListener {
 
 			egovBatchSchdulService.updateBatchResult(batchResult);
 
-			// ????????? ???  datamap???ID???????
+			// ????????? ??? datamap???ID???????
 			dataMap.put("batchResultId", batchResult.getBatchResultId());
-		} catch (ClassCastException e) {//KISA ?? ??(2018-10-29, ????
-			LOGGER.error("[ClassCastException]          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+		} catch (ClassCastException e) {// KISA ?? ??(2018-10-29, ????
+			LOGGER.error(
+					"[ClassCastException]          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("[ClassCastException] ["+ e.getClass() + "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			LOGGER.error("[ClassCastException] [" + e.getClass()
+					+ "] BatchResultID : {}, BatchScheduleID : {}, BatchJobID : {}, BatchResult(update) Error : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		} catch (Exception e) {
-			//2017.02.06 	???? 	??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
-			LOGGER.error("(Ko)          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			// 2017.02.06 ???? ??????ES)-?????? ??CWE-253, CWE-440, CWE-754]
+			LOGGER.error(
+					"(Ko)          ?               ID : {},          ????        D : {},          ??         ID : {},          ?               ????update) ?   ?    : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
-			LOGGER.error("(En) ["+ e.getClass() +"] BachResultID : {}, BatchScheduleID : {},          ??         ID : {},          ?               ????update) ?   ?    : {}", batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
+			LOGGER.error("(En) [" + e.getClass()
+					+ "] BachResultID : {}, BatchScheduleID : {},          ??         ID : {},          ?               ????update) ?   ?    : {}",
+					batchResult.getBatchResultId(), batchResult.getBatchSchdulId(),
 					batchResult.getBatchOpertId(), e.getMessage());
 		}
 

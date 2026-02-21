@@ -64,8 +64,9 @@ public class Comment implements Serializable {
     private LocalDateTime modifiedDate;
 
     @Builder
-    public Comment(Long nttId, String bbsId, String wrterId, String wrterNm,
-            String password, String commentCn, String useAt) {
+    public Comment(Long id, Long nttId, String bbsId, String wrterId, String wrterNm,
+            String password, String commentCn, String useAt, String frstRegisterId) {
+        this.id = id;
         this.nttId = nttId;
         this.bbsId = bbsId;
         this.wrterId = wrterId;
@@ -73,6 +74,7 @@ public class Comment implements Serializable {
         this.password = password;
         this.commentCn = commentCn;
         this.useAt = useAt;
+        this.frstRegisterId = frstRegisterId;
     }
 
     public void update(String commentCn) {

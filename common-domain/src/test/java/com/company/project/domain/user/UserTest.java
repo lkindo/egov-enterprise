@@ -1,23 +1,25 @@
 package com.company.project.domain.user;
 
+import com.company.project.domain.user.entity.Role;
+import com.company.project.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * User ?袁⑥컭???酉?????μ맄 ???뮞??
+ * User 엔티티 도메인 로직 테스트
  */
 class UserTest {
 
     @Test
-    @DisplayName("Builder嚥?User ??밴쉐 - 疫꿸퀡??첎?野꺜筌?)
+    @DisplayName("Builder로 User 생성 - 기본 필드 확인")
     void createUser_withBuilder() {
         // When
         User user = User.builder()
                 .userId("testUser")
                 .esntlId("USR00001")
-                .userNm("???뮞???????)
+                .userNm("홍길동")
                 .password("hashedPassword")
                 .emailAdres("test@example.com")
                 .build();
@@ -25,7 +27,7 @@ class UserTest {
         // Then
         assertThat(user.getUserId()).isEqualTo("testUser");
         assertThat(user.getEsntlId()).isEqualTo("USR00001");
-        assertThat(user.getUserNm()).isEqualTo("???뮞???????);
+        assertThat(user.getUserNm()).isEqualTo("홍길동");
         assertThat(user.getPassword()).isEqualTo("hashedPassword");
         assertThat(user.getEmailAdres()).isEqualTo("test@example.com");
         assertThat(user.getRole()).isEqualTo(Role.USER); // Default role
@@ -33,13 +35,13 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("Builder嚥?ADMIN Role 筌왖??)
+    @DisplayName("Builder로 ADMIN 권한 설정 확인")
     void createUser_withAdminRole() {
         // When
         User user = User.builder()
                 .userId("adminUser")
                 .esntlId("ADM00001")
-                .userNm("?온?귐딆쁽")
+                .userNm("관리자")
                 .password("adminPass")
                 .role(Role.ADMIN)
                 .build();
@@ -49,13 +51,13 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("update 筌롫뗄苑??뺤쨮 ??????類ｋ궖 ??륁젟")
+    @DisplayName("update 메서드로 회원 정보 수정 확인")
     void updateUser() {
         // Given
         User user = User.builder()
                 .userId("testUser")
                 .esntlId("USR00001")
-                .userNm("?癒?삋 ??已?)
+                .userNm("이전이름")
                 .password("password")
                 .emailAdres("old@example.com")
                 .role(Role.USER)
@@ -63,7 +65,7 @@ class UserTest {
 
         // When
         user.update(
-                "??륁젟????已?, // userNm
+                "수정된이름", // userNm
                 null, // passwordHint
                 null, // passwordCnsr
                 null, // emplNo
@@ -89,20 +91,20 @@ class UserTest {
         );
 
         // Then
-        assertThat(user.getUserNm()).isEqualTo("??륁젟????已?);
+        assertThat(user.getUserNm()).isEqualTo("수정된이름");
         assertThat(user.getMoblphonNo()).isEqualTo("010-1234-5678");
         assertThat(user.getEmailAdres()).isEqualTo("new@example.com");
         assertThat(user.getRole()).isEqualTo(Role.ADMIN);
     }
 
     @Test
-    @DisplayName("updatePassword嚥???쑬?甕곕뜇??癰궰野?)
+    @DisplayName("updatePassword로 비밀번호 변경 확인")
     void updatePassword() {
         // Given
         User user = User.builder()
                 .userId("testUser")
                 .esntlId("USR00001")
-                .userNm("???뮞??)
+                .userNm("사용자")
                 .password("oldPassword")
                 .build();
 
@@ -114,13 +116,13 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("筌뤴뫀諭??袁⑤굡嚥?User ??밴쉐")
+    @DisplayName("모든 필드 설정을 통한 User 생성")
     void createUser_withAllFields() {
         // When
         User user = User.builder()
                 .userId("fullUser")
                 .esntlId("USR00002")
-                .userNm("?袁⑷퍥 ?袁⑤굡 ?????)
+                .userNm("전체필드사용자")
                 .password("password")
                 .passwordHint("hint")
                 .passwordCnsr("answer")
@@ -132,13 +134,13 @@ class UserTest {
                 .homemiddleTelno("1234")
                 .homeendTelno("5678")
                 .fxnum("02-1234-5678")
-                .homeadres("??뽰뒻??揶쏅베沅볠뤃?)
-                .detailAdres("123??456??)
+                .homeadres("서울시 중구 세종대로")
+                .detailAdres("123번지 456호")
                 .zip("12345")
                 .offmTelno("02-9876-5432")
                 .moblphonNo("010-1111-2222")
                 .emailAdres("full@example.com")
-                .ofcpsNm("?⑥눘??)
+                .ofcpsNm("연구원")
                 .groupId("GRP001")
                 .orgnztId("ORG001")
                 .insttCode("INST001")
@@ -151,7 +153,7 @@ class UserTest {
         assertThat(user.getPasswordHint()).isEqualTo("hint");
         assertThat(user.getEmplNo()).isEqualTo("EMP001");
         assertThat(user.getSexdstnCode()).isEqualTo("M");
-        assertThat(user.getOfcpsNm()).isEqualTo("?⑥눘??);
+        assertThat(user.getOfcpsNm()).isEqualTo("연구원");
         assertThat(user.getSubDn()).isEqualTo("CN=user");
     }
 }

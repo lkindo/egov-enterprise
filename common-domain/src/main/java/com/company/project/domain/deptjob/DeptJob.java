@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * @see COMTNDEPTJOB ???뵠??筌띲끋釉?
  */
 @Entity
-@Table(name = "COMTNDEPTJOB")
+@Table(name = "NDEPTJOB")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

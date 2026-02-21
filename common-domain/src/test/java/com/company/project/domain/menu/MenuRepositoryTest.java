@@ -45,27 +45,27 @@ public class MenuRepositoryTest {
 
         @BeforeEach
         void setUp() {
-                // 1. ?袁⑥쨮域밸챶???源낆쨯
+                // 1. 프로그램 정보 등록
                 programRepository.save(java.util.Objects.requireNonNull(Program.builder()
                                 .progrmFileNm("mainProg")
                                 .progrmKoreanNm("Main Program")
                                 .url("/main/test.do")
                                 .build()));
 
-                // 2. 亦낅슦釉??源낆쨯
+                // 2. 권한 정보 등록
                 authorityRepository.save(java.util.Objects.requireNonNull(Authority.builder()
                                 .authorCode("AUTH_USER")
-                                .authorNm("??곗뺘?????)
-                                .authorDc("??곗뺘?????亦낅슦釉?)
+                                .authorNm("사용자 권한")
+                                .authorDc("일반 사용자용 권한")
                                 .build()));
 
-                // 3. ?????亦낅슦釉?筌띲끋釉?(uniqId -> authorCode)
+                // 3. 사용자 권한 매핑(uniqId -> authorCode)
                 userAuthorityRepository.save(java.util.Objects.requireNonNull(UserAuthority.builder()
                                 .uniqId("USR01")
                                 .authorCode("AUTH_USER")
                                 .build()));
 
-                // 4. 筌롫뗀???源낆쨯
+                // 4. 메뉴 정보 등록
                 menuRepository.save(java.util.Objects.requireNonNull(Menu.builder()
                                 .id(100L)
                                 .menuNm("Root Menu")
@@ -74,7 +74,7 @@ public class MenuRepositoryTest {
                                 .progrmFileNm("mainProg")
                                 .build()));
 
-                // 5. 筌롫뗀??亦낅슦釉???쇱젟
+                // 5. 메뉴 권한 설정
                 menuAuthorityRepository.save(java.util.Objects.requireNonNull(MenuAuthority.builder()
                                 .id(MenuAuthority.MenuAuthorityId.builder()
                                                 .menuNo(100L)
@@ -84,7 +84,7 @@ public class MenuRepositoryTest {
         }
 
         @Test
-        @DisplayName("筌롫뗀????已??곗쨮 野꺜??)
+        @DisplayName("메뉴 명으로 검색 성공")
         void searchMenus() {
                 Page<Menu> result = menuRepository.searchMenus("Root", PageRequest.of(0, 10));
                 assertThat(result.getContent()).hasSize(1);
@@ -92,12 +92,12 @@ public class MenuRepositoryTest {
         }
 
         @Test
-        @DisplayName("?????ID 疫꿸퀡而???삳쐭 筌롫뗀??鈺곌퀬??(亦낅슦釉?獄??袁⑥쨮域밸챶??Join 野꺜筌?")
+        @DisplayName("사용자 ID 기반 헤더 메뉴 조회 (권한 및 프로그램 Join 확인)")
         void selectMainMenuHead() {
                 List<MenuProjection> result = menuRepository.selectMainMenuHead("USR01");
 
                 assertThat(result).isNotEmpty();
                 assertThat(result.get(0).getMenuNm()).isEqualTo("Root Menu");
-                assertThat(result.get(0).getChkURL()).isEqualTo("/main/test.do"); // Program Join 野꺜筌?
+                assertThat(result.get(0).getChkURL()).isEqualTo("/main/test.do"); // Program Join 확인
         }
 }

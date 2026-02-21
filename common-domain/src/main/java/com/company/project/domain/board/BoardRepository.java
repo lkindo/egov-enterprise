@@ -23,4 +23,7 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
 
         @Query("SELECT COALESCE(MAX(b.nttNo), 0) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
         Long findMaxNttNo(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
+
+        @Query("SELECT COALESCE(MAX(b.nttId), 0) FROM Board b")
+        Long findMaxNttId();
 }

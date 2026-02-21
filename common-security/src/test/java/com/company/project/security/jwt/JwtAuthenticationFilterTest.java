@@ -43,7 +43,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT ?醫뤾쿃????덈뮉 ?遺욧퍕???????紐꾩쵄 ?源껊궗")
+    @DisplayName("유효한 토큰이 있는 경우 인증 성공")
     void doFilterInternal_withValidToken_authenticationSuccess() throws ServletException, IOException {
         // Given
         String token = "validToken123";
@@ -67,7 +67,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT ?醫뤾쿃????용뮉 ?遺욧퍕???????紐꾩쵄 ??곸뵠 ?④쑴??筌욊쑵六?)
+    @DisplayName("토큰이 없는 경우 인증 없이 진행")
     void doFilterInternal_withoutToken_continueWithoutAuthentication() throws ServletException, IOException {
         // Given
         when(tokenProvider.resolveToken(request)).thenReturn(null);
@@ -85,7 +85,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT ?醫뤾쿃?????筌??醫륁뒞??? ??? 野껋럩???紐꾩쵄 ??쎈솭")
+    @DisplayName("유효하지 않은 토큰인 경우 인증 실패")
     void doFilterInternal_withInvalidToken_authenticationFailure() throws ServletException, IOException {
         // Given
         String token = "invalidToken123";
@@ -107,7 +107,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("Authorization ??삳쐭??Bearer ?臾먮あ??? ??용뮉 野껋럩???紐꾩쵄 ??곸뵠 筌욊쑵六?)
+    @DisplayName("Authorization 헤더에 Bearer 접두사가 없는 경우 인증 없이 진행")
     void doFilterInternal_withoutBearerPrefix_continueWithoutAuthentication() throws ServletException, IOException {
         // Given
         request.addHeader("Authorization", "invalidPrefix token123");
@@ -126,7 +126,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT ?醫뤾쿃 野꺜筌?餓???됱뇚 獄쏆뮇源????紐꾩쵄 ??쎈솭")
+    @DisplayName("토큰 검증 중 예외 발생 시 인증 실패")
     void doFilterInternal_withTokenValidationException_authenticationFailure() throws ServletException, IOException {
         // Given
         String token = "exceptionToken123";
@@ -148,7 +148,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("?袁り숲 筌ｋ똻???④쑴??筌욊쑵六??類ㅼ뵥")
+    @DisplayName("필터 체인이 계속 진행되는지 확인")
     void doFilterInternal_chainContinues() throws ServletException, IOException {
         // Given
         String token = "validToken123";
@@ -169,7 +169,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("Security Context???紐꾩쵄 ?類ｋ궖 ??쇱젟 ?類ㅼ뵥")
+    @DisplayName("Security Context에 인증 정보가 올바르게 설정되는지 확인")
     void doFilterInternal_securityContextSetCorrectly() throws ServletException, IOException {
         // Given
         String token = "validToken123";

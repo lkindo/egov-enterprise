@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.company.project.domain.user.entity.User;
+import com.company.project.domain.user.repository.UserRepository;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +27,7 @@ class UserRepositoryPagingLogicTest {
     private UserRepository userRepository;
 
     @Test
-    @DisplayName("筌?甕곕뜆????륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
+    @DisplayName("전체 조회 첫 페이지 성공")
     void findAll_firstPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -45,7 +47,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("??甕곕뜆????륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
+    @DisplayName("전체 조회 두 번째 페이지 성공")
     void findAll_secondPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -65,7 +67,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("筌띾뜆?筌???륁뵠筌왖 ?????筌뤴뫖以?鈺곌퀬???源껊궗")
+    @DisplayName("전체 조회 마지막 페이지 성공")
     void findAll_lastPage_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -85,7 +87,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("??륁뵠筌왖 ??由?癰궰野????뮞??)
+    @DisplayName("페이지 크기 변경하여 조회 성공")
     void findAll_withDifferentPageSize_success() {
         // Given
         createTestData(25); // Create 25 test users
@@ -103,7 +105,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("??륁뵠筌왖 甕곕뜇??甕곕뗄???λ뜃?????뮞??- ??野껉퀗??獄쏆꼹??)
+    @DisplayName("페이지 번호 초과 조회 시 빈 결과 반환")
     void findAll_exceedingPageNumber_returnsEmpty() {
         // Given
         createTestData(25); // Create 25 test users
@@ -115,7 +117,7 @@ class UserRepositoryPagingLogicTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isEmpty(); // Should return empty list
-        assertThat(result.getTotalElements()).isEqualTo(25); // Total should still be 25
+        assertThat(result.getTotalElements()).isEqualTo(25); // Total still 25
         assertThat(result.getTotalPages()).isEqualTo(3); // Should be 3 pages
         assertThat(result.getNumber()).isEqualTo(5); // Current page number should be 5
         assertThat(result.isFirst()).isFalse(); // Should not be first page
@@ -123,24 +125,24 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??已?疫꿸퀣? ??살カ筌△뫁??)
+    @DisplayName("이름 오름차순 정렬 페이지 조회 성공")
     void findAll_sortedByNameAsc_success() {
         // Given
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("揶쎛揶쎛揶쎛")
+                .userNm("다라마")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("??롪돌??)
+                .userNm("가나다")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("??삳뼄??)
+                .userNm("나다라")
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
@@ -157,28 +159,28 @@ class UserRepositoryPagingLogicTest {
         List<String> sortedNames = result.getContent().stream()
                 .map(User::getUserNm)
                 .toList();
-        assertThat(sortedNames).containsExactly("揶쎛揶쎛揶쎛", "??롪돌??, "??삳뼄??);
+        assertThat(sortedNames).containsExactly("가나다", "나다라", "다라마");
     }
 
     @Test
-    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??已?疫꿸퀣? ???앾㎕?λ떄")
+    @DisplayName("이름 내림차순 정렬 페이지 조회 성공")
     void findAll_sortedByNameDesc_success() {
         // Given
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("揶쎛揶쎛揶쎛")
+                .userNm("가나다")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("??롪돌??)
+                .userNm("나다라")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("??삳뼄??)
+                .userNm("다라마")
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
@@ -195,28 +197,28 @@ class UserRepositoryPagingLogicTest {
         List<String> sortedNames = result.getContent().stream()
                 .map(User::getUserNm)
                 .toList();
-        assertThat(sortedNames).containsExactly("??삳뼄??, "??롪돌??, "揶쎛揶쎛揶쎛");
+        assertThat(sortedNames).containsExactly("다라마", "나다라", "가나다");
     }
 
     @Test
-    @DisplayName("?類ｌ졊????륁뵠筌?野껉퀗?????뮞??- ??밴쉐??疫꿸퀣? ??살カ筌△뫁??)
+    @DisplayName("생성일 오름차순 정렬 페이지 조회 성공")
     void findAll_sortedByCreatedDateAsc_success() {
         // Given
         User user1 = User.builder()
                 .userId("user1")
-                .userNm("?????")
+                .userNm("사용자1")
                 .esntlId("USR00001")
                 .password("encodedPassword")
                 .build();
         User user2 = User.builder()
                 .userId("user2")
-                .userNm("?????")
+                .userNm("사용자2")
                 .esntlId("USR00002")
                 .password("encodedPassword")
                 .build();
         User user3 = User.builder()
                 .userId("user3")
-                .userNm("?????")
+                .userNm("사용자3")
                 .esntlId("USR00003")
                 .password("encodedPassword")
                 .build();
@@ -230,12 +232,10 @@ class UserRepositoryPagingLogicTest {
 
         // Then
         assertThat(result.getContent()).hasSize(3);
-        // Verify that the users are ordered by creation date (which depends on the
-        // order of saving)
     }
 
     @Test
-    @DisplayName("??륁뵠筌???곸뵠 ?袁⑷퍥 鈺곌퀬?????뮞??)
+    @DisplayName("페이지 크기를 크게 설정하여 조회 성공")
     void findAll_unpaged_success() {
         // Given
         createTestData(15); // Create 15 test users
@@ -249,7 +249,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("??륁뵠筌왖 ??由?0??곗쨮 ?紐낅립 ??됱뇚 ???뮞??)
+    @DisplayName("페이지 크기가 0일 때 예외 발생 성공")
     void findAll_withZeroPageSize_throwsException() {
         // Given
         createTestData(10); // Create 10 test users
@@ -262,7 +262,7 @@ class UserRepositoryPagingLogicTest {
     }
 
     @Test
-    @DisplayName("???땾 ??륁뵠筌왖 甕곕뜇?????뮞??)
+    @DisplayName("페이지 번호가 음수일 때 예외 발생 성공")
     void findAll_withNegativePageNumber_throwsException() {
         // Given
         createTestData(10); // Create 10 test users
@@ -275,13 +275,13 @@ class UserRepositoryPagingLogicTest {
     }
 
     /**
-     * ???뮞???怨쀬뵠????밴쉐
+     * 테스트 데이터 생성
      */
     private void createTestData(int count) {
         for (int i = 1; i <= count; i++) {
             User user = User.builder()
                     .userId("user" + i)
-                    .userNm("????? + i)
+                    .userNm("사용자" + i)
                     .esntlId("USR" + String.format("%05d", i))
                     .password("encodedPassword")
                     .build();

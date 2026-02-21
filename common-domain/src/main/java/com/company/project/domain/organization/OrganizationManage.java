@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "COMTNORGNZTINFO")
+@Table(name = "NORGNZTINFO")
 public class OrganizationManage {
 
     @Id

@@ -41,7 +41,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Access Token ??밴쉐 ?源껊궗")
+    @DisplayName("Access Token 생성 성공")
     void createAccessToken_success() {
         // When
         String token = jwtTokenProvider.createAccessToken("testUser", "ROLE_USER");
@@ -51,7 +51,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Refresh Token ??밴쉐 ?源껊궗")
+    @DisplayName("Refresh Token 생성 성공")
     void createRefreshToken_success() {
         // Given
         String userId = "testUser";
@@ -71,7 +71,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Token 野꺜筌??源껊궗")
+    @DisplayName("토큰 검증 성공")
     void validateToken_success() {
         // Given
         String token = jwtTokenProvider.createAccessToken("testUser", "ROLE_USER");
@@ -82,7 +82,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Token 野꺜筌???쎈솭 - 筌띾슢利???醫뤾쿃")
+    @DisplayName("토큰 검증 실패 - 만료된 토큰")
     void validateToken_fail_expiredToken() {
         // Given
         String expiredToken = Jwts.builder()
@@ -99,7 +99,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Token 野꺜筌???쎈솭 - ??롢걵????뺤구")
+    @DisplayName("토큰 검증 실패 - 잘못된 서명")
     void validateToken_fail_invalidSignature() {
         // Given
         String tokenWithDifferentSecret = Jwts.builder()
@@ -116,7 +116,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Token 野꺜筌???쎈솭 - ??롢걵???類ㅻ뻼")
+    @DisplayName("토큰 검증 실패 - 잘못된 형식")
     void validateToken_fail_malformedToken() {
         // Given
         String malformedToken = "invalid.token.format";
@@ -127,7 +127,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Token ?癒?퐣 ?????ID ?곕뗄???源껊궗")
+    @DisplayName("토큰에서 사용자 ID 추출 성공")
     void getUserId_success() {
         // Given
         String token = jwtTokenProvider.createAccessToken("testUser", "ROLE_USER");
@@ -138,7 +138,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Resolve Token ?源껊궗 - Authorization ??삳쐭?癒?퐣")
+    @DisplayName("토큰 추출 성공 - Authorization 헤더에서")
     void resolveToken_success_fromAuthorizationHeader() {
         // Given
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -151,7 +151,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Resolve Token ??쎈솭 - Authorization ??삳쐭 ??곸벉")
+    @DisplayName("토큰 추출 실패 - Authorization 헤더 없음")
     void resolveToken_fail_noAuthorizationHeader() {
         // Given
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -162,12 +162,12 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Refresh Token ?묒쥚沅???쇱젟")
+    @DisplayName("Refresh Token 쿠키 설정")
     void setRefreshTokenCookie() {
         // Given
         MockHttpServletResponse response = new MockHttpServletResponse();
         String token = "test-refresh-token";
-        // When - setRefreshTokenCookie 筌롫뗄苑??? ??곸몵沃샕嚥??묒쥚沅?筌욊낯????쇱젟
+        // When
         response.addCookie(new jakarta.servlet.http.Cookie("refreshToken", token));
         // Then
         assertThat(response.getCookie("refreshToken")).isNotNull();
@@ -175,11 +175,11 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Refresh Token ?묒쥚沅???볤탢")
+    @DisplayName("Refresh Token 쿠키 제거")
     void removeRefreshTokenCookie() {
         // Given
         MockHttpServletResponse response = new MockHttpServletResponse();
-        // When - removeRefreshTokenCookie 筌롫뗄苑??? ??곸몵沃샕嚥??묒쥚沅?筌욊낯????볤탢
+        // When
         jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("refreshToken", null);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);

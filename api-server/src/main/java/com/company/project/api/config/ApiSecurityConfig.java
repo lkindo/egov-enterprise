@@ -20,8 +20,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.web.SecurityFilterChain;
@@ -82,7 +80,7 @@ public class ApiSecurityConfig {
 
                 return source;
 
-            }
+        }
 
         @Bean
 
@@ -147,68 +145,32 @@ public class ApiSecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
 
                                                 .requestMatchers(
-
                                                                 "/css/**", "/js/**", "/images/**",
-
                                                                 "/validator.do", "/cmm/fms/getImage.do",
-
                                                                 "/uat/uia/egovLoginUsr.do", "/uat/uia/actionLogin.do",
-
                                                                 "/uat/uia/actionLogout.do",
-
-                                                                "/index.jsp", "/", "/uss/olp/qri/**")
-
+                                                                "/index.jsp", "/", "/uss/olp/qri/**",
+                                                                "/favicon.ico")
                                                 .permitAll()
-
                                                 .anyRequest().authenticated())
-
                                 .formLogin(form -> form
-
                                                 .loginPage("/uat/uia/egovLoginUsr.do")
-
                                                 .usernameParameter("id")
-
                                                 .passwordParameter("password")
-
                                                 .permitAll())
-
                                 .logout(logout -> logout
-
                                                 .logoutUrl("/uat/uia/actionLogout.do")
-
                                                 .logoutSuccessUrl("/uat/uia/egovLoginUsr.do"))
-
                                 .sessionManagement(session -> session
-
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
                 return http.build();
-
         }
 
         @Bean
-
         public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-
                 AuthenticationManagerBuilder authenticationManagerBuilder = http
-
                                 .getSharedObject(AuthenticationManagerBuilder.class);
-
                 authenticationManagerBuilder.authenticationProvider(egovAuthenticationProvider);
-
                 return authenticationManagerBuilder.build();
-
         }
-
-        @Bean
-
-        public WebSecurityCustomizer webSecurityCustomizer() {
-
-                return (web) -> web.ignoring().requestMatchers(
-
-                                "/favicon.ico");
-
-        }
-
 }
-

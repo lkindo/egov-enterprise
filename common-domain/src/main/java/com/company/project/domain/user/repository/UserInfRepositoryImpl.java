@@ -1,7 +1,5 @@
 package com.company.project.domain.user.repository;
 
-import com.company.project.domain.user.vo.*;
-import com.company.project.domain.user.entity.*;
 import com.company.project.domain.user.vo.UserInfSearchResult;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;

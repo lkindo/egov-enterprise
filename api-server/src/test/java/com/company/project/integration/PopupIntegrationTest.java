@@ -1,13 +1,11 @@
 package com.company.project.integration;
 
-import com.company.project.config.MinimalTestConfig;
 import com.company.project.service.pwm.PopupService;
 import com.company.project.service.pwm.dto.PopupDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,16 +23,30 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = MinimalTestConfig.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(controllers = com.company.project.api.controller.pwm.PopupController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class PopupIntegrationTest {
+
+        @org.springframework.context.annotation.Configuration
+        @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
+                        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+                        org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
+        })
+        @org.springframework.context.annotation.ComponentScan(basePackages = "com.company.project.api.controller.pwm")
+        static class TestConfig {
+        }
 
         @Autowired
         private MockMvc mockMvc;
 
         @MockBean
         private PopupService popupService;
+
+        @MockBean
+        private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
         @Test
         @DisplayName("GET /api/v1/popups - 팝업 목록 조회 API 테스트")

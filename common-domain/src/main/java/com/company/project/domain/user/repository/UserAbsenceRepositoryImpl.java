@@ -1,8 +1,6 @@
 package com.company.project.domain.user.repository;
 
 import com.company.project.domain.user.vo.*;
-import com.company.project.domain.user.entity.*;
-
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;

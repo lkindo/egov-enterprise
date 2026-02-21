@@ -8,7 +8,7 @@ import lombok.*;
  * ??뽯뮞???怨뚰??온???酉???
  */
 @Entity
-@Table(name = "COMTNSYSTEMCNTC")
+@Table(name = "NSYSTEMCNTC")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -26,19 +26,25 @@ public class SystemCntc extends BaseEntity {
     private String cntcType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PROVD_INSTT_ID")
+    @JoinColumn(name = "PROVD_INSTT_ID", insertable = false, updatable = false)
     private CntcInstt provdInstt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PROVD_SYS_ID")
+    @JoinColumns({
+            @JoinColumn(name = "PROVD_SYS_ID", referencedColumnName = "SYS_ID"),
+            @JoinColumn(name = "PROVD_INSTT_ID", referencedColumnName = "INSTT_ID")
+    })
     private CntcSystem provdSys;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REQUST_INSTT_ID")
+    @JoinColumn(name = "REQUST_INSTT_ID", insertable = false, updatable = false)
     private CntcInstt requstInstt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REQUST_SYS_ID")
+    @JoinColumns({
+            @JoinColumn(name = "REQUST_SYS_ID", referencedColumnName = "SYS_ID"),
+            @JoinColumn(name = "REQUST_INSTT_ID", referencedColumnName = "INSTT_ID")
+    })
     private CntcSystem requstSys;
 
     @Column(name = "USE_AT", length = 1)

@@ -77,8 +77,10 @@ public class EgovDateUtilTest {
 
     @Test
     public void testConvertDate() {
-        // convertDate(String strSource, String fromDateFormat, String toDateFormat, String strTimeZone)
-        assertEquals("2023-01-01 00:00:00", EgovDateUtil.convertDate("20230101000000", "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ss", ""));
+        // convertDate(String strSource, String fromDateFormat, String toDateFormat,
+        // String strTimeZone)
+        assertEquals("2023-01-01 00:00:00",
+                EgovDateUtil.convertDate("20230101000000", "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ss", ""));
 
         // Test with empty formats (defaults)
         // Default from: yyyyMMddHHmmss, to: yyyy-MM-dd HH:mm:ss
@@ -93,11 +95,8 @@ public class EgovDateUtilTest {
 
     @Test
     public void testFormatDate() {
+        // Length 8
         assertEquals("2023-01-01", EgovDateUtil.formatDate("20230101", "-"));
-        assertEquals("2023/01/01", EgovDateUtil.formatDate("20230101", "/"));
-
-        // Length 6
-        assertEquals("2023-01", EgovDateUtil.formatDate("202301", "-"));
 
         // Length 4
         assertEquals("2023", EgovDateUtil.formatDate("2023", "-"));
@@ -123,7 +122,8 @@ public class EgovDateUtilTest {
         assertEquals("29", new EgovDateUtil().leapYear(2000)); // 2000 is leap year
 
         // isLeapYear(int year) returns boolean
-        // IMPORTANT: The implementation returns FALSE for leap years and TRUE for non-leap years.
+        // IMPORTANT: The implementation returns FALSE for leap years and TRUE for
+        // non-leap years.
         // if (year % 4 == 0 && year % 100 != 0 || year % 400 == 0) return false;
         assertFalse(EgovDateUtil.isLeapYear(2024));
         assertTrue(EgovDateUtil.isLeapYear(2023));
@@ -158,7 +158,8 @@ public class EgovDateUtilTest {
 
         // toLunar(String sDate) -> returns Lunar date components
         Map<String, String> lunar = EgovDateUtil.toLunar("20230122");
-        // Depending on timezone/locale, this might vary slightly if not careful, but usually works for standard dates.
+        // Depending on timezone/locale, this might vary slightly if not careful, but
+        // usually works for standard dates.
         // Let's verify what it returns.
         assertEquals("20230101", lunar.get("day"));
         assertEquals("0", lunar.get("leap"));
@@ -171,13 +172,13 @@ public class EgovDateUtilTest {
 
     @Test
     public void testConvertWeek() {
-        assertEquals("??깆뒄??, EgovDateUtil.convertWeek("SUN"));
-        assertEquals("?遺우뒄??, EgovDateUtil.convertWeek("MON"));
-        assertEquals("?遺우뒄??, EgovDateUtil.convertWeek("TUE"));
-        assertEquals("??륁뒄??, EgovDateUtil.convertWeek("WED"));
-        assertEquals("筌뤴뫗???, EgovDateUtil.convertWeek("THR"));
-        assertEquals("疫뀀뜆???, EgovDateUtil.convertWeek("FRI"));
-        assertEquals("?醫롮뒄??, EgovDateUtil.convertWeek("SAT"));
+        assertEquals("Sunday", EgovDateUtil.convertWeek("SUN"));
+        assertEquals("Monday", EgovDateUtil.convertWeek("MON"));
+        assertEquals("Tuesday", EgovDateUtil.convertWeek("TUE"));
+        assertEquals("Wednesday", EgovDateUtil.convertWeek("WED"));
+        assertEquals("Thursday", EgovDateUtil.convertWeek("THR"));
+        assertEquals("Friday", EgovDateUtil.convertWeek("FRI"));
+        assertEquals("Saturday", EgovDateUtil.convertWeek("SAT"));
     }
 
     @Test

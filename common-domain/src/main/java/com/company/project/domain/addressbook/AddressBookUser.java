@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
  * ??뉕탢?????뵠?? COMTNADBK
  */
 @Entity
-@Table(name = "COMTNADBK")
+@Table(name = "NADBK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AddressBookUser {

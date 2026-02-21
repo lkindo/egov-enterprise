@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "COMTNCMMNTYUSER")
+@Table(name = "NCMMNTYUSER")
 public class CommunityUser implements Serializable {
 
     @EmbeddedId

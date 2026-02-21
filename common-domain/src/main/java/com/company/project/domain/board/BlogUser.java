@@ -8,6 +8,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +16,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "COMTNBLOGUSER")
+@Table(name = "NBLOGUSER")
 @IdClass(BlogUserId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -53,6 +54,7 @@ public class BlogUser {
     private String frstRegisterId;
 }
 
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

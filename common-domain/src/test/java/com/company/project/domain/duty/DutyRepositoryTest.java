@@ -22,7 +22,7 @@ class DutyRepositoryTest {
     private BndtManageRepository dutyRepository;
 
     @Test
-    @DisplayName("?諭彛???? ??륁뵠筌?鈺곌퀬?????뮞??)
+    @DisplayName("당직 정보 시작일 기반 페이징 조회 테스트")
     void findByBndtDeStartingWith_Pagination() {
         // given
         // create 20 duties
@@ -58,9 +58,9 @@ class DutyRepositoryTest {
     }
 
     @Test
-    @DisplayName("?諭彛???? ??륁뵠筌?鈺곌퀬??- 野꺜??깅선 ??곸벉")
+    @DisplayName("당직 정보 시작일 기반 페이징 조회 - 검색어 없음")
     void findByBndtDeStartingWith_Pagination_NoKeyword() {
-         // given
+        // given
         BndtManage duty1 = BndtManage.builder()
                 .bndtId("TEST_ID")
                 .bndtDe("20231001")

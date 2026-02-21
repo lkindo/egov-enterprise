@@ -12,15 +12,14 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-@SpringBootApplication
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 
+@SpringBootApplication(exclude = { RedisRepositoriesAutoConfiguration.class })
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
-
                 "org.egovframe" }, excludeFilters = {
-
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-
-                                                org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class }),
+                                                org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class,
+                                                org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class }),
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),
 
@@ -30,9 +29,9 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
 
-                                // NOTE: sym ???            ??      ??- IdGnrService ???          ?          (2026-01-05)
+                                // NOTE: sym ??? ?? ??- IdGnrService ??? ? (2026-01-05)
 
-                                // 1.          ????      ??Quartz)   ??          ??       (?          ??       ?   ?)
+                                // 1. ???? ??Quartz) ?? ?? (? ?? ? ?)
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.bat\\..*"),
 
@@ -40,25 +39,25 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.sym\\.sym\\.nwk\\..*"), // ??      ??       ??      ??
+                                // "egovframework\\.com\\.sym\\.sym\\.nwk\\..*"), // ?? ?? ?? ??
 
                                 // -
 
-                                // ?      ???
+                                // ? ???
 
-                                // ??         ?
+                                // ?? ?
 
-                                // ??      
+                                // ??
 
-                                // 2.          ???      ?      ?      ?? ?         ??       ?      ?      ?         ???       (.web ???            ??      )
+                                // 2. ??? ? ? ?? ? ?? ? ? ? ??? (.web ??? ?? )
 
                                 // CCM: zip, ccc, cca, cde
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\..*"), // CCM
 
-                                // ?         
+                                // ?
 
-                                // ??      
+                                // ??
 
                                 // (Zip,
 
@@ -74,57 +73,57 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
                                 // ??
 
-                                // LOG: ?          ??       (Clg, Ulg, Slg, Wlg, Tlg ???      ?????                ?)
+                                // LOG: ? ?? (Clg, Ulg, Slg, Wlg, Tlg ??? ????? ?)
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\..*"),
 
-                                // MNU: mpm(         ?      ???, mcm(         ???      ) -          ???      ?      ?       ????
+                                // MNU: mpm( ? ???, mcm( ??? ) - ??? ? ? ????
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mpm\\.web\\..*"),
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mcm\\.web\\..*"),
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.bmm\\.web\\..*"), //                  ?
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.bmm\\.web\\..*"), // ?
 
-                                                                                                                                              // -
+                                // -
 
-                                                                                                                                              // ?      ???
+                                // ? ???
 
-                                                                                                                                              // ??         ?
+                                // ?? ?
 
-                                                                                                                                              // ??      
+                                // ??
 
-                                // PRM: prm(?                  ??
+                                // PRM: prm(? ??
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.prm\\.web\\..*"),
 
-                                // STS: ?          ??       (Cst, Bst, Dst, Vst, Rst ???      ?????                ?)
+                                // STS: ? ?? (Cst, Bst, Dst, Vst, Rst ??? ????? ?)
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
                                 // "egovframework\\.com\\.sts\\..*"),
 
-                                // COP ???           : LegacyCollaborationController??         ???       ?      ?      ?         ???      
+                                // COP ??? : LegacyCollaborationController?? ??? ? ? ? ???
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), //          ???- ??      ??
+                                // "egovframework\\.com\\.cop\\.bbs\\.web\\..*"), // ???- ?? ??
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.smt\\.sim\\.web\\..*"), //          ???       - ??      ??
+                                // "egovframework\\.com\\.cop\\.smt\\.sim\\.web\\..*"), // ??? - ?? ??
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.smt\\.sdm\\.web\\..*"), // ?     ??      ??- ??      ??
+                                // "egovframework\\.com\\.cop\\.smt\\.sdm\\.web\\..*"), // ? ?? ??- ?? ??
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.smt\\.mtm\\.web\\..*"), //          ??          - ??      ??
+                                // "egovframework\\.com\\.cop\\.smt\\.mtm\\.web\\..*"), // ?? - ?? ??
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.ems\\..*"), //          ?      ?      
+                                // "egovframework\\.com\\.cop\\.ems\\..*"), // ? ?
 
                                 // -
 
@@ -134,25 +133,28 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
                                 // ????
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"), //          ??   ?   ??         ?
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"), // ??
+                                                                                                                                        // ?
+                                                                                                                                        // ??
+                                                                                                                                        // ?
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // Legacy
+                                // Legacy
 
-                                                                                                                                        //          ??
+                                // ??
 
                                 // @ComponentScan.Filter(type = FilterType.REGEX, pattern =
 
-                                // "egovframework\\.com\\.cop\\.com\\.web\\..*"), //          ??   ?   ??         ?- Legacy          ??
+                                // "egovframework\\.com\\.cop\\.com\\.web\\..*"), // ?? ? ?? ?- Legacy ??
 
-                                // USS ???            ??      ??(            ???   , ??      ???    ?     ????
+                                // USS ??? ?? ??( ??? , ?? ??? ? ????
 
-                                // ?? UserManageController??Modern Controller                  ????   ???      
+                                // ?? UserManageController??Modern Controller ???? ???
 
-                                // USS ???            ??      ??(            ???   , ??      ???    ?     ????
+                                // USS ??? ?? ??( ??? , ?? ??? ? ????
 
-                                // ?? UserManageController??Modern Controller                  ????   ???      
+                                // ?? UserManageController??Modern Controller ???? ???
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.umt\\.web\\.EgovUserManageController"),
 
@@ -160,155 +162,166 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsenceManageController.*"),
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"), // ??   ???   ?
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"), // ??
+                                                                                                                                  // ???
+                                                                                                                                  // ?
 
-                                                                                                                                  // ?         
+                                // ?
 
-                                                                                                                                  // -
+                                // -
 
-                                                                                                                                  // ?      ???
+                                // ? ???
 
-                                                                                                                                  // ??         ?
+                                // ?? ?
 
-                                                                                                                                  // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olh\\..*"), // ??      ?         ??   ?
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olh\\..*"), // ??
+                                                                                                                                  // ?
+                                                                                                                                  // ??
+                                                                                                                                  // ?
 
-                                                                                                                                  // -
+                                // -
 
-                                                                                                                                  // ?      ???
+                                // ? ???
 
-                                                                                                                                  // ??         ?
+                                // ?? ?
 
-                                                                                                                                  // ??      
+                                // ??
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rss\\..*"), // RSS
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rsm\\..*"), //          ?      ???
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rsm\\..*"), // ?
+                                                                                                                                        // ???
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntr\\..*"), //          ?         ?
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntr\\..*"), // ?
+                                                                                                                                        // ?
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntm\\..*"), //          ??     ??
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ntm\\..*"), // ??
+                                                                                                                                        // ??
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.noi\\..*"), // ?         ???
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.noi\\..*"), // ?
+                                                                                                                                        // ???
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ctn\\..*"), //          ???
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.ctn\\..*"), // ???
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.evt\\..*"), // ??
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.nts\\..*"), //       ?   ?   ??
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.nts\\..*"), // ?
+                                                                                                                                        // ?
+                                                                                                                                        // ??
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ?      ???
+                                // ? ???
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
-                                                                                                                                        // ?         
+                                // ?
 
-                                                                                                                                        // -
+                                // -
 
-                                                                                                                                        // ??         ?
+                                // ?? ?
 
-                                                                                                                                        // ??      
+                                // ??
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\..*"), // USS
 
-                                                                                                                                  // ION
+// ION
 
-                                                                                                                                  // ?         
+// ?
 
-                                                                                                                                  // ??      
+// ??
 
-                                                                                                                                  // (Mtg,
+// (Mtg,
 
-                                                                                                                                  // Ntr,
+// Ntr,
 
-                                                                                                                                  // Ntm,
+// Ntm,
 
-                                                                                                                                  // Noi,
+// Noi,
 
-                                                                                                                                  // Evt
+// Evt
 
-                                                                                                                                  // ??
+// ??
 
-                                                                                                                                  // ??   ?
+// ?? ?
 
-//    ???USS ??       Legacy Controller?????         ?         ? ?          ???      ? ??      
+// ???USS ?? Legacy Controller????? ? ? ? ??? ? ??
 
 })
 
@@ -386,5 +399,9 @@ public class ApiServerApplication extends SpringBootServletInitializer {
 
         }
 
+        @org.springframework.context.annotation.Bean
+        public org.egovframe.rte.fdl.crypto.EgovEnvCryptoService egovEnvCryptoService() {
+                org.egovframe.rte.fdl.crypto.impl.EgovEnvCryptoServiceImpl service = new org.egovframe.rte.fdl.crypto.impl.EgovEnvCryptoServiceImpl();
+                return service;
+        }
 }
-
