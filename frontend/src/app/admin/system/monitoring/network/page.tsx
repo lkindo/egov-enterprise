@@ -18,7 +18,7 @@ export default function NetworkMonitoringPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await networkService.getNetworkLogs({ page: 0, size: 20 });
+        const res = await networkService.getNetworkLogs({ ntwrkId: 'all', page: 0, size: 20 });
         if (res.success) setLogs(res.data.content || []);
       } catch (error) {
         toast('네트워크 로그를 불러오지 못했습니다.', 'error');
