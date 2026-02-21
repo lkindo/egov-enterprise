@@ -1,5 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Force LF line endings for all text files (cross-platform consistency)
+* text eol=lf
+
+# Windows batch scripts should use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
 
 # Explicitly declare text files you want to always be normalized and converted to native line endings on checkout.
 *.java text eol=lf
