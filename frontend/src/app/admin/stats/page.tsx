@@ -22,12 +22,12 @@ export default function AdminStatsPage() {
     try {
       setLoading(true);
       const [sumRes, connRes, menuRes] = await Promise.all([
-        statsService.getSummary().catch(() => ({ data: { success: false } })),
-        statsService.getConnectStats({ startDate: '20260201', endDate: '20260214' }).catch(() => ({ data: [] })),
-        statsService.getMenuStats().catch(() => ({ data: [] }))
+        statsService.getSummary().catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0, pendingTroubles: 0 })),
+        statsService.getConnectStats({ startDate: '20260201', endDate: '20260214' }).catch(() => []),
+        statsService.getMenuStats().catch(() => [])
       ]);
 
-      if (sumRes.success) setSummary(sumRes.data);
+      setSummary(sumRes);
       
       // Transform connect data for line chart
       const transformedConn = Array.isArray(connRes) ? connRes.map(item => ({
