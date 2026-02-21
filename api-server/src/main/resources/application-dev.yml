@@ -21,7 +21,6 @@ spring:
       jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb?currentSchema=public}
 
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
     show-sql: true
@@ -45,6 +44,6 @@ logging:
     org.springframework.security: debug
 
 jwt:
-  # CRITICAL: JWT_SECRET environment variable MUST be set.
-  # We use a default empty value here to allow custom validation in JwtTokenProvider to throw a readable error.
-  secret: ${JWT_SECRET:}
+  # CRITICAL: JWT_SECRET environment variable MUST be set in production.
+  # Using a default secure length string for local development to prevent startup failures.
+  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}

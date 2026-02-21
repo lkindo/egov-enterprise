@@ -20,7 +20,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
   mvc:
     view:
       prefix: /WEB-INF/jsp/
