@@ -160,7 +160,11 @@ export default function UserManagePage() {
                 </div>
             )
         },
-        { header: '성명', accessor: 'userNm', className: 'font-bold' },
+        { 
+            header: '성명', 
+            accessor: (item: UserManage) => item.userNm, 
+            className: 'font-bold' 
+        },
         { 
             header: '이메일', 
             accessor: (item: UserManage) => (

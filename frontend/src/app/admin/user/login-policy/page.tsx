@@ -47,9 +47,20 @@ export default function LoginPolicyPage() {
   };
 
   const columns = [
-    { header: '사용자 ID', accessor: 'emplyrId', className: 'font-bold' },
-    { header: '성명', accessor: 'emplyrNm' },
-    { header: '제한 IP', accessor: 'ipInfo', className: 'font-mono text-xs' },
+    { 
+      header: '사용자 ID', 
+      accessor: (item: LoginPolicy) => item.emplyrId, 
+      className: 'font-bold' 
+    },
+    { 
+      header: '성명', 
+      accessor: (item: LoginPolicy) => item.emplyrNm 
+    },
+    { 
+      header: '제한 IP', 
+      accessor: (item: LoginPolicy) => item.ipInfo, 
+      className: 'font-mono text-xs' 
+    },
     { 
       header: '중복 허용', 
       accessor: (item: LoginPolicy) => (
