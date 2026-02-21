@@ -70,6 +70,14 @@ export/
 package-lock.json
 yarn.lock
 
+# Legacy binary files
+*.xlsx
+*.xls
+*.doc
+*.docx
+*.ppt
+*.pptx
+
 # ----- Environment & Secrets -----
 .env
 .env*.local
