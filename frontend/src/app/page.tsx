@@ -256,7 +256,8 @@ export default function UnifiedDashboard() {
               items={notiList}
               loading={dashboardLoading}
               icon={<Bell size={20} className="text-blue-500" />}
-              moreHref="/cop/bbs"
+              moreHref="/cop/bbs?bbsId=BBSMSTR_AAAAAAAAAAAA"
+              baseBbsId="BBSMSTR_AAAAAAAAAAAA"
               color="blue"
             />
             <DashboardListCard
@@ -264,7 +265,8 @@ export default function UnifiedDashboard() {
               items={taskList}
               loading={dashboardLoading}
               icon={<CheckCircle2 size={20} className="text-emerald-500" />}
-              moreHref="/cop/bbs"
+              moreHref="/cop/bbs?bbsId=BBSMSTR_CCCCCCCCCCCC"
+              baseBbsId="BBSMSTR_CCCCCCCCCCCC"
               color="emerald"
             />
           </div>
@@ -336,7 +338,7 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
   );
 }
 
-function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
+function DashboardListCard({ title, items, loading, icon, moreHref, color, baseBbsId }: any) {
   const borderColors: any = {
     blue: "group-hover:border-blue-200",
     emerald: "group-hover:border-emerald-200"
@@ -380,9 +382,11 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
         ) : (
           <div className="space-y-3">
             {items.slice(0, 6).map((item: any, idx: number) => (
-              <div 
-                key={idx} 
-                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
+              <Link
+                key={idx}
+                href={`/cop/bbs/${item.nttId}?bbsId=${item.bbsId || baseBbsId || ''}`}
+                aria-label={`${item.nttSj} - 자세히 보기`}
+                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
               >
                 <div className="flex items-center gap-4 overflow-hidden">
                   <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary group-hover/item:scale-125 transition-all" />
@@ -396,7 +400,7 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
                 <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase tracking-tighter">
                   {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}
