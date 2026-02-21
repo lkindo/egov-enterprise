@@ -73,10 +73,18 @@ export function HttpMonitor() {
   };
 
   const columns = [
-    { header: '시스템명', accessor: 'sysNm', className: 'font-bold' },
-    { header: 'URL', accessor: 'siteUrl', className: 'text-xs text-blue-600 underline cursor-pointer' },
     { 
-      header: '상태코드', 
+      header: '시스템명', 
+      accessor: (item: HttpMon) => item.sysNm, 
+      className: 'font-bold' 
+    },
+    { 
+      header: 'URL', 
+      accessor: (item: HttpMon) => item.siteUrl, 
+      className: 'text-xs text-blue-600 underline cursor-pointer' 
+    },
+    {
+      header: '상태코드',
       accessor: (item: HttpMon) => (
         <span className={cn(
           "px-2 py-0.5 rounded text-[10px] font-bold",
@@ -86,7 +94,11 @@ export function HttpMonitor() {
         </span>
       )
     },
-    { header: '최근확인', accessor: 'creatDt', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '최근확인', 
+      accessor: (item: HttpMon) => item.creatDt, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',

@@ -72,10 +72,18 @@ export function ProcessMonitor() {
   };
 
   const columns = [
-    { header: '프로세스명', accessor: 'processNm', className: 'font-bold font-mono text-primary' },
-    { header: '서버명', accessor: 'serverNm', className: 'text-xs' },
     { 
-      header: '상태', 
+      header: '프로세스명', 
+      accessor: (item: ProcessMon) => item.processNm, 
+      className: 'font-bold font-mono text-primary' 
+    },
+    { 
+      header: '서버명', 
+      accessor: (item: ProcessMon) => item.serverNm, 
+      className: 'text-xs' 
+    },
+    {
+      header: '상태',
       accessor: (item: ProcessMon) => (
         <div className="flex items-center gap-1">
           {item.procsSttus === '01' ? <CheckCircle2 size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
@@ -85,7 +93,11 @@ export function ProcessMonitor() {
         </div>
       )
     },
-    { header: '최근확인', accessor: 'creatDt', className: 'text-xs text-muted-foreground' },
+    { 
+      header: '최근확인', 
+      accessor: (item: ProcessMon) => item.creatDt, 
+      className: 'text-xs text-muted-foreground' 
+    },
     {
       header: '관리',
       className: 'text-right',
