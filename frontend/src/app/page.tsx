@@ -380,9 +380,11 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
         ) : (
           <div className="space-y-3">
             {items.slice(0, 6).map((item: any, idx: number) => (
-              <div 
+              <Link
                 key={idx} 
-                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
+                href={`/cop/bbs/${item.nttId}?bbsId=${item.bbsId}`}
+                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md block w-full"
+                aria-label={`${item.nttSj} 상세보기`}
               >
                 <div className="flex items-center gap-4 overflow-hidden">
                   <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary group-hover/item:scale-125 transition-all" />
@@ -396,7 +398,7 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
                 <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase tracking-tighter">
                   {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}
