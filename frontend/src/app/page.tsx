@@ -47,6 +47,125 @@ const DashboardPostChart = dynamic(
   }
 );
 
+const LEAVE_ICON = <Calendar className="text-blue-600" size={20} />;
+const CLOCK_ICON = <Clock className="text-orange-500" size={20} />;
+const BELL_ICON = <Bell className="text-purple-500" size={20} />;
+const SYSTEM_ICON = <CheckCircle2 className="text-emerald-500" size={20} />;
+const NOTICE_ICON = <Bell size={20} className="text-blue-500" />;
+const TODO_ICON = <CheckCircle2 size={20} className="text-emerald-500" />;
+
+const SummaryCard = React.memo(function SummaryCard({ title, value, description, icon, trend, color }: any) {
+  const colorMap: any = {
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    orange: "bg-orange-50 text-orange-600 border-orange-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100"
+  };
+
+  return (
+    <div className="p-8 rounded-[2.5rem] border-2 border-primary/5 bg-card shadow-lg hover:shadow-2xl hover:shadow-primary/5 transition-all group overflow-hidden relative">
+      <div className="flex justify-between items-start mb-8">
+        <div className={cn("p-4 rounded-2xl transition-all group-hover:scale-110 shadow-inner", colorMap[color])}>
+          {icon}
+        </div>
+        {trend !== 0 && (
+          <div
+            className={cn(
+              "flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm",
+              trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+            )}
+            role="img"
+            aria-label={`전일 대비 ${Math.abs(trend)}% ${trend > 0 ? '상승' : '하락'}`}
+          >
+            {trend > 0 ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
+            <span aria-hidden="true">{Math.abs(trend)}%</span>
+          </div>
+        )}
+      </div>
+      <div className="relative z-10 space-y-1">
+        <h4 className="text-4xl font-black text-foreground tracking-tighter leading-none">{value}</h4>
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pt-2">{title}</p>
+        <p className="text-[11px] text-muted-foreground/40 mt-6 flex items-center gap-2 font-bold italic">
+          <div className="w-1.5 h-1.5 bg-primary/20 rounded-full" />
+          {description}
+        </p>
+      </div>
+      <div className="absolute -right-6 -bottom-6 opacity-[0.03] scale-[3] rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
+        {icon}
+      </div>
+    </div>
+  );
+});
+
+const DashboardListCard = React.memo(function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
+  const borderColors: any = {
+    blue: "group-hover:border-blue-200",
+    emerald: "group-hover:border-emerald-200"
+  };
+
+  const textColors: any = {
+    blue: "group-hover:text-blue-600",
+    emerald: "group-hover:text-emerald-600"
+  };
+
+  return (
+    <div className={cn(
+      "border-2 border-primary/5 rounded-[3rem] bg-card shadow-xl overflow-hidden flex flex-col h-[420px] group transition-all duration-500",
+      borderColors[color]
+    )}>
+      <div className="px-10 py-8 border-b border-primary/5 flex items-center justify-between bg-muted/5">
+        <h3 className="font-black text-xl flex items-center gap-3">
+          {icon}
+          {title}
+        </h3>
+        <Link
+          href={moreHref || '#'}
+          className="p-3 bg-muted/50 rounded-2xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
+          aria-label={`${title} 더보기`}
+        >
+          <ArrowRight size={18} aria-hidden="true" />
+        </Link>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        {loading ? (
+          <div className="space-y-4 p-2">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-muted/40 animate-pulse rounded-2xl" />)}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 italic text-sm gap-4">
+            <div className="w-16 h-16 bg-muted/20 rounded-[2rem] flex items-center justify-center">
+              <AlertCircle size={32} />
+            </div>
+            <p className="font-black uppercase tracking-widest text-xs">No Data Available</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {items.slice(0, 6).map((item: any, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
+              >
+                <div className="flex items-center gap-4 overflow-hidden">
+                  <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary group-hover/item:scale-125 transition-all" />
+                  <span className={cn(
+                    "text-sm font-bold text-foreground truncate group-hover/item:translate-x-1 transition-transform",
+                    textColors[color]
+                  )}>
+                    {item.nttSj}
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase tracking-tighter">
+                  {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -199,7 +318,7 @@ export default function UnifiedDashboard() {
           title="잔여 연차"
           value={`${myLeave?.remndrYrycCo || 0}일`}
           description="총 15일 중"
-          icon={<Calendar className="text-blue-600" size={20} />}
+          icon={LEAVE_ICON}
           trend={12}
           color="blue"
         />
@@ -207,7 +326,7 @@ export default function UnifiedDashboard() {
           title="진행중인 업무"
           value="12건"
           description="금주 마감 3건"
-          icon={<Clock className="text-orange-500" size={20} />}
+          icon={CLOCK_ICON}
           trend={-5}
           color="orange"
         />
@@ -215,7 +334,7 @@ export default function UnifiedDashboard() {
           title="미확인 알림"
           value="5건"
           description="최근 24시간"
-          icon={<Bell className="text-purple-500" size={20} />}
+          icon={BELL_ICON}
           trend={2}
           color="purple"
         />
@@ -223,7 +342,7 @@ export default function UnifiedDashboard() {
           title="시스템 상태"
           value="정상"
           description="Uptime 99.9%"
-          icon={<CheckCircle2 className="text-emerald-500" size={20} />}
+          icon={SYSTEM_ICON}
           trend={0}
           color="emerald"
         />
@@ -255,7 +374,7 @@ export default function UnifiedDashboard() {
               title="최신 공지사항"
               items={notiList}
               loading={dashboardLoading}
-              icon={<Bell size={20} className="text-blue-500" />}
+              icon={NOTICE_ICON}
               moreHref="/cop/bbs"
               color="blue"
             />
@@ -263,7 +382,7 @@ export default function UnifiedDashboard() {
               title="오늘의 할일"
               items={taskList}
               loading={dashboardLoading}
-              icon={<CheckCircle2 size={20} className="text-emerald-500" />}
+              icon={TODO_ICON}
               moreHref="/cop/bbs"
               color="emerald"
             />
@@ -288,118 +407,6 @@ export default function UnifiedDashboard() {
             <DashboardPostChart />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
-  const colorMap: any = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    orange: "bg-orange-50 text-orange-600 border-orange-100",
-    purple: "bg-purple-50 text-purple-600 border-purple-100",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100"
-  };
-
-  return (
-    <div className="p-8 rounded-[2.5rem] border-2 border-primary/5 bg-card shadow-lg hover:shadow-2xl hover:shadow-primary/5 transition-all group overflow-hidden relative">
-      <div className="flex justify-between items-start mb-8">
-        <div className={cn("p-4 rounded-2xl transition-all group-hover:scale-110 shadow-inner", colorMap[color])}>
-          {icon}
-        </div>
-        {trend !== 0 && (
-          <div
-            className={cn(
-              "flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm",
-              trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-            )}
-            role="img"
-            aria-label={`전일 대비 ${Math.abs(trend)}% ${trend > 0 ? '상승' : '하락'}`}
-          >
-            {trend > 0 ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
-            <span aria-hidden="true">{Math.abs(trend)}%</span>
-          </div>
-        )}
-      </div>
-      <div className="relative z-10 space-y-1">
-        <h4 className="text-4xl font-black text-foreground tracking-tighter leading-none">{value}</h4>
-        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pt-2">{title}</p>
-        <p className="text-[11px] text-muted-foreground/40 mt-6 flex items-center gap-2 font-bold italic">
-          <div className="w-1.5 h-1.5 bg-primary/20 rounded-full" />
-          {description}
-        </p>
-      </div>
-      <div className="absolute -right-6 -bottom-6 opacity-[0.03] scale-[3] rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
-        {icon}
-      </div>
-    </div>
-  );
-}
-
-function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
-  const borderColors: any = {
-    blue: "group-hover:border-blue-200",
-    emerald: "group-hover:border-emerald-200"
-  };
-
-  const textColors: any = {
-    blue: "group-hover:text-blue-600",
-    emerald: "group-hover:text-emerald-600"
-  };
-
-  return (
-    <div className={cn(
-      "border-2 border-primary/5 rounded-[3rem] bg-card shadow-xl overflow-hidden flex flex-col h-[420px] group transition-all duration-500",
-      borderColors[color]
-    )}>
-      <div className="px-10 py-8 border-b border-primary/5 flex items-center justify-between bg-muted/5">
-        <h3 className="font-black text-xl flex items-center gap-3">
-          {icon}
-          {title}
-        </h3>
-        <Link
-          href={moreHref || '#'}
-          className="p-3 bg-muted/50 rounded-2xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
-          aria-label={`${title} 더보기`}
-        >
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
-      </div>
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-        {loading ? (
-          <div className="space-y-4 p-2">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-muted/40 animate-pulse rounded-2xl" />)}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 italic text-sm gap-4">
-            <div className="w-16 h-16 bg-muted/20 rounded-[2rem] flex items-center justify-center">
-              <AlertCircle size={32} />
-            </div>
-            <p className="font-black uppercase tracking-widest text-xs">No Data Available</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items.slice(0, 6).map((item: any, idx: number) => (
-              <div 
-                key={idx} 
-                className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5 shadow-sm hover:shadow-md"
-              >
-                <div className="flex items-center gap-4 overflow-hidden">
-                  <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary group-hover/item:scale-125 transition-all" />
-                  <span className={cn(
-                    "text-sm font-bold text-foreground truncate group-hover/item:translate-x-1 transition-transform",
-                    textColors[color]
-                  )}>
-                    {item.nttSj}
-                  </span>
-                </div>
-                <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase tracking-tighter">
-                  {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
