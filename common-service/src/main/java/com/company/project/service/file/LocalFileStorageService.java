@@ -32,12 +32,23 @@ public class LocalFileStorageService implements FileStorageService {
     private final Path rootLocation;
 
     public LocalFileStorageService(@Value("${file.upload.path:./storage/uploads}") String uploadPath) {
-        this.rootLocation = Paths.get(uploadPath);
+        this.rootLocation = Paths.get(uploadPath).toAbsolutePath().normalize();
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
             log.error("Could not initialize storage location", e);
         }
+    }
+
+    private Path validatePath(String targetPath, String filename) {
+        Path resolvedPath = rootLocation.resolve(Objects.requireNonNull(targetPath))
+                .resolve(filename != null ? filename : "")
+                .normalize();
+
+        if (!resolvedPath.startsWith(rootLocation)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return resolvedPath;
     }
 
     @Override
@@ -66,7 +77,7 @@ public class LocalFileStorageService implements FileStorageService {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
 
-            Path destinationDir = this.rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path destinationDir = validatePath(targetPath, "");
             Files.createDirectories(destinationDir);
 
             try (InputStream inputStream = file.getInputStream()) {
@@ -82,8 +93,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Resource loadAsResource(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
+            Path file = validatePath(targetPath, filename);
             Resource resource = new UrlResource(Objects.requireNonNull(file.toUri()));
             if (resource.exists() || resource.isReadable()) {
                 return resource;
@@ -98,8 +108,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
+            Path file = validatePath(targetPath, filename);
             Files.deleteIfExists(file);
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
@@ -109,7 +118,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(filename));
+            Path file = validatePath("", filename);
             Files.deleteIfExists(file);
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
@@ -119,7 +128,7 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Stream<Path> loadAll(String targetPath) {
         try {
-            Path path = rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path path = validatePath(targetPath, "");
             return Files.walk(path, 1)
                     .filter(p -> !p.equals(path))
                     .map(path::relativize);
@@ -135,7 +144,7 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public Path load(String filename) {
-        return rootLocation.resolve(Objects.requireNonNull(filename));
+        return validatePath("", filename);
     }
 
     @Override
