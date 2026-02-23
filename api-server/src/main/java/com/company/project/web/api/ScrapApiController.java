@@ -30,9 +30,9 @@ import com.company.project.service.scrap.EgovScrapService;
 
 import com.company.project.service.scrap.dto.ScrapDto;
 
-import egovframework.com.cmm.LoginVO;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import com.company.project.security.service.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import lombok.RequiredArgsConstructor;
 
@@ -147,11 +147,11 @@ public class ScrapApiController {
     }
 
     private String getCurrentUserId() {
-
-        LoginVO user = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-        return (user != null) ? user.getUniqId() : "anonymous";
-
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails userDetails) {
+            return userDetails.getUser().getEsntlId();
+        }
+        return "anonymous";
     }
 
 }

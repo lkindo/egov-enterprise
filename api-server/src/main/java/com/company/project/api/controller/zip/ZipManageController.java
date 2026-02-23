@@ -6,9 +6,10 @@ import com.company.project.service.zip.dto.ZipDto;
 
 import egovframework.com.cmm.ComDefaultVO;
 
-import egovframework.com.cmm.LoginVO;
-
+import com.company.project.security.service.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 
@@ -21,8 +22,6 @@ import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.annotation.Resource;
 
 import jakarta.validation.Valid;
 
@@ -41,10 +40,7 @@ import java.util.Map;
 public class ZipManageController {
 
     private final ZipManageService zipManageService;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
+    private final EgovPropertyService propertiesService;
 
     /**
 
@@ -183,25 +179,20 @@ public class ZipManageController {
      */
 
     @PostMapping(value = "/sym/ccm/zip/EgovCcmZipRegist.do")
-
-    public String insertZip(@ModelAttribute("loginVO") LoginVO loginVO,
-
+    public String insertZip(
             @Valid @ModelAttribute("zip") ZipDto zip, BindingResult bindingResult, ModelMap model) throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             model.addAttribute("zip", zip);
-
             return "cmm/sym/zip/EgovCcmZipRegist";
-
         }
 
-        zip.setFrstRegisterId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        zip.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
         zipManageService.insertZip(zip);
-
         return "forward:/sym/ccm/zip/EgovCcmZipList.do";
-
     }
 
     /**
@@ -211,43 +202,29 @@ public class ZipManageController {
      */
 
     @RequestMapping(value = "/sym/ccm/zip/EgovCcmZipModify.do")
-
-    public String updateZip(@ModelAttribute("loginVO") LoginVO loginVO,
-
+    public String updateZip(
             @Valid @ModelAttribute("zip") ZipDto zip, BindingResult bindingResult,
-
             @RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
 
         String sCmd = commandMap.get("cmd") == null ? "" : (String) commandMap.get("cmd");
-
         if (sCmd.equals("")) {
-
             ZipDto vo = zipManageService.selectZipDetail(zip);
-
             model.addAttribute("zip", vo);
-
             return "cmm/sym/zip/EgovCcmZipModify";
-
         } else if (sCmd.equals("Modify")) {
-
             if (bindingResult.hasErrors()) {
-
                 return "cmm/sym/zip/EgovCcmZipModify";
-
             }
 
-            zip.setLastUpdusrId(loginVO.getUniqId());
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            zip.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
             zipManageService.updateZip(zip);
-
             return "forward:/sym/ccm/zip/EgovCcmZipList.do";
-
         } else {
-
             return "forward:/sym/ccm/zip/EgovCcmZipList.do";
-
         }
-
     }
 
     /**

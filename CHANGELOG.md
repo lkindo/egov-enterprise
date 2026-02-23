@@ -71,8 +71,10 @@
 - `common-domain`: JPA 엔티티 및 도메인 모델
 - `common-core`: 공통 유틸리티
 - `common-security`: 인증/인가
-- `common-legacy-support`: 레거시 호환성
 - `frontend`: Next.js 애플리케이션
+
+### 🗑️ Removed
+- `common-legacy-support`: 레거시 호환성 모듈 삭제 (현대화 완료)
 
 ---
 

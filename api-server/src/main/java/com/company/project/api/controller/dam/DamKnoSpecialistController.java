@@ -4,17 +4,12 @@ import com.company.project.domain.dam.ProfessionalSearchResult;
 
 import com.company.project.service.dam.EgovKnoSpecialistService;
 
-import com.company.project.service.dam.EgovMapKnoService;
-
 import com.company.project.service.dam.dto.ProfessionalDto;
 
-import egovframework.com.cmm.LoginVO;
-
-import egovframework.com.cmm.annotation.IncludedInfo;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-
-import jakarta.annotation.Resource;
+import com.company.project.security.service.CustomUserDetails;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.validation.Valid;
 
@@ -43,24 +38,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-
+@RequiredArgsConstructor
 @RequestMapping("/dam/spe/spe")
-
 public class DamKnoSpecialistController {
 
-    @Resource(name = "egovKnoSpecialistServiceImpl")
-
-    private EgovKnoSpecialistService knoSpecialistService;
-
-    @Resource(name = "egovMapKnoServiceImpl")
-
-    private EgovMapKnoService mapKnoService;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
-
-    @IncludedInfo(name = "        ??      ?      ??     ??", listUrl = "/dam/spe/spe/EgovComDamSpecialistList.do", order = 1270, gid = 80)
+    private final EgovKnoSpecialistService knoSpecialistService;
+    private final EgovPropertyService propertiesService;
 
     @RequestMapping(value = "/EgovComDamSpecialistList.do")
 
@@ -142,9 +125,9 @@ public class DamKnoSpecialistController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-        professionalDto.setLastUpdusrId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        professionalDto.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         knoSpecialistService.insertKnoSpecialist(professionalDto);
 
@@ -184,9 +167,9 @@ public class DamKnoSpecialistController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-        professionalDto.setLastUpdusrId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        professionalDto.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         knoSpecialistService.updateKnoSpecialist(professionalDto);
 

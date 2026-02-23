@@ -2,17 +2,17 @@ package com.company.project.api.controller.auth;
 
 import com.company.project.service.auth.AuthorManageService;
 import com.company.project.service.auth.dto.AuthorManageDto;
-import egovframework.com.cmm.EgovMessageSource;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.MessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,7 +31,7 @@ class AuthorManageControllerTest {
     private EgovPropertyService propertiesService;
 
     @Mock
-    private EgovMessageSource egovMessageSource;
+    private MessageSource messageSource;
 
     @InjectMocks
     private AuthorManageController authorManageController;
@@ -39,8 +39,6 @@ class AuthorManageControllerTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        ReflectionTestUtils.setField(authorManageController, "egovMessageSource", egovMessageSource);
-        ReflectionTestUtils.setField(authorManageController, "propertiesService", propertiesService);
         mockMvc = MockMvcBuilders.standaloneSetup(authorManageController).build();
     }
 
@@ -52,7 +50,7 @@ class AuthorManageControllerTest {
         dto.setAuthorNm("Test Role");
 
         when(authorManageService.selectAuthor(authorCode)).thenReturn(dto);
-        when(egovMessageSource.getMessage(anyString())).thenReturn("Success");
+        when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Success");
 
         mockMvc.perform(get("/sec/ram/EgovAuthor.do")
                 .param("authorCode", authorCode))

@@ -10,9 +10,10 @@ import com.company.project.service.code.dto.CmmnDetailCodeDto;
 
 import egovframework.com.cmm.ComDefaultVO;
 
-import egovframework.com.cmm.LoginVO;
-
+import com.company.project.security.service.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 
@@ -123,27 +124,20 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/ccc/EgovCcmCmmnClCodeRegist.do")
-
-    public String insertCmmnClCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnClCode") CmmnClCodeDto cmmnClCode, BindingResult bindingResult, ModelMap model)
-
+    public String insertCmmnClCode(@Valid @ModelAttribute("cmmnClCode") CmmnClCodeDto cmmnClCode, BindingResult bindingResult, ModelMap model)
             throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             model.addAttribute("cmmnClCode", cmmnClCode);
-
             return "cmm/sym/ccm/EgovCcmCmmnClCodeRegist";
-
         }
 
-        cmmnClCode.setFrstRegisterId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnClCode.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
         commonCodeService.insertCmmnClCode(cmmnClCode);
-
         return "forward:/sym/ccm/ccc/EgovCcmCmmnClCodeList.do";
-
     }
 
     @GetMapping(value = "/sym/ccm/ccc/EgovCcmCmmnClCodeModify.do")
@@ -161,27 +155,20 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/ccc/EgovCcmCmmnClCodeModify.do")
-
-    public String updateCmmnClCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnClCode") CmmnClCodeDto cmmnClCode, BindingResult bindingResult, ModelMap model)
-
+    public String updateCmmnClCode(@Valid @ModelAttribute("cmmnClCode") CmmnClCodeDto cmmnClCode, BindingResult bindingResult, ModelMap model)
             throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             model.addAttribute("cmmnClCode", cmmnClCode);
-
             return "cmm/sym/ccm/EgovCcmCmmnClCodeModify";
-
         }
 
-        cmmnClCode.setLastUpdusrId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnClCode.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         commonCodeService.updateCmmnClCode(cmmnClCode);
-
         return "forward:/sym/ccm/ccc/EgovCcmCmmnClCodeList.do";
-
     }
 
     @RequestMapping(value = "/sym/ccm/ccc/EgovCcmCmmnClCodeRemove.do")
@@ -271,37 +258,25 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/cca/EgovCcmCmmnCodeRegist.do")
-
-    public String insertCmmnCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnCode") CmmnCodeDto cmmnCode, BindingResult bindingResult, ModelMap model)
-
+    public String insertCmmnCode(@Valid @ModelAttribute("cmmnCode") CmmnCodeDto cmmnCode, BindingResult bindingResult, ModelMap model)
             throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             ComDefaultVO searchVO = new ComDefaultVO();
-
             searchVO.setRecordCountPerPage(999999);
-
             searchVO.setFirstIndex(0);
-
             searchVO.setSearchCondition("CodeList");
-
             model.addAttribute("cmmnClCode", commonCodeService.selectCmmnClCodeList(searchVO));
-
             model.addAttribute("cmmnCode", cmmnCode);
-
             return "cmm/sym/ccm/EgovCcmCmmnCodeRegist";
-
         }
 
-        cmmnCode.setFrstRegisterId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnCode.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
         commonCodeService.insertCmmnCode(cmmnCode);
-
         return "forward:/sym/ccm/cca/EgovCcmCmmnCodeList.do";
-
     }
 
     @GetMapping(value = "/sym/ccm/cca/EgovCcmCmmnCodeModify.do")
@@ -317,27 +292,20 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/cca/EgovCcmCmmnCodeModify.do")
-
-    public String updateCmmnCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnCode") CmmnCodeDto cmmnCode, BindingResult bindingResult, ModelMap model)
-
+    public String updateCmmnCode(@Valid @ModelAttribute("cmmnCode") CmmnCodeDto cmmnCode, BindingResult bindingResult, ModelMap model)
             throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             model.addAttribute("cmmnCode", cmmnCode);
-
             return "cmm/sym/ccm/EgovCcmCmmnCodeModify";
-
         }
 
-        cmmnCode.setLastUpdusrId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnCode.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         commonCodeService.updateCmmnCode(cmmnCode);
-
         return "forward:/sym/ccm/cca/EgovCcmCmmnCodeList.do";
-
     }
 
     @RequestMapping(value = "/sym/ccm/cca/EgovCcmCmmnCodeRemove.do")
@@ -449,45 +417,31 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/cde/EgovCcmCmmnDetailCodeRegist.do")
-
-    public String insertCmmnDetailCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnDetailCode") CmmnDetailCodeDto cmmnDetailCode, BindingResult bindingResult,
-
+    public String insertCmmnDetailCode(@Valid @ModelAttribute("cmmnDetailCode") CmmnDetailCodeDto cmmnDetailCode, BindingResult bindingResult,
             ModelMap model) throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             ComDefaultVO searchClCodeVO = new ComDefaultVO();
-
             searchClCodeVO.setRecordCountPerPage(999999);
-
             searchClCodeVO.setFirstIndex(0);
-
             searchClCodeVO.setSearchCondition("CodeList");
-
             model.addAttribute("cmmnClCodeList", commonCodeService.selectCmmnClCodeList(searchClCodeVO));
 
             ComDefaultVO searchCodeVO = new ComDefaultVO();
-
             searchCodeVO.setRecordCountPerPage(999999);
-
             searchCodeVO.setFirstIndex(0);
-
             model.addAttribute("cmmnCodeList", commonCodeService.selectCmmnCodeList(searchCodeVO));
 
             model.addAttribute("cmmnDetailCode", cmmnDetailCode);
-
             return "cmm/sym/ccm/EgovCcmCmmnDetailCodeRegist";
-
         }
 
-        cmmnDetailCode.setFrstRegisterId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnDetailCode.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
         commonCodeService.insertCmmnDetailCode(cmmnDetailCode);
-
         return "forward:/sym/ccm/cde/EgovCcmCmmnDetailCodeList.do";
-
     }
 
     @GetMapping(value = "/sym/ccm/cde/EgovCcmCmmnDetailCodeModify.do")
@@ -505,25 +459,19 @@ public class CcmManageController {
     }
 
     @PostMapping(value = "/sym/ccm/cde/EgovCcmCmmnDetailCodeModify.do")
-
-    public String updateCmmnDetailCode(@ModelAttribute("loginVO") LoginVO loginVO,
-
-            @Valid @ModelAttribute("cmmnDetailCode") CmmnDetailCodeDto cmmnDetailCode, BindingResult bindingResult,
-
+    public String updateCmmnDetailCode(@Valid @ModelAttribute("cmmnDetailCode") CmmnDetailCodeDto cmmnDetailCode, BindingResult bindingResult,
             ModelMap model) throws Exception {
 
         if (bindingResult.hasErrors()) {
-
             return "cmm/sym/ccm/EgovCcmCmmnDetailCodeModify";
-
         }
 
-        cmmnDetailCode.setLastUpdusrId(loginVO.getUniqId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        cmmnDetailCode.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         commonCodeService.updateCmmnDetailCode(cmmnDetailCode);
-
         return "forward:/sym/ccm/cde/EgovCcmCmmnDetailCodeList.do";
-
     }
 
     @RequestMapping(value = "/sym/ccm/cde/EgovCcmCmmnDetailCodeRemove.do")

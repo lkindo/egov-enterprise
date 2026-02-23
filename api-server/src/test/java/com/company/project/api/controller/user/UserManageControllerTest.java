@@ -3,8 +3,7 @@ package com.company.project.api.controller.user;
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.group.GroupManageService;
 import com.company.project.service.user.UserManageService;
-import egovframework.com.cmm.EgovMessageSource;
-import egovframework.com.uss.umt.service.UserDefaultVO;
+import egovframework.com.cmm.ComDefaultVO;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ public class UserManageControllerTest {
     private EgovPropertyService propertiesService;
 
     @Mock
-    private EgovMessageSource egovMessageSource;
+    private org.springframework.context.MessageSource messageSource;
 
     @InjectMocks
     private UserManageController userManageController;
@@ -45,7 +44,7 @@ public class UserManageControllerTest {
     @Test
     public void selectUserList_ShouldLogAndThrow_WhenExceptionOccurs() throws Exception {
         // Arrange
-        UserDefaultVO searchVO = new UserDefaultVO();
+        ComDefaultVO searchVO = new ComDefaultVO();
         ModelMap model = new ModelMap();
 
         // Mock propertiesService to avoid NullPointerException before the service call

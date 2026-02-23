@@ -4,13 +4,11 @@ import com.company.project.service.backup.EgovBackupResultService;
 
 import com.company.project.service.backup.dto.BackupResultDto;
 
-import egovframework.com.cmm.EgovMessageSource;
-
-import egovframework.com.cmm.annotation.IncludedInfo;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 
@@ -35,20 +33,12 @@ import org.springframework.web.bind.annotation.RequestParam;
  */
 
 @Controller
-
+@RequiredArgsConstructor
 public class EgovBackupResultController {
 
-    @Resource(name = "backupResultService")
-
-    private EgovBackupResultService backupResultService;
-
-    @Resource(name = "propertiesService")
-
-    private EgovPropertyService propertyService;
-
-    @Resource(name = "egovMessageSource")
-
-    private EgovMessageSource egovMessageSource;
+    private final EgovBackupResultService backupResultService;
+    private final EgovPropertyService propertyService;
+    private final MessageSource messageSource;
 
     /**
 
@@ -62,14 +52,10 @@ public class EgovBackupResultController {
 
             throws Exception {
 
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
-        if (!isAuthenticated) {
-
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            model.addAttribute("message", messageSource.getMessage("fail.common.login", null, LocaleContextHolder.getLocale()));
             return "redirect:/uat/uia/egovLoginUsr.do";
-
         }
 
         backupResultService.deleteBackupResult(backupResultId);
@@ -104,7 +90,6 @@ public class EgovBackupResultController {
 
      */
 
-    @IncludedInfo(name = "                           ?     ??", order = 1151, gid = 60)
 
     @RequestMapping({ "/sym/sym/bak/getBackupResultList.do", "/sym/sym/bak/EgovBackupResultList.do" })
 

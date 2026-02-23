@@ -5,21 +5,25 @@ import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.security.service.EgovAuthenticationProvider;
 import egovframework.com.cmm.ComDefaultVO;
-import egovframework.com.cmm.EgovMessageSource;
-import egovframework.com.sym.mnu.mcm.service.EgovMenuCreateManageService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.TestPropertySource;
+
+import java.util.Locale;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 
@@ -34,14 +38,11 @@ public class MenuCreateControllerTest {
     @MockBean
     private MenuService menuService;
 
-    @MockBean
-    private EgovMenuCreateManageService menuCreateManageService;
-
     @MockBean(name = "propertiesService")
     private EgovPropertyService propertiesService;
 
-    @MockBean(name = "egovMessageSource")
-    private EgovMessageSource egovMessageSource;
+    @MockBean
+    private MessageSource messageSource;
 
     @MockBean
     private EgovAuthenticationProvider egovAuthenticationProvider;
@@ -58,8 +59,9 @@ public class MenuCreateControllerTest {
     @Test
     @WithMockUser(username = "testuser", roles = "USER")
     public void insertMenuCreatList_authenticated_shouldReachController() throws Exception {
-        // Setup mocks needed for the controller logic
-        when(egovMessageSource.getMessage("success.common.insert")).thenReturn("Success");
+        // Setup mocks
+        when(messageSource.getMessage(eq("success.common.insert"), isNull(), any(Locale.class)))
+                .thenReturn("Success");
         doNothing().when(menuService).insertMenuCreatList(any(), any());
 
         MenuCreateDto menuCreatVO = new MenuCreateDto();

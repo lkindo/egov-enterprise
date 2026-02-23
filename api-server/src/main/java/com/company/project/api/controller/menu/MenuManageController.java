@@ -8,17 +8,14 @@ import com.company.project.service.program.ProgramService;
 
 import egovframework.com.cmm.ComDefaultVO;
 
-import egovframework.com.cmm.EgovMessageSource;
-
-import jakarta.annotation.Resource;
-
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import org.springframework.stereotype.Controller;
 
@@ -37,16 +34,9 @@ import org.springframework.web.bind.annotation.*;
 public class MenuManageController {
 
     private final MenuService menuService;
-
     private final ProgramService programService;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
-
-    @Resource(name = "egovMessageSource")
-
-    EgovMessageSource egovMessageSource;
+    private final EgovPropertyService propertiesService;
+    private final MessageSource messageSource;
 
     /**
 
@@ -142,7 +132,7 @@ public class MenuManageController {
 
         if (menuService.selectMenuNoByPk(menuDto) != 0) {
 
-            model.addAttribute("resultMsg", egovMessageSource.getMessage("common.isExist.msg"));
+            model.addAttribute("resultMsg", messageSource.getMessage("common.isExist.msg", null, LocaleContextHolder.getLocale()));
 
             return "sym/mnu/mpm/EgovMenuRegist";
 
@@ -154,7 +144,7 @@ public class MenuManageController {
 
         if (programService.selectProgrmListTotCnt(progrmSearchVO) == 0) {
 
-            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.insert"));
+            model.addAttribute("resultMsg", messageSource.getMessage("fail.common.insert", null, LocaleContextHolder.getLocale()));
 
             return "sym/mnu/mpm/EgovMenuRegist";
 
@@ -186,7 +176,7 @@ public class MenuManageController {
 
         if (programService.selectProgrmListTotCnt(progrmSearchVO) == 0) {
 
-            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.update"));
+            model.addAttribute("resultMsg", messageSource.getMessage("fail.common.update", null, LocaleContextHolder.getLocale()));
 
             return "sym/mnu/mpm/EgovMenuDetailSelectUpdt";
 
@@ -214,7 +204,7 @@ public class MenuManageController {
 
         if (menuService.selectUpperMenuNoByPk(menuDto) != 0) {
 
-            model.addAttribute("resultMsg", egovMessageSource.getMessage("fail.common.delete.upperMenuExist"));
+            model.addAttribute("resultMsg", messageSource.getMessage("fail.common.delete.upperMenuExist", null, LocaleContextHolder.getLocale()));
 
             return "forward:/sym/mnu/mpm/EgovMenuManageSelect.do";
 

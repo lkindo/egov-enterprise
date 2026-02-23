@@ -14,21 +14,11 @@ import com.company.project.service.dam.dto.MapKnoDto;
 
 import com.company.project.service.dam.dto.MapTeamDto;
 
-import egovframework.com.cmm.EgovMessageSource;
-
-import egovframework.com.cmm.LoginVO;
-
-import egovframework.com.cmm.annotation.IncludedInfo;
-
-import egovframework.com.cmm.service.EgovFileMngService;
-
-import egovframework.com.cmm.service.EgovFileMngUtil;
-
-import egovframework.com.cmm.service.FileVO;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-
-import jakarta.annotation.Resource;
+import com.company.project.security.service.CustomUserDetails;
+import com.company.project.service.file.EgovFileService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.validation.Valid;
 
@@ -65,40 +55,15 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-
+@RequiredArgsConstructor
 @RequestMapping("/dam/per")
-
 public class DamKnoPersonalController {
 
-    @Resource(name = "egovKnoPersonalServiceImpl")
-
-    private EgovKnoPersonalService knoPersonalService;
-
-    @Resource(name = "egovMapTeamServiceImpl")
-
-    private EgovMapTeamService mapTeamService;
-
-    @Resource(name = "egovMapKnoServiceImpl")
-
-    private EgovMapKnoService mapKnoService;
-
-    @Resource(name = "EgovFileMngService")
-
-    private EgovFileMngService fileMngService;
-
-    @Resource(name = "EgovFileMngUtil")
-
-    private EgovFileMngUtil fileUtil;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
-
-    @Resource(name = "egovMessageSource")
-
-    EgovMessageSource egovMessageSource;
-
-    @IncludedInfo(name = "         ?      ??????", listUrl = "/dam/per/EgovComDamPersonalList.do", order = 1250, gid = 80)
+    private final EgovKnoPersonalService knoPersonalService;
+    private final EgovMapTeamService mapTeamService;
+    private final EgovMapKnoService mapKnoService;
+    private final EgovFileService fileService;
+    private final EgovPropertyService propertiesService;
 
     @RequestMapping(value = "/EgovComDamPersonalList.do")
 
@@ -112,7 +77,9 @@ public class DamKnoPersonalController {
 
             ModelMap model) throws Exception {
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        String uniqId = userDetails.getUser().getEsntlId();
 
         int pageUnit = propertiesService.getInt("pageUnit");
 
@@ -127,8 +94,7 @@ public class DamKnoPersonalController {
         paginationInfo.setPageSize(pageSize);
 
         Page<KnowledgeInf> page = knoPersonalService.selectKnoPersonalList(
-
-                searchCondition, searchKeyword, loginVO.getUniqId(), PageRequest.of(pageIndex - 1, pageUnit));
+                searchCondition, searchKeyword, uniqId, PageRequest.of(pageIndex - 1, pageUnit));
 
         paginationInfo.setTotalRecordCount((int) page.getTotalElements());
 
@@ -200,23 +166,19 @@ public class DamKnoPersonalController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
         List<MultipartFile> files = multiRequest.getFiles("file_1");
 
         String atchFileId = "";
         if (!files.isEmpty()) {
-
-            List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-
-
-            atchFileId = fileMngService.insertFileInfs(fvoList);
-
+            atchFileId = fileService.uploadFiles(files);
         }
 
         knowledgeDto.setAtchFileId(atchFileId);
 
-        knowledgeDto.setFrstRegisterId(loginVO.getUniqId());
+        knowledgeDto.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
         knoPersonalService.insertKnoPersonal(knowledgeDto);
 
@@ -252,9 +214,10 @@ public class DamKnoPersonalController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
-        knowledgeDto.setLastUpdusrId(loginVO.getUniqId());
+        knowledgeDto.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         String atchFileId = knowledgeDto.getAtchFileId();
 
@@ -265,29 +228,11 @@ public class DamKnoPersonalController {
             String atchFileAt = commandMap.get("atchFileAt");
 
             if ("N".equals(atchFileAt)) {
-
-                List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
-
-
-                atchFileId = fileMngService.insertFileInfs(fvoList);
-
+                atchFileId = fileService.uploadFiles(files);
                 knowledgeDto.setAtchFileId(atchFileId);
-
             } else {
-
-                FileVO fvo = new FileVO();
-
-                fvo.setAtchFileId(atchFileId);
-
-                int fileKeyParam = fileMngService.getMaxFileSN(fvo);
-
-                List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", fileKeyParam, atchFileId, "");
-
-
-                fileMngService.updateFileInfs(fvoList);
-
+                fileService.updateFiles(atchFileId, files);
             }
-
         }
 
         knoPersonalService.updateKnoPersonal(knowledgeDto);
