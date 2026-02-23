@@ -2,8 +2,6 @@ package com.company.project.api.controller.dam;
 
 import com.company.project.domain.dam.KnowledgeRequest;
 
-import com.company.project.service.dam.EgovMapKnoService;
-
 import com.company.project.service.dam.EgovMapTeamService;
 
 import com.company.project.service.dam.EgovRequestOfferService;
@@ -12,21 +10,11 @@ import com.company.project.service.dam.dto.KnowledgeRequestDto;
 
 import com.company.project.service.dam.dto.MapTeamDto;
 
-import egovframework.com.cmm.EgovMessageSource;
-
-import egovframework.com.cmm.LoginVO;
-
-import egovframework.com.cmm.annotation.IncludedInfo;
-
-import egovframework.com.cmm.service.EgovFileMngService;
-
-import egovframework.com.cmm.service.EgovFileMngUtil;
-
-import egovframework.com.cmm.service.FileVO;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-
-import jakarta.annotation.Resource;
+import com.company.project.security.service.CustomUserDetails;
+import com.company.project.service.file.EgovFileService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.validation.Valid;
 
@@ -63,40 +51,14 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-
+@RequiredArgsConstructor
 @RequestMapping("/dam/spe/req")
-
 public class DamRequestOfferController {
 
-    @Resource(name = "egovRequestOfferServiceImpl")
-
-    private EgovRequestOfferService requestOfferService;
-
-    @Resource(name = "egovMapTeamServiceImpl")
-
-    private EgovMapTeamService mapTeamService;
-
-    @Resource(name = "egovMapKnoServiceImpl")
-
-    private EgovMapKnoService mapKnoService;
-
-    @Resource(name = "EgovFileMngService")
-
-    private EgovFileMngService fileMngService;
-
-    @Resource(name = "EgovFileMngUtil")
-
-    private EgovFileMngUtil fileUtil;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
-
-    @Resource(name = "egovMessageSource")
-
-    EgovMessageSource egovMessageSource;
-
-    @IncludedInfo(name = "        ??               ?     ?", listUrl = "/dam/spe/req/listRequestOffer.do", order = 1291, gid = 80)
+    private final EgovRequestOfferService requestOfferService;
+    private final EgovMapTeamService mapTeamService;
+    private final EgovFileService fileService;
+    private final EgovPropertyService propertiesService;
 
     @RequestMapping(value = "/listRequestOffer.do")
 
@@ -110,7 +72,9 @@ public class DamRequestOfferController {
 
             ModelMap model) throws Exception {
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        String uniqId = userDetails.getUser().getEsntlId();
 
         int pageUnit = propertiesService.getInt("pageUnit");
 
@@ -134,7 +98,7 @@ public class DamRequestOfferController {
 
         model.addAttribute("paginationInfo", paginationInfo);
 
-        if (requestOfferService.isSpecialist(loginVO.getUniqId())) {
+        if (requestOfferService.isSpecialist(uniqId)) {
 
             model.addAttribute("IS_SPE", "Y");
 
@@ -142,7 +106,7 @@ public class DamRequestOfferController {
 
             model.addAttribute("IS_SPE", "N");
 
-            model.addAttribute("USER_UNIQ_ID", loginVO.getUniqId());
+            model.addAttribute("USER_UNIQ_ID", uniqId);
 
         }
 
@@ -158,9 +122,11 @@ public class DamRequestOfferController {
 
         model.addAttribute("requestOfferVO", result);
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        String uniqId = userDetails.getUser().getEsntlId();
 
-        if (requestOfferService.isSpecialist(loginVO.getUniqId())) {
+        if (requestOfferService.isSpecialist(uniqId)) {
 
             model.addAttribute("IS_SPE", "Y");
 
@@ -170,7 +136,7 @@ public class DamRequestOfferController {
 
         }
 
-        model.addAttribute("USER_UNIQ_ID", loginVO.getUniqId());
+        model.addAttribute("USER_UNIQ_ID", uniqId);
 
         return "egovframework/com/dam/spe/req/EgovComDamRequestOfferDetail";
 
@@ -206,25 +172,20 @@ public class DamRequestOfferController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
         List<MultipartFile> files = multiRequest.getFiles("file_1");
 
         String atchFileId = "";
         if (!files.isEmpty()) {
-
-            List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, "", "");
-
-
-            atchFileId = fileMngService.insertFileInfs(fvoList);
-
+            atchFileId = fileService.uploadFiles(files);
             requestDto.setAtchFileId(atchFileId);
-
         }
 
-        requestDto.setFrstRegisterId(loginVO.getUniqId());
+        requestDto.setFrstRegisterId(userDetails.getUser().getEsntlId());
 
-        requestDto.setEmplyrId(loginVO.getUniqId());
+        requestDto.setEmplyrId(userDetails.getUser().getEsntlId());
 
         requestOfferService.insertRequestOffer(requestDto);
 
@@ -260,9 +221,10 @@ public class DamRequestOfferController {
 
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
-        requestDto.setLastUpdusrId(loginVO.getUniqId());
+        requestDto.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         String atchFileId = requestDto.getAtchFileId();
 
@@ -273,29 +235,11 @@ public class DamRequestOfferController {
             String atchFileAt = commandMap.get("atchFileAt");
 
             if ("N".equals(atchFileAt)) {
-
-                List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", 0, atchFileId, "");
-
-
-                atchFileId = fileMngService.insertFileInfs(fvoList);
-
+                atchFileId = fileService.uploadFiles(files);
                 requestDto.setAtchFileId(atchFileId);
-
             } else {
-
-                FileVO fvo = new FileVO();
-
-                fvo.setAtchFileId(atchFileId);
-
-                int fileKeyParam = fileMngService.getMaxFileSN(fvo);
-
-                List<FileVO> fvoList = fileUtil.parseFileInf(files, "DSCH_", fileKeyParam, atchFileId, "");
-
-
-                fileMngService.updateFileInfs(fvoList);
-
+                fileService.updateFiles(atchFileId, files);
             }
-
         }
 
         requestOfferService.updateRequestOffer(requestDto);

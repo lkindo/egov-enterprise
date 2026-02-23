@@ -24,7 +24,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.company.project.service.board.BoardService;
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuDto;
-import egovframework.com.cmm.service.EgovUserDetailsService;
 
 @WebMvcTest(controllers = MainController.class,
     includeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {MainController.class}))
@@ -38,10 +37,6 @@ public class MainControllerTest {
 
     @MockBean(name = "egovBoardService")
     private BoardService boardService;
-
-    // EgovUserDetailsHelper might look for this bean
-    @MockBean(name = "egovUserDetailsService")
-    private EgovUserDetailsService egovUserDetailsService;
 
     @Test
     public void testSelectHeader_Unauthenticated_ShouldReturnEmptyMenus() throws Exception {

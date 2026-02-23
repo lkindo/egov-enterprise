@@ -10,7 +10,8 @@ import org.springframework.validation.Validator;
 
 import egovframework.com.cmm.EgovWebUtil;
 
-import egovframework.com.cmm.service.EgovProperties;
+import org.egovframe.rte.fdl.property.EgovPropertyService;
+import lombok.RequiredArgsConstructor;
 
 /**
 
@@ -19,8 +20,10 @@ import egovframework.com.cmm.service.EgovProperties;
  */
 
 @Component("batchOpertValidator")
-
+@RequiredArgsConstructor
 public class BatchOpertValidator implements Validator {
+
+    private final EgovPropertyService propertyService;
 
     @Override
 
@@ -36,7 +39,7 @@ public class BatchOpertValidator implements Validator {
 
         BatchOpert batchOpert = (BatchOpert) obj;
 
-        String filePath = EgovProperties.getProperty("SHELL.batchShellFolder") + batchOpert.getBatchProgrm();
+        String filePath = propertyService.getString("SHELL.batchShellFolder") + batchOpert.getBatchProgrm();
 
         File file = new File(EgovWebUtil.filePathBlackList(filePath));
 

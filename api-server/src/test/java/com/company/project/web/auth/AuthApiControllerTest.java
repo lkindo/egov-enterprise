@@ -6,7 +6,6 @@ import com.company.project.service.auth.AuthService;
 import com.company.project.service.auth.dto.LoginRequest;
 import com.company.project.service.auth.dto.TokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import egovframework.com.cmm.EgovMessageSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,9 +65,6 @@ class AuthApiControllerTest {
 
         @MockBean
         private SecurityContextRepository securityContextRepository;
-
-        @MockBean(name = "egovMessageSource")
-        private EgovMessageSource egovMessageSource;
 
         @Test
         @DisplayName("로그인 - 성공")

@@ -1,44 +1,9 @@
 package com.company.project.api.config;
 
-import egovframework.com.ext.oauth.service.OAuthVO;
-
-import org.springframework.context.annotation.Bean;
-
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-
 public class EgovOAuthConfig {
-
-    @Bean
-
-    public OAuthVO naverAuthVO() {
-
-        return new OAuthVO("naver", "dummy-client-id", "dummy-client-secret",
-
-                "http://localhost:8080/auth/naver/callback", "profile");
-
-    }
-
-    @Bean
-
-    public OAuthVO googleAuthVO() {
-
-        return new OAuthVO("google", "dummy-client-id", "dummy-client-secret",
-
-                "http://localhost:8080/auth/google/callback", "profile");
-
-    }
-
-    @Bean
-
-    public OAuthVO kakaoAuthVO() {
-
-        return new OAuthVO("kakao", "dummy-client-id", "dummy-client-secret",
-
-                "http://localhost:8080/auth/kakao/callback", "profile");
-
-    }
-
+    // OAuthVO 클래스가 common-legacy-support 모듈과 함께 제거되어 임시로 비워둠
+    // 향후 표준 OAuth2 방식으로 재구현 필요
 }
-

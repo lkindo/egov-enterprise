@@ -6,15 +6,12 @@ import com.company.project.service.dam.EgovKnoAppraisalService;
 
 import com.company.project.service.dam.dto.KnowledgeDto;
 
-import egovframework.com.cmm.EgovMessageSource;
-
-import egovframework.com.cmm.LoginVO;
-
-import egovframework.com.cmm.annotation.IncludedInfo;
-
-import egovframework.com.cmm.util.EgovUserDetailsHelper;
-
-import jakarta.annotation.Resource;
+import com.company.project.security.service.CustomUserDetails;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.validation.Valid;
 
@@ -43,24 +40,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-
+@RequiredArgsConstructor
 @RequestMapping("/dam/app")
-
 public class DamKnoAppraisalController {
 
-    @Resource(name = "egovKnoAppraisalServiceImpl")
-
-    private EgovKnoAppraisalService knoAppraisalService;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
-
-    @Resource(name = "egovMessageSource")
-
-    EgovMessageSource egovMessageSource;
-
-    @IncludedInfo(name = "        ??              ?     ??", listUrl = "/dam/app/EgovComDamAppraisalList.do", order = 1290, gid = 80)
+    private final EgovKnoAppraisalService knoAppraisalService;
+    private final EgovPropertyService propertiesService;
+    private final MessageSource messageSource;
 
     @RequestMapping(value = "/EgovComDamAppraisalList.do")
 
@@ -74,7 +60,9 @@ public class DamKnoAppraisalController {
 
             ModelMap model) throws Exception {
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        String uniqId = userDetails.getUser().getEsntlId();
 
         int pageUnit = propertiesService.getInt("pageUnit");
 
@@ -89,8 +77,7 @@ public class DamKnoAppraisalController {
         paginationInfo.setPageSize(pageSize);
 
         Page<KnowledgeInfSearchResult> page = knoAppraisalService.selectKnoAppraisalList(
-
-                loginVO.getUniqId(), searchCondition, searchKeyword, PageRequest.of(pageIndex - 1, pageUnit));
+                uniqId, searchCondition, searchKeyword, PageRequest.of(pageIndex - 1, pageUnit));
 
         paginationInfo.setTotalRecordCount((int) page.getTotalElements());
 
@@ -136,23 +123,14 @@ public class DamKnoAppraisalController {
 
             BindingResult bindingResult, ModelMap model) throws Exception {
 
-        Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
-
-        if (!isAuthenticated) {
-
-            model.addAttribute("message", egovMessageSource.getMessage("fail.common.login"));
-
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() instanceof String) {
+            model.addAttribute("message", messageSource.getMessage("fail.common.login", null, LocaleContextHolder.getLocale()));
             return "redirect:/uat/uia/egovLoginUsr.do";
-
         }
 
-        LoginVO loginVO = (LoginVO) EgovUserDetailsHelper.getAuthenticatedUser();
-
-        if (loginVO != null) {
-
-            knowledgeDto.setLastUpdusrId(loginVO.getUniqId());
-
-        }
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        knowledgeDto.setLastUpdusrId(userDetails.getUser().getEsntlId());
 
         if (bindingResult.hasErrors()) {
 
