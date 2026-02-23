@@ -16,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { UserManage, UserSearchParams } from '@/types/user';
 import { getUserList, createUser, updateUser, deleteUser } from '@/services/user/userService';
 import { Pencil, Trash2, Plus, Users, UserCheck, ShieldAlert, Mail } from 'lucide-react';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
+import { SmartSearchPanel } from '@/app/components/ui/standard-search-filter';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { useToast } from '@/app/components/ui/toast';
 
@@ -148,9 +148,13 @@ export default function UserManagePage() {
         }
     };
 
-    const columns = [
-        { 
-            header: '아이디', 
+    const columns: ColumnDef<UserManage>[] = [
+        {
+            id: 'userId',
+            header: '아이디',
+            pinned: 'left',
+            sortable: true,
+            width: 200,
             accessor: (item: UserManage) => (
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
@@ -160,13 +164,20 @@ export default function UserManagePage() {
                 </div>
             )
         },
-        { 
-            header: '성명', 
-            accessor: (item: UserManage) => item.userNm, 
-            className: 'font-bold' 
+        {
+            id: 'userNm',
+            header: '성명',
+            accessor: 'userNm',
+            sortable: true,
+            editable: true,
+            className: 'font-bold'
         },
-        { 
-            header: '이메일', 
+        {
+            id: 'email',
+            header: '이메일',
+            sortable: true,
+            editable: true,
+            width: 250,
             accessor: (item: UserManage) => (
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Mail size={12} className="opacity-50" />
@@ -174,14 +185,21 @@ export default function UserManagePage() {
                 </div>
             )
         },
-        { 
-            header: '가입일', 
+        {
+            id: 'sbscrbDe',
+            header: '가입일',
+            sortable: true,
             accessor: (item: UserManage) => (
                 <span className="text-xs font-medium text-slate-500">{item.sbscrbDe || '2026-02-17'}</span>
             )
         },
-        { header: '상태', accessor: (item: UserManage) => getStatusBadge(item.userSttusCode) },
         {
+            id: 'userSttusCode',
+            header: '상태',
+            accessor: (item: UserManage) => getStatusBadge(item.userSttusCode)
+        },
+        {
+            id: 'actions',
             header: '액션',
             className: 'text-right',
             accessor: (item: UserManage) => (
@@ -257,10 +275,10 @@ export default function UserManagePage() {
                 </div>
             </div>
 
-            <StandardSearchFilter
+            <SmartSearchPanel
                 fields={filterFields}
-                onSearch={(values) => setParams(prev => ({ 
-                    ...prev, 
+                onSearch={(values: Record<string, any>) => setParams(prev => ({
+                    ...prev,
                     pageIndex: 1,
                     searchCondition: values.searchCondition || '0',
                     searchKeyword: values.searchKeyword || '',
@@ -269,14 +287,16 @@ export default function UserManagePage() {
                 onReset={() => setParams({ pageIndex: 1, searchCondition: '0', searchKeyword: '', sbscrbSttus: '' })}
             />
 
-            <StandardDataTable
+            <UltimateDataGrid
+                title="USER DIRECTORY"
                 columns={columns}
                 data={users}
                 loading={isLoading}
-                enableSelection={true}
-                bulkActions={bulkActions}
                 keyField="userId"
-                emptyMessage="등록된 사용자가 없습니다."
+                onDataChange={(newData) => {
+                    // In real app, sync with backend
+                    queryClient.setQueryData(['users', params], { ...data, resultList: newData });
+                }}
             />
 
             {/* Registration/Edit Dialog */}

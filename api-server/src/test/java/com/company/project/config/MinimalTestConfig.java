@@ -91,20 +91,6 @@ public class MinimalTestConfig {
      * 레거시 컴포넌트에서 요구하는 빈들을 Mock으로 제공
      * 실제 테스트에서는 사용되지 않지만 ApplicationContext 로딩을 위해 필요
      */
-    @Bean(name = "egovMessageSource")
-    public egovframework.com.cmm.EgovMessageSource egovMessageSource() {
-        return org.mockito.Mockito.mock(egovframework.com.cmm.EgovMessageSource.class);
-    }
-
-    @Bean(name = "egovBBSMstrIdGnrService")
-    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovBBSMstrIdGnrService() {
-        return org.mockito.Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
-    }
-
-    @Bean
-    public egovframework.com.sym.log.wlg.service.EgovWebLogService egovWebLogService() {
-        return org.mockito.Mockito.mock(egovframework.com.sym.log.wlg.service.EgovWebLogService.class);
-    }
 
     @Bean
     public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {

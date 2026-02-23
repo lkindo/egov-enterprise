@@ -375,19 +375,6 @@ public class ApiServerApplication extends SpringBootServletInitializer {
 
         }
 
-        @org.springframework.context.annotation.Bean
-
-        public egovframework.com.cmm.util.EgovUserDetailsHelper egovUserDetailsHelper(
-
-                        egovframework.com.cmm.service.EgovUserDetailsService egovUserDetailsService) {
-
-                egovframework.com.cmm.util.EgovUserDetailsHelper helper = new egovframework.com.cmm.util.EgovUserDetailsHelper();
-
-                helper.setEgovUserDetailsService(egovUserDetailsService);
-
-                return helper;
-
-        }
 
         public static void main(String[] args) {
 

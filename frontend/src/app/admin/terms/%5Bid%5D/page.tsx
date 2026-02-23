@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,9 @@ import { ArrowLeft } from "lucide-react";
 import { getTermsDetail, updateTerms, deleteTerms } from '@/services/terms/termsService';
 import { StplatManageVO } from '@/types/terms';
 
-export default function TermsDetailPage({ params }: { params: { id: string } }) {
+export default function TermsDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: termsId } = use(params);
     const router = useRouter();
-    const termsId = params.id;
     const [formData, setFormData] = useState<StplatManageVO | null>(null);
 
     const fetchData = useCallback(async () => {

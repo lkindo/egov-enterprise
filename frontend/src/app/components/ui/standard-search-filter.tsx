@@ -26,7 +26,7 @@ interface StandardSearchFilterProps {
   className?: string;
 }
 
-export function StandardSearchFilter({ fields, onSearch, onReset, className }: StandardSearchFilterProps) {
+export function SmartSearchPanel({ fields, onSearch, onReset, className }: StandardSearchFilterProps) {
   const [values, setValues] = useState<Record<string, any>>({});
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -45,44 +45,49 @@ export function StandardSearchFilter({ fields, onSearch, onReset, className }: S
   };
 
   return (
-    <div className={cn("p-6 border-2 border-primary/5 rounded-[1.5rem] bg-card shadow-sm mb-8 transition-all", className)}>
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className={cn("p-8 border-2 border-primary/5 rounded-[2.5rem] bg-card/50 backdrop-blur-sm shadow-xl mb-8 transition-all group", className)}>
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black flex items-center gap-2 text-foreground/70 uppercase tracking-widest">
-            <Search size={16} className="text-primary" />
-            상세 검색 필터
-          </h3>
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="sm" 
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-2xl text-primary transition-transform group-hover:scale-110 duration-500">
+              <Search size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Intelligence Filter</h3>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">Multi-dimensional data search</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs font-bold gap-1"
+            className="rounded-xl font-bold h-10 px-4 gap-2 hover:bg-primary/5"
           >
-            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {isExpanded ? '접기' : '펴기'}
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <span className="text-[10px] uppercase tracking-widest">{isExpanded ? 'Collapse' : 'Expand'} Filter</span>
           </Button>
         </div>
 
         {isExpanded && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             {fields.map((field) => (
-              <div key={field.name} className="space-y-2">
-                <label className="text-[11px] font-black text-muted-foreground/80 uppercase tracking-tighter ml-1">
+              <div key={field.name} className="space-y-3">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 opacity-70">
                   {field.label}
                 </label>
-                
+
                 {field.type === 'select' ? (
-                  <Select 
-                    value={values[field.name] || ''} 
+                  <Select
+                    value={values[field.name] || ''}
                     onValueChange={(v) => handleValueChange(field.name, v)}
                   >
-                    <SelectTrigger className="h-11 rounded-xl border-primary/10 focus:ring-primary/20 transition-all">
+                    <SelectTrigger className="h-12 rounded-2xl border-2 border-primary/5 bg-background focus:ring-primary/20 hover:border-primary/20 transition-all font-bold text-xs ring-offset-background">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-2xl shadow-2xl border-primary/10">
                       {field.options?.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-bold rounded-xl m-1">{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -92,11 +97,11 @@ export function StandardSearchFilter({ fields, onSearch, onReset, className }: S
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-11 justify-start text-left font-normal rounded-xl border-primary/10 transition-all",
-                          !values[field.name] && "text-muted-foreground"
+                          "w-full h-12 justify-start text-left font-bold text-xs rounded-2xl border-2 border-primary/5 bg-background transition-all hover:border-primary/20",
+                          !values[field.name] && "text-muted-foreground/50"
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                        <CalendarIcon className="mr-3 h-4 w-4 opacity-50" />
                         {values[field.name]?.from ? (
                           values[field.name].to ? (
                             <>
@@ -111,7 +116,7 @@ export function StandardSearchFilter({ fields, onSearch, onReset, className }: S
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
+                    <PopoverContent className="w-auto p-0 rounded-3xl border-2 border-primary/10 shadow-3xl overflow-hidden" align="start">
                       <Calendar
                         initialFocus
                         mode="range"
@@ -120,6 +125,7 @@ export function StandardSearchFilter({ fields, onSearch, onReset, className }: S
                         onSelect={(v) => handleValueChange(field.name, v)}
                         numberOfMonths={2}
                         locale={ko}
+                        className="p-4"
                       />
                     </PopoverContent>
                   </Popover>
@@ -128,40 +134,42 @@ export function StandardSearchFilter({ fields, onSearch, onReset, className }: S
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-11 rounded-xl border-primary/10"
+                    className="h-12 rounded-2xl border-2 border-primary/5 bg-background font-bold text-xs ring-offset-background transition-all hover:border-primary/20 focus-visible:ring-primary/20"
                   />
                 ) : (
                   <Input
                     placeholder={field.placeholder}
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-11 rounded-xl border-primary/10 focus:ring-primary/20 transition-all"
+                    className="h-12 rounded-2xl border-2 border-primary/5 bg-background font-bold text-xs ring-offset-background transition-all hover:border-primary/20 focus-visible:ring-primary/20 shadow-inner"
                   />
                 )}
               </div>
             ))}
           </div>
         )}
-        
-        <div className="flex justify-end items-center gap-3 pt-2 border-t border-primary/5">
+
+        <div className="flex justify-end items-center gap-4 pt-6 mt-4 border-t-2 border-primary/5">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={handleReset}
-            className="rounded-xl h-11 px-6 font-bold gap-2 text-muted-foreground hover:text-foreground transition-all"
+            className="rounded-2xl h-12 px-8 font-black gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted/50 transition-all"
           >
             <RotateCcw size={16} />
-            초기화
+            Reset Filters
           </Button>
           <Button
             type="submit"
-            className="rounded-xl h-11 px-8 font-black gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="rounded-2xl h-12 px-10 font-black gap-2 shadow-2xl shadow-primary/20 hover:scale-[1.05] active:scale-[0.95] transition-all bg-primary text-white text-[10px] uppercase tracking-[0.2em]"
           >
             <Search size={16} />
-            조건 검색 실행
+            Execute Search
           </Button>
         </div>
       </form>
     </div>
   );
 }
+
+export const StandardSearchFilter = SmartSearchPanel;

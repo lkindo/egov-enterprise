@@ -7,7 +7,6 @@ dependencies {
     implementation project(':common-service')
     implementation project(':common-core')
     implementation project(':common-security')
-    implementation project(':common-legacy-support')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

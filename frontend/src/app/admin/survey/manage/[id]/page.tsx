@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,12 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { getPollDetail, updatePoll, deletePoll, getPollItemList, createPollItem, deletePollItem } from '@/services/poll/pollService';
+import { getPollDetail, getPollItemList, createPollItem, deletePollItem, deletePoll } from '@/services/poll/pollService';
 import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/poll';
 
-export default function PollDetailPage({ params }: { params: { id: string } }) {
+export default function PollDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: pollId } = use(params);
     const router = useRouter();
-    const pollId = params.id;
     const [poll, setPoll] = useState<OnlinePollManageVO | null>(null);
     const [items, setItems] = useState<OnlinePollItemVO[]>([]);
     const [newItemName, setNewItemName] = useState('');
