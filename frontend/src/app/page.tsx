@@ -47,6 +47,15 @@ const DashboardPostChart = dynamic(
   }
 );
 
+// ⚡ Bolt Optimization: Define static icons outside the component to ensure referential stability.
+// Passing new JSX elements (e.g., <Icon />) as props on every render breaks React.memo optimization in child components.
+const ICON_CALENDAR = <Calendar className="text-blue-600" size={20} />;
+const ICON_CLOCK = <Clock className="text-orange-500" size={20} />;
+const ICON_BELL = <Bell className="text-purple-500" size={20} />;
+const ICON_CHECK_CIRCLE = <CheckCircle2 className="text-emerald-500" size={20} />;
+const ICON_BELL_BLUE = <Bell size={20} className="text-blue-500" />;
+const ICON_CHECK_CIRCLE_EMERALD = <CheckCircle2 size={20} className="text-emerald-500" />;
+
 export default function UnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -199,7 +208,7 @@ export default function UnifiedDashboard() {
           title="잔여 연차"
           value={`${myLeave?.remndrYrycCo || 0}일`}
           description="총 15일 중"
-          icon={<Calendar className="text-blue-600" size={20} />}
+          icon={ICON_CALENDAR}
           trend={12}
           color="blue"
         />
@@ -207,7 +216,7 @@ export default function UnifiedDashboard() {
           title="진행중인 업무"
           value="12건"
           description="금주 마감 3건"
-          icon={<Clock className="text-orange-500" size={20} />}
+          icon={ICON_CLOCK}
           trend={-5}
           color="orange"
         />
@@ -215,7 +224,7 @@ export default function UnifiedDashboard() {
           title="미확인 알림"
           value="5건"
           description="최근 24시간"
-          icon={<Bell className="text-purple-500" size={20} />}
+          icon={ICON_BELL}
           trend={2}
           color="purple"
         />
@@ -223,7 +232,7 @@ export default function UnifiedDashboard() {
           title="시스템 상태"
           value="정상"
           description="Uptime 99.9%"
-          icon={<CheckCircle2 className="text-emerald-500" size={20} />}
+          icon={ICON_CHECK_CIRCLE}
           trend={0}
           color="emerald"
         />
@@ -255,7 +264,7 @@ export default function UnifiedDashboard() {
               title="최신 공지사항"
               items={notiList}
               loading={dashboardLoading}
-              icon={<Bell size={20} className="text-blue-500" />}
+              icon={ICON_BELL_BLUE}
               moreHref="/cop/bbs"
               color="blue"
             />
@@ -263,7 +272,7 @@ export default function UnifiedDashboard() {
               title="오늘의 할일"
               items={taskList}
               loading={dashboardLoading}
-              icon={<CheckCircle2 size={20} className="text-emerald-500" />}
+              icon={ICON_CHECK_CIRCLE_EMERALD}
               moreHref="/cop/bbs"
               color="emerald"
             />
@@ -293,7 +302,8 @@ export default function UnifiedDashboard() {
   );
 }
 
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
+// ⚡ Bolt Optimization: Wrap presentational components in React.memo to prevent unnecessary re-renders when parent state updates.
+const SummaryCard = React.memo(function SummaryCard({ title, value, description, icon, trend, color }: any) {
   const colorMap: any = {
     blue: "bg-blue-50 text-blue-600 border-blue-100",
     orange: "bg-orange-50 text-orange-600 border-orange-100",
@@ -334,9 +344,10 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       </div>
     </div>
   );
-}
+});
 
-function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
+// ⚡ Bolt Optimization: Wrap presentational components in React.memo to prevent unnecessary re-renders when parent state updates.
+const DashboardListCard = React.memo(function DashboardListCard({ title, items, loading, icon, moreHref, color }: any) {
   const borderColors: any = {
     blue: "group-hover:border-blue-200",
     emerald: "group-hover:border-emerald-200"
@@ -403,4 +414,4 @@ function DashboardListCard({ title, items, loading, icon, moreHref, color }: any
       </div>
     </div>
   );
-}
+});

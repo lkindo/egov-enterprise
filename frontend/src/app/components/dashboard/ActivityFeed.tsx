@@ -47,7 +47,8 @@ const activities = [
   }
 ];
 
-export function ActivityFeed() {
+// ⚡ Bolt Optimization: Wrap static component in React.memo to avoid re-renders on parent updates.
+export const ActivityFeed = React.memo(function ActivityFeed() {
   return (
     <div className="space-y-6">
       {activities.map((activity, idx) => (
@@ -81,4 +82,4 @@ export function ActivityFeed() {
       ))}
     </div>
   );
-}
+});

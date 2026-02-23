@@ -24,7 +24,8 @@ const visitorData = [
   { name: '일', visitors: 349, posts: 43 },
 ];
 
-export function DashboardVisitorChart() {
+// ⚡ Bolt Optimization: Charts are expensive to render. Wrap in React.memo to prevent re-renders when dashboard data loading state changes.
+export const DashboardVisitorChart = React.memo(function DashboardVisitorChart() {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -66,9 +67,9 @@ export function DashboardVisitorChart() {
       </ResponsiveContainer>
     </div>
   );
-}
+});
 
-export function DashboardPostChart() {
+export const DashboardPostChart = React.memo(function DashboardPostChart() {
   return (
     <div className="h-[200px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -93,4 +94,4 @@ export function DashboardPostChart() {
       </ResponsiveContainer>
     </div>
   );
-}
+});

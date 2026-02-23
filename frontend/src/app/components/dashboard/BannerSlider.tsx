@@ -6,7 +6,8 @@ import { bannerService } from '@/services/bannerService';
 import { Banner } from '@/types/banner';
 import { cn } from '@/lib/utils';
 
-export function BannerSlider() {
+// ⚡ Bolt Optimization: Wrap in React.memo to prevent unnecessary re-renders when parent dashboard state changes.
+export const BannerSlider = React.memo(function BannerSlider() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -117,4 +118,4 @@ export function BannerSlider() {
       )}
     </div>
   );
-}
+});

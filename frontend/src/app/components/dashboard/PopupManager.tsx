@@ -5,7 +5,8 @@ import { X } from 'lucide-react';
 import { popupService } from '@/services/popupService';
 import { Popup } from '@/types/banner';
 
-export function PopupManager() {
+// ⚡ Bolt Optimization: Wrap in React.memo to prevent unnecessary re-renders when parent dashboard state changes.
+export const PopupManager = React.memo(function PopupManager() {
   const [activePopups, setActivePopups] = useState<Popup[]>([]);
   const [visiblePopupIds, setVisiblePopupIds] = useState<string[]>([]);
 
@@ -108,4 +109,4 @@ export function PopupManager() {
       })}
     </>
   );
-}
+});
