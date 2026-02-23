@@ -11,10 +11,11 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import com.company.project.config.FullBeanNameGenerator;
 
 @SpringBootApplication
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
-                "org.egovframe" }, excludeFilters = {
+                "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class,
                                                 org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class }),
@@ -333,51 +334,12 @@ public class ApiServerApplication extends SpringBootServletInitializer {
 
         }
 
-        @org.springframework.context.annotation.Bean(name = "reprtStatsIdStrategy")
-
-        public org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy reprtStatsIdStrategy() {
-
-                org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl strategy = new org.egovframe.rte.fdl.idgnr.impl.strategy.EgovIdGnrStrategyImpl();
-
-                strategy.setPrefix("RS_");
-
-                strategy.setCipers(3);
-
-                strategy.setFillChar('0');
-
-                return strategy;
-
-        }
-
-        @org.springframework.context.annotation.Bean(name = "reprtStatsIdGnrService")
-
-        public org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService(
-
-                        @org.springframework.beans.factory.annotation.Qualifier("dataSource") javax.sql.DataSource dataSource,
-
-                        @org.springframework.beans.factory.annotation.Qualifier("reprtStatsIdStrategy") org.egovframe.rte.fdl.idgnr.EgovIdGnrStrategy reprtStatsIdStrategy) {
-
-                org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl idGnrService = new org.egovframe.rte.fdl.idgnr.impl.EgovTableIdGnrServiceImpl();
-
-                idGnrService.setDataSource(dataSource);
-
-                idGnrService.setStrategy(reprtStatsIdStrategy);
-
-                idGnrService.setBlockSize(10);
-
-                idGnrService.setTable("COMTECOPSEQ");
-
-                idGnrService.setTableName("RS_ID");
-
-                return idGnrService;
-
-        }
-
         public static void main(String[] args) {
 
                 SpringApplication app = new SpringApplication(ApiServerApplication.class);
 
                 app.setAllowCircularReferences(true);
+                app.setAllowBeanDefinitionOverriding(true);
 
                 app.run(args);
 
