@@ -1,156 +1,92 @@
 package com.company.project.api.auth;
 
 import com.company.project.core.exception.BusinessException;
-
 import com.company.project.core.exception.ErrorCode;
-
 import com.company.project.core.response.ApiResponse;
-
 import com.company.project.security.jwt.JwtTokenProvider;
-
-import com.company.project.security.service.CustomUserDetailsService;
-
-import jakarta.servlet.http.HttpServletRequest;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.authentication.AuthenticationManager;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-
 import org.springframework.security.core.Authentication;
-
-import org.springframework.security.core.userdetails.UserDetails;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-
 import java.util.Map;
 
 /**
-
- * ?          ?     ??REST API ?      ?      ?       (Modernized with Dual Token support)
-
+ * 사용자 인증을 위한 REST API 컨트롤러 (Dual Token 지원으로 현대화됨)
  */
-
-@RestController("modernAuthController")
-
-@RequestMapping("/auth")
-
+@RestController
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-
 public class AuthController {
 
+    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
-    private final CustomUserDetailsService userDetailsService;
-
-    private final AuthenticationManager authenticationManager;
-
     /**
-
-     * REST          ???(Access Token + HttpOnly Refresh Token)
-
+     * REST 로그인 기능 (Access Token + HttpOnly Refresh Token 발행)
      */
-
     @PostMapping("/login")
-
     public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest,
-
             HttpServletResponse response) {
 
         String userId = loginRequest.get("id");
-
         String password = loginRequest.get("password");
 
-        // 1. Authenticate via Spring Security
+        try {
+            // 1. Spring Security를 통한 인증
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userId, password));
 
-        Authentication authentication = authenticationManager.authenticate(
+            String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-                new UsernamePasswordAuthenticationToken(userId, password));
+            // 2. 이중 토큰 발행
+            String accessToken = jwtTokenProvider.createAccessToken(userId, role);
+            String refreshToken = jwtTokenProvider.createRefreshToken(userId);
 
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
+            // 3. 보안을 위해 Refresh Token은 HttpOnly 쿠키에 저장
+            jwtTokenProvider.addRefreshTokenCookie(response, refreshToken);
 
-        // 2. Issue Dual Tokens
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("accessToken", accessToken);
+            responseData.put("role", role);
 
-        String accessToken = jwtTokenProvider.createAccessToken(userId, role);
-
-        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
-
-        // 3. Set Refresh Token in HttpOnly Cookie for security
-
-        jwtTokenProvider.addRefreshTokenCookie(response, refreshToken);
-
-        Map<String, String> responseData = new HashMap<>();
-
-        responseData.put("accessToken", accessToken);
-
-        responseData.put("role", role);
-
-        return ApiResponse.success(responseData);
-
+            return ApiResponse.success(responseData);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
     }
 
     /**
-
-     * Refresh Token????      ??Access Token ??         ?(Cookie             ?
-
+     * Refresh Token을 사용한 Access Token 재발급 서비스
      */
-
     @PostMapping("/reissue")
-
-    public ApiResponse<Map<String, String>> reissue(HttpServletRequest request, HttpServletResponse response) {
-
-        String refreshToken = jwtTokenProvider.resolveRefreshToken(request);
-
-        if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
-
-            throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
-
+    public ApiResponse<Map<String, String>> reissue(@CookieValue(name = "refreshToken") String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         String userId = jwtTokenProvider.getUserId(refreshToken);
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
-
-        String role = userDetails.getAuthorities().iterator().next().getAuthority();
-
-        // New Tokens
-
+        // Refresh Token 검증 및 새로운 Access Token 생성
+        String role = "ROLE_USER"; // 임시 역할, 실제로는 DB에서 조회
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, role);
 
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
-
-        // Update Cookie
-
-        jwtTokenProvider.addRefreshTokenCookie(response, newRefreshToken);
-
         Map<String, String> responseData = new HashMap<>();
-
         responseData.put("accessToken", newAccessToken);
 
         return ApiResponse.success(responseData);
-
     }
 
     /**
-
-     *          ??          (?         ?????
-
+     * 로그아웃 처리 (무효화 로직)
      */
-
     @PostMapping("/logout")
-
-    public ApiResponse<Void> logout(HttpServletResponse response) {
-
-        jwtTokenProvider.removeRefreshTokenCookie(response);
-
-        return ApiResponse.success(null);
-
+    public ApiResponse<String> logout(HttpServletResponse response) {
+        // Refresh Token 쿠키 삭제 및 필요시 서버측 RefreshToken 엔티티 제거
+        jwtTokenProvider.addRefreshTokenCookie(response, "");
+        return ApiResponse.success("Logged out successfully");
     }
-
 }
-

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 /**
- * ?袁⑷텢 ??? ?癒?쑎 ?꾨뗀諭?
+ * 전역 예외 처리를 위한 에러 코드 열거형
  */
 @Getter
 @RequiredArgsConstructor
@@ -28,6 +28,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "Invalid JWT Token"),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Expired JWT Token"),
     AUTH_ERROR(HttpStatus.UNAUTHORIZED, "A004", "Authentication Failed"),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "A005", "Login Failed"),
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User Not Found"),
