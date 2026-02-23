@@ -19,84 +19,49 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RequestParam;
-
-import jakarta.annotation.Resource;
 
 import java.util.Map;
 
 /**
-
- * ??      ??         ????                   ?      ??          ?      ?      ?      
-
+ * 게시판 관리를 위한 컨트롤러 (공지사항 등)
  */
-
 @Controller
-
 @RequiredArgsConstructor
-
 public class BBSManageController {
 
     private final EgovBoardService boardService;
-
-    @Resource(name = "propertiesService")
-
-    protected EgovPropertyService propertiesService;
+    private final EgovPropertyService propertiesService;
 
     /**
-
-     *          ?      ?            ?         ??(?      ??
-
+     * 게시물 목록을 조회한다.
      */
-
     @RequestMapping({ "/cop/bbs/selectBoardList.do", "/cop/bbs/admin/selectBoardList.do" })
-
     public String selectBoardList(@RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
-
         String bbsId = (String) commandMap.get("bbsId");
-
         int pageIndex = 1;
-
         if (commandMap.get("pageIndex") != null && !commandMap.get("pageIndex").toString().isEmpty()) {
-
             pageIndex = Integer.parseInt(commandMap.get("pageIndex").toString());
-
         }
 
         int pageUnit = propertiesService.getInt("pageUnit");
-
         int pageSize = propertiesService.getInt("pageSize");
-
         PaginationInfo paginationInfo = new PaginationInfo();
-
         paginationInfo.setCurrentPageNo(pageIndex);
-
         paginationInfo.setRecordCountPerPage(pageUnit);
-
         paginationInfo.setPageSize(pageSize);
 
         Page<BoardDto> resultPage = boardService.getBoardPosts(bbsId, PageRequest.of(pageIndex - 1, pageUnit));
-
         model.addAttribute("resultList", resultPage.getContent());
-
         model.addAttribute("resultCnt", resultPage.getTotalElements());
-
         model.addAttribute("paginationInfo", paginationInfo);
-
         model.addAttribute("bbsId", bbsId);
 
-        // bbsId???          ??         ??(         ??   ? ?          ?      ???????     ?                   ? ?         ?
-
+        // 공지게시판(BBSMSTR_)인 경우 공지사항 목록 뷰로 이동
         if (bbsId.startsWith("BBSMSTR_")) {
-
             return "cop/bbs/EgovNoticeList";
-
         }
-
         return "cop/bbs/EgovNoticeList";
-
     }
-
 }
 
