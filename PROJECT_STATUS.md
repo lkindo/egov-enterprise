@@ -362,13 +362,13 @@ pnpm test:e2e          # Playwright E2E 테스트
 - **우선순위**: 🟢 낮음
 - **레거시 참조**: `legacy/egovframe-template-common-components-5.0.0/` 내 153 개 ServiceImpl
 
-#### 1.3 Redis 캐싱 전략
-- **현황**: Redis 의존성 추가됨 (`spring-boot-starter-data-redis`)
-- **작업**: 캐싱 전략 수립 및 구현
+#### 1.3 로컬 캐싱 전략
+- **현황**: `ConcurrentMapCacheManager`를 통한 로컬 캐싱 적용 완료
+- **작업**: 캐시 대상 확대 및 메모리 관리 최적화
 - **대상**: 
   - 공통코드 (`NCMMNCODE`, `NCMMNDETAILCODE`)
   - 메뉴 정보 (`NMENUINFO`)
-  - 세션 관리 (JWT Token Blacklist)
+  - JWT 토큰 검증 정보 (필요시)
 - **우선순위**: 🟡 중간
 
 #### 1.4 LDAP 연동 (선택)
@@ -417,7 +417,7 @@ pnpm test:e2e          # Playwright E2E 테스트
 #### 3.1 Docker 환경 완성
 - **현황**: docker-compose.yml 존재
 - **작업**: 개발/운영 환경 분리, Health Check 추가
-- **대상**: PostgreSQL, Redis, Application
+- **대상**: PostgreSQL, Application
 - **우선순위**: 🟡 중간
 
 #### 3.2 CI/CD 파이프라인
@@ -496,7 +496,7 @@ pnpm test:e2e          # Playwright E2E 테스트
 - [ ] CI/CD 파이프라인 구축 (우선순위: 높음)
 - [ ] 보안 감사 (OWASP Top 10) (우선순위: 높음)
 - [ ] MyBatis → JPA 완전 전환 (우선순위: 중간)
-- [ ] Redis 캐싱 전략 (우선순위: 중간)
+- [ ] 로컬 캐싱 전략 고도화 (우선순위: 중간)
 - [ ] Docker 환경 완성 (우선순위: 중간)
 - [ ] 접근성 검증 (WCAG 2.2) (우선순위: 중간)
 - [ ] 성능 최적화 (우선순위: 중간)

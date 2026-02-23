@@ -12,9 +12,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
-
-@SpringBootApplication(exclude = { RedisRepositoriesAutoConfiguration.class })
+@SpringBootApplication
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
                 "org.egovframe" }, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
@@ -374,7 +372,6 @@ public class ApiServerApplication extends SpringBootServletInitializer {
                 return idGnrService;
 
         }
-
 
         public static void main(String[] args) {
 
