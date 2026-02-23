@@ -26,7 +26,7 @@ public class CacheConfig {
 
         ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();
 
-        cacheManager.setCacheNames(Arrays.asList("users", "commonCodes", "deptJobs"));
+        cacheManager.setCacheNames(Arrays.asList("users", "commonCodes", "deptJobs", "menuInfo"));
 
         return cacheManager;
 

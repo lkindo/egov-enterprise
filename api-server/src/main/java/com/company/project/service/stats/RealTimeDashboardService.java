@@ -32,7 +32,7 @@ public class RealTimeDashboardService {
 
     private final SimpMessageSendingOperations messagingTemplate;
 
-    // ?? ?? ????(? - ?? ??Redis ? ?? )
+    // 실시간 통계 데이터 관리 (로컬 메모리 활용)
 
     private final AtomicInteger activeUsers = new AtomicInteger(0);
 
