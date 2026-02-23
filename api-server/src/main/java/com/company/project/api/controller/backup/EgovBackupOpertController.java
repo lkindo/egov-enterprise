@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ public class EgovBackupOpertController {
     private final EgovBackupOpertService backupOpertService;
     private final EgovPropertyService propertyService;
     private final MessageSource messageSource;
+    @Qualifier("egovBackupOpertIdGnrService")
     private final EgovIdGnrService idgenService;
     private final EgovCommonCodeService commonCodeService;
 
