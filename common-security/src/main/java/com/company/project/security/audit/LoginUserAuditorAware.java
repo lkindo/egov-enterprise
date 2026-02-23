@@ -8,12 +8,11 @@ import org.springframework.stereotype.Component;
 
 import org.springframework.lang.NonNull;
 import java.util.Optional;
-import java.util.Objects;
 
 /**
- * JPA Auditing???袁る립 ?袁⑹삺 ?????ID ??볥궗 ?????
+ * JPA Auditing을 위해 현재 로그인한 사용자의 ID 정보를 제공하는 클래스입니다.
  */
-@Component
+@Component("loginUserAuditorAware")
 public class LoginUserAuditorAware implements AuditorAware<String> {
 
     @Override
@@ -23,14 +22,14 @@ public class LoginUserAuditorAware implements AuditorAware<String> {
 
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication.getPrincipal().equals("anonymousUser")) {
-            return Objects.requireNonNull(Optional.of("SYSTEM"));
+            return Optional.of("SYSTEM");
         }
 
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails) {
-            return Objects.requireNonNull(Optional.of(((CustomUserDetails) principal).getUser().getUserId()));
+            return Optional.of(((CustomUserDetails) principal).getUser().getUserId());
         }
 
-        return Objects.requireNonNull(Optional.of(authentication.getName()));
+        return Optional.of(authentication.getName());
     }
 }
