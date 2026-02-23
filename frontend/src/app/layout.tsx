@@ -28,11 +28,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:p-4 focus:bg-background focus:text-foreground focus:top-0 focus:left-0 transition-colors"
+            >
+              Skip to main content
+            </a>
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <div className="flex flex-1">
                 <Sidebar />
-                <main className="flex-1 lg:pl-64 pt-4 transition-all duration-300">
+                <main id="main-content" className="flex-1 lg:pl-64 pt-4 transition-all duration-300">
                   <div className="container mx-auto p-4 md:p-6 min-h-[calc(100vh-10rem)]">
                     {children}
                   </div>
