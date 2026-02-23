@@ -61,13 +61,4 @@ public class TestContextConfig {
         return transactionManager;
     }
 
-    @Bean
-    public egovframework.com.sym.log.wlg.service.EgovWebLogService egovWebLogService() {
-        return org.mockito.Mockito.mock(egovframework.com.sym.log.wlg.service.EgovWebLogService.class);
-    }
-
-    @Bean(name = "egovMessageSource")
-    public egovframework.com.cmm.EgovMessageSource egovMessageSource() {
-        return org.mockito.Mockito.mock(egovframework.com.cmm.EgovMessageSource.class);
-    }
 }

@@ -1,34 +1,56 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Search, 
-  Command as CommandIcon, 
-  FileText, 
-  User, 
-  Settings, 
-  Calendar, 
-  LogOut, 
+import {
+  Search,
+  Command as CommandIcon,
+  X,
+  ChevronRight,
+  ArrowRight,
+  Settings,
+  User,
+  LogOut,
+  Bell,
+  Mail,
+  Calendar,
+  FileText,
+  Shield,
   ShieldCheck,
+  LayoutDashboard,
+  Globe,
   Zap,
-  ArrowRight
+  History as HistoryIcon,
+  GitBranch,
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/menuService';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface CommandItem {
+  id: string;
+  name: string;
+  url?: string;
+  action?: () => void;
+  category: '메뉴' | '액션' | '시스템' | '검색';
+  icon?: React.ReactNode;
+  description?: string;
+}
+
 export function GlobalCommandCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [menus, setMenus] = useState<any[]>([]);
+  const [menus, setMenus] = useState<CommandItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const router = useRouter();
   const { logout } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 1. 단축키 등록 (Ctrl+K)
+  // 1. 단축키 등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {
     setIsOpen(prev => !prev);
     if (!isOpen) {
@@ -37,21 +59,35 @@ export function GlobalCommandCenter() {
     }
   });
 
-  // 2. 메뉴 데이터 로드
+  // 2. 초기 메뉴 데이터 로드
   useEffect(() => {
     async function fetchAllMenus() {
       try {
         const head = await menuService.getHeadMenus();
         if (head.success) {
-          const all: any[] = [];
+          const all: CommandItem[] = [];
           for (const m of head.list) {
-            all.push({ name: m.menuNm, url: m.chkURL || '#', category: '메뉴' });
-            const left = await menuService.getLeftMenus(m.menuNo);
-            if (left.success) {
-              left.list.forEach((l: any) => {
-                all.push({ name: `${m.menuNm} > ${l.menuNm}`, url: l.chkURL || '#', category: '상세 메뉴' });
-              });
-            }
+            all.push({
+              id: `head-${m.menuNo}`,
+              name: m.menuNm,
+              url: m.chkURL || '#',
+              category: '메뉴',
+              icon: <LayoutDashboard size={16} />
+            });
+
+            // 왼쪽 서브메뉴 로드 (비동기로 가져오지만 초기엔 상위 메뉴 중심)
+            menuService.getLeftMenus(m.menuNo).then(left => {
+              if (left.success) {
+                const subItems: CommandItem[] = left.list.map((l: any) => ({
+                  id: `left-${l.menuNo}`,
+                  name: `${m.menuNm} > ${l.menuNm}`,
+                  url: l.chkURL || '#',
+                  category: '메뉴',
+                  icon: <ArrowRight size={14} />
+                }));
+                setMenus(prev => [...prev, ...subItems]);
+              }
+            });
           }
           setMenus(all);
         }
@@ -59,34 +95,66 @@ export function GlobalCommandCenter() {
         console.error('Failed to load command menus', e);
       }
     }
-    if (isOpen) fetchAllMenus();
-  }, [isOpen]);
+    if (isOpen && menus.length === 0) fetchAllMenus();
+  }, [isOpen, menus.length]);
 
-  // 3. 빠른 액션 정의
-  const quickActions = [
-    { name: '새 게시글 작성', url: '/cop/bbs/insertBoardArticle', icon: <FileText size={16} />, category: '액션' },
-    { name: '휴가 신청하기', url: '/uss/ion/vacation', icon: <Calendar size={16} />, category: '액션' },
-    { name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템' },
-    { name: '환경설정', url: '/admin/system/settings', icon: <Settings size={16} />, category: '시스템' },
-    { name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
+  // 3. 고정 액션 정의
+  const quickActions: CommandItem[] = [
+    { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
+    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/자원 관리' },
+    { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/security/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
+    { id: 'act-workflow', name: '프로세스 캔버스', url: '/admin/workflow', icon: <GitBranch size={16} />, category: '메뉴', description: '비즈니스 워크플로우 설계 및 모니터링' },
+    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '행정 서식 설계 및 문서 자동화 관리' },
+    { id: 'act-create-post', name: '새 게시글 작성', url: '/cop/bbs/insertBoardArticle', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
+    { id: 'act-2', name: '휴가 신청하기', url: '/uss/ion/vacation', icon: <Calendar size={16} />, category: '액션', description: '근태 관리 및 연차 신청' },
+    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템' },
+    { id: 'sys-2', name: '환경설정', url: '/admin/system/settings', icon: <Settings size={16} />, category: '시스템' },
+    { id: 'sys-3', name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
   ];
 
-  // 4. 검색 필터링
+  // 4. 통합 검색 필터링
   const filteredItems = useMemo(() => {
     const combined = [...quickActions, ...menus];
-    if (!search) return combined.slice(0, 8);
-    return combined.filter(item => 
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase())
-    ).slice(0, 10);
-  }, [search, menus]);
 
-  // 5. 키보드 내비게이션 및 포커스 관리
+    // 검색어가 있을 경우 필터링
+    let results = search
+      ? combined.filter(item =>
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.category.toLowerCase().includes(search.toLowerCase())
+      )
+      : combined;
+
+    // 만약 일치하는게 없다면 전역 검색 제안 추가
+    if (search && results.length === 0) {
+      results = [{
+        id: 'global-search',
+        name: `"${search}" 검색어로 사이트 전체 검색`,
+        url: `/search?q=${encodeURIComponent(search)}`,
+        category: '검색',
+        icon: <Search size={16} />
+      }];
+    }
+
+    return results.slice(0, 10);
+  }, [search, menus, quickActions]);
+
+  // 5. 핸들러 및 내비게이션
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  const handleSelect = useCallback((item: CommandItem) => {
+    if (!item) return;
+    if (item.action) {
+      item.action();
+    } else if (item.url) {
+      router.push(item.url);
+    }
+    setIsOpen(false);
+    setSearch('');
+  }, [router]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -97,150 +165,143 @@ export function GlobalCommandCenter() {
       setSelectedIndex(prev => (prev - 1 + filteredItems.length) % filteredItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (search && filteredItems.length > 0) {
-        handleSelect(filteredItems[selectedIndex]);
-      } else if (search) {
-        router.push(`/search?q=${encodeURIComponent(search)}`);
-        setIsOpen(false);
-      }
+      handleSelect(filteredItems[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
   };
 
-  const handleSelect = (item: any) => {
-    if (!item) return;
-    if (item.action) {
-      item.action();
-    } else if (item.url) {
-      router.push(item.url);
-    }
-    setIsOpen(false);
-    setSearch('');
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] p-4 md:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="command-center-title"
-    >
-      <h2 id="command-center-title" className="sr-only">글로벌 커맨드 센터 검색창</h2>
-      
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300" 
+    <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-[12vh] px-4 md:px-6">
+      <div
+        className="fixed inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300"
         onClick={() => setIsOpen(false)}
-        aria-hidden="true"
       />
 
-      {/* Command Palette Card */}
-      <div 
-        className="relative w-full max-w-2xl bg-background/80 backdrop-blur-2xl border-2 border-primary/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-500 ring-1 ring-white/20"
+      <div
+        className="relative w-full max-w-3xl bg-background/80 backdrop-blur-2xl border-2 border-primary/20 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
-        {/* Search Input Area */}
-        <div className="flex items-center px-8 py-6 border-b border-primary/5 gap-4">
-          <Search className="text-primary animate-pulse" size={24} aria-hidden="true" />
+        {/* Search Header */}
+        <div className="flex items-center px-10 py-8 border-b border-primary/10 gap-6">
+          <div className="p-3 bg-primary/10 rounded-2xl text-primary animate-pulse">
+            <Search size={28} />
+          </div>
           <input
             ref={inputRef}
-            placeholder="원하는 기능이나 메뉴를 검색하세요..."
-            className="flex-1 bg-transparent border-none outline-none text-xl font-bold placeholder:text-muted-foreground/40"
+            placeholder="Search Intelligence (CMD+K)..."
+            className="flex-1 bg-transparent border-none outline-none text-2xl font-black placeholder:text-muted-foreground/30 tracking-tight"
             value={search}
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded="true"
-            aria-haspopup="listbox"
-            aria-controls="command-results-list"
-            aria-activedescendant={`result-item-${selectedIndex}`}
             onChange={(e) => {
               setSearch(e.target.value);
               setSelectedIndex(0);
             }}
           />
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-xl border border-primary/5 text-[10px] font-black text-muted-foreground">
-            <kbd className="font-sans">ESC</kbd> <span>to close</span>
+          <div className="hidden sm:flex items-center gap-3">
+            <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground uppercase tracking-widest">ESC to close</div>
           </div>
         </div>
 
-        {/* Results List */}
-        <div 
-          id="command-results-list"
-          className="max-h-[450px] overflow-y-auto p-4 custom-scrollbar"
-          role="listbox"
-          aria-label="검색 결과"
-        >
-          {filteredItems.length === 0 ? (
-            <div className="py-20 text-center space-y-4">
-              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
-                <Zap size={24} className="text-muted-foreground/30" aria-hidden="true" />
-              </div>
-              <p className="text-muted-foreground font-medium italic">일치하는 항목을 찾을 수 없습니다.</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {filteredItems.map((item, idx) => (
-                <button
-                  key={idx}
-                  id={`result-item-${idx}`}
-                  role="option"
-                  aria-selected={idx === selectedIndex}
-                  className={cn(
-                    "w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-200 group text-left outline-none",
-                    idx === selectedIndex 
-                      ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02] z-10 ring-2 ring-primary/20" 
-                      : "hover:bg-primary/5 text-foreground focus:bg-primary/5"
-                  )}
-                  onClick={() => handleSelect(item)}
-                  onMouseEnter={() => setSelectedIndex(idx)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                      idx === selectedIndex ? "bg-white/20" : "bg-muted shadow-inner"
-                    )} aria-hidden="true">
-                      {item.icon || (item.category === '메뉴' ? <ShieldCheck size={18} /> : <ArrowRight size={18} />)}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-black text-base tracking-tight">{item.name}</span>
-                      <span className={cn(
-                        "text-[10px] font-bold uppercase tracking-widest",
-                        idx === selectedIndex ? "text-white/60" : "text-muted-foreground/60"
-                      )}>
-                        {item.category}
-                      </span>
+        {/* Results Container */}
+        <div className="max-h-[500px] overflow-y-auto p-6 scrollbar-hide">
+          {filteredItems.length > 0 ? (
+            <div className="space-y-6">
+              {['메뉴', '액션', '시스템', '검색'].map(cat => {
+                const catItems = filteredItems.filter(item => item.category === cat);
+                if (catItems.length === 0) return null;
+
+                return (
+                  <div key={cat} className="space-y-2">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] px-4 mb-3 flex items-center gap-3">
+                      <span className="w-4 h-px bg-muted-foreground/30" />
+                      {cat}
+                    </p>
+                    <div className="grid grid-cols-1 gap-1">
+                      {catItems.map((item) => {
+                        const globalIndex = filteredItems.indexOf(item);
+                        const isFocused = globalIndex === selectedIndex;
+
+                        return (
+                          <button
+                            key={item.id}
+                            className={cn(
+                              "w-full flex items-center justify-between p-5 rounded-3xl transition-all duration-300 group text-left",
+                              isFocused
+                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/30 scale-[1.01] z-10"
+                                : "hover:bg-primary/5 text-foreground"
+                            )}
+                            onClick={() => handleSelect(item)}
+                            onMouseEnter={() => setSelectedIndex(globalIndex)}
+                          >
+                            <div className="flex items-center gap-5">
+                              <div className={cn(
+                                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500",
+                                isFocused ? "bg-white/20 rotate-12 scale-110" : "bg-muted group-hover:bg-primary/10 group-hover:rotate-6 shadow-inner"
+                              )}>
+                                {item.icon || <ShieldCheck size={20} />}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-black text-lg tracking-tight leading-none mb-1">{item.name}</span>
+                                {item.description && (
+                                  <span className={cn(
+                                    "text-xs font-bold opacity-60",
+                                    isFocused ? "text-white" : "text-muted-foreground"
+                                  )}>
+                                    {item.description}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={cn(
+                              "transition-all duration-500",
+                              isFocused ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"
+                            )}>
+                              <ArrowRight size={20} />
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                  {idx === selectedIndex && (
-                    <div className="flex items-center gap-2 animate-in slide-in-from-right-2" aria-hidden="true">
-                      <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Execute</span>
-                      <CommandIcon size={14} className="opacity-60" />
-                    </div>
-                  )}
-                </button>
-              ))}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-24 text-center space-y-6">
+              <div className="w-24 h-24 bg-muted/30 rounded-[2.5rem] flex items-center justify-center mx-auto animate-bounce">
+                <Zap size={32} className="text-muted-foreground/20" />
+              </div>
+              <div>
+                <p className="text-xl font-black text-foreground">결과를 찾을 수 없습니다.</p>
+                <p className="text-sm text-muted-foreground font-bold mt-1">도움이 필요하시면 시스템 관리자에게 문의하세요.</p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer Bar */}
-        <div className="bg-muted/30 px-8 py-4 border-t border-primary/5 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/60 uppercase">
-              <kbd className="px-1.5 py-0.5 bg-background border rounded-md font-sans">↑↓</kbd> <span>Navigate</span>
+        {/* Intelligence Footer */}
+        <div className="bg-muted/30 px-10 py-6 border-t border-primary/10 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2">
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">↑↓</kbd>
+              <span className="text-[10px] font-black text-muted-foreground uppercase opacity-60">Move</span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/60 uppercase">
-              <kbd className="px-1.5 py-0.5 bg-background border rounded-md font-sans">Enter</kbd> <span>Select</span>
+            <div className="flex items-center gap-2">
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">ENTER</kbd>
+              <span className="text-[10px] font-black text-muted-foreground uppercase opacity-60">Select</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest" aria-live="polite">
-              {filteredItems.length} results found
-            </span>
+
+          <div className="flex items-center gap-4">
+            <div className="h-6 w-px bg-muted-foreground/20" />
+            <div className="flex items-center gap-3">
+              <Globe size={14} className="text-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest tracking-tighter">
+                System Status: <span className="text-emerald-500">Optimized</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>

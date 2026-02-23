@@ -10,7 +10,7 @@ export function useAutoSave<T>(key: string, data: T, onRestore: (savedData: T) =
 
   // 데이터 저장
   const save = useCallback(() => {
-    if (!data) return;
+    if (!data || typeof window === 'undefined') return;
     localStorage.setItem(`autosave_${key}`, JSON.stringify(data));
     setLastSaved(new Date());
   }, [key, data]);
@@ -23,6 +23,7 @@ export function useAutoSave<T>(key: string, data: T, onRestore: (savedData: T) =
 
   // 수동 복구 로직
   const restore = useCallback(() => {
+    if (typeof window === 'undefined') return false;
     const saved = localStorage.getItem(`autosave_${key}`);
     if (saved) {
       try {
@@ -37,9 +38,12 @@ export function useAutoSave<T>(key: string, data: T, onRestore: (savedData: T) =
 
   // 임시 데이터 삭제 (제출 성공 시 호출)
   const clear = useCallback(() => {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem(`autosave_${key}`);
     setLastSaved(null);
   }, [key]);
 
-  return { lastSaved, save, restore, clear, hasSavedData: !!localStorage.getItem(`autosave_${key}`) };
+  const hasSavedData = typeof window !== 'undefined' ? !!localStorage.getItem(`autosave_${key}`) : false;
+
+  return { lastSaved, save, restore, clear, hasSavedData };
 }

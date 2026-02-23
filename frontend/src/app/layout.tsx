@@ -6,7 +6,7 @@ import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { GlobalCommandCenter } from './components/ui/global-command-center';
-import { StandardOnboardingTour } from './components/ui/standard-onboarding-tour';
+import { SmartOnboardingHub } from './components/ui/smart-onboarding-hub';
 
 export const metadata: Metadata = {
   title: '전자정부 현대화 프로젝트',
@@ -40,7 +40,7 @@ export default function RootLayout({
                 </main>
               </div>
               <GlobalCommandCenter />
-              <StandardOnboardingTour />
+              <SmartOnboardingHub />
             </div>
           </Providers>
         </ThemeProvider>

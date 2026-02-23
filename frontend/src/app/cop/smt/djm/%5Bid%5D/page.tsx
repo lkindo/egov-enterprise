@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,9 @@ import { ArrowLeft } from "lucide-react";
 import { getDeptJobDetail, updateDeptJob, deleteDeptJob } from '@/services/deptJob/deptJobService';
 import { DeptJobVO } from '@/types/deptJob';
 
-export default function DeptJobDetailPage({ params }: { params: { id: string } }) {
+export default function DeptJobDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: deptJobId } = use(params);
     const router = useRouter();
-    const deptJobId = params.id;
     const [formData, setFormData] = useState<DeptJobVO | null>(null);
 
     const fetchData = useCallback(async () => {
