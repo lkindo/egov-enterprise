@@ -49,16 +49,18 @@ export function FormField({
   label, 
   error, 
   children,
-  required 
+  required,
+  htmlFor
 }: { 
   label: string; 
   error?: string; 
   children: React.ReactNode;
   required?: boolean;
+  htmlFor?: string;
 }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-semibold text-foreground flex items-center gap-1">
+      <label htmlFor={htmlFor} className="text-sm font-semibold text-foreground flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
       </label>

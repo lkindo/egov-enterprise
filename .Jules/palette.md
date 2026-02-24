@@ -7,3 +7,11 @@
 ## 2025-05-19 - [Accessibility] Trend Indicators & Icon-Only Links
 **Learning:** Visual-only trend indicators (color + icon) completely exclude screen reader users from understanding key metrics. Using `role="img"` with a descriptive `aria-label` on the wrapper element allows us to provide rich context (e.g., "Increased by 12%") while keeping the UI clean.
 **Action:** For complex visual status indicators, wrap them in `role="img"` with a full text description in `aria-label` and hide the internal decorative icons from assistive technology. Always ensure icon-only links have descriptive `aria-label`s.
+
+## 2025-05-20 - [Accessibility] Form Field Association
+**Learning:** Implicit association (wrapping input in label) changes DOM structure and can break styling. Explicit association (`htmlFor` + `id`) is safer for retrofitting accessibility into existing components.
+**Action:** When enhancing existing form components, prefer adding optional `htmlFor` props over restructuring the component tree.
+
+## 2025-05-20 - [Testing] Playwright & Middleware
+**Learning:** Next.js Middleware runs before client-side Playwright mocks can intercept requests if it checks cookies.
+**Action:** Always set required authentication cookies (even dummy ones) in Playwright context when testing pages protected by server-side middleware.

@@ -80,28 +80,28 @@ export default function ProfileEditPage() {
         }
       >
         <div className="flex flex-col items-center mb-8">
-          <div className="relative group cursor-pointer">
-            <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-card shadow-sm group-hover:opacity-80 transition-all">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-card shadow-sm">
               <User size={64} className="text-muted-foreground" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-              <span className="bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded">변경</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-4 font-medium">프로필 이미지는 준비 중인 기능입니다.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          <FormField label="사용자명" required>
+          <FormField label="사용자명" required htmlFor="userNm">
             <input 
+              id="userNm"
               type="text" 
               value={formData.userNm || ''}
               onChange={(e) => setFormData({...formData, userNm: e.target.value})}
+              required
               className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
           </FormField>
-          <FormField label="아이디 (수정불가)">
+          <FormField label="아이디 (수정불가)" htmlFor="userId">
             <input 
+              id="userId"
               type="text" 
               value={formData.userId || ''}
               readOnly
@@ -110,8 +110,9 @@ export default function ProfileEditPage() {
           </FormField>
         </div>
 
-        <FormField label="이메일 주소">
+        <FormField label="이메일 주소" htmlFor="emailAdres">
           <input 
+            id="emailAdres"
             type="email" 
             value={formData.emailAdres || ''}
             onChange={(e) => setFormData({...formData, emailAdres: e.target.value})}
@@ -120,16 +121,18 @@ export default function ProfileEditPage() {
         </FormField>
 
         <div className="grid grid-cols-2 gap-6">
-          <FormField label="사번">
+          <FormField label="사번" htmlFor="emplNo">
             <input 
+              id="emplNo"
               type="text" 
               value={formData.emplNo || ''}
               onChange={(e) => setFormData({...formData, emplNo: e.target.value})}
               className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
           </FormField>
-          <FormField label="직위">
+          <FormField label="직위" htmlFor="ofcpsNm">
             <input 
+              id="ofcpsNm"
               type="text" 
               value={formData.ofcpsNm || ''}
               onChange={(e) => setFormData({...formData, ofcpsNm: e.target.value})}
