@@ -6,6 +6,7 @@ import com.company.project.core.response.ApiResponse;
 import com.company.project.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import java.util.Map;
 /**
  * 사용자 인증을 위한 REST API 컨트롤러 (JWT 기반)
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class AuthController {
             responseData.put("role", role);
             return ApiResponse.success(responseData);
         } catch (Exception e) {
+            log.error(">>> Login failed for user {}: ", userId, e);
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
     }
@@ -58,7 +61,7 @@ public class AuthController {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
         String userId = jwtTokenProvider.getUserId(refreshToken);
-        String role = "ROLE_USER"; // 실제 서비스에서는 DB 조회 필요
+        String role = "ROLE_USER"; 
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, role);
         Map<String, String> responseData = new HashMap<>();
         responseData.put("accessToken", newAccessToken);

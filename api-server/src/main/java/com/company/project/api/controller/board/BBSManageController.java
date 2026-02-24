@@ -1,26 +1,16 @@
 package com.company.project.api.controller.board;
 
 import com.company.project.service.board.EgovBoardService;
-
 import com.company.project.service.board.dto.BoardDto;
-
 import lombok.RequiredArgsConstructor;
-
 import org.egovframe.rte.fdl.property.EgovPropertyService;
-
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
-
 import org.springframework.data.domain.Page;
-
 import org.springframework.data.domain.PageRequest;
-
 import org.springframework.stereotype.Controller;
-
 import org.springframework.ui.ModelMap;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
 import java.util.Map;
 
 /**
@@ -29,7 +19,6 @@ import java.util.Map;
 @Controller
 @RequiredArgsConstructor
 public class BBSManageController {
-
     private final EgovBoardService boardService;
     private final EgovPropertyService propertiesService;
 
@@ -46,6 +35,7 @@ public class BBSManageController {
 
         int pageUnit = propertiesService.getInt("pageUnit");
         int pageSize = propertiesService.getInt("pageSize");
+
         PaginationInfo paginationInfo = new PaginationInfo();
         paginationInfo.setCurrentPageNo(pageIndex);
         paginationInfo.setRecordCountPerPage(pageUnit);
@@ -57,10 +47,6 @@ public class BBSManageController {
         model.addAttribute("paginationInfo", paginationInfo);
         model.addAttribute("bbsId", bbsId);
 
-        // 공지게시판(BBSMSTR_)인 경우 공지사항 목록 뷰로 이동
-        if (bbsId.startsWith("BBSMSTR_")) {
-            return "cop/bbs/EgovNoticeList";
-        }
         return "cop/bbs/EgovNoticeList";
     }
 }
