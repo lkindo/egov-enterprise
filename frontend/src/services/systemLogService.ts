@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface SystemLog {
   logId: string;
@@ -15,6 +15,7 @@ export interface SystemLog {
 export const systemLogService = {
   getLogs: async (params: { page?: number; size?: number; searchWrd?: string; logType?: string }) => {
     const response = await client.get('/admin/system/logs', { params });
-    return response.data;
+    return response;
   }
 };
+

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface AuditLog {
   histId: string;
@@ -11,10 +11,11 @@ export interface AuditLog {
 
 export const auditService = {
   /**
-   * 감사 로그 목록 조회 (Admin)
+   * 媛먯궗 濡쒓렇 紐⑸줉 議고쉶 (Admin)
    */
   getAuditLogs: async (params: { page?: number; size?: number; keyword?: string }) => {
     const response = await client.get('/admin/audit', { params });
-    return response.data;
+    return response;
   }
 };
+

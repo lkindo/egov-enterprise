@@ -59,13 +59,20 @@ spring:
 logging:
   level:
     root: warn
-    com.company.project: info
-    egovframework: warn
-    org.hibernate.SQL: warn
-    org.hibernate.orm.jdbc.bind: warn
+    com.company.project: debug
+    egovframework: info
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: debug
     org.springframework.security: info
     org.springframework.web: debug
     org.springframework.web.servlet.mvc.method.annotation: trace
+    org.springframework.orm.jpa: debug
+  file:
+    name: logs/backend.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
 
 file:
   upload:

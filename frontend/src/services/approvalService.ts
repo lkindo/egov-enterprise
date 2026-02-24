@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Approval {
   approvalId: string;
@@ -14,26 +14,27 @@ export interface Approval {
 
 export const approvalService = {
   /**
-   * 결재 대기 목록 (받은 결재함)
+   * 寃곗옱 ?湲?紐⑸줉 (諛쏆? 寃곗옱??
    */
   getPending: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/approvals/pending', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 내 결재 신청 이력 (보낸 결재함)
+   * ??寃곗옱 ?좎껌 ?대젰 (蹂대궦 寃곗옱??
    */
   getMyHistory: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/approvals/my', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 결재 승인/반려 처리
+   * 寃곗옱 ?뱀씤/諛섎젮 泥섎━
    */
   confirm: async (id: string, status: 'Y' | 'N', reason?: string) => {
     const response = await client.put(`/approvals/${id}/confirm`, { status, reason });
-    return response.data;
+    return response;
   }
 };
+

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface FAQ {
   faqId: string;
@@ -17,22 +17,23 @@ export interface QNA {
   writngPassword?: string;
   wrterNm: string;
   writngDe: string;
-  qnaProcessSttusCode: string; // 1:접수, 2:답변중, 3:답변완료
+  qnaProcessSttusCode: string; // 1:?묒닔, 2:?듬?以? 3:?듬??꾨즺
 }
 
 export const helpService = {
   getFaqs: async (params: { searchWrd?: string }) => {
     const response = await client.get('/faqs', { params });
-    return response.data;
+    return response;
   },
   
   getQnas: async (params: { page?: number; size?: number; searchWrd?: string }) => {
     const response = await client.get('/qnas', { params });
-    return response.data;
+    return response;
   },
 
   createQna: async (data: Partial<QNA>) => {
     const response = await client.post('/qnas', data);
-    return response.data;
+    return response;
   }
 };
+

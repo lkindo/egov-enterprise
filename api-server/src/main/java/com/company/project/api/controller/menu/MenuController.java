@@ -1,10 +1,12 @@
 package com.company.project.api.controller.menu;
 
+import com.company.project.domain.menu.Menu;
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/menu")
 @RequiredArgsConstructor
@@ -23,8 +26,10 @@ public class MenuController {
 
     @Operation(summary = "GNB 대메뉴 목록 조회")
     @GetMapping("/head")
-    public ResponseEntity<?> getHeadMenu() {
+    public ResponseEntity<Map<String, Object>> getHeadMenu() {
+        log.info("getHeadMenu called");
         List<MenuDto> resultList = menuService.getMenuHierarchy();
+        log.info("getHeadMenu returned {} items", resultList.size());
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("list", resultList);
@@ -33,11 +38,59 @@ public class MenuController {
 
     @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
-    public ResponseEntity<?> getLeftMenu(@RequestParam("menuNo") Long menuNo) {
+    public ResponseEntity<Map<String, Object>> getLeftMenu(@RequestParam("menuNo") Long menuNo) {
+        log.info("getLeftMenu called with menuNo={}", menuNo);
         List<MenuDto> resultList = menuService.getSubMenus(menuNo);
+        log.info("getLeftMenu returned {} items", resultList.size());
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("list", resultList);
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "메뉴 목록 테스트 - Menu 엔티티 직접 반환")
+    @GetMapping("/test/raw")
+    public ResponseEntity<Map<String, Object>> getRawMenus() {
+        log.info("getRawMenus called");
+        try {
+            List<Menu> menus = menuService.getAllMenusCached();
+            log.info("getRawMenus returned {} items", menus.size());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("count", menus.size());
+            result.put("menus", menus);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("getRawMenus failed", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            error.put("exception", e.getClass().getName());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    @Operation(summary = "메뉴 목록 테스트 - Program 조회")
+    @GetMapping("/test/programs")
+    public ResponseEntity<Map<String, Object>> getPrograms() {
+        log.info("getPrograms called");
+        try {
+            List<com.company.project.domain.program.Program> programs = 
+                menuService.getAllPrograms();
+            log.info("getPrograms returned {} items", programs.size());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("count", programs.size());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("getPrograms failed", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            error.put("exception", e.getClass().getName());
+            return ResponseEntity.internalServerError().body(error);
+        }
     }
 }

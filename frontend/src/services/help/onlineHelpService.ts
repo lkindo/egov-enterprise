@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { FaqVO, QnaVO, OnlineHelpSearchParams } from '@/types/onlineHelp';
 
@@ -57,3 +57,4 @@ export const getQnaAnswerList = async (params: OnlineHelpSearchParams) => {
 export const updateQnaAnswer = async (qna: QnaVO) => {
     return client.post('/uss/olh/qna/updateQnaAnswer.do', qna);
 };
+

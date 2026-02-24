@@ -110,10 +110,16 @@ public class JwtTokenProvider {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.error(">>> [JWT] Invalid signature: {}", e.getMessage());
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.error(">>> [JWT] Expired token: {}", e.getMessage());
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.error(">>> [JWT] Malformed token: {}", e.getMessage());
         } catch (Exception e) {
-            log.error("JWT validation failed: {}", e.getMessage());
-            return false;
+            log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
         }
+        return false;
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface FileDetail {
   atchFileId: string;
@@ -14,17 +14,17 @@ export interface FileDetail {
 export const fileMngService = {
   getFiles: async (params: { page?: number; size?: number; searchWrd?: string }) => {
     const response = await client.get('/admin/system/files', { params });
-    return response.data;
+    return response;
   },
 
   deleteFile: async (atchFileId: string, fileSn: number) => {
     const response = await client.delete(`/admin/system/files/${atchFileId}/${fileSn}`);
-    return response.data;
+    return response;
   },
 
   /**
-   * 파일 업로드
-   * @param files 업로드할 파일 리스트
+   * ?뚯씪 ?낅줈??
+   * @param files ?낅줈?쒗븷 ?뚯씪 由ъ뒪??
    * @returns atchFileId
    */
   uploadFiles: async (files: File[]) => {
@@ -34,6 +34,7 @@ export const fileMngService = {
     const response = await client.post('/files', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    return response.data;
+    return response;
   }
 };
+

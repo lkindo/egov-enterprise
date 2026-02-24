@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { WorkReport, ReportSearchParams } from '@/types/schedule';
 
@@ -28,3 +28,4 @@ export const deleteReport = async (reprtId: string) => {
 export const confirmReport = async (reprtId: string) => {
     return client.post(`/cop/smt/wmr/confirmWikMnthngReprt.do?reprtId=${reprtId}`);
 };
+

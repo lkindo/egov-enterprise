@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Note {
   noteId: string;
@@ -14,42 +14,43 @@ export interface Note {
 
 export const noteService = {
   /**
-   * 받은 쪽지함 조회
+   * 諛쏆? 履쎌???議고쉶
    */
   getReceivedNotes: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/notes/received', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 보낸 쪽지함 조회
+   * 蹂대궦 履쎌???議고쉶
    */
   getSentNotes: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/notes/sent', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 쪽지 보내기
+   * 履쎌? 蹂대궡湲?
    */
   sendNote: async (data: { rcverId: string; noteSj: string; noteCn: string }) => {
     const response = await client.post('/notes', data);
-    return response.data;
+    return response;
   },
 
   /**
-   * 쪽지 상세 조회 및 읽음 처리
+   * 履쎌? ?곸꽭 議고쉶 諛??쎌쓬 泥섎━
    */
   getNote: async (id: string) => {
     const response = await client.get(`/notes/${id}`);
-    return response.data;
+    return response;
   },
 
   /**
-   * 쪽지 삭제
+   * 履쎌? ??젣
    */
   deleteNote: async (id: string) => {
     const response = await client.delete(`/notes/${id}`);
-    return response.data;
+    return response;
   }
 };
+

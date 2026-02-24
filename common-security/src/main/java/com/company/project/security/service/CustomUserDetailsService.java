@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
-// @Service - Deactivated to favor EgovAuthenticationProvider explicitly
+@org.springframework.stereotype.Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 

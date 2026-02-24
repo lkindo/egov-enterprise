@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { MenuResponse } from '@/types/menu';
 
 export const menuService = {
@@ -7,7 +7,7 @@ export const menuService = {
    */
   getHeadMenus: async () => {
     const response = await client.get<MenuResponse>('/menu/head');
-    return response.data;
+    return response;
   },
 
   /**
@@ -15,6 +15,7 @@ export const menuService = {
    */
   getLeftMenus: async (menuNo: number) => {
     const response = await client.get<MenuResponse>(`/menu/left?menuNo=${menuNo}`);
-    return response.data;
+    return response;
   }
 };
+

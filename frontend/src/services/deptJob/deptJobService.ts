@@ -1,10 +1,10 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptJobVO, DeptJobBxVO, DeptJobSearchParams } from '@/types/deptJob';
 
 const BASE_URL = '/cop/smt/djm';
 
-// Dept Job (부서업무)
+// Dept Job (遺?쒖뾽臾?
 export const getDeptJobList = async (params: DeptJobSearchParams) => {
     const { data } = await client.get<PaginationResponse<DeptJobVO>>(`${BASE_URL}/selectDeptJobList.do`, { params });
     return data;
@@ -27,9 +27,10 @@ export const deleteDeptJob = async (deptJobId: string) => {
     return client.post(`${BASE_URL}/deleteDeptJob.do?deptJobId=${deptJobId}`);
 };
 
-// Dept Job Box (부서업무함 - for selection)
+// Dept Job Box (遺?쒖뾽臾댄븿 - for selection)
 export const getDeptJobBxList = async () => {
     // Assuming simple list or pagination
     const { data } = await client.get<any>(`${BASE_URL}/selectDeptJobBxList.do`);
     return data?.resultList || [];
 };
+

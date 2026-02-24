@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface UserAbsence {
   userId: string;
@@ -10,13 +10,14 @@ export interface UserAbsence {
 export const absenceService = {
   getAbsences: async (params: { page?: number; size?: number; searchWrd?: string }) => {
     const response = await client.get('/admin/user/absences', { params });
-    return response.data;
+    return response;
   },
 
   updateAbsence: async (userId: string, isAbsent: boolean) => {
     const response = await client.put(`/admin/user/absences/${userId}`, { 
       userAbsnceAt: isAbsent ? 'Y' : 'N' 
     });
-    return response.data;
+    return response;
   }
 };
+

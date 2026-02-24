@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface LoginPolicy {
   emplyrId: string;
@@ -18,16 +18,17 @@ export const loginPolicyService = {
         searchKeyword: params.searchWrd || ''
       }
     });
-    return response.data;
+    return response;
   },
 
   getPolicy: async (emplyrId: string) => {
     const response = await client.get(`/admin/user/login-policies/${emplyrId}`);
-    return response.data;
+    return response;
   },
 
   updatePolicy: async (emplyrId: string, data: Partial<LoginPolicy>) => {
     const response = await client.put(`/admin/user/login-policies/${emplyrId}`, data);
-    return response.data;
+    return response;
   }
 };
+

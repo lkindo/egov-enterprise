@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse, SearchParams, MenuManage } from '@/types/system';
 
 export const getMenuList = async (params: SearchParams) => {
@@ -30,3 +30,4 @@ export const getMenuCreatList = async (params: SearchParams) => {
 export const createMenuCreat = async (menuCreat: any) => {
     return client.post('/sym/mnu/mcm/EgovMenuCreatInsert.do', menuCreat);
 }
+

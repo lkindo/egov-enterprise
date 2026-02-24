@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse, SearchParams, ProgrmManage } from '@/types/system';
 
 export const getProgramList = async (params: SearchParams) => {
@@ -22,3 +22,4 @@ export const updateProgram = async (program: ProgrmManage) => {
 export const deleteProgram = async (progrmFileNm: string) => {
     return client.delete(`/sym/prm/EgovProgramListManageDelete.do?progrmFileNm=${progrmFileNm}`);
 };
+

@@ -15,12 +15,13 @@ export function useNotifications() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const [listRes, countRes] = await Promise.all([
-        client.get('/notifications').catch(() => ({ data: { data: [] } })),
-        client.get('/notifications/unread-count').catch(() => ({ data: { data: 0 } }))
+      // client.ts 인터셉터가 이미 data.data를 풀어서 주므로 바로 사용합니다.
+      const [list, count]: any = await Promise.all([
+        client.get('/notifications').catch(() => []),
+        client.get('/notifications/unread-count').catch(() => 0)
       ]);
-      setNotifications(listRes.data.data || []);
-      setUnreadCount(countRes.data.data || 0);
+      setNotifications(list || []);
+      setUnreadCount(count || 0);
     } catch (e) {
       // Quietly ignore
     }
@@ -37,7 +38,9 @@ export function useNotifications() {
 
   // Initial load and WebSocket subscription
   useEffect(() => {
-    fetchNotifications();
+    if (user) {
+      fetchNotifications();
+    }
 
     if (wsClient && isConnected) {
       // Subscribe to public notifications
@@ -55,7 +58,9 @@ export function useNotifications() {
       };
     } else {
       // Fallback: Poll every 60 seconds if WS is not available
-      const interval = setInterval(fetchNotifications, 60000);
+      const interval = setInterval(() => {
+        if (user) fetchNotifications();
+      }, 60000);
       return () => clearInterval(interval);
     }
   }, [fetchNotifications, wsClient, isConnected, user, handleNewNotification]);

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { UserManage, UserSearchParams } from '@/types/user';
 
@@ -29,3 +29,4 @@ export const checkIdDuplicate = async (userId: string) => {
     const { data } = await client.post('/uss/umt/EgovIdDplctCnfirm.do', { checkId: userId });
     return data;
 };
+

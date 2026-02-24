@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface EventCmpgn {
   eventId: string;
@@ -8,7 +8,7 @@ export interface EventCmpgn {
   eventEndDe: string;
   receptBeginDe: string;
   receptEndDe: string;
-  eventTyCode: string; // 1:행사, 2:캠페인
+  eventTyCode: string; // 1:?됱궗, 2:罹좏럹??
   eventTyNm?: string;
   frstRegisterId?: string;
 }
@@ -16,26 +16,27 @@ export interface EventCmpgn {
 export const eventCmpgnService = {
   getEventCmpgnList: async (params: { page?: number; size?: number; eventCn?: string }) => {
     const response = await client.get('/admin/system/event-campaigns', { params });
-    return response.data;
+    return response;
   },
 
   getEventCmpgn: async (id: string) => {
     const response = await client.get(`/admin/system/event-campaigns/${id}`);
-    return response.data;
+    return response;
   },
 
   createEventCmpgn: async (data: Partial<EventCmpgn>) => {
     const response = await client.post('/admin/system/event-campaigns', data);
-    return response.data;
+    return response;
   },
 
   updateEventCmpgn: async (id: string, data: Partial<EventCmpgn>) => {
     const response = await client.put(`/admin/system/event-campaigns/${id}`, data);
-    return response.data;
+    return response;
   },
 
   deleteEventCmpgn: async (id: string) => {
     const response = await client.delete(`/admin/system/event-campaigns/${id}`);
-    return response.data;
+    return response;
   }
 };
+

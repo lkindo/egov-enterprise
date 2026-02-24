@@ -66,7 +66,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "HOUSE_ADRES", length = 300)
     private String homeadres;
 
-    @Column(name = "CHG_PWD_LAST_PNTTM")
+    @Column(name = "CHG_PWD_LAST_PNTTM", columnDefinition = "TIMESTAMP")
     private LocalDateTime passwordUpdateDate;
 
     @Column(name = "AREA_NO", length = 12)

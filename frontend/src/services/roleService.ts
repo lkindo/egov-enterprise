@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface AuthorInfo {
   authorCode: string;
@@ -8,10 +8,11 @@ export interface AuthorInfo {
 
 export const roleService = {
   /**
-   * 전체 권한 목록 조회
+   * ?꾩껜 沅뚰븳 紐⑸줉 議고쉶
    */
   getAuthors: async () => {
     const response = await client.get('/admin/security/authors');
-    return response.data;
+    return response;
   }
 };
+

@@ -1,5 +1,6 @@
 package com.company.project.service.menu.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "메뉴 정보 DTO")
 public class MenuDto {
     @Schema(description = "ID")

@@ -1,6 +1,8 @@
 package com.company.project.api.config;
 
 import com.company.project.security.service.EgovAuthenticationProvider;
+import com.company.project.security.jwt.JwtAuthenticationFilter;
+import com.company.project.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -13,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -24,9 +27,11 @@ import java.util.List;
 @EnableWebSecurity
 public class ApiSecurityConfig {
     private final EgovAuthenticationProvider egovAuthenticationProvider;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public ApiSecurityConfig(@Lazy EgovAuthenticationProvider egovAuthenticationProvider) {
+    public ApiSecurityConfig(@Lazy EgovAuthenticationProvider egovAuthenticationProvider, JwtTokenProvider jwtTokenProvider) {
         this.egovAuthenticationProvider = egovAuthenticationProvider;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Bean
@@ -37,7 +42,7 @@ public class ApiSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -54,7 +59,7 @@ public class ApiSecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me",
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me", "/api/v1/auth/reissue", "/api/v1/auth/logout",
                         "/api/v1/users/signup",
                         "/api/v1/menu/**", "/api/v1/health",
                         "/api/v1/images/**", "/api/v1/dashboard",
@@ -66,7 +71,8 @@ public class ApiSecurityConfig {
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

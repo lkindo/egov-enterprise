@@ -72,6 +72,7 @@ const Sidebar = () => {
     const searchParams = useSearchParams();
     const [leftMenus, setLeftMenus] = useState<MappedMenuItem[]>([]);
     const [parentMenuName, setParentMenuName] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     // Optimize: Memoize menuNo to prevent redundant API calls on route changes within same section
     const menuNo = useMemo(() => {
@@ -92,6 +93,7 @@ const Sidebar = () => {
 
         if (menuNo > 0) {
             try {
+                setError(null);
                 const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
                 if (response.data.success) {
                     // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
@@ -100,9 +102,14 @@ const Sidebar = () => {
                         mappedUrl: mapLegacyUrl(item.chkURL)
                     }));
                     setLeftMenus(mappedList);
+                } else {
+                    setError('Failed to fetch menus');
+                    setLeftMenus([]);
                 }
-            } catch (error) {
-                console.error('Failed to fetch left menus', error);
+            } catch (err: any) {
+                console.error('Failed to fetch left menus:', err);
+                setError(err.message || 'Failed to fetch menus');
+                setLeftMenus([]);
             }
         } else {
             setLeftMenus([]);
@@ -113,7 +120,7 @@ const Sidebar = () => {
         fetchLeftMenus();
     }, [fetchLeftMenus]);
 
-    if (pathname === '/' || pathname === '/login' || leftMenus.length === 0) {
+    if (pathname === '/' || pathname === '/login') {
         return null;
     }
 
@@ -131,10 +138,18 @@ const Sidebar = () => {
         return false;
     }, [pathname, searchParams]);
 
+    // Don't render sidebar if no menus and not an error state
+    if (leftMenus.length === 0 && !error) {
+        return null;
+    }
+
     return (
         <nav className="nav" aria-label="서브 메뉴">
             <div className="inner">
                 <h2>{parentMenuName}</h2>
+                {error && (
+                    <div className="text-red-500 text-sm p-2">{error}</div>
+                )}
                 <ul className="menu_list">
                     {leftMenus.map((menu) => (
                         <li key={menu.menuNo}>
