@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from '@/lib/api/client';
@@ -13,22 +13,23 @@ interface MenuItem {
 }
 
 const Header = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, loading } = useAuth();
     const [menus, setMenus] = useState<MenuItem[]>([]);
 
-    useEffect(() => {
-        const fetchMenus = async () => {
-            try {
-                const response = await axios.get('/menu/head');
-                if (response.data.success) {
-                    setMenus(response.data.list);
-                }
-            } catch (error) {
-                console.error('Failed to fetch menus', error);
+    const fetchMenus = useCallback(async () => {
+        try {
+            const response = await axios.get('/menu/head');
+            if (response.data.success) {
+                setMenus(response.data.list);
             }
-        };
-        fetchMenus();
+        } catch (error) {
+            console.error('Failed to fetch menus', error);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchMenus();
+    }, [fetchMenus]);
 
     return (
         <div className="header">
@@ -45,7 +46,9 @@ const Header = () => {
                 </div>
 
                 <div className="top_menu">
-                    {user ? (
+                    {loading ? (
+                        <span className="t">로딩중...</span>
+                    ) : user ? (
                         <>
                             <span className="t">
                                 <span style={{ cursor: 'pointer' }}>{user.name} 님</span>의 최종접속정보는

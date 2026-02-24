@@ -19,14 +19,18 @@ const client = axios.create({
     withCredentials: true, // Required for HttpOnly Cookie (Refresh Token)
 });
 
+let isRetrying = false; // Prevent infinite retry loop
+
 client.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
         // Handle 401 Unauthorized (Expired Access Token)
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !isRetrying) {
             originalRequest._retry = true;
+            isRetrying = true;
+            
             try {
                 // Attempt to reissue tokens via HttpOnly cookie
                 const response = await axios.post('/api/v1/auth/token/refresh', {}, { withCredentials: true });
@@ -37,11 +41,15 @@ client.interceptors.response.use(
                 // Save token to local storage or state (if managed globally)
                 localStorage.setItem('accessToken', accessToken);
 
+                isRetrying = false;
                 return client(originalRequest);
             } catch (reissueError) {
                 // If refresh fails, redirect to login
+                isRetrying = false;
                 localStorage.removeItem('accessToken');
-                if (typeof window !== 'undefined') {
+                
+                // Only redirect if not already on login page
+                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
                     window.location.href = '/login?expired=true';
                 }
                 return Promise.reject(reissueError);

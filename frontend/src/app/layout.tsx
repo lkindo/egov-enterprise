@@ -9,7 +9,7 @@ import { GlobalCommandCenter } from './components/ui/global-command-center';
 import { SmartOnboardingHub } from './components/ui/smart-onboarding-hub';
 
 export const metadata: Metadata = {
-  title: '전자정부 현대화 프로젝트',
+  title: '전자정부 프레임워크 모더니제이션',
   description: 'KRDS 기반 모던 전사 공통 모듈',
 };
 
@@ -20,12 +20,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body>
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
+          enableColorScheme
         >
           <Providers>
             <div className="relative flex min-h-screen flex-col">
