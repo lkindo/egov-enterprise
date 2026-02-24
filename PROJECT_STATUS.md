@@ -318,10 +318,15 @@ frontend/src/
 | - 훅 테스트 | 20+ | | |
 | - 유틸리티 테스트 | 30+ | | |
 | - 페이지 테스트 | 50+ | | |
-| **E2E 테스트** | 3 | Playwright | ✅ |
-| - login.spec.ts | | | |
-| - dashboard.spec.ts | | | |
-| - board.spec.ts | | | |
+| **E2E 테스트** | 14+ | Playwright | ✅ 확대 완료 |
+| - login.spec.ts | 인증 플로우 | | ✅ |
+| - dashboard.spec.ts | 메인 대시보드 | | ✅ |
+| - board.spec.ts | 게시판 기본 | | ✅ |
+| - survey.spec.ts | 설문 참여 및 조회 | | ✅ 신규 |
+| - admin-user.spec.ts | 사용자 관리/검색 | | ✅ 신규 |
+| - admin-code.spec.ts | 공통코드 관리 | | ✅ 보강 |
+| - approvals.spec.ts | 전자결재 플로우 | | ✅ 신규 |
+| - 기타 모듈 (bbs, scp, adb, cmy 등) | | | ✅ 보강 |
 
 ### 테스트 실행 명령어
 
@@ -336,7 +341,7 @@ pnpm test              # Vitest 단위 테스트
 pnpm test:e2e          # Playwright E2E 테스트
 ```
 
-**테스트 종합 현황**: ✅ **단위 테스트 대부분 완료, E2E 테스트 확대 필요**
+**테스트 종합 현황**: ✅ **단위 테스트 완료, 주요 비즈니스 플로우 E2E 테스트 확대 완료**
 
 ---
 
