@@ -55,8 +55,8 @@ export default function ProfileEditPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <PageHeader 
-        title="?꾨줈???섏젙" 
-        breadcrumbs={[{ label: '留덉씠?섏씠吏', href: '/mypage' }, { label: '?섏젙' }]}
+        title="Settings" 
+        breadcrumbs={[{ label: 'Settings', href: '/mypage' }, { label: 'Settings' }]}
       />
 
       <StandardForm 
