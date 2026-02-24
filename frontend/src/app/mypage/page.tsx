@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -41,9 +41,9 @@ export default function MyPageDashboard() {
     try {
       setLoading(true);
       const res = await userService.getMe();
-      if (res.success) setProfile(res.data);
+      if (res) setProfile(res);
     } catch (error) {
-      toast('프로필 정보를 불러오는데 실패했습니다.', 'error');
+      toast('?꾨줈???뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.', 'error');
     } finally {
       setLoading(false);
     }
@@ -62,19 +62,19 @@ export default function MyPageDashboard() {
   );
 
   const tabs = [
-    { id: 'dashboard', label: '활동 요약', icon: <Zap size={16} /> },
-    { id: 'profile', label: '개인정보 수정', icon: <User size={16} /> },
-    { id: 'password', label: '비밀번호 변경', icon: <Lock size={16} /> }
+    { id: 'dashboard', label: '?쒕룞 ?붿빟', icon: <Zap size={16} /> },
+    { id: 'profile', label: '媛쒖씤?뺣낫 ?섏젙', icon: <User size={16} /> },
+    { id: 'password', label: '鍮꾨?踰덊샇 蹂寃?, icon: <Lock size={16} /> }
   ];
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700">
       <PageHeader 
         title="Personal Workspace" 
-        breadcrumbs={[{ label: '계정 설정' }, { label: '마이페이지' }]}
+        breadcrumbs={[{ label: '怨꾩젙 ?ㅼ젙' }, { label: '留덉씠?섏씠吏' }]}
         actions={
           <Button variant="outline" className="rounded-xl border-2 font-bold gap-2">
-            <LogOut size={18} /> 로그아웃
+            <LogOut size={18} /> 濡쒓렇?꾩썐
           </Button>
         }
       />
@@ -104,10 +104,10 @@ export default function MyPageDashboard() {
               <p className="text-sm text-muted-foreground font-medium mb-8">@{profile?.userId}</p>
               
               <div className="space-y-4 pt-6 border-t border-primary/5">
-                <InfoItem icon={<Briefcase size={14} />} label="소속" value={profile?.role || '전략기획팀'} />
-                <InfoItem icon={<Mail size={14} />} label="이메일" value={profile?.emailAdres || 'user@egov.go.kr'} />
-                <InfoItem icon={<Phone size={14} />} label="연락처" value={profile?.moblphonNo || '010-1234-5678'} />
-                <InfoItem icon={<Calendar size={14} />} label="가입일" value="2026.01.15" />
+                <InfoItem icon={<Briefcase size={14} />} label="?뚯냽" value={profile?.role || '?꾨왂湲고쉷?'} />
+                <InfoItem icon={<Mail size={14} />} label="?대찓?? value={profile?.emailAdres || 'user@egov.go.kr'} />
+                <InfoItem icon={<Phone size={14} />} label="?곕씫泥? value={profile?.moblphonNo || '010-1234-5678'} />
+                <InfoItem icon={<Calendar size={14} />} label="媛?낆씪" value="2026.01.15" />
               </div>
             </div>
           </div>
@@ -142,40 +142,39 @@ export default function MyPageDashboard() {
             {activeTab === 'dashboard' && (
               <div className="space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <StatCard title="작성한 게시글" count={12} icon={<Edit3 size={20} />} color="blue" />
-                  <StatCard title="받은 알림" count={45} icon={<History size={20} />} color="purple" />
-                  <StatCard title="완료한 업무" count={8} icon={<CheckCircle2 size={20} />} color="emerald" />
+                  <StatCard title="?묒꽦??寃뚯떆湲" count={12} icon={<Edit3 size={20} />} color="blue" />
+                  <StatCard title="諛쏆? ?뚮┝" count={45} icon={<History size={20} />} color="purple" />
+                  <StatCard title="?꾨즺???낅Т" count={8} icon={<CheckCircle2 size={20} />} color="emerald" />
                 </div>
 
                 <div className="bg-card border-2 border-primary/5 rounded-[3rem] shadow-xl overflow-hidden">
                   <div className="px-10 py-8 border-b border-primary/5 flex items-center justify-between bg-muted/5">
                     <h3 className="text-xl font-black flex items-center gap-3">
                       <Clock size={22} className="text-primary" />
-                      나의 최근 활동 타임라인
-                    </h3>
+                      ?섏쓽 理쒓렐 ?쒕룞 ??꾨씪??                    </h3>
                     <Button variant="ghost" size="sm" className="font-bold text-xs gap-1">
-                      전체보기 <ArrowRight size={14} />
+                      ?꾩껜蹂닿린 <ArrowRight size={14} />
                     </Button>
                   </div>
                   <div className="p-10 space-y-8">
                     <ActivityItem 
-                      title="게시글 등록" 
-                      desc="'2026년 상반기 혁신 전략' 글을 성공적으로 등록했습니다." 
-                      time="2시간 전"
+                      title="寃뚯떆湲 ?깅줉" 
+                      desc="'2026???곷컲湲??곸떊 ?꾨왂' 湲???깃났?곸쑝濡??깅줉?덉뒿?덈떎." 
+                      time="2?쒓컙 ??
                       icon={<Edit3 size={14} />}
                       type="success"
                     />
                     <ActivityItem 
-                      title="정보 수정" 
-                      desc="프로필 사진 및 연락처 정보를 업데이트했습니다." 
-                      time="어제"
+                      title="?뺣낫 ?섏젙" 
+                      desc="?꾨줈???ъ쭊 諛??곕씫泥??뺣낫瑜??낅뜲?댄듃?덉뒿?덈떎." 
+                      time="?댁젣"
                       icon={<User size={14} />}
                       type="info"
                     />
                     <ActivityItem 
-                      title="결재 완료" 
-                      desc="팀 주간 회의 비용 정산 건이 최종 승인되었습니다." 
-                      time="3일 전"
+                      title="寃곗옱 ?꾨즺" 
+                      desc="? 二쇨컙 ?뚯쓽 鍮꾩슜 ?뺤궛 嫄댁씠 理쒖쥌 ?뱀씤?섏뿀?듬땲??" 
+                      time="3????
                       icon={<CheckCircle2 size={14} />}
                       type="success"
                     />
@@ -187,27 +186,27 @@ export default function MyPageDashboard() {
             {activeTab === 'profile' && (
               <div className="bg-card border-2 border-primary/5 rounded-[3rem] shadow-xl p-10 md:p-16">
                 <div className="mb-12 space-y-2 text-center md:text-left">
-                  <h3 className="text-3xl font-black tracking-tight">개인정보 수정</h3>
-                  <p className="text-muted-foreground font-medium">최신 정보를 유지하여 사내 소통을 원활하게 관리하세요.</p>
+                  <h3 className="text-3xl font-black tracking-tight">媛쒖씤?뺣낫 ?섏젙</h3>
+                  <p className="text-muted-foreground font-medium">理쒖떊 ?뺣낫瑜??좎??섏뿬 ?щ궡 ?뚰넻???먰솢?섍쾶 愿由ы븯?몄슂.</p>
                 </div>
-                <StandardForm onSubmit={() => toast('저장되었습니다.', 'success')}>
+                <StandardForm onSubmit={() => toast('??λ릺?덉뒿?덈떎.', 'success')}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                    <FormField label="사용자 성명" required>
+                    <FormField label="?ъ슜???깅챸" required>
                       <Input defaultValue={profile?.userNm} className="h-14 rounded-2xl border-primary/10 font-bold px-6" />
                     </FormField>
-                    <FormField label="이메일 주소" required>
+                    <FormField label="?대찓??二쇱냼" required>
                       <Input type="email" defaultValue={profile?.emailAdres} className="h-14 rounded-2xl border-primary/10 font-bold px-6" />
                     </FormField>
-                    <FormField label="휴대전화 번호">
+                    <FormField label="?대??꾪솕 踰덊샇">
                       <Input defaultValue={profile?.moblphonNo} className="h-14 rounded-2xl border-primary/10 font-bold px-6" />
                     </FormField>
-                    <FormField label="직급 / 부서">
-                      <Input defaultValue={profile?.role || '전략기획팀'} className="h-14 rounded-2xl border-primary/10 font-bold px-6" />
+                    <FormField label="吏곴툒 / 遺??>
+                      <Input defaultValue={profile?.role || '?꾨왂湲고쉷?'} className="h-14 rounded-2xl border-primary/10 font-bold px-6" />
                     </FormField>
                   </div>
                   <div className="flex justify-end pt-8 border-t border-primary/5">
                     <Button type="submit" size="lg" className="h-16 px-12 rounded-[1.5rem] font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                      프로필 정보 업데이트
+                      ?꾨줈???뺣낫 ?낅뜲?댄듃
                     </Button>
                   </div>
                 </StandardForm>
@@ -217,23 +216,23 @@ export default function MyPageDashboard() {
             {activeTab === 'password' && (
               <div className="bg-card border-2 border-primary/5 rounded-[3rem] shadow-xl p-10 md:p-16 max-w-2xl">
                 <div className="mb-12 space-y-2">
-                  <h3 className="text-3xl font-black tracking-tight">비밀번호 변경</h3>
-                  <p className="text-muted-foreground font-medium">보안을 위해 주기적으로 비밀번호를 변경하는 것을 권장합니다.</p>
+                  <h3 className="text-3xl font-black tracking-tight">鍮꾨?踰덊샇 蹂寃?/h3>
+                  <p className="text-muted-foreground font-medium">蹂댁븞???꾪빐 二쇨린?곸쑝濡?鍮꾨?踰덊샇瑜?蹂寃쏀븯??寃껋쓣 沅뚯옣?⑸땲??</p>
                 </div>
-                <StandardForm onSubmit={() => toast('비밀번호가 변경되었습니다.', 'success')} className="space-y-8">
-                  <FormField label="현재 비밀번호" required>
-                    <Input type="password" placeholder="••••••••" className="h-14 rounded-2xl border-primary/10 px-6" />
+                <StandardForm onSubmit={() => toast('鍮꾨?踰덊샇媛 蹂寃쎈릺?덉뒿?덈떎.', 'success')} className="space-y-8">
+                  <FormField label="?꾩옱 鍮꾨?踰덊샇" required>
+                    <Input type="password" placeholder="?™™™™™™™? className="h-14 rounded-2xl border-primary/10 px-6" />
                   </FormField>
                   <div className="h-px bg-primary/5 my-4" />
-                  <FormField label="새 비밀번호" required>
-                    <Input type="password" placeholder="최소 8자 이상" className="h-14 rounded-2xl border-primary/10 px-6" />
+                  <FormField label="??鍮꾨?踰덊샇" required>
+                    <Input type="password" placeholder="理쒖냼 8???댁긽" className="h-14 rounded-2xl border-primary/10 px-6" />
                   </FormField>
-                  <FormField label="새 비밀번호 확인" required>
-                    <Input type="password" placeholder="비밀번호 재입력" className="h-14 rounded-2xl border-primary/10 px-6" />
+                  <FormField label="??鍮꾨?踰덊샇 ?뺤씤" required>
+                    <Input type="password" placeholder="鍮꾨?踰덊샇 ?ъ엯?? className="h-14 rounded-2xl border-primary/10 px-6" />
                   </FormField>
                   <div className="pt-8 flex justify-end">
                     <Button type="submit" size="lg" className="h-16 px-12 rounded-[1.5rem] font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                      비밀번호 변경 완료
+                      鍮꾨?踰덊샇 蹂寃??꾨즺
                     </Button>
                   </div>
                 </StandardForm>
@@ -302,3 +301,4 @@ function ActivityItem({ title, desc, time, icon, type }: any) {
     </div>
   );
 }
+

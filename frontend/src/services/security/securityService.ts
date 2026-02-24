@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse, SearchParams } from '@/types/system';
 import { AuthorManage, RoleManage, GroupManage } from '@/types/security';
 
@@ -66,3 +66,4 @@ export const updateGroup = async (group: GroupManage) => {
 export const deleteGroup = async (groupId: string) => {
     return client.post(`/sec/gmt/EgovGroupDelete.do?groupId=${groupId}`);
 };
+

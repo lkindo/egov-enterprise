@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Community {
   cmmntyId: string;
@@ -13,16 +13,17 @@ export interface Community {
 export const communityService = {
   getCommunities: async (params: { page?: number; size?: number; searchWrd?: string }) => {
     const response = await client.get('/admin/communities', { params });
-    return response.data;
+    return response;
   },
 
   createCommunity: async (data: Partial<Community>) => {
     const response = await client.post('/admin/communities', data);
-    return response.data;
+    return response;
   },
 
   deleteCommunity: async (id: string) => {
     const response = await client.delete(`/admin/communities/${id}`);
-    return response.data;
+    return response;
   }
 };
+

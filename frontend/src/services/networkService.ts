@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Network {
   ntwrkId: string;
@@ -16,27 +16,27 @@ export interface Network {
 export const networkService = {
   getNetworks: async (params: { page?: number; size?: number; manageIem?: string; userNm?: string }) => {
     const response = await client.get('/admin/system/networks', { params });
-    return response.data;
+    return response;
   },
 
   getNetwork: async (id: string) => {
     const response = await client.get(`/admin/system/networks/${id}`);
-    return response.data;
+    return response;
   },
 
   createNetwork: async (data: Omit<Network, 'ntwrkId'>) => {
     const response = await client.post('/admin/system/networks', data);
-    return response.data;
+    return response;
   },
 
   updateNetwork: async (id: string, data: Partial<Network>) => {
     const response = await client.put(`/admin/system/networks/${id}`, data);
-    return response.data;
+    return response;
   },
 
   deleteNetwork: async (id: string) => {
     const response = await client.delete(`/admin/system/networks/${id}`);
-    return response.data;
+    return response;
   },
 
   getNetworkLogs: async (params: { ntwrkId: string; page?: number; size?: number }) => {
@@ -52,3 +52,4 @@ export type NetworkServiceStatus = {
   svcSttus: string;
   logDt: string;
 };
+

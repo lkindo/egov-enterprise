@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { StplatManageVO, TermsSearchParams } from '@/types/terms';
 
@@ -25,3 +25,4 @@ export const updateTerms = async (terms: StplatManageVO) => {
 export const deleteTerms = async (useStplatId: string) => {
     return client.post(`${BASE_URL}/StplatCnDelete.do?useStplatId=${useStplatId}`);
 };
+

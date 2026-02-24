@@ -44,74 +44,96 @@ public class MenuService {
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
 
-    @Autowired
-    @Lazy
-    private MenuService self;
-
     @Cacheable(value = "menuHierarchy")
     public List<MenuDto> getMenuHierarchy() {
-        List<Menu> menus = self.getAllMenusCached();
-        List<Program> programs = programRepository.findAll();
-        Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+        try {
+            log.debug("getMenuHierarchy started");
+            List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+            log.debug("Loaded {} menus", menus.size());
+            
+            List<Program> programs = programRepository.findAll();
+            log.debug("Loaded {} programs", programs.size());
+            
+            Map<String, Program> programMap = programs.stream()
+                    .filter(p -> p.getProgrmFileNm() != null)
+                    .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
-        Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
-        List<MenuDto> rootMenus = new ArrayList<>();
+            Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
+            List<MenuDto> rootMenus = new ArrayList<>();
 
-        for (Menu menu : menus) {
-            String url = "#";
-            String progrm = menu.getProgrmFileNm();
+            for (Menu menu : menus) {
+                try {
+                    String url = "#";
+                    String progrm = menu.getProgrmFileNm();
 
-            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                if (programMap.containsKey(progrm)) {
-                    String progrmUrl = programMap.get(progrm).getUrl();
-                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                } else {
-                    url = "/";
+                    if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                        Program program = programMap.get(progrm);
+                        if (program != null && program.getUrl() != null) {
+                            String progrmUrl = program.getUrl();
+                            url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                        } else {
+                            url = "/";
+                        }
+                    }
+
+                    MenuDto dto = MenuDto.builder()
+                            .id(menu.getId())
+                            .menuNo(menu.getId())
+                            .menuNm(menu.getMenuNm())
+                            .progrmFileNm(menu.getProgrmFileNm())
+                            .upperMenuNo(menu.getUpperMenuNo())
+                            .upperMenuId(menu.getUpperMenuNo())
+                            .menuOrdr(menu.getMenuOrdr())
+                            .chkURL(url)
+                            .relateImagePath(menu.getRelateImagePath())
+                            .relateImageNm(menu.getRelateImageNm())
+                            .build();
+
+                    menuMap.put(dto.getId(), dto);
+
+                    Long upperMenuNo = dto.getUpperMenuNo();
+                    if (upperMenuNo == null || upperMenuNo == 0) {
+                        if (dto.getId() != null && dto.getId() != 0) {
+                            rootMenus.add(dto);
+                        }
+                    } else {
+                        MenuDto parent = menuMap.get(upperMenuNo);
+                        if (parent != null) {
+                            parent.addChild(dto);
+                        } else {
+                            rootMenus.add(dto);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Error processing menu: menuId={}, menuNm={}", menu.getId(), menu.getMenuNm(), e);
+                    throw e;
                 }
             }
 
-            MenuDto dto = MenuDto.builder()
-                    .id(menu.getId())
-                    .menuNo(menu.getId())
-                    .menuNm(menu.getMenuNm())
-                    .progrmFileNm(menu.getProgrmFileNm())
-                    .upperMenuNo(menu.getUpperMenuNo())
-                    .upperMenuId(menu.getUpperMenuNo())
-                    .menuOrdr(menu.getMenuOrdr())
-                    .chkURL(url)
-                    .relateImagePath(menu.getRelateImagePath())
-                    .relateImageNm(menu.getRelateImageNm())
-                    .build();
-
-            menuMap.put(dto.getId(), dto);
-
-            if (dto.getUpperMenuNo() == 0) {
-                if (dto.getId() != 0) {
-                    rootMenus.add(dto);
-                }
-            } else {
-                MenuDto parent = menuMap.get(dto.getUpperMenuNo());
-                if (parent != null) {
-                    parent.addChild(dto);
-                } else {
-                    rootMenus.add(dto);
-                }
-            }
+            log.debug("getMenuHierarchy completed with {} root menus", rootMenus.size());
+            return rootMenus;
+        } catch (Exception e) {
+            log.error("getMenuHierarchy failed", e);
+            throw e;
         }
-
-        return rootMenus;
     }
 
-    @Cacheable(value = "allMenus")
+    @Cacheable(value = "allMenus", unless = "#result == null")
     public List<Menu> getAllMenusCached() {
-        return menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        log.debug("getAllMenusCached started");
+        try {
+            List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+            log.debug("getAllMenusCached loaded {} menus", menus.size());
+            return menus;
+        } catch (Exception e) {
+            log.error("getAllMenusCached failed", e);
+            throw e;
+        }
     }
 
     @Cacheable(value = "menuParentMap")
     public Map<Long, Long> getMenuParentMapCached() {
-        List<Menu> allMenus = self.getAllMenusCached();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
             parentMap.put(m.getId(), m.getUpperMenuNo());
@@ -121,7 +143,7 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        List<Menu> menus = self.getAllMenusCached();
+        List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
@@ -134,8 +156,9 @@ public class MenuService {
             String progrm = menu.getProgrmFileNm();
 
             if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                if (programMap.containsKey(progrm)) {
-                    String progrmUrl = programMap.get(progrm).getUrl();
+                Program program = programMap.get(progrm);
+                if (program != null && program.getUrl() != null) {
+                    String progrmUrl = program.getUrl();
                     url = "/".equals(progrmUrl) ? "#" : progrmUrl;
                 } else {
                     url = "/";
@@ -158,6 +181,11 @@ public class MenuService {
             result.add(dto);
         }
         return result;
+    }
+
+    public List<Program> getAllPrograms() {
+        log.debug("getAllPrograms called");
+        return programRepository.findAll();
     }
 
     public List<MenuCreateDto> selectMenuCreatManagList(@NonNull ComDefaultVO searchVO) {
@@ -320,7 +348,11 @@ public class MenuService {
             return null;
         }
 
-        Map<Long, Long> parentMap = self.getMenuParentMapCached();
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        Map<Long, Long> parentMap = new HashMap<>();
+        for (Menu m : allMenus) {
+            parentMap.put(m.getId(), m.getUpperMenuNo());
+        }
 
         Long currentId = currentMenu.getId();
         Long upperId = currentMenu.getUpperMenuNo();

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Scrap {
   scrapId: string;
@@ -10,18 +10,19 @@ export interface Scrap {
 
 export const scrapService = {
   /**
-   * 나의 스크랩 목록 조회
+   * ?섏쓽 ?ㅽ겕??紐⑸줉 議고쉶
    */
   getMyScraps: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/scraps', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 스크랩 삭제
+   * ?ㅽ겕????젣
    */
   deleteScrap: async (id: string) => {
     const response = await client.delete(`/scraps/${id}`);
-    return response.data;
+    return response;
   }
 };
+

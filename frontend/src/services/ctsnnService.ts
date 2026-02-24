@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface CtsnnManage {
   ctsnnId: string;
@@ -19,31 +19,32 @@ export interface CtsnnManage {
 export const ctsnnService = {
   getCtsnnList: async (params: { page?: number; size?: number; usid?: string }) => {
     const response = await client.get('/admin/system/ctsnn', { params });
-    return response.data;
+    return response;
   },
 
   getCtsnn: async (id: string) => {
     const response = await client.get(`/admin/system/ctsnn/${id}`);
-    return response.data;
+    return response;
   },
 
   createCtsnn: async (data: Partial<CtsnnManage>) => {
     const response = await client.post('/admin/system/ctsnn', data);
-    return response.data;
+    return response;
   },
 
   updateCtsnn: async (id: string, data: Partial<CtsnnManage>) => {
     const response = await client.put(`/admin/system/ctsnn/${id}`, data);
-    return response.data;
+    return response;
   },
 
   deleteCtsnn: async (id: string) => {
     const response = await client.delete(`/admin/system/ctsnn/${id}`);
-    return response.data;
+    return response;
   },
 
   approveCtsnn: async (id: string) => {
     const response = await client.post(`/admin/system/ctsnn/${id}/approve`);
-    return response.data;
+    return response;
   }
 };
+

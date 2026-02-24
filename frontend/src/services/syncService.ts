@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface SyncServer {
   serverId: string;
@@ -12,42 +12,43 @@ export interface SyncServer {
 
 export const syncService = {
   /**
-   * 동기화 서버 목록 조회
+   * ?숆린???쒕쾭 紐⑸줉 議고쉶
    */
   getSyncServers: async () => {
     const response = await client.get('/admin/system/sync-servers');
-    return response.data;
+    return response;
   },
 
   /**
-   * 서버 동기화 강제 실행
+   * ?쒕쾭 ?숆린??媛뺤젣 ?ㅽ뻾
    */
   executeSync: async (id: string) => {
     const response = await client.post(`/admin/system/sync-servers/${id}/execute`);
-    return response.data;
+    return response;
   },
 
   /**
-   * 동기화 서버 생성
+   * ?숆린???쒕쾭 ?앹꽦
    */
   createSyncServer: async (data: Omit<SyncServer, 'serverId'>) => {
     const response = await client.post('/admin/system/sync-servers', data);
-    return response.data;
+    return response;
   },
 
   /**
-   * 동기화 서버 수정
+   * ?숆린???쒕쾭 ?섏젙
    */
   updateSyncServer: async (id: string, data: Partial<SyncServer>) => {
     const response = await client.put(`/admin/system/sync-servers/${id}`, data);
-    return response.data;
+    return response;
   },
 
   /**
-   * 동기화 서버 삭제
+   * ?숆린???쒕쾭 ??젣
    */
   deleteSyncServer: async (id: string) => {
     const response = await client.delete(`/admin/system/sync-servers/${id}`);
-    return response.data;
+    return response;
   }
 };
+

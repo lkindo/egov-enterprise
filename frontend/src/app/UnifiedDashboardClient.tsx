@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -59,8 +59,15 @@ export default function UnifiedDashboardClient({
   const [notiList] = useState(initialNotiList);
   const [taskList] = useState(initialTaskList);
 
-  // Show skeleton while loading
-  if (loading) {
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  // Show skeleton while loading or if redirecting
+  if (loading || !user) {
     return (
       <div className="space-y-8 pb-10 animate-pulse">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
@@ -82,12 +89,6 @@ export default function UnifiedDashboardClient({
         </div>
       </div>
     );
-  }
-
-  // Redirect to login if not authenticated
-  if (!user) {
-    router.push('/login');
-    return null;
   }
 
   return (

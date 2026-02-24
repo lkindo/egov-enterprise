@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/schedule';
 
@@ -29,3 +29,4 @@ export const updateDeptSchedule = async (schedule: DeptSchedule) => {
 export const deleteDeptSchedule = async (schdulId: string) => {
     return client.post(`/cop/smt/sdm/EgovDeptSchdulManageDelete.do?schdulId=${schdulId}`);
 };
+

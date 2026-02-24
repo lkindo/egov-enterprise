@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/poll';
 
@@ -64,3 +64,4 @@ export const getPollResult = async (pollId: string) => {
     const { data } = await client.get(`/uss/olp/opp/egovOnlinePollManageStatistics.do?pollId=${pollId}`);
     return data;
 };
+

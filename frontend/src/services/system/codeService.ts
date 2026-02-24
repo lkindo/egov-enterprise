@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse, SearchParams, CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/system';
 
 // Classification Code
@@ -69,3 +69,4 @@ export const updateDetailCode = async (code: CmmnDetailCode) => {
 export const deleteDetailCode = async (codeId: string, code: string) => {
     return client.delete(`/sym/ccm/cde/EgovCcmCmmnDetailCodeRemove.do?codeId=${codeId}&code=${code}`);
 };
+

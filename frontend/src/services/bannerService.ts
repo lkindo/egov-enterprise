@@ -1,52 +1,53 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { Banner } from '@/types/banner';
 
 export const bannerService = {
   /**
-   * 배너 목록 조회 (Admin)
+   * 諛곕꼫 紐⑸줉 議고쉶 (Admin)
    */
   getBanners: async (params: { page?: number; size?: number; keyword?: string }) => {
     const response = await client.get('/banners', { params });
-    return response.data;
+    return response;
   },
 
   /**
-   * 반영된 배너 목록 조회 (전시용)
+   * 諛섏쁺??諛곕꼫 紐⑸줉 議고쉶 (?꾩떆??
    */
   getReflectedBanners: async () => {
     const response = await client.get('/banners/reflected');
-    return response.data;
+    return response;
   },
 
   /**
-   * 배너 상세 조회
+   * 諛곕꼫 ?곸꽭 議고쉶
    */
   getBanner: async (bannerId: string) => {
     const response = await client.get(`/banners/${bannerId}`);
-    return response.data;
+    return response;
   },
 
   /**
-   * 배너 등록
+   * 諛곕꼫 ?깅줉
    */
   createBanner: async (data: Banner) => {
     const response = await client.post('/banners', data);
-    return response.data;
+    return response;
   },
 
   /**
-   * 배너 수정
+   * 諛곕꼫 ?섏젙
    */
   updateBanner: async (bannerId: string, data: Banner) => {
     const response = await client.put(`/banners/${bannerId}`, data);
-    return response.data;
+    return response;
   },
 
   /**
-   * 배너 삭제
+   * 諛곕꼫 ??젣
    */
   deleteBanner: async (bannerId: string) => {
     const response = await client.delete(`/banners/${bannerId}`);
-    return response.data;
+    return response;
   }
 };
+

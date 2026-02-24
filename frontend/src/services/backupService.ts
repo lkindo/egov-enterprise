@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface BackupOpert {
   backupOpertId: string;
@@ -33,31 +33,32 @@ export interface BackupResult {
 export const backupService = {
   getOperations: async (params: { page?: number; size?: number; keyword?: string; condition?: string }) => {
     const response = await client.get('/admin/system/backups/operations', { params });
-    return response.data;
+    return response;
   },
 
   getOperation: async (id: string) => {
     const response = await client.get(`/admin/system/backups/operations/${id}`);
-    return response.data;
+    return response;
   },
 
   createOperation: async (data: Partial<BackupOpert>) => {
     const response = await client.post('/admin/system/backups/operations', data);
-    return response.data;
+    return response;
   },
 
   updateOperation: async (id: string, data: Partial<BackupOpert>) => {
     const response = await client.put(`/admin/system/backups/operations/${id}`, data);
-    return response.data;
+    return response;
   },
 
   deleteOperation: async (id: string) => {
     const response = await client.delete(`/admin/system/backups/operations/${id}`);
-    return response.data;
+    return response;
   },
 
   getResults: async (params: { page?: number; size?: number; sttus?: string; keyword?: string; condition?: string }) => {
     const response = await client.get('/admin/system/backups/results', { params });
-    return response.data;
+    return response;
   }
 };
+

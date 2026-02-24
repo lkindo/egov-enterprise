@@ -15,15 +15,22 @@ interface MenuItem {
 const Header = () => {
     const { user, logout, loading } = useAuth();
     const [menus, setMenus] = useState<MenuItem[]>([]);
+    const [menuError, setMenuError] = useState<string | null>(null);
 
     const fetchMenus = useCallback(async () => {
         try {
+            setMenuError(null);
             const response = await axios.get('/menu/head');
             if (response.data.success) {
                 setMenus(response.data.list);
+            } else {
+                setMenuError('Failed to fetch menus');
+                setMenus([]);
             }
-        } catch (error) {
-            console.error('Failed to fetch menus', error);
+        } catch (err: any) {
+            console.error('Failed to fetch menus:', err);
+            setMenuError(err.message || 'Failed to fetch menus');
+            setMenus([]);
         }
     }, []);
 

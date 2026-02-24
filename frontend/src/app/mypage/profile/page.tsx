@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -21,9 +21,9 @@ export default function ProfileEditPage() {
     async function loadProfile() {
       try {
         const res = await userService.getMe();
-        if (res.success) setFormData(res.data);
+        if (res) setFormData(res);
       } catch (error) {
-        toast('프로필 정보를 불러오는데 실패했습니다.', 'error');
+        toast('?꾨줈???뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.', 'error');
       } finally {
         setLoading(false);
       }
@@ -35,28 +35,28 @@ export default function ProfileEditPage() {
     e.preventDefault();
     
     const isConfirmed = await confirm({
-      title: '프로필 수정',
-      message: '입력하신 정보로 프로필을 업데이트하시겠습니까?'
+      title: '?꾨줈???섏젙',
+      message: '?낅젰?섏떊 ?뺣낫濡??꾨줈?꾩쓣 ?낅뜲?댄듃?섏떆寃좎뒿?덇퉴?'
     });
 
     if (!isConfirmed) return;
 
     try {
       await userService.updateMe(formData);
-      toast('프로필이 성공적으로 수정되었습니다.', 'success');
+      toast('?꾨줈?꾩씠 ?깃났?곸쑝濡??섏젙?섏뿀?듬땲??', 'success');
       router.push('/mypage');
     } catch (error) {
-      toast('수정 중 오류가 발생했습니다.', 'error');
+      toast('?섏젙 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     }
   };
 
-  if (loading) return <div className="p-12 text-center animate-pulse font-medium">로딩 중...</div>;
+  if (loading) return <div className="p-12 text-center animate-pulse font-medium">濡쒕뵫 以?..</div>;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <PageHeader 
-        title="프로필 수정" 
-        breadcrumbs={[{ label: '마이페이지', href: '/mypage' }, { label: '수정' }]}
+        title="?꾨줈???섏젙" 
+        breadcrumbs={[{ label: '留덉씠?섏씠吏', href: '/mypage' }, { label: '?섏젙' }]}
       />
 
       <StandardForm 
@@ -68,13 +68,13 @@ export default function ProfileEditPage() {
               onClick={() => router.back()}
               className="px-4 py-2 border rounded-lg font-bold hover:bg-accent flex items-center gap-2"
             >
-              <X size={18} /> 취소
+              <X size={18} /> 痍⑥냼
             </button>
             <button 
               type="submit"
               className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 flex items-center gap-2"
             >
-              <Save size={18} /> 저장하기
+              <Save size={18} /> ??ν븯湲?
             </button>
           </>
         }
@@ -85,14 +85,14 @@ export default function ProfileEditPage() {
               <User size={64} className="text-muted-foreground" />
             </div>
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-              <span className="bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded">변경</span>
+              <span className="bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded">蹂寃?/span>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-4 font-medium">프로필 이미지는 준비 중인 기능입니다.</p>
+          <p className="text-xs text-muted-foreground mt-4 font-medium">?꾨줈???대?吏??以鍮?以묒씤 湲곕뒫?낅땲??</p>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          <FormField label="사용자명" required>
+          <FormField label="?ъ슜?먮챸" required>
             <input 
               type="text" 
               value={formData.userNm || ''}
@@ -100,7 +100,7 @@ export default function ProfileEditPage() {
               className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
           </FormField>
-          <FormField label="아이디 (수정불가)">
+          <FormField label="?꾩씠??(?섏젙遺덇?)">
             <input 
               type="text" 
               value={formData.userId || ''}
@@ -110,7 +110,7 @@ export default function ProfileEditPage() {
           </FormField>
         </div>
 
-        <FormField label="이메일 주소">
+        <FormField label="?대찓??二쇱냼">
           <input 
             type="email" 
             value={formData.emailAdres || ''}
@@ -120,7 +120,7 @@ export default function ProfileEditPage() {
         </FormField>
 
         <div className="grid grid-cols-2 gap-6">
-          <FormField label="사번">
+          <FormField label="?щ쾲">
             <input 
               type="text" 
               value={formData.emplNo || ''}
@@ -128,7 +128,7 @@ export default function ProfileEditPage() {
               className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
           </FormField>
-          <FormField label="직위">
+          <FormField label="吏곸쐞">
             <input 
               type="text" 
               value={formData.ofcpsNm || ''}
@@ -141,3 +141,4 @@ export default function ProfileEditPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse, SearchParams, SysLog, UserLog, LoginLog, WebLog, PrivacyLog, TransferLog } from '@/types/system';
 
 export const getSysLogList = async (params: SearchParams) => {
@@ -64,3 +64,4 @@ export const getTransferLog = async (logId: string) => {
     const { data } = await client.get<TransferLog>(`/sym/log/tlg/SelectTrsmrcvLogDetail.do?logId=${logId}`);
     return data;
 };
+

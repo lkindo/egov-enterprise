@@ -40,7 +40,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-[url('/images/login-bg.jpg')] bg-cover bg-center">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-[url('/images/login-bg.png')] bg-cover bg-center">
             {/* Overlay for better readability if background image is used */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 

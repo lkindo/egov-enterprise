@@ -24,7 +24,7 @@ export default function BoardDetailPage() {
     async function loadPost() {
       try {
         const res = await boardService.getPost(bbsId, parseInt(id as string));
-        if (res.success) setPost(res.data);
+        if (res) setPost(res);
       } catch (error) {
         toast('게시글을 찾을 수 없습니다.', 'error');
         router.back();

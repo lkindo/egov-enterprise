@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 export interface Term {
   stplatId: string;
@@ -10,11 +10,12 @@ export interface Term {
 export const termsService = {
   getTerms: async () => {
     const response = await client.get('/admin/terms');
-    return response.data;
+    return response;
   },
   
   updateTerm: async (id: string, content: string) => {
     const response = await client.put(`/admin/terms/${id}`, { stplatCn: content });
-    return response.data;
+    return response;
   }
 };
+
