@@ -11,11 +11,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * ?類ｋ궖???뵝 JPA Entity
- * ??뉕탢?????뵠?? NNTFCINFO
+ * 알림 JPA Entity
+ * 테이블명: N_USER_NOTIFICATION
  */
 @Entity
-@Table(name = "NNTFCINFO")
+@Table(name = "N_USER_NOTIFICATION")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification extends BaseEntity {
@@ -53,19 +53,19 @@ public class Notification extends BaseEntity {
         this.isRead = "Y";
     }
 
-    // ?袁⑥뵭??筌롫뗄苑??뺣굶 ?곕떽?
+    // 시간 포맷 변환 메서드 추가
     public String getNtfcTime() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
     }
 
     public String getBhNtfcIntrvl() {
-        // ???뵝 揶쏄쑨爰??類ｋ궖??癰귢쑬猷??袁⑤굡揶쎛 ??곸몵沃샕嚥?null 獄쏆꼹??
+        // 기존 알림 방식과 호환성을 위해 필요에 따라 null 반환
         return null;
     }
 
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        // ??볦퍢 ?온???類ｋ궖??BaseEntity?癒?퐣 ?온??
+        // 시간 수정은 BaseEntity에서 처리
     }
 }

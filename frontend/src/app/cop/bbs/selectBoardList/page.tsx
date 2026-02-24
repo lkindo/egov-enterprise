@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import axios from '@/lib/api/client';
+import { useBoardList } from '@/hooks/api/use-board-list';
 import {
     Table,
     TableBody,
@@ -44,49 +44,31 @@ const BBSListContent = () => {
     const searchParams = useSearchParams();
     const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
-    const [list, setList] = useState<Board[]>([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [pageIndex, setPageIndex] = useState(1);
     const [searchWrd, setSearchWrd] = useState('');
+    const [pageIndex, setPageIndex] = useState(1);
     const [searchCnd, setSearchCnd] = useState('0'); // 0: Title, 1: Content, 2: Writer
     const [orderBy, setOrderBy] = useState('date'); // date, views, comments
     const [startDate, setStartDate] = useState<Date | undefined>();
     const [endDate, setEndDate] = useState<Date | undefined>();
-    const [loading, setLoading] = useState(false);
 
-    const fetchList = async () => {
-        setLoading(true);
-        try {
-            const params = {
-                bbsId,
-                pageIndex,
-                pageUnit: 10,
-                searchWrd,
-                searchCnd,
-                orderBy,
-                startDate: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined,
-                endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
-            };
-            const response = await axios.get('/bbs', { params });
-            setList(response.data.resultList || []);
-            setTotalCount(response.data.totalCount || 0);
-            setTotalPages(response.data.totalPages || 0);
-        } catch (error) {
-            console.error('Failed to fetch board articles', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data, isLoading: loading } = useBoardList({
+        bbsId,
+        pageIndex,
+        pageUnit: 10,
+        searchWrd,
+        searchCnd,
+        orderBy,
+        startDate: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined,
+        endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
+    });
 
-    useEffect(() => {
-        fetchList();
-    }, [bbsId, pageIndex]);
+    const list: Board[] = data?.resultList || [];
+    const totalCount = data?.totalCount || 0;
+    const totalPages = data?.totalPages || 0;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setPageIndex(1);
-        fetchList();
     };
 
     return (
@@ -275,7 +257,7 @@ const BBSListContent = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    list.map((item, idx) => (
+                                    list.map((item: Board, idx: number) => (
                                         <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
                                             <TableCell className="text-center font-bold text-xs text-slate-400 py-8">
                                                 {totalCount - ((pageIndex - 1) * 10) - idx}
