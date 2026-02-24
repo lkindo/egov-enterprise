@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -8,22 +8,18 @@ import {
   MessageSquare,
   CheckCircle2,
   Clock,
-  ArrowRight,
   Plus,
   BarChart3,
   Bell,
-  AlertCircle,
   LayoutGrid,
-  TrendingUp,
-  TrendingDown
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
-import Link from 'next/link';
+import { SummaryCard } from '@/app/components/dashboard/SummaryCard';
+import { DashboardListCard } from '@/app/components/dashboard/DashboardListCard';
 
 const DashboardVisitorChart = dynamic(
   () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
@@ -41,6 +37,14 @@ const DashboardPostChart = dynamic(
   }
 );
 
+// Define icons outside component for referential stability
+const ICON_CALENDAR = <Calendar className="text-blue-600" size={20} />;
+const ICON_CLOCK = <Clock className="text-orange-500" size={20} />;
+const ICON_BELL = <Bell className="text-purple-500" size={20} />;
+const ICON_CHECK = <CheckCircle2 className="text-emerald-500" size={20} />;
+const ICON_BELL_BLUE = <Bell size={20} className="text-blue-500" />;
+const ICON_CHECK_EMERALD = <CheckCircle2 size={20} className="text-emerald-500" />;
+
 interface UnifiedDashboardClientProps {
   initialLeave: any;
   initialNotiList: any[];
@@ -54,10 +58,6 @@ export default function UnifiedDashboardClient({
 }: UnifiedDashboardClientProps) {
   const { user } = useAuth();
   const router = useRouter();
-
-  const [myLeave] = useState(initialLeave);
-  const [notiList] = useState(initialNotiList);
-  const [taskList] = useState(initialTaskList);
 
   if (!user) return null;
 
@@ -86,10 +86,10 @@ export default function UnifiedDashboardClient({
       </div>
       <BannerSlider />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard title="잔여 연차" value={`${myLeave?.remndrYrycCo || 0}일`} description="총 15일 중" icon={<Calendar className="text-blue-600" size={20} />} trend={12} color="blue" />
-        <SummaryCard title="진행중인 업무" value="12건" description="금주 마감 3건" icon={<Clock className="text-orange-500" size={20} />} trend={-5} color="orange" />
-        <SummaryCard title="미확인 알림" value="5건" description="최근 24시간" icon={<Bell className="text-purple-500" size={20} />} trend={2} color="purple" />
-        <SummaryCard title="시스템 상태" value="정상" description="Uptime 99.9%" icon={<CheckCircle2 className="text-emerald-500" size={20} />} trend={0} color="emerald" />
+        <SummaryCard title="잔여 연차" value={`${initialLeave?.remndrYrycCo || 0}일`} description="총 15일 중" icon={ICON_CALENDAR} trend={12} color="blue" />
+        <SummaryCard title="진행중인 업무" value="12건" description="금주 마감 3건" icon={ICON_CLOCK} trend={-5} color="orange" />
+        <SummaryCard title="미확인 알림" value="5건" description="최근 24시간" icon={ICON_BELL} trend={2} color="purple" />
+        <SummaryCard title="시스템 상태" value="정상" description="Uptime 99.9%" icon={ICON_CHECK} trend={0} color="emerald" />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 space-y-10">
@@ -106,8 +106,8 @@ export default function UnifiedDashboardClient({
             <DashboardVisitorChart />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <DashboardListCard title="최신 공지사항" items={notiList} icon={<Bell size={20} className="text-blue-500" />} moreHref="/cop/bbs" color="blue" />
-            <DashboardListCard title="오늘의 할일" items={taskList} icon={<CheckCircle2 size={20} className="text-emerald-500" />} moreHref="/cop/bbs" color="emerald" />
+            <DashboardListCard title="최신 공지사항" items={initialNotiList} icon={ICON_BELL_BLUE} moreHref="/cop/bbs" color="blue" />
+            <DashboardListCard title="오늘의 할일" items={initialTaskList} icon={ICON_CHECK_EMERALD} moreHref="/cop/bbs" color="emerald" />
           </div>
         </div>
         <div className="space-y-10">
@@ -124,63 +124,6 @@ export default function UnifiedDashboardClient({
             </h3>
             <DashboardPostChart />
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
-  const colorMap: any = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    orange: "bg-orange-50 text-orange-600 border-orange-100",
-    purple: "bg-purple-50 text-purple-600 border-purple-100",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100"
-  };
-  return (
-    <div className="p-8 rounded-[2.5rem] border-2 border-primary/5 bg-card shadow-lg hover:shadow-2xl hover:shadow-primary/5 transition-all group overflow-hidden relative">
-      <div className="flex justify-between items-start mb-8">
-        <div className={cn("p-4 rounded-2xl transition-all group-hover:scale-110 shadow-inner", colorMap[color])}>{icon}</div>
-        {trend !== 0 && (
-          <div className={cn("flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full shadow-sm", trend > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
-            {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            <span>{Math.abs(trend)}%</span>
-          </div>
-        )}
-      </div>
-      <div className="relative z-10 space-y-1">
-        <h4 className="text-4xl font-black text-foreground tracking-tighter leading-none">{value}</h4>
-        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pt-2">{title}</p>
-        <p className="text-[11px] text-muted-foreground/40 mt-6 flex items-center gap-2 font-bold italic">
-          <div className="w-1.5 h-1.5 bg-primary/20 rounded-full" />
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function DashboardListCard({ title, items, icon, moreHref, color }: any) {
-  const textColors: any = { blue: "group-hover:text-blue-600", emerald: "group-hover:text-emerald-600" };
-  return (
-    <div className="border-2 border-primary/5 rounded-[3rem] bg-card shadow-xl overflow-hidden flex flex-col h-[420px] group transition-all duration-500">
-      <div className="px-10 py-8 border-b border-primary/5 flex items-center justify-between bg-muted/5">
-        <h3 className="font-black text-xl flex items-center gap-3">{icon}{title}</h3>
-        <Link href={moreHref || '#'} className="p-3 bg-muted/50 rounded-2xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
-          <ArrowRight size={18} />
-        </Link>
-      </div>
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-3">
-          {items?.slice(0, 6).map((item: any, idx: number) => (
-            <div key={idx} className="flex items-center justify-between p-5 hover:bg-muted/30 rounded-[1.75rem] transition-all cursor-pointer group/item border border-transparent hover:border-primary/5">
-              <div className="flex items-center gap-4 overflow-hidden">
-                <div className="w-2 h-2 rounded-full bg-muted shrink-0 group-hover/item:bg-primary" />
-                <span className={cn("text-sm font-bold text-foreground truncate", textColors[color])}>{item.nttSj}</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground/50 ml-4 shrink-0 font-black bg-muted/50 px-3 py-1 rounded-lg uppercase">{item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>
