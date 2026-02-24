@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * 濡쒖뺄 ?붿뒪??湲곕컲 ?뚯씪 ??μ냼 援ы쁽泥?
+ * 로컬 디스크 기반 파일 저장소 구현체
  */
 @Slf4j
 @Service
@@ -32,7 +32,7 @@ public class LocalFileStorageService implements FileStorageService {
     private final Path rootLocation;
 
     public LocalFileStorageService(@Value("${file.upload.path:./storage/uploads}") String uploadPath) {
-        this.rootLocation = Paths.get(uploadPath);
+        this.rootLocation = Paths.get(uploadPath).toAbsolutePath().normalize();
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
@@ -66,7 +66,9 @@ public class LocalFileStorageService implements FileStorageService {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
 
-            Path destinationDir = this.rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path destinationDir = this.rootLocation.resolve(Objects.requireNonNull(targetPath)).normalize();
+            validatePath(destinationDir);
+
             Files.createDirectories(destinationDir);
 
             try (InputStream inputStream = file.getInputStream()) {
@@ -83,7 +85,9 @@ public class LocalFileStorageService implements FileStorageService {
     public Resource loadAsResource(String filename, String targetPath) {
         try {
             Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
+                    .resolve(Objects.requireNonNull(filename)).normalize();
+            validatePath(file);
+
             Resource resource = new UrlResource(Objects.requireNonNull(file.toUri()));
             if (resource.exists() || resource.isReadable()) {
                 return resource;
@@ -99,7 +103,8 @@ public class LocalFileStorageService implements FileStorageService {
     public void delete(String filename, String targetPath) {
         try {
             Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
+                    .resolve(Objects.requireNonNull(filename)).normalize();
+            validatePath(file);
             Files.deleteIfExists(file);
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
@@ -109,7 +114,8 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(filename));
+            Path file = rootLocation.resolve(Objects.requireNonNull(filename)).normalize();
+            validatePath(file);
             Files.deleteIfExists(file);
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
@@ -119,7 +125,8 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Stream<Path> loadAll(String targetPath) {
         try {
-            Path path = rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path path = rootLocation.resolve(Objects.requireNonNull(targetPath)).normalize();
+            validatePath(path);
             return Files.walk(path, 1)
                     .filter(p -> !p.equals(path))
                     .map(path::relativize);
@@ -135,7 +142,9 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public Path load(String filename) {
-        return rootLocation.resolve(Objects.requireNonNull(filename));
+        Path file = rootLocation.resolve(Objects.requireNonNull(filename)).normalize();
+        validatePath(file);
+        return file;
     }
 
     @Override
@@ -157,6 +166,12 @@ public class LocalFileStorageService implements FileStorageService {
                     });
         } catch (IOException e) {
             log.error("Failed to delete all files", e);
+        }
+    }
+
+    private void validatePath(Path path) {
+        if (!path.startsWith(rootLocation)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 }
