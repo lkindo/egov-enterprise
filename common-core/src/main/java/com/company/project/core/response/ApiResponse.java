@@ -1,11 +1,12 @@
 package com.company.project.core.response;
 
 import com.company.project.core.exception.ErrorCode;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import java.time.LocalDateTime;
 
 /**
- * ?袁⑷텢 ??? ?臾먮뼗 ????(Java 21 Record)
+ * 공통 API 응답 규격 (Java 21 Record)
  */
 @Builder
 public record ApiResponse<T>(
@@ -14,7 +15,9 @@ public record ApiResponse<T>(
         String code,
         String message,
         T data,
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime timestamp) {
+
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .success(true)

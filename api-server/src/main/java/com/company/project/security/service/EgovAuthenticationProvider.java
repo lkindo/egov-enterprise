@@ -4,6 +4,7 @@ import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -15,16 +16,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 사용자 인증 처리 Provider
- * - EgovLoginService 의존성 제거, Spring Security 표준 방식으로 직접 인증
+ * 사용자 인증 처리 Provider (현대적 BCrypt + 레거시 Egov 암호화 통합 지원)
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class EgovAuthenticationProvider implements AuthenticationProvider {
-
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EgovPasswordEncoder egovPasswordEncoder;
 
     @Override
     @Transactional
@@ -32,35 +33,56 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
 
-        // 1. 사용자 조회 (ID 또는 esntlId로 조회)
-        User userEntity = userRepository.findById(userId)
-                .orElseGet(() -> userRepository.findByEsntlId(userId)
-                        .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
+        try {
+            // 1. 사용자 조회
+            User userEntity = userRepository.findById(userId)
+                    .orElseGet(() -> userRepository.findByEsntlId(userId)
+                            .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
 
-        // 2. 계정 상태 검증
-        validateAccountStatus(userEntity);
+            // 2. 계정 상태 검증
+            validateAccountStatus(userEntity);
 
-        // 3. 비밀번호 검증
-        if (!passwordEncoder.matches(password, userEntity.getPassword())) {
-            userEntity.incrementLockCount();
+            // 3. 비밀번호 검증 (BCrypt or Legacy Egov)
+            boolean isMatched = false;
+            String encodedPassword = userEntity.getPassword();
+
+            // 3.1 Legacy Egov 암호화 체크
+            if (encodedPassword != null && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
+                String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
+                isMatched = egovPasswordEncoder.matches(password, cleanHash, userId);
+            }
+
+            // 3.2 BCrypt 등 현대적 방식 시도
+            if (!isMatched) {
+                isMatched = passwordEncoder.matches(password, encodedPassword);
+            }
+
+            if (!isMatched) {
+                userEntity.incrementLockCount();
+                userRepository.save(userEntity);
+                throw new BadCredentialsException("Invalid User ID or Password");
+            }
+
+            // 4. 로그인 성공: 락 해제
+            userEntity.unlock();
             userRepository.save(userEntity);
-            throw new BadCredentialsException("Invalid User ID or Password");
+
+            // 5. 권한조회 및 토큰용 UserDetails 생성
+            String authorCode = userAuthorityRepository.findById(userEntity.getEsntlId())
+                    .map(ua -> ua.getAuthorCode())
+                    .orElse("ROLE_USER");
+
+            userEntity.setAuthorCode(authorCode);
+            CustomUserDetails userDetails = new CustomUserDetails(userEntity);
+
+            return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+        } catch (AuthenticationException e) {
+            log.error(">>> Authentication failed for user {}: {}", userId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error(">>> Unexpected error during authentication for user {}: ", userId, e);
+            throw new BadCredentialsException("Authentication service error");
         }
-
-        // 4. 로그인 성공: 락 해제
-        userEntity.unlock();
-        userRepository.save(userEntity);
-
-        // 5. 권한 조회 및 CustomUserDetails 생성
-        String authorCode = userAuthorityRepository.findById(userEntity.getEsntlId())
-                .map(ua -> ua.getAuthorCode())
-                .orElse("ROLE_USER");
-
-        userEntity.setAuthorCode(authorCode);
-
-        CustomUserDetails userDetails = new CustomUserDetails(userEntity);
-
-        return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
 
     private void validateAccountStatus(User user) {
@@ -75,5 +97,4 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     public boolean supports(Class<?> authentication) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
-
 }
