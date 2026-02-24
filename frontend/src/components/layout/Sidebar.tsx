@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import axios from '@/lib/api/client';
@@ -80,44 +80,44 @@ const Sidebar = () => {
         return 0;
     }, [pathname]);
 
-    useEffect(() => {
-        const fetchLeftMenus = async () => {
-            // Update parent menu name based on active menu number
-            if (menuNo === 3000000) {
-                setParentMenuName('협업');
-            } else if (menuNo === 2000000) {
-                setParentMenuName('알림');
-            } else {
-                setParentMenuName('');
-            }
+    const fetchLeftMenus = useCallback(async () => {
+        // Update parent menu name based on active menu number
+        if (menuNo === 3000000) {
+            setParentMenuName('협업');
+        } else if (menuNo === 2000000) {
+            setParentMenuName('알림');
+        } else {
+            setParentMenuName('');
+        }
 
-            if (menuNo > 0) {
-                try {
-                    const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
-                    if (response.data.success) {
-                        // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
-                        const mappedList = response.data.list.map((item: MenuItem) => ({
-                            ...item,
-                            mappedUrl: mapLegacyUrl(item.chkURL)
-                        }));
-                        setLeftMenus(mappedList);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch left menus', error);
+        if (menuNo > 0) {
+            try {
+                const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
+                if (response.data.success) {
+                    // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
+                    const mappedList = response.data.list.map((item: MenuItem) => ({
+                        ...item,
+                        mappedUrl: mapLegacyUrl(item.chkURL)
+                    }));
+                    setLeftMenus(mappedList);
                 }
-            } else {
-                setLeftMenus([]);
+            } catch (error) {
+                console.error('Failed to fetch left menus', error);
             }
-        };
-
-        fetchLeftMenus();
+        } else {
+            setLeftMenus([]);
+        }
     }, [menuNo]);
+
+    useEffect(() => {
+        fetchLeftMenus();
+    }, [fetchLeftMenus]);
 
     if (pathname === '/' || pathname === '/login' || leftMenus.length === 0) {
         return null;
     }
 
-    const isActive = (menu: MappedMenuItem) => {
+    const isActive = useCallback((menu: MappedMenuItem) => {
         const mapped = menu.mappedUrl;
         if (mapped === pathname) return true;
 
@@ -129,7 +129,7 @@ const Sidebar = () => {
         }
 
         return false;
-    };
+    }, [pathname, searchParams]);
 
     return (
         <nav className="nav" aria-label="서브 메뉴">

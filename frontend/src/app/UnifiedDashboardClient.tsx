@@ -47,19 +47,48 @@ interface UnifiedDashboardClientProps {
   initialTaskList: any[];
 }
 
-export default function UnifiedDashboardClient({ 
-  initialLeave, 
-  initialNotiList, 
-  initialTaskList 
+export default function UnifiedDashboardClient({
+  initialLeave,
+  initialNotiList,
+  initialTaskList
 }: UnifiedDashboardClientProps) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   const [myLeave] = useState(initialLeave);
   const [notiList] = useState(initialNotiList);
   const [taskList] = useState(initialTaskList);
 
-  if (!user) return null;
+  // Show skeleton while loading
+  if (loading) {
+    return (
+      <div className="space-y-8 pb-10 animate-pulse">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32 rounded-full" />
+            <Skeleton className="h-12 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-96 rounded-lg" />
+          </div>
+          <div className="flex gap-3 w-full lg:w-auto">
+            <Skeleton className="h-14 w-full lg:w-40 rounded-2xl" />
+            <Skeleton className="h-14 w-full lg:w-40 rounded-2xl" />
+          </div>
+        </div>
+        <Skeleton className="h-[200px] w-full rounded-[3rem]" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-48 rounded-[2.5rem]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in duration-1000">
@@ -86,9 +115,9 @@ export default function UnifiedDashboardClient({
       </div>
       <BannerSlider />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard title="잔여 연차" value={`${myLeave?.remndrYrycCo || 0}일`} description="총 15일 중" icon={<Calendar className="text-blue-600" size={20} />} trend={12} color="blue" />
-        <SummaryCard title="진행중인 업무" value="12건" description="금주 마감 3건" icon={<Clock className="text-orange-500" size={20} />} trend={-5} color="orange" />
-        <SummaryCard title="미확인 알림" value="5건" description="최근 24시간" icon={<Bell className="text-purple-500" size={20} />} trend={2} color="purple" />
+        <SummaryCard title="잔여 연차" value={`${myLeave?.remndrYrycCo || 0}일`} description="총 15 일 중" icon={<Calendar className="text-blue-600" size={20} />} trend={12} color="blue" />
+        <SummaryCard title="진행중인 업무" value="12 건" description="금주 마감 3 건" icon={<Clock className="text-orange-500" size={20} />} trend={-5} color="orange" />
+        <SummaryCard title="미확인 알림" value="5 건" description="최근 24 시간" icon={<Bell className="text-purple-500" size={20} />} trend={2} color="purple" />
         <SummaryCard title="시스템 상태" value="정상" description="Uptime 99.9%" icon={<CheckCircle2 className="text-emerald-500" size={20} />} trend={0} color="emerald" />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">

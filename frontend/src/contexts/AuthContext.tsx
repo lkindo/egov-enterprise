@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import axios from '@/lib/api/client';
 
 interface User {
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const checkAuth = async () => {
+    const checkAuth = useCallback(async () => {
         try {
             const response = await axios.get('/auth/me');
             if (response.data.success) {
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(null);
             }
         } catch (error: any) {
-            // 401은 미인증 상태로 정상적인 응답이므로 무시
+            // 401 은 미인증 상태로 정상적인 응답이므로 무시
             if (error.response?.status !== 401) {
                 console.error('Auth check error:', error);
             }
@@ -41,9 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const login = async (credentials: any) => {
+    const login = useCallback(async (credentials: any) => {
         try {
             const response = await axios.post('/auth/login', credentials);
             if (response.data.success) {
@@ -55,20 +55,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error('Login error:', error.response?.data || error.message);
             throw error;
         }
-    };
+    }, []);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             await axios.post('/auth/logout');
             setUser(null);
         } catch (error) {
             console.error('Logout failed', error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         checkAuth();
-    }, []);
+    }, [checkAuth]);
 
     return (
         <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
