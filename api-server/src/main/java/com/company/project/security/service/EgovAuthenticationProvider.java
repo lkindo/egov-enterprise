@@ -15,9 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 사용자 인증 처리 Provider (현대적 BCrypt + 레거시 Egov 암호화 통합 지원)
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -32,49 +29,36 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
-
         try {
-            // 1. 사용자 조회
             User userEntity = userRepository.findById(userId)
                     .orElseGet(() -> userRepository.findByEsntlId(userId)
                             .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
-
-            // 2. 계정 상태 검증
             validateAccountStatus(userEntity);
-
-            // 3. 비밀번호 검증 (BCrypt or Legacy Egov)
             boolean isMatched = false;
             String encodedPassword = userEntity.getPassword();
-
-            // 3.1 Legacy Egov 암호화 체크
             if (encodedPassword != null && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
                 String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
-                isMatched = egovPasswordEncoder.matches(password, cleanHash, userId);
+                String generatedHash = egovPasswordEncoder.encode(password, userId);
+                isMatched = cleanHash.equals(generatedHash);
+                if (isMatched) {
+                    log.info(">>> Authentication successful for user: {}", userId);
+                }
             }
-
-            // 3.2 BCrypt 등 현대적 방식 시도
             if (!isMatched) {
                 isMatched = passwordEncoder.matches(password, encodedPassword);
             }
-
             if (!isMatched) {
+                log.warn(">>> Password mismatch for user: {}", userId);
                 userEntity.incrementLockCount();
                 userRepository.save(userEntity);
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
-
-            // 4. 로그인 성공: 락 해제
             userEntity.unlock();
             userRepository.save(userEntity);
-
-            // 5. 권한조회 및 토큰용 UserDetails 생성
             String authorCode = userAuthorityRepository.findById(userEntity.getEsntlId())
-                    .map(ua -> ua.getAuthorCode())
-                    .orElse("ROLE_USER");
-
+                    .map(ua -> ua.getAuthorCode()).orElse("ROLE_USER");
             userEntity.setAuthorCode(authorCode);
             CustomUserDetails userDetails = new CustomUserDetails(userEntity);
-
             return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
         } catch (AuthenticationException e) {
             log.error(">>> Authentication failed for user {}: {}", userId, e.getMessage());
@@ -87,7 +71,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
 
     private void validateAccountStatus(User user) {
         if ("Y".equalsIgnoreCase(user.getLockAt())) {
-            throw new AccountStatusException("User account is locked due to multiple login failures.") {
+            throw new AccountStatusException("User account is locked.") {
                 private static final long serialVersionUID = 1L;
             };
         }

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,15 +19,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Tag(name = "Menu", description = "메뉴 정보 관련 API")
 public class MenuController {
-
     private final MenuService menuService;
 
     @Operation(summary = "GNB 대메뉴 목록 조회")
     @GetMapping("/head")
     public ResponseEntity<?> getHeadMenu() {
-        // MenuService.getMenuHierarchy()는 최상위 메뉴 리스트를 반환함
         List<MenuDto> resultList = menuService.getMenuHierarchy();
-        
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("list", resultList);
@@ -38,9 +34,7 @@ public class MenuController {
     @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
     public ResponseEntity<?> getLeftMenu(@RequestParam("menuNo") Long menuNo) {
-        // MenuService.getSubMenus(parentId)를 사용하여 하위 메뉴 조회
         List<MenuDto> resultList = menuService.getSubMenus(menuNo);
-        
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("list", resultList);

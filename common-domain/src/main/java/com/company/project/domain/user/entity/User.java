@@ -6,14 +6,13 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.Audited;
 import org.springframework.lang.NonNull;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * ??? ???????? Entity
- * ?????????? NEMPLYRINFO
+ * 사용자 정보 엔티티
+ * 테이블: NEMPLYRINFO (전자정부 프레임워크 표준 기반)
  */
 @Entity
 @Table(name = "NEMPLYRINFO")
@@ -67,16 +66,16 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "HOUSE_ADRES", length = 300)
     private String homeadres;
 
-    @Column(name = "PASSWORD_UPDT_PNTTM")
+    @Column(name = "CHG_PWD_LAST_PNTTM")
     private LocalDateTime passwordUpdateDate;
 
     @Column(name = "AREA_NO", length = 12)
     private String areaNo;
 
-    @Column(name = "HOMEMIDDLE_TELNO", length = 12)
+    @Column(name = "HOUSE_MIDDLE_TELNO", length = 12)
     private String homemiddleTelno;
 
-    @Column(name = "HOMEEND_TELNO", length = 12)
+    @Column(name = "HOUSE_END_TELNO", length = 12)
     private String homeendTelno;
 
     @Column(name = "DETAIL_ADRES", length = 300)
@@ -130,7 +129,7 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
-    @Column(name = "SUB_DN", length = 100)
+    @Column(name = "CRTFC_DN_VALUE", length = 100)
     private String subDn;
 
     @PrePersist
@@ -146,8 +145,7 @@ public class User extends BaseEntity implements Serializable {
             String fxnum, String homeadres, String detailAdres, String zip,
             String offmTelno, String moblphonNo, String emailAdres, String ofcpsNm,
             String groupId, String orgnztId, String insttCode, Role role, String subDn) {
-        if (userNm != null)
-            this.userNm = userNm;
+        if (userNm != null) this.userNm = userNm;
         this.passwordHint = passwordHint;
         this.passwordCnsr = passwordCnsr;
         this.emplNo = emplNo;
@@ -168,8 +166,7 @@ public class User extends BaseEntity implements Serializable {
         this.groupId = groupId;
         this.orgnztId = orgnztId;
         this.insttCode = insttCode;
-        if (role != null)
-            this.role = role;
+        if (role != null) this.role = role;
         this.subDn = subDn;
     }
 
@@ -178,7 +175,6 @@ public class User extends BaseEntity implements Serializable {
         this.passwordUpdateDate = LocalDateTime.now();
     }
 
-    // ?????? ??????
     public void unlock() {
         this.lockAt = "N";
         this.lockCount = 0;
@@ -186,18 +182,17 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void setAuthorCode(String authorCode) {
-        // authorCode ??role ????? (??? ??? ???)
         if (authorCode != null) {
-            this.role = Role.valueOf(authorCode);
+            try {
+                this.role = Role.valueOf(authorCode);
+            } catch (IllegalArgumentException e) {
+                this.role = Role.USER;
+            }
         }
     }
 
     public String getAuthorCode() {
         return this.role != null ? this.role.name() : null;
-    }
-
-    public Integer getLockCnt() {
-        return this.lockCount;
     }
 
     public void incrementLockCount() {

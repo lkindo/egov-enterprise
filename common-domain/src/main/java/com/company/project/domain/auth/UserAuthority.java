@@ -6,10 +6,10 @@ import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NEMPLYRSCRTYESTBS")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserAuthority implements Serializable {
     private static final long serialVersionUID = 1L;
 
