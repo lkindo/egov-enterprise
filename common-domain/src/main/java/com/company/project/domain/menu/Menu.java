@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Menu {
-
     @Id
     @Column(name = "MENU_NO")
     private Long id;
@@ -42,7 +41,7 @@ public class Menu {
 
     @Builder
     public Menu(Long id, String menuNm, String progrmFileNm, Long upperMenuNo, Integer menuOrdr, String menuDc,
-            String relateImagePath, String relateImageNm) {
+                String relateImagePath, String relateImageNm) {
         this.id = id;
         this.menuNm = menuNm;
         this.progrmFileNm = progrmFileNm;
@@ -54,7 +53,7 @@ public class Menu {
     }
 
     public void update(String menuNm, String progrmFileNm, Long upperMenuNo, Integer menuOrdr, String menuDc,
-            String relateImagePath, String relateImageNm) {
+                       String relateImagePath, String relateImageNm) {
         this.menuNm = menuNm;
         this.progrmFileNm = progrmFileNm;
         this.upperMenuNo = upperMenuNo;

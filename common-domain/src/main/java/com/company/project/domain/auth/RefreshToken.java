@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.Instant;
 
 /**
- * JWT ?귐뗫늄??됰뻻 ?醫뤾쿃 ?酉???
+ * JWT 리프레시 토큰 저장 엔티티
  */
 @Entity
 @Table(name = "NREFRESH_TOKEN")
@@ -14,7 +14,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class RefreshToken {
-
     @Id
     @Column(name = "USER_ID", nullable = false, length = 20)
     private String userId;
