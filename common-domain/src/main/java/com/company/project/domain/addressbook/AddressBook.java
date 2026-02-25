@@ -5,12 +5,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 /**
- * 雅뚯눘?쇗에?JPA Entity
- * ??뉕탢?????뵠?? COMTNADBKINFO
+ * 주소록 정보 JPA Entity
+ * 테이블명: nadbkmanage (기존: COMTNADBKINFO)
  */
 @Entity
 @Table(name = "nadbkmanage")

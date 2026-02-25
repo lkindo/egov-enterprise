@@ -9,7 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletRequest;
-import org.egovframe.rte.fdl.security.userdetails.util.EgovUserDetailsHelper;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -69,7 +71,8 @@ public class MainController {
 
     @RequestMapping(value = "/sym/mms/EgovHeader.do")
     public String selectHeader(ModelMap model) throws Exception {
-        if (EgovUserDetailsHelper.isAuthenticated()) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
             model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
             model.addAttribute("list_menulist", menuService.getAllMenus());
         } else {
@@ -86,7 +89,8 @@ public class MainController {
 
     @RequestMapping(value = "/sym/mms/EgovMenuLeft.do")
     public String selectMenuLeft(ModelMap model) throws Exception {
-        if (EgovUserDetailsHelper.isAuthenticated()) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
             model.addAttribute("lastLogoutDateTime", "2025-01-01 00:00");
         }
         return "main/inc/EgovIncLeftmenu";
@@ -94,7 +98,8 @@ public class MainController {
 
     @RequestMapping(value = "/sym/mms/EgovMainMenuHead.do")
     public String selectMainMenuHead(ModelMap model) throws Exception {
-        if (EgovUserDetailsHelper.isAuthenticated()) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
             model.addAttribute("list_headmenu", menuService.getMenuHierarchy());
             model.addAttribute("list_menulist", menuService.getAllMenus());
         }

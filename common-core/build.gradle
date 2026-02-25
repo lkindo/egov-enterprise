@@ -19,3 +19,6 @@ dependencies {
     // Fix for: javax.annotation.meta.When not found
     api 'com.google.code.findbugs:jsr305:3.0.2'
 }
+
+bootJar { enabled = false }
+jar { enabled = true }

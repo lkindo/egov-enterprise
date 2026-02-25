@@ -11,7 +11,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+    implementation libs.springdoc.openapi
     
     // JSP Support - Required for legacy eGovFrame components
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
@@ -20,32 +20,32 @@ dependencies {
     compileOnly 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
     
     // MyBATIS Support - Migration to JPA in progress (Phase A modules completed)
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    implementation libs.mybatis.starter
     
     // Legacy Dependencies
-    implementation 'com.ibm.icu:icu4j:75.1' // ChineseCalendar 등
-    implementation 'commons-io:commons-io:2.17.0'
-    implementation 'com.google.guava:guava:33.3.1-jre'
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
+    implementation libs.icu4j // ChineseCalendar 등
+    implementation libs.commons.io
+    implementation libs.guava
+    implementation libs.commons.lang3
     implementation 'jakarta.json:jakarta.json-api:2.1.3'
-    implementation 'org.eclipse.parsson:parsson:1.1.5' // JSON-P implementation
-    implementation 'org.postgresql:postgresql:42.7.3'
+    implementation libs.parsson // JSON-P implementation
+    implementation libs.postgresql
 
     // Missing Enterprise Dependencies
-    implementation 'org.apache.commons:commons-email:1.5'
+    implementation libs.commons.email
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.batch:spring-batch-infrastructure'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     // implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
     
     // eGovFrame Batch
-    implementation 'org.egovframe.rte:egovframe-rte-bat-core:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-access:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-crypto:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-idgnr:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-cmmn:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-excel:5.0.0'
-    implementation 'org.egovframe.rte:egovframe-rte-fdl-security:5.0.0'
+    implementation libs.egovframe.rte.bat.core
+    implementation libs.egovframe.rte.fdl.access
+    implementation libs.egovframe.rte.fdl.crypto
+    implementation libs.egovframe.rte.fdl.idgnr
+    implementation libs.egovframe.rte.fdl.cmmn
+    implementation libs.egovframe.rte.fdl.excel
+    implementation libs.egovframe.rte.fdl.security
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
     
@@ -53,21 +53,21 @@ dependencies {
     // implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     
     // Apache Commons Net (FTP)
-    implementation 'commons-net:commons-net:3.9.0'
+    implementation libs.commons.net
     
     // XML Processing (Legacy)
-    implementation 'org.apache.xmlbeans:xmlbeans:3.1.0'
-    implementation 'org.jdom:jdom2:2.0.6.1'
+    implementation libs.xmlbeans
+    implementation libs.jdom2
     
     // Database Connection Pool (Legacy)
-    implementation 'org.apache.commons:commons-dbcp2:2.9.0'
+    implementation libs.commons.dbcp2
     
     // File Upload (Legacy) - Removed
     // implementation 'commons-fileupload:commons-fileupload:1.5'
 
     // Social Login (ScribeJava)
-    implementation 'com.github.scribejava:scribejava-apis:8.3.3'
-    implementation 'com.github.scribejava:scribejava-core:8.3.3'
+    implementation libs.scribejava.apis
+    implementation libs.scribejava.core
 
     // Twitter API V2 Support - Removed due to module decommissioning
     // implementation 'org.twitter4j:twitter4j-core:4.1.2'
@@ -77,6 +77,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    testImplementation libs.archunit.junit5
     
     // Performance Optimization
     implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket Support
