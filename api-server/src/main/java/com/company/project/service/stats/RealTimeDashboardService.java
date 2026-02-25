@@ -1,7 +1,9 @@
 package com.company.project.service.stats;
 
+import com.company.project.service.board.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,16 @@ public class RealTimeDashboardService {
     // 실시간 통계 데이터 관리 (로컬 메모리 활용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final AtomicInteger visitsPerMinute = new AtomicInteger(0);
+    private final AtomicInteger todayNewPosts = new AtomicInteger(0);
+
+    /**
+     * 게시글 생성 이벤트 핸들러 (Point 22: 이벤트 활용)
+     */
+    @EventListener
+    public void handlePostCreated(PostCreatedEvent event) {
+        todayNewPosts.incrementAndGet();
+        log.debug("Real-time stats updated for new post in BBS: {}", event.getBbsId());
+    }
 
     /**
      * 실시간 데이터 브로드캐스트 (5초 주기)
@@ -33,7 +45,7 @@ public class RealTimeDashboardService {
             Map<String, Object> stats = new HashMap<>();
             stats.put("activeUsers", activeUsers.get());
             stats.put("visitsPerMinute", visitsPerMinute.get());
-            stats.put("newPosts", getTodayNewPostsCount());
+            stats.put("newPosts", todayNewPosts.get());
             stats.put("alerts", getPendingAlertsCount());
 
             messagingTemplate.convertAndSend("/topic/dashboard/stats", stats);
@@ -56,14 +68,6 @@ public class RealTimeDashboardService {
      */
     public void decrementActiveUsers() {
         activeUsers.decrementAndGet();
-    }
-
-    /**
-     * 오늘의 신규 게시물 수 조회 (더미 로직)
-     */
-    private int getTodayNewPostsCount() {
-        // TODO: 실제 데이터베이스에서 오늘의 게시물 수를 조회하는 로직 구현
-        return (int) (Math.random() * 10);
     }
 
     /**

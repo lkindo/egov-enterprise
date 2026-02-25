@@ -1,6 +1,6 @@
 spring:
-  profiles:
-    active: dev
+  # profiles:
+  #   active: dev
   main:
     lazy-initialization: false
     allow-bean-definition-overriding: true
@@ -31,6 +31,7 @@ spring:
       initialization-fail-timeout: 1
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
       order-inserts: true

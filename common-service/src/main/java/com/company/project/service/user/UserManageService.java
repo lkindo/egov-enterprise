@@ -1,7 +1,7 @@
 package com.company.project.service.user;
 
 import com.company.project.constants.Constants;
-import com.company.project.common.util.UserDtoMapper;
+import com.company.project.service.user.mapper.UserDtoMapper;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;

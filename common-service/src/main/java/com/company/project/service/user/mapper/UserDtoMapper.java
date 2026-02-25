@@ -1,4 +1,4 @@
-package com.company.project.common.util;
+package com.company.project.service.user.mapper;
 
 import com.company.project.domain.user.entity.User;
 import com.company.project.service.user.dto.UserDto;

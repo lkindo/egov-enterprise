@@ -8,11 +8,13 @@ import com.company.project.domain.board.BoardMaster;
 import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.domain.board.BoardSearchCondition;
-import com.company.project.domain.user.entity.User;
-import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.board.dto.BoardDto;
 import com.company.project.service.board.dto.BoardSaveRequest;
+import com.company.project.service.board.event.PostCreatedEvent;
 import com.company.project.service.file.EgovFileService;
+import com.company.project.service.user.EgovUserService;
+import com.company.project.service.user.dto.UserDto;
+import org.springframework.context.ApplicationEventPublisher;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,17 +37,20 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
-        private final UserRepository userRepository;
+        private final EgovUserService userService;
         private final EgovFileService fileService;
+        private final ApplicationEventPublisher eventPublisher;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
-                        UserRepository userRepository,
-                        EgovFileService fileService) {
+                        EgovUserService userService,
+                        EgovFileService fileService,
+                        ApplicationEventPublisher eventPublisher) {
                 this.boardRepository = boardRepository;
                 this.boardMasterRepository = boardMasterRepository;
-                this.userRepository = userRepository;
+                this.userService = userService;
                 this.fileService = fileService;
+                this.eventPublisher = eventPublisher;
         }
 
         @Override
@@ -76,8 +81,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findByEsntlId(Objects.requireNonNull(userId))
-                                .orElse(null);
+                // 서비스 데코레이터 패턴 또는 모듈간 서비스 호출 (이벤트 권장)
+                UserDto author = null;
+                try {
+                        author = userService.getUserById(Objects.requireNonNull(userId));
+                } catch (Exception e) {
+                        // ignore or handle
+                }
 
                 Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
@@ -97,8 +107,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .replyLc(0)
                                 .build();
 
-                return Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
+                Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
                                 .getNttId();
+
+                // Point 22: 이벤트 발행 (통계 동기화 등 목적)
+                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
+
+                return nttId;
         }
 
         @Override
@@ -128,8 +143,12 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .findById(Objects.requireNonNull(parentId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                User author = userRepository.findByEsntlId(Objects.requireNonNull(userId))
-                                .orElse(null);
+                UserDto author = null;
+                try {
+                        author = userService.getUserById(Objects.requireNonNull(userId));
+                } catch (Exception e) {
+                        // ignore
+                }
 
                 Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
 
@@ -149,8 +168,13 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .replyLc(parent.getReplyLc() + 1)
                                 .build();
 
-                return Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
+                Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
                                 .getNttId();
+
+                // 이벤트 발행
+                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
+
+                return nttId;
         }
 
         @Override

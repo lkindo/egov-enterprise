@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import java.util.List;
 
 @Configuration
@@ -57,7 +58,9 @@ public class ApiSecurityConfig {
         http
             .securityMatcher("/api/v1/**")
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/users/signup"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me", "/api/v1/auth/reissue", "/api/v1/auth/logout",
                         "/api/v1/users/signup",
@@ -81,7 +84,9 @@ public class ApiSecurityConfig {
     public SecurityFilterChain legacySecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/uat/uia/actionLogin.do"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/css/**", "/js/**", "/images/**",
