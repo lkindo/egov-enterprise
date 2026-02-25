@@ -10,8 +10,8 @@ allprojects {
     version = '0.0.1-SNAPSHOT'
 
     repositories {
-        maven { url 'https://maven.egovframe.go.kr/maven/' }
         mavenCentral()
+        maven { url 'https://maven.egovframe.go.kr/maven/' }
     }
 }
 
