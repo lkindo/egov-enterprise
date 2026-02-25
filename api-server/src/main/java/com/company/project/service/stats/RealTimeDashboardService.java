@@ -1,5 +1,6 @@
 package com.company.project.service.stats;
 
+import com.company.project.domain.notification.NotificationRepository;
 import com.company.project.service.board.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RealTimeDashboardService {
 
     private final SimpMessageSendingOperations messagingTemplate;
+    private final NotificationRepository notificationRepository;
 
     // 실시간 통계 데이터 관리 (로컬 메모리 활용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
@@ -74,8 +76,12 @@ public class RealTimeDashboardService {
      * 처리 대기 중인 알림 수 조회 (더미 로직)
      */
     private int getPendingAlertsCount() {
-        // TODO: 실제 데이터베이스에서 미처리 알림 수를 조회하는 로직 구현
-        return (int) (Math.random() * 5);
+        try {
+            return (int) notificationRepository.countByIsRead("N");
+        } catch (Exception e) {
+            log.error("Failed to count pending alerts", e);
+            return 0;
+        }
     }
 
     /**

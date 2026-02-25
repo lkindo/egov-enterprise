@@ -481,7 +481,7 @@ class LoadTest {
 
         // When: 응답 시간 측정을 위한 요청 실행
         for (int i = 0; i < numberOfRequests; i++) {
-            // TODO: Use requestId if specific logging or validation per request is needed
+            final int requestId = i;
             executorService.submit(() -> {
                 try {
                     long requestStartTime = System.currentTimeMillis();
@@ -490,6 +490,10 @@ class LoadTest {
                             .andExpect(status().isOk());
                     long responseTime = System.currentTimeMillis() - requestStartTime;
                     responseTimes.add(responseTime);
+                    
+                    if (requestId % 10 == 0) {
+                        System.out.printf("Request [%d] completed in %d ms%n", requestId, responseTime);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
