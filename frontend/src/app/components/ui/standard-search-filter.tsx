@@ -79,15 +79,21 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
 
                 {field.type === 'select' ? (
                   <Select
-                    value={values[field.name] || ''}
-                    onValueChange={(v) => handleValueChange(field.name, v)}
+                    value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
+                    onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
                     <SelectTrigger className="h-12 rounded-2xl border-2 border-primary/5 bg-background focus:ring-primary/20 hover:border-primary/20 transition-all font-bold text-xs ring-offset-background">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-primary/10">
                       {field.options?.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-bold rounded-xl m-1">{opt.label}</SelectItem>
+                        <SelectItem 
+                          key={opt.value || '__ALL__'} 
+                          value={opt.value === '' ? '__ALL__' : opt.value} 
+                          className="text-xs font-bold rounded-xl m-1"
+                        >
+                          {opt.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

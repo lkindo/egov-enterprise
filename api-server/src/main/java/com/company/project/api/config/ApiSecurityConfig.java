@@ -52,7 +52,9 @@ public class ApiSecurityConfig {
         String encodingId = "bcrypt";
         Map<String, PasswordEncoder> encoders = new HashMap<>();
         encoders.put("bcrypt", new BCryptPasswordEncoder());
-        encoders.put("egov", NoOpPasswordEncoder.getInstance());
+        @SuppressWarnings("deprecation")
+        PasswordEncoder noOp = NoOpPasswordEncoder.getInstance();
+        encoders.put("egov", noOp);
         return new DelegatingPasswordEncoder(encodingId, encoders);
     }
 

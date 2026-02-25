@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
 import { ToastProvider } from '@/app/components/ui/toast';
+import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 import { GlobalShortcutProvider } from '@/app/components/ui/global-shortcut-provider';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -26,15 +27,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <GlobalShortcutProvider>
-          <AuthProvider>
-            <LayoutProvider>
-              <WebSocketProvider>
-                {children}
-              </WebSocketProvider>
-            </LayoutProvider>
-          </AuthProvider>
-        </GlobalShortcutProvider>
+        <ConfirmProvider>
+          <GlobalShortcutProvider>
+            <AuthProvider>
+              <LayoutProvider>
+                <WebSocketProvider>
+                  {children}
+                </WebSocketProvider>
+              </LayoutProvider>
+            </AuthProvider>
+          </GlobalShortcutProvider>
+        </ConfirmProvider>
       </ToastProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

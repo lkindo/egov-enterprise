@@ -7,4 +7,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
     List<Notification> findByReceiverIdOrderByCreatedDateDesc(String receiverId);
 
     long countByReceiverIdAndIsRead(String receiverId, String isRead);
+    long countByIsRead(String isRead);
 }
