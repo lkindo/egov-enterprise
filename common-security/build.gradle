@@ -2,9 +2,8 @@ dependencies {
     api project(':common-core')
     api project(':common-domain')
     api 'org.springframework.boot:spring-boot-starter-security'
-    api 'org.springframework.boot:spring-boot-starter-web' // For Servlet API (Filter)
+    api 'org.springframework.boot:spring-boot-starter-web'
     
-    // JWT 0.12.6 (최신 안정 버전 - API 변경 있음)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
@@ -13,6 +12,3 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
 }
-
-bootJar { enabled = false }
-jar { enabled = true }

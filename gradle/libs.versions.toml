@@ -1,6 +1,6 @@
 [versions]
 egovframe = "5.0.0"
-spring-boot = "3.4.1"
+spring-boot = "3.3.7"
 spring-doc = "2.5.0"
 mybatis = "3.0.3"
 postgresql = "42.7.3"
@@ -47,3 +47,4 @@ xmlbeans = { group = "org.apache.xmlbeans", name = "xmlbeans", version.ref = "xm
 jdom2 = { group = "org.jdom", name = "jdom2", version.ref = "jdom2" }
 
 archunit-junit5 = { group = "com.tngtech.archunit", name = "archunit-junit5", version.ref = "archunit" }
+archunit-library = { group = "com.tngtech.archunit", name = "archunit-library", version.ref = "archunit" }
