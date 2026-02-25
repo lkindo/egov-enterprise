@@ -19,7 +19,13 @@ public class CryptoUtil implements ApplicationContextAware {
 
     @org.springframework.beans.factory.annotation.Value("${Globals.File.algorithmKey:egovframe}")
     public void setAlgorithmKey(String key) {
-        log.info("### CryptoUtil: algorithmKey injected: {}", key);
+        if ("egovframe".equals(key)) {
+            log.warn("### CryptoUtil WARNING: Using default insecure algorithmKey 'egovframe'. Please change this in production configuration!");
+        } else if (key != null && key.length() < 16) {
+            log.warn("### CryptoUtil WARNING: AlgorithmKey is too short ({} chars). Recommended length is at least 16 characters.", key.length());
+        } else {
+            log.info("### CryptoUtil: algorithmKey injected (length: {})", (key != null ? key.length() : "null"));
+        }
         CryptoUtil.algorithmKey = key;
     }
 
