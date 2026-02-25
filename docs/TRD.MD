@@ -1,8 +1,8 @@
 # 전자정부프레임워크 5.0 공통 모듈 구축 - 기술 설계서 (TRD)
 
-> **최종 업데이트**: 2026-02-23  
-> **프로젝트 진행률**: ✅ 85% 완료  
-> **문서 버전**: 2.0
+> **최종 업데이트**: 2026-02-25  
+> **프로젝트 진행률**: ✅ 90% 완료  
+> **문서 버전**: 2.1
 
 ## 1. 기술적 목표 (Technical Goals)
 
@@ -12,7 +12,7 @@
 |------|------|------|
 | **Modular Monolith** | 모듈 단위의 재사용성 확보, 의존성 최소화 | ✅ 완료 |
 | **JPA 중심 데이터 처리** | MyBatis → Spring Data JPA + QueryDSL 전환 | ✅ 완료 (98%) |
-| **Modern Frontend** | JSP → Next.js 16 + React + TypeScript | ✅ 완료 |
+| **Modern Frontend** | JSP → Next.js 15 + React + TypeScript | ✅ 완료 |
 | **Stateless Authentication** | JWT 기반 인증, MSA 확장성 확보 | ✅ 완료 |
 | **Type Safety** | TypeScript Strict 모드, any 제거 | ✅ 완료 |
 
@@ -25,12 +25,12 @@ Gradle 기반의 계층형 멀티 모듈 구조를 채택하여 도메인 중심
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Frontend Layer                           │
-│  frontend/ (Next.js 16, TypeScript, Tailwind CSS, Shadcn/UI)   │
+│  frontend/ (Next.js 15, TypeScript, Tailwind CSS, Shadcn/UI)   │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ REST API + JWT
 ┌─────────────────────────────────────────────────────────────────┐
 │                        API Gateway Layer                        │
-│  api-server/ (Spring Boot 3.3, Spring Security 6, JWT, Swagger) │
+│  api-server/ (Spring Boot 3.4, Spring Security 6, JWT, Swagger) │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ Service Call
 ┌─────────────────────────────────────────────────────────────────┐
@@ -58,7 +58,7 @@ Gradle 기반의 계층형 멀티 모듈 구조를 채택하여 도메인 중심
 | **common-security** | 5+ | 30+ | **JWT 인증/인가**, Spring Security 설정, 필터 체인 | common-domain, common-core |
 | **common-service** | 70 | 190+ | 핵심 비즈니스 로직, 트랜잭션 관리, 외부 시스템 연계 | common-domain, common-core |
 | **api-server** | 6+ | 115+ | **REST 컨트롤러**, Swagger 문서, 파일 서빙 | common-service, common-security |
-| **frontend** | 165+ | 300+ | **Next.js 16** UI, 상태 관리, API 클라이언트 | N/A |
+| **frontend** | 165+ | 300+ | **Next.js 15** UI, 상태 관리, API 클라이언트 | N/A |
 
 ### 2.3. 의존성 그래프
 
@@ -88,7 +88,7 @@ graph TD
 | 분류 | 기술 및 버전 | 비고 |
 | :--- | :--- | :--- |
 | **Language** | **Java 21 (LTS)** | Record, Pattern Matching, Sealed Classes |
-| **Framework** | **Spring Boot 3.3.7** | eGovFrame 5.0 표준 준수 |
+| **Framework** | **Spring Boot 3.4.1** | eGovFrame 5.0 표준 준수 |
 | **Persistence** | **Spring Data JPA 3.3**, QueryDSL 5.1.0 | 복잡한 쿼리는 QueryDSL 원칙 |
 | **Database** | **PostgreSQL 16+** | Docker 기반 운영, H2 (테스트) |
 | **Security** | **Spring Security 6.3**, JWT (jjwt 0.12.6) | Stateless, OAuth2 확장 가능 |
@@ -103,7 +103,7 @@ graph TD
 
 | 분류 | 기술 및 버전 | 비고 |
 | :--- | :--- | :--- |
-| **Framework** | **Next.js 16.1 (App Router)** | SSR, ISR, Server Components |
+| **Framework** | **Next.js 15.1 (App Router)** | SSR, ISR, Server Components |
 | **Language** | **TypeScript 5.x** | Strict Mode, noImplicitAny |
 | **Styling** | **Tailwind CSS 4.0**, **Shadcn/UI** | 컴포넌트 기반 디자인 시스템 |
 | **State** | **React Context**, **Zustand**, **TanStack Query 5.x** | 서버 상태 관리 |
@@ -389,6 +389,6 @@ services:
 
 ---
 
-*Last Updated: 2026-02-23*  
+*Last Updated: 2026-02-25*
 *Document Version: 2.0*  
 *Approved by: Project Architecture Team*

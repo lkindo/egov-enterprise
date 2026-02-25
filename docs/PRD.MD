@@ -1,13 +1,13 @@
 # 전자정부프레임워크 5.0 기반 전사 공통 모듈 구축 - 제품 요구사항 정의서 (PRD)
 
-> **최종 업데이트**: 2026-02-23  
-> **프로젝트 진행률**: ✅ 85% 완료 (Phase 1-4 완료, Phase 5 고도화 진행 중)
+> **최종 업데이트**: 2026-02-25  
+> **프로젝트 진행률**: ✅ 90% 완료 (Phase 1-4 완료, Phase 5 고도화 진행 중)
 
 ## 1. 프로젝트 개요
 
 본 프로젝트는 **전자정부프레임워크 5.0(Spring Boot 3.3)**을 기반으로, 여러 프로젝트에서 재사용 가능한 핵심 공통 기능을 모듈화하여 개발 생산성을 높이고 시스템 간 표준화를 달성하는 것을 목적으로 합니다.
 
-**현황**: 2026-02-23 기준, 핵심 기능의 95% 이상이 구현되었으며, Next.js 16 기반 프론트엔드와 Spring Boot 3.3 + JPA 기반 백엔드가 통합되어 운영 가능한 수준입니다.
+**현황**: 2026-02-25 기준, 핵심 기능의 95% 이상이 구현되었으며, Next.js 15 기반 프론트엔드와 Spring Boot 3.4 + JPA 기반 백엔드가 통합되어 운영 가능한 수준입니다.
 
 ## 2. 목표 및 핵심 가치
 
@@ -16,7 +16,7 @@
 | **표준화** | 전사 프로젝트에 동일한 보안 및 데이터 처리 표준 적용 | ✅ 완료 |
 | **재사용성** | 멀티 모듈 구조를 통한 필요한 기능의 선택적 도입 | ✅ 완료 |
 | **현대화** | 기존 MyBatis 중심의 샘플을 JPA 및 REST API 기반으로 고도화 | ✅ 완료 (98%) |
-| **풀스택 통합** | Next.js 16+ 기반 모던 프론트엔드와 백엔드 통합 | ✅ 완료 |
+| **풀스택 통합** | Next.js 15+ 기반 모던 프론트엔드와 백엔드 통합 | ✅ 완료 |
 
 ## 3. 주요 기능 요구사항
 
@@ -69,7 +69,7 @@
 
 | 분류 | 기술 및 버전 | 상태 |
 | :--- | :--- | :---: |
-| **Framework** | 전자정부프레임워크 5.0 (Spring Boot 3.3.7) | ✅ |
+| **Framework** | 전자정부프레임워크 5.0 (Spring Boot 3.4.1) | ✅ |
 | **Language** | Java 21 (LTS) | ✅ |
 | **Persistence** | Spring Data JPA + QueryDSL 5.1.0 | ✅ |
 | **Security** | Spring Security 6.3 + JWT 0.12.6 (jjwt) | ✅ |
@@ -82,7 +82,7 @@
 
 | 분류 | 기술 및 버전 | 상태 |
 | :--- | :--- | :---: |
-| **Framework** | Next.js 16.1 (App Router) | ✅ |
+| **Framework** | Next.js 15.1 (App Router) | ✅ |
 | **Language** | TypeScript 5.x (Strict) | ✅ |
 | **Styling** | Tailwind CSS 4.0 + Shadcn/UI | ✅ |
 | **State** | React Context + TanStack Query 5.x | ✅ |
@@ -184,6 +184,6 @@ frontend → api-server → common-service → common-domain → common-core
 
 ---
 
-*Last Updated: 2026-02-23*  
+*Last Updated: 2026-02-25*  
 *Document Version: 2.0*  
 *Approved by: Project Architecture Team*
