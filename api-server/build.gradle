@@ -13,32 +13,25 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation libs.springdoc.openapi
     
-    // JSP Support - Required for legacy eGovFrame components
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
     implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
     implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
     compileOnly 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
     
-    // MyBATIS Support - Migration to JPA in progress (Phase A modules completed)
     implementation libs.mybatis.starter
-    
-    // Legacy Dependencies
-    implementation libs.icu4j // ChineseCalendar 등
+    implementation libs.icu4j
     implementation libs.commons.io
     implementation libs.guava
     implementation libs.commons.lang3
     implementation 'jakarta.json:jakarta.json-api:2.1.3'
-    implementation libs.parsson // JSON-P implementation
+    implementation libs.parsson
     implementation libs.postgresql
 
-    // Missing Enterprise Dependencies
     implementation libs.commons.email
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.batch:spring-batch-infrastructure'
     implementation 'org.springframework.boot:spring-boot-starter-batch'
-    // implementation 'org.springframework.boot:spring-boot-starter-data-ldap'
     
-    // eGovFrame Batch
     implementation libs.egovframe.rte.bat.core
     implementation libs.egovframe.rte.fdl.access
     implementation libs.egovframe.rte.fdl.crypto
@@ -49,38 +42,21 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
     
-    // JSON Simple (Legacy Support) - Removed
-    // implementation 'com.googlecode.json-simple:json-simple:1.1.1'
-    
-    // Apache Commons Net (FTP)
     implementation libs.commons.net
-    
-    // XML Processing (Legacy)
     implementation libs.xmlbeans
     implementation libs.jdom2
-    
-    // Database Connection Pool (Legacy)
     implementation libs.commons.dbcp2
-    
-    // File Upload (Legacy) - Removed
-    // implementation 'commons-fileupload:commons-fileupload:1.5'
 
-    // Social Login (ScribeJava)
     implementation libs.scribejava.apis
     implementation libs.scribejava.core
 
-    // Twitter API V2 Support - Removed due to module decommissioning
-    // implementation 'org.twitter4j:twitter4j-core:4.1.2'
-    // implementation 'io.github.takke:twitter4j-v2:1.4.4'
-
-    // Lombok - io.freefair.lombok 8.10 플러그인이 자동으로 처리함
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
     testImplementation libs.archunit.junit5
+    testImplementation libs.archunit.library
     
-    // Performance Optimization
-    implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket Support
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 bootJar {

@@ -57,6 +57,13 @@ spring:
       prefix: /WEB-INF/jsp/
       suffix: .jsp
 
+  batch:
+    jdbc:
+      initialize-schema: never
+
+jwt:
+  secret: ${JWT_SECRET:v6yB8b6tV9zCvB8b6tV9zCvB8b6tV9zCvB8b6tV9zCvh6789012345678901234567890}
+
 logging:
   level:
     root: warn

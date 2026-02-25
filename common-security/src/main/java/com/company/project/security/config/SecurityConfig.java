@@ -22,7 +22,7 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@org.springframework.context.annotation.Profile("!test")
+@org.springframework.context.annotation.Profile("none")
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
