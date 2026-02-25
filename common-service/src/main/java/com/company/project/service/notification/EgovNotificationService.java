@@ -3,15 +3,14 @@ package com.company.project.service.notification;
 import com.company.project.service.notification.dto.NotificationDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 
 /**
- * ?뺣낫?뚮┝ ?쒕퉬???명꽣?섏씠??
+ * 알림 정보 서비스 인터페이스
  */
 public interface EgovNotificationService {
 
-    Page<NotificationDto> getNotificationList(String keyword, @org.springframework.lang.NonNull Pageable pageable);
+    Page<NotificationDto> getNotificationList(String keyword, Pageable pageable);
 
     NotificationDto getNotification(String ntfcNo);
 
@@ -22,4 +21,8 @@ public interface EgovNotificationService {
     void deleteNotification(String ntfcNo);
 
     List<NotificationDto> getActiveNotifications();
+
+    long getUnreadCount(String userId);
+
+    void markAsRead(String ntfcNo);
 }

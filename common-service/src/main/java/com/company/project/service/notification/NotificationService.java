@@ -25,9 +25,9 @@ public class NotificationService implements EgovNotificationService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public Page<NotificationDto> getNotificationList(String keyword,
-            @org.springframework.lang.NonNull Pageable pageable) {
-        return notificationRepository.searchNotifications(keyword, pageable).map(NotificationDto::from);
+    public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
+        return notificationRepository.searchNotifications(keyword, pageable)
+                .map(NotificationDto::from);
     }
 
     @Override
@@ -46,16 +46,16 @@ public class NotificationService implements EgovNotificationService {
                 .ntfcSj(dto.getNtfcSj())
                 .ntfcCn(dto.getNtfcCn())
                 .receiverId(userId)
-                .linkUrl(dto.getUniqId()) // Assuming linkUrl mapping
+                .linkUrl(dto.getUniqId())
                 .build();
-        entity.setFrstRegisterId(userId);
-        notificationRepository.save(Objects.requireNonNull(entity));
+        
+        notificationRepository.save(entity);
 
-        // Send Real-time notification via WebSocket
-        messagingTemplate.convertAndSend("/topic/public", Objects.requireNonNull(NotificationDto.from(entity)));
+        // WebSocket 실시간 알림 전송
+        NotificationDto responseDto = NotificationDto.from(entity);
+        messagingTemplate.convertAndSend("/topic/public", responseDto);
         if (userId != null) {
-            messagingTemplate.convertAndSendToUser(userId, "/queue/notifications",
-                    Objects.requireNonNull(NotificationDto.from(entity)));
+            messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
         }
 
         return id;
@@ -64,7 +64,7 @@ public class NotificationService implements EgovNotificationService {
     @Override
     @Transactional
     public void updateNotification(String ntfcNo, String userId, NotificationDto dto) {
-        Notification entity = notificationRepository.findById(Objects.requireNonNull(ntfcNo))
+        Notification entity = notificationRepository.findById(ntfcNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getNtfcSj(), dto.getNtfcCn(), dto.getNtfcTime(), dto.getBhNtfcIntrvl());
     }
@@ -72,13 +72,24 @@ public class NotificationService implements EgovNotificationService {
     @Override
     @Transactional
     public void deleteNotification(String ntfcNo) {
-        notificationRepository.deleteById(Objects.requireNonNull(ntfcNo));
+        notificationRepository.deleteById(ntfcNo);
     }
 
     @Override
     public List<NotificationDto> getActiveNotifications() {
-        return notificationRepository.findAll().stream() // Or custom logic
+        return notificationRepository.findAll().stream()
                 .map(NotificationDto::from)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public long getUnreadCount(String userId) {
+        return notificationRepository.countByReceiverIdAndIsRead(userId, "N");
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(String ntfcNo) {
+        notificationRepository.findById(ntfcNo).ifPresent(Notification::markAsRead);
     }
 }
