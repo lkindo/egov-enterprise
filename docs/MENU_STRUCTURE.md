@@ -91,5 +91,5 @@
 | ✅ | 약관관리 | `/admin/terms` | `/uss/sam/stp/StplatListInqire.do` | NSTPLATINFO |
 
 ---
-**최종 수정일**: 2026-02-08
+**최종 수정일**: 2026-02-25
 **수정 내용**: 실물 frontend 라우팅 구조 및 task.md 완료 상태 기반 전면 동기화

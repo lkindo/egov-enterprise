@@ -1,8 +1,8 @@
 # 프로젝트 전체 진행 현황 (Project Status Dashboard)
 
-> **최종 업데이트**: 2026-02-23  
-> **프로젝트명**: eGov Enterprise Modernization (전자정부 프레임워크 모더니제이션)  
-> **기술 스택**: Next.js 16 + Spring Boot 3.3 + PostgreSQL
+> **최종 업데이트**: 2026-02-25
+> **프로젝트명**: eGov Enterprise Modernization (전자정부 프레임워크 모더니제이션)
+> **기술 스택**: Next.js 15 + Spring Boot 3.4 + PostgreSQL
 
 ---
 
@@ -27,10 +27,10 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Frontend Layer                         │
-│  Next.js 16 (App Router) + TypeScript + Shadcn/UI          │
+│  Next.js 15 (App Router) + TypeScript + Shadcn/UI          │
 ├─────────────────────────────────────────────────────────────┤
 │                      API Gateway                            │
-│  Spring Boot 3.3 + Spring Security 6 + JWT                 │
+│  Spring Boot 3.4 + Spring Security 6 + JWT                 │
 ├─────────────────────────────────────────────────────────────┤
 │                   Business Logic Layer                      │
 │  Domain-Driven Service Modules (common-service)            │
@@ -522,7 +522,7 @@ pnpm test:e2e          # Playwright E2E 테스트
 | **보안** | 90% | ✅ 거의 완료 | JWT, RBAC, CORS 완료, OWASP 감사 대기 |
 | **문서화** | 95% | ✅ 완료 | PRD, TRD, LLD, README, PROJECT_STATUS 완료 |
 
-**전체 프로젝트 진행률**: ✅ **약 85% 완료** (Phase 1-4 완료, Phase 5 고도화 진행 중)
+**전체 프로젝트 진행률**: ✅ **약 90% 완료** (Phase 1-4 완료, Phase 5 고도화 진행 중)
 
 ---
 
@@ -538,6 +538,6 @@ pnpm test:e2e          # Playwright E2E 테스트
 
 ---
 
-*Last Updated: 2026-02-23*  
+*Last Updated: 2026-02-25*  
 *Project Version: 0.0.1-SNAPSHOT*  
-*Document Version: 2.0*
+*Document Version: 2.1*

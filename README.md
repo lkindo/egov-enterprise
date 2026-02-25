@@ -18,20 +18,21 @@
 ## 🛠 기술 스택 (Modern Tech Stack)
 
 ### Frontend
-- **Framework**: Next.js 16.x (App Router)
-- **Language**: TypeScript 5.0+ (Strict Mode)
+- **Framework**: Next.js 15.x (App Router)
+- **Language**: TypeScript 5.x (Strict Mode)
 - **Styling**: Tailwind CSS 4.x, Shadcn/UI (Modern Component System)
-- **State/Data**: Axios, React Hooks, Client/Server Components
+- **State/Data**: Axios, TanStack Query 5.x, Client/Server Components
 - **Visualization**: Recharts (Chart components)
+- **Communication**: WebSocket (STOMP), Socket.io (선택 가용)
 - **Icons**: Lucide React
 
 ### Backend
-- **Core**: Spring Boot 3.3.x, Java 21 (LTS)
+- **Core**: Spring Boot 3.4.x, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
-- **Service**: Domain-driven Architecture (Modular structure)
-- **Security**: Spring Security 6, JWT (Json Web Token)
-- **API**: RESTful API with JSON
-- **Build**: Gradle 8.x
+- **Architecture**: Modular Monolith & Event-Driven (Spring Events)
+- **Security**: Spring Security 6.x, JWT (Json Web Token)
+- **API**: RESTful API with OpenAPI 3.0
+- **Build**: Gradle 8.12 (Version Catalog)
 
 ---
 
@@ -134,13 +135,22 @@ pnpm dev
 ```
 refactor: add build artifacts to .gitignore and cleanup tracked files
 refactor: enforce LF line endings in .gitattributes
-refactor: update API server configuration
-refactor: apply LF line endings and cleanup Java source code (770 files)
-refactor: update build configuration
-refactor: update frontend files
-chore: add binary file extensions to .gitignore
-chore: add sensitive config directory to .gitignore
+refactor: apply Version Catalog (libs.versions.toml) for dependency management
+refactor: enforce Modular Monolith principles (bootJar separation)
+feat: implement Event-Driven communication (PostCreatedEvent)
+refactor: enhance data access boundary via Service Interface
+refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 ```
+
+---
+
+## 🛠 모듈러 모놀리스 & 이벤트 중심 설계
+
+본 프로젝트는 단순한 계층형 구조를 넘어, 모듈 간 결합도를 낮추기 위해 다음 원칙을 준수합니다.
+
+1. **상호 서비스 주입 금지**: 모듈 간 의존성은 인터페이스(Service Interface)를 통해서만 이루어지며, 직접적인 Repository 접근을 금지합니다.
+2. **이벤트 기반 동기화**: 게시글 등록(`PostCreatedEvent`) 등의 비즈니스 사례 발생 시, 이벤트를 발행하여 타 모듈(통계, 알림 등)과의 결합성을 최소화합니다.
+3. **독립적 빌드 구성**: 라이브러리 성격의 모듈은 `bootJar`를 생성하지 않으며 오직 진입점 모듈(`api-server`)만 실행 파일을 생성합니다.
 
 ---
 
@@ -217,4 +227,4 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-*Last Updated: 2026-02-23*
+*Last Updated: 2026-02-25*

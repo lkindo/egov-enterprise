@@ -1,8 +1,8 @@
 # 전자정부프레임워크 5.0 공통 모듈 구축 - 상세 설계서 (LLD)
 
-> **최종 업데이트**: 2026-02-23  
-> **프로젝트 진행률**: ✅ 85% 완료  
-> **문서 버전**: 2.0
+> **최종 업데이트**: 2026-02-25  
+> **프로젝트 진행률**: ✅ 90% 완료  
+> **문서 버전**: 2.1
 
 ## 1. 프로젝트 구조 및 패키지 설계
 
@@ -113,7 +113,7 @@ api-server/
     └── web/                    # WebMvc 설정
 ```
 
-### 1.2. 프론트엔드 (Next.js 16 App Router)
+### 1.2. 프론트엔드 (Next.js 15 App Router)
 
 ```
 frontend/
@@ -600,6 +600,6 @@ async function getUser(id: string): Promise<any> {  // any 사용 금지
 
 ---
 
-*Last Updated: 2026-02-23*  
+*Last Updated: 2026-02-25*
 *Document Version: 2.0*  
 *Approved by: Project Architecture Team*
