@@ -26,8 +26,49 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Link from 'next/link';
+
+// Optimizations:
+// 1. Memoized locally defined components (SummaryCard, DashboardListCard).
+// 2. Extracted static icons and color maps to module constants to prevent object recreation on re-renders.
+// 3. Extracted framer-motion variants to constants.
+
+const ICON_CALENDAR = <Calendar size={24} />;
+const ICON_ZAP = <Zap size={24} />;
+const ICON_BELL = <Bell size={24} />;
+const ICON_SHIELD = <ShieldCheck size={24} />;
+const ICON_BELL_SMALL = <Bell size={20} />;
+const ICON_CHECK_SMALL = <CheckCircle2 size={20} />;
+
+const SUMMARY_CARD_COLOR_MAP: Record<string, string> = {
+  blue: "bg-blue-500 text-white border-blue-600 shadow-blue-500/20",
+  orange: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20",
+  purple: "bg-white text-slate-900 border-slate-100 shadow-slate-200/50",
+  emerald: "bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/20"
+};
+
+const SUMMARY_CARD_ICON_BG_MAP: Record<string, string> = {
+  blue: "bg-white/20 text-white",
+  orange: "bg-primary/20 text-primary",
+  purple: "bg-slate-100 text-slate-900",
+  emerald: "bg-white/20 text-white"
+};
+
+const LIST_CARD_COLOR_MAP: Record<string, string> = {
+  blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50",
+  emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50"
+};
+
+const CARD_VARIANTS: Variants = {
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: { scale: 1, opacity: 1 }
+};
+
+const LIST_CARD_VARIANTS: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 }
+};
 
 const DashboardVisitorChart = dynamic(
   () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
@@ -71,7 +112,7 @@ export default function UnifiedDashboardClient({
   }, [user, loading, router]);
 
   // Framer Motion Variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -81,7 +122,7 @@ export default function UnifiedDashboardClient({
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -152,7 +193,7 @@ export default function UnifiedDashboardClient({
           title="잔여 연차" 
           value={`${myLeave?.remndrYrycCo || 0}d`} 
           description={`Total 15 days allotted for ${new Date().getFullYear()}`} 
-          icon={<Calendar size={24} />} 
+          icon={ICON_CALENDAR}
           trend={12} 
           color="blue" 
         />
@@ -160,7 +201,7 @@ export default function UnifiedDashboardClient({
           title="내 업무 현황" 
           value="12" 
           description="3 high-priority tasks pending" 
-          icon={<Zap size={24} />} 
+          icon={ICON_ZAP}
           trend={-5} 
           color="orange" 
         />
@@ -168,7 +209,7 @@ export default function UnifiedDashboardClient({
           title="새 알림" 
           value="05" 
           description="Updates from collaboration teams" 
-          icon={<Bell size={24} />} 
+          icon={ICON_BELL}
           trend={2} 
           color="purple" 
         />
@@ -176,7 +217,7 @@ export default function UnifiedDashboardClient({
           title="보안 지수" 
           value="Safe" 
           description="Encryption active & identity verified" 
-          icon={<ShieldCheck size={24} />} 
+          icon={ICON_SHIELD}
           trend={0} 
           color="emerald" 
         />
@@ -214,14 +255,14 @@ export default function UnifiedDashboardClient({
             <DashboardListCard 
               title="Recent Notices" 
               items={notiList} 
-              icon={<Bell size={20} />} 
+              icon={ICON_BELL_SMALL}
               moreHref="/cop/bbs" 
               color="blue" 
             />
             <DashboardListCard 
               title="Assigned Tasks" 
               items={taskList} 
-              icon={<CheckCircle2 size={20} />} 
+              icon={ICON_CHECK_SMALL}
               moreHref="/cop/bbs" 
               color="emerald" 
             />
@@ -265,35 +306,18 @@ export default function UnifiedDashboardClient({
   );
 }
 
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
-  const colorMap: any = {
-    blue: "bg-blue-500 text-white border-blue-600 shadow-blue-500/20",
-    orange: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20",
-    purple: "bg-white text-slate-900 border-slate-100 shadow-slate-200/50",
-    emerald: "bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/20"
-  };
-
-  const iconBgMap: any = {
-    blue: "bg-white/20 text-white",
-    orange: "bg-primary/20 text-primary",
-    purple: "bg-slate-100 text-slate-900",
-    emerald: "bg-white/20 text-white"
-  };
-
+const SummaryCard = React.memo(function SummaryCard({ title, value, description, icon, trend, color }: any) {
   return (
     <motion.div 
-      variants={{
-        hidden: { scale: 0.9, opacity: 0 },
-        visible: { scale: 1, opacity: 1 }
-      }}
+      variants={CARD_VARIANTS}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
         "p-10 rounded-[3.5rem] border-2 transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
-        colorMap[color]
+        SUMMARY_CARD_COLOR_MAP[color]
       )}
     >
       <div className="flex justify-between items-start relative z-10">
-        <div className={cn("p-5 rounded-[1.5rem] transition-transform group-hover:rotate-6", iconBgMap[color])}>
+        <div className={cn("p-5 rounded-[1.5rem] transition-transform group-hover:rotate-6", SUMMARY_CARD_ICON_BG_MAP[color])}>
           {icon}
         </div>
         {trend !== 0 && (
@@ -324,20 +348,12 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       </div>
     </motion.div>
   );
-}
+});
 
-function DashboardListCard({ title, items, icon, moreHref, color }: any) {
-  const itemColorMap: any = {
-    blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50",
-    emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50"
-  };
-
+const DashboardListCard = React.memo(function DashboardListCard({ title, items, icon, moreHref, color }: any) {
   return (
     <motion.div 
-      variants={{
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1 }
-      }}
+      variants={LIST_CARD_VARIANTS}
       className="border-2 border-primary/5 rounded-[4rem] bg-card shadow-2xl flex flex-col h-[480px] group overflow-hidden"
     >
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between">
@@ -361,7 +377,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-[2rem] border-2 border-transparent transition-all cursor-pointer group/item",
-                itemColorMap[color]
+                LIST_CARD_COLOR_MAP[color]
               )}
             >
               <div className="flex items-center justify-between">
@@ -384,7 +400,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
       </div>
     </motion.div>
   );
-}
+});
 
 function DashboardSkeleton() {
   return (
