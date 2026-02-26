@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface StandardFormProps {
   children: React.ReactNode;
   onSubmit?: (e: React.FormEvent) => void;
+  action?: any;
   className?: string;
   title?: string;
   description?: string;
@@ -13,6 +14,7 @@ interface StandardFormProps {
 export function StandardForm({ 
   children, 
   onSubmit, 
+  action,
   className,
   title,
   description,
@@ -27,7 +29,7 @@ export function StandardForm({
         </div>
       )}
       
-      <form onSubmit={onSubmit} className="p-6 space-y-6">
+      <form onSubmit={onSubmit} action={action} className="p-6 space-y-6">
         <div className="grid gap-6">
           {children}
         </div>

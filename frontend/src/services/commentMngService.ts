@@ -11,14 +11,12 @@ export interface CommentDetail {
 }
 
 export const commentMngService = {
-  getComments: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/admin/system/comments', { params });
-    return response;
+  getComments: async (params: { page?: number; size?: number; searchWrd?: string }, config?: any) => {
+    return client.get<any>('/admin/system/comments', { ...config, params });
   },
 
-  deleteComment: async (commentNo: number) => {
-    const response = await client.delete(`/admin/system/comments/${commentNo}`);
-    return response;
+  deleteComment: async (commentNo: number, config?: any) => {
+    return client.delete(`/admin/system/comments/${commentNo}`, config);
   }
 };
 

@@ -27,8 +27,8 @@ export default function DutyPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await dutyService.getDuties({});
-      if (res.success) setDuties(res.data || []);
+      const res = (await dutyService.getDuties({})) as any;
+      if (res?.success) setDuties(res.data || []);
     } catch (error) {
       toast('당직 정보를 불러오지 못했습니다.', 'error');
     } finally {
@@ -63,8 +63,8 @@ export default function DutyPage() {
   const handleDelete = async (item: Duty) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const res = await dutyService.deleteDuty(item.dutyId);
-      if (res.success) {
+      const res = (await dutyService.deleteDuty(item.dutyId)) as any;
+      if (res?.success) {
         toast('당직 정보가 삭제되었습니다.', 'success');
         loadData();
       }

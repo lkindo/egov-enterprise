@@ -49,7 +49,7 @@ export default function QnaManagePage() {
         queryFn: () => getQnaList(params),
     });
 
-    const qnas = data?.resultList || [];
+    const qnas: QnaVO[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const createMutation = useMutation({

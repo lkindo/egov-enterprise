@@ -7,17 +7,18 @@ export interface UserAbsence {
   lastUpdusrPnttm?: string;
 }
 
+interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+}
+
 export const absenceService = {
-  getAbsences: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/admin/user/absences', { params });
-    return response;
-  },
+  getAbsences: async (params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<UserAbsence>> =>
+    client.get<PageResult<UserAbsence>>('/admin/user/absences', { params }),
 
-  updateAbsence: async (userId: string, isAbsent: boolean) => {
-    const response = await client.put(`/admin/user/absences/${userId}`, { 
+  updateAbsence: async (userId: string, isAbsent: boolean): Promise<void> =>
+    client.put(`/admin/user/absences/${userId}`, { 
       userAbsnceAt: isAbsent ? 'Y' : 'N' 
-    });
-    return response;
-  }
+    })
 };
-

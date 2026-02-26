@@ -2,29 +2,18 @@
 import { Program, ProgramResponse } from '@/types/program';
 
 export const programService = {
-  getPrograms: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get<ProgramResponse>('/admin/programs', { params });
-    return response;
-  },
+    getPrograms: async (params: { page?: number; size?: number; searchWrd?: string }, config?: any): Promise<ProgramResponse> =>
+        client.get<ProgramResponse>('/admin/programs', { ...config, params }),
 
-  getProgram: async (name: string) => {
-    const response = await client.get(`/admin/programs/${name}`);
-    return response;
-  },
+    getProgram: async (name: string, config?: any): Promise<Program> =>
+        client.get<Program>(`/admin/programs/${name}`, config),
 
-  createProgram: async (data: Program) => {
-    const response = await client.post('/admin/programs', data);
-    return response;
-  },
+    createProgram: async (data: Program, config?: any): Promise<void> =>
+        client.post('/admin/programs', data, config),
 
-  updateProgram: async (name: string, data: Program) => {
-    const response = await client.put(`/admin/programs/${name}`, data);
-    return response;
-  },
+    updateProgram: async (name: string, data: Program, config?: any): Promise<void> =>
+        client.put(`/admin/programs/${name}`, data, config),
 
-  deleteProgram: async (name: string) => {
-    const response = await client.delete(`/admin/programs/${name}`);
-    return response;
-  }
+    deleteProgram: async (name: string, config?: any): Promise<void> =>
+        client.delete(`/admin/programs/${name}`, config),
 };
-

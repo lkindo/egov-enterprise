@@ -35,7 +35,7 @@ const ScrapListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10 };
-            const response = await axios.get('/scrap', { params });
+            const response = (await axios.get('/scrap', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
@@ -53,7 +53,7 @@ const ScrapListPage = () => {
     const handleDelete = async (id: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/scrap/${id}`);
+            (await axios.delete(`/scrap/${id}`)) as any;
             fetchList();
         } catch (error) {
             alert('삭제에 실패했습니다.');

@@ -40,7 +40,7 @@ export default function CommonClCodePage() {
         queryFn: () => getClCodeList(params),
     });
 
-    const codes = data?.resultList || [];
+    const codes: CmmnClCode[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {

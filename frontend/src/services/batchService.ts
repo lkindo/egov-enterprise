@@ -4,7 +4,7 @@ export interface BatchSchedule {
   batchSchdulId: string;
   batchOpertId: string;
   batchOpertNm: string;
-  executCycle: string; // 01:留ㅼ씪, 02:留ㅼ＜...
+  executCycle: string; // 01:매일, 02:매주...
   executSchdulDe: string;
   executSchdulHour: string;
   executSchdulMnt: string;
@@ -14,34 +14,21 @@ export interface BatchSchedule {
 export interface BatchResult {
   batchResultId: string;
   batchOpertNm: string;
-  sttus: string; // 01:?깃났, 02:?ㅽ뙣, 03:?섑뻾以?
+  sttus: string; // 01:성공, 02:실패, 03:수행중
   executBeginTime: string;
   executEndTime: string;
 }
 
 export const batchService = {
-  /**
-   * 諛곗튂 ?ㅼ?以?紐⑸줉 議고쉶
-   */
-  getSchedules: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/admin/system/batches/schedules', { params });
-    return response;
+  getSchedules: async (params: { page?: number; size?: number; searchWrd?: string }, config?: any) => {
+    return client.get<any>('/admin/system/batches/schedules', { ...config, params });
   },
 
-  /**
-   * 諛곗튂 ?ㅽ뻾 寃곌낵 紐⑸줉 議고쉶
-   */
-  getResults: async (params: { page?: number; size?: number }) => {
-    const response = await client.get('/admin/system/batches/results', { params });
-    return response;
+  getResults: async (params: { page?: number; size?: number }, config?: any) => {
+    return client.get<any>('/admin/system/batches/results', { ...config, params });
   },
 
-  /**
-   * 諛곗튂 利됱떆 ?ㅽ뻾
-   */
-  executeNow: async (id: string) => {
-    const response = await client.post(`/admin/system/batches/schedules/${id}/execute`);
-    return response;
+  executeNow: async (id: string, config?: any) => {
+    return client.post(`/admin/system/batches/schedules/${id}/execute`, null, config);
   }
 };
-

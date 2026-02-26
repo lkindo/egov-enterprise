@@ -30,7 +30,7 @@ const ScrapDetailPage = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/scrap/${scrapId}`);
+            const response = (await axios.get(`/scrap/${scrapId}`)) as any;
             setDetail(response.data.scrap);
         } catch (error) {
             console.error('Failed to fetch scrap detail', error);
@@ -47,7 +47,7 @@ const ScrapDetailPage = () => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         setActionLoading(true);
         try {
-            const response = await axios.delete(`/scrap/${scrapId}`);
+            const response = (await axios.delete(`/scrap/${scrapId}`)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/scp/selectScrapList');

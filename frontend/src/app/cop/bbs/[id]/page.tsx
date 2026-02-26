@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { boardService } from '@/services/boardService';
 import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Calendar, User, Eye, ArrowLeft, Trash2, Edit3, Paperclip } from 'lucide-react';
+import { Calendar, User, Eye, ArrowLeft, Trash2, Edit3, Paperclip, Loader2 } from 'lucide-react';
 
-export default function BoardDetailPage() {
+function BoardDetailContent() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId') || '';
@@ -23,8 +23,9 @@ export default function BoardDetailPage() {
   useEffect(() => {
     async function loadPost() {
       try {
-        const res = await boardService.getPost(bbsId, parseInt(id as string));
-        if (res) setPost(res);
+        const res = (await boardService.getPost(bbsId, parseInt(id as string))) as any;
+        if (res?.data) setPost(res.data);
+        else if (res) setPost(res);
       } catch (error) {
         toast('게시글을 찾을 수 없습니다.', 'error');
         router.back();
@@ -53,7 +54,7 @@ export default function BoardDetailPage() {
     }
   };
 
-  if (loading) return <div className="p-12 text-center animate-pulse font-medium">로딩 중...</div>;
+  if (loading) return <div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin"/> 로딩 중...</div>;
   if (!post) return null;
 
   return (
@@ -96,5 +97,13 @@ export default function BoardDetailPage() {
         )}
       </article>
     </div>
+  );
+}
+
+export default function BoardDetailPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin"/> 정보 로드 중...</div>}>
+      <BoardDetailContent />
+    </Suspense>
   );
 }

@@ -14,8 +14,8 @@ export function BannerSlider() {
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const res = await bannerService.getReflectedBanners();
-        if (res.success) {
+        const res = (await bannerService.getReflectedBanners()) as any;
+        if (res?.success) {
           setBanners(res.data);
         }
       } catch (error) {

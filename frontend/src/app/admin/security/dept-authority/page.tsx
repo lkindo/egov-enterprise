@@ -1,40 +1,41 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { useToast } from '@/app/components/ui/toast';
-import { ShieldCheck, Users, ChevronRight, Lock, Key, Save } from 'lucide-react';
+import { ShieldCheck, Users, ChevronRight, Key, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 import { deptService, Department } from '@/services/deptService';
 import { roleService, AuthorInfo } from '@/services/roleService';
 
+const DEPTS_KEY = ['admin', 'departments'] as const;
+const ROLES_KEY = ['admin', 'roles'] as const;
+
 export default function DeptAuthorityPage() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [depts, setDepts] = useState<Department[]>([]);
-  const [roles, setRoles] = useState<AuthorInfo[]>([]);
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadInitialData() {
-      try {
-        setLoading(true);
-        const [dRes, rRes] = await Promise.all([
-          deptService.getDepts(),
-          roleService.getAuthors()
-        ]);
-        if (dRes.success) setDepts(dRes.data || []);
-        if (rRes.success) setRoles(rRes.data || []);
-      } catch (error) {
-        toast('데이터를 불러오지 못했습니다.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadInitialData();
-  }, [toast]);
+  // [async-parallel] 독립 API (부서, 권한 목록) 개별 useQuery
+  const { data: deptsData, isLoading: deptsLoading } = useQuery({
+    queryKey: DEPTS_KEY,
+    queryFn: () => deptService.getDepts(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: rolesData, isLoading: rolesLoading } = useQuery({
+    queryKey: ROLES_KEY,
+    queryFn: () => roleService.getAuthors(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const depts: Department[] = (deptsData as any)?.data || (deptsData as any)?.list || deptsData || [];
+  const roles: AuthorInfo[] = (rolesData as any)?.data || (rolesData as any)?.list || rolesData || [];
+  
+  const loading = deptsLoading || rolesLoading;
 
   const columns = [
     {
@@ -50,7 +51,7 @@ export default function DeptAuthorityPage() {
     {
       header: '부여 여부', 
       className: 'text-center',
-      accessor: (item: AuthorInfo) => (
+      accessor: () => (
         <input 
           type="checkbox" 
           className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -59,18 +60,23 @@ export default function DeptAuthorityPage() {
     }
   ];
 
+  const handleSave = () => {
+    // TODO: implement save mutation
+    toast('권한 변경사항이 저장되었습니다.', 'success');
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <PageHeader 
         title="부서별 권한 일괄 관리" 
         breadcrumbs={[{ label: '보안관리' }, { label: '부서권한' }]}
         actions={
-          <button 
-            onClick={() => toast('권한 변경사항이 저장되었습니다.', 'success')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all"
+          <Button 
+            onClick={handleSave}
+            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all font-black h-11"
           >
             <Save size={18} /> 설정 저장
-          </button>
+          </Button>
         }
       />
 

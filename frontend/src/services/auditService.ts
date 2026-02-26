@@ -10,12 +10,7 @@ export interface AuditLog {
 }
 
 export const auditService = {
-  /**
-   * 媛먯궗 濡쒓렇 紐⑸줉 議고쉶 (Admin)
-   */
-  getAuditLogs: async (params: { page?: number; size?: number; keyword?: string }) => {
-    const response = await client.get('/admin/audit', { params });
-    return response;
+  getAuditLogs: async (params: { page?: number; size?: number; keyword?: string }, config?: any) => {
+    return client.get<any>('/admin/audit', { ...config, params });
   }
 };
-

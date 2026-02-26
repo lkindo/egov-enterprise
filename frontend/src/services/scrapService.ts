@@ -10,7 +10,7 @@ export interface Scrap {
 
 export const scrapService = {
   /**
-   * ?섏쓽 ?ㅽ겕??紐⑸줉 議고쉶
+   * 나의 스크랩 목록 조회
    */
   getMyScraps: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/scraps', { params });
@@ -18,11 +18,10 @@ export const scrapService = {
   },
 
   /**
-   * ?ㅽ겕????젣
+   * 스크랩 삭제
    */
   deleteScrap: async (id: string) => {
     const response = await client.delete(`/scraps/${id}`);
     return response;
   }
 };
-

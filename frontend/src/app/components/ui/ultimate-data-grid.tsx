@@ -35,6 +35,7 @@ interface UltimateDataGridProps<T> {
     className?: string;
     onDataChange?: (newData: T[]) => void;
     title?: string;
+    emptyMessage?: string;
 }
 
 export function UltimateDataGrid<T extends { [key: string]: any }>({

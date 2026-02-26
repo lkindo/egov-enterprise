@@ -3,7 +3,7 @@
 export interface WorkReport {
   reprtId: string;
   reprtSj: string;
-  reprtSe: string; // 1:二쇨컙, 2:?붽컙
+  reprtSe: string; // 1:주간, 2:월간
   reprtDe: string;
   wrterId: string;
   wrterNm?: string;
@@ -36,4 +36,3 @@ export const reportService = {
     return response;
   }
 };
-

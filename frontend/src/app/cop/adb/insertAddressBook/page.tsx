@@ -29,8 +29,8 @@ const InsertAddressBookPage = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post('/addressbook', formData);
-            if (response.data.success) {
+            const response = (await axios.post('/addressbook', formData)) as any;
+            if (response?.data?.success) {
                 alert(response.data.message);
                 router.push('/cop/adb/selectAddressBookList');
             }

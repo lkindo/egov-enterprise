@@ -1,207 +1,58 @@
-'use client';
-
-import React, { useEffect, useState, useCallback } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import { rewardService, Reward } from '@/services/rewardService';
-import { useToast } from '@/app/components/ui/toast';
-import { Trophy, Gift, User, Calendar, Plus, Edit, Trash2, CheckCircle2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { StandardModal } from '@/app/components/ui/standard-modal';
-import { RewardForm } from '@/components/admin/system/RewardForm';
+import RewardClient from './RewardClient';
+import { selectFieldsList } from '@/lib/utils/serialization';
 
-export default function RewardPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<Reward[]>([]);
-  const [searchParams, setSearchParams] = useState({ usid: '' });
+export const metadata = {
+  title: '임직원 포상 관리 | 전자정부 표준프레임워크',
+  description: '임직원의 포상 내역을 관리하고 승인 프로세스를 진행합니다.',
+};
 
-  // 모달 상태
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [mode, setMode] = useState<'create' | 'edit'>('create');
-  const [selectedReward, setSelectedReward] = useState<Reward | undefined>(undefined);
+export default async function RewardPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  const resolvedSearchParams = await searchParams;
+  const usid = (resolvedSearchParams.usid as string) || '';
 
-  const loadData = useCallback(async (params = searchParams) => {
-    try {
-      setLoading(true);
-      const res = await rewardService.getRewards({ ...params, page: 0, size: 50 });
-      if (res.success) {
-        setData(res.data.content || []);
-      }
-    } catch (error) {
-      toast('포상 정보를 불러오지 못했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast, searchParams]);
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  let rawData = { content: [] as Reward[], totalElements: 0, totalPages: 0 };
 
-  const handleOpenCreate = () => {
-    setMode('create');
-    setSelectedReward(undefined);
-    setIsModalOpen(true);
-  };
+  try {
+    rawData = await rewardService.getRewards({ usid, page: 0, size: 50 }, axiosConfig);
+  } catch (error) {
+    console.error('Server-side fetch rewards failed:', error);
+  }
 
-  const handleOpenEdit = (item: Reward) => {
-    setMode('edit');
-    setSelectedReward(item);
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (formData: Partial<Reward>) => {
-    try {
-      if (mode === 'create') {
-        await rewardService.createReward(formData);
-        toast('신규 포상이 등록되었습니다.', 'success');
-      } else {
-        await rewardService.updateReward(selectedReward!.rwdId, formData);
-        toast('포상 정보가 수정되었습니다.', 'success');
-      }
-      setIsModalOpen(false);
-      loadData();
-    } catch (error) {
-      toast('저장 중 오류가 발생했습니다.', 'error');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      await rewardService.deleteReward(id);
-      toast('삭제되었습니다.', 'success');
-      loadData();
-    } catch (error) {
-      toast('삭제 중 오류가 발생했습니다.', 'error');
-    }
-  };
-
-  const columns = [
-    { 
-      header: '종류', 
-      accessor: (item: Reward) => (
-        <span className={cn(
-          "px-2 py-0.5 rounded text-[10px] font-black uppercase",
-          item.rwdKnd === '1' ? "bg-orange-100 text-orange-700" :
-          item.rwdKnd === '2' ? "bg-blue-100 text-blue-700" :
-          "bg-green-100 text-green-700"
-        )}>
-          {item.rwdKnd === '1' ? '표창' : item.rwdKnd === '2' ? '포상금' : '휴가'}
-        </span>
-      )
-    },
-    { 
-      header: '포상명', 
-      accessor: (item: Reward) => item.rwdNm, 
-      className: 'font-bold text-primary' 
-    },
-    { 
-      header: '대상자 ID', 
-      accessor: (item: Reward) => item.usid, 
-      className: 'font-mono text-xs' 
-    },
-    { 
-      header: '포상일자', 
-      accessor: (item: Reward) => item.rwdDe, 
-      className: 'text-xs text-muted-foreground' 
-    },
-    { 
-      header: '상태', 
-      accessor: (item: Reward) => (
-        <div className="flex items-center gap-1">
-          {item.confmAt === 'Y' ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-green-600">
-              <CheckCircle2 size={12} /> 승인완료
-            </span>
-          ) : (
-            <span className="text-[10px] font-bold text-muted-foreground">대기중</span>
-          )}
-        </div>
-      )
-    },
-    {
-      header: '관리',
-      className: 'text-right',
-      accessor: (item: Reward) => (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenEdit(item)}><Edit size={14} /></Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(item.rwdId)}><Trash2 size={14} /></Button>
-        </div>
-      )
-    }
-  ];
+  // [Server Serialization Optimization] 필터링된 데이터만 클라이언트로 전달
+  const optimizedContent = selectFieldsList(rawData.content, [
+    'rwdId', 'rwdNm', 'rwdDe', 'rwdKnd', 'usid', 'confmAt'
+  ]);
 
   return (
-    <div className="space-y-6 pb-12">
-      <PageHeader
-        title="임직원 포상 관리"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '포상관리' }]}
-        actions={
-          <Button onClick={handleOpenCreate} className="rounded-full gap-2">
-            <Plus size={16} /> 신규 포상 등록
-          </Button>
-        }
+    <Suspense fallback={<RewardLoading />}>
+      <RewardClient 
+        initialData={{ ...rawData, content: optimizedContent as Reward[] }} 
+        searchUsid={usid} 
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <SummaryCard title="올해의 포상" count={data.length} icon={<Trophy size={18} />} color="text-orange-600" />
-        <SummaryCard title="승인 대기" count={data.filter(i => i.confmAt === 'N').length} icon={<Calendar size={18} />} color="text-slate-600" />
-        <SummaryCard title="최근 포상" count={data.slice(0, 5).length} icon={<Gift size={18} />} color="text-blue-600" />
-      </div>
-
-      <StandardSearchFilter 
-        fields={[
-          { name: 'usid', label: '대상자 ID', type: 'text', placeholder: '직원 ID 입력...' }
-        ]}
-        onSearch={(v: any) => {
-          setSearchParams(v);
-          loadData(v);
-        }}
-      />
-
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b bg-muted/5 flex items-center justify-between">
-          <h3 className="text-sm font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <Trophy size={14} /> 포상 수여 내역
-          </h3>
-        </div>
-        <StandardDataTable 
-          columns={columns} 
-          data={data} 
-          loading={loading}
-          emptyMessage="등록된 포상 내역이 없습니다."
-          className="border-none rounded-none"
-        />
-      </div>
-
-      <StandardModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={mode === 'create' ? '신규 포상 등록' : '포상 정보 수정'}
-        maxWidth="lg"
-      >
-        <RewardForm 
-          initialData={selectedReward} 
-          onSubmit={handleSubmit} 
-          onCancel={() => setIsModalOpen(false)} 
-        />
-      </StandardModal>
-    </div>
+    </Suspense>
   );
 }
 
-function SummaryCard({ title, count, icon, color }: any) {
+function RewardLoading() {
   return (
-    <div className="p-6 bg-card border rounded-3xl flex items-center gap-4 shadow-sm">
-      <div className={cn("p-3 rounded-2xl bg-muted/50", color)}>{icon}</div>
-      <div>
-        <p className="text-xs text-muted-foreground font-medium">{title}</p>
-        <h3 className="text-xl font-black mt-0.5">{count} 건</h3>
+    <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
+      <div className="h-20 w-1/3 bg-slate-100 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-[3rem]" />)}
       </div>
+      <div className="h-24 bg-slate-50 rounded-[2rem]" />
+      <div className="h-[600px] bg-slate-50 rounded-[4rem]" />
     </div>
   );
 }

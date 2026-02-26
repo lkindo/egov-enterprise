@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -9,11 +9,11 @@ import { boardService } from '@/services/boardService';
 import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
-import { Plus, Eye, MessageSquare, Megaphone } from 'lucide-react';
+import { Plus, Eye, MessageSquare, Megaphone, Loader2 } from 'lucide-react';
 
 const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
 
-export default function BoardListPage() {
+function BoardListContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { values, setSearchValues } = useSearchState({
@@ -31,13 +31,13 @@ export default function BoardListPage() {
     async function loadPosts() {
       try {
         setLoading(true);
-        const res = await boardService.getPosts(values.bbsId, {
+        const res = (await boardService.getPosts(values.bbsId, {
           page: parseInt(values.page),
           size: 10,
           searchWrd: values.searchWrd,
           searchCnd: values.searchCnd
-        });
-        if (res.success) {
+        })) as any;
+        if (res?.success) {
           setData(res.data.content);
           setTotal(res.data.totalElements);
         }
@@ -139,5 +139,18 @@ export default function BoardListPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function BoardListPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-muted-foreground font-medium animate-pulse">게시판 정보를 불러오고 있습니다...</p>
+      </div>
+    }>
+      <BoardListContent />
+    </Suspense>
   );
 }

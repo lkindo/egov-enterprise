@@ -44,8 +44,8 @@ export default function BoardWritePage() {
 
     if (isConfirmed) {
       try {
-        const res = await boardService.createPost(formData);
-        if (res.success) {
+        const res = (await boardService.createPost(formData)) as any;
+        if (res?.success) {
           toast('성공적으로 등록되었습니다.', 'success');
           clear(); // 자동 저장 데이터 삭제
           router.push('/cop/bbs');

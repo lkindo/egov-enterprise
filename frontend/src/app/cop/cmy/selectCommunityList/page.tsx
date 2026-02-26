@@ -35,7 +35,7 @@ const CommunityListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10 };
-            const response = await axios.get('/community', { params });
+            const response = (await axios.get('/community', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);

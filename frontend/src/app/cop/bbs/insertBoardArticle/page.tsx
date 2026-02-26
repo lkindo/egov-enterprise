@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
+import { cn } from '@/lib/utils';
+import { createBoardArticle } from '@/app/actions/boardActions';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,39 +34,20 @@ const InsertBBSContent = () => {
     const searchParams = useSearchParams();
     const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
-    const [formData, setFormData] = useState({
-        nttSj: '',
-        nttCn: '',
-        bbsId
-    });
-    const [attachedFiles, setFiles] = useState<File[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [state, formAction, isPending] = useActionState(createBoardArticle, null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.nttSj.trim()) { 
-            toast('제목을 입력해주세요.', 'error');
-            return; 
-        }
-        if (!formData.nttCn.trim()) { 
-            toast('내용을 입력해주세요.', 'error');
-            return; 
-        }
-
-        setLoading(true);
-        try {
-            // 실제 구현에서는 FormData를 사용하여 파일과 함께 전송
-            const response = await axios.post('/bbs', formData);
-            if (response.data.success) {
-                toast('게시글이 성공적으로 등록되었습니다.', 'success');
-                router.push(`/cop/bbs/selectBoardList?bbsId=${bbsId}`);
+    useEffect(() => {
+        if (state?.success) {
+            toast(state.message, 'success');
+            if (state.redirect) {
+                router.push(state.redirect);
             }
-        } catch (error: any) {
-            toast(error.response?.data?.message || '등록에 실패했습니다.', 'error');
-        } finally {
-            setLoading(false);
+        } else if (state && !state.success) {
+            toast(state.message, 'error');
         }
-    };
+    }, [state, router, toast]);
+
+    const [attachedFiles, setFiles] = useState<File[]>([]);
 
     return (
         <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full pb-32 animate-in fade-in duration-700">
@@ -111,7 +93,8 @@ const InsertBBSContent = () => {
                     </div>
                 </CardHeader>
 
-                <StandardForm onSubmit={handleSubmit}>
+                <StandardForm action={formAction}>
+                    <input type="hidden" name="bbsId" value={bbsId} />
                     <CardContent className="pt-20 px-12 md:px-20 space-y-20">
                         {/* Title Input */}
                         <div className="space-y-6 group">
@@ -123,10 +106,12 @@ const InsertBBSContent = () => {
                             </div>
                             <Input
                                 id="nttSj"
+                                name="nttSj"
                                 placeholder="매력적이고 명확한 제목을 입력하세요"
-                                className="h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30"
-                                value={formData.nttSj}
-                                onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
+                                className={cn(
+                                    "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
+                                    state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
+                                )}
                                 required
                             />
                         </div>
@@ -142,10 +127,12 @@ const InsertBBSContent = () => {
                             <div className="relative">
                                 <Textarea
                                     id="nttCn"
+                                    name="nttCn"
                                     placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
-                                    className="min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none"
-                                    value={formData.nttCn}
-                                    onChange={(e) => setFormData({ ...formData, nttCn: e.target.value })}
+                                    className={cn(
+                                        "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
+                                        state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
+                                    )}
                                     required
                                 />
                                 <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-full border border-primary/5 backdrop-blur-sm">
@@ -193,12 +180,12 @@ const InsertBBSContent = () => {
                         >
                             <ArrowLeft className="w-5 h-5 mr-4" /> Cancel & Return
                         </Button>
-                        <Button 
+                         <Button 
                             type="submit" 
                             className="h-20 px-24 gap-4 font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl" 
-                            disabled={loading}
+                            disabled={isPending}
                         >
-                            {loading ? (
+                            {isPending ? (
                                 <span className="flex items-center gap-3 animate-pulse">
                                     <div className="w-3 h-3 bg-white rounded-full" /> Publishing Now...
                                 </span>

@@ -8,7 +8,7 @@ export interface Event {
   eventEndDe: string;
   eventPlace: string;
   eventCn: string;
-  ctgryCode: string; // 1:?됱궗, 2:罹좏럹??
+  ctgryCode: string; // 1:행사, 2:캠페인
 }
 
 export const eventService = {
@@ -22,4 +22,3 @@ export const eventService = {
     return response;
   }
 };
-

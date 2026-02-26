@@ -24,8 +24,8 @@ export default function AddressBookPage() {
     try {
       setLoading(true);
       // 실무 데이터가 많다고 가정하고 대량의 목업 데이터 생성 (실제 API 응답으로 대체 가능)
-      const res = await addressbookService.searchUsers(keyword || '');
-      if (res.success) {
+      const res = (await addressbookService.searchUsers(keyword || '')) as any;
+      if (res?.success) {
         setContacts(res.data);
       }
     } catch (error) {

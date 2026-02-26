@@ -23,8 +23,8 @@ export const fileMngService = {
   },
 
   /**
-   * ?뚯씪 ?낅줈??
-   * @param files ?낅줈?쒗븷 ?뚯씪 由ъ뒪??
+   * 파일 업로드
+   * @param files 업로드할 파일 리스트
    * @returns atchFileId
    */
   uploadFiles: async (files: File[]) => {
@@ -37,4 +37,3 @@ export const fileMngService = {
     return response;
   }
 };
-

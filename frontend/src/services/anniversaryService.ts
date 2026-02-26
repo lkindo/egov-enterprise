@@ -4,7 +4,7 @@ export interface Anniversary {
   annvrsryId: string;
   annvrsryNm: string;
   annvrsryDe: string;
-  annvrsrySe: string; // 1:?앹씪, 2:寃고샎, 3:湲고?
+  annvrsrySe: string; // 1:생일, 2:결혼, 3:기타
   userNm: string;
   memo: string;
 }
@@ -15,4 +15,3 @@ export const anniversaryService = {
     return response;
   }
 };
-

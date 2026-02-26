@@ -26,7 +26,7 @@ function StatsContent() {
         queryFn: () => getSurveyStats({ qestnrId: initialQestnrId, type: '1' }),
         enabled: !!initialQestnrId,
         retry: false,
-    });
+    }) as any;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

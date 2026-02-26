@@ -20,7 +20,7 @@ const Header = () => {
     const fetchMenus = useCallback(async () => {
         try {
             setMenuError(null);
-            const response = await axios.get('/menu/head');
+            const response = (await axios.get('/menu/head')) as any;
             if (response.data.success) {
                 setMenus(response.data.list);
             } else {

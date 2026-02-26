@@ -28,7 +28,7 @@ const ScheduleListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10 };
-            const response = await axios.get('/schedule', { params });
+            const response = (await axios.get('/schedule', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
@@ -46,7 +46,7 @@ const ScheduleListPage = () => {
     const handleDelete = async (id: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/schedule/${id}`);
+            (await axios.delete(`/schedule/${id}`)) as any;
             fetchList();
         } catch (error) {
             alert('삭제에 실패했습니다.');

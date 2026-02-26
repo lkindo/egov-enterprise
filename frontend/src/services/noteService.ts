@@ -14,7 +14,7 @@ export interface Note {
 
 export const noteService = {
   /**
-   * 諛쏆? 履쎌???議고쉶
+   * 받은 쪽지함 조회
    */
   getReceivedNotes: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/notes/received', { params });
@@ -22,7 +22,7 @@ export const noteService = {
   },
 
   /**
-   * 蹂대궦 履쎌???議고쉶
+   * 보낸 쪽지함 조회
    */
   getSentNotes: async (params: { page?: number; size?: number }) => {
     const response = await client.get('/notes/sent', { params });
@@ -30,7 +30,7 @@ export const noteService = {
   },
 
   /**
-   * 履쎌? 蹂대궡湲?
+   * 쪽지 보내기
    */
   sendNote: async (data: { rcverId: string; noteSj: string; noteCn: string }) => {
     const response = await client.post('/notes', data);
@@ -38,7 +38,7 @@ export const noteService = {
   },
 
   /**
-   * 履쎌? ?곸꽭 議고쉶 諛??쎌쓬 泥섎━
+   * 쪽지 상세 조회 및 읽음 처리
    */
   getNote: async (id: string) => {
     const response = await client.get(`/notes/${id}`);
@@ -46,11 +46,10 @@ export const noteService = {
   },
 
   /**
-   * 履쎌? ??젣
+   * 쪽지 삭제
    */
   deleteNote: async (id: string) => {
     const response = await client.delete(`/notes/${id}`);
     return response;
   }
 };
-

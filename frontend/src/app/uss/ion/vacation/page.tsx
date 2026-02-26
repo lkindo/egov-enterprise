@@ -35,17 +35,13 @@ export default function VacationPage() {
             setLoading(true);
             const currentYear = new Date().getFullYear().toString();
 
-            const [vacationRes, leaveRes] = await Promise.all([
+            const [vacationResult, leaveResult] = await Promise.all([
                 vacationService.getMyVacations({ page: 0, size: 50 }),
                 vacationService.getMyYearlyLeave(currentYear)
             ]);
 
-            if (vacationRes.success) {
-                setVacations(vacationRes.data.content || vacationRes.data || []);
-            }
-            if (leaveRes.success) {
-                setYearlyLeave(leaveRes.data);
-            }
+            setVacations(vacationResult.content || []);
+            setYearlyLeave(leaveResult);
         } catch (error) {
             toast('휴가 정보를 불러오지 못했습니다.', 'error');
         } finally {
@@ -72,15 +68,11 @@ export default function VacationPage() {
                 occrrncYear: startDate.getFullYear().toString()
             };
 
-            const res = await vacationService.requestVacation(payload);
-            if (res.success) {
-                toast('휴가 신청이 완료되었습니다.', 'success');
-                setIsOpen(false);
-                setReason('');
-                loadData();
-            } else {
-                toast(res.message || '신청 중 오류가 발생했습니다.', 'error');
-            }
+            await vacationService.requestVacation(payload);
+            toast('휴가 신청이 완료되었습니다.', 'success');
+            setIsOpen(false);
+            setReason('');
+            loadData();
         } catch (error) {
             toast('저장 중 오류가 발생했습니다.', 'error');
         }
@@ -90,15 +82,13 @@ export default function VacationPage() {
         if (!confirm('신청된 휴가를 삭제하시겠습니까?')) return;
 
         try {
-            const res = await vacationService.deleteVacation({
+            await vacationService.deleteVacation({
                 applcntId: item.applcntId,
                 vcatnSe: item.vcatnSe,
                 bgnde: item.bgnde
             });
-            if (res.success) {
-                toast('휴가가 삭제되었습니다.', 'success');
-                loadData();
-            }
+            toast('휴가가 삭제되었습니다.', 'success');
+            loadData();
         } catch (error) {
             toast('삭제 중 오류가 발생했습니다.', 'error');
         }

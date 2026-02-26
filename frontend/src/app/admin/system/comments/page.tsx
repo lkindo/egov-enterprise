@@ -1,106 +1,46 @@
-'use client';
-
-import React, { useEffect, useState, useCallback } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import { commentMngService, CommentDetail } from '@/services/commentMngService';
-import { useToast } from '@/app/components/ui/toast';
-import { MessageSquare, Trash2, ExternalLink, User } from 'lucide-react';
+import CommentAdminClient from './CommentAdminClient';
+import { Loader2 } from 'lucide-react';
 
-export default function CommentAdminPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState<CommentDetail[]>([]);
+export const metadata = {
+  title: '전사 지능형 댓글 통합 관리 | 전자정부 표준프레임워크',
+  description: '시스템 전반의 모든 커뮤니케이션 스트림을 실시간으로 관제하고 무결성을 보장합니다.',
+};
 
-  const loadData = useCallback(async (searchWrd?: string) => {
-    try {
-      setLoading(true);
-      const res = await commentMngService.getComments({ page: 0, size: 20, searchWrd });
-      if (res.success) setComments(res.data.content || []);
-    } catch (error) {
-      toast('댓글 목록을 불러오지 못했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+export default async function AdminCommentPage() {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // [Eliminating Waterfalls] 서버 사이드 초기 데이터 패칭
+  let initialComments: CommentDetail[] = [];
 
-  const columns = [
-    { 
-      header: 'No', 
-      accessor: (item: CommentDetail) => item.commentNo, 
-      className: 'w-16 text-muted-foreground font-mono' 
-    },
-    {
-      header: '댓글 내용',
-      accessor: (item: CommentDetail) => (
-        <span className="font-bold text-foreground line-clamp-1">{item.commentCn}</span>
-      ),
-      className: 'min-w-[300px]'
-    },
-    {
-      header: '작성자',
-      accessor: (item: CommentDetail) => (
-        <div className="flex items-center gap-2">
-          <User size={12} className="text-muted-foreground" />
-          <span className="text-xs">{item.wrterNm} ({item.wrterId})</span>
-        </div>
-      )
-    },
-    { 
-      header: '작성일', 
-      accessor: (item: CommentDetail) => item.createdDate, 
-      className: 'text-[10px] text-muted-foreground' 
-    },
-    {
-      header: '관리',
-      className: 'text-right',
-      accessor: (item: CommentDetail) => (
-        <div className="flex justify-end gap-2">
-          <button className="p-1.5 hover:bg-accent rounded-md text-primary" title="원문 보기"><ExternalLink size={16} /></button>
-          <button 
-            onClick={() => toast('삭제되었습니다(Mock)', 'info')}
-            className="p-1.5 hover:bg-destructive/10 text-destructive rounded-md"
-            title="삭제"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      )
-    }
-  ];
+  try {
+    const response = await commentMngService.getComments({ page: 0, size: 500 }, axiosConfig);
+    initialComments = response?.content || response?.data?.content || response || [];
+  } catch (error) {
+    console.error('Server-side fetch audit logs failed:', error);
+  }
 
   return (
-    <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="전사 댓글 통합 모니터링" 
-        breadcrumbs={[{ label: '시스템관리' }, { label: '댓글관리' }]}
-      />
+    <Suspense fallback={<CommentAdminLoading />}>
+      <CommentAdminClient initialComments={initialComments} />
+    </Suspense>
+  );
+}
 
-      <StandardSearchFilter 
-        fields={[
-          { name: 'searchWrd', label: '댓글 내용/작성자 검색', type: 'text', placeholder: '검색어 입력...' }
-        ]}
-        onSearch={(v) => loadData(v.searchWrd)}
-      />
-
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b bg-muted/5 flex items-center justify-between">
-          <h3 className="text-sm font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <MessageSquare size={14} /> 전체 댓글 이력
-          </h3>
-        </div>
-        <StandardDataTable 
-          columns={columns} 
-          data={comments} 
-          loading={loading}
-          className="border-none rounded-none"
-        />
+function CommentAdminLoading() {
+  return (
+    <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col">
+      <div className="h-14 w-96 bg-slate-100 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
+        <div className="md:col-span-3 h-48 bg-slate-900/5 rounded-[3.5rem]" />
+        <div className="h-48 bg-rose-50 rounded-[3.5rem]" />
       </div>
+      <div className="h-28 bg-slate-50 rounded-[3.5rem]" />
+      <div className="flex-1 bg-slate-100/50 rounded-[5rem] p-12 mt-8" />
     </div>
   );
 }

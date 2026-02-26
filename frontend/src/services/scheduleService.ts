@@ -3,7 +3,7 @@ import { Schedule, ScheduleResponse, MonthlyScheduleResponse } from '@/types/sch
 
 export const scheduleService = {
   /**
-   * ?꾩껜 ?쇱젙 紐⑸줉 議고쉶 (?섏씠吏?
+   * 전체 일정 목록 조회 (페이지)
    */
   getScheduleList: async (params: { pageIndex?: number; pageUnit?: number }) => {
     const response = await client.get<ScheduleResponse>('/schedule', { params });
@@ -11,7 +11,7 @@ export const scheduleService = {
   },
 
   /**
-   * ?붾퀎 ?쇱젙 議고쉶
+   * 월별 일정 조회
    * @param yearMonth yyyyMM
    */
   getMonthlySchedule: async (yearMonth: string) => {
@@ -22,7 +22,7 @@ export const scheduleService = {
   },
 
   /**
-   * ?좎쭨 踰붿쐞蹂??쇱젙 議고쉶
+   * 날짜 범위별 일정 조회
    * @param startDate yyyyMMdd
    * @param endDate yyyyMMdd
    */
@@ -34,7 +34,7 @@ export const scheduleService = {
   },
 
   /**
-   * ?쇱젙 ?곸꽭 議고쉶
+   * 일정 상세 조회
    */
   getSchedule: async (id: string) => {
     const response = await client.get<{ schedule: Schedule }>(`/schedule/${id}`);
@@ -42,7 +42,7 @@ export const scheduleService = {
   },
 
   /**
-   * ?쇱젙 ?깅줉
+   * 일정 등록
    */
   createSchedule: async (data: Partial<Schedule>) => {
     const response = await client.post('/schedule', data);
@@ -50,7 +50,7 @@ export const scheduleService = {
   },
 
   /**
-   * ?쇱젙 ?섏젙
+   * 일정 수정
    */
   updateSchedule: async (id: string, data: Partial<Schedule>) => {
     const response = await client.put(`/schedule/${id}`, data);
@@ -58,11 +58,10 @@ export const scheduleService = {
   },
 
   /**
-   * ?쇱젙 ??젣
+   * 일정 삭제
    */
   deleteSchedule: async (id: string) => {
     const response = await client.delete(`/schedule/${id}`);
     return response;
   }
 };
-

@@ -2,30 +2,20 @@
 import { PaginationResponse } from '@/types/system';
 import { WorkReport, ReportSearchParams } from '@/types/schedule';
 
-// Weekly/Monthly Report Management
-export const getReportList = async (params: ReportSearchParams) => {
-    const { data } = await client.get<PaginationResponse<WorkReport>>('/cop/smt/wmr/EgovWikMnthngReprtList.do', { params });
-    return data;
-};
+export const getReportList = async (params: ReportSearchParams): Promise<PaginationResponse<WorkReport>> =>
+    client.get<PaginationResponse<WorkReport>>('/cop/smt/wmr/EgovWikMnthngReprtList.do', { params });
 
-export const getReport = async (reprtId: string) => {
-    const { data } = await client.get<WorkReport>(`/cop/smt/wmr/selectWikMnthngReprt.do?reprtId=${reprtId}`);
-    return data;
-};
+export const getReport = async (reprtId: string): Promise<WorkReport> =>
+    client.get<WorkReport>(`/cop/smt/wmr/selectWikMnthngReprt.do?reprtId=${reprtId}`);
 
-export const createReport = async (report: WorkReport) => {
-    return client.post('/cop/smt/wmr/insertWikMnthngReprt.do', report);
-};
+export const createReport = async (report: WorkReport): Promise<void> =>
+    client.post('/cop/smt/wmr/insertWikMnthngReprt.do', report);
 
-export const updateReport = async (report: WorkReport) => {
-    return client.post('/cop/smt/wmr/updateWikMnthngReprt.do', report);
-};
+export const updateReport = async (report: WorkReport): Promise<void> =>
+    client.post('/cop/smt/wmr/updateWikMnthngReprt.do', report);
 
-export const deleteReport = async (reprtId: string) => {
-    return client.post(`/cop/smt/wmr/deleteWikMnthngReprt.do?reprtId=${reprtId}`);
-};
+export const deleteReport = async (reprtId: string): Promise<void> =>
+    client.post(`/cop/smt/wmr/deleteWikMnthngReprt.do?reprtId=${reprtId}`);
 
-export const confirmReport = async (reprtId: string) => {
-    return client.post(`/cop/smt/wmr/confirmWikMnthngReprt.do?reprtId=${reprtId}`);
-};
-
+export const confirmReport = async (reprtId: string): Promise<void> =>
+    client.post(`/cop/smt/wmr/confirmWikMnthngReprt.do?reprtId=${reprtId}`);

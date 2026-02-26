@@ -3,7 +3,7 @@ import { UserDto } from '@/types/user';
 
 export const userService = {
   /**
-   * ???뺣낫 議고쉶
+   * 내 정보 조회
    */
   getMe: async () => {
     const response = await client.get('/users/me');
@@ -11,7 +11,7 @@ export const userService = {
   },
 
   /**
-   * ???뺣낫 ?섏젙
+   * 내 정보 수정
    */
   updateMe: async (data: Partial<UserDto>) => {
     const response = await client.put('/users/me', data);
@@ -19,11 +19,10 @@ export const userService = {
   },
 
   /**
-   * 鍮꾨?踰덊샇 蹂寃?
+   * 비밀번호 변경
    */
   changePassword: async (oldPassword: String, newPassword: String) => {
     const response = await client.put('/users/me/password', { oldPassword, newPassword });
     return response;
   }
 };
-

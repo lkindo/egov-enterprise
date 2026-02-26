@@ -38,17 +38,15 @@ export default function ApprovalInboxPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = tab === 'received' 
+      const result = tab === 'received' 
         ? await approvalService.getPending({ page: 0, size: 20 })
         : await approvalService.getMyHistory({ page: 0, size: 20 });
       
-      if (res.success) {
-        setData(res.data.content || []);
-        if (res.data.content?.length > 0) {
-          setSelectedItem(res.data.content[0]);
-        } else {
-          setSelectedItem(null);
-        }
+      setData(result.content || []);
+      if (result.content?.length > 0) {
+        setSelectedItem(result.content[0]);
+      } else {
+        setSelectedItem(null);
       }
     } catch (error) {
       toast('결재 목록을 불러오지 못했습니다.', 'error');

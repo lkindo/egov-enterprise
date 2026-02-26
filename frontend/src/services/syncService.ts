@@ -10,45 +10,25 @@ export interface SyncServer {
   syncAt: 'Y' | 'N';
 }
 
+interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+}
+
 export const syncService = {
-  /**
-   * ?숆린???쒕쾭 紐⑸줉 議고쉶
-   */
-  getSyncServers: async () => {
-    const response = await client.get('/admin/system/sync-servers');
-    return response;
-  },
+  getSyncServers: async (config?: any): Promise<SyncServer[]> =>
+    client.get<SyncServer[]>('/admin/system/sync-servers', config),
 
-  /**
-   * ?쒕쾭 ?숆린??媛뺤젣 ?ㅽ뻾
-   */
-  executeSync: async (id: string) => {
-    const response = await client.post(`/admin/system/sync-servers/${id}/execute`);
-    return response;
-  },
+  executeSync: async (id: string, config?: any): Promise<void> =>
+    client.post(`/admin/system/sync-servers/${id}/execute`, {}, config),
 
-  /**
-   * ?숆린???쒕쾭 ?앹꽦
-   */
-  createSyncServer: async (data: Omit<SyncServer, 'serverId'>) => {
-    const response = await client.post('/admin/system/sync-servers', data);
-    return response;
-  },
+  createSyncServer: async (data: Omit<SyncServer, 'serverId'>, config?: any): Promise<void> =>
+    client.post('/admin/system/sync-servers', data, config),
 
-  /**
-   * ?숆린???쒕쾭 ?섏젙
-   */
-  updateSyncServer: async (id: string, data: Partial<SyncServer>) => {
-    const response = await client.put(`/admin/system/sync-servers/${id}`, data);
-    return response;
-  },
+  updateSyncServer: async (id: string, data: Partial<SyncServer>, config?: any): Promise<void> =>
+    client.put(`/admin/system/sync-servers/${id}`, data, config),
 
-  /**
-   * ?숆린???쒕쾭 ??젣
-   */
-  deleteSyncServer: async (id: string) => {
-    const response = await client.delete(`/admin/system/sync-servers/${id}`);
-    return response;
-  }
+  deleteSyncServer: async (id: string, config?: any): Promise<void> =>
+    client.delete(`/admin/system/sync-servers/${id}`, config),
 };
-

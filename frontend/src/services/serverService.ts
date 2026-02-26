@@ -9,30 +9,25 @@ export interface ServerInfo {
   lastUpdusrPnttm?: string;
 }
 
+interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+}
+
 export const serverService = {
-  getServers: async (params: { page?: number; size?: number; serverNm?: string }) => {
-    const response = await client.get('/admin/system/servers', { params });
-    return response;
-  },
+  getServers: async (params: { page?: number; size?: number; serverNm?: string }, config?: any): Promise<PageResult<ServerInfo>> =>
+    client.get<PageResult<ServerInfo>>('/admin/system/servers', { ...config, params }),
   
-  getServer: async (id: string) => {
-    const response = await client.get(`/admin/system/servers/${id}`);
-    return response;
-  },
+  getServer: async (id: string, config?: any): Promise<ServerInfo> =>
+    client.get<ServerInfo>(`/admin/system/servers/${id}`, config),
 
-  createServer: async (data: Omit<ServerInfo, 'serverId'>) => {
-    const response = await client.post('/admin/system/servers', data);
-    return response;
-  },
+  createServer: async (data: Omit<ServerInfo, 'serverId'>, config?: any): Promise<void> =>
+    client.post('/admin/system/servers', data, config),
 
-  updateServer: async (id: string, data: Partial<ServerInfo>) => {
-    const response = await client.put(`/admin/system/servers/${id}`, data);
-    return response;
-  },
+  updateServer: async (id: string, data: Partial<ServerInfo>, config?: any): Promise<void> =>
+    client.put(`/admin/system/servers/${id}`, data, config),
 
-  deleteServer: async (id: string) => {
-    const response = await client.delete(`/admin/system/servers/${id}`);
-    return response;
-  }
+  deleteServer: async (id: string, config?: any): Promise<void> =>
+    client.delete(`/admin/system/servers/${id}`, config),
 };
-

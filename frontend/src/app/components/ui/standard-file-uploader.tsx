@@ -5,9 +5,10 @@ import { Upload, X, FileIcon, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StandardFileUploaderProps {
-  onFilesChange: (files: File[]) => void;
+  onFilesChange?: (files: File[]) => void;
   maxFiles?: number;
   maxSizeMB?: number;
+  name?: string;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export function StandardFileUploader({
   onFilesChange, 
   maxFiles = 5, 
   maxSizeMB = 10,
+  name = "files",
   className 
 }: StandardFileUploaderProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -24,14 +26,14 @@ export function StandardFileUploader({
       const newFiles = Array.from(e.target.files);
       const updatedFiles = [...selectedFiles, ...newFiles].slice(0, maxFiles);
       setSelectedFiles(updatedFiles);
-      onFilesChange(updatedFiles);
+      onFilesChange?.(updatedFiles);
     }
   };
 
   const removeFile = (index: number) => {
     const updatedFiles = selectedFiles.filter((_, i) => i !== index);
     setSelectedFiles(updatedFiles);
-    onFilesChange(updatedFiles);
+    onFilesChange?.(updatedFiles);
   };
 
   return (
@@ -42,7 +44,7 @@ export function StandardFileUploader({
           <p className="mb-1 text-sm text-foreground font-semibold">클릭하거나 파일을 드래그하세요</p>
           <p className="text-xs text-muted-foreground">최대 {maxFiles}개, 파일당 {maxSizeMB}MB 제한</p>
         </div>
-        <input type="file" className="hidden" multiple onChange={handleFileChange} />
+        <input name={name} type="file" className="hidden" multiple onChange={handleFileChange} />
       </label>
 
       {selectedFiles.length > 0 && (

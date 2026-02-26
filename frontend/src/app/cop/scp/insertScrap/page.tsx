@@ -33,7 +33,7 @@ const InsertScrapPage = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post('/scrap', formData);
+            const response = (await axios.post('/scrap', formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/scp/selectScrapList');

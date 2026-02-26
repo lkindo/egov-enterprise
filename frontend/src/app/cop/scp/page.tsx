@@ -19,8 +19,8 @@ export default function ScrapPage() {
   const loadScraps = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await scrapService.getMyScraps({ page: 0, size: 20 });
-      if (res.success) setScraps(res.data.content || []);
+      const res = (await scrapService.getMyScraps({ page: 0, size: 20 })) as any;
+      if (res?.success) setScraps(res.data.content || []);
     } catch (error) {
       toast('스크랩 목록을 불러오지 못했습니다.', 'error');
     } finally {

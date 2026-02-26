@@ -27,10 +27,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     const fetchComments = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await commentService.getComments({ nttId, bbsId, size: 100 });
-            if (res.success) {
-                setComments(res.data.resultList || []);
-            }
+            const result = await commentService.getComments({ nttId, bbsId, size: 100 });
+            setComments(result.resultList || []);
         } catch (error) {
             console.error('Failed to fetch comments', error);
         } finally {
@@ -48,15 +46,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
 
         try {
             setSubmitting(true);
-            const res = await commentService.createComment({
+            await commentService.createComment({
                 nttId,
                 bbsId,
                 commentCn: commentCn.trim()
             });
-            if (res.success) {
-                setCommentCn('');
-                fetchComments();
-            }
+            setCommentCn('');
+            fetchComments();
         } catch (error) {
             console.error('Failed to create comment', error);
             alert('댓글 등록에 실패했습니다.');
@@ -68,10 +64,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     const handleDelete = async (id: number) => {
         if (!confirm('댓글을 삭제하시겠습니까?')) return;
         try {
-            const res = await commentService.deleteComment(id);
-            if (res.success) {
-                fetchComments();
-            }
+            await commentService.deleteComment(id);
+            fetchComments();
         } catch (error) {
             console.error('Failed to delete comment', error);
             alert('댓글 삭제에 실패했습니다.');
@@ -81,15 +75,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     const handleUpdate = async (id: number) => {
         if (!editCn.trim()) return;
         try {
-            const res = await commentService.updateComment(id, {
+            await commentService.updateComment(id, {
                 nttId,
                 bbsId,
                 commentCn: editCn.trim()
             });
-            if (res.success) {
-                setEditingId(null);
-                fetchComments();
-            }
+            setEditingId(null);
+            fetchComments();
         } catch (error) {
             console.error('Failed to update comment', error);
             alert('댓글 수정에 실패했습니다.');

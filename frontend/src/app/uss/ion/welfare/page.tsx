@@ -17,11 +17,11 @@ export default function WelfarePage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = tab === 'reward' 
+      const result = tab === 'reward' 
         ? await welfareService.getRewards({ page: 0, size: 20 })
         : await welfareService.getCtsnns({ page: 0, size: 20 });
       
-      if (res.success) setData(res.data.content || []);
+      setData(result.content || []);
     } catch (error) {
       toast('데이터를 불러오지 못했습니다.', 'error');
     } finally {

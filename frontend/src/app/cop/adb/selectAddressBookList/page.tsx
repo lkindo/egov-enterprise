@@ -40,7 +40,7 @@ const AddressBookListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10, searchWrd };
-            const response = await axios.get('/addressbook', { params });
+            const response = (await axios.get('/addressbook', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
@@ -64,7 +64,7 @@ const AddressBookListPage = () => {
     const handleDelete = async (adbkId: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/addressbook/${adbkId}`);
+            (await axios.delete(`/addressbook/${adbkId}`)) as any;
             fetchList();
         } catch (error) {
             alert('삭제에 실패했습니다.');

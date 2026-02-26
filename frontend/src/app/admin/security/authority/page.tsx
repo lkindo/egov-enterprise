@@ -42,7 +42,7 @@ export default function AuthorityManagePage() {
         queryFn: () => getAuthorList(params),
     });
 
-    const authorities = data?.resultList || [];
+    const authorities: AuthorManage[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const saveMutation = useMutation({

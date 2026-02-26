@@ -94,7 +94,7 @@ const Sidebar = () => {
         if (menuNo > 0) {
             try {
                 setError(null);
-                const response = await axios.get(`/menu/left?menuNo=${menuNo}`);
+                const response = (await axios.get(`/menu/left?menuNo=${menuNo}`)) as any;
                 if (response.data.success) {
                     // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
                     const mappedList = response.data.list.map((item: MenuItem) => ({

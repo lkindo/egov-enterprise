@@ -1,100 +1,65 @@
-'use client';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { monitoringService } from '@/services/monitoringService';
+import MonitoringAdminClient from './MonitoringAdminClient';
 
-import React, { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ServerResource } from '@/components/admin/system/monitoring/ServerResource';
-import { HttpMonitor } from '@/components/admin/system/monitoring/HttpMonitor';
-import { DbMonitor } from '@/components/admin/system/monitoring/DbMonitor';
-import { FileSystemMonitor } from '@/components/admin/system/monitoring/FileSystemMonitor';
-import { ProcessMonitor } from '@/components/admin/system/monitoring/ProcessMonitor';
-import { NetworkServiceMonitor } from '@/components/admin/system/monitoring/NetworkServiceMonitor';
-import { Activity, Globe, Database, HardDrive, Cpu, Network } from 'lucide-react';
+export const metadata = {
+  title: '전사 커넥티드 인프라 실시간 관제 센터 | 전자정부 표준프레임워크',
+  description: '전사 시스템의 Compute, Network, Storage 리소스를 실시간으로 시각화하고 관제합니다.',
+};
 
-export default function MonitoringPage() {
-  const [activeTab, setActiveTab] = useState('server');
+export default async function AdminMonitoringPage() {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+  // [Eliminating Waterfalls] 서버 사이드 초기 요약 데이터 패칭 (병렬 처리)
+  let summary = {
+    httpCount: '0',
+    avgDiskUsage: 0,
+    serverCount: 0
+  };
+
+  try {
+    const [httpRes, fileSysRes, logsRes] = await Promise.all([
+        monitoringService.getHttpMonList({ page: 0, size: 1 }, axiosConfig),
+        monitoringService.getFileSysMntrngList({ page: 0, size: 100 }, axiosConfig),
+        monitoringService.getServerResourceLogs({ page: 0, size: 1 }, axiosConfig)
+    ]);
+
+    summary.httpCount = String((httpRes as any)?.totalElements || 0);
+    
+    const fileSystems = (fileSysRes as any)?.content || (fileSysRes as any)?.data?.content || [];
+    if (fileSystems.length > 0) {
+        const totalSize = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysSize || 0), 0);
+        const totalUsage = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysUsgQty || 0), 0);
+        summary.avgDiskUsage = totalSize > 0 ? Math.round((totalUsage / totalSize) * 100) : 0;
+    }
+
+    summary.serverCount = (logsRes as any)?.totalElements || 0;
+  } catch (error) {
+    console.error('Server-side fetch monitoring summary failed:', error);
+  }
 
   return (
-    <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="통합 시스템 모니터링" 
-        breadcrumbs={[{ label: '시스템관리' }, { label: '시스템모니터링' }]}
-      />
+    <Suspense fallback={<MonitoringLoading />}>
+      <MonitoringAdminClient summary={summary} />
+    </Suspense>
+  );
+}
 
-      <Tabs defaultValue="server" onValueChange={setActiveTab} className="space-y-6">
-        <div className="bg-card border rounded-2xl p-1 shadow-sm overflow-x-auto">
-          <TabsList className="h-14 w-full justify-start gap-2 bg-transparent p-0">
-            <TabsTrigger value="server" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <Activity size={18} /> 서버 리소스
-            </TabsTrigger>
-            <TabsTrigger value="http" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <Globe size={18} /> HTTP 서비스
-            </TabsTrigger>
-            <TabsTrigger value="db" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <Database size={18} /> 데이터베이스
-            </TabsTrigger>
-            <TabsTrigger value="filesys" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <HardDrive size={18} /> 파일시스템
-            </TabsTrigger>
-            <TabsTrigger value="process" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <Cpu size={18} /> 프로세스
-            </TabsTrigger>
-            <TabsTrigger value="network" className="h-12 rounded-xl px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold gap-2">
-              <Network size={18} /> 네트워크 서비스
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <div className="bg-card border rounded-3xl shadow-sm p-6 min-h-[500px]">
-          <TabsContent value="server" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">서버 리소스 로그</h3>
-              <p className="text-sm text-muted-foreground">CPU, Memory 등 서버의 주요 자원 사용률 이력을 조회합니다.</p>
-            </div>
-            <ServerResource />
-          </TabsContent>
-          
-          <TabsContent value="http" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">HTTP 웹 서비스 모니터링</h3>
-              <p className="text-sm text-muted-foreground">주요 웹 사이트 및 URL의 응답 상태(200 OK 등)를 주기적으로 확인합니다.</p>
-            </div>
-            <HttpMonitor />
-          </TabsContent>
-
-          <TabsContent value="db" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">데이터베이스(DBMS) 모니터링</h3>
-              <p className="text-sm text-muted-foreground">연동된 데이터베이스 서버의 연결 상태 및 가용성을 모니터링합니다.</p>
-            </div>
-            <DbMonitor />
-          </TabsContent>
-
-          <TabsContent value="filesys" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">파일시스템(Disk) 모니터링</h3>
-              <p className="text-sm text-muted-foreground">서버 디스크의 전체 용량 대비 사용량을 모니터링하고 임계치를 관리합니다.</p>
-            </div>
-            <FileSystemMonitor />
-          </TabsContent>
-
-          <TabsContent value="process" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">프로세스 모니터링</h3>
-              <p className="text-sm text-muted-foreground">서버 내 핵심 프로세스의 실행 상태(Running/Stopped)를 점검합니다.</p>
-            </div>
-            <ProcessMonitor />
-          </TabsContent>
-
-          <TabsContent value="network" className="mt-0">
-            <div className="mb-4">
-              <h3 className="text-lg font-black text-foreground">네트워크 서비스(Port) 모니터링</h3>
-              <p className="text-sm text-muted-foreground">특정 IP와 Port에 대한 네트워크 연결 가능 여부를 확인합니다.</p>
-            </div>
-            <NetworkServiceMonitor />
-          </TabsContent>
-        </div>
-      </Tabs>
+function MonitoringLoading() {
+  return (
+    <div className="max-w-7xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col">
+      <div className="h-14 w-96 bg-slate-100 rounded-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-[3rem]" />)}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 shrink-0">
+        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-[4rem]" />
+        <div className="h-64 bg-slate-50 rounded-[4rem]" />
+      </div>
+      <div className="flex-1 bg-slate-100/50 rounded-[5rem] p-12 mt-8" />
     </div>
   );
 }

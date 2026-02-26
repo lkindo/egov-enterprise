@@ -30,7 +30,7 @@ const CommunityDetailPage = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/community/${cmmntyId}`);
+            const response = (await axios.get(`/community/${cmmntyId}`)) as any;
             setDetail(response.data.community);
         } catch (error) {
             console.error('Failed to fetch community detail', error);

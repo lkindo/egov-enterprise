@@ -12,8 +12,8 @@ export function PopupManager() {
   useEffect(() => {
     async function fetchPopups() {
       try {
-        const res = await popupService.getActivePopups();
-        if (res.success) {
+        const res = (await popupService.getActivePopups()) as any;
+        if (res?.success) {
           const popups: Popup[] = res.data;
           
           // 필터링: "오늘 하루 보지 않기" 체크된 팝업 제외

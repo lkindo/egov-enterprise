@@ -31,7 +31,7 @@ const InsertSchedulePage = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post('/schedule', formData);
+            const response = (await axios.post('/schedule', formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/smt/sim/selectScheduleList');

@@ -12,9 +12,10 @@ export interface BoardListParams {
     endDate?: string;
 }
 
-export const useBoardList = (params: BoardListParams) => {
+export const useBoardList = (params: BoardListParams, initialData?: any) => {
     return useQuery({
         queryKey: ['boardList', params],
+        initialData,
         queryFn: async () => {
             const data: any = await client.get('/bbs', { params });
             // The global axios interceptor un-wraps the response to be just the API payload data.

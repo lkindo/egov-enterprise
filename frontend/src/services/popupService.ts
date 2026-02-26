@@ -2,52 +2,27 @@
 import { Popup } from '@/types/banner';
 
 export const popupService = {
-  /**
-   * ?앹뾽 紐⑸줉 議고쉶 (Admin)
-   */
-  getPopups: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/popups', { params });
-    return response;
+  getPopups: async (params: { page?: number; size?: number; searchWrd?: string }, config?: any) => {
+    return client.get<any>('/popups', { ...config, params });
   },
 
-  /**
-   * ?쒖꽦 ?앹뾽 紐⑸줉 議고쉶 (?꾩떆??
-   */
-  getActivePopups: async () => {
-    const response = await client.get('/popups/active');
-    return response;
+  getActivePopups: async (config?: any) => {
+    return client.get<any>('/popups/active', config);
   },
 
-  /**
-   * ?앹뾽 ?곸꽭 議고쉶
-   */
-  getPopup: async (popupId: string) => {
-    const response = await client.get(`/popups/${popupId}`);
-    return response;
+  getPopup: async (popupId: string, config?: any) => {
+    return client.get<any>(`/popups/${popupId}`, config);
   },
 
-  /**
-   * ?앹뾽 ?깅줉
-   */
-  createPopup: async (data: Popup) => {
-    const response = await client.post('/popups', data);
-    return response;
+  createPopup: async (data: Popup, config?: any) => {
+    return client.post('/popups', data, config);
   },
 
-  /**
-   * ?앹뾽 ?섏젙
-   */
-  updatePopup: async (popupId: string, data: Popup) => {
-    const response = await client.put(`/popups/${popupId}`, data);
-    return response;
+  updatePopup: async (popupId: string, data: Popup, config?: any) => {
+    return client.put(`/popups/${popupId}`, data, config);
   },
 
-  /**
-   * ?앹뾽 ??젣
-   */
-  deletePopup: async (popupId: string) => {
-    const response = await client.delete(`/popups/${popupId}`);
-    return response;
+  deletePopup: async (popupId: string, config?: any) => {
+    return client.delete(`/popups/${popupId}`, config);
   }
 };
-
