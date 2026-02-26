@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
@@ -5,10 +6,10 @@ import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
-import dynamic from 'next/dynamic';
+import { ScrollToTop } from './components/layout/scroll-to-top';
 
-const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
-const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
+
+
 
 export const metadata: Metadata = {
   title: '전자정부 프레임워크 현대화',
@@ -56,6 +57,9 @@ export default async function RootLayout({
           enableColorScheme
         >
           <Providers>
+            <Suspense fallback={null}>
+              <ScrollToTop />
+            </Suspense>
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <div className="flex flex-1">
@@ -67,8 +71,7 @@ export default async function RootLayout({
                   <Footer />
                 </main>
               </div>
-              <GlobalCommandCenter />
-              <SmartOnboardingHub />
+
             </div>
           </Providers>
         </ThemeProvider>

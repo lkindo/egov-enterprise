@@ -32,10 +32,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
     <>
       {isOpen && <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm" onClick={onClose} />}
       <div className={cn(
-        "fixed right-0 top-0 z-[9999] h-full w-full max-w-sm border-l bg-background/95 backdrop-blur-2xl shadow-[-20px_0_50px_rgba(0,0,0,0.2)] transition-transform duration-500 ease-out",
+        "fixed right-0 top-0 z-[9999] h-full w-full max-w-sm border-l bg-white dark:bg-slate-950 shadow-[-20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-out",
         isOpen ? "translate-x-0" : "translate-x-full"
       )}>
-        <div className="flex h-16 items-center justify-between border-b px-6 bg-background/50 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex h-16 items-center justify-between border-b px-6 bg-white dark:bg-slate-950 sticky top-0 z-10">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <Bell size={20} className="text-primary animate-bounce-subtle" />
             알림
@@ -54,12 +54,12 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
           ) : (
             <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
               {notifications.map((notif) => (
-                <div 
-                  key={notif.id} 
+                <div
+                  key={notif.id}
                   className={cn(
                     "group p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer",
-                    notif.isRead 
-                      ? "bg-muted/40 border-transparent opacity-80" 
+                    notif.isRead
+                      ? "bg-muted/40 border-transparent opacity-80"
                       : "bg-card border-primary/20 shadow-sm ring-1 ring-primary/5"
                   )}
                 >

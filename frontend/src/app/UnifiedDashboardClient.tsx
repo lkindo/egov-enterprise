@@ -98,14 +98,14 @@ export default function UnifiedDashboardClient({
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       className="space-y-10 pb-20 px-2 lg:px-0"
     >
       <PopupManager />
-      
+
       {/* Header Section with Industrial Luxury Feel */}
       <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
@@ -117,24 +117,24 @@ export default function UnifiedDashboardClient({
             Hi, <span className="text-primary italic">{user.name}</span>
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
-             오늘의 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span>와 실시간 지표를 분석했습니다.
+            오늘의 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span>와 실시간 지표를 분석했습니다.
           </p>
         </div>
-        
+
         <div className="flex gap-4 w-full lg:w-auto">
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/cop/smt/vct')} 
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 bg-slate-900 text-white dark:bg-primary dark:text-white rounded-[2rem] font-black shadow-2xl shadow-slate-900/20 hover:bg-primary transition-colors"
+            onClick={() => router.push('/cop/smt/vct')}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 bg-slate-900 text-white dark:bg-primary dark:text-primary-foreground rounded-[2rem] font-black shadow-2xl shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-primary/90 transition-colors"
           >
             <Zap size={20} /> 휴가 신청
           </motion.button>
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/cop/bbs')} 
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white rounded-[2rem] font-black hover:bg-slate-50 transition-all"
+            onClick={() => router.push('/cop/bbs')}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-white/10 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-white/20 transition-all"
           >
             <Plus size={20} /> 새 포스트
           </motion.button>
@@ -148,37 +148,37 @@ export default function UnifiedDashboardClient({
 
       {/* Summary Cards with Industrial Aesthetic */}
       <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        <SummaryCard 
-          title="잔여 연차" 
-          value={`${myLeave?.remndrYrycCo || 0}d`} 
-          description={`Total 15 days allotted for ${new Date().getFullYear()}`} 
-          icon={<Calendar size={24} />} 
-          trend={12} 
-          color="blue" 
+        <SummaryCard
+          title="잔여 연차"
+          value={`${myLeave?.remndrYrycCo || 0}d`}
+          description={`Total 15 days allotted for ${new Date().getFullYear()}`}
+          icon={<Calendar size={24} />}
+          trend={12}
+          color="blue"
         />
-        <SummaryCard 
-          title="내 업무 현황" 
-          value="12" 
-          description="3 high-priority tasks pending" 
-          icon={<Zap size={24} />} 
-          trend={-5} 
-          color="orange" 
+        <SummaryCard
+          title="내 업무 현황"
+          value="12"
+          description="3 high-priority tasks pending"
+          icon={<Zap size={24} />}
+          trend={-5}
+          color="orange"
         />
-        <SummaryCard 
-          title="새 알림" 
-          value="05" 
-          description="Updates from collaboration teams" 
-          icon={<Bell size={24} />} 
-          trend={2} 
-          color="purple" 
+        <SummaryCard
+          title="새 알림"
+          value="05"
+          description="Updates from collaboration teams"
+          icon={<Bell size={24} />}
+          trend={2}
+          color="purple"
         />
-        <SummaryCard 
-          title="보안 지수" 
-          value="Safe" 
-          description="Encryption active & identity verified" 
-          icon={<ShieldCheck size={24} />} 
-          trend={0} 
-          color="emerald" 
+        <SummaryCard
+          title="보안 지수"
+          value="Safe"
+          description="Encryption active & identity verified"
+          icon={<ShieldCheck size={24} />}
+          trend={0}
+          color="emerald"
         />
       </motion.div>
 
@@ -186,8 +186,8 @@ export default function UnifiedDashboardClient({
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
         <div className="xl:col-span-2 space-y-12">
           {/* Main Chart Card */}
-          <motion.div 
-            variants={itemVariants} 
+          <motion.div
+            variants={itemVariants}
             className="p-10 md:p-14 border-2 border-primary/5 rounded-[4rem] bg-card/50 backdrop-blur-xl shadow-2xl shadow-primary/5 relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -199,7 +199,7 @@ export default function UnifiedDashboardClient({
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                     <BarChart3 size={24} />
                   </div>
-                   Traffic Analytics
+                  Traffic Analytics
                 </h3>
                 <p className="text-sm text-muted-foreground mt-2 font-bold uppercase tracking-[0.2em] opacity-60">System Visitor Distribution</p>
               </div>
@@ -211,27 +211,27 @@ export default function UnifiedDashboardClient({
 
           {/* Secondary Lists */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <DashboardListCard 
-              title="Recent Notices" 
-              items={notiList} 
-              icon={<Bell size={20} />} 
-              moreHref="/cop/bbs" 
-              color="blue" 
+            <DashboardListCard
+              title="Recent Notices"
+              items={notiList}
+              icon={<Bell size={20} />}
+              moreHref="/cop/bbs"
+              color="blue"
             />
-            <DashboardListCard 
-              title="Assigned Tasks" 
-              items={taskList} 
-              icon={<CheckCircle2 size={20} />} 
-              moreHref="/cop/bbs" 
-              color="emerald" 
+            <DashboardListCard
+              title="Assigned Tasks"
+              items={taskList}
+              icon={<CheckCircle2 size={20} />}
+              moreHref="/cop/bbs"
+              color="emerald"
             />
           </div>
         </div>
 
         {/* Sidebar Widgets */}
         <div className="space-y-12">
-          <motion.div 
-            variants={itemVariants} 
+          <motion.div
+            variants={itemVariants}
             className="p-10 border-2 border-primary/5 rounded-[4rem] bg-slate-900 text-white shadow-2xl min-h-[500px] relative overflow-hidden group"
           >
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px]" />
@@ -246,13 +246,13 @@ export default function UnifiedDashboardClient({
             </div>
           </motion.div>
 
-          <motion.div 
-            variants={itemVariants} 
+          <motion.div
+            variants={itemVariants}
             className="p-10 border-2 border-primary/5 rounded-[4rem] bg-card shadow-xl overflow-hidden relative"
           >
             <div className="flex items-center justify-between mb-8">
-               <h3 className="text-[12px] font-black text-muted-foreground uppercase tracking-[0.4em] flex items-center gap-3">
-                <div className="w-2 h-2 bg-primary rounded-full animate-ping" /> 
+              <h3 className="text-[12px] font-black text-muted-foreground uppercase tracking-[0.4em] flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
                 System Pulse
               </h3>
               <div className="text-[10px] font-bold text-primary bg-primary/5 px-3 py-1 rounded-full">LIVE</div>
@@ -281,7 +281,7 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={{
         hidden: { scale: 0.9, opacity: 0 },
         visible: { scale: 1, opacity: 1 }
@@ -311,10 +311,10 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
         <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60 mb-2">{title}</p>
         <h4 className="text-6xl font-black tracking-tighter leading-none">{value}</h4>
         <div className="pt-6">
-           {/* HYDRATION FIX: changed <p> to <div> */}
-           <div className="text-[11px] opacity-40 font-bold leading-relaxed max-w-[180px]">
-             {description}
-           </div>
+          {/* HYDRATION FIX: changed <p> to <div> */}
+          <div className="text-[11px] opacity-40 font-bold leading-relaxed max-w-[180px]">
+            {description}
+          </div>
         </div>
       </div>
 
@@ -333,7 +333,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={{
         hidden: { y: 20, opacity: 0 },
         visible: { y: 0, opacity: 1 }
@@ -342,7 +342,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
     >
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between">
         <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", 
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
             color === 'blue' ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
           )}>
             {icon}
@@ -356,8 +356,8 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
       <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item: any, idx: number) => (
-            <motion.div 
-              key={idx} 
+            <motion.div
+              key={idx}
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-[2rem] border-2 border-transparent transition-all cursor-pointer group/item",
@@ -377,8 +377,8 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
           ))
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
-             <AlertCircle size={40} />
-             <p className="text-sm font-black uppercase tracking-widest">No data available</p>
+            <AlertCircle size={40} />
+            <p className="text-sm font-black uppercase tracking-widest">No data available</p>
           </div>
         )}
       </div>

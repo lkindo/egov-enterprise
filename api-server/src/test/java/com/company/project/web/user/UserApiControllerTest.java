@@ -85,7 +85,7 @@ class UserApiControllerTest {
         private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
 
         @Test
-        @DisplayName("?용??목록 조회 - 관리자")
+        @DisplayName("사용자 목록 조회 - 관리자")
         void getUserList_admin() throws Exception {
                 // Given
                 when(jwtTokenProvider.validateToken(any())).thenReturn(true);
@@ -100,16 +100,16 @@ class UserApiControllerTest {
         }
 
         @Test
-        @DisplayName("?원가??- ?공")
+        @DisplayName("회원가입 - 성공")
         void signup_success() throws Exception {
                 // Given
-                UserResponse mockResponse = new UserResponse("newUser", "???용??", Role.USER);
+                UserResponse mockResponse = new UserResponse("newUser", "신규사용자", Role.USER);
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
                 Map<String, Object> request = Map.of(
                                 "userId", "newUser",
                                 "password", "password123",
-                                "userNm", "???용??",
+                                "userNm", "신규사용자",
                                 "passwordHint", "hint",
                                 "passwordCnsr", "answer");
 
@@ -122,7 +122,7 @@ class UserApiControllerTest {
         }
 
         @Test
-        @DisplayName("?원가??- 중복 ?용??ID (409)")
+        @DisplayName("회원가입 - 중복 사용자 ID (409)")
         void signup_duplicateUserId() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -132,7 +132,7 @@ class UserApiControllerTest {
                 Map<String, Object> request = Map.of(
                                 "userId", "admin",
                                 "password", "password123",
-                                "userNm", "중복 ?용??");
+                                "userNm", "중복사용자");
 
                 // When & Then
                 mockMvc.perform(post("/api/v1/users/signup")

@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { useTheme } from 'next-themes';
-import { 
-  Moon, 
-  Sun, 
-  Bell, 
-  User, 
-  LogOut, 
-  Settings, 
+import {
+  Moon,
+  Sun,
+  Bell,
+  User,
+  LogOut,
+  Settings,
   ChevronDown,
   Info,
   Menu,
@@ -44,17 +44,17 @@ export function Header() {
             <span className="text-primary-foreground font-black text-lg">eG</span>
           </div>
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-sm font-black tracking-tight leading-none">전자정부 5.0</span>
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Enterprise Portal</span>
+            <span className="text-sm font-black leading-tight">전자정부 5.0</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">Enterprise Portal</span>
           </div>
         </Link>
-        
+
         <div className="flex-1" />
 
         <div className="flex items-center gap-1.5 md:gap-3">
           {/* Help Link - asChild 대신 클래스 직접 적용 */}
-          <Link 
-            href="/help" 
+          <Link
+            href="/help"
             title="메뉴구성 설명"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
@@ -70,10 +70,10 @@ export function Header() {
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsNotifOpen(true)}
             className="relative text-muted-foreground"
           >
@@ -114,8 +114,8 @@ export function Header() {
                       <Settings size={14} /> 환경설정
                     </Link>
                     <div className="h-px bg-muted my-1" />
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="w-full justify-start text-xs h-9 gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
                       onClick={() => logout()}
                     >
@@ -133,16 +133,16 @@ export function Header() {
         </div>
       </div>
 
-      <AppNotificationDrawer 
-        isOpen={isNotifOpen} 
-        onClose={() => setIsNotifOpen(false)} 
+      <AppNotificationDrawer
+        isOpen={isNotifOpen}
+        onClose={() => setIsNotifOpen(false)}
         notifications={notifications.map(n => ({
           id: n.ntfcNo,
           title: n.ntfcSj,
           message: n.ntfcCn,
           time: n.createdDate,
           isRead: n.isRead === 'Y'
-        }))} 
+        }))}
       />
     </header>
   );
