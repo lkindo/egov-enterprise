@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,16 +41,16 @@ class FileApiControllerTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @MockBean
+        @MockitoBean
         private FileService fileService;
 
-        @MockBean
+        @MockitoBean
         private JwtTokenProvider jwtTokenProvider;
 
-        @MockBean
+        @MockitoBean
         private PasswordEncoder passwordEncoder;
 
-        @MockBean
+        @MockitoBean
         private AuthenticationManager authenticationManager;
 
         @Test

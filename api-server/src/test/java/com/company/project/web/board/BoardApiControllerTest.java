@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,16 +49,16 @@ class BoardApiControllerTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @MockBean
+        @MockitoBean
         private BoardService boardService;
 
-        @MockBean
+        @MockitoBean
         private JwtTokenProvider jwtTokenProvider;
 
-        @MockBean(name = "dataSource")
+        @MockitoBean(name = "dataSource")
         private javax.sql.DataSource dataSource;
 
-        @MockBean
+        @MockitoBean
         private com.company.project.service.menu.MenuService menuService;
 
         @BeforeEach

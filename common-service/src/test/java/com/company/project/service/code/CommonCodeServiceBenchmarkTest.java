@@ -9,7 +9,7 @@ import com.company.project.domain.code.CommonCodeRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Collections;
 
@@ -23,13 +23,13 @@ public class CommonCodeServiceBenchmarkTest {
     @Autowired
     private CommonCodeService commonCodeService;
 
-    @MockBean
+    @MockitoBean
     private CommonCodeRepository commonCodeRepository;
 
-    @MockBean
+    @MockitoBean
     private CommonCodeCategoryRepository commonCodeCategoryRepository;
 
-    @MockBean
+    @MockitoBean
     private CommonCodeGroupRepository commonCodeGroupRepository;
 
     @Test

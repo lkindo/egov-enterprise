@@ -2,7 +2,7 @@ dependencies {
     api project(':common-core')
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     api 'org.springframework.data:spring-data-envers'
-    api 'org.hibernate.orm:hibernate-envers:6.5.3.Final'
+    api 'org.hibernate.orm:hibernate-envers'
     
     api 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
@@ -11,7 +11,7 @@ dependencies {
 
     runtimeOnly 'com.mysql:mysql-connector-j'
     runtimeOnly 'com.h2database:h2'
-    runtimeOnly 'org.cubrid:cubrid-jdbc:11.3.2.0053'
+    runtimeOnly libs.cubrid.jdbc
     
-    implementation 'org.hibernate.orm:hibernate-community-dialects:6.4.0.Final'
+    implementation libs.hibernate.community.dialects
 }

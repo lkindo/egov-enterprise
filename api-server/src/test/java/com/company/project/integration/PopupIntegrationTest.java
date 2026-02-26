@@ -6,7 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -38,14 +38,14 @@ class PopupIntegrationTest {
         @org.springframework.context.annotation.ComponentScan(basePackages = "com.company.project.api.controller.pwm")
         static class TestConfig {
         }
-
+ 
         @Autowired
         private MockMvc mockMvc;
-
-        @MockBean
+ 
+        @MockitoBean
         private PopupService popupService;
-
-        @MockBean
+ 
+        @MockitoBean
         private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
         @Test
