@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -56,13 +56,13 @@ public class MenuServicePerformanceTest {
     @Autowired
     private MenuService menuService;
 
-    @MockBean
+    @MockitoBean
     private ProgramRepository programRepository;
 
-    @MockBean
+    @MockitoBean
     private AuthorityRepository authorityRepository;
 
-    @MockBean
+    @MockitoBean
     private MenuAuthorityRepository menuAuthorityRepository;
 
     @BeforeEach

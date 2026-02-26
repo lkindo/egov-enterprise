@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,19 +51,19 @@ class AuthApiControllerTest {
         @Autowired
         private ObjectMapper objectMapper;
 
-        @MockBean
+        @MockitoBean
         private AuthService authService;
 
-        @MockBean
+        @MockitoBean
         private JwtTokenProvider jwtTokenProvider;
 
-        @MockBean
+        @MockitoBean
         private PasswordEncoder passwordEncoder;
 
-        @MockBean
+        @MockitoBean
         private AuthenticationManager authenticationManager;
 
-        @MockBean
+        @MockitoBean
         private SecurityContextRepository securityContextRepository;
 
         @Test

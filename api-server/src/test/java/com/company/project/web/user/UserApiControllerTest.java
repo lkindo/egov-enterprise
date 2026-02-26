@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -60,28 +60,28 @@ class UserApiControllerTest {
         @Autowired
         private ObjectMapper objectMapper;
 
-        @MockBean
+        @MockitoBean
         private UserService userService;
 
-        @MockBean
+        @MockitoBean
         private PasswordEncoder passwordEncoder;
 
-        @MockBean
+        @MockitoBean
         private JwtTokenProvider jwtTokenProvider;
 
-        @MockBean
+        @MockitoBean
         private AuthenticationManager authenticationManager;
 
-        @MockBean
+        @MockitoBean
         private OperationalAuditInterceptor operationalAuditInterceptor;
 
-        @MockBean
+        @MockitoBean
         private MenuService menuService;
 
-        @MockBean
+        @MockitoBean
         private com.company.project.security.service.EgovAuthenticationProvider egovAuthenticationProvider;
 
-        @MockBean
+        @MockitoBean
         private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
 
         @Test
