@@ -60,3 +60,10 @@ export const updateGroup = async (group: GroupManage): Promise<void> => {
 export const deleteGroup = async (groupId: string): Promise<void> => {
     return client.post(`/sec/gmt/EgovGroupDelete.do?groupId=${groupId}`);
 };
+
+/**
+ * Get menu list for a specific authority
+ */
+export const getMenuCreatList = async (authorCode: string): Promise<{ resultList: AuthorManage[] }> => {
+    return client.get<any>('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode } });
+};

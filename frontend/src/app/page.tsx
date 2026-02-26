@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
+import { cookies } from 'next/headers';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
 import { vacationService } from '@/services/vacationService';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cookies } from 'next/headers';
+import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
 
 async function getDashboardData() {
   const currentYear = new Date().getFullYear().toString();
@@ -12,22 +13,25 @@ async function getDashboardData() {
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
   try {
-    const [leaveRes, dashboardRes] = (await Promise.allSettled([
+    const [leaveRes, dashboardRes] = await Promise.allSettled([
       vacationService.getMyYearlyLeave(currentYear),
-      client.get('/dashboard', axiosConfig)
-    ])) as any[];
+      client.get<DashboardResponse>('/dashboard', axiosConfig)
+    ]);
 
     let initialLeave = null;
-    let initialNotiList = [];
-    let initialTaskList = [];
+    let initialNotiList: DashboardNoti[] = [];
+    let initialTaskList: DashboardTask[] = [];
 
     if (leaveRes.status === 'fulfilled' && (leaveRes.value as any)?.success) {
       initialLeave = (leaveRes.value as any).data;
     }
-    if (dashboardRes.status === 'fulfilled' && (dashboardRes.value as any).data?.success) {
-      initialNotiList = ((dashboardRes.value as any).data.notiList || []).slice(0, 6);
-      initialTaskList = ((dashboardRes.value as any).data.taskList || []).slice(0, 6);
+    
+    if (dashboardRes.status === 'fulfilled') {
+        const dashboardData = dashboardRes.value;
+        initialNotiList = (dashboardData.notiList || []).slice(0, 6);
+        initialTaskList = (dashboardData.taskList || []).slice(0, 6);
     }
+    
     return { initialLeave, initialNotiList, initialTaskList };
   } catch (err) {
     return { initialLeave: null, initialNotiList: [], initialTaskList: [] };
