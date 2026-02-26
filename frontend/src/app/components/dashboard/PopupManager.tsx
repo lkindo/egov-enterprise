@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { popupService } from '@/services/popupService';
 import { Popup } from '@/types/banner';
 
-export function PopupManager() {
+export const PopupManager = React.memo(function PopupManager() {
   const [activePopups, setActivePopups] = useState<Popup[]>([]);
   const [visiblePopupIds, setVisiblePopupIds] = useState<string[]>([]);
 
@@ -108,4 +108,4 @@ export function PopupManager() {
       })}
     </>
   );
-}
+});
