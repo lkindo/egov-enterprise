@@ -26,26 +26,25 @@ public class MenuController {
 
     @Operation(summary = "GNB 대메뉴 목록 조회")
     @GetMapping("/head")
-    public ResponseEntity<Map<String, Object>> getHeadMenu() {
+    public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getHeadMenu() {
         log.info("getHeadMenu called");
         List<MenuDto> resultList = menuService.getMenuHierarchy();
         log.info("getHeadMenu returned {} items", resultList.size());
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("list", resultList);
-        return ResponseEntity.ok(result);
+        Map<String, Object> data = new HashMap<>();
+        data.put("list", resultList);
+        return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
     }
 
     @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
-    public ResponseEntity<Map<String, Object>> getLeftMenu(@RequestParam("menuNo") Long menuNo) {
+    public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getLeftMenu(
+            @RequestParam("menuNo") Long menuNo) {
         log.info("getLeftMenu called with menuNo={}", menuNo);
         List<MenuDto> resultList = menuService.getSubMenus(menuNo);
         log.info("getLeftMenu returned {} items", resultList.size());
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("list", resultList);
-        return ResponseEntity.ok(result);
+        Map<String, Object> data = new HashMap<>();
+        data.put("list", resultList);
+        return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
     }
 
     @Operation(summary = "메뉴 목록 테스트 - Menu 엔티티 직접 반환")
@@ -55,7 +54,7 @@ public class MenuController {
         try {
             List<Menu> menus = menuService.getAllMenusCached();
             log.info("getRawMenus returned {} items", menus.size());
-            
+
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("count", menus.size());
@@ -76,10 +75,9 @@ public class MenuController {
     public ResponseEntity<Map<String, Object>> getPrograms() {
         log.info("getPrograms called");
         try {
-            List<com.company.project.domain.program.Program> programs = 
-                menuService.getAllPrograms();
+            List<com.company.project.domain.program.Program> programs = menuService.getAllPrograms();
             log.info("getPrograms returned {} items", programs.size());
-            
+
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("count", programs.size());

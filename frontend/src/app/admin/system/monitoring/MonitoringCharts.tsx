@@ -21,7 +21,7 @@ interface MonitoringChartProps {
 export function RealtimeResourceChart({ data }: MonitoringChartProps) {
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
@@ -36,7 +36,7 @@ export function RealtimeResourceChart({ data }: MonitoringChartProps) {
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 100]} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
           />
           <Area type="monotone" dataKey="cpu" stroke="#ef4444" strokeWidth={2} fill="url(#colorCpu)" name="CPU (%)" />
@@ -56,7 +56,7 @@ export function ServiceHealthChart() {
 
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <PieChart>
           <Pie
             data={data}

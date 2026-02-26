@@ -3,12 +3,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  CalendarDays, 
-  MessageSquare, 
-  Settings, 
-  Users, 
+import {
+  LayoutDashboard,
+  CalendarDays,
+  MessageSquare,
+  Settings,
+  Users,
   FileText,
   ShieldCheck,
   CircleDot,
@@ -109,10 +109,10 @@ const mapLegacyUrl = (url: string) => {
 function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const hasChildren = item.children && item.children.length > 0;
   const Icon = ICON_MAP[item.menuNm] || (depth === 0 ? ICON_MAP['기본'] : null);
-  
+
   // Normalize and map href
   const href = useMemo(() => mapLegacyUrl(item.chkURL || '#'), [item.chkURL]);
   const isActive = pathname === href || (hasChildren && item.children?.some(child => mapLegacyUrl(child.chkURL || '#') === pathname));
@@ -125,9 +125,9 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
 
   const content = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full",
-      isActive 
-        ? "bg-primary/10 text-primary" 
+      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-bold tracking-tight rounded-md transition-colors w-full",
+      isActive
+        ? "bg-primary/10 text-primary"
         : "text-muted-foreground hover:bg-accent hover:text-foreground",
       depth > 0 && "pl-9"
     )}>
@@ -144,7 +144,7 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
   return (
     <div className="w-full">
       {hasChildren ? (
-        <button 
+        <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full text-left"
         >
@@ -155,7 +155,7 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
           {content}
         </Link>
       )}
-      
+
       {hasChildren && isOpen && (
         <div className="mt-1 space-y-1">
           {item.children?.map((child) => (
@@ -208,15 +208,15 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuItem[] }) {
     <>
       {/* Mobile Overlay */}
       {isSidebarOpen ? (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       ) : null}
 
       <aside className={cn(
-        "fixed left-0 top-0 lg:top-16 z-50 h-full lg:h-[calc(100vh-4rem)] w-64 border-r bg-background overflow-y-auto transition-transform duration-300 ease-in-out lg:translate-x-0",
-        isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        "fixed left-0 top-0 lg:top-16 z-[100] h-full lg:h-[calc(100vh-4rem)] w-64 border-r bg-white dark:bg-slate-950 overflow-y-auto transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full py-6 px-4">
           {/* Mobile Header in Sidebar */}
@@ -227,7 +227,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuItem[] }) {
               </div>
               <span className="text-sm font-black tracking-tight uppercase">Enterprise</span>
             </div>
-            <button 
+            <button
               onClick={() => setSidebarOpen(false)}
               className="p-2 hover:bg-accent rounded-full transition-colors"
             >

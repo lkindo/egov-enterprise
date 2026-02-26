@@ -13,7 +13,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -25,65 +24,71 @@ import java.util.Map;
 @org.springframework.context.annotation.Profile("none")
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-    private final JwtTokenProvider jwtTokenProvider;
+        private final JwtTokenProvider jwtTokenProvider;
 
-    public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider,
-            Environment environment) {
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+        public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider,
+                        Environment environment) {
+                this.jwtTokenProvider = jwtTokenProvider;
+        }
 
-    @Bean
-    @SuppressWarnings("deprecation")
-    public PasswordEncoder passwordEncoder() {
-        String encodingId = "bcrypt";
-        Map<String, PasswordEncoder> encoders = new HashMap<>();
-        encoders.put("bcrypt", new BCryptPasswordEncoder());
-        encoders.put("egov", NoOpPasswordEncoder.getInstance());
-        return new DelegatingPasswordEncoder(encodingId, encoders);
-    }
+        @Bean
+        @SuppressWarnings("deprecation")
+        public PasswordEncoder passwordEncoder() {
+                String encodingId = "bcrypt";
+                Map<String, PasswordEncoder> encoders = new HashMap<>();
+                encoders.put("bcrypt", new BCryptPasswordEncoder());
+                encoders.put("egov", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance());
+                return new DelegatingPasswordEncoder(encodingId, encoders);
+        }
 
-    @Bean
-    public EgovPasswordEncoder egovPasswordEncoder() {
-        return new EgovPasswordEncoder();
-    }
+        @Bean
+        public EgovPasswordEncoder egovPasswordEncoder() {
+                return new EgovPasswordEncoder();
+        }
 
-    /* Commented out to avoid conflict with ApiSecurityConfig in api-server
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(...) { ... }
-    @Bean
-    public AuthenticationManager authenticationManager(...) { ... }
-    */
+        /*
+         * Commented out to avoid conflict with ApiSecurityConfig in api-server
+         * 
+         * @Bean
+         * public DaoAuthenticationProvider authenticationProvider(...) { ... }
+         * 
+         * @Bean
+         * public AuthenticationManager authenticationManager(...) { ... }
+         */
 
-    @Bean
-    @org.springframework.core.annotation.Order(2)
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**", "/static/**").permitAll()
-                        .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
-                        .requestMatchers("/sym/mms/**").permitAll()
-                        .requestMatchers("/connection").permitAll()
-                        .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
-                        .requestMatchers("/api/v1/public/**").permitAll()
-                        .anyRequest().authenticated())
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+        @Bean
+        @org.springframework.core.annotation.Order(2)
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**",
+                                                                "/static/**")
+                                                .permitAll()
+                                                .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
+                                                .requestMatchers("/sym/mms/**").permitAll()
+                                                .requestMatchers("/connection").permitAll()
+                                                .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
+                                                .requestMatchers("/api/v1/public/**").permitAll()
+                                                .anyRequest().authenticated())
+                                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                                                UsernamePasswordAuthenticationFilter.class);
 
-        http.headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                .contentTypeOptions(Customizer.withDefaults())
-                .xssProtection(xss -> xss.headerValue(
-                        org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                .httpStrictTransportSecurity(hsts -> hsts
-                        .maxAgeInSeconds(31536000L)
-                        .includeSubDomains(true)
-                        .preload(true))
-                .cacheControl(Customizer.withDefaults())
-                .referrerPolicy(referrer -> referrer.policy(
-                        org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
+                http.headers(headers -> headers
+                                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                                .contentTypeOptions(Customizer.withDefaults())
+                                .xssProtection(xss -> xss.headerValue(
+                                                org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                                .httpStrictTransportSecurity(hsts -> hsts
+                                                .maxAgeInSeconds(31536000L)
+                                                .includeSubDomains(true)
+                                                .preload(true))
+                                .cacheControl(Customizer.withDefaults())
+                                .referrerPolicy(referrer -> referrer.policy(
+                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
 
-        return http.build();
-    }
+                return http.build();
+        }
 }

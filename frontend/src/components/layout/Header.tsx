@@ -21,12 +21,9 @@ const Header = () => {
         try {
             setMenuError(null);
             const response = (await axios.get('/menu/head')) as any;
-            if (response.data.success) {
-                setMenus(response.data.list);
-            } else {
-                setMenuError('Failed to fetch menus');
-                setMenus([]);
-            }
+            // axios (client.ts) already extracts apiBody.data and handles success true/false
+            const list = response?.list || [];
+            setMenus(list);
         } catch (err: any) {
             console.error('Failed to fetch menus:', err);
             setMenuError(err.message || 'Failed to fetch menus');

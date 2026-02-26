@@ -12,13 +12,13 @@ spring:
       mode: never
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
-    jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
+    url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
+    jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
     username: ${DB_USERNAME:postgres.kmtcbkxvrbnfijvbdsrx}
     password: ${DB_PASSWORD:s5isI0KE48Bd9kD1}
     driver-class-name: org.postgresql.Driver
     hikari:
-      jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
+      jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public&prepareThreshold=0}
       maximum-pool-size: 20
       minimum-idle: 5
       idle-timeout: 300000

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  ResponsiveContainer, 
+import {
+  ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
@@ -20,22 +20,22 @@ interface StandardChartWrapperProps {
   height?: number;
 }
 
-export function StandardChartWrapper({ 
-  title, type, data, dataKeys, loading, className, height = 300 
+export function StandardChartWrapper({
+  title, type, data, dataKeys, loading, className, height = 300
 }: StandardChartWrapperProps) {
   return (
     <div className={cn("p-6 border rounded-2xl bg-card shadow-sm transition-all hover:shadow-md", className)}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">{title}</h3>
       </div>
-      
+
       <div style={{ width: '100%', height }}>
         {loading ? (
           <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-xl animate-pulse">
             <div className="h-4 w-24 bg-muted rounded" />
           </div>
         ) : (
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             {type === 'bar' ? (
               <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
@@ -45,31 +45,31 @@ export function StandardChartWrapper({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="name" 
-                  fontSize={10} 
+                <XAxis
+                  dataKey="name"
+                  fontSize={10}
                   fontWeight={800}
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{fill: '#94a3b8'}}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#94a3b8' }}
                 />
-                <YAxis 
-                  fontSize={10} 
+                <YAxis
+                  fontSize={10}
                   fontWeight={800}
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{fill: '#94a3b8'}}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#94a3b8' }}
                 />
-                <Tooltip 
-                  cursor={{fill: 'rgba(0, 85, 251, 0.05)'}} 
+                <Tooltip
+                  cursor={{ fill: 'rgba(0, 85, 251, 0.05)' }}
                   content={<CustomTooltip />}
                 />
                 {dataKeys.map((key, idx) => (
-                  <Bar 
-                    key={key} 
-                    dataKey={key} 
-                    fill="url(#barGradient)" 
-                    radius={[6, 6, 0, 0]} 
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    fill="url(#barGradient)"
+                    radius={[6, 6, 0, 0]}
                     barSize={24}
                   />
                 ))}
@@ -83,31 +83,31 @@ export function StandardChartWrapper({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="name" 
-                  fontSize={10} 
+                <XAxis
+                  dataKey="name"
+                  fontSize={10}
                   fontWeight={800}
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{fill: '#94a3b8'}}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#94a3b8' }}
                 />
-                <YAxis 
-                  fontSize={10} 
+                <YAxis
+                  fontSize={10}
                   fontWeight={800}
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{fill: '#94a3b8'}}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#94a3b8' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 {dataKeys.map((key, idx) => (
-                  <Area 
+                  <Area
                     key={key}
-                    type="monotone" 
-                    dataKey={key} 
-                    stroke="#0055FB" 
+                    type="monotone"
+                    dataKey={key}
+                    stroke="#0055FB"
                     strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#areaGradient)" 
+                    fillOpacity={1}
+                    fill="url(#areaGradient)"
                   />
                 ))}
               </AreaChart>
@@ -127,8 +127,8 @@ export function StandardChartWrapper({
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  verticalAlign="bottom" 
+                <Legend
+                  verticalAlign="bottom"
                   align="center"
                   iconType="circle"
                   formatter={(value) => <span className="text-[10px] font-black uppercase text-muted-foreground ml-1">{value}</span>}
@@ -141,12 +141,12 @@ export function StandardChartWrapper({
                 <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 {dataKeys.map((key, idx) => (
-                  <Line 
-                    key={key} 
-                    type="monotone" 
-                    dataKey={key} 
-                    stroke={CHART_COLORS[idx % CHART_COLORS.length]} 
-                    strokeWidth={3} 
+                  <Line
+                    key={key}
+                    type="monotone"
+                    dataKey={key}
+                    stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                    strokeWidth={3}
                     dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
                     activeDot={{ r: 6, strokeWidth: 0 }}
                   />

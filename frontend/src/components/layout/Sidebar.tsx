@@ -67,10 +67,14 @@ const mapLegacyUrl = (url: string) => {
     return url;
 };
 
-const Sidebar = () => {
+interface SidebarProps {
+    initialMenus?: MappedMenuItem[];
+}
+
+const Sidebar = ({ initialMenus = [] }: SidebarProps) => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [leftMenus, setLeftMenus] = useState<MappedMenuItem[]>([]);
+    const [leftMenus, setLeftMenus] = useState<MappedMenuItem[]>(initialMenus);
     const [parentMenuName, setParentMenuName] = useState('');
     const [error, setError] = useState<string | null>(null);
 
@@ -91,21 +95,26 @@ const Sidebar = () => {
             setParentMenuName('');
         }
 
+        // If we have initialMenus and they matching the current menuNo logic, but wait...
+        // initialMenus in RootLayout is based on GNB. 
+        // Let's actually check if initialMenus is passed.
+        if (initialMenus.length > 0 && leftMenus === initialMenus) {
+            // Already have menus, but maybe need to update name
+            return;
+        }
+
         if (menuNo > 0) {
             try {
                 setError(null);
                 const response = (await axios.get(`/menu/left?menuNo=${menuNo}`)) as any;
-                if (response.data.success) {
-                    // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
-                    const mappedList = response.data.list.map((item: MenuItem) => ({
-                        ...item,
-                        mappedUrl: mapLegacyUrl(item.chkURL)
-                    }));
-                    setLeftMenus(mappedList);
-                } else {
-                    setError('Failed to fetch menus');
-                    setLeftMenus([]);
-                }
+                // axios (client.ts) already extracts apiBody.data and handles success true/false
+                const list = response?.list || [];
+                // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
+                const mappedList = list.map((item: MenuItem) => ({
+                    ...item,
+                    mappedUrl: mapLegacyUrl(item.chkURL)
+                }));
+                setLeftMenus(mappedList);
             } catch (err: any) {
                 console.error('Failed to fetch left menus:', err);
                 setError(err.message || 'Failed to fetch menus');
@@ -114,7 +123,7 @@ const Sidebar = () => {
         } else {
             setLeftMenus([]);
         }
-    }, [menuNo]);
+    }, [menuNo, initialMenus]);
 
     useEffect(() => {
         fetchLeftMenus();

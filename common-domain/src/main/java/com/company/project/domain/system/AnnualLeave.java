@@ -20,10 +20,10 @@ public class AnnualLeave extends BaseEntity {
     private String occrrncYear;
 
     @Id
-    @Column(name = "USID", length = 20)
+    @Column(name = "USER_ID", length = 20)
     private String usid;
 
-    @Column(name = "OCCRNC_YRYC_CO")
+    @Column(name = "YRYC_OCCRRNC_CO")
     private Double occrncYrycCo;
 
     @Column(name = "USE_YRYC_CO")
@@ -33,7 +33,7 @@ public class AnnualLeave extends BaseEntity {
     private Double remndrYrycCo;
 
     /**
-     * ?????怨쀪컧 筌△몿而?獄??遺용연 ??깅땾 揶쏄퉮??
+     * 연차 사용 시 사용일수 가산 및 잔여 연차 동기화
      */
     public void deductLeave(Double days) {
         if (this.useYrycCo == null)
@@ -43,7 +43,7 @@ public class AnnualLeave extends BaseEntity {
     }
 
     /**
-     * ?遺용연 ??깅땾 ??녿┛??
+     * 잔여 연차 일수 동기화
      */
     public void syncRemaining() {
         if (this.occrncYrycCo == null)

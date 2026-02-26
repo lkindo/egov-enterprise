@@ -15,7 +15,7 @@ package com.company.project.test.async;
  * import
  * org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
  * import org.springframework.boot.test.context.SpringBootTest;
- * import org.springframework.boot.test.mock.mockito.MockBean;
+ * import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * import org.springframework.http.MediaType;
  * import org.springframework.test.context.ActiveProfiles;
  * import org.springframework.test.web.servlet.MockMvc;
@@ -42,7 +42,7 @@ package com.company.project.test.async;
  * @Autowired
  * private MockMvc mockMvc;
  * 
- * @MockBean
+ * @MockitoBean
  * private AsyncService asyncService;
  * 
  * private static final int DEFAULT_TIMEOUT = 10; // seconds

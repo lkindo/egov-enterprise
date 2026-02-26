@@ -9,6 +9,10 @@ import { LayoutProvider } from '@/contexts/LayoutContext';
 import { ToastProvider } from '@/app/components/ui/toast';
 import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 import { GlobalShortcutProvider } from '@/app/components/ui/global-shortcut-provider';
+import dynamic from 'next/dynamic';
+
+const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
+const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -33,6 +37,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               <LayoutProvider>
                 <WebSocketProvider>
                   {children}
+                  <GlobalCommandCenter />
+                  <SmartOnboardingHub />
                 </WebSocketProvider>
               </LayoutProvider>
             </AuthProvider>
