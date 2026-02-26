@@ -17,7 +17,7 @@ export interface QNA {
   writngPassword?: string;
   wrterNm: string;
   writngDe: string;
-  qnaProcessSttusCode: string; // 1:?묒닔, 2:?듬?以? 3:?듬??꾨즺
+  qnaProcessSttusCode: string; // 1:접수, 2:답변중, 3:답변완료
 }
 
 export const helpService = {
@@ -36,4 +36,3 @@ export const helpService = {
     return response;
   }
 };
-

@@ -5,19 +5,46 @@ import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
-import { GlobalCommandCenter } from './components/ui/global-command-center';
-import { SmartOnboardingHub } from './components/ui/smart-onboarding-hub';
+import dynamic from 'next/dynamic';
+
+const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
+const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
 
 export const metadata: Metadata = {
-  title: '전자정부 프레임워크 모더니제이션',
+  title: '전자정부 프레임워크 현대화',
   description: 'KRDS 기반 모던 전사 공통 모듈',
 };
 
-export default function RootLayout({
+import { cookies } from 'next/headers';
+import { menuService } from '@/services/menuService';
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+  // Fetch Sidebar Menus on Server to eliminate waterfall
+  let initialMenus: any[] = [];
+  try {
+    const headList = await menuService.getHeadMenus(axiosConfig);
+    initialMenus = await Promise.all(
+      headList.map(async (menu) => {
+        try {
+          const leftList = await menuService.getLeftMenus(menu.menuNo, axiosConfig);
+          return { ...menu, children: leftList };
+        } catch {
+          return { ...menu, children: [] };
+        }
+      })
+    );
+  } catch (error) {
+    console.error('RootLayout: Failed to pre-fetch menus', error);
+  }
+
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className="antialiased">
@@ -32,7 +59,7 @@ export default function RootLayout({
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <div className="flex flex-1">
-                <Sidebar />
+                <Sidebar initialMenus={initialMenus} />
                 <main className="flex-1 lg:pl-64 pt-4 transition-all duration-300">
                   <div className="container mx-auto p-4 md:p-6 min-h-[calc(100vh-10rem)]">
                     {children}

@@ -167,49 +167,52 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
   );
 }
 
-export function Sidebar() {
-  const [menus, setMenus] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuItem[] }) {
+  const [menus, setMenus] = useState<MenuItem[]>(initialMenus);
+  const [loading, setLoading] = useState(initialMenus.length === 0);
   const { isSidebarOpen, setSidebarOpen } = useLayout();
 
   useEffect(() => {
+    if (initialMenus.length > 0) {
+      setMenus(initialMenus);
+      setLoading(false);
+      return;
+    }
+
     async function loadMenus() {
       try {
         setLoading(true);
-        const headData = await menuService.getHeadMenus();
-        if (headData && headData.success) {
-          const menusWithChildren = await Promise.all(
-            (headData.list || []).map(async (menu: any) => {
-              try {
-                const leftData = await menuService.getLeftMenus(menu.menuNo);
-                return { ...menu, children: leftData && leftData.success ? leftData.list : [] };
-              } catch {
-                return { ...menu, children: [] };
-              }
-            })
-          );
-          setMenus(menusWithChildren);
-        }
+        const headList = await menuService.getHeadMenus();
+        const menusWithChildren = await Promise.all(
+          headList.map(async (menu) => {
+            try {
+              const leftList = await menuService.getLeftMenus(menu.menuNo);
+              return { ...menu, children: leftList };
+            } catch {
+              return { ...menu, children: [] };
+            }
+          })
+        );
+        setMenus(menusWithChildren);
       } catch (error) {
         console.error('Failed to load sidebar menus', error);
-        // API 오류 시 기본 메뉴 또는 빈 목록 제공하여 크래시 방지
         setMenus([]);
       } finally {
         setLoading(false);
       }
     }
     loadMenus();
-  }, []);
+  }, [initialMenus]);
 
   return (
     <>
       {/* Mobile Overlay */}
-      {isSidebarOpen && (
+      {isSidebarOpen ? (
         <div 
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in duration-300"
           onClick={() => setSidebarOpen(false)}
         />
-      )}
+      ) : null}
 
       <aside className={cn(
         "fixed left-0 top-0 lg:top-16 z-50 h-full lg:h-[calc(100vh-4rem)] w-64 border-r bg-background overflow-y-auto transition-transform duration-300 ease-in-out lg:translate-x-0",

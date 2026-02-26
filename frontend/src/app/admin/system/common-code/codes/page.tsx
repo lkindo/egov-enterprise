@@ -45,9 +45,9 @@ export default function CommonCodePage() {
         queryFn: () => getCmmnCodeList(params),
     });
 
-    const codes = data?.resultList || [];
+    const codes: CmmnCode[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
-    const clCodes = clCodesData?.resultList || [];
+    const clCodes: CmmnClCode[] = clCodesData?.resultList || [];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

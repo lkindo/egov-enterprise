@@ -23,19 +23,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import axios from '@/lib/api/client';
 
-const SearchResultsContent = () => {
+const SearchResultsContent = ({ initialResults = { articles: [], users: [], menus: [] }, query: initialQuery = '' }: { initialResults: { articles: any[], users: any[], menus: any[] }, query: string }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const query = searchParams.get('q') || '';
+  const query = searchParams.get('q') || initialQuery;
   
   const [activeTab, setTab] = useState('all');
   const [searchInput, setSearchInput] = useState(query);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<{
-    articles: any[],
-    users: any[],
-    menus: any[]
-  }>({ articles: [], users: [], menus: [] });
+  const [results, setResults] = useState(initialResults);
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -44,21 +40,21 @@ const SearchResultsContent = () => {
   };
 
   useEffect(() => {
-    if (!query) return;
+    if (!query || (query === initialQuery && results === initialResults)) return;
     
     const fetchResults = async () => {
       setLoading(true);
       try {
         // 실제 운영 환경에서는 통합 검색 API 하나로 호출하는 것이 좋지만,
         // 여기서는 각각의 서비스에서 데이터를 가져오는 방식으로 시뮬레이션합니다.
-        const [bbsRes, userRes] = await Promise.all([
+        const [bbsRes, userRes] = (await Promise.all([
           axios.get(`/bbs?searchWrd=${query}&searchCnd=0`),
           axios.get(`/admin/users?searchKeyword=${query}&searchCondition=1`)
-        ]);
+        ])) as any[];
 
         setResults({
-          articles: bbsRes.data.resultList || [],
-          users: userRes.data.resultList || [],
+          articles: (bbsRes.data.resultList || []).slice(0, 10),
+          users: (userRes.data.resultList || []).slice(0, 10),
           menus: [
             { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
             { name: '자유 게시판', path: '/cop/bbs/selectBoardList', category: '커뮤니티' }
@@ -72,7 +68,7 @@ const SearchResultsContent = () => {
     };
 
     fetchResults();
-  }, [query]);
+  }, [query, initialQuery, initialResults]);
 
   const tabs = [
     { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
@@ -175,33 +171,33 @@ const SearchResultsContent = () => {
             ) : (
               <div className="space-y-10">
                 {/* Articles Section */}
-                {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 && (
+                {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                   <ResultSection title="Articles" count={results.articles.length}>
-                    {results.articles.map((item, idx) => (
+                    {results.articles.map((item: any, idx: number) => (
                       <ArticleResultItem key={idx} item={item} query={query} />
                     ))}
                   </ResultSection>
-                )}
+                ) : null}
 
                 {/* Users Section */}
-                {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 && (
+                {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
                   <ResultSection title="Employees" count={results.users.length}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {results.users.map((item, idx) => (
+                      {results.users.map((item: any, idx: number) => (
                         <UserResultItem key={idx} item={item} />
                       ))}
                     </div>
                   </ResultSection>
-                )}
+                ) : null}
 
                 {/* Menus Section */}
-                {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 && (
+                {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 ? (
                   <ResultSection title="Shortcuts" count={results.menus.length}>
-                    {results.menus.map((item, idx) => (
+                    {results.menus.map((item: any, idx: number) => (
                       <MenuResultItem key={idx} item={item} />
                     ))}
                   </ResultSection>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -303,15 +299,47 @@ function MenuResultItem({ item }: any) {
 
 import { CheckCircle2 } from 'lucide-react';
 
-const IntegratedSearchPage = () => {
+import { cookies } from 'next/headers';
+import client from '@/lib/api/client';
+
+const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+  const resolvedSearchParams = await searchParams;
+  const q = (resolvedSearchParams.q as string) || '';
+  
+  let initialResults: { articles: any[], users: any[], menus: any[] } = { articles: [], users: [], menus: [] };
+
+  if (q) {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    try {
+      const [bbsRes, userRes] = (await Promise.allSettled([
+        client.get(`/bbs?searchWrd=${q}&searchCnd=0`, axiosConfig),
+        client.get(`/admin/users?searchKeyword=${q}&searchCondition=1`, axiosConfig)
+      ])) as any[];
+
+      initialResults = {
+        articles: (bbsRes.status === 'fulfilled' && bbsRes.value.data.resultList ? (bbsRes.value.data.resultList || []).slice(0, 10) : []),
+        users: (userRes.status === 'fulfilled' && userRes.value.data.resultList ? (userRes.value.data.resultList || []).slice(0, 10) : []),
+        menus: [
+          { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
+          { name: '자유 게시판', path: '/cop/bbs/selectBoardList', category: '커뮤니티' }
+        ].filter(m => m.name.includes(q))
+      };
+    } catch (error) {
+      console.error('Server-side search failed', error);
+    }
+  }
+
   return (
     <Suspense fallback={
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="font-black text-muted-foreground animate-pulse">Initializing Search Index...</p>
+        <p className="font-black text-muted-foreground animate-pulse">Analyzing Information...</p>
       </div>
     }>
-      <SearchResultsContent />
+      <SearchResultsContent initialResults={initialResults} query={q} />
     </Suspense>
   );
 };

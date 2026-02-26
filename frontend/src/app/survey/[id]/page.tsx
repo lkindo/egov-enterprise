@@ -24,12 +24,12 @@ export default function SurveyDetailPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [sRes, qRes] = await Promise.all([
+        const [sRes, qRes] = (await Promise.all([
           surveyService.getSurvey(id as string),
           surveyService.getQuestions(id as string)
-        ]);
-        if (sRes.success) setSurvey(sRes.data);
-        if (qRes.success) setQuestions(qRes.data);
+        ])) as any[];
+        if (sRes?.success) setSurvey(sRes.data);
+        if (qRes?.success) setQuestions(qRes.data);
       } catch (error) {
         toast('설문 정보를 불러오지 못했습니다.', 'error');
         router.back();

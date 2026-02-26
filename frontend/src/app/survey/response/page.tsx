@@ -1,5 +1,6 @@
 'use client';
 
+import { QustnrRespondInfo } from '@/types/survey';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getQustnrRespondInfoList, deleteQustnrRespondInfo } from '@/lib/api/survey';
 import { useState } from 'react';
@@ -41,7 +42,7 @@ export default function SurveyResponseListPage() {
         queryKey: ['survey-responses', pageIndex, searchKeyword],
         queryFn: () => getQustnrRespondInfoList({ pageIndex, size: 10, respondNm: searchKeyword }),
         retry: false,
-    });
+    }) as any;
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => deleteQustnrRespondInfo(id),
@@ -146,7 +147,7 @@ export default function SurveyResponseListPage() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    data?.resultList?.map((item) => (
+                                    data?.resultList?.map((item: QustnrRespondInfo) => (
                                         <TableRow key={item.qestnrQesitmId} className="transition-colors hover:bg-muted/30">
                                             <TableCell className="font-medium">{item.respondNm}</TableCell>
                                             <TableCell className="text-muted-foreground">

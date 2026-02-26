@@ -34,8 +34,8 @@ export default function MenuByAuthorityPage() {
     const { data: authorities = [] } = useQuery({
         queryKey: ['admin-authorities-all'],
         queryFn: async () => {
-            const { data } = await client.get('/sec/ram/EgovAuthorList.do', { params: { pageIndex: 1 } });
-            return (data?.resultList || []) as AuthorInfo[];
+            const data = await client.get('/sec/ram/EgovAuthorList.do', { params: { pageIndex: 1 } });
+            return ((data as any)?.resultList || []) as AuthorInfo[];
         },
     });
 
@@ -43,10 +43,10 @@ export default function MenuByAuthorityPage() {
         queryKey: ['admin-menu-tree', selectedAuthority],
         queryFn: async () => {
             if (!selectedAuthority) return [];
-            const { data } = await client.get('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode: selectedAuthority } });
+            const data = await client.get('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode: selectedAuthority } });
 
-            if (data && data.resultList) {
-                const menuList = data.resultList as MenuTreeItem[];
+            if (data && (data as any).resultList) {
+                const menuList = (data as any).resultList as MenuTreeItem[];
                 const menuMap = new Map<number, MenuTreeItem>();
                 const rootMenus: MenuTreeItem[] = [];
 

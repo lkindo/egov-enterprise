@@ -39,7 +39,7 @@ const DeptJobDetailPage = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/deptjob/${deptJobId}`);
+            const response = (await axios.get(`/deptjob/${deptJobId}`)) as any;
             const data = response.data.deptJob;
             setDetail(data);
             setFormData({
@@ -61,7 +61,7 @@ const DeptJobDetailPage = () => {
     const handleUpdate = async () => {
         setActionLoading(true);
         try {
-            const response = await axios.put(`/deptjob/${deptJobId}`, formData);
+            const response = (await axios.put(`/deptjob/${deptJobId}`, formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 setIsEditing(false);
@@ -78,7 +78,7 @@ const DeptJobDetailPage = () => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         setActionLoading(true);
         try {
-            const response = await axios.delete(`/deptjob/${deptJobId}`);
+            const response = (await axios.delete(`/deptjob/${deptJobId}`)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/smt/djm/selectDeptJobList');

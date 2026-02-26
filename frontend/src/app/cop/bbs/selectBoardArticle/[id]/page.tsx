@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useActionState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from '@/lib/api/client';
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, User, Calendar, Eye, ArrowLeft, Trash2, Home, ChevronRight, FileText, Share2, Printer } from "lucide-react";
 import CommentSection from "@/components/features/comment/CommentSection";
+import { deleteBoardArticle } from '@/app/actions/boardActions';
+import { useToast } from '@/app/components/ui/toast';
 
 interface BoardDetail {
     nttId: string;
@@ -20,65 +22,28 @@ interface BoardDetail {
     bbsId: string;
 }
 
-const BBSDetailContent = () => {
-    const params = useParams();
+const BBSDetailContent = ({ initialDetail, nttId, bbsId }: { initialDetail: BoardDetail; nttId: string; bbsId: string | null }) => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const nttId = params.id as string;
-    const bbsId = searchParams.get('bbsId');
-
-    const [detail, setDetail] = useState<BoardDetail | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+    
+    const [detail, setDetail] = useState<BoardDetail>(initialDetail);
     const [actionLoading, setActionLoading] = useState(false);
-
-    const fetchDetail = async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`/bbs/${nttId}`, { params: { bbsId } });
-            setDetail(response.data.board);
-        } catch (error) {
-            console.error('Failed to fetch board article detail', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [state, formAction, isPending] = useActionState(deleteBoardArticle, null);
 
     useEffect(() => {
-        if (nttId) fetchDetail();
-    }, [nttId, bbsId]);
-
-    const handleDelete = async () => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        setActionLoading(true);
-        try {
-            const response = await axios.delete(`/bbs/${nttId}`, { params: { bbsId } });
-            if (response.data.success) {
-                alert(response.data.message);
-                router.push(`/cop/bbs/selectBoardList?bbsId=${bbsId}`);
-            }
-        } catch (error: any) {
-            alert(error.response?.data?.message || '삭제에 실패했습니다.');
-        } finally {
-            setActionLoading(false);
+        if (state?.success) {
+            toast(state.message, "success");
+            router.push(`/cop/bbs/selectBoardList?bbsId=${bbsId}`);
+        } else if (state && !state.success) {
+            toast(state.message, "error");
         }
-    };
+    }, [state, router, toast, bbsId]);
 
-    if (loading) {
-        return (
-            <div className="p-6 space-y-6 max-w-5xl mx-auto w-full">
-                <Skeleton className="h-10 w-[300px] rounded-xl" />
-                <Card className="border-none shadow-xl rounded-[2rem]">
-                    <CardHeader className="p-10 border-b space-y-4">
-                        <Skeleton className="h-12 w-3/4 rounded-2xl" />
-                        <div className="flex gap-4"><Skeleton className="h-6 w-32 rounded-full" /><Skeleton className="h-6 w-32 rounded-full" /></div>
-                    </CardHeader>
-                    <CardContent className="p-10 space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /></CardContent>
-                </Card>
-            </div>
-        );
-    }
+    // The loading state and fetchDetail are removed as data is passed via props
+    // The initial loading skeleton is now handled by the parent Suspense boundary
 
-    if (!detail) return <div className="p-20 text-center font-black text-slate-400 uppercase tracking-widest">Article Not Found</div>;
+    // The `if (!detail)` check is also removed as `initialDetail` guarantees `detail` exists
+    // or the parent `BoardDetailPage` handles the "not found" case.
 
     return (
         <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto w-full">
@@ -104,9 +69,13 @@ const BBSDetailContent = () => {
                             <div className="flex gap-2">
                                 <Button variant="secondary" size="sm" className="h-10 w-10 p-0 rounded-2xl shadow-sm border bg-white hover:bg-slate-50"><Share2 className="w-4 h-4" /></Button>
                                 <Button variant="secondary" size="sm" className="h-10 w-10 p-0 rounded-2xl shadow-sm border bg-white hover:bg-slate-50"><Printer className="w-4 h-4" /></Button>
-                                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={actionLoading} className="h-10 px-6 gap-2 shadow-xl font-black rounded-2xl transition-all active:scale-95">
-                                    <Trash2 className="w-4 h-4" /> DELETE
-                                </Button>
+                                <form action={formAction}>
+                                    <input type="hidden" name="nttId" value={nttId} />
+                                    <input type="hidden" name="bbsId" value={bbsId || ''} />
+                                    <Button type="submit" variant="destructive" size="sm" disabled={isPending} className="h-10 px-6 gap-2 shadow-xl font-black rounded-2xl transition-all active:scale-95">
+                                        <Trash2 className="w-4 h-4" /> {isPending ? 'DELETING...' : 'DELETE'}
+                                    </Button>
+                                </form>
                             </div>
                         </div>
 
@@ -180,10 +149,78 @@ const BBSDetailContent = () => {
     );
 };
 
-const BoardDetailPage = () => {
+import { cookies } from 'next/headers';
+import client from '@/lib/api/client';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }): Promise<Metadata> {
+    const { id } = await params;
+    const resolvedSearchParams = await searchParams;
+    const bbsId = (resolvedSearchParams.bbsId as string) || '';
+
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    try {
+        const response: any = await client.get(`/bbs/${id}`, { ...axiosConfig, params: { bbsId } });
+        const post = response.board;
+        return {
+            title: `${post.nttSj} - 전자정부 프레임워크 현대화`,
+            description: post.nttCn?.substring(0, 150),
+        };
+    } catch {
+        return {
+            title: '게시글 상세 - 전자정부 프레임워크 현대화',
+        };
+    }
+}
+
+const BoardDetailPage = async ({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+    const { id } = await params;
+    const resolvedSearchParams = await searchParams;
+    const bbsId = (resolvedSearchParams.bbsId as string) || '';
+
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    let initialDetail: BoardDetail | null = null;
+    try {
+        const response: any = await client.get(`/bbs/${id}`, { ...axiosConfig, params: { bbsId } });
+        initialDetail = response.board;
+    } catch (error) {
+        console.error('Server-side fetch detail failed', error);
+    }
+
+    if (!initialDetail) {
+        return (
+            <div className="p-20 text-center space-y-4">
+                <div className="p-10 bg-rose-50 rounded-full w-fit mx-auto">
+                    <Trash2 className="w-16 h-16 text-rose-300" />
+                </div>
+                <p className="text-xl font-black text-slate-800 tracking-tighter uppercase italic">Article Not Found</p>
+                <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`}>
+                    <Button variant="outline" className="h-12 border-2 rounded-xl px-10 font-bold">Go Back to List</Button>
+                </Link>
+            </div>
+        );
+    }
+
     return (
-        <Suspense fallback={<div className="p-10 text-center font-bold">로딩 중...</div>}>
-            <BBSDetailContent />
+        <Suspense fallback={
+            <div className="p-6 space-y-6 max-w-5xl mx-auto w-full">
+                <Skeleton className="h-10 w-[300px] rounded-xl" />
+                <Card className="border-none shadow-xl rounded-[2rem]">
+                    <CardHeader className="p-10 border-b space-y-4">
+                        <Skeleton className="h-12 w-3/4 rounded-2xl" />
+                        <div className="flex gap-4"><Skeleton className="h-6 w-32 rounded-full" /><Skeleton className="h-6 w-32 rounded-full" /></div>
+                    </CardHeader>
+                    <CardContent className="p-10 space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /></CardContent>
+                </Card>
+            </div>
+        }>
+            <BBSDetailContent initialDetail={initialDetail} nttId={id} bbsId={bbsId} />
         </Suspense>
     );
 };

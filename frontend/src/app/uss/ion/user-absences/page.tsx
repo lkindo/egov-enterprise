@@ -16,8 +16,8 @@ export default function UserAbsencePage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await absenceService.getAbsences({ page: 0, size: 20 });
-      if (res.success) setData(res.data.content || []);
+      const res = (await absenceService.getAbsences({ page: 0, size: 20 })) as any;
+      if (res?.success) setData(res.data.content || []);
     } catch (error) {
       toast('부재 정보를 불러오지 못했습니다.', 'error');
     } finally {
@@ -32,8 +32,8 @@ export default function UserAbsencePage() {
   const handleToggleAbsence = async (item: UserAbsence) => {
     try {
       const newStatus = item.userAbsnceAt === 'N'; // toggle
-      const res = await absenceService.updateAbsence(item.userId, newStatus);
-      if (res.success) {
+      const res = (await absenceService.updateAbsence(item.userId, newStatus)) as any;
+      if (res?.success) {
         toast('부재 상태가 업데이트되었습니다.', 'success');
         loadData();
       }

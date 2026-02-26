@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         try {
             // client.ts 인터셉터 덕분에 알맹이(data)만 바로 받습니다.
-            const userData = await axios.get('/auth/me');
+            const userData = (await axios.get('/auth/me')) as any;
             if (userData) {
                 setUser(userData);
             } else {

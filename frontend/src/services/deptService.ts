@@ -8,11 +8,10 @@ export interface Department {
 
 export const deptService = {
   /**
-   * ?꾩껜 遺??議곗쭅) 紐⑸줉 議고쉶
+   * 전체 부서(조직) 목록 조회
    */
   getDepts: async () => {
     const response = await client.get('/admin/departments');
     return response;
   }
 };
-

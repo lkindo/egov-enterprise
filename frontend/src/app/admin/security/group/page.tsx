@@ -47,7 +47,7 @@ export default function GroupManagePage() {
         queryFn: () => getGroupList(params),
     });
 
-    const groups = data?.resultList || [];
+    const groups: GroupManage[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const createMutation = useMutation({

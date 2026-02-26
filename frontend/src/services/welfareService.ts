@@ -13,20 +13,21 @@ export interface Ctsnn {
   ctsnnId: string;
   ctsnnNm: string;
   ctsnnDe: string;
-  ctsnnCode: string; // 1:寃고샎, 2:遺怨?..
+  ctsnnCode: string; // 1:결혼, 2:부고..
   userNm: string;
   trgetNm: string;
 }
 
+interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+}
+
 export const welfareService = {
-  getRewards: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/uss/ion/rewards', { params });
-    return response;
-  },
+  getRewards: async (params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<Reward>> =>
+    client.get<PageResult<Reward>>('/uss/ion/rewards', { params }),
 
-  getCtsnns: async (params: { page?: number; size?: number; searchWrd?: string }) => {
-    const response = await client.get('/uss/ion/ctsnn', { params });
-    return response;
-  }
+  getCtsnns: async (params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<Ctsnn>> =>
+    client.get<PageResult<Ctsnn>>('/uss/ion/ctsnn', { params })
 };
-

@@ -1,32 +1,35 @@
 import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 
-// Determine the base URL based on environment
+// 백엔드 공통 응답 포맷
+export interface ApiResponse<T = unknown> {
+    success: boolean;
+    code: string;
+    message: string;
+    data: T;
+}
+
 const getBaseURL = () => {
-  if (typeof window === 'undefined') {
-    // Server-side (SSR) - use the backend server directly
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
-  } else {
-    // Client-side - use relative path for proxy
+    if (typeof window === 'undefined') {
+        return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+    }
     return '/api/v1';
-  }
 };
 
-const client = axios.create({
+const axiosInstance = axios.create({
     baseURL: getBaseURL(),
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
 });
 
-// Add Request Interceptor to attach Access Token
-client.interceptors.request.use(
+// Request interceptor: Access Token 첨부
+axiosInstance.interceptors.request.use(
     (config) => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
             if (process.env.NODE_ENV === 'development') {
-                console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+                console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
             }
         }
         return config;
@@ -36,32 +39,21 @@ client.interceptors.request.use(
 
 let isRetrying = false;
 
-client.interceptors.response.use(
-    (response) => {
-        // 백엔드 ApiResponse { success, code, message, data } 구조에서 data만 추출하여 반환
-        // axios 가 응답 본문을 response.data 에 담으므로, 실제 데이터는 response.data.data 가 됨
-        if (response.data && response.data.success === true && 'data' in response.data) {
-            return response.data.data;
-        }
-        return response.data; // success 가 false 이거나 다른 구조인 경우 전체 반환
-    },
+// Response interceptor: 401 → token refresh
+axiosInstance.interceptors.response.use(
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
-
         if (error.response?.status === 401 && !originalRequest._retry && !isRetrying) {
             originalRequest._retry = true;
             isRetrying = true;
-            
             try {
-                // reissue API 역시 이제 interceptor 에 의해 data 만 반환함
-                const data = await axios.post('/api/v1/auth/reissue', {}, { withCredentials: true });
-                const accessToken = data.data?.accessToken || data.accessToken;
-
+                const res = await axios.post('/api/v1/auth/reissue', {}, { withCredentials: true });
+                const accessToken = res.data?.data?.accessToken || res.data?.accessToken;
                 originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
                 localStorage.setItem('accessToken', accessToken);
-
                 isRetrying = false;
-                return client(originalRequest);
+                return axiosInstance(originalRequest);
             } catch (reissueError) {
                 isRetrying = false;
                 localStorage.removeItem('accessToken');
@@ -74,5 +66,47 @@ client.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+/**
+ * 타입 안전 API 클라이언트.
+ * 반환값은 백엔드 ApiResponse<T>.data (실제 페이로드).
+ * 실패(success=false) 시 Error를 throw합니다.
+ */
+const client = {
+    async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        const res = await axiosInstance.get<ApiResponse<T>>(url, config);
+        return extractData<T>(res.data);
+    },
+    async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+        const res = await axiosInstance.post<ApiResponse<T>>(url, data, config);
+        return extractData<T>(res.data);
+    },
+    async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+        const res = await axiosInstance.put<ApiResponse<T>>(url, data, config);
+        return extractData<T>(res.data);
+    },
+    async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+        const res = await axiosInstance.patch<ApiResponse<T>>(url, data, config);
+        return extractData<T>(res.data);
+    },
+    async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        const res = await axiosInstance.delete<ApiResponse<T>>(url, config);
+        return extractData<T>(res.data);
+    },
+};
+
+/** ApiResponse에서 data를 추출. success=false면 Error throw. */
+function extractData<T>(body: ApiResponse<T> | T): T {
+    // 백엔드 표준 응답 구조인 경우
+    if (body && typeof body === 'object' && 'success' in body) {
+        const apiBody = body as ApiResponse<T>;
+        if (!apiBody.success) {
+            throw new Error(apiBody.message || '요청 처리 중 오류가 발생했습니다.');
+        }
+        return apiBody.data;
+    }
+    // 표준 구조가 아닌 경우 그대로 반환
+    return body as T;
+}
 
 export default client;

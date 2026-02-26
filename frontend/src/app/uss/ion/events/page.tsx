@@ -16,8 +16,8 @@ export default function EventPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await eventService.getEvents({ page: 0, size: 12 });
-        if (res.success) setEvents(res.data.content || []);
+        const res = (await eventService.getEvents({ page: 0, size: 12 })) as any;
+        if (res?.success) setEvents(res.data.content || []);
       } catch (error) {
         toast('행사 목록을 불러오지 못했습니다.', 'error');
       } finally {

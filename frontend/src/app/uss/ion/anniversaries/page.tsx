@@ -16,8 +16,8 @@ export default function AnniversaryPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await anniversaryService.getAnniversaries();
-        if (res.success) setItems(res.data || []);
+        const res = (await anniversaryService.getAnniversaries()) as any;
+        if (res?.success) setItems(res.data || []);
       } catch (error) {
         toast('기념일 정보를 불러오지 못했습니다.', 'error');
       } finally {

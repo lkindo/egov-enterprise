@@ -49,7 +49,7 @@ export default function RoleManagePage() {
         queryFn: () => getRoleList(params),
     });
 
-    const roles = data?.resultList || [];
+    const roles: RoleManage[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const createMutation = useMutation({

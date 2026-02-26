@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Search } from "lucide-react";
 import { getTermsList } from '@/services/terms/termsService';
-import { TermsSearchParams } from '@/types/terms';
+import { TermsSearchParams, StplatManageVO } from '@/types/terms';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
 
@@ -31,7 +31,7 @@ export default function TermsListPage() {
         queryFn: () => getTermsList(params),
     });
 
-    const termsList = data?.resultList || [];
+    const termsList: StplatManageVO[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {

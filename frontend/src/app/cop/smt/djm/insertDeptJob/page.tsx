@@ -29,7 +29,7 @@ const InsertDeptJobPage = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post('/deptjob', formData);
+            const response = (await axios.post('/deptjob', formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/smt/djm/selectDeptJobList');

@@ -43,7 +43,7 @@ const ScheduleDetailPage = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/schedule/${schdulId}`);
+            const response = (await axios.get(`/schedule/${schdulId}`)) as any;
             const data = response.data.schedule;
             setDetail(data);
             setFormData({
@@ -67,7 +67,7 @@ const ScheduleDetailPage = () => {
     const handleUpdate = async () => {
         setActionLoading(true);
         try {
-            const response = await axios.put(`/schedule/${schdulId}`, formData);
+            const response = (await axios.put(`/schedule/${schdulId}`, formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 setIsEditing(false);
@@ -84,7 +84,7 @@ const ScheduleDetailPage = () => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         setActionLoading(true);
         try {
-            const response = await axios.delete(`/schedule/${schdulId}`);
+            const response = (await axios.delete(`/schedule/${schdulId}`)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/smt/sim/selectScheduleList');

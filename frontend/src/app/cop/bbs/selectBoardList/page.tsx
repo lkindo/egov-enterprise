@@ -28,8 +28,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { LayoutGrid, Plus, Search, Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, BarChart3, Filter, ArrowUpDown, X } from "lucide-react";
-import { BoardStats } from './BoardStats';
+import dynamic from 'next/dynamic';
 import { cn } from "@/lib/utils";
+
+const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), { 
+    ssr: false,
+    loading: () => <Skeleton className="h-[280px] w-full rounded-[2rem]" />
+});
 
 interface Board {
     nttId: string;
@@ -40,16 +45,16 @@ interface Board {
     commentCo?: number;
 }
 
-const BBSListContent = () => {
+const BBSListContent = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
     const searchParams = useSearchParams();
-    const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
+    const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
-    const [searchWrd, setSearchWrd] = useState('');
-    const [pageIndex, setPageIndex] = useState(1);
-    const [searchCnd, setSearchCnd] = useState('0'); // 0: Title, 1: Content, 2: Writer
-    const [orderBy, setOrderBy] = useState('date'); // date, views, comments
-    const [startDate, setStartDate] = useState<Date | undefined>();
-    const [endDate, setEndDate] = useState<Date | undefined>();
+    const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
+    const [pageIndex, setPageIndex] = useState(initialParams.pageIndex || 1);
+    const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0'); 
+    const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
+    const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
 
     const { data, isLoading: loading } = useBoardList({
         bbsId,
@@ -60,7 +65,7 @@ const BBSListContent = () => {
         orderBy,
         startDate: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined,
         endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
-    });
+    }, initialData);
 
     const list: Board[] = data?.resultList || [];
     const totalCount = data?.totalCount || 0;
@@ -301,11 +306,11 @@ const BBSListContent = () => {
                     </div>
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
+                    {totalPages > 1 ? (
                         <div className="flex items-center justify-center gap-8 py-10">
                             <Button
                                 variant="outline"
-                                onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+                                onClick={() => setPageIndex((p: number) => Math.max(1, p - 1))}
                                 disabled={pageIndex === 1}
                                 className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
                             >
@@ -318,24 +323,79 @@ const BBSListContent = () => {
                             </div>
                             <Button
                                 variant="outline"
-                                onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
+                                onClick={() => setPageIndex((p: number) => Math.min(totalPages, p + 1))}
                                 disabled={pageIndex === totalPages}
                                 className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
                             >
                                 Next
                             </Button>
                         </div>
-                    )}
+                    ) : null}
                 </CardContent>
             </Card>
         </div>
     );
 };
 
-const BoardListPage = () => {
+import { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import client from '@/lib/api/client';
+
+export const metadata: Metadata = {
+    title: '전체 게시글 - 전자정부 프레임워크 현대화',
+    description: '전자정부 소프트웨어 프레임워크 현대화 프로젝트의 전체 게시글 목록입니다.',
+};
+
+const BoardListPage = async ({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+    const resolvedSearchParams = await searchParams;
+    const bbsId = (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA';
+    const pageIndex = Number(resolvedSearchParams.pageIndex) || 1;
+    const searchWrd = (resolvedSearchParams.searchWrd as string) || '';
+    const searchCnd = (resolvedSearchParams.searchCnd as string) || '0';
+    const orderBy = (resolvedSearchParams.orderBy as string) || 'date';
+    const startDate = (resolvedSearchParams.startDate as string) || undefined;
+    const endDate = (resolvedSearchParams.endDate as string) || undefined;
+
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    let initialData = { resultList: [], totalCount: 0, totalPages: 0 };
+    try {
+        const queryParams = {
+            bbsId,
+            pageIndex,
+            pageUnit: 10,
+            searchWrd,
+            searchCnd,
+            orderBy,
+            startDate,
+            endDate
+        };
+        const response: any = await client.get('/bbs', { ...axiosConfig, params: queryParams });
+        initialData = {
+            resultList: response.resultList || [],
+            totalCount: response.totalCount || 0,
+            totalPages: response.totalPages || 0
+        };
+    } catch (error) {
+        console.error('Server-side fetch board list failed', error);
+    }
+
+    const initialParams = { bbsId, pageIndex, searchWrd, searchCnd, orderBy, startDate, endDate };
+
     return (
-        <Suspense fallback={<div className="p-20 text-center font-black animate-pulse text-slate-400">Loading Dashboard...</div>}>
-            <BBSListContent />
+        <Suspense fallback={
+            <div className="flex flex-col gap-6 p-6">
+                <Skeleton className="h-10 w-48 rounded-full" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <Skeleton className="lg:col-span-2 h-64 rounded-[2rem]" />
+                    <Skeleton className="h-64 rounded-[2rem]" />
+                </div>
+                <Skeleton className="h-[600px] w-full rounded-[2.5rem]" />
+            </div>
+        }>
+            <BBSListContent initialData={initialData} params={initialParams} />
         </Suspense>
     );
 };

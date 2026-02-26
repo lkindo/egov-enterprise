@@ -48,7 +48,7 @@ export default function FaqManagePage() {
         queryFn: () => getFaqList(params),
     });
 
-    const faqs = data?.resultList || [];
+    const faqs: FaqVO[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const createMutation = useMutation({

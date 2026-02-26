@@ -32,7 +32,7 @@ export default function PollManagePage() {
         queryFn: () => getPollList(params),
     });
 
-    const polls = data?.resultList || [];
+    const polls: OnlinePollManageVO[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const handleSearch = (e: React.FormEvent) => {

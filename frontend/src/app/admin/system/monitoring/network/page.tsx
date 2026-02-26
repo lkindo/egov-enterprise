@@ -1,33 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/app/components/ui/status-badge';
 import { networkService, NetworkServiceStatus } from '@/services/networkService';
-import { useToast } from '@/app/components/ui/toast';
 import { Network, RefreshCcw, Activity, ShieldCheck, Search, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+
+const QUERY_KEY = ['admin', 'monitoring-networks'] as const;
 
 export default function NetworkMonitoringPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [logs, setLogs] = useState<NetworkServiceStatus[]>([]);
+  
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: () => networkService.getNetworkLogs({ ntwrkId: 'all', page: 0, size: 50 }),
+    staleTime: 60 * 1000,
+  });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const res = await networkService.getNetworkLogs({ ntwrkId: 'all', page: 0, size: 20 });
-        if (res.success) setLogs(res.data.content || []);
-      } catch (error) {
-        toast('네트워크 로그를 불러오지 못했습니다.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [toast]);
+  const logs: NetworkServiceStatus[] = data?.content || [];
 
   const columns = [
     { 
@@ -71,9 +64,12 @@ export default function NetworkMonitoringPage() {
         title="네트워크 및 서비스 가용성 관제" 
         breadcrumbs={[{ label: '시스템관리' }, { label: '모니터링' }, { label: '네트워크' }]}
         actions={
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all">
-            <RefreshCcw size={16} /> 일괄 점검
-          </button>
+          <Button 
+            onClick={() => refetch()}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all"
+          >
+            <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} /> 일괄 점검
+          </Button>
         }
       />
 
@@ -91,7 +87,7 @@ export default function NetworkMonitoringPage() {
         <StandardDataTable 
           columns={columns} 
           data={logs} 
-          loading={loading}
+          loading={isLoading}
           className="border-none rounded-none"
         />
       </div>

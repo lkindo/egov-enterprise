@@ -31,8 +31,8 @@ export function UserPicker({
 
     try {
       setLoading(true);
-      const res = await addressbookService.searchUsers(keyword);
-      if (res.success) {
+      const res = (await addressbookService.searchUsers(keyword)) as any;
+      if (res?.success) {
         setResults(res.data || []);
       }
     } catch (error) {

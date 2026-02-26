@@ -2,26 +2,26 @@
 import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
 
 const damService = {
-    // 吏?앹젙蹂?紐⑸줉 議고쉶
-    getKnoList: async (params: KnoSearchParams) => {
-        const response = await client.get('/dam/mgm/EgovComDamManagementList.do', { params });
+    /**
+     * 지식정보 목록 조회
+     */
+    getKnoList: async (params: KnoSearchParams, config?: any) => {
+        const response: any = await client.get('/dam/mgm/kno', { ...config, params });
         return {
-            success: true,
-            list: response.data.resultList as KnoManagementVO[],
-            pagination: response.data.paginationInfo
+            list: response.list || [],
+            pagination: response.pagination || {}
         };
     },
 
-    // 吏?앹젙蹂??곸꽭 議고쉶
-    getKnoDetail: async (knoId: string) => {
-        const response = await client.get(`/dam/mgm/EgovComDamManagement.do?knoId=${knoId}`);
-        return {
-            success: true,
-            data: response.data.result as KnoManagementVO
-        };
+    /**
+     * 지식정보 상세 조회
+     */
+    getKnoDetail: async (knoId: string, config?: any) => {
+        const response: any = await client.get(`/dam/mgm/kno/${knoId}`, config);
+        return response.board || response.data || response;
     },
 
-    // 吏?앹젙蹂??깅줉
+    // 지식정보 등록
     createKno: async (data: KnoManagementVO) => {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -35,7 +35,7 @@ const damService = {
         return response;
     },
 
-    // 吏?앹젙蹂??섏젙
+    // 지식정보 수정
     updateKno: async (data: KnoManagementVO) => {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -49,7 +49,7 @@ const damService = {
         return response;
     },
 
-    // 吏?앹젙蹂???젣
+    // 지식정보 삭제
     deleteKno: async (knoId: string) => {
         const response = await client.post(`/dam/mgm/EgovComDamManagementDelete.do?knoId=${knoId}`);
         return response;
@@ -57,4 +57,3 @@ const damService = {
 };
 
 export default damService;
-

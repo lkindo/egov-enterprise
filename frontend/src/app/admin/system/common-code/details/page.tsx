@@ -20,7 +20,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { getDetailCodeList, getCmmnCodeList } from '@/services/system/codeService';
-import { CmmnDetailCode, SearchParams } from '@/types/system';
+import { CmmnDetailCode, SearchParams, CmmnCode } from '@/types/system';
 import { CommonDetailCodeForm } from '@/components/admin/system/CommonDetailCodeForm';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
@@ -45,9 +45,9 @@ export default function CommonDetailCodePage() {
         queryFn: () => getDetailCodeList(params),
     });
 
-    const codes = data?.resultList || [];
+    const codes: CmmnDetailCode[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
-    const cmmnCodes = cmmnCodesData?.resultList || [];
+    const cmmnCodes: CmmnCode[] = cmmnCodesData?.resultList || [];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

@@ -8,11 +8,10 @@ export interface AuthorInfo {
 
 export const roleService = {
   /**
-   * ?꾩껜 沅뚰븳 紐⑸줉 議고쉶
+   * 전체 권한 목록 조회
    */
   getAuthors: async () => {
     const response = await client.get('/admin/security/authors');
     return response;
   }
 };
-

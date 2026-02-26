@@ -38,10 +38,10 @@ export default function VacationListPage() {
     try {
       setLoading(true);
       const currentYear = new Date().getFullYear().toString();
-      const [vacationRes, leaveRes] = await Promise.all([
+      const [vacationRes, leaveRes] = (await Promise.all([
         vacationService.getMyVacations({ page: 0, size: 10 }),
         vacationService.getMyYearlyLeave(currentYear)
-      ]);
+      ])) as [any, any];
 
       if (vacationRes.success) setVacations(vacationRes.data.content);
       if (leaveRes.success) setMyLeave(leaveRes.data);
@@ -77,8 +77,8 @@ export default function VacationListPage() {
         endde: format(endDate, 'yyyyMMdd'),
       };
 
-      const res = await vacationService.requestVacation(payload);
-      if (res.success) {
+      const res = (await vacationService.requestVacation(payload)) as any;
+      if (res?.success) {
         toast('휴가 신청이 완료되었습니다.', 'success');
         setIsOpen(false);
         // 리셋

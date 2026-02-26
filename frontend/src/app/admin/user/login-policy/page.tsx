@@ -1,49 +1,45 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { loginPolicyService, LoginPolicy } from '@/services/loginPolicyService';
 import { useToast } from '@/app/components/ui/toast';
-import { ShieldCheck, Smartphone, MonitorOff, Save, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldCheck, Smartphone, MonitorOff, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const LOGIN_POLICIES_KEY = ['admin', 'login-policies'] as const;
 
 export default function LoginPolicyPage() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [policies, setPolicies] = useState<LoginPolicy[]>([]);
+  const queryClient = useQueryClient();
   const [searchWrd, setSearchWrd] = useState('');
 
-  const loadPolicies = useCallback(async (keyword = searchWrd) => {
-    try {
-      setLoading(true);
-      const res = await loginPolicyService.getPolicies({ page: 0, size: 20, searchWrd: keyword });
-      if (res.success) setPolicies(res.data.content || []);
-    } catch (error) {
-      toast('로그인 정책을 불러오지 못했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast, searchWrd]);
+  const { data, isLoading } = useQuery({
+    queryKey: [...LOGIN_POLICIES_KEY, searchWrd],
+    queryFn: () => loginPolicyService.getPolicies({ page: 0, size: 50, searchWrd }),
+    staleTime: 60 * 1000,
+  });
 
-  useEffect(() => {
-    loadPolicies();
-  }, [loadPolicies]);
+  const policies: LoginPolicy[] = data?.content || [];
 
-  const handleToggle = async (policy: LoginPolicy, field: 'dplctPermAt' | 'lmttAt') => {
-    try {
+  const { mutateAsync: togglePolicy } = useMutation({
+    mutationFn: ({ policy, field }: { policy: LoginPolicy, field: 'dplctPermAt' | 'lmttAt' }) => {
       const newValue = policy[field] === 'Y' ? 'N' : 'Y';
       const updatedData = { ...policy, [field]: newValue };
-      
-      const res = await loginPolicyService.updatePolicy(policy.emplyrId, updatedData);
-      if (res.success) {
-        toast(`${field === 'dplctPermAt' ? '중복 허용' : '접속 제한'} 설정이 변경되었습니다.`, 'success');
-        loadPolicies();
-      }
-    } catch (error) {
-      toast('정책 수정 중 오류가 발생했습니다.', 'error');
-    }
+      return loginPolicyService.updatePolicy(policy.emplyrId, updatedData);
+    },
+    onSuccess: (_, variables) => {
+      toast(`${variables.field === 'dplctPermAt' ? '중복 허용' : '접속 제한'} 설정이 변경되었습니다.`, 'success');
+      queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_KEY });
+    },
+    onError: () => toast('정책 수정 중 오류가 발생했습니다.', 'error'),
+  });
+
+  const handleToggle = async (policy: LoginPolicy, field: 'dplctPermAt' | 'lmttAt') => {
+    await togglePolicy({ policy, field });
   };
 
   const columns = [
@@ -125,17 +121,14 @@ export default function LoginPolicyPage() {
         fields={[
           { name: 'searchWrd', label: '사용자 검색', type: 'text', placeholder: '이름 또는 ID...' }
         ]}
-        onSearch={(v) => {
-          setSearchWrd(v.searchWrd);
-          loadPolicies(v.searchWrd);
-        }}
+        onSearch={(v: any) => setSearchWrd(v.searchWrd || '')}
       />
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
         <StandardDataTable 
           columns={columns} 
           data={policies} 
-          loading={loading}
+          loading={isLoading}
           emptyMessage="등록된 사용자가 없거나 정책 데이터가 없습니다."
           className="border-none rounded-none"
         />

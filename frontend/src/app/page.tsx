@@ -12,21 +12,21 @@ async function getDashboardData() {
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
   try {
-    const [leaveRes, dashboardRes] = await Promise.allSettled([
+    const [leaveRes, dashboardRes] = (await Promise.allSettled([
       vacationService.getMyYearlyLeave(currentYear),
       client.get('/dashboard', axiosConfig)
-    ]);
+    ])) as any[];
 
     let initialLeave = null;
     let initialNotiList = [];
     let initialTaskList = [];
 
-    if (leaveRes.status === 'fulfilled' && leaveRes.value.success) {
-      initialLeave = leaveRes.value.data;
+    if (leaveRes.status === 'fulfilled' && (leaveRes.value as any)?.success) {
+      initialLeave = (leaveRes.value as any).data;
     }
-    if (dashboardRes.status === 'fulfilled' && dashboardRes.value.data.success) {
-      initialNotiList = dashboardRes.value.data.notiList || [];
-      initialTaskList = dashboardRes.value.data.taskList || [];
+    if (dashboardRes.status === 'fulfilled' && (dashboardRes.value as any).data?.success) {
+      initialNotiList = ((dashboardRes.value as any).data.notiList || []).slice(0, 6);
+      initialTaskList = ((dashboardRes.value as any).data.taskList || []).slice(0, 6);
     }
     return { initialLeave, initialNotiList, initialTaskList };
   } catch (err) {
