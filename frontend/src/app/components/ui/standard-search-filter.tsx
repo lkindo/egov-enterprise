@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ interface StandardSearchFilterProps {
 export function SmartSearchPanel({ fields, onSearch, onReset, className }: StandardSearchFilterProps) {
   const [values, setValues] = useState<Record<string, any>>({});
   const [isExpanded, setIsExpanded] = useState(true);
+  const idPrefix = useId();
 
   const handleValueChange = (name: string, value: any) => {
     setValues(prev => ({ ...prev, [name]: value }));
@@ -71,9 +72,14 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
 
         {isExpanded && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            {fields.map((field) => (
+            {fields.map((field) => {
+              const fieldId = `${idPrefix}-${field.name}`;
+              return (
               <div key={field.name} className="space-y-3">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 opacity-70">
+                <label
+                  htmlFor={fieldId}
+                  className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1 opacity-70"
+                >
                   {field.label}
                 </label>
 
@@ -82,7 +88,10 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
-                    <SelectTrigger className="h-12 rounded-2xl border-2 border-primary/5 bg-background focus:ring-primary/20 hover:border-primary/20 transition-all font-bold text-xs ring-offset-background">
+                    <SelectTrigger
+                      id={fieldId}
+                      className="h-12 rounded-2xl border-2 border-primary/5 bg-background focus:ring-primary/20 hover:border-primary/20 transition-all font-bold text-xs ring-offset-background"
+                    >
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-primary/10">
@@ -101,6 +110,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        id={fieldId}
                         variant="outline"
                         className={cn(
                           "w-full h-12 justify-start text-left font-bold text-xs rounded-2xl border-2 border-primary/5 bg-background transition-all hover:border-primary/20",
@@ -137,6 +147,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                   </Popover>
                 ) : field.type === 'date' ? (
                   <Input
+                    id={fieldId}
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
@@ -144,6 +155,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                   />
                 ) : (
                   <Input
+                    id={fieldId}
                     placeholder={field.placeholder}
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
@@ -151,7 +163,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                   />
                 )}
               </div>
-            ))}
+            );})}
           </div>
         )}
 
