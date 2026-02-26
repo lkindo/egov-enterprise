@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,67 +11,58 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronRight, Folder, File, Loader2 } from "lucide-react";
-import client from '@/lib/api/client';
+import { getAuthorList, getMenuCreatList } from '@/services/security/securityService';
+import { MenuByAuthority } from '@/types/security';
 
-interface AuthorInfo {
-    authorCode: string;
-    authorNm: string;
-}
+/**
+ * Transforms flat menu list into a tree structure
+ */
+function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
+    const menuMap = new Map<number, MenuByAuthority>();
+    const rootMenus: MenuByAuthority[] = [];
 
-interface MenuTreeItem {
-    menuNo: number;
-    menuNm: string;
-    upperMenuId: number;
-    menuOrdr: number;
-    progrmFileNm: string;
-    children?: MenuTreeItem[];
+    menuList.forEach(menu => {
+        menuMap.set(menu.menuNo, { ...menu, children: [] });
+    });
+
+    menuList.forEach(menu => {
+        const currentMenu = menuMap.get(menu.menuNo)!;
+        if (menu.upperMenuId === 0) {
+            rootMenus.push(currentMenu);
+        } else {
+            const parent = menuMap.get(menu.upperMenuId);
+            if (parent) {
+                parent.children = parent.children || [];
+                parent.children.push(currentMenu);
+            }
+        }
+    });
+
+    return rootMenus;
 }
 
 export default function MenuByAuthorityPage() {
     const [selectedAuthority, setSelectedAuthority] = useState<string>('');
     const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
-    const { data: authorities = [] } = useQuery({
+    const { data: authorData } = useQuery({
         queryKey: ['admin-authorities-all'],
-        queryFn: async () => {
-            const data = await client.get('/sec/ram/EgovAuthorList.do', { params: { pageIndex: 1 } });
-            return ((data as any)?.resultList || []) as AuthorInfo[];
-        },
+        queryFn: () => getAuthorList({ pageIndex: 1, searchCondition: '1', searchKeyword: '' }),
     });
 
-    const { data: menuTree = [], isLoading: isMenuLoading } = useQuery({
+    const authorities = authorData?.resultList || [];
+
+    const { data: rawMenus = [], isLoading: isMenuLoading } = useQuery({
         queryKey: ['admin-menu-tree', selectedAuthority],
         queryFn: async () => {
-            if (!selectedAuthority) return [];
-            const data = await client.get('/sym/mnu/mcm/EgovMenuCreatList.do', { params: { authorCode: selectedAuthority } });
-
-            if (data && (data as any).resultList) {
-                const menuList = (data as any).resultList as MenuTreeItem[];
-                const menuMap = new Map<number, MenuTreeItem>();
-                const rootMenus: MenuTreeItem[] = [];
-
-                menuList.forEach(menu => {
-                    menuMap.set(menu.menuNo, { ...menu, children: [] });
-                });
-
-                menuList.forEach(menu => {
-                    const currentMenu = menuMap.get(menu.menuNo)!;
-                    if (menu.upperMenuId === 0) {
-                        rootMenus.push(currentMenu);
-                    } else {
-                        const parent = menuMap.get(menu.upperMenuId);
-                        if (parent) {
-                            parent.children = parent.children || [];
-                            parent.children.push(currentMenu);
-                        }
-                    }
-                });
-                return rootMenus;
-            }
-            return [];
+            const data = await getMenuCreatList(selectedAuthority);
+            return (data as any)?.resultList as MenuByAuthority[] || [];
         },
         enabled: !!selectedAuthority,
     });
+
+    // Memoize the tree calculation to avoid unnecessary re-renders (rerender-memo)
+    const menuTree = useMemo(() => buildMenuTree(rawMenus), [rawMenus]);
 
     const toggleExpand = (menuNo: number) => {
         setExpandedMenus(prev => {
@@ -85,7 +76,7 @@ export default function MenuByAuthorityPage() {
         });
     };
 
-    const renderMenuTree = (menus: MenuTreeItem[], depth: number = 0) => {
+    const renderMenuTree = (menus: MenuByAuthority[], depth: number = 0) => {
         return menus.map(menu => {
             const hasChildren = menu.children && menu.children.length > 0;
             const isExpanded = expandedMenus.has(menu.menuNo);
@@ -147,7 +138,7 @@ export default function MenuByAuthorityPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             <span>메뉴 구조</span>
-                            {isMenuLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {isMenuLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

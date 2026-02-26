@@ -63,7 +63,7 @@ const Button = React.forwardRef<
         children
       ) : (
         <>
-          {isLoading && <Loader2 className="animate-spin" />}
+          {isLoading ? <Loader2 className="animate-spin" /> : null}
           {children}
         </>
       )}

@@ -102,7 +102,7 @@ export default function CommonClCodePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading && <TableSkeleton columnCount={4} />}
+                        {isLoading ? <TableSkeleton columnCount={4} /> : null}
                         {!isLoading && codes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="h-24 text-center">
@@ -127,12 +127,12 @@ export default function CommonClCodePage() {
                 </Table>
             </div>
 
-            {pagination && (
+            {pagination ? (
                 <PagePagination
                     pagination={pagination}
                     onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
                 />
-            )}
+            ) : null}
 
             <CommonClCodeForm
                 open={isFormOpen}

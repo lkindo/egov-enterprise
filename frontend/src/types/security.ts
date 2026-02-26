@@ -23,3 +23,12 @@ export interface GroupManage {
     groupDc: string;
     groupCreatDe?: string;
 }
+
+export interface MenuByAuthority {
+    menuNo: number;
+    menuNm: string;
+    upperMenuId: number;
+    menuOrdr: number;
+    progrmFileNm: string;
+    children?: MenuByAuthority[];
+}

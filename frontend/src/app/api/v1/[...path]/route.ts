@@ -21,14 +21,17 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `http://localhost:8080/${path}${searchParams ? '?' + searchParams : ''}`;
 
+    const headers = new Headers();
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader) {
+        headers.set('Authorization', authHeader);
+    }
+    headers.set('Accept', request.headers.get('Accept') || 'application/json');
+
     logger.info(`[Proxy GET] ${url}`);
 
     try {
-        const response = await fetch(url, {
-            headers: {
-                'Accept': request.headers.get('Accept') || 'application/json',
-            },
-        });
+        const response = await fetch(url, { headers });
 
         const data = await response.text();
 
@@ -54,15 +57,20 @@ export async function POST(
     const url = `http://localhost:8080/${path}`;
     const body = await request.text();
 
+    const headers = new Headers();
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader) {
+        headers.set('Authorization', authHeader);
+    }
+    headers.set('Content-Type', request.headers.get('Content-Type') || 'application/json');
+    headers.set('Accept', request.headers.get('Accept') || 'application/json');
+
     logger.info(`[Proxy POST] ${url}`);
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': request.headers.get('Content-Type') || 'application/json',
-                'Accept': request.headers.get('Accept') || 'application/json',
-            },
+            headers,
             body,
         });
 

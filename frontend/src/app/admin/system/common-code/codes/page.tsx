@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +47,10 @@ export default function CommonCodePage() {
 
     const codes: CmmnCode[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
-    const clCodes: CmmnClCode[] = clCodesData?.resultList || [];
+    const clCodes = useMemo(() => 
+        (clCodesData?.resultList || []).map((c: CmmnClCode) => ({ label: c.clCodeNm, value: c.clCode })),
+        [clCodesData]
+    );
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +112,7 @@ export default function CommonCodePage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading && <TableSkeleton columnCount={5} />}
+                        {isLoading ? <TableSkeleton columnCount={5} /> : null}
                         {!isLoading && codes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
@@ -135,19 +138,19 @@ export default function CommonCodePage() {
                 </Table>
             </div>
 
-            {pagination && (
+            {pagination ? (
                 <PagePagination
                     pagination={pagination}
                     onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
                 />
-            )}
+            ) : null}
 
             <CommonCodeForm
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 data={selectedCode}
                 onSuccess={handleSuccess}
-                clCodes={clCodes.map(c => ({ label: c.clCodeNm, value: c.clCode }))}
+                clCodes={clCodes}
             />
         </div>
     );
