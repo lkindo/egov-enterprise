@@ -88,14 +88,18 @@ export function BannerSlider() {
       {banners.length > 1 && (
         <>
           <button 
+            type="button"
+            aria-label="Previous slide"
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronLeft size={24} />
           </button>
           <button 
+            type="button"
+            aria-label="Next slide"
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronRight size={24} />
           </button>
@@ -105,9 +109,12 @@ export function BannerSlider() {
             {banners.map((_, idx) => (
               <button
                 key={idx}
+                type="button"
+                aria-label={`Go to slide ${idx + 1}`}
+                aria-current={idx === currentIndex ? 'true' : undefined}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all",
+                  "w-2 h-2 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"
                 )}
               />
