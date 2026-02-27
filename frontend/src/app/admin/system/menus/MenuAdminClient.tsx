@@ -44,7 +44,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     menuOrdr: 0,
     upperMenuId: 0,
     progrmFileNm: '',
-    menuDc: ''
+    menuDc: '',
+    modernRoute: ''
   });
 
   const menus = orderedMenus || initialMenus;
@@ -57,7 +58,10 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleOpenEdit = (menu: MenuInfo) => {
     setMode('edit');
-    setFormData(menu);
+    setFormData({
+      ...menu,
+      modernRoute: menu.modernRoute || ''
+    });
     setIsOpen(true);
   };
 
@@ -139,6 +143,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             {item.progrmFileNm ? (
               <span className="text-[10px] flex items-center gap-1.5 text-primary font-black uppercase tracking-[0.1em] opacity-60">
                 <LinkIcon size={12} strokeWidth={3} /> {item.progrmFileNm}
+              </span>
+            ) : null}
+            {item.modernRoute ? (
+              <span className="text-[10px] flex items-center gap-1.5 text-emerald-600 font-black uppercase tracking-[0.1em] opacity-80">
+                <CheckCircle2 size={12} strokeWidth={3} /> {item.modernRoute}
               </span>
             ) : null}
           </div>
@@ -307,6 +316,16 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                     </SelectContent>
                     </Select>
                 </div>
+                </div>
+
+                <div className="space-y-3">
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Modern React Route (Optional)</Label>
+                    <Input 
+                        value={formData.modernRoute || ''}
+                        onChange={(e) => setFormData({...formData, modernRoute: e.target.value})}
+                        placeholder="E.g. /admin/system/common-code/groups"
+                        className="h-14 rounded-xl border-2 font-bold px-6 bg-emerald-50/10 border-emerald-100 focus:ring-emerald-500/10 transition-all text-emerald-800"
+                    />
                 </div>
 
                 <div className="space-y-3">

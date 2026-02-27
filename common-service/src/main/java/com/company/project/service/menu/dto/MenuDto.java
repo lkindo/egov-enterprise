@@ -47,6 +47,9 @@ public class MenuDto {
     @Schema(description = "관련 이미지 명")
     private String relateImageNm;
 
+    @Schema(description = "현대적 라우트 (Next.js)")
+    private String modernRoute;
+
     @Schema(description = "생성자 ID")
     private String creatPersonId;
 

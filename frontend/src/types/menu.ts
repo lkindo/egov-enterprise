@@ -8,6 +8,7 @@ export interface MenuInfo {
   relateImageNm?: string;
   progrmFileNm?: string;
   chkURL?: string; // Derived from program URL
+  modernRoute?: string;
 }
 
 export interface MenuResponse {

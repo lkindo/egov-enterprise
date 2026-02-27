@@ -42,7 +42,7 @@ public class MenuService {
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
 
-    @Cacheable(value = "menuHierarchy")
+    // @Cacheable(value = "menuHierarchy")
     public List<MenuDto> getMenuHierarchy() {
         try {
             log.debug("getMenuHierarchy started");
@@ -83,6 +83,7 @@ public class MenuService {
                             .upperMenuId(menu.getUpperMenuNo())
                             .menuOrdr(menu.getMenuOrdr())
                             .chkURL(url)
+                            .modernRoute(menu.getModernRoute())
                             .relateImagePath(menu.getRelateImagePath())
                             .relateImageNm(menu.getRelateImageNm())
                             .build();
@@ -172,6 +173,7 @@ public class MenuService {
                     .upperMenuId(menu.getUpperMenuNo())
                     .menuOrdr(menu.getMenuOrdr())
                     .chkURL(url)
+                    .modernRoute(menu.getModernRoute())
                     .relateImagePath(menu.getRelateImagePath())
                     .relateImageNm(menu.getRelateImageNm())
                     .build();
@@ -227,6 +229,8 @@ public class MenuService {
                     .menuNo(menu.getId())
                     .menuNm(menu.getMenuNm())
                     .upperMenuId(menu.getUpperMenuNo())
+                    .progrmFileNm(menu.getProgrmFileNm())
+                    .modernRoute(menu.getModernRoute())
                     .build();
             if (authMap.containsKey(menu.getId())) {
                 // dto.setChkYeoBu(true);
@@ -408,6 +412,7 @@ public class MenuService {
                 .upperMenuNo(vo.getUpperMenuNo())
                 .menuOrdr(vo.getMenuOrdr())
                 .menuDc(vo.getMenuDc())
+                .modernRoute(vo.getModernRoute())
                 .relateImagePath(vo.getRelateImagePath())
                 .relateImageNm(vo.getRelateImageNm())
                 .build();
@@ -419,8 +424,8 @@ public class MenuService {
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
-        menu.update(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(), vo.getMenuDc(),
-                vo.getRelateImagePath(), vo.getRelateImageNm());
+        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(), vo.getMenuDc(),
+                vo.getRelateImagePath(), vo.getRelateImageNm(), vo.getModernRoute());
     }
 
     @Transactional
@@ -455,6 +460,7 @@ public class MenuService {
                 .upperMenuId(menu.getUpperMenuNo())
                 .menuOrdr(menu.getMenuOrdr())
                 .menuDc(menu.getMenuDc())
+                .modernRoute(menu.getModernRoute())
                 .relateImagePath(menu.getRelateImagePath())
                 .relateImageNm(menu.getRelateImageNm())
                 .build();
