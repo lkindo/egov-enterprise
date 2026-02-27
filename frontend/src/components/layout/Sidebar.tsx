@@ -15,56 +15,9 @@ interface MappedMenuItem extends MenuItem {
     mappedUrl: string;
 }
 
-// Helper to map legacy .do URLs to Next.js routes
-const mapLegacyUrl = (url: string) => {
-    if (!url) return '#';
-
-    // Board list mapping
-    if (url.includes('selectBoardList.do')) {
-        const bbsId = new URLSearchParams(url.split('?')[1]).get('bbsId');
-        return `/cop/bbs/selectBoardList?bbsId=${bbsId}`;
-    }
-
-    // Board detail mapping
-    if (url.includes('selectBoardArticle.do')) {
-        const search = url.split('?')[1];
-        const params = new URLSearchParams(search);
-        const bbsId = params.get('bbsId');
-        const nttId = params.get('nttId');
-        return `/cop/bbs/selectBoardArticle/${nttId}?bbsId=${bbsId}`;
-    }
-
-    // Community mapping
-    if (url.includes('EgovCmmntyList.do')) {
-        return '/cop/cmy/selectCommunityList';
-    }
-
-    // Address Book mapping
-    if (url.includes('EgovAddressBookList.do')) {
-        return '/cop/adb/selectAddressBookList';
-    }
-
-    // Schedule mapping
-    if (url.includes('EgovSchdulManageList.do')) {
-        return '/cop/smt/sim/selectScheduleList';
-    }
-
-    // Scrap mapping
-    if (url.includes('EgovScrapList.do')) {
-        return '/cop/scp/selectScrapList';
-    }
-
-    // DeptJob mapping
-    if (url.includes('EgovDeptJobBxList.do')) {
-        return '/cop/smt/djm/selectDeptJobList';
-    }
-
-    // Survey mapping
-    if (url.includes('EgovQustnrRespondInfoList.do')) {
-        return '/survey';
-    }
-
-    return url;
+// Helper to determine URL
+const getMenuUrl = (item: MenuItem) => {
+    return item.chkURL || '#';
 };
 
 interface SidebarProps {
@@ -109,10 +62,9 @@ const Sidebar = ({ initialMenus = [] }: SidebarProps) => {
                 const response = (await axios.get(`/menu/left?menuNo=${menuNo}`)) as any;
                 // axios (client.ts) already extracts apiBody.data and handles success true/false
                 const list = response?.list || [];
-                // Optimize: Pre-calculate mapped URLs once to avoid redundant parsing in render loop
                 const mappedList = list.map((item: MenuItem) => ({
                     ...item,
-                    mappedUrl: mapLegacyUrl(item.chkURL)
+                    mappedUrl: getMenuUrl(item)
                 }));
                 setLeftMenus(mappedList);
             } catch (err: any) {
