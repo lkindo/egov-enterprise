@@ -32,6 +32,7 @@ interface MenuItem {
   upperMenuId: number;
   chkURL?: string;
   progrmFileNm?: string;
+  modernRoute?: string;
   children?: MenuItem[];
 }
 
@@ -103,6 +104,16 @@ const mapLegacyUrl = (url: string) => {
     return '/survey';
   }
 
+  // 추가 보안/시스템 매핑 (안전장치)
+  if (url.includes('EgovAuthorList.do')) return '/admin/security/authority';
+  if (url.includes('EgovAuthorGroupList.do')) return '/admin/security/group';
+  if (url.includes('EgovRoleList.do')) return '/admin/security/role';
+  if (url.includes('EgovUserManage.do')) return '/admin/user/manage';
+  if (url.includes('egovLoginUsr.do')) return '/login';
+  if (url.includes('EgovMenuManageSelect.do')) return '/admin/system/menus';
+  if (url.includes('EgovProgramListManageSelect.do')) return '/admin/system/programs';
+  if (url.includes('EgovCcmZipList.do')) return '/admin/system/common-code/zip';
+
   return url;
 };
 
@@ -113,9 +124,28 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
   const hasChildren = item.children && item.children.length > 0;
   const Icon = ICON_MAP[item.menuNm] || (depth === 0 ? ICON_MAP['기본'] : null);
 
+  // Debugging: Log item route info
+  useEffect(() => {
+    if (!hasChildren && !item.modernRoute) {
+      console.warn(`Menu [${item.menuNm}] has no modernRoute. Falling back to:`, mapLegacyUrl(item.chkURL || '#'));
+    }
+  }, [item, hasChildren]);
+
   // Normalize and map href
-  const href = useMemo(() => mapLegacyUrl(item.chkURL || '#'), [item.chkURL]);
-  const isActive = pathname === href || (hasChildren && item.children?.some(child => mapLegacyUrl(child.chkURL || '#') === pathname));
+  const href = useMemo(() => {
+    if (item.modernRoute) return item.modernRoute;
+    return mapLegacyUrl(item.chkURL || '#');
+  }, [item.modernRoute, item.chkURL]);
+  const isActive = useMemo(() => {
+    if (pathname === href) return true;
+    if (hasChildren && item.children) {
+      return item.children.some(child => {
+        const childHref = child.modernRoute || mapLegacyUrl(child.chkURL || '#');
+        return pathname === childHref;
+      });
+    }
+    return false;
+  }, [pathname, href, hasChildren, item.children]);
 
   useEffect(() => {
     if (isActive && hasChildren) {
@@ -151,7 +181,15 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
           {content}
         </button>
       ) : (
-        <Link href={href} className="block w-full">
+        <Link 
+          href={href} 
+          className="block w-full"
+          onClick={() => {
+            if (href.endsWith('.do')) {
+              console.error(`Navigation Error: Link still points to legacy URL: ${href}`);
+            }
+          }}
+        >
           {content}
         </Link>
       )}
