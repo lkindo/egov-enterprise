@@ -74,13 +74,75 @@ const mapLegacyUrl = (url: string) => {
     return `/cop/bbs/selectBoardArticle/${nttId}?bbsId=${bbsId}`;
   }
 
+  // --- User Support (uss) & Information (ion) Mapping ---
+  // Notification / Banner / Login Image
+  if (url.includes('selectNotificationList.do')) return '/admin/uss/ion/notification';
+  if (url.includes('selectBannerMainList.do')) return '/admin/uss/ion/banner';
+  if (url.includes('selectLoginScrinImageList.do')) return '/admin/uss/ion/login-image';
+  
+  // Search / Main Image / Links
+  if (url.includes('listRecentSrchwrd.do')) return '/admin/uss/ion/recent-search';
+  if (url.includes('selectMainImageList.do') || url.includes('getMainImageResult.do')) return '/admin/uss/ion/main-image';
+  if (url.includes('listUnityLink.do')) return '/admin/uss/ion/unity-link';
+  if (url.includes('selectIntnetSvcGuidanceList.do')) return '/admin/uss/ion/internet-service';
+  
+  // Wiki / RSS / Twitter
+  if (url.includes('listWikiBookmark.do')) return '/admin/uss/ion/wiki';
+  if (url.includes('listRssTagManage.do') || url.includes('listRssTagService.do')) return '/admin/uss/ion/rss';
+  if (url.includes('selectTwitterMain.do')) return '/admin/uss/ion/twitter';
+  
+  // Note (Message) Management
+  if (url.includes('registEgovNoteManage.do') || url.includes('listNoteRecptn.do') || url.includes('listNoteTrnsmit.do')) {
+    return '/admin/uss/ion/note';
+  }
+  
+  // Employee Services (Ctsnn, Vcatn, Reward, Event)
+  if (url.includes('selectCtsnnManageList.do') || url.includes('EgovCtsnnConfmList.do')) return '/admin/uss/ion/ctsnn';
+  if (url.includes('EgovVcatnConfmList.do') || url.includes('selectVcatnManageList.do')) return '/admin/uss/ion/vcatn';
+  if (url.includes('selectRwardManageList.do') || url.includes('EgovRwardConfmList.do')) return '/admin/uss/ion/reward';
+  if (url.includes('selectEventRceptConfmList.do') || url.includes('selectEventManageList.do')) return '/admin/uss/ion/event';
+
+  // Info Services (News, Site, Popup, etc.)
+  if (url.includes('NewsInfoListInqire.do')) return '/admin/uss/ion/news';
+  if (url.includes('SiteListInqire.do')) return '/admin/uss/ion/site';
+  if (url.includes('RecomendSiteListInqire.do')) return '/admin/uss/ion/recommend-site';
+  if (url.includes('EgovTnextrlHrInfoList.do')) return '/admin/uss/ion/external-hr';
+  if (url.includes('listPopup.do')) return '/admin/uss/ion/popup';
+
+  // --- Online Help / Consultation (uss/olh) Mapping ---
+  if (url.includes('QnaAnswerListInqire.do')) return '/admin/uss/olh/qna-answer';
+  if (url.includes('listAdministrationWord')) return '/admin/uss/olh/admin-word';
+  if (url.includes('selectOnlineManualList.do')) return '/admin/uss/olh/online-manual';
+
+  // --- Support / Online Poll / Survey (uss/olp) Mapping ---
+  if (url.includes('CnsltListInqire.do')) return '/admin/uss/olp/cnslt';
+  if (url.includes('CnsltAnswerListInqire.do')) return '/admin/uss/olp/cnslt-answer';
+  if (url.includes('EgovQustnrManageList.do') || url.includes('EgovQustnrRespondInfoManageList.do')) return '/admin/uss/olp/qustnr';
+  if (url.includes('EgovQustnrTmplatManageList.do')) return '/admin/uss/olp/qustnr-tmpl';
+  if (url.includes('EgovQustnrRespondManageList.do')) return '/admin/uss/olp/qustnr-resp';
+  if (url.includes('EgovQustnrQestnManageList.do')) return '/admin/uss/olp/qustnr-qestn';
+  if (url.includes('EgovQustnrItemManageList.do')) return '/admin/uss/olp/qustnr-item';
+  if (url.includes('listOnlinePoll')) return '/admin/uss/olp/online-poll';
+
+
+  // --- Collaboration (cop) Mapping ---
   // Community mapping
-  if (url.includes('EgovCmmntyList.do')) {
+  if (url.includes('EgovCmmntyList.do') || url.includes('selectCmmntyInfs.do')) {
     return '/cop/cmy/selectCommunityList';
   }
 
+  // Template mapping
+  if (url.includes('selectTemplateInfs.do')) {
+    return '/cop/tpl/selectTemplateList';
+  }
+
+  // Board Use mapping
+  if (url.includes('selectBBSUseInfs.do')) {
+    return '/cop/com/selectBBSUseInfs';
+  }
+
   // Address Book mapping
-  if (url.includes('EgovAddressBookList.do')) {
+  if (url.includes('EgovAddressBookList.do') || url.includes('selectAdbkList.do')) {
     return '/cop/adb/selectAddressBookList';
   }
 
@@ -90,9 +152,24 @@ const mapLegacyUrl = (url: string) => {
   }
 
   // Scrap mapping
-  if (url.includes('EgovScrapList.do')) {
+  if (url.includes('EgovScrapList.do') || url.includes('selectScrapList.do')) {
     return '/cop/scp/selectScrapList';
   }
+
+  // SMS mapping
+  if (url.includes('selectSmsList.do')) {
+    return '/cop/sms/selectSmsList';
+  }
+
+  // Business Card (Ncrd) mapping
+  if (url.includes('selectNcrdInfs.do')) return '/cop/ncm/selectNcrdList';
+  if (url.includes('selectMyNcrdUseInf.do')) return '/cop/ncm/selectMyNcrdList';
+
+  // Task Management (smt) mapping
+  if (url.includes('EgovDiaryManageList.do')) return '/cop/smt/dsm/selectDiaryList';
+  if (url.includes('selectWikMnthngReprtList.do')) return '/cop/smt/wmr/selectReportList';
+  if (url.includes('selectMemoTodoList.do')) return '/cop/smt/mtm/selectTodoList';
+  if (url.includes('selectMemoReprtList.do')) return '/cop/smt/mrm/selectMemoReportList';
 
   // DeptJob mapping
   if (url.includes('EgovDeptJobBxList.do')) {
@@ -104,15 +181,15 @@ const mapLegacyUrl = (url: string) => {
     return '/survey';
   }
 
-  // 추가 보안/시스템 매핑 (안전장치)
+  // --- Admin / System (sym) Mapping ---
   if (url.includes('EgovAuthorList.do')) return '/admin/security/authority';
   if (url.includes('EgovAuthorGroupList.do')) return '/admin/security/group';
   if (url.includes('EgovRoleList.do')) return '/admin/security/role';
   if (url.includes('EgovUserManage.do')) return '/admin/user/manage';
-  if (url.includes('egovLoginUsr.do')) return '/login';
   if (url.includes('EgovMenuManageSelect.do')) return '/admin/system/menus';
   if (url.includes('EgovProgramListManageSelect.do')) return '/admin/system/programs';
   if (url.includes('EgovCcmZipList.do')) return '/admin/system/common-code/zip';
+  if (url.includes('egovLoginUsr.do')) return '/login';
 
   return url;
 };
@@ -127,7 +204,10 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
   // Debugging: Log item route info
   useEffect(() => {
     if (!hasChildren && !item.modernRoute) {
-      console.warn(`Menu [${item.menuNm}] has no modernRoute. Falling back to:`, mapLegacyUrl(item.chkURL || '#'));
+      const fallback = mapLegacyUrl(item.chkURL || '#');
+      if (fallback.includes('.do') || fallback === '#') {
+        console.warn(`Menu [${item.menuNm}] is missing a modern route mapping. Legacy URL:`, item.chkURL || '#');
+      }
     }
   }, [item, hasChildren]);
 

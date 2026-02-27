@@ -17,14 +17,21 @@ export const useBoardList = (params: BoardListParams, initialData?: any) => {
         queryKey: ['boardList', params],
         initialData,
         queryFn: async () => {
-            const data: any = await client.get('/bbs', { params });
-            // The global axios interceptor un-wraps the response to be just the API payload data.
-            // If the payload contains resultList directly, or is inside data property:
-            const resultList = data.resultList || data.data?.resultList || [];
-            const totalCount = data.totalCount || data.data?.totalCount || 0;
-            const totalPages = data.totalPages || data.data?.totalPages || 0;
-
-            return { resultList, totalCount, totalPages };
+            const { bbsId, pageIndex, pageUnit, ...restParams } = params;
+            const queryParams = {
+                page: pageIndex - 1,
+                size: pageUnit || 10,
+                ...restParams
+            };
+            
+            const data: any = await client.get(`/boards/${bbsId}`, { params: queryParams });
+            
+            // Spring Data Page 구조 반영
+            return { 
+                resultList: data.content || [], 
+                totalCount: data.totalElements || 0, 
+                totalPages: data.totalPages || 0 
+            };
         },
         staleTime: 60 * 1000,
     });

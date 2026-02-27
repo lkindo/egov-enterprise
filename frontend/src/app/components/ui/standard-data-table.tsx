@@ -60,7 +60,7 @@ const DataRow = memo(function DataRow({
       {columns.map((column: any, colIdx: number) => (
         <td 
           key={colIdx} 
-          className={cn("px-4 py-4", column.className)}
+          className={cn("px-4 py-3 text-sm text-foreground/80", column.className)}
           onClick={() => onRowClick?.(item)}
         >
           <div className="font-medium outline-none">
@@ -86,8 +86,8 @@ const MobileCard = memo(function MobileCard({
   return (
     <div 
       className={cn(
-        "p-6 rounded-[2.25rem] border-2 transition-all duration-300 relative overflow-hidden",
-        isSelected ? "border-primary bg-primary/[0.03] shadow-xl shadow-primary/5" : "border-primary/5 bg-card hover:border-primary/20 hover:shadow-lg"
+        "p-5 rounded-xl border transition-all duration-300 relative overflow-hidden",
+        isSelected ? "border-primary bg-primary/[0.03] shadow-md shadow-primary/5" : "border-border bg-card hover:border-primary/20 hover:shadow-sm"
       )}
       onClick={() => onRowClick?.(item)}
     >
@@ -102,7 +102,7 @@ const MobileCard = memo(function MobileCard({
           </div>
         )}
         <div className="flex flex-col gap-1 flex-1 ml-4 overflow-hidden">
-          <div className="text-[10px] font-black text-primary/60 uppercase tracking-[0.2em]">
+          <div className="text-[11px] font-black text-primary/60">
             {columns[0].header}
           </div>
           <div className="font-black text-lg text-foreground truncate">
@@ -114,7 +114,7 @@ const MobileCard = memo(function MobileCard({
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-primary/5">
         {columns.slice(1, 5).map((column: any, idx: number) => (
           <div key={idx} className="space-y-1 overflow-hidden">
-            <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">{column.header}</p>
+            <p className="text-[11px] font-black text-muted-foreground/50">{column.header}</p>
             <div className="text-xs font-bold text-foreground/70 truncate">
               {typeof column.accessor === 'function' ? column.accessor(item) : item[column.accessor]}
             </div>
@@ -205,7 +205,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       )}
 
       {/* 1. Desktop View (Table) */}
-      <div className="hidden md:block w-full overflow-hidden border-2 border-primary/5 rounded-[2.5rem] bg-card shadow-2xl shadow-primary/5 transition-all duration-500">
+      <div className="hidden md:block w-full overflow-hidden border border-border rounded-xl bg-card shadow-sm transition-all duration-500">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
             <thead className="bg-muted/30 border-b border-primary/5">
@@ -220,7 +220,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   </th>
                 )}
                 {columns.map((column, idx) => (
-                  <th key={idx} className={cn("px-6 py-6 font-black text-muted-foreground uppercase tracking-[0.2em] text-[10px] whitespace-nowrap", column.className)} scope="col">
+                  <th key={idx} className={cn("px-4 py-3 font-semibold text-muted-foreground text-sm whitespace-nowrap bg-muted/20 border-b border-border", column.className)} scope="col">
                     {column.header}
                   </th>
                 ))}
@@ -230,9 +230,9 @@ export function StandardDataTable<T extends { [key: string]: any }>({
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    {enableSelection && <td className="px-6 py-8 text-center"><div className="w-5 h-5 bg-muted rounded-lg m-auto" /></td>}
+                    {enableSelection && <td className="px-4 py-4 text-center"><div className="w-5 h-5 bg-muted rounded-lg m-auto" /></td>}
                     {columns.map((_, j) => (
-                      <td key={j} className="px-6 py-8">
+                      <td key={j} className="px-4 py-4">
                         <div className="h-4 bg-muted/60 rounded-full w-3/4" />
                       </td>
                     ))}
@@ -266,10 +266,10 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       <div className="md:hidden space-y-5 px-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-56 bg-muted/40 animate-pulse rounded-[2.5rem]" />
+            <div key={i} className="h-48 bg-muted/40 animate-pulse rounded-xl" />
           ))
         ) : data.length === 0 ? (
-          <div className="p-16 bg-card border-2 border-dashed border-primary/10 rounded-[3rem] text-center shadow-inner">
+          <div className="p-12 bg-card border border-dashed border-border rounded-2xl text-center shadow-sm">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
           </div>
         ) : (
@@ -297,17 +297,17 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700">
-      <div className="w-24 h-24 bg-primary/5 rounded-[2.5rem] flex items-center justify-center mb-2 rotate-6 hover:rotate-0 transition-transform duration-500 shadow-inner">
+      <div className="w-24 h-24 bg-primary/5 rounded-2xl flex items-center justify-center mb-2 rotate-6 hover:rotate-0 transition-transform duration-500 shadow-sm">
         <MoreHorizontal size={48} className="text-primary/20" aria-hidden="true" />
       </div>
       <div className="space-y-2">
-        <p className="text-2xl font-black text-foreground/80 tracking-tight">{emptyMessage}</p>
+        <p className="text-xl font-bold text-foreground/80 tracking-tight">{emptyMessage}</p>
         <p className="text-sm text-muted-foreground font-medium max-w-[280px] mx-auto leading-relaxed">
           현재 표시할 수 있는 데이터가 없습니다. <br />검색 조건을 변경하거나 페이지를 새로고침 해보세요.
         </p>
       </div>
-      <Button variant="outline" className="mt-4 rounded-2xl font-black h-12 px-8 border-2 hover:bg-primary/5 transition-all shadow-xl shadow-primary/5" onClick={() => window.location.reload()}>
-        Refresh Connection
+      <Button variant="outline" className="mt-4 rounded-lg font-semibold h-10 px-6 border hover:bg-muted transition-all shadow-sm" onClick={() => window.location.reload()}>
+        새로고침
       </Button>
     </div>
   );

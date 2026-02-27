@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { getUserList } from '@/services/user/userService';
 import UserManageClient from './UserManageClient';
 import { Loader2 } from 'lucide-react';
@@ -41,8 +42,12 @@ export default async function UserManagePage({
             ] as any[]),
             paginationInfo: rawData.paginationInfo
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Server-side fetch users failed:', error);
+        // 401 에러(인증 만료/없음) 발생 시 로그인 페이지로 리렉트
+        if (error.response?.status === 401 || !accessToken) {
+            redirect('/login?expired=true');
+        }
     }
 
     return (

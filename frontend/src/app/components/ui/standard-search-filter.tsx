@@ -45,16 +45,16 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
   };
 
   return (
-    <div className={cn("p-8 border-2 border-primary/5 rounded-[2.5rem] bg-card/50 backdrop-blur-sm shadow-xl mb-8 transition-all group", className)}>
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <div className={cn("p-6 border border-border rounded-2xl bg-card shadow-sm mb-6 transition-all group", className)}>
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-2xl text-primary transition-transform group-hover:scale-110 duration-500">
               <Search size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Intelligence Filter</h3>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">Multi-dimensional data search</p>
+              <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">상세 검색 필터</h3>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">다차원 데이터 검색</p>
             </div>
           </div>
           <Button
@@ -65,7 +65,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
             className="rounded-xl font-bold h-10 px-4 gap-2 hover:bg-primary/5"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span className="text-[10px] uppercase tracking-widest">{isExpanded ? 'Collapse' : 'Expand'} Filter</span>
+            <span className="text-[10px] uppercase tracking-widest">{isExpanded ? '필터 접기' : '필터 펼치기'}</span>
           </Button>
         </div>
 
@@ -82,7 +82,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
-                    <SelectTrigger className="h-12 rounded-2xl border-2 border-primary/5 bg-background focus:ring-primary/20 hover:border-primary/20 transition-all font-bold text-xs ring-offset-background">
+                    <SelectTrigger className="h-10 rounded-lg border border-input bg-background focus:ring-primary/20 hover:border-border transition-all font-medium text-sm ring-offset-background">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-primary/10">
@@ -103,7 +103,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-bold text-xs rounded-2xl border-2 border-primary/5 bg-background transition-all hover:border-primary/20",
+                          "w-full h-10 justify-start text-left font-medium text-sm rounded-lg border border-input bg-background transition-all hover:border-border",
                           !values[field.name] && "text-muted-foreground/50"
                         )}
                       >
@@ -140,14 +140,14 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-12 rounded-2xl border-2 border-primary/5 bg-background font-bold text-xs ring-offset-background transition-all hover:border-primary/20 focus-visible:ring-primary/20"
+                    className="h-10 rounded-lg border border-input bg-background font-medium text-sm ring-offset-background transition-all hover:border-border focus-visible:ring-primary/20"
                   />
                 ) : (
                   <Input
                     placeholder={field.placeholder}
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-12 rounded-2xl border-2 border-primary/5 bg-background font-bold text-xs ring-offset-background transition-all hover:border-primary/20 focus-visible:ring-primary/20 shadow-inner"
+                    className="h-10 rounded-lg border border-input bg-background font-medium text-sm ring-offset-background transition-all hover:border-border focus-visible:ring-primary/20 shadow-sm"
                   />
                 )}
               </div>
@@ -160,17 +160,17 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
             type="button"
             variant="ghost"
             onClick={handleReset}
-            className="rounded-2xl h-12 px-8 font-black gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted/50 transition-all"
+            className="rounded-lg h-10 px-6 font-semibold gap-2 text-xs text-muted-foreground hover:bg-muted transition-all"
           >
             <RotateCcw size={16} />
-            Reset Filters
+            필터 초기화
           </Button>
           <Button
             type="submit"
-            className="rounded-2xl h-12 px-10 font-black gap-2 shadow-2xl shadow-primary/20 hover:scale-[1.05] active:scale-[0.95] transition-all bg-primary text-white text-[10px] uppercase tracking-[0.2em]"
+            className="rounded-lg h-10 px-8 font-semibold gap-2 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground text-xs"
           >
             <Search size={16} />
-            Execute Search
+            검색 실행
           </Button>
         </div>
       </form>
