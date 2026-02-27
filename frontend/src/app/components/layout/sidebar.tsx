@@ -23,6 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import { menuService } from '@/services/menuService';
 import { useLayout } from '@/contexts/LayoutContext';
 
@@ -55,172 +56,22 @@ const ICON_MAP: Record<string, any> = {
   '기본': CircleDot
 };
 
-// Helper to map legacy .do URLs to Next.js routes
-const mapLegacyUrl = (url: string) => {
-  if (!url || url === '#') return '#';
-
-  // Board list mapping
-  if (url.includes('selectBoardList.do')) {
-    const bbsId = new URLSearchParams(url.split('?')[1]).get('bbsId');
-    return `/cop/bbs/selectBoardList?bbsId=${bbsId}`;
-  }
-
-  // Board detail mapping
-  if (url.includes('selectBoardArticle.do')) {
-    const search = url.split('?')[1];
-    const params = new URLSearchParams(search);
-    const bbsId = params.get('bbsId');
-    const nttId = params.get('nttId');
-    return `/cop/bbs/selectBoardArticle/${nttId}?bbsId=${bbsId}`;
-  }
-
-  // --- User Support (uss) & Information (ion) Mapping ---
-  // Notification / Banner / Login Image
-  if (url.includes('selectNotificationList.do')) return '/admin/uss/ion/notification';
-  if (url.includes('selectBannerMainList.do')) return '/admin/uss/ion/banner';
-  if (url.includes('selectLoginScrinImageList.do')) return '/admin/uss/ion/login-image';
-  
-  // Search / Main Image / Links
-  if (url.includes('listRecentSrchwrd.do')) return '/admin/uss/ion/recent-search';
-  if (url.includes('selectMainImageList.do') || url.includes('getMainImageResult.do')) return '/admin/uss/ion/main-image';
-  if (url.includes('listUnityLink.do')) return '/admin/uss/ion/unity-link';
-  if (url.includes('selectIntnetSvcGuidanceList.do')) return '/admin/uss/ion/internet-service';
-  
-  // Wiki / RSS / Twitter
-  if (url.includes('listWikiBookmark.do')) return '/admin/uss/ion/wiki';
-  if (url.includes('listRssTagManage.do') || url.includes('listRssTagService.do')) return '/admin/uss/ion/rss';
-  if (url.includes('selectTwitterMain.do')) return '/admin/uss/ion/twitter';
-  
-  // Note (Message) Management
-  if (url.includes('registEgovNoteManage.do') || url.includes('listNoteRecptn.do') || url.includes('listNoteTrnsmit.do')) {
-    return '/admin/uss/ion/note';
-  }
-  
-  // Employee Services (Ctsnn, Vcatn, Reward, Event)
-  if (url.includes('selectCtsnnManageList.do') || url.includes('EgovCtsnnConfmList.do')) return '/admin/uss/ion/ctsnn';
-  if (url.includes('EgovVcatnConfmList.do') || url.includes('selectVcatnManageList.do')) return '/admin/uss/ion/vcatn';
-  if (url.includes('selectRwardManageList.do') || url.includes('EgovRwardConfmList.do')) return '/admin/uss/ion/reward';
-  if (url.includes('selectEventRceptConfmList.do') || url.includes('selectEventManageList.do')) return '/admin/uss/ion/event';
-
-  // Info Services (News, Site, Popup, etc.)
-  if (url.includes('NewsInfoListInqire.do')) return '/admin/uss/ion/news';
-  if (url.includes('SiteListInqire.do')) return '/admin/uss/ion/site';
-  if (url.includes('RecomendSiteListInqire.do')) return '/admin/uss/ion/recommend-site';
-  if (url.includes('EgovTnextrlHrInfoList.do')) return '/admin/uss/ion/external-hr';
-  if (url.includes('listPopup.do')) return '/admin/uss/ion/popup';
-
-  // --- Online Help / Consultation (uss/olh) Mapping ---
-  if (url.includes('QnaAnswerListInqire.do')) return '/admin/uss/olh/qna-answer';
-  if (url.includes('listAdministrationWord')) return '/admin/uss/olh/admin-word';
-  if (url.includes('selectOnlineManualList.do')) return '/admin/uss/olh/online-manual';
-
-  // --- Support / Online Poll / Survey (uss/olp) Mapping ---
-  if (url.includes('CnsltListInqire.do')) return '/admin/uss/olp/cnslt';
-  if (url.includes('CnsltAnswerListInqire.do')) return '/admin/uss/olp/cnslt-answer';
-  if (url.includes('EgovQustnrManageList.do') || url.includes('EgovQustnrRespondInfoManageList.do')) return '/admin/uss/olp/qustnr';
-  if (url.includes('EgovQustnrTmplatManageList.do')) return '/admin/uss/olp/qustnr-tmpl';
-  if (url.includes('EgovQustnrRespondManageList.do')) return '/admin/uss/olp/qustnr-resp';
-  if (url.includes('EgovQustnrQestnManageList.do')) return '/admin/uss/olp/qustnr-qestn';
-  if (url.includes('EgovQustnrItemManageList.do')) return '/admin/uss/olp/qustnr-item';
-  if (url.includes('listOnlinePoll')) return '/admin/uss/olp/online-poll';
-
-
-  // --- Collaboration (cop) Mapping ---
-  // Community mapping
-  if (url.includes('EgovCmmntyList.do') || url.includes('selectCmmntyInfs.do')) {
-    return '/cop/cmy/selectCommunityList';
-  }
-
-  // Template mapping
-  if (url.includes('selectTemplateInfs.do')) {
-    return '/cop/tpl/selectTemplateList';
-  }
-
-  // Board Use mapping
-  if (url.includes('selectBBSUseInfs.do')) {
-    return '/cop/com/selectBBSUseInfs';
-  }
-
-  // Address Book mapping
-  if (url.includes('EgovAddressBookList.do') || url.includes('selectAdbkList.do')) {
-    return '/cop/adb/selectAddressBookList';
-  }
-
-  // Schedule mapping
-  if (url.includes('EgovSchdulManageList.do')) {
-    return '/cop/smt/sim/selectScheduleList';
-  }
-
-  // Scrap mapping
-  if (url.includes('EgovScrapList.do') || url.includes('selectScrapList.do')) {
-    return '/cop/scp/selectScrapList';
-  }
-
-  // SMS mapping
-  if (url.includes('selectSmsList.do')) {
-    return '/cop/sms/selectSmsList';
-  }
-
-  // Business Card (Ncrd) mapping
-  if (url.includes('selectNcrdInfs.do')) return '/cop/ncm/selectNcrdList';
-  if (url.includes('selectMyNcrdUseInf.do')) return '/cop/ncm/selectMyNcrdList';
-
-  // Task Management (smt) mapping
-  if (url.includes('EgovDiaryManageList.do')) return '/cop/smt/dsm/selectDiaryList';
-  if (url.includes('selectWikMnthngReprtList.do')) return '/cop/smt/wmr/selectReportList';
-  if (url.includes('selectMemoTodoList.do')) return '/cop/smt/mtm/selectTodoList';
-  if (url.includes('selectMemoReprtList.do')) return '/cop/smt/mrm/selectMemoReportList';
-
-  // DeptJob mapping
-  if (url.includes('EgovDeptJobBxList.do')) {
-    return '/cop/smt/djm/selectDeptJobList';
-  }
-
-  // Survey mapping
-  if (url.includes('EgovQustnrRespondInfoList.do')) {
-    return '/survey';
-  }
-
-  // --- Admin / System (sym) Mapping ---
-  if (url.includes('EgovAuthorList.do')) return '/admin/security/authority';
-  if (url.includes('EgovAuthorGroupList.do')) return '/admin/security/group';
-  if (url.includes('EgovRoleList.do')) return '/admin/security/role';
-  if (url.includes('EgovUserManage.do')) return '/admin/user/manage';
-  if (url.includes('EgovMenuManageSelect.do')) return '/admin/system/menus';
-  if (url.includes('EgovProgramListManageSelect.do')) return '/admin/system/programs';
-  if (url.includes('EgovCcmZipList.do')) return '/admin/system/common-code/zip';
-  if (url.includes('egovLoginUsr.do')) return '/login';
-
-  return url;
-};
-
-function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
+const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-
+  const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
-  const Icon = ICON_MAP[item.menuNm] || (depth === 0 ? ICON_MAP['기본'] : null);
+  const [isOpen, setIsOpen] = useState(false);
+  const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
-  // Debugging: Log item route info
-  useEffect(() => {
-    if (!hasChildren && !item.modernRoute) {
-      const fallback = mapLegacyUrl(item.chkURL || '#');
-      if (fallback.includes('.do') || fallback === '#') {
-        console.warn(`Menu [${item.menuNm}] is missing a modern route mapping. Legacy URL:`, item.chkURL || '#');
-      }
-    }
-  }, [item, hasChildren]);
-
-  // Normalize and map href
   const href = useMemo(() => {
-    if (item.modernRoute) return item.modernRoute;
-    return mapLegacyUrl(item.chkURL || '#');
+    return item.modernRoute || item.chkURL || '#';
   }, [item.modernRoute, item.chkURL]);
+
   const isActive = useMemo(() => {
     if (pathname === href) return true;
     if (hasChildren && item.children) {
       return item.children.some(child => {
-        const childHref = child.modernRoute || mapLegacyUrl(child.chkURL || '#');
+        const childHref = child.modernRoute || child.chkURL || '#';
         return pathname === childHref;
       });
     }
@@ -235,18 +86,32 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
 
   const content = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-bold tracking-tight rounded-md transition-colors w-full",
+      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-bold tracking-tight rounded-md transition-all duration-200 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       isActive
-        ? "bg-primary/10 text-primary"
-        : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        ? "bg-primary/10 text-primary shadow-sm shadow-primary/5"
+        : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground",
       depth > 0 && "pl-9"
     )}>
       <div className="flex items-center gap-3">
-        {Icon && <Icon size={18} className={cn(isActive ? "text-primary" : "text-muted-foreground")} />}
-        <span>{item.menuNm}</span>
+        {Icon && (
+          <Icon
+            size={18}
+            className={cn(
+              "transition-transform duration-200 group-hover:scale-110",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )}
+          />
+        )}
+        <span className="truncate">{item.menuNm}</span>
       </div>
       {hasChildren && (
-        isOpen ? <ChevronDown size={14} className="opacity-50" /> : <ChevronRight size={14} className="opacity-50" />
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="opacity-50"
+        >
+          <ChevronDown size={14} />
+        </motion.div>
       )}
     </div>
   );
@@ -256,17 +121,20 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
       {hasChildren ? (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full text-left"
+          className="w-full text-left focus-visible:outline-none"
+          aria-expanded={isOpen}
+          aria-label={`${item.menuNm} 메뉴 ${isOpen ? '닫기' : '열기'}`}
         >
           {content}
         </button>
       ) : (
-        <Link 
-          href={href} 
-          className="block w-full"
+        <Link
+          href={href}
+          className="block w-full focus-visible:outline-none"
           onClick={() => {
+            setSidebarOpen(false);
             if (href.endsWith('.do')) {
-              console.error(`Navigation Error: Link still points to legacy URL: ${href}`);
+              console.warn(`Navigation Warning: Legacy URL detected: ${href}…`);
             }
           }}
         >
@@ -274,16 +142,26 @@ function NavItem({ item, depth = 0 }: { item: MenuItem; depth?: number }) {
         </Link>
       )}
 
-      {hasChildren && isOpen && (
-        <div className="mt-1 space-y-1">
-          {item.children?.map((child) => (
-            <NavItem key={child.menuNo} item={child} depth={depth + 1} />
-          ))}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {hasChildren && isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-1 space-y-1">
+              {item.children?.map((child) => (
+                <NavItem key={child.menuNo} item={child} depth={depth + 1} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};
 
 export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuItem[] }) {
   const [menus, setMenus] = useState<MenuItem[]>(initialMenus);

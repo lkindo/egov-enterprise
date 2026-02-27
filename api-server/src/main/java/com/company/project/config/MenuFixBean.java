@@ -16,9 +16,9 @@ public class MenuFixBean {
     @PostConstruct
     public void fixMenuUrl() {
         try {
-            String sql = "UPDATE NPROGRMLIST SET URL = '/sym/mnu/mpm/EgovMenuListSelect.do' WHERE PROGRM_FILE_NM = 'EgovMenuListSelect'";
+            String sql = "UPDATE NPROGRMLIST SET URL = '/admin/system/menus' WHERE PROGRM_FILE_NM = 'EgovMenuListSelect'";
             jdbcTemplate.update(sql);
-            log.info("FIX_MENU_URL_LOG: EgovMenuListSelect updated via MenuFixBean.");
+            log.info("FIX_MENU_URL_LOG: EgovMenuListSelect updated to modernized URL via MenuFixBean.");
         } catch (Exception e) {
             log.error("Error updating menu URL", e);
         }

@@ -267,17 +267,17 @@ export default function UnifiedDashboardClient({
 
 function SummaryCard({ title, value, description, icon, trend, color }: any) {
   const colorMap: any = {
-    blue: "bg-blue-500 text-white border-blue-600 shadow-blue-500/20",
-    orange: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20",
-    purple: "bg-white text-slate-900 border-slate-100 shadow-slate-200/50",
-    emerald: "bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/20"
+    blue: "bg-blue-600/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-xl shadow-blue-500/5",
+    orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
+    purple: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none",
+    emerald: "bg-emerald-600/5 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-xl shadow-emerald-500/5"
   };
 
   const iconBgMap: any = {
-    blue: "bg-white/20 text-white",
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     orange: "bg-primary/20 text-primary",
-    purple: "bg-slate-100 text-slate-900",
-    emerald: "bg-white/20 text-white"
+    purple: "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
   };
 
   return (
@@ -288,18 +288,18 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       }}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-[3.5rem] border-2 transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
+        "p-10 rounded-[3.5rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
         colorMap[color]
       )}
     >
       <div className="flex justify-between items-start relative z-10">
-        <div className={cn("p-5 rounded-[1.5rem] transition-transform group-hover:rotate-6", iconBgMap[color])}>
+        <div className={cn("p-5 rounded-[1.5rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
           {icon}
         </div>
         {trend !== 0 && (
           <div className={cn(
-            "flex items-center gap-1 text-[11px] font-black px-4 py-1.5 rounded-full backdrop-blur-md border",
-            trend > 0 ? "bg-white/20 border-white/10" : "bg-red-500/20 border-red-500/10"
+            "flex items-center gap-1 text-[11px] font-black px-4 py-1.5 rounded-full backdrop-blur-md border tabular-nums",
+            trend > 0 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-red-500/10 border-red-500/20 text-red-600"
           )}>
             {trend > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
             <span>{Math.abs(trend)}%</span>
@@ -309,18 +309,16 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
 
       <div className="space-y-2 relative z-10">
         <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60 mb-2">{title}</p>
-        <h4 className="text-6xl font-black tracking-tighter leading-none">{value}</h4>
+        <h4 className="text-6xl font-black tracking-tighter leading-none tabular-nums">{value}</h4>
         <div className="pt-6">
-          {/* HYDRATION FIX: changed <p> to <div> */}
           <div className="text-[11px] opacity-40 font-bold leading-relaxed max-w-[180px]">
             {description}
           </div>
         </div>
       </div>
 
-      {/* Industrial decor element */}
-      <div className="absolute -bottom-6 -left-6 opacity-5 group-hover:opacity-10 group-hover:rotate-12 transition-all duration-700">
-        {icon}
+      <div className="absolute -bottom-6 -left-6 opacity-[0.03] group-hover:opacity-[0.08] group-hover:rotate-12 transition-all duration-700 pointer-events-none">
+        {React.cloneElement(icon, { size: 140 })}
       </div>
     </motion.div>
   );
@@ -328,8 +326,8 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
 
 function DashboardListCard({ title, items, icon, moreHref, color }: any) {
   const itemColorMap: any = {
-    blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50",
-    emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50"
+    blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50 dark:group-hover/item:bg-blue-500/5",
+    emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5"
   };
 
   return (
@@ -338,18 +336,22 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
         hidden: { y: 20, opacity: 0 },
         visible: { y: 0, opacity: 1 }
       }}
-      className="border-2 border-primary/5 rounded-[4rem] bg-card shadow-2xl flex flex-col h-[480px] group overflow-hidden"
+      className="border border-primary/5 rounded-[4rem] bg-card/60 backdrop-blur-xl shadow-2xl shadow-black/5 flex flex-col h-[480px] group overflow-hidden"
     >
-      <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between">
+      <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card/40">
         <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
-            color === 'blue' ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+            color === 'blue' ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           )}>
             {icon}
           </div>
           {title}
         </h3>
-        <Link href={moreHref || '#'} className="w-12 h-12 bg-muted/50 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all">
+        <Link
+          href={moreHref || '#'}
+          className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label={`${title} 더보기`}
+        >
           <ArrowRight size={20} />
         </Link>
       </div>
@@ -360,15 +362,15 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
               key={idx}
               whileHover={{ x: 5 }}
               className={cn(
-                "flex flex-col gap-2 p-6 rounded-[2rem] border-2 border-transparent transition-all cursor-pointer group/item",
+                "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
                 itemColorMap[color]
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest tabular-nums">
                   {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
                 </span>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover/item:bg-primary" />
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
               </div>
               <span className="text-[15px] font-black text-foreground line-clamp-1 tracking-tight">
                 {item.nttSj}
@@ -378,7 +380,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-black uppercase tracking-widest">No data available</p>
+            <p className="text-sm font-black uppercase tracking-widest">No data available…</p>
           </div>
         )}
       </div>
@@ -391,15 +393,20 @@ function DashboardSkeleton() {
     <div className="space-y-12 pb-20 animate-pulse">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-6">
-          <Skeleton className="h-8 w-48 rounded-full" />
-          <Skeleton className="h-20 w-96 rounded-2xl" />
-          <Skeleton className="h-6 w-[500px] rounded-lg" />
+          <Skeleton className="h-8 w-48 rounded-full opacity-40" />
+          <Skeleton className="h-20 w-96 rounded-2xl opacity-50" />
+          <Skeleton className="h-6 w-[500px] rounded-lg opacity-30" />
         </div>
-        <div className="flex gap-4"><Skeleton className="h-16 w-48 rounded-[2rem]" /><Skeleton className="h-16 w-48 rounded-[2rem]" /></div>
+        <div className="flex gap-4">
+          <Skeleton className="h-16 w-48 rounded-[2rem] opacity-30" />
+          <Skeleton className="h-16 w-48 rounded-[2rem] opacity-40" />
+        </div>
       </div>
-      <Skeleton className="h-[250px] w-full rounded-[4rem]" />
+      <Skeleton className="h-[250px] w-full rounded-[4rem] opacity-20" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-[320px] rounded-[3.5rem]" />)}
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-[320px] rounded-[3.5rem] opacity-20" />
+        ))}
       </div>
     </div>
   );
