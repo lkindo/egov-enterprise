@@ -30,20 +30,28 @@ export default async function RootLayout({
 
   // Fetch Sidebar Menus on Server to eliminate waterfall
   let initialMenus: any[] = [];
-  try {
-    const headList = await menuService.getHeadMenus(axiosConfig);
-    initialMenus = await Promise.all(
-      headList.map(async (menu) => {
-        try {
-          const leftList = await menuService.getLeftMenus(menu.menuNo, axiosConfig);
-          return { ...menu, children: leftList };
-        } catch {
-          return { ...menu, children: [] };
-        }
-      })
-    );
-  } catch (error) {
-    console.error('RootLayout: Failed to pre-fetch menus', error);
+  
+  // Only attempt to fetch menus if we have a token (avoid 401 for guests/login page)
+  if (accessToken) {
+    try {
+      const headList = await menuService.getHeadMenus(axiosConfig);
+      initialMenus = await Promise.all(
+        headList.map(async (menu) => {
+          try {
+            const leftList = await menuService.getLeftMenus(menu.menuNo, axiosConfig);
+            return { ...menu, children: leftList };
+          } catch {
+            return { ...menu, children: [] };
+          }
+        })
+      );
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        console.warn('RootLayout: Authentication token expired or invalid (401)');
+      } else {
+        console.error('RootLayout: Failed to pre-fetch menus', error);
+      }
+    }
   }
 
   return (

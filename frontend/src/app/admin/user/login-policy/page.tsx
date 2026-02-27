@@ -45,8 +45,7 @@ export default function LoginPolicyPage() {
   const columns = [
     { 
       header: '사용자 ID', 
-      accessor: (item: LoginPolicy) => item.emplyrId, 
-      className: 'font-bold' 
+      accessor: (item: LoginPolicy) => item.emplyrId
     },
     { 
       header: '성명', 
@@ -54,8 +53,7 @@ export default function LoginPolicyPage() {
     },
     { 
       header: '제한 IP', 
-      accessor: (item: LoginPolicy) => item.ipInfo, 
-      className: 'font-mono text-xs' 
+      accessor: (item: LoginPolicy) => item.ipInfo
     },
     { 
       header: '중복 허용', 
@@ -124,25 +122,22 @@ export default function LoginPolicyPage() {
         onSearch={(v: any) => setSearchWrd(v.searchWrd || '')}
       />
 
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={columns} 
-          data={policies} 
-          loading={isLoading}
-          emptyMessage="등록된 사용자가 없거나 정책 데이터가 없습니다."
-          className="border-none rounded-none"
-        />
-      </div>
+      <StandardDataTable 
+        columns={columns} 
+        data={policies} 
+        loading={isLoading}
+        emptyMessage="등록된 사용자가 없거나 정책 데이터가 없습니다."
+      />
     </div>
   );
 }
 
 function PolicyInfoCard({ title, description, icon }: any) {
   return (
-    <div className="p-6 bg-muted/20 border border-dashed rounded-3xl flex items-center gap-4">
-      <div className="p-3 bg-card rounded-2xl shadow-sm text-primary">{icon}</div>
+    <div className="p-6 bg-muted/20 border border-dashed rounded-xl flex items-center gap-4">
+      <div className="p-3 bg-card rounded-lg shadow-sm text-primary">{icon}</div>
       <div>
-        <h4 className="text-sm font-black text-foreground">{title}</h4>
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
     </div>

@@ -2,24 +2,27 @@
 import { PaginationResponse } from '@/types/system';
 import { StplatManageVO, TermsSearchParams } from '@/types/terms';
 
-const BASE_URL = '/uss/sam/stp';
-
 export const getTermsList = async (params: TermsSearchParams): Promise<PaginationResponse<StplatManageVO>> => {
-    return client.get<PaginationResponse<StplatManageVO>>(`${BASE_URL}/StplatListInqire.do`, { params });
+    const res: any = await client.get('/admin/terms', { params });
+    return {
+        resultList: res.list || [],
+        paginationInfo: res.paginationInfo || {}
+    };
 };
 
 export const getTermsDetail = async (useStplatId: string): Promise<StplatManageVO> => {
-    return client.get<StplatManageVO>(`${BASE_URL}/StplatDetailInqire.do?useStplatId=${useStplatId}`);
+    const res: any = await client.get(`/admin/terms/${useStplatId}`);
+    return res.data;
 };
 
 export const createTerms = async (terms: StplatManageVO): Promise<void> => {
-    return client.post(`${BASE_URL}/StplatCnRegist.do`, terms);
+    return client.post('/admin/terms', terms);
 };
 
 export const updateTerms = async (terms: StplatManageVO): Promise<void> => {
-    return client.post(`${BASE_URL}/StplatCnUpdt.do`, terms);
+    return client.put(`/admin/terms/${terms.useStplatId}`, terms);
 };
 
 export const deleteTerms = async (useStplatId: string): Promise<void> => {
-    return client.post(`${BASE_URL}/StplatCnDelete.do?useStplatId=${useStplatId}`);
+    return client.delete(`/admin/terms/${useStplatId}`);
 };

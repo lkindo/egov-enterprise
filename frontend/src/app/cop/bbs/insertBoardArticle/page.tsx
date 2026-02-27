@@ -54,7 +54,7 @@ const InsertBBSContent = () => {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit border border-primary/5 shadow-sm">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1.5 transition-colors">
-                    <Home className="w-4 h-4" /> Home
+                    <Home className="w-4 h-4" /> 홈
                 </Link>
                 <ChevronRight className="w-4 h-4 opacity-30" />
                 <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</Link>

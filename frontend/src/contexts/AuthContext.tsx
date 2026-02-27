@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             setUser(null);
             localStorage.removeItem('accessToken');
+            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         } finally {
             setLoading(false);
         }
@@ -72,6 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (data && data.accessToken) {
                 localStorage.setItem('accessToken', data.accessToken);
+                // 서버 사이드 컴포넌트(SSR) 접근을 위해 쿠키에도 저장
+                document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+                
                 // 약간의 지연을 주어 인터셉터 반영 보장
                 await new Promise(resolve => setTimeout(resolve, 50));
                 await checkAuth();
@@ -91,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await axios.post('/auth/logout');
             setUser(null);
             localStorage.removeItem('accessToken');
+            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         } catch (error) {
             console.error('Logout failed', error);
         }

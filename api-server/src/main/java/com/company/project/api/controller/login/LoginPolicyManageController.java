@@ -12,7 +12,6 @@ import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -28,7 +27,7 @@ import java.util.Map;
  * 로그인 정책 관리를 위한 컨트롤러 클래스
  */
 @Slf4j
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class LoginPolicyManageController {
 
@@ -42,12 +41,19 @@ public class LoginPolicyManageController {
      * 로그인 정책 목록을 조회한다 (REST API)
      */
     @Operation(summary = "로그인 정책 목록 조회")
-    @GetMapping("/admin/user/login-policies")
-    @ResponseBody
+    @GetMapping("/api/v1/admin/user/login-policies")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getLoginPolicyList(
             @ModelAttribute LoginPolicyVO searchVO) throws Exception {
-        searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-        searchVO.setPageSize(propertiesService.getInt("pageSize"));
+        
+        // Use properties if available, otherwise use defaults to prevent 500 errors
+        try {
+            searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
+            searchVO.setPageSize(propertiesService.getInt("pageSize"));
+        } catch (Exception e) {
+            log.warn("Failed to load pageUnit/pageSize from properties, using defaults");
+            searchVO.setPageUnit(10);
+            searchVO.setPageSize(10);
+        }
 
         PaginationInfo paginationInfo = new PaginationInfo();
         paginationInfo.setCurrentPageNo(searchVO.getPageIndex());
@@ -75,8 +81,7 @@ public class LoginPolicyManageController {
      * 로그인 정책 상세 정보를 조회한다 (REST API)
      */
     @Operation(summary = "로그인 정책 상세 조회")
-    @GetMapping("/admin/user/login-policies/{emplyrId}")
-    @ResponseBody
+    @GetMapping("/api/v1/admin/user/login-policies/{emplyrId}")
     public ResponseEntity<ApiResponse<LoginPolicyDto>> getLoginPolicy(
             @PathVariable("emplyrId") String emplyrId) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(loginPolicyManageService.selectLoginPolicy(emplyrId)));
@@ -86,8 +91,7 @@ public class LoginPolicyManageController {
      * 로그인 정책을 저장 또는 수정한다 (REST API)
      */
     @Operation(summary = "로그인 정책 저장")
-    @PutMapping("/admin/user/login-policies/{emplyrId}")
-    @ResponseBody
+    @PutMapping("/api/v1/admin/user/login-policies/{emplyrId}")
     public ResponseEntity<ApiResponse<Void>> saveLoginPolicy(
             @PathVariable("emplyrId") String emplyrId,
             @RequestBody LoginPolicyDto loginPolicy) throws Exception {
