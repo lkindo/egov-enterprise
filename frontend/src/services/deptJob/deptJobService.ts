@@ -2,7 +2,7 @@
 import { PaginationResponse } from '@/types/system';
 import { DeptJobVO, DeptJobSearchParams } from '@/types/deptJob';
 
-const BASE_URL = '/cop/smt/djm';
+const BASE_URL = '/smart-toolkit/dept-job';
 
 export const getDeptJobList = async (params: DeptJobSearchParams): Promise<PaginationResponse<DeptJobVO>> =>
     client.get<PaginationResponse<DeptJobVO>>(`${BASE_URL}/selectDeptJobList.do`, { params });

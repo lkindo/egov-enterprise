@@ -12,11 +12,11 @@ export async function saveMenuAction(prevState: any, { mode, data }: { mode: 'cr
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     if (mode === 'create') {
-      await client.post('/admin/menus', data, axiosConfig);
+      await client.post('/admin/system/menus', data, axiosConfig);
     } else {
-      await client.put(`/admin/menus/${data.menuNo}`, data, axiosConfig);
+      await client.put(`/admin/system/menus/${data.menuNo}`, data, axiosConfig);
     }
-    
+
     revalidatePath('/admin/system/menus');
     return { success: true, message: `메뉴가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error: any) {
@@ -31,8 +31,8 @@ export async function updateMenuOrdersAction(prevState: any, menus: MenuInfo[]) 
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.put('/admin/menus/batch-order', menus, axiosConfig);
-    
+    await client.put('/admin/system/menus/batch-order', menus, axiosConfig);
+
     revalidatePath('/admin/system/menus');
     return { success: true, message: '순서가 저장되었습니다.' };
   } catch (error: any) {
@@ -47,8 +47,8 @@ export async function deleteMenuAction(prevState: any, id: number) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/menus/${id}`, axiosConfig);
-    
+    await client.delete(`/admin/system/menus/${id}`, axiosConfig);
+
     revalidatePath('/admin/system/menus');
     return { success: true, message: '메뉴가 삭제되었습니다.' };
   } catch (error: any) {

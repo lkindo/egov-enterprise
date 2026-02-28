@@ -16,8 +16,8 @@ export default function AnniversaryPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = (await anniversaryService.getAnniversaries()) as any;
-        if (res?.success) setItems(res.data || []);
+        const res = await anniversaryService.getAnniversaries();
+        setItems(res?.content || []);
       } catch (error) {
         toast('기념일 정보를 불러오지 못했습니다.', 'error');
       } finally {
@@ -28,7 +28,7 @@ export default function AnniversaryPage() {
   }, [toast]);
 
   const getIcon = (se: string) => {
-    switch(se) {
+    switch (se) {
       case '1': return <Cake className="text-pink-500" size={24} />;
       case '2': return <Heart className="text-red-500" size={24} />;
       case '3': return <Gift className="text-blue-500" size={24} />;
@@ -38,19 +38,19 @@ export default function AnniversaryPage() {
 
   return (
     <div className="space-y-8 pb-20">
-      <PageHeader 
-        title="임직원 경조사 및 기념일" 
+      <PageHeader
+        title="임직원 경조사 및 기념일"
         breadcrumbs={[{ label: '부가서비스' }, { label: '기념일관리' }]}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {loading ? (
-          [1,2,3,4].map(i => <div key={i} className="h-40 bg-muted animate-pulse rounded-2xl" />)
+          [1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-muted animate-pulse rounded-2xl" />)
         ) : items.length === 0 ? (
           <div className="col-span-full py-20 text-center text-muted-foreground italic">이달의 기념일이 없습니다.</div>
         ) : (
           items.map((item) => (
-            <div key={item.annvrsryId} className="bg-card border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center">
+            <div key={item.annId} className="bg-card border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center">
               <div className="p-4 bg-muted/50 rounded-2xl mb-4">
                 {getIcon(item.annvrsrySe)}
               </div>

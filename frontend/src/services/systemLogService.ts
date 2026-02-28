@@ -13,9 +13,8 @@ export interface SystemLog {
 }
 
 export const systemLogService = {
-  getLogs: async (params: { page?: number; size?: number; searchWrd?: string; logType?: string }) => {
+  getLogs: async (params: { page?: number; size?: number; searchWrd?: string; logType?: string }): Promise<any> => {
     const response = await client.get('/admin/system/logs', { params });
     return response;
   }
 };
-

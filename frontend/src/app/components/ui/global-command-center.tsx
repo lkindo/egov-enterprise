@@ -52,11 +52,14 @@ export function GlobalCommandCenter() {
 
   // 1. 단축키 등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {
-    setIsOpen(prev => !prev);
-    if (!isOpen) {
-      setSelectedIndex(0);
-      setSearch('');
-    }
+    setIsOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setSelectedIndex(0);
+        setSearch('');
+      }
+      return next;
+    });
   });
 
   // 2. 초기 메뉴 데이터 로드
@@ -65,44 +68,48 @@ export function GlobalCommandCenter() {
       try {
         const head = await menuService.getHeadMenus();
         if (head && head.length > 0) {
-          const all: CommandItem[] = [];
-          for (const m of head) {
-            all.push({
-              id: `head-${m.menuNo}`,
-              name: m.menuNm,
-              url: m.chkURL || '#',
-              category: '메뉴',
-              icon: <LayoutDashboard size={16} />
-            });
+          const allHead: CommandItem[] = head.map(m => ({
+            id: `cmd-head-${m.menuNo}`,
+            name: m.menuNm,
+            url: m.chkURL || '#',
+            category: '메뉴',
+            icon: <LayoutDashboard size={16} />
+          }));
 
-            // 왼쪽 서브메뉴 로드 (비동기로 가져오지만 초기엔 상위 메뉴 중심)
+          setMenus(allHead);
+
+          // 하위 메뉴 로드
+          for (const m of head) {
             menuService.getLeftMenus(m.menuNo).then(left => {
               if (left && left.length > 0) {
                 const subItems: CommandItem[] = left.map((l: any) => ({
-                  id: `left-${l.menuNo}`,
+                  id: `cmd-left-${m.menuNo}-${l.menuNo}`,
                   name: `${m.menuNm} > ${l.menuNm}`,
                   url: l.chkURL || '#',
                   category: '메뉴',
                   icon: <ArrowRight size={14} />
                 }));
-                setMenus(prev => [...prev, ...subItems]);
+                setMenus(prev => {
+                  const existingIds = new Set(prev.map(i => i.id));
+                  const newItems = subItems.filter(i => !existingIds.has(i.id));
+                  return [...prev, ...newItems];
+                });
               }
             });
           }
-          setMenus(all);
         }
       } catch (e) {
         console.error('Failed to load command menus', e);
       }
     }
     if (isOpen && menus.length === 0) fetchAllMenus();
-  }, [isOpen, menus.length]);
+  }, [isOpen]);
 
   // 3. 고정 액션 정의
   const quickActions: CommandItem[] = [
     { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
     { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/자원 관리' },
-    { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/security/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
+    { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
     { id: 'act-workflow', name: '프로세스 캔버스', url: '/admin/workflow', icon: <GitBranch size={16} />, category: '메뉴', description: '비즈니스 워크플로우 설계 및 모니터링' },
     { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '행정 서식 설계 및 문서 자동화 관리' },
     { id: 'act-create-post', name: '새 게시글 작성', url: '/cop/bbs/insertBoardArticle', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
