@@ -1,76 +1,32 @@
 package com.company.project.service.meeting;
 
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.meeting.MeetingManage;
-import com.company.project.domain.meeting.MeetingManageRepository;
-import com.company.project.service.meeting.dto.MeetingManageDto;
-import lombok.RequiredArgsConstructor;
+import com.company.project.service.meeting.dto.MeetingPlaceDto;
+import com.company.project.service.meeting.dto.MeetingReservationDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+public interface MeetingService {
 
-@Service
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class MeetingService implements EgovMeetingService {
+    Page<MeetingPlaceDto> getMeetingPlaceList(String keyword, Pageable pageable);
 
-    private final MeetingManageRepository meetingManageRepository;
+    MeetingPlaceDto getMeetingPlace(String mtgPlaceId);
 
-    @Override
-    public Page<MeetingManageDto> getMeetingList(String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isEmpty()) {
-            return meetingManageRepository.findAll(Objects.requireNonNull(pageable)).map(MeetingManageDto::from);
-        }
-        return meetingManageRepository.findByMtgNmContaining(keyword, Objects.requireNonNull(pageable))
-                .map(MeetingManageDto::from);
-    }
+    String createMeetingPlace(String userId, MeetingPlaceDto dto);
 
-    @Override
-    public MeetingManageDto getMeeting(String mtgId) {
-        return meetingManageRepository.findById(Objects.requireNonNull(mtgId))
-                .map(MeetingManageDto::from)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-    }
+    void updateMeetingPlace(String mtgPlaceId, String userId, MeetingPlaceDto dto);
 
-    @Override
-    @Transactional
-    public void insertMeeting(MeetingManageDto dto) {
-        String id = "MTG_" + String.format("%013d", System.currentTimeMillis());
-        meetingManageRepository.save(Objects.requireNonNull(MeetingManage.builder()
-                .mtgId(id)
-                .mtgNm(dto.getMtgNm())
-                .mtgMtrCn(dto.getMtgMtrCn())
-                .mtgSn(dto.getMtgSn())
-                .mtgCo(dto.getMtgCo())
-                .mtgDe(dto.getMtgDe())
-                .mtgPlace(dto.getMtgPlace())
-                .mtgBeginTm(dto.getMtgBeginTm())
-                .mtgEndTime(dto.getMtgEndTime())
-                .clsdrMtgAt(dto.getClsdrMtgAt())
-                .mtgResultCn(dto.getMtgResultCn())
-                .mngtDeptId(dto.getMngtDeptId())
-                .mnaerId(dto.getMnaerId())
-                .build()));
-    }
+    void deleteMeetingPlace(String mtgPlaceId);
 
-    @Override
-    @Transactional
-    public void updateMeeting(MeetingManageDto dto) {
-        MeetingManage entity = meetingManageRepository.findById(Objects.requireNonNull(dto.getMtgId()))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getMtgNm(), dto.getMtgMtrCn(), dto.getMtgSn(), dto.getMtgCo(),
-                dto.getMtgDe(), dto.getMtgPlace(), dto.getMtgBeginTm(), dto.getMtgEndTime(),
-                dto.getClsdrMtgAt(), null, null, dto.getMtgResultCn(), null, null,
-                dto.getMngtDeptId(), dto.getMnaerId(), null, null, null, null, null);
-    }
+    Page<MeetingReservationDto> getMeetingReservationList(String keyword, Pageable pageable);
 
-    @Override
-    @Transactional
-    public void deleteMeeting(String mtgId) {
-        meetingManageRepository.deleteById(Objects.requireNonNull(mtgId));
-    }
+    MeetingReservationDto getMeetingReservation(String resveId);
+
+    String reserveMeetingPlace(String userId, MeetingReservationDto dto);
+
+    void updateMeetingReservation(String resveId, String userId, MeetingReservationDto dto);
+
+    void cancelMeetingReservation(String resveId);
+
+    int checkReservationConflict(String mtgPlaceId, String resveDe, String startTime, String endTime,
+            String excludeResveId);
 }

@@ -40,14 +40,28 @@
 ### Phase 2: 도메인 명칭 및 패키지 표준화 (Naming Refactoring)
 *코드 내 약어(Abbreviation)를 제거하고 프론트엔드와 백엔드의 언어를 통일합니다.*
 
-- [x] **백엔드 약축 패키지/클래스명 변경**
+- [x] **백엔드 약축 패키지/클래스명 변경 (주요 도메인)**
     - [x] `vct` → `vacation`
     - [x] `bnr` → `banner`
     - [x] `ans` → `anniversary`
     - [x] `evt` → `event`
     - [x] `rwd` → `reward`
-    - [x] `ctsnn` → `congratulation-condolence`
+    - [ ] `ctsnn` → `congratulation-condolence` (api/service: partially as congratulation, domain: pending)
     - [x] `smt` → `smart-toolkit` (프론트엔드 라우트 이동 및 백엔드 web.api 패키지 재배치 완료)
+- [ ] **백엔드 약축 패키지/클래스명 추가 변경 (나머지 도메인)**
+    - [ ] `adb` → `addressbook` (domain: done, api/service: pending)
+    - [ ] `cmy` → `community` (domain: done, api/service: pending)
+    - [ ] `cmt` → `comment` (domain: done, api/service: pending)
+    - [ ] `noi` → `notification` (domain: done, api/service: pending)
+    - [ ] `hld` → `holiday` (domain: done, api/service: pending)
+    - [ ] `mtg` → `meeting` (domain: done, api/service: pending)
+    - [ ] `umt` → `user-management`
+    - [ ] `pwm` → `password-management`
+    - [ ] `ulm` → `user-log-management`
+    - [ ] `ncm` → `namecard-management`
+    - [ ] `nws` → `news`
+    - [ ] `ntm` → `note` / `note-management`
+    - [ ] `dam` → `digital-asset-management`
 - [ ] **DTO 및 엔티티 필드 주석 보강**
     - [ ] 난해한 레거시 필드명에 JavaDoc 및 `@Comment` 추가
     - [ ] 프론트엔드 인터페이스와 필드명 불일치 사례 조사 및 수정
