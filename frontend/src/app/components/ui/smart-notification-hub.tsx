@@ -131,7 +131,7 @@ export function SmartNotificationHub() {
             <div className="flex flex-col xl:flex-row gap-8">
                 {/* Center: Live Stream & Control */}
                 <div className="flex-1 flex flex-col gap-8">
-                    <div className="p-10 bg-card/60 backdrop-blur-xl border-2 border-primary/5 rounded-[3.5rem] shadow-2xl space-y-8">
+                    <div className="p-10 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-2xl space-y-8">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
                             <div className="flex items-center gap-4">
                                 <div className="p-4 bg-primary/10 rounded-2xl text-primary relative">

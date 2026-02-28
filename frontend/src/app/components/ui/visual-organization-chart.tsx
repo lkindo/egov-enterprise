@@ -202,7 +202,7 @@ export function VisualOrganizationChart() {
             {/* Center & Right: Hierarchy & Detail View */}
             <div className="flex-1 flex flex-col gap-6 overflow-hidden">
                 {/* Tree Canvas */}
-                <div className="flex-1 min-h-0 bg-card/60 backdrop-blur-xl border-2 border-primary/5 rounded-[3.5rem] p-12 shadow-2xl overflow-auto custom-scrollbar relative">
+                <div className="flex-1 min-h-0 bg-card border-2 border-primary/5 rounded-[3.5rem] p-12 shadow-2xl overflow-auto custom-scrollbar relative">
                     <div className="inline-flex flex-col gap-6">
                         {renderNode(MOCK_ORG_DATA)}
                     </div>
@@ -215,7 +215,7 @@ export function VisualOrganizationChart() {
 
                 {/* Selection Detail Banner */}
                 {selectedNode && (
-                    <div className="bg-card/80 backdrop-blur-2xl border-2 border-primary/10 rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-8 duration-500 overflow-hidden relative">
+                    <div className="bg-card border-2 border-primary/10 rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-8 duration-500 overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-8 opacity-5">
                             <Plus size={100} className="text-primary rotate-45" />
                         </div>

@@ -110,7 +110,7 @@ export function IntelligenceMeetingPlanner() {
                             onClick={() => setSelectedRoom(room.id)}
                             className={cn(
                                 "p-6 rounded-[2rem] border-2 transition-all cursor-pointer relative group/room",
-                                selectedRoom === room.id ? "bg-card border-primary ring-4 ring-primary/5 shadow-2xl" : "bg-muted/10 border-transparent hover:bg-card hover:border-primary/20"
+                                selectedRoom === room.id ? "bg-card border-primary ring-4 ring-primary/5 shadow-2xl" : "bg-white dark:bg-slate-800 border-transparent hover:bg-card hover:border-primary/20"
                             )}
                         >
                             <div className="flex justify-between items-start mb-4">
@@ -142,7 +142,7 @@ export function IntelligenceMeetingPlanner() {
             </div>
 
             {/* Interactive Timeline Area */}
-            <div className="flex-1 min-h-0 bg-card/60 backdrop-blur-xl border-2 border-primary/5 rounded-[3rem] p-10 shadow-2xl overflow-hidden flex flex-col gap-6">
+            <div className="flex-1 min-h-0 bg-card border-2 border-primary/5 rounded-[3rem] p-10 shadow-2xl overflow-hidden flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-2xl text-primary">
@@ -174,7 +174,7 @@ export function IntelligenceMeetingPlanner() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="flex-1 min-w-[800px] relative pt-16 bg-muted/20 border-l border-primary/10 rounded-tl-[2rem]">
+                    <div className="flex-1 min-w-[800px] relative pt-16 bg-white dark:bg-slate-900 border-l border-primary/10 rounded-tl-[2rem]">
                         {/* Time Vertical Lines */}
                         <div className="absolute inset-0 top-16 grid grid-rows-[repeat(11,minmax(0,1fr))] pointer-events-none">
                             {HOURS.map(hour => (
@@ -197,7 +197,7 @@ export function IntelligenceMeetingPlanner() {
                                     <div
                                         key={res.id}
                                         style={{ top, height }}
-                                        className="absolute left-8 right-8 bg-primary/10 border-2 border-primary/20 rounded-[1.5rem] p-4 group transition-all hover:bg-primary/15 hover:border-primary/40 hover:scale-[1.01] hover:shadow-xl shadow-primary/10 cursor-pointer overflow-hidden"
+                                        className="absolute left-8 right-8 bg-primary/20 border-2 border-primary/30 rounded-[1.5rem] p-4 group transition-all hover:bg-primary/25 hover:border-primary/40 hover:scale-[1.01] hover:shadow-xl shadow-primary/10 cursor-pointer overflow-hidden"
                                     >
                                         <div className="flex items-center justify-between mb-1">
                                             <h4 className="text-xs font-black text-primary uppercase tracking-tight">{res.title}</h4>

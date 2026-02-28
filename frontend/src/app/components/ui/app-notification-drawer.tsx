@@ -30,7 +30,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
 
   return createPortal(
     <>
-      {isOpen && <div className="fixed inset-0 z-[9998] bg-black/60" onClick={onClose} />}
+      {isOpen && <div className="fixed inset-0 z-[9998] bg-[#020617]/90" onClick={onClose} />}
       <div className={cn(
         "fixed right-0 top-0 z-[9999] h-full w-full max-w-sm border-l bg-white dark:bg-slate-950 shadow-[-20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-out",
         isOpen ? "translate-x-0" : "translate-x-full"

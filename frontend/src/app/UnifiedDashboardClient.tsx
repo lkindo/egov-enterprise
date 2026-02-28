@@ -134,7 +134,7 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/cop/bbs')}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-white/10 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-white/20 transition-all"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             <Plus size={20} /> 새 포스트
           </motion.button>
@@ -188,7 +188,7 @@ export default function UnifiedDashboardClient({
           {/* Main Chart Card */}
           <motion.div
             variants={itemVariants}
-            className="p-10 md:p-14 border-2 border-primary/5 rounded-[4rem] bg-card/50 backdrop-blur-xl shadow-2xl shadow-primary/5 relative overflow-hidden group"
+            className="p-10 md:p-14 border-2 border-primary/5 rounded-[4rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
               <BarChart3 size={200} />
@@ -336,9 +336,9 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
         hidden: { y: 20, opacity: 0 },
         visible: { y: 0, opacity: 1 }
       }}
-      className="border border-primary/5 rounded-[4rem] bg-card/60 backdrop-blur-xl shadow-2xl shadow-black/5 flex flex-col h-[480px] group overflow-hidden"
+      className="border border-primary/5 rounded-[4rem] bg-card shadow-2xl shadow-black/5 flex flex-col h-[480px] group overflow-hidden"
     >
-      <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card/40">
+      <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
         <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
             color === 'blue' ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
