@@ -45,6 +45,14 @@ const DashboardPostChart = dynamic(
   }
 );
 
+// Memoized Icons to prevent unnecessary re-renders of React.memo child components
+const ICON_CALENDAR = <Calendar size={24} />;
+const ICON_ZAP = <Zap size={24} />;
+const ICON_BELL = <Bell size={24} />;
+const ICON_SHIELD = <ShieldCheck size={24} />;
+const ICON_BELL_LIST = <Bell size={20} />;
+const ICON_CHECK_LIST = <CheckCircle2 size={20} />;
+
 interface UnifiedDashboardClientProps {
   initialLeave: any;
   initialNotiList: any[];
@@ -152,7 +160,7 @@ export default function UnifiedDashboardClient({
           title="잔여 연차"
           value={`${myLeave?.remndrYrycCo || 0}d`}
           description={`Total 15 days allotted for ${new Date().getFullYear()}`}
-          icon={<Calendar size={24} />}
+          icon={ICON_CALENDAR}
           trend={12}
           color="blue"
         />
@@ -160,7 +168,7 @@ export default function UnifiedDashboardClient({
           title="내 업무 현황"
           value="12"
           description="3 high-priority tasks pending"
-          icon={<Zap size={24} />}
+          icon={ICON_ZAP}
           trend={-5}
           color="orange"
         />
@@ -168,7 +176,7 @@ export default function UnifiedDashboardClient({
           title="새 알림"
           value="05"
           description="Updates from collaboration teams"
-          icon={<Bell size={24} />}
+          icon={ICON_BELL}
           trend={2}
           color="purple"
         />
@@ -176,7 +184,7 @@ export default function UnifiedDashboardClient({
           title="보안 지수"
           value="Safe"
           description="Encryption active & identity verified"
-          icon={<ShieldCheck size={24} />}
+          icon={ICON_SHIELD}
           trend={0}
           color="emerald"
         />
@@ -214,14 +222,14 @@ export default function UnifiedDashboardClient({
             <DashboardListCard
               title="Recent Notices"
               items={notiList}
-              icon={<Bell size={20} />}
+              icon={ICON_BELL_LIST}
               moreHref="/cop/bbs"
               color="blue"
             />
             <DashboardListCard
               title="Assigned Tasks"
               items={taskList}
-              icon={<CheckCircle2 size={20} />}
+              icon={ICON_CHECK_LIST}
               moreHref="/cop/bbs"
               color="emerald"
             />
@@ -265,7 +273,7 @@ export default function UnifiedDashboardClient({
   );
 }
 
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
+const SummaryCard = React.memo(function SummaryCard({ title, value, description, icon, trend, color }: any) {
   const colorMap: any = {
     blue: "bg-blue-600/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-xl shadow-blue-500/5",
     orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
@@ -322,9 +330,9 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       </div>
     </motion.div>
   );
-}
+});
 
-function DashboardListCard({ title, items, icon, moreHref, color }: any) {
+const DashboardListCard = React.memo(function DashboardListCard({ title, items, icon, moreHref, color }: any) {
   const itemColorMap: any = {
     blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50 dark:group-hover/item:bg-blue-500/5",
     emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5"
@@ -386,7 +394,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
       </div>
     </motion.div>
   );
-}
+});
 
 function DashboardSkeleton() {
   return (
