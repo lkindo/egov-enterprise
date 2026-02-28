@@ -7,12 +7,15 @@ interface LayoutContextType {
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  activeMenuNo: number;
+  setActiveMenuNo: (no: number) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activeMenuNo, setActiveMenuNo] = useState<number>(0);
   const pathname = usePathname();
 
   // 페이지 이동 시 사이드바 닫기 (모바일)
@@ -23,7 +26,13 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
   return (
-    <LayoutContext.Provider value={{ isSidebarOpen, setSidebarOpen, toggleSidebar }}>
+    <LayoutContext.Provider value={{
+      isSidebarOpen,
+      setSidebarOpen,
+      toggleSidebar,
+      activeMenuNo,
+      setActiveMenuNo
+    }}>
       {children}
     </LayoutContext.Provider>
   );

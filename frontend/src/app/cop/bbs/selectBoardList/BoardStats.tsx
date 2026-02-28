@@ -49,7 +49,7 @@ export function BoardStats() {
         </CardHeader>
         <CardContent className="px-6 pb-6">
           <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
@@ -78,7 +78,7 @@ export function BoardStats() {
         </CardHeader>
         <CardContent className="px-6 pb-6 flex flex-col items-center">
           <div className="h-[180px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={authorData}

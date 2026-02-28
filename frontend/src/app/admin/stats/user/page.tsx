@@ -82,7 +82,7 @@ export default function UserStatsPage() {
                                 통계 데이터가 없습니다.
                             </div>
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <BarChart
                                     data={stats}
                                     margin={{

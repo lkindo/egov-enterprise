@@ -5,125 +5,91 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import axios from '@/lib/api/client';
 
+import { useLayout } from '@/contexts/LayoutContext';
+
 interface MenuItem {
     menuNo: number;
     menuNm: string;
     chkURL: string;
+    children?: MenuItem[];
 }
 
-interface MappedMenuItem extends MenuItem {
-    mappedUrl: string;
-}
-
-// Helper to determine URL
-const getMenuUrl = (item: MenuItem) => {
-    return item.chkURL || '#';
-};
-
-interface SidebarProps {
-    initialMenus?: MappedMenuItem[];
-}
-
-const Sidebar = ({ initialMenus = [] }: SidebarProps) => {
+const Sidebar = () => {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const [leftMenus, setLeftMenus] = useState<MappedMenuItem[]>(initialMenus);
-    const [parentMenuName, setParentMenuName] = useState('');
+    const { activeMenuNo } = useLayout();
+    const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
+    const [parentMenu, setParentMenu] = useState<MenuItem | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Optimize: Memoize menuNo to prevent redundant API calls on route changes within same section
-    const menuNo = useMemo(() => {
-        if (pathname.includes('/survey')) return 3000000;
-        if (pathname.includes('/cop')) return 2000000;
-        return 0;
-    }, [pathname]);
-
     const fetchLeftMenus = useCallback(async () => {
-        // Update parent menu name based on active menu number
-        if (menuNo === 3000000) {
-            setParentMenuName('협업');
-        } else if (menuNo === 2000000) {
-            setParentMenuName('알림');
-        } else {
-            setParentMenuName('');
-        }
-
-        // If we have initialMenus and they matching the current menuNo logic, but wait...
-        // initialMenus in RootLayout is based on GNB. 
-        // Let's actually check if initialMenus is passed.
-        if (initialMenus.length > 0 && leftMenus === initialMenus) {
-            // Already have menus, but maybe need to update name
+        if (!activeMenuNo) {
+            setLeftMenus([]);
             return;
         }
 
-        if (menuNo > 0) {
-            try {
-                setError(null);
-                const response = (await axios.get(`/menu/left?menuNo=${menuNo}`)) as any;
-                // axios (client.ts) already extracts apiBody.data and handles success true/false
-                const list = response?.list || [];
-                const mappedList = list.map((item: MenuItem) => ({
-                    ...item,
-                    mappedUrl: getMenuUrl(item)
-                }));
-                setLeftMenus(mappedList);
-            } catch (err: any) {
-                console.error('Failed to fetch left menus:', err);
-                setError(err.message || 'Failed to fetch menus');
-                setLeftMenus([]);
-            }
-        } else {
-            setLeftMenus([]);
+        try {
+            setError(null);
+            // Fetch the root category itself to get its name
+            const headRes = (await axios.get('/menu/head')) as any;
+            const root = headRes?.list?.find((m: any) => m.menuNo === activeMenuNo);
+            if (root) setParentMenu(root);
+
+            // Fetch children (mid-categories)
+            const response = (await axios.get(`/menu/left?menuNo=${activeMenuNo}`)) as any;
+            const list = response?.list || [];
+            setLeftMenus(list);
+        } catch (err: any) {
+            console.error('Failed to fetch left menus:', err);
+            setError(err.message || 'Failed to fetch menus');
         }
-    }, [menuNo, initialMenus]);
+    }, [activeMenuNo]);
 
     useEffect(() => {
         fetchLeftMenus();
     }, [fetchLeftMenus]);
 
-    if (pathname === '/' || pathname === '/login') {
+    if (pathname === '/' || pathname === '/login' || !activeMenuNo) {
         return null;
     }
 
-    const isActive = useCallback((menu: MappedMenuItem) => {
-        const mapped = menu.mappedUrl;
-        if (mapped === pathname) return true;
-
-        // Handle board detail active state when list is selected
-        if (pathname.includes('selectBoardArticle') && mapped.includes('selectBoardList')) {
-            const pathBbsId = searchParams.get('bbsId');
-            const menuBbsId = new URLSearchParams(mapped.split('?')[1]).get('bbsId');
-            return pathBbsId === menuBbsId;
-        }
-
-        return false;
-    }, [pathname, searchParams]);
-
-    // Don't render sidebar if no menus and not an error state
-    if (leftMenus.length === 0 && !error) {
-        return null;
-    }
+    const isActive = (url: string) => {
+        if (!url || url === '#') return false;
+        return pathname.startsWith(url);
+    };
 
     return (
         <nav className="nav" aria-label="서브 메뉴">
             <div className="inner">
-                <h2>{parentMenuName}</h2>
+                {parentMenu && <h2 className="text-xl font-bold mb-6">{parentMenu.menuNm}</h2>}
+
                 {error && (
                     <div className="text-red-500 text-sm p-2">{error}</div>
                 )}
-                <ul className="menu_list">
-                    {leftMenus.map((menu) => (
-                        <li key={menu.menuNo}>
-                            <Link
-                                href={menu.mappedUrl}
-                                className={isActive(menu) ? 'on' : ''}
-                                aria-current={isActive(menu) ? 'page' : undefined}
-                            >
-                                {menu.menuNm}
-                            </Link>
-                        </li>
+
+                <div className="space-y-4">
+                    {leftMenus.map((group) => (
+                        <div key={group.menuNo} className="menu_group">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-2 px-2 uppercase tracking-wider">
+                                {group.menuNm}
+                            </h3>
+                            <ul className="space-y-1">
+                                {group.children?.map((item) => (
+                                    <li key={item.menuNo}>
+                                        <Link
+                                            href={item.chkURL || '#'}
+                                            className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.chkURL)
+                                                    ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
+                                                    : 'text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                        >
+                                            {item.menuNm}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     ))}
-                </ul>
+                </div>
             </div>
         </nav>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -12,7 +12,14 @@ import {
   ChevronDown,
   Info,
   Menu,
-  X
+  X,
+  LayoutGrid,
+  Briefcase,
+  Library,
+  UserCheck,
+  Cpu,
+  BarChart3,
+  CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLayout } from '@/contexts/LayoutContext';
@@ -23,16 +30,54 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { menuService } from '@/services/menuService';
+import { usePathname } from 'next/navigation';
+
+const DOMAIN_ICON_MAP: Record<number, any> = {
+  10: LayoutGrid,    // 워크스페이스
+  20: Briefcase,     // 운영 지원
+  30: Library,       // 지식 자산
+  40: UserCheck,     // 계정 및 권한
+  50: Cpu,           // 시스템 관리
+  60: BarChart3,     // 인사이트
+};
 
 export function Header() {
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
-  const { isSidebarOpen, toggleSidebar } = useLayout();
+  const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [menus, setMenus] = useState<any[]>([]);
+
+  useEffect(() => {
+    menuService.getHeadMenus().then(res => setMenus(res || []));
+  }, []);
+
+  // Sync activeMenuNo with pathname
+  useEffect(() => {
+    if (menus.length === 0) return;
+
+    const findActive = async () => {
+      for (const m of menus) {
+        const children = await menuService.getLeftMenus(m.menuNo);
+        const hasMatch = children.some((c: any) => {
+          if (c.modernRoute && pathname.startsWith(c.modernRoute)) return true;
+          if (c.children?.some((cc: any) => cc.modernRoute && pathname.startsWith(cc.modernRoute))) return true;
+          return false;
+        });
+        if (hasMatch) {
+          setActiveMenuNo(m.menuNo);
+          break;
+        }
+      }
+    };
+    findActive();
+  }, [pathname, menus, setActiveMenuNo]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
         <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar}>
@@ -49,10 +94,34 @@ export function Header() {
           </div>
         </Link>
 
-        <div className="flex-1" />
+        <div className="flex-1 flex justify-center">
+          <nav className="hidden xl:flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+            {menus.map((menu, index) => {
+              const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
+              const isActive = activeMenuNo === menu.menuNo;
+
+              return (
+                <Button
+                  key={menu.menuNo || `head-${index}`}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "px-4 h-9 font-bold text-xs transition-all rounded-lg gap-2",
+                    isActive
+                      ? "bg-white dark:bg-slate-800 text-primary shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50 scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-slate-800/50"
+                  )}
+                  onClick={() => setActiveMenuNo(menu.menuNo)}
+                >
+                  <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-60")} />
+                  {menu.menuNm}
+                </Button>
+              );
+            })}
+          </nav>
+        </div>
 
         <div className="flex items-center gap-1.5 md:gap-3">
-          {/* Help Link - asChild 대신 클래스 직접 적용 */}
           <Link
             href="/help"
             title="메뉴구성 설명"

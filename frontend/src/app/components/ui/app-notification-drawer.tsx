@@ -30,7 +30,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
 
   return createPortal(
     <>
-      {isOpen && <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm" onClick={onClose} />}
+      {isOpen && <div className="fixed inset-0 z-[9998] bg-black/60" onClick={onClose} />}
       <div className={cn(
         "fixed right-0 top-0 z-[9999] h-full w-full max-w-sm border-l bg-white dark:bg-slate-950 shadow-[-20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-out",
         isOpen ? "translate-x-0" : "translate-x-full"
@@ -59,7 +59,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                   className={cn(
                     "group p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer",
                     notif.isRead
-                      ? "bg-muted/40 border-transparent opacity-80"
+                      ? "bg-muted border-transparent opacity-80"
                       : "bg-card border-primary/20 shadow-sm ring-1 ring-primary/5"
                   )}
                 >
