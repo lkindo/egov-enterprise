@@ -13,13 +13,13 @@ interface StandardModalProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
-export function StandardModal({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
+export function StandardModal({
+  isOpen,
+  onClose,
+  title,
+  children,
   footer,
-  maxWidth = 'md' 
+  maxWidth = 'md'
 }: StandardModalProps) {
   if (!isOpen) return null;
 
@@ -32,8 +32,8 @@ export function StandardModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#020617]/95 animate-in fade-in duration-200">
+      <div
         className={cn(
           "bg-card border rounded-2xl shadow-2xl w-full mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200",
           maxWidthClasses[maxWidth]
@@ -42,8 +42,8 @@ export function StandardModal({
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b px-6 shrink-0">
           <h2 className="text-lg font-bold text-foreground">{title}</h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-accent rounded-full transition-colors text-muted-foreground hover:text-foreground"
           >
             <X size={20} />
@@ -57,7 +57,7 @@ export function StandardModal({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3 shrink-0">
+          <div className="px-6 py-4 border-t bg-muted flex justify-end gap-3 shrink-0">
             {footer}
           </div>
         )}

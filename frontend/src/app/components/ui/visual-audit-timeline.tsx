@@ -68,7 +68,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
     };
 
     return (
-        <div className={cn("flex flex-col gap-8 bg-card/60 backdrop-blur-xl border-2 border-primary/5 rounded-[3rem] p-10 shadow-2xl", className)}>
+        <div className={cn("flex flex-col gap-8 bg-card border-2 border-primary/5 rounded-[3rem] p-10 shadow-2xl", className)}>
             {/* Header Intelligence */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
                 <div className="flex items-center gap-5">
@@ -127,7 +127,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
                                 "group cursor-pointer rounded-[2rem] border-2 transition-all overflow-hidden",
                                 expandedLog === log.id
                                     ? "bg-card border-primary/20 shadow-xl"
-                                    : "bg-muted/20 border-transparent hover:bg-muted/40"
+                                    : "bg-white dark:bg-slate-800 border-transparent hover:bg-muted/40"
                             )}
                         >
                             <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -161,7 +161,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
                             {/* Expanded Detail: Side-by-Side Diff */}
                             {expandedLog === log.id && log.changes && (
-                                <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-50/50 space-y-6 animate-in slide-in-from-top-4 duration-500">
+                                <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-50 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
                                     <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
                                         <Cpu size={12} /> Neural Change Detection
                                     </h4>

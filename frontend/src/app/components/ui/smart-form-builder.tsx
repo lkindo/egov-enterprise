@@ -87,7 +87,7 @@ export function SmartFormBuilder() {
     return (
         <div className="flex flex-col gap-8 h-[calc(100vh-12rem)] animate-in fade-in duration-700">
             {/* Top Controller */}
-            <div className="flex items-center justify-between bg-card/60 backdrop-blur-xl border-2 border-primary/5 p-6 rounded-[2.5rem] shadow-xl">
+            <div className="flex items-center justify-between bg-white dark:bg-slate-900 border-2 border-primary/5 p-6 rounded-[2.5rem] shadow-xl">
                 <div className="flex items-center gap-5">
                     <div className="p-3 bg-primary/10 rounded-2xl text-primary animate-pulse">
                         <Sparkles size={24} />
@@ -129,7 +129,7 @@ export function SmartFormBuilder() {
 
             <div className="flex gap-8 flex-1 min-h-0">
                 {/* Left Toolbar: Elements */}
-                <div className="w-72 bg-card/40 backdrop-blur-md border border-primary/5 rounded-[3rem] p-8 flex flex-col gap-8">
+                <div className="w-72 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3rem] p-8 flex flex-col gap-8">
                     <div className="space-y-4">
                         <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-2 flex items-center gap-2">
                             <Plus size={12} /> UI Components
@@ -167,7 +167,7 @@ export function SmartFormBuilder() {
                 </div>
 
                 {/* Center: Canvas */}
-                <div className="flex-1 flex flex-col items-center overflow-y-auto custom-scrollbar bg-slate-100/30 rounded-[3rem] border-2 border-dashed border-primary/10 p-10">
+                <div className="flex-1 flex flex-col items-center overflow-y-auto custom-scrollbar bg-slate-100 dark:bg-slate-800 rounded-[3rem] border-2 border-dashed border-primary/10 p-10">
                     <div className={cn(
                         "bg-background shadow-2xl transition-all duration-700 overflow-hidden relative",
                         previewMode === 'desktop' ? "w-full max-w-3xl rounded-[3rem] p-12" : "w-[375px] rounded-[3.5rem] border-[8px] border-slate-900 p-8 pt-16 min-h-[667px]"
@@ -214,7 +214,7 @@ export function SmartFormBuilder() {
                 </div>
 
                 {/* Right Panel: Properties */}
-                <div className="w-80 bg-card/60 backdrop-blur-xl border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
+                <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Settings size={18} /></div>
                         <h3 className="text-sm font-black uppercase tracking-widest">Properties</h3>

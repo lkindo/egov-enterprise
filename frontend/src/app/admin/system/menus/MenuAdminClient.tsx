@@ -247,7 +247,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         <CheckCircle2 size={180} className="absolute right-[-40px] top-[-40px] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000" />
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-[4rem] p-4 shadow-2xl border border-slate-100 dark:border-white/5 ring-1 ring-slate-50 dark:ring-white/5 relative bg-card/60 backdrop-blur-3xl">
+      <div className="bg-white dark:bg-slate-900 rounded-[4rem] p-4 shadow-2xl border border-slate-100 dark:border-white/5 ring-1 ring-slate-50 dark:ring-white/5 relative bg-card">
         <ReorderableList
           items={menus}
           onReorder={handleReorder}

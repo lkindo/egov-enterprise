@@ -34,7 +34,7 @@ export function NotificationSender() {
     };
 
     return (
-        <div className="bg-card/40 backdrop-blur-2xl border-2 border-primary/10 rounded-[4rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative overflow-hidden group/sender">
+        <div className="bg-card border-2 border-primary/10 rounded-[4rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative overflow-hidden group/sender">
             {/* Decorative Grid Background */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_70%,transparent_100%)]" />
 
@@ -83,7 +83,7 @@ export function NotificationSender() {
 
                     <div className="space-y-4">
                         <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-2">Audience Segmentation</label>
-                        <div className="p-6 rounded-[2.5rem] bg-muted/20 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
+                        <div className="p-6 rounded-[2.5rem] bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
                                     <Users className="text-muted-foreground" size={20} />
@@ -157,7 +157,7 @@ export function NotificationSender() {
                     {/* Preview Banner */}
                     <div className="p-6 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between shadow-xl">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                                 <Zap size={18} className="text-yellow-400" />
                             </div>
                             <div>

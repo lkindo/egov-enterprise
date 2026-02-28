@@ -64,9 +64,9 @@ export function GlobalCommandCenter() {
     async function fetchAllMenus() {
       try {
         const head = await menuService.getHeadMenus();
-        if (head.success) {
+        if (head && head.length > 0) {
           const all: CommandItem[] = [];
-          for (const m of head.list) {
+          for (const m of head) {
             all.push({
               id: `head-${m.menuNo}`,
               name: m.menuNm,
@@ -77,8 +77,8 @@ export function GlobalCommandCenter() {
 
             // 왼쪽 서브메뉴 로드 (비동기로 가져오지만 초기엔 상위 메뉴 중심)
             menuService.getLeftMenus(m.menuNo).then(left => {
-              if (left.success) {
-                const subItems: CommandItem[] = left.list.map((l: any) => ({
+              if (left && left.length > 0) {
+                const subItems: CommandItem[] = left.map((l: any) => ({
                   id: `left-${l.menuNo}`,
                   name: `${m.menuNm} > ${l.menuNm}`,
                   url: l.chkURL || '#',
@@ -176,12 +176,12 @@ export function GlobalCommandCenter() {
   return (
     <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-[12vh] px-4 md:px-6">
       <div
-        className="fixed inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300"
+        className="fixed inset-0 bg-[#020617] animate-in fade-in duration-300"
         onClick={() => setIsOpen(false)}
       />
 
       <div
-        className="relative w-full max-w-3xl bg-background/80 backdrop-blur-2xl border-2 border-primary/20 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
+        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
         {/* Search Header */}
@@ -282,7 +282,7 @@ export function GlobalCommandCenter() {
         </div>
 
         {/* Intelligence Footer */}
-        <div className="bg-muted/30 px-10 py-6 border-t border-primary/10 flex items-center justify-between">
+        <div className="bg-muted px-10 py-6 border-t border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
               <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">↑↓</kbd>

@@ -95,7 +95,7 @@ export function Header() {
         </Link>
 
         <div className="flex-1 flex justify-center">
-          <nav className="hidden xl:flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+          <nav className="hidden xl:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;

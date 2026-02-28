@@ -45,7 +45,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
       {isOpen && options && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#020617]/90 animate-in fade-in duration-200">
           <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
               <div className={cn(
@@ -59,7 +59,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{options.message}</p>
               </div>
             </div>
-            
+
             <div className="mt-8 flex justify-end gap-3">
               <button
                 onClick={handleCancel}

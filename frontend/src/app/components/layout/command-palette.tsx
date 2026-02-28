@@ -69,8 +69,8 @@ export function CommandPalette() {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/60 animate-in fade-in duration-300">
-            <div className="w-full max-w-2xl bg-card border shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/80 animate-in fade-in duration-300">
+            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Search Input Area */}
                 <div className="flex items-center p-6 border-b gap-4">
                     <Search className="text-muted-foreground animate-pulse" size={20} />
