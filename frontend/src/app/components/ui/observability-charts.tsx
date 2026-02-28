@@ -42,7 +42,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
                 <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
             </div>
             <div className="w-full h-[180px] relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -93,7 +93,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
                 <span className="text-xs font-black text-foreground">{data[data.length - 1]?.value}%</span>
             </div>
             <div className="h-12 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <LineChart data={data}>
                         <Line
                             type="monotone"
@@ -125,7 +125,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
         <div className="p-8 border rounded-[2.5rem] bg-card shadow-lg flex flex-col items-center">
             <h3 className="text-sm font-black text-foreground uppercase tracking-[0.2em] mb-8">{title}</h3>
             <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
                         <PolarGrid stroke="var(--muted-foreground)" strokeOpacity={0.2} />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700 }} />

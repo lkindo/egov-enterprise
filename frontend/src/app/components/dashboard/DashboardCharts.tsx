@@ -27,7 +27,7 @@ const visitorData = [
 export function DashboardVisitorChart() {
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <AreaChart
           data={visitorData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -71,7 +71,7 @@ export function DashboardVisitorChart() {
 export function DashboardPostChart() {
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <BarChart data={visitorData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
           <XAxis

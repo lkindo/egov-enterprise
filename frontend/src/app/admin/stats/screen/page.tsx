@@ -21,7 +21,7 @@ export default function ScreenStatsPage() {
         queryFn: () => statsService.getScrinStats(filter),
     });
 
-    const stats = data?.list || [];
+    const stats = (data as any)?.scrinStats || (data as any)?.list || [];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,7 +67,7 @@ export default function ScreenStatsPage() {
                                 통계 데이터가 없습니다.
                             </div>
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <BarChart
                                     data={stats}
                                     layout="vertical"

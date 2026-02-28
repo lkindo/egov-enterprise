@@ -56,23 +56,26 @@ axiosInstance.interceptors.response.use(
                 const res = await axios.post('/api/v1/auth/reissue', {}, { withCredentials: true });
                 const accessToken = res.data?.data?.accessToken || res.data?.accessToken;
                 originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-                
+
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('accessToken', accessToken);
                 }
-                
+
                 isRetrying = false;
                 return axiosInstance(originalRequest);
             } catch (reissueError) {
                 isRetrying = false;
-                
+
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('accessToken');
+                    // 쿠키 명시적 삭제 (경로와 도메인 일치시켜야 함)
+                    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
                     if (!window.location.pathname.includes('/login')) {
                         window.location.href = '/login?expired=true';
                     }
                 }
-                
+
                 return Promise.reject(reissueError);
             }
         }

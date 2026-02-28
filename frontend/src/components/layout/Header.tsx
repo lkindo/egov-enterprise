@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from '@/lib/api/client';
+import { useLayout } from '@/contexts/LayoutContext';
+import { usePathname } from 'next/navigation';
 
 interface MenuItem {
     menuNo: number;
@@ -14,6 +16,8 @@ interface MenuItem {
 
 const Header = () => {
     const { user, logout, loading } = useAuth();
+    const { activeMenuNo, setActiveMenuNo } = useLayout();
+    const pathname = usePathname();
     const [menus, setMenus] = useState<MenuItem[]>([]);
     const [menuError, setMenuError] = useState<string | null>(null);
 
@@ -21,7 +25,6 @@ const Header = () => {
         try {
             setMenuError(null);
             const response = (await axios.get('/menu/head')) as any;
-            // axios (client.ts) already extracts apiBody.data and handles success true/false
             const list = response?.list || [];
             setMenus(list);
         } catch (err: any) {
@@ -35,6 +38,28 @@ const Header = () => {
         fetchMenus();
     }, [fetchMenus]);
 
+    // Auto-detect active domain based on children's URLs
+    useEffect(() => {
+        const findActiveDomain = (menuList: MenuItem[]): number => {
+            for (const menu of menuList) {
+                // Check if current pathname starts with any child URL (excluding # and /)
+                const hasMatch = (item: MenuItem): boolean => {
+                    if (item.chkURL && item.chkURL !== '#' && item.chkURL !== '/') {
+                        if (pathname.startsWith(item.chkURL)) return true;
+                    }
+                    return item.children?.some(hasMatch) || false;
+                };
+                if (hasMatch(menu)) return menu.menuNo;
+            }
+            return 0;
+        };
+
+        const detectedNo = findActiveDomain(menus);
+        if (detectedNo !== 0 && detectedNo !== activeMenuNo) {
+            setActiveMenuNo(detectedNo);
+        }
+    }, [menus, pathname, activeMenuNo, setActiveMenuNo]);
+
     return (
         <div className="header">
             <div className="inner">
@@ -44,9 +69,6 @@ const Header = () => {
                             <img src="/api/v1/images/logo.png" alt="표준프레임워크 포털 eGovFrame 샘플 포털" />
                         </Link>
                     </h1>
-                    <button type="button" className="go" style={{ backgroundColor: 'transparent', border: 0, padding: 0 }}>
-                        <img src="/api/v1/images/ico_question.png" alt="메뉴구성 설명" />
-                    </button>
                 </div>
 
                 <div className="top_menu">
@@ -55,17 +77,14 @@ const Header = () => {
                     ) : user ? (
                         <>
                             <span className="t">
-                                <span style={{ cursor: 'pointer' }}>{user.name} 님</span>의 최종접속정보는
+                                <span style={{ cursor: 'pointer' }}>{user.name} 님</span>
                             </span>
-                            <span className="d"> 2021-06-30 12:45 입니다.</span>
-                            <button onClick={logout} className="btn btn_blue_15 w_90" style={{ border: 0, cursor: 'pointer' }}>
+                            <button onClick={logout} className="btn btn_blue_15 w_90" style={{ border: 0, cursor: 'pointer', marginLeft: '10px' }}>
                                 로그아웃
                             </button>
                         </>
                     ) : (
                         <>
-                            <span className="t"><span>로그인정보 없음</span> &nbsp;</span>
-                            <span className="d">로그인후 사용하십시오</span>
                             <Link href="/login" className="btn btn_blue_15 w_90">로그인</Link>
                         </>
                     )}
@@ -75,20 +94,13 @@ const Header = () => {
                     <ul>
                         {menus.map((menu) => (
                             <li key={menu.menuNo}>
-                                <Link href={menu.chkURL || '#'} className={menu.menuNo >= 5 ? 'manager' : ''}>
+                                <Link
+                                    href={menu.chkURL || '#'}
+                                    className={`${activeMenuNo === menu.menuNo ? 'on' : ''}`}
+                                    onClick={() => setActiveMenuNo(menu.menuNo)}
+                                >
                                     {menu.menuNm}
                                 </Link>
-                                {menu.children && menu.children.length > 0 && (
-                                    <div className="depth2_wrap">
-                                        <ul>
-                                            {menu.children.map((child) => (
-                                                <li key={child.menuNo}>
-                                                    <Link href={child.chkURL}>{child.menuNm}</Link>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
                             </li>
                         ))}
                     </ul>

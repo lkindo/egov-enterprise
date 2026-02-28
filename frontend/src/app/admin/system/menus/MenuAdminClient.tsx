@@ -288,8 +288,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-2 shadow-2xl">
                       <SelectItem value="0" className="font-black italic uppercase tracking-widest text-[10px] py-4">--- ROOT DIRECTORY ---</SelectItem>
-                      {menus.filter(m => m.upperMenuId === 0).map(m => (
-                        <SelectItem key={m.menuNo} value={String(m.menuNo)} className="py-3 font-bold">{m.menuNm}</SelectItem>
+                      {menus.filter(m => m.upperMenuId === 0).map((m, idx) => (
+                        <SelectItem key={m.menuNo || `root-${idx}`} value={String(m.menuNo)} className="py-3 font-bold">{m.menuNm}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -305,8 +305,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                       <SelectValue placeholder="Unlinked Page" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-2 shadow-2xl max-h-[300px]">
-                      {programs.map(p => (
-                        <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="py-4 border-b last:border-0 border-slate-50">
+                      {programs.map((p, idx) => (
+                        <SelectItem key={p.progrmFileNm || `prog-${idx}`} value={p.progrmFileNm} className="py-4 border-b last:border-0 border-slate-50">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-black italic uppercase tracking-tighter text-sm">{p.progrmNm}</span>
                             <span className="text-[9px] opacity-40 font-mono tracking-widest">{p.progrmFileNm}</span>

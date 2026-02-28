@@ -35,7 +35,7 @@ export function StandardChartWrapper({
             <div className="h-4 w-24 bg-muted rounded" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             {type === 'bar' ? (
               <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>

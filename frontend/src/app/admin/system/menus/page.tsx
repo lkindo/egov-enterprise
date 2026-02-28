@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { menuAdminService } from '@/services/menuAdminService';
 import { programService } from '@/services/programService';
 import MenuAdminClient from './MenuAdminClient';
@@ -17,17 +18,26 @@ export default async function MenuAdminPage() {
   // Parallel fetching of menus and programs to eliminate waterfalls
   let menus: any[] = [];
   let programs: any[] = [];
+  let isUnauthorized = false;
 
   try {
     const [menuData, programData] = await Promise.all([
       menuAdminService.getAllMenus(axiosConfig),
       programService.getPrograms({ page: 0, size: 1000 }, axiosConfig)
     ]);
-    
+
     menus = menuData || [];
     programs = programData?.content || [];
-  } catch (error) {
-    console.error('Server-side fetch menu architecture failed:', error);
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      isUnauthorized = true;
+    } else {
+      console.error('Server-side fetch menu architecture failed:', error);
+    }
+  }
+
+  if (isUnauthorized) {
+    redirect('/login?expired=true');
   }
 
   return (
