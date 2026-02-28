@@ -25,13 +25,38 @@ export const getLoginLogList = async (params: SearchParams): Promise<PaginationR
 export const getLoginLog = async (logId: string): Promise<LoginLog> =>
     client.get<LoginLog>(`/log/login/${logId}`);
 
-// User Log (Mapped to sys log for simplicity, or separate if implemented)
+// User Log
 export const getUserLogList = async (params: SearchParams): Promise<PaginationResponse<UserLog>> => {
-    return getSysLogList(params) as any;
+    const res: any = await client.get('/log/user/list', { params });
+    return {
+        resultList: res.list || [],
+        paginationInfo: res.paginationInfo || {}
+    };
 };
 
-export const getUserLog = async (userLogId: string): Promise<UserLog> => {
-    return getSysLog(userLogId) as any;
+// Web Log
+export const getWebLogList = async (params: SearchParams): Promise<PaginationResponse<WebLog>> => {
+    const res: any = await client.get('/log/web/list', { params });
+    return {
+        resultList: res.list || [],
+        paginationInfo: res.paginationInfo || {}
+    };
 };
 
-// Web Log, Privacy Log, etc. can be added as needed based on backend controllers
+// Privacy Log
+export const getPrivacyLogList = async (params: SearchParams): Promise<PaginationResponse<PrivacyLog>> => {
+    const res: any = await client.get('/log/privacy/list', { params });
+    return {
+        resultList: res.list || [],
+        paginationInfo: res.paginationInfo || {}
+    };
+};
+
+// Transfer Log
+export const getTransferLogList = async (params: SearchParams): Promise<PaginationResponse<TransferLog>> => {
+    const res: any = await client.get('/log/trans/list', { params });
+    return {
+        resultList: res.list || [],
+        paginationInfo: res.paginationInfo || {}
+    };
+};

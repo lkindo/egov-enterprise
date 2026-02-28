@@ -100,7 +100,7 @@ cd frontend
 pnpm install
 pnpm dev
 ```
-- Web Interface: `http://localhost:3000`
+- Web Interface: `http://localhost:3001`
 
 ---
 

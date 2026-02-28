@@ -11,7 +11,7 @@ export const roleService = {
    * 전체 권한 목록 조회
    */
   getAuthors: async () => {
-    const response = await client.get('/admin/security/authors');
+    const response = await client.get('/admin/system/authorities');
     return response;
   }
 };

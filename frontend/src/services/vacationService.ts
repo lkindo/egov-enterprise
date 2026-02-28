@@ -51,23 +51,23 @@ export const vacationService = {
    * 전사 휴가 신청 목록 조회 (Admin)
    */
   getAllVacations: async (params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResult<Vacation>> =>
-    client.get<PageResult<Vacation>>('/vacations/admin/all', { ...config, params }),
+    client.get<PageResult<Vacation>>('/admin/system/vacations', { ...config, params }),
 
   /**
    * 휴가 승인/반려 처리 (Admin)
    */
-  approveVacation: async (params: { 
-    applcntId: string; 
-    vcatnSe: string; 
-    bgnde: string; 
-    confmAt: 'Y' | 'N'; 
-    returnResn?: string 
+  approveVacation: async (params: {
+    applcntId: string;
+    vcatnSe: string;
+    bgnde: string;
+    confmAt: 'Y' | 'N';
+    returnResn?: string
   }): Promise<void> =>
-    client.put('/vacations/approval', null, { params }),
+    client.put('/admin/system/vacations/approval', null, { params }),
 
   /**
    * 전사 연차 통계 조회
    */
   getYearlyLeaveStats: async (year: string, config?: AxiosRequestConfig): Promise<YearlyLeave[]> =>
-    client.get<YearlyLeave[]>(`/vacations/yearly-leaves?occrrncYear=${year}`, config)
+    client.get<YearlyLeave[]>(`/admin/system/vacations/annual-leaves?occrrncYear=${year}`, config)
 };

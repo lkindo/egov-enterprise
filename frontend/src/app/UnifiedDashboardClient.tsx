@@ -125,7 +125,7 @@ export default function UnifiedDashboardClient({
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/cop/smt/vct')}
+            onClick={() => router.push('/vacation')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 bg-slate-900 text-white dark:bg-primary dark:text-primary-foreground rounded-[2rem] font-black shadow-2xl shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-primary/90 transition-colors"
           >
             <Zap size={20} /> 휴가 신청

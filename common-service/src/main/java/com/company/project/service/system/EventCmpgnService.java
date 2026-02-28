@@ -3,7 +3,9 @@ package com.company.project.service.system;
 import com.company.project.domain.system.EventCmpgn;
 import com.company.project.domain.system.EventCmpgnRepository;
 import com.company.project.service.system.dto.EventCmpgnDto;
+import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,14 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 @Service("systemEventCmpgnService")
+@RequiredArgsConstructor
 public class EventCmpgnService extends EgovAbstractServiceImpl {
 
     private final EventCmpgnRepository eventCmpgnRepository;
-
-    public EventCmpgnService(
-            @org.springframework.beans.factory.annotation.Qualifier("systemEventCmpgnRepository") EventCmpgnRepository eventCmpgnRepository) {
-        this.eventCmpgnRepository = eventCmpgnRepository;
-    }
+    private final EgovIdGnrService egovEventCmpgnIdGnrService;
 
     @Transactional(readOnly = true)
     public Page<EventCmpgnDto> getEventCmpgnList(String eventCn, Pageable pageable) {
@@ -34,21 +33,27 @@ public class EventCmpgnService extends EgovAbstractServiceImpl {
     }
 
     @Transactional
-    public void createEventCmpgn(EventCmpgnDto dto) {
-        EventCmpgn entity = EventCmpgn.builder()
-                .eventId(dto.getEventId())
-                .bsnsYear(dto.getBsnsYear())
-                .bsnsCode(dto.getBsnsCode())
-                .eventSvcBeginDe(dto.getEventSvcBeginDe())
-                .svcUseNmprCo(dto.getSvcUseNmprCo())
-                .chargerNm(dto.getChargerNm())
-                .eventCn(dto.getEventCn())
-                .eventSvcEndDe(dto.getEventSvcEndDe())
-                .eventTyCode(dto.getEventTyCode())
-                .prparetgCn(dto.getPrparetgCn())
-                .eventConfmAt("N")
-                .build();
-        eventCmpgnRepository.save(Objects.requireNonNull(entity));
+    public String createEventCmpgn(EventCmpgnDto dto) {
+        try {
+            String id = egovEventCmpgnIdGnrService.getNextStringId();
+            EventCmpgn entity = EventCmpgn.builder()
+                    .eventId(id)
+                    .bsnsYear(dto.getBsnsYear())
+                    .bsnsCode(dto.getBsnsCode())
+                    .eventSvcBeginDe(dto.getEventSvcBeginDe())
+                    .svcUseNmprCo(dto.getSvcUseNmprCo())
+                    .chargerNm(dto.getChargerNm())
+                    .eventCn(dto.getEventCn())
+                    .eventSvcEndDe(dto.getEventSvcEndDe())
+                    .eventTyCode(dto.getEventTyCode())
+                    .prparetgCn(dto.getPrparetgCn())
+                    .eventConfmAt("N")
+                    .build();
+            eventCmpgnRepository.save(Objects.requireNonNull(entity));
+            return id;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate Event ID", e);
+        }
     }
 
     @Transactional

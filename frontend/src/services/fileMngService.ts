@@ -11,8 +11,17 @@ export interface FileDetail {
   createdDate: string;
 }
 
+export interface FileResponse {
+  success: boolean;
+  data: {
+    content: FileDetail[];
+    totalElements: number;
+  };
+  message?: string;
+}
+
 export const fileMngService = {
-  getFiles: async (params: { page?: number; size?: number; searchWrd?: string }) => {
+  getFiles: async (params: { page?: number; size?: number; searchWrd?: string }): Promise<any> => {
     const response = await client.get('/admin/system/files', { params });
     return response;
   },
@@ -30,7 +39,7 @@ export const fileMngService = {
   uploadFiles: async (files: File[]) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    
+
     const response = await client.post('/files', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
