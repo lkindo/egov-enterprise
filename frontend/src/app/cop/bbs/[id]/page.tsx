@@ -8,6 +8,7 @@ import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Calendar, User, Eye, ArrowLeft, Trash2, Edit3, Paperclip, Loader2 } from 'lucide-react';
+import DOMPurify from 'isomorphic-dompurify';
 
 function BoardDetailContent() {
   const { id } = useParams();
@@ -84,7 +85,7 @@ function BoardDetailContent() {
 
         {/* Content Body */}
         <div className="p-8 prose prose-slate dark:prose-invert max-w-none min-h-[400px]">
-          <div dangerouslySetInnerHTML={{ __html: post.nttCn.replace(/\n/g, '<br/>') }} />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.nttCn.replace(/\n/g, '<br/>')) }} />
         </div>
 
         {/* Attachments Section */}
