@@ -48,4 +48,3 @@ public class QReprtStats extends EntityPathBase<ReprtStats> {
     }
 
 }
-

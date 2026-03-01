@@ -30,7 +30,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { CmmnClCode } from "@/types/system";
-import { createClCode, updateClCode, deleteClCode } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 
 const formSchema = z.object({
     clCode: z.string().min(1, { message: "분류코드는 필수입니다." }),
@@ -61,9 +61,9 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await updateClCode({ ...values, clCode: data.clCode } as CmmnClCode); // clCode is read-only in edit
+                await codeAdminService.updateClCode({ ...values, clCode: data.clCode } as CmmnClCode); // clCode is read-only in edit
             } else {
-                await createClCode(values as CmmnClCode);
+                await codeAdminService.createClCode(values as CmmnClCode);
             }
             onSuccess();
             onOpenChange(false);
@@ -77,7 +77,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
         if (!data?.clCode) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await deleteClCode(data.clCode);
+                await codeAdminService.deleteClCode(data.clCode);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

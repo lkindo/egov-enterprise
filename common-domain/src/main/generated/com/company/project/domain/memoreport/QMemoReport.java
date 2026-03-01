@@ -66,4 +66,3 @@ public class QMemoReport extends EntityPathBase<MemoReport> {
     }
 
 }
-

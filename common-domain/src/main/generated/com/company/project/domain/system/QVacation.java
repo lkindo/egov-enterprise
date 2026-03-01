@@ -72,4 +72,3 @@ public class QVacation extends EntityPathBase<Vacation> {
     }
 
 }
-

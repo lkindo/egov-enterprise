@@ -275,8 +275,10 @@ public class EgovSmsBasicReceiver implements SMEListener {
 						smsDao.updateSmsRecptnInf(recptn);
 						// 2017.02.08 ?댁젙? ?쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 					} catch (IOException ex) {
-//						LOGGER.error("Exception: {}", ex.getClass().getName());
-//						LOGGER.error("Exception  Message: {}", ex.getMessage());
+//						LOGGER.error("Exception: {
+                    }", ex.getClass().getName());
+//						LOGGER.error("Exception  Message: {
+                    }", ex.getMessage());
 						LOGGER.error("[IOException] : Connection Close");
 					} catch (Exception ex) {
 						LOGGER.error("[" + ex.getClass() + "] Connection Close : ", ex.getMessage());
@@ -305,7 +307,8 @@ public class EgovSmsBasicReceiver implements SMEListener {
 	 * 
 	 * try { try { SMEConfig.configSet(args[0]); receiver.readPropertyFile();
 	 * 
-	 * } catch (Exception ex) { // LOGGER.error("DEBUG: {}", ex.getMessage());
+	 * } catch (Exception ex) { // LOGGER.error("DEBUG: {
+                    }", ex.getMessage());
 	 * //2017.03.07 議곗꽦???쒗걧?댁퐫??ES)-遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 	 * LOGGER.error("["+ ex.getClass() +"] : Connection Close ", ex.getMessage());
 	 * return; }

@@ -56,4 +56,3 @@ public class QInfrmlSanctn extends EntityPathBase<InfrmlSanctn> {
     }
 
 }
-

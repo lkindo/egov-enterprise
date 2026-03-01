@@ -64,4 +64,3 @@ public class QAdministCode extends EntityPathBase<AdministCode> {
     }
 
 }
-

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { syncService, SyncServer } from '@/services/syncService';
+import { syncAdminService, SyncServer } from '@/services/admin/system/SyncAdminService';
 import SyncServerAdminClient from './SyncServerAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default async function AdminSyncServerPage() {
   let initialServers: SyncServer[] = [];
 
   try {
-    const response = await syncService.getSyncServers(axiosConfig);
+    const response = await syncAdminService.getSyncServers(axiosConfig);
     initialServers = (response as any)?.content || (response as any)?.data?.content || (response as any) || [];
   } catch (error) {
     console.error('Server-side fetch sync server data failed:', error);

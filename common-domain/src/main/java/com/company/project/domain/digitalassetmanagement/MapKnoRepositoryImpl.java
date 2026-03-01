@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 지식맵 Repository Custom 구현체
+ */
 @Repository
 @RequiredArgsConstructor
 public class MapKnoRepositoryImpl implements MapKnoRepositoryCustom {
@@ -27,26 +30,28 @@ public class MapKnoRepositoryImpl implements MapKnoRepositoryCustom {
 
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             if ("1".equals(searchCondition)) {
-                predicate.and(mapTeam.orgnztNm.contains(searchKeyword));
+                // 조직명 검색
+                predicate.and(mapTeam.organizationName.contains(searchKeyword));
             } else if ("2".equals(searchCondition)) {
-                predicate.and(mapKno.knoTypeNm.contains(searchKeyword));
+                // 지식유형명 검색
+                predicate.and(mapKno.typeName.contains(searchKeyword));
             }
         }
 
         List<MapKnoSearchResult> content = queryFactory
                 .select(Projections.constructor(MapKnoSearchResult.class,
-                        mapKno.knoTypeCd,
-                        mapKno.knoTypeNm,
-                        mapTeam.orgnztNm,
-                        mapKno.speId,
-                        mapKno.knoUrl,
-                        mapKno.clYmd,
-                        mapKno.frstRegisterId,
-                        mapKno.frstRegisterPnttm))
+                        mapKno.typeCode,
+                        mapKno.typeName,
+                        mapTeam.organizationName,
+                        mapKno.expertId,
+                        mapKno.knowledgeUrl,
+                        mapKno.classificationDate,
+                        mapKno.createdBy,
+                        mapKno.createdDate))
                 .from(mapKno)
-                .join(mapTeam).on(mapKno.orgnztId.eq(mapTeam.orgnztId))
+                .join(mapTeam).on(mapKno.organizationId.eq(mapTeam.organizationId))
                 .where(predicate)
-                .orderBy(mapKno.knoTypeCd.asc())
+                .orderBy(mapKno.typeCode.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -54,7 +59,7 @@ public class MapKnoRepositoryImpl implements MapKnoRepositoryCustom {
         long total = queryFactory
                 .select(mapKno.count())
                 .from(mapKno)
-                .join(mapTeam).on(mapKno.orgnztId.eq(mapTeam.orgnztId))
+                .join(mapTeam).on(mapKno.organizationId.eq(mapTeam.organizationId))
                 .where(predicate)
                 .fetchOne();
 

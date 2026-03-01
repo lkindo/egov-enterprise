@@ -26,7 +26,7 @@ class AuthenticationBypassTest {
     private UserService userService;
 
     @Test
-    @DisplayName("?�증?��? ?��? ?�용?��? 보호???�드?�인?�에 ?�근 ??401 Unauthorized 반환")
+    @DisplayName("?�증?��? ?��? ?�용?��? 보호???�드?�인?�에 ?�근 ??401 Unauthorized 반환")
     void unauthorizedAccess_toProtectedEndpoint_returns401() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/users")
@@ -36,7 +36,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�못??JWT ?�큰?�로 보호???�드?�인???�근 ??401 Unauthorized 반환")
+    @DisplayName("?�못??JWT ?�큰?�로 보호???�드?�인???�근 ??401 Unauthorized 반환")
     void invalidJwtToken_toProtectedEndpoint_returns401() throws Exception {
         // Given
         String invalidToken = "invalid.token.here";
@@ -49,7 +49,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("만료??JWT ?�큰?�로 보호???�드?�인???�근 ??401 Unauthorized 반환")
+    @DisplayName("만료??JWT ?�큰?�로 보호???�드?�인???�근 ??401 Unauthorized 반환")
     void expiredJwtToken_toProtectedEndpoint_returns401() throws Exception {
         // Given
         String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTUwMDAwMDB9." +
@@ -63,7 +63,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("JWT ?�큰 ?�이 관리자 ?�용 ?�드?�인???�근 ??401 Unauthorized 반환")
+    @DisplayName("JWT ?�큰 ?�이 관리자 ?�용 ?�드?�인???�근 ??401 Unauthorized 반환")
     void noToken_toAdminEndpoint_returns401() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/admin/users")
@@ -72,7 +72,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("권한 ?�는 ?�용?��? 관리자 ?�용 ?�드?�인???�근 ??403 Forbidden 반환")
+    @DisplayName("권한 ?�는 ?�용?��? 관리자 ?�용 ?�드?�인???�근 ??403 Forbidden 반환")
     void unauthorizedUser_toAdminEndpoint_returns403() throws Exception {
         // Given
         String validToken = "valid.token.here";
@@ -89,7 +89,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�이 ?�용??목록 조회 ???�회 ?�도 ?�패 ?�인")
+    @DisplayName("?�증 ?�이 ?�용??목록 조회 ???�회 ?�도 ?�패 ?�인")
     void bypassAttempt_getUserList_withoutAuth_fails() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/users")
@@ -101,7 +101,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�이 ?�용???�성 ?�도 ?�회 ?�패 ?�인")
+    @DisplayName("?�증 ?�이 ?�용???�성 ?�도 ?�회 ?�패 ?�인")
     void bypassAttempt_createUser_withoutAuth_fails() throws Exception {
         // Given
         String requestBody = """
@@ -123,7 +123,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("�?Authorization ?�더�??�근 ??401 Unauthorized 반환")
+    @DisplayName("�?Authorization ?�더�??�근 ??401 Unauthorized 반환")
     void emptyAuthHeader_toProtectedEndpoint_returns401() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/users")
@@ -133,7 +133,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("Bearer ?�두???�는 ?�큰?�로 ?�근 ??401 Unauthorized 반환")
+    @DisplayName("Bearer ?�두???�는 ?�큰?�로 ?�근 ??401 Unauthorized 반환")
     void tokenWithoutBearerPrefix_toProtectedEndpoint_returns401() throws Exception {
         // Given
         String tokenWithoutPrefix = "some.token.here";
@@ -146,13 +146,13 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�이 ?�용???�보 ?�정 ?�도 ?�회 ?�패 ?�인")
+    @DisplayName("?�증 ?�이 ?�용???�보 ?�정 ?�도 ?�회 ?�패 ?�인")
     void bypassAttempt_updateUser_withoutAuth_fails() throws Exception {
         // Given
         String requestBody = """
                 {
                     "userId": "victim",
-                    "userNm": "?�해??,
+                    "userNm": "?�해??,
                     "role": "ADMIN"
                 }
                 """;
@@ -165,7 +165,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�이 ?�용????�� ?�도 ?�회 ?�패 ?�인")
+    @DisplayName("?�증 ?�이 ?�용????�� ?�도 ?�회 ?�패 ?�인")
     void bypassAttempt_deleteUser_withoutAuth_fails() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/users/victim")
@@ -174,7 +174,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("JWT ?�큰??쿠키�??�해 ?�달?�려???�도 ?�패 ?�인")
+    @DisplayName("JWT ?�큰??쿠키�??�해 ?�달?�려???�도 ?�패 ?�인")
     void tokenViaCookie_toProtectedEndpoint_returns401() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/users")
@@ -184,7 +184,7 @@ class AuthenticationBypassTest {
     }
 
     @Test
-    @DisplayName("?�른 ?�더???�큰???�함?�켜 ?�회 ?�도 ?�패 ?�인")
+    @DisplayName("?�른 ?�더???�큰???�함?�켜 ?�회 ?�도 ?�패 ?�인")
     void tokenInCustomHeader_toProtectedEndpoint_returns401() throws Exception {
         // Given
         String tokenInCustomHeader = "Bearer some.token.here";

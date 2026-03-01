@@ -7,7 +7,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { noteService, Note } from '@/services/noteService';
+import { noteService, Note } from '@/services/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search } from 'lucide-react';
@@ -16,11 +16,11 @@ import { cn } from '@/lib/utils';
 export default function NotePage() {
   const { toast } = useToast();
   const confirm = useConfirm();
-  
+
   const [tab, setTab] = useState<'received' | 'sent'>('received');
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<Note[]>([]);
-  
+
   // 모달 상태
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -31,10 +31,10 @@ export default function NotePage() {
   const loadNotes = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (tab === 'received' 
+      const res = (tab === 'received'
         ? await noteService.getReceivedNotes({ page: 0, size: 20 })
         : await noteService.getSentNotes({ page: 0, size: 20 })) as any;
-      
+
       if (res?.success) setNotes(res.data.content || []);
     } catch (error) {
       toast('쪽지 목록을 불러오지 못했습니다.', 'error');
@@ -85,25 +85,25 @@ export default function NotePage() {
       ),
       className: 'w-12'
     },
-    { 
-      header: '제목', 
-      accessor: (item: Note) => item.noteSj, 
-      className: 'font-bold' 
+    {
+      header: '제목',
+      accessor: (item: Note) => item.noteSj,
+      className: 'font-bold'
     },
-    { 
-      header: tab === 'received' ? '발신자' : '수신자', 
-      accessor: (item: Note) => tab === 'received' ? item.trnsmitterId : item.rcverId 
+    {
+      header: tab === 'received' ? '발신자' : '수신자',
+      accessor: (item: Note) => tab === 'received' ? item.trnsmitterId : item.rcverId
     },
-    { 
-      header: '일시', 
-      accessor: (item: Note) => item.sendDt, 
-      className: 'text-xs text-muted-foreground' 
+    {
+      header: '일시',
+      accessor: (item: Note) => item.sendDt,
+      className: 'text-xs text-muted-foreground'
     },
     {
       header: '관리',
       className: 'text-right',
       accessor: (item: Note) => (
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); toast('삭제되었습니다(Mock)', 'info'); }}
           className="p-1.5 hover:bg-destructive/10 text-destructive rounded-md"
         >
@@ -115,11 +115,11 @@ export default function NotePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="쪽지 센터" 
+      <PageHeader
+        title="쪽지 센터"
         breadcrumbs={[{ label: '협업지원' }, { label: '쪽지관리' }]}
         actions={
-          <button 
+          <button
             onClick={() => setWriteOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
@@ -151,9 +151,9 @@ export default function NotePage() {
         </button>
       </div>
 
-      <StandardDataTable 
-        columns={columns} 
-        data={notes} 
+      <StandardDataTable
+        columns={columns}
+        data={notes}
         loading={loading}
         onRowClick={handleDetail}
         emptyMessage={tab === 'received' ? "받은 쪽지가 없습니다." : "보낸 쪽지가 없습니다."}
@@ -176,15 +176,15 @@ export default function NotePage() {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <UserPlus size={16} className="absolute left-3 top-3 text-muted-foreground" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="사용자를 검색해 주세요."
                   readOnly
                   className="w-full h-10 pl-10 pr-3 rounded-md border bg-muted/20 text-sm outline-none cursor-not-allowed"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => setPickerOpen(true)}
                 className="px-4 bg-white border border-primary text-primary rounded-md font-bold text-xs hover:bg-primary/5 transition-all flex items-center gap-2"
               >
@@ -193,18 +193,18 @@ export default function NotePage() {
             </div>
           </FormField>
           <FormField label="제목" required>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.noteSj}
-              onChange={(e) => setFormData({...formData, noteSj: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
               placeholder="쪽지 제목을 입력하세요."
               className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
           </FormField>
           <FormField label="내용">
-            <textarea 
+            <textarea
               value={formData.noteCn}
-              onChange={(e) => setFormData({...formData, noteCn: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
               className="w-full min-h-[150px] p-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none"
               placeholder="내용을 입력하세요."
             />
@@ -212,10 +212,10 @@ export default function NotePage() {
         </div>
       </StandardModal>
 
-      <UserPicker 
-        isOpen={isPickerOpen} 
-        onClose={() => setPickerOpen(false)} 
-        onSelect={handleUserSelect} 
+      <UserPicker
+        isOpen={isPickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleUserSelect}
       />
 
       {/* 쪽지 상세 모달 */}
@@ -242,7 +242,7 @@ export default function NotePage() {
             <div className="flex gap-2 justify-end">
               <button onClick={() => setDetailOpen(false)} className="px-6 py-2 bg-muted rounded-lg font-bold text-sm">닫기</button>
               {tab === 'received' && (
-                <button 
+                <button
                   onClick={() => {
                     setDetailOpen(false);
                     setFormData({ ...formData, rcverId: selectedNote.trnsmitterId, noteSj: `Re: ${selectedNote.noteSj}` });

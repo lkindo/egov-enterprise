@@ -56,4 +56,3 @@ public class QProcessMonitoringLog extends EntityPathBase<ProcessMonitoringLog> 
     }
 
 }
-

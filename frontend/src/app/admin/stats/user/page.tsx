@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import statsService from '@/services/stats/statsService';
+import { statsAdminService } from '@/services/admin/stats/StatsAdminService';
 import { format } from 'date-fns';
 import { Loader2, Search } from "lucide-react";
 
@@ -20,7 +20,7 @@ export default function UserStatsPage() {
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['admin-stats-user', filter],
-        queryFn: () => statsService.getUserStats(filter),
+        queryFn: () => statsAdminService.getUserStats(filter),
     });
 
     const stats = data?.list || [];

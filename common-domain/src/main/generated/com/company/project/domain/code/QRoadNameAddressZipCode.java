@@ -70,4 +70,3 @@ public class QRoadNameAddressZipCode extends EntityPathBase<RoadNameAddressZipCo
     }
 
 }
-

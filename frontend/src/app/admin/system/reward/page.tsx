@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { rewardService, Reward } from '@/services/rewardService';
+import { rewardAdminService as rewardService, Reward } from '@/services/admin/system/RewardAdminService';
 import RewardClient from './RewardClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -9,10 +9,10 @@ export const metadata = {
   description: '임직원의 포상 내역을 관리하고 승인 프로세스를 진행합니다.',
 };
 
-export default async function RewardPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function RewardPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
   const usid = (resolvedSearchParams.usid as string) || '';
@@ -36,9 +36,9 @@ export default async function RewardPage({
 
   return (
     <Suspense fallback={<RewardLoading />}>
-      <RewardClient 
-        initialData={{ ...rawData, content: optimizedContent as Reward[] }} 
-        searchUsid={usid} 
+      <RewardClient
+        initialData={{ ...rawData, content: optimizedContent as Reward[] }}
+        searchUsid={usid}
       />
     </Suspense>
   );

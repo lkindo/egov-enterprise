@@ -60,4 +60,3 @@ public class QRecomendSite extends EntityPathBase<RecomendSite> {
     }
 
 }
-

@@ -11,27 +11,27 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "?�스 ?�보")
+@Schema(description = "?�스 ?�보")
 public class NewsDto {
-    @Schema(description = "?�스 ID")
+    @Schema(description = "?�스 ID")
     private String newsId;
-    @Schema(description = "?�스 ?�목")
+    @Schema(description = "?�스 ?�목")
     private String newsSj;
-    @Schema(description = "?�스 ?�용")
+    @Schema(description = "?�스 ?�용")
     private String newsCn;
-    @Schema(description = "?�스 출처")
+    @Schema(description = "?�스 출처")
     private String newsOrigin;
-    @Schema(description = "게시??)
+    @Schema(description = "게시??)")
     private String ntceDe;
-    @Schema(description = "첨�? ?�일 ID")
+    @Schema(description = "첨�? ?�일 ID")
     private String atchFileId;
-    @Schema(description = "?�성??ID")
+    @Schema(description = "?�성??ID")
     private String frstRegisterId;
-    @Schema(description = "?�성 ?�시")
+    @Schema(description = "?�성 ?�시")
     private LocalDateTime frstRegisterPnttm;
-    @Schema(description = "최종 ?�정??ID")
+    @Schema(description = "최종 ?�정??ID")
     private String lastUpdusrId;
-    @Schema(description = "최종 ?�정 ?�시")
+    @Schema(description = "최종 ?�정 ?�시")
     private LocalDateTime lastUpdusrPnttm;
 
     public static NewsDto from(News entity) {

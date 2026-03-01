@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { getDetailCodeList, getCmmnCodeList } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import { CmmnDetailCode, SearchParams, CmmnCode } from '@/types/system';
 import { CommonDetailCodeForm } from '@/components/admin/system/CommonDetailCodeForm';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -37,12 +37,12 @@ export default function CommonDetailCodePage() {
 
     const { data: cmmnCodesData } = useQuery({
         queryKey: ['common-codes-all'],
-        queryFn: () => getCmmnCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' }),
+        queryFn: () => codeAdminService.getCmmnCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' }),
     });
 
     const { data, isLoading } = useQuery({
         queryKey: ['common-detail-codes', params],
-        queryFn: () => getDetailCodeList(params),
+        queryFn: () => codeAdminService.getDetailCodeList(params),
     });
 
     const codes: CmmnDetailCode[] = data?.resultList || [];

@@ -51,14 +51,17 @@ public class EgovXssChecker {
 			//泥댄겕 媛믪뿉 ???臾닿껐??泥댄겕
 			//			if(sUniqId == null || (loginVO == null ? "" : EgovStringUtil.isNullToString(loginVO.getUniqId())) == null){
 			//				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");
-			//			} else if (loginVO.getUniqId().equals("")) { // KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
+			//			
+                    } else if (loginVO.getUniqId().equals("")) { // KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
 			//				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");
-			//			}
+			//			
+                    }
 			//
 			//			//?ъ슜?먯뿉?????Xss 泥댄겕
 			//			if(!sUniqId.equals(loginVO.getUniqId())){
 			//				throw new EgovXssException("XSS00002", "errors.xss.checkerUser");
-			//			}
+			//			
+                    }
 
 			if (sUniqId == null || loginVO.getUniqId() == null || loginVO.getUniqId().equals("")) {
 				throw new EgovXssException("XSS00001", "errors.xss.checkerUser");

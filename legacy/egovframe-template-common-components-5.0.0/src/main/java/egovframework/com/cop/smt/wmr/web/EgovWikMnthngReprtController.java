@@ -325,7 +325,8 @@ public class EgovWikMnthngReprtController {
 			 */
 			String atchFileId = wikMnthngReprtVO.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -393,7 +394,8 @@ public class EgovWikMnthngReprtController {
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {

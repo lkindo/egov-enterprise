@@ -48,4 +48,3 @@ public class QProcessMon extends EntityPathBase<ProcessMon> {
     }
 
 }
-

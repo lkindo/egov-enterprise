@@ -36,4 +36,3 @@ public class QBkmkMenu_BkmkMenuId extends BeanPath<BkmkMenu.BkmkMenuId> {
     }
 
 }
-

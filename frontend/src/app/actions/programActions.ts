@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
+import { programAdminService } from '@/services/admin/system/ProgramAdminService';
 import { Program } from '@/types/program';
 
 export async function saveProgramAction(prevState: any, { mode, data }: { mode: 'create' | 'edit', data: Program }) {
@@ -12,11 +12,11 @@ export async function saveProgramAction(prevState: any, { mode, data }: { mode: 
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     if (mode === 'create') {
-      await client.post('/admin/programs', data, axiosConfig);
+      await programAdminService.createProgram(data, axiosConfig);
     } else {
-      await client.put(`/admin/programs/${data.progrmFileNm}`, data, axiosConfig);
+      await programAdminService.updateProgram(data.progrmFileNm, data, axiosConfig);
     }
-    
+
     revalidatePath('/admin/system/programs');
     return { success: true, message: `프로그램이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error: any) {
@@ -31,8 +31,8 @@ export async function deleteProgramAction(prevState: any, name: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/programs/${name}`, axiosConfig);
-    
+    await programAdminService.deleteProgram(name, axiosConfig);
+
     revalidatePath('/admin/system/programs');
     return { success: true, message: '프로그램이 삭제되었습니다.' };
   } catch (error: any) {

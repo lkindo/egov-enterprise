@@ -12,12 +12,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class KnowledgeInfSearchResult {
-    private String knoId;
-    private String knoNm;
-    private String orgnztNm;
-    private String knoTypeNm;
-    private String userNm;
-    private String appYmd;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String knowledgeId;
+    private String title;
+    private String organizationName;
+    private String typeName;
+    private String userName;
+    private String evaluationDate;
+    private String firstRegisterId;
+    private LocalDateTime createdDate;
 }

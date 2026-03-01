@@ -48,4 +48,3 @@ public class QNote extends EntityPathBase<Note> {
     }
 
 }
-

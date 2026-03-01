@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
-import { CommonCodeDetail } from '@/services/codeService';
+import { CommonCodeDetail } from '@/services/admin/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import {
   Layers,

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { commentMngService, CommentDetail } from '@/services/commentMngService';
+import { commentAdminService, CommentDetail } from '@/services/admin/system/CommentAdminService';
 import CommentAdminClient from './CommentAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default async function AdminCommentPage() {
   let initialComments: CommentDetail[] = [];
 
   try {
-    const response = await commentMngService.getComments({ page: 0, size: 500 }, axiosConfig);
+    const response = await commentAdminService.getComments({ page: 0, size: 500 }, axiosConfig);
     initialComments = response?.content || response?.data?.content || response || [];
   } catch (error) {
     console.error('Server-side fetch audit logs failed:', error);

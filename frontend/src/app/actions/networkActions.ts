@@ -2,8 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
-import { Network } from '@/services/networkService';
+import { networkAdminService, Network } from '@/services/admin/system/NetworkAdminService';
 
 export async function saveNetworkAction(prevState: any, formData: FormData) {
   try {
@@ -23,9 +22,9 @@ export async function saveNetworkAction(prevState: any, formData: FormData) {
     };
 
     if (ntwrkId) {
-      await client.put(`/admin/system/networks/${ntwrkId}`, data, axiosConfig);
+      await networkAdminService.updateNetwork(ntwrkId, data, axiosConfig);
     } else {
-      await client.post('/admin/system/networks', data, axiosConfig);
+      await networkAdminService.createNetwork(data as any, axiosConfig);
     }
 
     revalidatePath('/admin/system/network');
@@ -42,8 +41,8 @@ export async function deleteNetworkAction(id: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/system/networks/${id}`, axiosConfig);
-    
+    await networkAdminService.deleteNetwork(id, axiosConfig);
+
     revalidatePath('/admin/system/network');
     return { success: true, message: '네트워크 정보가 삭제되었습니다.' };
   } catch (error: any) {

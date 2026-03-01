@@ -1,4 +1,4 @@
-/*
+*
  * CKEditor image upload module for Java.
  * Copyright guavatak (https://github.com/guavatak/ckeditor-upload-filter-java)
  *

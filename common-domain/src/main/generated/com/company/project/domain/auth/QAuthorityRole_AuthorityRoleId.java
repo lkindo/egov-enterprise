@@ -36,4 +36,3 @@ public class QAuthorityRole_AuthorityRoleId extends BeanPath<AuthorityRole.Autho
     }
 
 }
-

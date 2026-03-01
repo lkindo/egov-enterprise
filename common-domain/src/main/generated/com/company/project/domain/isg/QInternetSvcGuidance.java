@@ -48,4 +48,3 @@ public class QInternetSvcGuidance extends EntityPathBase<InternetSvcGuidance> {
     }
 
 }
-

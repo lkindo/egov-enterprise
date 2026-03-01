@@ -72,4 +72,3 @@ public class QBackupResult extends EntityPathBase<BackupResult> {
     }
 
 }
-

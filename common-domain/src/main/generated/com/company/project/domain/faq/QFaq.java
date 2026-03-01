@@ -58,4 +58,3 @@ public class QFaq extends EntityPathBase<Faq> {
     }
 
 }
-

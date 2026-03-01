@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
+import { menuAdminService } from '@/services/admin/system/MenuAdminService';
 import { MenuInfo } from '@/types/menu';
 
 export async function saveMenuAction(prevState: any, { mode, data }: { mode: 'create' | 'edit', data: Partial<MenuInfo> }) {
@@ -12,9 +12,9 @@ export async function saveMenuAction(prevState: any, { mode, data }: { mode: 'cr
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     if (mode === 'create') {
-      await client.post('/admin/system/menus', data, axiosConfig);
+      await menuAdminService.createMenu(data, axiosConfig);
     } else {
-      await client.put(`/admin/system/menus/${data.menuNo}`, data, axiosConfig);
+      await menuAdminService.updateMenu(data.menuNo!, data, axiosConfig);
     }
 
     revalidatePath('/admin/system/menus');
@@ -31,7 +31,7 @@ export async function updateMenuOrdersAction(prevState: any, menus: MenuInfo[]) 
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.put('/admin/system/menus/batch-order', menus, axiosConfig);
+    await menuAdminService.updateOrders(menus, axiosConfig);
 
     revalidatePath('/admin/system/menus');
     return { success: true, message: '순서가 저장되었습니다.' };
@@ -47,7 +47,7 @@ export async function deleteMenuAction(prevState: any, id: number) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/system/menus/${id}`, axiosConfig);
+    await menuAdminService.deleteMenu(id, axiosConfig);
 
     revalidatePath('/admin/system/menus');
     return { success: true, message: '메뉴가 삭제되었습니다.' };

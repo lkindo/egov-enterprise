@@ -36,4 +36,3 @@ public class QBatchSchdulDfkId extends BeanPath<BatchSchdulDfkId> {
     }
 
 }
-

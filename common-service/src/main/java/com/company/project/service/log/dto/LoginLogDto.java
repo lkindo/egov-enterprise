@@ -21,12 +21,12 @@ public class LoginLogDto {
     private String loginId;
     /** ?ë¬’ëƒ½ IP */
     private String loginIp;
-    /** ?ë¬’ëƒ½ è«›â‘¸ì¾?*/
+    /** ?ë¬’ëƒ½ è«›â‘¸ï¿½?*/
     private String loginMthd;
-    /** ?ë¨?œ­ è«›ì’–ê¹???? */
+    /** ?ï¿½?ï¿½ï¿½ è«›ì’–ï¿½???? */
     private String errOccrrAt;
-    /** ?ë¨?œ­ ?„ë¶¾ë±?*/
+    /** ?ï¿½?ï¿½ï¿½ ?ï¿½ë¶¾ï¿½?*/
     private String errorCode;
-    /** ??¹ê½¦??±ë–† */
+    /** ??ï¿½ê½¦??ï¿½ë–† */
     private String creatDt;
 }

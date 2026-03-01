@@ -41,4 +41,3 @@ public class QFileMaster extends EntityPathBase<FileMaster> {
     }
 
 }
-

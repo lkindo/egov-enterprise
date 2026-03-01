@@ -50,4 +50,3 @@ public class QSmsRecptn extends EntityPathBase<SmsRecptn> {
     }
 
 }
-

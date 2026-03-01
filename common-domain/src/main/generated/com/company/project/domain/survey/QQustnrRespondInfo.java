@@ -62,4 +62,3 @@ public class QQustnrRespondInfo extends EntityPathBase<QustnrRespondInfo> {
     }
 
 }
-

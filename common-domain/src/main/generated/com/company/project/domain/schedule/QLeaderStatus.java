@@ -50,4 +50,3 @@ public class QLeaderStatus extends EntityPathBase<LeaderStatus> {
     }
 
 }
-

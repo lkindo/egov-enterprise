@@ -38,4 +38,3 @@ public class QWebLogSummary extends EntityPathBase<WebLogSummary> {
     }
 
 }
-

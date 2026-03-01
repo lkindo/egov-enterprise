@@ -50,4 +50,3 @@ public class QZip extends EntityPathBase<Zip> {
     }
 
 }
-

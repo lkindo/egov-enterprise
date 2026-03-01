@@ -84,4 +84,3 @@ public class GlobalMenuAdvice {
         return null;
     }
 }
-

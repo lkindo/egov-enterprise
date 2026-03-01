@@ -52,4 +52,3 @@ public class QOnlinePollResult extends EntityPathBase<OnlinePollResult> {
     }
 
 }
-

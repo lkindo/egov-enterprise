@@ -1,4 +1,4 @@
-/**
+**
  *  Class Name : EgovFileMntrg.java
  *  Description : 
  *  Modification Information
@@ -59,7 +59,8 @@ public class EgovFileMntrg extends Thread {
 	 * ?대떦 ?뚯씪??蹂寃??좊Т瑜?泥댄겕?섍린 ?꾪븳 Default 珥덉쓽 stati final 蹂?? 湲곕낯 ?곸슜? 媛믪? 60珥?
 	 * </p>
 	 */
-	// static final public long DEFAULT_DELAY = 60000; // 60珥?
+	//
+                     final public long DEFAULT_DELAY = 60000; // 60珥?
 	static final public long DEFAULT_DELAY = 30000; // 30珥?
 
 	/**
@@ -145,7 +146,8 @@ public class EgovFileMntrg extends Thread {
 	 * ?대떦 ?뚯씪??蹂寃쎌떆 ?묒뾽 ???댁슜??湲곗닠 ??異붿긽(abstract) 硫붿냼??
 	 * </p>
 	 */
-	// abstract protected void doOnChange();
+	// abstract
+                     void doOnChange();
 	protected void doOnChange(List<String> changedList) {
 		// log.debug("doOnChange() start");
 		for (int i = 0; i < changedList.size(); i++) {

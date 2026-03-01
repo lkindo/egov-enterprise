@@ -30,7 +30,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { CmmnDetailCode } from "@/types/system";
-import { createDetailCode, updateDetailCode, deleteDetailCode } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 
 const formSchema = z.object({
     codeId: z.string().min(1, { message: "코드ID는 필수입니다." }),
@@ -64,9 +64,9 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await updateDetailCode(values as CmmnDetailCode);
+                await codeAdminService.updateDetailCode(values as CmmnDetailCode);
             } else {
-                await createDetailCode(values as CmmnDetailCode);
+                await codeAdminService.createDetailCode(values as CmmnDetailCode);
             }
             onSuccess();
             onOpenChange(false);
@@ -80,7 +80,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
         if (!data?.codeId || !data?.code) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await deleteDetailCode(data.codeId, data.code);
+                await codeAdminService.deleteDetailCode(data.codeId, data.code);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

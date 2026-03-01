@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { backupService, BackupOpert, BackupResult } from '@/services/backupService';
+import { backupAdminService, BackupOpert, BackupResult } from '@/services/admin/system/BackupAdminService';
 import BackupAdminClient from './BackupAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -20,8 +20,8 @@ export default async function AdminBackupPage() {
 
   try {
     const [opRes, resRes] = await Promise.all([
-      backupService.getOperations({ page: 0, size: 100 }, axiosConfig),
-      backupService.getResults({ page: 0, size: 100 }, axiosConfig)
+      backupAdminService.getOperations({ page: 0, size: 100 }, axiosConfig),
+      backupAdminService.getResults({ page: 0, size: 100 }, axiosConfig)
     ]);
 
     initialOperations = (opRes as any)?.content || (opRes as any)?.data?.content || (opRes as any) || [];
@@ -32,9 +32,9 @@ export default async function AdminBackupPage() {
 
   return (
     <Suspense fallback={<BackupAdminLoading />}>
-      <BackupAdminClient 
-        initialOperations={initialOperations} 
-        initialResults={initialResults} 
+      <BackupAdminClient
+        initialOperations={initialOperations}
+        initialResults={initialResults}
       />
     </Suspense>
   );

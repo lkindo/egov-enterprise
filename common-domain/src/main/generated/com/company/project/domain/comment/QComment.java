@@ -56,4 +56,3 @@ public class QComment extends EntityPathBase<Comment> {
     }
 
 }
-

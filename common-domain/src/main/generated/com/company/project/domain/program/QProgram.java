@@ -42,4 +42,3 @@ public class QProgram extends EntityPathBase<Program> {
     }
 
 }
-

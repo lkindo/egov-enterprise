@@ -56,4 +56,3 @@ public class QEventAttendance extends EntityPathBase<EventAttendance> {
     }
 
 }
-

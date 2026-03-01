@@ -65,14 +65,14 @@ class UserServiceCrudTest {
         signupRequest = new UserSignupRequest(
                 "newUser",
                 "password123!",
-                "?�?????",
+                "?�?????",
                 Role.USER,
                 "hint",
                 "answer");
     }
 
     @Test
-    @DisplayName("????????�?)
+    @DisplayName("????????�?)
     void createUser_success() {
         when(passwordEncoder.encode(any())).thenReturn("encoded");
         when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -90,7 +90,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("????조회 ?�?- ID ?")
+    @DisplayName("????조회 ?�?- ID ?")
     void getUserById_success_withValidId() {
         when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
         when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
@@ -115,7 +115,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("????목록 조회 ?�?)
+    @DisplayName("????목록 조회 ?�?)
     void getUserList_success() {
         when(userRepository.findAll()).thenReturn(List.of(mockUser));
         when(userAuthorityRepository.findByUniqIdIn(any())).thenReturn(List.of(
@@ -130,7 +130,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("??�징??????목록 조회 ?�?)
+    @DisplayName("??�징??????목록 조회 ?�?)
     void getPagedUserList_success() {
         Page<User> page = new PageImpl<>(List.of(mockUser));
         when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
@@ -146,7 +146,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("??????��????�?)
+    @DisplayName("??????��????�?)
     void signup_success() {
         when(userRepository.existsById(any())).thenReturn(false);
         when(passwordEncoder.encode(any())).thenReturn("encoded");
@@ -160,7 +160,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("??????��??????- 중복 ID")
+    @DisplayName("??????��??????- 중복 ID")
     void signup_fail_duplicateId() {
         when(userRepository.existsById(any())).thenReturn(true);
 
@@ -169,7 +169,7 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("??????��??????- null ????)
+    @DisplayName("??????��??????- null ????)
     void signup_fail_withNullValues() {
         UserSignupRequest nullRequest = new UserSignupRequest(null, "pw", "name", Role.USER, "h", "c");
 
@@ -178,14 +178,14 @@ class UserServiceCrudTest {
     }
 
     @Test
-    @DisplayName("�?번호 검??�?)
+    @DisplayName("�?번호 검??�?)
     void validatePassword_success() {
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
         assertThat(passwordEncoder.matches("pw", "encoded")).isTrue();
     }
 
     @Test
-    @DisplayName("�?번호 검????)
+    @DisplayName("�?번호 검????)
     void validatePassword_fail() {
         when(passwordEncoder.matches(any(), any())).thenReturn(false);
         assertThat(passwordEncoder.matches("pw", "encoded")).isFalse();

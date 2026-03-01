@@ -11,52 +11,52 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "?�업 ?�보")
+@Schema(description = "팝업 정보")
 public class PopupDto {
-    @Schema(description = "?�업 ID")
+    @Schema(description = "팝업 ID")
     private String popupId;
-    @Schema(description = "?�업 ?�목")
-    private String popupTitleNm;
-    @Schema(description = "?�일 URL")
+    @Schema(description = "팝업 제목")
+    private String popupTitleName;
+    @Schema(description = "파일 URL")
     private String fileUrl;
-    @Schema(description = "?�업 가�??�치")
-    private String popupWlc;
-    @Schema(description = "?�업 ?�로 ?�치")
-    private String popupHlc;
-    @Schema(description = "?�업 ?�이 ?�기")
-    private String popupHSize;
-    @Schema(description = "?�업 ?�비 ?�기")
-    private String popupWSize;
-    @Schema(description = "게시 ?�작??)
-    private String ntceBgnde;
-    @Schema(description = "게시 종료??)
-    private String ntceEndde;
-    @Schema(description = "그만보기 ?��?")
-    private String stopVewAt;
-    @Schema(description = "게시 ?��?")
-    private String ntceAt;
-    @Schema(description = "?�성??ID")
-    private String frstRegisterId;
-    @Schema(description = "?�성 ?�시")
-    private LocalDateTime frstRegistPnttm;
+    @Schema(description = "팝업 가로 위치")
+    private String popupWidthLocation;
+    @Schema(description = "팝업 세로 위치")
+    private String popupHeightLocation;
+    @Schema(description = "팝업 높이 크기")
+    private String popupHeightSize;
+    @Schema(description = "팝업 너비 크기")
+    private String popupWidthSize;
+    @Schema(description = "게시 시작일")
+    private String noticeBeginDate;
+    @Schema(description = "게시 종료일")
+    private String noticeEndDate;
+    @Schema(description = "그만보기 여부")
+    private String isStopView;
+    @Schema(description = "게시 여부")
+    private String isNotice;
+    @Schema(description = "생성자 ID")
+    private String createdBy;
+    @Schema(description = "생성 일시")
+    private LocalDateTime createdDate;
 
     public static PopupDto from(Popup entity) {
         if (entity == null)
             return null;
         return PopupDto.builder()
                 .popupId(entity.getPopupId())
-                .popupTitleNm(entity.getPopupTitleNm())
+                .popupTitleName(entity.getPopupTitleName())
                 .fileUrl(entity.getFileUrl())
-                .popupWlc(entity.getPopupWlc())
-                .popupHlc(entity.getPopupHlc())
-                .popupHSize(entity.getPopupHSize())
-                .popupWSize(entity.getPopupWSize())
-                .ntceBgnde(entity.getNtceBgnde())
-                .ntceEndde(entity.getNtceEndde())
-                .stopVewAt(entity.getStopVewAt())
-                .ntceAt(entity.getNtceAt())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegisterPnttm())
+                .popupWidthLocation(entity.getPopupWidthLocation())
+                .popupHeightLocation(entity.getPopupHeightLocation())
+                .popupHeightSize(entity.getPopupHeightSize())
+                .popupWidthSize(entity.getPopupWidthSize())
+                .noticeBeginDate(entity.getNoticeBeginDate())
+                .noticeEndDate(entity.getNoticeEndDate())
+                .isStopView(entity.getIsStopView())
+                .isNotice(entity.getIsNotice())
+                .createdBy(entity.getCreatedBy())
+                .createdDate(entity.getCreatedDate())
                 .build();
     }
 }

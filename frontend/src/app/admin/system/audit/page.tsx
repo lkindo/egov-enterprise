@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { auditService, AuditLog } from '@/services/auditService';
+import { auditAdminService, AuditLog } from '@/services/admin/system/AuditAdminService';
 import AuditAdminClient from './AuditAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default async function AdminAuditPage() {
   let initialLogs: AuditLog[] = [];
 
   try {
-    const response = await auditService.getAuditLogs({ page: 0, size: 500 }, axiosConfig);
+    const response = await auditAdminService.getAuditLogs({ page: 0, size: 500 }, axiosConfig);
     initialLogs = response?.content || response?.data?.content || response || [];
   } catch (error) {
     console.error('Server-side fetch audit logs failed:', error);

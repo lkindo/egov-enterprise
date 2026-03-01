@@ -40,4 +40,3 @@ public class QSiteMap extends EntityPathBase<SiteMap> {
     }
 
 }
-

@@ -60,4 +60,3 @@ public class QFileSystemMonitoring extends EntityPathBase<FileSystemMonitoring> 
     }
 
 }
-

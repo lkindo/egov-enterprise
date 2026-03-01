@@ -56,4 +56,3 @@ public class QDbMntrng extends EntityPathBase<DbMntrng> {
     }
 
 }
-

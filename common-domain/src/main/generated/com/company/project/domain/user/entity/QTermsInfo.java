@@ -38,4 +38,3 @@ public class QTermsInfo extends EntityPathBase<TermsInfo> {
     }
 
 }
-

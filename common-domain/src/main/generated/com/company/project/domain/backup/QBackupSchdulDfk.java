@@ -49,4 +49,3 @@ public class QBackupSchdulDfk extends EntityPathBase<BackupSchdulDfk> {
     }
 
 }
-

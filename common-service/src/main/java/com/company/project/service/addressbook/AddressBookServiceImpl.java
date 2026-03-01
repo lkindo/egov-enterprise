@@ -173,10 +173,10 @@ public class AddressBookServiceImpl implements AddressBookService {
             if (nameCard != null) {
                 return AddressBookUserDto.builder()
                         .ncrdId(nameCard.getNcrdId())
-                        .nm(nameCard.getNcrdNm())
-                        .emailAdres(nameCard.getEmailAdres())
-                        .homeTelno(nameCard.getTelNo())
-                        .moblphonNo(nameCard.getMbtlNum())
+                        .nm(nameCard.getName())
+                        .emailAdres(nameCard.getEmailAddress())
+                        .homeTelno(nameCard.getTelNumber())
+                        .moblphonNo(nameCard.getMobileNumber())
                         .build();
             }
         }

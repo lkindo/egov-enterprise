@@ -36,4 +36,3 @@ public class QNetworkServiceId extends BeanPath<NetworkServiceId> {
     }
 
 }
-

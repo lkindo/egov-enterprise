@@ -54,4 +54,3 @@ public class QQestnrTmplat extends EntityPathBase<QestnrTmplat> {
     }
 
 }
-

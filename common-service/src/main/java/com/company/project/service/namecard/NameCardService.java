@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 紐낇�???�퉬???�ы쁽�?
+ * 명함 관리 서비스 구현체
  */
 @Service
 @RequiredArgsConstructor
@@ -34,7 +34,8 @@ public class NameCardService implements EgovNameCardService {
 
     @Override
     public Page<NameCardDto> getMyNameCards(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        // ??? 吏곸???깅줉??紐낇�?紐⑸�?        return nameCardRepository.findByNcrdTrgterId(userId, pageable).map(NameCardDto::from);
+        // 특정 사용자가 등록한 명함 목록
+        return nameCardRepository.findByTargetUserId(userId, pageable).map(NameCardDto::from);
     }
 
     @Override
@@ -51,26 +52,26 @@ public class NameCardService implements EgovNameCardService {
 
         NameCard nameCard = NameCard.builder()
                 .ncrdId(ncrdId)
-                .ncrdNm(dto.getNcrdNm())
-                .cmpnyNm(dto.getCmpnyNm())
-                .deptNm(dto.getDeptNm())
-                .clsfNm(dto.getClsfNm())
-                .ofcpsNm(dto.getOfcpsNm())
-                .emailAdres(dto.getEmailAdres())
-                .telNo(dto.getTelNo())
-                .mbtlNum(dto.getMbtlNum())
-                .adres(dto.getAdres())
-                .detailAdres(dto.getDetailAdres())
+                .name(dto.getName())
+                .companyName(dto.getCompanyName())
+                .departmentName(dto.getDepartmentName())
+                .rankName(dto.getRankName())
+                .positionName(dto.getPositionName())
+                .emailAddress(dto.getEmailAddress())
+                .telNumber(dto.getTelNumber())
+                .mobileNumber(dto.getMobileNumber())
+                .address(dto.getAddress())
+                .detailAddress(dto.getDetailAddress())
                 .zipCode(dto.getZipCode())
                 .remark(dto.getRemark())
-                .othbcAt(dto.getOthbcAt())
-                .ncrdTrgterId(userId)
-                .extrlUserAt(dto.getExtrlUserAt())
+                .isPublic(dto.getIsPublic())
+                .targetUserId(userId)
+                .isExternalUser(dto.getIsExternalUser())
                 .build();
 
         nameCardRepository.save(Objects.requireNonNull(nameCard));
 
-        // ?깅줉 ????紐낇븿泥?�뿉???�?�� ?�붽?
+        // 등록자 본인의 명함첩에도 자동 추가
         addMyNameCard(userId, ncrdId);
 
         return ncrdId;
@@ -82,10 +83,10 @@ public class NameCardService implements EgovNameCardService {
         NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        nameCard.update(dto.getNcrdNm(), dto.getCmpnyNm(), dto.getDeptNm(), dto.getClsfNm(),
-                dto.getOfcpsNm(), dto.getEmailAdres(), dto.getTelNo(), dto.getMbtlNum(),
-                dto.getAdres(), dto.getDetailAdres(), dto.getZipCode(), dto.getRemark(),
-                dto.getOthbcAt(), dto.getExtrlUserAt());
+        nameCard.update(dto.getName(), dto.getCompanyName(), dto.getDepartmentName(), dto.getRankName(),
+                dto.getPositionName(), dto.getEmailAddress(), dto.getTelNumber(), dto.getMobileNumber(),
+                dto.getAddress(), dto.getDetailAddress(), dto.getZipCode(), dto.getRemark(),
+                dto.getIsPublic(), dto.getIsExternalUser());
     }
 
     @Override
@@ -94,8 +95,6 @@ public class NameCardService implements EgovNameCardService {
         NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // ?�???곗씠???�쇱? ????(?�?�� ??�━ ????泥섎??
-        // ??�??�뒗 ??�닚 ?�쇰?????�濡??�ы쁽
         nameCardRepository.delete(Objects.requireNonNull(nameCard));
     }
 
@@ -115,11 +114,14 @@ public class NameCardService implements EgovNameCardService {
         nameCardUserRepository.findByNcrdIdAndEmplyrId(ncrdId, userId)
                 .ifPresentOrElse(
                         nu -> nu.updateUseAt("Y"),
-                        () -> nameCardUserRepository.save(Objects.requireNonNull(NameCardUser.builder()
-                                .ncrdId(ncrdId)
-                                .emplyrId(userId)
-                                .useAt("Y")
-                                .registSeCode("REGC01") // 湲곕???깅줉 ?�붾�?                                .build())));
+                        () -> {
+                            nameCardUserRepository.save(Objects.requireNonNull(NameCardUser.builder()
+                                    .ncrdId(ncrdId)
+                                    .emplyrId(userId)
+                                    .useAt("Y")
+                                    .registSeCode("REGC01") // 등록구분: 사용자등록
+                                    .build()));
+                        });
     }
 
     @Override

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { CongratulationManage } from '@/services/congratulationService';
+import { CongratulationManage } from '@/services/admin/system/CongratulationAdminService';
 
 interface CongratulationFormProps {
     initialData?: Partial<CongratulationManage>;

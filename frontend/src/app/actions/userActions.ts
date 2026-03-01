@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
+import { userAdminService } from '@/services/admin/user/UserAdminService';
 import { UserManage } from '@/types/user';
 
 export async function createUserAction(prevState: any, formData: UserManage) {
@@ -11,8 +11,8 @@ export async function createUserAction(prevState: any, formData: UserManage) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.post('/admin/users', formData, axiosConfig);
-    
+    await userAdminService.createUser(formData, axiosConfig);
+
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 등록되었습니다.' };
   } catch (error: any) {
@@ -27,8 +27,8 @@ export async function updateUserAction(prevState: any, formData: UserManage) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.put(`/admin/users/${formData.userId}`, formData, axiosConfig);
-    
+    await userAdminService.updateUser(formData.userId, formData, axiosConfig);
+
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자 정보가 수정되었습니다.' };
   } catch (error: any) {
@@ -43,8 +43,8 @@ export async function deleteUserAction(prevState: any, userId: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/users/${userId}`, axiosConfig);
-    
+    await userAdminService.deleteUser(userId, axiosConfig);
+
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 삭제되었습니다.' };
   } catch (error: any) {

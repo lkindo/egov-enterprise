@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { approvalService, Approval } from '@/services/approvalService';
+import { approvalUserService, Approval } from '@/services/user/approval/ApprovalUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 export default function ApprovalInboxPage() {
   const { toast } = useToast();
   const confirm = useConfirm();
-  
+
   const [tab, setTab] = useState<'received' | 'sent'>('received');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Approval[]>([]);
@@ -38,10 +38,10 @@ export default function ApprovalInboxPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = tab === 'received' 
-        ? await approvalService.getPending({ page: 0, size: 20 })
-        : await approvalService.getMyHistory({ page: 0, size: 20 });
-      
+      const result = tab === 'received'
+        ? await approvalUserService.getPending({ page: 0, size: 20 })
+        : await approvalUserService.getMyHistory({ page: 0, size: 20 });
+
       setData(result.content || []);
       if (result.content?.length > 0) {
         setSelectedItem(result.content[0]);
@@ -70,7 +70,7 @@ export default function ApprovalInboxPage() {
     if (!isConfirmed) return;
 
     try {
-      await approvalService.confirm(item.approvalId, status);
+      await approvalUserService.confirm(item.approvalId, status);
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       loadData();
     } catch (error) {
@@ -79,14 +79,14 @@ export default function ApprovalInboxPage() {
   };
 
   const columns = [
-    { 
-      header: '결재 정보', 
+    {
+      header: '결재 정보',
       accessor: (item: Approval) => (
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0",
-            item.status === 'Y' ? "bg-emerald-50 text-emerald-600" : 
-            item.status === 'N' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+            item.status === 'Y' ? "bg-emerald-50 text-emerald-600" :
+              item.status === 'N' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
           )}>
             <FileText size={18} />
           </div>
@@ -99,8 +99,8 @@ export default function ApprovalInboxPage() {
         </div>
       )
     },
-    { 
-      header: '신청자', 
+    {
+      header: '신청자',
       accessor: (item: Approval) => (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -122,15 +122,15 @@ export default function ApprovalInboxPage() {
         label: '최종 승인',
         user: '관리자',
         status: selectedItem.status === 'Y' ? 'completed' as const :
-                selectedItem.status === 'N' ? 'rejected' as const : 'pending' as const
+          selectedItem.status === 'N' ? 'rejected' as const : 'pending' as const
       }
     ];
   }, [selectedItem]);
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
-      <PageHeader 
-        title="전자결재 관제 센터" 
+      <PageHeader
+        title="전자결재 관제 센터"
         breadcrumbs={[{ label: '업무지원' }, { label: '전자결재' }]}
         actions={
           <Button className="rounded-xl h-11 px-6 font-black shadow-lg shadow-primary/20 gap-2">
@@ -141,15 +141,15 @@ export default function ApprovalInboxPage() {
 
       {/* Modern Tab Bar */}
       <div className="flex p-1.5 bg-muted/30 rounded-[1.5rem] w-fit">
-        <TabButton 
-          active={tab === 'received'} 
+        <TabButton
+          active={tab === 'received'}
           onClick={() => setTab('received')}
           icon={<Inbox size={18} />}
           label="받은 결재함"
           count={tab === 'received' ? data.length : 3}
         />
-        <TabButton 
-          active={tab === 'sent'} 
+        <TabButton
+          active={tab === 'sent'}
           onClick={() => setTab('sent')}
           icon={<Send size={18} />}
           label="보낸 결재함"
@@ -170,9 +170,9 @@ export default function ApprovalInboxPage() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-              <StandardDataTable 
-                columns={columns} 
-                data={data} 
+              <StandardDataTable
+                columns={columns}
+                data={data}
                 loading={loading}
                 onRowClick={setSelectedItem}
                 emptyMessage={tab === 'received' ? "대기 중인 결재 요청이 없습니다." : "보낸 결재 이력이 없습니다."}
@@ -201,13 +201,13 @@ export default function ApprovalInboxPage() {
                   </div>
                   {tab === 'received' && selectedItem.status === 'R' && (
                     <div className="flex gap-3">
-                      <Button 
+                      <Button
                         onClick={() => handleAction(selectedItem, 'Y')}
                         className="h-14 px-8 rounded-2xl font-black bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 gap-2"
                       >
                         <Check size={20} /> 승인 처리
                       </Button>
-                      <Button 
+                      <Button
                         variant="destructive"
                         onClick={() => handleAction(selectedItem, 'N')}
                         className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-red-500/20 gap-2"
@@ -277,8 +277,8 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       onClick={onClick}
       className={cn(
         "flex items-center gap-2.5 px-8 py-3.5 text-sm font-black rounded-2xl transition-all duration-300 relative",
-        active 
-          ? "bg-background text-primary shadow-xl shadow-primary/10 scale-105 z-10" 
+        active
+          ? "bg-background text-primary shadow-xl shadow-primary/10 scale-105 z-10"
           : "text-muted-foreground hover:bg-background/50"
       )}
     >

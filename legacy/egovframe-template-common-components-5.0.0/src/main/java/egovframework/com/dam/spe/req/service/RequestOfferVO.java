@@ -172,6 +172,3 @@ public class RequestOfferVO extends RequestOffer{
 
 
 }
-
-
-

@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * ?�청/?�답 ?�키�?검�??�스??
- * API???�청 �??�답??명세???�키마에 ?�라 ?�바르게 구성?�는지 ?�인
+ * ?�청/?�답 ?�키�?검�??�스??
+ * API???�청 �??�답??명세???�키마에 ?�라 ?�바르게 구성?�는지 ?�인
  */
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -26,14 +26,14 @@ class RequestResponseSchemaValidationTest {
         private MockMvc mockMvc;
 
         @Test
-        @DisplayName("?�용???�록 ?�청 ?�키�?검�?)
+        @DisplayName("?�용???�록 ?�청 ?�키�?검�?)
         void userSignup_requestSchema_validation() throws Exception {
                 // Given
                 String validRequest = """
                                 {
                                     "userId": "validUser123",
                                     "password": "ValidPass123!",
-                                    "userNm": "?�효???�용??,
+                                    "userNm": "?�효???�용??,
                                     "passwordHint": "password hint",
                                     "passwordCnsr": "password answer",
                                     "role": "USER"
@@ -49,11 +49,11 @@ class RequestResponseSchemaValidationTest {
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data").exists())
                                 .andExpect(jsonPath("$.data.userId").value("validUser123"))
-                                .andExpect(jsonPath("$.data.userNm").value("?�효???�용??));
+                                .andExpect(jsonPath("$.data.userNm").value("?�효???�용??));
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�수 ?�드 ?�락 ??검�??�류")
+        @DisplayName("?�용???�록 ?�청 - ?�수 ?�드 ?�락 ??검�??�류")
         void userSignup_missingRequiredFields_validationError() throws Exception {
                 // Given
                 String invalidRequest = """
@@ -74,7 +74,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�못???�드 ?�????검�??�류")
+        @DisplayName("?�용???�록 ?�청 - ?�못???�드 ?�????검�??�류")
         void userSignup_wrongFieldType_validationError() throws Exception {
                 // Given
                 String invalidRequest = """
@@ -99,7 +99,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용??목록 조회 ?�답 ?�키�?검�?)
+        @DisplayName("?�용??목록 조회 ?�답 ?�키�?검�?)
         void userGetList_responseSchema_validation() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users")
@@ -115,7 +115,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�일 조회 ?�답 ?�키�?검�?)
+        @DisplayName("?�용???�일 조회 ?�답 ?�키�?검�?)
         void userGetById_responseSchema_validation() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/testUser")
@@ -134,7 +134,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�이징된 ?�용??목록 조회 ?�답 ?�키�?검�?)
+        @DisplayName("?�이징된 ?�용??목록 조회 ?�답 ?�키�?검�?)
         void pagedUserList_responseSchema_validation() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/paged?page=0&size=10")
@@ -157,14 +157,14 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�못??ID ?�식 검�?)
+        @DisplayName("?�용???�록 ?�청 - ?�못??ID ?�식 검�?)
         void userSignup_invalidIdFormat_validation() throws Exception {
                 // Given
                 String invalidRequest = """
                                 {
                                     "userId": "invalid@user#id",  // Contains invalid characters
                                     "password": "ValidPass123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -182,7 +182,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�무 �??�드 �?검�?)
+        @DisplayName("?�용???�록 ?�청 - ?�무 �??�드 �?검�?)
         void userSignup_tooLongField_validation() throws Exception {
                 // Given
                 String longUserId = "a".repeat(50); // Exceeds typical length limit
@@ -190,7 +190,7 @@ class RequestResponseSchemaValidationTest {
                                 {
                                     "userId": "%s",
                                     "password": "ValidPass123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -208,14 +208,14 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�무 짧�? 비�?번호 검�?)
+        @DisplayName("?�용???�록 ?�청 - ?�무 짧�? 비�?번호 검�?)
         void userSignup_shortPassword_validation() throws Exception {
                 // Given
                 String invalidRequest = """
                                 {
                                     "userId": "validUser123",
                                     "password": "123",  // Too short
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -233,14 +233,14 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�록 ?�청 - ?�못????�� �?검�?)
+        @DisplayName("?�용???�록 ?�청 - ?�못????�� �?검�?)
         void userSignup_invalidRole_validation() throws Exception {
                 // Given
                 String invalidRequest = """
                                 {
                                     "userId": "validUser123",
                                     "password": "ValidPass123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "INVALID_ROLE"
@@ -258,13 +258,13 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용???�보 ?�정 ?�청 ?�키�?검�?)
+        @DisplayName("?�용???�보 ?�정 ?�청 ?�키�?검�?)
         void userUpdate_requestSchema_validation() throws Exception {
                 // Given
                 String validRequest = """
                                 {
                                     "userId": "updateUser",
-                                    "userNm": "?�정???�용??,
+                                    "userNm": "?�정???�용??,
                                     "passwordHint": "new hint",
                                     "passwordCnsr": "new answer",
                                     "role": "ADMIN"
@@ -280,11 +280,11 @@ class RequestResponseSchemaValidationTest {
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data").exists())
                                 .andExpect(jsonPath("$.data.userId").value("updateUser"))
-                                .andExpect(jsonPath("$.data.userNm").value("?�정???�용??));
+                                .andExpect(jsonPath("$.data.userNm").value("?�정???�용??));
         }
 
         @Test
-        @DisplayName("?�용???�보 ?�정 ?�청 - ?�못???�드 �?검�?)
+        @DisplayName("?�용???�보 ?�정 ?�청 - ?�못???�드 �?검�?)
         void userUpdate_invalidFieldValue_validation() throws Exception {
                 // Given
                 String invalidRequest = """
@@ -308,7 +308,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용????�� ?�청 ?�키�?검�?)
+        @DisplayName("?�용????�� ?�청 ?�키�?검�?)
         void userDelete_requestSchema_validation() throws Exception {
                 // When & Then
                 mockMvc.perform(delete("/api/v1/users/deleteUser")
@@ -319,10 +319,10 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용??검???�청 ?�키�?검�?)
+        @DisplayName("?�용??검???�청 ?�키�?검�?)
         void userSearch_requestSchema_validation() throws Exception {
                 // When & Then
-                mockMvc.perform(get("/api/v1/users/search?searchType=USER_NM&searchKeyword=?�스??)
+                mockMvc.perform(get("/api/v1/users/search?searchType=USER_NM&searchKeyword=?�스??)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -331,10 +331,10 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용??검???�청 - ?�못??검???�??검�?)
+        @DisplayName("?�용??검???�청 - ?�못??검???�??검�?)
         void userSearch_invalidSearchType_validation() throws Exception {
                 // When & Then
-                mockMvc.perform(get("/api/v1/users/search?searchType=INVALID_TYPE&searchKeyword=?�스??)
+                mockMvc.perform(get("/api/v1/users/search?searchType=INVALID_TYPE&searchKeyword=?�스??)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -342,7 +342,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�용??검???�청 - ?�무 �?검?�어 검�?)
+        @DisplayName("?�용??검???�청 - ?�무 �?검?�어 검�?)
         void userSearch_tooLongSearchKeyword_validation() throws Exception {
                 // Given
                 String longKeyword = "a".repeat(1001); // Exceeds typical limit
@@ -356,7 +356,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�답 ?�이??구조 검�?- ?�용??DTO ?�드 존재 ?�인")
+        @DisplayName("?�답 ?�이??구조 검�?- ?�용??DTO ?�드 존재 ?�인")
         void responseSchema_userDtoFieldExistence() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/testUser")
@@ -389,7 +389,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�청 ?�라미터 ?�키�?검�?- ?�수 ?�???�라미터")
+        @DisplayName("?�청 ?�라미터 ?�키�?검�?- ?�수 ?�???�라미터")
         void requestParameter_schema_validation_integer() throws Exception {
                 // When & Then - Valid integer parameters
                 mockMvc.perform(get("/api/v1/users?page=0&size=10")
@@ -405,7 +405,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�청 ?�라미터 ?�키�?검�?- 부???�???�라미터")
+        @DisplayName("?�청 ?�라미터 ?�키�?검�?- 부???�???�라미터")
         void requestParameter_schema_validation_boolean() throws Exception {
                 // When & Then - Valid boolean parameter
                 mockMvc.perform(get("/api/v1/users?active=true")
@@ -419,7 +419,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�답 ?�키�?검�?- 공통 ?�답 구조 ?�인")
+        @DisplayName("?�답 ?�키�?검�?- 공통 ?�답 구조 ?�인")
         void responseSchema_commonStructure_validation() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/testUser")
@@ -435,7 +435,7 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�류 ?�답 ?�키�?검�?- 공통 ?�류 ?�답 구조 ?�인")
+        @DisplayName("?�류 ?�답 ?�키�?검�?- 공통 ?�류 ?�답 구조 ?�인")
         void errorResponseSchema_commonStructure_validation() throws Exception {
                 // Given
                 String invalidRequest = """
@@ -464,14 +464,14 @@ class RequestResponseSchemaValidationTest {
         }
 
         @Test
-        @DisplayName("?�청 본문 ?�키�?검�?- ?�수 ?�드 존재 ?�인")
+        @DisplayName("?�청 본문 ?�키�?검�?- ?�수 ?�드 존재 ?�인")
         void requestBodySchema_requiredFields_validation() throws Exception {
                 // Given - Valid request with all required fields
                 String validRequest = """
                                 {
                                     "userId": "completeUser",
                                     "password": "CompletePass123!",
-                                    "userNm": "?�전???�용??,
+                                    "userNm": "?�전???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"

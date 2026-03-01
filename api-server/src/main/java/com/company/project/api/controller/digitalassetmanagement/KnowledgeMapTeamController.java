@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetMapTeam", description = "지???� 관�?API")
+@Tag(name = "DigitalAssetMapTeam", description = "지식 맵 팀 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/digital-assets/map-teams")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class KnowledgeMapTeamController {
 
     private final KnowledgeMapTeamService mapTeamService;
 
-    @Operation(summary = "지???� 목록 조회", description = "?�스?�에 ?�록??지???�(조직) 목록??조회?�니??")
+    @Operation(summary = "지식 맵 팀 목록 조회", description = "시스템에 등록된 지식 맵 팀(조직) 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MapTeamDto>>> getMapTeamList(
             @RequestParam(required = false) String searchCondition,
@@ -33,39 +33,39 @@ public class KnowledgeMapTeamController {
                 mapTeamService.selectKnowledgeMapTeamList(searchCondition, searchKeyword, pageable)));
     }
 
-    @Operation(summary = "지???� ?�세 조회", description = "?�정 지???�???�세 ?�보�?조회?�니??")
-    @GetMapping("/{orgnztId}")
+    @Operation(summary = "지식 맵 팀 상세 조회", description = "특정 지식 맵 팀의 상세 정보를 조회합니다.")
+    @GetMapping("/{organizationId}")
     public ResponseEntity<ApiResponse<MapTeamDto>> getMapTeamDetail(
-            @Parameter(description = "조직 ID") @PathVariable String orgnztId) {
-        return ResponseEntity.ok(ApiResponse.success(mapTeamService.selectKnowledgeMapTeamDetail(orgnztId)));
+            @Parameter(description = "조직 ID") @PathVariable String organizationId) {
+        return ResponseEntity.ok(ApiResponse.success(mapTeamService.selectKnowledgeMapTeamDetail(organizationId)));
     }
 
-    @Operation(summary = "지???� ?�록", description = "?�로??지???� ?�보�??�록?�니??")
+    @Operation(summary = "지식 맵 팀 등록", description = "새로운 지식 맵 팀 정보를 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createMapTeam(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody MapTeamDto mapTeamDto) {
-        mapTeamDto.setLastUpdusrId(userDetails.getUsername());
+        mapTeamDto.setLastModifiedBy(userDetails.getUsername());
         mapTeamService.insertKnowledgeMapTeam(mapTeamDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지???� ?�보 ?�정", description = "지???� ?�보�??�정?�니??")
-    @PutMapping("/{orgnztId}")
+    @Operation(summary = "지식 맵 팀 정보 수정", description = "지식 맵 팀 정보를 수정합니다.")
+    @PutMapping("/{organizationId}")
     public ResponseEntity<ApiResponse<Void>> updateMapTeam(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String orgnztId,
+            @PathVariable String organizationId,
             @RequestBody MapTeamDto mapTeamDto) {
-        mapTeamDto.setOrgnztId(orgnztId);
-        mapTeamDto.setLastUpdusrId(userDetails.getUsername());
+        mapTeamDto.setOrganizationId(organizationId);
+        mapTeamDto.setLastModifiedBy(userDetails.getUsername());
         mapTeamService.updateKnowledgeMapTeam(mapTeamDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지???� ?�보 ??��", description = "지???� ?�보�???��?�니??")
-    @DeleteMapping("/{orgnztId}")
-    public ResponseEntity<ApiResponse<Void>> deleteMapTeam(@PathVariable String orgnztId) {
-        mapTeamService.deleteKnowledgeMapTeam(orgnztId);
+    @Operation(summary = "지식 맵 팀 정보 삭제", description = "지식 맵 팀 정보를 삭제합니다.")
+    @DeleteMapping("/{organizationId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMapTeam(@PathVariable String organizationId) {
+        mapTeamService.deleteKnowledgeMapTeam(organizationId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

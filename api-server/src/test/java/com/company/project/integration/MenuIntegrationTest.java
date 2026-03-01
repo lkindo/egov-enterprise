@@ -25,50 +25,50 @@ public class MenuIntegrationTest {
     private MenuService menuService;
 
     @Test
-    @DisplayName("메뉴 관�?CRUD ?�스??)
+    @DisplayName("메뉴 관�?CRUD ?�스??)
     @WithMockUser(roles = "ADMIN")
     void menuManageIntegrationTest() {
-        // 1. ?�록
+        // 1. ?�록
         MenuDto dto = MenuDto.builder()
                 .menuNo(9999L)
-                .menuNm("?�스?�메??)
+                .menuNm("?�스?�메??)
                 .progrmFileNm("testProgram")
                 .upperMenuNo(0L)
                 .menuOrdr(1)
-                .menuDc("?�스?�메?�설�?)
+                .menuDc("?�스?�메?�설�?)
                 .build();
         menuService.insertMenuManage(dto);
 
-        // 2. ?�세 조회
+        // 2. ?�세 조회
         MenuDto result = menuService.selectMenuManage(9999L);
         assertThat(result).isNotNull();
-        assertThat(result.getMenuNm()).isEqualTo("?�스?�메??);
+        assertThat(result.getMenuNm()).isEqualTo("?�스?�메??);
 
-        // 3. ?�정
-        result.setMenuNm("?�스?�메?�수??);
+        // 3. ?�정
+        result.setMenuNm("?�스?�메?�수??);
         menuService.updateMenuManage(result);
         MenuDto updated = menuService.selectMenuManage(9999L);
-        assertThat(updated.getMenuNm()).isEqualTo("?�스?�메?�수??);
+        assertThat(updated.getMenuNm()).isEqualTo("?�스?�메?�수??);
 
         // 4. 목록 조회
         ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setSearchKeyword("?�스??);
+        searchVO.setSearchKeyword("?�스??);
         searchVO.setPageIndex(1);
         searchVO.setRecordCountPerPage(10);
         List<MenuDto> list = menuService.selectMenuManageList(searchVO);
         assertThat(list).isNotEmpty();
 
-        // 5. ??��
+        // 5. ??��
         menuService.deleteMenuManage(updated);
         MenuDto deleted = menuService.selectMenuManage(9999L);
         assertThat(deleted).isNull();
     }
 
     @Test
-    @DisplayName("메뉴 계층 구조 조회 ?�스??)
+    @DisplayName("메뉴 계층 구조 조회 ?�스??)
     @WithMockUser(roles = "ADMIN")
     void menuHierarchyIntegrationTest() {
-        // 부�?메뉴 ?�록
+        // 부�?메뉴 ?�록
         MenuDto parent = MenuDto.builder()
                 .menuNo(8888L)
                 .menuNm("부모메??)
@@ -78,10 +78,10 @@ public class MenuIntegrationTest {
                 .build();
         menuService.insertMenuManage(parent);
 
-        // ?�식 메뉴 ?�록
+        // ?�식 메뉴 ?�록
         MenuDto child = MenuDto.builder()
                 .menuNo(8889L)
-                .menuNm("?�식메뉴")
+                .menuNm("?�식메뉴")
                 .progrmFileNm("childProg")
                 .upperMenuNo(8888L)
                 .menuOrdr(1)

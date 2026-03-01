@@ -516,7 +516,8 @@ public class EgovLoginController {
 		 * // 釉뚮씪?곗? ?대쫫??諛쏄린?꾪븳 泥섎━ String webKind = EgovClntInfo.getClntWebKind(request);
 		 * String[] ss = webKind.split(" "); String browser = ss[1];
 		 * model.addAttribute("browser",browser); // -- ?ш린源뚯? if
-		 * (os.equalsIgnoreCase("x86")) { //Local Host TEST 吏꾪뻾以?} else { if
+		 * (os.equalsIgnoreCase("x86")) { //Local Host TEST 吏꾪뻾以?
+                    } else { if
 		 * (browser.equalsIgnoreCase("Explorer")) { GPKIHttpServletResponse gpkiresponse
 		 * = null; GPKIHttpServletRequest gpkirequest = null;
 		 * 
@@ -555,7 +556,8 @@ public class EgovLoginController {
 		String browser = EgovClntInfo.getClntWebKind(request);
 		model.addAttribute("browser", browser);
 		/*
-		 * // -- ?ш린源뚯? if (os.equalsIgnoreCase("x86")) { // Local Host TEST 吏꾪뻾以?} else {
+		 * // -- ?ш린源뚯? if (os.equalsIgnoreCase("x86")) { // Local Host TEST 吏꾪뻾以?
+                    } else {
 		 * if (browser.equalsIgnoreCase("Explorer")) { GPKIHttpServletResponse
 		 * gpkiresponse = null; GPKIHttpServletRequest gpkirequest = null; try {
 		 * gpkiresponse = new GPKIHttpServletResponse(response); gpkirequest = new

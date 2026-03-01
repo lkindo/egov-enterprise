@@ -56,4 +56,3 @@ public class QHttpMonitoring extends EntityPathBase<HttpMonitoring> {
     }
 
 }
-

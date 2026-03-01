@@ -31,7 +31,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
 import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
-import { scheduleService } from '@/services/scheduleService';
+import { scheduleService } from '@/services/user/ScheduleService';
 import { Schedule } from '@/types/schedule';
 
 export default function SchedulePage() {

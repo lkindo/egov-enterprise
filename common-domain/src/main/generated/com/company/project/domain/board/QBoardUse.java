@@ -48,4 +48,3 @@ public class QBoardUse extends EntityPathBase<BoardUse> {
     }
 
 }
-

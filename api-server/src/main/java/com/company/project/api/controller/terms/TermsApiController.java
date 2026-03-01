@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-@Tag(name = "Terms", description = "?½ê? ê´€ë¦?API")
+@Tag(name = "Terms", description = "?ï¿½ï¿½? ê´€ï¿½?API")
 @RestController
 @RequestMapping("/api/v1/admin/terms")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class TermsApiController {
 
     private final TermsService termsService;
 
-    @Operation(summary = "?½ê? ëª©ë¡ ì¡°íšŒ")
+    @Operation(summary = "?ï¿½ï¿½? ëª©ë¡ ì¡°íšŒ")
     @GetMapping
     public ResponseEntity<?> getTermsList(
             @RequestParam(defaultValue = "0") int page,
@@ -34,13 +34,13 @@ public class TermsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "?½ê? ?ì„¸ ì¡°íšŒ")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì„¸ ì¡°íšŒ")
     @GetMapping("/{useStplatId}")
     public ResponseEntity<?> getTermsDetail(@PathVariable String useStplatId) {
         return ResponseEntity.ok(ApiResponse.success(termsService.getTerms(useStplatId)));
     }
 
-    @Operation(summary = "?½ê? ?±ë¡")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ë¡")
     @PostMapping
     public ResponseEntity<?> createTerms(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -49,7 +49,7 @@ public class TermsApiController {
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 
-    @Operation(summary = "?½ê? ?˜ì •")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì •")
     @PutMapping("/{useStplatId}")
     public ResponseEntity<?> updateTerms(
             @PathVariable String useStplatId,
@@ -59,7 +59,7 @@ public class TermsApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?½ê? ?? œ")
+    @Operation(summary = "?ï¿½ï¿½? ??ï¿½ï¿½")
     @DeleteMapping("/{useStplatId}")
     public ResponseEntity<?> deleteTerms(
             @PathVariable String useStplatId,

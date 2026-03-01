@@ -48,4 +48,3 @@ public class QServer extends EntityPathBase<Server> {
     }
 
 }
-

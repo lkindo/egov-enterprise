@@ -31,7 +31,7 @@ public class PopupServiceImpl implements PopupService {
         if (keyword == null || keyword.isEmpty()) {
             return popupRepository.findAll(Objects.requireNonNull(pageable)).map(PopupDto::from);
         }
-        return popupRepository.findByPopupTitleNmContaining(keyword, Objects.requireNonNull(pageable))
+        return popupRepository.findByPopupTitleNameContaining(keyword, Objects.requireNonNull(pageable))
                 .map(PopupDto::from);
     }
 
@@ -57,18 +57,18 @@ public class PopupServiceImpl implements PopupService {
             String popupId = egovPopupManageIdGnrService.getNextStringId();
             Popup popup = Popup.builder()
                     .popupId(popupId)
-                    .popupTitleNm(dto.getPopupTitleNm())
+                    .popupTitleName(dto.getPopupTitleName())
                     .fileUrl(dto.getFileUrl())
-                    .popupWlc(dto.getPopupWlc())
-                    .popupHlc(dto.getPopupHlc())
-                    .popupHSize(dto.getPopupHSize())
-                    .popupWSize(dto.getPopupWSize())
-                    .ntceBgnde(dto.getNtceBgnde())
-                    .ntceEndde(dto.getNtceEndde())
-                    .stopVewAt(dto.getStopVewAt())
-                    .ntceAt(dto.getNtceAt())
-                    .frstRegisterId(userId)
+                    .popupWidthLocation(dto.getPopupWidthLocation())
+                    .popupHeightLocation(dto.getPopupHeightLocation())
+                    .popupHeightSize(dto.getPopupHeightSize())
+                    .popupWidthSize(dto.getPopupWidthSize())
+                    .noticeBeginDate(dto.getNoticeBeginDate())
+                    .noticeEndDate(dto.getNoticeEndDate())
+                    .isStopView(dto.getIsStopView())
+                    .isNotice(dto.getIsNotice())
                     .build();
+            popup.setFrstRegisterId(userId);
             popupRepository.save(Objects.requireNonNull(popup));
             return popupId;
         } catch (Exception e) {
@@ -82,9 +82,11 @@ public class PopupServiceImpl implements PopupService {
         Popup popup = popupRepository.findById(Objects.requireNonNull(popupId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        popup.update(dto.getPopupTitleNm(), dto.getFileUrl(), dto.getPopupWlc(), dto.getPopupHlc(),
-                dto.getPopupHSize(), dto.getPopupWSize(), dto.getNtceBgnde(), dto.getNtceEndde(),
-                dto.getStopVewAt(), dto.getNtceAt(), userId);
+        popup.update(dto.getPopupTitleName(), dto.getFileUrl(), dto.getPopupWidthLocation(),
+                dto.getPopupHeightLocation(),
+                dto.getPopupHeightSize(), dto.getPopupWidthSize(), dto.getNoticeBeginDate(), dto.getNoticeEndDate(),
+                dto.getIsStopView(), dto.getIsNotice());
+        popup.setLastUpdusrId(userId);
     }
 
     @Override

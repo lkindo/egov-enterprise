@@ -61,7 +61,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 ?????�???????무결???? ????")
+    @DisplayName("병렬 ?????�???????무결???? ????")
     void parallelUserRegistration_dataIntegrity_preserved() throws Exception {
         // Given
         int numberOfUsers = 10;
@@ -230,7 +230,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 ?????????ID 중복 �? ????")
+    @DisplayName("병렬 ?????????ID 중복 �? ????")
     void parallelUserCreation_duplicateId_prevention() throws Exception {
         // Given
         String duplicateUserId = "duplicateUser";
@@ -297,14 +297,14 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 ???�????�??????무결????")
+    @DisplayName("병렬 ???�????�??????무결????")
     void parallelDatabaseRead_dataIntegrity_maintained() throws Exception {
         // Given
         // Prepare multiple users in the repository
         List<User> users = IntStream.range(0, 5)
                 .mapToObj(i -> User.builder()
                         .userId("readerUser" + i)
-                        .userNm("?�????? + i")
+                        .userNm("?�????? + i")
                         .esntlId("USR0000" + i)
                         .build())
                 .collect(Collectors.toList());
@@ -476,7 +476,7 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 ???????????�??무결????")
+    @DisplayName("병렬 ???????????�??무결????")
     void parallelDataInsertion_sequenceIntegrity_maintained() throws Exception {
         // Given
         int numberOfInsertions = 15;
@@ -492,7 +492,7 @@ class ParallelProcessingDataIntegrityTest {
                             {
                                 "userId": "%s",
                                 "password": "password123!",
-                                "userNm": "??�??????d",
+                                "userNm": "??�??????d",
                                 "passwordHint": "hint",
                                 "passwordCnsr": "answer",
                                 "role": "USER"
@@ -532,13 +532,13 @@ class ParallelProcessingDataIntegrityTest {
     }
 
     @Test
-    @DisplayName("병렬 ?????�?????????????????")
+    @DisplayName("병렬 ?????�?????????????????")
     void parallelUserInfoUpdate_concurrencyControl_test() throws Exception {
         // Given
         String userId = "concurrentUpdateUser";
         User originalUser = User.builder()
                 .userId(userId)
-                .userNm("?�?????")
+                .userNm("?�?????")
                 .esntlId("USR00001")
                 .build();
 
@@ -597,13 +597,13 @@ class ParallelProcessingDataIntegrityTest {
     /*
      * @Test
      * 
-     * @DisplayName("병렬 ?�??�??????무결????")
+     * @DisplayName("병렬 ?�??�??????무결????")
      * void parallelAuthentication_sessionIntegrity_maintained() throws Exception {
      * }
      */
 
     @Test
-    @DisplayName("병렬 ???�????�??????ACID ?????")
+    @DisplayName("병렬 ???�????�??????ACID ?????")
     void parallelDatabaseWrite_acidProperties_maintained() throws Exception {
         // Given
         int numberOfWrites = 10;
@@ -676,7 +676,7 @@ class ParallelProcessingDataIntegrityTest {
     /*
      * @Test
      * 
-     * @DisplayName("병렬 ????�????리소??경쟁 ???)
+     * @DisplayName("병렬 ????�????리소??경쟁 ???)
      * void parallelFileUpload_resourceCompetition_absent() throws Exception {
      * }
      */

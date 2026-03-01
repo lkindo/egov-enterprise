@@ -4,15 +4,15 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { BatchSchedule, BatchResult } from '@/services/batchService';
+import { BatchSchedule, BatchResult } from '@/services/admin/system/BatchAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { executeBatchAction } from '@/app/actions/batchActions';
-import { 
-  Play, 
-  Calendar, 
-  History, 
-  RefreshCcw, 
+import {
+  Play,
+  Calendar,
+  History,
+  RefreshCcw,
   Activity,
   Terminal,
   Cpu,
@@ -26,12 +26,12 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
-export default function BatchAdminClient({ 
-    initialSchedules, 
-    initialResults 
-}: { 
-    initialSchedules: BatchSchedule[]; 
-    initialResults: BatchResult[] 
+export default function BatchAdminClient({
+  initialSchedules,
+  initialResults
+}: {
+  initialSchedules: BatchSchedule[];
+  initialResults: BatchResult[]
 }) {
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -61,26 +61,26 @@ export default function BatchAdminClient({
   };
 
   const scheduleColumns: ColumnDef<BatchSchedule>[] = [
-    { 
+    {
       id: 'batchOpertNm',
-      header: 'Operation Identifier', 
+      header: 'Operation Identifier',
       pinned: 'left',
       width: 300,
       accessor: (item: BatchSchedule) => (
-          <div className="flex items-center gap-4 py-1">
-              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
-                  <Terminal size={18} />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                  <span className="font-black italic uppercase tracking-tighter text-slate-900">{item.batchOpertNm}</span>
-                  <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest opacity-60">Proc ID: {item.batchOpertId}</span>
-              </div>
+        <div className="flex items-center gap-4 py-1">
+          <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+            <Terminal size={18} />
           </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-black italic uppercase tracking-tighter text-slate-900">{item.batchOpertNm}</span>
+            <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest opacity-60">Proc ID: {item.batchOpertId}</span>
+          </div>
+        </div>
       )
     },
-    { 
+    {
       id: 'executCycle',
-      header: 'Recurrence', 
+      header: 'Recurrence',
       accessor: (item: BatchSchedule) => (
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest rounded-lg border border-primary/10 italic">
           <Zap size={12} className="fill-primary" />
@@ -88,16 +88,16 @@ export default function BatchAdminClient({
         </span>
       )
     },
-    { 
+    {
       id: 'time',
-      header: 'Scheduled Activation', 
+      header: 'Scheduled Activation',
       accessor: (item: BatchSchedule) => (
-          <div className="flex items-center gap-2">
-              <Clock size={14} className="text-slate-300" />
-              <span className="text-sm font-black font-mono text-slate-600 tracking-tight">
-                {item.executSchdulHour}:{item.executSchdulMnt}:{item.executSchdulSecnd}
-              </span>
-          </div>
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-slate-300" />
+          <span className="text-sm font-black font-mono text-slate-600 tracking-tight">
+            {item.executSchdulHour}:{item.executSchdulMnt}:{item.executSchdulSecnd}
+          </span>
+        </div>
       )
     },
     {
@@ -106,62 +106,62 @@ export default function BatchAdminClient({
       className: 'text-right',
       accessor: (item: BatchSchedule) => (
         <div className="flex justify-end pr-4">
-            <Button 
-                onClick={() => handleExecuteNow(item.batchSchdulId)}
-                className="h-10 px-6 bg-slate-900 hover:bg-primary text-white text-[10px] font-black uppercase italic tracking-widest rounded-xl transition-all shadow-xl shadow-slate-900/10 gap-2 active:scale-95"
-            >
-                <Play size={14} fill="currentColor" /> Trigger
-            </Button>
+          <Button
+            onClick={() => handleExecuteNow(item.batchSchdulId)}
+            className="h-10 px-6 bg-slate-900 hover:bg-primary text-white text-[10px] font-black uppercase italic tracking-widest rounded-xl transition-all shadow-xl shadow-slate-900/10 gap-2 active:scale-95"
+          >
+            <Play size={14} fill="currentColor" /> Trigger
+          </Button>
         </div>
       )
     }
   ];
 
   const resultColumns: ColumnDef<BatchResult>[] = [
-    { 
+    {
       id: 'batchOpertNm',
-      header: 'Historical Operation', 
+      header: 'Historical Operation',
       accessor: (item: BatchResult) => (
-          <div className="flex items-center gap-3 py-1">
-              <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center shadow-md",
-                  item.sttus === '01' ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
-              )}>
-                  {item.sttus === '01' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              </div>
-              <span className="font-black italic uppercase tracking-tighter text-slate-900">{item.batchOpertNm}</span>
+        <div className="flex items-center gap-3 py-1">
+          <div className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center shadow-md",
+            item.sttus === '01' ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
+          )}>
+            {item.sttus === '01' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           </div>
+          <span className="font-black italic uppercase tracking-tighter text-slate-900">{item.batchOpertNm}</span>
+        </div>
       )
     },
-    { 
+    {
       id: 'executBeginTime',
-      header: 'Timestamp (Start)', 
+      header: 'Timestamp (Start)',
       accessor: (item: BatchResult) => (
-          <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter">{item.executBeginTime}</span>
+        <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter">{item.executBeginTime}</span>
       )
     },
-    { 
+    {
       id: 'executEndTime',
-      header: 'Timestamp (End)', 
+      header: 'Timestamp (End)',
       accessor: (item: BatchResult) => (
-          <span className="text-xs font-bold text-slate-300 font-mono tracking-tighter italic">{item.executEndTime}</span>
+        <span className="text-xs font-bold text-slate-300 font-mono tracking-tighter italic">{item.executEndTime}</span>
       )
     },
-    { 
+    {
       id: 'sttus',
-      header: 'Status Matrix', 
-      accessor: (item: BatchResult) => <StatusBadge status={item.sttus === '01' ? 'Y' : item.sttus === '03' ? 'R' : 'N'} /> 
+      header: 'Status Matrix',
+      accessor: (item: BatchResult) => <StatusBadge status={item.sttus === '01' ? 'Y' : item.sttus === '03' ? 'R' : 'N'} />
     }
   ];
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <PageHeader 
-        title="배치 지능형 오퍼레이션 센터" 
+      <PageHeader
+        title="배치 지능형 오퍼레이션 센터"
         breadcrumbs={[{ label: '시스템관리' }, { label: '배치관리' }]}
         actions={
-          <Button 
-            onClick={handleRefresh} 
+          <Button
+            onClick={handleRefresh}
             className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl active:scale-95"
           >
             <RefreshCcw size={20} />
@@ -206,17 +206,17 @@ export default function BatchAdminClient({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <SummaryCard 
-            title="TOTAL DEFINED JOBS" 
-            value={initialSchedules.length} 
-            icon={<Cpu size={24} />} 
-            color="primary" 
+        <SummaryCard
+          title="TOTAL DEFINED JOBS"
+          value={initialSchedules.length}
+          icon={<Cpu size={24} />}
+          color="primary"
         />
-        <SummaryCard 
-            title="RECENT SUCCESS RATE" 
-            value={`${initialResults.length > 0 ? ((initialResults.filter(r => r.sttus === '01').length / initialResults.length) * 100).toFixed(0) : 0}%`} 
-            icon={<Zap size={24} />} 
-            color="emerald" 
+        <SummaryCard
+          title="RECENT SUCCESS RATE"
+          value={`${initialResults.length > 0 ? ((initialResults.filter(r => r.sttus === '01').length / initialResults.length) * 100).toFixed(0) : 0}%`}
+          icon={<Zap size={24} />}
+          color="emerald"
         />
       </div>
 
@@ -234,34 +234,34 @@ export default function BatchAdminClient({
 }
 
 function SummaryCard({ title, value, icon, color }: { title: string, value: string | number, icon: React.ReactNode, color: string }) {
-    const colorMap: any = {
-        primary: "bg-white text-primary border-slate-100 shadow-xl shadow-primary/5",
-        emerald: "bg-emerald-600 text-white border-emerald-700 shadow-2xl shadow-emerald-600/20"
-    };
+  const colorMap: any = {
+    primary: "bg-white text-primary border-slate-100 shadow-xl shadow-primary/5",
+    emerald: "bg-emerald-600 text-white border-emerald-700 shadow-2xl shadow-emerald-600/20"
+  };
 
-    const iconBgMap: any = {
-        primary: "bg-primary text-white shadow-xl shadow-primary/20",
-        emerald: "bg-white/10 text-white"
-    };
+  const iconBgMap: any = {
+    primary: "bg-primary text-white shadow-xl shadow-primary/20",
+    emerald: "bg-white/10 text-white"
+  };
 
-    return (
-        <div className={cn(
-            "p-10 rounded-[3rem] border-2 transition-all group overflow-hidden relative",
-            colorMap[color]
-        )}>
-            <div className="flex flex-col gap-4 relative z-10">
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform", iconBgMap[color])}>
-                    {icon}
-                </div>
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 italic">{title}</p>
-                    <h4 className="text-4xl font-black italic tracking-tighter tabular-nums">{value}</h4>
-                </div>
-            </div>
-            {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { 
-                size: 200, 
-                className: "absolute right-[-10%] bottom-[-10%] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000" 
-            }) : null}
+  return (
+    <div className={cn(
+      "p-10 rounded-[3rem] border-2 transition-all group overflow-hidden relative",
+      colorMap[color]
+    )}>
+      <div className="flex flex-col gap-4 relative z-10">
+        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform", iconBgMap[color])}>
+          {icon}
         </div>
-    );
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 italic">{title}</p>
+          <h4 className="text-4xl font-black italic tracking-tighter tabular-nums">{value}</h4>
+        </div>
+      </div>
+      {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, {
+        size: 200,
+        className: "absolute right-[-10%] bottom-[-10%] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000"
+      }) : null}
+    </div>
+  );
 }

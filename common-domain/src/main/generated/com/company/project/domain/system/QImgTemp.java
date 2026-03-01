@@ -50,4 +50,3 @@ public class QImgTemp extends EntityPathBase<ImgTemp> {
     }
 
 }
-

@@ -56,4 +56,3 @@ public class QTrsmrcvMntrngLog extends EntityPathBase<TrsmrcvMntrngLog> {
     }
 
 }
-

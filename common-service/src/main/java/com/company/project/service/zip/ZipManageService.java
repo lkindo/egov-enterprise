@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * ?고렪踰덊???�????�퉬??
+ * ?고렪踰덊???�????�퉬??
  */
 @Service("zipManageService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class ZipManageService {
     private final ZipRepository zipRepository;
 
     /**
-     * ?고렪踰덊??紐⑸�?議고??     */
+     * ?고렪踰덊??紐⑸�?議고??     */
     public List<ZipDto> selectZipList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -45,7 +45,7 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊??紐⑸�???嫄댁??     */
+     * ?고렪踰덊??紐⑸�???嫄댁??     */
     public int selectZipListTotCnt(ComDefaultVO searchVO) {
         return (int) zipRepository.count();
     }
@@ -64,7 +64,7 @@ public class ZipManageService {
      */
     @Transactional
     public void insertZip(ZipDto dto) {
-        // ?�?�� ??�젴踰덊????�꽦
+        // ?�?�� ??�젴踰덊????�꽦
         List<Zip> existing = zipRepository.findByZip(Objects.requireNonNull(dto.getZip()));
         int newSn = existing.isEmpty() ? 1 : existing.stream().mapToInt(Zip::getSn).max().orElse(0) + 1;
 
@@ -82,7 +82,7 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊????�젙
+     * ?고렪踰덊????�젙
      */
     @Transactional
     public void updateZip(ZipDto dto) {
@@ -101,7 +101,7 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊??寃??(??�뾽??
+     * ?고렪踰덊??寃??(??�뾽??
      */
     public List<ZipDto> searchZip(String keyword) {
         if (keyword == null || keyword.isEmpty()) {

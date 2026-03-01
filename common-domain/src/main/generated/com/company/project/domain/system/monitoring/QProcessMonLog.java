@@ -50,4 +50,3 @@ public class QProcessMonLog extends EntityPathBase<ProcessMonLog> {
     }
 
 }
-

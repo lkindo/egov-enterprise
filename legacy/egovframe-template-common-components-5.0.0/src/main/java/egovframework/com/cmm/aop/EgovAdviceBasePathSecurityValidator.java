@@ -39,7 +39,8 @@ public class EgovAdviceBasePathSecurityValidator {
         String className = thisJoinPoint.getTarget().getClass().getSimpleName();
         String methodName = thisJoinPoint.getSignature().getName();
 
-        // ?꾩옱 class, method ?뺣낫 諛?method arguments 濡쒓퉭
+        // ?꾩옱
+                    , method ?뺣낫 諛?method arguments 濡쒓퉭
         log.debug("==> {}.{}()", className, methodName);
 
         // 硫붿꽌???뚮씪誘명꽣 ?대쫫 媛?몄삤湲?

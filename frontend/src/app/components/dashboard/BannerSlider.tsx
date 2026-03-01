@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { bannerService } from '@/services/bannerService';
+import { bannerAdminService } from '@/services/admin/system/BannerAdminService';
 import { Banner } from '@/types/banner';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,7 @@ export function BannerSlider() {
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const res = (await bannerService.getReflectedBanners()) as any;
+        const res = (await bannerAdminService.getReflectedBanners()) as any;
         if (res?.success) {
           setBanners(res.data);
         }
@@ -53,17 +53,17 @@ export function BannerSlider() {
 
   const currentBanner = banners[currentIndex];
   // 이미지 URL 처리 (백엔드 스토리지 또는 정적 경로)
-  const imageUrl = currentBanner.bannerImage.startsWith('http') 
-    ? currentBanner.bannerImage 
+  const imageUrl = currentBanner.bannerImage.startsWith('http')
+    ? currentBanner.bannerImage
     : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
 
   return (
     <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-2xl bg-slate-900 shadow-lg">
-      <div 
+      <div
         className="w-full h-full bg-cover bg-center transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
         style={{ backgroundImage: `url(${imageUrl})`, opacity: 0.8 }}
       />
-      
+
       {/* Overlay Content */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
         <h2 className="text-2xl md:text-3xl font-black mb-2 animate-in slide-in-from-left duration-500">
@@ -73,7 +73,7 @@ export function BannerSlider() {
           {currentBanner.bannerDc}
         </p>
         {currentBanner.linkUrl && (
-          <a 
+          <a
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -87,19 +87,19 @@ export function BannerSlider() {
       {/* Navigation Buttons */}
       {banners.length > 1 && (
         <>
-          <button 
+          <button
             onClick={prevSlide}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronLeft size={24} />
           </button>
-          <button 
+          <button
             onClick={nextSlide}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50"
           >
             <ChevronRight size={24} />
           </button>
-          
+
           {/* Indicators */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {banners.map((_, idx) => (

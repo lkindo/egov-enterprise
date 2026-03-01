@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Map;
 
 /**
- * 게시??관리�? ?�한 컨트롤러 (공�??�항 ??
+ * 게시??관리�? ?�한 컨트롤러 (공�??�항 ??
  */
 @Controller
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class BBSManageController {
     private final EgovPropertyService propertiesService;
 
     /**
-     * 게시�?목록??조회?�다.
+     * 게시�?목록??조회?�다.
      */
     @RequestMapping({ "/cop/bbs/selectBoardList.do", "/cop/bbs/admin/selectBoardList.do" })
     public String selectBoardList(@RequestParam Map<String, Object> commandMap, ModelMap model) throws Exception {
@@ -50,4 +50,3 @@ public class BBSManageController {
         return "cop/bbs/EgovNoticeList";
     }
 }
-

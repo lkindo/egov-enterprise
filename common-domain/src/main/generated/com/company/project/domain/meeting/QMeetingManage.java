@@ -82,4 +82,3 @@ public class QMeetingManage extends EntityPathBase<MeetingManage> {
     }
 
 }
-

@@ -132,4 +132,3 @@ public class BkmkMenuManageDAO extends EgovComAbstractDAO{
         return (String)selectOne("BkmkMenuManageDAO.selectUrl", bkmkMenuManage);
     }
 }
-

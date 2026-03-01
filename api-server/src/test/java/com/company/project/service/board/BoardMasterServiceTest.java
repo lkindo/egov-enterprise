@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * BoardMasterService ?�위 ?�스??
+ * BoardMasterService ?�위 ?�스??
  */
 @ExtendWith(MockitoExtension.class)
 class BoardMasterServiceTest {
@@ -55,8 +55,8 @@ class BoardMasterServiceTest {
     void setUp() {
         mockBoardMaster = BoardMaster.builder()
                 .bbsId("BBS_0000000001")
-                .bbsNm("?�스??게시??)
-                .bbsIntrcn("게시???�개")
+                .bbsNm("?�스??게시??)
+                .bbsIntrcn("게시???�개")
                 .bbsTyCode("BBST01")
                 .bbsAttrbCode("BBSA01")
                 .replyPosblAt("Y")
@@ -74,8 +74,8 @@ class BoardMasterServiceTest {
 
         boardMasterDto = BoardMasterDto.builder()
                 .bbsId("BBS_0000000001")
-                .bbsNm("?�스??게시??)
-                .bbsIntrcn("게시???�개")
+                .bbsNm("?�스??게시??)
+                .bbsIntrcn("게시???�개")
                 .bbsTyCode("BBST01")
                 .bbsAttrbCode("BBSA01")
                 .replyPosblAt("Y")
@@ -93,7 +93,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시??마스??조회 ?�공")
+    @DisplayName("게시??마스??조회 ?�공")
     void getBoardMaster_success() {
         // Given
         when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -103,12 +103,12 @@ class BoardMasterServiceTest {
 
         // Then
         assertThat(result.getBbsId()).isEqualTo("BBS_0000000001");
-        assertThat(result.getBbsNm()).isEqualTo("?�스??게시??);
+        assertThat(result.getBbsNm()).isEqualTo("?�스??게시??);
         assertThat(result.getUseAt()).isEqualTo("Y");
     }
 
     @Test
-    @DisplayName("게시??마스??조회 ?�패 - 존재?��? ?�는 ID")
+    @DisplayName("게시??마스??조회 ?�패 - 존재?��? ?�는 ID")
     void getBoardMaster_fail_notFound() {
         // Given
         when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -120,13 +120,13 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시??마스??목록 조회 ?�공")
+    @DisplayName("게시??마스??목록 조회 ?�공")
     void getBoardMasterList_success() {
         // Given
         List<BoardMasterSearchResult> searchResults = Arrays.asList(
                 BoardMasterSearchResult.builder()
                         .bbsId("BBS_0000000001")
-                        .bbsNm("?�스??게시??")
+                        .bbsNm("?�스??게시??")
                         .bbsTyCode("BBST01")
                         .bbsAttrbCode("BBSA01")
                         .tmplatId("TMPL01")
@@ -144,19 +144,19 @@ class BoardMasterServiceTest {
         // Then
         assertThat(result).hasSize(1);
         assertThat(result.getContent().get(0).getBbsId()).isEqualTo("BBS_0000000001");
-        assertThat(result.getContent().get(0).getBbsNm()).isEqualTo("?�스??게시??");
+        assertThat(result.getContent().get(0).getBbsNm()).isEqualTo("?�스??게시??");
     }
 
     @Test
-    @DisplayName("게시??마스???�성 ?�공")
+    @DisplayName("게시??마스???�성 ?�공")
     void createBoardMaster_success() throws Exception {
         // Given
         when(idgenService.getNextStringId()).thenReturn("BBS_NEW0000001");
         when(boardMasterRepository.save(any(BoardMaster.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BoardMasterDto newBoardMasterDto = BoardMasterDto.builder()
-                .bbsNm("?�규 게시??)
-                .bbsIntrcn("?�규 게시???�개")
+                .bbsNm("?�규 게시??)
+                .bbsIntrcn("?�규 게시???�개")
                 .bbsTyCode("BBST01")
                 .bbsAttrbCode("BBSA01")
                 .replyPosblAt("Y")
@@ -176,13 +176,13 @@ class BoardMasterServiceTest {
 
         BoardMaster savedEntity = captor.getValue();
         assertThat(savedEntity.getBbsId()).isEqualTo("BBS_NEW0000001");
-        assertThat(savedEntity.getBbsNm()).isEqualTo("?�규 게시??);
+        assertThat(savedEntity.getBbsNm()).isEqualTo("?�규 게시??);
         assertThat(savedEntity.getUseAt()).isEqualTo("Y"); // Default value
         assertThat(savedEntity.getFrstRegisterId()).isEqualTo("USER001");
     }
 
     @Test
-    @DisplayName("게시??마스???�성 ?�패 - ID ?�성 ?�류")
+    @DisplayName("게시??마스???�성 ?�패 - ID ?�성 ?�류")
     void createBoardMaster_fail_idGeneration() throws Exception {
         // Given
         when(idgenService.getNextStringId()).thenThrow(new Exception("ID generation failed"));
@@ -194,15 +194,15 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시??마스???�정 ?�공")
+    @DisplayName("게시??마스???�정 ?�공")
     void updateBoardMaster_success() {
         // Given
         when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
 
         BoardMasterDto updateDto = BoardMasterDto.builder()
                 .bbsId("BBS_0000000001")
-                .bbsNm("?�정??게시??)
-                .bbsIntrcn("?�정???�개")
+                .bbsNm("?�정??게시??)
+                .bbsIntrcn("?�정???�개")
                 .lastUpdusrId("USER002")
                 .build();
 
@@ -211,12 +211,12 @@ class BoardMasterServiceTest {
 
         // Then
         verify(boardMasterRepository).findById("BBS_0000000001");
-        assertThat(mockBoardMaster.getBbsNm()).isEqualTo("?�정??게시??);
-        assertThat(mockBoardMaster.getBbsIntrcn()).isEqualTo("?�정???�개");
+        assertThat(mockBoardMaster.getBbsNm()).isEqualTo("?�정??게시??);
+        assertThat(mockBoardMaster.getBbsIntrcn()).isEqualTo("?�정???�개");
     }
 
     @Test
-    @DisplayName("게시??마스???�정 ?�패 - 존재?��? ?�는 ID")
+    @DisplayName("게시??마스???�정 ?�패 - 존재?��? ?�는 ID")
     void updateBoardMaster_fail_notFound() {
         // Given
         when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -228,7 +228,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시??마스????�� ?�공")
+    @DisplayName("게시??마스????�� ?�공")
     void deleteBoardMaster_success() {
         // Given
         when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -242,7 +242,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시??마스????�� ?�패 - 존재?��? ?�는 ID")
+    @DisplayName("게시??마스????�� ?�패 - 존재?��? ?�는 ID")
     void deleteBoardMaster_fail_notFound() {
         // Given
         when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -254,7 +254,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("만족???�용 가???��? ?�인 - ?�용 가??)
+    @DisplayName("만족???�용 가???��? ?�인 - ?�용 가??)
     void canUseSatisfaction_true() {
         // Given
         when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -267,7 +267,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("만족???�용 가???��? ?�인 - ?�용 불�?")
+    @DisplayName("만족???�용 가???��? ?�인 - ?�용 불�?")
     void canUseSatisfaction_false() {
         // Given
         BoardMaster inactiveBoard = BoardMaster.builder()
@@ -284,7 +284,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("?��? ?�용 가???��? ?�인 - 존재?��? ?�는 게시??)
+    @DisplayName("?��? ?�용 가???��? ?�인 - 존재?��? ?�는 게시??)
     void canUseComment_boardNotFound() {
         // Given
         when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -297,7 +297,7 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("?��? ?�용 가???��? ?�인 - ?�용 가??)
+    @DisplayName("?��? ?�용 가???��? ?�인 - ?�용 가??)
     void canUseComment_true() {
         // Given
         when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));

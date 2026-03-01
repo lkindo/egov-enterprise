@@ -7,17 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Popup", description = "?�업 관�?API")
+@Tag(name = "Popup", description = "팝업 사용자 API")
 @RestController
 @RequestMapping("/api/v1/popups")
 @RequiredArgsConstructor
@@ -25,50 +20,16 @@ public class PopupController {
 
     private final PopupService popupService;
 
-    @Operation(summary = "?�업 목록 조회", description = "?�록???�업 목록???�이징하??조회?�니??")
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<PopupDto>>> getPopups(
-            @RequestParam(required = false) String searchWrd,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.getPopupList(searchWrd, pageable)));
-    }
-
-    @Operation(summary = "?�성 ?�업 목록 조회", description = "?�재 게시 기간 ?�에 ?�는 ?�성 ?�업 목록??조회?�니??")
+    @Operation(summary = "활성 팝업 목록 조회", description = "현재 게시 기간 내에 있는 활성 팝업 목록을 조회합니다.")
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<PopupDto>>> getActivePopups() {
         return ResponseEntity.ok(ApiResponse.success(popupService.getActivePopups()));
     }
 
-    @Operation(summary = "?�업 ?�세 조회", description = "?�업???�세 ?�보�?조회?�니??")
+    @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
     @GetMapping("/{popupId}")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
-            @Parameter(description = "?�업 ID") @PathVariable String popupId) {
+            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
         return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupId)));
-    }
-
-    @Operation(summary = "?�업 ?�록", description = "?�로???�업???�록?�니??")
-    @PostMapping
-    public ResponseEntity<ApiResponse<String>> createPopup(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PopupDto popupDto) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.createPopup(userDetails.getUsername(), popupDto)));
-    }
-
-    @Operation(summary = "?�업 ?�보 ?�정", description = "?�록???�업???�보�??�정?�니??")
-    @PutMapping("/{popupId}")
-    public ResponseEntity<ApiResponse<Void>> updatePopup(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?�업 ID") @PathVariable String popupId,
-            @RequestBody PopupDto popupDto) {
-        popupService.updatePopup(popupId, userDetails.getUsername(), popupDto);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Operation(summary = "?�업 ??��", description = "?�록???�업???�스?�에????��?�니??")
-    @DeleteMapping("/{popupId}")
-    public ResponseEntity<ApiResponse<Void>> deletePopup(
-            @Parameter(description = "?�업 ID") @PathVariable String popupId) {
-        popupService.deletePopup(popupId);
-        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

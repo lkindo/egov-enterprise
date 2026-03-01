@@ -49,4 +49,3 @@ public class QFileGroup extends EntityPathBase<FileGroup> {
     }
 
 }
-

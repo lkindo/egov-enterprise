@@ -40,4 +40,3 @@ public class QGroupManage extends EntityPathBase<GroupManage> {
     }
 
 }
-

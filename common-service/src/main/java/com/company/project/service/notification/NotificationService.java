@@ -51,7 +51,7 @@ public class NotificationService implements EgovNotificationService {
         
         notificationRepository.save(entity);
 
-        // WebSocket ?¤ì‹œê°??Œë¦¼ ?„ì†¡
+        // WebSocket ?ï¿½ì‹œï¿½??ï¿½ë¦¼ ?ï¿½ì†¡
         NotificationDto responseDto = NotificationDto.from(entity);
         messagingTemplate.convertAndSend("/topic/public", responseDto);
         if (userId != null) {

@@ -52,4 +52,3 @@ public class QBndtManage extends EntityPathBase<BndtManage> {
     }
 
 }
-

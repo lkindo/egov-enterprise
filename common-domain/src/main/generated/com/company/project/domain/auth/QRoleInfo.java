@@ -46,4 +46,3 @@ public class QRoleInfo extends EntityPathBase<RoleInfo> {
     }
 
 }
-

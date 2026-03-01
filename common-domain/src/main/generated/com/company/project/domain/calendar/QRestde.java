@@ -54,4 +54,3 @@ public class QRestde extends EntityPathBase<Restde> {
     }
 
 }
-

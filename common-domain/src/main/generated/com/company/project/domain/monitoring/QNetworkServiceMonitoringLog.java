@@ -54,4 +54,3 @@ public class QNetworkServiceMonitoringLog extends EntityPathBase<NetworkServiceM
     }
 
 }
-

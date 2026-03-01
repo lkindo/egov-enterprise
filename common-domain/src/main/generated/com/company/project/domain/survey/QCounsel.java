@@ -64,4 +64,3 @@ public class QCounsel extends EntityPathBase<Counsel> {
     }
 
 }
-

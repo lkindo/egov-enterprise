@@ -1,4 +1,4 @@
-﻿package com.company.project.domain.vacation;
+package com.company.project.domain.vacation;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;

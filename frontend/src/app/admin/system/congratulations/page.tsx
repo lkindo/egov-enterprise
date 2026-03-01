@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { congratulationService, Congratulation } from '@/services/congratulationService';
+import { congratulationAdminService } from '@/services/admin/system/CongratulationAdminService';
+import type { Congratulation } from '@/services/admin/system/CongratulationAdminService';
 import CongratulationClient from './CongratulationClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -24,7 +25,7 @@ export default async function CongratulationPage({
     let rawData = { content: [] as Congratulation[], totalElements: 0, totalPages: 0 };
 
     try {
-        rawData = await congratulationService.getCtsnnList({ usid, page: 0, size: 50 }, axiosConfig);
+        rawData = await congratulationAdminService.getCtsnnList({ usid, page: 0, size: 50 }, axiosConfig);
     } catch (error) {
         console.error('Server-side fetch congratulation failed:', error);
     }

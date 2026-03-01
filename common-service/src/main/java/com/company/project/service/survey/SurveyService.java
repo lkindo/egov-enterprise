@@ -27,7 +27,7 @@ public class SurveyService implements EgovSurveyService {
     private final QustnrQesitmRepository qesitmRepository;
     private final QustnrIemRepository iemRepository;
 
-    // ??—ëµ†??
+    // ??ï¿½ëµ†??
     @Override
     public Page<QestnrTmplatDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -70,7 +70,7 @@ public class SurveyService implements EgovSurveyService {
         tmplatRepository.deleteById(Objects.requireNonNull(tmplatId));
     }
 
-    // ??»Ð??ëº£ë‚«
+    // ??ï¿½ï¿½??ëº£ë‚«
     @Override
     public Page<QestnrInfoDto> getSurveyList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -118,7 +118,7 @@ public class SurveyService implements EgovSurveyService {
         infoRepository.deleteById(Objects.requireNonNull(qestnrId));
     }
 
-    // ??»Ð??¾ëª…ë¹?    @Override
+    // ??ï¿½ï¿½??ï¿½ëª…ï¿½?    @Override
     public List<QustnrQesitmDto> getQuestionList(String qestnrId) {
         return qesitmRepository.findByQestnrIdOrderByQestnSnAsc(Objects.requireNonNull(qestnrId)).stream()
                 .map(q -> {
@@ -165,7 +165,7 @@ public class SurveyService implements EgovSurveyService {
         qesitmRepository.deleteById(Objects.requireNonNull(qesitmId));
     }
 
-    // ??»Ð?????    @Override
+    // ??ï¿½ï¿½?????    @Override
     public List<QustnrIemDto> getItemList(String qesitmId) {
         return iemRepository.findByQestnrQesitmIdOrderByIemSnAsc(Objects.requireNonNull(qesitmId)).stream()
                 .map(QustnrIemDto::from)

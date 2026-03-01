@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * ?????沅뚰�??�????�퉬??
+ * ?????沅뚰�??�????�퉬??
  */
 @Service("projectUserAuthorityService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class UserAuthorityService {
     private final UserAuthorityRepository userAuthorityRepository;
 
     /**
-     * ?????沅뚰�?紐⑸�?議고??     */
+     * ?????沅뚰�?紐⑸�?議고??     */
     public List<UserAuthorityDto> selectUserAuthorityList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -38,13 +38,13 @@ public class UserAuthorityService {
     }
 
     /**
-     * ?????沅뚰�?紐⑸�???嫄댁??     */
+     * ?????沅뚰�?紐⑸�???嫄댁??     */
     public int selectUserAuthorityListTotCnt(ComDefaultVO searchVO) {
         return (int) userAuthorityRepository.count();
     }
 
     /**
-     * ?????沅뚰�??곸꽭 議고??     */
+     * ?????沅뚰�??곸꽭 議고??     */
     public UserAuthorityDto selectUserAuthority(@NonNull String uniqId) {
         return userAuthorityRepository.findById(Objects.requireNonNull(uniqId))
                 .map(this::toDto)
@@ -52,7 +52,7 @@ public class UserAuthorityService {
     }
 
     /**
-     * ?????沅뚰�??깅줉/??�젙
+     * ?????沅뚰�??깅줉/??�젙
      */
     @Transactional
     public void insertUserAuthority(@NonNull UserAuthorityDto dto) {
@@ -72,7 +72,7 @@ public class UserAuthorityService {
     }
 
     /**
-     * ?????沅뚰�?????     */
+     * ?????沅뚰�?????     */
     @Transactional
     public void deleteUserAuthority(@NonNull String uniqId) {
         userAuthorityRepository.deleteById(Objects.requireNonNull(uniqId));

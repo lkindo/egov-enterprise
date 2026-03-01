@@ -13,6 +13,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 지식정보 Repository Custom 구현체
+ */
 @Repository
 @RequiredArgsConstructor
 public class KnowledgeInfRepositoryImpl implements KnowledgeInfRepositoryCustom {
@@ -28,33 +31,35 @@ public class KnowledgeInfRepositoryImpl implements KnowledgeInfRepositoryCustom 
         QUser user = QUser.user;
 
         BooleanBuilder predicate = new BooleanBuilder();
-        predicate.and(knowledgeInf.othbcAt.eq("Y"));
-        predicate.and(knowledgeInf.knoAps.eq("1"));
+        predicate.and(knowledgeInf.isPublic.eq("Y"));
+        predicate.and(knowledgeInf.evaluationGrade.eq("1"));
 
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             if ("1".equals(searchCondition)) {
-                predicate.and(knowledgeInf.knoNm.contains(searchKeyword));
+                // 제목 검색
+                predicate.and(knowledgeInf.title.contains(searchKeyword));
             } else if ("2".equals(searchCondition)) {
+                // 작성자(사용자명) 검색
                 predicate.and(user.userNm.contains(searchKeyword));
             }
         }
 
         List<KnowledgeInfSearchResult> content = queryFactory
                 .select(Projections.constructor(KnowledgeInfSearchResult.class,
-                        knowledgeInf.knoId,
-                        knowledgeInf.knoNm,
-                        mapTeam.orgnztNm,
-                        mapKno.knoTypeNm,
+                        knowledgeInf.knowledgeId,
+                        knowledgeInf.title,
+                        mapTeam.organizationName,
+                        mapKno.typeName,
                         user.userNm,
-                        knowledgeInf.appYmd,
-                        knowledgeInf.frstRegisterId,
-                        knowledgeInf.frstRegisterPnttm))
+                        knowledgeInf.evaluationDate,
+                        knowledgeInf.createdBy,
+                        knowledgeInf.createdDate))
                 .from(knowledgeInf)
-                .join(mapKno).on(knowledgeInf.knoTypeCd.eq(mapKno.knoTypeCd))
-                .join(mapTeam).on(mapKno.orgnztId.eq(mapTeam.orgnztId))
-                .leftJoin(user).on(knowledgeInf.frstRegisterId.eq(user.esntlId))
+                .join(mapKno).on(knowledgeInf.typeCode.eq(mapKno.typeCode))
+                .join(mapTeam).on(mapKno.organizationId.eq(mapTeam.organizationId))
+                .leftJoin(user).on(knowledgeInf.createdBy.eq(user.esntlId))
                 .where(predicate)
-                .orderBy(knowledgeInf.frstRegisterPnttm.desc())
+                .orderBy(knowledgeInf.createdDate.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -62,7 +67,7 @@ public class KnowledgeInfRepositoryImpl implements KnowledgeInfRepositoryCustom 
         long total = queryFactory
                 .select(knowledgeInf.count())
                 .from(knowledgeInf)
-                .leftJoin(user).on(knowledgeInf.frstRegisterId.eq(user.esntlId))
+                .leftJoin(user).on(knowledgeInf.createdBy.eq(user.esntlId))
                 .where(predicate)
                 .fetchOne();
 

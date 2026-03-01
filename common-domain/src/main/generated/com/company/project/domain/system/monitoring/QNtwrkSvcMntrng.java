@@ -54,4 +54,3 @@ public class QNtwrkSvcMntrng extends EntityPathBase<NtwrkSvcMntrng> {
     }
 
 }
-

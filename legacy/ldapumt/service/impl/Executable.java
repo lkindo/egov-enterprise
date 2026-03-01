@@ -1,4 +1,4 @@
-/*
+*
  * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *
@@ -21,4 +21,3 @@ package egovframework.com.ext.ldapumt.service.impl;
 interface Executable {
 	void execute(String key, Object object);
 }
-

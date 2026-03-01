@@ -58,4 +58,3 @@ public class QMainImage extends EntityPathBase<MainImage> {
     }
 
 }
-

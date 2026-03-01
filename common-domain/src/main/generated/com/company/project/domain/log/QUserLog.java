@@ -52,4 +52,3 @@ public class QUserLog extends EntityPathBase<UserLog> {
     }
 
 }
-

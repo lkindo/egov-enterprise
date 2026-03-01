@@ -1,12 +1,12 @@
 package com.company.project.constants;
 
 /**
- * ?�듯???곸닔 ??�???
+ * ?�듯???곸닔 ??�???
  */
 public class Constants {
     
     /**
-     * �?��???�???곸닔
+     * �?��???�???곸닔
      */
     public static class Cache {
         public static final String USERS_CACHE = "users";
@@ -16,7 +16,7 @@ public class Constants {
     }
     
     /**
-     * ??�뒪????�젙 ?�???곸닔
+     * ??�뒪????�젙 ?�???곸닔
      */
     public static class System {
         public static final String DEFAULT_PAGE_SIZE = "10";
@@ -25,7 +25,7 @@ public class Constants {
     }
     
     /**
-     * ??????�???곸닔
+     * ??????�???곸닔
      */
     public static class User {
         public static final String DEFAULT_ROLE = "USER";
@@ -38,7 +38,7 @@ public class Constants {
     }
 
     /**
-     * 寃뚯????�???곸닔
+     * 寃뚯????�???곸닔
      */
     public static class Board {
         public static final String DEFAULT_TEMPLATE_ID = "DEFAULT_TMPL";
@@ -47,7 +47,7 @@ public class Constants {
     }
 
     /**
-     * ???�� ??�줈???�???곸닔
+     * ???�� ??�줈???�???곸닔
      */
     public static class File {
         public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -56,7 +56,7 @@ public class Constants {
     }
 
     /**
-     * 蹂댁�??�???곸닔
+     * 蹂댁�??�???곸닔
      */
     public static class Security {
         public static final String JWT_HEADER = "Authorization";

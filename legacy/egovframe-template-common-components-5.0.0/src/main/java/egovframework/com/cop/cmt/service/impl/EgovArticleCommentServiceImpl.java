@@ -49,7 +49,8 @@ public class EgovArticleCommentServiceImpl extends EgovAbstractServiceImpl imple
 	    if (options.getCommentAt().equals("Y")) {
 		return true;
 	    }
-	//}
+	//
+                    }
 
 	return false;
     }

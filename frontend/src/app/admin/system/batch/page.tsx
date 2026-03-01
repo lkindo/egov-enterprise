@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { batchService, BatchSchedule, BatchResult } from '@/services/batchService';
+import { batchAdminService, BatchSchedule, BatchResult } from '@/services/admin/system/BatchAdminService';
 import BatchAdminClient from './BatchAdminClient';
 
 export const metadata = {
@@ -19,10 +19,10 @@ export default async function BatchAdminPage() {
 
   try {
     const [schedulesRes, resultsRes] = await Promise.all([
-      batchService.getSchedules({ page: 0, size: 50 }, axiosConfig),
-      batchService.getResults({ page: 0, size: 50 }, axiosConfig)
+      batchAdminService.getSchedules({ page: 0, size: 50 }, axiosConfig),
+      batchAdminService.getResults({ page: 0, size: 50 }, axiosConfig)
     ]);
-    
+
     initialSchedules = schedulesRes?.content || schedulesRes?.data?.content || schedulesRes || [];
     initialResults = resultsRes?.content || resultsRes?.data?.content || resultsRes || [];
   } catch (error) {
@@ -31,9 +31,9 @@ export default async function BatchAdminPage() {
 
   return (
     <Suspense fallback={<BatchAdminLoading />}>
-      <BatchAdminClient 
-        initialSchedules={initialSchedules} 
-        initialResults={initialResults} 
+      <BatchAdminClient
+        initialSchedules={initialSchedules}
+        initialResults={initialResults}
       />
     </Suspense>
   );

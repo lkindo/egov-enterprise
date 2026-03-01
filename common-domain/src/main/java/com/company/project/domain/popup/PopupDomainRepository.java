@@ -8,14 +8,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-/**
- * ??밸씜筌?Repository
- */
 @org.springframework.stereotype.Repository("popupPopupDomainRepository")
 public interface PopupDomainRepository extends JpaRepository<Popup, String> {
 
-    Page<Popup> findByPopupTitleNmContaining(String popupTitleNm, Pageable pageable);
+    Page<Popup> findByPopupTitleNameContaining(String popupTitleName, Pageable pageable);
 
-    @Query("SELECT p FROM PopupDomain p WHERE p.ntceAt = 'Y' AND :now BETWEEN p.ntceBgnde AND p.ntceEndde")
+    @Query("SELECT p FROM PopupDomain p WHERE p.isNotice = 'Y' AND :now BETWEEN p.noticeBeginDate AND p.noticeEndDate")
     List<Popup> findActivePopups(@Param("now") String now);
 }

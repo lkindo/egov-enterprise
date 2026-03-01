@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetManagement", description = "지???�산 관�?API (관리자??")
+@Tag(name = "DigitalAssetManagement", description = "지식 자산 관리 API (관리자용)")
 @RestController
 @RequestMapping("/api/v1/admin/digital-assets")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class KnowledgeManagementController {
 
     private final KnowledgeManagementService managementService;
 
-    @Operation(summary = "?�체 지??목록 조회", description = "?�스?�에 ?�록???�체 지??목록??조회?�니??")
+    @Operation(summary = "전체 지식 목록 조회", description = "시스템에 등록된 전체 지식 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<KnowledgeInfSearchResult>>> getManagementList(
             @RequestParam(required = false) String searchCondition,
@@ -34,23 +34,23 @@ public class KnowledgeManagementController {
                 managementService.selectKnowledgeManagementList(searchCondition, searchKeyword, pageable)));
     }
 
-    @Operation(summary = "지???�세 조회", description = "?�정 지?�의 ?�세 ?�보�?조회?�니??")
-    @GetMapping("/{knoId}")
+    @Operation(summary = "지식 상세 조회", description = "특정 지식의 상세 정보를 조회합니다.")
+    @GetMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<KnowledgeDto>> getManagementDetail(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "지??ID") @PathVariable String knoId) {
+            @Parameter(description = "지식 ID") @PathVariable String knowledgeId) {
         return ResponseEntity.ok(ApiResponse.success(
-                managementService.selectKnowledgeManagementDetail(knoId, userDetails.getUsername())));
+                managementService.selectKnowledgeManagementDetail(knowledgeId, userDetails.getUsername())));
     }
 
-    @Operation(summary = "지???�보 ?�정", description = "지?�의 ?�기 ?�자, ?��? ?�수 ??관리자 ?�보�??�정?�니??")
-    @PutMapping("/{knoId}")
+    @Operation(summary = "지식 정보 수정", description = "지식의 폐기 일자, 평가 등급 등 관리자 정보를 수정합니다.")
+    @PutMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<Void>> updateManagement(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String knoId,
+            @PathVariable String knowledgeId,
             @RequestBody KnowledgeDto knowledgeDto) {
-        knowledgeDto.setKnoId(knoId);
-        knowledgeDto.setLastUpdusrId(userDetails.getUsername());
+        knowledgeDto.setKnowledgeId(knowledgeId);
+        knowledgeDto.setFirstRegisterId(userDetails.getUsername()); // Using firstRegisterId for current user
         managementService.updateKnowledgeManagement(knowledgeDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

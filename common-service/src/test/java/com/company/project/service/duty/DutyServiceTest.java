@@ -37,7 +37,7 @@ class DutyServiceTest {
         private DutyService dutyService;
 
         @Test
-        @DisplayName("?�직 ?��? ?�이지 조회 ?�비???�스??)
+        @DisplayName("?�직 ?��? ?�이지 조회 ?�비???�스??)
         void getDutyList_Pagination() {
                 // given
                 BndtManage duty = BndtManage.builder()

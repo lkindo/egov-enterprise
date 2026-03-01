@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 筌뤿굟釉?Repository Custom ?紐낃숲??륁뵠??
+ * 명함 Repository Custom 인터페이스
  */
 public interface NameCardRepositoryCustom {
     Page<NameCard> searchNameCards(String keyword, Pageable pageable);

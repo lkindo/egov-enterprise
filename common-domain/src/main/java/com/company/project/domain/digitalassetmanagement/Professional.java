@@ -1,13 +1,12 @@
 package com.company.project.domain.digitalassetmanagement;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 /**
- * 筌왖???뱀???�㈇? JPA Entity
- * ???�탢?????�?? NDAMPRO
+ * 전문가 JPA Entity
+ * 연계 테이블: NDAMPRO
  */
 @Entity
 @Table(name = "NDAMPRO")
@@ -15,49 +14,33 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(ProfessionalId.class)
-public class Professional {
+public class Professional extends BaseEntity {
 
     @Id
     @Column(name = "EXPERT_ID", length = 20)
-    private String speId;
+    private String expertId;
 
     @Id
     @Column(name = "KNWLDG_TY_CODE", length = 20)
-    private String knoTypeCd;
+    private String typeCode;
 
     @Id
     @Column(name = "EXPERT_GRAD", length = 1)
-    private String appTypeCd;
+    private String assessmentLevel;
 
     @Column(name = "EXPERT_DC", length = 2000)
-    private String speExpCn;
+    private String expertDescription;
 
     @Column(name = "EXPERT_CONFM_DE", length = 20)
-    private String speConfmDe;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private String confirmedDate;
 
     @Builder
-    public Professional(String speId, String knoTypeCd, String appTypeCd, String speExpCn,
-            String speConfmDe, String frstRegisterId, String lastUpdusrId) {
-        this.speId = speId;
-        this.knoTypeCd = knoTypeCd;
-        this.appTypeCd = appTypeCd;
-        this.speExpCn = speExpCn;
-        this.speConfmDe = speConfmDe;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+    public Professional(String expertId, String typeCode, String assessmentLevel, String expertDescription,
+            String confirmedDate) {
+        this.expertId = expertId;
+        this.typeCode = typeCode;
+        this.assessmentLevel = assessmentLevel;
+        this.expertDescription = expertDescription;
+        this.confirmedDate = confirmedDate;
     }
 }

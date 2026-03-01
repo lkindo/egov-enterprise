@@ -38,4 +38,3 @@ public class QOrganizationManage extends EntityPathBase<OrganizationManage> {
     }
 
 }
-

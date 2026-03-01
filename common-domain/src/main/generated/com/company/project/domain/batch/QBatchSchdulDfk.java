@@ -49,4 +49,3 @@ public class QBatchSchdulDfk extends EntityPathBase<BatchSchdulDfk> {
     }
 
 }
-

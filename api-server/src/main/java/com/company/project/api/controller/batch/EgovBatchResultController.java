@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 배치결과 관리�? ?�한 컨트롤러 ?�래?? */
+ * 배치결과 관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class EgovBatchResultController {
@@ -30,7 +30,7 @@ public class EgovBatchResultController {
     private final MessageSource messageSource;
 
     /**
-     * 배치결과 ?�보�???��?�다.
+     * 배치결과 ?�보�???��?�다.
      */
     @RequestMapping("/sym/bat/deleteBatchResult.do")
     public String deleteBatchResult(BatchResult batchResult, ModelMap model) throws Exception {
@@ -45,7 +45,7 @@ public class EgovBatchResultController {
     }
 
     /**
-     * 배치결과 ?�세 ?�보�?조회?�다.
+     * 배치결과 ?�세 ?�보�?조회?�다.
      */
     @RequestMapping("/sym/bat/getBatchResult.do")
     public String selectBatchResult(@ModelAttribute("searchVO") BatchResult searchVO, ModelMap model) throws Exception {
@@ -57,7 +57,7 @@ public class EgovBatchResultController {
     }
 
     /**
-     * 배치결과 목록??조회?�다.
+     * 배치결과 목록??조회?�다.
      */
     @RequestMapping("/sym/bat/getBatchResultList.do")
     public String selectBatchResultList(@ModelAttribute("searchVO") BatchResult searchVO, ModelMap model)

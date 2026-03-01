@@ -66,4 +66,3 @@ public class QTransmitReceiveLog extends EntityPathBase<TransmitReceiveLog> {
     }
 
 }
-

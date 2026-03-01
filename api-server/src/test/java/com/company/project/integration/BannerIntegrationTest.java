@@ -36,12 +36,12 @@ class BannerIntegrationTest {
         private EgovBannerService bannerService;
 
         @Test
-        @DisplayName("GET /api/v1/banners - 배너 목록 조회 API ?�스??)
+        @DisplayName("GET /api/v1/banners - 배너 목록 조회 API ?�스??)
         void getBanners_ReturnsPage() throws Exception {
                 // Given
                 BannerDto dto = BannerDto.builder()
                                 .bannerId("BNR_001")
-                                .bannerNm("?�스??배너")
+                                .bannerNm("?�스??배너")
                                 .reflctAt("Y")
                                 .build();
                 Page<BannerDto> page = new PageImpl<>(Arrays.asList(dto));
@@ -55,13 +55,13 @@ class BannerIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data.content[0].bannerId").value("BNR_001"))
-                                .andExpect(jsonPath("$.data.content[0].bannerNm").value("?�스??배너"));
+                                .andExpect(jsonPath("$.data.content[0].bannerNm").value("?�스??배너"));
 
                 verify(bannerService, times(1)).getBannerList(any(), any(Pageable.class));
         }
 
         @Test
-        @DisplayName("GET /api/v1/banners/reflected - 반영??배너 목록 조회 API ?�스??)
+        @DisplayName("GET /api/v1/banners/reflected - 반영??배너 목록 조회 API ?�스??)
         void getReflectedBanners_ReturnsList() throws Exception {
                 // Given
                 BannerDto dto = BannerDto.builder()
@@ -83,7 +83,7 @@ class BannerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/banners - 배너 ?�록 API ?�스??)
+        @DisplayName("POST /api/v1/banners - 배너 ?�록 API ?�스??)
         void insertBanner_CallsService() throws Exception {
                 // When & Then
                 mockMvc.perform(post("/api/v1/banners")
@@ -103,7 +103,7 @@ class BannerIntegrationTest {
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/banners/{id} - 배너 ??�� API ?�스??)
+        @DisplayName("DELETE /api/v1/banners/{id} - 배너 ??�� API ?�스??)
         void deleteBanner_CallsService() throws Exception {
                 // When & Then
                 mockMvc.perform(delete("/api/v1/banners/BNR_001")

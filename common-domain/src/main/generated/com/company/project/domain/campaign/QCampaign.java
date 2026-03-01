@@ -67,4 +67,3 @@ public class QCampaign extends EntityPathBase<Campaign> {
     }
 
 }
-

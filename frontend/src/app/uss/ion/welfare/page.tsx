@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { welfareService, Reward, Ctsnn } from '@/services/welfareService';
+import { welfareService, Reward, Ctsnn } from '@/services/user/WelfareService';
 import { useToast } from '@/app/components/ui/toast';
 import { Trophy, Heart, Gift, Users, Search, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,10 +17,10 @@ export default function WelfarePage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = tab === 'reward' 
+      const result = tab === 'reward'
         ? await welfareService.getRewards({ page: 0, size: 20 })
         : await welfareService.getCtsnns({ page: 0, size: 20 });
-      
+
       setData(result.content || []);
     } catch (error) {
       toast('데이터를 불러오지 못했습니다.', 'error');
@@ -34,8 +34,8 @@ export default function WelfarePage() {
   }, [loadData]);
 
   const rewardColumns = [
-    { 
-      header: '포상명', 
+    {
+      header: '포상명',
       accessor: (item: Reward) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg"><Trophy size={16} /></div>
@@ -43,19 +43,19 @@ export default function WelfarePage() {
         </div>
       )
     },
-    { 
-      header: '대상자', 
-      accessor: (item: Reward) => item.userNm 
+    {
+      header: '대상자',
+      accessor: (item: Reward) => item.userNm
     },
-    { 
-      header: '포상종류', 
-      accessor: (item: Reward) => item.rwardKnd, 
-      className: 'text-xs text-muted-foreground' 
+    {
+      header: '포상종류',
+      accessor: (item: Reward) => item.rwardKnd,
+      className: 'text-xs text-muted-foreground'
     },
-    { 
-      header: '포상일', 
-      accessor: (item: Reward) => item.rwardDe, 
-      className: 'text-xs font-medium' 
+    {
+      header: '포상일',
+      accessor: (item: Reward) => item.rwardDe,
+      className: 'text-xs font-medium'
     }
   ];
 
@@ -69,26 +69,26 @@ export default function WelfarePage() {
         </div>
       )
     },
-    { 
-      header: '신청자', 
-      accessor: (item: Ctsnn) => item.userNm 
+    {
+      header: '신청자',
+      accessor: (item: Ctsnn) => item.userNm
     },
-    { 
-      header: '대상자', 
-      accessor: (item: Ctsnn) => item.trgetNm, 
-      className: 'text-xs text-muted-foreground' 
+    {
+      header: '대상자',
+      accessor: (item: Ctsnn) => item.trgetNm,
+      className: 'text-xs text-muted-foreground'
     },
-    { 
-      header: '일시', 
-      accessor: (item: Ctsnn) => item.ctsnnDe, 
-      className: 'text-xs font-medium' 
+    {
+      header: '일시',
+      accessor: (item: Ctsnn) => item.ctsnnDe,
+      className: 'text-xs font-medium'
     }
   ];
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="임직원 포상 및 경조사 현황" 
+      <PageHeader
+        title="임직원 포상 및 경조사 현황"
         breadcrumbs={[{ label: '부가서비스' }, { label: '복지현황' }]}
       />
 

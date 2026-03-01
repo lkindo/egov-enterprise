@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * ????몄젙�???�퉬???명꽣??�씠??
+ * ????몄젙�???�퉬???명꽣??�씠??
  */
 public interface EgovSiteService {
     Page<SiteDto> getSiteList(String keyword, Pageable pageable);

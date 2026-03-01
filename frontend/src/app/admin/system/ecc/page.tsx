@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { eventCmpgnService, EventCmpgn } from '@/services/eventCmpgnService';
+import { eventCmpgnAdminService } from '@/services/admin/system/EventCmpgnAdminService';
+import type { EventCmpgn } from '@/services/admin/system/EventCmpgnAdminService';
 import EccClient from './EccClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -9,10 +10,10 @@ export const metadata = {
   description: '전사적 행사 및 캠페인을 기획하고 일정을 관리합니다.',
 };
 
-export default async function EventCmpgnPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function EventCmpgnPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
   const eventCn = (resolvedSearchParams.eventCn as string) || '';
@@ -24,7 +25,7 @@ export default async function EventCmpgnPage({
   let rawData = { content: [] as EventCmpgn[], totalElements: 0, totalPages: 0 };
 
   try {
-    rawData = await eventCmpgnService.getEventCmpgnList({ eventCn, page: 0, size: 50 }, axiosConfig);
+    rawData = await eventCmpgnAdminService.getEventCmpgnList({ eventCn, page: 0, size: 50 }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch event-campaigns failed:', error);
   }
@@ -36,9 +37,9 @@ export default async function EventCmpgnPage({
 
   return (
     <Suspense fallback={<EccLoading />}>
-      <EccClient 
-        initialData={{ ...rawData, content: optimizedContent as EventCmpgn[] }} 
-        searchEventCn={eventCn} 
+      <EccClient
+        initialData={{ ...rawData, content: optimizedContent as EventCmpgn[] }}
+        searchEventCn={eventCn}
       />
     </Suspense>
   );

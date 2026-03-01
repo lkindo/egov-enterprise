@@ -40,4 +40,3 @@ public class QAdministCodeRecptnLog_AdministCodeRecptnLogId extends BeanPath<Adm
     }
 
 }
-

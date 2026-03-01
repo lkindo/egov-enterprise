@@ -5,12 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * FAQ ??�퉬???명꽣??�씠??
+ * FAQ ??�퉬???명꽣??�씠??
  */
 public interface EgovFaqService {
 
     /**
-     * FAQ 紐⑸�?議고??     */
+     * FAQ 紐⑸�?議고??     */
     Page<FaqDto> getFaqList(String keyword, Pageable pageable);
 
     /**
@@ -23,7 +23,7 @@ public interface EgovFaqService {
     String createFaq(String userId, FaqDto dto);
 
     /**
-     * FAQ ??�젙
+     * FAQ ??�젙
      */
     void updateFaq(String faqId, String userId, FaqDto dto);
 

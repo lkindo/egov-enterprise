@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { popupService } from '@/services/popupService';
+import { popupAdminService } from '@/services/admin/system/PopupAdminService';
 import { Popup } from '@/types/banner';
 
 export function PopupManager() {
@@ -12,10 +12,10 @@ export function PopupManager() {
   useEffect(() => {
     async function fetchPopups() {
       try {
-        const res = (await popupService.getActivePopups()) as any;
+        const res = (await popupAdminService.getActivePopups()) as any;
         if (res?.success) {
           const popups: Popup[] = res.data;
-          
+
           // 필터링: "오늘 하루 보지 않기" 체크된 팝업 제외
           const filteredPopups = popups.filter(popup => {
             const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
@@ -57,7 +57,7 @@ export function PopupManager() {
         if (!visiblePopupIds.includes(popup.popupId)) return null;
 
         return (
-          <div 
+          <div
             key={popup.popupId}
             className="fixed z-50 bg-white shadow-2xl rounded-xl overflow-hidden border animate-in zoom-in duration-300"
             style={{
@@ -70,7 +70,7 @@ export function PopupManager() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b">
               <span className="text-sm font-bold truncate">{popup.popupTitleNm}</span>
-              <button 
+              <button
                 onClick={() => closePopup(popup.popupId)}
                 className="p-1 hover:bg-muted rounded-full transition-colors"
               >
@@ -80,23 +80,23 @@ export function PopupManager() {
 
             {/* Content */}
             <div className="relative w-full h-[calc(100%-80px)] overflow-auto">
-               {/* 팝업 내용이 HTML이거나 이미지일 수 있음. 여기서는 이미지로 가정하거나 iframe 사용 가능 */}
-               <img 
-                 src={popup.fileUrl || '/api/placeholder/400/300'} 
-                 alt={popup.popupTitleNm}
-                 className="w-full h-auto object-contain"
-               />
+              {/* 팝업 내용이 HTML이거나 이미지일 수 있음. 여기서는 이미지로 가정하거나 iframe 사용 가능 */}
+              <img
+                src={popup.fileUrl || '/api/placeholder/400/300'}
+                alt={popup.popupTitleNm}
+                className="w-full h-auto object-contain"
+              />
             </div>
 
             {/* Footer */}
             <div className="absolute bottom-0 left-0 right-0 h-10 bg-slate-100 flex items-center justify-between px-4 border-t">
-              <button 
+              <button
                 onClick={() => closePopupForDay(popup.popupId)}
                 className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
               >
                 오늘 하루 보지 않기
               </button>
-              <button 
+              <button
                 onClick={() => closePopup(popup.popupId)}
                 className="text-[11px] font-bold text-slate-700 hover:text-black"
               >

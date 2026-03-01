@@ -63,4 +63,3 @@ public class QOnlinePollManage extends EntityPathBase<OnlinePollManage> {
     }
 
 }
-

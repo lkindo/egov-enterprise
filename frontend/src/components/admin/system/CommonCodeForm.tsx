@@ -30,7 +30,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { CmmnCode } from "@/types/system";
-import { createCmmnCode, updateCmmnCode, deleteCmmnCode } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 
 const formSchema = z.object({
     codeId: z.string().min(1, { message: "코드ID는 필수입니다." }),
@@ -64,9 +64,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await updateCmmnCode(values as CmmnCode);
+                await codeAdminService.updateCmmnCode(values as CmmnCode);
             } else {
-                await createCmmnCode(values as CmmnCode);
+                await codeAdminService.createCmmnCode(values as CmmnCode);
             }
             onSuccess();
             onOpenChange(false);
@@ -80,7 +80,7 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
         if (!data?.codeId) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await deleteCmmnCode(data.codeId);
+                await codeAdminService.deleteCmmnCode(data.codeId);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

@@ -36,4 +36,3 @@ public class QMenuAuthority_MenuAuthorityId extends BeanPath<MenuAuthority.MenuA
     }
 
 }
-

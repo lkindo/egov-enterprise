@@ -80,4 +80,3 @@ public class QCnsltManage extends EntityPathBase<CnsltManage> {
     }
 
 }
-

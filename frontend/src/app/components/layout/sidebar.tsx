@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { menuService } from '@/services/menuService';
+import { menuService } from '@/services/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

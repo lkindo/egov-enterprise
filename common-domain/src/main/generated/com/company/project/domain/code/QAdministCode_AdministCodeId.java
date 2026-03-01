@@ -36,4 +36,3 @@ public class QAdministCode_AdministCodeId extends BeanPath<AdministCode.Administ
     }
 
 }
-

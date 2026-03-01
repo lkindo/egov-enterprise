@@ -50,4 +50,3 @@ public class QIndvdlYrycManage extends EntityPathBase<IndvdlYrycManage> {
     }
 
 }
-

@@ -58,4 +58,3 @@ public class QMtgPlaceResve extends EntityPathBase<MtgPlaceResve> {
     }
 
 }
-

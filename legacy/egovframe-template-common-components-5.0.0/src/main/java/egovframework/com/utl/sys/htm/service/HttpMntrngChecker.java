@@ -26,7 +26,8 @@ import egovframework.com.cmm.EgovWebUtil;
 public class HttpMntrngChecker {
 
 	//@Resource(name = "HttpMonService")
-	//private EgovHttpMonService httpMonService;
+	//
+                     EgovHttpMonService httpMonService;
 
 	// ?뚯씪援щ텇??
 	static final char FILE_SEPARATOR = File.separatorChar;

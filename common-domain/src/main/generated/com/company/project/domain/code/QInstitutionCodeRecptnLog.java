@@ -102,4 +102,3 @@ public class QInstitutionCodeRecptnLog extends EntityPathBase<InstitutionCodeRec
     }
 
 }
-

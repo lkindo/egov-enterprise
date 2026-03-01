@@ -54,4 +54,3 @@ public class QBndtCeckManage extends EntityPathBase<BndtCeckManage> {
     }
 
 }
-

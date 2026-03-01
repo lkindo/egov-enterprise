@@ -4,18 +4,18 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
 import { SmartSearchPanel } from '@/app/components/ui/standard-search-filter';
-import { Reward, rewardService } from '@/services/rewardService';
+import { Reward, rewardAdminService as rewardService } from '@/services/admin/system/RewardAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { 
-  Plus, 
-  Trophy, 
-  Gift, 
-  User, 
-  Calendar, 
-  CheckCircle2, 
-  Activity, 
-  Trash2, 
+import {
+  Plus,
+  Trophy,
+  Gift,
+  User,
+  Calendar,
+  CheckCircle2,
+  Activity,
+  Trash2,
   Settings,
   Sparkles,
   Info,
@@ -34,7 +34,7 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [selectedReward, setSelectedReward] = useState<Reward | undefined>(undefined);
@@ -76,7 +76,7 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
       variant: 'destructive',
       confirmText: 'Purge Data'
     });
-    
+
     if (isConfirmed) {
       try {
         await rewardService.deleteReward(id);
@@ -97,29 +97,29 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
         <span className={cn(
           "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase italic tracking-widest border-2",
           item.rwdKnd === '1' ? "bg-orange-50/50 border-orange-100 text-orange-600" :
-          item.rwdKnd === '2' ? "bg-blue-50/50 border-blue-100 text-blue-600" :
-          "bg-emerald-50/50 border-emerald-100 text-emerald-600 shadow-inner"
+            item.rwdKnd === '2' ? "bg-blue-50/50 border-blue-100 text-blue-600" :
+              "bg-emerald-50/50 border-emerald-100 text-emerald-600 shadow-inner"
         )}>
           {item.rwdKnd === '1' ? 'Honorary' : item.rwdKnd === '2' ? 'Monetary' : 'Incentive'}
         </span>
       )
     },
-    { 
+    {
       id: 'rwdNm',
-      header: 'Nomenclature', 
+      header: 'Nomenclature',
       width: 250,
       accessor: (item: Reward) => (
         <div className="flex flex-col gap-1">
-            <span className="font-black italic uppercase tracking-tighter text-slate-900 text-lg leading-tight">{item.rwdNm}</span>
-            <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono font-black text-slate-400 uppercase tracking-widest opacity-60">Reward ID: {item.rwdId}</span>
-            </div>
+          <span className="font-black italic uppercase tracking-tighter text-slate-900 text-lg leading-tight">{item.rwdNm}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-mono font-black text-slate-400 uppercase tracking-widest opacity-60">Reward ID: {item.rwdId}</span>
+          </div>
         </div>
       )
     },
-    { 
+    {
       id: 'usid',
-      header: 'Subject Identity', 
+      header: 'Subject Identity',
       width: 180,
       accessor: (item: Reward) => (
         <div className="flex items-center gap-3">
@@ -133,9 +133,9 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
         </div>
       )
     },
-    { 
+    {
       id: 'rwdDe',
-      header: 'Activation Date', 
+      header: 'Activation Date',
       width: 150,
       accessor: (item: Reward) => (
         <div className="flex items-center gap-2 text-slate-500 font-mono font-black text-xs">
@@ -144,9 +144,9 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
         </div>
       )
     },
-    { 
+    {
       id: 'confmAt',
-      header: 'Integrity Stance', 
+      header: 'Integrity Stance',
       width: 180,
       accessor: (item: Reward) => (
         <div className="flex items-center gap-3">
@@ -169,14 +169,14 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
       className: 'text-right',
       accessor: (item: Reward) => (
         <div className="flex justify-end gap-2 pr-4">
-          <button 
-            onClick={() => handleOpenEdit(item)} 
+          <button
+            onClick={() => handleOpenEdit(item)}
             className="h-11 w-11 bg-slate-900/5 text-slate-900 hover:text-white hover:bg-slate-900 hover:shadow-2xl transition-all rounded-[1.25rem] flex items-center justify-center border border-transparent hover:scale-105 active:scale-95"
           >
             <Settings size={18} />
           </button>
-          <button 
-            onClick={() => handleDelete(item.rwdId, item.rwdNm)} 
+          <button
+            onClick={() => handleDelete(item.rwdId, item.rwdNm)}
             className="h-11 w-11 bg-rose-50 text-rose-400 hover:text-rose-600 hover:bg-white hover:border-rose-100 hover:shadow-2xl transition-all rounded-[1.25rem] flex items-center justify-center border border-transparent hover:scale-105 active:scale-95"
           >
             <Trash2 size={18} />
@@ -188,11 +188,11 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <PageHeader 
-        title="포상 아키텍처 매니지먼트" 
+      <PageHeader
+        title="포상 아키텍처 매니지먼트"
         breadcrumbs={[{ label: '시스템관리' }, { label: '포상관리' }]}
         actions={
-          <Button 
+          <Button
             onClick={handleOpenCreate}
             className="h-16 px-10 rounded-[1.5rem] font-black shadow-[0_20px_40px_rgba(15,23,42,0.15)] bg-slate-900 text-white gap-3 hover:-translate-y-1 transition-all active:scale-95 italic uppercase tracking-widest text-[11px] border border-white/10"
           >
@@ -264,7 +264,7 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
 
       {/* Search Matrix */}
       <div className="p-10 rounded-[4rem] bg-slate-50 border border-slate-100 shadow-inner group relative overflow-hidden">
-        <SmartSearchPanel 
+        <SmartSearchPanel
           fields={[
             { name: 'usid', label: 'Subject Identity (UID)', type: 'text', placeholder: 'Enter unit identifier...' }
           ]}
@@ -279,24 +279,24 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
 
       {/* Main Data Grid */}
       <div className="bg-white rounded-[5rem] p-6 shadow-[0_40px_80px_rgba(0,0,0,0.05)] border border-slate-50 relative group/matrix ring-1 ring-slate-100">
-        <UltimateDataGrid 
-          title="REWARD PROTOCOL DEFINITION MATRIX" 
-          columns={columns} 
-          data={rewards} 
+        <UltimateDataGrid
+          title="REWARD PROTOCOL DEFINITION MATRIX"
+          columns={columns}
+          data={rewards}
           emptyMessage="등록된 포상 프로토콜 정수가 존재하지 않습니다."
           className="bg-slate-50/50 p-10 rounded-[4rem] border border-dashed border-slate-200"
           keyField="rwdId"
         />
         <div className="flex justify-center items-center gap-6 mt-10 text-[9px] font-black italic text-slate-300 tracking-[0.4em] uppercase opacity-40">
-            <div className="flex items-center gap-3">
-                <Clock size={12} />
-                REAL-TIME SYNC ACTIVE
-            </div>
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-            <div className="flex items-center gap-3">
-                <ShieldCheck size={12} />
-                SECURED ARCHITECTURE
-            </div>
+          <div className="flex items-center gap-3">
+            <Clock size={12} />
+            REAL-TIME SYNC ACTIVE
+          </div>
+          <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={12} />
+            SECURED ARCHITECTURE
+          </div>
         </div>
       </div>
 
@@ -307,11 +307,11 @@ export default function RewardClient({ initialData, searchUsid }: { initialData:
         maxWidth="lg"
       >
         <div className="p-6">
-            <RewardForm 
-                initialData={selectedReward} 
-                onSubmit={handleSubmit} 
-                onCancel={() => setIsModalOpen(false)} 
-            />
+          <RewardForm
+            initialData={selectedReward}
+            onSubmit={handleSubmit}
+            onCancel={() => setIsModalOpen(false)}
+          />
         </div>
       </StandardModal>
     </div>

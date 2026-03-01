@@ -62,4 +62,3 @@ public class QEventAttendee extends EntityPathBase<EventAttendee> {
     }
 
 }
-

@@ -36,4 +36,3 @@ public class QIntegrationMessageItem_IntegrationMessageItemId extends BeanPath<I
     }
 
 }
-

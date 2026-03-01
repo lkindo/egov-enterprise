@@ -56,4 +56,3 @@ public class QBlog extends EntityPathBase<Blog> {
     }
 
 }
-

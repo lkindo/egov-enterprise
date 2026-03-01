@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getUserList } from '@/services/user/userService';
+import { userAdminService } from '@/services/admin/user/UserAdminService';
 import UserManageClient from './UserManageClient';
 import { Loader2 } from 'lucide-react';
 import { selectFieldsList } from '@/lib/utils/serialization';
@@ -11,10 +11,10 @@ export const metadata = {
     description: '시스템 사용자 계정을 관리하고 승인 처리합니다.',
 };
 
-export default async function UserManagePage({ 
-    searchParams 
-}: { 
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function UserManagePage({
+    searchParams
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const resolvedSearchParams = await searchParams;
     const pageIndex = Number(resolvedSearchParams.pageIndex) || 1;
@@ -28,7 +28,7 @@ export default async function UserManagePage({
 
     let initialData: any = { resultList: [], paginationInfo: { totalRecordCount: 0 } };
     try {
-        const rawData = await getUserList({
+        const rawData = await userAdminService.getUsers({
             pageIndex,
             searchCondition,
             searchKeyword,
@@ -52,8 +52,8 @@ export default async function UserManagePage({
 
     return (
         <Suspense fallback={<UserManageLoading />}>
-            <UserManageClient 
-                initialData={initialData} 
+            <UserManageClient
+                initialData={initialData}
                 initialParams={{
                     pageIndex,
                     searchCondition,

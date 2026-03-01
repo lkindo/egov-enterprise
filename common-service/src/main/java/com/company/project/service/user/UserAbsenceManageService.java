@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ??????�???�????�퉬??
+ * ??????�???�????�퉬??
  */
 @Service("userAbsenceManageService")
 @Transactional(readOnly = true)
@@ -36,7 +36,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????�??紐⑸�?議고??     */
+     * ??????�??紐⑸�?議고??     */
     public List<UserAbsenceDto> selectUserAbsenceList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -73,13 +73,13 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????�??紐⑸�???嫄댁??     */
+     * ??????�??紐⑸�???嫄댁??     */
     public int selectUserAbsenceListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * ??????�???곸꽭 議고??     */
+     * ??????�???곸꽭 議고??     */
     public UserAbsenceDto selectUserAbsence(String userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
         if (user == null) {
@@ -102,7 +102,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????�???깅줉
+     * ??????�???깅줉
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
@@ -116,7 +116,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????�????�젙
+     * ??????�????�젙
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
@@ -127,14 +127,14 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????�??????     */
+     * ??????�??????     */
     @Transactional
     public void deleteUserAbsence(String userId) {
         userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 
     /**
-     * ??????�????�쨷 ????     */
+     * ??????�????�쨷 ????     */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {
         userAbsenceRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(userIds))));

@@ -52,4 +52,3 @@ public class QTrsmrcvMonitoring extends EntityPathBase<TrsmrcvMonitoring> {
     }
 
 }
-

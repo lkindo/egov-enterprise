@@ -36,4 +36,3 @@ public class QIntegrationSystem_IntegrationSystemId extends BeanPath<Integration
     }
 
 }
-

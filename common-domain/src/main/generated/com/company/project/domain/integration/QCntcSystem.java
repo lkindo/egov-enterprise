@@ -68,4 +68,3 @@ public class QCntcSystem extends EntityPathBase<CntcSystem> {
     }
 
 }
-

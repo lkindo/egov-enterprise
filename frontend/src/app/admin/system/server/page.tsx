@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { serverService, ServerInfo } from '@/services/serverService';
+import { serverAdminService, ServerInfo } from '@/services/admin/system/ServerAdminService';
 import ServerAdminClient from './ServerAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default async function AdminServerPage() {
   let initialServers: ServerInfo[] = [];
 
   try {
-    const response = await serverService.getServers({ page: 0, size: 100 }, axiosConfig);
+    const response = await serverAdminService.getServers({ page: 0, size: 100 }, axiosConfig);
     initialServers = (response as any)?.content || (response as any)?.data?.content || (response as any) || [];
   } catch (error) {
     console.error('Server-side fetch server data failed:', error);

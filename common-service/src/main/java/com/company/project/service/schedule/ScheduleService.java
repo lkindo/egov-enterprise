@@ -49,9 +49,9 @@ public class ScheduleService implements EgovScheduleService {
 
     @Override
     public Page<ScheduleDto> getScheduleList(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        // userId媛 null??�???꾩껜 議고?? or 蹂몄??寃껊�?
-        // eGov standard logic: usually lists public schedules or own schedules.
-        // Assuming strict private + dept scope, but for step 1, let's filter by
+        // userId가 null일 때는 전체 조회 or 본인 것만?
+        // eGov standard logic: usually lists schedules or own schedules.
+        // Assuming strict dept scope, but for step 1, let's filter by
         // register/charger.
         // For simplicity, implement findByFrstRegisterId (My Schedules).
 

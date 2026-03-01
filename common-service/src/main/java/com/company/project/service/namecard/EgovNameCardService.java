@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 紐낇�???�퉬???명꽣??�씠??
+ * 筌뤿굟釉???뺥돩???紐낃숲??륁뵠??
  */
 public interface EgovNameCardService {
 
@@ -22,7 +22,7 @@ public interface EgovNameCardService {
 
     void deleteNameCard(String ncrdId);
 
-    // ??紐낇븿泥??�??
+    // ??筌뤿굟釉울㎗??온??
     Page<NameCardUserDto> getMyNameCardFolder(String userId, @org.springframework.lang.NonNull Pageable pageable);
 
     void addMyNameCard(String userId, String ncrdId);

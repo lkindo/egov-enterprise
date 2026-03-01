@@ -1,6 +1,6 @@
 package com.company.project.service.usermanagement;
 
-import com.company.project.service.user.dto.EnterpriseUserDto;
+import com.company.project.service.usermanagement.dto.EnterpriseUserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

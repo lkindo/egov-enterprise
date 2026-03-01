@@ -62,4 +62,3 @@ public class QIntegrationService extends EntityPathBase<IntegrationService> {
     }
 
 }
-

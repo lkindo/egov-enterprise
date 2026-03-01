@@ -36,4 +36,3 @@ public class QBaseTimeEntity extends EntityPathBase<BaseTimeEntity> {
     }
 
 }
-

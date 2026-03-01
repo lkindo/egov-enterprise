@@ -113,7 +113,8 @@ public class RequestOfferDao extends EgovComAbstractDAO {
 	    			if(mapAnsParents == null){
 	    				break;
 	    			//1?덈꺼 ?쇰븣 泥섎━
-	    			//}else if(mapAnsParents == null){
+	    			//
+                    }else if(mapAnsParents == null){
 	    			}else{
 	    				sAnsParents = (String)mapAnsParents.get("knoId");
 	    				nSeq=(Integer)mapAnsParents.get("ansSeq") + 1;

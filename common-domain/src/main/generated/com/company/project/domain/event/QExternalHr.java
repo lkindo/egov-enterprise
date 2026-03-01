@@ -68,4 +68,3 @@ public class QExternalHr extends EntityPathBase<ExternalHr> {
     }
 
 }
-

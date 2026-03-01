@@ -482,7 +482,8 @@ public class EgovAnnvrsryManageController {
 		}
 
 		if (sCmd.equals("bnde")) {
-			// final MultipartHttpServletRequest multiRequest =
+			//
+                     MultipartHttpServletRequest multiRequest =
 			// (MultipartHttpServletRequest) request;
 			final Map<String, MultipartFile> files = multiRequest.getFileMap();
 			Iterator<Entry<String, MultipartFile>> itr = files.entrySet().iterator();
@@ -536,12 +537,13 @@ public class EgovAnnvrsryManageController {
 		status.setComplete();
 		model.addAttribute("message", "true");
 		return "egovframework/com/uss/ion/ans/EgovAnnvrsryManageBndeListPop";
-		// }else{
+		// 
+                    }else{
 		// String sTempMessage =
 		// annvrsryManageVO.getBndtDe().substring(0,4)+"??+bndtManageVO.getBndtDe().substring(4,6)+"??
 		// ?곗씠?媛 議댁옱?⑸땲??";
 		// model.addAttribute("message", sTempMessage);
 		// return "egovframework/com/uss/ion/bnt/EgovBndtManageBndeListPop";
-		// }
-	}
+		
+                
 }

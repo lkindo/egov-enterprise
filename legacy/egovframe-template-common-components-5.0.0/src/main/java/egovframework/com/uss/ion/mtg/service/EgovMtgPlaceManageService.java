@@ -60,7 +60,8 @@ public interface EgovMtgPlaceManageService {
 	 * @param mtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
 	 * @return MtgPlaceManageVO - ?뚯쓽?ㅺ?由?VO
 	 */
-	//public List<MtgPlaceManageVO> selectMtgPlaceManageResult(MtgPlaceManageVO mtgPlaceManageVO) throws Exception;
+	//
+                     List<MtgPlaceManageVO> selectMtgPlaceManageResult(MtgPlaceManageVO mtgPlaceManageVO) throws Exception;
 
 	/******** ?뚯쓽???덉빟 愿由?*************/
 	/**

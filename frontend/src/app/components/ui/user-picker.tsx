@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { StandardModal } from './standard-modal';
 import { VirtualScrollList } from './virtual-scroll-list';
-import { addressbookService } from '@/services/addressbookService';
+import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { NameCard } from '@/types/addressbook';
 import { Search, User, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ export function UserPicker({
 
     try {
       setLoading(true);
-      const res = (await addressbookService.searchUsers(keyword)) as any;
+      const res = (await addressbookUserService.searchUsers(keyword)) as any;
       if (res?.success) {
         setResults(res.data || []);
       }
@@ -43,7 +43,7 @@ export function UserPicker({
   }, [keyword]);
 
   const renderUserItem = (user: NameCard) => (
-    <div 
+    <div
       className="flex items-center justify-between px-6 py-3 border-b hover:bg-primary/5 transition-colors cursor-pointer group"
       onClick={() => {
         onSelect(user);
@@ -76,7 +76,7 @@ export function UserPicker({
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="relative">
           <Search className="absolute left-3 top-2.5 text-muted-foreground" size={18} />
-          <input 
+          <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
@@ -84,7 +84,7 @@ export function UserPicker({
             className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             autoFocus
           />
-          <button 
+          <button
             type="submit"
             className="absolute right-2 top-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold shadow-sm"
           >
@@ -105,7 +105,7 @@ export function UserPicker({
               <p className="text-[10px]">이름이나 부서명을 입력하고 엔터를 눌러주세요.</p>
             </div>
           ) : (
-            <VirtualScrollList 
+            <VirtualScrollList
               items={results}
               itemHeight={60}
               containerHeight={350}

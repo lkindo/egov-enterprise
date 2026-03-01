@@ -2,8 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
-import { ServerInfo } from '@/services/serverService';
+import { serverAdminService, ServerInfo } from '@/services/admin/system/ServerAdminService';
 
 export async function saveServerAction(prevState: any, formData: FormData) {
   try {
@@ -18,9 +17,9 @@ export async function saveServerAction(prevState: any, formData: FormData) {
     };
 
     if (serverId) {
-      await client.put(`/admin/system/servers/${serverId}`, data, axiosConfig);
+      await serverAdminService.updateServer(serverId, data, axiosConfig);
     } else {
-      await client.post('/admin/system/servers', data, axiosConfig);
+      await serverAdminService.createServer(data as any, axiosConfig);
     }
 
     revalidatePath('/admin/system/server');
@@ -37,8 +36,8 @@ export async function deleteServerAction(id: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/system/servers/${id}`, axiosConfig);
-    
+    await serverAdminService.deleteServer(id, axiosConfig);
+
     revalidatePath('/admin/system/server');
     return { success: true, message: '서버 정보가 삭제되었습니다.' };
   } catch (error: any) {

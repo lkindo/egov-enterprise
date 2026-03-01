@@ -48,4 +48,3 @@ public class QTerms extends EntityPathBase<Terms> {
     }
 
 }
-

@@ -44,14 +44,14 @@ class UserServiceBusinessLogicExceptionTest {
                 signupRequest = new UserSignupRequest(
                                 "newUser",
                                 "password123!",
-                                "?�?????",
+                                "?�?????",
                                 Role.USER,
                                 "hint",
                                 "answer");
         }
 
         @Test
-        @DisplayName("??��???- 중복 ????ID???????발생")
+        @DisplayName("??��???- 중복 ????ID???????발생")
         void signup_fail_withDuplicateUserId() {
                 // Given
                 when(userRepository.existsById("newUser")).thenReturn(true);
@@ -63,7 +63,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("??��???- ???�????�??????????발생")
+        @DisplayName("??��???- ???�????�??????????발생")
         void signup_fail_withDatabaseConnectionError() {
                 // Given
                 when(userRepository.existsById("newUser")).thenReturn(false);
@@ -91,7 +91,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("????목록 ???조회 - ?�????��? 번호???????발생")
+        @DisplayName("????목록 ???조회 - ?�????��? 번호???????발생")
         void getPagedUserList_fail_withInvalidPageNumber() {
                 // Given
                 Page<User> emptyPage = new PageImpl<>(java.util.Collections.emptyList());
@@ -104,7 +104,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("????목록 ???조회 - ?�????��? ?�???????발생")
+        @DisplayName("????목록 ???조회 - ?�????��? ?�???????발생")
         void getPagedUserList_fail_withInvalidPageSize() {
                 // Given
                 Page<User> emptyPage = new PageImpl<>(java.util.Collections.emptyList());
@@ -117,7 +117,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("?????�?- ???�???????????????발생")
+        @DisplayName("?????�?- ???�???????????????발생")
         void registerUser_fail_withDatabaseSaveError() {
                 // Given
                 when(passwordEncoder.encode("password123!")).thenReturn("encodedPassword");
@@ -125,14 +125,14 @@ class UserServiceBusinessLogicExceptionTest {
                                 .when(userRepository).save(any(User.class));
 
                 // When & Then
-                assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", "?�?????", "hint", "answer",
+                assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", "?�?????", "hint", "answer",
                                 Role.USER))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Database save failed");
         }
 
         @Test
-        @DisplayName("�?번호 검?- ?�???�?번호가 null??경우 ???발생")
+        @DisplayName("�?번호 검?- ?�???�?번호가 null??경우 ???발생")
         void verifyPassword_fail_withNullEncodedPassword() {
                 // Given
                 when(passwordEncoder.matches("rawPassword", null)).thenReturn(false);
@@ -146,7 +146,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("??��???- ???????????????발생")
+        @DisplayName("??��???- ???????????????발생")
         void signup_fail_duringUserEntityCreation() {
                 // Given
                 when(userRepository.existsById("newUser")).thenReturn(false);
@@ -161,16 +161,16 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("?????�?- ????ID가 null??경우 ???발생")
+        @DisplayName("?????�?- ????ID가 null??경우 ???발생")
         void registerUser_fail_withNullUserId() {
                 // When & Then
-                assertThatThrownBy(() -> userService.registerUser(null, "password123!", "?�?????", "hint", "answer",
+                assertThatThrownBy(() -> userService.registerUser(null, "password123!", "?�?????", "hint", "answer",
                                 Role.USER))
                                 .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("?????�?- ?????�??null??경우 ???발생")
+        @DisplayName("?????�?- ?????�??null??경우 ???발생")
         void registerUser_fail_withNullUserNm() {
                 // When & Then
                 assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
@@ -179,21 +179,21 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("?????�?- �?번호 ?�???????????발생")
+        @DisplayName("?????�?- �?번호 ?�???????????발생")
         void registerUser_fail_withPasswordEncodingError() {
                 // Given
                 when(passwordEncoder.encode("password123!"))
                                 .thenThrow(new RuntimeException("Password encoding failed"));
 
                 // When & Then
-                assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", "?�?????", "hint", "answer",
+                assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", "?�?????", "hint", "answer",
                                 Role.USER))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Password encoding failed");
         }
 
         @Test
-        @DisplayName("????목록 조회 - ???�????�??�?발생")
+        @DisplayName("????목록 조회 - ???�????�??�?발생")
         void getUserList_fail_withDatabaseConnectionError() {
                 // Given
                 when(userRepository.findAll()).thenThrow(new RuntimeException("Database connection error"));
@@ -205,7 +205,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("????목록 ???조회 - ???�????�??�?발생")
+        @DisplayName("????목록 ???조회 - ???�????�??�?발생")
         void getPagedUserList_fail_withDatabaseConnectionError() {
                 // Given
                 PageRequest pageable = PageRequest.of(0, 10);
@@ -218,7 +218,7 @@ class UserServiceBusinessLogicExceptionTest {
         }
 
         @Test
-        @DisplayName("????조회 - ???�????�??�?발생")
+        @DisplayName("????조회 - ???�????�??�?발생")
         void getUserById_fail_withDatabaseConnectionError() {
                 // Given
                 when(userRepository.findById("testUser")).thenThrow(new RuntimeException("Database connection error"));

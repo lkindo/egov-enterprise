@@ -40,4 +40,3 @@ public class QAuthority extends EntityPathBase<Authority> {
     }
 
 }
-

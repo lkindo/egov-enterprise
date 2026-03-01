@@ -52,4 +52,3 @@ public class QProcessMonitoring extends EntityPathBase<ProcessMonitoring> {
     }
 
 }
-

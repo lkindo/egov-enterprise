@@ -60,4 +60,3 @@ public class QFileSysMntrngLog extends EntityPathBase<FileSysMntrngLog> {
     }
 
 }
-

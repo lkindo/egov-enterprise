@@ -35,7 +35,7 @@ class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    @DisplayName("?“ê? ?ì„± ?±ê³µ")
+    @DisplayName("?ï¿½ï¿½? ?ï¿½ì„± ?ï¿½ê³µ")
     void createComment_success() {
         // given
         String userId = "USER_01";
@@ -60,7 +60,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ëª©ë¡ ì¡°íšŒ ?±ê³µ")
+    @DisplayName("?ï¿½ï¿½? ëª©ë¡ ì¡°íšŒ ?ï¿½ê³µ")
     void getComments_success() {
         // given
         String bbsId = "BBS_01";
@@ -88,7 +88,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?˜ì • ?±ê³µ")
+    @DisplayName("?ï¿½ï¿½? ?ï¿½ì • ?ï¿½ê³µ")
     void updateComment_success() {
         // given
         Long commentId = 1L;
@@ -112,7 +112,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("?“ê? ?? œ ?±ê³µ")
+    @DisplayName("?ï¿½ï¿½? ??ï¿½ï¿½ ?ï¿½ê³µ")
     void deleteComment_success() {
         // given
         Long commentId = 1L;

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * Q&A ??�퉬???명꽣??�씠??
+ * Q&A ??�퉬???명꽣??�씠??
  */
 public interface EgovQnaService {
 

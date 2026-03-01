@@ -80,7 +80,8 @@ public class EgovWebApplicationInitializer implements WebApplicationInitializer 
 		// -------------------------------------------------------------
 		XmlWebApplicationContext rootContext = new XmlWebApplicationContext(); // NOPMD - CloseResource(由ъ냼???リ린)
 		rootContext.setConfigLocations(new String[] { "classpath*:egovframework/spring/com/**/context-*.xml" });
-		//rootContext.setConfigLocations(new String[] { "classpath*:egovframework/spring/com/context-*.xml","classpath*:egovframework/spring/com/*/context-*.xml" });
+		
+                    
 		rootContext.refresh();
 		rootContext.start();
 

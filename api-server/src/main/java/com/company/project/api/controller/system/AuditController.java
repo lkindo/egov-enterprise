@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Audit (Admin)", description = "?�스??감사 로그 관�?API (관리자??")
+@Tag(name = "Audit (Admin)", description = "?�스??감사 로그 관�?API (관리자??")
 @RestController("systemAuditController")
 @RequestMapping("/api/v1/admin/system/audit")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class AuditController {
 
     private final SystemHistoryRepository systemHistoryRepository;
 
-    @Operation(summary = "감사 로그 목록 조회", description = "?�스???�업 ?�력(감사 로그)??조회?�니??")
+    @Operation(summary = "감사 로그 목록 조회", description = "?�스???�업 ?�력(감사 로그)??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<SystemHistoryDto>>> getAuditLogs(
             @RequestParam(required = false) String keyword,

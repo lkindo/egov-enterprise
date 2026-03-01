@@ -52,4 +52,3 @@ public class QWikiBookmark extends EntityPathBase<WikiBookmark> {
     }
 
 }
-

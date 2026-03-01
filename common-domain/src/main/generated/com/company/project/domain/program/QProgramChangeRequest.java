@@ -62,4 +62,3 @@ public class QProgramChangeRequest extends EntityPathBase<ProgramChangeRequest> 
     }
 
 }
-

@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 백업?�업 관리�? ?�한 컨트롤러 ?�래?? */
+ * 백업?�업 관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class EgovBackupOpertController {
@@ -38,7 +38,7 @@ public class EgovBackupOpertController {
     private final EgovCommonCodeService commonCodeService;
 
     /**
-     * 백업?�업 ?�보�???��?�다.
+     * 백업?�업 ?�보�???��?�다.
      */
     @RequestMapping({ "/sym/sym/bak/deleteBackupOpert.do" })
     public String deleteBackupOpert(@RequestParam("backupOpertId") String backupOpertId, ModelMap model)
@@ -58,7 +58,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 ?�보�??�록?�다.
+     * 백업?�업 ?�보�??�록?�다.
      */
     @RequestMapping("/sym/sym/bak/addBackupOpert.do")
     public String insertBackupOpert(@ModelAttribute("backupOpert") BackupOpertDto backupOpert,
@@ -86,7 +86,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 ?�세 ?�보�?조회?�다.
+     * 백업?�업 ?�세 ?�보�?조회?�다.
      */
     @RequestMapping("/sym/sym/bak/getBackupOpert.do")
     public String selectBackupOpert(@RequestParam("backupOpertId") String backupOpertId, ModelMap model)
@@ -97,7 +97,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 ?�록 ?�면?�로 ?�동?�다.
+     * 백업?�업 ?�록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/sym/sym/bak/getBackupOpertForRegist.do")
     public String selectBackupOpertForRegist(ModelMap model)
@@ -108,7 +108,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 ?�정 ?�면?�로 ?�동?�다.
+     * 백업?�업 ?�정 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/sym/sym/bak/getBackupOpertForUpdate.do")
     public String selectBackupOpertForUpdate(@RequestParam("backupOpertId") String backupOpertId, ModelMap model)
@@ -120,7 +120,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 목록??조회?�다.
+     * 백업?�업 목록??조회?�다.
      */
     @RequestMapping({ "/sym/sym/bak/getBackupOpertList.do", "/sym/sym/bak/EgovBackupOpertList.do" })
     public String selectBackupOpertList(
@@ -153,7 +153,7 @@ public class EgovBackupOpertController {
     }
 
     /**
-     * 백업?�업 ?�보�??�정?�다.
+     * 백업?�업 ?�보�??�정?�다.
      */
     @RequestMapping("/sym/sym/bak/updateBackupOpert.do")
     public String updateBackupOpert(@ModelAttribute("backupOpert") BackupOpertDto backupOpert,

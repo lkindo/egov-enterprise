@@ -5,7 +5,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { VirtualScrollList } from '@/app/components/ui/virtual-scroll-list';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { addressbookService } from '@/services/addressbookService';
+import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { NameCard } from '@/types/addressbook';
 import { useToast } from '@/app/components/ui/toast';
 import { Contact, Phone, Mail, Building2, User, Search, MapPin } from 'lucide-react';
@@ -15,7 +15,7 @@ export default function AddressBookPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<NameCard[]>([]);
-  
+
   // 상세 모달 상태
   const [selectedContact, setSelectedContact] = useState<NameCard | null>(null);
   const [isModalOpen, setIsOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function AddressBookPage() {
     try {
       setLoading(true);
       // 실무 데이터가 많다고 가정하고 대량의 목업 데이터 생성 (실제 API 응답으로 대체 가능)
-      const res = (await addressbookService.searchUsers(keyword || '')) as any;
+      const res = (await addressbookUserService.searchUsers(keyword || '')) as any;
       if (res?.success) {
         setContacts(res.data);
       }
@@ -40,7 +40,7 @@ export default function AddressBookPage() {
   }, [loadContacts]);
 
   const renderContactItem = (item: NameCard) => (
-    <div 
+    <div
       className="flex items-center gap-4 px-6 py-4 border-b hover:bg-accent/30 transition-colors group cursor-pointer"
       onClick={() => {
         setSelectedContact(item);
@@ -68,12 +68,12 @@ export default function AddressBookPage() {
 
   return (
     <div className="h-full flex flex-col space-y-6">
-      <PageHeader 
-        title="통합 주소록" 
+      <PageHeader
+        title="통합 주소록"
         breadcrumbs={[{ label: '협업지원' }, { label: '주소록' }]}
       />
 
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={[
           { name: 'keyword', label: '사용자 검색', type: 'text', placeholder: '이름, 부서, 회사명...' }
         ]}
@@ -101,10 +101,10 @@ export default function AddressBookPage() {
               검색된 연락처가 없습니다.
             </div>
           ) : (
-            <VirtualScrollList 
-              items={contacts} 
-              itemHeight={72} 
-              containerHeight={550} 
+            <VirtualScrollList
+              items={contacts}
+              itemHeight={72}
+              containerHeight={550}
               renderItem={renderContactItem}
               className="border-none rounded-none"
             />
@@ -124,7 +124,7 @@ export default function AddressBookPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary text-white text-3xl font-black shadow-lg shadow-primary/20">
               {selectedContact.ncrdNm.charAt(0)}
             </div>
-            
+
             <div>
               <h3 className="text-2xl font-black text-foreground">{selectedContact.ncrdNm}</h3>
               <p className="text-sm font-bold text-primary mt-1">{selectedContact.deptNm} / {selectedContact.cmpnyNm}</p>

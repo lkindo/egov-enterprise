@@ -36,4 +36,3 @@ public class QBackupSchdulDfkId extends BeanPath<BackupSchdulDfkId> {
     }
 
 }
-

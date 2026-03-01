@@ -60,4 +60,3 @@ public class QDbMntrngLog extends EntityPathBase<DbMntrngLog> {
     }
 
 }
-

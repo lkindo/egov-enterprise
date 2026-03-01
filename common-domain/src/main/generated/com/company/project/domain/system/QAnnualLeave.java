@@ -56,4 +56,3 @@ public class QAnnualLeave extends EntityPathBase<AnnualLeave> {
     }
 
 }
-

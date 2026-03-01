@@ -56,4 +56,3 @@ public class QSynchrnServer extends EntityPathBase<SynchrnServer> {
     }
 
 }
-

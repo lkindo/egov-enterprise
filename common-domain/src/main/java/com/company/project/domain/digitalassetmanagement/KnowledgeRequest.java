@@ -1,5 +1,6 @@
 package com.company.project.domain.digitalassetmanagement;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -7,86 +8,69 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 /**
- * 筌왖???뱀?�癰귣똻?ｆ???�욧??JPA Entity
- * ???�탢?????�?? NDAMCALRES
+ * 지식요청/답변 JPA Entity
+ * 연계 테이블: NDAMCALRES
  */
 @Entity
 @Table(name = "NDAMCALRES")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class KnowledgeRequest {
+public class KnowledgeRequest extends BaseEntity {
 
     @Id
     @Column(name = "KNWLDG_ID", length = 20)
-    private String knoId;
+    private String knowledgeId;
 
     @Column(name = "KNWLDG_NM", length = 255, nullable = false)
-    private String knoNm;
+    private String title;
 
     @Column(name = "KNWLDG_CN", length = 4000)
-    private String knoCn;
+    private String content;
 
     @Column(name = "KNWLDG_TY_CODE", length = 20)
-    private String knoTypeCd;
+    private String typeCode;
 
     @Column(name = "ORGNZT_ID", length = 20)
-    private String orgnztId;
+    private String organizationId;
 
     @Column(name = "EXPERT_ID", length = 20)
-    private String speId;
+    private String expertId;
 
     @Column(name = "EMPLYR_ID", length = 20)
     private String emplyrId;
 
     @Column(name = "ATCH_FILE_ID", length = 20)
-    private String atchFileId;
+    private String attachedFileId;
 
     @Column(name = "PARNTS_KNWLDG_ID", length = 20)
-    private String ansParents;
+    private String parentKnowledgeId;
 
     @Column(name = "ANSWER_DP")
-    private Integer ansDepth;
+    private Integer answerDepth;
 
     @Column(name = "ANSWER_ORDR")
-    private Integer ansSeq;
+    private Integer answerOrder;
 
     @Column(name = "ANSWER_GROUP_NO")
-    private Long ansNumber;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private Long answerGroupNumber;
 
     @Builder
-    public KnowledgeRequest(String knoId, String knoNm, String knoCn, String knoTypeCd,
-            String orgnztId, String speId, String emplyrId, String atchFileId,
-            String ansParents, Integer ansDepth, Integer ansSeq, Long ansNumber,
-            String frstRegisterId) {
-        this.knoId = knoId;
-        this.knoNm = knoNm;
-        this.knoCn = knoCn;
-        this.knoTypeCd = knoTypeCd;
-        this.orgnztId = orgnztId;
-        this.speId = speId;
+    public KnowledgeRequest(String knowledgeId, String title, String content, String typeCode,
+            String organizationId, String expertId, String emplyrId, String attachedFileId,
+            String parentKnowledgeId, Integer answerDepth, Integer answerOrder, Long answerGroupNumber) {
+        this.knowledgeId = knowledgeId;
+        this.title = title;
+        this.content = content;
+        this.typeCode = typeCode;
+        this.organizationId = organizationId;
+        this.expertId = expertId;
         this.emplyrId = emplyrId;
-        this.atchFileId = atchFileId;
-        this.ansParents = ansParents;
-        this.ansDepth = ansDepth;
-        this.ansSeq = ansSeq;
-        this.ansNumber = ansNumber;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.attachedFileId = attachedFileId;
+        this.parentKnowledgeId = parentKnowledgeId;
+        this.answerDepth = answerDepth;
+        this.answerOrder = answerOrder;
+        this.answerGroupNumber = answerGroupNumber;
     }
 }

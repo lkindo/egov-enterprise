@@ -56,4 +56,3 @@ public class QTmplatInfo extends EntityPathBase<TmplatInfo> {
     }
 
 }
-

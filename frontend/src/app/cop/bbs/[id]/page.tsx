@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { boardService } from '@/services/boardService';
+import { boardUserService } from '@/services/user/board/BoardUserService';
 import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -23,7 +23,7 @@ function BoardDetailContent() {
   useEffect(() => {
     async function loadPost() {
       try {
-        const res = (await boardService.getPost(bbsId, parseInt(id as string))) as any;
+        const res = (await boardUserService.getPost(bbsId, parseInt(id as string))) as any;
         if (res?.data) setPost(res.data);
         else if (res) setPost(res);
       } catch (error) {
@@ -45,7 +45,7 @@ function BoardDetailContent() {
 
     if (isConfirmed) {
       try {
-        await boardService.deletePost(bbsId, parseInt(id as string));
+        await boardUserService.deletePost(bbsId, parseInt(id as string));
         toast('성공적으로 삭제되었습니다.', 'success');
         router.push('/cop/bbs');
       } catch (error) {
@@ -54,12 +54,12 @@ function BoardDetailContent() {
     }
   };
 
-  if (loading) return <div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin"/> 로딩 중...</div>;
+  if (loading) return <div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> 로딩 중...</div>;
   if (!post) return null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <PageHeader 
+      <PageHeader
         title="게시글 상세"
         breadcrumbs={[{ label: '게시판', href: '/cop/bbs' }, { label: post.nttSj }]}
         actions={
@@ -102,7 +102,7 @@ function BoardDetailContent() {
 
 export default function BoardDetailPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin"/> 정보 로드 중...</div>}>
+    <Suspense fallback={<div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> 정보 로드 중...</div>}>
       <BoardDetailContent />
     </Suspense>
   );

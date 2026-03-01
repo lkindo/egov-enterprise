@@ -50,4 +50,3 @@ public class QTemplate extends EntityPathBase<Template> {
     }
 
 }
-

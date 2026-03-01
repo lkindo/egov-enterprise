@@ -50,4 +50,3 @@ public class QBbsSummary extends EntityPathBase<BbsSummary> {
     }
 
 }
-

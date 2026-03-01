@@ -18,12 +18,12 @@ import java.util.List;
 @RestController("systemRoleController")
 @RequestMapping("/api/v1/admin/system/roles")
 @RequiredArgsConstructor
-@Tag(name = "Role (Admin)", description = "?�스??권한(�? 관�?API (관리자??")
+@Tag(name = "Role (Admin)", description = "?�스??권한(�? 관�?API (관리자??")
 public class RoleController {
 
     private final RoleManageService roleManageService;
 
-    @Operation(summary = "�?목록 조회", description = "?�스?�에 ?�의???�체 권한(�? 목록??조회?�니??")
+    @Operation(summary = "�?목록 조회", description = "?�스?�에 ?�의???�체 권한(�? 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RoleManageDto>>> getRoles(
             @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
@@ -40,20 +40,20 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageIndex, 10, total)));
     }
 
-    @Operation(summary = "�??�세 조회", description = "?�정 권한(�????�세 ?�보�?조회?�니??")
+    @Operation(summary = "�??�세 조회", description = "?�정 권한(�????�세 ?�보�?조회?�니??")
     @GetMapping("/{roleCode}")
     public ResponseEntity<ApiResponse<RoleManageDto>> getRole(@PathVariable String roleCode) {
         return ResponseEntity.ok(ApiResponse.success(roleManageService.selectRole(roleCode)));
     }
 
-    @Operation(summary = "�??�록", description = "?�로???�스??권한(�????�록?�니??")
+    @Operation(summary = "�??�록", description = "?�로???�스??권한(�????�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createRole(@RequestBody RoleManageDto dto) {
         roleManageService.insertRole(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "�??�정", description = "기존 ?�스??권한(�? ?�보�??�정?�니??")
+    @Operation(summary = "�??�정", description = "기존 ?�스??권한(�? ?�보�??�정?�니??")
     @PutMapping("/{roleCode}")
     public ResponseEntity<ApiResponse<Void>> updateRole(
             @PathVariable String roleCode,
@@ -63,7 +63,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "�???��", description = "?�스??권한(�? ?�보�???��?�니??")
+    @Operation(summary = "�???��", description = "?�스??권한(�? ?�보�???��?�니??")
     @DeleteMapping("/{roleCode}")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable String roleCode) {
         roleManageService.deleteRole(roleCode);

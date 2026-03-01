@@ -2,8 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
-import { SyncServer } from '@/services/syncService';
+import { syncAdminService, SyncServer } from '@/services/admin/system/SyncAdminService';
 
 export async function saveSyncServerAction(prevState: any, formData: FormData) {
   try {
@@ -20,9 +19,9 @@ export async function saveSyncServerAction(prevState: any, formData: FormData) {
     };
 
     if (serverId) {
-      await client.put(`/admin/system/sync-servers/${serverId}`, data, axiosConfig);
+      await syncAdminService.updateSyncServer(serverId, data, axiosConfig);
     } else {
-      await client.post('/admin/system/sync-servers', data, axiosConfig);
+      await syncAdminService.createSyncServer(data as any, axiosConfig);
     }
 
     revalidatePath('/admin/system/sync-server');
@@ -39,8 +38,8 @@ export async function deleteSyncServerAction(id: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/system/sync-servers/${id}`, axiosConfig);
-    
+    await syncAdminService.deleteSyncServer(id, axiosConfig);
+
     revalidatePath('/admin/system/sync-server');
     return { success: true, message: '서버 정보가 삭제되었습니다.' };
   } catch (error: any) {
@@ -55,8 +54,8 @@ export async function executeSyncAction(id: string) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.post(`/admin/system/sync-servers/${id}/execute`, {}, axiosConfig);
-    
+    await syncAdminService.executeSync(id, axiosConfig);
+
     revalidatePath('/admin/system/sync-server');
     return { success: true, message: '동기화 명령이 전송되었습니다.' };
   } catch (error: any) {

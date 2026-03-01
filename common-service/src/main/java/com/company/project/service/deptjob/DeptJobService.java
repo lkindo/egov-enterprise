@@ -53,10 +53,10 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            if ("0".equals(searchCondition)) { // ?ºÂ€??–ë¾½?¾ë?ì±?                builder.and(deptJob.deptJobNm.contains(keyword));
-            } else if ("1".equals(searchCondition)) { // ?ºÂ€??–ë¾½?¾ë?ê¶??
+            if ("0".equals(searchCondition)) { // ?ï¿½Â€??ï¿½ë¾½?ï¿½ï¿½?ï¿½?                builder.and(deptJob.deptJobNm.contains(keyword));
+            } else if ("1".equals(searchCondition)) { // ?ï¿½Â€??ï¿½ë¾½?ï¿½ï¿½?ï¿½??
                 builder.and(deptJob.deptJobCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // ??€??ë¨?±¸
+            } else if ("2".equals(searchCondition)) { // ??ï¿½??ï¿½?ï¿½ï¿½
                 builder.and(deptJob.chargerId.contains(keyword));
             }
         }

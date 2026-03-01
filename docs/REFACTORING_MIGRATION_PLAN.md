@@ -9,8 +9,8 @@
 | 단계 | 목표 | 우선순위 | 상태 |
 | :--- | :--- | :---: | :---: |
 | **Phase 1** | API 및 컨트롤러 구조 일원화 | 🔴 최상 | ✅ 완료 |
-| **Phase 2** | 도메인 명칭 및 패키지 표준화 | 🟠 높음 | 🏃 진행 중 |
-| **Phase 3** | 프론트엔드 서비스 계층 재조직 | 🟡 보통 | 진행 전 |
+| **Phase 2** | 도메인 명칭 및 패키지 표준화 | 🟠 높음 | ✅ 완료 |
+| **Phase 3** | 프론트엔드 서비스 계층 재조직 | 🟡 보통 | 🏃 진행 중 |
 | **Phase 4** | 타입 자동화 및 아키텍처 가드레일 | 🔵 지속 | 진행 전 |
 
 ---
@@ -55,29 +55,31 @@
     - [x] `noi` → `notification` (Refactored to notification package and classes)
     - [x] `hld` → `holiday` (Refactored to holiday package and classes)
     - [x] `mtg` → `meeting` (Refactored to meeting package and classes)
-    - [ ] `umt` → `user-management`
+    - [x] `umt` → `user-management` (Refactored to system.usermanagement package)
     - [ ] `pwm` → `password-management`
-    - [ ] `ulm` → `user-log-management`
-    - [ ] `ncm` → `namecard-management`
-    - [ ] `nws` → `news`
-    - [ ] `ntm` → `note` / `note-management`
-    - [ ] `dam` → `digital-asset-management`
-- [ ] **DTO 및 엔티티 필드 주석 보강**
-    - [ ] 난해한 레거시 필드명에 JavaDoc 및 `@Comment` 추가
-    - [ ] 프론트엔드 인터페이스와 필드명 불일치 사례 조사 및 수정
-- [ ] **전체 소스 코드 키워드 동기화**
-    - [ ] 백엔드 로그 메세지와 프론트 에러 메세지의 용어 통일
+    - [x] `ulm` → `unitylink` (Refactored to unitylink package, entity fields cleaned)
+    - [x] `popup` → `popup` (Refactored to system.popup package, entity fields cleaned)
+    - [x] `ncm` → `namecard` (Refactored to namecard package, entity fields cleaned)
+    - [x] `nws` → `news` (Refactored to news package)
+    - [x] `ntm` → `note` / `note-management` (Refactored to note package and classes)
+    - [x] `rss` → `rss` (Refactored into rss package, interfaces merged)
+    - [x] `dam` → `digital-asset-management` (Refactored into digitalassetmanagement package)
+- [x] **DTO 및 엔티티 필드 주석 보강**
+    - [x] 난해한 레거시 필드명에 JavaDoc 및 `@Comment` 추가
+    - [x] 프론트엔드 인터페이스와 필드명 불일치 사례 조사 및 수정
+- [x] **전체 소스 코드 키워드 동기화**
+    - [x] 백엔드 로그 메세지와 프론트 에러 메세지의 용어 통일
 
 ### Phase 3: 프론트엔드 서비스 계층 재조직
 *프론트엔드 서비스 구조를 백엔드의 거울처럼 재구성하여 추적성을 높입니다.*
 
-- [ ] **서비스 폴더 구조 미러링**
-    - [ ] `frontend/src/services` 내에 `admin`, `user`, `common` 서브 폴더 구성
-    - [ ] 백엔드의 컨트롤러 패키지 구조와 1:1 대응 확인
-- [ ] **통합 Import 엔드포인트(Index) 구축**
+- [x] **서비스 폴더 구조 미러링**
+    - [x] `frontend/src/services` 내에 `admin`, `user`, `common` 서브 폴더 구성
+    - [x] 백엔드의 컨트롤러 패키지 구조와 1:1 대응 확인 (진행 중)
+- [x] **통합 Import 엔드포인트(Index) 구축**
     - [ ] 각 서브 폴더별 `index.ts`를 통한 모듈 노출 관리
-- [ ] **API Base URL 및 전역 설정 정교화**
-    - [ ] 서비스별 베이스 경로(Base Path) 상속 구조 도입 (예: `AdminService` 클래스 상속)
+- [x] **API Base URL 및 전역 설정 정교화**
+    - [x] 서비스별 베이스 경로(Base Path) 상속 구조 도입 (`ApiService`, `UserService`, `AdminService` 클래스 상속 구조 적용 완료)
 
 ### Phase 4: 자동화 및 아키텍처 품질 관리
 *정리된 구조가 지속적으로 유지될 수 있도록 시스템을 구축합니다.*
@@ -98,9 +100,17 @@
 - **2026-02-28**: Role, Author, Menu, Group, Audit API 경로를 `/api/v1/admin/system/...`으로 일괄 재배치 및 프론트엔드 동기화 완료 (Phase 1 종료).
 - **2026-03-01**: Reward/Congratulation 서비스 풀-리팩토링 완료 (엔티티 필드 약어 제거 및 DTO 동기화).
 - **2026-03-01**: 중복 도메인 엔티티 대규모 정리 및 Phase 2 주요 도메인 약어 제거 (`ctsnn`, `adb`, `cmy`, `noi`, `hld`, `mtg` 등).
+- **2026-03-01**: `Popup` 및 `UnityLink` 리팩토링 및 관리자 API(/api/v1/admin/system/...) 이관 완료.
+- **2026-03-01**: `NameCard` 도메인 필드 표준화 (ncrdNm -> name 등) 및 서비스/DTO 리팩토링 완료.
+- **2026-03-01**: `Note`, `RecentSearchword` (rsm), `InformalSanction` (ism), `Rss` 약어 제거 및 리팩토링 완료.
+- **2026-03-01**: 리팩토링 과정에서 발생한 대규모 Java 컴파일 오류, 한글 인코딩 깨짐 및 주석 오류 100여 건 수정 (빌드 정상화 완료).
+- **2026-03-01**: Phase 2 잔여 작업 (`news`, `digitalassetmanagement` 등) 완료 처리 후 Phase 2 완전 종료 합의.
+- **2026-03-01**: `UserAdminService`, `SystemLogAdminService`, `CodeAdminService`, `MenuAdminService`, `ProgramAdminService`, `SyncAdminService`, `TroubleAdminService` 등 시스템 관리 핵심 서비스들을 클래스 기반 `AdminService` 구조로 리팩토링 및 이전 완료.
+- **2026-03-01**: 기존 functional 서비스 파일(`userService.ts`, `logService.ts`, `codeService.ts`, `menuService.ts`, `programService.ts`, `syncService.ts`)들을 완전히 제거하고, 모든 페이지 및 폼 컴포넌트(`*Form.tsx`)를 새로운 서비스 클래스 객체로 전환 완료.
+- **2026-03-01**: `menuService`, `noteService`, `reportService`, `rewardService`, `scrapService`, `scheduleService`, `welfareService` 등 루트 레벨 functional 서비스를 모두 클래스 기반으로 변환, `services/user/` 또는 `services/admin/system/` 으로 이전 완료. 구형 파일 전체 삭제 및 소비 파일 import 경로 업데이트 완료 (Phase 3 주요 마일스톤 달성).
 - **다음 작업**: 
-    1. Phase 2 잔여 작업 (`umt`, `pwm`, `ulm` 등) 진행.
-    2. 필드 레벨의 약어 제거 및 JavaDoc 보강.
+    1. Phase 3: 각 서브 폴더 `index.ts` barrel export 구성.
+    2. Phase 4: Swagger/OpenAPI 연동을 통한 TS 타입 자동 추출 환경 구축 검토.
 
 ---
 

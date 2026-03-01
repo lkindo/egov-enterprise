@@ -1,4 +1,4 @@
- package egovframework.com.sym.mnu.mpm.service.impl;
+package egovframework.com.sym.mnu.mpm.service.impl;
 
 import java.util.List;
 

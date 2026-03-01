@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { surveyService } from '@/services/surveyService';
+import { surveyAdminService } from '@/services/admin/survey/SurveyAdminService';
 import { Survey } from '@/types/survey';
 import { useToast } from '@/app/components/ui/toast';
 import { Vote, Calendar, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -21,7 +21,7 @@ export default function SurveyListPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = (await surveyService.getSurveys({ page: 0, size: 10 })) as any;
+        const res = (await surveyAdminService.getSurveys({ page: 0, size: 10 })) as any;
         if (res?.success) setData(res.data.content);
       } catch (error) {
         toast('설문 목록을 불러오지 못했습니다.', 'error');
@@ -33,8 +33,8 @@ export default function SurveyListPage() {
   }, [toast]);
 
   const columns = [
-    { 
-      header: '상태', 
+    {
+      header: '상태',
       accessor: (item: Survey) => (
         <span className={cn(
           "px-2 py-1 rounded text-[10px] font-black uppercase",
@@ -45,16 +45,16 @@ export default function SurveyListPage() {
       ),
       className: 'w-24'
     },
-    { 
-      header: '설문 제목', 
+    {
+      header: '설문 제목',
       accessor: (item: Survey) => (
         <div className="font-bold text-foreground group-hover:text-primary transition-colors">
           {item.qestnrSj}
         </div>
       )
     },
-    { 
-      header: '참여 기간', 
+    {
+      header: '참여 기간',
       accessor: (item: Survey) => (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar size={12} />
@@ -66,7 +66,7 @@ export default function SurveyListPage() {
       header: '',
       className: 'text-right',
       accessor: (item: Survey) => (
-        <button 
+        <button
           onClick={(e) => {
             e.stopPropagation();
             router.push(`/survey/${item.qestnrId}`);
@@ -81,12 +81,12 @@ export default function SurveyListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="온라인 설문 조사" 
+      <PageHeader
+        title="온라인 설문 조사"
         breadcrumbs={[{ label: '업무지원' }, { label: '설문조사' }]}
       />
 
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={[
           { name: 'searchWrd', label: '설문명 검색', type: 'text', placeholder: '제목 입력...' }
         ]}
@@ -94,9 +94,9 @@ export default function SurveyListPage() {
       />
 
       <div className="grid grid-cols-1 gap-6">
-        <StandardDataTable 
-          columns={columns} 
-          data={data} 
+        <StandardDataTable
+          columns={columns}
+          data={data}
           loading={loading}
           onRowClick={(item) => router.push(`/survey/${item.qestnrId}`)}
           emptyMessage="등록된 설문 조사가 없습니다."

@@ -50,4 +50,3 @@ public class QBlogUser extends EntityPathBase<BlogUser> {
     }
 
 }
-

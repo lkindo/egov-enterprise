@@ -3,8 +3,8 @@ package com.company.project.api.controller.user;
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.code.dto.CommonCodeDto;
 import com.company.project.service.group.GroupManageService;
-import com.company.project.service.user.UserManageService;
-import com.company.project.service.user.dto.UserManageDto;
+import com.company.project.service.usermanagement.UserManageService;
+import com.company.project.service.usermanagement.dto.UserManageDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * ?�용?��?리�? ?�한 컨트롤러 ?�래?? */
+ * 사용자 관리를 위한 컨트롤러
+ */
 @Slf4j
 @Controller("userPkgUserManageController")
 @RequiredArgsConstructor
@@ -37,13 +38,14 @@ public class UserManageController {
     private final MessageSource messageSource;
 
     /**
-     * ?�용??목록??조회?�다.
+     * 사용자 목록을 조회한다.
      */
     @RequestMapping({ "/uss/umt/EgovUserManage.do", "/uss/umt/user/EgovUserManage.do" })
     public String selectUserList(@ModelAttribute("userSearchVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
         try {
-            // searchVO�?모델???�아 JSP?�서 ?�용 가?�하�???            model.addAttribute("mberVO", searchVO);
+            // searchVO를 모델에 담아 JSP에서 사용 가능하게 함
+            model.addAttribute("mberVO", searchVO);
 
             searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
             searchVO.setPageSize(propertiesService.getInt("pageSize"));
@@ -62,18 +64,18 @@ public class UserManageController {
             paginationInfo.setTotalRecordCount(totCnt);
             model.addAttribute("paginationInfo", paginationInfo);
 
-            // ?�태코드 목록 조회
+            // 상태코드 목록 조회
             model.addAttribute("emplyrSttusCode_result", commonCodeService.getCodesByGroup("COM013"));
 
             return "cmm/uss/umt/EgovUserManage";
         } catch (Exception e) {
-            log.error("?�용??목록 조회 �??�류 발생", e);
+            log.error("사용자 목록 조회 중 오류 발생", e);
             throw e;
         }
     }
 
     /**
-     * ?�용???�록 ?�면?�로 ?�동?�다.
+     * 사용자 등록 화면으로 이동한다.
      */
     @GetMapping({ "/uss/umt/EgovUserInsertView.do", "/uss/umt/user/EgovUserInsertView.do" })
     public String insertUserView(Model model) throws Exception {
@@ -83,7 +85,7 @@ public class UserManageController {
     }
 
     /**
-     * ?�용???�보�??�록?�다.
+     * 사용자 정보를 등록한다.
      */
     @PostMapping({ "/uss/umt/EgovUserInsert.do", "/uss/umt/user/EgovUserInsert.do" })
     public String insertUser(@ModelAttribute("userManageVO") @jakarta.validation.Valid UserManageDto userManageVO,
@@ -94,12 +96,13 @@ public class UserManageController {
         }
 
         userManageService.insertUser(userManageVO);
-        model.addAttribute("resultMsg", messageSource.getMessage("success.common.insert", null, LocaleContextHolder.getLocale()));
+        model.addAttribute("resultMsg",
+                messageSource.getMessage("success.common.insert", null, LocaleContextHolder.getLocale()));
         return "forward:/uss/umt/EgovUserManage.do";
     }
 
     /**
-     * ?�용???�정 ?�면?�로 ?�동?�다.
+     * 사용자 수정 화면으로 이동한다.
      */
     @RequestMapping(value = { "/uss/umt/EgovUserSelectUpdtView.do",
             "/uss/umt/user/EgovUserSelectUpdtView.do" }, method = { RequestMethod.GET, RequestMethod.POST })
@@ -109,14 +112,14 @@ public class UserManageController {
             return "forward:/uss/umt/EgovUserManage.do";
         }
 
-        UserManageDto userManageVO = userManageService.selectUserByEsntlId(userId);
+        UserManageDto userManageVO = userManageService.selectUser(userId);
         model.addAttribute("userManageVO", userManageVO);
         populateCommonCodes(model);
         return "cmm/uss/umt/EgovUserSelectUpdt";
     }
 
     /**
-     * ?�용???�보�??�정?�다.
+     * 사용자 정보를 수정한다.
      */
     @PostMapping({ "/uss/umt/EgovUserSelectUpdt.do", "/uss/umt/user/EgovUserSelectUpdt.do" })
     public String updateUser(@ModelAttribute("userManageVO") @jakarta.validation.Valid UserManageDto userManageVO,
@@ -127,12 +130,13 @@ public class UserManageController {
         }
 
         userManageService.updateUser(userManageVO);
-        model.addAttribute("resultMsg", messageSource.getMessage("success.common.update", null, LocaleContextHolder.getLocale()));
+        model.addAttribute("resultMsg",
+                messageSource.getMessage("success.common.update", null, LocaleContextHolder.getLocale()));
         return "forward:/uss/umt/EgovUserManage.do";
     }
 
     /**
-     * ?�용???�보�???��?�다.
+     * 사용자 정보를 삭제한다.
      */
     @PostMapping({ "/uss/umt/EgovUserDelete.do", "/uss/umt/user/EgovUserDelete.do" })
     public String deleteUser(@RequestParam("checkedIdForDel") String checkedIdForDel, Model model)
@@ -141,12 +145,13 @@ public class UserManageController {
                 .map(String::trim)
                 .collect(Collectors.toList());
         userManageService.deleteUserList(userIdList);
-        model.addAttribute("resultMsg", messageSource.getMessage("success.common.delete", null, LocaleContextHolder.getLocale()));
+        model.addAttribute("resultMsg",
+                messageSource.getMessage("success.common.delete", null, LocaleContextHolder.getLocale()));
         return "forward:/uss/umt/EgovUserManage.do";
     }
 
     /**
-     * ?�이??중복?�인 ?�업창을 ?�출?�다.
+     * 아이디 중복확인 팝업창을 호출한다.
      */
     @GetMapping("/uss/umt/EgovIdDplctCnfirmView.do")
     public String checkIdDplctView(ModelMap model) throws Exception {
@@ -156,7 +161,7 @@ public class UserManageController {
     }
 
     /**
-     * ?�이??중복?��?�??�인?�다.
+     * 아이디 중복여부를 확인한다.
      */
     @RequestMapping("/uss/umt/EgovIdDplctCnfirm.do")
     public String checkIdDplct(@RequestParam Map<String, Object> commandMap, ModelMap model)
@@ -173,7 +178,7 @@ public class UserManageController {
     }
 
     /**
-     * 비�?번호 ?�정 ?�면?�로 ?�동?�다.
+     * 비밀번호 수정 화면으로 이동한다.
      */
     @GetMapping({ "/uss/umt/EgovUserPasswordUpdtView.do", "/uss/umt/user/EgovUserPasswordUpdtView.do" })
     public String updatePasswordView(@ModelAttribute("userManageVO") UserManageDto userManageVO, Model model)
@@ -183,7 +188,7 @@ public class UserManageController {
     }
 
     /**
-     * 비�?번호�??�정?�다.
+     * 비밀번호를 수정한다.
      */
     @PostMapping({ "/uss/umt/EgovUserPasswordUpdt.do", "/uss/umt/user/EgovUserPasswordUpdt.do" })
     public String updatePassword(@RequestParam Map<String, Object> commandMap, Model model)
@@ -191,7 +196,8 @@ public class UserManageController {
         String userId = (String) commandMap.get("userId");
         String newPassword = (String) commandMap.get("newPassword");
         userManageService.updatePassword(userId, newPassword);
-        model.addAttribute("resultMsg", messageSource.getMessage("success.common.update", null, LocaleContextHolder.getLocale()));
+        model.addAttribute("resultMsg",
+                messageSource.getMessage("success.common.update", null, LocaleContextHolder.getLocale()));
         return "cmm/uss/umt/EgovUserPasswordUpdt";
     }
 

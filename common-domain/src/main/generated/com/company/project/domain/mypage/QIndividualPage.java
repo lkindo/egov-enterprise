@@ -52,4 +52,3 @@ public class QIndividualPage extends EntityPathBase<IndividualPage> {
     }
 
 }
-

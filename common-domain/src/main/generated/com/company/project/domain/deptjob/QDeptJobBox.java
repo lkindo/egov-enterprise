@@ -48,4 +48,3 @@ public class QDeptJobBox extends EntityPathBase<DeptJobBox> {
     }
 
 }
-

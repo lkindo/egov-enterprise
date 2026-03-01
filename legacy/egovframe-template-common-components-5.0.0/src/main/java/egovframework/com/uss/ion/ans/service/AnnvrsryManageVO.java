@@ -13,7 +13,8 @@ import java.util.List;
  * @created 06-15-2010 ?ㅽ썑 2:08:56
  */
 
-//public class AnnvrsryManageVO extends AnnvrsryManage implements Serializable {
+//
+                     class AnnvrsryManageVO extends AnnvrsryManage implements Serializable {
 public class AnnvrsryManageVO extends AnnvrsryManage{
 
 	/**

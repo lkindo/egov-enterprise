@@ -1,102 +1,84 @@
 package com.company.project.domain.popup;
 
-import jakarta.persistence.*;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-/**
- * ??밸씜筌??온??JPA Entity
- * ??뉕탢?????뵠?? COMTNPOPUPMANAGE
- */
 @Entity(name = "PopupDomain")
 @Table(name = "NPOPUPMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Popup {
+public class Popup extends BaseEntity {
 
     @Id
     @Column(name = "POPUP_ID", length = 20)
     private String popupId;
 
     @Column(name = "POPUP_TITLE_NM", length = 255, nullable = false)
-    private String popupTitleNm;
+    private String popupTitleName;
 
     @Column(name = "FILE_URL", length = 255)
     private String fileUrl;
 
     @Column(name = "POPUP_WLC", length = 20)
-    private String popupWlc;
+    private String popupWidthLocation;
 
     @Column(name = "POPUP_HLC", length = 20)
-    private String popupHlc;
+    private String popupHeightLocation;
 
     @Column(name = "POPUP_H_SIZE", length = 20)
-    private String popupHSize;
+    private String popupHeightSize;
 
     @Column(name = "POPUP_W_SIZE", length = 20)
-    private String popupWSize;
+    private String popupWidthSize;
 
     @Column(name = "NTCE_BGNDE", length = 20)
-    private String ntceBgnde;
+    private String noticeBeginDate;
 
     @Column(name = "NTCE_ENDDE", length = 20)
-    private String ntceEndde;
+    private String noticeEndDate;
 
     @Column(name = "STOP_VEW_AT", length = 1)
-    private String stopVewAt;
+    private String isStopView;
 
     @Column(name = "NTCE_AT", length = 1)
-    private String ntceAt;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGISTER_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDUSR_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private String isNotice;
 
     @Builder
-    public Popup(String popupId, String popupTitleNm, String fileUrl, String popupWlc,
-            String popupHlc, String popupHSize, String popupWSize, String ntceBgnde,
-            String ntceEndde, String stopVewAt, String ntceAt, String frstRegisterId) {
+    public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
+            String popupHeightLocation, String popupHeightSize, String popupWidthSize,
+            String noticeBeginDate, String noticeEndDate, String isStopView, String isNotice) {
         this.popupId = popupId;
-        this.popupTitleNm = popupTitleNm;
+        this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;
-        this.popupWlc = popupWlc;
-        this.popupHlc = popupHlc;
-        this.popupHSize = popupHSize;
-        this.popupWSize = popupWSize;
-        this.ntceBgnde = ntceBgnde;
-        this.ntceEndde = ntceEndde;
-        this.stopVewAt = stopVewAt;
-        this.ntceAt = ntceAt;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
+        this.popupWidthLocation = popupWidthLocation;
+        this.popupHeightLocation = popupHeightLocation;
+        this.popupHeightSize = popupHeightSize;
+        this.popupWidthSize = popupWidthSize;
+        this.noticeBeginDate = noticeBeginDate;
+        this.noticeEndDate = noticeEndDate;
+        this.isStopView = isStopView;
+        this.isNotice = isNotice;
     }
 
-    public void update(String popupTitleNm, String fileUrl, String popupWlc, String popupHlc,
-            String popupHSize, String popupWSize, String ntceBgnde, String ntceEndde,
-            String stopVewAt, String ntceAt, String updusrId) {
-        this.popupTitleNm = popupTitleNm;
+    public void update(String popupTitleName, String fileUrl, String popupWidthLocation, String popupHeightLocation,
+            String popupHeightSize, String popupWidthSize, String noticeBeginDate, String noticeEndDate,
+            String isStopView, String isNotice) {
+        this.popupTitleName = popupTitleName;
         this.fileUrl = fileUrl;
-        this.popupWlc = popupWlc;
-        this.popupHlc = popupHlc;
-        this.popupHSize = popupHSize;
-        this.popupWSize = popupWSize;
-        this.ntceBgnde = ntceBgnde;
-        this.ntceEndde = ntceEndde;
-        this.stopVewAt = stopVewAt;
-        this.ntceAt = ntceAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+        this.popupWidthLocation = popupWidthLocation;
+        this.popupHeightLocation = popupHeightLocation;
+        this.popupHeightSize = popupHeightSize;
+        this.popupWidthSize = popupWidthSize;
+        this.noticeBeginDate = noticeBeginDate;
+        this.noticeEndDate = noticeEndDate;
+        this.isStopView = isStopView;
+        this.isNotice = isNotice;
     }
 }

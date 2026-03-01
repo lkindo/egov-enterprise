@@ -48,4 +48,3 @@ public class QIndvdlInfoPolicy extends EntityPathBase<IndvdlInfoPolicy> {
     }
 
 }
-

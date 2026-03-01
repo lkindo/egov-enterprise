@@ -13,6 +13,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 전문가 Repository Custom 구현체
+ */
 @Repository
 @RequiredArgsConstructor
 public class ProfessionalRepositoryImpl implements ProfessionalRepositoryCustom {
@@ -31,29 +34,31 @@ public class ProfessionalRepositoryImpl implements ProfessionalRepositoryCustom 
 
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             if ("1".equals(searchCondition)) {
+                // 사용자명 검색
                 predicate.and(user.userNm.contains(searchKeyword));
             } else if ("2".equals(searchCondition)) {
-                predicate.and(mapKno.knoTypeNm.contains(searchKeyword));
+                // 지식유형명 검색
+                predicate.and(mapKno.typeName.contains(searchKeyword));
             }
         }
 
         List<ProfessionalSearchResult> content = queryFactory
                 .select(Projections.constructor(ProfessionalSearchResult.class,
-                        mapTeam.orgnztNm,
-                        mapKno.knoTypeCd,
-                        mapKno.knoTypeNm,
+                        mapTeam.organizationName,
+                        mapKno.typeCode,
+                        mapKno.typeName,
                         user.userNm,
-                        professional.appTypeCd,
-                        professional.speConfmDe,
-                        professional.speId,
-                        professional.frstRegisterId,
-                        professional.frstRegisterPnttm))
+                        professional.assessmentLevel,
+                        professional.confirmedDate,
+                        professional.expertId,
+                        professional.createdBy,
+                        professional.createdDate))
                 .from(professional)
-                .join(mapKno).on(professional.knoTypeCd.eq(mapKno.knoTypeCd))
-                .join(mapTeam).on(mapKno.orgnztId.eq(mapTeam.orgnztId))
-                .join(user).on(professional.speId.eq(user.esntlId))
+                .join(mapKno).on(professional.typeCode.eq(mapKno.typeCode))
+                .join(mapTeam).on(mapKno.organizationId.eq(mapTeam.organizationId))
+                .join(user).on(professional.expertId.eq(user.esntlId))
                 .where(predicate)
-                .orderBy(professional.speId.asc())
+                .orderBy(professional.expertId.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -61,9 +66,9 @@ public class ProfessionalRepositoryImpl implements ProfessionalRepositoryCustom 
         long total = queryFactory
                 .select(professional.count())
                 .from(professional)
-                .join(mapKno).on(professional.knoTypeCd.eq(mapKno.knoTypeCd))
-                .join(mapTeam).on(mapKno.orgnztId.eq(mapTeam.orgnztId))
-                .join(user).on(professional.speId.eq(user.esntlId))
+                .join(mapKno).on(professional.typeCode.eq(mapKno.typeCode))
+                .join(mapTeam).on(mapKno.organizationId.eq(mapTeam.organizationId))
+                .join(user).on(professional.expertId.eq(user.esntlId))
                 .where(predicate)
                 .fetchOne();
 

@@ -13,91 +13,84 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "명함 정보 DTO")
 public class NameCardDto {
 
-    @Schema(description = "Description")
+    @Schema(description = "명함 ID")
     private String ncrdId;
 
-    @Schema(description = "Description")
-    private String ncrdNm;
+    @Schema(description = "이름")
+    private String name;
 
-    @Schema(description = "Description")
-    private String cmpnyNm;
+    @Schema(description = "회사명")
+    private String companyName;
 
-    @Schema(description = "Description")
-    private String deptNm;
+    @Schema(description = "부서명")
+    private String departmentName;
 
-    @Schema(description = "Description")
-    private String clsfNm;
+    @Schema(description = "직급명")
+    private String rankName;
 
-    @Schema(description = "Description")
-    private String ofcpsNm;
+    @Schema(description = "직위명")
+    private String positionName;
 
-    @Schema(description = "Description")
-    private String emailAdres;
+    @Schema(description = "이메일주소")
+    private String emailAddress;
 
-    @Schema(description = "Description")
-    private String telNo;
+    @Schema(description = "전화번호")
+    private String telNumber;
 
-    @Schema(description = "Description")
-    private String mbtlNum;
+    @Schema(description = "휴대폰번호")
+    private String mobileNumber;
 
-    @Schema(description = "Description")
-    private String adres;
+    @Schema(description = "주소")
+    private String address;
 
-    @Schema(description = "Description")
-    private String detailAdres;
+    @Schema(description = "상세주소")
+    private String detailAddress;
 
-    @Schema(description = "Description")
+    @Schema(description = "우편번호")
     private String zipCode;
 
-    @Schema(description = "Description")
+    @Schema(description = "비고")
     private String remark;
 
-    @Schema(description = "Description")
-    private String othbcAt;
+    @Schema(description = "공개여부 (Y/N)")
+    private String isPublic;
 
-    @Schema(description = "Description")
-    private String ncrdTrgterId;
+    @Schema(description = "명함 대상자 ID")
+    private String targetUserId;
 
-    @Schema(description = "Description")
-    private String extrlUserAt;
+    @Schema(description = "외부인여부 (Y/N)")
+    private String isExternalUser;
 
-    @Schema(description = "Description")
-    private String frstRegisterId;
+    @Schema(description = "최초등록자 ID")
+    private String firstRegisterId;
 
-    @Schema(description = "Description")
+    @Schema(description = "생성일시")
     private LocalDateTime createdDate;
 
-    public String getFrstRegisterId() {
-        return frstRegisterId;
-    }
-
-    public LocalDateTime getFrstRegisterPnttm() {
-        return createdDate;
-    }
-
     public static NameCardDto from(NameCard entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return NameCardDto.builder()
                 .ncrdId(entity.getNcrdId())
-                .ncrdNm(entity.getNcrdNm())
-                .cmpnyNm(entity.getCmpnyNm())
-                .deptNm(entity.getDeptNm())
-                .clsfNm(entity.getClsfNm())
-                .ofcpsNm(entity.getOfcpsNm())
-                .emailAdres(entity.getEmailAdres())
-                .telNo(entity.getTelNo())
-                .mbtlNum(entity.getMbtlNum())
-                .adres(entity.getAdres())
-                .detailAdres(entity.getDetailAdres())
+                .name(entity.getName())
+                .companyName(entity.getCompanyName())
+                .departmentName(entity.getDepartmentName())
+                .rankName(entity.getRankName())
+                .positionName(entity.getPositionName())
+                .emailAddress(entity.getEmailAddress())
+                .telNumber(entity.getTelNumber())
+                .mobileNumber(entity.getMobileNumber())
+                .address(entity.getAddress())
+                .detailAddress(entity.getDetailAddress())
                 .zipCode(entity.getZipCode())
                 .remark(entity.getRemark())
-                .othbcAt(entity.getOthbcAt())
-                .ncrdTrgterId(entity.getNcrdTrgterId())
-                .extrlUserAt(entity.getExtrlUserAt())
-                .frstRegisterId(entity.getCreatedBy())
+                .isPublic(entity.getIsPublic())
+                .targetUserId(entity.getTargetUserId())
+                .isExternalUser(entity.getIsExternalUser())
+                .firstRegisterId(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

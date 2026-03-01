@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { ismService, InfrmlSanctn } from '@/services/ismService';
+import { ismAdminService, InfrmlSanctn } from '@/services/admin/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -17,7 +17,7 @@ export default async function InformalSanctionPage() {
   let rawData = { content: [] as InfrmlSanctn[], totalElements: 0, totalPages: 0 };
 
   try {
-    rawData = await ismService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
+    rawData = await ismAdminService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch ism failed:', error);
   }

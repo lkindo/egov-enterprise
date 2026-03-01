@@ -64,4 +64,3 @@ public class QRwardManage extends EntityPathBase<RwardManage> {
     }
 
 }
-

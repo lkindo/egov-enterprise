@@ -60,4 +60,3 @@ public class QQustnrIem extends EntityPathBase<QustnrIem> {
     }
 
 }
-

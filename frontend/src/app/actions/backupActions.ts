@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
-import { BackupOpert } from '@/services/backupService';
+import { BackupOpert } from '@/services/admin/system/BackupAdminService';
 
 export async function saveBackupAction(prevState: any, formData: FormData) {
   try {
@@ -45,7 +45,7 @@ export async function deleteBackupAction(id: string) {
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     await client.delete(`/admin/system/backups/operations/${id}`, axiosConfig);
-    
+
     revalidatePath('/admin/system/backup');
     return { success: true, message: '백업 정책이 삭제되었습니다.' };
   } catch (error: any) {

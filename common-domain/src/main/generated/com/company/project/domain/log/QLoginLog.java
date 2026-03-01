@@ -46,4 +46,3 @@ public class QLoginLog extends EntityPathBase<LoginLog> {
     }
 
 }
-

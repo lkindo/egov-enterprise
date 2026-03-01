@@ -31,7 +31,8 @@ import jakarta.annotation.Resource;
 @Service("egovIndvdlSchdulManageService")
 public class EgovIndvdlSchdulManageServiceImpl extends EgovAbstractServiceImpl implements EgovIndvdlSchdulManageService{
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	//
+                     private Log log = LogFactory.getLog(this.getClass());
 
 	@Resource(name="indvdlSchdulManageDao")
 	private IndvdlSchdulManageDao dao;

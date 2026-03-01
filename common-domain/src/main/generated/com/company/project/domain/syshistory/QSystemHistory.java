@@ -50,4 +50,3 @@ public class QSystemHistory extends EntityPathBase<SystemHistory> {
     }
 
 }
-

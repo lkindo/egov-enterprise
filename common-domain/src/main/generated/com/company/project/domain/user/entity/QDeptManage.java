@@ -52,4 +52,3 @@ public class QDeptManage extends EntityPathBase<DeptManage> {
     }
 
 }
-

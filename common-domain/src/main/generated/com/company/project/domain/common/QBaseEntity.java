@@ -44,4 +44,3 @@ public class QBaseEntity extends EntityPathBase<BaseEntity> {
     }
 
 }
-

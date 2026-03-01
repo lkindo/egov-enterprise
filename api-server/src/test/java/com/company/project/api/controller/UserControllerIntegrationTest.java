@@ -38,13 +38,13 @@ class UserControllerIntegrationTest {
         private UserService userService;
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�용???�원가???�공")
+        @DisplayName("POST /api/v1/users/signup - ?�용???�원가???�공")
         void signup_success() throws Exception {
                 // Given
 
                 UserResponse response = new UserResponse(
                                 "newUser",
-                                "?�규 ?�용??,
+                                "?�규 ?�용??,
                                 com.company.project.domain.user.entity.Role.USER);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
@@ -53,7 +53,7 @@ class UserControllerIntegrationTest {
                                 {
                                     "userId": "newUser",
                                     "password": "password123!",
-                                    "userNm": "?�규 ?�용??,
+                                    "userNm": "?�규 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -68,16 +68,16 @@ class UserControllerIntegrationTest {
                                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data.userId").value("newUser"))
-                                .andExpect(jsonPath("$.data.userNm").value("?�규 ?�용??));
+                                .andExpect(jsonPath("$.data.userNm").value("?�규 ?�용??));
         }
 
         @Test
-        @DisplayName("GET /api/v1/users - ?�용??목록 조회 ?�공")
+        @DisplayName("GET /api/v1/users - ?�용??목록 조회 ?�공")
         void getUserList_success() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
-                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
+                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
 
                 when(userService.getUserList()).thenReturn(userList);
 
@@ -90,17 +90,17 @@ class UserControllerIntegrationTest {
                                 .andExpect(jsonPath("$.data").isArray())
                                 .andExpect(jsonPath("$.data.length()").value(2))
                                 .andExpect(jsonPath("$.data[0].userId").value("user1"))
-                                .andExpect(jsonPath("$.data[0].userNm").value("?�용??"))
+                                .andExpect(jsonPath("$.data[0].userNm").value("?�용??"))
                                 .andExpect(jsonPath("$.data[1].userId").value("user2"))
-                                .andExpect(jsonPath("$.data[1].userNm").value("?�용??"));
+                                .andExpect(jsonPath("$.data[1].userNm").value("?�용??"));
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/paged - ?�이징된 ?�용??목록 조회 ?�공")
+        @DisplayName("GET /api/v1/users/paged - ?�이징된 ?�용??목록 조회 ?�공")
         void getPagedUserList_success() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
                 Page<UserDto> userPage = new PageImpl<>(userList, PageRequest.of(0, 10), 1);
 
                 when(userService.getPagedUserList(any(PageRequest.class))).thenReturn(userPage);
@@ -114,15 +114,15 @@ class UserControllerIntegrationTest {
                                 .andExpect(jsonPath("$.data.content").isArray())
                                 .andExpect(jsonPath("$.data.totalElements").value(1))
                                 .andExpect(jsonPath("$.data.content[0].userId").value("user1"))
-                                .andExpect(jsonPath("$.data.content[0].userNm").value("?�용??"));
+                                .andExpect(jsonPath("$.data.content[0].userNm").value("?�용??"));
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/paged - ?�이�??�라미터 기본�??�용")
+        @DisplayName("GET /api/v1/users/paged - ?�이�??�라미터 기본�??�용")
         void getPagedUserList_defaultParams() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
                 Page<UserDto> userPage = new PageImpl<>(userList, PageRequest.of(0, 10), 1);
 
                 when(userService.getPagedUserList(any(PageRequest.class))).thenReturn(userPage);
@@ -138,7 +138,7 @@ class UserControllerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�효?��? ?��? ?�청 ?�이?�로 ?�한 ?�패")
+        @DisplayName("POST /api/v1/users/signup - ?�효?��? ?��? ?�청 ?�이?�로 ?�한 ?�패")
         void signup_fail_withInvalidData() throws Exception {
                 // Given
                 String invalidRequestBody = """
@@ -157,7 +157,7 @@ class UserControllerIntegrationTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/paged - ?�못???�이지 ?�라미터")
+        @DisplayName("GET /api/v1/users/paged - ?�못???�이지 ?�라미터")
         void getPagedUserList_fail_withInvalidParams() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/paged?page=-1&size=0")

@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ?�일 API 컨트롤러 ?�라?�스 ?�스?? */
+ * ?�일 API 컨트롤러 ?�라?�스 ?�스?? */
 @WebMvcTest(controllers = FileController.class, excludeAutoConfiguration = {
                 DataSourceAutoConfiguration.class,
                 JpaRepositoriesAutoConfiguration.class,
@@ -53,7 +53,7 @@ class FileApiControllerTest {
         private AuthenticationManager authenticationManager;
 
         @Test
-        @DisplayName("?�일 ?�로???�공")
+        @DisplayName("?�일 ?�로???�공")
         void uploadFiles_success() throws Exception {
                 // Given
                 when(jwtTokenProvider.validateToken(any())).thenReturn(true);
@@ -74,7 +74,7 @@ class FileApiControllerTest {
         }
 
         @Test
-        @DisplayName("?�증 ?�이 ?�일 ?�로????401 ?�러")
+        @DisplayName("?�증 ?�이 ?�일 ?�로????401 ?�러")
         void uploadFiles_unauthorized() throws Exception {
                 MockMultipartFile file1 = new MockMultipartFile(
                                 "files",

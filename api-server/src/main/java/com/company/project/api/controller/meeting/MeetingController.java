@@ -17,7 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Meeting", description = "?�의???�약 �??�의 관�?API")
+@Tag(name = "Meeting", description = "?�의???�약 �??�의 관�?API")
 @RestController
 @RequestMapping("/api/v1/meetings")
 @RequiredArgsConstructor
@@ -25,9 +25,9 @@ public class MeetingController {
 
     private final MeetingService meetingService;
 
-    // --- Meeting Places (?�의?? ---
+    // --- Meeting Places (?�의?? ---
 
-    @Operation(summary = "?�의??목록 조회", description = "?�스?�에 ?�록???�의??목록???�이징하??조회?�니??")
+    @Operation(summary = "?�의??목록 조회", description = "?�스?�에 ?�록???�의??목록???�이징하??조회?�니??")
     @GetMapping("/places")
     public ResponseEntity<ApiResponse<Page<MeetingPlaceDto>>> getMeetingPlaces(
             @RequestParam(required = false) String searchWrd,
@@ -35,14 +35,14 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingPlaceList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "?�의???�세 조회", description = "?�정 ?�의?�의 ?�세 ?�보�?조회?�니??")
+    @Operation(summary = "?�의???�세 조회", description = "?�정 ?�의?�의 ?�세 ?�보�?조회?�니??")
     @GetMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<MeetingPlaceDto>> getMeetingPlace(
-            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingPlace(mtgPlaceId)));
     }
 
-    @Operation(summary = "?�의???�록", description = "?�로???�의???�보�??�록?�니??")
+    @Operation(summary = "?�의???�록", description = "?�로???�의???�보�??�록?�니??")
     @PostMapping("/places")
     public ResponseEntity<ApiResponse<String>> createMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -51,27 +51,27 @@ public class MeetingController {
                 .ok(ApiResponse.success(meetingService.createMeetingPlace(userDetails.getUsername(), dto)));
     }
 
-    @Operation(summary = "?�의???�보 ?�정", description = "?�의?�의 명칭, ?�픈 ?�간 ???�보�??�정?�니??")
+    @Operation(summary = "?�의???�보 ?�정", description = "?�의?�의 명칭, ?�픈 ?�간 ???�보�??�정?�니??")
     @PutMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<Void>> updateMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId,
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId,
             @RequestBody MeetingPlaceDto dto) {
         meetingService.updateMeetingPlace(mtgPlaceId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?�의????��", description = "?�록???�의???�보�???��?�니??")
+    @Operation(summary = "?�의????��", description = "?�록???�의???�보�???��?�니??")
     @DeleteMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<Void>> deleteMeetingPlace(
-            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
         meetingService.deleteMeetingPlace(mtgPlaceId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // --- Reservations (?�의???�약) ---
+    // --- Reservations (?�의???�약) ---
 
-    @Operation(summary = "?�의???�약 목록 조회", description = "?�스?�의 ?�의???�약 ?�황???�이징하??조회?�니??")
+    @Operation(summary = "?�의???�약 목록 조회", description = "?�스?�의 ?�의???�약 ?�황???�이징하??조회?�니??")
     @GetMapping("/reservations")
     public ResponseEntity<ApiResponse<Page<MeetingReservationDto>>> getMeetingReservations(
             @RequestParam(required = false) String searchWrd,
@@ -79,14 +79,14 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingReservationList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "?�의???�약 ?�세 조회", description = "?�정 ?�의???�약???�세 ?�보�?조회?�니??")
+    @Operation(summary = "?�의???�약 ?�세 조회", description = "?�정 ?�의???�약???�세 ?�보�?조회?�니??")
     @GetMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<MeetingReservationDto>> getMeetingReservation(
-            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
+            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingReservation(resveId)));
     }
 
-    @Operation(summary = "?�의???�약 ?�청", description = "?�정 ?�의?�에 ?�???�약???�청?�니??")
+    @Operation(summary = "?�의???�약 ?�청", description = "?�정 ?�의?�에 ?�???�약???�청?�니??")
     @PostMapping("/reservations")
     public ResponseEntity<ApiResponse<String>> reserveMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -95,27 +95,27 @@ public class MeetingController {
                 .ok(ApiResponse.success(meetingService.reserveMeetingPlace(userDetails.getUsername(), dto)));
     }
 
-    @Operation(summary = "?�의???�약 ?�보 ?�정", description = "?�록???�의???�약 ?�보�??�정?�니??")
+    @Operation(summary = "?�의???�약 ?�보 ?�정", description = "?�록???�의???�약 ?�보�??�정?�니??")
     @PutMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<Void>> updateMeetingReservation(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?�약 ID") @PathVariable String resveId,
+            @Parameter(description = "?�약 ID") @PathVariable String resveId,
             @RequestBody MeetingReservationDto dto) {
         meetingService.updateMeetingReservation(resveId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?�의???�약 취소", description = "?�록???�의???�약??취소?�니??")
+    @Operation(summary = "?�의???�약 취소", description = "?�록???�의???�약??취소?�니??")
     @DeleteMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<Void>> cancelMeetingReservation(
-            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
+            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
         meetingService.cancelMeetingReservation(resveId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // --- Meeting Management (?�의 관�? ---
+    // --- Meeting Management (?�의 관�? ---
 
-    @Operation(summary = "?�의 목록 조회", description = "?�스?�에 ?�록???�의 목록???�이징하??조회?�니??")
+    @Operation(summary = "?�의 목록 조회", description = "?�스?�에 ?�록???�의 목록???�이징하??조회?�니??")
     @GetMapping("/manage")
     public ResponseEntity<ApiResponse<Page<MeetingManageDto>>> getMeetings(
             @RequestParam(required = false) String keyword,
@@ -123,14 +123,14 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingList(keyword, pageable)));
     }
 
-    @Operation(summary = "?�의 ?�세 조회", description = "?�정 ?�의???�세 ?�보�?조회?�니??")
+    @Operation(summary = "?�의 ?�세 조회", description = "?�정 ?�의???�세 ?�보�?조회?�니??")
     @GetMapping("/manage/{mtgId}")
     public ResponseEntity<ApiResponse<MeetingManageDto>> getMeeting(
-            @Parameter(description = "?�의 ID") @PathVariable String mtgId) {
+            @Parameter(description = "?�의 ID") @PathVariable String mtgId) {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeeting(mtgId)));
     }
 
-    @Operation(summary = "?�의 ?�록", description = "?�로???�의 ?�보�??�록?�니??")
+    @Operation(summary = "?�의 ?�록", description = "?�로???�의 ?�보�??�록?�니??")
     @PostMapping("/manage")
     public ResponseEntity<ApiResponse<Void>> insertMeeting(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -140,7 +140,7 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?�의 ?�보 ?�정", description = "?�록???�의 ?�보�??�정?�니??")
+    @Operation(summary = "?�의 ?�보 ?�정", description = "?�록???�의 ?�보�??�정?�니??")
     @PutMapping("/manage/{mtgId}")
     public ResponseEntity<ApiResponse<Void>> updateMeeting(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -152,7 +152,7 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?�의 ?�보 ??��", description = "?�록???�의 ?�보�???��?�니??")
+    @Operation(summary = "?�의 ?�보 ??��", description = "?�록???�의 ?�보�???��?�니??")
     @DeleteMapping("/manage/{mtgId}")
     public ResponseEntity<ApiResponse<Void>> deleteMeeting(@PathVariable String mtgId) {
         meetingService.deleteMeeting(mtgId);

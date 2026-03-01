@@ -76,4 +76,3 @@ public class QCtsnnManage extends EntityPathBase<CtsnnManage> {
     }
 
 }
-
