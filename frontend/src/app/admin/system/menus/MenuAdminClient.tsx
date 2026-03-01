@@ -262,92 +262,101 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
         title={mode === 'create' ? 'Define New Entity' : 'Alter Node Blueprint'}
+        maxWidth="2xl"
       >
-        <div className="p-4">
-          <StandardForm onSubmit={handleSave}>
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Entity Nomenclature</Label>
-                <Input
-                  value={formData.menuNm}
-                  onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
-                  placeholder="E.g. SYSTEM DASHBOARD, USER MANAGEMENT"
-                  className="h-16 rounded-2xl border-2 text-xl font-black px-8 focus:ring-4 focus:ring-primary/10 transition-all"
-                />
+        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <Label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Entity Nomenclature
+              </Label>
+              <Input
+                value={formData.menuNm}
+                onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
+                placeholder="E.g. SYSTEM DASHBOARD, USER MANAGEMENT"
+                className="h-16 rounded-2xl border-2 text-xl font-black px-8 focus:ring-4 focus:ring-primary/10 transition-all bg-white dark:bg-slate-800"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <Label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Parent Hierarchy
+                </Label>
+                <Select
+                  value={formData.upperMenuId === 0 ? 'root' : String(formData.upperMenuId)}
+                  onValueChange={(v) => setFormData({ ...formData, upperMenuId: v === 'root' ? 0 : Number(v) })}
+                >
+                  <SelectTrigger className="h-16 rounded-2xl border-2 font-black text-lg px-8 bg-white dark:bg-slate-800 transition-colors">
+                    <SelectValue placeholder="Select Origin" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-2 shadow-2xl">
+                    <SelectItem key="root-option" value="root" className="font-black italic uppercase tracking-widest text-[10px] py-4">--- ROOT DIRECTORY ---</SelectItem>
+                    {menus.filter(m => m.upperMenuId === 0).map((m, idx) => (
+                      <SelectItem key={`root-opt-${m.menuNo}-${idx}`} value={String(m.menuNo)} className="py-3 font-bold">{m.menuNm}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Parent Hierarchy</Label>
-                  <Select
-                    value={String(formData.upperMenuId)}
-                    onValueChange={(v) => setFormData({ ...formData, upperMenuId: Number(v) })}
-                  >
-                    <SelectTrigger className="h-16 rounded-2xl border-2 font-black text-lg px-8 bg-slate-50/50">
-                      <SelectValue placeholder="Select Origin" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-2 shadow-2xl">
-                      <SelectItem key="root-option" value="0" className="font-black italic uppercase tracking-widest text-[10px] py-4">--- ROOT DIRECTORY ---</SelectItem>
-                      {menus.filter(m => m.upperMenuId === 0).map((m, idx) => (
-                        <SelectItem key={`root-opt-${m.menuNo}-${idx}`} value={String(m.menuNo)} className="py-3 font-bold">{m.menuNm}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Program Linkage</Label>
-                  <Select
-                    value={formData.progrmFileNm || ''}
-                    onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
-                  >
-                    <SelectTrigger className="h-16 rounded-2xl border-2 font-black text-lg px-8 bg-white shadow-inner">
-                      <SelectValue placeholder="Unlinked Page" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-2 shadow-2xl max-h-[300px]">
-                      {programs.map((p, idx) => (
-                        <SelectItem key={`prog-opt-${p.progrmFileNm}-${idx}`} value={p.progrmFileNm || `unlinked-${idx}`} className="py-4 border-b last:border-0 border-slate-50">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-black italic uppercase tracking-tighter text-sm">{p.progrmNm}</span>
-                            <span className="text-[9px] opacity-40 font-mono tracking-widest">{p.progrmFileNm}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Modern React Route (Optional)</Label>
-                <Input
-                  value={formData.modernRoute || ''}
-                  onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
-                  placeholder="E.g. /admin/system/common-code/groups"
-                  className="h-14 rounded-xl border-2 font-bold px-6 bg-emerald-50/10 border-emerald-100 focus:ring-emerald-500/10 transition-all text-emerald-800"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Contextual Background</Label>
-                <textarea
-                  value={formData.menuDc || ''}
-                  onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
-                  className="w-full min-h-[140px] p-8 rounded-[2.5rem] border-2 bg-slate-50/30 text-lg font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
-                  placeholder="Describe the functional scope of this menu entry…"
-                />
-              </div>
-
-              <div className="flex gap-4 pt-10">
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 hover:bg-slate-50 transition-all">Cancel Process</Button>
-                <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
-                  {mode === 'create' ? 'Complete Core Extraction' : 'Persist Blueprint Modifications'}
-                </Button>
+              <div className="space-y-4">
+                <Label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Program Linkage
+                </Label>
+                <Select
+                  value={formData.progrmFileNm || ''}
+                  onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
+                >
+                  <SelectTrigger className="h-16 rounded-2xl border-2 font-black text-lg px-8 bg-white dark:bg-slate-800 shadow-inner">
+                    <SelectValue placeholder="Unlinked Page" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-2 shadow-2xl max-h-[300px]">
+                    {programs.map((p, idx) => (
+                      <SelectItem key={`prog-opt-${p.progrmFileNm}-${idx}`} value={p.progrmFileNm || `unlinked-${idx}`} className="py-4 border-b last:border-0 border-slate-50">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-black italic uppercase tracking-tighter text-sm">{p.progrmNm}</span>
+                          <span className="text-[9px] opacity-40 font-mono tracking-widest">{p.progrmFileNm}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </StandardForm>
-        </div>
+
+            <div className="space-y-4">
+              <Label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Modern React Route (Optional)
+              </Label>
+              <Input
+                value={formData.modernRoute || ''}
+                onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
+                placeholder="E.g. /admin/system/common-code/groups"
+                className="h-14 rounded-xl border-2 font-bold px-6 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-primary/10 transition-all"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Contextual Background
+              </Label>
+              <textarea
+                value={formData.menuDc || ''}
+                onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
+                className="w-full min-h-[140px] p-8 rounded-[2.5rem] border-2 bg-white dark:bg-slate-800 text-lg font-bold outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+                placeholder="Describe the functional scope of this menu entry…"
+              />
+            </div>
+
+            <div className="flex gap-4 pt-10">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 hover:bg-slate-50 transition-all">Cancel Process</Button>
+              <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
+                {mode === 'create' ? 'Complete Core Extraction' : 'Persist Blueprint Modifications'}
+              </Button>
+            </div>
+          </div>
+        </StandardForm>
       </StandardModal>
-    </div>
+    </div >
   );
 }

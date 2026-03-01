@@ -35,7 +35,7 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
           홈
         </Link>
         {autoBreadcrumbs.map((item, idx) => (
-          <React.Fragment key={idx}>
+          <React.Fragment key={`breadcrumb-${idx}`}>
             <ChevronRight size={12} />
             {item.href && idx < autoBreadcrumbs.length - 1 ? (
               <Link href={item.href} className="hover:text-foreground">
@@ -55,7 +55,7 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
         </h1>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-      
+
       <div className="h-1 w-12 bg-primary rounded-full" />
     </div>
   );

@@ -7,15 +7,15 @@ import { SmartSearchPanel } from '@/app/components/ui/standard-search-filter';
 import { Program, ProgramResponse } from '@/types/program';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { 
-  Plus, 
-  Code, 
-  Globe, 
-  Trash2, 
-  Edit, 
-  Terminal, 
-  Layers, 
-  Cpu, 
+import {
+  Plus,
+  Code,
+  Globe,
+  Trash2,
+  Edit,
+  Terminal,
+  Layers,
+  Cpu,
   Activity,
   FileCode,
   Link as LinkIcon,
@@ -103,17 +103,17 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           <div className="flex flex-col gap-0.5">
             <span className="font-black tracking-tighter italic uppercase text-slate-900">{item.progrmFileNm}</span>
             <span className="text-[10px] text-primary font-bold opacity-60 flex items-center gap-1">
-               <Terminal size={12} strokeWidth={3} /> COMPILED SOURCE
+              <Terminal size={12} strokeWidth={3} /> COMPILED SOURCE
             </span>
           </div>
         </div>
       )
     },
-    { 
+    {
       id: 'progrmNm',
-      header: 'Technical Name', 
+      header: 'Technical Name',
       accessor: (item: Program) => (
-          <span className="font-black text-slate-700 tracking-tight italic uppercase">{item.progrmNm}</span>
+        <span className="font-black text-slate-700 tracking-tight italic uppercase">{item.progrmNm}</span>
       )
     },
     {
@@ -129,11 +129,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
         </div>
       )
     },
-    { 
+    {
       id: 'progrmStrePath',
-      header: 'Physical Path', 
+      header: 'Physical Path',
       accessor: (item: Program) => (
-          <span className="text-[10px] font-black text-slate-400 font-mono tracking-tighter">{item.progrmStrePath}</span>
+        <span className="text-[10px] font-black text-slate-400 font-mono tracking-tighter">{item.progrmStrePath}</span>
       )
     },
     {
@@ -142,17 +142,17 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       className: 'text-right',
       accessor: (item: Program) => (
         <div className="flex justify-end gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => handleOpenEdit(item)}
             className="h-11 w-11 hover:bg-slate-900 hover:text-white rounded-[1rem] border-2 border-transparent hover:border-slate-900 transition-all active:scale-90"
           >
             <Settings size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => handleDelete(item.progrmFileNm)}
             className="h-11 w-11 hover:bg-rose-50 hover:text-rose-600 rounded-[1rem] border-2 border-transparent hover:border-rose-100 transition-all active:scale-90"
           >
@@ -165,11 +165,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <PageHeader 
-        title="시스템 프로그램 미들웨어" 
+      <PageHeader
+        title="시스템 프로그램 미들웨어"
         breadcrumbs={[{ label: '시스템관리' }, { label: '프로그램관리' }]}
         actions={
-          <Button 
+          <Button
             onClick={handleOpenCreate}
             className="h-14 px-10 rounded-2xl font-black shadow-2xl shadow-primary/20 gap-3 hover:-translate-y-1 transition-all active:scale-95 italic uppercase tracking-widest text-xs"
           >
@@ -213,7 +213,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       </div>
 
       <div className="p-8 rounded-[3rem] bg-slate-50 border border-slate-100 shadow-inner relative overflow-hidden group">
-        <SmartSearchPanel 
+        <SmartSearchPanel
           fields={[
             { name: 'searchWrd', label: 'Logic Name / Identifier', type: 'text', placeholder: 'Enter code or technical term...' }
           ]}
@@ -227,10 +227,10 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       </div>
 
       <div className="bg-white rounded-[4rem] p-4 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative">
-        <UltimateDataGrid 
-          title="PROGRAM MIDDLEWARE INVENTORY" 
-          columns={columns} 
-          data={programs} 
+        <UltimateDataGrid
+          title="PROGRAM MIDDLEWARE INVENTORY"
+          columns={columns}
+          data={programs}
           keyField="progrmFileNm"
           className="bg-slate-50/50 p-6 rounded-[3rem] border border-dashed border-slate-200"
         />
@@ -242,86 +242,85 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       </div>
 
       {/* Registration/Edit Modal */}
-      <StandardModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsOpen(false)} 
+      <StandardModal
+        isOpen={isModalOpen}
+        onClose={() => setIsOpen(false)}
         title={mode === 'create' ? 'Deploy System Entity' : 'Alter Logic Blueprint'}
+        maxWidth="2xl"
       >
-        <div className="p-6">
-          <StandardForm onSubmit={handleSave}>
-            <div className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Artifact ID (Unique)</label>
-                    <span className="text-[8px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded font-black italic">REQUIRED</span>
-                  </div>
-                  <Input 
-                    value={formData.progrmFileNm}
-                    onChange={(e) => setFormData({...formData, progrmFileNm: e.target.value})}
-                    disabled={mode === 'edit'}
-                    placeholder="E.g. SYSTEM_LOG_V1"
-                    className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-slate-50/50"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logic Nomenclature</label>
-                    <span className="text-[8px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded font-black italic">REQUIRED</span>
-                  </div>
-                  <Input 
-                    value={formData.progrmNm}
-                    onChange={(e) => setFormData({...formData, progrmNm: e.target.value})}
-                    placeholder="E.g. AUDIT TRAIL ENGINE"
-                    className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all"
-                  />
-                </div>
-              </div>
-
+        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
+          <div className="space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Endpoint URI Mapping</label>
-                <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
-                        <LinkIcon size={20} />
-                    </div>
-                    <Input 
-                        value={formData.url}
-                        onChange={(e) => setFormData({...formData, url: e.target.value})}
-                        placeholder="E.g. /sys/audit/logs"
-                        className="h-16 rounded-2xl border-2 text-lg font-black pl-16 pr-8 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner bg-slate-50/30 font-mono"
-                    />
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Artifact ID (Unique)</label>
+                  <span className="text-[8px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded font-black italic">REQUIRED</span>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Root Storage Directory</label>
-                <Input 
-                  value={formData.progrmStrePath}
-                  onChange={(e) => setFormData({...formData, progrmStrePath: e.target.value})}
-                  placeholder="E.g. /opt/middleware/v1/"
-                  className="h-16 rounded-2xl border-2 text-lg font-black px-8 focus:ring-4 focus:ring-primary/10 transition-all italic text-slate-500 font-mono"
+                <Input
+                  value={formData.progrmFileNm}
+                  onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
+                  disabled={mode === 'edit'}
+                  placeholder="E.g. SYSTEM_LOG_V1"
+                  className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-slate-50 dark:bg-slate-800 disabled:opacity-50"
                 />
               </div>
-
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Middleware Contextual Description</label>
-                <textarea 
-                  value={formData.progrmDc}
-                  onChange={(e) => setFormData({...formData, progrmDc: e.target.value})}
-                  className="w-full min-h-[140px] p-8 rounded-[2.5rem] border-2 bg-slate-50/30 text-lg font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
-                  placeholder="Describe the architectural impact of this module..."
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logic Nomenclature</label>
+                  <span className="text-[8px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded font-black italic">REQUIRED</span>
+                </div>
+                <Input
+                  value={formData.progrmNm}
+                  onChange={(e) => setFormData({ ...formData, progrmNm: e.target.value })}
+                  placeholder="E.g. AUDIT TRAIL ENGINE"
+                  className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all dark:bg-slate-800"
                 />
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 hover:bg-slate-50 transition-all">Abort Deployment</Button>
-                <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
-                  <Terminal size={18} /> Persist Logic Framework
-                </Button>
               </div>
             </div>
-          </StandardForm>
-        </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Endpoint URI Mapping</label>
+              <div className="relative group">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
+                  <LinkIcon size={20} />
+                </div>
+                <Input
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  placeholder="E.g. /sys/audit/logs"
+                  className="h-16 rounded-2xl border-2 text-lg font-black pl-16 pr-8 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner bg-slate-50 dark:bg-slate-800 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Root Storage Directory</label>
+              <Input
+                value={formData.progrmStrePath}
+                onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
+                placeholder="E.g. /opt/middleware/v1/"
+                className="h-16 rounded-2xl border-2 text-lg font-black px-8 focus:ring-4 focus:ring-primary/10 transition-all italic text-slate-400 font-mono bg-slate-50 dark:bg-slate-800"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Middleware Contextual Description</label>
+              <textarea
+                value={formData.progrmDc}
+                onChange={(e) => setFormData({ ...formData, progrmDc: e.target.value })}
+                className="w-full min-h-[140px] p-8 rounded-[2.5rem] border-2 bg-slate-50 dark:bg-slate-800 text-lg font-bold outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+                placeholder="Describe the architectural impact of this module..."
+              />
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 hover:bg-slate-50 transition-all">Abort Deployment</Button>
+              <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
+                <Terminal size={18} /> Persist Logic Framework
+              </Button>
+            </div>
+          </div>
+        </StandardForm>
       </StandardModal>
     </div>
   );

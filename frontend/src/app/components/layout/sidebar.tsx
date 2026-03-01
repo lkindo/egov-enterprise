@@ -232,7 +232,7 @@ const MobileDomainNode = ({
             {loading ? (
               <div className="space-y-3 py-2 animate-pulse pl-4">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-10 bg-muted/20 rounded-xl w-full" />
+                  <div key={`domain-loading-${i}`} className="h-10 bg-muted/20 rounded-xl w-full" />
                 ))}
               </div>
             ) : menus.length === 0 ? (

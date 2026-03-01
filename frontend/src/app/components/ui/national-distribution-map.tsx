@@ -52,7 +52,7 @@ export function NationalDistributionMap({ className }: { className?: string }) {
                 {/* Data Points (Bubbles) */}
                 {MOCK_MAP_DATA.map((item, idx) => (
                     <div
-                        key={idx}
+                        key={`map-point-${idx}`}
                         className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group/point"
                         style={{ left: `${item.coords.x}%`, top: `${item.coords.y}%` }}
                     >

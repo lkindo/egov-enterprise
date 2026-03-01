@@ -365,7 +365,7 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item: any, idx: number) => (
             <motion.div
-              key={idx}
+              key={`list-item-${title}-${item.id || item.nttId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
@@ -411,7 +411,7 @@ function DashboardSkeleton() {
       <Skeleton className="h-[250px] w-full rounded-[4rem] opacity-20" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-[320px] rounded-[3.5rem] opacity-20" />
+          <Skeleton key={`dash-skeleton-item-${i}`} className="h-[320px] rounded-[3.5rem] opacity-20" />
         ))}
       </div>
     </div>

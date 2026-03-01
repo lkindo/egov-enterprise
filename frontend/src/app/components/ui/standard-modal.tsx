@@ -10,7 +10,7 @@ interface StandardModalProps {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
 }
 
 export function StandardModal({
@@ -29,19 +29,22 @@ export function StandardModal({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#020617]/95 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
       <div
         className={cn(
-          "bg-card border rounded-2xl shadow-2xl w-full mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200",
+          "bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] w-full mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
           maxWidthClasses[maxWidth]
         )}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b px-6 shrink-0">
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+        <div className="flex h-16 items-center justify-between border-b px-6 shrink-0 bg-white dark:bg-slate-950">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-accent rounded-full transition-colors text-muted-foreground hover:text-foreground"
@@ -62,6 +65,6 @@ export function StandardModal({
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

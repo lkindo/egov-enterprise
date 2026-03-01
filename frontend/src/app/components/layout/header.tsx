@@ -44,12 +44,17 @@ const DOMAIN_ICON_MAP: Record<number, any> = {
 
 export function Header() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [menus, setMenus] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     menuService.getHeadMenus().then(res => setMenus(res || []));
@@ -133,11 +138,11 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="text-muted-foreground"
             title="테마 변경"
           >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            {mounted ? (resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-5 h-5" />}
           </Button>
 
           <Button
@@ -205,8 +210,8 @@ export function Header() {
       <AppNotificationDrawer
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}
-        notifications={notifications.map(n => ({
-          id: n.ntfcNo,
+        notifications={notifications.map((n, i) => ({
+          id: n.ntfcNo || `notif-${i}`,
           title: n.ntfcSj,
           message: n.ntfcCn,
           time: n.createdDate,

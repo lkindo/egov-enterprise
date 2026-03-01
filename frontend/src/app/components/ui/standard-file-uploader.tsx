@@ -12,12 +12,12 @@ interface StandardFileUploaderProps {
   className?: string;
 }
 
-export function StandardFileUploader({ 
-  onFilesChange, 
-  maxFiles = 5, 
+export function StandardFileUploader({
+  onFilesChange,
+  maxFiles = 5,
   maxSizeMB = 10,
   name = "files",
-  className 
+  className
 }: StandardFileUploaderProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -50,13 +50,13 @@ export function StandardFileUploader({
       {selectedFiles.length > 0 && (
         <ul className="grid gap-2">
           {selectedFiles.map((file, idx) => (
-            <li key={idx} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
+            <li key={`file-${idx}`} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
               <div className="flex items-center gap-3 overflow-hidden">
                 <FileIcon size={18} className="text-primary shrink-0" />
                 <span className="text-sm truncate font-medium">{file.name}</span>
                 <span className="text-xs text-muted-foreground shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
               </div>
-              <button 
+              <button
                 onClick={() => removeFile(idx)}
                 className="p-1 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors"
               >

@@ -69,7 +69,7 @@ export function PagePagination({ pagination, onPageChange }: PagePaginationProps
         <div className="flex justify-center mt-4">
             <Pagination>
                 <PaginationContent>
-                    <PaginationItem>
+                    <PaginationItem key="pagination-prev">
                         <PaginationPrevious
                             href="#"
                             onClick={(e) => {
@@ -81,7 +81,7 @@ export function PagePagination({ pagination, onPageChange }: PagePaginationProps
 
                     {renderPageNumbers()}
 
-                    <PaginationItem>
+                    <PaginationItem key="pagination-next">
                         <PaginationNext
                             href="#"
                             onClick={(e) => {

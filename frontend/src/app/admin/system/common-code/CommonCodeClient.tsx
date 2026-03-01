@@ -290,87 +290,93 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
         title={mode === 'create' ? 'Broadcast New Protocol Entry' : 'Refine Knowledge Protocol'}
-        maxWidth="md"
+        maxWidth="lg"
       >
-        <div className="p-4">
-          <StandardForm onSubmit={handleSave}>
-            <div className="p-10 space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Unique Code Sequence</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      disabled={mode === 'edit'}
-                      placeholder="01 / REQ"
-                      className="w-full h-16 rounded-2xl border-2 bg-slate-50/50 disabled:bg-slate-100 font-black text-xl px-12 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase italic tracking-widest"
-                    />
-                    <Code2 size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Protocol Display Label</label>
+        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
+          <div className="p-10 space-y-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Unique Code Sequence
+                </label>
+                <div className="relative">
                   <input
                     type="text"
-                    value={formData.codeNm}
-                    onChange={(e) => setFormData({ ...formData, codeNm: e.target.value })}
-                    placeholder="ENTER NOMENCLATURE"
-                    className="w-full h-16 rounded-2xl border-2 bg-white font-black text-xl px-6 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-xl italic tracking-tighter"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    disabled={mode === 'edit'}
+                    placeholder="01 / REQ"
+                    className="w-full h-16 rounded-2xl border-2 bg-slate-50 dark:bg-slate-800 disabled:opacity-50 font-black text-xl px-12 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase italic tracking-widest"
                   />
+                  <Code2 size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                 </div>
               </div>
-
-              <div className="space-y-4 pt-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Deployment Status</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, useAt: 'Y' })}
-                    className={cn(
-                      "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
-                      formData.useAt === 'Y' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
-                    )}
-                  >
-                    <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'Y' ? "bg-emerald-400 animate-pulse" : "bg-slate-200")} />
-                    <span className="text-xs font-black uppercase tracking-widest">Active Matrix</span>
-                    {formData.useAt === 'Y' && <ArrowRightCircle size={16} className="text-emerald-400" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, useAt: 'N' })}
-                    className={cn(
-                      "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
-                      formData.useAt === 'N' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
-                    )}
-                  >
-                    <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'N' ? "bg-rose-400 animate-pulse" : "bg-slate-200")} />
-                    <span className="text-xs font-black uppercase tracking-widest">Suspended</span>
-                    {formData.useAt === 'N' && <ArrowRightCircle size={16} className="text-rose-400" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Architectural Meta Description</label>
-                <textarea
-                  value={formData.codeDc || ''}
-                  onChange={(e) => setFormData({ ...formData, codeDc: e.target.value })}
-                  placeholder="Describe the functional scope and technical impact of this code point..."
-                  className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50/50 font-bold text-lg outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Protocol Display Label
+                </label>
+                <input
+                  type="text"
+                  value={formData.codeNm}
+                  onChange={(e) => setFormData({ ...formData, codeNm: e.target.value })}
+                  placeholder="ENTER NOMENCLATURE"
+                  className="w-full h-16 rounded-2xl border-2 bg-slate-50 dark:bg-slate-800 font-black text-xl px-6 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-xl italic tracking-tighter"
                 />
               </div>
+            </div>
 
-              <div className="flex gap-6 pt-10">
-                <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 transition-all opacity-40 hover:opacity-100">Abort Protocol</button>
-                <button type="submit" className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-slate-900/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all active:scale-95 border border-white/10 group">
-                  <Save size={20} className="group-hover:rotate-12 transition-transform" /> Persist Protocol Configuration
+            <div className="space-y-4 pt-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Deployment Status
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, useAt: 'Y' })}
+                  className={cn(
+                    "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
+                    formData.useAt === 'Y' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700"
+                  )}
+                >
+                  <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'Y' ? "bg-emerald-400 animate-pulse" : "bg-slate-200")} />
+                  <span className="text-xs font-black uppercase tracking-widest">Active Matrix</span>
+                  {formData.useAt === 'Y' && <ArrowRightCircle size={16} className="text-emerald-400" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, useAt: 'N' })}
+                  className={cn(
+                    "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
+                    formData.useAt === 'N' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700"
+                  )}
+                >
+                  <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'N' ? "bg-rose-400 animate-pulse" : "bg-slate-200")} />
+                  <span className="text-xs font-black uppercase tracking-widest">Suspended</span>
+                  {formData.useAt === 'N' && <ArrowRightCircle size={16} className="text-rose-400" />}
                 </button>
               </div>
             </div>
-          </StandardForm>
-        </div>
+
+            <div className="space-y-4 pt-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Architectural Meta Description
+              </label>
+              <textarea
+                value={formData.codeDc || ''}
+                onChange={(e) => setFormData({ ...formData, codeDc: e.target.value })}
+                placeholder="Describe the functional scope and technical impact of this code point..."
+                className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+              />
+            </div>
+
+            <div className="flex gap-6 pt-10">
+              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 transition-all opacity-40 hover:opacity-100 dark:border-slate-700 dark:hover:bg-slate-800">Abort Protocol</button>
+              <button type="submit" className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-slate-900/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all active:scale-95 border border-white/10 group">
+                <Save size={20} className="group-hover:rotate-12 transition-transform" /> Persist Protocol Configuration
+              </button>
+            </div>
+          </div>
+        </StandardForm>
       </StandardModal>
     </div>
   );

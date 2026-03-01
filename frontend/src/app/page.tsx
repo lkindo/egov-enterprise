@@ -56,7 +56,7 @@ function DashboardSkeleton() {
       </div>
       <Skeleton className="h-[200px] w-full rounded-[3rem]" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-48 rounded-[2.5rem]" />)}
+        {[1, 2, 3, 4].map((i) => <Skeleton key={`page-skeleton-${i}`} className="h-48 rounded-[2.5rem]" />)}
       </div>
     </div>
   );

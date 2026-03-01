@@ -154,7 +154,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         {loading ? (
                             <div className="space-y-6">
                                 {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="h-32 bg-muted/40 animate-pulse rounded-[2rem]" />
+                                    <div key={`search-skeleton-${i}`} className="h-32 bg-muted/40 animate-pulse rounded-[2rem]" />
                                 ))}
                             </div>
                         ) : results.articles.length === 0 && results.users.length === 0 && results.menus.length === 0 ? (
@@ -173,7 +173,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                                     <ResultSection title="Articles" count={results.articles.length}>
                                         {results.articles.map((item: any, idx: number) => (
-                                            <ArticleResultItem key={idx} item={item} query={query} />
+                                            <ArticleResultItem key={`search-article-${idx}`} item={item} query={query} />
                                         ))}
                                     </ResultSection>
                                 ) : null}
@@ -183,7 +183,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                     <ResultSection title="Employees" count={results.users.length}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {results.users.map((item: any, idx: number) => (
-                                                <UserResultItem key={idx} item={item} />
+                                                <UserResultItem key={`search-user-${idx}`} item={item} />
                                             ))}
                                         </div>
                                     </ResultSection>
@@ -193,7 +193,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 ? (
                                     <ResultSection title="Shortcuts" count={results.menus.length}>
                                         {results.menus.map((item: any, idx: number) => (
-                                            <MenuResultItem key={idx} item={item} />
+                                            <MenuResultItem key={`search-menu-${idx}`} item={item} />
                                         ))}
                                     </ResultSection>
                                 ) : null}

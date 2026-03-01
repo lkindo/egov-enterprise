@@ -102,9 +102,9 @@ export function BannerSlider() {
 
           {/* Indicators */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {banners.map((_, idx) => (
+            {banners.map((banner, idx) => (
               <button
-                key={idx}
+                key={`banner-dot-${banner.bannerId || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
                   "w-2 h-2 rounded-full transition-all",

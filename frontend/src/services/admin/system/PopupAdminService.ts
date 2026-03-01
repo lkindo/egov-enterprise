@@ -11,10 +11,6 @@ class PopupAdminService extends AdminService {
         return this.get<any>('', { ...config, params });
     }
 
-    async getActivePopups(config?: any) {
-        return this.get<any>('/active', config);
-    }
-
     async getPopup(popupId: string, config?: any) {
         return this.get<any>(`/${popupId}`, config);
     }
