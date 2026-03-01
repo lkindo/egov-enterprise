@@ -12,13 +12,13 @@ spring:
       on-profile: dev
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
-    jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
-    username: ${DB_USERNAME:postgres.kmtcbkxvrbnfijvbdsrx}
-    password: ${DB_PASSWORD:s5isI0KE48Bd9kD1}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public}
+    jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public}
+    username: ${DB_USERNAME:egov}
+    password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
     hikari:
-      jdbc-url: ${DB_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?currentSchema=public}
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public}
 
   jpa:
     open-in-view: false
