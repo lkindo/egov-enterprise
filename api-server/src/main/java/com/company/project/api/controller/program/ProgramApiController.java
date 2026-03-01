@@ -28,7 +28,7 @@ import java.util.List;
 
 @RestController
 
-@RequestMapping("/api/v1/admin/programs")
+@RequestMapping("/api/v1/admin/system/programs")
 
 @RequiredArgsConstructor
 

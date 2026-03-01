@@ -149,6 +149,7 @@ export default function UnifiedDashboardClient({
       {/* Summary Cards with Industrial Aesthetic */}
       <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <SummaryCard
+          key="summary-vacation"
           title="잔여 연차"
           value={`${myLeave?.remndrYrycCo || 0}d`}
           description={`Total 15 days allotted for ${new Date().getFullYear()}`}
@@ -157,6 +158,7 @@ export default function UnifiedDashboardClient({
           color="blue"
         />
         <SummaryCard
+          key="summary-tasks"
           title="내 업무 현황"
           value="12"
           description="3 high-priority tasks pending"
@@ -165,6 +167,7 @@ export default function UnifiedDashboardClient({
           color="orange"
         />
         <SummaryCard
+          key="summary-notifications"
           title="새 알림"
           value="05"
           description="Updates from collaboration teams"
@@ -173,6 +176,7 @@ export default function UnifiedDashboardClient({
           color="purple"
         />
         <SummaryCard
+          key="summary-security"
           title="보안 지수"
           value="Safe"
           description="Encryption active & identity verified"
@@ -212,6 +216,7 @@ export default function UnifiedDashboardClient({
           {/* Secondary Lists */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <DashboardListCard
+              key="list-notices"
               title="Recent Notices"
               items={notiList}
               icon={<Bell size={20} />}
@@ -219,6 +224,7 @@ export default function UnifiedDashboardClient({
               color="blue"
             />
             <DashboardListCard
+              key="list-tasks"
               title="Assigned Tasks"
               items={taskList}
               icon={<CheckCircle2 size={20} />}

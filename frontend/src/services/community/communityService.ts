@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { CommunityVO, CommunitySearchParams } from '@/types/community';
 

@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { CommentVO, CommentSearchParams, CommentSaveRequest } from '@/types/comment';
 
 interface CommentListResult {

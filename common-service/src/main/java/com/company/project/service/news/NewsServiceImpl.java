@@ -27,7 +27,7 @@ public class NewsServiceImpl implements NewsService {
         if (keyword == null || keyword.isEmpty()) {
             return newsRepository.findAll(Objects.requireNonNull(pageable)).map(NewsDto::from);
         }
-        return newsRepository.findByNewsSjContaining(keyword, Objects.requireNonNull(pageable)).map(NewsDto::from);
+        return newsRepository.findByTitleContaining(keyword, Objects.requireNonNull(pageable)).map(NewsDto::from);
     }
 
     @Override
@@ -44,10 +44,10 @@ public class NewsServiceImpl implements NewsService {
             String newsId = egovNewsManageIdGnrService.getNextStringId();
             News news = News.builder()
                     .newsId(newsId)
-                    .newsSj(dto.getNewsSj())
-                    .newsCn(dto.getNewsCn())
+                    .title(dto.getTitle())
+                    .content(dto.getContent())
                     .newsOrigin(dto.getNewsOrigin())
-                    .ntceDe(dto.getNtceDe())
+                    .noticeDate(dto.getNoticeDate())
                     .atchFileId(dto.getAtchFileId())
                     .frstRegisterId(userId)
                     .build();
@@ -63,7 +63,7 @@ public class NewsServiceImpl implements NewsService {
     public void updateNews(String newsId, String userId, NewsDto dto) {
         News news = newsRepository.findById(Objects.requireNonNull(newsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        news.update(dto.getNewsSj(), dto.getNewsCn(), dto.getNewsOrigin(), dto.getNtceDe(),
+        news.update(dto.getTitle(), dto.getContent(), dto.getNewsOrigin(), dto.getNoticeDate(),
                 dto.getAtchFileId(), userId);
     }
 

@@ -77,19 +77,20 @@
     - [x] `frontend/src/services` 내에 `admin`, `user`, `common` 서브 폴더 구성
     - [x] 백엔드의 컨트롤러 패키지 구조와 1:1 대응 확인 (진행 중)
 - [x] **통합 Import 엔드포인트(Index) 구축**
-    - [ ] 각 서브 폴더별 `index.ts`를 통한 모듈 노출 관리
+    - [x] 각 서브 폴더별 `index.ts`를 통한 모듈 노출 관리 완료 (`services/user`, `services/admin`, `services/admin/system`)
 - [x] **API Base URL 및 전역 설정 정교화**
     - [x] 서비스별 베이스 경로(Base Path) 상속 구조 도입 (`ApiService`, `UserService`, `AdminService` 클래스 상속 구조 적용 완료)
 
 ### Phase 4: 자동화 및 아키텍처 품질 관리
 *정리된 구조가 지속적으로 유지될 수 있도록 시스템을 구축합니다.*
 
-- [ ] **Swagger 기반 TypeScript 타입 추출기 도입**
-    - [ ] `openapi-typescript` 등을 활용한 백엔드 DTO -> 프론트 interface 자동 생성
-- [ ] **아키텍처 규칙 검증 테스트(ArchUnit) 도입**
-    - [ ] 백엔드 패키지 간 순환 참조 방지 및 비즈니스 규칙 위반 검사
-- [ ] **ESLint/Prettier 규칙 강화**
-    - [ ] 서비스 계층의 명명 규칙 및 폴더 위치 강제 규칙 추가
+- [x] **Swagger 기반 TypeScript 타입 추출기 도입**
+    - [x] `openapi-typescript` 패키지 설치 및 `codegen:ts` 스크립트 구성 완료 (`package.json`)
+    - [x] API 타입 유틸리티(`src/types/api-utils.ts`)를 통한 DTO 타입 추출 체계 구축 완료
+- [x] **아키텍처 규칙 검증 테스트(ArchUnit) 도입**
+    - [x] `api-server`에 `ArchUnit` 의존성 활성화 및 `ArchitectureTest.java` 구축 완료
+- [x] **ESLint/Prettier 규칙 강화**
+    - [x] `eslint.config.mjs` 내 서비스 계층 명명 규칙(`*Service`) 강제 설정 및 린트 규칙 적용 완료
 
 ---
 
@@ -108,10 +109,12 @@
 - **2026-03-01**: `UserAdminService`, `SystemLogAdminService`, `CodeAdminService`, `MenuAdminService`, `ProgramAdminService`, `SyncAdminService`, `TroubleAdminService` 등 시스템 관리 핵심 서비스들을 클래스 기반 `AdminService` 구조로 리팩토링 및 이전 완료.
 - **2026-03-01**: 기존 functional 서비스 파일(`userService.ts`, `logService.ts`, `codeService.ts`, `menuService.ts`, `programService.ts`, `syncService.ts`)들을 완전히 제거하고, 모든 페이지 및 폼 컴포넌트(`*Form.tsx`)를 새로운 서비스 클래스 객체로 전환 완료.
 - **2026-03-01**: `menuService`, `noteService`, `reportService`, `rewardService`, `scrapService`, `scheduleService`, `welfareService` 등 루트 레벨 functional 서비스를 모두 클래스 기반으로 변환, `services/user/` 또는 `services/admin/system/` 으로 이전 완료. 구형 파일 전체 삭제 및 소비 파일 import 경로 업데이트 완료 (Phase 3 주요 마일스톤 달성).
-- **다음 작업**: 
-    1. Phase 3: 각 서브 폴더 `index.ts` barrel export 구성.
-    2. Phase 4: Swagger/OpenAPI 연동을 통한 TS 타입 자동 추출 환경 구축 검토.
+- **2026-03-01**: `services/user`, `services/admin`, `services/admin/system` 각 폴더에 `index.ts` (Barrel Export)를 구축하여 서비스 계층의 캡슐화 및 통합 노출 관리 체계 구축 완료 (Phase 3 완료 합의).
+- **2026-03-01**: `ArchUnit`을 이용한 백엔드 레이어드 아키텍처 검증 테스트 구축 및 `eslint.config.mjs` 서비스 명명 규칙 강제화 완료. 이로써 Phase 1~4에 걸친 전방위 리팩토링 및 아키텍처 정립 작업이 성공적으로 마무리됨.
+- **최종 상태**: 모든 신규 서비스는 클래스 기반 `ApiService`/`AdminService` 구조를 따르며, 백엔드와 프론트엔드 간의 명사(Naming) 및 타입(Type) 동기화가 자동화됨.
 
 ---
+
+> **Note**: 본 리팩토링 프로젝트는 계획된 모든 마일스톤을 달성하였으며, 향후 추가되는 도메인은 위 가이드라인에 따라 확장합니다.
 
 > **Note**: 이 문서는 작업이 진행됨에 따라 실시간으로 업데이트되어야 합니다. 수동 수정이 발생할 경우 반드시 이력을 남겨주세요.
