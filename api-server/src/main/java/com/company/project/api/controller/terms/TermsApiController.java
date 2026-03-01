@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-@Tag(name = "Terms", description = "약관 관리 API")
+@Tag(name = "Terms", description = "?��? 관�?API")
 @RestController
 @RequestMapping("/api/v1/admin/terms")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class TermsApiController {
 
     private final TermsService termsService;
 
-    @Operation(summary = "약관 목록 조회")
+    @Operation(summary = "?��? 목록 조회")
     @GetMapping
     public ResponseEntity<?> getTermsList(
             @RequestParam(defaultValue = "0") int page,
@@ -34,13 +34,13 @@ public class TermsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "약관 상세 조회")
+    @Operation(summary = "?��? ?�세 조회")
     @GetMapping("/{useStplatId}")
     public ResponseEntity<?> getTermsDetail(@PathVariable String useStplatId) {
         return ResponseEntity.ok(ApiResponse.success(termsService.getTerms(useStplatId)));
     }
 
-    @Operation(summary = "약관 등록")
+    @Operation(summary = "?��? ?�록")
     @PostMapping
     public ResponseEntity<?> createTerms(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -49,7 +49,7 @@ public class TermsApiController {
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 
-    @Operation(summary = "약관 수정")
+    @Operation(summary = "?��? ?�정")
     @PutMapping("/{useStplatId}")
     public ResponseEntity<?> updateTerms(
             @PathVariable String useStplatId,
@@ -59,7 +59,7 @@ public class TermsApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "약관 삭제")
+    @Operation(summary = "?��? ??��")
     @DeleteMapping("/{useStplatId}")
     public ResponseEntity<?> deleteTerms(
             @PathVariable String useStplatId,

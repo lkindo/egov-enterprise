@@ -2,6 +2,7 @@ package com.company.project.api.controller.meeting;
 
 import com.company.project.core.response.ApiResponse;
 import com.company.project.service.meeting.MeetingService;
+import com.company.project.service.meeting.dto.MeetingManageDto;
 import com.company.project.service.meeting.dto.MeetingPlaceDto;
 import com.company.project.service.meeting.dto.MeetingReservationDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "MeetingRoom", description = "회의실 및 예약 관리 API")
+@Tag(name = "Meeting", description = "?�의???�약 �??�의 관�?API")
 @RestController
 @RequestMapping("/api/v1/meetings")
 @RequiredArgsConstructor
@@ -24,9 +25,9 @@ public class MeetingController {
 
     private final MeetingService meetingService;
 
-    // --- Meeting Places ---
+    // --- Meeting Places (?�의?? ---
 
-    @Operation(summary = "회의실 목록 조회", description = "시스템에 등록된 회의실 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "?�의??목록 조회", description = "?�스?�에 ?�록???�의??목록???�이징하??조회?�니??")
     @GetMapping("/places")
     public ResponseEntity<ApiResponse<Page<MeetingPlaceDto>>> getMeetingPlaces(
             @RequestParam(required = false) String searchWrd,
@@ -34,14 +35,14 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingPlaceList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "회의실 상세 조회", description = "특정 회의실의 상세 정보를 조회합니다.")
+    @Operation(summary = "?�의???�세 조회", description = "?�정 ?�의?�의 ?�세 ?�보�?조회?�니??")
     @GetMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<MeetingPlaceDto>> getMeetingPlace(
-            @Parameter(description = "회의실 ID") @PathVariable String mtgPlaceId) {
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingPlace(mtgPlaceId)));
     }
 
-    @Operation(summary = "회의실 등록", description = "새로운 회의실 정보를 등록합니다.")
+    @Operation(summary = "?�의???�록", description = "?�로???�의???�보�??�록?�니??")
     @PostMapping("/places")
     public ResponseEntity<ApiResponse<String>> createMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -50,27 +51,27 @@ public class MeetingController {
                 .ok(ApiResponse.success(meetingService.createMeetingPlace(userDetails.getUsername(), dto)));
     }
 
-    @Operation(summary = "회의실 정보 수정", description = "회의실의 명칭, 오픈 시간 등 정보를 수정합니다.")
+    @Operation(summary = "?�의???�보 ?�정", description = "?�의?�의 명칭, ?�픈 ?�간 ???�보�??�정?�니??")
     @PutMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<Void>> updateMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "회의실 ID") @PathVariable String mtgPlaceId,
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId,
             @RequestBody MeetingPlaceDto dto) {
         meetingService.updateMeetingPlace(mtgPlaceId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "회의실 삭제", description = "등록된 회의실 정보를 삭제합니다.")
+    @Operation(summary = "?�의????��", description = "?�록???�의???�보�???��?�니??")
     @DeleteMapping("/places/{mtgPlaceId}")
     public ResponseEntity<ApiResponse<Void>> deleteMeetingPlace(
-            @Parameter(description = "회의실 ID") @PathVariable String mtgPlaceId) {
+            @Parameter(description = "?�의??ID") @PathVariable String mtgPlaceId) {
         meetingService.deleteMeetingPlace(mtgPlaceId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // --- Reservations ---
+    // --- Reservations (?�의???�약) ---
 
-    @Operation(summary = "회의실 예약 목록 조회", description = "시스템의 회의실 예약 현황을 페이징하여 조회합니다.")
+    @Operation(summary = "?�의???�약 목록 조회", description = "?�스?�의 ?�의???�약 ?�황???�이징하??조회?�니??")
     @GetMapping("/reservations")
     public ResponseEntity<ApiResponse<Page<MeetingReservationDto>>> getMeetingReservations(
             @RequestParam(required = false) String searchWrd,
@@ -78,14 +79,14 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingReservationList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "회의실 예약 상세 조회", description = "특정 회의실 예약의 상세 정보를 조회합니다.")
+    @Operation(summary = "?�의???�약 ?�세 조회", description = "?�정 ?�의???�약???�세 ?�보�?조회?�니??")
     @GetMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<MeetingReservationDto>> getMeetingReservation(
-            @Parameter(description = "예약 ID") @PathVariable String resveId) {
+            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
         return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingReservation(resveId)));
     }
 
-    @Operation(summary = "회의실 예약 신청", description = "특정 회의실에 대한 예약을 신청합니다.")
+    @Operation(summary = "?�의???�약 ?�청", description = "?�정 ?�의?�에 ?�???�약???�청?�니??")
     @PostMapping("/reservations")
     public ResponseEntity<ApiResponse<String>> reserveMeetingPlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -94,21 +95,67 @@ public class MeetingController {
                 .ok(ApiResponse.success(meetingService.reserveMeetingPlace(userDetails.getUsername(), dto)));
     }
 
-    @Operation(summary = "회의실 예약 정보 수정", description = "등록된 회의실 예약 정보를 수정합니다.")
+    @Operation(summary = "?�의???�약 ?�보 ?�정", description = "?�록???�의???�약 ?�보�??�정?�니??")
     @PutMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<Void>> updateMeetingReservation(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "예약 ID") @PathVariable String resveId,
+            @Parameter(description = "?�약 ID") @PathVariable String resveId,
             @RequestBody MeetingReservationDto dto) {
         meetingService.updateMeetingReservation(resveId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "회의실 예약 취소", description = "등록된 회의실 예약을 취소합니다.")
+    @Operation(summary = "?�의???�약 취소", description = "?�록???�의???�약??취소?�니??")
     @DeleteMapping("/reservations/{resveId}")
     public ResponseEntity<ApiResponse<Void>> cancelMeetingReservation(
-            @Parameter(description = "예약 ID") @PathVariable String resveId) {
+            @Parameter(description = "?�약 ID") @PathVariable String resveId) {
         meetingService.cancelMeetingReservation(resveId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // --- Meeting Management (?�의 관�? ---
+
+    @Operation(summary = "?�의 목록 조회", description = "?�스?�에 ?�록???�의 목록???�이징하??조회?�니??")
+    @GetMapping("/manage")
+    public ResponseEntity<ApiResponse<Page<MeetingManageDto>>> getMeetings(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(meetingService.getMeetingList(keyword, pageable)));
+    }
+
+    @Operation(summary = "?�의 ?�세 조회", description = "?�정 ?�의???�세 ?�보�?조회?�니??")
+    @GetMapping("/manage/{mtgId}")
+    public ResponseEntity<ApiResponse<MeetingManageDto>> getMeeting(
+            @Parameter(description = "?�의 ID") @PathVariable String mtgId) {
+        return ResponseEntity.ok(ApiResponse.success(meetingService.getMeeting(mtgId)));
+    }
+
+    @Operation(summary = "?�의 ?�록", description = "?�로???�의 ?�보�??�록?�니??")
+    @PostMapping("/manage")
+    public ResponseEntity<ApiResponse<Void>> insertMeeting(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody MeetingManageDto dto) {
+        dto.setFrstRegisterId(userDetails.getUsername());
+        meetingService.insertMeeting(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "?�의 ?�보 ?�정", description = "?�록???�의 ?�보�??�정?�니??")
+    @PutMapping("/manage/{mtgId}")
+    public ResponseEntity<ApiResponse<Void>> updateMeeting(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String mtgId,
+            @RequestBody MeetingManageDto dto) {
+        dto.setMtgId(mtgId);
+        dto.setLastUpdusrId(userDetails.getUsername());
+        meetingService.updateMeeting(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "?�의 ?�보 ??��", description = "?�록???�의 ?�보�???��?�니??")
+    @DeleteMapping("/manage/{mtgId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMeeting(@PathVariable String mtgId) {
+        meetingService.deleteMeeting(mtgId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

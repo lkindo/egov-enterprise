@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 紐낇븿 ?쒕퉬??援ы쁽泥?
+ * 紐낇�???�퉬???�ы쁽�?
  */
 @Service
 @RequiredArgsConstructor
@@ -34,8 +34,7 @@ public class NameCardService implements EgovNameCardService {
 
     @Override
     public Page<NameCardDto> getMyNameCards(String userId, @org.springframework.lang.NonNull Pageable pageable) {
-        // ?닿? 吏곸젒 ?깅줉??紐낇븿 紐⑸줉
-        return nameCardRepository.findByNcrdTrgterId(userId, pageable).map(NameCardDto::from);
+        // ??? 吏곸???깅줉??紐낇�?紐⑸�?        return nameCardRepository.findByNcrdTrgterId(userId, pageable).map(NameCardDto::from);
     }
 
     @Override
@@ -71,7 +70,7 @@ public class NameCardService implements EgovNameCardService {
 
         nameCardRepository.save(Objects.requireNonNull(nameCard));
 
-        // ?깅줉 ????紐낇븿泥⑹뿉???먮룞 異붽?
+        // ?깅줉 ????紐낇븿泥?�뿉???�?�� ?�붽?
         addMyNameCard(userId, ncrdId);
 
         return ncrdId;
@@ -95,8 +94,8 @@ public class NameCardService implements EgovNameCardService {
         NameCard nameCard = nameCardRepository.findById(Objects.requireNonNull(ncrdId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 愿怨??곗씠??癒쇱? ??젣 (?먮뒗 ?쇰━ ??젣 泥섎━)
-        // ?ш린?쒕뒗 ?⑥닚 臾쇰━ ??젣濡?援ы쁽
+        // ?�???곗씠???�쇱? ????(?�?�� ??�━ ????泥섎??
+        // ??�??�뒗 ??�닚 ?�쇰?????�濡??�ы쁽
         nameCardRepository.delete(Objects.requireNonNull(nameCard));
     }
 
@@ -120,8 +119,7 @@ public class NameCardService implements EgovNameCardService {
                                 .ncrdId(ncrdId)
                                 .emplyrId(userId)
                                 .useAt("Y")
-                                .registSeCode("REGC01") // 湲곕낯 ?깅줉 肄붾뱶
-                                .build())));
+                                .registSeCode("REGC01") // 湲곕???깅줉 ?�붾�?                                .build())));
     }
 
     @Override

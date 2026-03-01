@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "AddressBook", description = "주소록 관리 API")
+@Tag(name = "AddressBook", description = "주소�?관�?API")
 @RestController
 @RequestMapping("/api/v1/address-books")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class AddressBookController {
 
     private final AddressBookService addressBookService;
 
-    @Operation(summary = "주소록 목록 조회", description = "사용자가 생성한 주소록 또는 공개된 주소록 목록을 조회합니다.")
+    @Operation(summary = "주소�?목록 조회", description = "?�용?��? ?�성??주소�??�는 공개??주소�?목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AddressBookDto>>> getAddressBooks(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -37,14 +37,14 @@ public class AddressBookController {
                         pageable)));
     }
 
-    @Operation(summary = "주소록 상세 조회", description = "주소록의 상세 정보와 포함된 사용자 목록을 조회합니다.")
+    @Operation(summary = "주소�??�세 조회", description = "주소록의 ?�세 ?�보?� ?�함???�용??목록??조회?�니??")
     @GetMapping("/{adbkId}")
     public ResponseEntity<ApiResponse<AddressBookDto>> getAddressBook(
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId) {
+            @Parameter(description = "주소�?ID") @PathVariable String adbkId) {
         return ResponseEntity.ok(ApiResponse.success(addressBookService.getAddressBook(adbkId)));
     }
 
-    @Operation(summary = "주소록 등록", description = "새로운 주소록을 생성합니다.")
+    @Operation(summary = "주소�??�록", description = "?�로??주소록을 ?�성?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -53,27 +53,27 @@ public class AddressBookController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "주소록 정보 수정", description = "주소록 명칭, 공개 여부 등 정보를 수정합니다.")
+    @Operation(summary = "주소�??�보 ?�정", description = "주소�?명칭, 공개 ?��? ???�보�??�정?�니??")
     @PutMapping("/{adbkId}")
     public ResponseEntity<ApiResponse<Void>> updateAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId,
+            @Parameter(description = "주소�?ID") @PathVariable String adbkId,
             @RequestBody AddressBookDto addressBookDto) {
         addressBookDto.setAdbkId(adbkId);
         addressBookService.updateAddressBook(userDetails.getUsername(), addressBookDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "주소록 삭제 (사용중지)", description = "주소록을 삭제(사용중지 상태로 변경) 처리합니다.")
+    @Operation(summary = "주소�???�� (?�용중�?)", description = "주소록을 ??��(?�용중�? ?�태�?변�? 처리?�니??")
     @DeleteMapping("/{adbkId}")
     public ResponseEntity<ApiResponse<Void>> deleteAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId) {
+            @Parameter(description = "주소�?ID") @PathVariable String adbkId) {
         addressBookService.deleteAddressBook(adbkId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "주소록 사용자 검색", description = "주소록에 추가할 사용자를 시스템 전체에서 검색합니다.")
+    @Operation(summary = "주소�??�용??검??, description = "주소록에 추�????�용?��? ?�스???�체?�서 검?�합?�다.")
     @GetMapping("/search-users")
     public ResponseEntity<ApiResponse<Page<AddressBookUserDto>>> searchUsers(
             @RequestParam String searchWrd,

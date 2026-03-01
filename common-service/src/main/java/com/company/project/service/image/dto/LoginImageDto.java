@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 濡쒓렇???대?吏 DTO
+ * 濡쒓?????�?吏 DTO
  */
 @Data
 @Builder

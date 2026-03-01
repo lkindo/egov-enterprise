@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 /**
- * OpenAPI 문서 기반 테스트
- * API 문서와 실제 엔드포인트 간 일치성 확인
+ * OpenAPI 문서 기반 ?�스??
+ * API 문서?� ?�제 ?�드?�인??�??�치???�인
  */
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -26,18 +26,18 @@ class OpenApiDocumentationTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("OpenAPI 문서 엔드포인트 접근 테스트")
+    @DisplayName("OpenAPI 문서 ?�드?�인???�근 ?�스??)
     void openApiDocumentation_endpoint_accessibility() throws Exception {
-        // When & Then - Swagger UI 접근 테스트
+        // When & Then - Swagger UI ?�근 ?�스??
         mockMvc.perform(get("/swagger-ui/index.html")
                 .contentType(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("OpenAPI 스펙 문서 접근 테스트")
+    @DisplayName("OpenAPI ?�펙 문서 ?�근 ?�스??)
     void openApiSpec_endpoint_accessibility() throws Exception {
-        // When & Then - OpenAPI 스펙 문서 접근 테스트
+        // When & Then - OpenAPI ?�펙 문서 ?�근 ?�스??
         mockMvc.perform(get("/v3/api-docs")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -45,9 +45,9 @@ class OpenApiDocumentationTest {
     }
 
     @Test
-    @DisplayName("특정 API 그룹 OpenAPI 스펙 접근 테스트")
+    @DisplayName("?�정 API 그룹 OpenAPI ?�펙 ?�근 ?�스??)
     void openApiSpec_specificGroup_accessibility() throws Exception {
-        // When & Then - 특정 API 그룹 스펙 접근 테스트
+        // When & Then - ?�정 API 그룹 ?�펙 ?�근 ?�스??
         mockMvc.perform(get("/v3/api-docs/user-api")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

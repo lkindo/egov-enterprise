@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 沅뚰븳 愿由??쒕퉬??
+ * 沅뚰�??�????�퉬??
  */
 @Service("projectAuthorManageService")
 @RequiredArgsConstructor
@@ -29,8 +29,7 @@ public class AuthorManageService {
     private final AuthorityRepository authorityRepository;
 
     /**
-     * 沅뚰븳 紐⑸줉 議고쉶
-     */
+     * 沅뚰�?紐⑸�?議고??     */
     public List<AuthorManageDto> selectAuthorList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -41,15 +40,13 @@ public class AuthorManageService {
     }
 
     /**
-     * 沅뚰븳 紐⑸줉 珥?嫄댁닔
-     */
+     * 沅뚰�?紐⑸�???嫄댁??     */
     public int selectAuthorListTotCnt(ComDefaultVO searchVO) {
         return (int) authorityRepository.count();
     }
 
     /**
-     * 沅뚰븳 ?곸꽭 議고쉶
-     */
+     * 沅뚰�??곸꽭 議고??     */
     public AuthorManageDto selectAuthor(@NonNull String authorCode) {
         return authorityRepository.findById(Objects.requireNonNull(authorCode))
                 .map(this::toDto)
@@ -57,7 +54,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 沅뚰븳 ?깅줉
+     * 沅뚰�??깅줉
      */
     @Transactional
     public void insertAuthor(@NonNull AuthorManageDto dto) {
@@ -70,7 +67,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 沅뚰븳 ?섏젙
+     * 沅뚰�???�젙
      */
     @Transactional
     public void updateAuthor(@NonNull AuthorManageDto dto) {
@@ -80,16 +77,14 @@ public class AuthorManageService {
     }
 
     /**
-     * 沅뚰븳 ??젣
-     */
+     * 沅뚰�?????     */
     @Transactional
     public void deleteAuthor(@NonNull String authorCode) {
         authorityRepository.deleteById(Objects.requireNonNull(authorCode));
     }
 
     /**
-     * 沅뚰븳 ?ㅼ쨷 ??젣
-     */
+     * 沅뚰�???�쨷 ????     */
     @Transactional
     public void deleteAuthors(@NonNull String[] authorCodes) {
         authorityRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(authorCodes))));

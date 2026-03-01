@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Menu (Admin)", description = "시스템 메뉴 관리 API (관리자용)")
+@Tag(name = "Menu (Admin)", description = "?�스??메뉴 관�?API (관리자??")
 @RestController("systemMenuAdminController")
 @RequestMapping("/api/v1/admin/system/menus")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class MenuAdminController {
 
     private final MenuService menuService;
 
-    @Operation(summary = "메뉴 목록 조회", description = "시스템 전체 메뉴 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "메뉴 목록 조회", description = "?�스???�체 메뉴 목록???�이징하??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MenuDto>>> getMenuList(
             @RequestParam(required = false) String searchWrd,
@@ -40,26 +40,26 @@ public class MenuAdminController {
         return ResponseEntity.ok(ApiResponse.success(new PageImpl<>(list, pageable, total)));
     }
 
-    @Operation(summary = "메뉴 전체 트리 조회", description = "시스템 메뉴를 트리 구조 구성을 위한 전체 목록으로 조회합니다.")
+    @Operation(summary = "메뉴 ?�체 ?�리 조회", description = "?�스??메뉴�??�리 구조 구성???�한 ?�체 목록?�로 조회?�니??")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<MenuDto>>> getAllMenus() throws Exception {
         return ResponseEntity.ok(ApiResponse.success(menuService.getAllMenus()));
     }
 
-    @Operation(summary = "메뉴 상세 조회", description = "특정 메뉴의 상세 정보를 조회합니다.")
+    @Operation(summary = "메뉴 ?�세 조회", description = "?�정 메뉴???�세 ?�보�?조회?�니??")
     @GetMapping("/{menuNo}")
     public ResponseEntity<ApiResponse<MenuDto>> getMenu(@PathVariable Long menuNo) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(menuService.selectMenuManage(menuNo)));
     }
 
-    @Operation(summary = "메뉴 등록", description = "새로운 시스템 메뉴를 등록합니다.")
+    @Operation(summary = "메뉴 ?�록", description = "?�로???�스??메뉴�??�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createMenu(@RequestBody MenuDto dto) throws Exception {
         menuService.insertMenuManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "메뉴 정보 수정", description = "기존 시스템 메뉴 정보를 수정합니다.")
+    @Operation(summary = "메뉴 ?�보 ?�정", description = "기존 ?�스??메뉴 ?�보�??�정?�니??")
     @PutMapping("/{menuNo}")
     public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable Long menuNo, @RequestBody MenuDto dto)
             throws Exception {
@@ -68,7 +68,7 @@ public class MenuAdminController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "메뉴 순서 일괄 변경", description = "여러 메뉴의 순서를 일괄적으로 업데이트합니다.")
+    @Operation(summary = "메뉴 ?�서 ?�괄 변�?, description = "?�러 메뉴???�서�??�괄?�으�??�데?�트?�니??")
     @PutMapping("/batch-order")
     public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@RequestBody List<MenuDto> menuList) throws Exception {
         for (MenuDto dto : menuList) {
@@ -77,7 +77,7 @@ public class MenuAdminController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "메뉴 삭제", description = "시스템 메뉴를 삭제합니다.")
+    @Operation(summary = "메뉴 ??��", description = "?�스??메뉴�???��?�니??")
     @DeleteMapping("/{menuNo}")
     public ResponseEntity<ApiResponse<Void>> deleteMenu(@PathVariable Long menuNo) throws Exception {
         MenuDto dto = MenuDto.builder().menuNo(menuNo).build();

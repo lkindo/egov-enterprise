@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Popup", description = "팝업 관리 API")
+@Tag(name = "Popup", description = "?�업 관�?API")
 @RestController
 @RequestMapping("/api/v1/popups")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class PopupController {
 
     private final PopupService popupService;
 
-    @Operation(summary = "팝업 목록 조회", description = "등록된 팝업 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "?�업 목록 조회", description = "?�록???�업 목록???�이징하??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PopupDto>>> getPopups(
             @RequestParam(required = false) String searchWrd,
@@ -33,20 +33,20 @@ public class PopupController {
         return ResponseEntity.ok(ApiResponse.success(popupService.getPopupList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "활성 팝업 목록 조회", description = "현재 게시 기간 내에 있는 활성 팝업 목록을 조회합니다.")
+    @Operation(summary = "?�성 ?�업 목록 조회", description = "?�재 게시 기간 ?�에 ?�는 ?�성 ?�업 목록??조회?�니??")
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<PopupDto>>> getActivePopups() {
         return ResponseEntity.ok(ApiResponse.success(popupService.getActivePopups()));
     }
 
-    @Operation(summary = "팝업 상세 조회", description = "팝업의 상세 정보를 조회합니다.")
+    @Operation(summary = "?�업 ?�세 조회", description = "?�업???�세 ?�보�?조회?�니??")
     @GetMapping("/{popupId}")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
-            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
+            @Parameter(description = "?�업 ID") @PathVariable String popupId) {
         return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupId)));
     }
 
-    @Operation(summary = "팝업 등록", description = "새로운 팝업을 등록합니다.")
+    @Operation(summary = "?�업 ?�록", description = "?�로???�업???�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -54,20 +54,20 @@ public class PopupController {
         return ResponseEntity.ok(ApiResponse.success(popupService.createPopup(userDetails.getUsername(), popupDto)));
     }
 
-    @Operation(summary = "팝업 정보 수정", description = "등록된 팝업의 정보를 수정합니다.")
+    @Operation(summary = "?�업 ?�보 ?�정", description = "?�록???�업???�보�??�정?�니??")
     @PutMapping("/{popupId}")
     public ResponseEntity<ApiResponse<Void>> updatePopup(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "팝업 ID") @PathVariable String popupId,
+            @Parameter(description = "?�업 ID") @PathVariable String popupId,
             @RequestBody PopupDto popupDto) {
         popupService.updatePopup(popupId, userDetails.getUsername(), popupDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "팝업 삭제", description = "등록된 팝업을 시스템에서 삭제합니다.")
+    @Operation(summary = "?�업 ??��", description = "?�록???�업???�스?�에????��?�니??")
     @DeleteMapping("/{popupId}")
     public ResponseEntity<ApiResponse<Void>> deletePopup(
-            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
+            @Parameter(description = "?�업 ID") @PathVariable String popupId) {
         popupService.deletePopup(popupId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

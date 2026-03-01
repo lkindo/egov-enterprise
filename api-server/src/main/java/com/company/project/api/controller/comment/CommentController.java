@@ -17,7 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Comment", description = "댓글 관리 API")
+@Tag(name = "Comment", description = "?��? 관�?API")
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    @Operation(summary = "댓글 목록 조회", description = "특정 게시물의 댓글 목록을 조회합니다.")
+    @Operation(summary = "?��? 목록 조회", description = "?�정 게시물의 ?��? 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CommentDto>>> getComments(
             @RequestParam Long nttId,
@@ -34,7 +34,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(commentService.getComments(nttId, bbsId, pageable)));
     }
 
-    @Operation(summary = "댓글 등록", description = "새로운 댓글을 등록합니다.")
+    @Operation(summary = "?��? ?�록", description = "?�로???��????�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -43,21 +43,21 @@ public class CommentController {
                 commentService.createComment(userDetails.getUsername(), userDetails.getUsername(), request)));
     }
 
-    @Operation(summary = "댓글 수정", description = "등록된 댓글의 내용을 수정합니다.")
+    @Operation(summary = "?��? ?�정", description = "?�록???��????�용???�정?�니??")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "댓글 ID") @PathVariable Long id,
+            @Parameter(description = "?��? ID") @PathVariable Long id,
             @Valid @RequestBody CommentSaveRequest request) {
         commentService.updateComment(id, userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "댓글 삭제", description = "등록된 댓글을 삭제 처리합니다.")
+    @Operation(summary = "?��? ??��", description = "?�록???��?????�� 처리?�니??")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "댓글 ID") @PathVariable Long id) {
+            @Parameter(description = "?��? ID") @PathVariable Long id) {
         commentService.deleteComment(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

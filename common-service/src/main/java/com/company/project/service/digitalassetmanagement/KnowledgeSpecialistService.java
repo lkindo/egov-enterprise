@@ -1,6 +1,6 @@
 package com.company.project.service.digitalassetmanagement;
 
-import com.company.project.domain.dam.ProfessionalSearchResult;
+import com.company.project.domain.digitalassetmanagement.ProfessionalSearchResult;
 import com.company.project.service.digitalassetmanagement.dto.ProfessionalDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -11,8 +11,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import javax.sql.DataSource;
 
 /**
- * 통합 테스트를 위한 최소 설정
- * 레거시 eGovFrame 컴포넌트를 제외하고 핵심 기능만 로드
+ * ?�합 ?�스?��? ?�한 최소 ?�정
+ * ?�거??eGovFrame 컴포?�트�??�외?�고 ?�심 기능�?로드
  */
 @org.springframework.context.annotation.Configuration
 @ComponentScan(basePackages = {
@@ -24,13 +24,13 @@ import javax.sql.DataSource;
         "com.company.project.domain",
         "com.company.project.core"
 }, excludeFilters = {
-        // 스케줄링 관련 제외
+        // ?��?줄링 관???�외
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
-        // 레거시 웹 컨트롤러 제외
+        // ?�거????컨트롤러 ?�외
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
-        // 인터셉터 제외 (테스트에서 불필요)
+        // ?�터?�터 ?�외 (?�스?�에??불필??
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*"),
-        // WebMvcConfig 제외 (인터셉터 의존성 때문에)
+        // WebMvcConfig ?�외 (?�터?�터 ?�존???�문??
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*WebMvcConfig.*")
 })
 @EnableJpaRepositories(basePackages = {
@@ -88,8 +88,8 @@ public class MinimalTestConfig {
     }
 
     /**
-     * 레거시 컴포넌트에서 요구하는 빈들을 Mock으로 제공
-     * 실제 테스트에서는 사용되지 않지만 ApplicationContext 로딩을 위해 필요
+     * ?�거??컴포?�트?�서 ?�구?�는 빈들??Mock?�로 ?�공
+     * ?�제 ?�스?�에?�는 ?�용?��? ?��?�?ApplicationContext 로딩???�해 ?�요
      */
 
     @Bean

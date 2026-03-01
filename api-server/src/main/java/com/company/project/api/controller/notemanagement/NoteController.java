@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Note", description = "쪽지 관리 API")
+@Tag(name = "Note", description = "쪽�? 관�?API")
 @RestController("notemanagementNoteController")
 @RequestMapping("/api/v1/notes")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class NoteController {
 
     private final NoteService noteService;
 
-    @Operation(summary = "수신 쪽지 목록 조회", description = "로그인한 사용자가 수신한 쪽지 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "?�신 쪽�? 목록 조회", description = "로그?�한 ?�용?��? ?�신??쪽�? 목록???�이징하??조회?�니??")
     @GetMapping("/received")
     public ResponseEntity<ApiResponse<Page<NoteDto>>> getReceivedNotes(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -33,7 +33,7 @@ public class NoteController {
                 noteService.getReceivedNotes(userDetails.getUsername(), searchWrd, pageable)));
     }
 
-    @Operation(summary = "발신 쪽지 목록 조회", description = "로그인한 사용자가 발신한 쪽지 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "발신 쪽�? 목록 조회", description = "로그?�한 ?�용?��? 발신??쪽�? 목록???�이징하??조회?�니??")
     @GetMapping("/sent")
     public ResponseEntity<ApiResponse<Page<NoteDto>>> getSentNotes(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -43,16 +43,16 @@ public class NoteController {
                 noteService.getSentNotes(userDetails.getUsername(), searchWrd, pageable)));
     }
 
-    @Operation(summary = "쪽지 상세 조회", description = "특정 쪽지의 상세 정보를 조회합니다.")
+    @Operation(summary = "쪽�? ?�세 조회", description = "?�정 쪽�????�세 ?�보�?조회?�니??")
     @GetMapping("/{noteId}")
     public ResponseEntity<ApiResponse<NoteDto>> getNote(
-            @Parameter(description = "쪽지 ID") @PathVariable String noteId,
-            @Parameter(description = "쪽지 구분 (recv: 수신, sent: 발신)") @RequestParam String type,
-            @Parameter(description = "관계 ID (수신ID 또는 발신ID)") @RequestParam String relationId) {
+            @Parameter(description = "쪽�? ID") @PathVariable String noteId,
+            @Parameter(description = "쪽�? 구분 (recv: ?�신, sent: 발신)") @RequestParam String type,
+            @Parameter(description = "관�?ID (?�신ID ?�는 발신ID)") @RequestParam String relationId) {
         return ResponseEntity.ok(ApiResponse.success(noteService.getNoteDetail(noteId, type, relationId)));
     }
 
-    @Operation(summary = "쪽지 발송", description = "새로운 쪽지를 작성하여 발송합니다.")
+    @Operation(summary = "쪽�? 발송", description = "?�로??쪽�?�??�성?�여 발송?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> sendNote(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -61,11 +61,11 @@ public class NoteController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "쪽지 삭제", description = "수신 또는 발신 기록에서 쪽지를 삭제합니다.")
+    @Operation(summary = "쪽�? ??��", description = "?�신 ?�는 발신 기록?�서 쪽�?�???��?�니??")
     @DeleteMapping("/{relationId}")
     public ResponseEntity<ApiResponse<Void>> deleteNote(
-            @Parameter(description = "관계 ID") @PathVariable String relationId,
-            @Parameter(description = "쪽지 구분 (recv: 수신, sent: 발신)") @RequestParam String type) {
+            @Parameter(description = "관�?ID") @PathVariable String relationId,
+            @Parameter(description = "쪽�? 구분 (recv: ?�신, sent: 발신)") @RequestParam String type) {
         noteService.deleteNote(relationId, type);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -12,9 +12,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.sql.DataSource;
 
 /**
- * 테스트 환경용 Security 설정
- * - 모든 요청 허용 (테스트 용이성)
- * - 기존 SecurityConfig를 완전히 대체
+ * ?�스???�경??Security ?�정
+ * - 모든 ?�청 ?�용 (?�스???�이??
+ * - 기존 SecurityConfig�??�전???��?
  */
 @TestConfiguration
 public class TestSecurityConfig {

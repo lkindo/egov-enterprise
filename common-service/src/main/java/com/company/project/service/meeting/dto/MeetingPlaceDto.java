@@ -13,37 +13,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "회의실 정보")
+@Schema(description = "?�의???�보")
 public class MeetingPlaceDto {
 
-    @Schema(description = "회의실 ID")
+    @Schema(description = "?�의??ID")
     private String mtgPlaceId;
 
-    @Schema(description = "회의실 명칭")
+    @Schema(description = "?�의??명칭")
     private String mtgPlaceNm;
 
-    @Schema(description = "오픈 시작 시간")
+    @Schema(description = "?�픈 ?�작 ?�간")
     private String opnBeginTm;
 
-    @Schema(description = "오픈 종료 시간")
+    @Schema(description = "?�픈 종료 ?�간")
     private String opnEndTm;
 
-    @Schema(description = "수용 가능 인원")
+    @Schema(description = "?�용 가???�원")
     private Integer aceptncPosblNmpr;
 
-    @Schema(description = "위치 구분")
+    @Schema(description = "?�치 구분")
     private String lcSe;
 
-    @Schema(description = "위치 상세")
+    @Schema(description = "?�치 ?�세")
     private String lcDetail;
 
-    @Schema(description = "첨부 파일 ID")
+    @Schema(description = "첨�? ?�일 ID")
     private String atchFileId;
 
-    @Schema(description = "생성자")
+    @Schema(description = "?�성??)
     private String createdBy;
 
-    @Schema(description = "생성일")
+    @Schema(description = "?�성??)
     private LocalDateTime createdDate;
 
     public static MeetingPlaceDto from(MeetingPlace entity) {

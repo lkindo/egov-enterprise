@@ -34,8 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
- * BoardService 단위 테스트
- */
+ * BoardService ?�위 ?�스?? */
 @ExtendWith(MockitoExtension.class)
 class BoardServiceTest {
 
@@ -55,13 +54,13 @@ class BoardServiceTest {
         private BoardService boardService;
 
         @Test
-        @DisplayName("게시판 ID로 게시물 목록 조회 성공")
+        @DisplayName("게시??ID�?게시�?목록 조회 ?�공")
         void getBoardPosts_success() {
                 // given
                 String bbsId = "TEST_BBS";
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId(bbsId)
-                                .bbsNm("테스트 게시판")
+                                .bbsNm("?�스??게시??)
                                 .bbsTyCode("BBST01")
                                 .build();
 
@@ -83,7 +82,7 @@ class BoardServiceTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 게시판 ID로 조회 시 예외 발생")
+        @DisplayName("존재?��? ?�는 게시??ID�?조회 ???�외 발생")
         void getBoardPosts_notFound() {
                 // given
                 String bbsId = "NOT_EXIST";
@@ -96,25 +95,25 @@ class BoardServiceTest {
         }
 
         @Test
-        @DisplayName("게시물 상세 조회 시 조회수 증가")
+        @DisplayName("게시�??�세 조회 ??조회??증�?")
         void getPostDetail_increaseViewCount() {
                 // given
                 BoardMaster master = BoardMaster.builder()
                                 .bbsId("TEST_BBS")
-                                .bbsNm("테스트")
+                                .bbsNm("?�스??)
                                 .bbsTyCode("BBST01")
                                 .build();
 
                 Board board = Board.builder()
                                 .nttId(1L)
                                 .bbsId(Objects.requireNonNull(master.getBbsId()))
-                                .nttSj("테스트 제목")
-                                .nttCn("테스트 내용")
+                                .nttSj("?�스???�목")
+                                .nttCn("?�스???�용")
                                 .inqireCo(0)
                                 .build();
 
                 com.company.project.domain.board.BoardDetailResult detailResult = new com.company.project.domain.board.BoardDetailResult();
-                detailResult.setNttSj("테스트 제목");
+                detailResult.setNttSj("?�스???�목");
 
                 when(boardRepository.findArticleDetail(java.util.Objects.requireNonNull(any())))
                                 .thenReturn(Optional.of(detailResult));
@@ -125,13 +124,13 @@ class BoardServiceTest {
                 BoardDto result = boardService.getPostDetail("TEST_BBS", 1L);
 
                 // then
-                assertThat(result.getNttSj()).isEqualTo("테스트 제목");
-                assertThat(board.getInqireCo()).isEqualTo(1); // 조회수 1 증가
+                assertThat(result.getNttSj()).isEqualTo("?�스???�목");
+                assertThat(board.getInqireCo()).isEqualTo(1); // 조회??1 증�?
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("파일 서비스 Mock 설정 필요 - 후속 작업")
-        @DisplayName("파일 첨부 게시물 등록 성공")
+        @org.junit.jupiter.api.Disabled("?�일 ?�비??Mock ?�정 ?�요 - ?�속 ?�업")
+        @DisplayName("?�일 첨�? 게시�??�록 ?�공")
         void createPostWithFiles_success() throws IOException {
                 // given
                 String userId = "USER_01";

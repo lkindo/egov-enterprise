@@ -2,8 +2,8 @@ package com.company.project.service.reward;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.notification.RwardManage;
-import com.company.project.domain.notification.RwardManageRepository;
+import com.company.project.domain.reward.Reward;
+import com.company.project.domain.reward.RewardRepository;
 import com.company.project.service.reward.dto.RewardDto;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -20,7 +20,7 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class RewardServiceImpl implements RewardService {
 
-    private final RwardManageRepository rewardRepository;
+    private final RewardRepository rewardRepository;
     private final EgovIdGnrService egovRwardManageIdGnrService;
 
     @Override
@@ -44,7 +44,7 @@ public class RewardServiceImpl implements RewardService {
     public String createReward(String userId, RewardDto dto) {
         try {
             String id = egovRwardManageIdGnrService.getNextStringId();
-            RwardManage entity = RwardManage.builder()
+            Reward entity = Reward.builder()
                     .rwardId(id)
                     .rwardwnrId(dto.getRwardwnrId())
                     .rwardCode(dto.getRwardCode())
@@ -66,7 +66,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public void updateReward(String rwardId, String userId, RewardDto dto) {
-        RwardManage entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
+        Reward entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn(),
                 dto.getAtchFileId(), userId);
@@ -84,7 +84,7 @@ public class RewardServiceImpl implements RewardService {
     @Override
     @Transactional
     public void confirmReward(String rwardId, String userId, String confmAt, String returnResn) {
-        RwardManage entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
+        Reward entity = rewardRepository.findById(Objects.requireNonNull(rwardId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.confirm(confmAt, LocalDateTime.now(), returnResn, userId);
     }

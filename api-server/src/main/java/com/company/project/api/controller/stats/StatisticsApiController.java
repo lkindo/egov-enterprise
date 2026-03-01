@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Tag(name = "Stats", description = "통계 관리 API")
+@Tag(name = "Stats", description = "?�계 관�?API")
 @RestController
 @RequestMapping("/api/v1/admin/stats")
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class StatisticsApiController {
 
     private final StatsService statsService;
 
-    @Operation(summary = "접속 통계 조회")
+    @Operation(summary = "?�속 ?�계 조회")
     @GetMapping("/connect")
     public ResponseEntity<List<StatsDto>> getConnectStats(
             @RequestParam(required = false) String fromDate,
@@ -31,7 +31,7 @@ public class StatisticsApiController {
         return ResponseEntity.ok(statsService.getConnectionStats(dates[0], dates[1], statsKind));
     }
 
-    @Operation(summary = "게시물 통계 조회")
+    @Operation(summary = "게시�??�계 조회")
     @GetMapping("/bbs")
     public ResponseEntity<List<StatsDto>> getBbsStats(
             @RequestParam(required = false) String fromDate,
@@ -42,7 +42,7 @@ public class StatisticsApiController {
         return ResponseEntity.ok(statsService.getBoardStats(dates[0], dates[1], statsKind));
     }
 
-    @Operation(summary = "사용자 통계 조회")
+    @Operation(summary = "?�용???�계 조회")
     @GetMapping("/user")
     public ResponseEntity<List<StatsDto>> getUserStats(
             @RequestParam(required = false) String fromDate,
@@ -53,7 +53,7 @@ public class StatisticsApiController {
         return ResponseEntity.ok(statsService.getUserStats(dates[0], dates[1], statsKind));
     }
 
-    @Operation(summary = "화면(요청) 통계 조회")
+    @Operation(summary = "?�면(?�청) ?�계 조회")
     @GetMapping("/screen")
     public ResponseEntity<List<StatsDto>> getScreenStats(
             @RequestParam(required = false) String fromDate,

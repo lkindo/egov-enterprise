@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * ?고렪踰덊샇 愿由??쒕퉬??
+ * ?고렪踰덊???�????�퉬??
  */
 @Service("zipManageService")
 @RequiredArgsConstructor
@@ -27,8 +27,7 @@ public class ZipManageService {
     private final ZipRepository zipRepository;
 
     /**
-     * ?고렪踰덊샇 紐⑸줉 議고쉶
-     */
+     * ?고렪踰덊??紐⑸�?議고??     */
     public List<ZipDto> selectZipList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -46,15 +45,13 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊샇 紐⑸줉 珥?嫄댁닔
-     */
+     * ?고렪踰덊??紐⑸�???嫄댁??     */
     public int selectZipListTotCnt(ComDefaultVO searchVO) {
         return (int) zipRepository.count();
     }
 
     /**
-     * ?고렪踰덊샇 ?곸꽭 議고쉶
-     */
+     * ?고렪踰덊???곸꽭 議고??     */
     public ZipDto selectZipDetail(ZipDto dto) {
         return zipRepository
                 .findById(new ZipId(Objects.requireNonNull(dto.getZip()), Objects.requireNonNull(dto.getSn())))
@@ -63,11 +60,11 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊샇 ?깅줉
+     * ?고렪踰덊???깅줉
      */
     @Transactional
     public void insertZip(ZipDto dto) {
-        // ?먮룞 ?쇰젴踰덊샇 ?앹꽦
+        // ?�?�� ??�젴踰덊????�꽦
         List<Zip> existing = zipRepository.findByZip(Objects.requireNonNull(dto.getZip()));
         int newSn = existing.isEmpty() ? 1 : existing.stream().mapToInt(Zip::getSn).max().orElse(0) + 1;
 
@@ -85,7 +82,7 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊샇 ?섏젙
+     * ?고렪踰덊????�젙
      */
     @Transactional
     public void updateZip(ZipDto dto) {
@@ -97,15 +94,14 @@ public class ZipManageService {
     }
 
     /**
-     * ?고렪踰덊샇 ??젣
-     */
+     * ?고렪踰덊??????     */
     @Transactional
     public void deleteZip(ZipDto dto) {
         zipRepository.deleteById(new ZipId(Objects.requireNonNull(dto.getZip()), Objects.requireNonNull(dto.getSn())));
     }
 
     /**
-     * ?고렪踰덊샇 寃??(?앹뾽??
+     * ?고렪踰덊??寃??(??�뾽??
      */
     public List<ZipDto> searchZip(String keyword) {
         if (keyword == null || keyword.isEmpty()) {

@@ -8,14 +8,14 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "쪽지 수신자 정보")
+@Schema(description = "쪽�? ?�신???�보")
 public class NoteRecipientDto {
-    @Schema(description = "쪽지 수신 ID")
+    @Schema(description = "쪽�? ?�신 ID")
     private String noteRecptnId;
-    @Schema(description = "수신자 ID")
+    @Schema(description = "?�신??ID")
     private String rcverId;
-    @Schema(description = "수신자 명")
+    @Schema(description = "?�신??�?)
     private String rcverNm;
-    @Schema(description = "수신 구분 (1: 수신, 2: 참조)")
+    @Schema(description = "?�신 구분 (1: ?�신, 2: 참조)")
     private String recptnSe;
 }

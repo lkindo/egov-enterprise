@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 메인 페이지 조회를 위한 컨트롤러
- * 전자정부 프레임워크 호환성과 통합 대시보드 기능을 수행
+ * 메인 ?�이지 조회�??�한 컨트롤러
+ * ?�자?��? ?�레?�워???�환?�과 ?�합 ?�?�보??기능???�행
  */
 @Controller
 public class MainPageController {
@@ -27,11 +27,11 @@ public class MainPageController {
     }
 
     /**
-     * 메인 페이지 (통합 대시보드) 조회
+     * 메인 ?�이지 (?�합 ?�?�보?? 조회
      */
     @RequestMapping({ "/", "/cmm/main/mainPage", "/cmm/main/mainPage.do" })
     public String mainPage(Model model, HttpSession session) throws Exception {
-        // 업무 게시판 (BBSMSTR_CCCCCCCCCCCC 기준, 실제 환경에 맞게 조정 필요)
+        // ?�무 게시??(BBSMSTR_CCCCCCCCCCCC 기�?, ?�제 ?�경??맞게 조정 ?�요)
         try {
             List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
             try {
@@ -46,7 +46,7 @@ public class MainPageController {
             model.addAttribute("bbsList", new ArrayList<>());
         }
 
-        // 공지 사항 (BBSMSTR_AAAAAAAAAAAA 기준, 실제 환경에 맞게 조정 필요)
+        // 공�? ?�항 (BBSMSTR_AAAAAAAAAAAA 기�?, ?�제 ?�경??맞게 조정 ?�요)
         try {
             List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
             try {

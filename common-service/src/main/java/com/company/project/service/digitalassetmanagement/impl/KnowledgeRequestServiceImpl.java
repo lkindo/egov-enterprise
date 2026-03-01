@@ -1,8 +1,8 @@
 package com.company.project.service.digitalassetmanagement.impl;
 
-import com.company.project.domain.dam.KnowledgeRequest;
-import com.company.project.domain.dam.KnowledgeRequestRepository;
-import com.company.project.domain.dam.ProfessionalRepository;
+import com.company.project.domain.digitalassetmanagement.KnowledgeRequest;
+import com.company.project.domain.digitalassetmanagement.KnowledgeRequestRepository;
+import com.company.project.domain.digitalassetmanagement.ProfessionalRepository;
 import com.company.project.service.digitalassetmanagement.KnowledgeRequestService;
 import com.company.project.service.digitalassetmanagement.dto.KnowledgeRequestDto;
 import lombok.RequiredArgsConstructor;

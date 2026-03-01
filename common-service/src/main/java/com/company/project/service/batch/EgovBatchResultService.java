@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * 諛곗튂寃곌낵 ?쒕퉬???명꽣?섏씠??
+ * 諛곗?�寃곌낵 ??�퉬???명꽣??�씠??
  */
 public interface EgovBatchResultService {
 

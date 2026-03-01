@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.List;
 
 /**
- * ?쒗뵆由?愿由??쒕퉬??
+ * ??�뵆???�????�퉬??
  */
 @Service("egovTmplatInfoService")
 @RequiredArgsConstructor

@@ -5,18 +5,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * FAQ ?쒕퉬???명꽣?섏씠??
+ * FAQ ??�퉬???명꽣??�씠??
  */
 public interface EgovFaqService {
 
     /**
-     * FAQ 紐⑸줉 議고쉶
-     */
+     * FAQ 紐⑸�?議고??     */
     Page<FaqDto> getFaqList(String keyword, Pageable pageable);
 
     /**
-     * FAQ ?곸꽭 議고쉶
-     */
+     * FAQ ?곸꽭 議고??     */
     FaqDto getFaq(String faqId);
 
     /**
@@ -25,17 +23,16 @@ public interface EgovFaqService {
     String createFaq(String userId, FaqDto dto);
 
     /**
-     * FAQ ?섏젙
+     * FAQ ??�젙
      */
     void updateFaq(String faqId, String userId, FaqDto dto);
 
     /**
-     * FAQ ??젣
-     */
+     * FAQ ????     */
     void deleteFaq(String faqId, String userId);
 
     /**
-     * 議고쉶??利앷?
+     * 議고???利앷?
      */
     void increaseViewCount(String faqId);
 }

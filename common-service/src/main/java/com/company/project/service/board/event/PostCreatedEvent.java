@@ -4,8 +4,7 @@ import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 /**
- * 게시글 생성 완료 시 발생하는 이벤트
- */
+ * 게시글 ?�성 ?�료 ??발생?�는 ?�벤?? */
 @Getter
 public class PostCreatedEvent extends ApplicationEvent {
     private final String bbsId;

@@ -1,8 +1,8 @@
 package com.company.project.service.digitalassetmanagement.impl;
 
-import com.company.project.domain.dam.MapKno;
-import com.company.project.domain.dam.MapKnoRepository;
-import com.company.project.domain.dam.MapKnoSearchResult;
+import com.company.project.domain.digitalassetmanagement.MapKno;
+import com.company.project.domain.digitalassetmanagement.MapKnoRepository;
+import com.company.project.domain.digitalassetmanagement.MapKnoSearchResult;
 import com.company.project.service.digitalassetmanagement.KnowledgeMapService;
 import com.company.project.service.digitalassetmanagement.dto.MapKnoDto;
 import lombok.RequiredArgsConstructor;

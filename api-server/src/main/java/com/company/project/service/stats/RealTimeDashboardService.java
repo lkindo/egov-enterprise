@@ -13,9 +13,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 실시간 대시보드 통계 서비스
- * 로컬 메모리(AtomicInteger)를 사용하여 실시간 데이터를 집계하고 WebSocket으로 브로드캐스트함
- */
+ * ?�시�??�?�보???�계 ?�비?? * 로컬 메모�?AtomicInteger)�??�용?�여 ?�시�??�이?��? 집계?�고 WebSocket?�로 브로?�캐?�트?? */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,13 +22,13 @@ public class RealTimeDashboardService {
     private final SimpMessageSendingOperations messagingTemplate;
     private final NotificationRepository notificationRepository;
 
-    // 실시간 통계 데이터 관리 (로컬 메모리 활용)
+    // ?�시�??�계 ?�이??관�?(로컬 메모�??�용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final AtomicInteger visitsPerMinute = new AtomicInteger(0);
     private final AtomicInteger todayNewPosts = new AtomicInteger(0);
 
     /**
-     * 게시글 생성 이벤트 핸들러 (Point 22: 이벤트 활용)
+     * 게시글 ?�성 ?�벤???�들??(Point 22: ?�벤???�용)
      */
     @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
@@ -39,7 +37,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 실시간 데이터 브로드캐스트 (5초 주기)
+     * ?�시�??�이??브로?�캐?�트 (5�?주기)
      */
     @Scheduled(fixedRate = 5000)
     public void broadcastRealTimeStats() {
@@ -58,7 +56,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 활성 사용자 증가
+     * ?�성 ?�용??증�?
      */
     public void incrementActiveUsers() {
         activeUsers.incrementAndGet();
@@ -66,14 +64,14 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 활성 사용자 감소
+     * ?�성 ?�용??감소
      */
     public void decrementActiveUsers() {
         activeUsers.decrementAndGet();
     }
 
     /**
-     * 처리 대기 중인 알림 수 조회 (더미 로직)
+     * 처리 ?��?중인 ?�림 ??조회 (?��? 로직)
      */
     private int getPendingAlertsCount() {
         try {
@@ -85,7 +83,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 분당 방문자 수 초기화 (1분 주기)
+     * 분당 방문????초기??(1�?주기)
      */
     @Scheduled(fixedRate = 60000)
     public void resetVisitsCounter() {

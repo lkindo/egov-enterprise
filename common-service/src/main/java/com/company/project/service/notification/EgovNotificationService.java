@@ -6,8 +6,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 /**
- * 알림 정보 서비스 인터페이스
- */
+ * ?�림 ?�보 ?�비???�터?�이?? */
 public interface EgovNotificationService {
 
     Page<NotificationDto> getNotificationList(String keyword, Pageable pageable);

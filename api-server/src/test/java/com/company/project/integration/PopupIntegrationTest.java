@@ -1,7 +1,7 @@
 package com.company.project.integration;
 
-import com.company.project.service.pwm.PopupService;
-import com.company.project.service.pwm.dto.PopupDto;
+import com.company.project.service.popup.PopupService;
+import com.company.project.service.popup.dto.PopupDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(controllers = com.company.project.api.controller.pwm.PopupController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest(controllers = com.company.project.api.controller.popup.PopupController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class PopupIntegrationTest {
@@ -35,26 +35,26 @@ class PopupIntegrationTest {
                         org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
                         org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
         })
-        @org.springframework.context.annotation.ComponentScan(basePackages = "com.company.project.api.controller.pwm")
+        @org.springframework.context.annotation.ComponentScan(basePackages = "com.company.project.api.controller.popup")
         static class TestConfig {
         }
- 
+
         @Autowired
         private MockMvc mockMvc;
- 
+
         @MockitoBean
         private PopupService popupService;
- 
+
         @MockitoBean
         private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
         @Test
-        @DisplayName("GET /api/v1/popups - 팝업 목록 조회 API 테스트")
+        @DisplayName("GET /api/v1/popups - ?�업 목록 조회 API ?�스??)
         void getPopups_ReturnsPage() throws Exception {
                 // Given
                 PopupDto dto = PopupDto.builder()
                                 .popupId("POP_001")
-                                .popupTitleNm("테스트 팝업")
+                                .popupTitleNm("?�스???�업")
                                 .ntceAt("Y")
                                 .build();
                 Page<PopupDto> page = new PageImpl<>(Arrays.asList(dto));
@@ -67,18 +67,18 @@ class PopupIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data.content[0].popupTitleNm").value("테스트 팝업"));
+                                .andExpect(jsonPath("$.data.content[0].popupTitleNm").value("?�스???�업"));
 
                 verify(popupService, times(1)).getPopupList(any(), any(Pageable.class));
         }
 
         @Test
-        @DisplayName("GET /api/v1/popups/active - 활성 팝업 조회 API 테스트")
+        @DisplayName("GET /api/v1/popups/active - ?�성 ?�업 조회 API ?�스??)
         void getActivePopups_ReturnsList() throws Exception {
                 // Given
                 PopupDto dto = PopupDto.builder()
                                 .popupId("POP_001")
-                                .popupTitleNm("활성 팝업")
+                                .popupTitleNm("?�성 ?�업")
                                 .build();
                 when(popupService.getActivePopups()).thenReturn(Arrays.asList(dto));
 
@@ -87,14 +87,14 @@ class PopupIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data[0].popupTitleNm").value("활성 팝업"));
+                                .andExpect(jsonPath("$.data[0].popupTitleNm").value("?�성 ?�업"));
 
                 verify(popupService, times(1)).getActivePopups();
         }
 
         @Test
         @WithMockUser(username = "admin")
-        @DisplayName("POST /api/v1/popups - 팝업 등록 API 테스트")
+        @DisplayName("POST /api/v1/popups - ?�업 ?�록 API ?�스??)
         void createPopup_CallsService() throws Exception {
                 // Given
                 when(popupService.createPopup(anyString(), any(PopupDto.class))).thenReturn("POP_001");
@@ -104,7 +104,7 @@ class PopupIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                                 {
-                                                    "popupTitleNm": "신규 팝업",
+                                                    "popupTitleNm": "?�규 ?�업",
                                                     "ntceBgnde": "2026-02-01",
                                                     "ntceEndde": "2026-02-28",
                                                     "ntceAt": "Y"
@@ -118,7 +118,7 @@ class PopupIntegrationTest {
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/popups/{id} - 팝업 삭제 API 테스트")
+        @DisplayName("DELETE /api/v1/popups/{id} - ?�업 ??�� API ?�스??)
         void deletePopup_CallsService() throws Exception {
                 // When & Then
                 mockMvc.perform(delete("/api/v1/popups/POP_001")

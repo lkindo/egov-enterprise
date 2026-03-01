@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ?고렪踰덊샇 DTO
+ * ?고렪踰덊??DTO
  */
 @Getter
 @Setter
@@ -15,22 +15,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ZipDto {
-    /** ?고렪踰덊샇 */
+    /** ?고렪踰덊??*/
     private String zip;
-    /** ?쇰젴踰덊샇 */
+    /** ??�젴踰덊??*/
     private Integer sn;
-    /** ?쒕룄紐?*/
+    /** ??�룄�?*/
     private String ctprvnNm;
-    /** ?쒓뎔援щ챸 */
+    /** ??�뎔?�щ챸 */
     private String signguNm;
-    /** ?띾㈃?숇챸 */
+    /** ??�㈃??�챸 */
     private String emdNm;
-    /** 由ш굔臾쇰챸 */
+    /** ?�ш굔?�쇰�?*/
     private String liBuldNm;
-    /** 踰덉??숉샇 */
+    /** 踰덉???�샇 */
     private String lnbrDongHo;
-    /** 理쒖큹?깅줉?륤D */
+    /** 理쒖??깅줉?륤D */
     private String frstRegisterId;
-    /** 理쒖쥌?섏젙?륤D */
+    /** 理쒖�??�젙?륤D */
     private String lastUpdusrId;
 }

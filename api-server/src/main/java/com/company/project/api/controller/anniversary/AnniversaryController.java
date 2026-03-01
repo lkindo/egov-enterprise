@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Anniversary (User)", description = "개인 기념일 관리 API (사용자용)")
+@Tag(name = "Anniversary (User)", description = "개인 기념??관�?API (?�용?�용)")
 @RestController("userAnniversaryController")
 @RequestMapping("/api/v1/anniversaries")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class AnniversaryController {
 
     private final EgovAnniversaryService anniversaryService;
 
-    @Operation(summary = "기념일 검색", description = "시스템에 등록된 기념일을 검색 조건에 따라 페이징 조회합니다.")
+    @Operation(summary = "기념??검??, description = "?�스?�에 ?�록??기념?�을 검??조건???�라 ?�이�?조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AnniversaryDto>>> getAnniversaries(
             @RequestParam(required = false) String keyword,
@@ -31,7 +31,7 @@ public class AnniversaryController {
         return ResponseEntity.ok(ApiResponse.success(anniversaryService.getAnniversaryList(keyword, pageable)));
     }
 
-    @Operation(summary = "나의 기념일 목록 조회", description = "로그인한 사용자가 등록한 개인 기념일 목록을 조회합니다.")
+    @Operation(summary = "?�의 기념??목록 조회", description = "로그?�한 ?�용?��? ?�록??개인 기념??목록??조회?�니??")
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<AnniversaryDto>>> getMyAnniversaries(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -40,14 +40,14 @@ public class AnniversaryController {
                 .ok(ApiResponse.success(anniversaryService.getMyAnniversaryList(userDetails.getUsername(), pageable)));
     }
 
-    @Operation(summary = "기념일 상세 조회", description = "특정 기념일의 상세 정보를 조회합니다.")
+    @Operation(summary = "기념???�세 조회", description = "?�정 기념?�의 ?�세 ?�보�?조회?�니??")
     @GetMapping("/{annId}")
     public ResponseEntity<ApiResponse<AnniversaryDto>> getAnniversary(
-            @Parameter(description = "기념일 ID") @PathVariable String annId) {
+            @Parameter(description = "기념??ID") @PathVariable String annId) {
         return ResponseEntity.ok(ApiResponse.success(anniversaryService.getAnniversary(annId)));
     }
 
-    @Operation(summary = "기념일 등록", description = "새로운 개인 기념일을 등록합니다.")
+    @Operation(summary = "기념???�록", description = "?�로??개인 기념?�을 ?�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> insertAnniversary(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -56,7 +56,7 @@ public class AnniversaryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "기념일 수정", description = "기존에 등록된 기념일 정보를 수정합니다.")
+    @Operation(summary = "기념???�정", description = "기존???�록??기념???�보�??�정?�니??")
     @PutMapping("/{annId}")
     public ResponseEntity<ApiResponse<Void>> updateAnniversary(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -66,7 +66,7 @@ public class AnniversaryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "기념일 삭제", description = "등록된 기념일을 삭제합니다.")
+    @Operation(summary = "기념????��", description = "?�록??기념?�을 ??��?�니??")
     @DeleteMapping("/{annId}")
     public ResponseEntity<ApiResponse<Void>> deleteAnniversary(@PathVariable String annId) {
         anniversaryService.deleteAnniversary(annId);

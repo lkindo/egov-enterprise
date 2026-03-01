@@ -1,7 +1,7 @@
 package com.company.project.api.controller.digitalassetmanagement;
 
 import com.company.project.core.response.ApiResponse;
-import com.company.project.domain.dam.MapKnoSearchResult;
+import com.company.project.domain.digitalassetmanagement.MapKnoSearchResult;
 import com.company.project.service.digitalassetmanagement.KnowledgeMapService;
 import com.company.project.service.digitalassetmanagement.dto.MapKnoDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetMap", description = "지식 유형 관리 API")
+@Tag(name = "DigitalAssetMap", description = "지???�형 관�?API")
 @RestController
 @RequestMapping("/api/v1/admin/digital-assets/maps")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class KnowledgeMapController {
 
     private final KnowledgeMapService mapService;
 
-    @Operation(summary = "지식 유형 목록 조회", description = "시스템에 등록된 지식 유형(맵) 목록을 조회합니다.")
+    @Operation(summary = "지???�형 목록 조회", description = "?�스?�에 ?�록??지???�형(�? 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<MapKnoSearchResult>>> getMapList(
             @RequestParam(required = false) String searchCondition,
@@ -34,14 +34,14 @@ public class KnowledgeMapController {
                 mapService.selectKnowledgeMapList(searchCondition, searchKeyword, pageable)));
     }
 
-    @Operation(summary = "지식 유형 상세 조회", description = "특정 지식 유형의 상세 정보를 조회합니다.")
+    @Operation(summary = "지???�형 ?�세 조회", description = "?�정 지???�형???�세 ?�보�?조회?�니??")
     @GetMapping("/{knoTypeCd}")
     public ResponseEntity<ApiResponse<MapKnoDto>> getMapDetail(
-            @Parameter(description = "지식 유형 코드") @PathVariable String knoTypeCd) {
+            @Parameter(description = "지???�형 코드") @PathVariable String knoTypeCd) {
         return ResponseEntity.ok(ApiResponse.success(mapService.selectKnowledgeMapDetail(knoTypeCd)));
     }
 
-    @Operation(summary = "지식 유형 등록", description = "새로운 지식 유형 정보를 등록합니다.")
+    @Operation(summary = "지???�형 ?�록", description = "?�로??지???�형 ?�보�??�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createMap(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -51,7 +51,7 @@ public class KnowledgeMapController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지식 유형 정보 수정", description = "지식 유형 정보를 수정합니다.")
+    @Operation(summary = "지???�형 ?�보 ?�정", description = "지???�형 ?�보�??�정?�니??")
     @PutMapping("/{knoTypeCd}")
     public ResponseEntity<ApiResponse<Void>> updateMap(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -63,7 +63,7 @@ public class KnowledgeMapController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지식 유형 정보 삭제", description = "지식 유형 정보를 삭제합니다.")
+    @Operation(summary = "지???�형 ?�보 ??��", description = "지???�형 ?�보�???��?�니??")
     @DeleteMapping("/{knoTypeCd}")
     public ResponseEntity<ApiResponse<Void>> deleteMap(@PathVariable String knoTypeCd) {
         mapService.deleteKnowledgeMap(knoTypeCd);

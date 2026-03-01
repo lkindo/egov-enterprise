@@ -15,8 +15,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 시스템 연계 서비스 구현체
- */
+ * ?�스???�계 ?�비??구현�? */
 @Service("egovSystemCntcService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,7 +24,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     private final SystemCntcRepository systemCntcRepository;
 
     /**
-     * 연계 목록 조회
+     * ?�계 목록 조회
      */
     public List<SystemCntcDto> selectSystemCntcList() {
         return systemCntcRepository.findAll().stream()
@@ -34,7 +33,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * 연계 상세 조회
+     * ?�계 ?�세 조회
      */
     public SystemCntcDto selectSystemCntcDetail(String cntcId) {
         return systemCntcRepository.findById(Objects.requireNonNull(cntcId))
@@ -43,7 +42,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * 연계 등록
+     * ?�계 ?�록
      */
     @Transactional
     public void insertSystemCntc(SystemCntcDto dto) {
@@ -58,7 +57,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * 연계 승인
+     * ?�계 ?�인
      */
     @Transactional
     public void approveSystemCntc(String cntcId) {

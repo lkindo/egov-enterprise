@@ -11,33 +11,33 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "팝업 정보")
+@Schema(description = "?�업 ?�보")
 public class PopupDto {
-    @Schema(description = "팝업 ID")
+    @Schema(description = "?�업 ID")
     private String popupId;
-    @Schema(description = "팝업 제목")
+    @Schema(description = "?�업 ?�목")
     private String popupTitleNm;
-    @Schema(description = "파일 URL")
+    @Schema(description = "?�일 URL")
     private String fileUrl;
-    @Schema(description = "팝업 가로 위치")
+    @Schema(description = "?�업 가�??�치")
     private String popupWlc;
-    @Schema(description = "팝업 세로 위치")
+    @Schema(description = "?�업 ?�로 ?�치")
     private String popupHlc;
-    @Schema(description = "팝업 높이 크기")
+    @Schema(description = "?�업 ?�이 ?�기")
     private String popupHSize;
-    @Schema(description = "팝업 너비 크기")
+    @Schema(description = "?�업 ?�비 ?�기")
     private String popupWSize;
-    @Schema(description = "게시 시작일")
+    @Schema(description = "게시 ?�작??)
     private String ntceBgnde;
-    @Schema(description = "게시 종료일")
+    @Schema(description = "게시 종료??)
     private String ntceEndde;
-    @Schema(description = "그만보기 여부")
+    @Schema(description = "그만보기 ?��?")
     private String stopVewAt;
-    @Schema(description = "게시 여부")
+    @Schema(description = "게시 ?��?")
     private String ntceAt;
-    @Schema(description = "생성자 ID")
+    @Schema(description = "?�성??ID")
     private String frstRegisterId;
-    @Schema(description = "생성 일시")
+    @Schema(description = "?�성 ?�시")
     private LocalDateTime frstRegistPnttm;
 
     public static PopupDto from(Popup entity) {

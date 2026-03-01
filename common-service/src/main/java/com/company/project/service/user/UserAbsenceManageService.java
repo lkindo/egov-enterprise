@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ?ъ슜??遺??愿由??쒕퉬??
+ * ??????�???�????�퉬??
  */
 @Service("userAbsenceManageService")
 @Transactional(readOnly = true)
@@ -36,8 +36,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?ъ슜??遺??紐⑸줉 議고쉶
-     */
+     * ??????�??紐⑸�?議고??     */
     public List<UserAbsenceDto> selectUserAbsenceList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -74,15 +73,13 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?ъ슜??遺??紐⑸줉 珥?嫄댁닔
-     */
+     * ??????�??紐⑸�???嫄댁??     */
     public int selectUserAbsenceListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * ?ъ슜??遺???곸꽭 議고쉶
-     */
+     * ??????�???곸꽭 議고??     */
     public UserAbsenceDto selectUserAbsence(String userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
         if (user == null) {
@@ -105,7 +102,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?ъ슜??遺???깅줉
+     * ??????�???깅줉
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
@@ -119,7 +116,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?ъ슜??遺???섏젙
+     * ??????�????�젙
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
@@ -130,16 +127,14 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?ъ슜??遺????젣
-     */
+     * ??????�??????     */
     @Transactional
     public void deleteUserAbsence(String userId) {
         userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 
     /**
-     * ?ъ슜??遺???ㅼ쨷 ??젣
-     */
+     * ??????�????�쨷 ????     */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {
         userAbsenceRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(userIds))));

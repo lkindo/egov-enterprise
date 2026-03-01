@@ -40,7 +40,7 @@ public class CounselService implements EgovCounselService {
     public void updateCounsel(CounselDto dto) {
         counselRepository.findById(Objects.requireNonNull(dto.getCounselId()))
                 .ifPresent(c -> {
-                    // ?꾨뱶 ?섎룞 ?낅뜲?댄듃 濡쒖쭅 ?앸왂 (Update 硫붿꽌???뺤옣 媛??
+                    // ?꾨뱶 ??�룞 ??�뜲??�듃 濡쒖�???�왂 (Update 硫붿�???뺤옣 媛??
                 });
     }
 
@@ -57,8 +57,8 @@ public class CounselService implements EgovCounselService {
                 .ifPresent(c -> c.updateAnswer(
                         dto.getManagerContent(),
                         dto.getManagerDate(),
-                        "2", // ?듬??꾨즺
-                        dto.getWriterId() // 愿由ъ옄 ID ?꾩슂
+                        "2", // ????꾨즺
+                        dto.getWriterId() // ?�?�ъ옄 ID ?꾩슂
                 ));
     }
 

@@ -18,8 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.validation.Valid;
 
 /**
- * 그룹 관리를 위한 컨트롤러 클래스
- */
+ * 그룹 관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class GroupManageController {
@@ -29,7 +28,7 @@ public class GroupManageController {
     private final MessageSource messageSource;
 
     /**
-     * 그룹 목록 화면으로 이동한다.
+     * 그룹 목록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/sec/gmt/EgovGroupListView.do")
     public String selectGroupListView() throws Exception {
@@ -37,7 +36,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 목록을 조회한다.
+     * 그룹 목록??조회?�다.
      */
     @GetMapping("/sec/gmt/EgovGroupList.do")
     public String selectGroupList(@ModelAttribute("searchVO") ComDefaultVO searchVO, Model model)
@@ -64,7 +63,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 세부정보를 조회한다.
+     * 그룹 ?��??�보�?조회?�다.
      */
     @GetMapping("/sec/gmt/EgovGroup.do")
     public String selectGroup(@RequestParam("groupId") String groupId, Model model)
@@ -74,7 +73,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 등록 화면으로 이동한다.
+     * 그룹 ?�록 ?�면?�로 ?�동?�다.
      */
     @GetMapping("/sec/gmt/EgovGroupInsertView.do")
     public String insertGroupView(Model model) throws Exception {
@@ -83,7 +82,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 정보를 등록한다.
+     * 그룹 ?�보�??�록?�다.
      */
     @PostMapping("/sec/gmt/EgovGroupInsert.do")
     public String insertGroup(@Valid @ModelAttribute("groupManage") GroupManageDto groupManage,
@@ -101,7 +100,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 정보를 수정한다.
+     * 그룹 ?�보�??�정?�다.
      */
     @PostMapping("/sec/gmt/EgovGroupUpdate.do")
     public String updateGroup(@Valid @ModelAttribute("groupManage") GroupManageDto groupManage,
@@ -120,7 +119,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 정보를 삭제한다.
+     * 그룹 ?�보�???��?�다.
      */
     @PostMapping("/sec/gmt/EgovGroupDelete.do")
     public String deleteGroup(@RequestParam("groupId") String groupId,
@@ -133,7 +132,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 목록을 멀티 삭제한다.
+     * 그룹 목록??멀????��?�다.
      */
     @PostMapping("/sec/gmt/EgovGroupListDelete.do")
     public String deleteGroupList(@RequestParam("groupIds") String groupIds,
@@ -147,7 +146,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 검색 팝업창을 호출한다.
+     * 그룹 검???�업창을 ?�출?�다.
      */
     @GetMapping("/sec/gmt/EgovGroupSearchView.do")
     public String selectGroupSearchView() throws Exception {
@@ -155,7 +154,7 @@ public class GroupManageController {
     }
 
     /**
-     * 그룹 목록을 검색한다.
+     * 그룹 목록??검?�한??
      */
     @GetMapping("/sec/gmt/EgovGroupSearchList.do")
     public String selectGroupSearchList(@ModelAttribute("searchVO") ComDefaultVO searchVO, Model model)

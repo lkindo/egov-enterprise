@@ -5,15 +5,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * UserController 인증 테스트
- * Note: Security 설정으로 인해 별도 설정 필요 - 현재 비활성화됨
+ * UserController ?�증 ?�스??
+ * Note: Security ?�정?�로 ?�해 별도 ?�정 ?�요 - ?�재 비활?�화??
  */
-@Disabled("Security 설정 필요 - 별도 작업 필요")
+@Disabled("Security ?�정 ?�요 - 별도 ?�업 ?�요")
 class UserControllerAuthTest {
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - 회원가입 API 호출 테스트 (비활성화)")
+        @DisplayName("POST /api/v1/users/signup - ?�원가??API ?�출 ?�스??(비활?�화)")
         void signup_test() {
-                // Note: Security 설정이 필요하여 현재 비활성화됨
+                // Note: Security ?�정???�요?�여 ?�재 비활?�화??
         }
 }

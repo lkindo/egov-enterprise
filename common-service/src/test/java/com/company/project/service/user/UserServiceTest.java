@@ -24,8 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 /**
- * UserService 단위 테스트
- */
+ * UserService ?�위 ?�스?? */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -45,20 +44,20 @@ class UserServiceTest {
         private UserService userService;
 
         @Test
-        @DisplayName("사용자 목록 조회 성공")
+        @DisplayName("?�용??목록 조회 ?�공")
         void getUserList_success() {
                 // given
                 User user = User.builder()
                                 .userId("testUser")
                                 .password("password")
-                                .userNm("테스트 사용자")
+                                .userNm("?�스???�용??)
                                 .esntlId("USR_001")
                                 .role(Role.USER)
                                 .build();
 
                 UserDto userDto = UserDto.builder()
                                 .userId("testUser")
-                                .userNm("테스트 사용자")
+                                .userNm("?�스???�용??)
                                 .esntlId("USR_001")
                                 .role("USER")
                                 .build();
@@ -72,25 +71,25 @@ class UserServiceTest {
                 // then
                 assertThat(result).hasSize(1);
                 assertThat(result.get(0).getUserId()).isEqualTo("testUser");
-                assertThat(result.get(0).getUserNm()).isEqualTo("테스트 사용자");
+                assertThat(result.get(0).getUserNm()).isEqualTo("?�스???�용??);
         }
 
         @Test
-        @DisplayName("사용자 상세 조회 성공")
+        @DisplayName("?�용???�세 조회 ?�공")
         void getUserById_success() {
                 // given
                 String userId = "testUser";
                 User user = User.builder()
                                 .userId(userId)
                                 .password("password")
-                                .userNm("테스트 사용자")
+                                .userNm("?�스???�용??)
                                 .esntlId("USR_001")
                                 .role(Role.ADMIN)
                                 .build();
 
                 UserDto userDto = UserDto.builder()
                                 .userId(userId)
-                                .userNm("테스트 사용자")
+                                .userNm("?�스???�용??)
                                 .esntlId("USR_001")
                                 .role("ADMIN")
                                 .build();
@@ -107,7 +106,7 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 사용자 조회 시 예외 발생")
+        @DisplayName("존재?��? ?�는 ?�용??조회 ???�외 발생")
         void getUserById_notFound() {
                 // given
                 String userId = "notExist";

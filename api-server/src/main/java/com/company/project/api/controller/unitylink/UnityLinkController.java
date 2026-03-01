@@ -13,7 +13,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "UnityLink", description = "통합 링크 관리 API")
+@Tag(name = "UnityLink", description = "?�합 링크 관�?API")
 @RestController
 @RequestMapping("/api/v1/unity-links")
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class UnityLinkController {
 
     private final EgovUnityLinkService unityLinkService;
 
-    @Operation(summary = "통합 링크 목록 조회", description = "시스템에 등록된 통합 링크 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "?�합 링크 목록 조회", description = "?�스?�에 ?�록???�합 링크 목록???�이징하??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UnityLinkDto>>> getUnityLinks(
             @RequestParam(required = false) String keyword,
@@ -29,14 +29,14 @@ public class UnityLinkController {
         return ResponseEntity.ok(ApiResponse.success(unityLinkService.getUnityLinkList(keyword, pageable)));
     }
 
-    @Operation(summary = "통합 링크 상세 조회", description = "특정 통합 링크의 상세 정보를 조회합니다.")
+    @Operation(summary = "?�합 링크 ?�세 조회", description = "?�정 ?�합 링크???�세 ?�보�?조회?�니??")
     @GetMapping("/{unityLinkId}")
     public ResponseEntity<ApiResponse<UnityLinkDto>> getUnityLink(
-            @Parameter(description = "통합 링크 ID") @PathVariable String unityLinkId) {
+            @Parameter(description = "?�합 링크 ID") @PathVariable String unityLinkId) {
         return ResponseEntity.ok(ApiResponse.success(unityLinkService.getUnityLink(unityLinkId)));
     }
 
-    @Operation(summary = "통합 링크 등록", description = "새로운 통합 링크를 등록합니다.")
+    @Operation(summary = "?�합 링크 ?�록", description = "?�로???�합 링크�??�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> insertUnityLink(
             @RequestBody UnityLinkDto dto) {
@@ -44,7 +44,7 @@ public class UnityLinkController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "통합 링크 수정", description = "기존 통합 링크 정보를 수정합니다.")
+    @Operation(summary = "?�합 링크 ?�정", description = "기존 ?�합 링크 ?�보�??�정?�니??")
     @PutMapping("/{unityLinkId}")
     public ResponseEntity<ApiResponse<Void>> updateUnityLink(
             @PathVariable String unityLinkId,
@@ -54,7 +54,7 @@ public class UnityLinkController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "통합 링크 삭제", description = "시스템에서 통합 링크를 삭제합니다.")
+    @Operation(summary = "?�합 링크 ??��", description = "?�스?�에???�합 링크�???��?�니??")
     @DeleteMapping("/{unityLinkId}")
     public ResponseEntity<ApiResponse<Void>> deleteUnityLink(
             @PathVariable String unityLinkId) {

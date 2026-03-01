@@ -33,8 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 게시판 API 컨트롤러 슬라이스 테스트
- */
+ * 게시??API 컨트롤러 ?�라?�스 ?�스?? */
 @WebMvcTest(BoardController.class)
 @ActiveProfiles("test")
 class BoardApiControllerTest {
@@ -76,7 +75,7 @@ class BoardApiControllerTest {
         }
 
         @Test
-        @DisplayName("게시물 목록 조회 - 인증된 사용자")
+        @DisplayName("게시�?목록 조회 - ?�증???�용??)
         void getBoardList_authenticated() throws Exception {
                 // Given
                 List<BoardDto> list = new ArrayList<>();
@@ -92,7 +91,7 @@ class BoardApiControllerTest {
         }
 
         @Test
-        @DisplayName("게시물 목록 조회 - 인증되지 않은 사용자 (401)")
+        @DisplayName("게시�?목록 조회 - ?�증?��? ?��? ?�용??(401)")
         void getBoardList_unauthenticated() throws Exception {
                 // Given
                 when(jwtTokenProvider.resolveToken(any())).thenReturn(null);
@@ -106,7 +105,7 @@ class BoardApiControllerTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 게시판 조회 (404)")
+        @DisplayName("존재?��? ?�는 게시??조회 (404)")
         void getBoardList_notFound() throws Exception {
                 // Given
                 when(boardService.getBoardPosts(eq("NOT_EXIST"), any(Pageable.class)))

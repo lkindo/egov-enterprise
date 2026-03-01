@@ -1,6 +1,6 @@
 package com.company.project.service.congratulation.dto;
 
-import com.company.project.domain.ctsnn.CtsnnManage;
+import com.company.project.domain.congratulation.Congratulation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,32 +13,32 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "경조사(Congratulation/Condolence) DTO")
+@Schema(description = "경조사 (Congratulation/Condolence) DTO")
 public class CongratulationDto {
 
     @Schema(description = "경조사 ID")
-    private String ctsnnId;
+    private String congratulationId;
 
     @Schema(description = "사용자 ID")
-    private String usid;
+    private String userId;
 
-    @Schema(description = "경조 구분 코드")
-    private String ctsnnCd;
+    @Schema(description = "경조사 구분 코드")
+    private String congratulationCode;
 
     @Schema(description = "신청 일자")
-    private String reqstDe;
+    private String requestDate;
 
-    @Schema(description = "경조명")
-    private String ctsnnNm;
+    @Schema(description = "경조사명")
+    private String congratulationName;
 
     @Schema(description = "대상자명")
-    private String trgterNm;
+    private String trgterName;
 
     @Schema(description = "대상자 생년월일")
-    private String brth;
+    private String birthday;
 
     @Schema(description = "발생 일자")
-    private String occrrDe;
+    private String occurrenceDate;
 
     @Schema(description = "관계")
     private String relate;
@@ -67,18 +67,18 @@ public class CongratulationDto {
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
-    public static CongratulationDto from(CtsnnManage entity) {
+    public static CongratulationDto from(Congratulation entity) {
         if (entity == null)
             return null;
         return CongratulationDto.builder()
-                .ctsnnId(entity.getCtsnnId())
-                .usid(entity.getUsid())
-                .ctsnnCd(entity.getCtsnnCd())
-                .reqstDe(entity.getReqstDe())
-                .ctsnnNm(entity.getCtsnnNm())
-                .trgterNm(entity.getTrgterNm())
-                .brth(entity.getBrth())
-                .occrrDe(entity.getOccrrDe())
+                .congratulationId(entity.getCongratulationId())
+                .userId(entity.getUserId())
+                .congratulationCode(entity.getCongratulationCode())
+                .requestDate(entity.getRequestDate())
+                .congratulationName(entity.getCongratulationName())
+                .trgterName(entity.getTrgterName())
+                .birthday(entity.getBirthday())
+                .occurrenceDate(entity.getOccurrenceDate())
                 .relate(entity.getRelate())
                 .remark(entity.getRemark())
                 .sanctnerId(entity.getSanctnerId())
@@ -86,7 +86,7 @@ public class CongratulationDto {
                 .sanctnDt(entity.getSanctnDt())
                 .returnResn(entity.getReturnResn())
                 .infrmlSanctnId(entity.getInfrmlSanctnId())
-                .createdBy(entity.getCreatedBy())
+                .createdBy(entity.getFrstRegisterId())
                 .createdDate(entity.getCreatedDate())
                 .build();
     }

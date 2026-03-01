@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ?꾨??붾맂 ?뚯씪 愿由??쒕퉬??(異붿긽???명꽣?섏씠??湲곕컲)
+ * ?�??붾맂 ???�� ?�????�퉬??(?�붿�???명꽣??�씠??湲곕�?
  */
 @Service("egovFileService")
 @Transactional(readOnly = true)
@@ -42,7 +42,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * ?뚯씪 ?낅줈??(硫?고뙆??吏??
+     * ???�� ??�줈??(硫?고뙆??吏??
      */
     @Override
     @Transactional
@@ -76,8 +76,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * 泥⑤??뚯씪 紐⑸줉 議고쉶
-     */
+     * 泥⑤????�� 紐⑸�?議고??     */
     @Override
     public List<FileDto> getFileList(String atchFileId) {
         if (atchFileId == null)
@@ -90,8 +89,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * ?뚯씪 ?ㅼ슫濡쒕뱶瑜??꾪븳 Resource 議고쉶
-     */
+     * ???�� ??�슫濡쒕뱶瑜??꾪븳 Resource 議고??     */
     @Override
     public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository

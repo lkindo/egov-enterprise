@@ -10,22 +10,22 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "지식 맵 정보")
+@Schema(description = "지??�??�보")
 public class MapKnoDto {
-    @Schema(description = "지식 유형 코드")
+    @Schema(description = "지???�형 코드")
     private String knoTypeCd;
-    @Schema(description = "지식 유형 명칭")
+    @Schema(description = "지???�형 명칭")
     private String knoTypeNm;
-    @Schema(description = "조직(부서) ID")
+    @Schema(description = "조직(부?? ID")
     private String orgnztId;
-    @Schema(description = "조직(부서) 명칭")
+    @Schema(description = "조직(부?? 명칭")
     private String orgnztNm;
-    @Schema(description = "전문가 ID")
+    @Schema(description = "?�문가 ID")
     private String speId;
-    @Schema(description = "분류 일자")
+    @Schema(description = "분류 ?�자")
     private String clYmd;
-    @Schema(description = "지식 URL")
+    @Schema(description = "지??URL")
     private String knoUrl;
-    @Schema(description = "최초 등록자 ID")
+    @Schema(description = "최초 ?�록??ID")
     private String frstRegisterId;
 }

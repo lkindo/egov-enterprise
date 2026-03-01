@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 시스템 로그 관리를 위한 REST 컨트롤러
+ * ?�스??로그 관리�? ?�한 REST 컨트롤러
  */
 @Slf4j
 @RestController
@@ -29,7 +29,7 @@ public class LogManageController {
     private final EgovPropertyService propertiesService;
 
     /**
-     * 시스템 로그 목록을 조회한다.
+     * ?�스??로그 목록??조회?�다.
      */
     @GetMapping("/list")
     public ResponseEntity<?> selectSysLogList(@ModelAttribute("searchVO") ComDefaultVO searchVO) throws Exception {
@@ -52,7 +52,7 @@ public class LogManageController {
     }
 
     /**
-     * 시스템 로그 상세 정보를 조회한다.
+     * ?�스??로그 ?�세 ?�보�?조회?�다.
      */
     @GetMapping("/{requestId}")
     public ResponseEntity<?> selectSysLog(@PathVariable("requestId") String requestId) throws Exception {

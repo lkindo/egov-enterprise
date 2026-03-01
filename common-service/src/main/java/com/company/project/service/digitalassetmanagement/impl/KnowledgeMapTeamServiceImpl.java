@@ -1,7 +1,7 @@
 package com.company.project.service.digitalassetmanagement.impl;
 
-import com.company.project.domain.dam.MapTeam;
-import com.company.project.domain.dam.MapTeamRepository;
+import com.company.project.domain.digitalassetmanagement.MapTeam;
+import com.company.project.domain.digitalassetmanagement.MapTeamRepository;
 import com.company.project.service.digitalassetmanagement.KnowledgeMapTeamService;
 import com.company.project.service.digitalassetmanagement.dto.MapTeamDto;
 import lombok.RequiredArgsConstructor;
