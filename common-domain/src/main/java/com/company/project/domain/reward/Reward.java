@@ -21,7 +21,7 @@ public class Reward {
     private String rwardId;
 
     @Column(name = "RWARDWNR_ID", length = 20)
-    private String rwardManId;
+    private String rwardwnrId;
 
     @Column(name = "RWARD_CODE", length = 3)
     private String rwardCode;
@@ -70,11 +70,28 @@ public class Reward {
         this.frstRegistPnttm = LocalDateTime.now();
         this.lastUpdtPnttm = LocalDateTime.now();
         if (this.confmAt == null)
-            this.confmAt = "N";
+            this.confmAt = "R";
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.lastUpdtPnttm = LocalDateTime.now();
+    }
+
+    public void update(String rwardCode, String rwardDe, String rwardNm, String pblenCn, String atchFileId,
+            String lastUpdusrId) {
+        this.rwardCode = rwardCode;
+        this.rwardDe = rwardDe;
+        this.rwardNm = rwardNm;
+        this.pblenCn = pblenCn;
+        this.atchFileId = atchFileId;
+        this.lastUpdusrId = lastUpdusrId;
+    }
+
+    public void confirm(String confmAt, LocalDateTime sanctnDt, String returnResn, String lastUpdusrId) {
+        this.confmAt = confmAt;
+        this.sanctnDt = sanctnDt;
+        this.returnResn = returnResn;
+        this.lastUpdusrId = lastUpdusrId;
     }
 }

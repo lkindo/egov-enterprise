@@ -10,37 +10,37 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "쪽지 정보")
+@Schema(description = "쪽�? ?�보")
 public class NoteDto {
-    @Schema(description = "쪽지 ID")
+    @Schema(description = "쪽�? ID")
     private String noteId;
-    @Schema(description = "제목")
+    @Schema(description = "?�목")
     private String noteSj;
-    @Schema(description = "내용")
+    @Schema(description = "?�용")
     private String noteCn;
-    @Schema(description = "첨부 파일 ID")
+    @Schema(description = "첨�? ?�일 ID")
     private String atchFileId;
 
-    @Schema(description = "쪽지 발신 ID")
+    @Schema(description = "쪽�? 발신 ID")
     private String noteTrnsmitId;
-    @Schema(description = "발신자 ID")
+    @Schema(description = "발신??ID")
     private String trnsmiterId;
-    @Schema(description = "발신자 명")
+    @Schema(description = "발신??�?)
     private String trnsmiterNm;
 
-    @Schema(description = "쪽지 수신 ID")
+    @Schema(description = "쪽�? ?�신 ID")
     private String noteRecptnId;
-    @Schema(description = "수신자 ID")
+    @Schema(description = "?�신??ID")
     private String rcverId;
-    @Schema(description = "수신자 명")
+    @Schema(description = "?�신??�?)
     private String rcverNm;
-    @Schema(description = "열람 여부")
+    @Schema(description = "?�람 ?��?")
     private String openYn;
-    @Schema(description = "수신 구분")
+    @Schema(description = "?�신 구분")
     private String recptnSe;
 
-    @Schema(description = "등록 일시")
+    @Schema(description = "?�록 ?�시")
     private LocalDateTime regDate;
-    @Schema(description = "수신자 목록")
+    @Schema(description = "?�신??목록")
     private List<NoteRecipientDto> recipients;
 }

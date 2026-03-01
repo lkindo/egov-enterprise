@@ -1,6 +1,6 @@
 package com.company.project.service.reward.dto;
 
-import com.company.project.domain.notification.RwardManage;
+import com.company.project.domain.reward.Reward;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -26,7 +26,7 @@ public class RewardDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
-    public static RewardDto from(RwardManage entity) {
+    public static RewardDto from(Reward entity) {
         if (entity == null)
             return null;
         return RewardDto.builder()
@@ -43,7 +43,7 @@ public class RewardDto {
                 .atchFileId(entity.getAtchFileId())
                 .infrmlSanctnId(entity.getInfrmlSanctnId())
                 .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .frstRegisterPnttm(entity.getFrstRegistPnttm())
                 .build();
     }
 }

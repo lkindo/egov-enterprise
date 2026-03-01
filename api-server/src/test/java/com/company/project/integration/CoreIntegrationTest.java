@@ -17,8 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 핵심 기능 중심의 통합 테스트
- * MinimalTestConfig를 사용하여 필요한 컴포넌트만 로드
+ * ?�심 기능 중심???�합 ?�스?? * MinimalTestConfig�??�용?�여 ?�요??컴포?�트�?로드
  */
 @SpringBootTest(classes = com.company.project.config.MinimalTestConfig.class, properties = {
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"
@@ -37,41 +36,41 @@ class CoreIntegrationTest {
                 signupRequest = new UserSignupRequest(
                                 "coreIntegrationUser",
                                 "password123!",
-                                "핵심 통합 테스트 사용자",
+                                "?�심 ?�합 ?�스???�용??,
                                 com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
         }
 
         @Test
-        @DisplayName("사용자 서비스 - 사용자 등록 및 조회 통합 테스트")
+        @DisplayName("?�용???�비??- ?�용???�록 �?조회 ?�합 ?�스??)
         void userSignupAndRetrieval_integrationTest() {
                 // Given
                 long initialCount = userService.getUserList().size();
 
-                // When - 사용자 등록
+                // When - ?�용???�록
                 UserResponse response = userService.signup(signupRequest);
 
-                // Then - 등록 확인
+                // Then - ?�록 ?�인
                 assertThat(response).isNotNull();
                 assertThat(response.userId()).isEqualTo("coreIntegrationUser");
-                assertThat(response.userNm()).isEqualTo("핵심 통합 테스트 사용자");
+                assertThat(response.userNm()).isEqualTo("?�심 ?�합 ?�스???�용??);
 
-                // When - 사용자 목록 조회
+                // When - ?�용??목록 조회
                 List<UserDto> userList = userService.getUserList();
 
-                // Then - 목록에 새 사용자 포함 확인
+                // Then - 목록?????�용???�함 ?�인
                 assertThat(userList.size()).isEqualTo(initialCount + 1);
                 UserDto newUser = userList.stream()
                                 .filter(u -> "coreIntegrationUser".equals(u.getUserId()))
                                 .findFirst()
                                 .orElse(null);
                 assertThat(newUser).isNotNull();
-                assertThat(newUser.getUserNm()).isEqualTo("핵심 통합 테스트 사용자");
+                assertThat(newUser.getUserNm()).isEqualTo("?�심 ?�합 ?�스???�용??);
         }
 
         @Test
-        @DisplayName("사용자 서비스 - 등록된 사용자 상세 조회")
+        @DisplayName("?�용???�비??- ?�록???�용???�세 조회")
         void getUserById_integrationTest() {
                 // Given
                 userService.signup(signupRequest);
@@ -82,21 +81,21 @@ class CoreIntegrationTest {
                 // Then
                 assertThat(retrievedUser).isNotNull();
                 assertThat(retrievedUser.getUserId()).isEqualTo("coreIntegrationUser");
-                assertThat(retrievedUser.getUserNm()).isEqualTo("핵심 통합 테스트 사용자");
+                assertThat(retrievedUser.getUserNm()).isEqualTo("?�심 ?�합 ?�스???�용??);
                 assertThat(retrievedUser.getRole()).isEqualTo("USER");
         }
 
         @Test
-        @DisplayName("사용자 서비스 - 중복 사용자 ID 등록 시 예외 발생")
+        @DisplayName("?�용???�비??- 중복 ?�용??ID ?�록 ???�외 발생")
         void duplicateUserSignup_integrationTest() {
                 // Given
                 userService.signup(signupRequest);
 
-                // When & Then - 중복 ID로 다시 등록 시도
+                // When & Then - 중복 ID�??�시 ?�록 ?�도
                 UserSignupRequest duplicateRequest = new UserSignupRequest(
-                                "coreIntegrationUser", // 동일한 ID
+                                "coreIntegrationUser", // ?�일??ID
                                 "password456!",
-                                "중복 테스트 사용자",
+                                "중복 ?�스???�용??,
                                 com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
@@ -109,20 +108,20 @@ class CoreIntegrationTest {
         }
 
         @Test
-        @DisplayName("사용자 서비스 - 여러 사용자 등록 후 목록 조회")
+        @DisplayName("?�용???�비??- ?�러 ?�용???�록 ??목록 조회")
         void multipleUsers_signupAndListRetrieval_integrationTest() {
                 // Given
                 UserSignupRequest request1 = new UserSignupRequest(
                                 "multiUser1",
                                 "password123!",
-                                "다중 사용자1",
+                                "?�중 ?�용??",
                                 com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
                 UserSignupRequest request2 = new UserSignupRequest(
                                 "multiUser2",
                                 "password123!",
-                                "다중 사용자2",
+                                "?�중 ?�용??",
                                 com.company.project.domain.user.entity.Role.ADMIN,
                                 "hint",
                                 "answer");
@@ -137,6 +136,6 @@ class CoreIntegrationTest {
                 assertThat(userList).extracting(UserDto::getUserId)
                                 .contains("multiUser1", "multiUser2");
                 assertThat(userList).extracting(UserDto::getUserNm)
-                                .contains("다중 사용자1", "다중 사용자2");
+                                .contains("?�중 ?�용??", "?�중 ?�용??");
         }
 }

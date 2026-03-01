@@ -64,7 +64,7 @@ public class NotificationDto {
                 .build();
     }
     
-    // ?꾨씫??硫붿꽌?쒕뱾 異붽?
+    // ?꾨씫??硫붿�??�뱾 ?�붽?
     public String getNtfcTime() {
         return this.ntfcTime;
     }

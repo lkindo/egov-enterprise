@@ -13,9 +13,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * JPA 湲곕컲 怨듯넻 肄붾뱶 愿由??쒕퉬??援ы쁽泥?
- * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”
- * - EgovAbstractServiceImpl ?곸냽 諛?EgovCodeService ?명꽣?섏씠??援ы쁽
+ * JPA 湲곕�??�듯???�붾�??�????�퉬???�ы쁽�?
+ * - ?꾩옄?�??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?�⑹?? * - EgovAbstractServiceImpl ?곸냽 �?EgovCodeService ?명꽣??�씠???�ы쁽
  */
 @Service("egovCodeService")
 @Transactional(readOnly = true)
@@ -28,8 +27,7 @@ public class CodeService extends EgovAbstractServiceImpl implements EgovCodeServ
     }
 
     /**
-     * ?뱀젙 洹몃９ 肄붾뱶(CODE_ID)???랁븳 ?곸꽭 肄붾뱶 紐⑸줉 議고쉶
-     */
+     * ?뱀??洹몃�??�붾�?CODE_ID)????�븳 ?곸꽭 ?�붾�?紐⑸�?議고??     */
     @Override
     public List<CodeDto> getDetailCodeList(@NonNull String codeGroupId) {
         return commonCodeRepository.findByCodeGroupIdAndUseAt(Objects.requireNonNull(codeGroupId), "Y")
@@ -39,8 +37,7 @@ public class CodeService extends EgovAbstractServiceImpl implements EgovCodeServ
     }
 
     /**
-     * ?꾩껜 ?쒖꽦 肄붾뱶 紐⑸줉 議고쉶
-     */
+     * ?꾩껜 ??�꽦 ?�붾�?紐⑸�?議고??     */
     @Override
     public List<CodeDto> getAllActiveCodes() {
         return commonCodeRepository.findAll().stream()

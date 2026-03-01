@@ -10,26 +10,26 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "지식 전문가 정보")
+@Schema(description = "지???�문가 ?�보")
 public class ProfessionalDto {
-    @Schema(description = "전문가 ID")
+    @Schema(description = "?�문가 ID")
     private String speId;
-    @Schema(description = "사용자 명")
+    @Schema(description = "?�용??�?)
     private String userNm;
-    @Schema(description = "지식 유형 코드")
+    @Schema(description = "지???�형 코드")
     private String knoTypeCd;
-    @Schema(description = "지식 유형 명칭")
+    @Schema(description = "지???�형 명칭")
     private String knoTypeNm;
-    @Schema(description = "조직(부서) ID")
+    @Schema(description = "조직(부?? ID")
     private String orgnztId;
-    @Schema(description = "조직(부서) 명칭")
+    @Schema(description = "조직(부?? 명칭")
     private String orgnztNm;
-    @Schema(description = "전문가 등급 코드")
+    @Schema(description = "?�문가 ?�급 코드")
     private String appTypeCd;
-    @Schema(description = "전문 분야")
+    @Schema(description = "?�문 분야")
     private String speExpCn;
-    @Schema(description = "승인 일자")
+    @Schema(description = "?�인 ?�자")
     private String speConfmDe;
-    @Schema(description = "최종 수정자 ID")
+    @Schema(description = "최종 ?�정??ID")
     private String lastUpdusrId;
 }

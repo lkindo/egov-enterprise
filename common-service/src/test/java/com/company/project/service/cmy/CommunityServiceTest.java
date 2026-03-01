@@ -51,7 +51,7 @@ class CommunityServiceTest {
         }
 
         @Test
-        @DisplayName("而ㅻ??덊떚 ?앹꽦")
+        @DisplayName("?�ㅻ???�떚 ??�꽦")
         void createCommunity() {
                 // Given
                 String userId = "USR-001";
@@ -79,8 +79,8 @@ class CommunityServiceTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("UnnecessaryStubbing 臾몄젣 - ?꾩냽 ?묒뾽 ?꾩슂")
-        @DisplayName("而ㅻ??덊떚 ?섏젙")
+        @org.junit.jupiter.api.Disabled("UnnecessaryStubbing ?�몄??- ?꾩냽 ?묒뾽 ?꾩슂")
+        @DisplayName("?�ㅻ???�떚 ??�젙")
         void updateCommunity() {
                 // Given
                 String userId = "USR-001";

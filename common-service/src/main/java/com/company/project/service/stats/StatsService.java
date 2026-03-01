@@ -12,9 +12,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * ?듦퀎 ?쒕퉬??援ы쁽泥?
- * Native Query瑜??ъ슜?섏뿬 湲곗〈 ?듦퀎 ?붿빟 ?뚯씠釉붿뿉???곗씠??議고쉶
- */
+ * ???�???�퉬???�ы쁽�?
+ * Native Query???????�뿬 湲곗?????�??붿빟 ???��?�붿�???곗씠??議고?? */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,7 +23,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getConnectionStats(String fromDate, String toDate, String statsKind) {
-        // ?묒냽 濡쒓렇 ?뚯씠釉붿뿉???쇰퀎/?붾퀎/?꾨퀎 吏묎퀎 (SCONECTSUMMARY -> sweblogsummary)
+        // ?묒냽 濡쒓?????��?�붿�????��??붾�??꾨�?吏묎??(SCONECTSUMMARY -> sweblogsummary)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -38,7 +37,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getBoardStats(String fromDate, String toDate, String statsKind) {
-        // 寃뚯떆???붿빟 ?뚯씠釉붿뿉??議고쉶 (SBBSSUMMARY)
+        // 寃뚯????붿빟 ???��?�붿�??議고??(SBBSSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(CREAT_CO) as stats_co
                 FROM SBBSSUMMARY
@@ -52,7 +51,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getUserStats(String fromDate, String toDate, String statsKind) {
-        // ?ъ슜???붿빟 ?뚯씠釉붿뿉??議고쉶 (SUSERSUMMARY)
+        // ??????붿빟 ???��?�붿�??議고??(SUSERSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(user_co) as stats_co
                 FROM SUSERSUMMARY
@@ -66,7 +65,7 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind) {
-        // ?붾㈃ ?붿빟 ?뚯씠釉붿뿉???붿껌 ?듦퀎 吏묎퀎 (SSCRINSUMMARY -> sweblogsummary ?泥?
+        // ?붾㈃ ?붿빟 ???��?�붿�???붿껌 ???�?吏묎??(SSCRINSUMMARY -> sweblogsummary ??�?
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -96,9 +95,7 @@ public class StatsService implements EgovStatsService {
                 result.add(dto);
             }
         } catch (Exception e) {
-            // ?뚯씠釉붿씠 ?녾굅??荑쇰━ ?ㅻ쪟 ??鍮?紐⑸줉 諛섑솚
-            // ?먮윭瑜?臾댁떆?섏? ?딄퀬, 鍮?寃곌낵 諛섑솚
-        }
+            // ???��?�붿????�굅???�쇰????�쪟 ????紐⑸�?諛섑??            // ?�?��???�댁???? ??��? ??寃곌??諛섑??        }
 
         return result;
     }

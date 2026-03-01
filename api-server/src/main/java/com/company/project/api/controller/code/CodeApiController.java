@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Code", description = "공통코드 관리 API")
+@Tag(name = "Code", description = "공통코드 관�?API")
 @RestController
 @RequestMapping("/api/v1/admin/codes")
 @RequiredArgsConstructor
@@ -39,7 +39,7 @@ public class CodeApiController {
         return ResponseEntity.ok(createPageResult(list, total, searchVO));
     }
 
-    @Operation(summary = "분류코드 상세 조회")
+    @Operation(summary = "분류코드 ?�세 조회")
     @GetMapping("/cl/{clCode}")
     public ResponseEntity<?> getClCode(@PathVariable String clCode) throws Exception {
         CmmnClCodeDto vo = new CmmnClCodeDto();
@@ -47,14 +47,14 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnClCodeDetail(vo)));
     }
 
-    @Operation(summary = "분류코드 등록")
+    @Operation(summary = "분류코드 ?�록")
     @PostMapping("/cl")
     public ResponseEntity<?> createClCode(@Valid @RequestBody CmmnClCodeDto vo) throws Exception {
         commonCodeService.insertCmmnClCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "분류코드 수정")
+    @Operation(summary = "분류코드 ?�정")
     @PutMapping("/cl/{clCode}")
     public ResponseEntity<?> updateClCode(@PathVariable String clCode, @Valid @RequestBody CmmnClCodeDto vo) throws Exception {
         vo.setClCode(clCode);
@@ -62,7 +62,7 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "분류코드 삭제")
+    @Operation(summary = "분류코드 ??��")
     @DeleteMapping("/cl/{clCode}")
     public ResponseEntity<?> deleteClCode(@PathVariable String clCode) throws Exception {
         CmmnClCodeDto vo = new CmmnClCodeDto();
@@ -82,7 +82,7 @@ public class CodeApiController {
         return ResponseEntity.ok(createPageResult(list, total, searchVO));
     }
 
-    @Operation(summary = "공통코드 상세 조회")
+    @Operation(summary = "공통코드 ?�세 조회")
     @GetMapping("/cmmn/{codeId}")
     public ResponseEntity<?> getCmmnCode(@PathVariable String codeId) throws Exception {
         CmmnCodeDto vo = new CmmnCodeDto();
@@ -90,14 +90,14 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnCodeDetail(vo)));
     }
 
-    @Operation(summary = "공통코드 등록")
+    @Operation(summary = "공통코드 ?�록")
     @PostMapping("/cmmn")
     public ResponseEntity<?> createCmmnCode(@Valid @RequestBody CmmnCodeDto vo) throws Exception {
         commonCodeService.insertCmmnCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "공통코드 수정")
+    @Operation(summary = "공통코드 ?�정")
     @PutMapping("/cmmn/{codeId}")
     public ResponseEntity<?> updateCmmnCode(@PathVariable String codeId, @Valid @RequestBody CmmnCodeDto vo) throws Exception {
         vo.setCodeId(codeId);
@@ -105,7 +105,7 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "공통코드 삭제")
+    @Operation(summary = "공통코드 ??��")
     @DeleteMapping("/cmmn/{codeId}")
     public ResponseEntity<?> deleteCmmnCode(@PathVariable String codeId) throws Exception {
         CmmnCodeDto vo = new CmmnCodeDto();
@@ -114,9 +114,9 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // --- Detail Code (상세코드) ---
+    // --- Detail Code (?�세코드) ---
 
-    @Operation(summary = "상세코드 목록 조회")
+    @Operation(summary = "?�세코드 목록 조회")
     @GetMapping("/detail")
     public ResponseEntity<?> getDetailCodeList(@ModelAttribute ComDefaultVO searchVO) throws Exception {
         setupPagination(searchVO);
@@ -125,7 +125,7 @@ public class CodeApiController {
         return ResponseEntity.ok(createPageResult(list, total, searchVO));
     }
 
-    @Operation(summary = "상세코드 상세 조회")
+    @Operation(summary = "?�세코드 ?�세 조회")
     @GetMapping("/detail/{codeId}/{code}")
     public ResponseEntity<?> getDetailCode(@PathVariable String codeId, @PathVariable String code) throws Exception {
         CmmnDetailCodeDto vo = new CmmnDetailCodeDto();
@@ -134,14 +134,14 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(commonCodeService.selectCmmnDetailCodeDetail(vo)));
     }
 
-    @Operation(summary = "상세코드 등록")
+    @Operation(summary = "?�세코드 ?�록")
     @PostMapping("/detail")
     public ResponseEntity<?> createDetailCode(@Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
         commonCodeService.insertCmmnDetailCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "상세코드 수정")
+    @Operation(summary = "?�세코드 ?�정")
     @PutMapping("/detail/{codeId}/{code}")
     public ResponseEntity<?> updateDetailCode(@PathVariable String codeId, @PathVariable String code, @Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
         vo.setCodeId(codeId);
@@ -150,7 +150,7 @@ public class CodeApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "상세코드 삭제")
+    @Operation(summary = "?�세코드 ??��")
     @DeleteMapping("/detail/{codeId}/{code}")
     public ResponseEntity<?> deleteDetailCode(@PathVariable String codeId, @PathVariable String code) throws Exception {
         CmmnDetailCodeDto vo = new CmmnDetailCodeDto();

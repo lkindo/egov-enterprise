@@ -13,7 +13,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Congratulation (Admin)", description = "시스템 경조사 관리 API (관리자용)")
+@Tag(name = "Congratulation (Admin)", description = "?�스??경조??관�?API (관리자??")
 @RestController("systemCongratulationManageController")
 @RequestMapping("/api/v1/admin/system/congratulations")
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class CongratulationManageController {
 
     private final CongratulationService congratulationService;
 
-    @Operation(summary = "전체 경조사 목록 조회", description = "관리자가 시스템에 등록된 모든 경조사 내역을 조회합니다.")
+    @Operation(summary = "?�체 경조??목록 조회", description = "관리자가 ?�스?�에 ?�록??모든 경조???�역??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CongratulationDto>>> getCongratulationList(
             @RequestParam(required = false) String searchWrd,
@@ -29,19 +29,19 @@ public class CongratulationManageController {
         return ResponseEntity.ok(ApiResponse.success(congratulationService.getCongratulationList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "경조사 상세 조회", description = "특정 경조사의 상세 내용을 조회합니다.")
+    @Operation(summary = "경조???�세 조회", description = "?�정 경조?�의 ?�세 ?�용??조회?�니??")
     @GetMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<CongratulationDto>> getCongratulation(@PathVariable String congratulationId) {
         return ResponseEntity.ok(ApiResponse.success(congratulationService.getCongratulation(congratulationId)));
     }
 
-    @Operation(summary = "경조사 직접 등록", description = "관리자가 경조사 내역을 직접 등록합니다.")
+    @Operation(summary = "경조??직접 ?�록", description = "관리자가 경조???�역??직접 ?�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createCongratulation(@RequestBody CongratulationDto dto) {
         return ResponseEntity.ok(ApiResponse.success(congratulationService.createCongratulation("ADMIN", dto)));
     }
 
-    @Operation(summary = "경조사 정보 수정", description = "기존 경조사 정보를 수정합니다.")
+    @Operation(summary = "경조???�보 ?�정", description = "기존 경조???�보�??�정?�니??")
     @PutMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<Void>> updateCongratulation(
             @PathVariable String congratulationId,
@@ -50,17 +50,17 @@ public class CongratulationManageController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "경조사 내역 삭제", description = "경조사 내역을 시스템에서 삭제합니다.")
+    @Operation(summary = "경조???�역 ??��", description = "경조???�역???�스?�에????��?�니??")
     @DeleteMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<Void>> deleteCongratulation(@PathVariable String congratulationId) {
         congratulationService.deleteCongratulation(congratulationId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "경조사 승인 처리", description = "신청된 경조사를 승인 또는 반려 처리합니다.")
+    @Operation(summary = "경조???�인 처리", description = "?�청??경조?��? ?�인 ?�는 반려 처리?�니??")
     @PutMapping("/{congratulationId}/approval")
     public ResponseEntity<ApiResponse<Void>> approveCongratulation(
-            @Parameter(description = "경조사 ID") @PathVariable String congratulationId,
+            @Parameter(description = "경조??ID") @PathVariable String congratulationId,
             @RequestParam String confmAt,
             @RequestParam(required = false) String returnResn) {
         congratulationService.approveCongratulation(congratulationId, "ADMIN", confmAt, returnResn);

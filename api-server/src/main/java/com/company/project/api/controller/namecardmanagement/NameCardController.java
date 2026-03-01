@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "NameCard", description = "명함 관리 API")
+@Tag(name = "NameCard", description = "명함 관�?API")
 @RestController
 @RequestMapping("/api/v1/name-cards")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class NameCardController {
 
     private final EgovNameCardService nameCardService;
 
-    @Operation(summary = "명함 목록 조회", description = "시스템에 등록된 전체 명함 목록을 조회합니다.")
+    @Operation(summary = "명함 목록 조회", description = "?�스?�에 ?�록???�체 명함 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<NameCardDto>>> getNameCardList(
             @RequestParam(required = false) String keyword,
@@ -32,14 +32,14 @@ public class NameCardController {
         return ResponseEntity.ok(ApiResponse.success(nameCardService.getNameCardList(keyword, pageable)));
     }
 
-    @Operation(summary = "명함 상세 조회", description = "특정 명함의 상세 정보를 조회합니다.")
+    @Operation(summary = "명함 ?�세 조회", description = "?�정 명함???�세 ?�보�?조회?�니??")
     @GetMapping("/{ncrdId}")
     public ResponseEntity<ApiResponse<NameCardDto>> getNameCard(
             @Parameter(description = "명함 ID") @PathVariable String ncrdId) {
         return ResponseEntity.ok(ApiResponse.success(nameCardService.getNameCard(ncrdId)));
     }
 
-    @Operation(summary = "명함 등록", description = "새로운 명함을 등록합니다.")
+    @Operation(summary = "명함 ?�록", description = "?�로??명함???�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createNameCard(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -48,7 +48,7 @@ public class NameCardController {
         return ResponseEntity.ok(ApiResponse.success(ncrdId));
     }
 
-    @Operation(summary = "명함 정보 수정", description = "등록된 명함의 정보를 수정합니다.")
+    @Operation(summary = "명함 ?�보 ?�정", description = "?�록??명함???�보�??�정?�니??")
     @PutMapping("/{ncrdId}")
     public ResponseEntity<ApiResponse<Void>> updateNameCard(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -58,7 +58,7 @@ public class NameCardController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "명함 삭제", description = "등록된 명함을 삭제합니다.")
+    @Operation(summary = "명함 ??��", description = "?�록??명함????��?�니??")
     @DeleteMapping("/{ncrdId}")
     public ResponseEntity<ApiResponse<Void>> deleteNameCard(
             @PathVariable String ncrdId) {
@@ -66,7 +66,7 @@ public class NameCardController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "나의 명함첩 조회", description = "로그인한 사용자의 개인 명함첩에 담긴 명함 목록을 조회합니다.")
+    @Operation(summary = "?�의 명함�?조회", description = "로그?�한 ?�용?�의 개인 명함첩에 ?�긴 명함 목록??조회?�니??")
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<NameCardUserDto>>> getMyNameCardFolder(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -75,7 +75,7 @@ public class NameCardController {
                 .ok(ApiResponse.success(nameCardService.getMyNameCardFolder(userDetails.getUsername(), pageable)));
     }
 
-    @Operation(summary = "나의 명함첩에 명함 추가", description = "전체 명함 중 특정 명함을 나의 명함첩에 추가합니다.")
+    @Operation(summary = "?�의 명함첩에 명함 추�?", description = "?�체 명함 �??�정 명함???�의 명함첩에 추�??�니??")
     @PostMapping("/my/{ncrdId}")
     public ResponseEntity<ApiResponse<Void>> addMyNameCard(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -84,7 +84,7 @@ public class NameCardController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "나의 명함첩에서 명함 삭제", description = "나의 명함첩에 보관 중인 명함을 나의 명함첩에서 제거합니다.")
+    @Operation(summary = "?�의 명함첩에??명함 ??��", description = "?�의 명함첩에 보�? 중인 명함???�의 명함첩에???�거?�니??")
     @DeleteMapping("/my/{ncrdId}")
     public ResponseEntity<ApiResponse<Void>> removeMyNameCard(
             @AuthenticationPrincipal UserDetails userDetails,

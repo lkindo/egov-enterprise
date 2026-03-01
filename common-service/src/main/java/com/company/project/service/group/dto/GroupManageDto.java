@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 洹몃９ 愿由?DTO
+ * 洹몃�??�??DTO
  */
 @Getter
 @Setter
@@ -15,12 +15,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupManageDto {
-    /** 洹몃９ ID */
+    /** 洹몃�?ID */
     private String groupId;
-    /** 洹몃９ 紐?*/
+    /** 洹몃�?�?*/
     private String groupNm;
-    /** 洹몃９ ?ㅻ챸 */
+    /** 洹몃�???�챸 */
     private String groupDc;
-    /** 洹몃９ ?앹꽦??*/
+    /** 洹몃�???�꽦??*/
     private String groupCreatDe;
 }

@@ -46,15 +46,15 @@
     - [x] `ans` → `anniversary`
     - [x] `evt` → `event`
     - [x] `rwd` → `reward`
-    - [ ] `ctsnn` → `congratulation-condolence` (api/service: partially as congratulation, domain: pending)
+    - [x] `ctsnn` → `congratulation-condolence` (Refactored to congratulation package, entity fields cleaned)
     - [x] `smt` → `smart-toolkit` (프론트엔드 라우트 이동 및 백엔드 web.api 패키지 재배치 완료)
-- [ ] **백엔드 약축 패키지/클래스명 추가 변경 (나머지 도메인)**
-    - [ ] `adb` → `addressbook` (domain: done, api/service: pending)
-    - [ ] `cmy` → `community` (domain: done, api/service: pending)
-    - [ ] `cmt` → `comment` (domain: done, api/service: pending)
-    - [ ] `noi` → `notification` (domain: done, api/service: pending)
-    - [ ] `hld` → `holiday` (domain: done, api/service: pending)
-    - [ ] `mtg` → `meeting` (domain: done, api/service: pending)
+- [x] **백엔드 약축 패키지/클래스명 추가 변경 (나머지 도메인)**
+    - [x] `adb` → `addressbook` (Refactored to addressbook package and classes)
+    - [x] `cmy` → `community` (Refactored to community package and classes)
+    - [x] `cmt` → `comment` (Refactored to comment package and classes)
+    - [x] `noi` → `notification` (Refactored to notification package and classes)
+    - [x] `hld` → `holiday` (Refactored to holiday package and classes)
+    - [x] `mtg` → `meeting` (Refactored to meeting package and classes)
     - [ ] `umt` → `user-management`
     - [ ] `pwm` → `password-management`
     - [ ] `ulm` → `user-log-management`
@@ -96,9 +96,11 @@
 - **2026-02-28**: 마이그레이션 계획 수립 및 문서화 완료.
 - **2026-02-28**: Phase 1의 주요 도메인 (Vacation, Anniversary, Reward, Event, Ctsnn, EventCmpgn) 컨트롤러 및 서비스 통합 완료.
 - **2026-02-28**: Role, Author, Menu, Group, Audit API 경로를 `/api/v1/admin/system/...`으로 일괄 재배치 및 프론트엔드 동기화 완료 (Phase 1 종료).
+- **2026-03-01**: Reward/Congratulation 서비스 풀-리팩토링 완료 (엔티티 필드 약어 제거 및 DTO 동기화).
+- **2026-03-01**: 중복 도메인 엔티티 대규모 정리 및 Phase 2 주요 도메인 약어 제거 (`ctsnn`, `adb`, `cmy`, `noi`, `hld`, `mtg` 등).
 - **다음 작업**: 
-    1. Phase 2 (도메인 명칭 및 패키지 표준화) 착수 - 약어 제거 작업 시작.
-    2. `vct` -> `vacation` 리팩토링부터 순차적으로 진행.
+    1. Phase 2 잔여 작업 (`umt`, `pwm`, `ulm` 등) 진행.
+    2. 필드 레벨의 약어 제거 및 JavaDoc 보강.
 
 ---
 

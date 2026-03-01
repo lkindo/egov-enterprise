@@ -13,8 +13,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 권한별 롤 관리를 위한 컨트롤러 클래스
- */
+ * 권한�?�?관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class AuthorRoleManageController {
@@ -25,7 +24,7 @@ public class AuthorRoleManageController {
     private final MessageSource messageSource;
 
     /**
-     * 권한별 롤 목록 화면으로 이동한다.
+     * 권한�?�?목록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping({ "/sec/ram/EgovAuthorRoleListView.do" })
     public String selectAuthorRoleListView() throws Exception {
@@ -33,7 +32,7 @@ public class AuthorRoleManageController {
     }
 
     /**
-     * 권한별 롤 목록을 조회한다.
+     * 권한�?�?목록??조회?�다.
      */
     @RequestMapping({ "/sec/ram/EgovAuthorRoleList.do", "/sec/rgm/EgovAuthorGroupListView.do" })
     public String selectAuthorRoleList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
@@ -54,7 +53,7 @@ public class AuthorRoleManageController {
         // 권한 목록 조회
         model.addAttribute("authorList", authorManageService.selectAuthorList(searchVO));
 
-        // 롤 목록 조회
+        // �?목록 조회
         model.addAttribute("roleList", roleManageService.selectRoleList(searchVO));
 
         int totCnt = roleManageService.selectRoleListTotCnt(searchVO);
@@ -66,7 +65,7 @@ public class AuthorRoleManageController {
     }
 
     /**
-     * 권한별 롤 정보를 등록한다.
+     * 권한�?�??�보�??�록?�다.
      */
     @PostMapping("/sec/ram/EgovAuthorRoleInsert.do")
     public String insertAuthorRole(@RequestParam("authorCode") String authorCode,
@@ -74,8 +73,8 @@ public class AuthorRoleManageController {
             @RequestParam("regYns") String regYns,
             ModelMap model) throws Exception {
 
-        // 실제 구현 로직은 AuthorManageService 또는 별도의 AuthorRoleManageService 필요
-        // 현재는 메시지만 반환
+        // ?�제 구현 로직?� AuthorManageService ?�는 별도??AuthorRoleManageService ?�요
+        // ?�재??메시지�?반환
         model.addAttribute("message", messageSource.getMessage("success.common.insert", null, LocaleContextHolder.getLocale()));
 
         return "redirect:/sec/ram/EgovAuthorRoleList.do?searchKeyword=" + authorCode;

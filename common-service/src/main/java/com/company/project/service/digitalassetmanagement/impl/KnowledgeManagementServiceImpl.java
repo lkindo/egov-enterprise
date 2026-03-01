@@ -1,8 +1,8 @@
 package com.company.project.service.digitalassetmanagement.impl;
 
-import com.company.project.domain.dam.KnowledgeInf;
-import com.company.project.domain.dam.KnowledgeInfRepository;
-import com.company.project.domain.dam.KnowledgeInfSearchResult;
+import com.company.project.domain.digitalassetmanagement.KnowledgeInf;
+import com.company.project.domain.digitalassetmanagement.KnowledgeInfRepository;
+import com.company.project.domain.digitalassetmanagement.KnowledgeInfSearchResult;
 import com.company.project.service.digitalassetmanagement.KnowledgeManagementService;
 import com.company.project.service.digitalassetmanagement.dto.KnowledgeDto;
 import lombok.RequiredArgsConstructor;

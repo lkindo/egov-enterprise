@@ -48,33 +48,31 @@ class UserServiceIntegrationTest {
         signupRequest = new UserSignupRequest(
                 "integrationTestUser",
                 "password123!",
-                "?합 ?스???용??",
+                "???????????",
                 Role.USER,
                 "hint",
                 "answer");
     }
 
     @Test
-    @DisplayName("?용???비??- ?용???록 ???용???보? 권한 ?보가 ?께 ??됨")
+    @DisplayName("?????�??- ?????�????????�? 권한 ?보�? ?�?????)
     void signup_createsUserAndAuthority() {
         // When
         userService.signup(signupRequest);
 
         // Then
-        // ?용???보가 ??되?는지 ?인
-        Optional<User> savedUser = userRepository.findById("integrationTestUser");
+        // ?????보�? ?????��? ???        Optional<User> savedUser = userRepository.findById("integrationTestUser");
         assertThat(savedUser).isPresent();
-        assertThat(savedUser.get().getUserNm()).isEqualTo("?합 ?스???용??");
+        assertThat(savedUser.get().getUserNm()).isEqualTo("???????????");
         assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
 
-        // 권한 ?보가 ??되?는지 ?인
-        Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
+        // 권한 ?보�? ?????��? ???        Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
         assertThat(savedAuthority).isPresent();
         assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
     }
 
     @Test
-    @DisplayName("?용???비??- ?용??목록 조회 ??권한 ?보???께 조회??")
+    @DisplayName("?????�??- ????목록 조회 ??권한 ?�???�?조회??")
     void getUserList_retrievesUsersWithAuthority() {
         // Given
         userService.signup(signupRequest);
@@ -86,12 +84,12 @@ class UserServiceIntegrationTest {
         assertThat(userList).isNotEmpty();
         UserDto user = userList.get(0);
         assertThat(user.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(user.getUserNm()).isEqualTo("?합 ?스???용??");
-        // 권한 ?보가 ?함?어 ?는지 ?인 (권한 코드가 UserAuthority?서 가?온 것인지 ?인)
+        assertThat(user.getUserNm()).isEqualTo("???????????");
+        // 권한 ?보�? ???????��? ???(권한 코드가 UserAuthority???가???것인지 ???
     }
 
     @Test
-    @DisplayName("?용???비??- ?용???록 ??바로 조회 가??")
+    @DisplayName("?????�??- ?????�???바로 조회 가??")
     void signup_thenGetUserById_success() {
         // Given
         UserResponse signupResponse = userService.signup(signupRequest);
@@ -102,24 +100,24 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(retrievedUser).isNotNull();
         assertThat(retrievedUser.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(retrievedUser.getUserNm()).isEqualTo("?합 ?스???용??");
+        assertThat(retrievedUser.getUserNm()).isEqualTo("???????????");
     }
 
     @Test
-    @DisplayName("?용???비??- ?러 ?용???록 ??목록 조회")
+    @DisplayName("?????�??- ????????�???목록 조회")
     void multipleUsers_signup_thenGetList_success() {
         // Given
         UserSignupRequest request1 = new UserSignupRequest(
                 "user1",
                 "password123!",
-                "?용??",
+                "????",
                 Role.USER,
                 "hint",
                 "answer");
         UserSignupRequest request2 = new UserSignupRequest(
                 "user2",
                 "password123!",
-                "?용??",
+                "????",
                 Role.ADMIN,
                 "hint",
                 "answer");
@@ -132,11 +130,11 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(userList).hasSize(2);
         assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("user1", "user2");
-        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("?용??", "?용??");
+        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("????", "????");
     }
 
     @Test
-    @DisplayName("?용???비??- ?용???록 ???이?베?스???제 ??됨")
+    @DisplayName("?????�??- ?????�??????�???????????)
     void signup_persistsToDatabase() {
         // Given
         long initialUserCount = userRepository.count();
@@ -152,16 +150,15 @@ class UserServiceIntegrationTest {
         assertThat(currentUserCount).isEqualTo(initialUserCount + 1);
         assertThat(currentAuthorityCount).isEqualTo(initialAuthorityCount + 1);
 
-        // ??된 ?용???인
-        Optional<User> savedUser = userRepository.findById("integrationTestUser");
+        // ???????????        Optional<User> savedUser = userRepository.findById("integrationTestUser");
         assertThat(savedUser).isPresent();
         assertThat(savedUser.get().getUserId()).isEqualTo("integrationTestUser");
-        assertThat(savedUser.get().getUserNm()).isEqualTo("?합 ?스???용??");
+        assertThat(savedUser.get().getUserNm()).isEqualTo("???????????");
         assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
     }
 
     @Test
-    @DisplayName("?용???비??- ?용??ID??세 조회 ?공")
+    @DisplayName("?????�??- ????ID????조회 ?�?)
     void getUserById_success_withValidId() {
         // Given
         userService.signup(signupRequest);
@@ -172,11 +169,11 @@ class UserServiceIntegrationTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getUserId()).isEqualTo("integrationTestUser");
-        assertThat(result.getUserNm()).isEqualTo("?합 ?스???용??");
+        assertThat(result.getUserNm()).isEqualTo("???????????");
     }
 
     @Test
-    @DisplayName("?용???비??- 존재?? ?는 ?용??ID?조회 ???외 발생")
+    @DisplayName("?????�??- 존재?? ???????ID?조회 ?????발생")
     void getUserById_fail_withNonExistentId() {
         // When & Then
         assertThatThrownBy(() -> userService.getUserById("nonexistent"))
@@ -185,7 +182,7 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("?용???비??- ?용???록 ??중복 ID??한 ?외 발생")
+    @DisplayName("?????�??- ?????�???중복 ID???????발생")
     void signup_fail_withDuplicateId() {
         // Given
         userService.signup(signupRequest);
@@ -198,34 +195,33 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("?용???비??- ?용???보 ?정 ?공")
+    @DisplayName("?????�??- ?????�?????�?)
     void updateUser_success() {
         // Given
         userService.signup(signupRequest);
-        UserDto updatedUserDto = new UserDto("integrationTestUser", "?정???용??", "USR_TEST", "ADMIN", null, null, null);
+        UserDto updatedUserDto = new UserDto("integrationTestUser", "????????", "USR_TEST", "ADMIN", null, null, null);
 
         // When
         userService.updateUser("integrationTestUser", updatedUserDto);
 
         // Then
         UserDto result = userService.getUserById("integrationTestUser");
-        assertThat(result.getUserNm()).isEqualTo("?정???용??");
+        assertThat(result.getUserNm()).isEqualTo("????????");
     }
 
     @Test
-    @DisplayName("?용???비??- 비?번호 변??공")
+    @DisplayName("?????�??- �?번호 변??�?)
     void changePassword_success() {
         // Given
         userService.signup(signupRequest);
 
         // When & Then
-        // 비?번호 변경이 ?공?으??행?는지 ?인
-        assertThatNoException()
+        // �?번호 변경이 ?�???????��? ???        assertThatNoException()
                 .isThrownBy(() -> userService.changePassword("integrationTestUser", "password123!", "newPassword123!"));
     }
 
     @Test
-    @DisplayName("?용???비??- ?못???전 비?번호?변????외 발생")
+    @DisplayName("?????�??- ?�?????�?번호?변??????발생")
     void changePassword_fail_withWrongOldPassword() {
         // Given
         userService.signup(signupRequest);
@@ -238,14 +234,14 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("?용???비??- ?이징된 ?용??목록 조회 ?공")
+    @DisplayName("?????�??- ??�징??????목록 조회 ?�?)
     void getPagedUserList_success() {
         // Given
         for (int i = 0; i < 15; i++) {
             UserSignupRequest request = new UserSignupRequest(
                     "pagedUser" + i,
                     "password123!",
-                    "?이??스???용?? + i",
+                    "??????????? + i",
                     Role.USER,
                     "hint",
                     "answer");

@@ -26,8 +26,7 @@ public class ProgramService {
     private final ProgramRepository programRepository;
 
     /**
-     * ?꾨줈洹몃옩 紐⑸줉 議고쉶
-     */
+     * ?꾨줈洹몃??紐⑸�?議고??     */
     public List<ProgramDto> selectProgrmList(ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
                 Sort.by("progrmFileNm").ascending());
@@ -46,8 +45,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 珥?媛?닔 議고쉶
-     */
+     * ?꾨줈洹몃????�???議고??     */
     public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
@@ -57,8 +55,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 ?곸꽭 議고쉶
-     */
+     * ?꾨줈洹몃???곸꽭 議고??     */
     public ProgramDto selectProgrm(ComDefaultVO searchVO) {
         if (searchVO.getSearchKeyword() == null)
             return new ProgramDto();
@@ -74,7 +71,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 ?깅줉
+     * ?꾨줈洹몃???깅줉
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -90,7 +87,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 ?섏젙
+     * ?꾨줈洹몃????�젙
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -101,8 +98,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 ??젣
-     */
+     * ?꾨줈洹몃??????     */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
@@ -110,8 +106,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃옩 紐⑸줉 硫????젣
-     */
+     * ?꾨줈洹몃??紐⑸�?硫??????     */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {

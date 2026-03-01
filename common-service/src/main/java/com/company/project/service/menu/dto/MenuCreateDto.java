@@ -10,23 +10,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MenuCreateDto {
-    /** 硫붾돱踰덊샇 */
+    /** 硫붾?�踰?�샇 */
     private int menuNo;
-    /** 留듭깮?켌D */
+    /** 留듭�?켌D */
     private String mapCreatId;
     /** 沅뚰븳肄붾뱶 */
     private String authorCode;
 
     /** 沅뚰븳紐?*/
     private String authorNm;
-    /** 沅뚰븳?ㅻ챸 */
+    /** 沅뚰�??�챸 */
     private String authorDc;
-    /** 沅뚰븳?앹꽦?쇱옄 */
+    /** 沅뚰�??�꽦??�옄 */
     private String authorCreatDe;
 
-    /** ?앹꽦?륤D */
+    /** ??�꽦?륤D */
     private String creatPersonId;
 
-    /** 硫붾돱?앹꽦?щ? (1 ?댁긽: ?앹꽦?? 0: 誘몄깮?? */
+    /** 硫붾???�꽦??? (1 ??�긽: ??�꽦?? 0: 誘몄�?? */
     private int chkYeoBu;
 }

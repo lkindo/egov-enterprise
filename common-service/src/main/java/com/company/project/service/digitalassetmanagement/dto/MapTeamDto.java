@@ -10,16 +10,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "조직별 지식 맵 정보")
+@Schema(description = "조직�?지??�??�보")
 public class MapTeamDto {
-    @Schema(description = "조직(부서) ID")
+    @Schema(description = "조직(부?? ID")
     private String orgnztId;
-    @Schema(description = "조직(부서) 명칭")
+    @Schema(description = "조직(부?? 명칭")
     private String orgnztNm;
-    @Schema(description = "분류 일자")
+    @Schema(description = "분류 ?�자")
     private String clYmd;
-    @Schema(description = "지식 URL")
+    @Schema(description = "지??URL")
     private String knoUrl;
-    @Schema(description = "최종 수정자 ID")
+    @Schema(description = "최종 ?�정??ID")
     private String lastUpdusrId;
 }

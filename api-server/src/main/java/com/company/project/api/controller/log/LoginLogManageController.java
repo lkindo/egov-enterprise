@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
- * 로그인 로그 관리를 위한 컨트롤러 (Legacy JSP 전용)
+ * 로그??로그 관리�? ?�한 컨트롤러 (Legacy JSP ?�용)
  */
 @Slf4j
 @Controller
@@ -24,7 +24,7 @@ public class LoginLogManageController {
     private final EgovPropertyService propertiesService;
 
     /**
-     * 로그인 로그 목록을 조회한다. (JSP 방식)
+     * 로그??로그 목록??조회?�다. (JSP 방식)
      */
     @RequestMapping("/SelectLoginLogList.do")
     public String selectLoginLogListJsp(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model) throws Exception {

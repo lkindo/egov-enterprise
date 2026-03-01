@@ -1,9 +1,9 @@
 package com.company.project.service.digitalassetmanagement.impl;
 
-import com.company.project.domain.dam.Professional;
-import com.company.project.domain.dam.ProfessionalId;
-import com.company.project.domain.dam.ProfessionalRepository;
-import com.company.project.domain.dam.ProfessionalSearchResult;
+import com.company.project.domain.digitalassetmanagement.Professional;
+import com.company.project.domain.digitalassetmanagement.ProfessionalId;
+import com.company.project.domain.digitalassetmanagement.ProfessionalRepository;
+import com.company.project.domain.digitalassetmanagement.ProfessionalSearchResult;
 import com.company.project.service.digitalassetmanagement.KnowledgeSpecialistService;
 import com.company.project.service.digitalassetmanagement.dto.ProfessionalDto;
 import lombok.RequiredArgsConstructor;

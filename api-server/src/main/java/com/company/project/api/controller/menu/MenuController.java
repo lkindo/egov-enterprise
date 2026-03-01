@@ -20,11 +20,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/menu")
 @RequiredArgsConstructor
-@Tag(name = "Menu", description = "메뉴 정보 관련 API")
+@Tag(name = "Menu", description = "메뉴 ?�보 관??API")
 public class MenuController {
     private final MenuService menuService;
 
-    @Operation(summary = "GNB 대메뉴 목록 조회")
+    @Operation(summary = "GNB ?�메뉴 목록 조회")
     @GetMapping("/head")
     public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getHeadMenu() {
         log.info("getHeadMenu called");
@@ -35,7 +35,7 @@ public class MenuController {
         return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
     }
 
-    @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
+    @Operation(summary = "?�정 메뉴???�위 메뉴 목록 조회")
     @GetMapping("/left")
     public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getLeftMenu(
             @RequestParam("menuNo") Long menuNo) {
@@ -47,7 +47,7 @@ public class MenuController {
         return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
     }
 
-    @Operation(summary = "메뉴 목록 테스트 - Menu 엔티티 직접 반환")
+    @Operation(summary = "메뉴 목록 ?�스??- Menu ?�티??직접 반환")
     @GetMapping("/test/raw")
     public ResponseEntity<Map<String, Object>> getRawMenus() {
         log.info("getRawMenus called");
@@ -70,7 +70,7 @@ public class MenuController {
         }
     }
 
-    @Operation(summary = "메뉴 목록 테스트 - Program 조회")
+    @Operation(summary = "메뉴 목록 ?�스??- Program 조회")
     @GetMapping("/test/programs")
     public ResponseEntity<Map<String, Object>> getPrograms() {
         log.info("getPrograms called");

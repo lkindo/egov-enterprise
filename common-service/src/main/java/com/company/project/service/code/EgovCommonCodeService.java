@@ -11,22 +11,20 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 /**
- * 怨듯넻 肄붾뱶 愿由??쒕퉬???명꽣?섏씠??(愿由ъ옄??
- * - ?꾩옄?뺣??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 異⑹”???꾪븳 ?명꽣?섏씠??遺꾨━
- */
+ * ?�듯???�붾�??�????�퉬???명꽣??�씠??(?�?�ъ옄??
+ * - ?꾩옄?�??꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?�⑹????꾪븳 ?명꽣??�씠???�꾨?? */
 public interface EgovCommonCodeService {
 
     /**
-     * 洹몃９蹂?肄붾뱶 紐⑸줉 議고쉶
-     */
+     * 洹몃９蹂??�붾�?紐⑸�?議고??     */
     List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId);
 
     /**
-     * 肄붾뱶 ?앹꽦
+     * ?�붾�???�꽦
      */
     CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request);
 
-    // --- 怨듯넻遺꾨쪟肄붾뱶 (CmmnClCode) ---
+    // --- ?�듯?�遺꾨쪟?�붾�?(CmmnClCode) ---
     List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnClCodeListTotCnt(@NonNull ComDefaultVO searchVO);
@@ -39,7 +37,7 @@ public interface EgovCommonCodeService {
 
     void deleteCmmnClCode(@NonNull CmmnClCodeDto dto);
 
-    // --- 怨듯넻肄붾뱶(洹몃９) (CmmnCode) ---
+    // --- ?�듯?�肄붾뱶(洹몃�? (CmmnCode) ---
     List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnCodeListTotCnt(@NonNull ComDefaultVO searchVO);
@@ -52,7 +50,7 @@ public interface EgovCommonCodeService {
 
     void deleteCmmnCode(@NonNull CmmnCodeDto dto);
 
-    // --- 怨듯넻?곸꽭肄붾뱶 (CmmnDetailCode) ---
+    // --- ?�듯??곸꽭?�붾�?(CmmnDetailCode) ---
     List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnDetailCodeListTotCnt(@NonNull ComDefaultVO searchVO);

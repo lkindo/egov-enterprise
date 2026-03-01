@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 /**
- * 사용자 부재 관리를 위한 컨트롤러 클래스
- */
+ * ?�용??부??관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class UserAbsenceManageController {
@@ -27,7 +26,7 @@ public class UserAbsenceManageController {
     private final MessageSource messageSource;
 
     /**
-     * 사용자 부재 목록 화면으로 이동한다.
+     * ?�용??부??목록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/uss/ion/uas/selectUserAbsnceListView.do")
     public String selectUserAbsenceListView() throws Exception {
@@ -35,7 +34,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 목록을 조회한다.
+     * ?�용??부??목록??조회?�다.
      */
     @RequestMapping("/uss/ion/uas/selectUserAbsnceList.do")
     public String selectUserAbsenceList(@ModelAttribute("userAbsnceVO") UserAbsenceVO searchVO, ModelMap model)
@@ -62,7 +61,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 상세 정보를 조회한다.
+     * ?�용??부???�세 ?�보�?조회?�다.
      */
     @RequestMapping("/uss/ion/uas/getUserAbsnce.do")
     public String selectUserAbsence(@RequestParam("userId") String userId, ModelMap model)
@@ -79,7 +78,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 등록 화면으로 이동한다.
+     * ?�용??부???�록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/uss/ion/uas/addViewUserAbsnce.do")
     public String insertUserAbsenceView(@RequestParam("userId") String userId, ModelMap model)
@@ -90,7 +89,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 정보를 등록한다.
+     * ?�용??부???�보�??�록?�다.
      */
     @PostMapping("/uss/ion/uas/addUserAbsnce.do")
     public String insertUserAbsence(@Valid @ModelAttribute("userAbsnce") UserAbsenceDto userAbsence,
@@ -105,7 +104,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 정보를 수정한다.
+     * ?�용??부???�보�??�정?�다.
      */
     @PostMapping("/uss/ion/uas/updtUserAbsnce.do")
     public String updateUserAbsence(@Valid @ModelAttribute("userAbsnce") UserAbsenceDto userAbsence,
@@ -119,7 +118,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 정보를 삭제한다.
+     * ?�용??부???�보�???��?�다.
      */
     @PostMapping("/uss/ion/uas/removeUserAbsnce.do")
     public String deleteUserAbsence(@RequestParam("userId") String userId, ModelMap model)
@@ -130,7 +129,7 @@ public class UserAbsenceManageController {
     }
 
     /**
-     * 사용자 부재 목록을 멀티 삭제한다.
+     * ?�용??부??목록??멀????��?�다.
      */
     @PostMapping("/uss/ion/uas/removeUserAbsnceList.do")
     public String deleteUserAbsenceList(@RequestParam("userIds") String userIds, ModelMap model)

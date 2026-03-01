@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Vacation (Admin)", description = "휴가 및 연차 통합 관리 API (관리자용)")
+@Tag(name = "Vacation (Admin)", description = "?��? �??�차 ?�합 관�?API (관리자??")
 @RestController("systemVacationController")
 @RequestMapping("/api/v1/admin/system/vacations")
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class VacationController {
 
     private final VacationService vacationService;
 
-    @Operation(summary = "전체 휴가 신청 목록 조회", description = "관리자가 전체 사용자의 휴가 신청 내역을 조회합니다.")
+    @Operation(summary = "?�체 ?��? ?�청 목록 조회", description = "관리자가 ?�체 ?�용?�의 ?��? ?�청 ?�역??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VacationDto>>> getVacationList(
             @RequestParam(required = false) String searchWrd,
@@ -34,7 +34,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getVacationList(null, searchWrd, pageable)));
     }
 
-    @Operation(summary = "휴가 승인/반려 처리", description = "신청된 휴가에 대해 승인 또는 반려 처리를 수행합니다.")
+    @Operation(summary = "?��? ?�인/반려 처리", description = "?�청???��????�???�인 ?�는 반려 처리�??�행?�니??")
     @PutMapping("/approval")
     public ResponseEntity<ApiResponse<Void>> approveVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -47,7 +47,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "전사 연차 관리 목록 조회", description = "특정 연도의 사용자별 연차 정보를 조회합니다.")
+    @Operation(summary = "?�사 ?�차 관�?목록 조회", description = "?�정 ?�도???�용?�별 ?�차 ?�보�?조회?�니??")
     @GetMapping("/annual-leaves")
     public ResponseEntity<ApiResponse<List<YearlyLeaveDto>>> getAnnualLeaveList(
             @RequestParam String occrrncYear,
@@ -55,7 +55,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getYearlyLeaveList(occrrncYear, searchWrd)));
     }
 
-    @Operation(summary = "연차 정보 등록/수정", description = "사용자의 연차 발생일 등을 수동으로 관리합니다.")
+    @Operation(summary = "?�차 ?�보 ?�록/?�정", description = "?�용?�의 ?�차 발생???�을 ?�동?�로 관리합?�다.")
     @PostMapping("/annual-leaves")
     public ResponseEntity<ApiResponse<Void>> saveAnnualLeave(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -64,7 +64,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "사용자 부재 설정 목록 조회", description = "시스템 내 전체 사용자 부재 설정을 조회합니다.")
+    @Operation(summary = "?�용??부???�정 목록 조회", description = "?�스?????�체 ?�용??부???�정??조회?�니??")
     @GetMapping("/absence")
     public ResponseEntity<ApiResponse<Page<UserAbsenceDto>>> getUserAbsences(
             @RequestParam(required = false) String searchWrd,
@@ -72,13 +72,13 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getUserAbsenceList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "사용자 부재 설정 상세 조회", description = "특정 사용자의 부재 설정 정보를 조회합니다.")
+    @Operation(summary = "?�용??부???�정 ?�세 조회", description = "?�정 ?�용?�의 부???�정 ?�보�?조회?�니??")
     @GetMapping("/absence/{userId}")
     public ResponseEntity<ApiResponse<UserAbsenceDto>> getUserAbsence(@PathVariable String userId) {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getUserAbsence(userId)));
     }
 
-    @Operation(summary = "사용자 부재 영역 설정", description = "특정 사용자의 부재 상태를 강제 설정하거나 수정합니다.")
+    @Operation(summary = "?�용??부???�역 ?�정", description = "?�정 ?�용?�의 부???�태�?강제 ?�정?�거???�정?�니??")
     @PostMapping("/absence")
     public ResponseEntity<ApiResponse<Void>> saveUserAbsence(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -87,7 +87,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "사용자 부재 설정 삭제", description = "사용자의 부재 설정을 초기화(삭제)합니다.")
+    @Operation(summary = "?�용??부???�정 ??��", description = "?�용?�의 부???�정??초기????��)?�니??")
     @DeleteMapping("/absence/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteUserAbsence(@PathVariable String userId) {
         vacationService.deleteUserAbsence(userId);

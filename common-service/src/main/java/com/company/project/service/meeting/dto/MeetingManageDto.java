@@ -13,53 +13,83 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "?Œì˜ ê´€ë¦??•ë³´")
 public class MeetingManageDto {
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ID")
     private String mtgId;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ëª…ì¹­")
     private String mtgNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?ë£Œ ?´ìš©")
     private String mtgMtrCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?œë²ˆ")
     private Integer mtgSn;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?Ÿìˆ˜")
     private Integer mtgCo;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?¼ì")
     private String mtgDe;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?¥ì†Œ")
     private String mtgPlace;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ?œì‘ ?œê°„")
     private String mtgBeginTm;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ì¢…ë£Œ ?œê°„")
     private String mtgEndTime;
 
-    @Schema(description = "Description")
+    @Schema(description = "ê³µê°œ ?Œì˜ ?¬ë?")
     private String clsdrMtgAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "?´ëŒ ?œì‘ ?¼ì")
+    private String readngBgnde;
+
+    @Schema(description = "?´ëŒ ?¬ë?")
+    private String readngAt;
+
+    @Schema(description = "?Œì˜ ê²°ê³¼ ?´ìš©")
     private String mtgResultCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "?Œì˜ ê²°ê³¼ ?±ë¡ ?¬ë?")
+    private String mtgResultEnnc;
+
+    @Schema(description = "ê¸°í? ?¬í•­")
+    private String etcMatter;
+
+    @Schema(description = "ì£¼ê? ë¶€??ID")
     private String mngtDeptId;
 
-    @Schema(description = "Description")
+    @Schema(description = "ê´€ë¦¬ì ID")
     private String mnaerId;
 
-    @Schema(description = "Description")
-    private String createdBy;
+    @Schema(description = "ê´€ë¦¬ì ë¶€??ID")
+    private String mnaerDeptId;
 
-    @Schema(description = "Description")
-    private LocalDateTime createdDate;
+    @Schema(description = "?Œì˜ ?íƒœ")
+    private String mtgAt;
+
+    @Schema(description = "ë¶ˆì°¸ ?¸ì›??)
+    private Integer nonatdrnCo;
+
+    @Schema(description = "ì°¸ì„ ?¸ì›??)
+    private Integer atdrnCo;
+
+    @Schema(description = "ìµœì´ˆ ?±ë¡??ID")
+    private String frstRegisterId;
+
+    @Schema(description = "ìµœì´ˆ ?±ë¡ ?¼ì‹œ")
+    private LocalDateTime frstRegisterPnttm;
+
+    @Schema(description = "ìµœì¢… ?˜ì •??ID")
+    private String lastUpdusrId;
+
+    @Schema(description = "ìµœì¢… ?˜ì • ?¼ì‹œ")
+    private LocalDateTime lastUpdusrPnttm;
 
     public static MeetingManageDto from(MeetingManage entity) {
         if (entity == null)
@@ -75,11 +105,21 @@ public class MeetingManageDto {
                 .mtgBeginTm(entity.getMtgBeginTm())
                 .mtgEndTime(entity.getMtgEndTime())
                 .clsdrMtgAt(entity.getClsdrMtgAt())
+                .readngBgnde(entity.getReadngBgnde())
+                .readngAt(entity.getReadngAt())
                 .mtgResultCn(entity.getMtgResultCn())
+                .mtgResultEnnc(entity.getMtgResultEnnc())
+                .etcMatter(entity.getEtcMatter())
                 .mngtDeptId(entity.getMngtDeptId())
                 .mnaerId(entity.getMnaerId())
-                .createdBy(entity.getFrstRegisterId())
-                .createdDate(entity.getFrstRegisterPnttm())
+                .mnaerDeptId(entity.getMnaerDeptId())
+                .mtgAt(entity.getMtgAt())
+                .nonatdrnCo(entity.getNonatdrnCo())
+                .atdrnCo(entity.getAtdrnCo())
+                .frstRegisterId(entity.getFrstRegisterId())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
+                .lastUpdusrId(entity.getLastUpdusrId())
+                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
                 .build();
     }
 }

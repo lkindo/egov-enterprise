@@ -148,7 +148,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
-        // QueryDSL 湲곕컲 寃?됱씠 ?꾩슂?????덉쑝???쇰떒 findAll濡?泥섎━ (?꾩슂??Custom Repository??異붽?)
+        // QueryDSL 湲곕�?寃??�씠 ?꾩슂??????�쑝????�떒 findAll�?泥섎??(?꾩슂??Custom Repository???�붽?)
         return blogRepository.findAll(Objects.requireNonNull(pageable)).map(BlogDto::from);
     }
 

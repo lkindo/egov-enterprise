@@ -2,8 +2,8 @@ package com.company.project.service.unitylink;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
-import com.company.project.domain.ulm.UnityLink;
-import com.company.project.domain.ulm.UnityLinkRepository;
+import com.company.project.domain.unitylink.UnityLink;
+import com.company.project.domain.unitylink.UnityLinkRepository;
 import com.company.project.service.unitylink.dto.UnityLinkDto;
 import java.util.Objects;
 import org.springframework.data.domain.Page;

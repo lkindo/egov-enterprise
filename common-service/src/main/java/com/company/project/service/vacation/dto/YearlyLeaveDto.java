@@ -1,6 +1,6 @@
 package com.company.project.service.vacation.dto;
 
-import com.company.project.domain.system.AnnualLeave;
+import com.company.project.domain.vacation.AnnualLeave;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -24,7 +24,7 @@ public class YearlyLeaveDto {
             return null;
         return YearlyLeaveDto.builder()
                 .occrrncYear(entity.getOccrrncYear())
-                .userId(entity.getUsid())
+                .userId(entity.getUserId())
                 .yrycOccrrncCo(entity.getOccrncYrycCo())
                 .useYrycCo(entity.getUseYrycCo())
                 .remndrYrycCo(entity.getRemndrYrycCo())

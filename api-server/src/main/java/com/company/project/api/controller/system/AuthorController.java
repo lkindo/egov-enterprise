@@ -20,13 +20,13 @@ import java.util.List;
 @RestController("systemAuthorController")
 @RequestMapping("/api/v1/admin/system/authorities")
 @RequiredArgsConstructor
-@Tag(name = "Authority (Admin)", description = "시스템 권한 그룹 관리 API (관리자용)")
+@Tag(name = "Authority (Admin)", description = "?�스??권한 그룹 관�?API (관리자??")
 public class AuthorController {
 
     private final AuthorManageService authorManageService;
     private final MenuService menuService;
 
-    @Operation(summary = "권한 그룹 목록 조회", description = "시스템에 정의된 권한 그룹(Author) 목록을 조회합니다.")
+    @Operation(summary = "권한 그룹 목록 조회", description = "?�스?�에 ?�의??권한 그룹(Author) 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorManageDto>>> getAuthors(
             @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
@@ -43,20 +43,20 @@ public class AuthorController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageIndex, 10, total)));
     }
 
-    @Operation(summary = "권한 그룹 상세 조회", description = "특정 권한 그룹의 상세 정보를 조회합니다.")
+    @Operation(summary = "권한 그룹 ?�세 조회", description = "?�정 권한 그룹???�세 ?�보�?조회?�니??")
     @GetMapping("/{authorCode}")
     public ResponseEntity<ApiResponse<AuthorManageDto>> getAuthor(@PathVariable String authorCode) {
         return ResponseEntity.ok(ApiResponse.success(authorManageService.selectAuthor(authorCode)));
     }
 
-    @Operation(summary = "권한 그룹 등록", description = "새로운 시스템 권한 그룹을 등록합니다.")
+    @Operation(summary = "권한 그룹 ?�록", description = "?�로???�스??권한 그룹???�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAuthor(@RequestBody AuthorManageDto dto) {
         authorManageService.insertAuthor(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "권한 그룹 수정", description = "기존 시스템 권한 그룹 정보를 수정합니다.")
+    @Operation(summary = "권한 그룹 ?�정", description = "기존 ?�스??권한 그룹 ?�보�??�정?�니??")
     @PutMapping("/{authorCode}")
     public ResponseEntity<ApiResponse<Void>> updateAuthor(
             @PathVariable String authorCode,
@@ -66,7 +66,7 @@ public class AuthorController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한 그룹이 접근 가능한 메뉴 목록을 조회합니다.")
+    @Operation(summary = "권한�?메뉴 목록 조회", description = "?�정 권한 그룹???�근 가?�한 메뉴 목록??조회?�니??")
     @GetMapping("/{authorCode}/menus")
     public ResponseEntity<ApiResponse<PageResponse<MenuDto>>> getAuthorMenus(
             @PathVariable String authorCode) {
@@ -80,7 +80,7 @@ public class AuthorController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, 1, list.size(), list.size())));
     }
 
-    @Operation(summary = "권한 그룹 삭제", description = "시스템 권한 그룹 정보를 삭제합니다.")
+    @Operation(summary = "권한 그룹 ??��", description = "?�스??권한 그룹 ?�보�???��?�니??")
     @DeleteMapping("/{authorCode}")
     public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authorCode) {
         authorManageService.deleteAuthor(authorCode);

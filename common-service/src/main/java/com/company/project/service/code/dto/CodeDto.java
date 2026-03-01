@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 怨듯넻 肄붾뱶 ?뺣낫 DTO
+ * ?�듯???�붾�??뺣낫 DTO
  */
 @Getter
 @Builder

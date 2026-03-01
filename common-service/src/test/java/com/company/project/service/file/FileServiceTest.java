@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 /**
- * FileService ?⑥쐞 ?뚯뒪??
+ * FileService ??�쐞 ???��??
  */
 @ExtendWith(MockitoExtension.class)
 class FileServiceTest {
@@ -37,7 +37,7 @@ class FileServiceTest {
     private FileService fileService;
 
     @Test
-    @DisplayName("泥⑤??뚯씪 紐⑸줉 議고쉶 ?깃났")
+    @DisplayName("泥⑤????�� 紐⑸�?議고???깃났")
     void getFileList_success() {
         // given
         String atchFileId = "FILE_001";
@@ -63,7 +63,7 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("議댁옱?섏? ?딅뒗 ?뚯씪ID濡?議고쉶 ???덉쇅 諛쒖깮")
+    @DisplayName("議댁???? ??�뒗 ???��ID�?議고??????�쇅 諛쒖�?)
     void getFileList_notFound() {
         // given
         String atchFileId = "NOT_EXIST";

@@ -35,7 +35,7 @@ class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    @DisplayName("雽撽竴 靸濎劚 靹标车")
+    @DisplayName("?撽? ?濎劚 ?标车")
     void createComment_success() {
         // given
         String userId = "USER_01";
@@ -60,7 +60,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("雽撽竴 氇╇ 臁绊殞 靹标车")
+    @DisplayName("?撽? 氇╇ 臁绊殞 ?标车")
     void getComments_success() {
         // given
         String bbsId = "BBS_01";
@@ -88,7 +88,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("雽撽竴 靾橃爼 靹标车")
+    @DisplayName("?撽? ?橃爼 ?标车")
     void updateComment_success() {
         // given
         Long commentId = 1L;
@@ -112,7 +112,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("雽撽竴 靷牅 靹标车")
+    @DisplayName("?撽? ??牅 ?标车")
     void deleteComment_success() {
         // given
         Long commentId = 1L;

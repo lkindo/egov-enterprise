@@ -1,6 +1,6 @@
 package com.company.project.service.digitalassetmanagement;
 
-import com.company.project.domain.dam.KnowledgeRequest;
+import com.company.project.domain.digitalassetmanagement.KnowledgeRequest;
 import com.company.project.service.digitalassetmanagement.dto.KnowledgeRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

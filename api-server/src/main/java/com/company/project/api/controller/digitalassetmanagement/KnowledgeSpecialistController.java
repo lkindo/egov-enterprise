@@ -1,7 +1,7 @@
 package com.company.project.api.controller.digitalassetmanagement;
 
 import com.company.project.core.response.ApiResponse;
-import com.company.project.domain.dam.ProfessionalSearchResult;
+import com.company.project.domain.digitalassetmanagement.ProfessionalSearchResult;
 import com.company.project.service.digitalassetmanagement.KnowledgeSpecialistService;
 import com.company.project.service.digitalassetmanagement.dto.ProfessionalDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetSpecialist", description = "지식 전문가 관리 API")
+@Tag(name = "DigitalAssetSpecialist", description = "지???�문가 관�?API")
 @RestController
 @RequestMapping("/api/v1/admin/digital-assets/specialists")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class KnowledgeSpecialistController {
 
     private final KnowledgeSpecialistService specialistService;
 
-    @Operation(summary = "전문가 목록 조회", description = "시스템에 등록된 지식 전문가 목록을 조회합니다.")
+    @Operation(summary = "?�문가 목록 조회", description = "?�스?�에 ?�록??지???�문가 목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProfessionalSearchResult>>> getSpecialistList(
             @RequestParam(required = false) String searchCondition,
@@ -34,17 +34,17 @@ public class KnowledgeSpecialistController {
                 specialistService.selectKnowledgeSpecialistList(searchCondition, searchKeyword, pageable)));
     }
 
-    @Operation(summary = "전문가 상세 조회", description = "특정 전문가의 상세 정보를 조회합니다.")
+    @Operation(summary = "?�문가 ?�세 조회", description = "?�정 ?�문가???�세 ?�보�?조회?�니??")
     @GetMapping("/{speId}")
     public ResponseEntity<ApiResponse<ProfessionalDto>> getSpecialistDetail(
-            @Parameter(description = "전문가 USER ID") @PathVariable String speId,
+            @Parameter(description = "?�문가 USER ID") @PathVariable String speId,
             @RequestParam String knoTypeCd,
             @RequestParam String appTypeCd) {
         return ResponseEntity.ok(ApiResponse.success(
                 specialistService.selectKnowledgeSpecialistDetail(speId, knoTypeCd, appTypeCd)));
     }
 
-    @Operation(summary = "전문가 등록", description = "새로운 지식 전문가를 등록합니다.")
+    @Operation(summary = "?�문가 ?�록", description = "?�로??지???�문가�??�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createSpecialist(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -54,7 +54,7 @@ public class KnowledgeSpecialistController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "전문가 정보 수정", description = "전문가의 경력 상황 등 정보를 수정합니다.")
+    @Operation(summary = "?�문가 ?�보 ?�정", description = "?�문가??경력 ?�황 ???�보�??�정?�니??")
     @PutMapping("/{speId}")
     public ResponseEntity<ApiResponse<Void>> updateSpecialist(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -66,7 +66,7 @@ public class KnowledgeSpecialistController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "전문가 삭제", description = "지식 전문가 정보를 삭제합니다.")
+    @Operation(summary = "?�문가 ??��", description = "지???�문가 ?�보�???��?�니??")
     @DeleteMapping("/{speId}")
     public ResponseEntity<ApiResponse<Void>> deleteSpecialist(
             @PathVariable String speId,

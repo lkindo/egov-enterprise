@@ -1,5 +1,6 @@
 package com.company.project.service.meeting;
 
+import com.company.project.service.meeting.dto.MeetingManageDto;
 import com.company.project.service.meeting.dto.MeetingPlaceDto;
 import com.company.project.service.meeting.dto.MeetingReservationDto;
 import org.springframework.data.domain.Page;
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface MeetingService {
 
+    // Meeting Place
     Page<MeetingPlaceDto> getMeetingPlaceList(String keyword, Pageable pageable);
 
     MeetingPlaceDto getMeetingPlace(String mtgPlaceId);
@@ -17,6 +19,7 @@ public interface MeetingService {
 
     void deleteMeetingPlace(String mtgPlaceId);
 
+    // Meeting Reservation
     Page<MeetingReservationDto> getMeetingReservationList(String keyword, Pageable pageable);
 
     MeetingReservationDto getMeetingReservation(String resveId);
@@ -29,4 +32,15 @@ public interface MeetingService {
 
     int checkReservationConflict(String mtgPlaceId, String resveDe, String startTime, String endTime,
             String excludeResveId);
+
+    // Meeting Manage
+    Page<MeetingManageDto> getMeetingList(String keyword, Pageable pageable);
+
+    MeetingManageDto getMeeting(String mtgId);
+
+    void insertMeeting(MeetingManageDto dto);
+
+    void updateMeeting(MeetingManageDto dto);
+
+    void deleteMeeting(String mtgId);
 }

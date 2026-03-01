@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Congratulation (User)", description = "나의 경조사 관리 API (사용자용)")
+@Tag(name = "Congratulation (User)", description = "?�의 경조??관�?API (?�용?�용)")
 @RestController("userCongratulationController")
 @RequestMapping("/api/v1/congratulations")
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class CongratulationController {
 
     private final CongratulationService congratulationService;
 
-    @Operation(summary = "나의 경조사 목록 조회", description = "내가 신청하거나 등록된 경조사 목록을 조회합니다.")
+    @Operation(summary = "?�의 경조??목록 조회", description = "?��? ?�청?�거???�록??경조??목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CongratulationDto>>> getCongratulationList(
             @RequestParam(required = false) String searchWrd,
@@ -31,14 +31,14 @@ public class CongratulationController {
         return ResponseEntity.ok(ApiResponse.success(congratulationService.getCongratulationList(searchWrd, pageable)));
     }
 
-    @Operation(summary = "경조사 상세 조회", description = "특정 경조사의 상세 내용을 조회합니다.")
+    @Operation(summary = "경조???�세 조회", description = "?�정 경조?�의 ?�세 ?�용??조회?�니??")
     @GetMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<CongratulationDto>> getCongratulation(
-            @Parameter(description = "경조사 ID") @PathVariable String congratulationId) {
+            @Parameter(description = "경조??ID") @PathVariable String congratulationId) {
         return ResponseEntity.ok(ApiResponse.success(congratulationService.getCongratulation(congratulationId)));
     }
 
-    @Operation(summary = "경조사 등록/신청", description = "새로운 경조사 내용을 등록하거나 신청합니다.")
+    @Operation(summary = "경조???�록/?�청", description = "?�로??경조???�용???�록?�거???�청?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createCongratulation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -47,20 +47,20 @@ public class CongratulationController {
                 .ok(ApiResponse.success(congratulationService.createCongratulation(userDetails.getUsername(), dto)));
     }
 
-    @Operation(summary = "경조사 정보 수정", description = "신청한 경조사 정보를 수정합니다.")
+    @Operation(summary = "경조???�보 ?�정", description = "?�청??경조???�보�??�정?�니??")
     @PutMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<Void>> updateCongratulation(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "경조사 ID") @PathVariable String congratulationId,
+            @Parameter(description = "경조??ID") @PathVariable String congratulationId,
             @RequestBody CongratulationDto dto) {
         congratulationService.updateCongratulation(congratulationId, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "경조사 신청 취소/삭제", description = "등록한 경조사 신청을 취소하거나 삭제합니다.")
+    @Operation(summary = "경조???�청 취소/??��", description = "?�록??경조???�청??취소?�거????��?�니??")
     @DeleteMapping("/{congratulationId}")
     public ResponseEntity<ApiResponse<Void>> deleteCongratulation(
-            @Parameter(description = "경조사 ID") @PathVariable String congratulationId) {
+            @Parameter(description = "경조??ID") @PathVariable String congratulationId) {
         congratulationService.deleteCongratulation(congratulationId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -1,12 +1,11 @@
 package com.company.project.common.constant;
 
 /**
- * ?⑤벏???怨몃땾 ?????
+ * ??�벏????�몃????????
  */
 public class Constants {
     
-    // ??????온???怨몃땾
-    public static final class User {
+    // ???????�????�몃??    public static final class User {
         public static final String USER_PREFIX = "USR_";
         public static final String ESNTL_ID_PREFIX = "USR_";
         public static final String USRCNFRM_PREFIX = "USRCNFRM_";
@@ -15,13 +14,11 @@ public class Constants {
         public static final int MIN_PASSWORD_LENGTH = 8;
     }
     
-    // 筌?Ŋ???온???怨몃땾
-    public static final class Cache {
+    // �?Ŋ????�????�몃??    public static final class Cache {
         public static final String USERS_CACHE = "users";
     }
     
-    // 亦낅슦釉??온???怨몃땾
-    public static final class Authority {
+    // �?��??��???�????�몃??    public static final class Authority {
         public static final String DEFAULT_ROLE = "ROLE_USER";
     }
 }

@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description = "메뉴 정보 DTO")
+@Schema(description = "메뉴 ?�보 DTO")
 public class MenuDto {
     @Schema(description = "ID")
     private Long id;
@@ -20,41 +20,41 @@ public class MenuDto {
     @Schema(description = "메뉴 번호")
     private Long menuNo;
 
-    @Schema(description = "메뉴 명")
+    @Schema(description = "메뉴 �?)
     private String menuNm;
 
-    @Schema(description = "프로그램 파일 명")
+    @Schema(description = "?�로그램 ?�일 �?)
     private String progrmFileNm;
 
-    @Schema(description = "상위 메뉴 번호")
+    @Schema(description = "?�위 메뉴 번호")
     private Long upperMenuNo;
 
-    @Schema(description = "상위 메뉴 ID")
+    @Schema(description = "?�위 메뉴 ID")
     private Long upperMenuId;
 
-    @Schema(description = "메뉴 순서")
+    @Schema(description = "메뉴 ?�서")
     private Integer menuOrdr;
 
     @Schema(description = "URL 체크")
     private String chkURL;
 
-    @Schema(description = "메뉴 설명")
+    @Schema(description = "메뉴 ?�명")
     private String menuDc;
 
-    @Schema(description = "관련 이미지 경로")
+    @Schema(description = "관???��?지 경로")
     private String relateImagePath;
 
-    @Schema(description = "관련 이미지 명")
+    @Schema(description = "관???��?지 �?)
     private String relateImageNm;
 
-    @Schema(description = "현대적 라우트 (Next.js)")
+    @Schema(description = "?��????�우??(Next.js)")
     private String modernRoute;
 
-    @Schema(description = "생성자 ID")
+    @Schema(description = "?�성??ID")
     private String creatPersonId;
 
     @Builder.Default
-    @Schema(description = "자식 메뉴 목록")
+    @Schema(description = "?�식 메뉴 목록")
     private List<MenuDto> children = new ArrayList<>();
 
     public void addChild(MenuDto child) {

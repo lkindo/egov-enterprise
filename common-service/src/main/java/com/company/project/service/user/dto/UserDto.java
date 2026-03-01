@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * ?ъ슜???뺣낫 DTO
+ * ??????뺣낫 DTO
  */
 @Getter
 @Builder

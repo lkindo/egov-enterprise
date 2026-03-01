@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓렇???뺤콉 愿由??쒕퉬??
+ * 濡쒓????뺤콉 ?�????�퉬??
  */
 @Service("loginPolicyManageService")
 @RequiredArgsConstructor
@@ -29,8 +29,7 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     /**
-     * 濡쒓렇???뺤콉 紐⑸줉 議고쉶
-     */
+     * 濡쒓????뺤콉 紐⑸�?議고??     */
     public List<LoginPolicyDto> selectLoginPolicyList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -57,15 +56,13 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓렇???뺤콉 紐⑸줉 珥?嫄댁닔
-     */
+     * 濡쒓????뺤콉 紐⑸�???嫄댁??     */
     public int selectLoginPolicyListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 濡쒓렇???뺤콉 ?곸꽭 議고쉶
-     */
+     * 濡쒓????뺤콉 ?곸꽭 議고??     */
     public LoginPolicyDto selectLoginPolicy(String emplyrId) {
         User user = userRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
         if (user == null) {
@@ -89,7 +86,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓렇???뺤콉 ?깅줉
+     * 濡쒓????뺤콉 ?깅줉
      */
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
@@ -104,7 +101,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓렇???뺤콉 ?섏젙
+     * 濡쒓????뺤콉 ??�젙
      */
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
@@ -114,8 +111,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓렇???뺤콉 ??젣
-     */
+     * 濡쒓????뺤콉 ????     */
     @Transactional
     public void deleteLoginPolicy(String emplyrId) {
         loginPolicyRepository.deleteById(Objects.requireNonNull(emplyrId));

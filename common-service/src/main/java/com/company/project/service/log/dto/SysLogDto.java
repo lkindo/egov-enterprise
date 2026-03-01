@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ?쒖뒪??濡쒓렇 DTO
+ * ??�뒪??濡쒓??DTO
  */
 @Getter
 @Setter
@@ -17,18 +17,18 @@ import lombok.Setter;
 public class SysLogDto {
     /** ?붿껌 ID */
     private String requstId;
-    /** ?쒕퉬?ㅻ챸 */
+    /** ??�퉬??�챸 */
     private String srvcNm;
-    /** 硫붿꽌?쒕챸 */
+    /** 硫붿�??�챸 */
     private String methodNm;
-    /** 泥섎━援щ텇肄붾뱶 */
+    /** 泥섎?�援??�肄붾뱶 */
     private String processSeCode;
-    /** 泥섎━?쒓컙 */
+    /** 泥섎???�컙 */
     private String processTime;
     /** ?붿껌?륤D */
     private String rqesterId;
     /** ?붿껌?륤P */
     private String rqesterIp;
-    /** 諛쒖깮??*/
+    /** 諛쒖�??*/
     private String occrrncDe;
 }

@@ -2,10 +2,13 @@ package com.company.project.service.meeting;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
+import com.company.project.domain.meeting.MeetingManage;
+import com.company.project.domain.meeting.MeetingManageRepository;
 import com.company.project.domain.meeting.MeetingPlace;
 import com.company.project.domain.meeting.MeetingPlaceRepository;
 import com.company.project.domain.meeting.MeetingReservation;
 import com.company.project.domain.meeting.MeetingReservationRepository;
+import com.company.project.service.meeting.dto.MeetingManageDto;
 import com.company.project.service.meeting.dto.MeetingPlaceDto;
 import com.company.project.service.meeting.dto.MeetingReservationDto;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +27,10 @@ public class MeetingServiceImpl implements MeetingService {
 
     private final MeetingPlaceRepository meetingPlaceRepository;
     private final MeetingReservationRepository meetingReservationRepository;
+    private final MeetingManageRepository meetingManageRepository;
     private final EgovIdGnrService egovMtgPlaceManageIdGnrService;
     private final EgovIdGnrService egovMtgPlaceResveManageIdGnrService;
+    private final EgovIdGnrService egovMeetingManageIdGnrService;
 
     @Override
     public Page<MeetingPlaceDto> getMeetingPlaceList(String keyword, Pageable pageable) {
@@ -154,5 +159,73 @@ public class MeetingServiceImpl implements MeetingService {
         // For simplicity and correctness, I'll rely on the repository method
         return (int) meetingReservationRepository.countConflictingReservations(mtgPlaceId, resveDe, startTime, endTime,
                 excludeResveId);
+    }
+
+    @Override
+    public Page<MeetingManageDto> getMeetingList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return meetingManageRepository.findAll(pageable).map(MeetingManageDto::from);
+        }
+        return meetingManageRepository.findByMtgNmContaining(keyword, pageable).map(MeetingManageDto::from);
+    }
+
+    @Override
+    public MeetingManageDto getMeeting(String mtgId) {
+        return meetingManageRepository.findById(mtgId)
+                .map(MeetingManageDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public void insertMeeting(MeetingManageDto dto) {
+        try {
+            String id = egovMeetingManageIdGnrService.getNextStringId();
+            MeetingManage entity = MeetingManage.builder()
+                    .mtgId(id)
+                    .mtgNm(dto.getMtgNm())
+                    .mtgMtrCn(dto.getMtgMtrCn())
+                    .mtgSn(dto.getMtgSn())
+                    .mtgCo(dto.getMtgCo())
+                    .mtgDe(dto.getMtgDe())
+                    .mtgPlace(dto.getMtgPlace())
+                    .mtgBeginTm(dto.getMtgBeginTm())
+                    .mtgEndTime(dto.getMtgEndTime())
+                    .clsdrMtgAt(dto.getClsdrMtgAt())
+                    .readngBgnde(dto.getReadngBgnde())
+                    .readngAt(dto.getReadngAt())
+                    .mtgResultCn(dto.getMtgResultCn())
+                    .mtgResultEnnc(dto.getMtgResultEnnc())
+                    .etcMatter(dto.getEtcMatter())
+                    .mngtDeptId(dto.getMngtDeptId())
+                    .mnaerId(dto.getMnaerId())
+                    .mnaerDeptId(dto.getMnaerDeptId())
+                    .mtgAt(dto.getMtgAt())
+                    .nonatdrnCo(dto.getNonatdrnCo())
+                    .atdrnCo(dto.getAtdrnCo())
+                    .frstRegisterId(dto.getFrstRegisterId())
+                    .build();
+            meetingManageRepository.save(entity);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate meeting ID", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateMeeting(MeetingManageDto dto) {
+        MeetingManage entity = meetingManageRepository.findById(dto.getMtgId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getMtgNm(), dto.getMtgMtrCn(), dto.getMtgSn(), dto.getMtgCo(), dto.getMtgDe(),
+                dto.getMtgPlace(), dto.getMtgBeginTm(), dto.getMtgEndTime(), dto.getClsdrMtgAt(),
+                dto.getReadngBgnde(), dto.getReadngAt(), dto.getMtgResultCn(), dto.getMtgResultEnnc(),
+                dto.getEtcMatter(), dto.getMngtDeptId(), dto.getMnaerId(), dto.getMnaerDeptId(),
+                dto.getMtgAt(), dto.getNonatdrnCo(), dto.getAtdrnCo(), dto.getLastUpdusrId());
+    }
+
+    @Override
+    @Transactional
+    public void deleteMeeting(String mtgId) {
+        meetingManageRepository.deleteById(mtgId);
     }
 }
