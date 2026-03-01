@@ -1,3 +1,4 @@
+import React from 'react';
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
@@ -12,7 +13,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   'C': { label: '완료', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+// ⚡ Bolt: Memoize StatusBadge to prevent unnecessary re-renders in large tables/lists
+// This pure component relies only on primitive props (`status` and `className`),
+// making it a perfect candidate for React.memo to improve performance during parent re-renders.
+export const StatusBadge = React.memo(function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status] || { label: status, color: 'bg-gray-100 text-gray-700' };
 
   return (
@@ -24,4 +28,4 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       {config.label}
     </span>
   );
-}
+});
