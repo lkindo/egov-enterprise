@@ -276,68 +276,74 @@ export default function TroubleClient({ initialData }: { initialData: { content:
         title={mode === 'create' ? 'Inaugurate New Incident Ticket' : 'Alter Failure Blueprint'}
         maxWidth="lg"
       >
-        <div className="p-4">
-          <StandardForm onSubmit={handleSave}>
-            <div className="p-8 space-y-12">
+        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
+          <div className="p-8 space-y-12">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Incident Nomenclature
+              </label>
+              <input
+                type="text"
+                value={formData.troblNm}
+                onChange={(e) => setFormData({ ...formData, troblNm: e.target.value })}
+                placeholder="Enter incident technical name..."
+                className="w-full h-16 rounded-2xl border-2 bg-white dark:bg-slate-800 font-black text-xl px-8 outline-none focus:ring-8 focus:ring-rose-500/5 focus:border-rose-200 focus:bg-white dark:focus:bg-slate-700 transition-all shadow-xl italic tracking-tighter"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Incident Nomenclature</label>
-                <input
-                  type="text"
-                  value={formData.troblNm}
-                  onChange={(e) => setFormData({ ...formData, troblNm: e.target.value })}
-                  placeholder="Enter incident technical name..."
-                  className="w-full h-16 rounded-2xl border-2 bg-white font-black text-xl px-8 outline-none focus:ring-8 focus:ring-rose-500/5 focus:border-rose-200 transition-all shadow-xl italic tracking-tighter"
-                  required
-                />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Failure Vector
+                </label>
+                <select
+                  value={formData.troblKnd}
+                  onChange={(e) => setFormData({ ...formData, troblKnd: e.target.value })}
+                  className="w-full h-16 rounded-2xl border-2 bg-white dark:bg-slate-800 font-black text-xs px-6 outline-none hover:border-slate-300 cursor-pointer appearance-none uppercase italic tracking-widest shadow-inner transition-colors"
+                >
+                  <option value="1">SERVER INFRASTRUCTURE</option>
+                  <option value="2">DATABASE ENGINE</option>
+                  <option value="3">NETWORK TOPOLOGY</option>
+                  <option value="4">SECURITY ASSET</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Failure Vector</label>
-                  <select
-                    value={formData.troblKnd}
-                    onChange={(e) => setFormData({ ...formData, troblKnd: e.target.value })}
-                    className="w-full h-16 rounded-2xl border-2 bg-slate-50 font-black text-xs px-6 outline-none hover:border-slate-300 cursor-pointer appearance-none uppercase italic tracking-widest shadow-inner"
-                  >
-                    <option value="1">SERVER INFRASTRUCTURE</option>
-                    <option value="2">DATABASE ENGINE</option>
-                    <option value="3">NETWORK TOPOLOGY</option>
-                    <option value="4">SECURITY ASSET</option>
-                  </select>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Response Condition</label>
-                  <select
-                    value={formData.processSttus}
-                    onChange={(e) => setFormData({ ...formData, processSttus: e.target.value })}
-                    className="w-full h-16 rounded-2xl border-2 bg-slate-50 font-black text-xs px-6 outline-none hover:border-slate-300 cursor-pointer appearance-none uppercase italic tracking-widest shadow-inner"
-                  >
-                    <option value="R">PENDING / RECEIVED</option>
-                    <option value="P">PROCESSING / ACTIVE</option>
-                    <option value="C">COMPLETED / STABLE</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Diagnostic Background & Logic</label>
-                <textarea
-                  value={formData.troblDc || ''}
-                  onChange={(e) => setFormData({ ...formData, troblDc: e.target.value })}
-                  placeholder="Describe the architectural impact of this incident..."
-                  className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50/50 font-bold text-lg outline-none focus:bg-white focus:ring-8 focus:ring-rose-500/5 transition-all resize-none shadow-inner leading-relaxed"
-                />
-              </div>
-
-              <div className="flex gap-6 pt-6">
-                <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 transition-all opacity-40 hover:opacity-100">Abort Response</button>
-                <button type="submit" className="flex-[2] h-16 bg-rose-600 text-white rounded-2xl font-black shadow-2xl shadow-rose-600/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all active:scale-95 border border-white/10 group">
-                  <CheckCircle2 size={20} className="group-hover:rotate-12 transition-transform" /> Commit Failure Protocol
-                </button>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Response Condition
+                </label>
+                <select
+                  value={formData.processSttus}
+                  onChange={(e) => setFormData({ ...formData, processSttus: e.target.value })}
+                  className="w-full h-16 rounded-2xl border-2 bg-white dark:bg-slate-800 font-black text-xs px-6 outline-none hover:border-slate-300 cursor-pointer appearance-none uppercase italic tracking-widest shadow-inner transition-colors"
+                >
+                  <option value="R">PENDING / RECEIVED</option>
+                  <option value="P">PROCESSING / ACTIVE</option>
+                  <option value="C">COMPLETED / STABLE</option>
+                </select>
               </div>
             </div>
-          </StandardForm>
-        </div>
+
+            <div className="space-y-4 pt-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Diagnostic Background & Logic
+              </label>
+              <textarea
+                value={formData.troblDc || ''}
+                onChange={(e) => setFormData({ ...formData, troblDc: e.target.value })}
+                placeholder="Describe the architectural impact of this incident..."
+                className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-white dark:bg-slate-800 font-bold text-lg outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-8 focus:ring-rose-500/5 transition-all resize-none shadow-inner leading-relaxed"
+              />
+            </div>
+
+            <div className="flex gap-6 pt-6">
+              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all opacity-40 hover:opacity-100">Abort Response</button>
+              <button type="submit" className="flex-[2] h-16 bg-rose-600 text-white rounded-2xl font-black shadow-2xl shadow-rose-600/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all active:scale-95 border border-white/10 group">
+                <CheckCircle2 size={20} className="group-hover:rotate-12 transition-transform" /> Commit Failure Protocol
+              </button>
+            </div>
+          </div>
+        </StandardForm>
       </StandardModal>
     </div>
   );

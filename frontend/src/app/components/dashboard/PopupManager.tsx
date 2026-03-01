@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { popupAdminService } from '@/services/admin/system/PopupAdminService';
+import { popupService } from '@/services/user/PopupService';
 import { Popup } from '@/types/banner';
 
 export function PopupManager() {
@@ -12,7 +12,7 @@ export function PopupManager() {
   useEffect(() => {
     async function fetchPopups() {
       try {
-        const res = (await popupAdminService.getActivePopups()) as any;
+        const res = (await popupService.getActivePopups()) as any;
         if (res?.success) {
           const popups: Popup[] = res.data;
 
@@ -53,12 +53,12 @@ export function PopupManager() {
 
   return (
     <>
-      {activePopups.map((popup) => {
+      {activePopups.map((popup, idx) => {
         if (!visiblePopupIds.includes(popup.popupId)) return null;
 
         return (
           <div
-            key={popup.popupId}
+            key={`popup-${popup.popupId}-${idx}`}
             className="fixed z-50 bg-white shadow-2xl rounded-xl overflow-hidden border animate-in zoom-in duration-300"
             style={{
               top: `${popup.popupHlc}px`,

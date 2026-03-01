@@ -211,12 +211,12 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                         <tbody className="divide-y divide-primary/5">
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        {sortedColumns.map((c, j) => <td key={j} className="px-6 py-6 border-b border-primary/5"><div className="h-4 bg-muted rounded-lg w-3/4" /></td>)}
+                                    <tr key={`grid-loading-row-${i}`} className="animate-pulse">
+                                        {sortedColumns.map((c, j) => <td key={`grid-loading-cell-${j}`} className="px-6 py-6 border-b border-primary/5"><div className="h-4 bg-muted rounded-lg w-3/4" /></td>)}
                                     </tr>
                                 ))
                             ) : filteredData.map((item, rowIdx) => (
-                                <tr key={item[keyField] || rowIdx} className="group hover:bg-primary/[0.02] transition-colors">
+                                <tr key={item[keyField] !== undefined ? `item-${item[keyField]}` : `row-${rowIdx}`} className="group hover:bg-primary/[0.02] transition-colors">
                                     {sortedColumns.map((col, colIdx) => {
                                         const isEditing = editingCell?.rowId === item[keyField] && editingCell?.colId === col.id;
                                         const value = typeof col.accessor === 'function' ? col.accessor(item) : item[col.accessor as keyof T];
@@ -225,7 +225,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
 
                                         return (
                                             <td
-                                                key={col.id}
+                                                key={`cell-${col.id}`}
                                                 className={cn(
                                                     "px-6 py-5 border-b border-primary/5 transition-all duration-300",
                                                     pinnedCols.has(col.id) ? "sticky z-10 bg-background/95 backdrop-blur-md group-hover:bg-primary/[0.03]/95" : "relative group-hover:bg-primary/[0.01]",
@@ -291,7 +291,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30">Previous</Button>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3].map(p => (
-                            <Button key={p} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
+                            <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
                         ))}
                     </div>
                     <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black uppercase tracking-widest">Next</Button>

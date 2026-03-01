@@ -73,7 +73,7 @@ function UserManageLoading() {
                 <div className="h-12 w-48 bg-slate-100 rounded-2xl" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-50 rounded-[2.5rem]" />)}
+                {[1, 2, 3].map(i => <div key={`user-skeleton-${i}`} className="h-32 bg-slate-50 rounded-[2.5rem]" />)}
             </div>
             <div className="h-24 w-full bg-slate-50 rounded-[2.5rem]" />
             <div className="h-[500px] w-full bg-slate-50 rounded-[3rem]" />

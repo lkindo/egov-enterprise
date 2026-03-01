@@ -111,7 +111,7 @@ export function SmartNotificationHub() {
                     { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
                     { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
                 ].map((stat, i) => (
-                    <div key={i} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
+                    <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-4">
                             <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
                                 {React.cloneElement(stat.icon as React.ReactElement<any>, { size: 20 })}
@@ -173,7 +173,7 @@ export function SmartNotificationHub() {
 
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
                             {filteredLogs.map((log, i) => (
-                                <div key={log.id} className="group flex items-center gap-6 p-6 rounded-[2.5rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
+                                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[2.5rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
                                     <div className={cn(
                                         "w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-500",
                                         log.type === 'system' ? "bg-indigo-500/10 text-indigo-500" : log.type === 'mail' ? "bg-blue-500/10 text-blue-500" : "bg-emerald-500/10 text-emerald-500"
@@ -238,7 +238,7 @@ export function SmartNotificationHub() {
                                     { name: 'Email SMTP', score: 94, color: 'blue' },
                                     { name: 'SMS Gateway', score: 88, color: 'emerald' },
                                 ].map((channel, i) => (
-                                    <div key={i} className="space-y-2">
+                                    <div key={`channel-health-${i}`} className="space-y-2">
                                         <div className="flex justify-between items-end">
                                             <span className="text-xs font-black text-foreground">{channel.name}</span>
                                             <span className="text-[10px] font-black text-primary">{channel.score}%</span>

@@ -1,7 +1,7 @@
-import { AdminService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 import { Banner } from '@/types/banner';
 
-class BannerAdminService extends AdminService {
+class BannerAdminService extends UserService {
     constructor() {
         super('/banners');
     }

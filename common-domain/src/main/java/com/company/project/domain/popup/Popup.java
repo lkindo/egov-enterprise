@@ -20,22 +20,22 @@ public class Popup extends BaseEntity {
     @Column(name = "POPUP_ID", length = 20)
     private String popupId;
 
-    @Column(name = "POPUP_TITLE_NM", length = 255, nullable = false)
+    @Column(name = "POPUP_SJ_NM", length = 1024, nullable = false)
     private String popupTitleName;
 
-    @Column(name = "FILE_URL", length = 255)
+    @Column(name = "FILE_URL", length = 1024)
     private String fileUrl;
 
-    @Column(name = "POPUP_WLC", length = 20)
+    @Column(name = "POPUP_WIDTH_LC", length = 20)
     private String popupWidthLocation;
 
-    @Column(name = "POPUP_HLC", length = 20)
+    @Column(name = "POPUP_VRTICL_LC", length = 20)
     private String popupHeightLocation;
 
-    @Column(name = "POPUP_H_SIZE", length = 20)
+    @Column(name = "POPUP_VRTICL_SIZE", length = 20)
     private String popupHeightSize;
 
-    @Column(name = "POPUP_W_SIZE", length = 20)
+    @Column(name = "POPUP_WIDTH_SIZE", length = 20)
     private String popupWidthSize;
 
     @Column(name = "NTCE_BGNDE", length = 20)
@@ -44,7 +44,7 @@ public class Popup extends BaseEntity {
     @Column(name = "NTCE_ENDDE", length = 20)
     private String noticeEndDate;
 
-    @Column(name = "STOP_VEW_AT", length = 1)
+    @Column(name = "STOPVEW_SETUP_AT", length = 1)
     private String isStopView;
 
     @Column(name = "NTCE_AT", length = 1)

@@ -56,8 +56,8 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
                             dataKey="value"
                             stroke="none"
                         >
-                            <Cell fill={color} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                            <Cell fill="var(--muted)" />
+                            <Cell key="gauge-active" fill={color} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                            <Cell key="gauge-muted" fill="var(--muted)" />
                         </Pie>
                     </PieChart>
                 </ResponsiveContainer>
@@ -142,7 +142,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4 w-full">
                 {data.map((item, idx) => (
-                    <div key={idx} className="flex flex-col">
+                    <div key={`radar-item-${idx}`} className="flex flex-col">
                         <span className="text-[9px] font-black text-muted-foreground uppercase">{item.subject}</span>
                         <span className="text-xs font-black">{item.A}%</span>
                     </div>

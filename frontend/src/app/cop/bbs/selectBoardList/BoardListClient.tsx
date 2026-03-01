@@ -31,7 +31,7 @@ import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye,
 import dynamic from 'next/dynamic';
 import { cn } from "@/lib/utils";
 
-const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), { 
+const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
     ssr: false,
     loading: () => <Skeleton className="h-[280px] w-full rounded-[2rem]" />
 });
@@ -51,7 +51,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
     const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
     const [pageIndex, setPageIndex] = useState(initialParams.pageIndex || 1);
-    const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0'); 
+    const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
     const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
     const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
@@ -237,7 +237,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                             <TableBody>
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, i) => (
-                                        <TableRow key={i} className="border-b last:border-0">
+                                        <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
                                             <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
                                             <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
                                             <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>

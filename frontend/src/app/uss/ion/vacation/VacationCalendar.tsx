@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isSameDay, 
-  addMonths, 
-  subMonths 
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
@@ -91,8 +91,8 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           const isToday = isSameDay(day, new Date());
 
           return (
-            <div 
-              key={idx} 
+            <div
+              key={`day-${idx}`}
               className={cn(
                 "min-h-[120px] p-2 border-r border-b group transition-colors hover:bg-accent/10",
                 !isCurrentMonth && "bg-muted/10 opacity-40",
@@ -112,11 +112,11 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
                   </span>
                 )}
               </div>
-              
+
               <div className="space-y-1">
                 {isCurrentMonth && dayVacations.map((v, vIdx) => (
-                  <div 
-                    key={vIdx} 
+                  <div
+                    key={`vacation-${vIdx}`}
                     className={cn(
                       "text-[10px] font-bold px-2 py-1 rounded-md text-white truncate shadow-sm animate-in zoom-in-95",
                       getStatusColor(v.confmAt)

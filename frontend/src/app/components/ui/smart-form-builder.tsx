@@ -271,7 +271,7 @@ export function SmartFormBuilder() {
                                 <div className="space-y-3 pt-4 border-t border-primary/5">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase px-1">Options</label>
                                     {(activeField.options || []).map((opt, idx) => (
-                                        <div key={idx} className="flex gap-2">
+                                        <div key={`opt-${idx}`} className="flex gap-2">
                                             <Input
                                                 value={opt}
                                                 onChange={(e) => {

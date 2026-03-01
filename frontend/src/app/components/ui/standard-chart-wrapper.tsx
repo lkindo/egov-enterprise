@@ -171,7 +171,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <p className="text-[10px] font-black text-muted-foreground uppercase mb-1 tracking-tighter">{label}</p>
         <div className="space-y-1">
           {payload.map((p: any, idx: number) => (
-            <div key={idx} className="flex items-center justify-between gap-4">
+            <div key={`tooltip-item-${idx}`} className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
                 <span className="text-xs font-bold text-foreground">{p.name}</span>

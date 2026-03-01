@@ -51,19 +51,19 @@ export function ActivityFeed() {
   return (
     <div className="space-y-6">
       {activities.map((activity, idx) => (
-        <div key={activity.id} className="relative flex gap-4">
+        <div key={`activity-${activity.id}`} className="relative flex gap-4">
           {/* Timeline Line */}
           {idx !== activities.length - 1 && (
             <div className="absolute left-[17px] top-9 bottom-[-24px] w-px bg-slate-200" />
           )}
-          
+
           <div className={cn(
             "w-9 h-9 rounded-full flex items-center justify-center shrink-0 z-10",
             activity.bg
           )}>
             {activity.icon}
           </div>
-          
+
           <div className="flex flex-col gap-0.5 pb-2">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-foreground">{activity.user}</span>

@@ -10,9 +10,9 @@ export function TableSkeleton({ columnCount, rowCount = 5 }: TableSkeletonProps)
     return (
         <>
             {Array.from({ length: rowCount }).map((_, i) => (
-                <TableRow key={i}>
+                <TableRow key={`skeleton-row-${i}`}>
                     {Array.from({ length: columnCount }).map((_, j) => (
-                        <TableCell key={j}>
+                        <TableCell key={`skeleton-cell-${j}`}>
                             <Skeleton className="h-6 w-full" />
                         </TableCell>
                     ))}

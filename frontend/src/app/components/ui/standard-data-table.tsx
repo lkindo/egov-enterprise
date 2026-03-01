@@ -32,16 +32,16 @@ interface StandardDataTableProps<T> {
 }
 
 // 1. Row 컴포넌트 메모이제이션으로 성능 최적화
-const DataRow = memo(function DataRow({ 
-  item, 
-  columns, 
-  isSelected, 
-  enableSelection, 
-  onToggle, 
-  onRowClick 
+const DataRow = memo(function DataRow({
+  item,
+  columns,
+  isSelected,
+  enableSelection,
+  onToggle,
+  onRowClick
 }: any) {
   return (
-    <tr 
+    <tr
       className={cn(
         "group transition-all duration-200 outline-none focus-within:bg-primary/[0.02]",
         isSelected ? "bg-primary/[0.03]" : "hover:bg-accent/30",
@@ -50,7 +50,7 @@ const DataRow = memo(function DataRow({
     >
       {enableSelection && (
         <td className="px-4 py-4 text-center">
-          <Checkbox 
+          <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
             aria-label="행 선택"
@@ -58,14 +58,14 @@ const DataRow = memo(function DataRow({
         </td>
       )}
       {columns.map((column: any, colIdx: number) => (
-        <td 
-          key={colIdx} 
+        <td
+          key={`row-cell-${colIdx}`}
           className={cn("px-4 py-3 text-sm text-foreground/80", column.className)}
           onClick={() => onRowClick?.(item)}
         >
           <div className="font-medium outline-none">
-            {typeof column.accessor === 'function' 
-              ? column.accessor(item) 
+            {typeof column.accessor === 'function'
+              ? column.accessor(item)
               : item[column.accessor]}
           </div>
         </td>
@@ -75,16 +75,16 @@ const DataRow = memo(function DataRow({
 });
 
 // 2. 모바일 카드 컴포넌트
-const MobileCard = memo(function MobileCard({ 
-  item, 
-  columns, 
-  isSelected, 
-  enableSelection, 
-  onToggle, 
-  onRowClick 
+const MobileCard = memo(function MobileCard({
+  item,
+  columns,
+  isSelected,
+  enableSelection,
+  onToggle,
+  onRowClick
 }: any) {
   return (
-    <div 
+    <div
       className={cn(
         "p-5 rounded-xl border transition-all duration-300 relative overflow-hidden",
         isSelected ? "border-primary bg-primary/[0.03] shadow-md shadow-primary/5" : "border-border bg-card hover:border-primary/20 hover:shadow-sm"
@@ -94,7 +94,7 @@ const MobileCard = memo(function MobileCard({
       <div className="flex justify-between items-start mb-5">
         {enableSelection && (
           <div onClick={(e) => e.stopPropagation()} className="relative z-10">
-            <Checkbox 
+            <Checkbox
               checked={isSelected}
               onCheckedChange={onToggle}
               className="rounded-lg w-6 h-6 border-2"
@@ -113,7 +113,7 @@ const MobileCard = memo(function MobileCard({
 
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-primary/5">
         {columns.slice(1, 5).map((column: any, idx: number) => (
-          <div key={idx} className="space-y-1 overflow-hidden">
+          <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
             <p className="text-[11px] font-black text-muted-foreground/50">{column.header}</p>
             <div className="text-xs font-bold text-foreground/70 truncate">
               {typeof column.accessor === 'function' ? column.accessor(item) : item[column.accessor]}
@@ -121,7 +121,7 @@ const MobileCard = memo(function MobileCard({
           </div>
         ))}
       </div>
-      
+
       <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.02] rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
         <List size={100} />
       </div>
@@ -129,10 +129,10 @@ const MobileCard = memo(function MobileCard({
   );
 });
 
-export function StandardDataTable<T extends { [key: string]: any }>({ 
-  columns, 
-  data, 
-  loading, 
+export function StandardDataTable<T extends { [key: string]: any }>({
+  columns,
+  data,
+  loading,
   onRowClick,
   emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
@@ -142,7 +142,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 }: StandardDataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
 
-  const selectedItems = useMemo(() => 
+  const selectedItems = useMemo(() =>
     data.filter(item => selectedIds.has(item[keyField])),
     [data, selectedIds, keyField]
   );
@@ -168,7 +168,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
     <div className={cn("space-y-6", className)}>
       {/* Bulk Action Toolbar */}
       {enableSelection && selectedIds.size > 0 && (
-        <div 
+        <div
           className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-[1.5rem] animate-in fade-in slide-in-from-top-2 shadow-inner"
           role="toolbar"
           aria-label="선택 항목 작업"
@@ -181,7 +181,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <div className="flex gap-2.5">
               {bulkActions.map((action, idx) => (
                 <Button
-                  key={idx}
+                  key={`bulk-action-${idx}`}
                   size="sm"
                   variant={action.variant || "outline"}
                   className="h-9 px-4 rounded-xl font-bold gap-2 shadow-sm"
@@ -193,9 +193,9 @@ export function StandardDataTable<T extends { [key: string]: any }>({
               ))}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setSelectedIds(new Set())}
             className="text-xs font-bold h-9 px-4 hover:bg-primary/5"
           >
@@ -212,7 +212,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
               <tr>
                 {enableSelection && (
                   <th className="px-6 py-6 w-12 text-center" scope="col">
-                    <Checkbox 
+                    <Checkbox
                       checked={data.length > 0 && selectedIds.size === data.length}
                       onCheckedChange={toggleAll}
                       aria-label="전체 항목 선택"
@@ -220,7 +220,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   </th>
                 )}
                 {columns.map((column, idx) => (
-                  <th key={idx} className={cn("px-4 py-3 font-semibold text-muted-foreground text-sm whitespace-nowrap bg-muted/20 border-b border-border", column.className)} scope="col">
+                  <th key={`header-${idx}`} className={cn("px-4 py-3 font-semibold text-muted-foreground text-sm whitespace-nowrap bg-muted/20 border-b border-border", column.className)} scope="col">
                     {column.header}
                   </th>
                 ))}
@@ -229,10 +229,10 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <tbody className="divide-y divide-primary/5">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
+                  <tr key={`loading-row-${i}`} className="animate-pulse">
                     {enableSelection && <td className="px-4 py-4 text-center"><div className="w-5 h-5 bg-muted rounded-lg m-auto" /></td>}
                     {columns.map((_, j) => (
-                      <td key={j} className="px-4 py-4">
+                      <td key={`loading-cell-${j}`} className="px-4 py-4">
                         <div className="h-4 bg-muted/60 rounded-full w-3/4" />
                       </td>
                     ))}
@@ -246,8 +246,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 </tr>
               ) : (
                 data.map((item, rowIdx) => (
-                  <DataRow 
-                    key={item[keyField] || rowIdx}
+                  <DataRow
+                    key={item[keyField] !== undefined ? `row-${item[keyField]}` : `row-idx-${rowIdx}`}
                     item={item}
                     columns={columns}
                     isSelected={selectedIds.has(item[keyField])}
@@ -266,7 +266,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       <div className="md:hidden space-y-5 px-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-48 bg-muted/40 animate-pulse rounded-xl" />
+            <div key={`loading-card-${i}`} className="h-48 bg-muted/40 animate-pulse rounded-xl" />
           ))
         ) : data.length === 0 ? (
           <div className="p-12 bg-card border border-dashed border-border rounded-2xl text-center shadow-sm">
@@ -275,8 +275,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         ) : (
           <div className="grid grid-cols-1 gap-5">
             {data.map((item, idx) => (
-              <MobileCard 
-                key={item[keyField] || idx}
+              <MobileCard
+                key={item[keyField] !== undefined ? `card-${item[keyField]}` : `card-idx-${idx}`}
                 item={item}
                 columns={columns}
                 isSelected={selectedIds.has(item[keyField])}
