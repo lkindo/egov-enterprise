@@ -19,6 +19,19 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    files: ["src/services/**/*.ts"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          "selector": "class",
+          "format": ["PascalCase"],
+          "suffix": ["Service", "AdminService"]
+        }
+      ]
+    }
+  }
 ];
 
 export default eslintConfig;

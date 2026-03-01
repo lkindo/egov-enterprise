@@ -287,7 +287,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                       <SelectValue placeholder="Select Origin" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-2 shadow-2xl">
-                      <SelectItem value="0" className="font-black italic uppercase tracking-widest text-[10px] py-4">--- ROOT DIRECTORY ---</SelectItem>
+                      <SelectItem key="root-option" value="0" className="font-black italic uppercase tracking-widest text-[10px] py-4">--- ROOT DIRECTORY ---</SelectItem>
                       {menus.filter(m => m.upperMenuId === 0).map((m, idx) => (
                         <SelectItem key={`root-opt-${m.menuNo}-${idx}`} value={String(m.menuNo)} className="py-3 font-bold">{m.menuNm}</SelectItem>
                       ))}

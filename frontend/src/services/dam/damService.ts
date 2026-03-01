@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
 
 const damService = {
