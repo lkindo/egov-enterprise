@@ -48,4 +48,3 @@ public class QSentMail extends EntityPathBase<SentMail> {
     }
 
 }
-

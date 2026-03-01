@@ -50,4 +50,3 @@ public class QProfessional extends EntityPathBase<Professional> {
     }
 
 }
-

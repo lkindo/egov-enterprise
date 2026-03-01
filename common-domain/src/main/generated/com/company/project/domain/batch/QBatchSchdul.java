@@ -68,4 +68,3 @@ public class QBatchSchdul extends EntityPathBase<BatchSchdul> {
     }
 
 }
-

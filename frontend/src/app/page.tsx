@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
-import { vacationService } from '@/services/vacationService';
+import { vacationUserService } from '@/services/user/vacation/VacationUserService';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
@@ -14,7 +14,7 @@ async function getDashboardData() {
 
   try {
     const [leaveRes, dashboardRes] = await Promise.allSettled([
-      vacationService.getMyYearlyLeave(currentYear),
+      vacationUserService.getMyYearlyLeave(currentYear),
       client.get<DashboardResponse>('/dashboard', axiosConfig)
     ]);
 
@@ -25,13 +25,13 @@ async function getDashboardData() {
     if (leaveRes.status === 'fulfilled' && (leaveRes.value as any)?.success) {
       initialLeave = (leaveRes.value as any).data;
     }
-    
+
     if (dashboardRes.status === 'fulfilled') {
-        const dashboardData = dashboardRes.value;
-        initialNotiList = (dashboardData.notiList || []).slice(0, 6);
-        initialTaskList = (dashboardData.taskList || []).slice(0, 6);
+      const dashboardData = dashboardRes.value;
+      initialNotiList = (dashboardData.notiList || []).slice(0, 6);
+      initialTaskList = (dashboardData.taskList || []).slice(0, 6);
     }
-    
+
     return { initialLeave, initialNotiList, initialTaskList };
   } catch (err) {
     return { initialLeave: null, initialNotiList: [], initialTaskList: [] };

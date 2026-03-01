@@ -61,14 +61,14 @@ class UserServiceTest {
         signupRequest = new UserSignupRequest(
                 "newUser",
                 "password123",
-                "?�?????",
+                "?�?????",
                 Role.USER,
                 "hint",
                 "answer");
     }
 
     @Test
-    @DisplayName("????목록 조회 ?�?)
+    @DisplayName("????목록 조회 ?�?)
     void getUserList_success() {
         // Given
         List<User> userList = Arrays.asList(mockUser);
@@ -84,7 +84,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("??�징??????목록 조회 ?�?)
+    @DisplayName("??�징??????목록 조회 ?�?)
     void getPagedUserList_success() {
         // Given
         List<User> userList = Arrays.asList(mockUser);
@@ -101,7 +101,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("????ID????조회 ?�?- userId 기반")
+    @DisplayName("????ID????조회 ?�?- userId 기반")
     void getUserById_success_withUserId() {
         // Given
         when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
@@ -115,7 +115,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("????ID????조회 ?�?- esntlId 기반")
+    @DisplayName("????ID????조회 ?�?- esntlId 기반")
     void getUserById_success_withEsntlId() {
         // Given
         when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
@@ -143,12 +143,12 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("?????�??�?)
+    @DisplayName("?????�??�?)
     void registerUser_success() {
         // Given
         String userId = "newUser";
         String password = "password123";
-        String userNm = "?�?????";
+        String userNm = "?�?????";
         String passwordHint = "hint";
         String passwordCnsr = "answer";
         Role role = Role.ADMIN;
@@ -175,7 +175,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("??????��????�?)
+    @DisplayName("??????��????�?)
     void signup_success() {
         // Given
         when(userRepository.existsById("newUser")).thenReturn(false);
@@ -188,7 +188,7 @@ class UserServiceTest {
 
         // Then
         assertThat(result.userId()).isEqualTo("newUser");
-        assertThat(result.userNm()).isEqualTo("?�?????");
+        assertThat(result.userNm()).isEqualTo("?�?????");
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
@@ -196,13 +196,13 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
         assertThat(savedUser.getUserId()).isEqualTo("newUser");
         assertThat(savedUser.getPassword()).isEqualTo(encodedPassword);
-        assertThat(savedUser.getUserNm()).isEqualTo("?�?????");
+        assertThat(savedUser.getUserNm()).isEqualTo("?�?????");
         assertThat(savedUser.getRole()).isEqualTo(Role.USER); // Default role
         assertThat(savedUser.getEsntlId()).startsWith("USR_");
     }
 
     @Test
-    @DisplayName("??????��??????- 중복 ID")
+    @DisplayName("??????��??????- 중복 ID")
     void signup_fail_duplicateUserId() {
         // Given
         when(userRepository.existsById("newUser")).thenReturn(true);
@@ -214,7 +214,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("�?번호 검??�?)
+    @DisplayName("�?번호 검??�?)
     void verifyPassword_success() {
         // Given
         when(passwordEncoder.matches("rawPassword", "encodedPassword")).thenReturn(true);
@@ -227,7 +227,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("�?번호 검????)
+    @DisplayName("�?번호 검????)
     void verifyPassword_fail() {
         // Given
         when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);

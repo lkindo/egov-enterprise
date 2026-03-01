@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { programService } from '@/services/programService';
+import { programAdminService } from '@/services/admin/system/ProgramAdminService';
 import ProgramAdminClient from './ProgramAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -9,10 +9,10 @@ export const metadata = {
   description: '시스템 아키텍처 내의 각 프로그램과 엔드포인트를 정의하고 관리합니다.',
 };
 
-export default async function ProgramAdminPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function ProgramAdminPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
   const searchWrd = (resolvedSearchParams.searchWrd as string) || '';
@@ -23,7 +23,7 @@ export default async function ProgramAdminPage({
 
   let initialData: any = { content: [], totalElements: 0 };
   try {
-    initialData = await programService.getPrograms({ page: 0, size: 100, searchWrd }, axiosConfig);
+    initialData = await programAdminService.getPrograms({ page: 0, size: 100, searchWrd }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch programs failed:', error);
   }

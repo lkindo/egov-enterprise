@@ -44,4 +44,3 @@ public class QPrivacyLog extends EntityPathBase<PrivacyLog> {
     }
 
 }
-

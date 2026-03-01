@@ -52,4 +52,3 @@ public class QAddressBook extends EntityPathBase<AddressBook> {
     }
 
 }
-

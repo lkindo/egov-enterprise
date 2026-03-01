@@ -93,7 +93,8 @@ public class EgovSysHistoryController {
 		if (loginVO != null) {
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 			if (!files.isEmpty()) {
 				fvoList = fileUtil.parseFileInf(files, "SHF_", 0, "", "");
@@ -151,7 +152,8 @@ public class EgovSysHistoryController {
 
 		if (loginVO != null) {
 			String atchFileId = history.getAtchFileId();
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 			if (!files.isEmpty()) {
 				if ("".equals(atchFileId)) {

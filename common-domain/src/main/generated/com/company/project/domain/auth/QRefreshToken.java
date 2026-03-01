@@ -38,4 +38,3 @@ public class QRefreshToken extends EntityPathBase<RefreshToken> {
     }
 
 }
-

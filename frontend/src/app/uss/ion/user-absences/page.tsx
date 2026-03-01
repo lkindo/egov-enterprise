@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { absenceService, UserAbsence } from '@/services/absenceService';
+import { absenceAdminService, UserAbsence } from '@/services/admin/vacation/AbsenceAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { UserX, UserCheck, ShieldOff, Search, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ export default function UserAbsencePage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (await absenceService.getAbsences({ page: 0, size: 20 })) as any;
+      const res = (await absenceAdminService.getAbsences({ page: 0, size: 20 })) as any;
       if (res?.success) setData(res.data.content || []);
     } catch (error) {
       toast('부재 정보를 불러오지 못했습니다.', 'error');
@@ -32,7 +32,7 @@ export default function UserAbsencePage() {
   const handleToggleAbsence = async (item: UserAbsence) => {
     try {
       const newStatus = item.userAbsnceAt === 'N'; // toggle
-      const res = (await absenceService.updateAbsence(item.userId, newStatus)) as any;
+      const res = (await absenceAdminService.updateAbsence(item.userId, newStatus)) as any;
       if (res?.success) {
         toast('부재 상태가 업데이트되었습니다.', 'success');
         loadData();
@@ -43,15 +43,15 @@ export default function UserAbsencePage() {
   };
 
   const columns = [
-    { 
-      header: '사용자 ID', 
-      accessor: (item: UserAbsence) => item.userId, 
-      className: 'font-mono' 
+    {
+      header: '사용자 ID',
+      accessor: (item: UserAbsence) => item.userId,
+      className: 'font-mono'
     },
-    { 
-      header: '성명', 
-      accessor: (item: UserAbsence) => item.userNm, 
-      className: 'font-bold text-foreground' 
+    {
+      header: '성명',
+      accessor: (item: UserAbsence) => item.userNm,
+      className: 'font-bold text-foreground'
     },
     {
       header: '부재 여부',
@@ -69,10 +69,10 @@ export default function UserAbsencePage() {
         </div>
       )
     },
-    { 
-      header: '최종 수정', 
-      accessor: (item: UserAbsence) => item.lastUpdusrPnttm, 
-      className: 'text-[10px] text-muted-foreground' 
+    {
+      header: '최종 수정',
+      accessor: (item: UserAbsence) => item.lastUpdusrPnttm,
+      className: 'text-[10px] text-muted-foreground'
     },
     {
       header: '상태 변경',

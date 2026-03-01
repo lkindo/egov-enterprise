@@ -1,4 +1,4 @@
-/**
+**
  *  Class Name : EgovNetworkState.java
  *  Description : ?ㅽ듃?뚰겕(Network)?곹깭 泥댄겕 Business Interface class
  *  Modification Information
@@ -57,7 +57,8 @@ public class EgovNetworkState {
 
 	public static final int BUFF_SIZE = 2048;
 	// Log
-	// protected static final Log log = LogFactory.getLog(EgovNetworkState.class);
+	//
+                     static final Log log = LogFactory.getLog(EgovNetworkState.class);
 
 	/**
 	 * <pre>

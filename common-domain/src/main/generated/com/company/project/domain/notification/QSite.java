@@ -54,4 +54,3 @@ public class QSite extends EntityPathBase<Site> {
     }
 
 }
-

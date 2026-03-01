@@ -50,4 +50,3 @@ public class QBkmkMenu extends EntityPathBase<BkmkMenu> {
     }
 
 }
-

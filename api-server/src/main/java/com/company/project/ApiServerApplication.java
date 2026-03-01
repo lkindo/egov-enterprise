@@ -9,7 +9,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import com.company.project.config.FullBeanNameGenerator;
 
 /**
- * ?�로?�트 메인 ?�플리�??�션 ?�래?? */
+ * ?�로?�트 메인 ?�플리�??�션 ?�래?? */
 @SpringBootApplication
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
                 "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
@@ -18,39 +18,39 @@ import com.company.project.config.FullBeanNameGenerator;
                                                 org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class
                                 }),
 
-                                // 보안 �?권한 관�?(web ?�키지 ?�외)
+                                // 보안 �?권한 관�?(web ?�키지 ?�외)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.gmt\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.rmt\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uat\\.uap\\.web\\..*"),
 
-                                // ?�스??관�?sym) 모듈 - 배치 �?백업 ?�외 (modern 컨트롤러 ?�용)
+                                // ?�스??관�?sym) 모듈 - 배치 �?백업 ?�외 (modern 컨트롤러 ?�용)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.bat\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.sym\\.bak\\..*"),
 
-                                // 공통코드 관�?(sym.ccm)
+                                // 공통코드 관�?(sym.ccm)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.ccm\\..*"),
 
-                                // 로그 관�?(sym.log)
+                                // 로그 관�?(sym.log)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.log\\..*"),
 
-                                // 메뉴 관�?(sym.mnu)
+                                // 메뉴 관�?(sym.mnu)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mpm\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.mcm\\.web\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.mnu\\.bmm\\.web\\..*"),
 
-                                // ?�로그램 관�?(sym.prm)
+                                // ?�로그램 관�?(sym.prm)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sym\\.prm\\.web\\..*"),
 
-                                // ?�업 관�?(cop) - 메일 �?게시??관???�외
+                                // ?�업 관�?(cop) - 메일 �?게시??관???�외
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.cop\\.com\\.web\\..*"),
 
-                                // ?�용??권한 관�?(uss) - ?�거??컨트롤러 ?�외
+                                // ?�용??권한 관�?(uss) - ?�거??컨트롤러 ?�외
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.umt\\.web\\.EgovUserManageController"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsnceController"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.uas\\.web\\.EgovUserAbsenceManageController.*"),
 
-                                // ?�문 �?기�? 관�?(uss.olp, uss.olh ??
+                                // ?�문 �?기�? 관�?(uss.olp, uss.olh ??
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olp\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.olh\\..*"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.uss\\.ion\\.rss\\..*"),

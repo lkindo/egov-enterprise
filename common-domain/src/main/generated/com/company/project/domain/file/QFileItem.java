@@ -68,4 +68,3 @@ public class QFileItem extends EntityPathBase<FileItem> {
     }
 
 }
-

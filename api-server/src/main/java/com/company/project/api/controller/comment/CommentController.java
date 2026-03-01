@@ -17,7 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Comment", description = "?“ê? ê´€ë¦?API")
+@Tag(name = "Comment", description = "?ï¿½ï¿½? ê´€ï¿½?API")
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    @Operation(summary = "?“ê? ëª©ë¡ ì¡°íšŒ", description = "?¹ì • ê²Œì‹œë¬¼ì˜ ?“ê? ëª©ë¡??ì¡°íšŒ?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ëª©ë¡ ì¡°íšŒ", description = "?ï¿½ì • ê²Œì‹œë¬¼ì˜ ?ï¿½ï¿½? ëª©ë¡??ì¡°íšŒ?ï¿½ë‹ˆ??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CommentDto>>> getComments(
             @RequestParam Long nttId,
@@ -34,7 +34,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(commentService.getComments(nttId, bbsId, pageable)));
     }
 
-    @Operation(summary = "?“ê? ?±ë¡", description = "?ˆë¡œ???“ê????±ë¡?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ë¡", description = "?ï¿½ë¡œ???ï¿½ï¿½????ï¿½ë¡?ï¿½ë‹ˆ??")
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -43,21 +43,21 @@ public class CommentController {
                 commentService.createComment(userDetails.getUsername(), userDetails.getUsername(), request)));
     }
 
-    @Operation(summary = "?“ê? ?˜ì •", description = "?±ë¡???“ê????´ìš©???˜ì •?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì •", description = "?ï¿½ë¡???ï¿½ï¿½????ï¿½ìš©???ï¿½ì •?ï¿½ë‹ˆ??")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?“ê? ID") @PathVariable Long id,
+            @Parameter(description = "?ï¿½ï¿½? ID") @PathVariable Long id,
             @Valid @RequestBody CommentSaveRequest request) {
         commentService.updateComment(id, userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?“ê? ?? œ", description = "?±ë¡???“ê????? œ ì²˜ë¦¬?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ??ï¿½ï¿½", description = "?ï¿½ë¡???ï¿½ï¿½?????ï¿½ï¿½ ì²˜ë¦¬?ï¿½ë‹ˆ??")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?“ê? ID") @PathVariable Long id) {
+            @Parameter(description = "?ï¿½ï¿½? ID") @PathVariable Long id) {
         commentService.deleteComment(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

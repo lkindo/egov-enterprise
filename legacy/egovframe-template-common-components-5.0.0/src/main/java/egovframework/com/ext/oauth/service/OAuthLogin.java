@@ -99,7 +99,8 @@ public class OAuthLogin {
 		return user;
 	}
 
-//	private void getEmails(OAuthUniversalUser user, JsonNode rootNode) {
+//
+                     void getEmails(OAuthUniversalUser user, JsonNode rootNode) {
 //		Iterator<JsonNode> iterEmails = rootNode.path("emails").elements();
 //		while (iterEmails.hasNext()) {
 //			JsonNode emailNode = iterEmails.next();
@@ -107,8 +108,9 @@ public class OAuthLogin {
 //			if (StringUtils.equals(type, "account")) {
 //				user.setEmail(emailNode.get("value").asText());
 //				break;
-//			}
-//		}
-//	}
+//			
+                    }
+//		
+                    }
 
-}
+                

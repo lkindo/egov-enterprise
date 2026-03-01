@@ -13,8 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
+/**
+ * 지식요청/답변 서비스 구현체
+ */
 @Service("knowledgeRequestServiceImpl")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class KnowledgeRequestServiceImpl implements KnowledgeRequestService {
 
     private final KnowledgeRequestRepository repository;
@@ -28,10 +32,10 @@ public class KnowledgeRequestServiceImpl implements KnowledgeRequestService {
     }
 
     @Override
-    public KnowledgeRequestDto selectKnowledgeRequestDetail(String knoId) throws Exception {
-        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(knoId))
+    public KnowledgeRequestDto selectKnowledgeRequestDetail(String knowledgeId) throws Exception {
+        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(knowledgeId))
                 .orElseThrow(() -> new Exception("Not found"));
-        return convertToDto(entity);
+        return KnowledgeRequestDto.from(entity);
     }
 
     @Override
@@ -44,7 +48,7 @@ public class KnowledgeRequestServiceImpl implements KnowledgeRequestService {
     @Override
     @Transactional
     public void updateKnowledgeRequest(KnowledgeRequestDto requestDto) throws Exception {
-        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(requestDto.getKnoId()))
+        KnowledgeRequest entity = repository.findById(Objects.requireNonNull(requestDto.getKnowledgeId()))
                 .orElseThrow(() -> new Exception("Not found"));
         updateEntity(entity, requestDto);
         repository.save(Objects.requireNonNull(entity));
@@ -52,67 +56,45 @@ public class KnowledgeRequestServiceImpl implements KnowledgeRequestService {
 
     @Override
     @Transactional
-    public void deleteKnowledgeRequest(String knoId) throws Exception {
-        repository.deleteById(Objects.requireNonNull(knoId));
+    public void deleteKnowledgeRequest(String knowledgeId) throws Exception {
+        repository.deleteById(Objects.requireNonNull(knowledgeId));
     }
 
     @Override
-    public boolean isSpecialist(String uniqId) throws Exception {
-        return professionalRepository.existsBySpeId(uniqId);
+    public boolean isSpecialist(String userId) throws Exception {
+        return professionalRepository.existsByExpertId(userId);
     }
 
     @Override
-    public int getReplyCount(String knoId) throws Exception {
-        return (int) repository.countByAnsParents(Objects.requireNonNull(knoId));
-    }
-
-    private KnowledgeRequestDto convertToDto(KnowledgeRequest entity) {
-        KnowledgeRequestDto dto = new KnowledgeRequestDto();
-        dto.setKnoId(entity.getKnoId());
-        dto.setKnoNm(entity.getKnoNm());
-        dto.setKnoCn(entity.getKnoCn());
-        dto.setKnoTypeCd(entity.getKnoTypeCd());
-        dto.setOrgnztId(entity.getOrgnztId());
-        dto.setSpeId(entity.getSpeId());
-        dto.setEmplyrId(entity.getEmplyrId());
-        dto.setAtchFileId(entity.getAtchFileId());
-        dto.setAnsParents(entity.getAnsParents());
-        dto.setAnsDepth(entity.getAnsDepth());
-        dto.setAnsSeq(entity.getAnsSeq());
-        dto.setAnsNumber(entity.getAnsNumber());
-        dto.setFrstRegisterId(entity.getFrstRegisterId());
-        dto.setFrstRegisterPnttm(entity.getFrstRegisterPnttm());
-        dto.setLastUpdusrId(entity.getLastUpdusrId());
-        dto.setLastUpdusrPnttm(entity.getLastUpdusrPnttm());
-        return dto;
+    public int getReplyCount(String knowledgeId) throws Exception {
+        return (int) repository.countByParentKnowledgeId(Objects.requireNonNull(knowledgeId));
     }
 
     private KnowledgeRequest convertToEntity(KnowledgeRequestDto dto) {
         return KnowledgeRequest.builder()
-                .knoId(dto.getKnoId())
-                .knoNm(dto.getKnoNm())
-                .knoCn(dto.getKnoCn())
-                .knoTypeCd(dto.getKnoTypeCd())
-                .orgnztId(dto.getOrgnztId())
-                .speId(dto.getSpeId())
-                .emplyrId(dto.getEmplyrId())
-                .atchFileId(dto.getAtchFileId())
-                .ansParents(dto.getAnsParents())
-                .ansDepth(dto.getAnsDepth())
-                .ansSeq(dto.getAnsSeq())
-                .ansNumber(dto.getAnsNumber())
-                .frstRegisterId(dto.getFrstRegisterId())
+                .knowledgeId(dto.getKnowledgeId())
+                .title(dto.getTitle())
+                .content(dto.getContent())
+                .typeCode(dto.getTypeCode())
+                .organizationId(dto.getOrganizationId())
+                .expertId(dto.getExpertId())
+                .emplyrId(dto.getUserId())
+                .attachedFileId(dto.getAttachedFileId())
+                .parentKnowledgeId(dto.getParentKnowledgeId())
+                .answerDepth(dto.getAnswerDepth())
+                .answerOrder(dto.getAnswerOrder())
+                .answerGroupNumber(dto.getAnswerGroupNumber())
                 .build();
     }
 
     private void updateEntity(KnowledgeRequest entity, KnowledgeRequestDto dto) {
-        entity.setKnoNm(dto.getKnoNm());
-        entity.setKnoCn(dto.getKnoCn());
-        entity.setKnoTypeCd(dto.getKnoTypeCd());
-        entity.setOrgnztId(dto.getOrgnztId());
-        entity.setSpeId(dto.getSpeId());
-        entity.setEmplyrId(dto.getEmplyrId());
-        entity.setAtchFileId(dto.getAtchFileId());
-        entity.setLastUpdusrId(dto.getLastUpdusrId());
+        entity.setTitle(dto.getTitle());
+        entity.setContent(dto.getContent());
+        entity.setTypeCode(dto.getTypeCode());
+        entity.setOrganizationId(dto.getOrganizationId());
+        entity.setExpertId(dto.getExpertId());
+        entity.setEmplyrId(dto.getUserId());
+        entity.setAttachedFileId(dto.getAttachedFileId());
+        entity.setLastModifiedBy(dto.getFirstRegisterId());
     }
 }

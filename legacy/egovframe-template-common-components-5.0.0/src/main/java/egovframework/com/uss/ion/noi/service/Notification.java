@@ -136,12 +136,16 @@ public class Notification implements Serializable {
      * bhNtfcIntrvl attribute瑜?由ы꽩?쒕떎.
      * @return the bhNtfcIntrvl
      */
-//    public String[] getBhNtfcIntrvl() {
+//
+                     String[] getBhNtfcIntrvl() {
 //        return bhNtfcIntrvl;
-//    }
-    // 2011.10.07 private 諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
+//    
+                    }
+    // 2011.10.07
+                     諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
     public String[] getBhNtfcIntrvl() {
-    	// 硫붿냼?쒕? private?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
+    	// 硫붿냼?쒕?
+                    ?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
     	// ?섏젙???쒖뼱?섎뒗 public硫붿냼?쒕? 蹂꾨룄濡?留뚮뱺??
     	String[] ret = null;
     	if(this.bhNtfcIntrvl != null) {
@@ -157,10 +161,13 @@ public class Notification implements Serializable {
      * bhNtfcIntrvl attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param bhNtfcIntrvl the bhNtfcIntrvl to set
      */
-//    public void setBhNtfcIntrvl(String[] bhNtfcIntrvl) {
+//
+                     void setBhNtfcIntrvl(String[] bhNtfcIntrvl) {
 //        this.bhNtfcIntrvl = bhNtfcIntrvl;
-//    }
-    // 2011.10.07 private 諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
+//    
+                    }
+    // 2011.10.07
+                     諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
 	public void setBhNtfcIntrvl(String[] bhNtfcIntrvl) {
 		this.bhNtfcIntrvl = new String[bhNtfcIntrvl.length];
 		for (int i = 0; i < bhNtfcIntrvl.length; ++i) {

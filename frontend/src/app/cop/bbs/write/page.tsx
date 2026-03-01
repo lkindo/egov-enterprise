@@ -6,7 +6,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardEditor } from '@/app/components/ui/standard-editor';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { FormField } from '@/app/components/ui/standard-form';
-import { boardService } from '@/services/boardService';
+import { boardUserService } from '@/services/user/board/BoardUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
@@ -44,7 +44,7 @@ export default function BoardWritePage() {
 
     if (isConfirmed) {
       try {
-        const res = (await boardService.createPost(formData)) as any;
+        const res = (await boardUserService.createPost(formData)) as any;
         if (res?.success) {
           toast('성공적으로 등록되었습니다.', 'success');
           clear(); // 자동 저장 데이터 삭제
@@ -58,7 +58,7 @@ export default function BoardWritePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      <PageHeader 
+      <PageHeader
         title="새 게시글 작성"
         breadcrumbs={[{ label: '게시판', href: '/cop/bbs' }, { label: '글쓰기' }]}
         actions={
@@ -77,19 +77,19 @@ export default function BoardWritePage() {
         {/* Main Form (Left) */}
         <div className="lg:col-span-2 space-y-6">
           <FormField label="게시글 제목" required>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.nttSj}
-              onChange={(e) => setFormData({...formData, nttSj: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
               placeholder="제목을 입력해 주세요."
               className="w-full h-12 px-4 rounded-xl border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
             />
           </FormField>
 
           <FormField label="내용 작성" required>
-            <StandardEditor 
-              value={formData.nttCn} 
-              onChange={(val) => setFormData({...formData, nttCn: val})} 
+            <StandardEditor
+              value={formData.nttCn}
+              onChange={(val) => setFormData({ ...formData, nttCn: val })}
               minHeight="450px"
             />
           </FormField>
@@ -102,11 +102,11 @@ export default function BoardWritePage() {
               <AlertCircle size={18} className="text-primary" />
               게시 옵션
             </h3>
-            
+
             <FormField label="게시판 대상">
-              <select 
+              <select
                 value={formData.bbsId}
-                onChange={(e) => setFormData({...formData, bbsId: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
                 className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none"
               >
                 <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
@@ -117,19 +117,19 @@ export default function BoardWritePage() {
 
             <div className="flex flex-col gap-3 pt-2">
               <label className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  checked={formData.noticeAt === 'Y'} 
-                  onChange={(e) => setFormData({...formData, noticeAt: e.target.checked ? 'Y' : 'N'})}
+                <input
+                  type="checkbox"
+                  checked={formData.noticeAt === 'Y'}
+                  onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
                   className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <span className="text-sm font-medium group-hover:text-primary transition-colors">중요 공지로 등록</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  checked={formData.secretAt === 'Y'} 
-                  onChange={(e) => setFormData({...formData, secretAt: e.target.checked ? 'Y' : 'N'})}
+                <input
+                  type="checkbox"
+                  checked={formData.secretAt === 'Y'}
+                  onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
                   className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <span className="text-sm font-medium group-hover:text-primary transition-colors">비밀글로 설정</span>

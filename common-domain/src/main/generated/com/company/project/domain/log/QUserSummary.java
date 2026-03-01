@@ -40,4 +40,3 @@ public class QUserSummary extends EntityPathBase<UserSummary> {
     }
 
 }
-

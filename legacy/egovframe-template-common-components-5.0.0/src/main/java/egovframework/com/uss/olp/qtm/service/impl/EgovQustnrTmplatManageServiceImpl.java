@@ -32,7 +32,8 @@ import jakarta.annotation.Resource;
 @Service("egovQustnrTmplatManageService")
 public class EgovQustnrTmplatManageServiceImpl extends EgovAbstractServiceImpl implements EgovQustnrTmplatManageService{
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	//
+                     private Log log = LogFactory.getLog(this.getClass());
 
 	@Resource(name="qustnrTmplatManageDao")
 	private QustnrTmplatManageDao dao;

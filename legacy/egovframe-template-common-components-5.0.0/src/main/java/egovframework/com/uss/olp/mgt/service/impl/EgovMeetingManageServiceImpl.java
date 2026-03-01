@@ -30,7 +30,8 @@ import jakarta.annotation.Resource;
 @Service("egovMeetingManageService")
 public class EgovMeetingManageServiceImpl extends EgovAbstractServiceImpl implements EgovMeetingManageService{
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	//
+                     private Log log = LogFactory.getLog(this.getClass());
 
 	@Resource(name="meetingManageDao")
 	private MeetingManageDao dao;

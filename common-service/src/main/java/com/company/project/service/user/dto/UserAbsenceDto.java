@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ??????ºÂ€??DTO
+ * ??????ï¿½Â€??DTO
  */
 @Getter
 @Setter
@@ -17,15 +17,15 @@ import lombok.Setter;
 public class UserAbsenceDto {
     /** ?????ID */
     private String userId;
-    /** ????ë¨?±¸ */
+    /** ????ï¿½?ï¿½ï¿½ */
     private String userNm;
-    /** ?ºÂ€????? */
+    /** ?ï¿½Â€????? */
     private String userAbsnceAt;
     /** ?ê¹…ì¤‰ ??? */
     private String regYn;
     /** ?ê¹…ì¤‰??ID */
     private String frstRegisterId;
-    /** ??ì ™??ID */
+    /** ??ï¿½ì ™??ID */
     private String lastUpdusrId;
     private String lastUpdusrPnttm;
 }

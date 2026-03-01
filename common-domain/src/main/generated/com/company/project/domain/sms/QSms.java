@@ -52,4 +52,3 @@ public class QSms extends EntityPathBase<Sms> {
     }
 
 }
-

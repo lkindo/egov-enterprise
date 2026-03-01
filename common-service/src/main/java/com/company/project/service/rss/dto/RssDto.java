@@ -14,59 +14,60 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "RSS 정보 DTO")
 public class RssDto {
 
     @Schema(description = "RSS ID")
     private String rssId;
 
-    @Schema(description = "Description")
+    @Schema(description = "대상 서비스 명")
     private String trgetSvcNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "대상 서비스 테이블")
     private String trgetSvcTable;
 
-    @Schema(description = "Description")
+    @Schema(description = "대상 서비스 목록 수")
     private Integer trgetSvcListCo;
 
-    @Schema(description = "Description")
+    @Schema(description = "헤더 제목")
     private String hderTitle;
 
-    @Schema(description = "Description")
+    @Schema(description = "헤더 링크")
     private String hderLink;
 
-    @Schema(description = "Description")
+    @Schema(description = "헤더 설명")
     private String hderDc;
 
-    @Schema(description = "Description")
+    @Schema(description = "헤더 태그")
     private String hderTag;
 
-    @Schema(description = "Description")
+    @Schema(description = "헤더 기타")
     private String hderEtc;
 
-    @Schema(description = "Description")
+    @Schema(description = "본문 제목")
     private String bdtTitle;
 
-    @Schema(description = "Description")
+    @Schema(description = "본문 링크")
     private String bdtLink;
 
-    @Schema(description = "Description")
+    @Schema(description = "본문 설명")
     private String bdtDc;
 
-    @Schema(description = "Description")
+    @Schema(description = "본문 태그")
     private String bdtTag;
 
-    @Schema(description = "Description")
+    @Schema(description = "본문 기타 태그")
     private String bdtEtcTag;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록자 ID")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
     public static RssDto from(Rss entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return RssDto.builder()
                 .rssId(entity.getRssId())
                 .trgetSvcNm(entity.getTrgetSvcNm())
@@ -88,7 +89,8 @@ public class RssDto {
     }
 
     public static RssDto from(RssTag entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return RssDto.builder()
                 .rssId(entity.getRssId())
                 .trgetSvcNm(entity.getTrgetSvcNm())

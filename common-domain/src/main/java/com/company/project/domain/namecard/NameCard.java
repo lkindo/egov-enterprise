@@ -12,8 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 筌뤿굟釉?JPA Entity
- * ??뉕탢?????뵠?? NNCRD
+ * 명함 JPA Entity
+ * 연계 테이블: NNCRD
  */
 @Entity
 @Table(name = "NNCRD")
@@ -26,34 +26,34 @@ public class NameCard extends BaseEntity {
     private String ncrdId;
 
     @Column(name = "NM", length = 100, nullable = false)
-    private String ncrdNm;
+    private String name;
 
     @Column(name = "CMPNY_NM", length = 100)
-    private String cmpnyNm;
+    private String companyName;
 
     @Column(name = "DEPT_NM", length = 100)
-    private String deptNm;
+    private String departmentName;
 
     @Column(name = "CLSF_NM", length = 50)
-    private String clsfNm;
+    private String rankName;
 
     @Column(name = "OFCPS_NM", length = 50)
-    private String ofcpsNm;
+    private String positionName;
 
     @Column(name = "EMAIL_ADRES", length = 100)
-    private String emailAdres;
+    private String emailAddress;
 
     @Column(name = "TELNO", length = 20)
-    private String telNo;
+    private String telNumber;
 
     @Column(name = "MBTLNUM", length = 20)
-    private String mbtlNum;
+    private String mobileNumber;
 
     @Column(name = "ADRES", length = 255)
-    private String adres;
+    private String address;
 
     @Column(name = "DETAIL_ADRES", length = 255)
-    private String detailAdres;
+    private String detailAddress;
 
     @Transient
     private String zipCode;
@@ -62,53 +62,53 @@ public class NameCard extends BaseEntity {
     private String remark;
 
     @Column(name = "OTHBC_AT", length = 1)
-    private String othbcAt;
+    private String isPublic;
 
     @Column(name = "NCRD_TRGTER_ID", length = 20)
-    private String ncrdTrgterId;
+    private String targetUserId;
 
     @Column(name = "EXTRL_USER_AT", length = 1)
-    private String extrlUserAt;
+    private String isExternalUser;
 
     @Builder
-    public NameCard(String ncrdId, String ncrdNm, String cmpnyNm, String deptNm, String clsfNm,
-            String ofcpsNm, String emailAdres, String telNo, String mbtlNum, String adres,
-            String detailAdres, String zipCode, String remark, String othbcAt,
-            String ncrdTrgterId, String extrlUserAt) {
+    public NameCard(String ncrdId, String name, String companyName, String departmentName, String rankName,
+            String positionName, String emailAddress, String telNumber, String mobileNumber, String address,
+            String detailAddress, String zipCode, String remark, String isPublic,
+            String targetUserId, String isExternalUser) {
         this.ncrdId = ncrdId;
-        this.ncrdNm = ncrdNm;
-        this.cmpnyNm = cmpnyNm;
-        this.deptNm = deptNm;
-        this.clsfNm = clsfNm;
-        this.ofcpsNm = ofcpsNm;
-        this.emailAdres = emailAdres;
-        this.telNo = telNo;
-        this.mbtlNum = mbtlNum;
-        this.adres = adres;
-        this.detailAdres = detailAdres;
+        this.name = name;
+        this.companyName = companyName;
+        this.departmentName = departmentName;
+        this.rankName = rankName;
+        this.positionName = positionName;
+        this.emailAddress = emailAddress;
+        this.telNumber = telNumber;
+        this.mobileNumber = mobileNumber;
+        this.address = address;
+        this.detailAddress = detailAddress;
         this.zipCode = zipCode;
         this.remark = remark;
-        this.othbcAt = othbcAt;
-        this.ncrdTrgterId = ncrdTrgterId;
-        this.extrlUserAt = extrlUserAt;
+        this.isPublic = isPublic;
+        this.targetUserId = targetUserId;
+        this.isExternalUser = isExternalUser;
     }
 
-    public void update(String ncrdNm, String cmpnyNm, String deptNm, String clsfNm, String ofcpsNm,
-            String emailAdres, String telNo, String mbtlNum, String adres, String detailAdres,
-            String zipCode, String remark, String othbcAt, String extrlUserAt) {
-        this.ncrdNm = ncrdNm;
-        this.cmpnyNm = cmpnyNm;
-        this.deptNm = deptNm;
-        this.clsfNm = clsfNm;
-        this.ofcpsNm = ofcpsNm;
-        this.emailAdres = emailAdres;
-        this.telNo = telNo;
-        this.mbtlNum = mbtlNum;
-        this.adres = adres;
-        this.detailAdres = detailAdres;
+    public void update(String name, String companyName, String departmentName, String rankName, String positionName,
+            String emailAddress, String telNumber, String mobileNumber, String address, String detailAddress,
+            String zipCode, String remark, String isPublic, String isExternalUser) {
+        this.name = name;
+        this.companyName = companyName;
+        this.departmentName = departmentName;
+        this.rankName = rankName;
+        this.positionName = positionName;
+        this.emailAddress = emailAddress;
+        this.telNumber = telNumber;
+        this.mobileNumber = mobileNumber;
+        this.address = address;
+        this.detailAddress = detailAddress;
         this.zipCode = zipCode;
         this.remark = remark;
-        this.othbcAt = othbcAt;
-        this.extrlUserAt = extrlUserAt;
+        this.isPublic = isPublic;
+        this.isExternalUser = isExternalUser;
     }
 }

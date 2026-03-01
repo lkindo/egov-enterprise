@@ -66,4 +66,3 @@ public class QSurveyRespondent extends EntityPathBase<SurveyRespondent> {
     }
 
 }
-

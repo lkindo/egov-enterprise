@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { getClCodeList } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import { SearchParams, CmmnClCode } from '@/types/system';
 import { CommonClCodeForm } from '@/components/admin/system/CommonClCodeForm';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -37,7 +37,7 @@ export default function CommonClCodePage() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['common-cl-codes', params],
-        queryFn: () => getClCodeList(params),
+        queryFn: () => codeAdminService.getClCodeList(params),
     });
 
     const codes: CmmnClCode[] = data?.resultList || [];

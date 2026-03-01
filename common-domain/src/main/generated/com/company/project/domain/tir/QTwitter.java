@@ -46,4 +46,3 @@ public class QTwitter extends EntityPathBase<Twitter> {
     }
 
 }
-

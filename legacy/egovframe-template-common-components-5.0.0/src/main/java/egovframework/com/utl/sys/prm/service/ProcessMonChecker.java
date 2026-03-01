@@ -38,7 +38,8 @@ import egovframework.com.cmm.service.Globals;
 public class ProcessMonChecker {
 
 	// Log
-	//private static final Logger LOGGER = LoggerFactory.getLogger(ProcessMonChecker.class);
+	//
+                     static final Logger LOGGER = LoggerFactory.getLogger(ProcessMonChecker.class);
 
 	/**
 	 * <pre>

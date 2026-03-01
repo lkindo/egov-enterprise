@@ -203,12 +203,16 @@ public class Sms implements Serializable {
      * recptnTelno attribute瑜?由ы꽩?쒕떎.
      * @return the recptnTelno
      */
-//    public String[] getRecptnTelno() {
+//
+                     String[] getRecptnTelno() {
 //        return recptnTelno;
-//    }
-    // 2011.10.07 private 諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
+//    
+                    }
+    // 2011.10.07
+                     諛곗뿴??public ?⑥닔媛 諛섑솚?섏? ?딅룄濡???
     public String[] getRecptnTelno() {
-    	// 硫붿냼?쒕? private?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
+    	// 硫붿냼?쒕?
+                    ?쇰줈 ?섍굅?? 蹂듭젣蹂몄쓣 諛섑솚?섍굅??
     	// ?섏젙???쒖뼱?섎뒗 public硫붿냼?쒕? 蹂꾨룄濡?留뚮뱺??
     	String[] ret = null;
     	if(this.recptnTelno != null) {
@@ -224,10 +228,13 @@ public class Sms implements Serializable {
      * recptnTelno attribute 媛믪쓣 ?ㅼ젙?쒕떎.
      * @param recptnTelno the recptnTelno to set
      */
-//    public void setRecptnTelno(String[] recptnTelno) {
+//
+                     void setRecptnTelno(String[] recptnTelno) {
 //        this.recptnTelno = recptnTelno;
-//    }
-    // 2011.10.07 private 諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
+//    
+                    }
+    // 2011.10.07
+                     諛곗뿴-?좏삎 ?꾨뱶??怨듭슜 ?곗씠???좊떦?섏? ?딅룄濡???
 	public void setRecptnTelno(String[] recptnTelno) {
 		this.recptnTelno = new String[recptnTelno.length];
 		for (int i = 0; i < recptnTelno.length; ++i) {

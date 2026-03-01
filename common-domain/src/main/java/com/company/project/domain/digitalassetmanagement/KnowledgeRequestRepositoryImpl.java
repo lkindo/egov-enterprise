@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 지식요청 Repository Custom 구현체
+ */
 @Repository
 @RequiredArgsConstructor
 public class KnowledgeRequestRepositoryImpl implements KnowledgeRequestRepositoryCustom {
@@ -26,17 +29,19 @@ public class KnowledgeRequestRepositoryImpl implements KnowledgeRequestRepositor
 
         if (searchKeyword != null && !searchKeyword.isEmpty()) {
             if ("A.KNWLDG_NM".equals(searchCondition)) {
-                predicate.and(knowledgeRequest.knoNm.contains(searchKeyword));
+                // 제목 검색
+                predicate.and(knowledgeRequest.title.contains(searchKeyword));
             } else if ("A.KNWLDG_CN".equals(searchCondition)) {
-                predicate.and(knowledgeRequest.knoCn.contains(searchKeyword));
+                // 내용 검색
+                predicate.and(knowledgeRequest.content.contains(searchKeyword));
             }
         }
 
         List<KnowledgeRequest> content = queryFactory
                 .selectFrom(knowledgeRequest)
                 .where(predicate)
-                .orderBy(knowledgeRequest.ansNumber.desc(), knowledgeRequest.ansSeq.asc(),
-                        knowledgeRequest.ansDepth.asc())
+                .orderBy(knowledgeRequest.answerGroupNumber.desc(), knowledgeRequest.answerOrder.asc(),
+                        knowledgeRequest.answerDepth.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

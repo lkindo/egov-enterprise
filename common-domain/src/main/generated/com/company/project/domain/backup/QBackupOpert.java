@@ -71,4 +71,3 @@ public class QBackupOpert extends EntityPathBase<BackupOpert> {
     }
 
 }
-

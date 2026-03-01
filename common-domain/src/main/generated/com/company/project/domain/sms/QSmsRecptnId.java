@@ -36,4 +36,3 @@ public class QSmsRecptnId extends BeanPath<SmsRecptnId> {
     }
 
 }
-

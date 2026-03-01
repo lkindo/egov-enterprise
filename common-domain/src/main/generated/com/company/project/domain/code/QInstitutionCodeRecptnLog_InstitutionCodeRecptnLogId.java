@@ -38,4 +38,3 @@ public class QInstitutionCodeRecptnLog_InstitutionCodeRecptnLogId extends BeanPa
     }
 
 }
-

@@ -12,24 +12,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
+/**
+ * 개인 지식정보 서비스 구현체
+ */
 @Service("knowledgePersonalServiceImpl")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class KnowledgePersonalServiceImpl implements KnowledgePersonalService {
 
     private final KnowledgeInfRepository repository;
 
     @Override
-    public Page<KnowledgeInf> selectKnowledgePersonalList(String searchCondition, String searchKeyword, String uniqId,
+    public Page<KnowledgeInf> selectKnowledgePersonalList(String searchCondition, String searchKeyword, String userId,
             Pageable pageable) throws Exception {
-        return repository.findAll((root, query, cb) -> cb.equal(root.get("frstRegisterId"), uniqId),
+        return repository.findAll((root, query, cb) -> cb.equal(root.get("createdBy"), userId),
                 Objects.requireNonNull(pageable));
     }
 
     @Override
-    public KnowledgeDto selectKnowledgePersonalDetail(String knoId) throws Exception {
-        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knoId))
+    public KnowledgeDto selectKnowledgePersonalDetail(String knowledgeId) throws Exception {
+        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knowledgeId))
                 .orElseThrow(() -> new Exception("Not found"));
-        return convertToDto(entity);
+        return KnowledgeDto.from(entity);
     }
 
     @Override
@@ -42,7 +46,7 @@ public class KnowledgePersonalServiceImpl implements KnowledgePersonalService {
     @Override
     @Transactional
     public void updateKnowledgePersonal(KnowledgeDto knowledgeDto) throws Exception {
-        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knowledgeDto.getKnoId()))
+        KnowledgeInf entity = repository.findById(Objects.requireNonNull(knowledgeDto.getKnowledgeId()))
                 .orElseThrow(() -> new Exception("Not found"));
         updateEntity(entity, knowledgeDto);
         repository.save(Objects.requireNonNull(entity));
@@ -50,52 +54,36 @@ public class KnowledgePersonalServiceImpl implements KnowledgePersonalService {
 
     @Override
     @Transactional
-    public void deleteKnowledgePersonal(String knoId) throws Exception {
-        repository.deleteById(Objects.requireNonNull(knoId));
-    }
-
-    private KnowledgeDto convertToDto(KnowledgeInf entity) {
-        return KnowledgeDto.builder()
-                .knoId(entity.getKnoId())
-                .knoNm(entity.getKnoNm())
-                .knoCn(entity.getKnoCn())
-                .knoTypeCd(entity.getKnoTypeCd())
-                .orgnztId(entity.getOrgnztId())
-                .speId(entity.getSpeId())
-                .othbcAt(entity.getOthbcAt())
-                .appYmd(entity.getAppYmd())
-                .knoAps(entity.getKnoAps())
-                .junkYmd(entity.getJunkYmd())
-                .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .build();
+    public void deleteKnowledgePersonal(String knowledgeId) throws Exception {
+        repository.deleteById(Objects.requireNonNull(knowledgeId));
     }
 
     private KnowledgeInf convertToEntity(KnowledgeDto dto) {
-        return KnowledgeInf.builder()
-                .knoId(dto.getKnoId())
-                .knoNm(dto.getKnoNm())
-                .knoCn(dto.getKnoCn())
-                .knoTypeCd(dto.getKnoTypeCd())
-                .orgnztId(dto.getOrgnztId())
-                .speId(dto.getSpeId())
-                .othbcAt(dto.getOthbcAt())
-                .appYmd(dto.getAppYmd())
-                .knoAps(dto.getKnoAps())
-                .junkYmd(dto.getJunkYmd())
-                .atchFileId(dto.getAtchFileId())
-                .frstRegisterId(dto.getFrstRegisterId())
+        KnowledgeInf entity = KnowledgeInf.builder()
+                .knowledgeId(dto.getKnowledgeId())
+                .title(dto.getTitle())
+                .content(dto.getContent())
+                .typeCode(dto.getTypeCode())
+                .organizationId(dto.getOrganizationId())
+                .expertId(dto.getExpertId())
+                .isPublic(dto.getIsPublic())
+                .evaluationDate(dto.getEvaluationDate())
+                .evaluationGrade(dto.getEvaluationGrade())
+                .disuseDate(dto.getDisuseDate())
+                .attachedFileId(dto.getAttachedFileId())
                 .build();
+        entity.setCreatedBy(dto.getFirstRegisterId());
+        return entity;
     }
 
     private void updateEntity(KnowledgeInf entity, KnowledgeDto dto) {
-        entity.setKnoNm(dto.getKnoNm());
-        entity.setKnoCn(dto.getKnoCn());
-        entity.setKnoTypeCd(dto.getKnoTypeCd());
-        entity.setOrgnztId(dto.getOrgnztId());
-        entity.setSpeId(dto.getSpeId());
-        entity.setOthbcAt(dto.getOthbcAt());
-        entity.setAtchFileId(dto.getAtchFileId());
-        entity.setLastUpdusrId(dto.getLastUpdusrId());
+        entity.setTitle(dto.getTitle());
+        entity.setContent(dto.getContent());
+        entity.setTypeCode(dto.getTypeCode());
+        entity.setOrganizationId(dto.getOrganizationId());
+        entity.setExpertId(dto.getExpertId());
+        entity.setIsPublic(dto.getIsPublic());
+        entity.setAttachedFileId(dto.getAttachedFileId());
+        entity.setLastModifiedBy(dto.getFirstRegisterId());
     }
 }

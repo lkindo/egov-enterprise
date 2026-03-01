@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { troubleService, Trouble } from '@/services/troubleService';
+import { troubleAdminService, Trouble } from '@/services/admin/system/TroubleAdminService';
 import TroubleClient from './TroubleClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -17,7 +17,7 @@ export default async function TroublePage() {
   let rawData = { content: [] as Trouble[], totalElements: 0, totalPages: 0 };
 
   try {
-    rawData = await troubleService.getTroubles({ page: 0, size: 50 }, axiosConfig);
+    rawData = await troubleAdminService.getTroubles({ page: 0, size: 50 }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch troubles failed:', error);
   }

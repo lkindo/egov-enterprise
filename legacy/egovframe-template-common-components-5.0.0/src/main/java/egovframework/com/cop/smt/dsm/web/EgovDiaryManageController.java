@@ -253,7 +253,8 @@ public class EgovDiaryManageController {
 			 */
 			String atchFileId = diaryManageVO.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -374,7 +375,8 @@ public class EgovDiaryManageController {
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {

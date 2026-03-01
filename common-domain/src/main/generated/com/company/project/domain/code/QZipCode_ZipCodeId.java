@@ -36,4 +36,3 @@ public class QZipCode_ZipCodeId extends BeanPath<ZipCode.ZipCodeId> {
     }
 
 }
-

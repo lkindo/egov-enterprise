@@ -13,15 +13,15 @@ import lombok.*;
 public class VacationDto {
     private String applcntId;
 
-    @NotBlank(message = "?´ê?êµ¬ë¶„?€ ?„ìˆ˜ ?…ë ¥ ??ª©?…ë‹ˆ??")
+    @NotBlank(message = "?ï¿½ï¿½?êµ¬ë¶„?ï¿½ ?ï¿½ìˆ˜ ?ï¿½ë ¥ ??ï¿½ï¿½?ï¿½ë‹ˆ??")
     @Size(max = 2)
     private String vcatnSe;
 
-    @NotBlank(message = "?œì‘?¼ì? ?„ìˆ˜ ?…ë ¥ ??ª©?…ë‹ˆ??")
+    @NotBlank(message = "?ï¿½ì‘?ï¿½ï¿½? ?ï¿½ìˆ˜ ?ï¿½ë ¥ ??ï¿½ï¿½?ï¿½ë‹ˆ??")
     @Size(max = 8)
     private String bgnde;
 
-    @NotBlank(message = "ì¢…ë£Œ?¼ì? ?„ìˆ˜ ?…ë ¥ ??ª©?…ë‹ˆ??")
+    @NotBlank(message = "ì¢…ë£Œ?ï¿½ï¿½? ?ï¿½ìˆ˜ ?ï¿½ë ¥ ??ï¿½ï¿½?ï¿½ë‹ˆ??")
     @Size(max = 8)
     private String endde;
 
@@ -30,7 +30,7 @@ public class VacationDto {
 
     private String reqstDe;
 
-    @NotBlank(message = "ë°œìƒ?°ë„???„ìˆ˜ ?…ë ¥ ??ª©?…ë‹ˆ??")
+    @NotBlank(message = "ë°œìƒ?ï¿½ë„???ï¿½ìˆ˜ ?ï¿½ë ¥ ??ï¿½ï¿½?ï¿½ë‹ˆ??")
     @Size(max = 4)
     private String occrrncYear;
 

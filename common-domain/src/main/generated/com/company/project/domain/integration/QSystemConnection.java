@@ -64,4 +64,3 @@ public class QSystemConnection extends EntityPathBase<SystemConnection> {
     }
 
 }
-

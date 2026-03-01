@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * ?�스???�계 ?�비??구현�? */
+ * ?�스???�계 ?�비??구현�? */
 @Service("egovSystemCntcService")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,7 +24,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     private final SystemCntcRepository systemCntcRepository;
 
     /**
-     * ?�계 목록 조회
+     * ?�계 목록 조회
      */
     public List<SystemCntcDto> selectSystemCntcList() {
         return systemCntcRepository.findAll().stream()
@@ -33,7 +33,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * ?�계 ?�세 조회
+     * ?�계 ?�세 조회
      */
     public SystemCntcDto selectSystemCntcDetail(String cntcId) {
         return systemCntcRepository.findById(Objects.requireNonNull(cntcId))
@@ -42,7 +42,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * ?�계 ?�록
+     * ?�계 ?�록
      */
     @Transactional
     public void insertSystemCntc(SystemCntcDto dto) {
@@ -57,7 +57,7 @@ public class SystemCntcService extends EgovAbstractServiceImpl {
     }
 
     /**
-     * ?�계 ?�인
+     * ?�계 ?�인
      */
     @Transactional
     public void approveSystemCntc(String cntcId) {

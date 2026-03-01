@@ -52,7 +52,8 @@ public class EgovSmsInfoController {
 	@Resource(name = "egovMessageSource")
 	EgovMessageSource egovMessageSource;
 
-	//private static final Logger LOGGER = LoggerFactory.getLogger(EgovSmsInfoController.class);
+	//
+                     static final Logger LOGGER = LoggerFactory.getLogger(EgovSmsInfoController.class);
 
 	/**
 	 * 臾몄옄硫붿떆吏 紐⑸줉??議고쉶?쒕떎.

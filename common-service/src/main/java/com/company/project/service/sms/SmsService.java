@@ -66,7 +66,7 @@ public class SmsService implements EgovSmsService {
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
 
-                // ??�젣 SMS 諛쒖??泥섎??(??��룞湲?泥섎???�좊??媛??
+                // ??�젣 SMS 諛쒖??泥섎??(??��룞湲?泥섎???�좊??媛??
                 try {
                     smsSender.send(dto.getTrnsmitTelno(), recptnDto.getRecptnTelno(), dto.getTrnsmitCn());
                     recptn.updateResult("S", "Success");

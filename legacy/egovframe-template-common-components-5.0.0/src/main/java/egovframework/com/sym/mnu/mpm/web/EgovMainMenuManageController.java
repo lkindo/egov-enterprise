@@ -55,11 +55,13 @@ public class EgovMainMenuManageController {
 
 	/** EgovFileMngService */
 	// @Resource(name="EgovFileMngService")
-	// private EgovFileMngService fileMngService;
+	//
+                     EgovFileMngService fileMngService;
 
 	/** EgovFileMngUtil */
 	// @Resource(name="EgovFileMngUtil")
-	// private EgovFileMngUtil fileUtil;
+	//
+                     EgovFileMngUtil fileUtil;
 
 	/* ### 硫붿씤?묒뾽 ### */
 	/* Main Index 議고쉶 */

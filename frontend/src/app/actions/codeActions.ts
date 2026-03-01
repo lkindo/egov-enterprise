@@ -2,17 +2,17 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
-import { CommonCodeDetail } from '@/services/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
+import { CmmnDetailCode } from '@/types/system';
 
-export async function saveCodeDetail(prevState: any, data: Partial<CommonCodeDetail>) {
+export async function saveCodeDetail(prevState: any, data: Partial<CmmnDetailCode>) {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.post('/admin/system/codes/details', data, axiosConfig);
-    
+    await codeAdminService.createDetailCode(data as CmmnDetailCode, config);
+
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 저장되었습니다.' };
   } catch (error: any) {
@@ -25,10 +25,10 @@ export async function deleteCodeDetail(prevState: any, { codeId, code }: { codeI
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/admin/system/codes/${codeId}/details/${code}`, axiosConfig);
-    
+    await codeAdminService.deleteDetailCode(codeId, code, config);
+
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 삭제되었습니다.' };
   } catch (error: any) {

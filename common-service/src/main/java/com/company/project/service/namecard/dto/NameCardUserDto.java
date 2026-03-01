@@ -44,7 +44,7 @@ public class NameCardUserDto {
                 .build();
     }
 
-    // ?꾨씫??硫붿�??�뱾 ?�붽?
+    // ?袁⑥뵭??筌롫뗄苑??뺣굶 ?곕떽?
     public String getCreatDt() {
         return this.creatDt != null ? this.creatDt.toString() : null;
     }

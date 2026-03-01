@@ -64,4 +64,3 @@ public class QRssTag extends EntityPathBase<RssTag> {
     }
 
 }
-

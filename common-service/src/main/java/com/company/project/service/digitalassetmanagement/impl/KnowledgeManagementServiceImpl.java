@@ -11,57 +11,48 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * 지식정보 관리 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class KnowledgeManagementServiceImpl implements KnowledgeManagementService {
 
-    private final KnowledgeInfRepository knowledgeInfRepository;
+        private final KnowledgeInfRepository knowledgeInfRepository;
 
-    @Override
-    public Page<KnowledgeInfSearchResult> selectKnowledgeManagementList(String searchCondition, String searchKeyword,
-            Pageable pageable) {
-        return knowledgeInfRepository.searchKnowledgeInf(searchCondition, searchKeyword,
-                Objects.requireNonNull(pageable));
-    }
+        @Override
+        public Page<KnowledgeInfSearchResult> selectKnowledgeManagementList(String searchCondition,
+                        String searchKeyword,
+                        Pageable pageable) {
+                return knowledgeInfRepository.searchKnowledgeInf(searchCondition, searchKeyword,
+                                Objects.requireNonNull(pageable));
+        }
 
-    @Override
-    public KnowledgeDto selectKnowledgeManagementDetail(String knoId, String emplyrId) {
-        KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(knoId))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge ID: " + knoId));
+        @Override
+        public KnowledgeDto selectKnowledgeManagementDetail(String knowledgeId, String userId) {
+                KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(knowledgeId))
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Invalid Knowledge ID: " + knowledgeId));
 
-        return KnowledgeDto.builder()
-                .knoId(entity.getKnoId())
-                .knoNm(entity.getKnoNm())
-                .knoCn(entity.getKnoCn())
-                .knoTypeCd(entity.getKnoTypeCd())
-                .orgnztId(entity.getOrgnztId())
-                .speId(entity.getSpeId())
-                .othbcAt(entity.getOthbcAt())
-                .appYmd(entity.getAppYmd())
-                .knoAps(entity.getKnoAps())
-                .junkYmd(entity.getJunkYmd())
-                .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .build();
-    }
+                return KnowledgeDto.from(entity);
+        }
 
-    @Override
-    @Transactional
-    public void updateKnowledgeManagement(KnowledgeDto dto) {
-        KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(dto.getKnoId()))
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Invalid Knowledge ID: " + dto.getKnoId()));
+        @Override
+        @Transactional
+        public void updateKnowledgeManagement(KnowledgeDto dto) {
+                KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(dto.getKnowledgeId()))
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Invalid Knowledge ID: " + dto.getKnowledgeId()));
 
-        entity.setJunkYmd(dto.getJunkYmd());
-        entity.setKnoAps(dto.getKnoAps());
-        entity.setLastUpdusrId(dto.getLastUpdusrId());
-        entity.setLastUpdusrPnttm(LocalDateTime.now());
+                entity.setDisuseDate(dto.getDisuseDate());
+                entity.setEvaluationGrade(dto.getEvaluationGrade());
+                // auditing fields are handled by JPA auditing if enabled, but we can set them
+                // manually if needed via BaseEntity methods
+                entity.setLastModifiedBy(dto.getFirstRegisterId()); // Using appropriate field for modifier
 
-        knowledgeInfRepository.save(Objects.requireNonNull(entity));
-    }
+                knowledgeInfRepository.save(Objects.requireNonNull(entity));
+        }
 }

@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * ?ºÂ€??–ë¾½?¾ëŒ„ë¸?DTO
+ * ?ï¿½Â€??ï¿½ë¾½?ï¿½ëŒ„ï¿½?DTO
  */
 @Getter
 @Setter

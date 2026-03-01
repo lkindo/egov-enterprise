@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ?�증 API 컨트롤러 ?�라?�스 ?�스?? */
+ * ?�증 API 컨트롤러 ?�라?�스 ?�스?? */
 @WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {
                 DataSourceAutoConfiguration.class,
                 JpaRepositoriesAutoConfiguration.class,
@@ -66,7 +66,7 @@ class AuthApiControllerTest {
         private SecurityContextRepository securityContextRepository;
 
         @Test
-        @DisplayName("로그??- ?�공")
+        @DisplayName("로그??- ?�공")
         void login_success() throws Exception {
                 // Given
                 TokenResponse mockResponse = new TokenResponse("mock-jwt-token", null);
@@ -87,7 +87,7 @@ class AuthApiControllerTest {
         }
 
         @Test
-        @DisplayName("로그??- ?�못??비�?번호")
+        @DisplayName("로그??- ?�못??비�?번호")
         void login_wrongPassword() throws Exception {
                 // Given
                 when(authService.login(any(LoginRequest.class)))

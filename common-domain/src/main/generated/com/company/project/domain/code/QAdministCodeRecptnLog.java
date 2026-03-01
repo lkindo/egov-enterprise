@@ -76,4 +76,3 @@ public class QAdministCodeRecptnLog extends EntityPathBase<AdministCodeRecptnLog
     }
 
 }
-

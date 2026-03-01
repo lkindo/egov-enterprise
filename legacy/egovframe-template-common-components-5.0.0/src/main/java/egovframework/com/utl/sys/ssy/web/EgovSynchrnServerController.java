@@ -79,8 +79,10 @@ public class EgovSynchrnServerController {
 	private EgovFileMngUtil fileUtil;
 
 	final static String SYNTH_SERVER_PATH = EgovProperties.getProperty("Globals.SynchrnServerPath");
-	// final static String uploadDir = "/product/jeus2/egovProps/tmp/upload/";
-	// final static String uploadDir = "D:/ftp/";
+	//
+                     static String uploadDir = "/product/jeus2/egovProps/tmp/upload/";
+	//
+                     static String uploadDir = "D:/ftp/";
 
 	/**
 	 * ?숆린?붾????쒕쾭愿由?紐⑸줉?붾㈃ ?대룞

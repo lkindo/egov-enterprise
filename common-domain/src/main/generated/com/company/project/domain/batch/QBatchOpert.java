@@ -50,4 +50,3 @@ public class QBatchOpert extends EntityPathBase<BatchOpert> {
     }
 
 }
-

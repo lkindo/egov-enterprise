@@ -62,4 +62,3 @@ public class QQestnrInfo extends EntityPathBase<QestnrInfo> {
     }
 
 }
-

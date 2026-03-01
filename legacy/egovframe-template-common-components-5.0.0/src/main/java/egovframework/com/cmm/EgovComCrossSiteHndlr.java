@@ -138,7 +138,8 @@ public class EgovComCrossSiteHndlr extends BodyTagSupport {
 	}
 
 	// *********************************************************************
-	// Public utility methods
+	//
+                     utility methods
 
 	/**
 	 * Outputs <tt>text</tt> to <tt>pageContext</tt>'s current JspWriter. If

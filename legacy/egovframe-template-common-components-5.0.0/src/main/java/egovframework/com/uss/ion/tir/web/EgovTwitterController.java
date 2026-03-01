@@ -50,7 +50,8 @@ import twitter4j.CreateTweetResponse;
 public class EgovTwitterController {
 
 //	@Autowired
-//	private DefaultBeanValidator beanValidator;
+//
+                     DefaultBeanValidator beanValidator;
 
 	/** EgovMessageSource */
 	@Resource(name = "egovMessageSource")

@@ -26,7 +26,7 @@ public class BbsApiController {
 
     private final EgovBoardService boardService;
 
-    @Operation(summary = "게시�?목록 조회")
+    @Operation(summary = "게시�?목록 조회")
     @GetMapping("/{bbsId}")
     public ResponseEntity<?> getBoardList(
             @PathVariable("bbsId") String bbsId,
@@ -49,7 +49,7 @@ public class BbsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "게시�??�세 조회")
+    @Operation(summary = "게시�??�세 조회")
     @GetMapping("/{bbsId}/{nttId}")
     public ResponseEntity<?> getBoardDetail(
             @PathVariable("bbsId") String bbsId,
@@ -61,7 +61,7 @@ public class BbsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "게시�??�록")
+    @Operation(summary = "게시�??�록")
     @PostMapping("/{bbsId}")
     public ResponseEntity<?> createBoard(
             @PathVariable("bbsId") String bbsId,
@@ -81,7 +81,7 @@ public class BbsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "게시�??�정")
+    @Operation(summary = "게시�??�정")
     @PutMapping("/{bbsId}/{nttId}")
     public ResponseEntity<?> updateBoard(
             @PathVariable("bbsId") String bbsId,
@@ -98,7 +98,7 @@ public class BbsApiController {
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "게시�???��")
+    @Operation(summary = "게시�???��")
     @DeleteMapping("/{bbsId}/{nttId}")
     public ResponseEntity<?> deleteBoard(
             @PathVariable("bbsId") String bbsId,

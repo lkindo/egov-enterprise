@@ -102,7 +102,8 @@ public class EgovArticleController {
 	@Resource(name = "EgovTemplateManageService")
 	private EgovTemplateManageService egovTemplateManageService;
 
-    //protected Logger log = Logger.getLogger(this.getClass());
+    //
+                     Logger log = Logger.getLogger(this.getClass());
 
 	/**
 	 * XSS 諛⑹? 泥섎━.
@@ -359,7 +360,8 @@ public class EgovArticleController {
 
 		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		board.setFrstRegisterId((user == null || user.getUniqId() == null) ? "" : user.getUniqId());

@@ -11,54 +11,46 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * 지식평가 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class KnowledgeAppraisalServiceImpl implements KnowledgeAppraisalService {
 
-    private final KnowledgeInfRepository knowledgeInfRepository;
+        private final KnowledgeInfRepository knowledgeInfRepository;
 
-    @Override
-    public Page<KnowledgeInfSearchResult> selectKnowledgeAppraisalList(String emplyrId, String searchCondition,
-            String searchKeyword, Pageable pageable) {
-        return knowledgeInfRepository.searchKnowledgeInf(searchCondition, searchKeyword,
-                Objects.requireNonNull(pageable));
-    }
+        @Override
+        public Page<KnowledgeInfSearchResult> selectKnowledgeAppraisalList(String userId, String searchCondition,
+                        String searchKeyword, Pageable pageable) {
+                return knowledgeInfRepository.searchKnowledgeInf(searchCondition, searchKeyword,
+                                Objects.requireNonNull(pageable));
+        }
 
-    @Override
-    public KnowledgeDto selectKnowledgeAppraisalDetail(String knoId) {
-        KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(knoId))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge ID: " + knoId));
+        @Override
+        public KnowledgeDto selectKnowledgeAppraisalDetail(String knowledgeId) {
+                KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(knowledgeId))
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Invalid Knowledge ID: " + knowledgeId));
 
-        return KnowledgeDto.builder()
-                .knoId(entity.getKnoId())
-                .knoNm(entity.getKnoNm())
-                .knoCn(entity.getKnoCn())
-                .knoTypeCd(entity.getKnoTypeCd())
-                .othbcAt(entity.getOthbcAt())
-                .appYmd(entity.getAppYmd())
-                .knoAps(entity.getKnoAps())
-                .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .build();
-    }
+                return KnowledgeDto.from(entity);
+        }
 
-    @Override
-    @Transactional
-    public void updateKnowledgeAppraisal(KnowledgeDto dto) {
-        KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(dto.getKnoId()))
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Invalid Knowledge ID: " + dto.getKnoId()));
+        @Override
+        @Transactional
+        public void updateKnowledgeAppraisal(KnowledgeDto dto) {
+                KnowledgeInf entity = knowledgeInfRepository.findById(Objects.requireNonNull(dto.getKnowledgeId()))
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Invalid Knowledge ID: " + dto.getKnowledgeId()));
 
-        entity.setAppYmd(dto.getAppYmd());
-        entity.setKnoAps(dto.getKnoAps());
-        entity.setSpeId(dto.getSpeId());
-        entity.setLastUpdusrId(dto.getLastUpdusrId());
-        entity.setLastUpdusrPnttm(LocalDateTime.now());
+                entity.setEvaluationDate(dto.getEvaluationDate());
+                entity.setEvaluationGrade(dto.getEvaluationGrade());
+                entity.setExpertId(dto.getExpertId());
+                entity.setLastModifiedBy(dto.getFirstRegisterId());
 
-        knowledgeInfRepository.save(Objects.requireNonNull(entity));
-    }
+                knowledgeInfRepository.save(Objects.requireNonNull(entity));
+        }
 }

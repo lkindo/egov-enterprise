@@ -56,4 +56,3 @@ public class QOnlineManual extends EntityPathBase<OnlineManual> {
     }
 
 }
-

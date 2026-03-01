@@ -50,4 +50,3 @@ public class QSysLogSummary extends EntityPathBase<SysLogSummary> {
     }
 
 }
-

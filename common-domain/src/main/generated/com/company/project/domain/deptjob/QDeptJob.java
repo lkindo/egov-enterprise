@@ -54,4 +54,3 @@ public class QDeptJob extends EntityPathBase<DeptJob> {
     }
 
 }
-

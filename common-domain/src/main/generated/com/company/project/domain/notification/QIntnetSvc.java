@@ -48,4 +48,3 @@ public class QIntnetSvc extends EntityPathBase<IntnetSvc> {
     }
 
 }
-

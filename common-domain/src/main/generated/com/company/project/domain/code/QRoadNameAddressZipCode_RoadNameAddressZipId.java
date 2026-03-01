@@ -36,4 +36,3 @@ public class QRoadNameAddressZipCode_RoadNameAddressZipId extends BeanPath<RoadN
     }
 
 }
-

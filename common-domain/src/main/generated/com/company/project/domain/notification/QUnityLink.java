@@ -58,4 +58,3 @@ public class QUnityLink extends EntityPathBase<UnityLink> {
     }
 
 }
-

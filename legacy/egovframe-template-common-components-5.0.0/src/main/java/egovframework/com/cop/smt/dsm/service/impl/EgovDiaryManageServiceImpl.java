@@ -30,7 +30,8 @@ import jakarta.annotation.Resource;
 @Service("egovDiaryManageService")
 public class EgovDiaryManageServiceImpl extends EgovAbstractServiceImpl implements EgovDiaryManageService{
 
-	//final private Log log = LogFactory.getLog(this.getClass());
+	//
+                     private Log log = LogFactory.getLog(this.getClass());
 
 	@Resource(name="diaryManageDao")
 	private DiaryManageDao dao;

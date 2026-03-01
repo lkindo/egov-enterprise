@@ -142,7 +142,8 @@ public class EgovLeaderSchdulController {
 		//?쇱젙援щ텇 寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
-		//}
+		//
+                    }
         model.addAttribute("searchKeyword", leaderSchdulVO.getSearchKeyword() == null ? "" : (String)leaderSchdulVO.getSearchKeyword());
         model.addAttribute("searchKeywordEx", leaderSchdulVO.getSearchKeywordEx() == null ? "" : (String)leaderSchdulVO.getSearchKeywordEx());
         model.addAttribute("searchCondition", leaderSchdulVO.getSearchCondition() == null ? "" : (String)leaderSchdulVO.getSearchCondition());
@@ -198,7 +199,8 @@ public class EgovLeaderSchdulController {
 		//?쇱젙援щ텇 寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
-		//}
+		//
+                    }
         model.addAttribute("searchKeyword", leaderSchdulVO.getSearchKeyword() == null ? "" : (String)leaderSchdulVO.getSearchKeyword());
         model.addAttribute("searchKeywordEx", leaderSchdulVO.getSearchKeywordEx() == null ? "" : (String)leaderSchdulVO.getSearchKeywordEx());
         model.addAttribute("searchCondition", leaderSchdulVO.getSearchCondition() == null ? "" : (String)leaderSchdulVO.getSearchCondition());
@@ -334,7 +336,8 @@ public class EgovLeaderSchdulController {
 		//寃???좎?
 		//if(leaderSchdulVO.getSearchKeywordEx() != null){
 		//	leaderSchdulVO.setSearchKeywordEx(new String(leaderSchdulVO.getSearchKeywordEx().getBytes("8859_1"), "UTF-8"));
-		//}
+		//
+                    }
         model.addAttribute("searchKeyword", leaderSchdulVO.getSearchKeyword() == null ? "" : (String)leaderSchdulVO.getSearchKeyword());
         model.addAttribute("searchKeywordEx", leaderSchdulVO.getSearchKeywordEx() == null ? "" : (String)leaderSchdulVO.getSearchKeywordEx());
         model.addAttribute("searchCondition", leaderSchdulVO.getSearchCondition() == null ? "" : (String)leaderSchdulVO.getSearchCondition());

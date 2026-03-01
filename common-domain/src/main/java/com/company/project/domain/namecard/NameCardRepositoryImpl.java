@@ -14,7 +14,7 @@ import java.util.Objects;
 import static com.company.project.domain.namecard.QNameCard.nameCard;
 
 /**
- * 筌뤿굟釉?Repository Custom ?닌뗭겱筌?
+ * 명함 Repository Custom 구현체
  */
 @RequiredArgsConstructor
 public class NameCardRepositoryImpl implements NameCardRepositoryCustom {
@@ -27,10 +27,10 @@ public class NameCardRepositoryImpl implements NameCardRepositoryCustom {
                                 .selectFrom(nameCard)
                                 .where(
                                                 keywordContains(keyword),
-                                                nameCard.othbcAt.eq("Y"))
+                                                nameCard.isPublic.eq("Y"))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(nameCard.ncrdNm.asc())
+                                .orderBy(nameCard.name.asc())
                                 .fetch();
 
                 long total = queryFactory
@@ -38,15 +38,15 @@ public class NameCardRepositoryImpl implements NameCardRepositoryCustom {
                                 .from(nameCard)
                                 .where(
                                                 keywordContains(keyword),
-                                                nameCard.othbcAt.eq("Y"))
+                                                nameCard.isPublic.eq("Y"))
                                 .fetchOne();
 
                 return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
         }
 
         private BooleanExpression keywordContains(String keyword) {
-                return StringUtils.hasText(keyword) ? nameCard.ncrdNm.containsIgnoreCase(keyword)
-                                .or(nameCard.cmpnyNm.containsIgnoreCase(keyword))
-                                .or(nameCard.deptNm.containsIgnoreCase(keyword)) : null;
+                return StringUtils.hasText(keyword) ? nameCard.name.containsIgnoreCase(keyword)
+                                .or(nameCard.companyName.containsIgnoreCase(keyword))
+                                .or(nameCard.departmentName.containsIgnoreCase(keyword)) : null;
         }
 }

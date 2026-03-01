@@ -58,4 +58,3 @@ public class QWorkReport extends EntityPathBase<WorkReport> {
     }
 
 }
-

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
-import { monitoringService, DbMntrng } from '@/services/monitoringService';
+import { monitoringAdminService, DbMntrng } from '@/services/admin/system/MonitoringAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Database, Plus, Trash2, PlayCircle, Clock, Server, ShieldCheck } from 'lucide-react';
@@ -27,7 +27,7 @@ export function DbMonitor() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (await monitoringService.getDbMntrngList({ page: 0, size: 50 })) as any;
+      const res = (await monitoringAdminService.getDbMntrngList({ page: 0, size: 50 })) as any;
       setData(res.content || res.data?.content || []);
     } catch (error) {
       toast('DB 모니터링 정보를 불러오지 못했습니다.', 'error');
@@ -43,7 +43,7 @@ export function DbMonitor() {
   const handleCheck = async (id: string) => {
     try {
       setLoading(true);
-      await monitoringService.checkDbStatus(id);
+      await monitoringAdminService.checkDbStatus(id);
       toast('인스턴스 연결 프로토콜 확인 완료.', 'success');
       loadData();
     } catch (error) {
@@ -56,7 +56,7 @@ export function DbMonitor() {
   const handleDelete = async (id: string) => {
     if (!confirm('해당 데이터 소스 모니터링을 삭제하시겠습니까?')) return;
     try {
-      await monitoringService.deleteDbMntrng(id);
+      await monitoringAdminService.deleteDbMntrng(id);
       toast('정상적으로 삭제되었습니다.', 'success');
       loadData();
     } catch (error) {
@@ -67,7 +67,7 @@ export function DbMonitor() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await monitoringService.createDbMntrng(formData);
+      await monitoringAdminService.createDbMntrng(formData);
       toast('신규 DB 인스턴스가 등록되었습니다.', 'success');
       setIsModalOpen(false);
       loadData();
@@ -77,49 +77,49 @@ export function DbMonitor() {
   };
 
   const columns: ColumnDef<DbMntrng>[] = [
-    { 
+    {
       id: 'dataSourcNm',
-      header: 'Data Source Alias', 
+      header: 'Data Source Alias',
       width: 250,
       accessor: (item: DbMntrng) => (
         <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:bg-primary transition-all">
-                <Database size={16} />
-            </div>
-            <span className="text-sm font-black text-slate-900 italic uppercase tracking-tighter">{item.dataSourcNm}</span>
+          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:bg-primary transition-all">
+            <Database size={16} />
+          </div>
+          <span className="text-sm font-black text-slate-900 italic uppercase tracking-tighter">{item.dataSourcNm}</span>
         </div>
       )
     },
-    { 
+    {
       id: 'dbmsKind',
-      header: 'Architecture', 
+      header: 'Architecture',
       width: 150,
       accessor: (item: DbMntrng) => (
         <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black italic uppercase text-slate-400">DBMS Engine</span>
-            <div className="px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 inline-block">
-                <span className="text-xs font-mono font-black text-slate-600 uppercase">{item.dbmsKind || 'SQL'}</span>
-            </div>
+          <span className="text-[10px] font-black italic uppercase text-slate-400">DBMS Engine</span>
+          <div className="px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 inline-block">
+            <span className="text-xs font-mono font-black text-slate-600 uppercase">{item.dbmsKind || 'SQL'}</span>
+          </div>
         </div>
       )
     },
-    { 
+    {
       id: 'dbmsIp',
-      header: 'Endpoint Config', 
+      header: 'Endpoint Config',
       width: 220,
       accessor: (item: DbMntrng) => (
         <div className="flex flex-col gap-1">
-            <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest leading-none">Access IPv4 : Port</span>
-            <div className="flex items-center gap-2">
-                <Server size={12} className="text-slate-300" />
-                <span className="text-xs font-mono font-black text-slate-900 tracking-tight">{item.dbmsIp}:{item.dbmsPort}</span>
-            </div>
+          <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest leading-none">Access IPv4 : Port</span>
+          <div className="flex items-center gap-2">
+            <Server size={12} className="text-slate-300" />
+            <span className="text-xs font-mono font-black text-slate-900 tracking-tight">{item.dbmsIp}:{item.dbmsPort}</span>
+          </div>
         </div>
       )
     },
-    { 
+    {
       id: 'mntrngSttus',
-      header: 'Sync Integrity', 
+      header: 'Sync Integrity',
       width: 150,
       accessor: (item: DbMntrng) => (
         <div className="flex items-center gap-3">
@@ -133,12 +133,12 @@ export function DbMonitor() {
         </div>
       )
     },
-    { 
+    {
       id: 'creatDt',
-      header: 'Pulse Snapshot', 
+      header: 'Pulse Snapshot',
       accessor: (item: DbMntrng) => (
         <div className="flex items-center gap-2 text-[10px] font-mono font-black text-slate-400 italic tabular-nums">
-            <Clock size={12} className="opacity-30" /> {item.creatDt}
+          <Clock size={12} className="opacity-30" /> {item.creatDt}
         </div>
       )
     },
@@ -148,15 +148,15 @@ export function DbMonitor() {
       className: 'text-right',
       accessor: (item: DbMntrng) => (
         <div className="flex justify-end gap-2 pr-4">
-          <button 
-            onClick={() => handleCheck(item.dataSourcNm)} 
+          <button
+            onClick={() => handleCheck(item.dataSourcNm)}
             className="h-10 w-10 bg-primary/5 text-primary hover:text-white hover:bg-primary hover:shadow-xl transition-all rounded-xl flex items-center justify-center border border-primary/10"
             title="연결 확인"
           >
             <PlayCircle size={16} className="fill-current" />
           </button>
-          <button 
-            onClick={() => handleDelete(item.dataSourcNm)} 
+          <button
+            onClick={() => handleDelete(item.dataSourcNm)}
             className="h-10 w-10 bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-white hover:shadow-xl transition-all rounded-xl flex items-center justify-center border border-transparent hover:border-rose-100"
           >
             <Trash2 size={16} />
@@ -169,71 +169,71 @@ export function DbMonitor() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <div className="flex justify-end">
-        <Button 
-            onClick={() => setIsModalOpen(true)} 
-            className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black italic uppercase tracking-widest text-[10px] shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 border border-white/10"
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black italic uppercase tracking-widest text-[10px] shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 border border-white/10"
         >
           <Plus size={18} /> Establish New Data Node
         </Button>
       </div>
 
       <div className="bg-white/50 rounded-[3rem] p-4 border border-slate-100 shadow-xl">
-          <UltimateDataGrid 
-            title="DATABASE INFRASTRUCTURE MONITOR MATRIX" 
-            columns={columns as any} 
-            data={data as any} 
-            loading={loading}
-            keyField="dataSourcNm"
-            className="rounded-[2.5rem] border-none"
-          />
+        <UltimateDataGrid
+          title="DATABASE INFRASTRUCTURE MONITOR MATRIX"
+          columns={columns as any}
+          data={data as any}
+          loading={loading}
+          keyField="dataSourcNm"
+          className="rounded-[2.5rem] border-none"
+        />
       </div>
 
-      <StandardModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <StandardModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title="Broadcast New Storage Engine Node"
         maxWidth="md"
       >
         <form onSubmit={handleCreate} className="p-10 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Data Source Alias</label>
-                    <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dataSourcNm} onChange={e => setFormData({...formData, dataSourcNm: e.target.value})} required placeholder="DS NAME" />
-                </div>
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">DBMS Engine</label>
-                    <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner uppercase" value={formData.dbmsKind} onChange={e => setFormData({...formData, dbmsKind: e.target.value})} required placeholder="MYSQL / ORACLE" />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">Data Source Alias</label>
+              <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dataSourcNm} onChange={e => setFormData({ ...formData, dataSourcNm: e.target.value })} required placeholder="DS NAME" />
             </div>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">DBMS Engine</label>
+              <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner uppercase" value={formData.dbmsKind} onChange={e => setFormData({ ...formData, dbmsKind: e.target.value })} required placeholder="MYSQL / ORACLE" />
+            </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">IPv4 Address</label>
-                    <input className="w-full h-12 rounded-lg border-2 text-xs font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" value={formData.dbmsIp} onChange={e => setFormData({...formData, dbmsIp: e.target.value})} required placeholder="0.0.0.0" />
-                </div>
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Access Port</label>
-                    <input type="number" className="w-full h-12 rounded-lg border-2 text-xs font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" value={formData.dbmsPort} onChange={e => setFormData({...formData, dbmsPort: parseInt(e.target.value)})} required />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">IPv4 Address</label>
+              <input className="w-full h-12 rounded-lg border-2 text-xs font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" value={formData.dbmsIp} onChange={e => setFormData({ ...formData, dbmsIp: e.target.value })} required placeholder="0.0.0.0" />
             </div>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Access Port</label>
+              <input type="number" className="w-full h-12 rounded-lg border-2 text-xs font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" value={formData.dbmsPort} onChange={e => setFormData({ ...formData, dbmsPort: parseInt(e.target.value) })} required />
+            </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Credential ID</label>
-                    <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dbmsId} onChange={e => setFormData({...formData, dbmsId: e.target.value})} required />
-                </div>
-                <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Secret Key</label>
-                    <input type="password" className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dbmsPw} onChange={e => setFormData({...formData, dbmsPw: e.target.value})} required />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Credential ID</label>
+              <input className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dbmsId} onChange={e => setFormData({ ...formData, dbmsId: e.target.value })} required />
             </div>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Secret Key</label>
+              <input type="password" className="w-full h-14 rounded-xl border-2 text-sm font-black px-4 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" value={formData.dbmsPw} onChange={e => setFormData({ ...formData, dbmsPw: e.target.value })} required />
+            </div>
+          </div>
 
-            <div className="flex gap-4 pt-6">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2">Abort</Button>
-                <Button type="submit" className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-2xl shadow-slate-900/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all active:scale-95 border border-white/10">
-                    <ShieldCheck size={18} /> Establish Protocol
-                </Button>
-            </div>
+          <div className="flex gap-4 pt-6">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2">Abort</Button>
+            <Button type="submit" className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-2xl shadow-slate-900/20 italic uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all active:scale-95 border border-white/10">
+              <ShieldCheck size={18} /> Establish Protocol
+            </Button>
+          </div>
         </form>
       </StandardModal>
     </div>

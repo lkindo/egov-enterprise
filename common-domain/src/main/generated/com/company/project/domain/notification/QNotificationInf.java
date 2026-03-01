@@ -50,4 +50,3 @@ public class QNotificationInf extends EntityPathBase<NotificationInf> {
     }
 
 }
-

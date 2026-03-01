@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { anniversaryService, Anniversary } from '@/services/anniversaryService';
+import { anniversaryUserService, Anniversary } from '@/services/user/anniversary/AnniversaryUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { Cake, Heart, Gift, Star, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ export default function AnniversaryPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await anniversaryService.getAnniversaries();
+        const res = await anniversaryUserService.getAnniversaries();
         setItems(res?.content || []);
       } catch (error) {
         toast('기념일 정보를 불러오지 못했습니다.', 'error');

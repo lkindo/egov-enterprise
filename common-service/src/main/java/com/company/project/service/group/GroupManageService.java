@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 洹몃�??�????�퉬??
+ * 洹몃�??�????�퉬??
  */
 @Service("projectGroupManageService")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class GroupManageService {
     private final GroupManageRepository groupManageRepository;
 
     /**
-     * 洹몃�?紐⑸�?議고??     */
+     * 洹몃�?紐⑸�?議고??     */
     public List<GroupManageDto> selectGroupList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -45,7 +45,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃�?紐⑸�???嫄댁??     */
+     * 洹몃�?紐⑸�???嫄댁??     */
     public int selectGroupListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
@@ -55,7 +55,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃�??곸꽭 議고??     */
+     * 洹몃�??곸꽭 議고??     */
     public GroupManageDto selectGroup(String groupId) {
         return groupManageRepository.findById(Objects.requireNonNull(groupId))
                 .map(this::toDto)
@@ -63,7 +63,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃�??깅줉
+     * 洹몃�??깅줉
      */
     @Transactional
     public String insertGroup(GroupManageDto dto) {
@@ -83,7 +83,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃�???�젙
+     * 洹몃�???�젙
      */
     @Transactional
     public void updateGroup(GroupManageDto dto) {
@@ -93,14 +93,14 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃�?????     */
+     * 洹몃�?????     */
     @Transactional
     public void deleteGroup(String groupId) {
         groupManageRepository.deleteById(Objects.requireNonNull(groupId));
     }
 
     /**
-     * 洹몃�???�쨷 ????     */
+     * 洹몃�???�쨷 ????     */
     @Transactional
     public void deleteGroups(String[] groupIds) {
         groupManageRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(groupIds)));

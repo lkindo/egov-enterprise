@@ -1,4 +1,4 @@
-/**
+**
  *  Class Name : EgovFileCmprs.java
  *  Description : ?뚯씪(?붾젆?좊━)???뺤텞 諛??뺤텞?댁젣 ?섎뒗 Business Interface class
  *  Modification Information

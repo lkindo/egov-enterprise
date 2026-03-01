@@ -36,4 +36,3 @@ public class QProgramChangeRequest_ProgramChangeRequestId extends BeanPath<Progr
     }
 
 }
-

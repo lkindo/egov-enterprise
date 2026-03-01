@@ -52,4 +52,3 @@ public class QCntcInstt extends EntityPathBase<CntcInstt> {
     }
 
 }
-

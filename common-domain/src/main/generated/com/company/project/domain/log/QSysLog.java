@@ -54,4 +54,3 @@ public class QSysLog extends EntityPathBase<SysLog> {
     }
 
 }
-

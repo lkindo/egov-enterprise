@@ -48,4 +48,3 @@ public class QCommonCodeCategory extends EntityPathBase<CommonCodeCategory> {
     }
 
 }
-

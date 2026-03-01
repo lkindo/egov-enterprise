@@ -52,4 +52,3 @@ public class QHoliday extends EntityPathBase<Holiday> {
     }
 
 }
-

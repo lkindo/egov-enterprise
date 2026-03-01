@@ -9,8 +9,8 @@ import { ShieldCheck, Users, ChevronRight, Key, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-import { deptService, Department } from '@/services/deptService';
-import { roleService, AuthorInfo } from '@/services/roleService';
+import { deptAdminService, Department } from '@/services/admin/system/DeptAdminService';
+import { roleAdminService, AuthorInfo } from '@/services/admin/system/RoleAdminService';
 
 const DEPTS_KEY = ['admin', 'departments'] as const;
 const ROLES_KEY = ['admin', 'roles'] as const;
@@ -22,7 +22,7 @@ export default function DeptAuthorityPage() {
   // [async-parallel] 독립 API (부서, 권한 목록) 개별 useQuery
   const { data: deptsData, isLoading: deptsLoading } = useQuery({
     queryKey: DEPTS_KEY,
-    queryFn: () => deptService.getDepts(),
+    queryFn: () => deptAdminService.getDepts(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -34,7 +34,7 @@ export default function DeptAuthorityPage() {
 
   const depts: Department[] = (deptsData as any)?.data || (deptsData as any)?.list || deptsData || [];
   const roles: AuthorInfo[] = (rolesData as any)?.data || (rolesData as any)?.list || rolesData || [];
-  
+
   const loading = deptsLoading || rolesLoading;
 
   const columns = [
@@ -43,17 +43,17 @@ export default function DeptAuthorityPage() {
       accessor: (item: AuthorInfo) => item.authorCode,
       className: 'font-mono text-xs font-bold text-primary'
     },
-    { 
-      header: '권한 명칭', 
-      accessor: (item: AuthorInfo) => item.authorNm, 
-      className: 'font-bold' 
+    {
+      header: '권한 명칭',
+      accessor: (item: AuthorInfo) => item.authorNm,
+      className: 'font-bold'
     },
     {
-      header: '부여 여부', 
+      header: '부여 여부',
       className: 'text-center',
       accessor: () => (
-        <input 
-          type="checkbox" 
+        <input
+          type="checkbox"
           className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
         />
       )
@@ -67,11 +67,11 @@ export default function DeptAuthorityPage() {
 
   return (
     <div className="space-y-6 pb-20">
-      <PageHeader 
-        title="부서별 권한 일괄 관리" 
+      <PageHeader
+        title="부서별 권한 일괄 관리"
         breadcrumbs={[{ label: '보안관리' }, { label: '부서권한' }]}
         actions={
-          <Button 
+          <Button
             onClick={handleSave}
             className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all font-black h-11"
           >
@@ -91,8 +91,8 @@ export default function DeptAuthorityPage() {
                 onClick={() => setSelectedDept(d.orgnztId)}
                 className={cn(
                   "flex items-center justify-between p-4 rounded-2xl border text-left transition-all",
-                  selectedDept === d.orgnztId 
-                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                  selectedDept === d.orgnztId
+                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
                     : "bg-card hover:bg-accent"
                 )}
               >
@@ -123,11 +123,11 @@ export default function DeptAuthorityPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">선택된 부서의 모든 소속원에게 아래 체크된 권한이 공통으로 부여됩니다.</p>
                 </div>
               </div>
-              
+
               <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-                <StandardDataTable 
-                  columns={columns} 
-                  data={roles} 
+                <StandardDataTable
+                  columns={columns}
+                  data={roles}
                   loading={loading}
                   className="border-none rounded-none"
                 />

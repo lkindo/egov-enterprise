@@ -74,4 +74,3 @@ public class QRss extends EntityPathBase<Rss> {
     }
 
 }
-

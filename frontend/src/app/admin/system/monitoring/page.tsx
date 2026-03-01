@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { monitoringService } from '@/services/monitoringService';
+import { monitoringAdminService } from '@/services/admin/system/MonitoringAdminService';
 import MonitoringAdminClient from './MonitoringAdminClient';
 
 export const metadata = {
@@ -22,18 +22,18 @@ export default async function AdminMonitoringPage() {
 
   try {
     const [httpRes, fileSysRes, logsRes] = await Promise.all([
-        monitoringService.getHttpMonList({ page: 0, size: 1 }, axiosConfig),
-        monitoringService.getFileSysMntrngList({ page: 0, size: 100 }, axiosConfig),
-        monitoringService.getServerResourceLogs({ page: 0, size: 1 }, axiosConfig)
+      monitoringAdminService.getHttpMonList({ page: 0, size: 1 }, axiosConfig),
+      monitoringAdminService.getFileSysMntrngList({ page: 0, size: 100 }, axiosConfig),
+      monitoringAdminService.getServerResourceLogs({ page: 0, size: 1 }, axiosConfig)
     ]);
 
     summary.httpCount = String((httpRes as any)?.totalElements || 0);
-    
+
     const fileSystems = (fileSysRes as any)?.content || (fileSysRes as any)?.data?.content || [];
     if (fileSystems.length > 0) {
-        const totalSize = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysSize || 0), 0);
-        const totalUsage = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysUsgQty || 0), 0);
-        summary.avgDiskUsage = totalSize > 0 ? Math.round((totalUsage / totalSize) * 100) : 0;
+      const totalSize = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysSize || 0), 0);
+      const totalUsage = fileSystems.reduce((acc: number, cur: any) => acc + (cur.fileSysUsgQty || 0), 0);
+      summary.avgDiskUsage = totalSize > 0 ? Math.round((totalUsage / totalSize) * 100) : 0;
     }
 
     summary.serverCount = (logsRes as any)?.totalElements || 0;

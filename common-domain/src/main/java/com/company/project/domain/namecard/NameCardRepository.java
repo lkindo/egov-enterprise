@@ -5,13 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * 嶺뚮ㅏ援잓뇡?Repository
+ * 명함 Repository
  */
 public interface NameCardRepository extends JpaRepository<NameCard, String>, NameCardRepositoryCustom {
 
-    Page<NameCard> findByNcrdNmContaining(String ncrdNm, Pageable pageable);
+    Page<NameCard> findByNameContaining(String name, Pageable pageable);
 
-    Page<NameCard> findByCmpnyNmContaining(String cmpnyNm, Pageable pageable);
+    Page<NameCard> findByCompanyNameContaining(String companyName, Pageable pageable);
 
-    Page<NameCard> findByNcrdTrgterId(String ncrdTrgterId, Pageable pageable);
+    Page<NameCard> findByTargetUserId(String targetUserId, Pageable pageable);
 }

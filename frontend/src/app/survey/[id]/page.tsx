@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { surveyService } from '@/services/surveyService';
+import { surveyAdminService } from '@/services/admin/survey/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/survey';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -25,8 +25,8 @@ export default function SurveyDetailPage() {
       try {
         setLoading(true);
         const [sRes, qRes] = (await Promise.all([
-          surveyService.getSurvey(id as string),
-          surveyService.getQuestions(id as string)
+          surveyAdminService.getSurvey(id as string),
+          surveyAdminService.getQuestions(id as string)
         ])) as any[];
         if (sRes?.success) setSurvey(sRes.data);
         if (qRes?.success) setQuestions(qRes.data);
@@ -53,7 +53,7 @@ export default function SurveyDetailPage() {
 
     if (isConfirmed) {
       try {
-        await surveyService.submitAnswers(id as string, answers);
+        await surveyAdminService.submitAnswers(id as string, answers);
         toast('설문에 참여해 주셔서 감사합니다.', 'success');
         router.push('/survey');
       } catch (error) {
@@ -67,7 +67,7 @@ export default function SurveyDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20">
-      <PageHeader 
+      <PageHeader
         title={survey.qestnrSj}
         breadcrumbs={[{ label: '설문조사', href: '/survey' }, { label: '참여' }]}
       />
@@ -95,17 +95,17 @@ export default function SurveyDetailPage() {
               </span>
               <div className="flex-1 space-y-6">
                 <h3 className="text-lg font-bold text-foreground">{q.qestnCn}</h3>
-                
+
                 {q.qestnTyCode === '1' ? (
                   <div className="grid gap-3">
                     {/* Mock Options - In real case, fetch from answers API */}
                     {['매우 만족', '만족', '보통', '불만족'].map((opt) => (
                       <label key={opt} className="flex items-center gap-3 p-4 border rounded-xl hover:bg-accent/50 cursor-pointer transition-colors group">
-                        <input 
-                          type="radio" 
-                          name={q.qestnrQesitmId} 
+                        <input
+                          type="radio"
+                          name={q.qestnrQesitmId}
                           value={opt}
-                          onChange={(e) => setAnswers({...answers, [q.qestnrQesitmId]: e.target.value})}
+                          onChange={(e) => setAnswers({ ...answers, [q.qestnrQesitmId]: e.target.value })}
                           className="w-4 h-4 text-primary"
                         />
                         <span className="text-sm font-medium group-hover:text-primary">{opt}</span>
@@ -113,10 +113,10 @@ export default function SurveyDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <textarea 
+                  <textarea
                     className="w-full min-h-[120px] p-4 border rounded-xl bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     placeholder="의견을 입력해 주세요."
-                    onChange={(e) => setAnswers({...answers, [q.qestnrQesitmId]: e.target.value})}
+                    onChange={(e) => setAnswers({ ...answers, [q.qestnrQesitmId]: e.target.value })}
                   />
                 )}
               </div>
@@ -126,7 +126,7 @@ export default function SurveyDetailPage() {
       </div>
 
       <div className="flex justify-center pt-8">
-        <button 
+        <button
           onClick={handleSubmit}
           className="flex items-center gap-2 px-12 py-4 bg-primary text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all"
         >

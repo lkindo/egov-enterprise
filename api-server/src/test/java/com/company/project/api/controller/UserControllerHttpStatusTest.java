@@ -39,13 +39,13 @@ class UserControllerHttpStatusTest {
         private UserService userService;
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�공 ??200 OK 반환")
+        @DisplayName("POST /api/v1/users/signup - ?�공 ??200 OK 반환")
         void signup_success_returns200() throws Exception {
                 // Given
 
                 UserResponse response = new UserResponse(
                                 "newUser",
-                                "?�규 ?�용??,
+                                "?�규 ?�용??,
                                 com.company.project.domain.user.entity.Role.USER);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
@@ -54,7 +54,7 @@ class UserControllerHttpStatusTest {
                                 {
                                     "userId": "newUser",
                                     "password": "password123!",
-                                    "userNm": "?�규 ?�용??,
+                                    "userNm": "?�규 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -70,7 +70,7 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - 중복 ?�용??ID�??�한 400 Bad Request 반환")
+        @DisplayName("POST /api/v1/users/signup - 중복 ?�용??ID�??�한 400 Bad Request 반환")
         void signup_fail_duplicateUserId_returns400() throws Exception {
                 // Given
 
@@ -81,7 +81,7 @@ class UserControllerHttpStatusTest {
                                 {
                                     "userId": "existingUser",
                                     "password": "password123!",
-                                    "userNm": "기존 ?�용??,
+                                    "userNm": "기존 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -99,11 +99,11 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users - ?�공 ??200 OK 반환")
+        @DisplayName("GET /api/v1/users - ?�공 ??200 OK 반환")
         void getUserList_success_returns200() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
 
                 when(userService.getUserList()).thenReturn(userList);
 
@@ -115,12 +115,12 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/paged - ?�공 ??200 OK 반환")
+        @DisplayName("GET /api/v1/users/paged - ?�공 ??200 OK 반환")
         void getPagedUserList_success_returns200() throws Exception {
                 // Given
                 org.springframework.data.domain.Page<UserDto> userPage = new org.springframework.data.domain.PageImpl<>(
                                 Arrays.asList(
-                                                new UserDto("user1", "?�용??", "USR001", null, null, null, null)));
+                                                new UserDto("user1", "?�용??", "USR001", null, null, null, null)));
 
                 when(userService.getPagedUserList(any(org.springframework.data.domain.Pageable.class)))
                                 .thenReturn(userPage);
@@ -133,7 +133,7 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/paged - ?�못???�이지 번호�??�한 400 Bad Request 반환")
+        @DisplayName("GET /api/v1/users/paged - ?�못???�이지 번호�??�한 400 Bad Request 반환")
         void getPagedUserList_fail_invalidPage_returns400() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users/paged?page=-1&size=10")
@@ -142,7 +142,7 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�효??검???�패�??�한 400 Bad Request 반환")
+        @DisplayName("POST /api/v1/users/signup - ?�효??검???�패�??�한 400 Bad Request 반환")
         void signup_fail_validationError_returns400() throws Exception {
                 // Given
                 String invalidRequestBody = """
@@ -162,7 +162,7 @@ class UserControllerHttpStatusTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�버 ?��? ?�류�??�한 500 Internal Server Error 반환")
+        @DisplayName("POST /api/v1/users/signup - ?�버 ?��? ?�류�??�한 500 Internal Server Error 반환")
         void signup_fail_internalError_returns500() throws Exception {
                 // Given
 
@@ -173,7 +173,7 @@ class UserControllerHttpStatusTest {
                                 {
                                     "userId": "newUser",
                                     "password": "password123!",
-                                    "userNm": "?�규 ?�용??,
+                                    "userNm": "?�규 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"

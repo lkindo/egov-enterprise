@@ -50,4 +50,3 @@ public class QCommonCodeGroup extends EntityPathBase<CommonCodeGroup> {
     }
 
 }
-

@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * ë°°ì¹˜?¤ì?ì¤?ê´€ë¦¬ë? ?„í•œ ì»¨íŠ¸ë¡¤ëŸ¬ ?´ë˜?? */
+ * ë°°ì¹˜?ï¿½ï¿½?ï¿½?ê´€ë¦¬ï¿½? ?ï¿½í•œ ì»¨íŠ¸ë¡¤ëŸ¬ ?ï¿½ë˜?? */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -57,7 +57,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤?ëª©ë¡??ì¡°íšŒ?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½?ëª©ë¡??ì¡°íšŒ?ï¿½ë‹¤.
      */
     @RequestMapping({ "/sym/bat/getBatchSchdulList.do", "/sym/bat/EgovBatchSchdulList.do" })
     public String selectBatchSchdulList(@ModelAttribute("searchVO") BatchSchdul searchVO, ModelMap model)
@@ -87,7 +87,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??ì„¸ ?•ë³´ë¥?ì¡°íšŒ?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ì„¸ ?ï¿½ë³´ï¿½?ì¡°íšŒ?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/getBatchSchdul.do")
     public String selectBatchSchdul(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -98,7 +98,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??•ë³´ë¥??? œ?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ë³´ï¿½???ï¿½ï¿½?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/deleteBatchSchdul.do")
     public String deleteBatchSchdul(BatchSchdul batchSchdul, ModelMap model) throws Exception {
@@ -114,7 +114,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??±ë¡ ?”ë©´?¼ë¡œ ?´ë™?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ë¡ ?ï¿½ë©´?ï¿½ë¡œ ?ï¿½ë™?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/getBatchSchdulForRegist.do")
     public String selectBatchSchdulForRegist(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -125,7 +125,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??•ë³´ë¥??±ë¡?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ë³´ï¿½??ï¿½ë¡?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/addBatchSchdul.do")
     public String insertBatchSchdul(@Valid @ModelAttribute("batchSchdul") BatchSchdul batchSchdul,
@@ -151,7 +151,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??˜ì • ?”ë©´?¼ë¡œ ?´ë™?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ì • ?ï¿½ë©´?ï¿½ë¡œ ?ï¿½ë™?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/getBatchSchdulForUpdate.do")
     public String selectBatchSchdulForUpdate(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -163,7 +163,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * ë°°ì¹˜?¤ì?ì¤??•ë³´ë¥??˜ì •?œë‹¤.
+     * ë°°ì¹˜?ï¿½ï¿½?ï¿½??ï¿½ë³´ï¿½??ï¿½ì •?ï¿½ë‹¤.
      */
     @RequestMapping("/sym/bat/updateBatchSchdul.do")
     public String updateBatchSchdul(@Valid @ModelAttribute("batchSchdul") BatchSchdul batchSchdul,

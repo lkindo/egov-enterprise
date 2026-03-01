@@ -41,7 +41,8 @@ import jakarta.annotation.Resource;
 public class EgovComUtlController {
 
     //@Resource(name = "egovUserManageService")
-    //private EgovUserManageService egovUserManageService;
+    //
+                     EgovUserManageService egovUserManageService;
 	private static final Logger LOGGER = LoggerFactory.getLogger(EgovComUtlController.class);
 	
 	/** ?뷀샇?붿꽌鍮꾩뒪 */

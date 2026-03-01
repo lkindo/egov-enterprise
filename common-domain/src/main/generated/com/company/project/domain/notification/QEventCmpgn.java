@@ -60,4 +60,3 @@ public class QEventCmpgn extends EntityPathBase<EventCmpgn> {
     }
 
 }
-

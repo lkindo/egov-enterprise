@@ -90,4 +90,3 @@ public class QGeneralUser extends EntityPathBase<GeneralUser> {
     }
 
 }
-

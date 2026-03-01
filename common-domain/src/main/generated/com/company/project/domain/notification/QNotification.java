@@ -58,4 +58,3 @@ public class QNotification extends EntityPathBase<Notification> {
     }
 
 }
-

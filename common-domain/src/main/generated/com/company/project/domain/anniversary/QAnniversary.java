@@ -66,4 +66,3 @@ public class QAnniversary extends EntityPathBase<Anniversary> {
     }
 
 }
-

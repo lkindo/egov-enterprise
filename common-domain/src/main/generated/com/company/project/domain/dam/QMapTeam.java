@@ -44,4 +44,3 @@ public class QMapTeam extends EntityPathBase<MapTeam> {
     }
 
 }
-

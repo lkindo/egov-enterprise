@@ -669,7 +669,8 @@ public class EgovDeptSchdulManageController {
 			 */
 			String atchFileId = deptSchdulManageVO.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -794,7 +795,8 @@ public class EgovDeptSchdulManageController {
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {

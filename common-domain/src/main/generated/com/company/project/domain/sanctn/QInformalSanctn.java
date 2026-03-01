@@ -62,4 +62,3 @@ public class QInformalSanctn extends EntityPathBase<InformalSanctn> {
     }
 
 }
-

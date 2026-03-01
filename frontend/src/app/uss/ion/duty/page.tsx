@@ -8,7 +8,7 @@ import { UserPicker } from '@/app/components/ui/user-picker';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
 import { FormField } from '@/app/components/ui/standard-form';
-import { dutyService, Duty } from '@/services/dutyService';
+import { dutyUserService, Duty } from '@/services/user/duty/DutyUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { Calendar, UserPlus, Clock, ShieldAlert, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -27,7 +27,7 @@ export default function DutyPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (await dutyService.getDuties({})) as any;
+      const res = (await dutyUserService.getDuties({})) as any;
       if (res?.success) setDuties(res.data || []);
     } catch (error) {
       toast('당직 정보를 불러오지 못했습니다.', 'error');
@@ -47,7 +47,7 @@ export default function DutyPage() {
     }
 
     try {
-      await dutyService.saveDuty({
+      await dutyUserService.saveDuty({
         dutyDe: format(selectedDate, 'yyyyMMdd'),
         dutyUserId: selectedUser.ncrdId,
         dutyUserNm: selectedUser.ncrdNm
@@ -63,7 +63,7 @@ export default function DutyPage() {
   const handleDelete = async (item: Duty) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const res = (await dutyService.deleteDuty(item.dutyId)) as any;
+      const res = (await dutyUserService.deleteDuty(item.dutyId)) as any;
       if (res?.success) {
         toast('당직 정보가 삭제되었습니다.', 'success');
         loadData();
@@ -74,10 +74,10 @@ export default function DutyPage() {
   };
 
   const columns = [
-    { 
-      header: '당직일자', 
-      accessor: (item: Duty) => item.dutyDe, 
-      className: 'font-mono font-bold' 
+    {
+      header: '당직일자',
+      accessor: (item: Duty) => item.dutyDe,
+      className: 'font-mono font-bold'
     },
     {
       header: '당직자',
@@ -90,15 +90,15 @@ export default function DutyPage() {
         </div>
       )
     },
-    { 
-      header: '직위', 
-      accessor: (item: Duty) => item.postNm, 
-      className: 'text-xs text-muted-foreground' 
+    {
+      header: '직위',
+      accessor: (item: Duty) => item.postNm,
+      className: 'text-xs text-muted-foreground'
     },
-    { 
-      header: '연락처', 
-      accessor: (item: Duty) => item.telNo, 
-      className: 'text-xs' 
+    {
+      header: '연락처',
+      accessor: (item: Duty) => item.telNo,
+      className: 'text-xs'
     },
     {
       header: '관리',

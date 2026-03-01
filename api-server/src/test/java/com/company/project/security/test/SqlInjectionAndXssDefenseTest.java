@@ -28,7 +28,7 @@ class SqlInjectionAndXssDefenseTest {
     private UserService userService;
 
     @Test
-    @DisplayName("SQL Injection ?�도 - ?�용??ID??SQL 쿼리 ?�함")
+    @DisplayName("SQL Injection ?�도 - ?�용??ID??SQL 쿼리 ?�함")
     void sqlInjection_attemptInUserId() throws Exception {
         // Given
         String maliciousUserId = "admin'; DROP TABLE NEMPLYRINFO; --";
@@ -51,7 +51,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - ?�용???�름??SQL 쿼리 ?�함")
+    @DisplayName("SQL Injection ?�도 - ?�용???�름??SQL 쿼리 ?�함")
     void sqlInjection_attemptInUserName() throws Exception {
         // Given
         String maliciousUserName = "Admin'; DELETE FROM NEMPLYRINFO WHERE '1'='1";
@@ -74,7 +74,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - ?�용??조회 ?�라미터??SQL 쿼리 ?�함")
+    @DisplayName("SQL Injection ?�도 - ?�용??조회 ?�라미터??SQL 쿼리 ?�함")
     void sqlInjection_attemptInQueryParam() throws Exception {
         // Given
         String maliciousParam = "'; DROP TABLE NEMPLYRINFO; --";
@@ -86,7 +86,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�크립트 ?�그 ?�함")
+    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�크립트 ?�그 ?�함")
     void xssAttack_attemptInUserName() throws Exception {
         // Given
         String maliciousUserName = "<script>alert('XSS')</script>";
@@ -109,7 +109,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�벤???�들???�함")
+    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�벤???�들???�함")
     void xssAttack_attemptInUserNameWithEventHandler() throws Exception {
         // Given
         String maliciousUserName = "<img src=x onerror=alert('XSS')>";
@@ -132,7 +132,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�바?�크립트 URI ?�함")
+    @DisplayName("XSS 공격 ?�도 - ?�용???�름???�바?�크립트 URI ?�함")
     void xssAttack_attemptInUserNameWithJsUri() throws Exception {
         // Given
         String maliciousUserName = "<a href=\"javascript:alert('XSS')\">Click me</a>";
@@ -155,7 +155,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - LIKE 쿼리???�?�드카드 ?�용")
+    @DisplayName("SQL Injection ?�도 - LIKE 쿼리???�?�드카드 ?�용")
     void sqlInjection_attemptWithWildcard() throws Exception {
         // Given
         String maliciousSearch = "%'; OR '1'='1";
@@ -167,7 +167,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - UNION 기반 쿼리")
+    @DisplayName("SQL Injection ?�도 - UNION 기반 쿼리")
     void sqlInjection_attemptWithUnion() throws Exception {
         // Given
         String maliciousUserId = "admin' UNION SELECT * FROM NEMPLYRINFO WHERE '1'='1";
@@ -179,7 +179,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - 주석 기반 ?�회 ?�도")
+    @DisplayName("SQL Injection ?�도 - 주석 기반 ?�회 ?�도")
     void sqlInjection_attemptWithComment() throws Exception {
         // Given
         String maliciousUserId = "admin'--";
@@ -202,7 +202,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�풋 ?�드???�크립트 ?�함")
+    @DisplayName("XSS 공격 ?�도 - ?�풋 ?�드???�크립트 ?�함")
     void xssAttack_attemptInPasswordField() throws Exception {
         // Given
         String maliciousPassword = "password123!<script>alert('XSS')</script>";
@@ -210,7 +210,7 @@ class SqlInjectionAndXssDefenseTest {
                 {
                     "userId": "xssUser4",
                     "password": "%s",
-                    "userNm": "XSS ?�스???�용??,
+                    "userNm": "XSS ?�스???�용??,
                     "passwordHint": "hint",
                     "passwordCnsr": "answer",
                     "role": "USER"
@@ -225,7 +225,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�메???�드???�크립트 ?�함")
+    @DisplayName("XSS 공격 ?�도 - ?�메???�드???�크립트 ?�함")
     void xssAttack_attemptInEmailField() throws Exception {
         // Given
         String maliciousEmail = "test<script>alert('XSS')</script>@example.com";
@@ -233,7 +233,7 @@ class SqlInjectionAndXssDefenseTest {
                 {
                     "userId": "xssUser5",
                     "password": "password123!",
-                    "userNm": "XSS ?�스???�용??,
+                    "userNm": "XSS ?�스???�용??,
                     "emailAdres": "%s",
                     "passwordHint": "hint",
                     "passwordCnsr": "answer",
@@ -249,7 +249,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - ORDER BY ??조작")
+    @DisplayName("SQL Injection ?�도 - ORDER BY ??조작")
     void sqlInjection_attemptOrderByManipulation() throws Exception {
         // Given
         String maliciousOrderBy = "user_id; DROP TABLE NEMPLYRINFO; --";
@@ -261,7 +261,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("XSS 공격 ?�도 - ?�답???�성 ?�크립트 ?�함")
+    @DisplayName("XSS 공격 ?�도 - ?�답???�성 ?�크립트 ?�함")
     void xssAttack_responseContainsMaliciousScript() throws Exception {
         // Given
         String safeUserId = "normalUser";
@@ -280,7 +280,7 @@ class SqlInjectionAndXssDefenseTest {
     }
 
     @Test
-    @DisplayName("SQL Injection ?�도 - ?�중 쿼리 ?�행")
+    @DisplayName("SQL Injection ?�도 - ?�중 쿼리 ?�행")
     void sqlInjection_attemptMultipleQueries() throws Exception {
         // Given
         String maliciousUserId = "admin'; SHUTDOWN; --";

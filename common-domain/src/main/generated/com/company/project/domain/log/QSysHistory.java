@@ -46,4 +46,3 @@ public class QSysHistory extends EntityPathBase<SysHistory> {
     }
 
 }
-

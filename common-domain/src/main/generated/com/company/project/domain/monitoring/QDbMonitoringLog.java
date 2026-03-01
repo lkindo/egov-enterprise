@@ -60,4 +60,3 @@ public class QDbMonitoringLog extends EntityPathBase<DbMonitoringLog> {
     }
 
 }
-

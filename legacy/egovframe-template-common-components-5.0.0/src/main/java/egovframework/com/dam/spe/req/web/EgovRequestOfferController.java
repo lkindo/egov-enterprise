@@ -357,7 +357,8 @@ public class EgovRequestOfferController {
 			// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 			String atchFileId = requestOfferVO.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -432,7 +433,8 @@ public class EgovRequestOfferController {
 		// if (mapMaterial.getOrgnztId().equals("")) {
 		// EgovMap emp = (EgovMap)MapTeamList.get(0);
 		// mapMaterial.setOrgnztId(emp.get("orgnztId").toString());
-		// }
+		// 
+                    }
 
 		List<MapMaterialVO> mapMaterialList = mapMaterialService.selectMapMaterialList(searchMatVO);
 		model.addAttribute("mapMaterialList", mapMaterialList);
@@ -495,7 +497,8 @@ public class EgovRequestOfferController {
 			// 泥⑤??뚯씪 愿??泥⑤??뚯씪ID ?앹꽦
 			String atchFileId = "";
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {

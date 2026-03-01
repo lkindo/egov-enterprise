@@ -54,12 +54,14 @@ public class EgovProperties {
 	final static String FILE_SEPARATOR = System.getProperty("file.separator");
 
 	//?꾨줈?쇳떚 ?뚯씪??臾쇰━???꾩튂
-	//public static final String GLOBALS_PROPERTIES_FILE = System.getProperty("user.home") + FILE_SEPARATOR + "egovProps" +FILE_SEPARATOR + "globals.properties";
+	//
+                     static final String GLOBALS_PROPERTIES_FILE = System.getProperty("user.home") + FILE_SEPARATOR + "egovProps" +FILE_SEPARATOR + "globals.properties";
 
 	public static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getResource("") == null ? ""
 		: EgovProperties.class.getResource("").getPath().substring(0,
 			EgovProperties.class.getResource("").getPath().lastIndexOf("com"));
-	//public static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath().substring(0,EgovProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath().indexOf("WEB-INF/classes/")+"WEB-INF/classes/".length())+"egovframework/";
+	//
+                     static final String RELATIVE_PATH_PREFIX = EgovProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath().substring(0,EgovProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath().indexOf("WEB-INF/classes/")+"WEB-INF/classes/".length())+"egovframework/";
 
 	public static final String GLOBALS_PROPERTIES_FILE = RELATIVE_PATH_PREFIX + "egovProps" + FILE_SEPARATOR
 		+ "globals.properties";

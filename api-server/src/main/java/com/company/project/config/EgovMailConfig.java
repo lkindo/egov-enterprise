@@ -17,4 +17,3 @@ public class EgovMailConfig {
     // Removed dummy bean as it is now implemented in EgovSndngMailRegistServiceImpl
 
 }
-

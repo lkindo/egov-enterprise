@@ -58,4 +58,3 @@ public class QProxySvc extends EntityPathBase<ProxySvc> {
     }
 
 }
-

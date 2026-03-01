@@ -65,4 +65,3 @@ public class QNoteRecptn extends EntityPathBase<NoteRecptn> {
     }
 
 }
-

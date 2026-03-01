@@ -56,4 +56,3 @@ public class QBatchResult extends EntityPathBase<BatchResult> {
     }
 
 }
-

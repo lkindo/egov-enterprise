@@ -35,7 +35,7 @@ class ExceptionResponseTest {
         private UserService userService;
 
         @Test
-        @DisplayName("?�외 발생 ???�절???�러 ?�답 반환 - 비즈?�스 ?�외")
+        @DisplayName("?�외 발생 ???�절???�러 ?�답 반환 - 비즈?�스 ?�외")
         void exception_occurs_returnsProperErrorResponse() throws Exception {
                 // Given
 
@@ -46,7 +46,7 @@ class ExceptionResponseTest {
                                 {
                                     "userId": "duplicateUser",
                                     "password": "password123!",
-                                    "userNm": "중복 ?�용??,
+                                    "userNm": "중복 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -64,7 +64,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?��????�외 발생 ??500 ?�러 ?�답 반환")
+        @DisplayName("?��????�외 발생 ??500 ?�러 ?�답 반환")
         void runtimeException_occurs_returns500Error() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -74,7 +74,7 @@ class ExceptionResponseTest {
                                 {
                                     "userId": "testUser",
                                     "password": "password123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -92,7 +92,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�력 검�??�외 발생 ??400 ?�러 ?�답 반환")
+        @DisplayName("?�력 검�??�외 발생 ??400 ?�러 ?�답 반환")
         void validationException_occurs_returns400Error() throws Exception {
                 // Given
                 String invalidRequestBody = """
@@ -114,7 +114,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("존재?��? ?�는 ?�용??조회 ??404 ?�러 ?�답 반환")
+        @DisplayName("존재?��? ?�는 ?�용??조회 ??404 ?�러 ?�답 반환")
         void userNotFound_occurs_returns404Error() throws Exception {
                 // Given
                 when(userService.getUserById("nonexistentUser"))
@@ -130,7 +130,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�증?��? ?��? ?�청 ??401 ?�러 ?�답 반환")
+        @DisplayName("?�증?��? ?��? ?�청 ??401 ?�러 ?�답 반환")
         void unauthorizedRequest_occurs_returns401Error() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/admin/users")
@@ -142,7 +142,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("권한???�는 ?�청 ??403 ?�러 ?�답 반환")
+        @DisplayName("권한???�는 ?�청 ??403 ?�러 ?�답 반환")
         void forbiddenRequest_occurs_returns403Error() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/admin/users")
@@ -155,7 +155,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�버 ?��? ?�류 발생 ??500 ?�러 ?�답 반환")
+        @DisplayName("?�버 ?��? ?�류 발생 ??500 ?�러 ?�답 반환")
         void internalServerError_occurs_returns500Error() throws Exception {
                 // Given
                 when(userService.getUserList())
@@ -171,7 +171,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�못???�청 ?�라미터 ??400 ?�러 ?�답 반환")
+        @DisplayName("?�못???�청 ?�라미터 ??400 ?�러 ?�답 반환")
         void badRequestParameter_occurs_returns400Error() throws Exception {
                 // When & Then
                 mockMvc.perform(get("/api/v1/users?page=-1&size=0") // Invalid pagination params
@@ -183,14 +183,14 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("JSON ?�싱 ?�류 발생 ??400 ?�러 ?�답 반환")
+        @DisplayName("JSON ?�싱 ?�류 발생 ??400 ?�러 ?�답 반환")
         void jsonParseError_occurs_returns400Error() throws Exception {
                 // Given
                 String invalidJson = """
                                 {
                                     "userId": "testUser",
                                     "password": "password123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "invalidField": "extraValue"
                                 """;
 
@@ -205,7 +205,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("메서???�용?��? ?��? HTTP 메서???�용 ??405 ?�러 ?�답 반환")
+        @DisplayName("메서???�용?��? ?��? HTTP 메서???�용 ??405 ?�러 ?�답 반환")
         void methodNotAllowed_occurs_returns405Error() throws Exception {
                 // When & Then
                 mockMvc.perform(patch("/api/v1/users")
@@ -218,7 +218,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�청 ?�이로드가 ?�무 ??경우 413 ?�러 ?�답 반환")
+        @DisplayName("?�청 ?�이로드가 ?�무 ??경우 413 ?�러 ?�답 반환")
         void payloadTooLarge_occurs_returns413Error() throws Exception {
                 // Given
                 String largePayload = """
@@ -240,14 +240,14 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("지?�되지 ?�는 미디???�???�청 ??415 ?�러 ?�답 반환")
+        @DisplayName("지?�되지 ?�는 미디???�???�청 ??415 ?�러 ?�답 반환")
         void unsupportedMediaType_occurs_returns415Error() throws Exception {
                 // Given
                 String requestBody = """
                                 {
                                     "userId": "testUser",
                                     "password": "password123!",
-                                    "userNm": "?�스???�용??
+                                    "userNm": "?�스???�용??
                                 }
                                 """;
 
@@ -262,7 +262,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�청 ?�간 초과 ??408 ?�러 ?�답 반환")
+        @DisplayName("?�청 ?�간 초과 ??408 ?�러 ?�답 반환")
         void requestTimeout_occurs_returns408Error() throws Exception {
                 // Given
                 // Simulate slow service response
@@ -276,7 +276,7 @@ class ExceptionResponseTest {
                                 {
                                     "userId": "slowUser",
                                     "password": "password123!",
-                                    "userNm": "?�린 ?�용??
+                                    "userNm": "?�린 ?�용??
                                 }
                                 """;
 
@@ -294,7 +294,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�버 과�?????503 ?�러 ?�답 반환")
+        @DisplayName("?�버 과�?????503 ?�러 ?�답 반환")
         void serviceUnavailable_occurs_returns503Error() throws Exception {
                 // Given
                 when(userService.getUserList())
@@ -311,7 +311,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�러 ?�답 구조 ?��????�인")
+        @DisplayName("?�러 ?�답 구조 ?��????�인")
         void errorResponse_structure_consistency() throws Exception {
                 // Given
                 when(userService.getUserById("nonexistent"))
@@ -330,7 +330,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�양???�외 ?�?�에 ?�???�답 ?�스??)
+        @DisplayName("?�양???�외 ?�?�에 ?�???�답 ?�스??)
         void variousExceptionTypes_responseTest() throws Exception {
                 // Test for different exception types
                 when(userService.getUserById("illegalArg"))
@@ -359,7 +359,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�러 메시지 로컬?�이?�이???�스??)
+        @DisplayName("?�러 메시지 로컬?�이?�이???�스??)
         void errorMessage_localization_test() throws Exception {
                 // Given
                 when(userService.getUserById("localizedError"))
@@ -370,7 +370,7 @@ class ExceptionResponseTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header("Accept-Language", "ko-KR"))
                                 .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.error.message").value("?�용?��? 찾을 ???�습?�다."));
+                                .andExpect(jsonPath("$.error.message").value("?�용?��? 찾을 ???�습?�다."));
 
                 mockMvc.perform(get("/api/v1/users/localizedError")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -380,7 +380,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�러 ?�답???�세 ?�보 ?�함 ?��? ?�스??)
+        @DisplayName("?�러 ?�답???�세 ?�보 ?�함 ?��? ?�스??)
         void errorResponse_withDetails() throws Exception {
                 // Given
                 BusinessException businessException = new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
@@ -405,7 +405,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�러 ?�답??추적 ID ?�함 ?��? ?�스??)
+        @DisplayName("?�러 ?�답??추적 ID ?�함 ?��? ?�스??)
         void errorResponse_withTraceId() throws Exception {
                 // Given
                 when(userService.getUserById("errorWithTrace"))
@@ -423,7 +423,7 @@ class ExceptionResponseTest {
         }
 
         @Test
-        @DisplayName("?�러 발생 ???�상 ?�청 처리 가???��? ?�스??)
+        @DisplayName("?�러 발생 ???�상 ?�청 처리 가???��? ?�스??)
         void errorThenNormalRequest_handlingCapability() throws Exception {
                 // Given - First request causes error
                 when(userService.getUserById("errorUser"))
@@ -436,7 +436,7 @@ class ExceptionResponseTest {
 
                 // Given - Reset mock for normal response
                 when(userService.getUserById("normalUser"))
-                                .thenReturn(new UserDto("normalUser", "?�상 ?�용??, "USR00001", null, null, null, null));
+                                .thenReturn(new UserDto("normalUser", "?�상 ?�용??, "USR00001", null, null, null, null));
 
                 // When & Then - Normal request after error should still work
                 mockMvc.perform(get("/api/v1/users/normalUser")

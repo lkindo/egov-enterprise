@@ -215,7 +215,8 @@ public class EgovRwardManageController {
 			List<FileVO> fvoList = null;
 			String atchFileId = "";
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 			if (!files.isEmpty()) {
@@ -257,7 +258,8 @@ public class EgovRwardManageController {
 			// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 			String atchFileId = rwardManage.getAtchFileId();
 
-			// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+			//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 			final List<MultipartFile> files = multiRequest.getFiles("file_1");
 			// System.out.println("updtRwardManage 1");
 			if (!files.isEmpty()) {

@@ -8,7 +8,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { FormField } from '@/app/components/ui/standard-form';
-import { vacationService } from '@/services/vacationService';
+import { vacationUserService } from '@/services/user/vacation/VacationUserService';
 import { Vacation, YearlyLeave } from '@/types/vacation';
 import { useToast } from '@/app/components/ui/toast';
 import { Calendar as CalendarIcon, Palmtree, Clock, Plus, Trash2, CheckCircle, XCircle, Info, List } from 'lucide-react';
@@ -36,8 +36,8 @@ export default function VacationPage() {
             const currentYear = new Date().getFullYear().toString();
 
             const [vacationResult, leaveResult] = await Promise.all([
-                vacationService.getMyVacations({ page: 0, size: 50 }),
-                vacationService.getMyYearlyLeave(currentYear)
+                vacationUserService.getMyVacations({ page: 0, size: 50 }),
+                vacationUserService.getMyYearlyLeave(currentYear)
             ]);
 
             setVacations(vacationResult.content || []);
@@ -68,7 +68,7 @@ export default function VacationPage() {
                 occrrncYear: startDate.getFullYear().toString()
             };
 
-            await vacationService.requestVacation(payload);
+            await vacationUserService.requestVacation(payload);
             toast('휴가 신청이 완료되었습니다.', 'success');
             setIsOpen(false);
             setReason('');
@@ -82,7 +82,7 @@ export default function VacationPage() {
         if (!confirm('신청된 휴가를 삭제하시겠습니까?')) return;
 
         try {
-            await vacationService.deleteVacation({
+            await vacationUserService.deleteVacation({
                 applcntId: item.applcntId,
                 vcatnSe: item.vcatnSe,
                 bgnde: item.bgnde
@@ -120,10 +120,10 @@ export default function VacationPage() {
                 </div>
             )
         },
-        { 
-            header: '사유', 
-            accessor: (item: Vacation) => item.vcatnResn, 
-            className: 'max-w-[200px] truncate' 
+        {
+            header: '사유',
+            accessor: (item: Vacation) => item.vcatnResn,
+            className: 'max-w-[200px] truncate'
         },
         { header: '상태', accessor: (item: Vacation) => getStatusBadge(item.confmAt) },
         {

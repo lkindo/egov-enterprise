@@ -58,4 +58,3 @@ public class QHttpMonLog extends EntityPathBase<HttpMonLog> {
     }
 
 }
-

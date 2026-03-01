@@ -56,4 +56,3 @@ public class QMtgPlace extends EntityPathBase<MtgPlace> {
     }
 
 }
-

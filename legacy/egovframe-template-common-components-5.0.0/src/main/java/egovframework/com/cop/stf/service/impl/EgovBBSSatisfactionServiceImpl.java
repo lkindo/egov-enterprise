@@ -65,7 +65,8 @@ public class EgovBBSSatisfactionServiceImpl extends EgovAbstractServiceImpl impl
 	    if (options.getStsfdgAt().equals("Y")) {
 		return true;
 	    }
-	//}
+	//
+                    }
 
 	return false;
     }

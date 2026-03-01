@@ -66,4 +66,3 @@ public class QVcatnManage extends EntityPathBase<VcatnManage> {
     }
 
 }
-

@@ -54,4 +54,3 @@ public class QDiary extends EntityPathBase<Diary> {
     }
 
 }
-

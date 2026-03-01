@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { scrapService, Scrap } from '@/services/scrapService';
+import { scrapService, Scrap } from '@/services/user/ScrapService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Bookmark, ExternalLink, Trash2, Calendar, FileText } from 'lucide-react';
@@ -51,8 +51,8 @@ export default function ScrapPage() {
   };
 
   const columns = [
-    { 
-      header: '제목', 
+    {
+      header: '제목',
       accessor: (item: Scrap) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 text-primary rounded-lg">
@@ -65,8 +65,8 @@ export default function ScrapPage() {
       ),
       className: 'min-w-[400px]'
     },
-    { 
-      header: '스크랩 일시', 
+    {
+      header: '스크랩 일시',
       accessor: (item: Scrap) => (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar size={12} />
@@ -79,14 +79,14 @@ export default function ScrapPage() {
       className: 'text-right',
       accessor: (item: Scrap) => (
         <div className="flex justify-end gap-2">
-          <button 
+          <button
             onClick={() => router.push(`/cop/bbs/${item.nttId}?bbsId=${item.bbsId}`)}
             className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-all"
             title="본문 보기"
           >
             <ExternalLink size={16} />
           </button>
-          <button 
+          <button
             onClick={() => handleDelete(item.scrapId)}
             className="p-2 hover:bg-destructive/10 text-destructive rounded-lg transition-all"
             title="삭제"
@@ -100,8 +100,8 @@ export default function ScrapPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="나의 스크랩 보관함" 
+      <PageHeader
+        title="나의 스크랩 보관함"
         breadcrumbs={[{ label: '협업지원' }, { label: '스크랩관리' }]}
       />
 
@@ -116,9 +116,9 @@ export default function ScrapPage() {
       </div>
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={columns} 
-          data={scraps} 
+        <StandardDataTable
+          columns={columns}
+          data={scraps}
           loading={loading}
           emptyMessage="보관된 스크랩이 없습니다."
           className="border-none rounded-none"

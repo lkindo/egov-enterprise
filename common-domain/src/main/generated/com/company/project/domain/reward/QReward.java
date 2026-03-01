@@ -64,4 +64,3 @@ public class QReward extends EntityPathBase<Reward> {
     }
 
 }
-

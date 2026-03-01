@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { communityService, Community } from '@/services/communityService';
+import { communityAdminService, Community } from '@/services/admin/system/CommunityAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { Users, Plus, ShieldCheck, Trash2, Globe, Lock } from 'lucide-react';
 import { StatusBadge } from '@/app/components/ui/status-badge';
@@ -17,7 +17,7 @@ export default function CommunityAdminPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await communityService.getCommunities({ page: 0, size: 20 }) as any;
+        const res = await communityAdminService.getCommunities({ page: 0, size: 20 }) as any;
         setData(res?.data?.content || res?.content || []);
       } catch (error) {
         toast('동호회 목록을 불러오지 못했습니다.', 'error');
@@ -29,32 +29,32 @@ export default function CommunityAdminPage() {
   }, [toast]);
 
   const columns: { header: string; accessor: keyof Community | ((item: Community) => React.ReactNode); className?: string }[] = [
-    { 
-      header: '구분', 
+    {
+      header: '구분',
       accessor: (item: Community) => (
         item.useAt === 'Y' ? <Globe size={16} className="text-green-500" /> : <Lock size={16} className="text-muted-foreground" />
       ),
       className: 'w-12'
     },
-    { 
-      header: '동호회명', 
-      accessor: (item) => item.cmmntyNm, 
-      className: 'font-black text-primary' 
+    {
+      header: '동호회명',
+      accessor: (item) => item.cmmntyNm,
+      className: 'font-black text-primary'
     },
-    { 
-      header: '설명', 
-      accessor: (item) => item.cmmntyIntrcn, 
-      className: 'text-sm text-muted-foreground line-clamp-1' 
+    {
+      header: '설명',
+      accessor: (item) => item.cmmntyIntrcn,
+      className: 'text-sm text-muted-foreground line-clamp-1'
     },
-    { 
-      header: '관리자', 
-      accessor: (item) => item.frstRegisterId, 
-      className: 'text-xs' 
+    {
+      header: '관리자',
+      accessor: (item) => item.frstRegisterId,
+      className: 'text-xs'
     },
-    { 
-      header: '개설일', 
-      accessor: (item) => item.createdDate, 
-      className: 'text-xs text-muted-foreground' 
+    {
+      header: '개설일',
+      accessor: (item) => item.createdDate,
+      className: 'text-xs text-muted-foreground'
     },
     {
       header: '관리',
@@ -67,8 +67,8 @@ export default function CommunityAdminPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="사내 동호회 및 커뮤니티 관리" 
+      <PageHeader
+        title="사내 동호회 및 커뮤니티 관리"
         breadcrumbs={[{ label: '협업지원' }, { label: '동호회관리' }]}
         actions={
           <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
@@ -85,9 +85,9 @@ export default function CommunityAdminPage() {
       </div>
 
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-        <StandardDataTable 
-          columns={columns} 
-          data={data} 
+        <StandardDataTable
+          columns={columns}
+          data={data}
           loading={loading}
           emptyMessage="개설된 동호회가 없습니다."
           className="border-none rounded-none"

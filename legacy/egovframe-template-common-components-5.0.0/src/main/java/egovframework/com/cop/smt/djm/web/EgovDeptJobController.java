@@ -263,13 +263,15 @@ public class EgovDeptJobController {
 	 * @param deptJobBxVO
 	 */
 //	@RequestMapping("/cop/smt/djm/selectDeptJobBx.do")
-//	public String selectDeptJobBx(@ModelAttribute("searchVO") DeptJobBxVO deptJobBxVO, ModelMap model) throws Exception{
+//
+                     String selectDeptJobBx(@ModelAttribute("searchVO") DeptJobBxVO deptJobBxVO, ModelMap model) throws Exception{
 //
 //		DeptJobBx deptJobBx = deptJobService.selectDeptJobBx(deptJobBxVO);
 //        model.addAttribute("deptJobBx", deptJobBx);
 //
 //		return "egovframework/com/cop/smt/djm/EgovDeptJobBxDetail";
-//	}
+//	
+                    }
 
 	/**
 	 * 遺?쒖뾽臾댄븿 ?뺣낫???깅줉?붾㈃?쇰줈 ?대룞?쒕떎.
@@ -633,7 +635,8 @@ public class EgovDeptJobController {
 		// 2022.11.11 ?쒗걧?댁퐫??泥섎━
 		String atchFileId = deptJobVO.getAtchFileId();
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {
@@ -699,7 +702,8 @@ public class EgovDeptJobController {
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {

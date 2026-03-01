@@ -10,10 +10,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * ???? Á≠åÎùª?±ÂØÉ??ÔßêÔΩãÍ∂?Entity
- * ???ïÌÉ¢?????Îµ?? NUNITYLINK
- */
 @Entity
 @Table(name = "NUNITYLINK")
 @Getter
@@ -25,31 +21,32 @@ public class UnityLink extends BaseEntity {
     private String unityLinkId;
 
     @Column(name = "UNITY_LINK_SE_CODE", length = 3, nullable = false)
-    private String unityLinkSeCode;
+    private String unityLinkCategoryCode;
 
     @Column(name = "UNITY_LINK_NM", length = 255, nullable = false)
-    private String unityLinkNm;
+    private String unityLinkName;
 
     @Column(name = "UNITY_LINK_URL", length = 255, nullable = false)
     private String unityLinkUrl;
 
     @Column(name = "UNITY_LINK_DC", length = 1000)
-    private String unityLinkDc;
+    private String unityLinkDescription;
 
     @Builder
-    public UnityLink(String unityLinkId, String unityLinkSeCode, String unityLinkNm,
-                    String unityLinkUrl, String unityLinkDc) {
+    public UnityLink(String unityLinkId, String unityLinkCategoryCode, String unityLinkName,
+            String unityLinkUrl, String unityLinkDescription) {
         this.unityLinkId = unityLinkId;
-        this.unityLinkSeCode = unityLinkSeCode;
-        this.unityLinkNm = unityLinkNm;
+        this.unityLinkCategoryCode = unityLinkCategoryCode;
+        this.unityLinkName = unityLinkName;
         this.unityLinkUrl = unityLinkUrl;
-        this.unityLinkDc = unityLinkDc;
+        this.unityLinkDescription = unityLinkDescription;
     }
 
-    public void update(String unityLinkSeCode, String unityLinkNm, String unityLinkUrl, String unityLinkDc) {
-        this.unityLinkSeCode = unityLinkSeCode;
-        this.unityLinkNm = unityLinkNm;
+    public void update(String unityLinkCategoryCode, String unityLinkName, String unityLinkUrl,
+            String unityLinkDescription) {
+        this.unityLinkCategoryCode = unityLinkCategoryCode;
+        this.unityLinkName = unityLinkName;
         this.unityLinkUrl = unityLinkUrl;
-        this.unityLinkDc = unityLinkDc;
+        this.unityLinkDescription = unityLinkDescription;
     }
 }

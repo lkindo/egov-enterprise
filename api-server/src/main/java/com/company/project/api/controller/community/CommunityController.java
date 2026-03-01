@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Community", description = "?�호??커�??�티 관�?API")
+@Tag(name = "Community", description = "?�호??커�??�티 관�?API")
 @RestController
 @RequestMapping("/api/v1/communities")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
-    @Operation(summary = "?�호??목록 조회", description = "?�스?�에 ?�록???�체 ?�호??목록??조회?�니??")
+    @Operation(summary = "?�호??목록 조회", description = "?�스?�에 ?�록???�체 ?�호??목록??조회?�니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CommunityDto>>> getCommunities(
             @RequestParam(required = false) String searchCnd,
@@ -35,14 +35,14 @@ public class CommunityController {
                 .ok(ApiResponse.success(communityService.getCommunityList(searchCnd, searchWrd, pageable)));
     }
 
-    @Operation(summary = "?�호???�세 조회", description = "?�정 ?�호?�의 ?�세 기본 ?�보�?조회?�니??")
+    @Operation(summary = "?�호???�세 조회", description = "?�정 ?�호?�의 ?�세 기본 ?�보�?조회?�니??")
     @GetMapping("/{cmmntyId}")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
-            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId) {
+            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId) {
         return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmmntyId)));
     }
 
-    @Operation(summary = "?�호??개설 ?�청/?�록", description = "?�로???�호??개설???�청?�거???�록?�니??")
+    @Operation(summary = "?�호??개설 ?�청/?�록", description = "?�로???�호??개설???�청?�거???�록?�니??")
     @PostMapping
     public ResponseEntity<ApiResponse<CommunityDto>> createCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -51,27 +51,27 @@ public class CommunityController {
                 .ok(ApiResponse.success(communityService.createCommunity(userDetails.getUsername(), communityDto)));
     }
 
-    @Operation(summary = "?�호???�보 ?�정", description = "?�호??명칭, ?�개 ??기본 ?�보�??�정?�니??")
+    @Operation(summary = "?�호???�보 ?�정", description = "?�호??명칭, ?�개 ??기본 ?�보�??�정?�니??")
     @PutMapping("/{cmmntyId}")
     public ResponseEntity<ApiResponse<Void>> updateCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId,
+            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId,
             @RequestBody CommunityDto communityDto) {
         communityDto.setCmmntyId(cmmntyId);
         communityService.updateCommunity(userDetails.getUsername(), communityDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?�호???�쇄/??��", description = "?�호?��? ?�쇄 처리?�거????��?�니??")
+    @Operation(summary = "?�호???�쇄/??��", description = "?�호?��? ?�쇄 처리?�거????��?�니??")
     @DeleteMapping("/{cmmntyId}")
     public ResponseEntity<ApiResponse<Void>> deleteCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId) {
+            @Parameter(description = "?�호??ID") @PathVariable String cmmntyId) {
         communityService.deleteCommunity(cmmntyId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?��?릿용 ?�호??목록", description = "메인 ?�면 ?��?�??�시??최적?�된 ?�호??목록??조회?�니??")
+    @Operation(summary = "?��?릿용 ?�호??목록", description = "메인 ?�면 ?��?�??�시??최적?�된 ?�호??목록??조회?�니??")
     @GetMapping("/portlet")
     public ResponseEntity<ApiResponse<List<CommunityDto>>> getCommunityPortlet() {
         return ResponseEntity.ok(ApiResponse.success(communityService.getCommunityListPortlet()));

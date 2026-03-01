@@ -56,4 +56,3 @@ public class QServerResrceLog extends EntityPathBase<ServerResrceLog> {
     }
 
 }
-

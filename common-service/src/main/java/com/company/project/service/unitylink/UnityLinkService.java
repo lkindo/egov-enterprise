@@ -28,7 +28,7 @@ public class UnityLinkService implements EgovUnityLinkService {
         if (keyword == null || keyword.isEmpty()) {
             return unityLinkRepository.findAll(pageable).map(UnityLinkDto::from);
         }
-        return unityLinkRepository.findByUnityLinkNmContaining(keyword, pageable).map(UnityLinkDto::from);
+        return unityLinkRepository.findByUnityLinkNameContaining(keyword, pageable).map(UnityLinkDto::from);
     }
 
     @Override
@@ -44,10 +44,10 @@ public class UnityLinkService implements EgovUnityLinkService {
         String id = "ULM_" + String.format("%013d", System.currentTimeMillis());
         UnityLink entity = UnityLink.builder()
                 .unityLinkId(id)
-                .unityLinkSeCode(dto.getUnityLinkSeCode())
-                .unityLinkNm(dto.getUnityLinkNm())
+                .unityLinkCategoryCode(dto.getUnityLinkCategoryCode())
+                .unityLinkName(dto.getUnityLinkName())
                 .unityLinkUrl(dto.getUnityLinkUrl())
-                .unityLinkDc(dto.getUnityLinkDc())
+                .unityLinkDescription(dto.getUnityLinkDescription())
                 .build();
         unityLinkRepository.save(Objects.requireNonNull(entity));
     }
@@ -57,7 +57,8 @@ public class UnityLinkService implements EgovUnityLinkService {
     public void updateUnityLink(UnityLinkDto dto) {
         UnityLink entity = unityLinkRepository.findById(Objects.requireNonNull(dto.getUnityLinkId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getUnityLinkSeCode(), dto.getUnityLinkNm(), dto.getUnityLinkUrl(), dto.getUnityLinkDc());
+        entity.update(dto.getUnityLinkCategoryCode(), dto.getUnityLinkName(), dto.getUnityLinkUrl(),
+                dto.getUnityLinkDescription());
     }
 
     @Override

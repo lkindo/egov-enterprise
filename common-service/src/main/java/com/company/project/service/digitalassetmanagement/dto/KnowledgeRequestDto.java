@@ -1,47 +1,80 @@
 package com.company.project.service.digitalassetmanagement.dto;
 
+import com.company.project.domain.digitalassetmanagement.KnowledgeRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
-@Schema(description = "지???�청 ?�보")
+@AllArgsConstructor
+@Schema(description = "지식요청 정보 DTO")
 public class KnowledgeRequestDto {
-    @Schema(description = "지??ID")
-    private String knoId;
-    @Schema(description = "지??명칭")
-    private String knoNm;
-    @Schema(description = "지???�용")
-    private String knoCn;
-    @Schema(description = "지???�형 코드")
-    private String knoTypeCd;
-    @Schema(description = "조직(부?? ID")
-    private String orgnztId;
-    @Schema(description = "?�문가 ID")
-    private String speId;
-    @Schema(description = "?�용??ID")
-    private String emplyrId;
-    @Schema(description = "첨�? ?�일 ID")
-    private String atchFileId;
-    @Schema(description = "?�위 질문/?��? ID")
-    private String ansParents;
-    @Schema(description = "?��? 깊이")
-    private Integer ansDepth;
-    @Schema(description = "?��? ?�서")
-    private Integer ansSeq;
-    @Schema(description = "?��? 번호")
-    private Long ansNumber;
-    @Schema(description = "최초 ?�록??ID")
-    private String frstRegisterId;
-    @Schema(description = "최초 ?�록 ?�시")
-    private LocalDateTime frstRegisterPnttm;
-    @Schema(description = "최종 ?�정??ID")
-    private String lastUpdusrId;
-    @Schema(description = "최종 ?�정 ?�시")
-    private LocalDateTime lastUpdusrPnttm;
+    @Schema(description = "지식 ID")
+    private String knowledgeId;
+
+    @Schema(description = "지식 명칭")
+    private String title;
+
+    @Schema(description = "지식 내용")
+    private String content;
+
+    @Schema(description = "지식 유형 코드")
+    private String typeCode;
+
+    @Schema(description = "조직(부서) ID")
+    private String organizationId;
+
+    @Schema(description = "전문가 ID")
+    private String expertId;
+
+    @Schema(description = "사용자 ID")
+    private String userId;
+
+    @Schema(description = "첨부 파일 ID")
+    private String attachedFileId;
+
+    @Schema(description = "상위 질문/답변 ID")
+    private String parentKnowledgeId;
+
+    @Schema(description = "답변 깊이")
+    private Integer answerDepth;
+
+    @Schema(description = "답변 순서")
+    private Integer answerOrder;
+
+    @Schema(description = "답변 그룹 번호")
+    private Long answerGroupNumber;
+
+    @Schema(description = "최초 등록자 ID")
+    private String firstRegisterId;
+
+    @Schema(description = "최초 등록 일시")
+    private LocalDateTime createdDate;
+
+    public static KnowledgeRequestDto from(KnowledgeRequest entity) {
+        if (entity == null)
+            return null;
+        return KnowledgeRequestDto.builder()
+                .knowledgeId(entity.getKnowledgeId())
+                .title(entity.getTitle())
+                .content(entity.getContent())
+                .typeCode(entity.getTypeCode())
+                .organizationId(entity.getOrganizationId())
+                .expertId(entity.getExpertId())
+                .userId(entity.getEmplyrId())
+                .attachedFileId(entity.getAttachedFileId())
+                .parentKnowledgeId(entity.getParentKnowledgeId())
+                .answerDepth(entity.getAnswerDepth())
+                .answerOrder(entity.getAnswerOrder())
+                .answerGroupNumber(entity.getAnswerGroupNumber())
+                .firstRegisterId(entity.getCreatedBy())
+                .createdDate(entity.getCreatedDate())
+                .build();
+    }
 }

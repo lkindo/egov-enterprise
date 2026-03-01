@@ -8,7 +8,7 @@ import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
 import { FormField } from '@/app/components/ui/standard-form';
-import { vacationService } from '@/services/vacationService';
+import { vacationUserService } from '@/services/user/vacation/VacationUserService';
 import { Vacation, YearlyLeave } from '@/types/vacation';
 import { Plus, Calendar, Info, Send } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
@@ -19,11 +19,11 @@ import { format } from 'date-fns';
 export default function VacationListPage() {
   const { toast } = useToast();
   const confirm = useConfirm();
-  
+
   const [loading, setLoading] = useState(true);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [myLeave, setMyLeave] = useState<YearlyLeave | null>(null);
-  
+
   // 모달 및 폼 상태
   const [isModalOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Vacation>>({
@@ -39,8 +39,8 @@ export default function VacationListPage() {
       setLoading(true);
       const currentYear = new Date().getFullYear().toString();
       const [vacationRes, leaveRes] = (await Promise.all([
-        vacationService.getMyVacations({ page: 0, size: 10 }),
-        vacationService.getMyYearlyLeave(currentYear)
+        vacationUserService.getMyVacations({ page: 0, size: 10 }),
+        vacationUserService.getMyYearlyLeave(currentYear)
       ])) as [any, any];
 
       if (vacationRes.success) setVacations(vacationRes.data.content);
@@ -77,7 +77,7 @@ export default function VacationListPage() {
         endde: format(endDate, 'yyyyMMdd'),
       };
 
-      const res = (await vacationService.requestVacation(payload)) as any;
+      const res = (await vacationUserService.requestVacation(payload)) as any;
       if (res?.success) {
         toast('휴가 신청이 완료되었습니다.', 'success');
         setIsOpen(false);
@@ -111,14 +111,14 @@ export default function VacationListPage() {
         </div>
       )
     },
-    { 
-      header: '사유', 
-      accessor: (item: Vacation) => item.vcatnResn, 
-      className: 'max-w-[200px] truncate' 
+    {
+      header: '사유',
+      accessor: (item: Vacation) => item.vcatnResn,
+      className: 'max-w-[200px] truncate'
     },
-    { 
-      header: '신청일', 
-      accessor: (item: Vacation) => item.reqstDe 
+    {
+      header: '신청일',
+      accessor: (item: Vacation) => item.reqstDe
     },
     {
       header: '상태',
@@ -128,11 +128,11 @@ export default function VacationListPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="휴가/연차 현황" 
+      <PageHeader
+        title="휴가/연차 현황"
         breadcrumbs={[{ label: '협업지원' }, { label: '업무지원' }, { label: '휴가관리' }]}
         actions={
-          <button 
+          <button
             onClick={() => setIsOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
           >
@@ -149,22 +149,24 @@ export default function VacationListPage() {
         <StatCard title="잔여 연차" value={myLeave?.remndrYrycCo} icon={<Info size={24} />} color="primary" highlight />
       </div>
 
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={[
           { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '사유 검색...' },
-          { name: 'vcatnSe', label: '구분', type: 'select', options: [
-            { label: '전체', value: '' },
-            { label: '연차', value: '01' },
-            { label: '반차', value: '02' },
-            { label: '병가', value: '03' }
-          ]}
+          {
+            name: 'vcatnSe', label: '구분', type: 'select', options: [
+              { label: '전체', value: '' },
+              { label: '연차', value: '01' },
+              { label: '반차', value: '02' },
+              { label: '병가', value: '03' }
+            ]
+          }
         ]}
         onSearch={(values) => console.log('Filtering...', values)}
       />
 
-      <StandardDataTable 
-        columns={columns} 
-        data={vacations} 
+      <StandardDataTable
+        columns={columns}
+        data={vacations}
         loading={loading}
         emptyMessage="신청된 휴가 내역이 없습니다."
       />
@@ -178,7 +180,7 @@ export default function VacationListPage() {
         footer={
           <>
             <button onClick={() => setIsOpen(false)} className="px-4 py-2 text-sm font-semibold border rounded-lg hover:bg-accent transition-colors">취소</button>
-            <button 
+            <button
               onClick={handleRequest}
               className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-all"
             >
@@ -191,9 +193,9 @@ export default function VacationListPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <FormField label="휴가 구분" required>
-              <select 
+              <select
                 value={formData.vcatnSe}
-                onChange={(e) => setFormData({...formData, vcatnSe: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, vcatnSe: e.target.value })}
                 className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="01">연차</option>
@@ -202,8 +204,8 @@ export default function VacationListPage() {
               </select>
             </FormField>
             <FormField label="발생 연도" required>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.occrrncYear}
                 readOnly
                 className="w-full h-10 px-3 rounded-md border bg-muted/30 text-sm outline-none cursor-not-allowed"
@@ -221,9 +223,9 @@ export default function VacationListPage() {
           </div>
 
           <FormField label="신청 사유">
-            <textarea 
+            <textarea
               value={formData.vcatnResn}
-              onChange={(e) => setFormData({...formData, vcatnResn: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, vcatnResn: e.target.value })}
               placeholder="휴가 신청 사유를 입력해 주세요."
               className="w-full min-h-[100px] p-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
@@ -250,7 +252,7 @@ function StatCard({ title, value, icon, color, highlight }: any) {
     red: "bg-red-50 text-red-600 dark:bg-red-900/20",
     primary: "bg-white/20 text-white"
   };
-  
+
   return (
     <div className={cn(
       "p-6 rounded-2xl border shadow-sm flex items-center justify-between",

@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetRequest", description = "지???�청 관�?API")
+@Tag(name = "DigitalAssetRequest", description = "지식 요청 관리 API")
 @RestController
 @RequestMapping("/api/v1/digital-assets/requests")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class KnowledgeRequestController {
 
     private final KnowledgeRequestService requestService;
 
-    @Operation(summary = "지???�청 목록 조회", description = "?�용?�들???�록??지???�청 목록??조회?�니??")
+    @Operation(summary = "지식 요청 목록 조회", description = "사용자들이 등록한 지식 요청 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<KnowledgeRequest>>> getRequestList(
             @RequestParam(required = false) String searchCondition,
@@ -34,43 +34,43 @@ public class KnowledgeRequestController {
                 requestService.selectKnowledgeRequestList(searchCondition, searchKeyword, pageable)));
     }
 
-    @Operation(summary = "지???�청 ?�세 조회", description = "?�정 지???�청???�세 ?�보�?조회?�니??")
-    @GetMapping("/{knoId}")
+    @Operation(summary = "지식 요청 상세 조회", description = "특정 지식 요청의 상세 정보를 조회합니다.")
+    @GetMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<KnowledgeRequestDto>> getRequestDetail(
-            @Parameter(description = "지???�청 ID") @PathVariable String knoId) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(requestService.selectKnowledgeRequestDetail(knoId)));
+            @Parameter(description = "지식 요청 ID") @PathVariable String knowledgeId) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(requestService.selectKnowledgeRequestDetail(knowledgeId)));
     }
 
-    @Operation(summary = "지???�청 ?�록", description = "?�로??지???�청???�록?�니??")
+    @Operation(summary = "지식 요청 등록", description = "새로운 지식 요청을 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createRequest(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody KnowledgeRequestDto requestDto) throws Exception {
-        requestDto.setFrstRegisterId(userDetails.getUsername());
-        requestDto.setEmplyrId(userDetails.getUsername());
+        requestDto.setFirstRegisterId(userDetails.getUsername());
+        requestDto.setUserId(userDetails.getUsername());
         requestService.insertKnowledgeRequest(requestDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지???�청 ?�정", description = "?��? ?�록??지???�청 ?�보�??�정?�니??")
-    @PutMapping("/{knoId}")
+    @Operation(summary = "지식 요청 수정", description = "내가 등록한 지식 요청 정보를 수정합니다.")
+    @PutMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<Void>> updateRequest(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String knoId,
+            @PathVariable String knowledgeId,
             @RequestBody KnowledgeRequestDto requestDto) throws Exception {
-        requestDto.setKnoId(knoId);
-        requestDto.setLastUpdusrId(userDetails.getUsername());
+        requestDto.setKnowledgeId(knowledgeId);
+        requestDto.setFirstRegisterId(userDetails.getUsername());
         requestService.updateKnowledgeRequest(requestDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "지???�청 ??��", description = "?��? ?�록??지???�청????��?�니?? (?��????�는 경우 ??�� 불�?)")
-    @DeleteMapping("/{knoId}")
-    public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable String knoId) throws Exception {
-        if (requestService.getReplyCount(knoId) > 0) {
-            throw new IllegalStateException("?��????�록???�청?� ??��?????�습?�다.");
+    @Operation(summary = "지식 요청 삭제", description = "내가 등록한 지식 요청을 삭제합니다. (답변이 있는 경우 삭제 불가)")
+    @DeleteMapping("/{knowledgeId}")
+    public ResponseEntity<ApiResponse<Void>> deleteRequest(@PathVariable String knowledgeId) throws Exception {
+        if (requestService.getReplyCount(knowledgeId) > 0) {
+            throw new IllegalStateException("답변이 등록된 요청은 삭제할 수 없습니다.");
         }
-        requestService.deleteKnowledgeRequest(knoId);
+        requestService.deleteKnowledgeRequest(knowledgeId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

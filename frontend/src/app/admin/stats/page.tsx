@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { statsService } from '@/services/statsService';
+import { statsAdminService } from '@/services/admin/stats/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
 import { Loader2 } from 'lucide-react';
 
@@ -21,13 +21,13 @@ export default async function AdminStatsPage() {
 
   try {
     const [sumRes, connRes, menuRes] = await Promise.all([
-      statsService.getSummary(axiosConfig).catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0, pendingTroubles: 0 })),
-      statsService.getConnectStats({ startDate: '20260201', endDate: '20260214' }, axiosConfig).catch(() => []),
-      statsService.getMenuStats(axiosConfig).catch(() => [])
+      statsAdminService.getSummary(axiosConfig).catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0, pendingTroubles: 0 })),
+      statsAdminService.getConnectStats({ startDate: '20260201', endDate: '20260214' }, axiosConfig).catch(() => []),
+      statsAdminService.getMenuStats(axiosConfig).catch(() => [])
     ]);
 
     initialSummary = sumRes;
-    
+
     // Transform connect data for area chart
     initialConnectData = Array.isArray(connRes) ? connRes.map((item: any) => ({
       name: item.date.substring(4, 6) + '/' + item.date.substring(6, 8),
@@ -41,10 +41,10 @@ export default async function AdminStatsPage() {
 
   return (
     <Suspense fallback={<AdminStatsLoading />}>
-      <AdminStatsClient 
-        initialSummary={initialSummary} 
-        initialConnectData={initialConnectData} 
-        initialMenuData={initialMenuData} 
+      <AdminStatsClient
+        initialSummary={initialSummary}
+        initialConnectData={initialConnectData}
+        initialMenuData={initialMenuData}
       />
     </Suspense>
   );

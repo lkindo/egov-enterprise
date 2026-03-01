@@ -64,4 +64,3 @@ public class QNtwrk extends EntityPathBase<Ntwrk> {
     }
 
 }
-

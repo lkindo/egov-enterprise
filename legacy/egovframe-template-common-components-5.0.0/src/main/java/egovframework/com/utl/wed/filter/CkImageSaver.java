@@ -1,4 +1,4 @@
-/*
+*
  * CKEditor image upload module for Java.
  * Copyright guavatak (https://github.com/guavatak/ckeditor-upload-filter-java)
  *
@@ -158,7 +158,8 @@ public class CkImageSaver {
 			sb.append("<script type=\"text/javascript\">\n");
 			// Compressed version of the document.domain automatic fix script.
 			// The original script can be found at [fckeditor_dir]/_dev/domain_fix_template.js
-			// sb.append("(function(){var d=document.domain;while (true){try{var A=window.parent.document.domain;break;}catch(e) {};d=d.replace(/.*?(?:\\.|$)/,'');if (d.length==0) break;try{document.domain=d;}catch (e){break;}}})();\n");
+			
+                )();\n");
 			// KISA 蹂댁븞?쎌젏 議곗튂 (2018-12-11, ?좎슜??
 			String funcNo = request.getParameter(FUNC_NO);
 			boolean isInteger = true;

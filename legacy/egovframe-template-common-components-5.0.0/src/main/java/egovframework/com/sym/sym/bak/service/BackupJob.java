@@ -181,7 +181,8 @@ public class BackupJob implements Job {
 			// // ?뚯씪?대쫫 ?쒓?泥섎━ ~~~ ,
 			// ((ZipArchiveOutputStream)
 			// aosOutput).setEncoding(Charset.defaultCharset().name());
-			// }
+			// 
+                    }
 
 			if (ArchiveStreamFactory.TAR.equals(archiveFormat)) {
 				((TarArchiveOutputStream) aosOutput).setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
@@ -222,7 +223,8 @@ public class BackupJob implements Job {
 			}
 			throw new JobExecutionException(msg, e);
 		} catch (Exception e) {
-			// LOGGER.error("諛깆뾽?붿씪?앹꽦以??먮윭媛 諛쒖깮?덉뒿?덈떎. ?먮윭 : {}", e.getMessage());
+			// LOGGER.error("諛깆뾽?붿씪?앹꽦以??먮윭媛 諛쒖깮?덉뒿?덈떎. ?먮윭 : {
+                    }", e.getMessage());
 			// LOGGER.debug(e.getMessage());
 
 			String msg = "諛깆뾽?붿씪?앹꽦以??먮윭媛 諛쒖깮?덉뒿?덈떎.";

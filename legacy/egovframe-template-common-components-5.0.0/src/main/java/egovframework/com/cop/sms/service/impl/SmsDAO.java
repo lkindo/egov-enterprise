@@ -1,4 +1,4 @@
- package egovframework.com.cop.sms.service.impl;
+package egovframework.com.cop.sms.service.impl;
 
 import java.util.List;
 

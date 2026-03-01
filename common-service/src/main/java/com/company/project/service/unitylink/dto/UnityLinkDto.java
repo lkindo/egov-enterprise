@@ -13,28 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "?�합 링크 ?�보")
+@Schema(description = "통합 링크 정보")
 public class UnityLinkDto {
 
-    @Schema(description = "?�합 링크 ID")
+    @Schema(description = "통합 링크 ID")
     private String unityLinkId;
 
-    @Schema(description = "?�합 링크 구분 코드")
-    private String unityLinkSeCode;
+    @Schema(description = "통합 링크 구분 코드")
+    private String unityLinkCategoryCode;
 
-    @Schema(description = "?�합 링크 명칭")
-    private String unityLinkNm;
+    @Schema(description = "통합 링크 명칭")
+    private String unityLinkName;
 
-    @Schema(description = "?�합 링크 URL")
+    @Schema(description = "통합 링크 URL")
     private String unityLinkUrl;
 
-    @Schema(description = "?�합 링크 ?�명")
-    private String unityLinkDc;
+    @Schema(description = "통합 링크 설명")
+    private String unityLinkDescription;
 
-    @Schema(description = "?�성??)
+    @Schema(description = "생성자")
     private String createdBy;
 
-    @Schema(description = "?�성??)
+    @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
     public static UnityLinkDto from(UnityLink entity) {
@@ -42,10 +42,10 @@ public class UnityLinkDto {
             return null;
         return UnityLinkDto.builder()
                 .unityLinkId(entity.getUnityLinkId())
-                .unityLinkSeCode(entity.getUnityLinkSeCode())
-                .unityLinkNm(entity.getUnityLinkNm())
+                .unityLinkCategoryCode(entity.getUnityLinkCategoryCode())
+                .unityLinkName(entity.getUnityLinkName())
                 .unityLinkUrl(entity.getUnityLinkUrl())
-                .unityLinkDc(entity.getUnityLinkDc())
+                .unityLinkDescription(entity.getUnityLinkDescription())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
                 .build();

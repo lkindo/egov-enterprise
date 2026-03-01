@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 /**
- * ë¡?ê´€ë¦¬ë? ?„í•œ ì»¨íŠ¸ë¡¤ëŸ¬ ?´ë˜?? */
+ * ï¿½?ê´€ë¦¬ï¿½? ?ï¿½í•œ ì»¨íŠ¸ë¡¤ëŸ¬ ?ï¿½ë˜?? */
 @Controller
 @RequiredArgsConstructor
 public class RoleManageController {
@@ -27,7 +27,7 @@ public class RoleManageController {
     private final MessageSource messageSource;
 
     /**
-     * ë¡?ëª©ë¡ ?”ë©´?¼ë¡œ ?´ë™?œë‹¤.
+     * ï¿½?ëª©ë¡ ?ï¿½ë©´?ï¿½ë¡œ ?ï¿½ë™?ï¿½ë‹¤.
      */
     @RequestMapping("/sec/rmt/EgovRoleListView.do")
     public String selectRoleListView() throws Exception {
@@ -35,7 +35,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡?ëª©ë¡??ì¡°íšŒ?œë‹¤.
+     * ï¿½?ëª©ë¡??ì¡°íšŒ?ï¿½ë‹¤.
      */
     @RequestMapping({ "/sec/rmt/EgovRoleList.do", "/sec/rmt/EgovRoleManage.do" })
     public String selectRoleList(@ModelAttribute("roleManageVO") ComDefaultVO searchVO, ModelMap model)
@@ -64,7 +64,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡??¸ë??•ë³´ë¥?ì¡°íšŒ?œë‹¤.
+     * ï¿½??ï¿½ï¿½??ï¿½ë³´ï¿½?ì¡°íšŒ?ï¿½ë‹¤.
      */
     @RequestMapping(value = { "/api/v1/auth/roles", "/sec/rmt/EgovRole.do" })
     public String selectRole(@RequestParam("roleCode") String roleCode, ModelMap model)
@@ -74,7 +74,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡??±ë¡ ?”ë©´?¼ë¡œ ?´ë™?œë‹¤.
+     * ï¿½??ï¿½ë¡ ?ï¿½ë©´?ï¿½ë¡œ ?ï¿½ë™?ï¿½ë‹¤.
      */
     @RequestMapping("/sec/rmt/EgovRoleInsertView.do")
     public String insertRoleView(Model model) throws Exception {
@@ -83,7 +83,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡??•ë³´ë¥??±ë¡?œë‹¤.
+     * ï¿½??ï¿½ë³´ï¿½??ï¿½ë¡?ï¿½ë‹¤.
      */
     @PostMapping("/sec/rmt/EgovRoleInsert.do")
     public String insertRole(@Valid @ModelAttribute("roleManage") RoleManageDto roleManage,
@@ -100,7 +100,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡??•ë³´ë¥??? œ?œë‹¤.
+     * ï¿½??ï¿½ë³´ï¿½???ï¿½ï¿½?ï¿½ë‹¤.
      */
     @PostMapping("/sec/rmt/EgovRoleDelete.do")
     public String deleteRole(@RequestParam("roleCode") String roleCode, ModelMap model)
@@ -113,7 +113,7 @@ public class RoleManageController {
     }
 
     /**
-     * ë¡?ëª©ë¡??ë©€???? œ?œë‹¤.
+     * ï¿½?ëª©ë¡??ë©€????ï¿½ï¿½?ï¿½ë‹¤.
      */
     @PostMapping("/sec/rmt/EgovRoleListDelete.do")
     public String deleteRoleList(@RequestParam("roleCodes") String roleCodes, Model model)

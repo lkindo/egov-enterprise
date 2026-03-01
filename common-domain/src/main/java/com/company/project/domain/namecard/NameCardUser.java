@@ -12,8 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 筌뤿굟釉??????類ｋ궖 JPA Entity
- * ??뉕탢?????뵠?? NNCRDUSER
+ * 嶺뚮ㅏ援잓뇡??????筌먲퐢沅?JPA Entity
+ * ???뺥깴?????逾?? NNCRDUSER
  */
 @Entity
 @Table(name = "NNCRDUSER")
@@ -48,7 +48,7 @@ public class NameCardUser extends BaseEntity {
         this.useAt = useAt;
     }
 
-    // ?袁⑥뵭??筌롫뗄苑??뺣굶 ?곕떽?
+    // ?熬곣뫁逾??嶺뚮∥?꾥땻??類ｊ독 ?怨뺣뼺?
     public String getCreatDt() {
         return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
     }

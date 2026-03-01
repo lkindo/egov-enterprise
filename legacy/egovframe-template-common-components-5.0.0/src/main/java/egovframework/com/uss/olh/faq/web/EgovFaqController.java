@@ -174,7 +174,8 @@ public class EgovFaqController {
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {
@@ -253,7 +254,8 @@ public class EgovFaqController {
 		// 泥⑤??뚯씪 愿??ID ?앹꽦 start....
 		String atchFileId = faqVO.getAtchFileId();
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 		if (!files.isEmpty()) {
 			if (atchFileId == null || "".equals(atchFileId)) {

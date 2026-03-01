@@ -60,4 +60,3 @@ public class QFileDetail extends EntityPathBase<FileDetail> {
     }
 
 }
-

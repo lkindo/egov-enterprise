@@ -72,4 +72,3 @@ public class QEvent extends EntityPathBase<Event> {
     }
 
 }
-

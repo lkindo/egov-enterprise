@@ -72,4 +72,3 @@ public class QBoardMaster extends EntityPathBase<BoardMaster> {
     }
 
 }
-

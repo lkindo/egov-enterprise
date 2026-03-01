@@ -62,4 +62,3 @@ public class QExtrlHr extends EntityPathBase<ExtrlHr> {
     }
 
 }
-

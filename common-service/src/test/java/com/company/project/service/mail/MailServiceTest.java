@@ -43,7 +43,8 @@ class MailServiceTest {
 
         // Then
         // Verify that save was called. The object passed to save is mutated later,
-        // so we check its final state or we rely on the fact that updateResult was
+        // so we check its
+                     state or we rely on the fact that updateResult was
         // called (which we can't verify directly on entity).
         // But we can verify the state of the captured argument.
         verify(sentMailRepository).save(java.util.Objects.requireNonNull(argThat(sentMail -> {

@@ -1,4 +1,4 @@
-/*
+*
  * Copyright 2008-2009 MOPAS(MINISTRY OF SECURITY AND PUBLIC ADMINISTRATION).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

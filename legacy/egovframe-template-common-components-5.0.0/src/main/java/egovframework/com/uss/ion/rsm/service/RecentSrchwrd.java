@@ -296,4 +296,3 @@ public class RecentSrchwrd extends ComDefaultVO implements Serializable {
     }
 
 }
-

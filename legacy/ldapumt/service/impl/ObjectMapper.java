@@ -1,4 +1,4 @@
-/*
+*
  * eGovFrame LDAP議곗쭅?꾧?由?
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *

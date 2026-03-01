@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ProgrmManage } from "@/types/system";
-import { createProgram, updateProgram, deleteProgram } from '@/services/system/programService';
+import { programAdminService } from '@/services/admin/system/ProgramAdminService';
 
 const formSchema = z.object({
     progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
@@ -56,9 +56,9 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await updateProgram(values as ProgrmManage);
+                await programAdminService.updateProgram(values as ProgrmManage);
             } else {
-                await createProgram(values as ProgrmManage);
+                await programAdminService.createProgram(values as ProgrmManage);
             }
             onSuccess();
             onOpenChange(false);
@@ -72,7 +72,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
         if (!data?.progrmFileNm) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await deleteProgram(data.progrmFileNm);
+                await programAdminService.deleteProgram(data.progrmFileNm);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

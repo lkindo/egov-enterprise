@@ -50,4 +50,3 @@ public class QDtaUseStats extends EntityPathBase<DtaUseStats> {
     }
 
 }
-

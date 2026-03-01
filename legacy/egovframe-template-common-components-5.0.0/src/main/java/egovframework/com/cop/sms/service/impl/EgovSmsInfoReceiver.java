@@ -384,7 +384,8 @@ public class EgovSmsInfoReceiver extends EgovAbstractServiceImpl implements SMEL
 			//// ?곌껐??吏꾪뻾 以묒씠硫???job 醫낅즺
 			//if (isConnected) {
 			//	return;
-			//}
+			//
+                    }
 
 			//close();
 			//Thread.sleep(1000);

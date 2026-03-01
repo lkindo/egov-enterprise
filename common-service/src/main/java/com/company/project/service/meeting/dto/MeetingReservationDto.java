@@ -13,46 +13,46 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "?�의???�약 ?�보")
+@Schema(description = "?�의???�약 ?�보")
 public class MeetingReservationDto {
 
-    @Schema(description = "?�약 ID")
+    @Schema(description = "?�약 ID")
     private String resveId;
 
-    @Schema(description = "?�의??ID")
+    @Schema(description = "?�의??ID")
     private String mtgPlaceId;
 
-    @Schema(description = "?�의??명칭")
+    @Schema(description = "?�의??명칭")
     private String mtgPlaceNm;
 
-    @Schema(description = "?�의 ?�목")
+    @Schema(description = "?�의 ?�목")
     private String mtgSj;
 
-    @Schema(description = "?�약??ID")
+    @Schema(description = "?�약??ID")
     private String resveManId;
 
-    @Schema(description = "?�약??명칭")
+    @Schema(description = "?�약??명칭")
     private String resveManNm;
 
-    @Schema(description = "?�약 ?�자")
+    @Schema(description = "?�약 ?�자")
     private String resveDe;
 
-    @Schema(description = "?�약 ?�작 ?�간")
+    @Schema(description = "?�약 ?�작 ?�간")
     private String resveBeginTm;
 
-    @Schema(description = "?�약 종료 ?�간")
+    @Schema(description = "?�약 종료 ?�간")
     private String resveEndTm;
 
-    @Schema(description = "참석 ?�원")
+    @Schema(description = "참석 ?�원")
     private Integer atndncNmpr;
 
-    @Schema(description = "?�의 ?�용")
+    @Schema(description = "?�의 ?�용")
     private String mtgCn;
 
-    @Schema(description = "?�성??)
+    @Schema(description = "?�성??)")
     private String createdBy;
 
-    @Schema(description = "?�성??)
+    @Schema(description = "?�성??)")
     private LocalDateTime createdDate;
 
     public static MeetingReservationDto from(MeetingReservation entity) {

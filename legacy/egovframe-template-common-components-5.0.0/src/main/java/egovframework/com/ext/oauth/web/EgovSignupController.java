@@ -1,4 +1,4 @@
-/*
+*
  * eGovFrame OAuth
  * Copyright The eGovFrame Open Community (http://open.egovframe.go.kr)).
  *

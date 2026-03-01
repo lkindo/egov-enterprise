@@ -63,17 +63,23 @@ public class EgovSmsBasicServiceImpl implements EgovSmsInfoService {
 		// props.load(new BufferedInputStream(fis));
 		//
 		// smeConfigPath = props.getProperty("Globals.SMEConfigPath").trim();
-		// } catch(Exception ex) {
+		// 
+                    } catch(Exception ex) {
 		// logger.error(ex);
-		// } finally {
+		// 
+                    } finally {
 		// try {
 		// if (fis != null) {
 		// fis.close();
-		// }
-		// } catch (Exception ex) {
+		// 
+                    }
+		// 
+                    } catch (Exception ex) {
 		// ex.printStackTrace();
-		// }
-		// }
+		// 
+                    }
+		// 
+                    }
 
 		if (EgovProperties.class.getResource("") != null) {
 			String fileSeparator = System.getProperty("file.separator");

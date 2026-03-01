@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { vacationService, Vacation } from '@/services/vacationService';
+import { vacationAdminService } from '@/services/admin/vacation/VacationAdminService';
+import type { Vacation } from '@/types/vacation';
 import VacationClient from './VacationClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -9,10 +10,10 @@ export const metadata = {
   description: '전체 임직원의 휴가 신청 현황을 모니터링하고 승인 프로세스를 관리합니다.',
 };
 
-export default async function AdminVacationPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function AdminVacationPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
   const searchWrd = (resolvedSearchParams.searchWrd as string) || '';
@@ -30,8 +31,8 @@ export default async function AdminVacationPage({
 
   try {
     const [vRes, sRes] = await Promise.all([
-      vacationService.getAllVacations({ page: 0, size: 50, searchWrd }, axiosConfig),
-      vacationService.getYearlyLeaveStats(year, axiosConfig)
+      vacationAdminService.getAllVacations({ page: 0, size: 50, searchWrd }, axiosConfig),
+      vacationAdminService.getYearlyLeaveStats(year, axiosConfig)
     ]);
     vacationsData = vRes as any;
     statsData = sRes as any;
@@ -46,8 +47,8 @@ export default async function AdminVacationPage({
 
   return (
     <Suspense fallback={<VacationLoading />}>
-      <VacationClient 
-        initialVacations={optimizedContent as Vacation[]} 
+      <VacationClient
+        initialVacations={optimizedContent as Vacation[]}
         initialStats={statsData}
         searchWrd={searchWrd}
         status={status}
@@ -63,8 +64,8 @@ function VacationLoading() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 h-[400px] bg-slate-50 rounded-[3rem]" />
         <div className="lg:col-span-2 space-y-8">
-            <div className="h-24 bg-slate-50 rounded-[2rem]" />
-            <div className="h-[400px] bg-slate-50 rounded-[3rem]" />
+          <div className="h-24 bg-slate-50 rounded-[2rem]" />
+          <div className="h-[400px] bg-slate-50 rounded-[3rem]" />
         </div>
       </div>
     </div>

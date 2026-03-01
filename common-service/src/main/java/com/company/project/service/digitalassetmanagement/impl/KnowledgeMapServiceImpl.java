@@ -11,9 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * 지식맵 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,52 +31,44 @@ public class KnowledgeMapServiceImpl implements KnowledgeMapService {
     }
 
     @Override
-    public MapKnoDto selectKnowledgeMapDetail(String knoTypeCd) {
-        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(knoTypeCd))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + knoTypeCd));
-        return MapKnoDto.builder()
-                .knoTypeCd(entity.getKnoTypeCd())
-                .knoTypeNm(entity.getKnoTypeNm())
-                .orgnztId(entity.getOrgnztId())
-                .speId(entity.getSpeId())
-                .clYmd(entity.getClYmd())
-                .knoUrl(entity.getKnoUrl())
-                .build();
+    public MapKnoDto selectKnowledgeMapDetail(String typeCode) {
+        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(typeCode))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + typeCode));
+        return MapKnoDto.from(entity);
     }
 
     @Override
     @Transactional
     public void insertKnowledgeMap(MapKnoDto dto) {
         MapKno entity = MapKno.builder()
-                .knoTypeCd(dto.getKnoTypeCd())
-                .knoTypeNm(dto.getKnoTypeNm())
-                .orgnztId(dto.getOrgnztId())
-                .speId(dto.getSpeId())
-                .clYmd(dto.getClYmd())
-                .knoUrl(dto.getKnoUrl())
-                .frstRegisterId(dto.getFrstRegisterId())
+                .typeCode(dto.getTypeCode())
+                .typeName(dto.getTypeName())
+                .organizationId(dto.getOrganizationId())
+                .expertId(dto.getExpertId())
+                .classificationDate(dto.getClassificationDate())
+                .knowledgeUrl(dto.getKnowledgeUrl())
                 .build();
+        entity.setCreatedBy(dto.getFirstRegisterId());
         mapKnoRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
     public void updateKnowledgeMap(MapKnoDto dto) {
-        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(dto.getKnoTypeCd()))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + dto.getKnoTypeCd()));
-        entity.setKnoTypeNm(dto.getKnoTypeNm());
-        entity.setOrgnztId(dto.getOrgnztId());
-        entity.setSpeId(dto.getSpeId());
-        entity.setClYmd(dto.getClYmd());
-        entity.setKnoUrl(dto.getKnoUrl());
-        entity.setLastUpdusrId(dto.getFrstRegisterId());
-        entity.setLastUpdusrPnttm(LocalDateTime.now());
+        MapKno entity = mapKnoRepository.findById(Objects.requireNonNull(dto.getTypeCode()))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Knowledge Type Code: " + dto.getTypeCode()));
+        entity.setTypeName(dto.getTypeName());
+        entity.setOrganizationId(dto.getOrganizationId());
+        entity.setExpertId(dto.getExpertId());
+        entity.setClassificationDate(dto.getClassificationDate());
+        entity.setKnowledgeUrl(dto.getKnowledgeUrl());
+        entity.setLastModifiedBy(dto.getFirstRegisterId());
         mapKnoRepository.save(Objects.requireNonNull(entity));
     }
 
     @Override
     @Transactional
-    public void deleteKnowledgeMap(String knoTypeCd) {
-        mapKnoRepository.deleteById(Objects.requireNonNull(knoTypeCd));
+    public void deleteKnowledgeMap(String typeCode) {
+        mapKnoRepository.deleteById(Objects.requireNonNull(typeCode));
     }
 }

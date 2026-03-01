@@ -23,7 +23,8 @@ class ApplicationContextProviderTest {
 
     @AfterEach
     void tearDown() {
-        // Reset the static context to null to avoid side effects
+        // Reset the
+                     context to null to avoid side effects
         provider.setApplicationContext(null);
     }
 

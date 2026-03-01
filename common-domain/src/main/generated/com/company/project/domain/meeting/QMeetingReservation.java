@@ -64,4 +64,3 @@ public class QMeetingReservation extends EntityPathBase<MeetingReservation> {
     }
 
 }
-

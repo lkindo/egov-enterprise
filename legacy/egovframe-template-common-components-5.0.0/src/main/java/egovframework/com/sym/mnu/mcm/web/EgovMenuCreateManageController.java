@@ -50,7 +50,8 @@ public class EgovMenuCreateManageController {
 
 	/* Validator */
 //	@Autowired
-//	private DefaultBeanValidator beanValidator;
+//
+                     DefaultBeanValidator beanValidator;
 	/** EgovPropertyService */
 	@Resource(name = "propertiesService")
 	protected EgovPropertyService propertiesService;
@@ -239,7 +240,8 @@ public class EgovMenuCreateManageController {
 	 * // .setTmp_rootPath("D:/egovframework/workspace/egovcmm/src/main/webapp" //
 	 * ); }else{menuSiteMapVO.setTmp_rootPath( //
 	 * "/product/jeus/webhome/was_com/egovframework-com-1_0/egovframework-com-1_0_war___"
-	 * // ); }
+	 * // ); 
+                    }
 	 * 
 	 * chkCreat = menuCreateManageService.creatSiteMap(menuSiteMapVO, valueHtml); if
 	 * (!chkCreat) { resultMsg = egovMessageSource.getMessage("fail.common.insert");

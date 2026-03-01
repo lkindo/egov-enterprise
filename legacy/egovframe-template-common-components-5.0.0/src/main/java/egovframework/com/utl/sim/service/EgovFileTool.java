@@ -1,4 +1,4 @@
-/**
+**
  *  Class Name : EgovFileTool.java
  *  Description : ?쒖뒪???붾젆?좊━ ?뺣낫瑜??뺤씤?섏뿬 ?쒓났?섎뒗  Business class
  *  Modification Information

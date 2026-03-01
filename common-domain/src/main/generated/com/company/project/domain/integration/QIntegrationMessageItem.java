@@ -62,4 +62,3 @@ public class QIntegrationMessageItem extends EntityPathBase<IntegrationMessageIt
     }
 
 }
-

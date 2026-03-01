@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { menuAdminService } from '@/services/menuAdminService';
-import { programService } from '@/services/programService';
+import { menuAdminService } from '@/services/admin/system/MenuAdminService';
+import { programAdminService } from '@/services/admin/system/ProgramAdminService';
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
@@ -23,7 +23,7 @@ export default async function MenuAdminPage() {
   try {
     const [menuData, programData] = await Promise.all([
       menuAdminService.getAllMenus(axiosConfig),
-      programService.getPrograms({ page: 0, size: 1000 }, axiosConfig)
+      programAdminService.getProgramList({ page: 0, size: 1000 }, axiosConfig)
     ]);
 
     menus = menuData || [];

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { networkService, Network } from '@/services/networkService';
+import { networkAdminService, Network } from '@/services/admin/system/NetworkAdminService';
 import NetworkAdminClient from './NetworkAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default async function AdminNetworkPage() {
   let initialNetworks: Network[] = [];
 
   try {
-    const response = await networkService.getNetworks({ page: 0, size: 100 }, axiosConfig);
+    const response = await networkAdminService.getNetworks({ page: 0, size: 100 }, axiosConfig);
     initialNetworks = (response as any)?.content || (response as any)?.data?.content || (response as any) || [];
   } catch (error) {
     console.error('Server-side fetch network data failed:', error);

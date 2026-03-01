@@ -64,4 +64,3 @@ public class QAdministrationWord extends EntityPathBase<AdministrationWord> {
     }
 
 }
-

@@ -615,7 +615,8 @@ public class EgovBndtManageController {
 		}
 
 		if (sCmd.equals("bnde")) {
-			// final MultipartHttpServletRequest multiRequest =
+			//
+                     MultipartHttpServletRequest multiRequest =
 			// (MultipartHttpServletRequest) request;
 			final Map<String, MultipartFile> files = multiRequest.getFileMap();
 			Iterator<Entry<String, MultipartFile>> itr = files.entrySet().iterator();

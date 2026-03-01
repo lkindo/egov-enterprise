@@ -38,4 +38,3 @@ public class QUserAuthority extends EntityPathBase<UserAuthority> {
     }
 
 }
-

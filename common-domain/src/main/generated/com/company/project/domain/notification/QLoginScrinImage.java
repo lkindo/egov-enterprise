@@ -52,4 +52,3 @@ public class QLoginScrinImage extends EntityPathBase<LoginScrinImage> {
     }
 
 }
-

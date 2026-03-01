@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * AnniversaryService ???? ???��??
- * Note: DB ??�빟議곌�??�몄?�濡??명빐 ?꾩옱 ??��??깊솕??
+ * AnniversaryService ???? ???��??
+ * Note: DB ??�빟議곌�??�몄?�濡??명빐 ?꾩옱 ??��??깊솕??
  */
 @DataJpaTest(properties = {
         "spring.jpa.show-sql=true",
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(AnniversaryService.class)
 @Transactional
 @Rollback
-@org.junit.jupiter.api.Disabled("DB ??�빟議곌�??�몄??- ?꾩냽 ?묒뾽 ?꾩슂")
+@org.junit.jupiter.api.Disabled("DB ??�빟議곌�??�몄??- ?꾩냽 ?묒뾽 ?꾩슂")
 public class AnniversaryServiceIntegrationTest {
 
     @Autowired
@@ -67,7 +67,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ?�?�� ??�쇅 ??0 �?諛섑??)
+    @DisplayName("湲곕???以묐???뺤씤 - ?�?�� ??�쇅 ??0 �?諛섑??)
     void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
@@ -77,7 +77,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ �???�쇅 ??1 �?諛섑??)
+    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ �???�쇅 ??1 �?諛섑??)
     void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
@@ -87,7 +87,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ 寃껉???�⑸�???1 �?諛섑??)
+    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ 寃껉???�⑸�???1 �?諛섑??)
     void checkAnniversaryDuplicate_ConflictWithOther_ShouldReturnOne() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231225", "Wedding", "ANN_001");
@@ -97,7 +97,7 @@ public class AnniversaryServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ?�⑸�???�쓬 ??0 �?諛섑??)
+    @DisplayName("湲곕???以묐???뺤씤 - ?�⑸�???�쓬 ??0 �?諛섑??)
     void checkAnniversaryDuplicate_NoConflict_ShouldReturnZero() {
         // When
         int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20240101", "New Year", "ANN_001");

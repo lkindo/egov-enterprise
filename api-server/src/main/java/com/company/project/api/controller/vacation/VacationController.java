@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Vacation (User)", description = "???´ê? ë°??°ì°¨ ê´€ë¦?API (?¬ìš©?ìš©)")
+@Tag(name = "Vacation (User)", description = "???ï¿½ï¿½? ï¿½??ï¿½ì°¨ ê´€ï¿½?API (?ï¿½ìš©?ï¿½ìš©)")
 @RestController
 @RequestMapping("/api/v1/vacations")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class VacationController {
 
     private final VacationService vacationService;
 
-    @Operation(summary = "?˜ì˜ ?´ê? ? ì²­ ëª©ë¡ ì¡°íšŒ", description = "?¬ìš©??ë³¸ì¸???´ê? ? ì²­ ëª©ë¡???˜ì´ì§•í•˜??ì¡°íšŒ?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ì˜ ?ï¿½ï¿½? ?ï¿½ì²­ ëª©ë¡ ì¡°íšŒ", description = "?ï¿½ìš©??ë³¸ì¸???ï¿½ï¿½? ?ï¿½ì²­ ëª©ë¡???ï¿½ì´ì§•í•˜??ì¡°íšŒ?ï¿½ë‹ˆ??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VacationDto>>> getVacations(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -34,7 +34,7 @@ public class VacationController {
                 ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
     }
 
-    @Operation(summary = "?´ê? ? ì²­ ?ì„¸ ì¡°íšŒ", description = "? ì²­???¨ì¼ ?´ê????ì„¸ ?•ë³´ë¥??•ì¸?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì²­ ?ï¿½ì„¸ ì¡°íšŒ", description = "?ï¿½ì²­???ï¿½ì¼ ?ï¿½ï¿½????ï¿½ì„¸ ?ï¿½ë³´ï¿½??ï¿½ì¸?ï¿½ë‹ˆ??")
     @GetMapping("/detail")
     public ResponseEntity<ApiResponse<VacationDto>> getVacation(
             @RequestParam String applcntId,
@@ -43,7 +43,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getVacation(applcntId, vcatnSe, bgnde)));
     }
 
-    @Operation(summary = "?´ê? ? ì²­", description = "?ˆë¡œ???´ê? ? ì²­?œë? ?±ë¡?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì²­", description = "?ï¿½ë¡œ???ï¿½ï¿½? ?ï¿½ì²­?ï¿½ï¿½? ?ï¿½ë¡?ï¿½ë‹ˆ??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> requestVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -52,7 +52,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?´ê? ? ì²­ ?˜ì •", description = "?€ê¸?ì¤‘ì¸ ?´ê? ? ì²­ ?´ìš©???˜ì •?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì²­ ?ï¿½ì •", description = "?ï¿½ï¿½?ì¤‘ì¸ ?ï¿½ï¿½? ?ï¿½ì²­ ?ï¿½ìš©???ï¿½ì •?ï¿½ë‹ˆ??")
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> updateVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -61,7 +61,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?´ê? ? ì²­ ì·¨ì†Œ", description = "? ì²­???´ê? ?•ë³´ë¥??? œ(ì·¨ì†Œ)?©ë‹ˆ??")
+    @Operation(summary = "?ï¿½ï¿½? ?ï¿½ì²­ ì·¨ì†Œ", description = "?ï¿½ì²­???ï¿½ï¿½? ?ï¿½ë³´ï¿½???ï¿½ï¿½(ì·¨ì†Œ)?ï¿½ë‹ˆ??")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteVacation(
             @RequestParam String applcntId,
@@ -71,7 +71,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "ë³¸ì¸ ?°ì°¨ ?„í™© ì¡°íšŒ", description = "ë¡œê·¸?¸í•œ ?¬ìš©?ì˜ ?¹í•´ ?°ë„ ?”ì—¬ ?°ì°¨ ?•ë³´ë¥??•ì¸?©ë‹ˆ??")
+    @Operation(summary = "ë³¸ì¸ ?ï¿½ì°¨ ?ï¿½í™© ì¡°íšŒ", description = "ë¡œê·¸?ï¿½í•œ ?ï¿½ìš©?ï¿½ì˜ ?ï¿½í•´ ?ï¿½ë„ ?ï¿½ì—¬ ?ï¿½ì°¨ ?ï¿½ë³´ï¿½??ï¿½ì¸?ï¿½ë‹ˆ??")
     @GetMapping("/yearly-leaves/my")
     public ResponseEntity<ApiResponse<YearlyLeaveDto>> getMyYearlyLeave(
             @AuthenticationPrincipal UserDetails userDetails,

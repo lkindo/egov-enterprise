@@ -62,4 +62,3 @@ public class QMeetingPlace extends EntityPathBase<MeetingPlace> {
     }
 
 }
-

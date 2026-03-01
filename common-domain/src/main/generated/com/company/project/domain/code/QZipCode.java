@@ -64,4 +64,3 @@ public class QZipCode extends EntityPathBase<ZipCode> {
     }
 
 }
-

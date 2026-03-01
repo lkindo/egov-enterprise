@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProfessionalSearchResult {
-    private String orgnztNm;
-    private String knoTypeCd;
-    private String knoTypeNm;
-    private String userNm;
-    private String appTypeCd; // EXPERT_GRAD
-    private String speConfmDe;
-    private String speId;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String organizationName;
+    private String typeCode;
+    private String typeName;
+    private String userName;
+    private String assessmentLevel;
+    private String confirmedDate;
+    private String expertId;
+    private String firstRegisterId;
+    private LocalDateTime createdDate;
 }

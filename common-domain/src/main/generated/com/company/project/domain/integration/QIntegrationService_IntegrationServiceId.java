@@ -38,4 +38,3 @@ public class QIntegrationService_IntegrationServiceId extends BeanPath<Integrati
     }
 
 }
-

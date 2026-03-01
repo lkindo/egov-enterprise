@@ -56,4 +56,3 @@ public class QHttpMon extends EntityPathBase<HttpMon> {
     }
 
 }
-

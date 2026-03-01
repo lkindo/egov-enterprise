@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { codeService } from '@/services/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import CommonCodeClient from './CommonCodeClient';
 
 export const metadata = {
@@ -8,10 +8,10 @@ export const metadata = {
   description: '시스템 전반에서 사용되는 공통 코드 및 상세 내역을 관리합니다.',
 };
 
-export default async function CommonCodePage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function CommonCodePage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
   const groupId = (resolvedSearchParams.groupId as string) || null;
@@ -26,8 +26,8 @@ export default async function CommonCodePage({
 
   try {
     const promises: [Promise<any[]>, Promise<any[]>] = [
-      codeService.getGroups({}, axiosConfig),
-      groupId ? codeService.getDetails({ codeId: groupId }, axiosConfig) : Promise.resolve([])
+      codeAdminService.getGroups({}, axiosConfig),
+      groupId ? codeAdminService.getDetails({ codeId: groupId }, axiosConfig) : Promise.resolve([])
     ];
 
     [groups, details] = await Promise.all(promises);
@@ -37,10 +37,10 @@ export default async function CommonCodePage({
 
   return (
     <Suspense fallback={<CommonCodeLoading />}>
-      <CommonCodeClient 
-        groups={groups} 
-        details={details} 
-        selectedGroupId={groupId} 
+      <CommonCodeClient
+        groups={groups}
+        details={details}
+        selectedGroupId={groupId}
       />
     </Suspense>
   );

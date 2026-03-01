@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * 배치?�업 관리�? ?�한 컨트롤러 ?�래?? */
+ * 배치?�업 관리�? ?�한 컨트롤러 ?�래?? */
 @Controller
 @RequiredArgsConstructor
 public class EgovBatchOpertController {
@@ -32,7 +32,7 @@ public class EgovBatchOpertController {
     private final BatchOpertValidator batchOpertValidator;
 
     /**
-     * 배치?�업 목록??조회?�다.
+     * 배치?�업 목록??조회?�다.
      */
     @RequestMapping({ "/sym/bat/getBatchOpertList.do", "/sym/bat/EgovBatchOpertList.do" })
     public String selectBatchOpertList(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model,
@@ -72,7 +72,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�보�??�록?�다.
+     * 배치?�업 ?�보�??�록?�다.
      */
     @RequestMapping("/sym/bat/addBatchOpert.do")
     public String insertBatchOpert(@ModelAttribute("searchVO") BatchOpert searchVO,
@@ -104,7 +104,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�록 ?�면?�로 ?�동?�다.
+     * 배치?�업 ?�록 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/sym/bat/getBatchOpertForRegist.do")
     public String selectBatchOpertForRegist(@ModelAttribute("searchVO") BatchOpert batchOpert, ModelMap model)
@@ -114,7 +114,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�세 ?�보�?조회?�다.
+     * 배치?�업 ?�세 ?�보�?조회?�다.
      */
     @RequestMapping("/sym/bat/getBatchOpert.do")
     public String selectBatchOpert(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model) throws Exception {
@@ -134,7 +134,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�보�???��?�다.
+     * 배치?�업 ?�보�???��?�다.
      */
     @RequestMapping("/sym/bat/deleteBatchOpert.do")
     public String deleteBatchOpert(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model) throws Exception {
@@ -149,7 +149,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�정 ?�면?�로 ?�동?�다.
+     * 배치?�업 ?�정 ?�면?�로 ?�동?�다.
      */
     @RequestMapping("/sym/bat/getBatchOpertForUpdate.do")
     public String selectBatchOpertForUpdate(@ModelAttribute("searchVO") BatchOpert searchVO, ModelMap model)
@@ -168,7 +168,7 @@ public class EgovBatchOpertController {
     }
 
     /**
-     * 배치?�업 ?�보�??�정?�다.
+     * 배치?�업 ?�보�??�정?�다.
      */
     @RequestMapping("/sym/bat/updateBatchOpert.do")
     public String updateBatchOpert(@ModelAttribute("searchVO") BatchOpert searchVO,

@@ -12,12 +12,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MapKnoSearchResult {
-    private String knoTypeCd;
-    private String knoTypeNm;
-    private String orgnztNm;
-    private String speId;
-    private String knoUrl;
-    private String clYmd;
-    private String frstRegisterId;
-    private LocalDateTime frstRegisterPnttm;
+    private String typeCode;
+    private String typeName;
+    private String organizationName;
+    private String expertId;
+    private String knowledgeUrl;
+    private String classificationDate;
+    private String firstRegisterId;
+    private LocalDateTime createdDate;
 }

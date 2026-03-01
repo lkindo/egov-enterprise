@@ -62,4 +62,3 @@ public class QPopup extends EntityPathBase<Popup> {
     }
 
 }
-

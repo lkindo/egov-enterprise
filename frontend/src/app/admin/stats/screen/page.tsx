@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import statsService from '@/services/stats/statsService';
+import { statsAdminService } from '@/services/admin/stats/StatsAdminService';
 import { format } from 'date-fns';
 import { Loader2, Search } from "lucide-react";
 
@@ -18,7 +18,7 @@ export default function ScreenStatsPage() {
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['admin-stats-screen', filter],
-        queryFn: () => statsService.getScrinStats(filter),
+        queryFn: () => statsAdminService.getScrinStats(filter),
     });
 
     const stats = (data as any)?.scrinStats || (data as any)?.list || [];

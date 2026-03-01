@@ -50,4 +50,3 @@ public class QProxyLog extends EntityPathBase<ProxyLog> {
     }
 
 }
-

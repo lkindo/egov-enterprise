@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * ???€???•í‰¬???´Ñ‹ì½ï§?
- * Native Query???????ë¿¬ æ¹²ê³—?????€??ë¶¿ë¹Ÿ ???” ?‰ë¶¿ë¿???ê³—ì” ??è­°ê³ ?? */
+ * í†µê³„ ì„œë¹„ìŠ¤ êµ¬í˜„ì²´
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,7 +23,6 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getConnectionStats(String fromDate, String toDate, String statsKind) {
-        // ?ë¬’ëƒ½ æ¿¡ì’“?????” ?‰ë¶¿ë¿????°í€??ë¶¾í€??ê¾¨í€?ï§ë¬??(SCONECTSUMMARY -> sweblogsummary)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -37,7 +36,6 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getBoardStats(String fromDate, String toDate, String statsKind) {
-        // å¯ƒëš¯????ë¶¿ë¹Ÿ ???” ?‰ë¶¿ë¿??è­°ê³ ??(SBBSSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(CREAT_CO) as stats_co
                 FROM SBBSSUMMARY
@@ -51,7 +49,6 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getUserStats(String fromDate, String toDate, String statsKind) {
-        // ??????ë¶¿ë¹Ÿ ???” ?‰ë¶¿ë¿??è­°ê³ ??(SUSERSUMMARY)
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(user_co) as stats_co
                 FROM SUSERSUMMARY
@@ -65,7 +62,6 @@ public class StatsService implements EgovStatsService {
 
     @Override
     public List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind) {
-        // ?ë¶¾ãˆƒ ?ë¶¿ë¹Ÿ ???” ?‰ë¶¿ë¿???ë¶¿ê»Œ ???€?ï§ë¬??(SSCRINSUMMARY -> sweblogsummary ??ï§?
         String sql = """
                 SELECT OCCRRNC_DE as stats_date, SUM(rdcnt) as stats_co
                 FROM sweblogsummary
@@ -95,7 +91,8 @@ public class StatsService implements EgovStatsService {
                 result.add(dto);
             }
         } catch (Exception e) {
-            // ???” ?‰ë¶¿????¾êµ…???‘ì‡°????»ìªŸ ????ï§â‘¸ì¤?è«›ì„‘??            // ?ë¨?œ­???¾ëŒ???? ??„í€? ??å¯ƒê³Œ??è«›ì„‘??        }
+            // Log error if needed
+        }
 
         return result;
     }

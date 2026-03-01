@@ -4,7 +4,7 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.user.entity.EnterpriseUser;
 import com.company.project.domain.user.repository.EnterpriseUserRepository;
-import com.company.project.service.user.dto.EnterpriseUserDto;
+import com.company.project.service.usermanagement.dto.EnterpriseUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

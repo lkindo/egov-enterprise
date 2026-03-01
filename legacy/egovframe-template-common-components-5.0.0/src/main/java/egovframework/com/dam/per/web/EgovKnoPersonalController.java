@@ -223,7 +223,8 @@ public class EgovKnoPersonalController {
 		List<FileVO> fvoList = null;
 		String atchFileId = "";
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {
@@ -313,7 +314,8 @@ public class EgovKnoPersonalController {
 		 */
 		String atchFileId = knoPersonal.getAtchFileId();
 
-		// final Map<String, MultipartFile> files = multiRequest.getFileMap();
+		//
+                     Map<String, MultipartFile> files = multiRequest.getFileMap();
 		final List<MultipartFile> files = multiRequest.getFiles("file_1");
 
 		if (!files.isEmpty()) {

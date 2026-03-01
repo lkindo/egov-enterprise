@@ -90,4 +90,3 @@ public class QInstitutionCode extends EntityPathBase<InstitutionCode> {
     }
 
 }
-

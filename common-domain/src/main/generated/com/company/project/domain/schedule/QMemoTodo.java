@@ -56,4 +56,3 @@ public class QMemoTodo extends EntityPathBase<MemoTodo> {
     }
 
 }
-

@@ -1,4 +1,4 @@
-/**
+**
  * @Class Name  : EgovStringUtil.java
  * @Description : 臾몄옄???곗씠??泥섎━ 愿???좏떥由ы떚
  * @Modification Information
@@ -52,7 +52,8 @@ public class EgovStringUtil {
 	/**
 	 * <p>Padding???????덈뒗 理쒕? ?섏튂</p>
 	 */
-	// private static final int PAD_LIMIT = 8192;
+	//
+                     static final int PAD_LIMIT = 8192;
 
 	/**
 	 * <p>An array of <code>String</code>s used for padding.</p>
@@ -314,15 +315,18 @@ public class EgovStringUtil {
 	public static String decode(String sourceStr, String compareStr, String returnStr, String defaultStr) {
 		//		if (sourceStr == null && compareStr == null) {
 		//			return returnStr;
-		//		}
+		//		
+                    }
 		//
 		//		if (sourceStr == null && compareStr != null) {
 		//			return defaultStr;
-		//		}
+		//		
+                    }
 		//
 		//		if (sourceStr.trim().equals(compareStr)) {
 		//			return returnStr;
-		//		}
+		//		
+                    }
 
 		if (sourceStr == null) { //2022.01. Possible null pointer dereference
 			if (compareStr == null) {

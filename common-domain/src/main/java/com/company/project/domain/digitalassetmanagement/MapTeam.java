@@ -1,5 +1,6 @@
 package com.company.project.domain.digitalassetmanagement;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -7,45 +8,35 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 /**
- * 筌왖???멥룋(?�곌?�彛? JPA Entity
- * ???�탢?????�?? NDAMMAPTEAM
+ * 지식맵(조직분류) JPA Entity
+ * 연계 테이블: NDAMMAPTEAM
  */
 @Entity
 @Table(name = "NDAMMAPTEAM")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MapTeam {
+public class MapTeam extends BaseEntity {
 
     @Id
     @Column(name = "ORGNZT_ID", length = 20)
-    private String orgnztId;
+    private String organizationId;
 
     @Column(name = "ORGNZT_NM", length = 100, nullable = false)
-    private String orgnztNm;
+    private String organizationName;
 
     @Column(name = "CL_DE", length = 20)
-    private String clYmd;
+    private String classificationDate;
 
     @Column(name = "KNWLDG_URL", length = 255)
-    private String knoUrl;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
+    private String knowledgeUrl;
 
     @Builder
-    public MapTeam(String orgnztId, String orgnztNm, String clYmd, String knoUrl, String lastUpdusrId) {
-        this.orgnztId = orgnztId;
-        this.orgnztNm = orgnztNm;
-        this.clYmd = clYmd;
-        this.knoUrl = knoUrl;
-        this.lastUpdusrId = lastUpdusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
+    public MapTeam(String organizationId, String organizationName, String classificationDate, String knowledgeUrl) {
+        this.organizationId = organizationId;
+        this.organizationName = organizationName;
+        this.classificationDate = classificationDate;
+        this.knowledgeUrl = knowledgeUrl;
     }
 }

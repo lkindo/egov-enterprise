@@ -461,7 +461,8 @@ public class EgovMberManageController {
 		// Boolean isAuthenticated = EgovUserDetailsHelper.isAuthenticated();
 		// if (!isAuthenticated) {
 		// return "index";
-		// }
+		// 
+                    }
 
 		// ?쇰컲?뚯썝???쎄? ?꾩씠???ㅼ젙
 		String stplatId = "STPLAT_0000000000001";

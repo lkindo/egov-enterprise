@@ -11,8 +11,6 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Objects;
 
-// import static com.company.project.domain.log.QSysHistory.sysHistory; // Removed static import
-
 @RequiredArgsConstructor
 public class SysHistoryRepositoryImpl implements SysHistoryRepositoryCustom {
 
@@ -42,12 +40,8 @@ public class SysHistoryRepositoryImpl implements SysHistoryRepositoryCustom {
             return null;
         }
 
-        if ("0".equals(searchCnd)) { // ??뽯뮞??뺤구
+        if ("0".equals(searchCnd)) {
             return QSysHistory.sysHistory.sysNm.contains(searchWrd);
-        } else if ("1".equals(searchCnd)) { // ???경뤃??뉛쭗?- ??野껋럩??SE_CODE?? 鈺곌퀣????袁⑹뒄???????筌? ??곕뼊 ?꾨뗀諭뜻에?野꺜??뀀릭椰꾧퀡援???λ떄 ??釉?野꺜??깆몵嚥?筌ｌ꼶??
-            // ??뉕탢??뽯퓠??뺣뮉 CCMMNDETAILCODE?? 鈺곌퀣???뤿연 CODE_NM??野꺜??뀀맙.
-            // ??곕뼊?? JOIN ??몄셽??랁??袁⑹뒄???類ㅼ삢.
-            return null;
         }
 
         return null;

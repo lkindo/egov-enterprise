@@ -49,13 +49,13 @@ class UserControllerServiceLayerIntegrationTest {
         private UserService userService;
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
+        @DisplayName("POST /api/v1/users/signup - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
         void signup_endpoint_callsServiceLayer() throws Exception {
                 // Given
 
                 UserResponse response = new UserResponse(
                                 "testUser",
-                                "?�스???�용??,
+                                "?�스???�용??,
                                 null);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
@@ -64,7 +64,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 {
                                     "userId": "testUser",
                                     "password": "password123!",
-                                    "userNm": "?�스???�용??,
+                                    "userNm": "?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -84,12 +84,12 @@ class UserControllerServiceLayerIntegrationTest {
 
         @Test
         @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
+        @DisplayName("GET /api/v1/users - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
         void getUserList_endpoint_callsServiceLayer() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
-                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
+                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
 
                 when(userService.getUserList()).thenReturn(userList);
 
@@ -104,7 +104,7 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
+        @DisplayName("POST /api/v1/users/signup - ?�비??계층 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
         void signup_endpoint_handlesServiceException() throws Exception {
                 // Given
 
@@ -116,7 +116,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 {
                                     "userId": "duplicateUser",
                                     "password": "password123!",
-                                    "userNm": "중복 ?�용??,
+                                    "userNm": "중복 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -135,7 +135,7 @@ class UserControllerServiceLayerIntegrationTest {
 
         @Test
         @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층?�서 �?목록 반환 ??API ?�드?�인?�에??�?배열 ?�답")
+        @DisplayName("GET /api/v1/users - ?�비??계층?�서 �?목록 반환 ??API ?�드?�인?�에??�?배열 ?�답")
         void getUserList_endpoint_handlesEmptyList() throws Exception {
                 // Given
                 when(userService.getUserList()).thenReturn(Arrays.asList());
@@ -153,7 +153,7 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층?�서 null 반환 ??API ?�드?�인?�에???�절??처리")
+        @DisplayName("POST /api/v1/users/signup - ?�비??계층?�서 null 반환 ??API ?�드?�인?�에???�절??처리")
         void signup_endpoint_handlesNullResponse() throws Exception {
                 // Given
 
@@ -163,7 +163,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 {
                                     "userId": "nullResponseUser",
                                     "password": "password123!",
-                                    "userNm": "NULL ?�답 ?�용??,
+                                    "userNm": "NULL ?�답 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -182,7 +182,7 @@ class UserControllerServiceLayerIntegrationTest {
 
         @Test
         @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층?�서 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
+        @DisplayName("GET /api/v1/users - ?�비??계층?�서 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
         void getUserList_endpoint_handlesServiceException() throws Exception {
                 // Given
                 when(userService.getUserList())
@@ -198,13 +198,13 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�러 �??�출 ???�비??계층???�러 �??�출??)
+        @DisplayName("POST /api/v1/users/signup - ?�러 �??�출 ???�비??계층???�러 �??�출??)
         void signup_endpoint_multipleCalls() throws Exception {
                 // Given
 
                 UserResponse response = new UserResponse(
                                 "multiCallUser",
-                                "?�중 ?�출 ?�용??,
+                                "?�중 ?�출 ?�용??,
                                 null);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
@@ -213,7 +213,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 {
                                     "userId": "multiCallUser",
                                     "password": "password123!",
-                                    "userNm": "?�중 ?�출 ?�용??,
+                                    "userNm": "?�중 ?�출 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -237,11 +237,11 @@ class UserControllerServiceLayerIntegrationTest {
 
         @Test
         @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층 ?�출 ???�라미터 ?�달 ?�인")
+        @DisplayName("GET /api/v1/users - ?�비??계층 ?�출 ???�라미터 ?�달 ?�인")
         void getUserList_endpoint_parameterPassing() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
 
                 when(userService.getUserList()).thenReturn(userList);
 
@@ -259,20 +259,20 @@ class UserControllerServiceLayerIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층???�확???�청 객체 ?�달 ?�인")
+        @DisplayName("POST /api/v1/users/signup - ?�비??계층???�확???�청 객체 ?�달 ?�인")
         void signup_endpoint_requestObjectPassedCorrectly() throws Exception {
                 // Given
                 UserSignupRequest request = new UserSignupRequest(
                                 "correctParamUser",
                                 "password123!",
-                                "?�확???�라미터 ?�용??,
+                                "?�확???�라미터 ?�용??,
                                 com.company.project.domain.user.entity.Role.USER,
                                 "hint",
                                 "answer");
 
                 UserResponse response = new UserResponse(
                                 "correctParamUser",
-                                "?�확???�라미터 ?�용??,
+                                "?�확???�라미터 ?�용??,
                                 null);
 
                 when(userService.signup(eq(request))).thenReturn(response);
@@ -281,7 +281,7 @@ class UserControllerServiceLayerIntegrationTest {
                                 {
                                     "userId": "correctParamUser",
                                     "password": "password123!",
-                                    "userNm": "?�확???�라미터 ?�용??,
+                                    "userNm": "?�확???�라미터 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"

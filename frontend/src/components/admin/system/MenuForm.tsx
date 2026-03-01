@@ -30,7 +30,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { MenuManage } from "@/types/system";
-import { createMenu, updateMenu, deleteMenu } from '@/services/system/menuService';
+import { menuAdminService } from '@/services/admin/system/MenuAdminService';
 
 const formSchema = z.object({
     menuNo: z.coerce.number().min(1, { message: "메뉴번호는 필수입니다." }),
@@ -69,9 +69,9 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await updateMenu({ ...values, menuNo: data.menuNo } as MenuManage);
+                await menuAdminService.updateMenu({ ...values, menuNo: data.menuNo } as MenuManage);
             } else {
-                await createMenu(values as MenuManage);
+                await menuAdminService.createMenu(values as MenuManage);
             }
             onSuccess();
             onOpenChange(false);
@@ -85,7 +85,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
         if (!data?.menuNo) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await deleteMenu(data.menuNo);
+                await menuAdminService.deleteMenu(data.menuNo);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

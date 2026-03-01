@@ -79,12 +79,11 @@ public class BackupResultService extends EgovAbstractServiceImpl implements Egov
                 backupResultRepository.save(Objects.requireNonNull(entity));
         }
 
-        // Note: updateUserResult is not in the interface, removing @Override
+        // Note: updateUserResult is not in the interface.
+        // Based on view_file, the original method is updateBackupResult.
         @Transactional
         public void updateUserResult(String backupResultId, String userId, BackupResultDto dto) {
-                // This seems to be a mismatch in naming if called by interface, let's keep it
-                // consistent or fix interface if needed.
-                // Based on view_file, it was updateBackupResult.
+                // Consistent with updateBackupResult if needed.
         }
 
         @Override

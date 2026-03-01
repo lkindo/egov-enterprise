@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { boardService } from '@/services/boardService';
+import { boardUserService } from '@/services/user/board/BoardUserService';
 import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
@@ -31,7 +31,7 @@ function BoardListContent() {
     async function loadPosts() {
       try {
         setLoading(true);
-        const res = (await boardService.getPosts(values.bbsId, {
+        const res = (await boardUserService.getPosts(values.bbsId, {
           page: parseInt(values.page),
           size: 10,
           searchWrd: values.searchWrd,
@@ -51,17 +51,17 @@ function BoardListContent() {
   }, [values, toast]);
 
   const columns = [
-    { 
-      header: '번호', 
+    {
+      header: '번호',
       accessor: (item: BoardPost) => (
-        item.noticeAt === 'Y' ? 
-        <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> : 
-        item.nttId 
+        item.noticeAt === 'Y' ?
+          <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
+          item.nttId
       ),
       className: 'w-20'
     },
-    { 
-      header: '제목', 
+    {
+      header: '제목',
       accessor: (item: BoardPost) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
@@ -72,8 +72,8 @@ function BoardListContent() {
     },
     { header: '작성자', accessor: (item: BoardPost) => item.frstRegisterNm || item.ntcrNm || '익명' },
     { header: '날짜', accessor: (item: BoardPost) => item.createdDate.substring(0, 10) },
-    { 
-      header: '조회', 
+    {
+      header: '조회',
       accessor: (item: BoardPost) => (
         <div className="flex items-center gap-1 text-muted-foreground">
           <Eye size={14} />
@@ -85,11 +85,11 @@ function BoardListContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="통합 게시판" 
+      <PageHeader
+        title="통합 게시판"
         breadcrumbs={[{ label: '협업지원' }, { label: '게시판' }]}
         actions={
-          <button 
+          <button
             onClick={() => router.push('/cop/bbs/write')}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
@@ -98,41 +98,41 @@ function BoardListContent() {
         }
       />
 
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={[
-          { 
-            name: 'bbsId', 
-            label: '게시판 선택', 
-            type: 'select', 
+          {
+            name: 'bbsId',
+            label: '게시판 선택',
+            type: 'select',
             options: [
               { label: '공지사항', value: 'BBSMSTR_AAAAAAAAAAAA' },
               { label: '자유게시판', value: 'BBSMSTR_BBBBBBBBBBBB' },
               { label: '업무게시판', value: 'BBSMSTR_CCCCCCCCCCCC' }
-            ] 
+            ]
           },
           { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
-          { 
-            name: 'searchCnd', 
-            label: '검색 조건', 
-            type: 'select', 
+          {
+            name: 'searchCnd',
+            label: '검색 조건',
+            type: 'select',
             options: [
               { label: '제목', value: '0' },
               { label: '내용', value: '1' },
               { label: '작성자', value: '2' }
-            ] 
+            ]
           }
         ]}
         onSearch={(v) => setSearchValues({ ...v, page: '0' })}
       />
 
-      <StandardDataTable 
-        columns={columns} 
-        data={data} 
+      <StandardDataTable
+        columns={columns}
+        data={data}
         loading={loading}
         onRowClick={(item) => router.push(`/cop/bbs/${item.nttId}?bbsId=${item.bbsId}`)}
         emptyMessage="게시글이 존재하지 않습니다."
       />
-      
+
       <div className="flex justify-center pt-4">
         <p className="text-sm text-muted-foreground font-medium">
           총 <span className="text-foreground font-bold">{total}</span> 개의 게시글이 있습니다.

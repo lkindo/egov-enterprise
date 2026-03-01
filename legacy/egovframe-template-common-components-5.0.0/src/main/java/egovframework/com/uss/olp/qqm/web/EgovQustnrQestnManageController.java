@@ -438,5 +438,3 @@ public class EgovQustnrQestnManageController {
 		return sLocationUrl;
 	}
 }
-
-

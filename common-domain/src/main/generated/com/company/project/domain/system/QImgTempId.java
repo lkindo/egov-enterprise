@@ -36,4 +36,3 @@ public class QImgTempId extends BeanPath<ImgTempId> {
     }
 
 }
-

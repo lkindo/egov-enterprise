@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "DigitalAssetAppraisal", description = "지???��? 관�?API")
+@Tag(name = "DigitalAssetAppraisal", description = "지식 평가 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/digital-assets/appraisals")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class KnowledgeAppraisalController {
 
     private final KnowledgeAppraisalService appraisalService;
 
-    @Operation(summary = "지???��? 목록 조회", description = "?�문가가 ?��??�야 ??지??목록??조회?�니??")
+    @Operation(summary = "지식 평가 목록 조회", description = "전문가가 평가해야 할 지식 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<KnowledgeInfSearchResult>>> getAppraisalList(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -36,21 +36,21 @@ public class KnowledgeAppraisalController {
                         pageable)));
     }
 
-    @Operation(summary = "지???��? ?�세 조회", description = "?��? ?�??지?�의 ?�세 ?�보�?조회?�니??")
-    @GetMapping("/{knoId}")
+    @Operation(summary = "지식 평가 상세 조회", description = "평가 대상 지식의 상세 정보를 조회합니다.")
+    @GetMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<KnowledgeDto>> getAppraisalDetail(
-            @Parameter(description = "지??ID") @PathVariable String knoId) {
-        return ResponseEntity.ok(ApiResponse.success(appraisalService.selectKnowledgeAppraisalDetail(knoId)));
+            @Parameter(description = "지식 ID") @PathVariable String knowledgeId) {
+        return ResponseEntity.ok(ApiResponse.success(appraisalService.selectKnowledgeAppraisalDetail(knowledgeId)));
     }
 
-    @Operation(summary = "지???��? ?�행", description = "지?�에 ?�???��? ?�수 �??�문가 ?�견???�록?�니??")
-    @PutMapping("/{knoId}")
+    @Operation(summary = "지식 평가 수행", description = "지식에 대한 평가 점수 및 전문가 의견을 등록합니다.")
+    @PutMapping("/{knowledgeId}")
     public ResponseEntity<ApiResponse<Void>> updateAppraisal(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String knoId,
+            @PathVariable String knowledgeId,
             @RequestBody KnowledgeDto knowledgeDto) {
-        knowledgeDto.setKnoId(knoId);
-        knowledgeDto.setLastUpdusrId(userDetails.getUsername());
+        knowledgeDto.setKnowledgeId(knowledgeId);
+        knowledgeDto.setFirstRegisterId(userDetails.getUsername());
         appraisalService.updateKnowledgeAppraisal(knowledgeDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

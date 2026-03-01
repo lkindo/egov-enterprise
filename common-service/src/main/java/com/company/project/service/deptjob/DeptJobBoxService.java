@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * ?ºÂ€??–ë¾½?¾ëŒ„ë¸???•í‰¬???´Ñ‹ì½ï§?
+ * ?ï¿½Â€??ï¿½ë¾½?ï¿½ëŒ„ï¿½???ï¿½í‰¬???ï¿½Ñ‹ì½ï¿½?
  */
 @Service("deptJobBoxService")
 @RequiredArgsConstructor

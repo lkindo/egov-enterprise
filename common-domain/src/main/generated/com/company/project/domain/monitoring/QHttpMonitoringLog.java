@@ -58,4 +58,3 @@ public class QHttpMonitoringLog extends EntityPathBase<HttpMonitoringLog> {
     }
 
 }
-

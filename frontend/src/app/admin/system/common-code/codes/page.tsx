@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { getCmmnCodeList, getClCodeList } from '@/services/system/codeService';
+import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import { CmmnCode, SearchParams, CmmnClCode } from '@/types/system';
 import { CommonCodeForm } from '@/components/admin/system/CommonCodeForm';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -37,17 +37,17 @@ export default function CommonCodePage() {
 
     const { data: clCodesData } = useQuery({
         queryKey: ['common-cl-codes-all'],
-        queryFn: () => getClCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' }),
+        queryFn: () => codeAdminService.getClCodeList({ pageIndex: 1, searchCondition: '', searchKeyword: '' }),
     });
 
     const { data, isLoading } = useQuery({
         queryKey: ['common-codes', params],
-        queryFn: () => getCmmnCodeList(params),
+        queryFn: () => codeAdminService.getCmmnCodeList(params),
     });
 
     const codes: CmmnCode[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
-    const clCodes = useMemo(() => 
+    const clCodes = useMemo(() =>
         (clCodesData?.resultList || []).map((c: CmmnClCode) => ({ label: c.clCodeNm, value: c.clCode })),
         [clCodesData]
     );

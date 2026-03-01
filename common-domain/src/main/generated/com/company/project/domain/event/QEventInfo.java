@@ -69,4 +69,3 @@ public class QEventInfo extends EntityPathBase<EventInfo> {
     }
 
 }
-

@@ -56,4 +56,3 @@ public class QWordDicary extends EntityPathBase<WordDicary> {
     }
 
 }
-

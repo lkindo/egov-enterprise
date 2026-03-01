@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * API ?�드?�인?��? ?�비??계층 간의 ?�합 ?�스?? */
+ * API ?�드?�인?��? ?�비??계층 간의 ?�합 ?�스?? */
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @org.springframework.transaction.annotation.Transactional
@@ -49,12 +49,12 @@ class UserControllerServiceIntegrationTest {
         private UserService userService;
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("POST /api/v1/users/signup - API ?�드?�인?�에???�비???�출 ?�인")
         void signup_api_callsService() throws Exception {
                 // Given
                 UserResponse response = new UserResponse(
                                 "apiTestUser",
-                                "API ?�합 ?�스???�용??,
+                                "API ?�합 ?�스???�용??,
                                 null);
                 doReturn(response).when(userService).signup(any(UserSignupRequest.class));
 
@@ -62,7 +62,7 @@ class UserControllerServiceIntegrationTest {
                                 {
                                     "userId": "apiTestUser",
                                     "password": "password123!",
-                                    "userNm": "API ?�합 ?�스???�용??,
+                                    "userNm": "API ?�합 ?�스???�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -82,12 +82,12 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("GET /api/v1/users - API ?�드?�인?�에???�비???�출 ?�인")
         void getUserList_api_callsService() throws Exception {
                 // Given
                 List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
-                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
+                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
+                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
                 when(userService.getUserList()).thenReturn(userList);
 
                 // When & Then
@@ -103,10 +103,10 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/{id} - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("GET /api/v1/users/{id} - API ?�드?�인?�에???�비???�출 ?�인")
         void getUserById_api_callsService() throws Exception {
                 // Given
-                UserDto userDto = new UserDto("testUser", "?�스???�용??, "USR001", null, null, null, null);
+                UserDto userDto = new UserDto("testUser", "?�스???�용??, "USR001", null, null, null, null);
                 when(userService.getUserById("testUser")).thenReturn(userDto);
 
                 // When & Then
@@ -115,14 +115,14 @@ class UserControllerServiceIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data.userId").value("testUser"))
-                                .andExpect(jsonPath("$.data.userNm").value("?�스???�용??));
+                                .andExpect(jsonPath("$.data.userNm").value("?�스???�용??));
 
                 // Verify service method was called
                 verify(userService, times(1)).getUserById("testUser");
         }
 
         @Test
-        @DisplayName("POST /api/v1/users - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("POST /api/v1/users - API ?�드?�인?�에???�비???�출 ?�인")
         void registerUser_api_callsService() throws Exception {
                 // Given
                 when(userService.registerUser(anyString(), anyString(), anyString(), anyString(), anyString(), any()))
@@ -132,7 +132,7 @@ class UserControllerServiceIntegrationTest {
                                 {
                                     "userId": "newUser",
                                     "password": "password123!",
-                                    "userNm": "?�규 ?�용??,
+                                    "userNm": "?�규 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -153,7 +153,7 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("PUT /api/v1/users/{userId} - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("PUT /api/v1/users/{userId} - API ?�드?�인?�에???�비???�출 ?�인")
         void updateUser_api_callsService() throws Exception {
                 // When & Then
                 mockMvc.perform(put("/api/v1/users/updateUser")
@@ -161,7 +161,7 @@ class UserControllerServiceIntegrationTest {
                                 .content("""
                                                 {
                                                     "userId": "updateUser",
-                                                    "userNm": "?�정???�용??,
+                                                    "userNm": "?�정???�용??,
                                                     "esntlId": "USR001",
                                                     "role": "USER"
                                                 }
@@ -174,7 +174,7 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/users/{userId} - API ?�드?�인?�에???�비???�출 ?�인")
+        @DisplayName("DELETE /api/v1/users/{userId} - API ?�드?�인?�에???�비???�출 ?�인")
         void deleteUser_api_callsService() throws Exception {
                 // When & Then
                 mockMvc.perform(delete("/api/v1/users/deleteUser")
@@ -187,7 +187,7 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층 ?�외 발생 ??API???�외 반환")
+        @DisplayName("POST /api/v1/users/signup - ?�비??계층 ?�외 발생 ??API???�외 반환")
         void signup_serviceException_returnsError() throws Exception {
                 // Given
                 when(userService.signup(any(UserSignupRequest.class)))
@@ -198,7 +198,7 @@ class UserControllerServiceIntegrationTest {
                                 {
                                     "userId": "duplicateUser",
                                     "password": "password123!",
-                                    "userNm": "중복 ?�용??,
+                                    "userNm": "중복 ?�용??,
                                     "passwordHint": "hint",
                                     "passwordCnsr": "answer",
                                     "role": "USER"
@@ -218,7 +218,7 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users - ?�비??계층?�서 �?리스??반환 ??API??�?배열 반환")
+        @DisplayName("GET /api/v1/users - ?�비??계층?�서 �?리스??반환 ??API??�?배열 반환")
         void getUserList_emptyServiceResult_returnsEmptyArray() throws Exception {
                 // Given
                 when(userService.getUserList()).thenReturn(Arrays.asList());
@@ -236,7 +236,7 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/users/{id} - 존재?��? ?�는 ?�용??조회 ??API?�서 ?�절???�류 반환")
+        @DisplayName("GET /api/v1/users/{id} - 존재?��? ?�는 ?�용??조회 ??API?�서 ?�절???�류 반환")
         void getUserById_nonExistentUser_returnsError() throws Exception {
                 // Given
                 when(userService.getUserById("nonexistent")).thenThrow(
@@ -255,12 +255,12 @@ class UserControllerServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("API ?�드?�인?��? ?�비??계층 간의 ?�이???�달 ?�확???�인")
+        @DisplayName("API ?�드?�인?��? ?�비??계층 간의 ?�이???�달 ?�확???�인")
         void dataTransfer_accuracyBetweenApiAndService() throws Exception {
                 // Given
                 UserResponse response = new UserResponse(
                                 "accuracyTestUser",
-                                "?�확???�스???�용??,
+                                "?�확???�스???�용??,
                                 null);
 
                 when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
@@ -269,7 +269,7 @@ class UserControllerServiceIntegrationTest {
                                 {
                                     "userId": "accuracyTestUser",
                                     "password": "password123!",
-                                    "userNm": "?�확???�스???�용??,
+                                    "userNm": "?�확???�스???�용??,
                                     "passwordHint": "accuracyHint",
                                     "passwordCnsr": "accuracyAnswer",
                                     "role": "ADMIN"
@@ -283,11 +283,11 @@ class UserControllerServiceIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.success").value(true))
                                 .andExpect(jsonPath("$.data.userId").value("accuracyTestUser"))
-                                .andExpect(jsonPath("$.data.userNm").value("?�확???�스???�용??));
+                                .andExpect(jsonPath("$.data.userNm").value("?�확???�스???�용??));
 
                 // Verify that the service received the correct data
                 verify(userService, times(1)).signup(argThat(req -> req.userId().equals("accuracyTestUser") &&
-                                req.userNm().equals("?�확???�스???�용??) &&
+                                req.userNm().equals("?�확???�스???�용??) &&
                                 req.role() == com.company.project.domain.user.entity.Role.ADMIN));
         }
 }

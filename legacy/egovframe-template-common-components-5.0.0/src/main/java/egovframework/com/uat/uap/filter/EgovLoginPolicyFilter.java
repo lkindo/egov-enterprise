@@ -126,8 +126,10 @@ public class EgovLoginPolicyFilter implements Filter {
 			((HttpServletResponse) response)
 					.sendRedirect(httpRequest.getContextPath() + "/uat/uia/egovLoginUsr.do?login_error=1");
 		} catch (Exception e) {
-//			LOGGER.error("Exception: {}", e.getClass().getName());
-//			LOGGER.error("Exception  Message: {}", e.getMessage());
+//			LOGGER.error("Exception: {
+                    }", e.getClass().getName());
+//			LOGGER.error("Exception  Message: {
+                    }", e.getMessage());
 			// 2017-02-14 ?댁젙? ?쒗걧?댁퐫??ES) - ?쒗걧?댁퐫??遺?곸젅???덉쇅 泥섎━[CWE-253, CWE-440, CWE-754]
 			LOGGER.error("[" + e.getClass() + "] : ", e.getMessage());
 

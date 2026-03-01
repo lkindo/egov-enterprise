@@ -62,4 +62,3 @@ public class QKnowledgeInf extends EntityPathBase<KnowledgeInf> {
     }
 
 }
-

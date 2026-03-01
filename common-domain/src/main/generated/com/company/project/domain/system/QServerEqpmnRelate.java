@@ -40,4 +40,3 @@ public class QServerEqpmnRelate extends EntityPathBase<ServerEqpmnRelate> {
     }
 
 }
-

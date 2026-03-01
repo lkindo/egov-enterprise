@@ -54,4 +54,3 @@ public class QRecentSrchwrdManage extends EntityPathBase<RecentSrchwrdManage> {
     }
 
 }
-

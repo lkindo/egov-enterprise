@@ -51,7 +51,8 @@ public class EgovArticleCommentController {
     @Resource(name="egovMessageSource")
     EgovMessageSource egovMessageSource;
 
-    //protected Logger log = Logger.getLogger(this.getClass());
+    //
+                     Logger log = Logger.getLogger(this.getClass());
 
     /**
      * ?볤?愿由?紐⑸줉 議고쉶瑜??쒓났?쒕떎.

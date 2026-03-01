@@ -46,4 +46,3 @@ public class QIntegrationInstitution extends EntityPathBase<IntegrationInstituti
     }
 
 }
-

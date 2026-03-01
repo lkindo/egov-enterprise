@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 import java.util.regex.Pattern;
 
 /**
- * ?�용??관???�력�?검�??�틸리티 ?�래?? */
+ * ?�용??관???�력�?검�??�틸리티 ?�래?? */
 public class UserValidator {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
@@ -18,7 +18,7 @@ public class UserValidator {
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-??\s]{2,50}$");
 
     /**
-     * ?�용???�원가???�청 검�?     */
+     * ?�용???�원가???�청 검�?     */
     public static void validateUserSignupRequest(@NonNull UserSignupRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("User signup request cannot be null");
@@ -50,7 +50,7 @@ public class UserValidator {
     }
 
     /**
-     * ?�메??주소 검�?     */
+     * ?�메??주소 검�?     */
     public static void validateEmail(String email) {
         if (!StringUtils.hasText(email) || !EMAIL_PATTERN.matcher(email).matches()) {
             throw new IllegalArgumentException("Invalid email format");
@@ -58,7 +58,7 @@ public class UserValidator {
     }
 
     /**
-     * ?�용???�티??검�?     */
+     * ?�용???�티??검�?     */
     public static void validateUser(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
