@@ -57,10 +57,12 @@ export function StandardFileUploader({
                 <span className="text-xs text-muted-foreground shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
               </div>
               <button
+                type="button"
                 onClick={() => removeFile(idx)}
-                className="p-1 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors"
+                className="p-1 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label={`파일 삭제: ${file.name}`}
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             </li>
           ))}
