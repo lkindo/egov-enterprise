@@ -122,4 +122,9 @@ public class MinimalTestConfig {
     public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovFileIdGnrService() {
         return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
     }
+
+    @Bean(name = "egovCmmntyIdGnrService")
+    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovCmmntyIdGnrService() {
+        return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
+    }
 }

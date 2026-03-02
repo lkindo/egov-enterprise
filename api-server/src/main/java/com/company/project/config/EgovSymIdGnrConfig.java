@@ -251,4 +251,14 @@ public class EgovSymIdGnrConfig {
     public EgovIdGnrService egovAdbkUserIdGnrService() {
         return createIdGnrService("ids", "ADBKUSER_", 20);
     }
+
+    @Bean(name = "egovCmmntyIdGnrService")
+    public EgovIdGnrService egovCmmntyIdGnrService() {
+        return createIdGnrService("CMMNTY_ID", "CMMNTY_", 13);
+    }
+
+    @Bean(name = "egovMenuManageIdGnrService")
+    public EgovIdGnrService egovMenuManageIdGnrService() {
+        return createIdGnrService("MENU_ID", "MENU_", 10);
+    }
 }

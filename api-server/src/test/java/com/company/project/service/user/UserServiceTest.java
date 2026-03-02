@@ -5,9 +5,11 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.service.user.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +43,13 @@ class UserServiceTest {
   private UserRepository userRepository;
 
   @Mock
+  private UserAuthorityRepository userAuthorityRepository;
+
+  @Mock
   private PasswordEncoder passwordEncoder;
+
+  @Mock
+  private UserMapper userMapper;
 
   @InjectMocks
   private UserService userService;
