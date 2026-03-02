@@ -13,15 +13,22 @@ export interface PaginationInfo {
 export interface PaginationResponse<T> {
     success?: boolean;
     list?: T[];
+    content?: T[]; // Spring Data JPA 대응 추가
     totalRecordCount?: number;
+    totalElements?: number; // Spring Data JPA 대응 추가
     resultList: T[];
     paginationInfo: PaginationInfo;
 }
 
 export interface SearchParams {
     pageIndex?: number;
+    page?: number;
+    size?: number;
     searchCondition?: string;
     searchKeyword?: string;
+    searchWrd?: string; // 추가
+    ntwrkId?: string; // 추가
+    codeId?: string; // 추가
 }
 
 // Common Code

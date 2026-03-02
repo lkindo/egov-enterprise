@@ -14,7 +14,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
   const [formData, setFormData] = useState<Partial<SyncServer>>({
     serverNm: '',
     serverIp: '',
-    serverPort: 0,
+    serverPort: '',
     targetDrctry: '',
     syncAt: 'Y',
     ...initialData
@@ -52,9 +52,9 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
           </FormField>
           <FormField label="포트 (Port)" required>
             <input
-              type="number"
+              type="text"
               value={formData.serverPort || ''}
-              onChange={(e) => setFormData({...formData, serverPort: parseInt(e.target.value) || 0})}
+              onChange={(e) => setFormData({...formData, serverPort: e.target.value})}
               placeholder="22"
               className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
               required

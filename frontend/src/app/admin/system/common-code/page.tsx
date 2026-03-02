@@ -25,12 +25,13 @@ export default async function CommonCodePage({
   let details: any[] = [];
 
   try {
-    const promises: [Promise<any[]>, Promise<any[]>] = [
+    const [groupsRes, detailsRes] = await Promise.all([
       codeAdminService.getGroups({}, axiosConfig),
-      groupId ? codeAdminService.getDetails({ codeId: groupId }, axiosConfig) : Promise.resolve([])
-    ];
+      groupId ? codeAdminService.getDetails({ codeId: groupId }, axiosConfig) : Promise.resolve({ resultList: [] } as any)
+    ]);
 
-    [groups, details] = await Promise.all(promises);
+    groups = groupsRes.resultList || [];
+    details = detailsRes.resultList || [];
   } catch (error) {
     console.error('Server-side fetch common codes failed:', error);
   }

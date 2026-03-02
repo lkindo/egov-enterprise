@@ -28,58 +28,64 @@ import java.util.List;
 
 import java.util.Map;
 
-@Tag(name = "Dashboard", description = "????      ???         ??API")
+import com.company.project.service.informalsanction.InformalSanctionService;
+import com.company.project.service.vacation.VacationService;
+import com.company.project.service.vacation.dto.YearlyLeaveDto;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDate;
 
+@Tag(name = "Dashboard", description = "메인 대시보드 데이터 제공 API")
 @RestController
-
 @RequestMapping("/api/v1/dashboard")
-
 @RequiredArgsConstructor
-
 public class DashboardController {
 
     private final EgovBoardService boardService;
+    private final InformalSanctionService approvalService;
+    private final VacationService vacationService;
 
-@Operation(summary = "????      ????      ??                ??(??      ???         , ?      ???   ?")
-
+    @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수, 휴가 정보 등을 통합 조회합니다.")
     @GetMapping
-
-    public ResponseEntity<?> getDashboardData() throws Exception {
-
+    public ResponseEntity<?> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) throws Exception {
+        String userId = userDetails.getUsername();
         Map<String, Object> result = new HashMap<>();
 
-        // ??      ???          (??         ??   ?? - BBSMSTR_CCCCCCCCCCCC
-
+        // 1. 할 일 목록 (공통 게시판)
         try {
-
             Page<BoardDto> taskList = boardService.getBoardPosts("BBSMSTR_CCCCCCCCCCCC", PageRequest.of(0, 5));
-
             result.put("taskList", taskList.getContent());
-
         } catch (Exception e) {
-
             result.put("taskList", List.of());
-
         }
 
-        //          ????              ? (?      ???   ? - BBSMSTR_AAAAAAAAAAAA
-
+        // 2. 공지사항 목록
         try {
-
             Page<BoardDto> notiList = boardService.getBoardPosts("BBSMSTR_AAAAAAAAAAAA", PageRequest.of(0, 5));
-
             result.put("notiList", notiList.getContent());
-
         } catch (Exception e) {
-
             result.put("notiList", List.of());
+        }
 
+        // 3. 결재 대기 건수 (전자결재)
+        try {
+            long pendingApprovalCount = approvalService.getReceivedInformalSanctionList(userId, Pageable.unpaged()).getTotalElements();
+            result.put("pendingApprovalCount", pendingApprovalCount);
+        } catch (Exception e) {
+            result.put("pendingApprovalCount", 0);
+        }
+
+        // 4. 휴가 정보 (연차 현황)
+        try {
+            String currentYear = String.valueOf(LocalDate.now().getYear());
+            YearlyLeaveDto leaveInfo = vacationService.getYearlyLeave(currentYear, userId);
+            result.put("leaveInfo", leaveInfo);
+        } catch (Exception e) {
+            result.put("leaveInfo", null);
         }
 
         result.put("success", true);
-
         return ResponseEntity.ok(result);
-
     }
-
 }

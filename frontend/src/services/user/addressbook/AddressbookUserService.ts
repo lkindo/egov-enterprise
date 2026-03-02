@@ -3,7 +3,7 @@ import { AddressBook, NameCard } from '@/types/addressbook';
 
 class AddressbookUserService extends UserService {
     constructor() {
-        super('/addressbooks');
+        super('/address-books');
     }
 
     /**

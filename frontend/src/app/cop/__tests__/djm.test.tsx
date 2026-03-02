@@ -1,11 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from '@/lib/api/client';
-import DeptJobListPage from '../smt/djm/selectDeptJobList/page';
+import DeptJobListPage from '../../smart-toolkit/dept-job/selectDeptJobList/page';
 
 vi.mock('@/lib/api/client');
 vi.mock('next/link', () => ({
     default: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+}));
+
+// Mock Next.js Navigation
+vi.mock('next/navigation', () => ({
+    usePathname: () => '/smart-toolkit/dept-job/selectDeptJobList',
+    useSearchParams: () => new URLSearchParams(),
 }));
 
 describe('DeptJobListPage', () => {

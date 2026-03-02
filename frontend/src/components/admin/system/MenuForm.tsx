@@ -69,7 +69,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await menuAdminService.updateMenu({ ...values, menuNo: data.menuNo } as MenuManage);
+                await menuAdminService.updateMenu(data.menuNo!, { ...values, menuNo: data.menuNo } as MenuManage);
             } else {
                 await menuAdminService.createMenu(values as MenuManage);
             }

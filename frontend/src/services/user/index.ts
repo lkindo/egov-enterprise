@@ -12,7 +12,7 @@ export { boardUserService } from './board/BoardUserService';
 export { approvalUserService } from './approval/ApprovalUserService';
 export { communityUserService } from './community/CommunityUserService';
 export { vacationUserService } from './vacation/VacationUserService';
-export { addressBookUserService } from './addressbook/AddressBookUserService';
+export { addressbookUserService } from './addressbook/AddressbookUserService';
 export { anniversaryUserService } from './anniversary/AnniversaryUserService';
 export { eventUserService } from './event/EventUserService';
 export { deptJobUserService } from './deptJob/DeptJobUserService';

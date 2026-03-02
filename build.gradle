@@ -19,6 +19,11 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
     
     java {
         toolchain {
@@ -47,5 +52,15 @@ subprojects {
         useJUnitPlatform()
         jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
         systemProperty 'file.encoding', 'UTF-8'
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            csv.required = false
+            html.required = true
+        }
     }
 }

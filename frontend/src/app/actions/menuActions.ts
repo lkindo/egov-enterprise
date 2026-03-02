@@ -12,7 +12,7 @@ export async function saveMenuAction(prevState: any, { mode, data }: { mode: 'cr
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     if (mode === 'create') {
-      await menuAdminService.createMenu(data, axiosConfig);
+      await menuAdminService.createMenu(data as any, axiosConfig);
     } else {
       await menuAdminService.updateMenu(data.menuNo!, data, axiosConfig);
     }

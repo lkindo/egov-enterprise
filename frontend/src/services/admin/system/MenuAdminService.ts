@@ -1,71 +1,50 @@
-import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams, MenuManage } from '@/types/system';
+import client from '@/lib/api/client';
+import { MenuManage, SearchParams, PaginationResponse } from '@/types/system';
 
-class MenuAdminService extends AdminService {
-    constructor() {
-        super('/menus');
-    }
+/**
+ * 메뉴 관리 서비스 (Admin)
+ * 백엔드: com.company.project.api.controller.system.MenuAdminController
+ */
+const BASE_URL = '/admin/system/menus';
 
-    /**
-     * 메뉴 목록 조회
-     */
-    async getMenuList(params: SearchParams, config?: any): Promise<PaginationResponse<MenuManage>> {
-        return this.get<PaginationResponse<MenuManage>>('', { ...config, params });
-    }
+export const menuAdminService = {
+    /** 메뉴 목록 조회 (페이징) */
+    getMenuList: async (params?: SearchParams, _config?: any) => {
+        return client.get<PaginationResponse<MenuManage>>(BASE_URL, { params });
+    },
 
-    /**
-     * 전체 메뉴 목록 조회 (페이징 없이 트리용)
-     */
-    async getAllMenus(config?: any): Promise<MenuManage[]> {
-        return this.get<MenuManage[]>('/all', config);
-    }
+    /** 메뉴 전체 트리 조회용 목록 */
+    getAllMenus: async (_config?: any) => {
+        return client.get<MenuManage[]>(`${BASE_URL}/all`);
+    },
 
-    /**
-     * 메뉴 상세 조회
-     */
-    async getMenu(menuNo: number, config?: any): Promise<MenuManage> {
-        return this.get<MenuManage>(`/${menuNo}`, config);
-    }
+    /** 메뉴 상세 조회 */
+    getMenu: async (menuNo: number | string, _config?: any) => {
+        return client.get<MenuManage>(`${BASE_URL}/${menuNo}`);
+    },
 
-    /**
-     * 메뉴 등록
-     */
-    async createMenu(menu: MenuManage, config?: any): Promise<void> {
-        return this.post('', menu, config);
-    }
+    /** 메뉴 등록 */
+    createMenu: async (data: Partial<MenuManage>, _config?: any) => {
+        return client.post<void>(BASE_URL, data);
+    },
 
-    /**
-     * 메뉴 수정
-     */
-    async updateMenu(id: number | string, data: Partial<MenuManage>, config?: any): Promise<void> {
-        return this.put(`/${id}`, data, config);
-    }
+    /** 메뉴 정보 수정 */
+    updateMenu: async (menuNo: number | string, data: Partial<MenuManage>, _config?: any) => {
+        return client.put<void>(`${BASE_URL}/${menuNo}`, data);
+    },
 
-    /**
-     * 메뉴 삭제
-     */
-    async deleteMenu(menuNo: number, config?: any): Promise<void> {
-        return this.delete(`/${menuNo}`, config);
-    }
+    /** 메뉴 삭제 */
+    deleteMenu: async (menuNo: number | string, _config?: any) => {
+        return client.delete<void>(`${BASE_URL}/${menuNo}`);
+    },
 
-    /**
-     * 메뉴 생성 목록 조회
-     */
-    async getMenuCreatList(params: SearchParams, config?: any): Promise<any> {
-        return this.get('/creation', { ...config, params });
-    }
+    /** 메뉴 순서 일괄 변경 */
+    updateMenuOrder: async (menuList: Partial<MenuManage>[], _config?: any) => {
+        return client.put<void>(`${BASE_URL}/batch-order`, menuList);
+    },
 
-    /**
-     * 메뉴 생성 등록
-     */
-    async createMenuCreat(menuCreat: any, config?: any): Promise<void> {
-        return this.post('/creation', menuCreat, config);
-    }
-
-    // legacy helpers or batch operations
-    async updateOrders(menus: any[], config?: any) {
-        return this.put('/batch-order', menus, config);
-    }
-}
-
-export const menuAdminService = new MenuAdminService();
+    /** 메뉴 순서 일괄 변경 (Alias) */
+    updateOrders: async (menuList: Partial<MenuManage>[], _config?: any) => {
+        return client.put<void>(`${BASE_URL}/batch-order`, menuList);
+    },
+};

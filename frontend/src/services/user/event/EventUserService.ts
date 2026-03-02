@@ -13,7 +13,7 @@ export interface Event {
 
 class EventUserService extends UserService {
     constructor() {
-        super('/uss/ion/events');
+        super('/events');
     }
 
     async getEvents(params: { page?: number; size?: number; searchWrd?: string }) {

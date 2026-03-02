@@ -12,7 +12,7 @@ export async function saveProgramAction(prevState: any, { mode, data }: { mode: 
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     if (mode === 'create') {
-      await programAdminService.createProgram(data, axiosConfig);
+      await programAdminService.createProgram(data as any, axiosConfig);
     } else {
       await programAdminService.updateProgram(data.progrmFileNm, data, axiosConfig);
     }

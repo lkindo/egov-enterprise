@@ -16,40 +16,47 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 describe('AuthContext', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('should not log credentials during login', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+    // Mock successful login
+    (client.post as any).mockResolvedValue({
+      accessToken: 'mock-token',
+      role: 'ROLE_USER'
+    });
+    // Mock auth check (getCurrentUser)
+    (client.get as any).mockResolvedValue({
+      id: 'test',
+      name: 'Test User'
     });
 
-    it('should not log credentials during login', async () => {
-        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
 
-        // Mock successful login
-        (client.post as any).mockResolvedValue({
-            data: { success: true, user: { id: 'test', name: 'Test User' } }
-        });
-        // Mock auth check
-        (client.get as any).mockResolvedValue({
-            data: { success: false }
-        });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
-        const wrapper = ({ children }: { children: React.ReactNode }) => (
-            <AuthProvider>{children}</AuthProvider>
-        );
-
-        const { result } = renderHook(() => useAuth(), { wrapper });
-
-        // Wait for initial checkAuth to complete
-        await waitFor(() => expect(client.get).toHaveBeenCalledWith('/auth/me'));
-
-        await act(async () => {
-             await result.current.login({ id: 'test', password: 'password' });
-        });
-
-        expect(client.post).toHaveBeenCalledWith('/auth/login', { id: 'test', password: 'password' });
-
-        // New behavior: logs should not be present
-        expect(consoleSpy).not.toHaveBeenCalled();
-
-        consoleSpy.mockRestore();
+    // Login process
+    await act(async () => {
+      await result.current.login({ id: 'test', password: 'password' });
     });
+
+    expect(client.post).toHaveBeenCalledWith('/auth/login', { id: 'test', password: 'password' });
+    // After login, checkAuth is called
+    await waitFor(() => expect(client.get).toHaveBeenCalledWith('/auth/me'));
+
+    // Security check: logs should not be present
+    // We only care about logs during the login action
+    expect(consoleSpy).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+  });
 });

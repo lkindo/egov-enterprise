@@ -7,34 +7,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
 
 async function getDashboardData() {
-  const currentYear = new Date().getFullYear().toString();
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
   try {
-    const [leaveRes, dashboardRes] = await Promise.allSettled([
-      vacationUserService.getMyYearlyLeave(currentYear),
-      client.get<DashboardResponse>('/dashboard', axiosConfig)
-    ]);
+    const dashboardRes = await client.get<any>('/dashboard', axiosConfig);
 
     let initialLeave = null;
     let initialNotiList: DashboardNoti[] = [];
     let initialTaskList: DashboardTask[] = [];
+    let pendingApprovalCount = 0;
 
-    if (leaveRes.status === 'fulfilled' && (leaveRes.value as any)?.success) {
-      initialLeave = (leaveRes.value as any).data;
+    if (dashboardRes) {
+      initialNotiList = (dashboardRes.notiList || []).slice(0, 6);
+      initialTaskList = (dashboardRes.taskList || []).slice(0, 6);
+      initialLeave = dashboardRes.leaveInfo;
+      pendingApprovalCount = dashboardRes.pendingApprovalCount || 0;
     }
 
-    if (dashboardRes.status === 'fulfilled') {
-      const dashboardData = dashboardRes.value;
-      initialNotiList = (dashboardData.notiList || []).slice(0, 6);
-      initialTaskList = (dashboardData.taskList || []).slice(0, 6);
-    }
-
-    return { initialLeave, initialNotiList, initialTaskList };
+    return { initialLeave, initialNotiList, initialTaskList, pendingApprovalCount };
   } catch (err) {
-    return { initialLeave: null, initialNotiList: [], initialTaskList: [] };
+    return { initialLeave: null, initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
   }
 }
 
@@ -42,7 +36,12 @@ export default async function UnifiedDashboardPage() {
   const data = await getDashboardData();
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <UnifiedDashboardClient initialLeave={data.initialLeave} initialNotiList={data.initialNotiList} initialTaskList={data.initialTaskList} />
+      <UnifiedDashboardClient 
+        initialLeave={data.initialLeave} 
+        initialNotiList={data.initialNotiList} 
+        initialTaskList={data.initialTaskList}
+        pendingApprovalCount={data.pendingApprovalCount}
+      />
     </Suspense>
   );
 }

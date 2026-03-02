@@ -15,6 +15,8 @@ import { roleAdminService, AuthorInfo } from '@/services/admin/system/RoleAdminS
 const DEPTS_KEY = ['admin', 'departments'] as const;
 const ROLES_KEY = ['admin', 'roles'] as const;
 
+import { roleService } from '@/services/roleService';
+
 export default function DeptAuthorityPage() {
   const { toast } = useToast();
   const [selectedDept, setSelectedDept] = useState<string | null>(null);

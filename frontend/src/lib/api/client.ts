@@ -20,6 +20,8 @@ const axiosInstance = axios.create({
     baseURL: getBaseURL(),
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
 // Request interceptor: Access Token 첨부
@@ -44,6 +46,17 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        // 에러 메시지 추출
+        const message = error.response?.data?.message || error.message || '요청 처리 중 오류가 발생했습니다.';
+        
+        // 전역 에러 이벤트 발생 (Toast 연동용)
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('api-error', { 
+                detail: { message, status: error.response?.status } 
+            }));
+        }
+
         if (error.response?.status === 401 && !originalRequest._retry && !isRetrying) {
             // 서버 사이드인 경우 reissue 시도하지 않고 즉시 에러 반환
             if (typeof window === 'undefined') {
@@ -53,8 +66,17 @@ axiosInstance.interceptors.response.use(
             originalRequest._retry = true;
             isRetrying = true;
             try {
-                const res = await axios.post('/api/v1/auth/reissue', {}, { withCredentials: true });
-                const accessToken = res.data?.data?.accessToken || res.data?.accessToken;
+                // authService.reissue()를 직접 호출하지 않고 axiosInstance 대신 
+                // 원시 axios를 사용해 인터셉터 무한 루프 방지
+                const res = await axios.post<ApiResponse<{accessToken: string}>>(
+                    `${getBaseURL()}/auth/reissue`, 
+                    {}, 
+                    { withCredentials: true }
+                );
+                
+                const accessToken = res.data?.data?.accessToken;
+                if (!accessToken) throw new Error('Token reissue failed');
+
                 originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
 
                 if (typeof window !== 'undefined') {

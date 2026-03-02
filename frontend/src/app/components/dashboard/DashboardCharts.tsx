@@ -13,23 +13,27 @@ import {
   Bar,
   Cell,
 } from 'recharts';
+import { StatsDto } from '@/services/admin/system/StatsAdminService';
 
-const visitorData = [
-  { name: '월', visitors: 400, posts: 24 },
-  { name: '화', visitors: 300, posts: 13 },
-  { name: '수', visitors: 200, posts: 98 },
-  { name: '목', visitors: 278, posts: 39 },
-  { name: '금', visitors: 189, posts: 48 },
-  { name: '토', visitors: 239, posts: 38 },
-  { name: '일', visitors: 349, posts: 43 },
-];
+interface ChartProps {
+  data: StatsDto[];
+  loading?: boolean;
+}
 
-export function DashboardVisitorChart() {
+export function DashboardVisitorChart({ data }: ChartProps) {
+  // 데이터 가공: 날짜 포맷 최적화 (예: 20260302 -> 03.02)
+  const chartData = (data || []).map(item => ({
+    name: item.statsDate?.length === 8 ? `${item.statsDate.substring(4, 6)}.${item.statsDate.substring(6, 8)}` : item.statsDate,
+    visitors: item.statsCo || 0
+  }));
+
+  if (!chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
+
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={visitorData}
+          data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
           <defs>
@@ -68,11 +72,18 @@ export function DashboardVisitorChart() {
   );
 }
 
-export function DashboardPostChart() {
+export function DashboardPostChart({ data }: ChartProps) {
+  const chartData = (data || []).map(item => ({
+    name: item.statsDate?.length === 8 ? `${item.statsDate.substring(6, 8)}` : item.statsDate,
+    posts: (item.creatCo || 0) + (item.inqireCo || 0)
+  }));
+
+  if (!chartData.length) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs font-bold uppercase tracking-widest opacity-30">Pulse Inactive</div>;
+
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-        <BarChart data={visitorData}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
           <XAxis
             dataKey="name"
@@ -85,8 +96,8 @@ export function DashboardPostChart() {
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
           />
           <Bar dataKey="posts" radius={[4, 4, 0, 0]}>
-            {visitorData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={index === 3 ? '#3b82f6' : '#94a3b8'} />
+            {chartData.map((_entry, index) => (
+              <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#3b82f6' : '#94a3b8'} />
             ))}
           </Bar>
         </BarChart>

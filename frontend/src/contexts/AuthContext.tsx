@@ -1,26 +1,19 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import axios from '@/lib/api/client';
-
-interface User {
-    id: string;
-    name: string;
-    userSe: string;
-    [key: string]: any;
-}
+import { authService, UserInfo } from '@/services/authService';
 
 interface AuthContextType {
-    user: User | null;
+    user: UserInfo | null;
     loading: boolean;
-    login: (credentials: any) => Promise<void>;
+    login: (credentials: Record<string, string>) => Promise<void>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// JWT 만료 여부 확인 함수
+// JWT 만료 여부 확인 함수 (브라우저 사이드 간단 체크)
 const isTokenExpired = (token: string) => {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -33,71 +26,75 @@ const isTokenExpired = (token: string) => {
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
     const checkAuth = useCallback(async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         
-        if (!token || isTokenExpired(token)) {
-            if (token) localStorage.removeItem('accessToken');
+        if (!token) {
             setUser(null);
             setLoading(false);
             return;
         }
 
+        // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로 
+        // /auth/me를 호출하여 최종 유효성을 검증합니다.
         try {
-            // client.ts 인터셉터 덕분에 알맹이(data)만 바로 받습니다.
-            const userData = (await axios.get('/auth/me')) as any;
+            const userData = await authService.getCurrentUser();
             if (userData) {
                 setUser(userData);
             } else {
                 setUser(null);
             }
         } catch (error: any) {
-            if (error.response?.status !== 401) {
-                console.error('Auth check error:', error);
-            }
+            // 401 에러는 interceptor가 토큰 재발급 실패 시 최종적으로 던집니다.
             setUser(null);
-            localStorage.removeItem('accessToken');
-            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('accessToken');
+                document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            }
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const login = useCallback(async (credentials: any) => {
+    const login = useCallback(async (credentials: Record<string, string>) => {
         try {
-            // client.ts 인터셉터가 이미 data.data를 풀어서 줍니다.
-            const data: any = await axios.post('/auth/login', credentials);
+            const data = await authService.login(credentials);
             
             if (data && data.accessToken) {
                 localStorage.setItem('accessToken', data.accessToken);
-                // 서버 사이드 컴포넌트(SSR) 접근을 위해 쿠키에도 저장
+                // 서버 사이드 컴포넌트(SSR) 및 미들웨어 접근을 위해 쿠키에 저장
                 document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+                if (data.role) {
+                    document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
+                }
                 
-                // 약간의 지연을 주어 인터셉터 반영 보장
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // 전역 상태 업데이트를 위해 내 정보 조회
                 await checkAuth();
             } else {
                 throw new Error('인증 정보가 올바르지 않습니다.');
             }
         } catch (error: any) {
-            // 에러 시 인터셉터가 본문을 그대로 던지므로 해당 구조에 맞춰 처리
-            const message = error.response?.data?.message || error.message || 'Login failed';
-            console.error('Login error:', message);
+            const message = error.message || '로그인 중 오류가 발생했습니다.';
+            console.error('Login process error:', message);
             throw new Error(message);
         }
     }, [checkAuth]);
 
     const logout = useCallback(async () => {
         try {
-            await axios.post('/auth/logout');
-            setUser(null);
-            localStorage.removeItem('accessToken');
-            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            await authService.logout();
         } catch (error) {
-            console.error('Logout failed', error);
+            console.error('Logout API call failed', error);
+        } finally {
+            setUser(null);
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('accessToken');
+                document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            }
         }
     }, []);
 

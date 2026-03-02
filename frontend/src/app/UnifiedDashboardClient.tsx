@@ -45,16 +45,21 @@ const DashboardPostChart = dynamic(
   }
 );
 
+import { statsAdminService, StatsDto } from '@/services/admin/system/StatsAdminService';
+import { useQuery } from '@tanstack/react-query';
+
 interface UnifiedDashboardClientProps {
   initialLeave: any;
   initialNotiList: any[];
   initialTaskList: any[];
+  pendingApprovalCount: number;
 }
 
 export default function UnifiedDashboardClient({
   initialLeave,
   initialNotiList,
-  initialTaskList
+  initialTaskList,
+  pendingApprovalCount
 }: UnifiedDashboardClientProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -62,6 +67,21 @@ export default function UnifiedDashboardClient({
   const [myLeave] = useState(initialLeave);
   const [notiList] = useState(initialNotiList);
   const [taskList] = useState(initialTaskList);
+  const [pendingCount] = useState(pendingApprovalCount);
+
+  // 접속 통계 데이터 조회 (최근 7일)
+  const { data: connectStats = [] } = useQuery({
+    queryKey: ['dashboard', 'stats', 'connect'],
+    queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
+    enabled: !!user
+  });
+
+  // 게시물 통계 데이터 조회 (최근 7일)
+  const { data: bbsStats = [] } = useQuery({
+    queryKey: ['dashboard', 'stats', 'bbs'],
+    queryFn: () => statsAdminService.getBbsStats({ statsKind: 'COM101' }),
+    enabled: !!user
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -160,19 +180,19 @@ export default function UnifiedDashboardClient({
         <SummaryCard
           key="summary-tasks"
           title="내 업무 현황"
-          value="12"
-          description="3 high-priority tasks pending"
+          value={taskList.length.toString().padStart(2, '0')}
+          description={`${taskList.filter((t:any) => t.isNew).length} new tasks assigned recently`}
           icon={<Zap size={24} />}
           trend={-5}
           color="orange"
         />
         <SummaryCard
           key="summary-notifications"
-          title="새 알림"
-          value="05"
-          description="Updates from collaboration teams"
+          title="결재 대기"
+          value={pendingCount.toString().padStart(2, '0')}
+          description="Pending approvals in your inbox"
           icon={<Bell size={24} />}
-          trend={2}
+          trend={pendingCount > 0 ? 10 : 0}
           color="purple"
         />
         <SummaryCard
@@ -209,7 +229,7 @@ export default function UnifiedDashboardClient({
               </div>
             </div>
             <div className="relative z-10">
-              <DashboardVisitorChart />
+              <DashboardVisitorChart data={connectStats} />
             </div>
           </motion.div>
 
@@ -263,7 +283,7 @@ export default function UnifiedDashboardClient({
               </h3>
               <div className="text-[10px] font-bold text-primary bg-primary/5 px-3 py-1 rounded-full">LIVE</div>
             </div>
-            <DashboardPostChart />
+            <DashboardPostChart data={bbsStats} />
           </motion.div>
         </div>
       </div>

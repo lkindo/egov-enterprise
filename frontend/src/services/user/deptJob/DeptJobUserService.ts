@@ -17,7 +17,7 @@ export interface DeptJob {
 
 class DeptJobUserService extends UserService {
     constructor() {
-        super('/dept-jobs');
+        super('/deptjob');
     }
 
     /**

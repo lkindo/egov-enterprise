@@ -1,50 +1,40 @@
-import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams, ProgrmManage } from '@/types/system';
+import client from '@/lib/api/client';
+import { ProgrmManage, SearchParams, PaginationResponse } from '@/types/system';
 
-class ProgramAdminService extends AdminService {
-    constructor() {
-        super('/programs');
-    }
+/**
+ * 프로그램 관리 서비스 (Admin)
+ * 백엔드: com.company.project.api.controller.program.ProgramApiController
+ */
+const BASE_URL = '/admin/system/programs';
 
-    /**
-     * 프로그램 리스트 조회
-     */
-    async getProgramList(params: SearchParams, config?: any): Promise<PaginationResponse<ProgrmManage>> {
-        return this.get<PaginationResponse<ProgrmManage>>('', { ...config, params });
-    }
+export const programAdminService = {
+    /** 프로그램 목록 조회 (페이징) */
+    getProgramList: async (params?: SearchParams, _config?: any) => {
+        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { params });
+    },
 
-    /**
-     * 프로그램 상세 조회
-     */
-    async getProgram(progrmFileNm: string, config?: any): Promise<ProgrmManage> {
-        return this.get<ProgrmManage>(`/${progrmFileNm}`, config);
-    }
+    /** 프로그램 목록 조회 (Alias) */
+    getPrograms: async (params?: SearchParams, _config?: any) => {
+        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { params });
+    },
 
-    /**
-     * 프로그램 등록
-     */
-    async createProgram(program: ProgrmManage, config?: any): Promise<void> {
-        return this.post('', program, config);
-    }
+    /** 프로그램 상세 조회 */
+    getProgram: async (progrmFileNm: string, _config?: any) => {
+        return client.get<ProgrmManage>(`${BASE_URL}/${progrmFileNm}`);
+    },
 
-    /**
-     * 프로그램 수정
-     */
-    async updateProgram(id: string, data: Partial<ProgrmManage>, config?: any): Promise<void> {
-        return this.put(`/${id}`, data, config);
-    }
+    /** 프로그램 등록 */
+    createProgram: async (data: Partial<ProgrmManage>, _config?: any) => {
+        return client.post<void>(BASE_URL, data);
+    },
 
-    /**
-     * 프로그램 삭제
-     */
-    async deleteProgram(progrmFileNm: string, config?: any): Promise<void> {
-        return this.delete(`/${progrmFileNm}`, config);
-    }
+    /** 프로그램 정보 수정 */
+    updateProgram: async (progrmFileNm: string, data: Partial<ProgrmManage>, _config?: any) => {
+        return client.put<void>(`${BASE_URL}/${progrmFileNm}`, data);
+    },
 
-    // legacy helpers or batch operations
-    async getPrograms(params: { page?: number; size?: number; searchWrd?: string }, config?: any) {
-        return this.get<any>('', { ...config, params });
-    }
-}
-
-export const programAdminService = new ProgramAdminService();
+    /** 프로그램 삭제 */
+    deleteProgram: async (progrmFileNm: string, _config?: any) => {
+        return client.delete<void>(`${BASE_URL}/${progrmFileNm}`);
+    },
+};

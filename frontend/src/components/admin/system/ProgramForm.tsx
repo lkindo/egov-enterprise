@@ -56,7 +56,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await programAdminService.updateProgram(values as ProgrmManage);
+                await programAdminService.updateProgram(data.progrmFileNm!, values as ProgrmManage);
             } else {
                 await programAdminService.createProgram(values as ProgrmManage);
             }

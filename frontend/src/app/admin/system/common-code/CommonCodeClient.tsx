@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
+import { DataTable, Column } from '@/components/common/DataTable';
+import { exportToCsv } from '@/lib/utils/exportUtils';
 import { CommonCodeDetail } from '@/services/admin/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import {
@@ -33,6 +34,7 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
   const { toast } = useToast();
   const confirm = useConfirm();
 
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [formData, setFormData] = useState<Partial<CommonCodeDetail>>({
@@ -85,68 +87,64 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
     }
   };
 
-  const columns: ColumnDef<CommonCodeDetail>[] = [
+  const handleExport = () => {
+    const exportColumns = [
+      { header: '코드', accessorKey: 'code' },
+      { header: '코드명', accessorKey: 'codeNm' },
+      { header: '설명', accessorKey: 'codeDc' },
+      { header: '사용여부', accessorKey: 'useAt' },
+    ];
+    exportToCsv(details, exportColumns as any, `CommonCodes_${selectedGroupId}`);
+    toast('데이터를 내보냈습니다.', 'success');
+  };
+
+  const columns: Column<CommonCodeDetail>[] = [
     {
-      id: 'code',
-      header: 'Unique Sequence',
-      width: 150,
-      accessor: (item: CommonCodeDetail) => (
-        <span className="text-[10px] font-mono font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{item.code}</span>
+      header: '코드',
+      accessorKey: 'code',
+      sortable: true,
+      cell: (item) => (
+        <span className="font-mono font-bold text-primary">{item.code}</span>
       )
     },
     {
-      id: 'codeNm',
-      header: 'Protocol Label',
-      width: 250,
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-black text-slate-900 italic uppercase tracking-tighter">{item.codeNm}</span>
-          <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-[0.2em] opacity-40 italic font-mono">CODE_KEY_REF</span>
+      header: '코드명',
+      accessorKey: 'codeNm',
+      sortable: true,
+      cell: (item) => (
+        <span className="font-bold">{item.codeNm}</span>
+      )
+    },
+    {
+      header: '설명',
+      accessorKey: 'codeDc',
+      cell: (item) => (
+        <span className="text-muted-foreground line-clamp-1 max-w-[250px]">{item.codeDc || '-'}</span>
+      )
+    },
+    {
+      header: '상태',
+      accessorKey: 'useAt',
+      sortable: true,
+      cell: (item) => (
+        <div className="flex items-center gap-2">
+          <div className={cn("h-2 w-2 rounded-full", item.useAt === 'Y' ? "bg-success" : "bg-destructive")} />
+          <span className="text-xs font-medium uppercase tracking-widest">{item.useAt === 'Y' ? 'ACTIVE' : 'INACTIVE'}</span>
         </div>
       )
     },
     {
-      id: 'codeDc',
-      header: 'Contextual Logic',
-      width: 300,
-      accessor: (item: CommonCodeDetail) => (
-        <span className="text-xs font-bold text-slate-500 leading-relaxed truncate block max-w-[280px]">{item.codeDc || 'No contextual description provided.'}</span>
-      )
-    },
-    {
-      id: 'useAt',
-      header: 'Deployment Status',
-      width: 150,
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-2 w-2">
-            <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", item.useAt === 'Y' ? "bg-emerald-400" : "bg-rose-400")}></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </div>
-          <span className={cn("text-[9px] font-black uppercase tracking-widest italic font-mono", item.useAt === 'Y' ? "text-emerald-600" : "text-rose-600")}>
-            {item.useAt === 'Y' ? 'PROTOCOL_ACTIVE' : 'DEPRECATED'}
-          </span>
-        </div>
-      )
-    },
-    {
-      id: 'actions',
-      header: 'Edge Config',
+      header: '관리',
+      accessorKey: 'actions',
       className: 'text-right',
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex justify-end gap-2 pr-4">
-          <button
-            onClick={() => handleOpenEdit(item)}
-            className="h-10 w-10 bg-primary/5 text-primary hover:text-white hover:bg-primary hover:shadow-xl transition-all rounded-xl flex items-center justify-center border border-primary/10 shadow-sm"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => handleDelete(item.code)}
-            className="h-10 w-10 bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-white hover:shadow-xl transition-all rounded-xl flex items-center justify-center border border-transparent hover:border-rose-100 shadow-sm"
-          >
-            <Trash2 size={16} />
-          </button>
+      cell: (item) => (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-8 w-8 hover:bg-primary/10 hover:text-primary">
+            <Edit size={14} />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.code)} className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive">
+            <Trash2 size={14} />
+          </Button>
         </div>
       )
     }
@@ -246,14 +244,19 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
                 </div>
               </div>
 
-              <div className="bg-white/50 rounded-[4rem] p-4 border border-slate-100 shadow-2xl ring-1 ring-slate-50 relative overflow-hidden group/matrix">
-                <UltimateDataGrid
-                  title="SYSTEM PROTOCOL DEFINITION MATRIX"
-                  columns={columns as any}
-                  data={details as any}
-                  emptyMessage="정의된 상세 프로토콜이 존재하지 않습니다."
-                  className="rounded-[3.25rem] border-none shadow-none"
-                  keyField="code"
+              <div className="bg-white rounded-[2.5rem] p-8 border shadow-2xl relative overflow-hidden group/matrix">
+                <DataTable
+                  title="코드 상세 정의 매트릭스"
+                  columns={columns}
+                  data={details}
+                  loading={loading}
+                  onExport={handleExport}
+                  onRefresh={() => {
+                    setLoading(true);
+                    router.refresh();
+                    setTimeout(() => setLoading(false), 500);
+                  }}
+                  searchPlaceholder="상세 코드 검색..."
                 />
                 <Layers size={200} className="absolute right-[-40px] bottom-[-40px] opacity-[0.02] -rotate-12 transition-transform duration-1000 group-hover/matrix:rotate-0" />
               </div>

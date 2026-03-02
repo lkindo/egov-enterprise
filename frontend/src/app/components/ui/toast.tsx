@@ -14,6 +14,8 @@ interface Toast {
 
 interface ToastContextType {
   toast: (message: string, type?: ToastType) => void;
+  success: (message: string) => void;
+  error: (message: string) => void;
   removeToast: (id: string) => void;
 }
 
@@ -35,8 +37,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, [removeToast]);
 
+  const success = useCallback((message: string) => toast(message, 'success'), [toast]);
+  const error = useCallback((message: string) => toast(message, 'error'), [toast]);
+
+  // API 전역 에러 리스너
+  React.useEffect(() => {
+    const handleApiError = (e: any) => {
+      const { message, status } = e.detail;
+      // 401은 토큰 재발급 로직이 처리하므로 사용자에게는 알리지 않음
+      if (status !== 401) {
+        error(message);
+      }
+    };
+
+    window.addEventListener('api-error', handleApiError);
+    return () => window.removeEventListener('api-error', handleApiError);
+  }, [error]);
+
   return (
-    <ToastContext.Provider value={{ toast, removeToast }}>
+    <ToastContext.Provider value={{ toast, success, error, removeToast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm">
         {toasts.map((t) => (
