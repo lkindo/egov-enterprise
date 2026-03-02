@@ -23,8 +23,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 부하사용자 사용자 醫롫윪??嶺뚳퐣瑗?테스트사용자 *
- * 사용자사용자테스트사용자嶺뚳퐣瑗????테스트 ??
+ * 부하 테스트 클래스
+ * 다양한 API 엔드포인트에 대한 동시 요청 처리 성능을 측정한다.
  */
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -41,7 +41,7 @@ class LoadTest {
 
   @BeforeEach
   void setUp() {
-    executorService = Executors.newFixedThreadPool(20); // Korean comment removed
+    executorService = Executors.newFixedThreadPool(20); // 스레드 풀 초기화
   }
 
   @AfterEach
@@ -60,19 +60,19 @@ class LoadTest {
   }
 
   @Test
-  @DisplayName("사용자嶺뚮ㅄ維뽨빳??브퀗???- 100?사용자부하 테스트)")
+  @DisplayName("회원 목록 조회 부하 테스트 - 100건 동시 요청")
   void loadTest_getUserList_100ConcurrentRequests() throws Exception {
     // Given
     int numberOfRequests = 100;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    // Korean comment removed
+    // 사전 요청으로 JIT 워밍업
     mockMvc.perform(get("/api/v1/users")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk());
 
-    // Korean comment removed
+    // 부하 테스트 시작
     long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
@@ -97,13 +97,13 @@ class LoadTest {
       futures.add(future);
     }
 
-    // Korean comment removed
+    // 모든 요청 완료 후 측정
     long endTime = System.currentTimeMillis();
 
     long duration = endTime - startTime;
     double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
-    // Korean comment removed
+    // 성공 요청 집계
     long successfulRequests = futures.stream()
         .map(future -> {
           try {
@@ -115,14 +115,14 @@ class LoadTest {
         .filter(Boolean::booleanValue)
         .count();
 
-    System.out.printf("부하사용자테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 평균: %d ms, TPS: %.2f%n",
+    System.out.printf("목록 조회 부하 테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 소요: %d ms, TPS: %.2f%n",
         numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
         requestsPerSecond);
 
     List<Long> responseTimes = futures.stream()
         .map(f -> {
           try {
-            return Boolean.TRUE.equals(f.get())  0L : -1L;
+            return Boolean.TRUE.equals(f.get()) ? 0L : -1L;
           } catch (Exception e) {
             return -1L;
           }
@@ -132,22 +132,22 @@ class LoadTest {
 
     if (!responseTimes.isEmpty()) {
       double avg = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
-      System.out.printf("성공롫윥??嶺뚯솘????怨뺣뾼??용쐻? %.2f ms (성공 リ옇???)%n", avg);
+      System.out.printf("단일 스레드 평균 응답 시간: %.2f ms%n", avg);
     }
 
-    // Korean comment removed
+    // 성공률 95% 이상 검증
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
   }
 
   @Test
-  @DisplayName("사용자가입- 50?사용자부하 테스트)")
+  @DisplayName("회원가입 부하 테스트 - 50건 동시 요청")
   void loadTest_userSignup_50ConcurrentRequests() throws Exception {
     // Given
     int numberOfRequests = 50;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    // Korean comment removed
+    // 부하 테스트 시작
     long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
@@ -158,7 +158,7 @@ class LoadTest {
               {
                 "userId": "loadTestUser%d",
                 "password": "Password123!",
-                "userNm": "부하사용자d",
+                "userNm": "부하테스트 사용자%d",
                 "passwordHint": "hint",
                 "passwordCnsr": "answer",
                 "role": "USER"
@@ -183,13 +183,13 @@ class LoadTest {
       futures.add(future);
     }
 
-    // Korean comment removed
+    // 완료 후 집계
     long endTime = System.currentTimeMillis();
 
     long duration = endTime - startTime;
     double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
-    // Korean comment removed
+    // 성공 요청 집계
     long successfulRequests = futures.stream()
         .map(future -> {
           try {
@@ -202,30 +202,30 @@ class LoadTest {
         .count();
 
     System.out.printf(
-        "사용자가입부하사용자테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 평균: %d ms, TPS: %.2f%n",
+        "회원가입 부하 테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 소요: %d ms, TPS: %.2f%n",
         numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
         requestsPerSecond);
 
-    // Korean comment removed
+    // 성공률 90% 이상 검증
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.90));
   }
 
   @Test
-  @DisplayName("사용자브퀗???- 200?사용자부하 테스트)")
+  @DisplayName("단건 조회 부하 테스트 - 200건 동시 요청")
   void loadTest_getUserById_200ConcurrentRequests() throws Exception {
-    // Korean comment removed
+    // 테스트용 사용자 사전 등록
     IntStream.range(0, 10).forEach(i -> {
       try {
         UserSignupRequest request = new UserSignupRequest(
             "perfUser" + i,
             "Password123!",
-            "테스트사용자 + i",
+            "성능 테스트 사용자" + i,
             com.company.project.domain.user.entity.Role.USER,
             "hint",
             "answer");
         userService.signup(request);
       } catch (Exception e) {
-        // Korean comment removed
+        // 이미 등록된 사용자는 무시
       }
     });
 
@@ -233,11 +233,11 @@ class LoadTest {
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    // Korean comment removed
+    // 부하 테스트 시작
     long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
-      final String userId = "perfUser" + (i % 10); // Korean comment removed
+      final String userId = "perfUser" + (i % 10); // 등록된 10명의 사용자를 순환하여 조회
       Future<Boolean> future = executorService.submit(() -> {
         try {
           mockMvc.perform(get("/api/v1/users/" + userId)
@@ -258,13 +258,13 @@ class LoadTest {
       futures.add(future);
     }
 
-    // Korean comment removed
+    // 완료 후 집계
     long endTime = System.currentTimeMillis();
 
     long duration = endTime - startTime;
     double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
-    // Korean comment removed
+    // 성공 요청 집계
     long successfulRequests = futures.stream()
         .map(future -> {
           try {
@@ -277,29 +277,29 @@ class LoadTest {
         .count();
 
     System.out.printf(
-        "사용자브퀗???부하사용자테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 평균: %d ms, TPS: %.2f%n",
+        "단건 조회 부하 테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 소요: %d ms, TPS: %.2f%n",
         numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
         requestsPerSecond);
 
-    // Korean comment removed
+    // 성공률 95% 이상 검증
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
   }
 
   @Test
-  @DisplayName("사용자嶺뚮ㅄ維뽨빳?페이징?브퀗???- 75?사용자부하 테스트)")
+  @DisplayName("페이징 목록 조회 부하 테스트 - 75건 동시 요청")
   void loadTest_getPagedUserList_75ConcurrentRequests() throws Exception {
     // Given
     int numberOfRequests = 75;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    // Korean comment removed
+    // 부하 테스트 시작
     long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
       if (i % 50 == 0)
         System.out.println("Processing load id: " + i);
-      final int pageNum = i % 5; // Korean comment removed
+      final int pageNum = i % 5; // 0~4 페이지를 순환하여 요청
       Future<Boolean> future = executorService.submit(() -> {
         try {
           mockMvc.perform(get("/api/v1/users/paged?page=%d&size=10".formatted(pageNum))
@@ -320,13 +320,13 @@ class LoadTest {
       futures.add(future);
     }
 
-    // Korean comment removed
+    // 완료 후 집계
     long endTime = System.currentTimeMillis();
 
     long duration = endTime - startTime;
     double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
-    // Korean comment removed
+    // 성공 요청 집계
     long successfulRequests = futures.stream()
         .map(future -> {
           try {
@@ -339,30 +339,30 @@ class LoadTest {
         .count();
 
     System.out.printf(
-        "페이징사용자嶺뚮ㅄ維뽨빳?부하사용자테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 평균: %d ms, TPS: %.2f%n",
+        "페이징 목록 조회 부하 테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 소요: %d ms, TPS: %.2f%n",
         numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
         requestsPerSecond);
 
-    // Korean comment removed
+    // 성공률 95% 이상 검증
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
   }
 
   @Test
-  @DisplayName("?이후  API 회원- 150?사용자부하 테스트)")
+  @DisplayName("혼합 API 부하 테스트 - 150건 동시 요청")
   void loadTest_mixedApiRequests_150ConcurrentRequests() throws Exception {
-    // Korean comment removed
+    // 테스트용 사용자 사전 등록
     IntStream.range(0, 20).forEach(i -> {
       try {
         UserSignupRequest request = new UserSignupRequest(
             "mixedUser" + i,
             "Password123!",
-            "?이후  사용자 + i",
+            "혼합 테스트 사용자" + i,
             com.company.project.domain.user.entity.Role.USER,
             "hint",
             "answer");
         userService.signup(request);
       } catch (Exception e) {
-        // Korean comment removed
+        // 이미 등록된 사용자는 무시
       }
     });
 
@@ -370,14 +370,14 @@ class LoadTest {
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    // Korean comment removed
+    // 부하 테스트 시작
     long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
       final int requestType = i % 10; // 0-9
       Future<Boolean> future;
 
-      if (requestType < 6) { // Korean comment removed
+      if (requestType < 6) { // 60% - 목록 조회
         future = executorService.submit(() -> {
           try {
             mockMvc.perform(get("/api/v1/users")
@@ -393,7 +393,7 @@ class LoadTest {
             latch.countDown();
           }
         });
-      } else if (requestType < 8) { // Korean comment removed
+      } else if (requestType < 8) { // 20% - 단건 조회
         final String userId = "mixedUser" + (i % 20);
         future = executorService.submit(() -> {
           try {
@@ -410,15 +410,15 @@ class LoadTest {
             latch.countDown();
           }
         });
-      } else { // Korean comment removed
-        final int userIdNum = numberOfRequests + i; // Korean comment removed
+      } else { // 20% - 회원가입
+        final int userIdNum = numberOfRequests + i; // 기존 사용자와 ID 충돌 방지
         future = executorService.submit(() -> {
           try {
             String requestBody = """
                 {
                   "userId": "mixedLoadUser%d",
                   "password": "Password123!",
-                  "userNm": "?이후  부하사용자d",
+                  "userNm": "혼합 부하 테스트 사용자%d",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -443,13 +443,13 @@ class LoadTest {
       futures.add(future);
     }
 
-    // Korean comment removed
+    // 완료 후 집계
     long endTime = System.currentTimeMillis();
 
     long duration = endTime - startTime;
     double requestsPerSecond = (double) numberOfRequests / (duration / 1000.0);
 
-    // Korean comment removed
+    // 성공 요청 집계
     long successfulRequests = futures.stream()
         .map(future -> {
           try {
@@ -462,23 +462,23 @@ class LoadTest {
         .count();
 
     System.out.printf(
-        "?이후  API 사용자부하 테스트테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 평균: %d ms, TPS: %.2f%n",
+        "혼합 API 부하 테스트 결과 - 요청: %d, 성공: %d, 실패: %d, 소요: %d ms, TPS: %.2f%n",
         numberOfRequests, successfulRequests, numberOfRequests - successfulRequests, duration,
         requestsPerSecond);
 
-    // Korean comment removed
+    // 성공률 90% 이상 검증
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.90));
   }
 
   @Test
-  @DisplayName("부하 - 응답 시간 분석)")
+  @DisplayName("부하 테스트 - 응답 시간 분석")
   void loadTest_responseTimeAnalysis() throws Exception {
     // Given
     int numberOfRequests = 50;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
-    List<Long> responseTimes = new CopyOnWriteArrayList<>(); // Thread-safe list for response times
+    List<Long> responseTimes = new CopyOnWriteArrayList<>(); // 스레드 안전 리스트
 
-    // Korean comment removed
+    // 응답 시간 측정 요청 실행
     for (int i = 0; i < numberOfRequests; i++) {
       final int requestId = i;
       executorService.submit(() -> {
@@ -501,7 +501,7 @@ class LoadTest {
       });
     }
 
-    // Korean comment removed
+    // 모든 요청 완료 대기
 
     latch.await(60, TimeUnit.SECONDS);
     if (!responseTimes.isEmpty()) {
@@ -509,26 +509,26 @@ class LoadTest {
       long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
       long minResponseTime = responseTimes.stream().mapToLong(Long::longValue).min().orElse(0L);
 
-      System.out.printf("테스트 醫롫윞??분석- 성공 %d ms, 嶺뚣끉裕??: %d ms, 嶺뚣끉裕?? %d ms, 사용자 %d%n",
+      System.out.printf("응답 시간 분석 - 평균: %d ms, 최대: %d ms, 최소: %d ms, 총 요청: %d%n",
           avgResponseTime, maxResponseTime, minResponseTime, responseTimes.size());
 
-      // Korean comment removed
+      // 평균 응답 시간 1초 미만 검증
       assertThat(avgResponseTime).isLessThan(1000L);
     }
   }
 
   @Test
-  @DisplayName("부하 테스트 - 嶺뚮∥???귣쐻사용자嶺뚮ㅄ維???醫롫윥壤?)")
+  @DisplayName("부하 테스트 - 메모리 사용량 모니터링")
   void loadTest_memoryUsageMonitoring() throws Exception {
     // Given
     Runtime runtime = Runtime.getRuntime();
-    System.gc(); // Force garbage collection before test
+    System.gc(); // 테스트 전 GC 강제 실행
     long initialUsedMemory = runtime.totalMemory() - runtime.freeMemory();
 
     int numberOfRequests = 30;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
 
-    // Korean comment removed
+    // 메모리 사용량 측정 요청 실행
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
@@ -543,17 +543,17 @@ class LoadTest {
       });
     }
 
-    // Korean comment removed
+    // 모든 요청 완료 대기
     latch.await(30, TimeUnit.SECONDS);
 
-    System.gc(); // Force garbage collection after test
+    System.gc(); // 테스트 후 GC 강제 실행
     long finalUsedMemory = runtime.totalMemory() - runtime.freeMemory();
     long memoryIncrease = finalUsedMemory - initialUsedMemory;
 
-    System.out.printf("嶺뚮∥???귣쐻사용자- 초기 %d bytes, 嶺뚣끉裕뉏펺? %d bytes, 嶺뚯빘鍮??: %d bytes%n",
+    System.out.printf("메모리 사용량 - 초기: %d bytes, 최종: %d bytes, 증가량: %d bytes%n",
         initialUsedMemory, finalUsedMemory, memoryIncrease);
 
-    // Korean comment removed
+    // 메모리 증가량 50MB 미만 검증
     assertThat(memoryIncrease).isLessThan(50 * 1024 * 1024L); // 50MB
   }
 }
