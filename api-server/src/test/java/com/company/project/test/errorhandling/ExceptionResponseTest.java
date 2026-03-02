@@ -3,7 +3,7 @@ package com.company.project.test.errorhandling;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
+
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,421 +28,422 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class ExceptionResponseTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockitoBean
-        private UserService userService;
+    @MockitoBean
+    private UserService userService;
 
-        @Test
-        @DisplayName("?�외 발생 ???�절???�러 ?�답 반환 - 비즈?�스 ?�외")
-        void exception_occurs_returnsProperErrorResponse() throws Exception {
-                // Given
+    @Test
+    @DisplayName("사용자꾩룇裕뉑틦??사용자테스트 결과- ??닷럴사용자 醫롫윪??)")
+    void exception_occurs_returnsProperErrorResponse() throws Exception {
+        // Given
 
-                when(userService.signup(any(UserSignupRequest.class)))
-                                .thenThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID));
+        when(userService.signup(any(UserSignupRequest.class)))
+                .thenThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID));
 
-                String requestBody = """
-                                {
-                                    "userId": "duplicateUser",
-                                    "password": "password123!",
-                                    "userNm": "중복 ?�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
+        String requestBody = """
+                {
+                  "userId": "duplicateUser",
+                  "password": "password123!",
+                  "userNm": "중복사용자",
+                  "passwordHint": "hint",
+                  "passwordCnsr": "answer",
+                  "role": "USER"
+                }
+                """;
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("DUPLICATE_USER_ID"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("DUPLICATE_USER_ID"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?��????�외 발생 ??500 ?�러 ?�답 반환")
-        void runtimeException_occurs_returns500Error() throws Exception {
-                // Given
-                when(userService.signup(any(UserSignupRequest.class)))
-                                .thenThrow(new RuntimeException("Internal server error"));
+    @Test
+    @DisplayName("???사용자꾩룇裕뉑틦???500 테스트 결과)")
+    void runtimeException_occurs_returns500Error() throws Exception {
+        // Given
+        when(userService.signup(any(UserSignupRequest.class)))
+                .thenThrow(new RuntimeException("Internal server error"));
 
-                String requestBody = """
-                                {
-                                    "userId": "testUser",
-                                    "password": "password123!",
-                                    "userNm": "?�스???�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
+        String requestBody = """
+                {
+                  "userId": "testUser",
+                  "password": "password123!",
+                  "userNm": "사용자",
+                  "passwordHint": "hint",
+                  "passwordCnsr": "answer",
+                  "role": "USER"
+                }
+                """;
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isInternalServerError())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�력 검�??�외 발생 ??400 ?�러 ?�답 반환")
-        void validationException_occurs_returns400Error() throws Exception {
-                // Given
-                String invalidRequestBody = """
-                                {
-                                    "userId": "",
-                                    "password": "123",
-                                    "userNm": ""
-                                }
-                                """;
+    @Test
+    @DisplayName("테스트 롪틵??사용자꾩룇裕뉑틦???400 테스트 결과)")
+    void validationException_occurs_returns400Error() throws Exception {
+        // Given
+        String invalidRequestBody = """
+                {
+                  "userId": "",
+                  "password": "123",
+                  "userNm": ""
+                }
+                """;
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(invalidRequestBody))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error").exists())
-                                .andExpect(jsonPath("$.data").isEmpty());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.data").isEmpty());
+    }
 
-        @Test
-        @DisplayName("존재?��? ?�는 ?�용??조회 ??404 ?�러 ?�답 반환")
-        void userNotFound_occurs_returns404Error() throws Exception {
-                // Given
-                when(userService.getUserById("nonexistentUser"))
-                                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    @Test
+    @DisplayName("존재하지 않는 테스트사용자 브퀗?????404 테스트 결과)")
+    void userNotFound_occurs_returns404Error() throws Exception {
+        // Given
+        when(userService.getUserById("nonexistentUser"))
+                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users/nonexistentUser")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("USER_NOT_FOUND"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users/nonexistentUser")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("USER_NOT_FOUND"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�증?��? ?��? ?�청 ??401 ?�러 ?�답 반환")
-        void unauthorizedRequest_occurs_returns401Error() throws Exception {
-                // When & Then
-                mockMvc.perform(get("/api/v1/admin/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isUnauthorized())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
-                                .andExpect(jsonPath("$.error.message").value("Authentication required"));
-        }
+    @Test
+    @DisplayName("??醫롫윪凉?? ? 사용자 401 테스트 결과)")
+    void unauthorizedRequest_occurs_returns401Error() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.error.message").value("Authentication required"));
+    }
 
-        @Test
-        @DisplayName("권한???�는 ?�청 ??403 ?�러 ?�답 반환")
-        void forbiddenRequest_occurs_returns403Error() throws Exception {
-                // When & Then
-                mockMvc.perform(get("/api/v1/admin/users")
-                                .header("Authorization", "Bearer validTokenButNotAdmin")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isForbidden())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
-                                .andExpect(jsonPath("$.error.message").value("Access denied"));
-        }
+    @Test
+    @DisplayName("관리자사용자 403 테스트 결과)")
+    void forbiddenRequest_occurs_returns403Error() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/users")
+                .header("Authorization", "Bearer validTokenButNotAdmin")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.error.message").value("Access denied"));
+    }
 
-        @Test
-        @DisplayName("?�버 ?��? ?�류 발생 ??500 ?�러 ?�답 반환")
-        void internalServerError_occurs_returns500Error() throws Exception {
-                // Given
-                when(userService.getUserList())
-                                .thenThrow(new RuntimeException("Database connection failed"));
+    @Test
+    @DisplayName("테스트  실패예외 발생??500 테스트 결과)")
+    void internalServerError_occurs_returns500Error() throws Exception {
+        // Given
+        when(userService.getUserList())
+                .thenThrow(new RuntimeException("Database connection failed"));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isInternalServerError())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"))
-                                .andExpect(jsonPath("$.error.message").value("An unexpected error occurred"));
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.error.message").value("An unexpected error occurred"));
+    }
 
-        @Test
-        @DisplayName("?�못???�청 ?�라미터 ??400 ?�러 ?�답 반환")
-        void badRequestParameter_occurs_returns400Error() throws Exception {
-                // When & Then
-                mockMvc.perform(get("/api/v1/users?page=-1&size=0") // Invalid pagination params
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("INVALID_PARAMETER"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+    @Test
+    @DisplayName("테스트 사용자 선택적??400 테스트 결과)")
+    void badRequestParameter_occurs_returns400Error() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/users?page=-1&size=0") // Invalid pagination params
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INVALID_PARAMETER"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("JSON ?�싱 ?�류 발생 ??400 ?�러 ?�답 반환")
-        void jsonParseError_occurs_returns400Error() throws Exception {
-                // Given
-                String invalidJson = """
-                                {
-                                    "userId": "testUser",
-                                    "password": "password123!",
-                                    "userNm": "?�스???�용??,
-                                    "invalidField": "extraValue"
-                                """;
+    @Test
+    @DisplayName("JSON 사용자 醫롫윥筌?예외 발생??400 테스트 결과)")
+    void jsonParseError_occurs_returns400Error() throws Exception {
+        // Given
+        String invalidJson = """
+                {
+                  "userId": "testUser",
+                  "password": "password123!",
+                  "userNm": "사용자",
+                  "invalidField": "extraValue"
+                """;
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(invalidJson))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("INVALID_JSON"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INVALID_JSON"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("메서???�용?��? ?��? HTTP 메서???�용 ??405 ?�러 ?�답 반환")
-        void methodNotAllowed_occurs_returns405Error() throws Exception {
-                // When & Then
-                mockMvc.perform(patch("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{}"))
-                                .andExpect(status().isMethodNotAllowed())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("METHOD_NOT_ALLOWED"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+    @Test
+    @DisplayName("嶺뚮∥?꾥땻?? HTTP 嶺뚮∥?꾥땻?사용자 405 테스트 결과)")
+    void methodNotAllowed_occurs_returns405Error() throws Exception {
+        // When & Then
+        mockMvc.perform(patch("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�청 ?�이로드가 ?�무 ??경우 413 ?�러 ?�답 반환")
-        void payloadTooLarge_occurs_returns413Error() throws Exception {
-                // Given
-                String largePayload = """
-                                {
-                                    "userId": "testUser",
-                                    "password": "password123!",
-                                    "userNm": "%s"
-                                }
-                                """.formatted("A".repeat(10000)); // Very large string
+    @Test
+    @DisplayName("사용자 醫롫윪?議우뿉?類ｊ덧?띠럾? 단건??경로413 테스트 결과)")
+    void payloadTooLarge_occurs_returns413Error() throws Exception {
+        // Given
+        String largePayload = """
+                {
+                  "userId": "testUser",
+                  "password": "password123!",
+                  "userNm": "%s"
+                }
+                """.formatted("A".repeat(10000)); // Very large string"
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(largePayload))
-                                .andExpect(status().isPayloadTooLarge())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("PAYLOAD_TOO_LARGE"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(largePayload))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("PAYLOAD_TOO_LARGE"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("지?�되지 ?�는 미디???�???�청 ??415 ?�러 ?�답 반환")
-        void unsupportedMediaType_occurs_returns415Error() throws Exception {
-                // Given
-                String requestBody = """
-                                {
-                                    "userId": "testUser",
-                                    "password": "password123!",
-                                    "userNm": "?�스???�용??
-                                }
-                                """;
+    @Test
+    @DisplayName("嶺뚯솘테스트깅툦彛? 테스트亦껋꼶梨띌?????사용자 415 테스트 결과)")
+    void unsupportedMediaType_occurs_returns415Error() throws Exception {
+        // Given
+        String requestBody = """
+                {
+                  "userId": "testUser",
+                  "password": "password123!",
+                  "userNm": "사용자"
+                }
+                """;
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType("application/xml") // Wrong content type
-                                .content(requestBody))
-                                .andExpect(status().isUnsupportedMediaType())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("UNSUPPORTED_MEDIA_TYPE"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType("application/xml") // Wrong content type
+                .content(requestBody))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("UNSUPPORTED_MEDIA_TYPE"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�청 ?�간 초과 ??408 ?�러 ?�답 반환")
-        void requestTimeout_occurs_returns408Error() throws Exception {
-                // Given
-                // Simulate slow service response
-                when(userService.signup(any(UserSignupRequest.class)))
-                                .thenAnswer(invocation -> {
-                                        Thread.sleep(10000); // 10 seconds delay
-                                        return null;
-                                });
+    @Test
+    @DisplayName("사용자 醫롫윞???貫?????408 테스트 결과)")
+    void requestTimeout_occurs_returns408Error() throws Exception {
+        // Given
+        // Simulate slow service response
+        when(userService.signup(any(UserSignupRequest.class)))
+                .thenAnswer(invocation -> {
+                    Thread.sleep(10000); // 10 seconds delay
+                    return null;
+                });
 
-                String requestBody = """
-                                {
-                                    "userId": "slowUser",
-                                    "password": "password123!",
-                                    "userNm": "?�린 ?�용??
-                                }
-                                """;
+        String requestBody = """
+                {
+                  "userId": "slowUser",
+                  "password": "password123!",
+                  "userNm": "테스트사용자"
+                }
+                """;
 
-                // When & Then
-                // Note: This test might require specific timeout configuration in MockMvc
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                                .requestAttr("org.springframework.web.util.WebUtils.ERROR_REQUEST_URI_ATTRIBUTE",
-                                                "/api/v1/users/signup"))
-                                .andExpect(status().isRequestTimeout())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("REQUEST_TIMEOUT"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        // Note: This test might require specific timeout configuration in MockMvc
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+                .requestAttr("org.springframework.web.util.WebUtils.ERROR_REQUEST_URI_ATTRIBUTE",
+                        "/api/v1/users/signup"))
+                .andExpect(status().isRequestTimeout())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("REQUEST_TIMEOUT"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�버 과�?????503 ?�러 ?�답 반환")
-        void serviceUnavailable_occurs_returns503Error() throws Exception {
-                // Given
-                when(userService.getUserList())
-                                .thenThrow(new com.company.project.core.exception.BusinessException(
-                                                ErrorCode.SERVER_OVERLOAD));
+    @Test
+    @DisplayName("테스트 λ닰??????503 테스트 결과)")
+    void serviceUnavailable_occurs_returns503Error() throws Exception {
+        // Given
+        when(userService.getUserList())
+                .thenThrow(new com.company.project.core.exception.BusinessException(
+                        ErrorCode.SERVER_OVERLOAD));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isServiceUnavailable())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("SERVER_OVERLOAD"))
-                                .andExpect(jsonPath("$.error.message").exists());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("SERVER_OVERLOAD"))
+                .andExpect(jsonPath("$.error.message").exists());
+    }
 
-        @Test
-        @DisplayName("?�러 ?�답 구조 ?��????�인")
-        void errorResponse_structure_consistency() throws Exception {
-                // Given
-                when(userService.getUserById("nonexistent"))
-                                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    @Test
+    @DisplayName("테스트 응답 형식????)")
+    void errorResponse_structure_consistency() throws Exception {
+        // Given
+        when(userService.getUserById("nonexistent"))
+                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users/nonexistent")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error").exists())
-                                .andExpect(jsonPath("$.error.code").exists())
-                                .andExpect(jsonPath("$.error.message").exists())
-                                .andExpect(jsonPath("$.data").isEmpty()) // Error responses should have empty data
-                                .andExpect(jsonPath("$.timestamp").exists()); // Should include timestamp
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users/nonexistent")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.error.code").exists())
+                .andExpect(jsonPath("$.error.message").exists())
+                .andExpect(jsonPath("$.data").isEmpty()) // Error responses should have empty data
+                .andExpect(jsonPath("$.timestamp").exists()); // Should include timestamp
+    }
 
-        @Test
-        @DisplayName("?�양???�외 ?�?�에 ?�???�답 ?�스??)
-        void variousExceptionTypes_responseTest() throws Exception {
-                // Test for different exception types
-                when(userService.getUserById("illegalArg"))
-                                .thenThrow(new IllegalArgumentException("Invalid argument"));
+    @Test
+    @DisplayName("사용자 테스트사용자)")
+    void variousExceptionTypes_responseTest() throws Exception {
+        // Test for different exception types
+        when(userService.getUserById("illegalArg"))
+                .thenThrow(new IllegalArgumentException("Invalid argument"));
 
-                when(userService.getUserById("nullPointer"))
-                                .thenThrow(new NullPointerException("Null pointer exception"));
+        when(userService.getUserById("nullPointer"))
+                .thenThrow(new NullPointerException("Null pointer exception"));
 
-                when(userService.getUserById("illegalState"))
-                                .thenThrow(new IllegalStateException("Illegal state"));
+        when(userService.getUserById("illegalState"))
+                .thenThrow(new IllegalStateException("Illegal state"));
 
-                // Test IllegalArgumentException
-                mockMvc.perform(get("/api/v1/users/illegalArg")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isBadRequest());
+        // Test IllegalArgumentException
+        mockMvc.perform(get("/api/v1/users/illegalArg")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
 
-                // Test NullPointerException
-                mockMvc.perform(get("/api/v1/users/nullPointer")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isInternalServerError());
+        // Test NullPointerException
+        mockMvc.perform(get("/api/v1/users/nullPointer")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
 
-                // Test IllegalStateException
-                mockMvc.perform(get("/api/v1/users/illegalState")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isInternalServerError());
-        }
+        // Test IllegalStateException
+        mockMvc.perform(get("/api/v1/users/illegalState")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+    }
 
-        @Test
-        @DisplayName("?�러 메시지 로컬?�이?�이???�스??)
-        void errorMessage_localization_test() throws Exception {
-                // Given
-                when(userService.getUserById("localizedError"))
-                                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    @Test
+    @DisplayName("테스트嶺뚮∥???낆?? β돦裕뉛쭚사용자사용자)")
+    void errorMessage_localization_test() throws Exception {
+        // Given
+        when(userService.getUserById("localizedError"))
+                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-                // When & Then - Test with different locales
-                mockMvc.perform(get("/api/v1/users/localizedError")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header("Accept-Language", "ko-KR"))
-                                .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.error.message").value("?�용?��? 찾을 ???�습?�다."));
+        // When & Then - Test with different locales
+        mockMvc.perform(get("/api/v1/users/localizedError")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Accept-Language", "ko-KR"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.message").value("사용자 嶺뚢돦堉???사용자"));
 
-                mockMvc.perform(get("/api/v1/users/localizedError")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header("Accept-Language", "en-US"))
-                                .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.error.message").value("User not found."));
-        }
+        mockMvc.perform(get("/api/v1/users/localizedError")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Accept-Language", "en-US"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.message").value("User not found."));
+    }
 
-        @Test
-        @DisplayName("?�러 ?�답???�세 ?�보 ?�함 ?��? ?�스??)
-        void errorResponse_withDetails() throws Exception {
-                // Given
-                BusinessException businessException = new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-                businessException.addDetail("field", "userId");
-                businessException.addDetail("rejectedValue", "");
-                businessException.addDetail("message", "User ID cannot be empty");
+    @Test
+    @DisplayName("테스트 잘못된 요청 이후 ?? 사용자)")
+    void errorResponse_withDetails() throws Exception {
+        // Given
+        BusinessException businessException = new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        businessException.addDetail("field", "userId");
+        businessException.addDetail("rejectedValue", "");
+        businessException.addDetail("message", "User ID cannot be empty");
 
-                when(userService.getUserById("detailedError"))
-                                .thenThrow(businessException);
+        when(userService.getUserById("detailedError"))
+                .thenThrow(businessException);
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users/detailedError")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT_VALUE"))
-                                .andExpect(jsonPath("$.error.message").exists())
-                                .andExpect(jsonPath("$.error.details").exists())
-                                .andExpect(jsonPath("$.error.details.field").value("userId"))
-                                .andExpect(jsonPath("$.error.details.rejectedValue").value(""))
-                                .andExpect(jsonPath("$.error.details.message").value("User ID cannot be empty"));
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users/detailedError")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT_VALUE"))
+                .andExpect(jsonPath("$.error.message").exists())
+                .andExpect(jsonPath("$.error.details").exists())
+                .andExpect(jsonPath("$.error.details.field").value("userId"))
+                .andExpect(jsonPath("$.error.details.rejectedValue").value(""))
+                .andExpect(jsonPath("$.error.details.message").value("User ID cannot be empty"));
+    }
 
-        @Test
-        @DisplayName("?�러 ?�답??추적 ID ?�함 ?��? ?�스??)
-        void errorResponse_withTraceId() throws Exception {
-                // Given
-                when(userService.getUserById("errorWithTrace"))
-                                .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR));
+    @Test
+    @DisplayName("테스트 ?怨뺣뾼??ID 이후 ?? 사용자)")
+    void errorResponse_withTraceId() throws Exception {
+        // Given
+        when(userService.getUserById("errorWithTrace"))
+                .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users/errorWithTrace")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isInternalServerError())
-                                .andExpect(jsonPath("$.success").value(false))
-                                .andExpect(jsonPath("$.error").exists())
-                                .andExpect(jsonPath("$.error.traceId").exists()) // Should include trace ID for
-                                                                                 // debugging
-                                .andExpect(jsonPath("$.error.timestamp").exists());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users/errorWithTrace")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.error.traceId").exists()) // Should include trace ID for
+                                         // debugging
+                .andExpect(jsonPath("$.error.timestamp").exists());
+    }
 
-        @Test
-        @DisplayName("?�러 발생 ???�상 ?�청 처리 가???��? ?�스??)
-        void errorThenNormalRequest_handlingCapability() throws Exception {
-                // Given - First request causes error
-                when(userService.getUserById("errorUser"))
-                                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    @Test
+    @DisplayName("테스트 꾩룇裕뉑틦?????醫롫윪疫嶺뚳퐣瑗???띠럾????? 사용자)")
+    void errorThenNormalRequest_handlingCapability() throws Exception {
+        // Given - First request causes error
+        when(userService.getUserById("errorUser"))
+                .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-                // When & Then - Error request
-                mockMvc.perform(get("/api/v1/users/errorUser")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isNotFound());
+        // When & Then - Error request
+        mockMvc.perform(get("/api/v1/users/errorUser")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
 
-                // Given - Reset mock for normal response
-                when(userService.getUserById("normalUser"))
-                                .thenReturn(new UserDto("normalUser", "?�상 ?�용??, "USR00001", null, null, null, null));
+        // Given - Reset mock for normal response
+        when(userService.getUserById("normalUser"))
+                .thenReturn(com.company.project.service.user.dto.UserDto.builder().userId("normalUser")
+                        .userNm("User").esntlId("USR00001").build());
 
-                // When & Then - Normal request after error should still work
-                mockMvc.perform(get("/api/v1/users/normalUser")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data.userId").value("normalUser"));
-        }
+        // When & Then - Normal request after error should still work
+        mockMvc.perform(get("/api/v1/users/normalUser")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.userId").value("normalUser"));
+    }
 }

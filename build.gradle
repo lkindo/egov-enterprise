@@ -45,5 +45,7 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
+        systemProperty 'file.encoding', 'UTF-8'
     }
 }

@@ -22,41 +22,41 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AuthorManageControllerTest {
 
-    private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-    @Mock
-    private AuthorManageService authorManageService;
+  @Mock
+  private AuthorManageService authorManageService;
 
-    @Mock
-    private EgovPropertyService propertiesService;
+  @Mock
+  private EgovPropertyService propertiesService;
 
-    @Mock
-    private MessageSource messageSource;
+  @Mock
+  private MessageSource messageSource;
 
-    @InjectMocks
-    private AuthorManageController authorManageController;
+  @InjectMocks
+  private AuthorManageController authorManageController;
 
-    @BeforeEach
-    void setup() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(authorManageController).build();
-    }
+  @BeforeEach
+  void setup() {
+    MockitoAnnotations.openMocks(this);
+    mockMvc = MockMvcBuilders.standaloneSetup(authorManageController).build();
+  }
 
-    @Test
-    void selectAuthor_ShouldReturnViewAndModel_WhenCalled() throws Exception {
-        String authorCode = "ROLE_TEST";
-        AuthorManageDto dto = new AuthorManageDto();
-        dto.setAuthorCode(authorCode);
-        dto.setAuthorNm("Test Role");
+  @Test
+  void selectAuthor_ShouldReturnViewAndModel_WhenCalled() throws Exception {
+    String authorCode = "ROLE_TEST";
+    AuthorManageDto dto = new AuthorManageDto();
+    dto.setAuthorCode(authorCode);
+    dto.setAuthorNm("Test Role");
 
-        when(authorManageService.selectAuthor(authorCode)).thenReturn(dto);
-        when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Success");
+    when(authorManageService.selectAuthor(authorCode)).thenReturn(dto);
+    when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Success");
 
-        mockMvc.perform(get("/sec/ram/EgovAuthor.do")
-                .param("authorCode", authorCode))
-                .andExpect(status().isOk())
-                .andExpect(view().name("sec/ram/EgovAuthorUpdate"))
-                .andExpect(model().attributeExists("authorManage"))
-                .andExpect(model().attribute("message", "Success"));
-    }
+    mockMvc.perform(get("/sec/ram/EgovAuthor.do")
+        .param("authorCode", authorCode))
+        .andExpect(status().isOk())
+        .andExpect(view().name("sec/ram/EgovAuthorUpdate"))
+        .andExpect(model().attributeExists("authorManage"))
+        .andExpect(model().attribute("message", "Success"));
+  }
 }

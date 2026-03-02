@@ -32,73 +32,73 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 public class MenuServicePerformanceTest {
 
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableCaching
-    @EntityScan("com.company.project.domain")
-    @EnableJpaRepositories("com.company.project.domain")
-    @Import(MenuService.class)
-    static class TestConfig {
-        @Bean
-        public JPAQueryFactory jpaQueryFactory(EntityManager em) {
-            return new JPAQueryFactory(em);
-        }
-
-        @Bean
-        public CacheManager cacheManager() {
-            return new ConcurrentMapCacheManager("allMenus", "menuParentMap", "allMenuDtos");
-        }
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableCaching
+  @EntityScan("com.company.project.domain")
+  @EnableJpaRepositories("com.company.project.domain")
+  @Import(MenuService.class)
+  static class TestConfig {
+    @Bean
+    public JPAQueryFactory jpaQueryFactory(EntityManager em) {
+      return new JPAQueryFactory(em);
     }
 
-    @Autowired
-    private MenuRepository menuRepository;
-
-    @Autowired
-    private MenuService menuService;
-
-    @MockitoBean
-    private ProgramRepository programRepository;
-
-    @MockitoBean
-    private AuthorityRepository authorityRepository;
-
-    @MockitoBean
-    private MenuAuthorityRepository menuAuthorityRepository;
-
-    @BeforeEach
-    void setUp() {
-        // Setup a deep hierarchy
-        List<Menu> menus = new ArrayList<>();
-        // Root
-        menus.add(createMenu(1L, "Root", "root.do", 0L));
-
-        // Depth 1 to 20
-        for (int i = 1; i <= 20; i++) {
-             menus.add(createMenu( (long)(i+1), "Level" + i, "level" + i + ".do", (long)i));
-        }
-        menuRepository.saveAll(menus);
-        menuRepository.flush();
+    @Bean
+    public CacheManager cacheManager() {
+      return new ConcurrentMapCacheManager("allMenus", "menuParentMap", "allMenuDtos");
     }
+  }
 
-    private Menu createMenu(Long id, String name, String fileNm, Long upperId) {
-        return Menu.builder()
-                .id(id)
-                .menuNm(name)
-                .progrmFileNm(fileNm)
-                .upperMenuNo(upperId)
-                .menuOrdr(1)
-                .build();
+  @Autowired
+  private MenuRepository menuRepository;
+
+  @Autowired
+  private MenuService menuService;
+
+  @MockitoBean
+  private ProgramRepository programRepository;
+
+  @MockitoBean
+  private AuthorityRepository authorityRepository;
+
+  @MockitoBean
+  private MenuAuthorityRepository menuAuthorityRepository;
+
+  @BeforeEach
+  void setUp() {
+    // Setup a deep hierarchy
+    List<Menu> menus = new ArrayList<>();
+    // Root
+    menus.add(createMenu(1L, "Root", "root.do", 0L));
+
+    // Depth 1 to 20
+    for (int i = 1; i <= 20; i++) {
+       menus.add(createMenu( (long)(i+1), "Level" + i, "level" + i + ".do", (long)i));
     }
+    menuRepository.saveAll(menus);
+    menuRepository.flush();
+  }
 
-    @Test
-    void measureGetRootMenuIdBenchmark() {
-        String targetFile = "level20.do";
+  private Menu createMenu(Long id, String name, String fileNm, Long upperId) {
+    return Menu.builder()
+        .id(id)
+        .menuNm(name)
+        .progrmFileNm(fileNm)
+        .upperMenuNo(upperId)
+        .menuOrdr(1)
+        .build();
+  }
 
-        // Warmup
-        menuService.getRootMenuIdByProgrmFileNm(targetFile);
+  @Test
+  void measureGetRootMenuIdBenchmark() {
+    String targetFile = "level20.do";
 
-        // Verification of correctness
-        Long rootId = menuService.getRootMenuIdByProgrmFileNm(targetFile);
-        assertThat(rootId).isEqualTo(1L);
-    }
+    // Warmup
+    menuService.getRootMenuIdByProgrmFileNm(targetFile);
+
+    // Verification of correctness
+    Long rootId = menuService.getRootMenuIdByProgrmFileNm(targetFile);
+    assertThat(rootId).isEqualTo(1L);
+  }
 }

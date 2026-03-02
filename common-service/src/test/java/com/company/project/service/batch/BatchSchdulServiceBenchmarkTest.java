@@ -31,68 +31,68 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(BatchSchdulService.class)
 public class BatchSchdulServiceBenchmarkTest {
 
-    @Autowired
-    private BatchSchdulService batchSchdulService;
+  @Autowired
+  private BatchSchdulService batchSchdulService;
 
-    @Autowired
-    private BatchSchdulRepository batchSchdulRepository;
+  @Autowired
+  private BatchSchdulRepository batchSchdulRepository;
 
-    @Autowired
-    private BatchOpertRepository batchOpertRepository;
+  @Autowired
+  private BatchOpertRepository batchOpertRepository;
 
-    @Test
-    @Transactional
-    public void testGetBatchSchdulListPerformance() {
-        // Given
-        int count = 200;
+  @Test
+  @Transactional
+  public void testGetBatchSchdulListPerformance() {
+    // Given
+    int count = 200;
 
-        // Create BatchJob
-        BatchOpert job = BatchOpert.builder()
-                .batchOpertId("JOB_TEST")
-                .batchOpertNm("Test Job")
-                .batchProgrm("Test Program")
-                .build();
-        batchOpertRepository.save(java.util.Objects.requireNonNull(job));
+    // Create BatchJob
+    BatchOpert job = BatchOpert.builder()
+        .batchOpertId("JOB_TEST")
+        .batchOpertNm("Test Job")
+        .batchProgrm("Test Program")
+        .build();
+    batchOpertRepository.save(java.util.Objects.requireNonNull(job));
 
-        List<BatchSchdul> schduls = new ArrayList<>();
+    List<BatchSchdul> schduls = new ArrayList<>();
 
-        for (int i = 0; i < count; i++) {
-            String id = "BSCH_" + String.format("%014d", System.currentTimeMillis() + i);
-            BatchSchdul schdul = BatchSchdul.builder()
-                    .batchSchdulId(id)
-                    .batchOpertId("JOB_TEST")
-                    .executCycle("02") // Weekly
-                    .build();
+    for (int i = 0; i < count; i++) {
+      String id = "BSCH_" + String.format("%014d", System.currentTimeMillis() + i);
+      BatchSchdul schdul = BatchSchdul.builder()
+          .batchSchdulId(id)
+          .batchOpertId("JOB_TEST")
+          .executCycle("02") // Weekly
+          .build();
 
-            // Add 5 DFKs
-            for (int j = 1; j <= 5; j++) {
-                schdul.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
-                        .batchSchdulId(id)
-                        .executSchdulDfkSe("0" + j)
-                        .build());
-            }
-            schduls.add(schdul);
-        }
-
-        batchSchdulRepository.saveAll(java.util.Objects.requireNonNull(schduls));
-        batchSchdulRepository.flush();
-
-        Pageable pageable = PageRequest.of(0, count);
-
-        // When
-        long startTime = System.currentTimeMillis();
-        Page<BatchSchdulDto> result = batchSchdulService.getBatchSchdulList(null, null, pageable);
-        long endTime = System.currentTimeMillis();
-
-        // Then
-        long duration = endTime - startTime;
-        System.out.println("Execution time for fetching " + count + " records with DFKs: " + duration + " ms");
-
-        assertThat(result.getContent()).hasSize(count);
-
-        if (!result.getContent().isEmpty()) {
-            BatchSchdulDto first = result.getContent().get(0);
-            assertThat(first.getExecutSchdulDfkSes()).hasSize(5);
-        }
+      // Add 5 DFKs
+      for (int j = 1; j <= 5; j++) {
+        schdul.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
+            .batchSchdulId(id)
+            .executSchdulDfkSe("0" + j)
+            .build());
+      }
+      schduls.add(schdul);
     }
+
+    batchSchdulRepository.saveAll(java.util.Objects.requireNonNull(schduls));
+    batchSchdulRepository.flush();
+
+    Pageable pageable = PageRequest.of(0, count);
+
+    // When
+    long startTime = System.currentTimeMillis();
+    Page<BatchSchdulDto> result = batchSchdulService.getBatchSchdulList(null, null, pageable);
+    long endTime = System.currentTimeMillis();
+
+    // Then
+    long duration = endTime - startTime;
+    System.out.println("Execution time for fetching " + count + " records with DFKs: " + duration + " ms");
+
+    assertThat(result.getContent()).hasSize(count);
+
+    if (!result.getContent().isEmpty()) {
+      BatchSchdulDto first = result.getContent().get(0);
+      assertThat(first.getExecutSchdulDfkSes()).hasSize(5);
+    }
+  }
 }

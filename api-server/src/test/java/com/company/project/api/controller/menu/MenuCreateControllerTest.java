@@ -22,57 +22,66 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 @WebMvcTest(MenuCreateController.class)
 @Import(ApiSecurityConfig.class)
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 public class MenuCreateControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @MockitoBean
-    private MenuService menuService;
+  @MockitoBean
+  private MenuService menuService;
 
-    @MockitoBean(name = "propertiesService")
-    private EgovPropertyService propertiesService;
+  @MockitoBean(name = "propertiesService")
+  private EgovPropertyService propertiesService;
 
-    @MockitoBean
-    private MessageSource messageSource;
+  @MockitoBean(name = "messageSource")
+  private MessageSource messageSource;
 
-    @MockitoBean
-    private EgovAuthenticationProvider egovAuthenticationProvider;
+  @MockitoBean
+  private EgovAuthenticationProvider egovAuthenticationProvider;
 
-    @Test
-    public void insertMenuCreatList_unauthenticated_shouldRedirectToLogin() throws Exception {
-        mockMvc.perform(post("/sym/mnu/mcm/EgovMenuCreatInsert.do")
-                .param("checkedAuthorForInsert", "ROLE_USER")
-                .param("checkedMenuNoForInsert", "1,2,3"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("**/uat/uia/egovLoginUsr.do"));
-    }
+  @MockitoBean
+  private com.company.project.security.jwt.JwtTokenProvider jwtTokenProvider;
 
-    @Test
-    @WithMockUser(username = "testuser", roles = "USER")
-    public void insertMenuCreatList_authenticated_shouldReachController() throws Exception {
-        // Setup mocks
-        when(messageSource.getMessage(eq("success.common.insert"), isNull(), any(Locale.class)))
-                .thenReturn("Success");
-        doNothing().when(menuService).insertMenuCreatList(any(), any());
+  @Test
+  public void insertMenuCreatList_unauthenticated_shouldRedirectToLogin() throws Exception {
+    mockMvc.perform(post("/sym/mnu/mcm/EgovMenuCreatInsert.do")
+        .param("checkedAuthorForInsert", "ROLE_USER")
+        .param("checkedMenuNoForInsert", "1,2,3")
+        .with(csrf()))
+        .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrlPattern("**/uat/uia/egovLoginUsr.do"));
+  }
 
-        MenuCreateDto menuCreatVO = new MenuCreateDto();
-        menuCreatVO.setAuthorCode("ROLE_USER");
+  @Test
+  @WithMockUser(username = "testuser", roles = "USER")
+  public void insertMenuCreatList_authenticated_shouldReachController() throws Exception {
+    // Setup mocks
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("Success");
+    doNothing().when(menuService).insertMenuCreatList(anyString(), anyString());
 
-        mockMvc.perform(post("/sym/mnu/mcm/EgovMenuCreatInsert.do")
-                .param("checkedAuthorForInsert", "ROLE_USER")
-                .param("checkedMenuNoForInsert", "1,2,3")
-                .flashAttr("menuCreatVO", menuCreatVO)
-                .flashAttr("searchVO", new ComDefaultVO()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/sym/mnu/mcm/EgovMenuCreatSelect.do?**"));
-    }
+    MenuCreateDto menuCreatVO = new MenuCreateDto();
+    menuCreatVO.setAuthorCode("ROLE_USER");
+
+    mockMvc.perform(post("/sym/mnu/mcm/EgovMenuCreatInsert.do")
+        .param("checkedAuthorForInsert", "ROLE_USER")
+        .param("checkedMenuNoForInsert", "1,2,3")
+        .param("authorCode", "ROLE_USER")
+        .flashAttr("menuCreatVO", menuCreatVO)
+        .flashAttr("searchVO", new ComDefaultVO())
+        .with(csrf()))
+        .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrlPattern("/sym/mnu/mcm/EgovMenuCreatSelect.do?**"));
+  }
 }

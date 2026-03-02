@@ -21,53 +21,53 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(AuthorManageService.class)
 class AuthorManageServiceTest {
 
-    @Autowired
-    private AuthorManageService authorManageService;
+  @Autowired
+  private AuthorManageService authorManageService;
 
-    @Autowired
-    private AuthorityRepository authorityRepository;
+  @Autowired
+  private AuthorityRepository authorityRepository;
 
-    @BeforeEach
-    void setUp() {
-        authorityRepository.deleteAll();
+  @BeforeEach
+  void setUp() {
+    authorityRepository.deleteAll();
+  }
+
+  @Test
+  void deleteAuthors_shouldDeleteSpecifiedAuthors() {
+    // given
+    List<Authority> authorities = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      authorities.add(Authority.builder()
+          .authorCode("AUTH_" + i)
+          .authorNm("Test Authority " + i)
+          .authorDc("Description " + i)
+          .build());
     }
+    authorityRepository.saveAll(authorities);
 
-    @Test
-    void deleteAuthors_shouldDeleteSpecifiedAuthors() {
-        // given
-        List<Authority> authorities = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            authorities.add(Authority.builder()
-                    .authorCode("AUTH_" + i)
-                    .authorNm("Test Authority " + i)
-                    .authorDc("Description " + i)
-                    .build());
-        }
-        authorityRepository.saveAll(authorities);
+    String[] codesToDelete = { "AUTH_0", "AUTH_1", "AUTH_2" };
 
-        String[] codesToDelete = { "AUTH_0", "AUTH_1", "AUTH_2" };
+    // when
+    authorManageService.deleteAuthors(codesToDelete);
 
-        // when
-        authorManageService.deleteAuthors(codesToDelete);
+    // then
+    assertThat(authorityRepository.existsById("AUTH_0")).isFalse();
+    assertThat(authorityRepository.existsById("AUTH_1")).isFalse();
+    assertThat(authorityRepository.existsById("AUTH_2")).isFalse();
+    assertThat(authorityRepository.existsById("AUTH_3")).isTrue();
+    assertThat(authorityRepository.existsById("AUTH_4")).isTrue();
+  }
 
-        // then
-        assertThat(authorityRepository.existsById("AUTH_0")).isFalse();
-        assertThat(authorityRepository.existsById("AUTH_1")).isFalse();
-        assertThat(authorityRepository.existsById("AUTH_2")).isFalse();
-        assertThat(authorityRepository.existsById("AUTH_3")).isTrue();
-        assertThat(authorityRepository.existsById("AUTH_4")).isTrue();
-    }
+  @Test
+  void deleteAuthors_shouldHandleEmptyArray() {
+    // given
+    Authority auth = Authority.builder().authorCode("AUTH_X").authorNm("X").build();
+    authorityRepository.save(java.util.Objects.requireNonNull(auth));
 
-    @Test
-    void deleteAuthors_shouldHandleEmptyArray() {
-        // given
-        Authority auth = Authority.builder().authorCode("AUTH_X").authorNm("X").build();
-        authorityRepository.save(java.util.Objects.requireNonNull(auth));
+    // when
+    authorManageService.deleteAuthors(new String[] {});
 
-        // when
-        authorManageService.deleteAuthors(new String[] {});
-
-        // then
-        assertThat(authorityRepository.existsById("AUTH_X")).isTrue();
-    }
+    // then
+    assertThat(authorityRepository.existsById("AUTH_X")).isTrue();
+  }
 }

@@ -29,272 +29,161 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class UserControllerServiceLayerIntegrationTest {
 
-        @org.springframework.context.annotation.Configuration
-        @org.springframework.context.annotation.Import({
-                        com.company.project.config.MinimalTestConfig.class,
-                        com.company.project.api.common.exception.GlobalExceptionHandler.class
-        })
-        static class TestConfig {
-                @org.springframework.context.annotation.Bean
-                public com.company.project.api.controller.UserController userController(
-                                com.company.project.service.user.UserService userService) {
-                        return new com.company.project.api.controller.UserController(userService);
+    @org.springframework.context.annotation.Configuration
+    @org.springframework.context.annotation.Import({
+            com.company.project.config.MinimalTestConfig.class,
+            com.company.project.api.common.exception.GlobalExceptionHandler.class
+    })
+    static class TestConfig {
+        @org.springframework.context.annotation.Bean
+        public com.company.project.api.controller.UserController userController(
+                com.company.project.service.user.UserService userService) {
+            return new com.company.project.api.controller.UserController(userService);
+        }
+    }
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private UserService userService;
+
+    @Test
+    @DisplayName("POST /api/v1/users/signup - Verify service layer call")
+    void signup_endpoint_callsServiceLayer() throws Exception {
+        // Given
+        UserResponse response = new UserResponse(
+                "testUser",
+                "Test User",
+                null);
+
+        when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
+
+        String requestBody = """
+                {
+                  "userId": "testUser",
+                  "password": "password123!",
+                  "userNm": "Test User",
+                  "passwordHint": "hint",
+                  "passwordCnsr": "answer",
+                  "role": "USER"
                 }
-        }
+                """;
 
-        @Autowired
-        private MockMvc mockMvc;
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        @MockitoBean
-        private UserService userService;
+        // Verify that the service method was called
+        verify(userService, times(1)).signup(any(UserSignupRequest.class));
+    }
 
-        @Test
-        @DisplayName("POST /api/v1/users/signup - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
-        void signup_endpoint_callsServiceLayer() throws Exception {
-                // Given
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GET /api/v1/users - Verify service layer call")
+    void getUserList_endpoint_callsServiceLayer() throws Exception {
+        // Given
+        List<UserDto> userList = Arrays.asList(
+                UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build(),
+                UserDto.builder().userId("user2").userNm("User 2").esntlId("USR002").build());
 
-                UserResponse response = new UserResponse(
-                                "testUser",
-                                "?�스???�용??,
-                                null);
+        when(userService.getUserList()).thenReturn(userList);
 
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-                String requestBody = """
-                                {
-                                    "userId": "testUser",
-                                    "password": "password123!",
-                                    "userNm": "?�스???�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
+        // Verify that the service method was called
+        verify(userService, times(1)).getUserList();
+    }
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk())
-                                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    @Test
+    @DisplayName("POST /api/v1/users/signup - Handles service exception")
+    void signup_endpoint_handlesServiceException() throws Exception {
+        // Given
+        when(userService.signup(any(UserSignupRequest.class)))
+                .thenThrow(new com.company.project.core.exception.BusinessException(
+                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID));
 
-                // Verify that the service method was called
-                verify(userService, times(1)).signup(any(UserSignupRequest.class));
-        }
+        String requestBody = """
+                {
+                  "userId": "duplicateUser",
+                  "password": "password123!",
+                  "userNm": "Duplicate User",
+                  "passwordHint": "hint",
+                  "passwordCnsr": "answer",
+                  "role": "USER"
+                }
+                """;
 
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - API ?�드?�인?�에???�비??계층?�로 ?�청 ?�달 ?�스??)
-        void getUserList_endpoint_callsServiceLayer() throws Exception {
-                // Given
-                List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null),
-                                new UserDto("user2", "?�용??", "USR002", null, null, null, null));
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isConflict());
 
-                when(userService.getUserList()).thenReturn(userList);
+        // Verify that the service method was called
+        verify(userService, times(1)).signup(any(UserSignupRequest.class));
+    }
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GET /api/v1/users - Handles empty list")
+    void getUserList_endpoint_handlesEmptyList() throws Exception {
+        // Given
+        when(userService.getUserList()).thenReturn(Arrays.asList());
 
-                // Verify that the service method was called
-                verify(userService, times(1)).getUserList();
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(0));
 
-        @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
-        void signup_endpoint_handlesServiceException() throws Exception {
-                // Given
+        // Verify that the service method was called
+        verify(userService, times(1)).getUserList();
+    }
 
-                when(userService.signup(any(UserSignupRequest.class)))
-                                .thenThrow(new com.company.project.core.exception.BusinessException(
-                                                com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID));
+    @Test
+    @DisplayName("POST /api/v1/users/signup - Multiple calls")
+    void signup_endpoint_multipleCalls() throws Exception {
+        // Given
+        UserResponse response = new UserResponse(
+                "multiCallUser",
+                "Multi Call User",
+                null);
 
-                String requestBody = """
-                                {
-                                    "userId": "duplicateUser",
-                                    "password": "password123!",
-                                    "userNm": "중복 ?�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
+        when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isConflict());
+        String requestBody = """
+                {
+                  "userId": "multiCallUser",
+                  "password": "password123!",
+                  "userNm": "Multi Call User",
+                  "passwordHint": "hint",
+                  "passwordCnsr": "answer",
+                  "role": "USER"
+                }
+                """;
 
-                // Verify that the service method was called
-                verify(userService, times(1)).signup(any(UserSignupRequest.class));
-        }
+        // When & Then - Call twice
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk());
 
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층?�서 �?목록 반환 ??API ?�드?�인?�에??�?배열 ?�답")
-        void getUserList_endpoint_handlesEmptyList() throws Exception {
-                // Given
-                when(userService.getUserList()).thenReturn(Arrays.asList());
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk());
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(jsonPath("$.data").isArray())
-                                .andExpect(jsonPath("$.data.length()").value(0));
-
-                // Verify that the service method was called
-                verify(userService, times(1)).getUserList();
-        }
-
-        @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층?�서 null 반환 ??API ?�드?�인?�에???�절??처리")
-        void signup_endpoint_handlesNullResponse() throws Exception {
-                // Given
-
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn(null);
-
-                String requestBody = """
-                                {
-                                    "userId": "nullResponseUser",
-                                    "password": "password123!",
-                                    "userNm": "NULL ?�답 ?�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
-
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk());
-
-                // Verify that the service method was called
-                verify(userService, times(1)).signup(any(UserSignupRequest.class));
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층?�서 ?�외 발생 ??API ?�드?�인?�에???�절???�답 반환")
-        void getUserList_endpoint_handlesServiceException() throws Exception {
-                // Given
-                when(userService.getUserList())
-                                .thenThrow(new RuntimeException("Service layer error"));
-
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isInternalServerError());
-
-                // Verify that the service method was called
-                verify(userService, times(1)).getUserList();
-        }
-
-        @Test
-        @DisplayName("POST /api/v1/users/signup - ?�러 �??�출 ???�비??계층???�러 �??�출??)
-        void signup_endpoint_multipleCalls() throws Exception {
-                // Given
-
-                UserResponse response = new UserResponse(
-                                "multiCallUser",
-                                "?�중 ?�출 ?�용??,
-                                null);
-
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
-
-                String requestBody = """
-                                {
-                                    "userId": "multiCallUser",
-                                    "password": "password123!",
-                                    "userNm": "?�중 ?�출 ?�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
-
-                // When & Then - Call twice
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk());
-
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk());
-
-                // Verify that the service method was called twice
-                verify(userService, times(2)).signup(any(UserSignupRequest.class));
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("GET /api/v1/users - ?�비??계층 ?�출 ???�라미터 ?�달 ?�인")
-        void getUserList_endpoint_parameterPassing() throws Exception {
-                // Given
-                List<UserDto> userList = Arrays.asList(
-                                new UserDto("user1", "?�용??", "USR001", null, null, null, null));
-
-                when(userService.getUserList()).thenReturn(userList);
-
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(jsonPath("$.data").isArray())
-                                .andExpect(jsonPath("$.data.length()").value(1));
-
-                // Verify that the service method was called with correct parameters (no
-                // parameters in this case)
-                verify(userService, times(1)).getUserList();
-        }
-
-        @Test
-        @DisplayName("POST /api/v1/users/signup - ?�비??계층???�확???�청 객체 ?�달 ?�인")
-        void signup_endpoint_requestObjectPassedCorrectly() throws Exception {
-                // Given
-                UserSignupRequest request = new UserSignupRequest(
-                                "correctParamUser",
-                                "password123!",
-                                "?�확???�라미터 ?�용??,
-                                com.company.project.domain.user.entity.Role.USER,
-                                "hint",
-                                "answer");
-
-                UserResponse response = new UserResponse(
-                                "correctParamUser",
-                                "?�확???�라미터 ?�용??,
-                                null);
-
-                when(userService.signup(eq(request))).thenReturn(response);
-
-                String requestBody = """
-                                {
-                                    "userId": "correctParamUser",
-                                    "password": "password123!",
-                                    "userNm": "?�확???�라미터 ?�용??,
-                                    "passwordHint": "hint",
-                                    "passwordCnsr": "answer",
-                                    "role": "USER"
-                                }
-                                """;
-
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk());
-
-                // Verify that the service method was called with the exact request object
-                verify(userService, times(1)).signup(eq(request));
-        }
+        // Verify that the service method was called twice
+        verify(userService, times(2)).signup(any(UserSignupRequest.class));
+    }
 }

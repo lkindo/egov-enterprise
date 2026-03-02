@@ -14,8 +14,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
 public class TestNoteConfig {
 
-    @Bean
-    public JPAQueryFactory jpaQueryFactory(EntityManager entityManager) {
-        return new JPAQueryFactory(entityManager);
-    }
+  @Bean
+  public JPAQueryFactory jpaQueryFactory(EntityManager entityManager) {
+    return new JPAQueryFactory(entityManager);
+  }
 }

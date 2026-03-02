@@ -36,109 +36,109 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = UserController.class)
 @ContextConfiguration(classes = {
-                UserController.class,
-                GlobalExceptionHandler.class,
-                UserApiControllerTest.TestConfig.class
+        UserController.class,
+        GlobalExceptionHandler.class,
+        UserApiControllerTest.TestConfig.class
 })
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserApiControllerTest {
 
-        @org.springframework.boot.SpringBootConfiguration
-        @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
-                        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-                        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-                        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-                        org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
-        })
-        static class TestConfig {
-        }
+    @org.springframework.boot.SpringBootConfiguration
+    @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
+            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+            org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+            org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
+            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
+    })
+    static class TestConfig {
+    }
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        @MockitoBean
-        private UserService userService;
+    @MockitoBean
+    private UserService userService;
 
-        @MockitoBean
-        private PasswordEncoder passwordEncoder;
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
-        @MockitoBean
-        private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
-        @MockitoBean
-        private AuthenticationManager authenticationManager;
+    @MockitoBean
+    private AuthenticationManager authenticationManager;
 
-        @MockitoBean
-        private OperationalAuditInterceptor operationalAuditInterceptor;
+    @MockitoBean
+    private OperationalAuditInterceptor operationalAuditInterceptor;
 
-        @MockitoBean
-        private MenuService menuService;
+    @MockitoBean
+    private MenuService menuService;
 
-        @MockitoBean
-        private com.company.project.security.service.EgovAuthenticationProvider egovAuthenticationProvider;
+    @MockitoBean
+    private com.company.project.security.service.EgovAuthenticationProvider egovAuthenticationProvider;
 
-        @MockitoBean
-        private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
+    @MockitoBean
+    private com.company.project.security.service.CustomUserDetailsService customUserDetailsService;
 
-        @Test
-        @DisplayName("?�용??목록 조회 - 관리자")
-        void getUserList_admin() throws Exception {
-                // Given
-                when(jwtTokenProvider.validateToken(any())).thenReturn(true);
-                when(userService.getUserList()).thenReturn(Collections.emptyList());
+    @Test
+    @DisplayName("사용자嶺뚮ㅄ維뽨빳??브퀗???- ?㉱?洹먮봿??)")
+    void getUserList_admin() throws Exception {
+        // Given
+        when(jwtTokenProvider.validateToken(any())).thenReturn(true);
+        when(userService.getUserList()).thenReturn(Collections.emptyList());
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/users")
-                                .header("Authorization", "Bearer admin-token")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andDo(print())
-                                .andExpect(status().isOk());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/users")
+                .header("Authorization", "Bearer admin-token")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        @DisplayName("?�원가??- ?�공")
-        void signup_success() throws Exception {
-                // Given
-                UserResponse mockResponse = new UserResponse("newUser", "?�규?�용??, Role.USER);
-                when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
+    @Test
+    @DisplayName("사용자쾸???- 성공)")
+    void signup_success() throws Exception {
+        // Given
+        UserResponse mockResponse = new UserResponse("newUser", "??醫롫윞사용자", Role.USER);
+        when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
-                Map<String, Object> request = Map.of(
-                                "userId", "newUser",
-                                "password", "password123",
-                                "userNm", "?�규?�용??,
-                                "passwordHint", "hint",
-                                "passwordCnsr", "answer");
+        Map<String, Object> request = Map.of(
+                "userId", "newUser",
+                "password", "password123",
+                "userNm", "??醫롫윞사용자",
+                "passwordHint", "hint",
+                "passwordCnsr", "answer");
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                                .andDo(print())
-                                .andExpect(status().isOk());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        @DisplayName("?�원가??- 중복 ?�용??ID (409)")
-        void signup_duplicateUserId() throws Exception {
-                // Given
-                when(userService.signup(any(UserSignupRequest.class)))
-                                .thenThrow(new com.company.project.core.exception.BusinessException(
-                                                com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID));
+    @Test
+    @DisplayName("사용자쾸???- 중복사용자ID (409)")
+    void signup_duplicateUserId() throws Exception {
+        // Given
+        when(userService.signup(any(UserSignupRequest.class)))
+                .thenThrow(new com.company.project.core.exception.BusinessException(
+                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID));
 
-                Map<String, Object> request = Map.of(
-                                "userId", "admin",
-                                "password", "password123",
-                                "userNm", "중복?�용??);
+        Map<String, Object> request = Map.of(
+                "userId", "admin",
+                "password", "password123",
+                "userNm", "繞벿살탮사용자");
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/users/signup")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                                .andDo(print())
-                                .andExpect(status().isConflict());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isConflict());
+    }
 }

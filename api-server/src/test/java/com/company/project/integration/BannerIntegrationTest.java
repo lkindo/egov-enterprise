@@ -29,88 +29,88 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class BannerIntegrationTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockitoBean
-        private EgovBannerService bannerService;
+    @MockitoBean
+    private EgovBannerService bannerService;
 
-        @Test
-        @DisplayName("GET /api/v1/banners - 배너 목록 조회 API ?�스??)
-        void getBanners_ReturnsPage() throws Exception {
-                // Given
-                BannerDto dto = BannerDto.builder()
-                                .bannerId("BNR_001")
-                                .bannerNm("?�스??배너")
-                                .reflctAt("Y")
-                                .build();
-                Page<BannerDto> page = new PageImpl<>(Arrays.asList(dto));
-                when(bannerService.getBannerList(any(), any(Pageable.class))).thenReturn(page);
+    @Test
+    @DisplayName("GET /api/v1/banners - 배너목록조회API ?좎럩???)")
+    void getBanners_ReturnsPage() throws Exception {
+        // Given
+        BannerDto dto = BannerDto.builder()
+                .bannerId("BNR_001")
+                .bannerNm("??좎럩???배너")
+                .reflctAt("Y")
+                .build();
+        Page<BannerDto> page = new PageImpl<>(Arrays.asList(dto));
+        when(bannerService.getBannerList(any(), any(Pageable.class))).thenReturn(page);
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/banners")
-                                .param("page", "0")
-                                .param("size", "10")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data.content[0].bannerId").value("BNR_001"))
-                                .andExpect(jsonPath("$.data.content[0].bannerNm").value("?�스??배너"));
+        // When & Then
+        mockMvc.perform(get("/api/v1/banners")
+                .param("page", "0")
+                .param("size", "10")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].bannerId").value("BNR_001"))
+                .andExpect(jsonPath("$.data.content[0].bannerNm").value("??좎럩???배너"));
 
-                verify(bannerService, times(1)).getBannerList(any(), any(Pageable.class));
-        }
+        verify(bannerService, times(1)).getBannerList(any(), any(Pageable.class));
+    }
 
-        @Test
-        @DisplayName("GET /api/v1/banners/reflected - 반영??배너 목록 조회 API ?�스??)
-        void getReflectedBanners_ReturnsList() throws Exception {
-                // Given
-                BannerDto dto = BannerDto.builder()
-                                .bannerId("BNR_001")
-                                .bannerNm("반영 배너")
-                                .reflctAt("Y")
-                                .build();
-                List<BannerDto> list = Arrays.asList(dto);
-                when(bannerService.getReflectedBanners()).thenReturn(list);
+    @Test
+    @DisplayName("GET /api/v1/banners/reflected - 반사된?배너목록조회API ?좎럩???)")
+    void getReflectedBanners_ReturnsList() throws Exception {
+        // Given
+        BannerDto dto = BannerDto.builder()
+                .bannerId("BNR_001")
+                .bannerNm("반사된배너")
+                .reflctAt("Y")
+                .build();
+        List<BannerDto> list = Arrays.asList(dto);
+        when(bannerService.getReflectedBanners()).thenReturn(list);
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/banners/reflected")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data[0].bannerNm").value("반영 배너"));
+        // When & Then
+        mockMvc.perform(get("/api/v1/banners/reflected")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].bannerNm").value("반사된배너"));
 
-                verify(bannerService, times(1)).getReflectedBanners();
-        }
+        verify(bannerService, times(1)).getReflectedBanners();
+    }
 
-        @Test
-        @DisplayName("POST /api/v1/banners - 배너 ?�록 API ?�스??)
-        void insertBanner_CallsService() throws Exception {
-                // When & Then
-                mockMvc.perform(post("/api/v1/banners")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                                {
-                                                    "bannerNm": "??배너",
-                                                    "linkUrl": "http://test.com",
-                                                    "reflctAt": "Y",
-                                                    "sortOrdr": 1
-                                                }
-                                                """))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true));
+    @Test
+    @DisplayName("POST /api/v1/banners - 배너등록API ?좎럩???)")
+    void insertBanner_CallsService() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/v1/banners")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "bannerNm": "??배너",
+                          "linkUrl": "http://test.com",
+                          "reflctAt": "Y",
+                          "sortOrdr": 1
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
 
-                verify(bannerService, times(1)).insertBanner(any(BannerDto.class));
-        }
+        verify(bannerService, times(1)).insertBanner(any(BannerDto.class));
+    }
 
-        @Test
-        @DisplayName("DELETE /api/v1/banners/{id} - 배너 ??�� API ?�스??)
-        void deleteBanner_CallsService() throws Exception {
-                // When & Then
-                mockMvc.perform(delete("/api/v1/banners/BNR_001")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true));
+    @Test
+    @DisplayName("DELETE /api/v1/banners/{id} - 배너???좎룞??API ?좎럩???)")
+    void deleteBanner_CallsService() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/v1/banners/BNR_001")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
 
-                verify(bannerService, times(1)).deleteBanner("BNR_001");
-        }
+        verify(bannerService, times(1)).deleteBanner("BNR_001");
+    }
 }

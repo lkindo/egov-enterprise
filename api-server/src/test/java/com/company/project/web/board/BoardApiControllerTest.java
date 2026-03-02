@@ -33,90 +33,90 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 게시??API 컨트롤러 ?�라?�스 ?�스?? */
+ * 게시판API 뚢뫂?껅에?살쑎 ?좎럥?설정? */
 @WebMvcTest(BoardController.class)
 @ActiveProfiles("test")
 class BoardApiControllerTest {
 
-        @SpringBootConfiguration
-        @EnableAutoConfiguration
-        @Import({ BoardController.class, WebMvcConfig.class, TestSecurityConfig.class,
-                        com.company.project.api.common.exception.GlobalExceptionHandler.class })
-        static class TestConfig {
-        }
+    @SpringBootConfiguration
+    @EnableAutoConfiguration
+    @Import({ BoardController.class, WebMvcConfig.class, TestSecurityConfig.class,
+            com.company.project.api.common.exception.GlobalExceptionHandler.class })
+    static class TestConfig {
+    }
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockitoBean
-        private BoardService boardService;
+    @MockitoBean
+    private BoardService boardService;
 
-        @MockitoBean
-        private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
-        @MockitoBean(name = "dataSource")
-        private javax.sql.DataSource dataSource;
+    @MockitoBean(name = "dataSource")
+    private javax.sql.DataSource dataSource;
 
-        @MockitoBean
-        private com.company.project.service.menu.MenuService menuService;
+    @MockitoBean
+    private com.company.project.service.menu.MenuService menuService;
 
-        @BeforeEach
-        void setUp() {
-                when(jwtTokenProvider.resolveToken(any())).thenReturn("mock-token");
-                when(jwtTokenProvider.validateToken(any())).thenReturn(true);
-                org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
-                                .withUsername("testuser")
-                                .password("password")
-                                .roles("USER")
-                                .build();
-                org.springframework.security.core.Authentication auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                when(jwtTokenProvider.getAuthentication(any())).thenReturn(auth);
-        }
+    @BeforeEach
+    void setUp() {
+        when(jwtTokenProvider.resolveToken(any())).thenReturn("mock-token");
+        when(jwtTokenProvider.validateToken(any())).thenReturn(true);
+        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername("testuser")
+                .password("password")
+                .roles("USER")
+                .build();
+        org.springframework.security.core.Authentication auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        when(jwtTokenProvider.getAuthentication(any())).thenReturn(auth);
+    }
 
-        @Test
-        @DisplayName("게시�?목록 조회 - ?�증???�용??)
-        void getBoardList_authenticated() throws Exception {
-                // Given
-                List<BoardDto> list = new ArrayList<>();
-                Page<BoardDto> emptyPage = new PageImpl<>(list, PageRequest.of(0, 10), 0);
-                when(boardService.getBoardPosts(eq("TEST_BBS"), any(Pageable.class))).thenReturn(emptyPage);
+    @Test
+    @DisplayName("게시글목록조회- 테스트???좎럩???)")
+    void getBoardList_authenticated() throws Exception {
+        // Given
+        List<BoardDto> list = new ArrayList<>();
+        Page<BoardDto> emptyPage = new PageImpl<>(list, PageRequest.of(0, 10), 0);
+        when(boardService.getBoardPosts(eq("TEST_BBS"), any(Pageable.class))).thenReturn(emptyPage);
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
-                                .header("Authorization", "Bearer mock-token")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andDo(print())
-                                .andExpect(status().isOk());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
+                .header("Authorization", "Bearer mock-token")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        @DisplayName("게시�?목록 조회 - ?�증?��? ?��? ?�용??(401)")
-        void getBoardList_unauthenticated() throws Exception {
-                // Given
-                when(jwtTokenProvider.resolveToken(any())).thenReturn(null);
-                when(jwtTokenProvider.validateToken(any())).thenReturn(false);
+    @Test
+    @DisplayName("게시글목록조회- 테스트?좎룞?? ?좎룞?? 인증 실패 401")
+    void getBoardList_unauthenticated() throws Exception {
+        // Given
+        when(jwtTokenProvider.resolveToken(any())).thenReturn(null);
+        when(jwtTokenProvider.validateToken(any())).thenReturn(false);
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andDo(print())
-                                .andExpect(status().isUnauthorized());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
 
-        @Test
-        @DisplayName("존재?��? ?�는 게시??조회 (404)")
-        void getBoardList_notFound() throws Exception {
-                // Given
-                when(boardService.getBoardPosts(eq("NOT_EXIST"), any(Pageable.class)))
-                                .thenThrow(new com.company.project.core.exception.BusinessException(
-                                                com.company.project.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
+    @Test
+    @DisplayName("없는 게시글 ?좎럥??게시판조회(404)")
+    void getBoardList_notFound() throws Exception {
+        // Given
+        when(boardService.getBoardPosts(eq("NOT_EXIST"), any(Pageable.class)))
+                .thenThrow(new com.company.project.core.exception.BusinessException(
+                        com.company.project.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
 
-                // When & Then
-                mockMvc.perform(get("/api/v1/boards/{bbsId}", "NOT_EXIST")
-                                .header("Authorization", "Bearer mock-token")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andDo(print())
-                                .andExpect(status().isNotFound());
-        }
+        // When & Then
+        mockMvc.perform(get("/api/v1/boards/{bbsId}", "NOT_EXIST")
+                .header("Authorization", "Bearer mock-token")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
 }

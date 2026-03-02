@@ -18,62 +18,61 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class MailServiceTest {
 
-    @Mock
-    private SentMailRepository sentMailRepository;
+  @Mock
+  private SentMailRepository sentMailRepository;
 
-    @Mock
-    private EmailSender emailSender;
+  @Mock
+  private EmailSender emailSender;
 
-    @InjectMocks
-    private MailService mailService;
+  @InjectMocks
+  private MailService mailService;
 
-    @Test
-    @DisplayName("Send mail success")
-    void sendMail_Success() throws Exception {
-        // Given
-        SentMailDto dto = SentMailDto.builder()
-                .sj("Subject")
-                .emailCn("Content")
-                .dsptchPerson("sender@example.com")
-                .recptnPerson("receiver@example.com")
-                .build();
+  @Test
+  @DisplayName("Send mail success")
+  void sendMail_Success() throws Exception {
+    // Given
+    SentMailDto dto = SentMailDto.builder()
+        .sj("Subject")
+        .emailCn("Content")
+        .dsptchPerson("sender@example.com")
+        .recptnPerson("receiver@example.com")
+        .build();
 
-        // When
-        mailService.sendMail("user1", dto);
+    // When
+    mailService.sendMail("user1", dto);
 
-        // Then
-        // Verify that save was called. The object passed to save is mutated later,
-        // so we check its
-                     state or we rely on the fact that updateResult was
-        // called (which we can't verify directly on entity).
-        // But we can verify the state of the captured argument.
-        verify(sentMailRepository).save(java.util.Objects.requireNonNull(argThat(sentMail -> {
-            return sentMail != null && sentMail.getSndngResultCode().equals("S");
-        })));
-        verify(emailSender).send(eq("Subject"), eq("Content"), eq("sender@example.com"), eq("receiver@example.com"));
-    }
+    // Then
+    // Verify that save was called. The object passed to save is mutated later,
+    // so we check its state or we rely on the fact that updateResult was
+    // called (which we can't verify directly on entity).
+    // But we can verify the state of the captured argument.
+    verify(sentMailRepository).save(java.util.Objects.requireNonNull(argThat(sentMail -> {
+      return sentMail != null && sentMail.getSndngResultCode().equals("S");
+    })));
+    verify(emailSender).send(eq("Subject"), eq("Content"), eq("sender@example.com"), eq("receiver@example.com"));
+  }
 
-    @Test
-    @DisplayName("Send mail failure")
-    void sendMail_Failure() throws Exception {
-        // Given
-        SentMailDto dto = SentMailDto.builder()
-                .sj("Subject")
-                .emailCn("Content")
-                .dsptchPerson("sender@example.com")
-                .recptnPerson("receiver@example.com")
-                .build();
+  @Test
+  @DisplayName("Send mail failure")
+  void sendMail_Failure() throws Exception {
+    // Given
+    SentMailDto dto = SentMailDto.builder()
+        .sj("Subject")
+        .emailCn("Content")
+        .dsptchPerson("sender@example.com")
+        .recptnPerson("receiver@example.com")
+        .build();
 
-        doThrow(new RuntimeException("Mail Error")).when(emailSender).send(anyString(), anyString(), anyString(),
-                anyString());
+    doThrow(new RuntimeException("Mail Error")).when(emailSender).send(anyString(), anyString(), anyString(),
+        anyString());
 
-        // When
-        mailService.sendMail("user1", dto);
+    // When
+    mailService.sendMail("user1", dto);
 
-        // Then
-        verify(sentMailRepository).save(java.util.Objects.requireNonNull(argThat(sentMail -> {
-            return sentMail != null && sentMail.getSndngResultCode().equals("F");
-        })));
-        verify(emailSender).send(eq("Subject"), eq("Content"), eq("sender@example.com"), eq("receiver@example.com"));
-    }
+    // Then
+    verify(sentMailRepository).save(java.util.Objects.requireNonNull(argThat(sentMail -> {
+      return sentMail != null && sentMail.getSndngResultCode().equals("F");
+    })));
+    verify(emailSender).send(eq("Subject"), eq("Content"), eq("sender@example.com"), eq("receiver@example.com"));
+  }
 }

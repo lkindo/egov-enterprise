@@ -34,134 +34,135 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
- * BoardService ?�위 ?�스?? */
+ * BoardService 단위 테스트
+ */
 @ExtendWith(MockitoExtension.class)
 class BoardServiceTest {
 
-        @Mock
-        private BoardRepository boardRepository;
+    @Mock
+    private BoardRepository boardRepository;
 
-        @Mock
-        private BoardMasterRepository boardMasterRepository;
+    @Mock
+    private BoardMasterRepository boardMasterRepository;
 
-        @Mock
-        private UserRepository userRepository;
+    @Mock
+    private UserRepository userRepository;
 
-        @Mock
-        private EgovFileService fileService;
+    @Mock
+    private EgovFileService fileService;
 
-        @InjectMocks
-        private BoardService boardService;
+    @InjectMocks
+    private BoardService boardService;
 
-        @Test
-        @DisplayName("게시??ID�?게시�?목록 조회 ?�공")
-        void getBoardPosts_success() {
-                // given
-                String bbsId = "TEST_BBS";
-                BoardMaster master = BoardMaster.builder()
-                                .bbsId(bbsId)
-                                .bbsNm("?�스??게시??)
-                                .bbsTyCode("BBST01")
-                                .build();
+    @Test
+    @DisplayName("게시판 ID로 게시문 목록 조회 성공")
+    void getBoardPosts_success() {
+        // given
+        String bbsId = "TEST_BBS";
+        BoardMaster master = BoardMaster.builder()
+                .bbsId(bbsId)
+                .bbsNm("테스트 게시판")
+                .bbsTyCode("BBST01")
+                .build();
 
-                PageRequest pageable = PageRequest.of(0, 10);
-                Page<com.company.project.domain.board.BoardSearchResult> boards = new PageImpl<>(
-                                Objects.requireNonNull(
-                                                List.of(new com.company.project.domain.board.BoardSearchResult())));
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<com.company.project.domain.board.BoardSearchResult> boards = new PageImpl<>(
+                Objects.requireNonNull(
+                        List.of(new com.company.project.domain.board.BoardSearchResult())));
 
-                when(boardMasterRepository.findById(java.util.Objects.requireNonNull(bbsId)))
-                                .thenReturn(Optional.of(master));
-                when(boardRepository.searchArticles(any(), eq(java.util.Objects.requireNonNull(pageable))))
-                                .thenReturn(boards);
+        when(boardMasterRepository.findById(java.util.Objects.requireNonNull(bbsId)))
+                .thenReturn(Optional.of(master));
+        when(boardRepository.searchArticles(any(), eq(java.util.Objects.requireNonNull(pageable))))
+                .thenReturn(boards);
 
-                // when
-                Page<BoardDto> result = boardService.getBoardPosts(bbsId, Objects.requireNonNull(pageable));
+        // when
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, Objects.requireNonNull(pageable));
 
-                // then
-                assertThat(result.getContent()).hasSize(1);
-        }
+        // then
+        assertThat(result.getContent()).hasSize(1);
+    }
 
-        @Test
-        @DisplayName("존재?��? ?�는 게시??ID�?조회 ???�외 발생")
-        void getBoardPosts_notFound() {
-                // given
-                String bbsId = "NOT_EXIST";
-                when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.empty());
+    @Test
+    @DisplayName("존재하지 않는 게시판 ID 조회 시 예외 발생")
+    void getBoardPosts_notFound() {
+        // given
+        String bbsId = "NOT_EXIST";
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.empty());
 
-                // when & then
-                assertThatThrownBy(
-                                () -> boardService.getBoardPosts(bbsId, Objects.requireNonNull(PageRequest.of(0, 10))))
-                                .isInstanceOf(BusinessException.class);
-        }
+        // when & then
+        assertThatThrownBy(
+                () -> boardService.getBoardPosts(bbsId, Objects.requireNonNull(PageRequest.of(0, 10))))
+                .isInstanceOf(BusinessException.class);
+    }
 
-        @Test
-        @DisplayName("게시�??�세 조회 ??조회??증�?")
-        void getPostDetail_increaseViewCount() {
-                // given
-                BoardMaster master = BoardMaster.builder()
-                                .bbsId("TEST_BBS")
-                                .bbsNm("?�스??)
-                                .bbsTyCode("BBST01")
-                                .build();
+    @Test
+    @DisplayName("게시문 상세 조회 시 조회수 증가 확인")
+    void getPostDetail_increaseViewCount() {
+        // given
+        BoardMaster master = BoardMaster.builder()
+                .bbsId("TEST_BBS")
+                .bbsNm("테스트")
+                .bbsTyCode("BBST01")
+                .build();
 
-                Board board = Board.builder()
-                                .nttId(1L)
-                                .bbsId(Objects.requireNonNull(master.getBbsId()))
-                                .nttSj("?�스???�목")
-                                .nttCn("?�스???�용")
-                                .inqireCo(0)
-                                .build();
+        Board board = Board.builder()
+                .nttId(1L)
+                .bbsId(Objects.requireNonNull(master.getBbsId()))
+                .nttSj("테스트 제목")
+                .nttCn("테스트 내용")
+                .inqireCo(0)
+                .build();
 
-                com.company.project.domain.board.BoardDetailResult detailResult = new com.company.project.domain.board.BoardDetailResult();
-                detailResult.setNttSj("?�스???�목");
+        com.company.project.domain.board.BoardDetailResult detailResult = new com.company.project.domain.board.BoardDetailResult();
+        detailResult.setNttSj("테스트 제목");
 
-                when(boardRepository.findArticleDetail(java.util.Objects.requireNonNull(any())))
-                                .thenReturn(Optional.of(detailResult));
-                when(boardRepository.findById(java.util.Objects.requireNonNull(any())))
-                                .thenReturn(Optional.of(Objects.requireNonNull(board)));
+        when(boardRepository.findArticleDetail(java.util.Objects.requireNonNull(any())))
+                .thenReturn(Optional.of(detailResult));
+        when(boardRepository.findById(java.util.Objects.requireNonNull(any())))
+                .thenReturn(Optional.of(Objects.requireNonNull(board)));
 
-                // when
-                BoardDto result = boardService.getPostDetail("TEST_BBS", 1L);
+        // when
+        BoardDto result = boardService.getPostDetail("TEST_BBS", 1L);
 
-                // then
-                assertThat(result.getNttSj()).isEqualTo("?�스???�목");
-                assertThat(board.getInqireCo()).isEqualTo(1); // 조회??1 증�?
-        }
+        // then
+        assertThat(result.getNttSj()).isEqualTo("테스트 제목");
+        assertThat(board.getInqireCo()).isEqualTo(1); // 조회수 1 증가 확인
+    }
 
-        @Test
-        @org.junit.jupiter.api.Disabled("?�일 ?�비??Mock ?�정 ?�요 - ?�속 ?�업")
-        @DisplayName("?�일 첨�? 게시�??�록 ?�공")
-        void createPostWithFiles_success() throws IOException {
-                // given
-                String userId = "USER_01";
-                String esntlId = "ESNTL_001";
-                String bbsId = "TEST_BBS";
-                String atchFileId = "FILE_01";
+    @Test
+    @org.junit.jupiter.api.Disabled("파일 Mock 저장 - 통합테스트 환경에서 실행")
+    @DisplayName("파일 업로드와 게시문 저장 성공")
+    void createPostWithFiles_success() throws IOException {
+        // given
+        String userId = "USER_01";
+        String esntlId = "ESNTL_001";
+        String bbsId = "TEST_BBS";
+        String atchFileId = "FILE_01";
 
-                com.company.project.service.board.dto.BoardSaveRequest request = new com.company.project.service.board.dto.BoardSaveRequest(
-                                bbsId, "Title", "Content", "2023-01-01", "2023-12-31", null);
+        com.company.project.service.board.dto.BoardSaveRequest request = new com.company.project.service.board.dto.BoardSaveRequest(
+                bbsId, "Title", "Content", "2023-01-01", "2023-12-31", null);
 
-                List<MultipartFile> files = Objects.requireNonNull(List.of(mock(MultipartFile.class)));
+        List<MultipartFile> files = Objects.requireNonNull(List.of(mock(MultipartFile.class)));
 
-                BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-                User user = User.builder()
-                                .userId(userId).esntlId(esntlId).userNm("Tester").password("pw").build();
-                Board savedBoard = Board.builder().nttId(1L).atchFileId(atchFileId).build();
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        User user = User.builder()
+                .userId(userId).esntlId(esntlId).userNm("Tester").password("pw").build();
+        Board savedBoard = Board.builder().nttId(1L).atchFileId(atchFileId).build();
 
-                when(fileService.uploadFiles(files)).thenReturn(atchFileId);
-                when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-                when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(Objects.requireNonNull(user)));
-                when(boardRepository.findMaxNttId()).thenReturn(0L);
-                when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
-                when(boardRepository.save(Objects.requireNonNull(any(Board.class))))
-                                .thenReturn(Objects.requireNonNull(savedBoard));
+        when(fileService.uploadFiles(files)).thenReturn(atchFileId);
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
+        when(userRepository.findByEsntlId(esntlId)).thenReturn(Optional.of(Objects.requireNonNull(user)));
+        when(boardRepository.findMaxNttId()).thenReturn(0L);
+        when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
+        when(boardRepository.save(Objects.requireNonNull(any(Board.class))))
+                .thenReturn(Objects.requireNonNull(savedBoard));
 
-                // when
-                Long result = boardService.createPostWithFiles(userId, request, files);
+        // when
+        Long result = boardService.createPostWithFiles(userId, request, files);
 
-                // then
-                assertThat(result).isEqualTo(1L);
-                verify(fileService).uploadFiles(files);
-                verify(boardRepository).save(java.util.Objects.requireNonNull(any(Board.class)));
-        }
+        // then
+        assertThat(result).isEqualTo(1L);
+        verify(fileService).uploadFiles(files);
+        verify(boardRepository).save(java.util.Objects.requireNonNull(any(Board.class)));
+    }
 }

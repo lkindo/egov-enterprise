@@ -24,75 +24,75 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SmsServiceTest {
 
-        @Mock
-        private SmsRepository smsRepository;
+    @Mock
+    private SmsRepository smsRepository;
 
-        @Mock
-        private SmsRecptnRepository smsRecptnRepository;
+    @Mock
+    private SmsRecptnRepository smsRecptnRepository;
 
-        @Mock
-        private SmsSender smsSender;
+    @Mock
+    private SmsSender smsSender;
 
-        @InjectMocks
-        private SmsService smsService;
+    @InjectMocks
+    private SmsService smsService;
 
-        @Test
-        void sendSms_Success() {
-                // Given
-                String userId = "TEST_USER";
-                SmsRecptnDto recipientDto = SmsRecptnDto.builder()
-                                .recptnTelno("01012345678")
-                                .build();
-                SmsDto smsDto = SmsDto.builder()
-                                .trnsmitTelno("021234567")
-                                .trnsmitCn("Test Message")
-                                .recipients(List.of(recipientDto))
-                                .build();
+    @Test
+    void sendSms_Success() {
+        // Given
+        String userId = "TEST_USER";
+        SmsRecptnDto recipientDto = SmsRecptnDto.builder()
+                .recptnTelno("01012345678")
+                .build();
+        SmsDto smsDto = SmsDto.builder()
+                .trnsmitTelno("021234567")
+                .trnsmitCn("Test Message")
+                .recipients(List.of(recipientDto))
+                .build();
 
-                when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
-                                java.util.Objects.requireNonNull(anyString()),
-                                java.util.Objects.requireNonNull(anyString()))).thenReturn(true);
-                when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
+                java.util.Objects.requireNonNull(anyString()),
+                java.util.Objects.requireNonNull(anyString()))).thenReturn(true);
+        when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-                smsService.sendSms(userId, smsDto);
+        smsService.sendSms(userId, smsDto);
 
-                // Then
-                ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
-                verify(smsRepository).save(java.util.Objects.requireNonNull(smsCaptor.capture()));
+        // Then
+        ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
+        verify(smsRepository).save(java.util.Objects.requireNonNull(smsCaptor.capture()));
 
-                Sms capturedSms = smsCaptor.getValue();
-                assertNotNull(capturedSms);
-                assertEquals("021234567", capturedSms.getTrnsmitTelno());
+        Sms capturedSms = smsCaptor.getValue();
+        assertNotNull(capturedSms);
+        assertEquals("021234567", capturedSms.getTrnsmitTelno());
 
-                verify(smsSender).send("021234567", "01012345678", "Test Message");
-                verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
-        }
+        verify(smsSender).send("021234567", "01012345678", "Test Message");
+        verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
+    }
 
-        @Test
-        void sendSms_Failure() {
-                // Given
-                String userId = "TEST_USER";
-                SmsRecptnDto recipientDto = SmsRecptnDto.builder()
-                                .recptnTelno("01012345678")
-                                .build();
-                SmsDto smsDto = SmsDto.builder()
-                                .trnsmitTelno("021234567")
-                                .trnsmitCn("Test Message")
-                                .recipients(List.of(recipientDto))
-                                .build();
+    @Test
+    void sendSms_Failure() {
+        // Given
+        String userId = "TEST_USER";
+        SmsRecptnDto recipientDto = SmsRecptnDto.builder()
+                .recptnTelno("01012345678")
+                .build();
+        SmsDto smsDto = SmsDto.builder()
+                .trnsmitTelno("021234567")
+                .trnsmitCn("Test Message")
+                .recipients(List.of(recipientDto))
+                .build();
 
-                when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
-                                java.util.Objects.requireNonNull(anyString()),
-                                java.util.Objects.requireNonNull(anyString())))
-                                .thenThrow(new RuntimeException("Send error"));
-                when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
+                java.util.Objects.requireNonNull(anyString()),
+                java.util.Objects.requireNonNull(anyString())))
+                .thenThrow(new RuntimeException("Send error"));
+        when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-                smsService.sendSms(userId, smsDto);
+        smsService.sendSms(userId, smsDto);
 
-                // Then
-                verify(smsSender).send("021234567", "01012345678", "Test Message");
-                verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
-        }
+        // Then
+        verify(smsSender).send("021234567", "01012345678", "Test Message");
+        verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
+    }
 }

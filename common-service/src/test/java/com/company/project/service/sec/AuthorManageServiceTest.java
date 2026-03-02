@@ -20,56 +20,56 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthorManageServiceTest {
 
-    @Mock
-    private AuthorityRepository authorityRepository;
+  @Mock
+  private AuthorityRepository authorityRepository;
 
-    @Mock
-    private RoleInfoRepository roleInfoRepository;
+  @Mock
+  private RoleInfoRepository roleInfoRepository;
 
-    @Mock
-    private AuthorityRoleRepository authorityRoleRepository;
+  @Mock
+  private AuthorityRoleRepository authorityRoleRepository;
 
-    @InjectMocks
-    private AuthorManageServiceImpl authorManageService;
+  @InjectMocks
+  private AuthorManageServiceImpl authorManageService;
 
-    @Test
-    @DisplayName("updateRole should update RoleInfo fields")
-    void updateRole_shouldUpdateRoleInfoFields() {
-        // Given
-        String roleCode = "ROLE_TEST";
-        RoleDto dto = RoleDto.builder()
-                .roleCode(roleCode)
-                .roleNm("Updated Name")
-                .rolePtn("Updated Pattern")
-                .roleDc("Updated Desc")
-                .roleTyp("Updated Type")
-                .roleSort("Updated Sort")
-                .build();
+  @Test
+  @DisplayName("updateRole should update RoleInfo fields")
+  void updateRole_shouldUpdateRoleInfoFields() {
+    // Given
+    String roleCode = "ROLE_TEST";
+    RoleDto dto = RoleDto.builder()
+        .roleCode(roleCode)
+        .roleNm("Updated Name")
+        .rolePtn("Updated Pattern")
+        .roleDc("Updated Desc")
+        .roleTyp("Updated Type")
+        .roleSort("Updated Sort")
+        .build();
 
-        RoleInfo role = RoleInfo.builder()
-                .roleCode(roleCode)
-                .roleNm("Original Name")
-                .rolePttrn("Original Pattern")
-                .roleDc("Original Desc")
-                .roleTy("Original Type")
-                .roleSort("Original Sort")
-                .build();
+    RoleInfo role = RoleInfo.builder()
+        .roleCode(roleCode)
+        .roleNm("Original Name")
+        .rolePttrn("Original Pattern")
+        .roleDc("Original Desc")
+        .roleTy("Original Type")
+        .roleSort("Original Sort")
+        .build();
 
-        when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(role));
+    when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.of(role));
 
-        // When
-        authorManageService.updateRole(java.util.Objects.requireNonNull(dto));
+    // When
+    authorManageService.updateRole(java.util.Objects.requireNonNull(dto));
 
-        // Then
-        // Since update method modifies the object state in place, we can verify the
-        // object state
-        assertEquals("Updated Name", role.getRoleNm());
-        assertEquals("Updated Pattern", role.getRolePttrn());
-        assertEquals("Updated Desc", role.getRoleDc());
-        assertEquals("Updated Type", role.getRoleTy());
-        assertEquals("Updated Sort", role.getRoleSort());
+    // Then
+    // Since update method modifies the object state in place, we can verify the
+    // object state
+    assertEquals("Updated Name", role.getRoleNm());
+    assertEquals("Updated Pattern", role.getRolePttrn());
+    assertEquals("Updated Desc", role.getRoleDc());
+    assertEquals("Updated Type", role.getRoleTy());
+    assertEquals("Updated Sort", role.getRoleSort());
 
-        // Verify findById was called
-        verify(roleInfoRepository, times(1)).findById(roleCode);
-    }
+    // Verify findById was called
+    verify(roleInfoRepository, times(1)).findById(roleCode);
+  }
 }

@@ -14,43 +14,43 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 /**
- * OpenAPI 문서 기반 ?�스??
- * API 문서?� ?�제 ?�드?�인??�??�치???�인
+ * OpenAPI 문서화?좎럩???
+ * API 문서 구조 확인???????좎럩?????좎럩??
  */
 @SpringBootTest
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 class OpenApiDocumentationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @Test
-    @DisplayName("OpenAPI 문서 ?�드?�인???�근 ?�스??)
-    void openApiDocumentation_endpoint_accessibility() throws Exception {
-        // When & Then - Swagger UI ?�근 ?�스??
-        mockMvc.perform(get("/swagger-ui/index.html")
-                .contentType(MediaType.TEXT_HTML))
-                .andExpect(status().isOk());
-    }
+  @Test
+  @DisplayName("OpenAPI API 문서 구조 확인)")
+  void openApiDocumentation_endpoint_accessibility() throws Exception {
+    // When & Then - Swagger UI ?좎럡????좎럩???
+    mockMvc.perform(get("/swagger-ui/index.html")
+        .contentType(MediaType.TEXT_HTML))
+        .andExpect(status().isOk());
+  }
 
-    @Test
-    @DisplayName("OpenAPI ?�펙 문서 ?�근 ?�스??)
-    void openApiSpec_endpoint_accessibility() throws Exception {
-        // When & Then - OpenAPI ?�펙 문서 ?�근 ?�스??
-        mockMvc.perform(get("/v3/api-docs")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
+  @Test
+  @DisplayName("OpenAPI 스펙?문서 조회?좎럩???)")
+  void openApiSpec_endpoint_accessibility() throws Exception {
+    // When & Then - OpenAPI 스펙?문서 조회?좎럩???
+    mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+  }
 
-    @Test
-    @DisplayName("?�정 API 그룹 OpenAPI ?�펙 ?�근 ?�스??)
-    void openApiSpec_specificGroup_accessibility() throws Exception {
-        // When & Then - ?�정 API 그룹 ?�펙 ?�근 ?�스??
-        mockMvc.perform(get("/v3/api-docs/user-api")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
+  @Test
+  @DisplayName("실제 API 경로OpenAPI 스펙???좎럡????좎럩???)")
+  void openApiSpec_specificGroup_accessibility() throws Exception {
+    // When & Then - 실제 API 경로스펙???좎럡????좎럩???
+    mockMvc.perform(get("/v3/api-docs/user-api")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+  }
 }

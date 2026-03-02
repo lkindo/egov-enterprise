@@ -1,6 +1,5 @@
 package com.company.project.service.usermanagement;
 
-import com.company.project.constants.Constants;
 import com.company.project.service.user.mapper.UserDtoMapper;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;

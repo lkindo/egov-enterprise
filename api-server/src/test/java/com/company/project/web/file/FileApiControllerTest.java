@@ -27,65 +27,65 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ?�일 API 컨트롤러 ?�라?�스 ?�스?? */
+ * 회원API ??쳜?猿낆뿉??댁몠 테스트사용자 */
 @WebMvcTest(controllers = FileController.class, excludeAutoConfiguration = {
-                DataSourceAutoConfiguration.class,
-                JpaRepositoriesAutoConfiguration.class,
-                HibernateJpaAutoConfiguration.class,
-                BatchAutoConfiguration.class
+        DataSourceAutoConfiguration.class,
+        JpaRepositoriesAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        BatchAutoConfiguration.class
 })
 @ActiveProfiles("test")
 class FileApiControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockitoBean
-        private FileService fileService;
+    @MockitoBean
+    private FileService fileService;
 
-        @MockitoBean
-        private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
-        @MockitoBean
-        private PasswordEncoder passwordEncoder;
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
-        @MockitoBean
-        private AuthenticationManager authenticationManager;
+    @MockitoBean
+    private AuthenticationManager authenticationManager;
 
-        @Test
-        @DisplayName("?�일 ?�로???�공")
-        void uploadFiles_success() throws Exception {
-                // Given
-                when(jwtTokenProvider.validateToken(any())).thenReturn(true);
-                when(fileService.uploadFiles(anyList())).thenReturn("FILE_ID_001");
+    @Test
+    @DisplayName("사용자 醫롫윥餓??성공)")
+    void uploadFiles_success() throws Exception {
+        // Given
+        when(jwtTokenProvider.validateToken(any())).thenReturn(true);
+        when(fileService.uploadFiles(anyList())).thenReturn("FILE_ID_001");
 
-                MockMultipartFile file1 = new MockMultipartFile(
-                                "files",
-                                "test1.txt",
-                                MediaType.TEXT_PLAIN_VALUE,
-                                "Hello World 1".getBytes());
+        MockMultipartFile file1 = new MockMultipartFile(
+                "files",
+                "test1.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "Hello World 1".getBytes());
 
-                // When & Then
-                mockMvc.perform(multipart("/api/v1/files")
-                                .file(file1)
-                                .header("Authorization", "Bearer mock-token"))
-                                .andDo(print())
-                                .andExpect(status().isOk());
-        }
+        // When & Then
+        mockMvc.perform(multipart("/api/v1/files")
+                .file(file1)
+                .header("Authorization", "Bearer mock-token"))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        @DisplayName("?�증 ?�이 ?�일 ?�로????401 ?�러")
-        void uploadFiles_unauthorized() throws Exception {
-                MockMultipartFile file1 = new MockMultipartFile(
-                                "files",
-                                "test1.txt",
-                                MediaType.TEXT_PLAIN_VALUE,
-                                "Hello World 1".getBytes());
+    @Test
+    @DisplayName("??醫롫윪凉사용자 醫롫윥餓????401 테스트)")
+    void uploadFiles_unauthorized() throws Exception {
+        MockMultipartFile file1 = new MockMultipartFile(
+                "files",
+                "test1.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "Hello World 1".getBytes());
 
-                // When & Then
-                mockMvc.perform(multipart("/api/v1/files")
-                                .file(file1))
-                                .andDo(print())
-                                .andExpect(status().isUnauthorized());
-        }
+        // When & Then
+        mockMvc.perform(multipart("/api/v1/files")
+                .file(file1))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
 }

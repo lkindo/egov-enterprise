@@ -24,60 +24,60 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class MenuDataInitializerPerfTest {
 
-    @Mock
-    private MenuRepository menuRepository;
+  @Mock
+  private MenuRepository menuRepository;
 
-    @Mock
-    private JdbcTemplate jdbcTemplate;
+  @Mock
+  private JdbcTemplate jdbcTemplate;
 
-    private MenuDataInitializer initializer;
-    private File tempFile;
+  private MenuDataInitializer initializer;
+  private File tempFile;
 
-    @BeforeEach
-    void setUp() throws IOException {
-        initializer = new MenuDataInitializer(menuRepository, jdbcTemplate);
-        tempFile = File.createTempFile("large_test_sql", ".sql");
-        generateLargeFile(tempFile, 200000); // 200k lines
-        initializer.setScriptFile(tempFile);
+  @BeforeEach
+  void setUp() throws IOException {
+    initializer = new MenuDataInitializer(menuRepository, jdbcTemplate);
+    tempFile = File.createTempFile("large_test_sql", ".sql");
+    generateLargeFile(tempFile, 200000); // 200k lines
+    initializer.setScriptFile(tempFile);
+  }
+
+  @AfterEach
+  void tearDown() {
+    if (tempFile != null && tempFile.exists()) {
+      tempFile.delete();
     }
+  }
 
-    @AfterEach
-    void tearDown() {
-        if (tempFile != null && tempFile.exists()) {
-            tempFile.delete();
+  private void generateLargeFile(File file, int lines) throws IOException {
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+      for (int i = 0; i < lines; i++) {
+        if (i % 2 == 0) {
+          writer.write("INSERT INTO NMENUINFO VALUES (" + i + ", 'Menu " + i + "');");
+        } else {
+          writer.write("INSERT INTO NPROGRMLIST VALUES (" + i + ", 'Program " + i + "');");
         }
+        writer.newLine();
+      }
     }
+  }
 
-    private void generateLargeFile(File file, int lines) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (int i = 0; i < lines; i++) {
-                if (i % 2 == 0) {
-                    writer.write("INSERT INTO NMENUINFO VALUES (" + i + ", 'Menu " + i + "');");
-                } else {
-                    writer.write("INSERT INTO NPROGRMLIST VALUES (" + i + ", 'Program " + i + "');");
-                }
-                writer.newLine();
-            }
-        }
-    }
+  @Test
+  void benchmarkRun() throws Exception {
+    lenient().when(menuRepository.count()).thenReturn(0L);
+    lenient().when(jdbcTemplate.queryForObject(java.util.Objects.requireNonNull(anyString()),
+        eq(java.util.Objects.requireNonNull(Integer.class)))).thenReturn(0);
 
-    @Test
-    void benchmarkRun() throws Exception {
-        lenient().when(menuRepository.count()).thenReturn(0L);
-        lenient().when(jdbcTemplate.queryForObject(java.util.Objects.requireNonNull(anyString()),
-                eq(java.util.Objects.requireNonNull(Integer.class)))).thenReturn(0);
+    // Mock execute to simulate DB work (fast)
+    lenient().doAnswer(invocation -> null).when(jdbcTemplate)
+        .execute(java.util.Objects.requireNonNull(anyString()));
 
-        // Mock execute to simulate DB work (fast)
-        lenient().doAnswer(invocation -> null).when(jdbcTemplate)
-                .execute(java.util.Objects.requireNonNull(anyString()));
+    long start = System.nanoTime();
+    initializer.run();
+    long end = System.nanoTime();
 
-        long start = System.nanoTime();
-        initializer.run();
-        long end = System.nanoTime();
+    System.out.println("Execution Time: " + (end - start) / 1_000_000.0 + " ms");
 
-        System.out.println("Execution Time: " + (end - start) / 1_000_000.0 + " ms");
-
-        // Verify that all lines were executed
-        verify(jdbcTemplate, times(200000)).execute(java.util.Objects.requireNonNull(anyString()));
-    }
+    // Verify that all lines were executed
+    verify(jdbcTemplate, times(200000)).execute(java.util.Objects.requireNonNull(anyString()));
+  }
 }

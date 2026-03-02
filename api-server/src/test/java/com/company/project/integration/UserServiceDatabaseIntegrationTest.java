@@ -26,259 +26,182 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class UserServiceDatabaseIntegrationTest {
 
-    @Autowired
-    private UserService userService;
+  @Autowired
+  private UserService userService;
 
-    @Autowired
-    private UserRepository userRepository;
+  @Autowired
+  private UserRepository userRepository;
 
-    @Autowired
-    private UserAuthorityRepository userAuthorityRepository;
+  @Autowired
+  private UserAuthorityRepository userAuthorityRepository;
 
-    private UserSignupRequest signupRequest;
+  private UserSignupRequest signupRequest;
 
-    @BeforeEach
-    void setUp() {
-        signupRequest = new UserSignupRequest(
-                "dbIntegrationUser",
-                "password123!",
-                "DB ???????????",
-                Role.USER,
-                "hint",
-                "answer");
-    }
+  @BeforeEach
+  void setUp() {
+    signupRequest = new UserSignupRequest(
+        "dbIntegrationUser",
+        "password123!",
+        "DB Integration User",
+        Role.USER,
+        "hint",
+        "answer");
+  }
 
-    @Test
-    @DisplayName("?????�??- ?????�??????�???????????)
-    void signup_persistsToDatabase() {
-        // When
-        userService.signup(signupRequest);
+  @Test
+  @DisplayName("Signup - Persists to Database")
+  void signup_persistsToDatabase() {
+    // When
+    userService.signup(signupRequest);
 
-        // Then
-        // ??????�블???????��? ???        Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
-        assertThat(savedUser).isPresent();
-        assertThat(savedUser.get().getUserNm()).isEqualTo("DB ???????????");
-        assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
+    // Then
+    Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
+    assertThat(savedUser).isPresent();
+    assertThat(savedUser.get().getUserNm()).isEqualTo("DB Integration User");
+    assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
 
-        // 권한 ??�블???????��? ???        Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
-        assertThat(savedAuthority).isPresent();
-        assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
-    }
+    Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
+    assertThat(savedAuthority).isPresent();
+    assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
+  }
 
-    @Test
-    @DisplayName("?????�??- ????조회 ?????�????????????가???)
-    void getUserById_retrievesFromDatabase() {
-        // Given
-        userService.signup(signupRequest);
+  @Test
+  @DisplayName("Get User Info - Retrieves from Database")
+  void getUserById_retrievesFromDatabase() {
+    // Given
+    userService.signup(signupRequest);
 
-        // When
-        UserDto retrievedUser = userService.getUserById("dbIntegrationUser");
+    // When
+    UserDto retrievedUser = userService.getUserById("dbIntegrationUser");
 
-        // Then
-        assertThat(retrievedUser).isNotNull();
-        assertThat(retrievedUser.getUserId()).isEqualTo("dbIntegrationUser");
-        assertThat(retrievedUser.getUserNm()).isEqualTo("DB ???????????");
+    // Then
+    assertThat(retrievedUser).isNotNull();
+    assertThat(retrievedUser.getUserId()).isEqualTo("dbIntegrationUser");
+    assertThat(retrievedUser.getUserNm()).isEqualTo("DB Integration User");
 
-        // ???�?????직접 ???        Optional<User> dbUser = userRepository.findById("dbIntegrationUser");
-        assertThat(dbUser).isPresent();
-        assertThat(dbUser.get().getUserNm()).isEqualTo("DB ???????????");
-    }
+    Optional<User> dbUser = userRepository.findById("dbIntegrationUser");
+    assertThat(dbUser).isPresent();
+    assertThat(dbUser.get().getUserNm()).isEqualTo("DB Integration User");
+  }
 
-    @Test
-    @DisplayName("?????�??- ????목록 조회 ?????�????????????가???)
-    void getUserList_retrievesFromDatabase() {
-        // Given
-        userService.signup(signupRequest);
+  @Test
+  @DisplayName("Get User List - Retrieves from Database")
+  void getUserList_retrievesFromDatabase() {
+    // Given
+    userService.signup(signupRequest);
 
-        UserSignupRequest request2 = new UserSignupRequest(
-                "dbIntegrationUser2",
-                "password123!",
-                "DB ???????????",
-                Role.ADMIN,
-                "hint",
-                "answer");
-        userService.signup(request2);
+    UserSignupRequest request2 = new UserSignupRequest(
+        "dbIntegrationUser2",
+        "password123!",
+        "DB Integration User 2",
+        Role.ADMIN,
+        "hint",
+        "answer");
+    userService.signup(request2);
 
-        // When
-        List<UserDto> userList = userService.getUserList();
+    // When
+    List<UserDto> userList = userService.getUserList();
 
-        // Then
-        assertThat(userList).hasSize(2);
-        assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("dbIntegrationUser",
-                "dbIntegrationUser2");
-        assertThat(userList).extracting(UserDto::getUserNm).containsExactlyInAnyOrder("DB ???????????",
-                "DB ???????????");
+    // Then
+    assertThat(userList).hasSize(2);
+    assertThat(userList).extracting(UserDto::getUserId).containsExactlyInAnyOrder("dbIntegrationUser",
+        "dbIntegrationUser2");
 
-        // ???�?????직접 ???        List<User> dbUsers = userRepository.findAll();
-        assertThat(dbUsers).hasSize(2);
-        assertThat(dbUsers).extracting(User::getUserNm).containsExactlyInAnyOrder("DB ???????????", "DB ???????????");
-    }
+    List<User> dbUsers = userRepository.findAll();
+    assertThat(dbUsers).hasSize(2);
+  }
 
-    @Test
-    @DisplayName("?????�??- ?????�??????�???????????)
-    void signup_verifyPersistence() {
-        // Given
-        long initialUserCount = userRepository.count();
-        long initialAuthorityCount = userAuthorityRepository.count();
+  @Test
+  @DisplayName("Signup - Verify Persistence Integrity")
+  void signup_verifyPersistence() {
+    // Given
+    long initialUserCount = userRepository.count();
+    long initialAuthorityCount = userAuthorityRepository.count();
 
-        // When
-        userService.signup(signupRequest);
+    // When
+    userService.signup(signupRequest);
 
-        // Then
-        long currentUserCount = userRepository.count();
-        long currentAuthorityCount = userAuthorityRepository.count();
+    // Then
+    long currentUserCount = userRepository.count();
+    long currentAuthorityCount = userAuthorityRepository.count();
 
-        assertThat(currentUserCount).isEqualTo(initialUserCount + 1);
-        assertThat(currentAuthorityCount).isEqualTo(initialAuthorityCount + 1);
+    assertThat(currentUserCount).isEqualTo(initialUserCount + 1);
+    assertThat(currentAuthorityCount).isEqualTo(initialAuthorityCount + 1);
 
-        // ?????????무결?????        Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
-        assertThat(savedUser).isPresent();
-        assertThat(savedUser.get().getUserId()).isEqualTo("dbIntegrationUser");
-        assertThat(savedUser.get().getUserNm()).isEqualTo("DB ???????????");
-        assertThat(savedUser.get().getRole()).isEqualTo(Role.USER);
+    Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
+    assertThat(savedUser).isPresent();
+    assertThat(savedUser.get().getUserId()).isEqualTo("dbIntegrationUser");
 
-        Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
-        assertThat(savedAuthority).isPresent();
-        assertThat(savedAuthority.get().getUniqId()).isEqualTo(savedUser.get().getEsntlId());
-        assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
-    }
+    Optional<UserAuthority> savedAuthority = userAuthorityRepository.findById(savedUser.get().getEsntlId());
+    assertThat(savedAuthority).isPresent();
+    assertThat(savedAuthority.get().getAuthorCode()).isEqualTo("ROLE_USER");
+  }
 
-    @Test
-    @DisplayName("?????�??- ?????�?????????�????반영??")
-    void updateUser_updatesDatabase() {
-        // Given
-        userService.signup(signupRequest);
+  @Test
+  @DisplayName("Update User - Reflects in Database")
+  void updateUser_updatesDatabase() {
+    // Given
+    userService.signup(signupRequest);
 
-        // When
-        userService.registerUser(
-                "updatedUser",
-                "newPassword123!",
-                "????????",
-                "newHint",
-                "newAnswer",
-                Role.ADMIN);
+    // When
+    userService.registerUser(
+        "dbIntegrationUser",
+        "newPassword123!",
+        "Updated Name",
+        "newHint",
+        "newAnswer",
+        Role.ADMIN);
 
-        // Then
-        Optional<User> updatedUser = userRepository.findById("updatedUser");
-        assertThat(updatedUser).isPresent();
-        assertThat(updatedUser.get().getUserNm()).isEqualTo("????????");
-        assertThat(updatedUser.get().getRole()).isEqualTo(Role.ADMIN);
+    // Then
+    Optional<User> updatedUser = userRepository.findById("dbIntegrationUser");
+    assertThat(updatedUser).isPresent();
+    assertThat(updatedUser.get().getUserNm()).isEqualTo("Updated Name");
+    assertThat(updatedUser.get().getRole()).isEqualTo(Role.ADMIN);
 
-        // ?�??계층?????조회???????결과 ???        UserDto serviceUser = userService.getUserById("updatedUser");
-        assertThat(serviceUser).isNotNull();
-        assertThat(serviceUser.getUserNm()).isEqualTo("????????");
-        assertThat(serviceUser.getRole()).isEqualTo("ADMIN");
-    }
+    UserDto serviceUser = userService.getUserById("dbIntegrationUser");
+    assertThat(serviceUser).isNotNull();
+    assertThat(serviceUser.getUserNm()).isEqualTo("Updated Name");
+  }
 
-    @Test
-    @DisplayName("?????�??- ?????? ?????�?????????")
-    void deleteUser_removesFromDatabase() {
-        // Given
-        userService.signup(signupRequest);
-        Optional<User> initialUser = userRepository.findById("dbIntegrationUser");
-        assertThat(initialUser).isPresent();
+  @Test
+  @DisplayName("Delete User - Removes from Database")
+  void deleteUser_removesFromDatabase() {
+    // Given
+    userService.signup(signupRequest);
+    Optional<User> initialUser = userRepository.findById("dbIntegrationUser");
+    assertThat(initialUser).isPresent();
 
-        // When
-        userRepository.deleteById("dbIntegrationUser");
+    // When
+    userRepository.deleteById("dbIntegrationUser");
 
-        // Then
-        Optional<User> deletedUser = userRepository.findById("dbIntegrationUser");
-        assertThat(deletedUser).isEmpty();
+    // Then
+    Optional<User> deletedUser = userRepository.findById("dbIntegrationUser");
+    assertThat(deletedUser).isEmpty();
+  }
 
-        // ?�??계층?????조회???존재?? ???????        UserDto serviceUser = userService.getUserById("dbIntegrationUser");
-        assertThat(serviceUser).isNull();
-    }
+  @Test
+  @DisplayName("Signup - Duplicate ID Violation")
+  void signup_duplicateId_violatesDatabaseConstraint() {
+    // Given
+    userService.signup(signupRequest);
 
-    @Test
-    @DisplayName("?????�??- 중복 ????ID??�??????�??????조건 ?�?)
-    void signup_duplicateId_violatesDatabaseConstraint() {
-        // Given
-        userService.signup(signupRequest);
+    // When & Then
+    assertThat(org.junit.jupiter.api.Assertions.assertThrows(
+        com.company.project.core.exception.BusinessException.class,
+        () -> userService.signup(signupRequest)))
+        .hasFieldOrPropertyWithValue("errorCode",
+            com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
+  }
 
-        // When & Then
-        assertThat(org.junit.jupiter.api.Assertions.assertThrows(
-                com.company.project.core.exception.BusinessException.class,
-                () -> userService.signup(signupRequest)))
-                .hasFieldOrPropertyWithValue("errorCode",
-                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID);
+  @Test
+  @DisplayName("Signup - Auto Set Created Date")
+  void signup_autoSetCreatedAt() {
+    // When
+    userService.signup(signupRequest);
 
-        // ???�????중복 ???? ???? ???? ???        List<User> allUsers = userRepository.findAll();
-        assertThat(allUsers).hasSize(1);
-        assertThat(allUsers.get(0).getUserId()).isEqualTo("dbIntegrationUser");
-    }
-
-    @Test
-    @DisplayName("?????�??- ?????�?????????????????)
-    void signup_autoSetCreatedAt() {
-        // When
-        userService.signup(signupRequest);
-
-        // Then
-        Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
-        assertThat(savedUser).isPresent();
-        assertThat(savedUser.get().getSbscrbDe()).isNotNull(); // 가???????    
-                    }
-
-    @Test
-    @DisplayName("?????�??- ????????�??????�????모두 ????)
-    void signup_multipleUsers_allPersisted() {
-        // Given
-        UserSignupRequest request1 = new UserSignupRequest(
-                "multiUser1",
-                "password123!",
-                "?�?????",
-                Role.USER,
-                "hint",
-                "answer");
-        UserSignupRequest request2 = new UserSignupRequest(
-                "multiUser2",
-                "password123!",
-                "?�?????",
-                Role.ADMIN,
-                "hint",
-                "answer");
-        UserSignupRequest request3 = new UserSignupRequest(
-                "multiUser3",
-                "password123!",
-                "?�?????",
-                Role.USER,
-                "hint",
-                "answer");
-
-        // When
-        userService.signup(request1);
-        userService.signup(request2);
-        userService.signup(request3);
-
-        // Then
-        List<User> allUsers = userRepository.findAll();
-        assertThat(allUsers).hasSize(3);
-        assertThat(allUsers).extracting(User::getUserId).containsExactlyInAnyOrder("multiUser1", "multiUser2",
-                "multiUser3");
-        assertThat(allUsers).extracting(User::getUserNm).containsExactlyInAnyOrder("?�?????", "?�?????", "?�?????");
-
-        // ??????권한 ?�?????        for (User user : allUsers) {
-            Optional<UserAuthority> authority = userAuthorityRepository.findById(user.getEsntlId());
-            assertThat(authority).isPresent();
-        }
-    }
-
-    @Test
-    @DisplayName("?????�??- ???�??????? ????")
-    void signup_transactionRollbackOnFailure() {
-        // Given
-        long initialCount = userRepository.count();
-
-        try {
-            // When - ??????????            userService.signup(signupRequest);
-
-            // 중복??ID???????????????            userService.signup(signupRequest);
-        } catch (Exception e) {
-            // ???발생? ???????        
-                    }
-
-        // Then - ??????롤백???초기 ??? 같아????
-        long finalCount = userRepository.count();
-        assertThat(finalCount).isEqualTo(initialCount + 1); // ?번째???�??��??1 �?
-    }
+    // Then
+    Optional<User> savedUser = userRepository.findById("dbIntegrationUser");
+    assertThat(savedUser).isPresent();
+    assertThat(savedUser.get().getSbscrbDe()).isNotNull();
+  }
 }

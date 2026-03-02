@@ -24,45 +24,45 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DutyServiceTest {
 
-        @Mock
-        private BndtManageRepository bndtManageRepository;
+    @Mock
+    private BndtManageRepository bndtManageRepository;
 
-        @Mock
-        private BndtDiaryRepository bndtDiaryRepository;
+    @Mock
+    private BndtDiaryRepository bndtDiaryRepository;
 
-        @Mock
-        private BndtCeckManageRepository bndtCeckManageRepository;
+    @Mock
+    private BndtCeckManageRepository bndtCeckManageRepository;
 
-        @InjectMocks
-        private DutyService dutyService;
+    @InjectMocks
+    private DutyService dutyService;
 
-        @Test
-        @DisplayName("?�직 ?��? ?�이지 조회 ?�비???�스??)
-        void getDutyList_Pagination() {
-                // given
-                BndtManage duty = BndtManage.builder()
-                                .bndtId("TEST_ID")
-                                .bndtDe("20231001")
-                                .remark("Remark")
-                                .build();
+    @Test
+    @DisplayName("스케줄 등록 ?좎럩?좑쭪? 조회??좎럥?????좎럩???)")
+    void getDutyList_Pagination() {
+        // given
+        BndtManage duty = BndtManage.builder()
+                .bndtId("TEST_ID")
+                .bndtDe("20231001")
+                .remark("Remark")
+                .build();
 
-                Pageable pageable = PageRequest.of(0, 10);
-                Page<BndtManage> dutyPage = new PageImpl<>(
-                                java.util.Objects.requireNonNull(Collections.singletonList(duty)), pageable, 1);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<BndtManage> dutyPage = new PageImpl<>(
+                java.util.Objects.requireNonNull(Collections.singletonList(duty)), pageable, 1);
 
-                given(bndtManageRepository.findByBndtDeStartingWith(anyString(), any(Pageable.class)))
-                                .willReturn(dutyPage);
+        given(bndtManageRepository.findByBndtDeStartingWith(anyString(), any(Pageable.class)))
+                .willReturn(dutyPage);
 
-                given(bndtDiaryRepository.findByBndtDeStartingWith(anyString()))
-                                .willReturn(Collections.emptyList());
+        given(bndtDiaryRepository.findByBndtDeStartingWith(anyString()))
+                .willReturn(Collections.emptyList());
 
-                // when
-                Page<DutyDto> resultPage = dutyService.getDutyList("202310", pageable);
+        // when
+        Page<DutyDto> resultPage = dutyService.getDutyList("202310", pageable);
 
-                // then
-                assertThat(resultPage.getTotalElements()).isEqualTo(1);
-                assertThat(resultPage.getContent().get(0).getBndtDe()).isEqualTo("20231001");
+        // then
+        assertThat(resultPage.getTotalElements()).isEqualTo(1);
+        assertThat(resultPage.getContent().get(0).getBndtDe()).isEqualTo("20231001");
 
-                verify(bndtManageRepository).findByBndtDeStartingWith(anyString(), any(Pageable.class));
-        }
+        verify(bndtManageRepository).findByBndtDeStartingWith(anyString(), any(Pageable.class));
+    }
 }

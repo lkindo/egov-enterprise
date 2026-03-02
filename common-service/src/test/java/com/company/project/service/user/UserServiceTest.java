@@ -24,96 +24,97 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 /**
- * UserService ?�위 ?�스?? */
+ * UserService 단위 테스트
+ */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-        @Mock
-        private UserRepository userRepository;
+    @Mock
+    private UserRepository userRepository;
 
-        @Mock
-        private UserAuthorityRepository userAuthorityRepository;
+    @Mock
+    private UserAuthorityRepository userAuthorityRepository;
 
-        @Mock
-        private PasswordEncoder passwordEncoder;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
-        @Mock
-        private UserMapper userMapper;
+    @Mock
+    private UserMapper userMapper;
 
-        @InjectMocks
-        private UserService userService;
+    @InjectMocks
+    private UserService userService;
 
-        @Test
-        @DisplayName("?�용??목록 조회 ?�공")
-        void getUserList_success() {
-                // given
-                User user = User.builder()
-                                .userId("testUser")
-                                .password("password")
-                                .userNm("?�스???�용??)
-                                .esntlId("USR_001")
-                                .role(Role.USER)
-                                .build();
+    @Test
+    @DisplayName("사용자 목록 조회 성공")
+    void getUserList_success() {
+        // given
+        User user = User.builder()
+                .userId("testUser")
+                .password("password")
+                .userNm("테스트 사용자")
+                .esntlId("USR_001")
+                .role(Role.USER)
+                .build();
 
-                UserDto userDto = UserDto.builder()
-                                .userId("testUser")
-                                .userNm("?�스???�용??)
-                                .esntlId("USR_001")
-                                .role("USER")
-                                .build();
+        UserDto userDto = UserDto.builder()
+                .userId("testUser")
+                .userNm("테스트 사용자")
+                .esntlId("USR_001")
+                .role("USER")
+                .build();
 
-                given(userRepository.findAll()).willReturn(List.of(user));
-                given(userMapper.toDtoWithAuthority(any(User.class), any())).willReturn(userDto);
+        given(userRepository.findAll()).willReturn(List.of(user));
+        given(userMapper.toDtoWithAuthority(any(User.class), any())).willReturn(userDto);
 
-                // when
-                List<UserDto> result = userService.getUserList();
+        // when
+        List<UserDto> result = userService.getUserList();
 
-                // then
-                assertThat(result).hasSize(1);
-                assertThat(result.get(0).getUserId()).isEqualTo("testUser");
-                assertThat(result.get(0).getUserNm()).isEqualTo("?�스???�용??);
-        }
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getUserId()).isEqualTo("testUser");
+        assertThat(result.get(0).getUserNm()).isEqualTo("테스트 사용자");
+    }
 
-        @Test
-        @DisplayName("?�용???�세 조회 ?�공")
-        void getUserById_success() {
-                // given
-                String userId = "testUser";
-                User user = User.builder()
-                                .userId(userId)
-                                .password("password")
-                                .userNm("?�스???�용??)
-                                .esntlId("USR_001")
-                                .role(Role.ADMIN)
-                                .build();
+    @Test
+    @DisplayName("사용자 ID로 단건 조회 성공")
+    void getUserById_success() {
+        // given
+        String userId = "testUser";
+        User user = User.builder()
+                .userId(userId)
+                .password("password")
+                .userNm("테스트 사용자")
+                .esntlId("USR_001")
+                .role(Role.ADMIN)
+                .build();
 
-                UserDto userDto = UserDto.builder()
-                                .userId(userId)
-                                .userNm("?�스???�용??)
-                                .esntlId("USR_001")
-                                .role("ADMIN")
-                                .build();
+        UserDto userDto = UserDto.builder()
+                .userId(userId)
+                .userNm("테스트 사용자")
+                .esntlId("USR_001")
+                .role("ADMIN")
+                .build();
 
-                given(userRepository.findById(userId)).willReturn(Optional.of(user));
-                given(userMapper.toDtoWithAuthority(any(User.class), any())).willReturn(userDto);
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userMapper.toDtoWithAuthority(any(User.class), any())).willReturn(userDto);
 
-                // when
-                UserDto result = userService.getUserById(userId);
+        // when
+        UserDto result = userService.getUserById(userId);
 
-                // then
-                assertThat(result.getUserId()).isEqualTo(userId);
-                assertThat(result.getRole()).isEqualTo("ADMIN");
-        }
+        // then
+        assertThat(result.getUserId()).isEqualTo(userId);
+        assertThat(result.getRole()).isEqualTo("ADMIN");
+    }
 
-        @Test
-        @DisplayName("존재?��? ?�는 ?�용??조회 ???�외 발생")
-        void getUserById_notFound() {
-                // given
-                String userId = "notExist";
-                given(userRepository.findById(userId)).willReturn(Optional.empty());
+    @Test
+    @DisplayName("존재하지 않는 사용자 ID 조회 시 예외 발생")
+    void getUserById_notFound() {
+        // given
+        String userId = "notExist";
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-                // when & then
-                assertThatThrownBy(() -> userService.getUserById(userId))
-                                .isInstanceOf(BusinessException.class);
-        }
+        // when & then
+        assertThatThrownBy(() -> userService.getUserById(userId))
+                .isInstanceOf(BusinessException.class);
+    }
 }

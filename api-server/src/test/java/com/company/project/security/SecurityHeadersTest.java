@@ -25,35 +25,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("dev") // To ensure SecurityConfig loads (!test)
 public class SecurityHeadersTest {
 
-    @Configuration
-    @EnableAutoConfiguration
-    static class TestConfig {
+  @Configuration
+  @EnableAutoConfiguration
+  static class TestConfig {
+  }
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @MockitoBean
+  private CustomUserDetailsService customUserDetailsService;
+
+  @MockitoBean
+  private JwtTokenProvider jwtTokenProvider;
+
+  @RestController("headersTestController")
+  static class TestController {
+    @GetMapping("/test-headers")
+    public String test() {
+      return "ok";
     }
+  }
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @RestController("headersTestController")
-    static class TestController {
-        @GetMapping("/test-headers")
-        public String test() {
-            return "ok";
-        }
-    }
-
-    @Test
-    public void testSecurityHeaders() throws Exception {
-        mockMvc.perform(get("/test-headers").secure(true))
-                .andExpect(header().exists("X-Content-Type-Options"))
-                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
-                .andExpect(header().exists("X-XSS-Protection"))
-                .andExpect(header().string("X-XSS-Protection", "1; mode=block"))
-                .andExpect(header().exists("Strict-Transport-Security"));
-    }
+  @Test
+  public void testSecurityHeaders() throws Exception {
+    mockMvc.perform(get("/test-headers").secure(true))
+        .andExpect(header().exists("X-Content-Type-Options"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+        .andExpect(header().exists("X-XSS-Protection"))
+        .andExpect(header().string("X-XSS-Protection", "1; mode=block"))
+        .andExpect(header().exists("Strict-Transport-Security"));
+  }
 }

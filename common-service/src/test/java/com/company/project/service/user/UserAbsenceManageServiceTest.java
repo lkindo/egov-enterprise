@@ -28,65 +28,65 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class UserAbsenceManageServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-    @Mock
-    private UserAbsenceRepository userAbsenceRepository;
+  @Mock
+  private UserAbsenceRepository userAbsenceRepository;
 
-    @InjectMocks
-    private UserAbsenceManageService userAbsenceManageService;
+  @InjectMocks
+  private UserAbsenceManageService userAbsenceManageService;
 
-    @Test
-    @DisplayName("Verify N+1 query behavior is fixed in selectUserAbsenceList")
-    void selectUserAbsenceList_checkRepositoryInteractions() {
-        // given
-        List<User> users = new ArrayList<>();
-        int userCount = 5;
-        for (int i = 0; i < userCount; i++) {
-            users.add(User.builder()
-                    .userId("user" + i)
-                    .userNm("User " + i)
-                    .esntlId("ESNTL_" + i)
-                    .password("pw")
-                    .build());
-        }
-        Page<User> userPage = new PageImpl<>(java.util.Objects.requireNonNull(users));
-
-        given(userRepository.findAll(java.util.Objects.requireNonNull(any(Pageable.class)))).willReturn(userPage);
-
-        // Mock findAllById
-        List<UserAbsence> absences = new ArrayList<>();
-        // Add one absence for user0
-        absences.add(UserAbsence.builder()
-                .userId("user0")
-                .userAbsnceAt("Y")
-                .build());
-        given(userAbsenceRepository.findAllById(java.util.Objects.requireNonNull(any())))
-                .willReturn(java.util.Objects.requireNonNull(absences));
-
-        // when
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setPageIndex(1);
-        searchVO.setPageUnit(10);
-        List<UserAbsenceDto> result = userAbsenceManageService.selectUserAbsenceList(searchVO);
-
-        // then
-        assertThat(result).hasSize(userCount);
-
-        // Verify user0 has absence
-        assertThat(result.get(0).getUserId()).isEqualTo("user0");
-        assertThat(result.get(0).getUserAbsnceAt()).isEqualTo("Y");
-        assertThat(result.get(0).getRegYn()).isEqualTo("Y");
-
-        // Verify user1 has no absence
-        assertThat(result.get(1).getUserId()).isEqualTo("user1");
-        assertThat(result.get(1).getUserAbsnceAt()).isEqualTo("N");
-        assertThat(result.get(1).getRegYn()).isEqualTo("N");
-
-        // Verify findAllById called once
-        verify(userAbsenceRepository, times(1)).findAllById(java.util.Objects.requireNonNull(any()));
-        // Verify findById called zero times
-        verify(userAbsenceRepository, times(0)).findById(java.util.Objects.requireNonNull(any(String.class)));
+  @Test
+  @DisplayName("Verify N+1 query behavior is fixed in selectUserAbsenceList")
+  void selectUserAbsenceList_checkRepositoryInteractions() {
+    // given
+    List<User> users = new ArrayList<>();
+    int userCount = 5;
+    for (int i = 0; i < userCount; i++) {
+      users.add(User.builder()
+          .userId("user" + i)
+          .userNm("User " + i)
+          .esntlId("ESNTL_" + i)
+          .password("pw")
+          .build());
     }
+    Page<User> userPage = new PageImpl<>(java.util.Objects.requireNonNull(users));
+
+    given(userRepository.findAll(java.util.Objects.requireNonNull(any(Pageable.class)))).willReturn(userPage);
+
+    // Mock findAllById
+    List<UserAbsence> absences = new ArrayList<>();
+    // Add one absence for user0
+    absences.add(UserAbsence.builder()
+        .userId("user0")
+        .userAbsnceAt("Y")
+        .build());
+    given(userAbsenceRepository.findAllById(java.util.Objects.requireNonNull(any())))
+        .willReturn(java.util.Objects.requireNonNull(absences));
+
+    // when
+    ComDefaultVO searchVO = new ComDefaultVO();
+    searchVO.setPageIndex(1);
+    searchVO.setPageUnit(10);
+    List<UserAbsenceDto> result = userAbsenceManageService.selectUserAbsenceList(searchVO);
+
+    // then
+    assertThat(result).hasSize(userCount);
+
+    // Verify user0 has absence
+    assertThat(result.get(0).getUserId()).isEqualTo("user0");
+    assertThat(result.get(0).getUserAbsnceAt()).isEqualTo("Y");
+    assertThat(result.get(0).getRegYn()).isEqualTo("Y");
+
+    // Verify user1 has no absence
+    assertThat(result.get(1).getUserId()).isEqualTo("user1");
+    assertThat(result.get(1).getUserAbsnceAt()).isEqualTo("N");
+    assertThat(result.get(1).getRegYn()).isEqualTo("N");
+
+    // Verify findAllById called once
+    verify(userAbsenceRepository, times(1)).findAllById(java.util.Objects.requireNonNull(any()));
+    // Verify findById called zero times
+    verify(userAbsenceRepository, times(0)).findById(java.util.Objects.requireNonNull(any(String.class)));
+  }
 }

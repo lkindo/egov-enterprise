@@ -15,94 +15,94 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * AnniversaryService ???? ???��??
- * Note: DB ??�빟議곌�??�몄?�濡??명빐 ?꾩옱 ??��??깊솕??
+ * AnniversaryService 상세 통합 테스트
+ * Note: DB 연동이 필요하며 실제 DB를 사용하는 통합 테스트입니다.
  */
 @DataJpaTest(properties = {
-        "spring.jpa.show-sql=true",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.jpa.show-sql=true",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 @Import(AnniversaryService.class)
 @Transactional
 @Rollback
-@org.junit.jupiter.api.Disabled("DB ??�빟議곌�??�몄??- ?꾩냽 ?묒뾽 ?꾩슂")
+@org.junit.jupiter.api.Disabled("DB 연동이 필요하여 통합테스트 환경에서 실행")
 public class AnniversaryServiceIntegrationTest {
 
-    @Autowired
-    private AnniversaryService anniversaryService;
+  @Autowired
+  private AnniversaryService anniversaryService;
 
-    @Autowired
-    @Qualifier("ansAnniversaryRepository")
-    private AnniversaryRepository anniversaryRepository;
+  @Autowired
+  @Qualifier("ansAnniversaryRepository")
+  private AnniversaryRepository anniversaryRepository;
 
-    private Anniversary ann1;
-    private Anniversary ann2;
+  private Anniversary ann1;
+  private Anniversary ann2;
 
-    @BeforeEach
-    @Transactional
-    void setUp() {
-        anniversaryRepository.deleteAll();
+  @BeforeEach
+  @Transactional
+  void setUp() {
+    anniversaryRepository.deleteAll();
 
-        ann1 = Anniversary.builder()
-                .annId("ANN_001")
-                .usid("USER_001")
-                .annvrsrySe("1")
-                .annvrsryNm("Birthday")
-                .annvrsryDe("20231010")
-                .cldrSe("1")
-                .reptitAt("1")
-                .build();
-        anniversaryRepository.save(java.util.Objects.requireNonNull(ann1));
+    ann1 = Anniversary.builder()
+        .annId("ANN_001")
+        .usid("USER_001")
+        .annvrsrySe("1")
+        .annvrsryNm("Birthday")
+        .annvrsryDe("20231010")
+        .cldrSe("1")
+        .reptitAt("1")
+        .build();
+    anniversaryRepository.save(java.util.Objects.requireNonNull(ann1));
 
-        ann2 = Anniversary.builder()
-                .annId("ANN_002")
-                .usid("USER_001")
-                .annvrsrySe("1")
-                .annvrsryNm("Wedding")
-                .annvrsryDe("20231225")
-                .cldrSe("1")
-                .reptitAt("1")
-                .build();
-        anniversaryRepository.save(java.util.Objects.requireNonNull(ann2));
-    }
+    ann2 = Anniversary.builder()
+        .annId("ANN_002")
+        .usid("USER_001")
+        .annvrsrySe("1")
+        .annvrsryNm("Wedding")
+        .annvrsryDe("20231225")
+        .cldrSe("1")
+        .reptitAt("1")
+        .build();
+    anniversaryRepository.save(java.util.Objects.requireNonNull(ann2));
+  }
 
-    @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ?�?�� ??�쇅 ??0 �?諛섑??)
-    void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
-        // When
-        int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
+  @Test
+  @DisplayName("?リ옇????중복?체크- 자신 제외하면 0 ?결과)")
+  void checkAnniversaryDuplicate_ExcludeSelf_ShouldReturnZero() {
+    // When
+    int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_001");
 
-        // Then
-        assertThat(count).isEqualTo(0);
-    }
+    // Then
+    assertThat(count).isEqualTo(0);
+  }
 
-    @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ �???�쇅 ??1 �?諛섑??)
-    void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
-        // When
-        int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
+  @Test
+  @DisplayName("?リ옇????중복?체크- 다른 ID면 1 ?결과)")
+  void checkAnniversaryDuplicate_ExcludeOther_ShouldReturnOne() {
+    // When
+    int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231010", "Birthday", "ANN_002");
 
-        // Then
-        assertThat(count).isEqualTo(1);
-    }
+    // Then
+    assertThat(count).isEqualTo(1);
+  }
 
-    @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ??�Ⅸ 寃껉???�⑸�???1 �?諛섑??)
-    void checkAnniversaryDuplicate_ConflictWithOther_ShouldReturnOne() {
-        // When
-        int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231225", "Wedding", "ANN_001");
+  @Test
+  @DisplayName("?リ옇????중복?체크- ??좎뜦???롪퍒?????좎뜦維뽩뜝???1 ?결과)")
+  void checkAnniversaryDuplicate_ConflictWithOther_ShouldReturnOne() {
+    // When
+    int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20231225", "Wedding", "ANN_001");
 
-        // Then
-        assertThat(count).isEqualTo(1);
-    }
+    // Then
+    assertThat(count).isEqualTo(1);
+  }
 
-    @Test
-    @DisplayName("湲곕???以묐???뺤씤 - ?�⑸�???�쓬 ??0 �?諛섑??)
-    void checkAnniversaryDuplicate_NoConflict_ShouldReturnZero() {
-        // When
-        int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20240101", "New Year", "ANN_001");
+  @Test
+  @DisplayName("?リ옇????중복?체크- ?좎뜦維뽩뜝????좎럩踰???0 ?결과)")
+  void checkAnniversaryDuplicate_NoConflict_ShouldReturnZero() {
+    // When
+    int count = anniversaryService.checkAnniversaryDuplicate("USER_001", "20240101", "New Year", "ANN_001");
 
-        // Then
-        assertThat(count).isEqualTo(0);
-    }
+    // Then
+    assertThat(count).isEqualTo(0);
+  }
 }

@@ -21,86 +21,86 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 public class MenuIntegrationTest {
 
-    @Autowired
-    private MenuService menuService;
+  @Autowired
+  private MenuService menuService;
 
-    @Test
-    @DisplayName("메뉴 관�?CRUD ?�스??)
-    @WithMockUser(roles = "ADMIN")
-    void menuManageIntegrationTest() {
-        // 1. ?�록
-        MenuDto dto = MenuDto.builder()
-                .menuNo(9999L)
-                .menuNm("?�스?�메??)
-                .progrmFileNm("testProgram")
-                .upperMenuNo(0L)
-                .menuOrdr(1)
-                .menuDc("?�스?�메?�설�?)
-                .build();
-        menuService.insertMenuManage(dto);
+  @Test
+  @DisplayName("메뉴 관리 CRUD 통합 테스트")
+  @WithMockUser(roles = "ADMIN")
+  void menuManageIntegrationTest() {
+    // 1. 등록
+    MenuDto dto = MenuDto.builder()
+        .menuNo(9999L)
+        .menuNm("테스트메뉴")
+        .progrmFileNm("testProgram")
+        .upperMenuNo(0L)
+        .menuOrdr(1)
+        .menuDc("테스트메뉴설명")
+        .build();
+    menuService.insertMenuManage(dto);
 
-        // 2. ?�세 조회
-        MenuDto result = menuService.selectMenuManage(9999L);
-        assertThat(result).isNotNull();
-        assertThat(result.getMenuNm()).isEqualTo("?�스?�메??);
+    // 2. 상세 조회
+    MenuDto result = menuService.selectMenuManage(9999L);
+    assertThat(result).isNotNull();
+    assertThat(result.getMenuNm()).isEqualTo("테스트메뉴");
 
-        // 3. ?�정
-        result.setMenuNm("?�스?�메?�수??);
-        menuService.updateMenuManage(result);
-        MenuDto updated = menuService.selectMenuManage(9999L);
-        assertThat(updated.getMenuNm()).isEqualTo("?�스?�메?�수??);
+    // 3. 수정
+    result.setMenuNm("테스트메뉴수정");
+    menuService.updateMenuManage(result);
+    MenuDto updated = menuService.selectMenuManage(9999L);
+    assertThat(updated.getMenuNm()).isEqualTo("테스트메뉴수정");
 
-        // 4. 목록 조회
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setSearchKeyword("?�스??);
-        searchVO.setPageIndex(1);
-        searchVO.setRecordCountPerPage(10);
-        List<MenuDto> list = menuService.selectMenuManageList(searchVO);
-        assertThat(list).isNotEmpty();
+    // 4. 목록 조회
+    ComDefaultVO searchVO = new ComDefaultVO();
+    searchVO.setSearchKeyword("테스트");
+    searchVO.setPageIndex(1);
+    searchVO.setRecordCountPerPage(10);
+    List<MenuDto> list = menuService.selectMenuManageList(searchVO);
+    assertThat(list).isNotEmpty();
 
-        // 5. ??��
-        menuService.deleteMenuManage(updated);
-        MenuDto deleted = menuService.selectMenuManage(9999L);
-        assertThat(deleted).isNull();
+    // 5. 삭제
+    menuService.deleteMenuManage(updated);
+    MenuDto deleted = menuService.selectMenuManage(9999L);
+    assertThat(deleted).isNull();
+  }
+
+  @Test
+  @DisplayName("메뉴 계층 구조 조회 통합 테스트")
+  @WithMockUser(roles = "ADMIN")
+  void menuHierarchyIntegrationTest() {
+    // 부모 메뉴 등록
+    MenuDto parent = MenuDto.builder()
+        .menuNo(8888L)
+        .menuNm("부모메뉴")
+        .progrmFileNm("parentProg")
+        .upperMenuNo(0L)
+        .menuOrdr(1)
+        .build();
+    menuService.insertMenuManage(parent);
+
+    // 자식 메뉴 등록
+    MenuDto child = MenuDto.builder()
+        .menuNo(8889L)
+        .menuNm("자식메뉴")
+        .progrmFileNm("childProg")
+        .upperMenuNo(8888L)
+        .menuOrdr(1)
+        .build();
+    menuService.insertMenuManage(child);
+
+    // 계층 구조 조회
+    List<MenuDto> hierarchy = menuService.getMenuHierarchy();
+    assertThat(hierarchy).isNotEmpty();
+
+    boolean found = false;
+    for (MenuDto root : hierarchy) {
+      if (root.getId().equals(8888L)) {
+        assertThat(root.getChildren()).isNotEmpty();
+        assertThat(root.getChildren().get(0).getId()).isEqualTo(8889L);
+        found = true;
+        break;
+      }
     }
-
-    @Test
-    @DisplayName("메뉴 계층 구조 조회 ?�스??)
-    @WithMockUser(roles = "ADMIN")
-    void menuHierarchyIntegrationTest() {
-        // 부�?메뉴 ?�록
-        MenuDto parent = MenuDto.builder()
-                .menuNo(8888L)
-                .menuNm("부모메??)
-                .progrmFileNm("parentProg")
-                .upperMenuNo(0L)
-                .menuOrdr(1)
-                .build();
-        menuService.insertMenuManage(parent);
-
-        // ?�식 메뉴 ?�록
-        MenuDto child = MenuDto.builder()
-                .menuNo(8889L)
-                .menuNm("?�식메뉴")
-                .progrmFileNm("childProg")
-                .upperMenuNo(8888L)
-                .menuOrdr(1)
-                .build();
-        menuService.insertMenuManage(child);
-
-        // 계층 조회
-        List<MenuDto> hierarchy = menuService.getMenuHierarchy();
-        assertThat(hierarchy).isNotEmpty();
-
-        boolean found = false;
-        for (MenuDto root : hierarchy) {
-            if (root.getId().equals(8888L)) {
-                assertThat(root.getChildren()).isNotEmpty();
-                assertThat(root.getChildren().get(0).getId()).isEqualTo(8889L);
-                found = true;
-                break;
-            }
-        }
-        assertThat(found).isTrue();
-    }
+    assertThat(found).isTrue();
+  }
 }

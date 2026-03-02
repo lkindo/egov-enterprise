@@ -27,40 +27,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 public class MenuServiceBatchInsertBenchmarkTest {
 
-    @Autowired
-    private MenuService menuService;
+  @Autowired
+  private MenuService menuService;
 
-    @Autowired
-    private MenuAuthorityRepository menuAuthorityRepository;
+  @Autowired
+  private MenuAuthorityRepository menuAuthorityRepository;
 
-    @Test
-    public void testInsertMenuCreatListPerformance() {
-        // Given
-        String authorCode = "TEST_AUTHOR_CODE";
-        int count = 1000;
+  @Test
+  public void testInsertMenuCreatListPerformance() {
+    // Given
+    String authorCode = "TEST_AUTHOR_CODE";
+    int count = 1000;
 
-        // Generate comma separated menu numbers
-        String checkedMenuNos = IntStream.rangeClosed(1, count)
-                .mapToObj(String::valueOf)
-                .collect(Collectors.joining(","));
+    // Generate comma separated menu numbers
+    String checkedMenuNos = IntStream.rangeClosed(1, count)
+        .mapToObj(String::valueOf)
+        .collect(Collectors.joining(","));
 
-        // Pre-clean
-        menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
+    // Pre-clean
+    menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
 
-        // When
-        long startTime = System.currentTimeMillis();
-        menuService.insertMenuCreatList(authorCode, checkedMenuNos);
-        menuAuthorityRepository.flush();
-        long endTime = System.currentTimeMillis();
+    // When
+    long startTime = System.currentTimeMillis();
+    menuService.insertMenuCreatList(authorCode, checkedMenuNos);
+    menuAuthorityRepository.flush();
+    long endTime = System.currentTimeMillis();
 
-        // Then
-        long duration = endTime - startTime;
-        System.out.println("Execution time for inserting " + count + " records: " + duration + " ms");
+    // Then
+    long duration = endTime - startTime;
+    System.out.println("Execution time for inserting " + count + " records: " + duration + " ms");
 
-        long dbCount = menuAuthorityRepository.findByIdAuthorCode(authorCode).size();
-        assertThat(dbCount).isEqualTo(count);
+    long dbCount = menuAuthorityRepository.findByIdAuthorCode(authorCode).size();
+    assertThat(dbCount).isEqualTo(count);
 
-        // Cleanup
-        menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
-    }
+    // Cleanup
+    menuAuthorityRepository.deleteByIdAuthorCode(authorCode);
+  }
 }

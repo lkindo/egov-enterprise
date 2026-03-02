@@ -32,77 +32,77 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ?�증 API 컨트롤러 ?�라?�스 ?�스?? */
+ * ?醫롫윪凉?API ??쳜?猿낆뿉??댁몠 테스트사용자 */
 @WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {
-                DataSourceAutoConfiguration.class,
-                JpaRepositoriesAutoConfiguration.class,
-                HibernateJpaAutoConfiguration.class,
-                BatchAutoConfiguration.class
+        DataSourceAutoConfiguration.class,
+        JpaRepositoriesAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        BatchAutoConfiguration.class
 })
 @ActiveProfiles("test")
 @org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
 @org.junit.jupiter.api.Disabled("Disabled due to major refactoring of AuthController")
 class AuthApiControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        @MockitoBean
-        private AuthService authService;
+    @MockitoBean
+    private AuthService authService;
 
-        @MockitoBean
-        private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
-        @MockitoBean
-        private PasswordEncoder passwordEncoder;
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
-        @MockitoBean
-        private AuthenticationManager authenticationManager;
+    @MockitoBean
+    private AuthenticationManager authenticationManager;
 
-        @MockitoBean
-        private SecurityContextRepository securityContextRepository;
+    @MockitoBean
+    private SecurityContextRepository securityContextRepository;
 
-        @Test
-        @DisplayName("로그??- ?�공")
-        void login_success() throws Exception {
-                // Given
-                TokenResponse mockResponse = new TokenResponse("mock-jwt-token", null);
-                when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
+    @Test
+    @DisplayName("부하- 성공)")
+    void login_success() throws Exception {
+        // Given
+        TokenResponse mockResponse = new TokenResponse("mock-jwt-token", null);
+        when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
 
-                Map<String, String> request = Map.of(
-                                "userId", "loginUser",
-                                "password", "correctPassword");
+        Map<String, String> request = Map.of(
+                "userId", "loginUser",
+                "password", "correctPassword");
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                                .andDo(print())
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.data.accessToken").exists());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").exists());
+    }
 
-        @Test
-        @DisplayName("로그??- ?�못??비�?번호")
-        void login_wrongPassword() throws Exception {
-                // Given
-                when(authService.login(any(LoginRequest.class)))
-                                .thenThrow(new org.springframework.security.authentication.BadCredentialsException(
-                                                "Bad credentials"));
+    @Test
+    @DisplayName("부하- 테스트 ?비밀번호?)")
+    void login_wrongPassword() throws Exception {
+        // Given
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException(
+                        "Bad credentials"));
 
-                Map<String, String> request = Map.of(
-                                "userId", "loginUser",
-                                "password", "wrongPassword");
+        Map<String, String> request = Map.of(
+                "userId", "loginUser",
+                "password", "wrongPassword");
 
-                // When & Then
-                mockMvc.perform(post("/api/v1/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                                .andDo(print())
-                                .andExpect(status().isUnauthorized());
-        }
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
 }

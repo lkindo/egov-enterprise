@@ -18,23 +18,23 @@ import org.springframework.context.annotation.Import;
 @Import(CommonCodeService.class)
 public class BenchmarkTestConfig {
 
-    @Bean(name = "mockReprtStatsIdGnrService")
-    public EgovIdGnrService reprtStatsIdGnrService() {
-        return Mockito.mock(EgovIdGnrService.class);
-    }
+  @Bean(name = "mockReprtStatsIdGnrService")
+  public EgovIdGnrService reprtStatsIdGnrService() {
+    return Mockito.mock(EgovIdGnrService.class);
+  }
 
-    @Bean(name = "leaveaTrace")
-    public LeaveaTrace leaveaTrace() {
-        return Mockito.mock(LeaveaTrace.class);
-    }
+  @Bean(name = "leaveaTrace")
+  public LeaveaTrace leaveaTrace() {
+    return Mockito.mock(LeaveaTrace.class);
+  }
 
-    @Bean(name = "propertiesService")
-    public EgovPropertyService propertiesService() {
-        return Mockito.mock(EgovPropertyService.class);
-    }
+  @Bean(name = "propertiesService")
+  public EgovPropertyService propertiesService() {
+    return Mockito.mock(EgovPropertyService.class);
+  }
 
-    @Bean
-    public JPAQueryFactory jpaQueryFactory() {
-        return Mockito.mock(JPAQueryFactory.class);
-    }
+  @Bean
+  public JPAQueryFactory jpaQueryFactory() {
+    return Mockito.mock(JPAQueryFactory.class);
+  }
 }
