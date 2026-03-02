@@ -1,6 +1,6 @@
 package com.company.project.domain.board;
 
-import com.company.project.domain.TestQuerydslConfig;
+import com.company.project.TestJpaConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * BoardRepository JPA 테스트
  */
 @DataJpaTest
-@Import(TestQuerydslConfig.class)
+@Import(TestJpaConfig.class)
 @ActiveProfiles("test")
 class BoardRepositoryTest {
 

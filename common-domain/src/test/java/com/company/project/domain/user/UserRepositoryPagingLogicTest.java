@@ -227,7 +227,7 @@ class UserRepositoryPagingLogicTest {
         userRepository.save(java.util.Objects.requireNonNull(user3));
 
         // When
-        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdAt"));
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdDate"));
         Page<User> result = userRepository.findAll(pageable);
 
         // Then
@@ -256,9 +256,9 @@ class UserRepositoryPagingLogicTest {
 
         // When & Then
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(
-                org.springframework.dao.InvalidDataAccessApiUsageException.class,
+                IllegalArgumentException.class,
                 () -> userRepository.findAll(PageRequest.of(0, 0))))
-                .hasMessageContaining("Page size must not be less than one!");
+                .hasMessageContaining("Page size must not be less than one");
     }
 
     @Test
@@ -269,9 +269,9 @@ class UserRepositoryPagingLogicTest {
 
         // When & Then
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(
-                org.springframework.dao.InvalidDataAccessApiUsageException.class,
+                IllegalArgumentException.class,
                 () -> userRepository.findAll(PageRequest.of(-1, 10))))
-                .hasMessageContaining("Page index must not be less than zero!");
+                .hasMessageContaining("Page index must not be less than zero");
     }
 
     /**

@@ -28,7 +28,9 @@ public class AddressBookServiceImpl implements AddressBookService {
     private final AddressBookRepository addressBookRepository;
     private final AddressBookUserRepository addressBookUserRepository;
     private final NameCardRepository nameCardRepository;
+    @org.springframework.beans.factory.annotation.Qualifier("egovAdbkIdGnrService")
     private final EgovIdGnrService egovAdbkIdGnrService;
+    @org.springframework.beans.factory.annotation.Qualifier("egovAdbkUserIdGnrService")
     private final EgovIdGnrService egovAdbkUserIdGnrService;
 
     @Override

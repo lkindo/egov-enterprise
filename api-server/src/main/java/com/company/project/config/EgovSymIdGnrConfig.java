@@ -241,4 +241,14 @@ public class EgovSymIdGnrConfig {
     public EgovIdGnrService egovBBSMstrIdGnrService() {
         return createIdGnrService("ids", "BBSMSTR_", 12);
     }
+
+    @Bean(name = "egovAdbkIdGnrService")
+    public EgovIdGnrService egovAdbkIdGnrService() {
+        return createIdGnrService("ids", "ADBK_", 20);
+    }
+
+    @Bean(name = "egovAdbkUserIdGnrService")
+    public EgovIdGnrService egovAdbkUserIdGnrService() {
+        return createIdGnrService("ids", "ADBKUSER_", 20);
+    }
 }

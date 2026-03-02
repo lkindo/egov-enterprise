@@ -6,7 +6,7 @@ import com.company.project.domain.auth.MenuAuthority;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.config.QuerydslConfig;
+import com.company.project.TestJpaConfig;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(QuerydslConfig.class)
+@Import(TestJpaConfig.class)
 @ActiveProfiles("test")
 public class MenuRepositoryTest {
 
@@ -134,20 +134,20 @@ public class MenuRepositoryTest {
         void bulkUpdateByPattern() {
                 // Given: 여러 메뉴 추가
                 menuRepository.save(Menu.builder()
-                        .id(101L)
-                        .menuNm("User Management")
-                        .upperMenuNo(0L)
-                        .menuOrdr(2)
-                        .progrmFileNm("EgovUserManage")
-                        .build());
+                                .id(101L)
+                                .menuNm("User Management")
+                                .upperMenuNo(0L)
+                                .menuOrdr(2)
+                                .progrmFileNm("EgovUserManage")
+                                .build());
 
                 menuRepository.save(Menu.builder()
-                        .id(102L)
-                        .menuNm("Member Management")
-                        .upperMenuNo(0L)
-                        .menuOrdr(3)
-                        .progrmFileNm("EgovMberManage")
-                        .build());
+                                .id(102L)
+                                .menuNm("Member Management")
+                                .upperMenuNo(0L)
+                                .menuOrdr(3)
+                                .progrmFileNm("EgovMberManage")
+                                .build());
 
                 // When: 패턴으로 일괄 업데이트
                 int updated = menuRepository.bulkUpdateModernRouteByPattern("Egov%Manage", "/admin/user/manage");

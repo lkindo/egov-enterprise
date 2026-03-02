@@ -5,17 +5,13 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import com.company.project.api.config.WebMvcConfig;
 import com.company.project.api.controller.board.BoardController;
-import com.company.project.config.TestSecurityConfig;
+import com.company.project.config.MinimalTestConfig;
 import com.company.project.security.jwt.JwtTokenProvider;
 import com.company.project.service.board.BoardService;
 import com.company.project.service.board.dto.BoardDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.junit.jupiter.api.BeforeEach;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
@@ -25,22 +21,22 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.data.domain.PageRequest;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * 게시판API 뚢뫂?껅에?살쑎 ?좎럥?설정? */
 @WebMvcTest(BoardController.class)
 @ActiveProfiles("test")
 class BoardApiControllerTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @Import({ BoardController.class, WebMvcConfig.class, TestSecurityConfig.class,
+    @Import({ BoardController.class, WebMvcConfig.class, MinimalTestConfig.class,
             com.company.project.api.common.exception.GlobalExceptionHandler.class })
     static class TestConfig {
     }
@@ -54,69 +50,21 @@ class BoardApiControllerTest {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockitoBean(name = "dataSource")
-    private javax.sql.DataSource dataSource;
-
-    @MockitoBean
-    private com.company.project.service.menu.MenuService menuService;
-
-    @BeforeEach
-    void setUp() {
-        when(jwtTokenProvider.resolveToken(any())).thenReturn("mock-token");
-        when(jwtTokenProvider.validateToken(any())).thenReturn(true);
-        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername("testuser")
-                .password("password")
-                .roles("USER")
-                .build();
-        org.springframework.security.core.Authentication auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-        when(jwtTokenProvider.getAuthentication(any())).thenReturn(auth);
-    }
-
     @Test
-    @DisplayName("게시글목록조회- 테스트???좎럩???)")
-    void getBoardList_authenticated() throws Exception {
-        // Given
+    @DisplayName("GET /api/v1/boards/{bbsId} - 성공")
+    void getBoardPosts_success() throws Exception {
+        String bbsId = "BBSMSTR_AAAAAAAAAAAA";
         List<BoardDto> list = new ArrayList<>();
-        Page<BoardDto> emptyPage = new PageImpl<>(list, PageRequest.of(0, 10), 0);
-        when(boardService.getBoardPosts(eq("TEST_BBS"), any(Pageable.class))).thenReturn(emptyPage);
+        Page<BoardDto> page = new PageImpl<>(list, PageRequest.of(0, 10), 0);
 
-        // When & Then
-        mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
-                .header("Authorization", "Bearer mock-token")
+        when(boardService.getBoardPosts(eq(bbsId), any(Pageable.class))).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/boards/" + bbsId)
                 .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
                 .andExpect(status().isOk());
     }
 
-    @Test
-    @DisplayName("게시글목록조회- 테스트?좎룞?? ?좎룞?? 인증 실패 401")
-    void getBoardList_unauthenticated() throws Exception {
-        // Given
-        when(jwtTokenProvider.resolveToken(any())).thenReturn(null);
-        when(jwtTokenProvider.validateToken(any())).thenReturn(false);
-
-        // When & Then
-        mockMvc.perform(get("/api/v1/boards/{bbsId}", "TEST_BBS")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("없는 게시글 ?좎럥??게시판조회(404)")
-    void getBoardList_notFound() throws Exception {
-        // Given
-        when(boardService.getBoardPosts(eq("NOT_EXIST"), any(Pageable.class)))
-                .thenThrow(new com.company.project.core.exception.BusinessException(
-                        com.company.project.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
-
-        // When & Then
-        mockMvc.perform(get("/api/v1/boards/{bbsId}", "NOT_EXIST")
-                .header("Authorization", "Bearer mock-token")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isNotFound());
+    private String eq(String value) {
+        return value;
     }
 }

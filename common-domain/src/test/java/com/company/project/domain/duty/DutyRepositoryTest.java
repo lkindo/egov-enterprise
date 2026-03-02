@@ -1,6 +1,6 @@
 package com.company.project.domain.duty;
 
-import com.company.project.domain.TestQuerydslConfig;
+import com.company.project.TestJpaConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(TestQuerydslConfig.class)
+@Import(TestJpaConfig.class)
 @ActiveProfiles("test")
 class DutyRepositoryTest {
 

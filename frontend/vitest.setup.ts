@@ -43,3 +43,10 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock ScrollTo for components that might use it
 window.scrollTo = vi.fn();
+
+// Mock DOM elements for Radix UI
+if (typeof window !== 'undefined') {
+  window.Element.prototype.scrollIntoView = vi.fn();
+  window.Element.prototype.hasPointerCapture = vi.fn();
+  window.Element.prototype.releasePointerCapture = vi.fn();
+}

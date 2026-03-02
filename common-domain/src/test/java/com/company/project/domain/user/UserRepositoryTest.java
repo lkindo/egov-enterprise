@@ -1,6 +1,6 @@
 package com.company.project.domain.user;
 
-import com.company.project.domain.config.QuerydslConfig;
+import com.company.project.TestJpaConfig;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
@@ -17,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(QuerydslConfig.class)
+@Import(TestJpaConfig.class)
 @ActiveProfiles("test")
 public class UserRepositoryTest {
 

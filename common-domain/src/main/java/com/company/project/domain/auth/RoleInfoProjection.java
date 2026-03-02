@@ -2,8 +2,6 @@ package com.company.project.domain.auth;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @Builder
@@ -17,5 +15,5 @@ public class RoleInfoProjection {
     private String roleTy;
     private String roleTyNm;
     private String roleSort;
-    private LocalDateTime creatDt;
+    private String creatDt;
 }

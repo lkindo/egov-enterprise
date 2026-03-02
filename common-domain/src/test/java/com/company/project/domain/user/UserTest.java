@@ -4,6 +4,7 @@ import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +23,7 @@ class UserTest {
                 .userNm("홍길동")
                 .password("hashedPassword")
                 .emailAdres("test@example.com")
+                .sbscrbDe(LocalDateTime.now())
                 .build();
 
         // Then
@@ -155,5 +157,97 @@ class UserTest {
         assertThat(user.getSexdstnCode()).isEqualTo("M");
         assertThat(user.getOfcpsNm()).isEqualTo("연구원");
         assertThat(user.getSubDn()).isEqualTo("CN=user");
+    }
+
+    @Test
+    @DisplayName("unlock 메서드로 잠금 상태 및 횟수 초기화 확인")
+    void unlock() {
+        // Given
+        User user = User.builder()
+                .userId("testUser")
+                .esntlId("USR00001")
+                .userNm("사용자")
+                .password("password")
+                .lockAt("Y")
+                .lockCount(5)
+                .lockLastDate(LocalDateTime.now())
+                .build();
+
+        // When
+        user.unlock();
+
+        // Then
+        assertThat(user.getLockAt()).isEqualTo("N");
+        assertThat(user.getLockCount()).isEqualTo(0);
+        assertThat(user.getLockLastDate()).isNull();
+    }
+
+    @Test
+    @DisplayName("incrementLockCount 메서드로 잠금 횟수 증가 확인")
+    void incrementLockCount() {
+        // Given
+        User user = User.builder()
+                .userId("testUser")
+                .esntlId("USR00001")
+                .userNm("사용자")
+                .password("password")
+                .build();
+
+        // When
+        user.incrementLockCount();
+        user.incrementLockCount();
+
+        // Then
+        assertThat(user.getLockCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("setAuthorCode 메서드로 Role 설정 확인")
+    void setAuthorCode() {
+        // Given
+        User user = User.builder()
+                .userId("testUser")
+                .esntlId("USR00001")
+                .userNm("사용자")
+                .password("password")
+                .build();
+
+        // When
+        user.setAuthorCode("ADMIN");
+
+        // Then
+        assertThat(user.getRole()).isEqualTo(Role.ADMIN);
+
+        // When: Invalid code
+        user.setAuthorCode("INVALID_ROLE");
+
+        // Then: Defaults to USER
+        assertThat(user.getRole()).isEqualTo(Role.USER);
+
+        // When: null code
+        user.setAuthorCode(null);
+        assertThat(user.getRole()).isEqualTo(Role.USER); // No change
+    }
+
+    @Test
+    @DisplayName("getAuthorCode 메서드로 Role 이름 반환 확인")
+    void getAuthorCode() {
+        // Given
+        User user = User.builder()
+                .userId("testUser")
+                .esntlId("USR00001")
+                .userNm("사용자")
+                .password("password")
+                .role(Role.ADMIN)
+                .build();
+
+        // Then
+        assertThat(user.getAuthorCode()).isEqualTo("ADMIN");
+
+        // When
+        user.setRole(null);
+
+        // Then
+        assertThat(user.getAuthorCode()).isNull();
     }
 }
