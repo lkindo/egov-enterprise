@@ -55,10 +55,15 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             }
             userEntity.unlock();
             userRepository.save(userEntity);
+            log.info(">>> Authenticating user: {}, esntlId: {}", userEntity.getUserId(), userEntity.getEsntlId());
             String authorCode = userAuthorityRepository.findById(userEntity.getEsntlId())
-                    .map(ua -> ua.getAuthorCode()).orElse("ROLE_USER");
+                    .map(ua -> {
+                        log.info(">>> Found authorCode: {} for esntlId: {}", ua.getAuthorCode(), userEntity.getEsntlId());
+                        return ua.getAuthorCode();
+                    }).orElse("ROLE_USER");
+            log.info(">>> Final authorCode for user {}: {}", userId, authorCode);
             userEntity.setAuthorCode(authorCode);
-            CustomUserDetails userDetails = new CustomUserDetails(userEntity);
+            CustomUserDetails userDetails = new CustomUserDetails(userEntity, authorCode);
             return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
         } catch (AuthenticationException e) {
             log.error(">>> Authentication failed for user {}: {}", userId, e.getMessage());

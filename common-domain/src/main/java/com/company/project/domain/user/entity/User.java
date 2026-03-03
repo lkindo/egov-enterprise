@@ -184,7 +184,8 @@ public class User extends BaseEntity implements Serializable {
     public void setAuthorCode(String authorCode) {
         if (authorCode != null) {
             try {
-                this.role = Role.valueOf(authorCode);
+                String cleanRole = authorCode.startsWith("ROLE_") ? authorCode.substring(5) : authorCode;
+                this.role = Role.valueOf(cleanRole);
             } catch (IllegalArgumentException e) {
                 this.role = Role.USER;
             }

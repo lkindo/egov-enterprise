@@ -64,22 +64,31 @@ public class MenuService {
 
             List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
             List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
+            log.info(">>> Total menus: {}, Total authorities: {}", allMenus.size(), authorities.size());
             
             List<Long> authorizedMenuNos = authorities.stream()
-                .filter(ma -> roles.contains(ma.getId().getAuthorCode()))
+                .filter(ma -> {
+                    boolean match = roles.contains(ma.getId().getAuthorCode());
+                    if (match) log.trace(">>> Menu mapping match: menuNo={}, author={}", ma.getId().getMenuNo(), ma.getId().getAuthorCode());
+                    return match;
+                })
                 .map(ma -> ma.getId().getMenuNo())
                 .distinct()
                 .collect(Collectors.toList());
 
+            log.info(">>> Authorized menu count: {}", authorizedMenuNos.size());
+
             List<Menu> menus = allMenus.stream()
-                .filter(m -> authorizedMenuNos.contains(m.getId()) || "ROLE_ADMIN".equals(roles.contains("ROLE_ADMIN") ? "ROLE_ADMIN" : ""))
+                .filter(m -> {
+                    boolean isAuthorized = authorizedMenuNos.contains(m.getId());
+                    boolean isAdmin = roles.contains("ROLE_ADMIN");
+                    return isAuthorized || isAdmin;
+                })
                 .collect(Collectors.toList());
             
-            log.debug("Loaded {} menus for roles {}", menus.size(), roles);
+            log.info(">>> Screened menus count: {}", menus.size());
 
             List<Program> programs = programRepository.findAll();
-            log.debug("Loaded {} programs", programs.size());
-            
             Map<String, Program> programMap = programs.stream()
                     .filter(p -> p.getProgrmFileNm() != null)
                     .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
