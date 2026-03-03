@@ -6,12 +6,12 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import com.company.project.config.FullBeanNameGenerator;
+import com.company.project.core.config.FullBeanNameGenerator;
 
 /**
  * 프로젝트 메인 애플리케이션 클래스
  */
-@SpringBootApplication
+@SpringBootApplication(nameGenerator = FullBeanNameGenerator.class)
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
                 "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {

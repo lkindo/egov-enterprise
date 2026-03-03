@@ -26,7 +26,11 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = MinimalTestConfig.class)
+@SpringBootTest(classes = {
+    MinimalTestConfig.class,
+    com.company.project.api.controller.UserController.class,
+    com.company.project.api.common.exception.GlobalExceptionHandler.class
+})
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserControllerIntegrationTest {

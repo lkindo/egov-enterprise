@@ -1,4 +1,4 @@
-package com.company.project.config;
+package com.company.project.core.config;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
@@ -12,6 +12,12 @@ import org.springframework.context.annotation.AnnotationBeanNameGenerator;
 public class FullBeanNameGenerator extends AnnotationBeanNameGenerator {
     @Override
     protected String buildDefaultBeanName(BeanDefinition definition) {
-        return definition.getBeanClassName();
+        String beanName = definition.getBeanClassName();
+        // System.out.println("FullBeanNameGenerator generated: " + beanName);
+        if (beanName != null && beanName.contains("PopupController")) {
+            System.out.println("FULL NAME GEN for PopupController. Stack trace:");
+            new Exception().printStackTrace(System.out);
+        }
+        return beanName;
     }
 }

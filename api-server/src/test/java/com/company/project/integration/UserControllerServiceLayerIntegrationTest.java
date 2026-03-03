@@ -32,14 +32,10 @@ class UserControllerServiceLayerIntegrationTest {
     @org.springframework.context.annotation.Configuration
     @org.springframework.context.annotation.Import({
             com.company.project.config.MinimalTestConfig.class,
-            com.company.project.api.common.exception.GlobalExceptionHandler.class
+            com.company.project.api.common.exception.GlobalExceptionHandler.class,
+            com.company.project.api.controller.UserController.class
     })
     static class TestConfig {
-        @org.springframework.context.annotation.Bean
-        public com.company.project.api.controller.UserController userController(
-                com.company.project.service.user.UserService userService) {
-            return new com.company.project.api.controller.UserController(userService);
-        }
     }
 
     @Autowired

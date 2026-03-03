@@ -62,15 +62,20 @@ public class MenuService {
             for (Menu menu : menus) {
                 try {
                     String url = "#";
-                    String progrm = menu.getProgrmFileNm();
-
-                    if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                        Program program = programMap.get(progrm);
-                        if (program != null && program.getUrl() != null) {
-                            String progrmUrl = program.getUrl();
-                            url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                        } else {
-                            url = "/";
+                    // modernRoute가 있으면 최우선 적용
+                    if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+                        url = menu.getModernRoute();
+                    } else {
+                        // 레거시 URL 계산 로직 (Fallback)
+                        String progrm = menu.getProgrmFileNm();
+                        if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                            Program program = programMap.get(progrm);
+                            if (program != null && program.getUrl() != null) {
+                                String progrmUrl = program.getUrl();
+                                url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                            } else {
+                                url = "/";
+                            }
                         }
                     }
 
@@ -82,7 +87,7 @@ public class MenuService {
                             .upperMenuNo(menu.getUpperMenuNo())
                             .upperMenuId(menu.getUpperMenuNo())
                             .menuOrdr(menu.getMenuOrdr())
-                            .chkURL(url)
+                            .chkURL(url) // modernRoute가 반영된 url 할당
                             .modernRoute(menu.getModernRoute())
                             .relateImagePath(menu.getRelateImagePath())
                             .relateImageNm(menu.getRelateImageNm())
@@ -152,15 +157,19 @@ public class MenuService {
 
         for (Menu menu : menus) {
             String url = "#";
-            String progrm = menu.getProgrmFileNm();
-
-            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                Program program = programMap.get(progrm);
-                if (program != null && program.getUrl() != null) {
-                    String progrmUrl = program.getUrl();
-                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                } else {
-                    url = "/";
+            // modernRoute 우선 적용
+            if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+                url = menu.getModernRoute();
+            } else {
+                String progrm = menu.getProgrmFileNm();
+                if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                    Program program = programMap.get(progrm);
+                    if (program != null && program.getUrl() != null) {
+                        String progrmUrl = program.getUrl();
+                        url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                    } else {
+                        url = "/";
+                    }
                 }
             }
 
@@ -461,6 +470,7 @@ public class MenuService {
                 .menuOrdr(menu.getMenuOrdr())
                 .menuDc(menu.getMenuDc())
                 .modernRoute(menu.getModernRoute())
+                .chkURL(menu.getModernRoute())
                 .relateImagePath(menu.getRelateImagePath())
                 .relateImageNm(menu.getRelateImageNm())
                 .build();

@@ -30,7 +30,10 @@ class PopupIntegrationTest {
             org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
             org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
     })
-    @org.springframework.context.annotation.ComponentScan(basePackages = "com.company.project.api.controller.popup")
+    @org.springframework.context.annotation.Import({
+            com.company.project.config.MinimalTestConfig.class,
+            com.company.project.api.controller.popup.PopupController.class
+    })
     static class TestConfig {
     }
 

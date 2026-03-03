@@ -90,7 +90,6 @@ public class EgovBackupResultController {
 
      */
 
-
     @RequestMapping({ "/sym/sym/bak/getBackupResultList.do", "/sym/sym/bak/EgovBackupResultList.do" })
 
     public String selectBackupResultList(

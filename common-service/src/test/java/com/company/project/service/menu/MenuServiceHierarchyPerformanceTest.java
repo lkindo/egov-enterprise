@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 public class MenuServiceHierarchyPerformanceTest {
 
-  @SpringBootApplication
+  @SpringBootApplication(nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class)
   @EntityScan("com.company.project.domain")
   @EnableJpaRepositories("com.company.project.domain")
   static class TestConfig {

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "Popup", description = "팝업 사용자 API")
-@RestController
+@RestController("com.company.project.api.controller.popup.PopupController")
 @RequestMapping("/api/v1/popups")
 @RequiredArgsConstructor
 public class PopupController {

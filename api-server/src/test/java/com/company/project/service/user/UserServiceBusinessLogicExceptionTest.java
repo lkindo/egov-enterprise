@@ -7,6 +7,8 @@ import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 
 import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.service.user.mapper.UserMapper;
+import com.company.project.domain.auth.UserAuthorityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

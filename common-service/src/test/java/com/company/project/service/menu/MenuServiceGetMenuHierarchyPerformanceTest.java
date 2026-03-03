@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 public class MenuServiceGetMenuHierarchyPerformanceTest {
 
-  @SpringBootApplication
+  @SpringBootApplication(nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class)
   @EntityScan("com.company.project.domain")
   @EnableJpaRepositories("com.company.project.domain")
   @EnableCaching

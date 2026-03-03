@@ -27,18 +27,21 @@ import java.util.Properties;
 
 @TestConfiguration
 @Profile("test")
+@org.springframework.web.servlet.config.annotation.EnableWebMvc
+@org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+@org.springframework.context.annotation.Import({
+    EgovSymIdGnrConfig.class,
+    org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration.class
+})
 @ComponentScan(basePackages = {
         "com.company.project.service",
         "com.company.project.domain",
-        "com.company.project.core",
-        "com.company.project.config",
-        "com.company.project.security",
-        "com.company.project.api"
-}, nameGenerator = com.company.project.config.FullBeanNameGenerator.class, excludeFilters = {
+        "com.company.project.core"
+}, nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class, excludeFilters = {
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*"),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*WebMvcConfig.*")
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*")
 })
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
 @EntityScan(basePackages = { "com.company.project.domain", "egovframework.com" })
@@ -108,23 +111,66 @@ public class MinimalTestConfig {
         return http.build();
     }
 
-    @Bean(name = "egovBBSMstrIdGnrService")
-    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovBBSMstrIdGnrService() {
+    @Bean
+    public static org.springframework.beans.factory.config.BeanFactoryPostProcessor mockIdGnrServicePostProcessor() {
+        return beanFactory -> {
+            org.springframework.beans.factory.support.DefaultListableBeanFactory factory = 
+                (org.springframework.beans.factory.support.DefaultListableBeanFactory) beanFactory;
+            
+            String[] commonIdGnrNames = {
+                    "egovEventManageIdGnrService", "egovBackupOpertIdGnrService", "egovAdbkUserIdGnrService",
+                    "egovBBSMstrIdGnrService", "egovMenuManageIdGnrService", "egovFileIdGnrService",
+                    "egovCmmntyIdGnrService", "egovAdbkIdGnrService", "egovBBSUseIdGnrService",
+                    "egovDeptSchdulManageIdGnrService", "egovDietIdGnrService", "egovEventInfoIdGnrService",
+                    "egovEventRecptnIdGnrService", "egovExtrlHrIdGnrService", "egovFaqManageIdGnrService",
+                    "egovGuidanceManageIdGnrService", "egovHpcmIdGnrService", "egovIndvdlSchdulManageIdGnrService",
+                    "egovIntrfcManageIdGnrService", "egovJrdcIDGnrService", "egovLoginLogIdGnrService",
+                    "egovLoginPolicyIdGnrService", "egovLoginScrinIdGnrService", "egovManageIemIdGnrService",
+                    "egovMeetingIdGnrService", "egovMeetingManageIdGnrService", "egovMemoReprtIdGnrService",
+                    "egovMemoTodoIdGnrService", "egovNcrdIdGnrService", "egovNcrdUserIdGnrService"
+            };
+            
+            for (String name : commonIdGnrNames) {
+                if (!factory.containsBeanDefinition(name)) {
+                    factory.registerSingleton(name, Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class));
+                }
+            }
+        };
+    }
+
+    @Bean
+    public org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate() {
+        return Mockito.mock(org.springframework.messaging.simp.SimpMessagingTemplate.class);
+    }
+
+    @Bean
+    public JwtTokenProvider jwtTokenProvider() {
+        return Mockito.mock(JwtTokenProvider.class);
+    }
+
+    @Bean
+    public org.springframework.security.authentication.AuthenticationManager authenticationManager() {
+        return Mockito.mock(org.springframework.security.authentication.AuthenticationManager.class);
+    }
+
+    @Bean
+    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovIdGnrService() {
         return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
     }
 
-    @Bean(name = "egovMenuManageIdGnrService")
-    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovMenuManageIdGnrService() {
-        return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
+    @Bean(name = "loginUserAuditorAware")
+    public org.springframework.data.domain.AuditorAware<String> loginUserAuditorAware() {
+        return () -> java.util.Optional.of("testUser");
     }
 
-    @Bean(name = "egovFileIdGnrService")
-    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovFileIdGnrService() {
-        return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
-    }
-
-    @Bean(name = "egovCmmntyIdGnrService")
-    public org.egovframe.rte.fdl.idgnr.EgovIdGnrService egovCmmntyIdGnrService() {
-        return Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class);
+    @Bean
+    public static org.springframework.beans.factory.config.BeanFactoryPostProcessor debugBeanSourcePostProcessor() {
+        return beanFactory -> {
+            String[] filterChainNames = beanFactory.getBeanNamesForType(org.springframework.security.web.SecurityFilterChain.class);
+            for (String name : filterChainNames) {
+                org.springframework.beans.factory.config.BeanDefinition bd = beanFactory.getBeanDefinition(name);
+                System.out.println("DEBUG SECURITY CHAIN: " + name + " [Resource: " + bd.getResourceDescription() + "]");
+            }
+        };
     }
 }
