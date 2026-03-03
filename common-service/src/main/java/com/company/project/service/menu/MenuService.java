@@ -32,6 +32,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.GrantedAuthority;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,9 +50,33 @@ public class MenuService {
     public List<MenuDto> getMenuHierarchy() {
         try {
             log.debug("getMenuHierarchy started");
-            List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-            log.debug("Loaded {} menus", menus.size());
             
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            List<String> roles = new ArrayList<>();
+            if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+                for (GrantedAuthority authority : auth.getAuthorities()) {
+                    roles.add(authority.getAuthority());
+                }
+            } else {
+                roles.add("ROLE_ANONYMOUS");
+            }
+            log.debug("Current roles: {}", roles);
+
+            List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+            List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
+            
+            List<Long> authorizedMenuNos = authorities.stream()
+                .filter(ma -> roles.contains(ma.getId().getAuthorCode()))
+                .map(ma -> ma.getId().getMenuNo())
+                .distinct()
+                .collect(Collectors.toList());
+
+            List<Menu> menus = allMenus.stream()
+                .filter(m -> authorizedMenuNos.contains(m.getId()) || "ROLE_ADMIN".equals(roles.contains("ROLE_ADMIN") ? "ROLE_ADMIN" : ""))
+                .collect(Collectors.toList());
+            
+            log.debug("Loaded {} menus for roles {}", menus.size(), roles);
+
             List<Program> programs = programRepository.findAll();
             log.debug("Loaded {} programs", programs.size());
             
