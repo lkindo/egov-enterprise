@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   if (pathname.startsWith('/login') || pathname.startsWith('/api') || pathname === '/favicon.ico') {
     return NextResponse.next();
   }
@@ -19,7 +19,8 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. 관리자 권한 확인 (/admin 경로 보호)
-  if (pathname.startsWith('/admin') && userRole !== 'ROLE_ADMIN') {
+  const normalizedRole = userRole?.startsWith('ROLE_') ? userRole : `ROLE_${userRole}`;
+  if (pathname.startsWith('/admin') && normalizedRole !== 'ROLE_ADMIN') {
     // 권한이 없으면 메인 대시보드로 리다이렉트
     return NextResponse.redirect(new URL('/', request.url));
   }

@@ -13,6 +13,24 @@ export const metadata = {
 export default async function MenuAdminPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
+
+  // Debug to file since we can't see stdout
+  try {
+    const fs = require('fs');
+    fs.appendFileSync('d:/project/egov-enterprise/ssr_debug.log', JSON.stringify({
+      time: new Date().toISOString(),
+      accessToken: accessToken ? 'PRESENT' : 'MISSING',
+      cookies: cookieStore.getAll().map(c => c.name)
+    }) + '\n');
+  } catch (e) { }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[MenuAdminPage] AccessToken present: ${!!accessToken}`);
+    if (!accessToken) {
+      console.log(`[MenuAdminPage] All cookies: ${JSON.stringify(cookieStore.getAll().map(c => c.name))}`);
+    }
+  }
+
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
   // Parallel fetching of menus and programs to eliminate waterfalls

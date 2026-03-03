@@ -8,73 +8,62 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * BoardRepository JPA 테스트
- */
 @DataJpaTest
 @Import(TestJpaConfig.class)
 @ActiveProfiles("test")
+@DisplayName("BoardRepository 테스트")
 class BoardRepositoryTest {
-
-        @Autowired
-        private BoardRepository boardRepository;
 
         @Autowired
         private BoardMasterRepository boardMasterRepository;
 
+        @Autowired
+        private BoardRepository boardRepository;
+
         @Test
-        @DisplayName("게시판 마스터 저장 및 조회 테스트")
-        void saveBoardMaster() {
-                // given
+        @DisplayName("게시판 마스터 저장 및 조회")
+        void boardMasterTest() {
+                // Given
                 BoardMaster master = BoardMaster.builder()
-                                .bbsId("TEST_BBS_001")
-                                .bbsNm("테스트 게시판")
+                                .bbsId("BBS_001")
+                                .bbsNm("공지사항")
                                 .bbsTyCode("BBST01")
                                 .bbsAttrbCode("BBSA01")
+                                .useAt("Y")
                                 .frstRegisterId("SYSTEM")
                                 .build();
 
-                // when
-                BoardMaster saved = java.util.Objects
-                                .requireNonNull(boardMasterRepository.save(java.util.Objects.requireNonNull(master)));
+                // When
+                boardMasterRepository.save(master);
+                Optional<BoardMaster> found = boardMasterRepository.findById("BBS_001");
 
-                // then
-                assertThat(saved.getBbsId()).isEqualTo("TEST_BBS_001");
-                assertThat(saved.getBbsNm()).isEqualTo("테스트 게시판");
+                // Then
+                assertThat(found).isPresent();
+                assertThat(found.get().getBbsNm()).isEqualTo("공지사항");
         }
 
         @Test
-        @DisplayName("게시물 저장 및 조회 테스트")
-        void saveBoard() {
-                // given
-                BoardMaster master = java.util.Objects.requireNonNull(boardMasterRepository.save(
-                                java.util.Objects.requireNonNull(BoardMaster.builder()
-                                                .bbsId("TEST_BBS_002")
-                                                .bbsNm("테스트 게시판")
-                                                .bbsTyCode("BBST01")
-                                                .bbsAttrbCode("BBSA01")
-                                                .frstRegisterId("SYSTEM")
-                                                .build())));
-
-                Board board = Board.builder()
-                                .bbsId(java.util.Objects.requireNonNull(master.getBbsId()))
+        @DisplayName("게시물 저장 및 조회")
+        void boardArticleTest() {
+                // Given
+                Board article = Board.builder()
+                                .bbsId("BBS_001")
                                 .nttSj("테스트 제목")
                                 .nttCn("테스트 내용")
-                                .ntceBgnde("20230101")
-                                .ntceEndde("99991231")
-                                .ntcrId("TESTER")
-                                .ntcrNm("Tester")
-                                .password("password")
+                                .ntceBgnde("20240101")
+                                .ntceEndde("20991231")
                                 .build();
 
-                // when
-                Board saved = java.util.Objects
-                                .requireNonNull(boardRepository.save(java.util.Objects.requireNonNull(board)));
+                // When
+                Board saved = boardRepository.save(article);
+                Optional<Board> found = boardRepository.findById(saved.getNttId());
 
-                // then
-                assertThat(saved.getNttSj()).isEqualTo("테스트 제목");
-                assertThat(saved.getNttCn()).isEqualTo("테스트 내용");
+                // Then
+                assertThat(found).isPresent();
+                assertThat(found.get().getNttSj()).isEqualTo("테스트 제목");
         }
 }

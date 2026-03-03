@@ -50,7 +50,7 @@ public class MenuService {
     public List<MenuDto> getMenuHierarchy() {
         try {
             log.debug("getMenuHierarchy started");
-            
+
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             List<String> roles = new ArrayList<>();
             if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
@@ -65,27 +65,29 @@ public class MenuService {
             List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
             List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
             log.info(">>> Total menus: {}, Total authorities: {}", allMenus.size(), authorities.size());
-            
+
             List<Long> authorizedMenuNos = authorities.stream()
-                .filter(ma -> {
-                    boolean match = roles.contains(ma.getId().getAuthorCode());
-                    if (match) log.trace(">>> Menu mapping match: menuNo={}, author={}", ma.getId().getMenuNo(), ma.getId().getAuthorCode());
-                    return match;
-                })
-                .map(ma -> ma.getId().getMenuNo())
-                .distinct()
-                .collect(Collectors.toList());
+                    .filter(ma -> {
+                        boolean match = roles.contains(ma.getId().getAuthorCode());
+                        if (match)
+                            log.trace(">>> Menu mapping match: menuNo={}, author={}", ma.getId().getMenuNo(),
+                                    ma.getId().getAuthorCode());
+                        return match;
+                    })
+                    .map(ma -> ma.getId().getMenuNo())
+                    .distinct()
+                    .collect(Collectors.toList());
 
             log.info(">>> Authorized menu count: {}", authorizedMenuNos.size());
 
             List<Menu> menus = allMenus.stream()
-                .filter(m -> {
-                    boolean isAuthorized = authorizedMenuNos.contains(m.getId());
-                    boolean isAdmin = roles.contains("ROLE_ADMIN");
-                    return isAuthorized || isAdmin;
-                })
-                .collect(Collectors.toList());
-            
+                    .filter(m -> {
+                        boolean isAuthorized = authorizedMenuNos.contains(m.getId());
+                        boolean isAdmin = roles.contains("ROLE_ADMIN");
+                        return isAuthorized || isAdmin;
+                    })
+                    .collect(Collectors.toList());
+
             log.info(">>> Screened menus count: {}", menus.size());
 
             List<Program> programs = programRepository.findAll();
@@ -470,7 +472,8 @@ public class MenuService {
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
-        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(), vo.getMenuDc(),
+        menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(),
+                vo.getMenuDc(),
                 vo.getRelateImagePath(), vo.getRelateImageNm(), vo.getModernRoute());
     }
 

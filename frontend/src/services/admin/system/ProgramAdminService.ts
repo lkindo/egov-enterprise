@@ -9,32 +9,32 @@ const BASE_URL = '/admin/system/programs';
 
 export const programAdminService = {
     /** 프로그램 목록 조회 (페이징) */
-    getProgramList: async (params?: SearchParams, _config?: any) => {
-        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { params });
+    getProgramList: async (params?: SearchParams, config?: any) => {
+        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { ...config, params });
     },
 
     /** 프로그램 목록 조회 (Alias) */
-    getPrograms: async (params?: SearchParams, _config?: any) => {
-        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { params });
+    getPrograms: async (params?: SearchParams, config?: any) => {
+        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { ...config, params });
     },
 
     /** 프로그램 상세 조회 */
-    getProgram: async (progrmFileNm: string, _config?: any) => {
-        return client.get<ProgrmManage>(`${BASE_URL}/${progrmFileNm}`);
+    getProgram: async (progrmFileNm: string, config?: any) => {
+        return client.get<ProgrmManage>(`${BASE_URL}/${progrmFileNm}`, config);
     },
 
     /** 프로그램 등록 */
-    createProgram: async (data: Partial<ProgrmManage>, _config?: any) => {
-        return client.post<void>(BASE_URL, data);
+    createProgram: async (data: Partial<ProgrmManage>, config?: any) => {
+        return client.post<void>(BASE_URL, data, config);
     },
 
     /** 프로그램 정보 수정 */
-    updateProgram: async (progrmFileNm: string, data: Partial<ProgrmManage>, _config?: any) => {
-        return client.put<void>(`${BASE_URL}/${progrmFileNm}`, data);
+    updateProgram: async (progrmFileNm: string, data: Partial<ProgrmManage>, config?: any) => {
+        return client.put<void>(`${BASE_URL}/${progrmFileNm}`, data, config);
     },
 
     /** 프로그램 삭제 */
-    deleteProgram: async (progrmFileNm: string, _config?: any) => {
-        return client.delete<void>(`${BASE_URL}/${progrmFileNm}`);
+    deleteProgram: async (progrmFileNm: string, config?: any) => {
+        return client.delete<void>(`${BASE_URL}/${progrmFileNm}`, config);
     },
 };
