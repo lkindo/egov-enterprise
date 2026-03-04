@@ -16,7 +16,8 @@ import com.company.project.core.config.FullBeanNameGenerator;
                 "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 org.egovframe.rte.fdl.security.config.EgovSecurityConfiguration.class,
-                                                org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class
+                                                org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class,
+                                                org.egovframe.rte.fdl.access.config.EgovAccessConfiguration.class
                                 }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.company\\.project\\.config\\.MinimalTestConfig"),
 
