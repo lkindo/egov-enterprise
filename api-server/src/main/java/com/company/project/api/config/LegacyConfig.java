@@ -1,7 +1,5 @@
 package com.company.project.api.config;
 
-import org.mybatis.spring.boot.autoconfigure.ConfigurationCustomizer;
-import org.egovframe.rte.psl.dataaccess.util.EgovMap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -52,14 +50,6 @@ public class LegacyConfig {
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setCacheSeconds(60);
         return messageSource;
-    }
-
-    @Bean
-    public ConfigurationCustomizer mybatisConfigurationCustomizer() {
-        return configuration -> {
-            configuration.getTypeAliasRegistry().registerAlias("egovMap", EgovMap.class);
-            // FileVO, ComDefaultCodeVO ?? common-legacy-support 모듈 ?거??해 ????
-                    };
     }
 
     @Bean

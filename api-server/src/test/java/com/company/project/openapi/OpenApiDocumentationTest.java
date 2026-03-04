@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * API 문서 구조 확인???????좎럩?????좎럩??
  */
 @SpringBootTest
-@AutoConfigureWebMvc
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 @ActiveProfiles("test")
 class OpenApiDocumentationTest {
 
@@ -38,10 +38,17 @@ class OpenApiDocumentationTest {
   @DisplayName("OpenAPI 스펙?문서 조회?좎럩???)")
   void openApiSpec_endpoint_accessibility() throws Exception {
     // When & Then - OpenAPI 스펙?문서 조회?좎럩???
-    mockMvc.perform(get("/v3/api-docs")
+    String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andReturn().getResponse().getContentAsString();
+
+    // Export to file if requested
+    String exportPath = System.getProperty("openapi.export.path");
+    if (exportPath != null) {
+      java.nio.file.Files.write(java.nio.file.Paths.get(exportPath), content.getBytes());
+    }
   }
 
   @Test

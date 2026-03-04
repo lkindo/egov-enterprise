@@ -19,7 +19,6 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     
-    implementation libs.mybatis.starter
     implementation libs.icu4j
     implementation libs.commons.io
     implementation libs.guava
@@ -54,8 +53,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
-//    testImplementation libs.archunit.junit5
-//    testImplementation libs.archunit.library
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.3.0"
     
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
