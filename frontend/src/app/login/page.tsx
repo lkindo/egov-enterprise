@@ -48,7 +48,7 @@ export default function LoginPage() {
                 <CardHeader className="space-y-1 text-center">
                     <CardTitle className="text-2xl font-bold tracking-tight text-primary">E-GOV ENTERPRISE</CardTitle>
                     <CardDescription>
-                        표준프레임워크 경량환경 내부업무 시스템
+                        표준프레임워크 엔터프라이즈 시스템
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
@@ -59,7 +59,7 @@ export default function LoginPage() {
                                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id="id"
-                                    placeholder="Enter your ID"
+                                    placeholder="아이디를 입력하세요"
                                     value={id}
                                     onChange={(e) => setId(e.target.value)}
                                     className="pl-9"
@@ -74,7 +74,7 @@ export default function LoginPage() {
                                 <Input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
-                                    placeholder="Enter your password"
+                                    placeholder="비밀번호를 입력하세요"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="pl-9 pr-9"

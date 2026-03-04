@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import CommonCodeClient from './CommonCodeClient';
 
@@ -20,25 +21,32 @@ export default async function CommonCodePage({
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // Fetch groups and details in parallel if groupId exists
+  // Fetch classifications, groups and details in parallel
+  let clCodes: any[] = [];
   let groups: any[] = [];
   let details: any[] = [];
 
   try {
-    const [groupsRes, detailsRes] = await Promise.all([
-      codeAdminService.getGroups({}, axiosConfig),
-      groupId ? codeAdminService.getDetails({ codeId: groupId }, axiosConfig) : Promise.resolve({ resultList: [] } as any)
+    const [clRes, groupsRes, detailsRes] = await Promise.all([
+      codeAdminService.getClCodes({ pageUnit: 999 } as any, axiosConfig),
+      codeAdminService.getGroups({ pageUnit: 999 } as any, axiosConfig),
+      groupId ? codeAdminService.getDetails({ codeId: groupId, pageUnit: 999 } as any, axiosConfig) : Promise.resolve({ resultList: [] } as any)
     ]);
 
-    groups = groupsRes.resultList || [];
-    details = detailsRes.resultList || [];
-  } catch (error) {
+    clCodes = clRes.list || clRes.resultList || [];
+    groups = groupsRes.list || groupsRes.resultList || [];
+    details = detailsRes.list || detailsRes.resultList || [];
+  } catch (error: any) {
     console.error('Server-side fetch common codes failed:', error);
+    if (error.response?.status === 401 || !accessToken) {
+      redirect('/login?expired=true');
+    }
   }
 
   return (
     <Suspense fallback={<CommonCodeLoading />}>
       <CommonCodeClient
+        clCodes={clCodes}
         groups={groups}
         details={details}
         selectedGroupId={groupId}

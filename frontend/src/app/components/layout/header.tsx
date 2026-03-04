@@ -95,7 +95,7 @@ export function Header() {
           </div>
           <div className="flex flex-col hidden sm:flex">
             <span className="text-sm font-black leading-tight">전자정부 5.0</span>
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">Enterprise Portal</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">전자정부 포털</span>
           </div>
         </Link>
 

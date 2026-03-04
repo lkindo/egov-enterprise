@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * ??뉕탢?????뵠?? COMTNSYSHISTORY
  */
 @Entity
-@Table(name = "NSYSHISTORY")
+@Table(name = "HSYSHIST")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SystemHistory {

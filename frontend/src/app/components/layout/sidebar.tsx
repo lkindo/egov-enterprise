@@ -313,8 +313,8 @@ export function Sidebar() {
                 <span className="text-primary-foreground font-black text-xl -rotate-2">eG</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-black tracking-tighter uppercase leading-none">Enterprise</span>
-                <span className="text-[10px] text-muted-foreground/60 font-black tracking-[0.3em]">Portal 5.0</span>
+                <span className="text-base font-black tracking-tighter uppercase leading-none">엔터프라이즈</span>
+                <span className="text-[10px] text-muted-foreground/60 font-black tracking-[0.3em]">포털 5.0</span>
               </div>
             </Link>
             <Button
@@ -332,7 +332,7 @@ export function Sidebar() {
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
                 <div className="text-[11px] font-black text-muted-foreground/40 uppercase tracking-[0.25em]">
-                  Service Modules
+                  서비스 모듈
                 </div>
               </div>
               {topMenus.map((domain, index) => (
@@ -351,7 +351,7 @@ export function Sidebar() {
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
                 <div className="text-[11px] font-black text-muted-foreground/40 uppercase tracking-[0.25em]">
-                  Navigation
+                  전체 메뉴
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
                   <Badge variant="outline" className="text-[9px] px-2 py-0 border-primary/20 bg-primary/5 text-primary">
@@ -389,9 +389,9 @@ export function Sidebar() {
                 <span className="text-[10px] font-black text-primary uppercase tracking-tighter">eGovFrame 5.0</span>
               </div>
               <p className="text-[9px] font-bold text-muted-foreground/50 leading-relaxed uppercase tracking-widest">
-                Modernized Enterprise UI Kit
+                현대화된 엔터프라이즈 UI 키트
                 <br />
-                Final Version 1.0.2
+                최종 버전 1.0.2
               </p>
             </div>
           </div>

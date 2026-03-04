@@ -105,7 +105,7 @@ export default function AuditAdminClient({ initialLogs }: { initialLogs: AuditLo
             <div className="flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl shadow-xl">
               <Activity size={16} className="text-emerald-500" />
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
-                Detected Streams: <span className="text-slate-900 tabular-nums">{initialLogs.length.toLocaleString()}</span>
+                감지된 로그: <span className="text-slate-900 tabular-nums">{initialLogs.length.toLocaleString()}</span>
               </span>
             </div>
             <Button
@@ -124,7 +124,7 @@ export default function AuditAdminClient({ initialLogs }: { initialLogs: AuditLo
             <Database size={28} className="text-primary-foreground" />
           </div>
           <div className="space-y-1 relative z-10">
-            <h4 className="text-xl font-black italic tracking-tighter uppercase tabular-nums">History Persistence Center</h4>
+            <h4 className="text-xl font-black italic tracking-tighter uppercase tabular-nums">감사 로그 저장 센터</h4>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-relaxed">
               시스템 모든 변경 사항을 추적하는 불변의 감사 로그 저장소입니다.
             </p>
@@ -139,7 +139,7 @@ export default function AuditAdminClient({ initialLogs }: { initialLogs: AuditLo
           <div className="flex-1">
             <StandardSearchFilter
               fields={[
-                { name: 'keyword', label: '로그 검색', type: 'text', placeholder: 'SYSTEM, ACTION, USER...' }
+                { name: 'keyword', label: '로그 검색', type: 'text', placeholder: '시스템, 작업명, 사용자...' }
               ]}
               onSearch={handleSearch}
               className="mb-0 border-none bg-transparent p-0 shadow-none ring-0 w-full"
@@ -156,12 +156,12 @@ export default function AuditAdminClient({ initialLogs }: { initialLogs: AuditLo
                 <History size={18} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">Audit Stream Inventory</h3>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">High-concurrency event log</p>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">감사 로그 인벤토리</h3>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">고성능 이벤트 로그 시스템</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black uppercase tracking-widest italic shadow-xl">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" /> Active Monitoring
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" /> 실시간 모니터링 중
             </div>
           </div>
 
@@ -172,8 +172,8 @@ export default function AuditAdminClient({ initialLogs }: { initialLogs: AuditLo
                   <ShieldCheck size={48} className="opacity-20 translate-y-2" />
                 </div>
                 <div className="text-center space-y-2">
-                  <p className="text-xl font-black uppercase tracking-widest text-slate-400 italic">No Protocol Found</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Try adjusting your interaction search</p>
+                  <p className="text-xl font-black uppercase tracking-widest text-slate-400 italic">검색된 로그가 없습니다.</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">검색어를 확인해 주세요.</p>
                 </div>
               </div>
             ) : (

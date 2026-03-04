@@ -11,7 +11,19 @@ export async function saveCodeDetail(prevState: any, data: Partial<CmmnDetailCod
     const accessToken = cookieStore.get('accessToken')?.value;
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await codeAdminService.createDetailCode(data as CmmnDetailCode, config);
+    // Check if it's an update or create. Since we use a modal and 'mode' state on client, 
+    // we should ideally pass it. For now, we'll try to update if it has both codeId and code.
+    // In a real app, you might want to call check if it exists or pass a flag.
+    // But since the service methods use different endpoints, we use a simple heuristic or a new param.
+    
+    // Let's use 'isNew' flag if provided in data (as partial)
+    const isNew = (data as any).isNew !== false;
+    
+    if (isNew) {
+      await codeAdminService.createDetailCode(data as CmmnDetailCode, config);
+    } else {
+      await codeAdminService.updateDetailCode(data as CmmnDetailCode, config);
+    }
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 저장되었습니다.' };

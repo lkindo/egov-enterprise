@@ -28,8 +28,9 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { saveCodeDetail, deleteCodeDetail } from '@/app/actions/codeActions';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CommonCodeClient({ groups, details, selectedGroupId }: { groups: any[]; details: CommonCodeDetail[]; selectedGroupId: string | null }) {
+export default function CommonCodeClient({ clCodes, groups, details, selectedGroupId }: { clCodes: any[]; groups: any[]; details: CommonCodeDetail[]; selectedGroupId: string | null }) {
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -37,6 +38,8 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
+  const [expandedCl, setExpandedCl] = useState<Record<string, boolean>>({});
+
   const [formData, setFormData] = useState<Partial<CommonCodeDetail>>({
     codeId: '',
     code: '',
@@ -44,6 +47,10 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
     codeDc: '',
     useAt: 'Y'
   });
+
+  const toggleCl = (clCode: string) => {
+    setExpandedCl(prev => ({ ...prev, [clCode]: !prev[clCode] }));
+  };
 
   const handleOpenCreate = () => {
     if (!selectedGroupId) return;
@@ -60,12 +67,18 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await saveCodeDetail(null, formData);
-    if (res.success) {
-      toast(res.message, 'success');
-      setIsOpen(false);
-    } else {
-      toast(res.message, 'error');
+    setLoading(true);
+    try {
+      const res = await saveCodeDetail(null, { ...formData, isNew: mode === 'create' } as any);
+      if (res.success) {
+        toast(res.message, 'success');
+        setIsOpen(false);
+        router.refresh();
+      } else {
+        toast(res.message, 'error');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,11 +91,17 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
     });
 
     if (isConfirmed) {
-      const res = await deleteCodeDetail(null, { codeId: selectedGroupId, code });
-      if (res.success) {
-        toast(res.message, 'success');
-      } else {
-        toast(res.message, 'error');
+      setLoading(true);
+      try {
+        const res = await deleteCodeDetail(null, { codeId: selectedGroupId, code });
+        if (res.success) {
+          toast(res.message, 'success');
+          router.refresh();
+        } else {
+          toast(res.message, 'error');
+        }
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -97,6 +116,9 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
     exportToCsv(details, exportColumns as any, `CommonCodes_${selectedGroupId}`);
     toast('데이터를 내보냈습니다.', 'success');
   };
+
+  const selectedGroup = groups.find(g => g.codeId === selectedGroupId);
+  const selectedCl = clCodes.find(c => c.clCode === selectedGroup?.clCode);
 
   const columns: Column<CommonCodeDetail>[] = [
     {
@@ -129,7 +151,7 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
       cell: (item) => (
         <div className="flex items-center gap-2">
           <div className={cn("h-2 w-2 rounded-full", item.useAt === 'Y' ? "bg-success" : "bg-destructive")} />
-          <span className="text-xs font-medium uppercase tracking-widest">{item.useAt === 'Y' ? 'ACTIVE' : 'INACTIVE'}</span>
+          <span className="text-xs font-medium uppercase tracking-widest">{item.useAt === 'Y' ? '사용 중' : '미사용'}</span>
         </div>
       )
     },
@@ -153,100 +175,140 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
-        title="시스템 공통 코드 프레임워크"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }]}
+        title="통합 기준정보 아키텍처"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '기준정보 및 공통코드' }]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        {/* Left: Code Groups */}
+        {/* Left: Hierarchical Taxonomy Tree */}
         <div className="lg:col-span-1 space-y-8">
-          <div className="flex items-center justify-between px-3">
-            <div className="space-y-1">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 italic">
-                <Activity size={12} className="text-primary animate-pulse" /> Code Taxonomy
-              </h3>
-            </div>
-            <button className="text-primary hover:bg-primary/10 p-2.5 rounded-2xl transition-all border border-transparent hover:border-primary/20 shadow-sm" title="그룹 추가"><Plus size={20} /></button>
-          </div>
-          <div className="flex flex-col gap-4">
-            {groups.map((g: any) => (
-              <button
-                key={g.codeId}
-                onClick={() => router.push(`/admin/system/common-code?groupId=${g.codeId}`)}
-                className={cn(
-                  "flex items-center justify-between p-6 rounded-[2rem] border-2 text-left transition-all group relative overflow-hidden",
-                  selectedGroupId === g.codeId
-                    ? "bg-slate-900 text-white border-slate-900 shadow-[0_20px_40px_rgba(15,23,42,0.15)] translate-x-2"
-                    : "bg-white border-slate-50 hover:border-slate-200 hover:bg-slate-50 shadow-sm"
-                )}
-              >
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg",
-                    selectedGroupId === g.codeId ? "bg-white/10 ring-1 ring-white/20" : "bg-slate-50 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary"
-                  )}>
-                    <Layers size={20} className={cn(selectedGroupId === g.codeId && "animate-pulse")} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black tracking-tight uppercase italic">{g.codeIdNm}</span>
-                    <span className={cn("text-[9px] font-mono font-bold tracking-widest opacity-40 italic", selectedGroupId === g.codeId ? "text-white" : "text-slate-400")}>{g.codeId}</span>
-                  </div>
+          <div className="px-3">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 italic mb-6">
+              <Layers size={12} className="text-primary animate-pulse" /> 통합 분류 체계
+            </h3>
+            
+            <div className="space-y-4">
+              {clCodes.length === 0 && (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase italic">분류 코드가 없습니다.</p>
                 </div>
-                <ChevronRight size={16} className={cn("transition-all relative z-10", selectedGroupId === g.codeId ? "translate-x-1" : "opacity-0 group-hover:opacity-100")} />
-                {selectedGroupId === g.codeId && <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[60px] rounded-full -mr-16 -mt-16 animate-pulse" />}
-              </button>
-            ))}
+              )}
+              {clCodes.map((cl) => {
+                const clGroups = groups.filter(g => g.clCode === cl.clCode);
+                const isExpanded = expandedCl[cl.clCode] || clGroups.some(g => g.codeId === selectedGroupId);
+                
+                return (
+                  <div key={cl.clCode} className="space-y-2">
+                    <button
+                      onClick={() => toggleCl(cl.clCode)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all group",
+                        isExpanded ? "bg-slate-50 border-slate-200" : "bg-white border-transparent hover:bg-slate-50"
+                      )}
+                    >
+                      <ChevronRight size={14} className={cn("transition-transform duration-300 opacity-40", isExpanded && "rotate-90 opacity-100 text-primary")} />
+                      <div className="w-8 h-8 rounded-lg bg-slate-900/5 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                        <Activity size={14} />
+                      </div>
+                      <div className="flex flex-col items-start overflow-hidden">
+                        <span className="text-[11px] font-black uppercase tracking-tight truncate w-full">{cl.clCodeNm}</span>
+                        <span className="text-[8px] font-mono opacity-40">{cl.clCode}</span>
+                      </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {isExpanded && (clGroups.length > 0) && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden pl-6 space-y-1.5"
+                        >
+                          {clGroups.map(g => (
+                            <button
+                              key={g.codeId}
+                              onClick={() => router.push(`/admin/system/common-code?groupId=${g.codeId}`)}
+                              className={cn(
+                                "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group",
+                                selectedGroupId === g.codeId
+                                  ? "bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.02] -translate-x-1"
+                                  : "bg-white border-slate-50 hover:border-slate-100 text-slate-500 hover:text-slate-900"
+                              )}
+                            >
+                              <div className="flex flex-col gap-0.5 max-w-[80%]">
+                                <span className="text-[10px] font-bold leading-tight truncate">{g.codeIdNm}</span>
+                                <span className={cn("text-[8px] font-mono opacity-40", selectedGroupId === g.codeId && "text-white/60")}>{g.codeId}</span>
+                              </div>
+                              <ArrowRightCircle size={12} className={cn("transition-all", selectedGroupId === g.codeId ? "opacity-100" : "opacity-0 group-hover:opacity-40")} />
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Right: Code Details */}
+        {/* Right: Integrated Control Center */}
         <div className="lg:col-span-3 space-y-10">
           {!selectedGroupId ? (
-            <div className="h-full min-h-[600px] rounded-[4rem] bg-slate-50/50 border-4 border-dashed border-slate-200/50 flex flex-col items-center justify-center text-slate-400 p-12 text-center transition-all group">
+            <div className="h-full min-h-[700px] rounded-[4rem] bg-slate-50/50 border-4 border-dashed border-slate-200/50 flex flex-col items-center justify-center text-slate-400 p-12 text-center transition-all group">
               <div className="w-28 h-28 rounded-full bg-white border border-slate-100 flex items-center justify-center mb-10 shadow-2xl group-hover:scale-110 transition-transform duration-700">
-                <Code2 size={48} className="opacity-20 italic text-primary" />
+                <ShieldCheck size={48} className="opacity-20 italic text-primary" />
               </div>
-              <p className="font-black text-2xl italic uppercase tracking-tighter text-slate-900 mb-4">Initialize Data Protocol</p>
-              <p className="text-sm font-bold max-w-sm leading-relaxed opacity-60">좌측 리스트에서 코드 아키텍처 그룹을 선택하십시오.<br />선택한 그룹에 최적화된 상세 프로토콜 정의 매트릭스가 활성화됩니다.</p>
+              <p className="font-black text-2xl italic uppercase tracking-tighter text-slate-900 mb-4">통합 정보 제어 센터</p>
+              <p className="text-sm font-bold max-w-sm leading-relaxed opacity-60">좌측 트리에서 코드 그룹을 선택하십시오.<br />전사 표준 공통 코드 프로토콜이 즉시 바인딩됩니다.</p>
               <div className="mt-12 flex gap-4 text-[9px] font-black uppercase tracking-[0.2em] opacity-30 italic">
-                <span className="animate-pulse">Waiting for Selection</span>
-                <span>•</span>
-                <span>System Idle</span>
+                <span className="animate-pulse">분류 노드 선택 대기 중</span>
               </div>
             </div>
           ) : (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-12 duration-1000">
-              <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between px-6 gap-6">
-                <div className="space-y-3">
-                  <div className="inline-flex px-4 py-1.5 bg-slate-100 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 italic shadow-inner">
-                    <ShieldCheck size={12} className="mr-2 text-emerald-500" /> Authorized Perspective
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-12 duration-1000">
+              {/* Header section with double identification */}
+              <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between px-6 gap-10">
+                <div className="flex items-center gap-6">
+                  <div className="relative group/id">
+                    <div className="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center shadow-2xl group-hover/id:-rotate-12 transition-all duration-700">
+                      <Tag size={32} className="text-white" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded-lg shadow-lg uppercase tracking-tighter italic">마스터</div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden group/icon">
-                      <Tag size={24} className="relative z-10 rotate-12 transition-transform group-hover/icon:rotate-0" />
-                      <div className="absolute bottom-0 right-0 w-8 h-8 bg-primary/40 blur-xl opacity-0 group-hover/icon:opacity-100 transition-opacity" />
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] italic bg-primary/5 px-3 py-1 rounded-full border border-primary/10">{selectedCl?.clCodeNm}</span>
+                      <ChevronRight size={12} className="opacity-20" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{selectedGroup?.codeIdNm}</span>
                     </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
-                        {groups.find((g: any) => g.codeId === selectedGroupId)?.codeIdNm}
-                      </h3>
-                      <span className="text-[10px] font-mono font-black text-slate-400 tracking-[0.4em] mt-2 italic px-1 opacity-60 uppercase">{selectedGroupId} Protocol Chain</span>
-                    </div>
+                    <h3 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
+                      {selectedGroup?.codeIdNm}
+                    </h3>
+                    <p className="text-sm font-bold text-slate-400 line-clamp-1 opacity-70 italic mt-1 px-1">
+                      {selectedGroup?.codeIdDc || 'No structural description provided.'}
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <Button
-                    onClick={handleOpenCreate}
-                    className="h-16 px-10 bg-slate-900 text-white rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 border border-white/10"
-                  >
-                    <Plus size={20} /> Establish New Code
-                  </Button>
+                
+                <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-[2rem] border border-slate-100 shadow-inner w-full xl:w-auto">
+                    <div className="hidden sm:flex flex-col items-end px-6">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">글로벌 코드 ID</span>
+                        <span className="text-lg font-mono font-black italic text-slate-900">{selectedGroupId}</span>
+                    </div>
+                    <Button
+                        onClick={handleOpenCreate}
+                        className="h-16 px-8 bg-slate-900 text-white rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-3 flex-1 xl:flex-none"
+                    >
+                        <Plus size={20} /> 코드 등록
+                    </Button>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] p-8 border shadow-2xl relative overflow-hidden group/matrix">
+              {/* Matrix view */}
+              <div className="bg-white rounded-[3rem] p-10 border shadow-2xl relative overflow-hidden group/matrix ring-1 ring-slate-100">
                 <DataTable
-                  title="코드 상세 정의 매트릭스"
+                  title="시스템 코드 정의 매트릭스"
                   columns={columns}
                   data={details}
                   loading={loading}
@@ -258,124 +320,126 @@ export default function CommonCodeClient({ groups, details, selectedGroupId }: {
                   }}
                   searchPlaceholder="상세 코드 검색..."
                 />
-                <Layers size={200} className="absolute right-[-40px] bottom-[-40px] opacity-[0.02] -rotate-12 transition-transform duration-1000 group-hover/matrix:rotate-0" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50" />
               </div>
 
-              <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group">
-                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                  <div className="w-20 h-20 bg-white/10 rounded-[1.5rem] flex items-center justify-center backdrop-blur-xl border border-white/20 shadow-2xl group-hover:rotate-12 transition-transform duration-700">
-                    <Info size={36} className="text-primary group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="space-y-3 flex-1 text-center md:text-left">
-                    <h4 className="text-2xl font-black italic tracking-tighter uppercase">Protocol Documentation Control</h4>
-                    <p className="text-sm text-slate-400 font-bold leading-relaxed max-w-2xl">
-                      선택된 그룹 내에서 공통 코드의 세부 프로토콜을 정의하고 런타임 환경에 즉각적으로 브로드캐스팅하십시오.
-                      모든 변경사항은 <span className="text-primary font-black italic">Next-Auth 기반 보안 환경</span>에서 추적 및 감사됩니다.
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 pr-4">
-                    <span className="text-[10px] font-black tracking-widest uppercase opacity-40">System Response</span>
-                    <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                      <Clock size={14} className="text-emerald-400" />
-                      <span className="text-sm font-mono font-black italic uppercase tracking-tighter">0.03ms Normalized</span>
+              {/* Meta stats / Info bar */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white shadow-xl relative overflow-hidden group border border-white/10">
+                    <div className="flex flex-col gap-1 relative z-10">
+                        <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] italic">전체 정의 항목</span>
+                        <div className="flex items-end gap-3">
+                            <h4 className="text-4xl font-black italic tracking-tighter tabular-nums">{details.length}</h4>
+                            <span className="text-[10px] font-bold opacity-40 mb-2 uppercase">활성 상태</span>
+                        </div>
                     </div>
-                  </div>
+                    <Code2 size={80} className="absolute right-[-10px] bottom-[-10px] opacity-[0.05] -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
                 </div>
-                <Activity size={200} className="absolute inset-0 m-auto opacity-[0.03] group-hover:scale-110 transition-transform duration-1000 pointer-events-none" />
+                
+                <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group transition-all hover:border-primary/20">
+                    <div className="flex flex-col gap-1 relative z-10">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">최근 동기화</span>
+                        <div className="flex items-center gap-3">
+                            <Clock size={20} className="text-primary opacity-40" />
+                            <h4 className="text-xl font-black italic tracking-tighter uppercase tabular-nums">실시간 동기화 완료</h4>
+                        </div>
+                    </div>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                </div>
+
+                <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group transition-all hover:border-primary/20">
+                    <div className="flex flex-col gap-1 relative z-10">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">보안 프로토콜</span>
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck size={20} className="text-emerald-500 opacity-60" />
+                            <h4 className="text-sm font-black italic uppercase tracking-tighter">인증 완료</h4>
+                        </div>
+                    </div>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 상세 코드 등록/수정 모달 */}
+      {/* Modal remains same for Code Detail Edit */}
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? 'Broadcast New Protocol Entry' : 'Refine Knowledge Protocol'}
+        title={mode === 'create' ? '새 상세 코드 등록' : '상세 코드 정보 수정'}
         maxWidth="lg"
       >
         <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
           <div className="p-10 space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Unique Code Sequence
-                </label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 코드 ID</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     disabled={mode === 'edit'}
-                    placeholder="01 / REQ"
-                    className="w-full h-16 rounded-2xl border-2 bg-slate-50 dark:bg-slate-800 disabled:opacity-50 font-black text-xl px-12 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase italic tracking-widest"
+                    placeholder="CODE_01"
+                    className="w-full h-16 rounded-2xl border-2 bg-slate-50 disabled:opacity-50 font-black text-xl px-12 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase italic tracking-widest"
                   />
                   <Code2 size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Protocol Display Label
-                </label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 코드 명칭</label>
                 <input
                   type="text"
                   value={formData.codeNm}
                   onChange={(e) => setFormData({ ...formData, codeNm: e.target.value })}
-                  placeholder="ENTER NOMENCLATURE"
-                  className="w-full h-16 rounded-2xl border-2 bg-slate-50 dark:bg-slate-800 font-black text-xl px-6 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-xl italic tracking-tighter"
+                  placeholder="공통코드명"
+                  className="w-full h-16 rounded-2xl border-2 bg-slate-50 font-black text-xl px-6 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-xl italic tracking-tighter"
                 />
               </div>
             </div>
 
             <div className="space-y-4 pt-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Deployment Status
-              </label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">운영 상태 설정</label>
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, useAt: 'Y' })}
                   className={cn(
                     "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
-                    formData.useAt === 'Y' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700"
+                    formData.useAt === 'Y' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
                   )}
                 >
                   <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'Y' ? "bg-emerald-400 animate-pulse" : "bg-slate-200")} />
-                  <span className="text-xs font-black uppercase tracking-widest">Active Matrix</span>
-                  {formData.useAt === 'Y' && <ArrowRightCircle size={16} className="text-emerald-400" />}
+                  <span className="text-xs font-black uppercase tracking-widest">사용 중</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, useAt: 'N' })}
                   className={cn(
                     "h-20 rounded-[1.5rem] border-2 flex items-center justify-center gap-4 transition-all shadow-lg active:scale-95",
-                    formData.useAt === 'N' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700"
+                    formData.useAt === 'N' ? "bg-slate-900 border-slate-900 text-white ring-4 ring-slate-900/10" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300"
                   )}
                 >
                   <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'N' ? "bg-rose-400 animate-pulse" : "bg-slate-200")} />
-                  <span className="text-xs font-black uppercase tracking-widest">Suspended</span>
-                  {formData.useAt === 'N' && <ArrowRightCircle size={16} className="text-rose-400" />}
+                  <span className="text-xs font-black uppercase tracking-widest">미사용</span>
                 </button>
               </div>
             </div>
 
             <div className="space-y-4 pt-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Architectural Meta Description
-              </label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 설명</label>
               <textarea
                 value={formData.codeDc || ''}
                 onChange={(e) => setFormData({ ...formData, codeDc: e.target.value })}
-                placeholder="Describe the functional scope and technical impact of this code point..."
-                className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+                placeholder="코드에 대한 설명을 입력하세요..."
+                className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner leading-relaxed resize-none"
               />
             </div>
 
             <div className="flex gap-6 pt-10">
-              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-50 transition-all opacity-40 hover:opacity-100 dark:border-slate-700 dark:hover:bg-slate-800">Abort Protocol</button>
-              <button type="submit" className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-slate-900/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all active:scale-95 border border-white/10 group">
-                <Save size={20} className="group-hover:rotate-12 transition-transform" /> Persist Protocol Configuration
+              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] opacity-40 hover:opacity-100 transition-all">취소</button>
+              <button type="submit" className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-slate-900/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all">
+                <Save size={20} /> 설정 저장하기
               </button>
             </div>
           </div>

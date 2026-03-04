@@ -95,7 +95,7 @@ export function DataTable<T>({
           {onExport && (
             <Button variant="outline" size="sm" onClick={onExport} className="h-9 gap-2">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">엑셀 다운로드</span>
             </Button>
           )}
         </div>
