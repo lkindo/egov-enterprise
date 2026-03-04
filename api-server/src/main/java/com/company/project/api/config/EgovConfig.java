@@ -6,10 +6,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+import org.springframework.context.annotation.Profile;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
+@Profile("!test")
 public class EgovConfig {
 
     // [context-whitelist.xml] Whitelists

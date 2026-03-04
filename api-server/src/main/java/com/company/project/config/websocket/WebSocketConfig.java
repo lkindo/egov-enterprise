@@ -11,9 +11,8 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
-
 @EnableWebSocketMessageBroker
-
+@org.springframework.context.annotation.Profile("!test")
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override

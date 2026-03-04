@@ -1,6 +1,7 @@
 package com.company.project.config;
 
 import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.security.service.EgovPasswordEncoder;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,7 +39,9 @@ import java.util.Properties;
 @ComponentScan(basePackages = {
         "com.company.project.service",
         "com.company.project.domain",
-        "com.company.project.core"
+        "com.company.project.core",
+        "com.company.project.security",
+        "com.company.project.api"
 }, nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class, excludeFilters = {
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
@@ -48,10 +52,15 @@ import java.util.Properties;
 public class MinimalTestConfig {
 
     @Bean
+    public EgovPasswordEncoder egovPasswordEncoder() {
+        return new EgovPasswordEncoder();
+    }
+
+    @Bean
     @Primary
     public DataSourceProperties dataSourceProperties() {
         DataSourceProperties properties = new DataSourceProperties();
-        properties.setUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        properties.setUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL");
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");
@@ -106,6 +115,7 @@ public class MinimalTestConfig {
 
     @Bean
     @Primary
+    @org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
@@ -150,6 +160,19 @@ public class MinimalTestConfig {
     }
 
     @Bean
+    @Primary
+    public UserDetailsService userDetailsService() {
+        return Mockito.mock(UserDetailsService.class);
+    }
+
+    @Bean
+    public com.company.project.api.interceptor.OperationalAuditInterceptor operationalAuditInterceptor() throws Exception {
+        com.company.project.api.interceptor.OperationalAuditInterceptor mock = Mockito.mock(com.company.project.api.interceptor.OperationalAuditInterceptor.class);
+        Mockito.when(mock.preHandle(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
+        return mock;
+    }
+
+    @Bean
     public org.springframework.security.authentication.AuthenticationManager authenticationManager() {
         return Mockito.mock(org.springframework.security.authentication.AuthenticationManager.class);
     }
@@ -162,16 +185,5 @@ public class MinimalTestConfig {
     @Bean(name = "loginUserAuditorAware")
     public org.springframework.data.domain.AuditorAware<String> loginUserAuditorAware() {
         return () -> java.util.Optional.of("testUser");
-    }
-
-    @Bean
-    public static org.springframework.beans.factory.config.BeanFactoryPostProcessor debugBeanSourcePostProcessor() {
-        return beanFactory -> {
-            String[] filterChainNames = beanFactory.getBeanNamesForType(org.springframework.security.web.SecurityFilterChain.class);
-            for (String name : filterChainNames) {
-                org.springframework.beans.factory.config.BeanDefinition bd = beanFactory.getBeanDefinition(name);
-                System.out.println("DEBUG SECURITY CHAIN: " + name + " [Resource: " + bd.getResourceDescription() + "]");
-            }
-        };
     }
 }

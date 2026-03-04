@@ -33,15 +33,15 @@ class MenuApiControllerTest {
     private MenuService menuService;
 
     @Test
-    @DisplayName("메뉴 계층 구조 API 조회 테스트")
+    @DisplayName("메뉴 전체 트리 조회 API 테스트")
     void getMenuHierarchyApiTest() throws Exception {
         // Given
         List<MenuDto> mockHierarchy = new ArrayList<>();
         mockHierarchy.add(MenuDto.builder().id(1L).menuNm("System").build());
-        given(menuService.getMenuHierarchy()).willReturn(mockHierarchy);
+        given(menuService.getAllMenus()).willReturn(mockHierarchy);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/menus/hierarchy")
+        mockMvc.perform(get("/api/v1/admin/system/menus/all")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -56,9 +56,10 @@ class MenuApiControllerTest {
         given(menuService.selectMenuManage(100L)).willReturn(dto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/menus/100")
+        mockMvc.perform(get("/api/v1/admin/system/menus/100")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.menuNm").value("Detail Menu"));
     }
 }

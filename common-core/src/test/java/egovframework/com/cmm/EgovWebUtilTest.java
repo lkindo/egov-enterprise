@@ -9,48 +9,55 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class EgovWebUtilTest {
 
     @Test
-    @DisplayName("XSS 최소 필터링 테스트")
-    void clearXSSMinimumTest() {
-        String input = "<script>alert('xss')</script>";
-        String output = EgovWebUtil.clearXSSMinimum(input);
-        
-        assertThat(output).contains("&lt;script&gt;");
-        assertThat(output).contains("&#39;xss&#39;");
+    @DisplayName("XSS 최소 필터링 확인")
+    void clearXSSMinimum() {
+        assertThat(EgovWebUtil.clearXSSMinimum(null)).isEqualTo("");
+        assertThat(EgovWebUtil.clearXSSMinimum("")).isEqualTo("");
+        assertThat(EgovWebUtil.clearXSSMinimum("<script>alert('XSS')</script>"))
+                .isEqualTo("&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;");
+        assertThat(EgovWebUtil.clearXSSMinimum("test.do%2F")).isEqualTo("test&#46;do&#47;");
     }
 
     @Test
-    @DisplayName("파일 경로 블랙리스트 필터링 테스트")
-    void filePathBlackListTest() {
-        String unsafePath = "../etc/passwd";
-        String safePath = EgovWebUtil.filePathBlackList(unsafePath);
-        
-        // ".." 가 제거되었는지 확인
-        assertThat(safePath).doesNotContain("..");
+    @DisplayName("XSS 최대 필터링 확인")
+    void clearXSSMaximum() {
+        // clearXSSMinimum replaces . with &#46; so ../ becomes &#46;&#46;/
+        // Then clearXSSMaximum replaces %00 and %
+        assertThat(EgovWebUtil.clearXSSMaximum("../test.do%00%"))
+                .isEqualTo("&#46;&#46;/test&#46;do&#37;");
     }
 
     @Test
-    @DisplayName("파일 경로 베이스 패스 결합 테스트")
-    void filePathWithBasePathTest() {
-        String input = "profile.png";
-        String basePath = "/upload/";
-        String result = EgovWebUtil.filePathBlackList(input, basePath);
-        
-        assertThat(result).contains("profile.png");
-        assertThat(result).contains(basePath);
+    @DisplayName("파일 경로 블랙리스트 필터링 확인")
+    void filePathBlackList() {
+        assertThat(EgovWebUtil.filePathBlackList(null)).isEqualTo("");
+        // ../../../etc/passwd -> .. removed -> ///etc/passwd
+        assertThat(EgovWebUtil.filePathBlackList("../../../etc/passwd")).isEqualTo("///etc/passwd");
+        assertThat(EgovWebUtil.filePathBlackList("..\\..\\..\\windows\\system32")).isEqualTo("windows\\system32");
     }
 
     @Test
-    @DisplayName("루트 경로 설정 시 예외 발생 테스트")
-    void rootPathExceptionTest() {
-        assertThrows(SecurityException.class, () -> {
-            EgovWebUtil.filePathBlackList("test", "/");
-        });
+    @DisplayName("Base Path 포함 파일 경로 필터링 확인")
+    void filePathBlackList_WithBasePath() {
+        assertThrows(SecurityException.class, () -> EgovWebUtil.filePathBlackList("test.txt", null));
+        assertThrows(SecurityException.class, () -> EgovWebUtil.filePathBlackList("test.txt", "/"));
+
+        // /base + /subdir/../file.txt -> /base/subdir/../file.txt -> /base/subdir//file.txt
+        assertThat(EgovWebUtil.filePathBlackList("/subdir/../file.txt", "/base"))
+                .isEqualTo("/base/subdir//file.txt");
     }
 
     @Test
-    @DisplayName("CRLF 제거 테스트")
-    void removeCRLFTest() {
-        String input = "line1\r\nline2\n";
-        assertThat(EgovWebUtil.removeCRLF(input)).isEqualTo("line1line2");
+    @DisplayName("파일 경로 전체 치환 확인")
+    void filePathReplaceAll() {
+        assertThat(EgovWebUtil.filePathReplaceAll(null)).isEqualTo("");
+        assertThat(EgovWebUtil.filePathReplaceAll("a/b\\c..d&e")).isEqualTo("abcde");
+    }
+
+    @Test
+    @DisplayName("CRLF 제거 확인")
+    void removeCRLF() {
+        assertThat(EgovWebUtil.removeCRLF("line1\r\nline2")).isEqualTo("line1line2");
     }
 }
+

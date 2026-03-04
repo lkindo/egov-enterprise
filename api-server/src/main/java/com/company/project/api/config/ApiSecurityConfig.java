@@ -33,6 +33,7 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.context.annotation.Profile("!test")
 public class ApiSecurityConfig {
         private final EgovAuthenticationProvider egovAuthenticationProvider;
         private final JwtTokenProvider jwtTokenProvider;

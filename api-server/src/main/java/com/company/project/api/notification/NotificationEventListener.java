@@ -1,6 +1,7 @@
 package com.company.project.api.notification;
 
 import com.company.project.service.notification.NotificationService;
+import com.company.project.service.notification.dto.NotificationDto;
 import com.company.project.service.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,12 @@ public class NotificationEventListener {
     @EventListener
     public void handleNotificationEvent(NotificationEvent event) {
         log.info("Handling notification event for user: {}, message: {}", event.getUserId(), event.getMessage());
-        notificationService.sendToUser(event.getUserId(), event.getMessage(), event.getType());
+        
+        NotificationDto dto = NotificationDto.builder()
+                .ntfcSj("Notification: " + event.getType())
+                .ntfcCn(event.getMessage())
+                .build();
+                
+        notificationService.createNotification(event.getUserId(), dto);
     }
 }
