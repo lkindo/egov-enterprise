@@ -21,16 +21,15 @@ function getActiveScript() {
 	var d = document.getElementsByTagName("script");
 	var path = dirname(d[d.length - 1].src);
 	delete d;
-	
+
 	var offset=path.indexOf(location.host)+location.host.length;
 	return path.substring(offset);
-} 
-
+}
 
 function getContextPath(){
     var offset=location.href.indexOf(location.host)+location.host.length;
     var ctxPath=location.href.substring(offset, location.href.indexOf('/',offset+1));
-    
+
     if ((/^\/js/).test(getActiveScript())) {
     	return "";
     }
@@ -43,7 +42,7 @@ function loadScript(src, f) {
   var script = document.createElement("script");
   script.src = src;
   var done = false;
-  script.onload = script.onreadystatechange = function() { 
+  script.onload = script.onreadystatechange = function() {
     // attach to both events for cross browser finish detection:
     if ( !done && (!this.readyState ||
       this.readyState == "loaded" || this.readyState == "complete") ) {
@@ -86,11 +85,11 @@ function fn_egov_AdministCalendar(frm, sDate, vDate) {
 	var openParam = "dialogWidth:320px;dialogHeight:220px;scroll:no;status:no;center:yes;resizable:yes;";
 
 	retVal = window.showModalDialog(url, varParam, openParam, "calendarCallback");
-	
+
 	otherParameters[0] = fn_egov_AdministCalendar.arguments.length;
 	otherParameters[1] = sDate;
 	otherParameters[2] = vDate;
-	
+
 	if (retVal) {
 		sDate.value = retVal.sDate;
 		vDate.value = retVal.vDate;
@@ -136,7 +135,7 @@ function fn_egov_NormalCalendar(frm, sDate, vDate) {
 	otherParameters[0] = fn_egov_NormalCalendar.arguments.length;
 	otherParameters[1] = sDate;
 	otherParameters[2] = vDate;
-	
+
 	if (retVal) {
 		if(fn_egov_NormalCalendar.arguments.length == 2){
 			sDate.value = retVal.vDate;
@@ -188,7 +187,7 @@ function fn_egov_Calendar(frm, sDate, vDate) {
 	otherParameters[0] = fn_egov_Calendar.arguments.length;
 	otherParameters[1] = sDate;
 	otherParameters[2] = vDate;
-	
+
 	if(retVal) {
 		if(fn_egov_Calendar.arguments.length == 2){
 			sDate.value = retVal.vDate;

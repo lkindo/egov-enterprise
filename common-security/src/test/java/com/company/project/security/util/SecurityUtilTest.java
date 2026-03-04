@@ -65,7 +65,7 @@ class SecurityUtilTest {
     @Test
     @DisplayName("해당 권한이 있을 때 true 반환 확인")
     void hasRole_UserHasRole_ReturnsTrue() {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null, 
+        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
@@ -77,7 +77,7 @@ class SecurityUtilTest {
     @Test
     @DisplayName("해당 권한이 없을 때 false 반환 확인")
     void hasRole_UserDoesNotHaveRole_ReturnsFalse() {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null, 
+        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
                 List.of(new SimpleGrantedAuthority("ROLE_GUEST")));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);

@@ -4,7 +4,7 @@
  */
 
 const EgovValidation = {
-    
+
     // 에러 메시지 설정
     messages: {
         required: '{0}은(는) 필수입력 항목입니다.',
@@ -22,72 +22,72 @@ const EgovValidation = {
         pwdCheckRepeat: '반복된 3개 이상의 문자나 숫자를 사용할 수 없습니다.',
         english: '{0}은(는) 영문자만 입력 가능합니다.'
     },
-    
+
     // 기본 validation 규칙들
     rules: {
         // 필수입력 검사
         required: function(value) {
-            return value !== null && value !== undefined && 
+            return value !== null && value !== undefined &&
                    (typeof value === 'string' ? value.trim().length > 0 : true);
         },
-        
+
         // 최대 길이 검사
         maxlength: function(value, max) {
             if (!value) return true;
             return value.length <= parseInt(max);
         },
-        
+
         // 최소 길이 검사
         minlength: function(value, min) {
             if (!value) return true;
             return value.length >= parseInt(min);
         },
-        
+
         // 숫자 검사
         integer: function(value) {
             if (!value) return true;
             return /^\d+$/.test(value);
         },
-        
+
         // 이메일 검사
         email: function(value) {
             if (!value) return true;
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(value);
         },
-        
+
         // 영문자만 허용
         english: function(value) {
             if (!value) return true;
             return /^[a-zA-Z]+$/.test(value);
         },
-        
+
         // 패스워드 길이 검사 (8~20자)
         password1: function(value) {
             if (!value) return true;
             return value.length >= 8 && value.length <= 20;
         },
-        
+
         // 패스워드 특수문자 제한
         password2: function(value) {
             if (!value) return true;
             // 특수문자 체크 (ASCII 33-47, 58-64, 91-96, 123-126)
             for (let i = 0; i < value.length; i++) {
                 const ch = value.charCodeAt(i);
-                if ((ch >= 33 && ch <= 47) || (ch >= 58 && ch <= 64) || 
+                if ((ch >= 33 && ch <= 47) || (ch >= 58 && ch <= 64) ||
                     (ch >= 91 && ch <= 96) || (ch >= 123 && ch <= 126)) {
                     return false;
                 }
             }
             return true;
         },
-        
+
         // 연속된 문자/순차적 문자 4개 이상 금지
         password3: function(value) {
             if (!value) return true;
             let cnt = 0, cnt2 = 1, cnt3 = 1;
             let temp = "";
-            
+
             for (let i = 0; i < value.length; i++) {
                 const ch = value.charAt(i);
                 if (i > 0) {
@@ -98,7 +98,7 @@ const EgovValidation = {
                     } else {
                         cnt2 = 1;
                     }
-                    
+
                     if (ch.charCodeAt(0) - prevCh.charCodeAt(0) === -1) {
                         cnt3++;
                         if (cnt3 >= 4) return false;
@@ -109,35 +109,35 @@ const EgovValidation = {
             }
             return true;
         },
-        
+
         // 반복문자/숫자 연속 4개 이상 금지
         password4: function(value) {
             if (!value) return true;
             for (let i = 0; i < value.length - 3; i++) {
-                if (value.charAt(i) === value.charAt(i+1) && 
-                    value.charAt(i) === value.charAt(i+2) && 
+                if (value.charAt(i) === value.charAt(i+1) &&
+                    value.charAt(i) === value.charAt(i+2) &&
                     value.charAt(i) === value.charAt(i+3)) {
                     return false;
                 }
             }
             return true;
         },
-        
+
         // 3가지 조합 (영문자, 숫자, 특수문자)
         pwdCheckComb3: function(value) {
             if (!value) return true;
             let hasAlpha = /[a-zA-Z]/.test(value);
             let hasNum = /\d/.test(value);
             let hasSpecial = /[~!@#$%^&*?]/.test(value);
-            
+
             let count = 0;
             if (hasAlpha) count++;
             if (hasNum) count++;
             if (hasSpecial) count++;
-            
+
             return count >= 3;
         },
-        
+
         // 4가지 조합 (영대문자, 영소문자, 숫자, 특수문자)
         pwdCheckComb4: function(value) {
             if (!value) return true;
@@ -145,16 +145,16 @@ const EgovValidation = {
             let hasLower = /[a-z]/.test(value);
             let hasNum = /\d/.test(value);
             let hasSpecial = /[~!@#$%^&*?]/.test(value);
-            
+
             let count = 0;
             if (hasUpper) count++;
             if (hasLower) count++;
             if (hasNum) count++;
             if (hasSpecial) count++;
-            
+
             return count >= 4;
         },
-        
+
         // 연속된 3개 이상의 문자나 숫자 금지
         pwdCheckSeries: function(value) {
             if (!value) return true;
@@ -162,20 +162,20 @@ const EgovValidation = {
                 const ch1 = value.charCodeAt(i);
                 const ch2 = value.charCodeAt(i+1);
                 const ch3 = value.charCodeAt(i+2);
-                
-                if ((ch2 - ch1 === 1 && ch3 - ch2 === 1) || 
+
+                if ((ch2 - ch1 === 1 && ch3 - ch2 === 1) ||
                     (ch1 - ch2 === 1 && ch2 - ch3 === 1)) {
                     return false;
                 }
             }
             return true;
         },
-        
+
         // 반복된 3개 이상의 문자나 숫자 금지
         pwdCheckRepeat: function(value) {
             if (!value) return true;
             for (let i = 0; i < value.length - 2; i++) {
-                if (value.charAt(i) === value.charAt(i+1) && 
+                if (value.charAt(i) === value.charAt(i+1) &&
                     value.charAt(i) === value.charAt(i+2)) {
                     return false;
                 }
@@ -183,30 +183,30 @@ const EgovValidation = {
             return true;
         }
     },
-    
+
     // 폼 검증 함수
     validateForm: function(formElement, validationRules) {
         const errors = [];
         let firstErrorField = null;
-        
+
         for (const fieldName in validationRules) {
             const field = formElement.elements[fieldName];
             if (!field) continue;
-            
+
             const fieldRules = validationRules[fieldName];
             const fieldValue = this.getFieldValue(field);
             const fieldLabel = fieldRules.label || fieldName;
-            
+
             // 각 규칙별로 검증
             for (const ruleName in fieldRules.rules) {
                 if (ruleName === 'label') continue;
-                
+
                 const ruleValue = fieldRules.rules[ruleName];
                 const ruleFunction = this.rules[ruleName];
-                
+
                 if (ruleFunction) {
                     let isValid = false;
-                    
+
                     if (ruleValue === true) {
                         // 매개변수가 없는 규칙
                         isValid = ruleFunction(fieldValue);
@@ -214,11 +214,11 @@ const EgovValidation = {
                         // 매개변수가 있는 규칙
                         isValid = ruleFunction(fieldValue, ruleValue);
                     }
-                    
+
                     if (!isValid) {
                         const errorMsg = this.formatMessage(this.messages[ruleName], fieldLabel, ruleValue);
                         errors.push(errorMsg);
-                        
+
                         if (!firstErrorField) {
                             firstErrorField = field;
                         }
@@ -227,7 +227,7 @@ const EgovValidation = {
                 }
             }
         }
-        
+
         if (errors.length > 0) {
             alert(errors.join('\n'));
             if (firstErrorField) {
@@ -235,14 +235,14 @@ const EgovValidation = {
             }
             return false;
         }
-        
+
         return true;
     },
-    
+
     // 필드 값 가져오기
     getFieldValue: function(field) {
         if (!field) return '';
-        
+
         if (field.type === 'checkbox' || field.type === 'radio') {
             if (field.length) {
                 // 배열인 경우
@@ -269,14 +269,14 @@ const EgovValidation = {
             return field.value || '';
         }
     },
-    
+
     // 메시지 포맷팅
     formatMessage: function(template, ...args) {
         return template.replace(/{(\d+)}/g, function(match, index) {
             return args[index] !== undefined ? args[index] : match;
         });
     },
-    
+
     // 문자열 trim 유틸리티
     trim: function(str) {
         return str ? str.replace(/^\s+|\s+$/g, '') : '';
@@ -288,7 +288,7 @@ window.EgovValidation = EgovValidation;
 
 // 기존 Spring Modules validation 함수들을 대체하는 래퍼 함수들
 
-// 게시판 관리 
+// 게시판 관리
 function validateBoardMaster(form) {
     const rules = {
         bbsNm: {

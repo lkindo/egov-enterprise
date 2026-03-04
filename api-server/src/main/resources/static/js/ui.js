@@ -3,7 +3,6 @@ $(function() {
     // init
     $('.popup').length && popup.init();
 
-
     // Form
 
         // Checkbox
@@ -92,14 +91,12 @@ $(function() {
             }
         });
 
-    
-
     // All menu
     var allMenu = {
         init: function() {
             this.$tartet = $('.all_menu');
             this.$btn = $('.util_menu .allmenu');
-            
+
             this.addEvent();
         },
         addEvent: function() {
@@ -118,9 +115,7 @@ $(function() {
     }
     $('.all_menu').length && allMenu.init();
 
-
-
-    // 
+    //
     var tempIntro = {
         init: function() {
             this.$tartet = $('.POP_TEMPLATE_INTRO');
@@ -137,11 +132,9 @@ $(function() {
     }
     tempIntro.init();
 
-
     $('.tree-ui').length && tree.init();
-    
-});
 
+});
 
 // Popup
 var popup = {
@@ -161,8 +154,6 @@ var popup = {
         });
     }
 }
-
-
 
 // 메뉴생성
 var tree = {

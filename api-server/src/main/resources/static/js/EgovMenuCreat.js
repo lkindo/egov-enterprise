@@ -60,7 +60,7 @@ function setOpenTreeNodes(openNode) {
 			openTreeNodes.push(nodeValues[0]);
 			setOpenTreeNodes(nodeValues[1]);
 		}
-	} 
+	}
 }
 /*
 * 트리노드 오픈 여부 확인
@@ -98,7 +98,7 @@ function addTreeNode(parentNode, recursedNodes) {
 	for (var i = 0; i < treeNodes.length; i++) {
 		var nodeValues = treeNodes[i].split("|");
 		if (nodeValues[1] == parentNode) {
-			
+
 			var lastSibling	= lastTreeSibling(nodeValues[0], nodeValues[1]);
 			var hasChildNode	= hasChildTreeNode(nodeValues[0]);
 			var isNodeOpen = isTreeNodeOpen(nodeValues[0]);
@@ -137,7 +137,7 @@ function openCloseEx(node, bottom) {
 	var treeDiv = document.getElementById("div" + node);
 	var treeJoin	= document.getElementById("join" + node);
 	var treeIcon = document.getElementById("icon" + node);
-	
+
 	if (treeDiv.style.display == 'none') {
 		if (bottom==1) treeJoin.src = treeIcons[3].src;
 		else treeJoin.src = treeIcons[2].src;
@@ -166,7 +166,7 @@ if(!Array.prototype.pop) {
 	}
 	Array.prototype.pop = fnArrayPop;
 }
- 
+
 /* ********************************************************
  * 모두선택 처리 함수
  ******************************************************** */

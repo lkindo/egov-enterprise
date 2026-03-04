@@ -46,7 +46,7 @@ class MenuServiceHierarchyTest {
 
         // Then
         assertThat(hierarchy).hasSize(2); // Root 1, Root 2
-        
+
         MenuDto root1 = hierarchy.get(0);
         assertThat(root1.getMenuNm()).isEqualTo("Root 1");
         assertThat(root1.getChildren()).hasSize(2);

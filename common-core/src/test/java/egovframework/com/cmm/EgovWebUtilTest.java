@@ -60,4 +60,3 @@ class EgovWebUtilTest {
         assertThat(EgovWebUtil.removeCRLF("line1\r\nline2")).isEqualTo("line1line2");
     }
 }
-

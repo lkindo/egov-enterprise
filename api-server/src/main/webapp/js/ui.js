@@ -3,7 +3,6 @@ $(function () {
     // init
     $('.popup').length && popup.init();
 
-
     // Form
 
     // Checkbox
@@ -92,8 +91,6 @@ $(function () {
         }
     });
 
-
-
     var allMenu = {
         init: function () {
             this.$btn = $('.util_menu .allmenu');
@@ -152,9 +149,7 @@ $(function () {
     };
     $('.gnb').length && gnbInteraction.init();
 
-
-
-    // 
+    //
     var tempIntro = {
         init: function () {
             this.$tartet = $('.POP_TEMPLATE_INTRO');
@@ -171,11 +166,9 @@ $(function () {
     }
     tempIntro.init();
 
-
     $('.tree-ui').length && tree.init();
 
 });
-
 
 // Popup
 var popup = {
@@ -195,8 +188,6 @@ var popup = {
         });
     }
 }
-
-
 
 // 메뉴생성
 var tree = {

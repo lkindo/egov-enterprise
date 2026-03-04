@@ -41,10 +41,10 @@ class BoardServiceTest {
     void setUp() {
         // Constructor arguments ordered correctly
         boardService = new BoardService(
-            boardRepository, 
-            boardMasterRepository, 
-            userService, 
-            fileService, 
+            boardRepository,
+            boardMasterRepository,
+            userService,
+            fileService,
             eventPublisher
         );
     }
@@ -68,7 +68,7 @@ class BoardServiceTest {
         BoardDetailResult mockDetail = mock(BoardDetailResult.class);
         given(mockDetail.getNttId()).willReturn(1L);
         given(mockDetail.getNttSj()).willReturn("Subject");
-        
+
         given(boardRepository.findArticleDetail(1L)).willReturn(Optional.of(mockDetail));
         given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().nttId(1L).build()));
 

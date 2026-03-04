@@ -31,10 +31,10 @@ function MultiSelector( list_target, max ){
 	} else {
 		this.max = 3; // 기본값 3개로 변경
 	};
-	
+
 	// 선택된 파일 목록 관리
 	this.selected_files = [];
-	
+
 	/**
 	 * Add a new file input element
 	 */
@@ -49,36 +49,36 @@ function MultiSelector( list_target, max ){
 
 			// Add reference to this object
 			element.multi_selector = this;
-			
+
 			// 전체 생성된 요소 수 증가
 			this.total_elements++;
 
 			// What to do when a file is selected
 			element.onchange = function(){
-				
+
 				// 파일이 선택되었는지 확인
 				if(this.value && this.value.length > 0) {
-					
+
 					// 최대 파일 수 체크
 					if(this.multi_selector.count >= this.multi_selector.max) {
 						alert('최대 ' + this.multi_selector.max + '개의 파일만 첨부할 수 있습니다.');
 						this.value = ''; // 선택 취소
 						return false;
 					}
-					
+
 					// 선택된 파일 수 증가
 					this.multi_selector.count++;
-					
+
 					// 파일 정보를 배열에 저장
 					this.multi_selector.selected_files.push({
 						element: this,
 						name: this.value,
 						id: this.getAttribute('data-file-id')
 					});
-					
+
 					// Update list
 					this.multi_selector.addListRow( this );
-					
+
 					// Hide this element
 					this.style.position = 'absolute';
 					this.style.left = '-1000px';
@@ -88,29 +88,29 @@ function MultiSelector( list_target, max ){
 					this.style.width = '0';
 					this.style.height = '0';
 					this.style.overflow = 'hidden';
-					
+
 					// 최대 개수에 도달하지 않았으면 새로운 파일 입력 요소 생성
 					if(this.multi_selector.count < this.multi_selector.max) {
 						// New file input
 						var new_element = document.createElement( 'input' );
 						new_element.type = 'file';
-						
+
 						// Add new element
 						this.parentNode.insertBefore( new_element, this );
-						
+
 						// Apply 'update' to element
 						this.multi_selector.addElement( new_element );
-						
+
 						new_element.onkeypress = function(){
 							return false;
 						};
 					}
 				}
 			};
-			
+
 			// Most recent element
 			this.current_element = element;
-			
+
 		} else {
 			// This can only be applied to file input elements!
 			alert( 'Error: not a file input element' );
@@ -155,7 +155,7 @@ function MultiSelector( list_target, max ){
 
 			// Decrement counter
 			multi_selector.count--;
-			
+
 			// selected_files 배열에서 제거
 			for(var i = 0; i < multi_selector.selected_files.length; i++) {
 				if(multi_selector.selected_files[i].id == file_id) {
@@ -165,11 +165,11 @@ function MultiSelector( list_target, max ){
 			}
 
 			// 파일을 삭제했으므로 새로운 입력 필드가 필요한 경우 생성
-			if(multi_selector.count < multi_selector.max && 
+			if(multi_selector.count < multi_selector.max &&
 			   !multi_selector.hasVisibleFileInput()) {
 				var new_element = document.createElement( 'input' );
 				new_element.type = 'file';
-				
+
 				// 첫 번째 파일 입력 필드의 부모에 추가
 				var file_container = document.getElementById('file_upload_posbl');
 				if(file_container) {
@@ -189,7 +189,7 @@ function MultiSelector( list_target, max ){
 		if(fileName.lastIndexOf('/') !== -1) {
 			fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
 		}
-		
+
 		// Set row value
 		var fileNameSpan = document.createElement('span');
 		fileNameSpan.innerHTML = fileName;
@@ -201,29 +201,29 @@ function MultiSelector( list_target, max ){
 		// Add it to the list
 		this.list_target.appendChild( new_row );
 	};
-	
+
 	/**
 	 * 현재 보이는 파일 입력 필드가 있는지 확인
 	 */
 	this.hasVisibleFileInput = function() {
 		var inputs = document.querySelectorAll('input[type="file"]');
 		for(var i = 0; i < inputs.length; i++) {
-			if(inputs[i].style.display !== 'none' && 
-			   inputs[i].style.visibility !== 'hidden' && 
+			if(inputs[i].style.display !== 'none' &&
+			   inputs[i].style.visibility !== 'hidden' &&
 			   inputs[i].offsetParent !== null) {
 				return true;
 			}
 		}
 		return false;
 	};
-	
+
 	/**
 	 * 현재 선택된 파일 개수 반환
 	 */
 	this.getFileCount = function() {
 		return this.count;
 	};
-	
+
 	/**
 	 * 최대 파일 개수 반환
 	 */

@@ -805,11 +805,10 @@ class DomainCoverageBoostTest {
             "com.company.project.domain.zip.ZipRepository"
         );
 
-
         for (String className : entityClasses) {
             try {
                 Class<?> clazz = Class.forName(className);
-                
+
                 // Static fields access (especially for Q classes)
                 for (Field field : clazz.getDeclaredFields()) {
                     if (Modifier.isStatic(field.getModifiers())) {

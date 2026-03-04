@@ -19,10 +19,10 @@ package com.company.project.test.async;
  * import org.springframework.http.MediaType;
  * import org.springframework.test.context.ActiveProfiles;
  * import org.springframework.test.web.servlet.MockMvc;
- * 
+ *
  * import java.util.concurrent.CompletableFuture;
  * import java.util.concurrent.TimeUnit;
- * 
+ *
  * import static org.awaitility.Awaitility.await;
  * import static org.mockito.ArgumentMatchers.anyInt;
  * import static org.mockito.Mockito.*;
@@ -31,22 +31,22 @@ package com.company.project.test.async;
  * import static
  * org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
  * import static org.assertj.core.api.Assertions.assertThat;
- * 
+ *
  * @SpringBootTest
- * 
+ *
  * @AutoConfigureWebMvc
- * 
+ *
  * @ActiveProfiles("test")
  * class AsyncCompletionTest {
- * 
+ *
  * @Autowired
  * private MockMvc mockMvc;
- * 
+ *
  * @MockitoBean
  * private AsyncService asyncService;
- * 
+ *
  * private static final int DEFAULT_TIMEOUT = 10; // seconds
- * 
+ *
  * @BeforeEach
  * void setUp() {
  * // Mock the async method to return a CompletableFuture that completes after a
@@ -63,7 +63,7 @@ package com.company.project.test.async;
  * }
  * });
  * });
- * 
+ *
  * when(asyncService.processAsyncWithError(anyInt())).thenAnswer(invocation -> {
  * int delayMs = invocation.getArgument(0);
  * return CompletableFuture.supplyAsync(() -> {
@@ -77,7 +77,7 @@ package com.company.project.test.async;
  * });
  * });
  * }
- * 
+ *
  * // ... tests ...
  * }
  */

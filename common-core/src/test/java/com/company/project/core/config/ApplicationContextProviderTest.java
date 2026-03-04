@@ -19,7 +19,7 @@ class ApplicationContextProviderTest {
     void setUp() throws Exception {
         mockContext = mock(ApplicationContext.class);
         provider = new ApplicationContextProvider();
-        
+
         // Reset static field using reflection for isolation
         Field field = ApplicationContextProvider.class.getDeclaredField("applicationContext");
         field.setAccessible(true);

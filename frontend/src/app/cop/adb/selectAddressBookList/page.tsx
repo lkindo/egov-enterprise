@@ -41,7 +41,7 @@ const AddressBookListPage = () => {
         try {
             const params = { pageIndex, pageUnit: 10, searchWrd };
             const response = await addressbookUserService.getAddressBooks(params);
-            
+
             // Spring Data Page 객체 구조에 맞게 매핑
             setList(response.content || []);
             setTotalCount(response.totalElements || 0);

@@ -36,9 +36,9 @@ function getDialogArguments() {
 function setReturnValue(obj) {
 	if (!window.showModalDialog) {
 		if (opener != null && !opener.closed) {
-			
+
 			var callbackMethod = opener.getCallbackMethodName();
-			
+
 			try {
 				if (callbackMethod != null) {
 					opener[callbackMethod](obj);
@@ -49,9 +49,9 @@ function setReturnValue(obj) {
 				alert('팝업 처리 시 오류가 발생하였습니다. \n오류내용 : ' + err);
 			}
 		} else if (parent.opener != null && !parent.opener.closed) {
-			
+
 			var callbackMethod = parent.opener.getCallbackMethodName();
-			
+
 			try {
 				if (callbackMethod != null) {
 					parent.opener[callbackMethod](obj);

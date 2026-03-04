@@ -186,7 +186,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 italic mb-6">
               <Layers size={12} className="text-primary animate-pulse" /> 통합 분류 체계
             </h3>
-            
+
             <div className="space-y-4">
               {clCodes.length === 0 && (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -196,7 +196,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
               {clCodes.map((cl) => {
                 const clGroups = groups.filter(g => g.clCode === cl.clCode);
                 const isExpanded = expandedCl[cl.clCode] || clGroups.some(g => g.codeId === selectedGroupId);
-                
+
                 return (
                   <div key={cl.clCode} className="space-y-2">
                     <button
@@ -290,7 +290,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-[2rem] border border-slate-100 shadow-inner w-full xl:w-auto">
                     <div className="hidden sm:flex flex-col items-end px-6">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">글로벌 코드 ID</span>
@@ -335,7 +335,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                     </div>
                     <Code2 size={80} className="absolute right-[-10px] bottom-[-10px] opacity-[0.05] -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
                 </div>
-                
+
                 <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group transition-all hover:border-primary/20">
                     <div className="flex flex-col gap-1 relative z-10">
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">최근 동기화</span>

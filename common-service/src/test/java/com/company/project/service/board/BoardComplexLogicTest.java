@@ -41,10 +41,10 @@ class BoardComplexLogicTest {
     @BeforeEach
     void setUp() {
         boardService = new BoardService(
-            boardRepository, 
-            boardMasterRepository, 
-            userService, 
-            fileService, 
+            boardRepository,
+            boardMasterRepository,
+            userService,
+            fileService,
             eventPublisher
         );
     }
@@ -82,7 +82,7 @@ class BoardComplexLogicTest {
 
         // Then
         // Repository에 저장되는 엔티티의 atchFileId가 request와 동일한지 확인
-        verify(boardRepository).save(argThat(board -> 
+        verify(boardRepository).save(argThat(board ->
             "FILE_999".equals(board.getAtchFileId())
         ));
     }
@@ -94,7 +94,7 @@ class BoardComplexLogicTest {
         Long nttId = 1L;
         Board board = spy(Board.builder().nttId(nttId).inqireCo(10).build());
         BoardDetailResult mockDetail = mock(BoardDetailResult.class);
-        
+
         given(boardRepository.findArticleDetail(nttId)).willReturn(Optional.of(mockDetail));
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
 

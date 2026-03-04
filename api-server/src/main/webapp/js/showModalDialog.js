@@ -16,7 +16,7 @@ this.showModalDialogSupported = true;
 this.callbackMethod = null;
 
 if (!window.showModalDialog) {
-	
+
 	showModalDialogSupported = false;
 
 	window.showModalDialog = function(arg1, arg2, arg3, callback) {
@@ -61,7 +61,7 @@ if (!window.showModalDialog) {
 		var targetWin = window.open(arg1, "ShowModalDialog" + arg1, 'toolbar=no, location=no, directories=no, status=' + status + ', menubar=no, scrollbars=' + scroll + ', resizable=' + resizable + ', copyhistory=no, width=' + w	+ ', height=' + h + ', top=' + top + ', left=' + left);
 
 		dialogArguments = arg2;
-		
+
 		if (callback != null) {
 			callbackMethod = callback;
 		} else {
@@ -73,8 +73,8 @@ if (!window.showModalDialog) {
 
 	window.getDialogArgumentsInner = function() {
 		return dialogArguments;
-	}; 
-	
+	};
+
 	window.getCallbackMethodName = function() {
 		return callbackMethod;
 	}

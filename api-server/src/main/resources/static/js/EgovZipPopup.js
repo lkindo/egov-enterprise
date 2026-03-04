@@ -1,15 +1,14 @@
 /****************************************************************
- * 
+ *
  * 파일명 : EgovZipPopup.js
  * 설  명 : 전자정부 공통서비스 달력 팝업 JavaScript
- * 
+ *
  *    수정일      수정자     Version        Function 명
  * ------------    ---------   -------------  ----------------------------
  * 2009.03.30    이중호       1.0             최초생성
- * 
- * 
+ *
+ *
  */
-
 
 function dirname(path) {
 	if (path.lastIndexOf("/") == -1)
@@ -21,16 +20,15 @@ function getActiveScript() {
 	var d = document.getElementsByTagName("script");
 	var path = dirname(d[d.length - 1].src);
 	delete d;
-	
+
 	var offset=path.indexOf(location.host)+location.host.length;
 	return path.substring(offset);
-} 
-
+}
 
 function getContextPath(){
     var offset=location.href.indexOf(location.host)+location.host.length;
     var ctxPath=location.href.substring(offset, location.href.indexOf('/',offset+1));
-    
+
     if ((/^\/js/).test(getActiveScript())) {
     	return "";
     }
@@ -43,7 +41,7 @@ function loadScript(src, f) {
   var script = document.createElement("script");
   script.src = src;
   var done = false;
-  script.onload = script.onreadystatechange = function() { 
+  script.onload = script.onreadystatechange = function() {
     // attach to both events for cross browser finish detection:
     if ( !done && (!this.readyState ||
       this.readyState == "loaded" || this.readyState == "complete") ) {
@@ -62,21 +60,21 @@ loadScript(getContextPath() + '/js/showModalDialog.js');
 /**********************************************
  * 함수명 : fn_egov_ZipSearch
  * 설  명 : 우편번호찾기 팝업 호출 - form별로 이름이 다른 경우 사용
- * 인  자 : 사용할 Form 객체, 우편번호(123456), 우편번호(123-456), 주소 
+ * 인  자 : 사용할 Form 객체, 우편번호(123456), 우편번호(123-456), 주소
  * 사용법 : fn_egov_ZipSearch(frm, sZip, vZip, sAddr)
- * 
+ *
  * 수정일        수정자      수정내용
  * ------        ------     -------------------
  * 2009.03.30    이중호      신규작업
- * 
+ *
  */
 function fn_egov_ZipSearch(frm, sZip, vZip, sAddr) {
 	var retVal;
 
 	var url = frm.zip_url.value;
-	//var url = "/ebt/sym/cmm/EgovCcmZipSearchPopup.do"; 
+	//var url = "/ebt/sym/cmm/EgovCcmZipSearchPopup.do";
 	var varParam = new Object();
-	varParam.sZip = sZip.value;		
+	varParam.sZip = sZip.value;
 
 	// IE
 	//var openParam = "dialogWidth:500px;dialogHeight:325px;scroll:no;status:no;center:yes;resizable:yes;";
@@ -95,7 +93,6 @@ function fn_egov_ZipSearch(frm, sZip, vZip, sAddr) {
 		sAddr.value = retVal.sAddr;
 	}
 }
-
 
 function zipCallback(retVal) {
 	if (retVal) {

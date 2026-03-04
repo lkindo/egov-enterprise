@@ -19,7 +19,6 @@ $.ui = $.ui || {};
 
 var version = $.ui.version = "1.12.1";
 
-
 /*!
  * jQuery UI Widget 1.12.1
  * http://jqueryui.com
@@ -34,8 +33,6 @@ var version = $.ui.version = "1.12.1";
 //>>description: Provides a factory for creating stateful widgets with a common API.
 //>>docs: http://api.jqueryui.com/jQuery.widget/
 //>>demos: http://jqueryui.com/widget/
-
-
 
 var widgetUuid = 0;
 var widgetSlice = Array.prototype.slice;
@@ -742,7 +739,6 @@ $.each( { show: "fadeIn", hide: "fadeOut" }, function( method, defaultEffect ) {
 
 var widget = $.widget;
 
-
 /*!
  * jQuery UI Position 1.12.1
  * http://jqueryui.com
@@ -759,7 +755,6 @@ var widget = $.widget;
 //>>description: Positions elements relative to other elements.
 //>>docs: http://api.jqueryui.com/position/
 //>>demos: http://jqueryui.com/position/
-
 
 ( function() {
 var cachedScrollbarWidth,
@@ -1230,7 +1225,6 @@ $.ui.position = {
 
 var position = $.ui.position;
 
-
 /*!
  * jQuery UI :data 1.12.1
  * http://jqueryui.com
@@ -1244,7 +1238,6 @@ var position = $.ui.position;
 //>>group: Core
 //>>description: Selects elements which have data stored under the specified key.
 //>>docs: http://api.jqueryui.com/data-selector/
-
 
 var data = $.extend( $.expr[ ":" ], {
 	data: $.expr.createPseudo ?
@@ -1276,7 +1269,6 @@ var data = $.extend( $.expr[ ":" ], {
 
 // This file is deprecated
 
-
 var disableSelection = $.fn.extend( {
 	disableSelection: ( function() {
 		var eventType = "onselectstart" in document.createElement( "div" ) ?
@@ -1295,7 +1287,6 @@ var disableSelection = $.fn.extend( {
 	}
 } );
 
-
 /*!
  * jQuery UI Effects 1.12.1
  * http://jqueryui.com
@@ -1312,8 +1303,6 @@ var disableSelection = $.fn.extend( {
 // jscs:enable maximumLineLength
 //>>docs: http://api.jqueryui.com/category/effects-core/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var dataSpace = "ui-effects-",
 	dataSpaceStyle = "ui-effects-style",
@@ -2920,7 +2909,6 @@ $.each( baseEasings, function( name, easeIn ) {
 
 var effect = $.effects;
 
-
 /*!
  * jQuery UI Effects Blind 1.12.1
  * http://jqueryui.com
@@ -2935,8 +2923,6 @@ var effect = $.effects;
 //>>description: Blinds the element.
 //>>docs: http://api.jqueryui.com/blind-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectBlind = $.effects.define( "blind", "hide", function( options, done ) {
 	var map = {
@@ -2976,7 +2962,6 @@ var effectsEffectBlind = $.effects.define( "blind", "hide", function( options, d
 	} );
 } );
 
-
 /*!
  * jQuery UI Effects Bounce 1.12.1
  * http://jqueryui.com
@@ -2991,8 +2976,6 @@ var effectsEffectBlind = $.effects.define( "blind", "hide", function( options, d
 //>>description: Bounces an element horizontally or vertically n times.
 //>>docs: http://api.jqueryui.com/bounce-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectBounce = $.effects.define( "bounce", function( options, done ) {
 	var upAnim, downAnim, refValue,
@@ -3072,7 +3055,6 @@ var effectsEffectBounce = $.effects.define( "bounce", function( options, done ) 
 	$.effects.unshift( element, queuelen, anims + 1 );
 } );
 
-
 /*!
  * jQuery UI Effects Clip 1.12.1
  * http://jqueryui.com
@@ -3087,8 +3069,6 @@ var effectsEffectBounce = $.effects.define( "bounce", function( options, done ) 
 //>>description: Clips the element on and off like an old TV.
 //>>docs: http://api.jqueryui.com/clip-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectClip = $.effects.define( "clip", "hide", function( options, done ) {
 	var start,
@@ -3123,7 +3103,6 @@ var effectsEffectClip = $.effects.define( "clip", "hide", function( options, don
 
 } );
 
-
 /*!
  * jQuery UI Effects Drop 1.12.1
  * http://jqueryui.com
@@ -3138,8 +3117,6 @@ var effectsEffectClip = $.effects.define( "clip", "hide", function( options, don
 //>>description: Moves an element in one direction and hides it at the same time.
 //>>docs: http://api.jqueryui.com/drop-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectDrop = $.effects.define( "drop", "hide", function( options, done ) {
 
@@ -3178,7 +3155,6 @@ var effectsEffectDrop = $.effects.define( "drop", "hide", function( options, don
 	} );
 } );
 
-
 /*!
  * jQuery UI Effects Explode 1.12.1
  * http://jqueryui.com
@@ -3195,8 +3171,6 @@ var effectsEffectDrop = $.effects.define( "drop", "hide", function( options, don
 // jscs:enable maximumLineLength
 //>>docs: http://api.jqueryui.com/explode-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectExplode = $.effects.define( "explode", "hide", function( options, done ) {
 
@@ -3275,7 +3249,6 @@ var effectsEffectExplode = $.effects.define( "explode", "hide", function( option
 	}
 } );
 
-
 /*!
  * jQuery UI Effects Fade 1.12.1
  * http://jqueryui.com
@@ -3290,8 +3263,6 @@ var effectsEffectExplode = $.effects.define( "explode", "hide", function( option
 //>>description: Fades the element.
 //>>docs: http://api.jqueryui.com/fade-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectFade = $.effects.define( "fade", "toggle", function( options, done ) {
 	var show = options.mode === "show";
@@ -3308,7 +3279,6 @@ var effectsEffectFade = $.effects.define( "fade", "toggle", function( options, d
 		} );
 } );
 
-
 /*!
  * jQuery UI Effects Fold 1.12.1
  * http://jqueryui.com
@@ -3323,8 +3293,6 @@ var effectsEffectFade = $.effects.define( "fade", "toggle", function( options, d
 //>>description: Folds an element first horizontally and then vertically.
 //>>docs: http://api.jqueryui.com/fold-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectFold = $.effects.define( "fold", "hide", function( options, done ) {
 
@@ -3383,7 +3351,6 @@ var effectsEffectFold = $.effects.define( "fold", "hide", function( options, don
 	$.effects.unshift( element, queuelen, 4 );
 } );
 
-
 /*!
  * jQuery UI Effects Highlight 1.12.1
  * http://jqueryui.com
@@ -3398,8 +3365,6 @@ var effectsEffectFold = $.effects.define( "fold", "hide", function( options, don
 //>>description: Highlights the background of an element in a defined color for a custom duration.
 //>>docs: http://api.jqueryui.com/highlight-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectHighlight = $.effects.define( "highlight", "show", function( options, done ) {
 	var element = $( this ),
@@ -3426,7 +3391,6 @@ var effectsEffectHighlight = $.effects.define( "highlight", "show", function( op
 		} );
 } );
 
-
 /*!
  * jQuery UI Effects Size 1.12.1
  * http://jqueryui.com
@@ -3441,8 +3405,6 @@ var effectsEffectHighlight = $.effects.define( "highlight", "show", function( op
 //>>description: Resize an element to a specified width and height.
 //>>docs: http://api.jqueryui.com/size-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectSize = $.effects.define( "size", function( options, done ) {
 
@@ -3603,7 +3565,6 @@ var effectsEffectSize = $.effects.define( "size", function( options, done ) {
 
 } );
 
-
 /*!
  * jQuery UI Effects Scale 1.12.1
  * http://jqueryui.com
@@ -3618,8 +3579,6 @@ var effectsEffectSize = $.effects.define( "size", function( options, done ) {
 //>>description: Grows or shrinks an element and its content.
 //>>docs: http://api.jqueryui.com/scale-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectScale = $.effects.define( "scale", function( options, done ) {
 
@@ -3644,7 +3603,6 @@ var effectsEffectScale = $.effects.define( "scale", function( options, done ) {
 	$.effects.effect.size.call( this, newOptions, done );
 } );
 
-
 /*!
  * jQuery UI Effects Puff 1.12.1
  * http://jqueryui.com
@@ -3660,8 +3618,6 @@ var effectsEffectScale = $.effects.define( "scale", function( options, done ) {
 //>>docs: http://api.jqueryui.com/puff-effect/
 //>>demos: http://jqueryui.com/effect/
 
-
-
 var effectsEffectPuff = $.effects.define( "puff", "hide", function( options, done ) {
 	var newOptions = $.extend( true, {}, options, {
 		fade: true,
@@ -3670,7 +3626,6 @@ var effectsEffectPuff = $.effects.define( "puff", "hide", function( options, don
 
 	$.effects.effect.scale.call( this, newOptions, done );
 } );
-
 
 /*!
  * jQuery UI Effects Pulsate 1.12.1
@@ -3686,8 +3641,6 @@ var effectsEffectPuff = $.effects.define( "puff", "hide", function( options, don
 //>>description: Pulsates an element n times by changing the opacity to zero and back.
 //>>docs: http://api.jqueryui.com/pulsate-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectPulsate = $.effects.define( "pulsate", "show", function( options, done ) {
 	var element = $( this ),
@@ -3721,7 +3674,6 @@ var effectsEffectPulsate = $.effects.define( "pulsate", "show", function( option
 	$.effects.unshift( element, queuelen, anims + 1 );
 } );
 
-
 /*!
  * jQuery UI Effects Shake 1.12.1
  * http://jqueryui.com
@@ -3736,8 +3688,6 @@ var effectsEffectPulsate = $.effects.define( "pulsate", "show", function( option
 //>>description: Shakes an element horizontally or vertically n times.
 //>>docs: http://api.jqueryui.com/shake-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectShake = $.effects.define( "shake", function( options, done ) {
 
@@ -3781,7 +3731,6 @@ var effectsEffectShake = $.effects.define( "shake", function( options, done ) {
 	$.effects.unshift( element, queuelen, anims + 1 );
 } );
 
-
 /*!
  * jQuery UI Effects Slide 1.12.1
  * http://jqueryui.com
@@ -3796,8 +3745,6 @@ var effectsEffectShake = $.effects.define( "shake", function( options, done ) {
 //>>description: Slides an element in and out of the viewport.
 //>>docs: http://api.jqueryui.com/slide-effect/
 //>>demos: http://jqueryui.com/effect/
-
-
 
 var effectsEffectSlide = $.effects.define( "slide", "show", function( options, done ) {
 	var startClip, startRef,
@@ -3843,7 +3790,6 @@ var effectsEffectSlide = $.effects.define( "slide", "show", function( options, d
 	} );
 } );
 
-
 /*!
  * jQuery UI Effects Transfer 1.12.1
  * http://jqueryui.com
@@ -3859,8 +3805,6 @@ var effectsEffectSlide = $.effects.define( "slide", "show", function( options, d
 //>>docs: http://api.jqueryui.com/transfer-effect/
 //>>demos: http://jqueryui.com/effect/
 
-
-
 var effect;
 if ( $.uiBackCompat !== false ) {
 	effect = $.effects.define( "transfer", function( options, done ) {
@@ -3868,7 +3812,6 @@ if ( $.uiBackCompat !== false ) {
 	} );
 }
 var effectsEffectTransfer = effect;
-
 
 /*!
  * jQuery UI Focusable 1.12.1
@@ -3883,8 +3826,6 @@ var effectsEffectTransfer = effect;
 //>>group: Core
 //>>description: Selects elements which can be focused.
 //>>docs: http://api.jqueryui.com/focusable-selector/
-
-
 
 // Selectors
 $.ui.focusable = function( element, hasTabindex ) {
@@ -3943,16 +3884,12 @@ $.extend( $.expr[ ":" ], {
 
 var focusable = $.ui.focusable;
 
-
-
-
 // Support: IE8 Only
 // IE8 does not support the form attribute and when it is supplied. It overwrites the form prop
 // with a string, so we need to find the proper form.
 var form = $.fn.form = function() {
 	return typeof this[ 0 ].form === "string" ? this.closest( "form" ) : $( this[ 0 ].form );
 };
-
 
 /*!
  * jQuery UI Form Reset Mixin 1.12.1
@@ -3967,8 +3904,6 @@ var form = $.fn.form = function() {
 //>>group: Core
 //>>description: Refresh input widgets when their form is reset
 //>>docs: http://api.jqueryui.com/form-reset-mixin/
-
-
 
 var formResetMixin = $.ui.formResetMixin = {
 	_formResetHandler: function() {
@@ -4016,7 +3951,6 @@ var formResetMixin = $.ui.formResetMixin = {
 	}
 };
 
-
 /*!
  * jQuery UI Support for jQuery core 1.7.x 1.12.1
  * http://jqueryui.com
@@ -4030,8 +3964,6 @@ var formResetMixin = $.ui.formResetMixin = {
 //>>label: jQuery 1.7 Support
 //>>group: Core
 //>>description: Support version 1.7.x of jQuery core
-
-
 
 // Support: jQuery 1.7 only
 // Not a great way to check versions, but since we only support 1.7+ and only
@@ -4110,7 +4042,6 @@ if ( $.fn.jquery.substring( 0, 3 ) === "1.7" ) {
 //>>description: Provide keycodes as keynames
 //>>docs: http://api.jqueryui.com/jQuery.ui.keyCode/
 
-
 var keycode = $.ui.keyCode = {
 	BACKSPACE: 8,
 	COMMA: 188,
@@ -4130,9 +4061,6 @@ var keycode = $.ui.keyCode = {
 	UP: 38
 };
 
-
-
-
 // Internal use only
 var escapeSelector = $.ui.escapeSelector = ( function() {
 	var selectorEscape = /([!"#$%&'()*+,./:;<=>?@[\]^`{|}~])/g;
@@ -4140,7 +4068,6 @@ var escapeSelector = $.ui.escapeSelector = ( function() {
 		return selector.replace( selectorEscape, "\\$1" );
 	};
 } )();
-
 
 /*!
  * jQuery UI Labels 1.12.1
@@ -4155,8 +4082,6 @@ var escapeSelector = $.ui.escapeSelector = ( function() {
 //>>group: Core
 //>>description: Find all the labels associated with a given input
 //>>docs: http://api.jqueryui.com/labels/
-
-
 
 var labels = $.fn.labels = function() {
 	var ancestor, selector, id, labels, ancestors;
@@ -4193,7 +4118,6 @@ var labels = $.fn.labels = function() {
 	return this.pushStack( labels );
 };
 
-
 /*!
  * jQuery UI Scroll Parent 1.12.1
  * http://jqueryui.com
@@ -4207,8 +4131,6 @@ var labels = $.fn.labels = function() {
 //>>group: Core
 //>>description: Get the closest ancestor element that is scrollable.
 //>>docs: http://api.jqueryui.com/scrollParent/
-
-
 
 var scrollParent = $.fn.scrollParent = function( includeHidden ) {
 	var position = this.css( "position" ),
@@ -4228,7 +4150,6 @@ var scrollParent = $.fn.scrollParent = function( includeHidden ) {
 		scrollParent;
 };
 
-
 /*!
  * jQuery UI Tabbable 1.12.1
  * http://jqueryui.com
@@ -4243,8 +4164,6 @@ var scrollParent = $.fn.scrollParent = function( includeHidden ) {
 //>>description: Selects elements which can be tabbed to.
 //>>docs: http://api.jqueryui.com/tabbable-selector/
 
-
-
 var tabbable = $.extend( $.expr[ ":" ], {
 	tabbable: function( element ) {
 		var tabIndex = $.attr( element, "tabindex" ),
@@ -4252,7 +4171,6 @@ var tabbable = $.extend( $.expr[ ":" ], {
 		return ( !hasTabindex || tabIndex >= 0 ) && $.ui.focusable( element, hasTabindex );
 	}
 } );
-
 
 /*!
  * jQuery UI Unique ID 1.12.1
@@ -4267,8 +4185,6 @@ var tabbable = $.extend( $.expr[ ":" ], {
 //>>group: Core
 //>>description: Functions to generate and remove uniqueId's
 //>>docs: http://api.jqueryui.com/uniqueId/
-
-
 
 var uniqueId = $.fn.extend( {
 	uniqueId: ( function() {
@@ -4292,7 +4208,6 @@ var uniqueId = $.fn.extend( {
 	}
 } );
 
-
 /*!
  * jQuery UI Accordion 1.12.1
  * http://jqueryui.com
@@ -4312,8 +4227,6 @@ var uniqueId = $.fn.extend( {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/accordion.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 var widgetsAccordion = $.widget( "ui.accordion", {
 	version: "1.12.1",
@@ -4889,8 +4802,6 @@ var widgetsAccordion = $.widget( "ui.accordion", {
 	}
 } );
 
-
-
 var safeActiveElement = $.ui.safeActiveElement = function( document ) {
 	var activeElement;
 
@@ -4919,7 +4830,6 @@ var safeActiveElement = $.ui.safeActiveElement = function( document ) {
 	return activeElement;
 };
 
-
 /*!
  * jQuery UI Menu 1.12.1
  * http://jqueryui.com
@@ -4937,8 +4847,6 @@ var safeActiveElement = $.ui.safeActiveElement = function( document ) {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/menu.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 var widgetsMenu = $.widget( "ui.menu", {
 	version: "1.12.1",
@@ -5574,7 +5482,6 @@ var widgetsMenu = $.widget( "ui.menu", {
 	}
 } );
 
-
 /*!
  * jQuery UI Autocomplete 1.12.1
  * http://jqueryui.com
@@ -5592,8 +5499,6 @@ var widgetsMenu = $.widget( "ui.menu", {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/autocomplete.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.autocomplete", {
 	version: "1.12.1",
@@ -6238,7 +6143,6 @@ $.widget( "ui.autocomplete", $.ui.autocomplete, {
 
 var widgetsAutocomplete = $.ui.autocomplete;
 
-
 /*!
  * jQuery UI Controlgroup 1.12.1
  * http://jqueryui.com
@@ -6256,7 +6160,6 @@ var widgetsAutocomplete = $.ui.autocomplete;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/controlgroup.css
 //>>css.theme: ../../themes/base/theme.css
-
 
 var controlgroupCornerRegex = /ui-corner-([a-z]){2,6}/g;
 
@@ -6543,8 +6446,6 @@ var widgetsControlgroup = $.widget( "ui.controlgroup", {
 //>>css.structure: ../../themes/base/checkboxradio.css
 //>>css.theme: ../../themes/base/theme.css
 
-
-
 $.widget( "ui.checkboxradio", [ $.ui.formResetMixin, {
 	version: "1.12.1",
 	options: {
@@ -6793,7 +6694,6 @@ $.widget( "ui.checkboxradio", [ $.ui.formResetMixin, {
 
 var widgetsCheckboxradio = $.ui.checkboxradio;
 
-
 /*!
  * jQuery UI Button 1.12.1
  * http://jqueryui.com
@@ -6811,8 +6711,6 @@ var widgetsCheckboxradio = $.ui.checkboxradio;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/button.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.button", {
 	version: "1.12.1",
@@ -7159,7 +7057,6 @@ if ( $.uiBackCompat !== false ) {
 
 var widgetsButton = $.ui.button;
 
-
 // jscs:disable maximumLineLength
 /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
 /*!
@@ -7179,8 +7076,6 @@ var widgetsButton = $.ui.button;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/datepicker.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.extend( $.ui, { datepicker: { version: "1.12.1" } } );
 
@@ -9265,9 +9160,6 @@ $.datepicker.version = "1.12.1";
 
 var widgetsDatepicker = $.datepicker;
 
-
-
-
 // This file is deprecated
 var ie = $.ui.ie = !!/msie [\w.]+/.exec( navigator.userAgent.toLowerCase() );
 
@@ -9284,8 +9176,6 @@ var ie = $.ui.ie = !!/msie [\w.]+/.exec( navigator.userAgent.toLowerCase() );
 //>>group: Widgets
 //>>description: Abstracts mouse-based interactions to assist in creating certain widgets.
 //>>docs: http://api.jqueryui.com/mouse/
-
-
 
 var mouseHandled = false;
 $( document ).on( "mouseup", function() {
@@ -9481,9 +9371,6 @@ var widgetsMouse = $.widget( "ui.mouse", {
 	_mouseCapture: function( /* event */ ) { return true; }
 } );
 
-
-
-
 // $.ui.plugin is deprecated. Use $.widget() extensions instead.
 var plugin = $.ui.plugin = {
 	add: function( module, option, set ) {
@@ -9515,8 +9402,6 @@ var plugin = $.ui.plugin = {
 	}
 };
 
-
-
 var safeBlur = $.ui.safeBlur = function( element ) {
 
 	// Support: IE9 - 10 only
@@ -9525,7 +9410,6 @@ var safeBlur = $.ui.safeBlur = function( element ) {
 		$( element ).trigger( "blur" );
 	}
 };
-
 
 /*!
  * jQuery UI Draggable 1.12.1
@@ -9542,8 +9426,6 @@ var safeBlur = $.ui.safeBlur = function( element ) {
 //>>docs: http://api.jqueryui.com/draggable/
 //>>demos: http://jqueryui.com/draggable/
 //>>css.structure: ../../themes/base/draggable.css
-
-
 
 $.widget( "ui.draggable", $.ui.mouse, {
 	version: "1.12.1",
@@ -10756,7 +10638,6 @@ $.ui.plugin.add( "draggable", "zIndex", {
 
 var widgetsDraggable = $.ui.draggable;
 
-
 /*!
  * jQuery UI Resizable 1.12.1
  * http://jqueryui.com
@@ -10774,8 +10655,6 @@ var widgetsDraggable = $.ui.draggable;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/resizable.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.resizable", $.ui.mouse, {
 	version: "1.12.1",
@@ -11940,7 +11819,6 @@ $.ui.plugin.add( "resizable", "grid", {
 
 var widgetsResizable = $.ui.resizable;
 
-
 /*!
  * jQuery UI Dialog 1.12.1
  * http://jqueryui.com
@@ -11958,8 +11836,6 @@ var widgetsResizable = $.ui.resizable;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/dialog.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.dialog", {
 	version: "1.12.1",
@@ -12855,7 +12731,6 @@ if ( $.uiBackCompat !== false ) {
 
 var widgetsDialog = $.ui.dialog;
 
-
 /*!
  * jQuery UI Droppable 1.12.1
  * http://jqueryui.com
@@ -12870,8 +12745,6 @@ var widgetsDialog = $.ui.dialog;
 //>>description: Enables drop targets for draggable elements.
 //>>docs: http://api.jqueryui.com/droppable/
 //>>demos: http://jqueryui.com/droppable/
-
-
 
 $.widget( "ui.droppable", {
 	version: "1.12.1",
@@ -13336,7 +13209,6 @@ if ( $.uiBackCompat !== false ) {
 
 var widgetsDroppable = $.ui.droppable;
 
-
 /*!
  * jQuery UI Progressbar 1.12.1
  * http://jqueryui.com
@@ -13356,8 +13228,6 @@ var widgetsDroppable = $.ui.droppable;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/progressbar.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 var widgetsProgressbar = $.widget( "ui.progressbar", {
 	version: "1.12.1",
@@ -13500,7 +13370,6 @@ var widgetsProgressbar = $.widget( "ui.progressbar", {
 	}
 } );
 
-
 /*!
  * jQuery UI Selectable 1.12.1
  * http://jqueryui.com
@@ -13516,8 +13385,6 @@ var widgetsProgressbar = $.widget( "ui.progressbar", {
 //>>docs: http://api.jqueryui.com/selectable/
 //>>demos: http://jqueryui.com/selectable/
 //>>css.structure: ../../themes/base/selectable.css
-
-
 
 var widgetsSelectable = $.widget( "ui.selectable", $.ui.mouse, {
 	version: "1.12.1",
@@ -13795,7 +13662,6 @@ var widgetsSelectable = $.widget( "ui.selectable", $.ui.mouse, {
 
 } );
 
-
 /*!
  * jQuery UI Selectmenu 1.12.1
  * http://jqueryui.com
@@ -13815,8 +13681,6 @@ var widgetsSelectable = $.widget( "ui.selectable", $.ui.mouse, {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/selectmenu.css, ../../themes/base/button.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 var widgetsSelectmenu = $.widget( "ui.selectmenu", [ $.ui.formResetMixin, {
 	version: "1.12.1",
@@ -14461,7 +14325,6 @@ var widgetsSelectmenu = $.widget( "ui.selectmenu", [ $.ui.formResetMixin, {
 	}
 } ] );
 
-
 /*!
  * jQuery UI Slider 1.12.1
  * http://jqueryui.com
@@ -14479,8 +14342,6 @@ var widgetsSelectmenu = $.widget( "ui.selectmenu", [ $.ui.formResetMixin, {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/slider.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 var widgetsSlider = $.widget( "ui.slider", $.ui.mouse, {
 	version: "1.12.1",
@@ -15197,7 +15058,6 @@ var widgetsSlider = $.widget( "ui.slider", $.ui.mouse, {
 	}
 } );
 
-
 /*!
  * jQuery UI Sortable 1.12.1
  * http://jqueryui.com
@@ -15213,8 +15073,6 @@ var widgetsSlider = $.widget( "ui.slider", $.ui.mouse, {
 //>>docs: http://api.jqueryui.com/sortable/
 //>>demos: http://jqueryui.com/sortable/
 //>>css.structure: ../../themes/base/sortable.css
-
-
 
 var widgetsSortable = $.widget( "ui.sortable", $.ui.mouse, {
 	version: "1.12.1",
@@ -16733,7 +16591,6 @@ var widgetsSortable = $.widget( "ui.sortable", $.ui.mouse, {
 
 } );
 
-
 /*!
  * jQuery UI Spinner 1.12.1
  * http://jqueryui.com
@@ -16751,8 +16608,6 @@ var widgetsSortable = $.widget( "ui.sortable", $.ui.mouse, {
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/spinner.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 function spinnerModifer( fn ) {
 	return function() {
@@ -17291,7 +17146,6 @@ if ( $.uiBackCompat !== false ) {
 
 var widgetsSpinner = $.ui.spinner;
 
-
 /*!
  * jQuery UI Tabs 1.12.1
  * http://jqueryui.com
@@ -17309,8 +17163,6 @@ var widgetsSpinner = $.ui.spinner;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/tabs.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.tabs", {
 	version: "1.12.1",
@@ -18197,7 +18049,6 @@ if ( $.uiBackCompat !== false ) {
 
 var widgetsTabs = $.ui.tabs;
 
-
 /*!
  * jQuery UI Tooltip 1.12.1
  * http://jqueryui.com
@@ -18215,8 +18066,6 @@ var widgetsTabs = $.ui.tabs;
 //>>css.structure: ../../themes/base/core.css
 //>>css.structure: ../../themes/base/tooltip.css
 //>>css.theme: ../../themes/base/theme.css
-
-
 
 $.widget( "ui.tooltip", {
 	version: "1.12.1",
@@ -18699,8 +18548,5 @@ if ( $.uiBackCompat !== false ) {
 }
 
 var widgetsTooltip = $.ui.tooltip;
-
-
-
 
 }));

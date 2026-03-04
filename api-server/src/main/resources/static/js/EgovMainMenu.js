@@ -25,7 +25,7 @@ function preloadIcons() {
 	treeIcons[4].src = imgpath+"menu_folder.gif";
 	treeIcons[5] = new Image();
 	treeIcons[5].src = imgpath+"menu_folderopen.gif";
-} 
+}
 /*
 * 트리생성함수
 */
@@ -37,10 +37,10 @@ function createTree(arrName, vYeobu, checkValue) {
 	startNode = chkValue;
 	if (treeNodes.length > 0) {
 		preloadIcons();
-		
+
 		//vHtmlCode +="<table width='181' height='94' border='2' align='center' cellpadding='0' cellspacing='0'><tr>";
 		//vHtmlCode +="<td valign='bottom' background='/images/egovframework/com/left_menu_top.gif' style='background-repeat:no-repeat'>";
-	
+
 		if (startNode == null) startNode = 0;
 		if (openNode != 0 || openNode != null) setOpenTreeNodes(openNode);
 		if (startNode !=0) {
@@ -76,7 +76,7 @@ function setOpenTreeNodes(openNode) {
 			openTreeNodes.push(nodeValues[0]);
 			setOpenTreeNodes(nodeValues[1]);
 		}
-	} 
+	}
 }
 /*
 * 트리노드 오픈 여부 확인
@@ -119,13 +119,13 @@ function addTreeNode(parentNode, recursedNodes) {
 
 		var nodeValues = treeNodes[i].split("|");
 		if (nodeValues[1] == parentNode) {
-		
+
 			var lastSibling	= lastTreeSibling(nodeValues[0], nodeValues[1]);
 			var hasChildNode	= hasChildTreeNode(nodeValues[0]);
 			var isNodeOpen = isTreeNodeOpen(nodeValues[0]);
 			vHtmlCodeBg      ="<li class='leftmenu_dept01'>";
 			vHtmlCodeBgList  ="<li class='dept02'>";
-			
+
 			vHtmlCodeEmpty = "";
 			// Write out line | empty treeIcons
 			for (g=0; g<recursedNodes.length; g++) {
@@ -145,7 +145,7 @@ function addTreeNode(parentNode, recursedNodes) {
 				   vHtmlCode +=vHtmlCodeBgList+"<a href=javascript:fn_MovePage('" + i + "');>"+nodeValues[2]+"</a></li>";
 				}
 			}
-		
+
 			if (hasChildNode) {
 				vHtmlCode +="<div id='div" + nodeValues[0] + "'";
 					if (!isNodeOpen) vHtmlCode +=" style='display: none;'";
@@ -174,4 +174,3 @@ if(!Array.prototype.pop) {
 	}
 	Array.prototype.pop = fnArrayPop;
 }
-

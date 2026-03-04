@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * UserController 테스트 설정
- * Note: Security ?좎럩?등록??좎?鍮?Security 설정 - 
+ * Note: Security ?좎럩?등록??좎?鍮?Security 설정 -
  */
 @Disabled("Security 설정- Security 설정?좎럩??")
 class UserControllerAuthTest {

@@ -84,7 +84,6 @@ class LoginUserAuditorAwareTest {
         assertThat(auditor).isPresent().contains("testUser");
     }
 
-
     @Test
     @DisplayName("그 외의 경우 authentication.getName() 반환")
     void getCurrentAuditor_OtherPrincipal_ReturnsName() {

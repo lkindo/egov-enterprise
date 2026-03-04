@@ -19,12 +19,12 @@ package com.company.project.test.async;
  * import org.springframework.http.MediaType;
  * import org.springframework.test.context.ActiveProfiles;
  * import org.springframework.test.web.servlet.MockMvc;
- * 
+ *
  * import java.util.concurrent.CompletableFuture;
  * import java.util.concurrent.ExecutionException;
  * import java.util.concurrent.TimeUnit;
  * import java.util.concurrent.TimeoutException;
- * 
+ *
  * import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * import static org.awaitility.Awaitility.await;
  * import static org.mockito.ArgumentMatchers.anyInt;
@@ -34,23 +34,23 @@ package com.company.project.test.async;
  * import static
  * org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
  * import static org.assertj.core.api.Assertions.assertThat;
- * 
+ *
  * @SpringBootTest
- * 
+ *
  * @AutoConfigureWebMvc
- * 
+ *
  * @ActiveProfiles("test")
  * class AsyncTimeoutTest {
- * 
+ *
  * @Autowired
  * private MockMvc mockMvc;
- * 
+ *
  * @MockitoBean
  * private AsyncService asyncService;
- * 
+ *
  * private static final int DEFAULT_TIMEOUT = 10; // seconds
  * private static final int SHORT_TIMEOUT = 2; // seconds for timeout tests
- * 
+ *
  * @BeforeEach
  * void setUp() {
  * // Mock async methods that will timeout
@@ -66,12 +66,12 @@ package com.company.project.test.async;
  * }
  * });
  * });
- * 
+ *
  * when(asyncService.processWithTimeout(anyInt(),
  * anyInt())).thenAnswer(invocation -> {
  * int delayMs = invocation.getArgument(0);
  * int timeoutMs = invocation.getArgument(1);
- * 
+ *
  * return CompletableFuture.supplyAsync(() -> {
  * try {
  * Thread.sleep(delayMs);
@@ -87,7 +87,7 @@ package com.company.project.test.async;
  * });
  * });
  * }
- * 
+ *
  * // ... tests ...
  * }
  */

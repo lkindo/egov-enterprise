@@ -124,9 +124,9 @@ public class MinimalTestConfig {
     @Bean
     public static org.springframework.beans.factory.config.BeanFactoryPostProcessor mockIdGnrServicePostProcessor() {
         return beanFactory -> {
-            org.springframework.beans.factory.support.DefaultListableBeanFactory factory = 
+            org.springframework.beans.factory.support.DefaultListableBeanFactory factory =
                 (org.springframework.beans.factory.support.DefaultListableBeanFactory) beanFactory;
-            
+
             String[] commonIdGnrNames = {
                     "egovEventManageIdGnrService", "egovBackupOpertIdGnrService", "egovAdbkUserIdGnrService",
                     "egovBBSMstrIdGnrService", "egovMenuManageIdGnrService", "egovFileIdGnrService",
@@ -139,7 +139,7 @@ public class MinimalTestConfig {
                     "egovMeetingIdGnrService", "egovMeetingManageIdGnrService", "egovMemoReprtIdGnrService",
                     "egovMemoTodoIdGnrService", "egovNcrdIdGnrService", "egovNcrdUserIdGnrService"
             };
-            
+
             for (String name : commonIdGnrNames) {
                 if (!factory.containsBeanDefinition(name)) {
                     factory.registerSingleton(name, Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class));

@@ -21,13 +21,13 @@ class EgovFileScrtyTest {
         Path sourcePath = tempDir.resolve("source.txt");
         Path targetPath = tempDir.resolve("encrypted.txt");
         Path decryptedPath = tempDir.resolve("decrypted.txt");
-        
+
         String originalContent = "Hello eGovFrame! This is a secret message.";
         Files.writeString(sourcePath, originalContent);
 
         // When (Encryption)
         boolean encryptResult = EgovFileScrty.encryptFile(sourcePath.toString(), targetPath.toString());
-        
+
         // Then
         assertThat(encryptResult).isTrue();
         assertThat(targetPath).exists();
@@ -35,7 +35,7 @@ class EgovFileScrtyTest {
 
         // When (Decryption)
         boolean decryptResult = EgovFileScrty.decryptFile(targetPath.toString(), decryptedPath.toString());
-        
+
         // Then
         assertThat(decryptResult).isTrue();
         assertThat(decryptedPath).exists();
@@ -48,12 +48,12 @@ class EgovFileScrtyTest {
     void passwordEncryptionTest() throws Exception {
         String password = "password123";
         String salt = "salt";
-        
+
         String encrypted = EgovFileScrty.encryptPassword(password, salt.getBytes());
-        
+
         assertThat(encrypted).isNotNull();
         assertThat(encrypted).isNotEqualTo(password);
-        
+
         // Same input should produce same output
         String encrypted2 = EgovFileScrty.encryptPassword(password, salt.getBytes());
         assertThat(encrypted).isEqualTo(encrypted2);

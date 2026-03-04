@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function RedirectToUnifiedCode() {
     const router = useRouter();
-    
+
     useEffect(() => {
         router.replace('/admin/system/common-code');
     }, [router]);

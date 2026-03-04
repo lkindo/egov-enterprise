@@ -21,29 +21,13 @@ class SystemMonitoringSaveTest {
     @Autowired
     private DbMntrngRepository dbMntrngRepository;
     @Autowired
-    private DbMntrngLogRepository dbMntrngLogRepository;
-    @Autowired
     private FileSysMntrngRepository fileSysMntrngRepository;
-    @Autowired
-    private FileSysMntrngLogRepository fileSysMntrngLogRepository;
     @Autowired
     private HttpMonRepository httpMonRepository;
     @Autowired
-    private HttpMonLogRepository httpMonLogRepository;
-    @Autowired
     private ProcessMonRepository processMonRepository;
     @Autowired
-    private ProcessMonLogRepository processMonLogRepository;
-    @Autowired
     private ServerResrceLogRepository serverResrceLogRepository;
-    @Autowired
-    private NtwrkSvcMntrngRepository ntwrkSvcMntrngRepository;
-    @Autowired
-    private NtwrkSvcMntrngLogRepository ntwrkSvcMntrngLogRepository;
-    @Autowired
-    private TrsmrcvMntrngRepository trsmrcvMntrngRepository;
-    @Autowired
-    private TrsmrcvMntrngLogRepository trsmrcvMntrngLogRepository;
 
     @Test
     @DisplayName("DB 모니터링 저장")
