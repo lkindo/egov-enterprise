@@ -60,7 +60,7 @@ public class MinimalTestConfig {
     @Primary
     public DataSourceProperties dataSourceProperties() {
         DataSourceProperties properties = new DataSourceProperties();
-        properties.setUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL");
+        properties.setUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE");
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");

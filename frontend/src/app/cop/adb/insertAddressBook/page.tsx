@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
+import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,9 @@ const InsertAddressBookPage = () => {
 
         setLoading(true);
         try {
-            const response = (await axios.post('/addressbook', formData)) as any;
-            if (response?.data?.success) {
-                alert(response.data.message);
-                router.push('/cop/adb/selectAddressBookList');
-            }
+            await addressbookUserService.createAddressBook(formData);
+            alert('등록되었습니다.');
+            router.push('/cop/adb/selectAddressBookList');
         } catch (error: any) {
             alert(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {

@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Slf4j
-@Component
+// @Component
 @RequiredArgsConstructor
 public class MenuDataInitializer implements CommandLineRunner {
 
@@ -88,6 +88,10 @@ public class MenuDataInitializer implements CommandLineRunner {
             AtomicInteger programCount = new AtomicInteger(0);
 
             lines.forEach(line -> {
+                if (line.contains("EgovMenuManageSelect") || line.contains("6140000")) {
+                    log.debug("Skipping legacy batch menu/program statement: {}", line);
+                    return;
+                }
                 if (needMenu && line.contains("INSERT INTO NMENUINFO")) {
                     executeStatements(line, menuCount);
                 } else if (needProgram && line.contains("INSERT INTO NPROGRMLIST")) {

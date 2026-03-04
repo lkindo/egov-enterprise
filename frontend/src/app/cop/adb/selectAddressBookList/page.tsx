@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
+import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import {
     Table,
     TableBody,
@@ -40,10 +40,12 @@ const AddressBookListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10, searchWrd };
-            const response = (await axios.get('/addressbook', { params })) as any;
-            setList(response.data.resultList || []);
-            setTotalCount(response.data.totalCount || 0);
-            setTotalPages(response.data.totalPages || 0);
+            const response = await addressbookUserService.getAddressBooks(params);
+            
+            // Spring Data Page 객체 구조에 맞게 매핑
+            setList(response.content || []);
+            setTotalCount(response.totalElements || 0);
+            setTotalPages(response.totalPages || 0);
         } catch (error) {
             console.error('Failed to fetch address books', error);
         } finally {
@@ -64,7 +66,7 @@ const AddressBookListPage = () => {
     const handleDelete = async (adbkId: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
-            (await axios.delete(`/addressbook/${adbkId}`)) as any;
+            await addressbookUserService.deleteAddressBook(adbkId);
             fetchList();
         } catch (error) {
             alert('삭제에 실패했습니다.');

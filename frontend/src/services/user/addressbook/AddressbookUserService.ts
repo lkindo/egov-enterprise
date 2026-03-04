@@ -9,23 +9,51 @@ class AddressbookUserService extends UserService {
     /**
      * 주소록 목록 조회
      */
-    async getAddressBooks(params: { page?: number; size?: number; searchWrd?: string }) {
-        return this.get<any>('', { params });
+    async getAddressBooks(params: { pageIndex?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }) {
+        return this.get<any>('', { 
+            params: {
+                page: (params.pageIndex || 1) - 1,
+                size: params.pageUnit || 10,
+                searchWrd: params.searchWrd,
+                searchCnd: params.searchCnd
+            }
+        });
     }
 
     /**
-     * 명함 상세 조회 (사용자 검색 결과용)
+     * 주소록 상세 조회
      */
-    async getNameCard(id: string) {
-        return this.get<any>(`/namecards/${id}`);
+    async getAddressBook(adbkId: string) {
+        return this.get<any>(`/${adbkId}`);
     }
 
     /**
-     * 전사 사용자 주소록 검색
+     * 주소록 등록
      */
-    async searchUsers(keyword: string) {
-        return this.get<any>('/users', {
-            params: { keyword }
+    async createAddressBook(data: any) {
+        return this.post<any>('', data);
+    }
+
+    /**
+     * 주소록 수정
+     */
+    async updateAddressBook(adbkId: string, data: any) {
+        return this.put<any>(`/${adbkId}`, data);
+    }
+
+    /**
+     * 주소록 삭제
+     */
+    async deleteAddressBook(adbkId: string) {
+        return this.delete<any>(`/${adbkId}`);
+    }
+
+    /**
+     * 전사 사용자 주소록 검색 (상세 팝업용 등)
+     */
+    async searchUsers(searchWrd: string) {
+        return this.get<any>('/search-users', {
+            params: { searchWrd }
         });
     }
 }

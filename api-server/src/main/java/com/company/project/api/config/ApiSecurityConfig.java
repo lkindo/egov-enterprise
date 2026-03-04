@@ -5,6 +5,7 @@ import com.company.project.security.jwt.JwtAuthenticationFilter;
 import com.company.project.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -32,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
+@Profile("!test")
 @EnableWebSecurity
-@org.springframework.context.annotation.Profile("!test")
 public class ApiSecurityConfig {
         private final EgovAuthenticationProvider egovAuthenticationProvider;
         private final JwtTokenProvider jwtTokenProvider;
@@ -92,7 +93,7 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/auth/reissue",
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/users/signup",
-                                                                "/api/v1/menu/**", "/api/v1/health",
+                                                                "/api/v1/health",
                                                                 "/api/v1/images/**", "/api/v1/dashboard",
                                                                 "/api/v1/bbs/**", "/api/v1/community/**",
                                                                 "/api/v1/deptjob/**", "/api/v1/addressbook/**",
@@ -129,14 +130,11 @@ public class ApiSecurityConfig {
                                                                 "/favicon.ico")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
-                                .formLogin(form -> form
-                                                .loginPage("/uat/uia/egovLoginUsr.do")
-                                                .usernameParameter("id")
-                                                .passwordParameter("password")
-                                                .permitAll())
-                                .logout(logout -> logout
-                                                .logoutUrl("/uat/uia/actionLogout.do")
-                                                .logoutSuccessUrl("/uat/uia/egovLoginUsr.do"))
+                                .formLogin(form -> form.disable())
+                                .logout(logout -> logout.disable())
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
                 return http.build();

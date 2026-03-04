@@ -4,7 +4,7 @@ import { PaginationResponse } from '@/types/system';
 
 class UserAdminService extends ApiService {
     constructor() {
-        super('/admin/users');
+        super('/admin/system/users');
     }
 
     /**
@@ -13,7 +13,7 @@ class UserAdminService extends ApiService {
     async getUsers(params: UserSearchParams = {}, config?: any): Promise<PaginationResponse<UserManage>> {
         const res: any = await this.get('', { ...config, params });
         return {
-            resultList: res.list || [],
+            resultList: res.resultList || [],
             paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
         };
     }

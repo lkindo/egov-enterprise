@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
+import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +40,11 @@ const AddressBookDetailPage = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = (await axios.get(`/addressbook/${adbkId}`)) as any;
-            const data = response.data.addressBook;
+            const response = await addressbookUserService.getAddressBook(adbkId);
+            // ApiResponse.data가 바로 dto이므로 response를 사용하거나 구조에 맞춰 조정
+            // 백엔드 AddressBookController.getAddressBook은 ApiResponse<AddressBookDto> 반환
+            // client.get은 body.data(AddressBookDto)를 반환함.
+            const data = response;
             setDetail(data);
             setFormData({
                 adbkNm: data.adbkNm || '',
@@ -63,12 +66,10 @@ const AddressBookDetailPage = () => {
     const handleUpdate = async () => {
         setActionLoading(true);
         try {
-            const response = (await axios.put(`/addressbook/${adbkId}`, formData)) as any;
-            if (response.data.success) {
-                alert(response.data.message);
-                setIsEditing(false);
-                fetchDetail();
-            }
+            await addressbookUserService.updateAddressBook(adbkId, formData);
+            alert('수정되었습니다.');
+            setIsEditing(false);
+            fetchDetail();
         } catch (error: any) {
             alert(error.response?.data?.message || '수정에 실패했습니다.');
         } finally {
@@ -80,11 +81,9 @@ const AddressBookDetailPage = () => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         setActionLoading(true);
         try {
-            const response = (await axios.delete(`/addressbook/${adbkId}`)) as any;
-            if (response.data.success) {
-                alert(response.data.message);
-                router.push('/cop/adb/selectAddressBookList');
-            }
+            await addressbookUserService.deleteAddressBook(adbkId);
+            alert('삭제되었습니다.');
+            router.push('/cop/adb/selectAddressBookList');
         } catch (error: any) {
             alert(error.response?.data?.message || '삭제에 실패했습니다.');
         } finally {
